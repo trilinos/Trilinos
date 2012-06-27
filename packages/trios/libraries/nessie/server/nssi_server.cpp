@@ -108,9 +108,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_threads.h"
 #include "Trios_nssi_rpc.h"
 #include "buffer_queue.h"
+#include "Trios_nssi_debug.h"
 
-
-#include "nssi_debug.h"
 #include "nssi_opcodes.h"
 #include "nssi_trace.h"
 #include "nssi_service_args.h"
@@ -119,11 +118,11 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
+extern nssi_config_t nssi_config;
 
-#ifdef USE_BUFFER_QUEUE
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
-#endif
+
 
 // TODO: Replace these with the threadpool rank
 int FIXRANK = 0;
@@ -651,30 +650,30 @@ static int send_result(const NNTI_peer_t   *caller,
     /* allocated an xdr memory stream for the short result buffer */
     assert(res_buf_size > 0);
 
-#ifdef USE_BUFFER_QUEUE
-    short_res_hdl=trios_buffer_queue_pop(&send_bq);
-    assert(short_res_hdl);
-#else
-    buf=(char *)malloc(res_buf_size);
-    memset(buf, 0, res_buf_size);  // address valgrind uninitialized error
-    if (!buf)   {
-        log_fatal(rpc_debug_level, "malloc() failed!");
-        rc = NSSI_ENOMEM;
-        goto cleanup;
+    if (nssi_config.use_buffer_queue) {
+        short_res_hdl=trios_buffer_queue_pop(&send_bq);
+        assert(short_res_hdl);
+    } else {
+        buf=(char *)malloc(res_buf_size);
+        memset(buf, 0, res_buf_size);  // address valgrind uninitialized error
+        if (!buf)   {
+            log_fatal(rpc_debug_level, "malloc() failed!");
+            rc = NSSI_ENOMEM;
+            goto cleanup;
+        }
+        rc=NNTI_register_memory(
+                &transports[caller->peer.transport_id],
+                buf,
+                res_buf_size,
+                1,
+                NNTI_SEND_SRC,
+                caller,
+                short_res_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering short result: %s",
+                    nnti_err_str(rc));
+        }
     }
-    rc=NNTI_register_memory(
-            &transports[caller->peer.transport_id],
-            buf,
-            res_buf_size,
-            1,
-            NNTI_SEND_SRC,
-            caller,
-            short_res_hdl);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering short result: %s",
-                nnti_err_str(rc));
-    }
-#endif
 
     xdrmem_create(
             &hdr_xdrs,
@@ -863,17 +862,17 @@ cleanup:
         free(buf);
     }
 
-#ifdef USE_BUFFER_QUEUE
-    trios_buffer_queue_push(&send_bq, short_res_hdl);
-#else
-    buf=NNTI_BUFFER_C_POINTER(short_res_hdl);
-    rc=NNTI_unregister_memory(short_res_hdl);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering short result: %s",
-                nnti_err_str(rc));
+    if (nssi_config.use_buffer_queue) {
+        trios_buffer_queue_push(&send_bq, short_res_hdl);
+    } else {
+        buf=NNTI_BUFFER_C_POINTER(short_res_hdl);
+        rc=NNTI_unregister_memory(short_res_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering short result: %s",
+                    nnti_err_str(rc));
+        }
+        free(buf);
     }
-    free(buf);
-#endif
 
     log_debug(rpc_debug_level, "thread_id(%d): result %lu sent", thread_id, request_id);
 

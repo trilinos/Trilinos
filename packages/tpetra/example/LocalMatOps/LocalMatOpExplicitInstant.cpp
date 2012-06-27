@@ -41,7 +41,7 @@
 // @HEADER
 */
 
-#include <examples/Kokkos_DummySparseKernelClass.hpp>
+#include <examples/KokkosExamples_EmptySparseKernelClass.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_DefaultPlatform.hpp"
@@ -62,7 +62,7 @@
 #include "Tpetra_CrsMatrixSolveOp_def.hpp"
 
 typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType DefNode;
-typedef KokkosExamples::DummySparseKernel<DefNode>             SparseOp;
+typedef KokkosExamples::EmptySparseKernel<void,DefNode>           SparseOp;
 
 namespace Tpetra {
 
@@ -71,7 +71,7 @@ namespace Tpetra {
   TPETRA_MULTIVECTOR_INSTANT(float,int,int,DefNode)
 #endif
 
-  // float matrix support for dummy sparse kernel class
+  // float matrix support for Empty sparse kernel class
   template class CrsMatrix < float , int , int , DefNode , SparseOp >;
 }
 

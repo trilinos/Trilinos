@@ -190,8 +190,10 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 
   /* Make Smoother, if needed */
   int Sweeps=List_.get("smoother: sweeps",0);
+#ifdef HAVE_ML_IFPACK
   if(Sweeps)
     IfSmoother=ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*K2_Matrix_),0,List_,"GradDiv (level 0): ",verbose_);
+#endif
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[2]));
 #endif

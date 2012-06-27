@@ -42,24 +42,187 @@
 #ifndef KOKKOS_DEFAULTSPARSEOPS_HPP
 #define KOKKOS_DEFAULTSPARSEOPS_HPP
 
-#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_CrsGraph.hpp"
+#include "Kokkos_CrsMatrixBase.hpp"
+#include "Kokkos_CrsGraphBase.hpp"
+
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
-#include "Kokkos_DefaultSparseScaleKernelOps.hpp"
 #include "Kokkos_DefaultSparseSolveKernelOps.hpp"
 #include "Kokkos_DefaultSparseMultiplyKernelOps.hpp"
 
 namespace Kokkos {
+
+  //! \class DefaultCrsGraph
+  /** \brief Default implementation of CRS sparse graph, using generic kernels and suitable for host-based nodes.
+  */
+  template <class Ordinal,
+            class Node>
+  class DefaultCrsGraph : public CrsGraphBase<Ordinal,Node>
+  {
+    public:
+      DefaultCrsGraph(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
+      bool isEmpty() const;
+      void setStructure(const ArrayRCP<const size_t>  &ptrs,
+                        const ArrayRCP<const Ordinal> &inds);
+      inline ArrayRCP<const size_t> getPointers() const;
+      inline ArrayRCP<const Ordinal> getIndices() const;
+      inline bool isInitialized() const;
+      inline void setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag);
+      inline void getMatDesc(Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const;
+    private:
+      ArrayRCP<const size_t>  ptrs_;
+      ArrayRCP<const Ordinal> inds_;
+      bool isInitialized_;
+      bool isEmpty_;
+      Teuchos::EUplo  tri_uplo_;
+      Teuchos::EDiag unit_diag_;
+  };
+
+  //! \class DefaultCrsMatrix
+  /** \brief Default implementation of CRS sparse matrix, using generic kernels and suitable for host-based nodes.
+  */
+  template <class Scalar,
+            class Ordinal,
+            class Node>
+  class DefaultCrsMatrix : public CrsMatrixBase<Scalar,Ordinal,Node>
+  {
+    public:
+      DefaultCrsMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, const RCP<ParameterList> &params);
+      void setValues(const ArrayRCP<const Scalar> &vals);
+      inline ArrayRCP<const Scalar> getValues() const;
+      inline bool isInitialized() const;
+    private:
+      ArrayRCP<const Scalar> vals_;
+      bool isInitialized_;
+  };
+
+  template <class Ordinal, class Node>
+  DefaultCrsGraph<Ordinal,Node>::DefaultCrsGraph(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params)
+  : CrsGraphBase<Ordinal,Node>(numRows,node,params)
+  , isInitialized_(false)
+  , isEmpty_(false)
+  {
+    // Make sure that users only specialize for Kokkos Node types that are host Nodes (vs. device Nodes, such as GPU Nodes)
+    Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+  }
+
+  template <class Ordinal, class Node>
+  bool DefaultCrsGraph<Ordinal,Node>::isEmpty() const
+  { return isEmpty_; }
+
+  template <class Ordinal, class Node>
+  void DefaultCrsGraph<Ordinal,Node>::setStructure(
+                      const ArrayRCP<const size_t>  &ptrs,
+                      const ArrayRCP<const Ordinal> &inds)
+  {
+    std::string tfecfFuncName("setStructure(ptrs,inds)");
+    const size_t numrows = this->getNumRows();
+
+    // mfh 19 June 2012: The tests expect std::runtime_error rather
+    // than the arguably more appropriate std::invalid_argument, so
+    // I'll throw std::runtime_error here.  Ditto for the other checks
+    // below.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ptrs.is_null (),
+      std::runtime_error,
+      ": The input array 'ptrs' must be nonnull, even for a matrix with zero "
+      "rows.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      (size_t) ptrs.size() != numrows+1,
+      std::runtime_error,
+      ": Graph input data are not coherent:\n"
+      "-- ptrs.size() = " << ptrs.size() << " != numrows+1 = "
+      << (numrows+1) << ".");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ptrs[0] != 0,
+      std::runtime_error,
+      ": Graph input data are not coherent:\n"
+      "-- ptrs[0] = " << ptrs[0] << " != 0.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      (size_t) inds.size() != ptrs[numrows],
+      std::runtime_error,
+      ": Graph input data are not coherent:\n"
+      "-- inds.size() = " << inds.size() << " != ptrs[numrows="
+      << numrows << "] = " << ptrs[numrows] << ".");
+
+    const size_t numEntries = ptrs[numrows];
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isInitialized_,
+      std::runtime_error,
+      " matrix has already been initialized."
+    )
+    if (numrows == 0 || numEntries == 0) isEmpty_ = true;
+    ptrs_ = ptrs;
+    inds_ = inds;
+    isInitialized_ = true;
+  }
+
+  template <class Ordinal, class Node>
+  ArrayRCP<const size_t> DefaultCrsGraph<Ordinal,Node>::getPointers() const
+  { return ptrs_; }
+
+  template <class Ordinal, class Node>
+  ArrayRCP<const Ordinal> DefaultCrsGraph<Ordinal,Node>::getIndices() const
+  { return inds_; }
+
+
+  template <class Ordinal, class Node>
+  bool DefaultCrsGraph<Ordinal,Node>::isInitialized() const
+  { return isInitialized_; }
+
+  template <class Ordinal, class Node>
+  void DefaultCrsGraph<Ordinal,Node>::setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag)
+  {
+    tri_uplo_ = uplo;
+    unit_diag_ = diag;
+  }
+
+  template <class Ordinal, class Node>
+  void DefaultCrsGraph<Ordinal,Node>::getMatDesc(Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const
+  {
+    uplo = tri_uplo_;
+    diag = unit_diag_;
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  DefaultCrsMatrix<Scalar,Ordinal,Node>::DefaultCrsMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, const RCP<ParameterList> &params)
+  : CrsMatrixBase<Scalar,Ordinal,Node>(graph,params)
+  , isInitialized_(false)
+  {
+    // Make sure that users only specialize for Kokkos Node types that are host Nodes (vs. device Nodes, such as GPU Nodes)
+    Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  void DefaultCrsMatrix<Scalar,Ordinal,Node>::setValues(const ArrayRCP<const Scalar> &vals)
+  {
+    std::string tfecfFuncName("setValues(vals)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == true,
+        std::runtime_error, " matrix is already initialized."
+    )
+    vals_ = vals;
+    isInitialized_ = true;
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  ArrayRCP<const Scalar> DefaultCrsMatrix<Scalar,Ordinal,Node>::getValues() const
+  { return vals_; }
+
+  template <class Scalar, class Ordinal, class Node>
+  bool DefaultCrsMatrix<Scalar,Ordinal,Node>::isInitialized() const
+  {
+    return isInitialized_;
+  }
 
   /// \class DefaultHostSparseOps
   /// \brief Default implementation of sparse matrix-vector multiply
@@ -76,25 +239,41 @@ namespace Kokkos {
     //! @name Typedefs and structs
 
     //! The type of the individual entries of the sparse matrix.
-    typedef Scalar  ScalarType;
+    typedef Scalar  scalar_type;
     //! The type of the (local) indices describing the structure of the sparse matrix.
-    typedef Ordinal OrdinalType;
+    typedef Ordinal ordinal_type;
     //! The Kokkos Node type.
-    typedef Node    NodeType;
+    typedef Node    node_type;
+    //! The type of this object, the sparse operator object
+    typedef DefaultHostSparseOps<Scalar,Ordinal,Node> sparse_ops_type;
+
+    /** \brief Typedef for local graph class */
+    template <class O, class N>
+    struct graph {
+      typedef DefaultCrsGraph<O,N> graph_type;
+    };
+
+    /** \brief Typedef for local matrix class */
+    template <class S, class O, class N>
+    struct matrix {
+      typedef DefaultCrsMatrix<S,O,N> matrix_type;
+    };
 
     /// \brief Sparse operations type for a different scalar type.
     ///
-    /// The "rebind" struct defines the type responsible for sparse
+    /// The bind_scalar struct defines the type responsible for sparse
     /// operations for a scalar type S2, which may be different from
     /// \c Scalar.
+    ///
+    /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar type to the appropriate scalar.
     ///
     /// This always specifies a specialization of \c
     /// DefaultHostSparseOps, regardless of the scalar type S2.
     ///
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
-    struct rebind {
-      typedef DefaultHostSparseOps<S2,Ordinal,Node> other;
+    struct bind_scalar {
+      typedef DefaultHostSparseOps<S2,Ordinal,Node> other_type;
     };
 
     //@}
@@ -115,17 +294,36 @@ namespace Kokkos {
     RCP<Node> getNode() const;
 
     //@}
-    //! @name Initialization of structure
+
+    //! @name Initialization of graph and matrix
     //@{
 
-    //! Initialize structure of matrix, using CrsGraphHostCompute
-    void initializeStructure(const CrsGraphHostCompute<Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &graph);
+    //! \brief Allocate and initialize the storage for the matrix values.
+    static ArrayRCP<size_t> allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow);
 
-    //! Initialize values of matrix, using CrsMatrixHostCompute
-    void initializeValues(const CrsMatrixHostCompute<Scalar,Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &matrix);
+    //! \brief Allocate and initialize the storage for a sparse graph.
+    template <class T>
+    static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &rowPtrs);
 
-    //! Clear all matrix structure and values.
-    void clear();
+    //! Finalize a graph
+    static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params);
+
+    //! Finalize the matrix of an already-finalized graph.
+    static void finalizeMatrix(const DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
+
+    //! Finalize a graph and a matrix.
+    static void finalizeGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
+
+    //! Initialize sparse operations with a graph and matrix
+    ///
+    /// \param uplo [in] UPPER_TRI if the matrix is upper triangular,
+    ///   else LOWER_TRI if the matrix is lower triangular.
+    ///
+    /// \param diag [in] UNIT_DIAG if the matrix has an implicit unit diagonal,
+    ///   else NON_UNIT_DIAG (diagonal entries are explicitly stored in the matrix).
+    ///
+    void setGraphAndMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph,
+                           const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix);
 
     //@}
     //! @name Computational methods
@@ -150,11 +348,12 @@ namespace Kokkos {
     ///   or its conjugate transpose (if applicable).
     ///
     /// \param alpha [in] Scalar constant \f$\alpha\f$ by which to
-    ///   multiply the result: \f$Y := \alpha A X\f$.
+    ///   multiply the result of the sparse matrix-(multi)vector
+    ///   multiply.
     ///
     /// \param X [in] Input multivector.
     ///
-    /// \param Y [out] Result multivector.
+    /// \param Y [out] Result multivector. Contents will be overwritten.
     template <class DomainScalar, class RangeScalar>
     void
     multiply (Teuchos::ETransp trans,
@@ -162,7 +361,7 @@ namespace Kokkos {
               const MultiVector<DomainScalar,Node> &X,
               MultiVector<RangeScalar,Node> &Y) const;
 
-    /// \brief Y := Y + alpha * Op(A) * X.
+    /// \brief Y := beta * Y + alpha * Op(A) * X.
     ///
     /// Apply the local sparse matrix A (or its transpose or conjugate
     /// transpose) to a multivector X, accumulating the result into Y.
@@ -181,9 +380,14 @@ namespace Kokkos {
     ///   or its conjugate transpose (if applicable).
     ///
     /// \param alpha [in] Scalar constant \f$\alpha\f$ by which to
-    ///   multiply the result: \f$Y := Y + \alpha A X\f$.
+    ///   multiply the result of the sparse matrix-(multi)vector
+    ///   multiply.
     ///
     /// \param X [in] Input multivector.
+    ///
+    /// \param beta [in] Scalar constant \f$\beta\f$ by which to
+    ///   multiply Y when summing with the result of the sparse
+    ///   matrix-(multi)vector multiply.
     ///
     /// \param Y [in/out] Result multivector.
     template <class DomainScalar, class RangeScalar>
@@ -211,26 +415,14 @@ namespace Kokkos {
     /// \param trans [in] Whether to solve with the matrix, its
     ///   transpose, or its conjugate transpose (if applicable).
     ///
-    /// \param uplo [in] UPPER_TRI if the matrix is upper triangular,
-    ///   else LOWER_TRI if the matrix is lower triangular.
-    ///
-    /// \param diag [in] UNIT_DIAG if the matrix has unit diagonal,
-    ///   else NON_UNIT_DIAG.
-    ///
     /// \param Y [in] Input multivector.
     ///
     /// \param X [out] Result multivector.
     template <class DomainScalar, class RangeScalar>
     void
     solve (Teuchos::ETransp trans,
-           Teuchos::EUplo uplo,
-           Teuchos::EDiag diag,
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const;
-
-    //! Left-scale the matrix by the given vector.
-    template <class VectorScalar>
-    void leftScale(const MultiVector<VectorScalar,Node> &X);
 
     //@}
 
@@ -242,30 +434,71 @@ namespace Kokkos {
     RCP<Node> node_;
 
     // we do this one of two ways:
-    // 1D/packed: arrays of offsets, array of ordinals, array of values.
-    ArrayRCP<const Ordinal> inds1D_;
-    ArrayRCP<const size_t>  begs1D_, ends1D_;
-    ArrayRCP<Scalar>  vals1D_;
-    // 2D: array of pointers
-    ArrayRCP<const ArrayRCP<Ordinal> > inds2D_;
-    ArrayRCP<const ArrayRCP<Scalar> >  vals2D_;
-    ArrayRCP<const size_t>          numEntries_;
-    ArrayRCP<const Ordinal *> indPtrs_;
-    ArrayRCP<Scalar  *> valPtrs_;
+    // packed CRS: array of row pointers, array of indices, array of values.
+    ArrayRCP<const Ordinal> inds_;
+    ArrayRCP<const size_t>  ptrs_;
+    ArrayRCP<const Scalar>  vals_;
+
+    Teuchos::EUplo  tri_uplo_;
+    Teuchos::EDiag unit_diag_;
 
     size_t numRows_;
-    bool indsInit_, valsInit_, isEmpty_;
+    bool isInitialized_;
+    bool isEmpty_;
   };
+
+
+  template <class Scalar, class Ordinal, class Node>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
+  {
+    // nothing much to do here
+    graph.setMatDesc(uplo,diag);
+    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        graph.isInitialized() == false,
+        std::runtime_error, FuncName << ": graph has not yet been initialized."
+    )
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeMatrix(const DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
+  {
+    // nothing much to do here
+    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeMatrix(graph,matrix,params)");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        matrix.isInitialized() == false,
+        std::runtime_error, FuncName << ": matrix has not yet been initialized."
+    )
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
+  {
+    // nothing much to do here
+    graph.setMatDesc(uplo,diag);
+    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraphAndMatrix(graph,matrix,params)");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        graph.isInitialized() == false,
+        std::runtime_error, FuncName << ": graph has not yet been initialized."
+    )
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        matrix.isInitialized() == false,
+        std::runtime_error, FuncName << ": matrix has not yet been initialized."
+    )
+  }
+
 
   template<class Scalar, class Ordinal, class Node>
   DefaultHostSparseOps<Scalar,Ordinal,Node>::DefaultHostSparseOps(const RCP<Node> &node)
   : node_(node)
+  , numRows_(0)
+  , isInitialized_(false)
+  , isEmpty_(false)
   {
     // Make sure that users only specialize DefaultHostSparseOps for
     // Kokkos Node types that are host Nodes (vs. device Nodes, such
     // as GPU Nodes).
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
-    clear();
   }
 
   template<class Scalar, class Ordinal, class Node>
@@ -278,188 +511,103 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::clear() {
-    begs1D_     = null;
-    ends1D_     = null;
-    inds1D_     = null;
-    vals1D_     = null;
-    inds2D_     = null;
-    vals2D_     = null;
-    numEntries_ = null;
-    indPtrs_    = null;
-    valPtrs_    = null;
-    numRows_  = 0;
-    indsInit_ = false;
-    valsInit_ = false;
-    isEmpty_  = false;
-  }
-
-  template <class Scalar, class Ordinal, class Node>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::initializeStructure(const CrsGraphHostCompute<Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &graph) {
-    using Teuchos::arcp;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
-    numRows_ = graph.getNumRows();
-    if (graph.isEmpty() || numRows_ == 0) {
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::setGraphAndMatrix(
+              const RCP<const DefaultCrsGraph<Ordinal,Node> > &opgraph,
+              const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &opmatrix)
+  {
+    std::string tfecfFuncName("setGraphAndMatrix(uplo,diag,graph,matrix)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == true,
+        std::runtime_error, " operators already initialized.");
+    numRows_ = opgraph->getNumRows();
+    if (opgraph->isEmpty() || numRows_ == 0) {
       isEmpty_ = true;
     }
-    else if (graph.is1DStructure()) {
-      isEmpty_ = false;
-      ArrayRCP<Ordinal> inds;
-      ArrayRCP<size_t> begs, ends;
-      const_cast<CrsGraphHostCompute<Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &>(graph).get1DStructure( inds, begs, ends );
-      inds1D_ = inds;
-      begs1D_ = begs;
-      ends1D_ = ends;
-    }
     else {
-      isEmpty_  = false;
-      {
-        ArrayRCP<ArrayRCP<Ordinal> > inds;
-        ArrayRCP<size_t>  sizes;
-        const_cast<CrsGraphHostCompute<Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &>(graph).get2DStructure(inds,sizes);
-        inds2D_     = inds;
-        numEntries_ = sizes;
-      }
-      indPtrs_    = arcp<const Ordinal *>(numRows_);
-      for (size_t r=0; r < numRows_; ++r) {
-        indPtrs_[r] = inds2D_[r].getRawPtr();
-      }
+      isEmpty_ = false;
+      ptrs_ = opgraph->getPointers();
+      inds_ = opgraph->getIndices();
+      vals_ = opmatrix->getValues();
+      // these checks just about the most that we can perform
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          (size_t)ptrs_.size() != numRows_+1
+          || inds_.size() != vals_.size(),
+          std::runtime_error, " matrix and graph seem incongruent.");
     }
-    indsInit_ = true;
+    opgraph->getMatDesc( tri_uplo_, unit_diag_ );
+    isInitialized_ = true;
   }
-
-
-  template <class Scalar, class Ordinal, class Node>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::initializeValues(const CrsMatrixHostCompute<Scalar,Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &matrix) {
-    using Teuchos::arcp;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::initializeValues(): must initialize values after graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty() ||
-                       (inds2D_ != null && matrix.is1DStructure()) || (inds1D_ != null && matrix.is2DStructure()),
-                       std::runtime_error, Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
-    if (!isEmpty_) {
-      if (matrix.is1DStructure()) {
-        ArrayRCP<Scalar> vals;
-        const_cast<CrsMatrixHostCompute<Scalar,Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &>(matrix).get1DValues( vals );
-        vals1D_ = vals;
-      }
-      else {
-        {
-          ArrayRCP<ArrayRCP<Scalar> > vals;
-          const_cast<CrsMatrixHostCompute<Scalar,Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &>(matrix).get2DValues(vals);
-          vals2D_ = vals;
-        }
-        valPtrs_ = arcp<Scalar *>(numRows_);
-        for (size_t r=0; r < numRows_; ++r) {
-          valPtrs_[r] = vals2D_[r].getRawPtr();
-        }
-      }
-    }
-    valsInit_ = true;
-  }
-
 
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::solve(
-                      Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag,
-                      const MultiVector<DomainScalar,Node> &Y,
-                            MultiVector<RangeScalar,Node> &X) const
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::solve(Teuchos::ETransp trans,
+                                                        const MultiVector<DomainScalar,Node> &Y,
+                                                              MultiVector< RangeScalar,Node> &X) const
   {
-    typedef DefaultSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
-    typedef DefaultSparseSolveOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  Op2D;
-    typedef DefaultSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp1D;
-    typedef DefaultSparseTransposeSolveOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp2D;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): this solve was not fully initialized.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumCols() != Y.getNumCols(), std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): Left hand side and right hand side multivectors have differing numbers of vectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumRows() < numRows_, std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): Left-hand-side multivector does not have enough rows. Likely cause is that the column map was not provided to the Tpetra::CrsMatrix in the case of an implicit unit diagonal.");
+    std::string tfecfFuncName("solve(trans,Y,X)");
+    typedef DefaultSparseSolveOp<Scalar,Ordinal,DomainScalar,RangeScalar>            Op;
+    typedef DefaultSparseTransposeSolveOp<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, " this solve was not fully initialized."
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getNumCols() != Y.getNumCols(),
+        std::runtime_error, " Left hand side and right hand side multivectors have differing numbers of vectors."
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getNumRows() < numRows_,
+        std::runtime_error, " Left-hand-side multivector does not have enough rows. "
+                            "Likely cause is that the column map was not provided to "
+                            "the Tpetra::CrsMatrix in the case of an implicit unit diagonal."
+    );
 
     ReadyBufferHelper<Node> rbh(node_);
     if (numRows_ == 0) {
       // null op
     }
     else if (isEmpty_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(diag != Teuchos::UNIT_DIAG, std::runtime_error,
-          Teuchos::typeName(*this) << "::solve(): solve of empty matrix only valid for an implicit unit diagonal.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(unit_diag_ != Teuchos::UNIT_DIAG, std::runtime_error,
+          " solve of empty matrix only valid for an implicit unit diagonal.");
       // solve I * X = Y for X = Y
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
     }
-    else if (begs1D_ != null) {
-      if (trans == Teuchos::NO_TRANS) {
-        Op1D wdp;
-        rbh.begin();
-        wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-        wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
-        wdp.vals    = rbh.template addConstBuffer< Scalar>(vals1D_);
-        wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
-        wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-        rbh.end();
-        wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op1D>(0,numRHS,wdp);
-      }
-      else {
-        TOp1D wdp;
-        rbh.begin();
-        wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-        wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
-        wdp.vals    = rbh.template addConstBuffer< Scalar>(vals1D_);
-        wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
-        wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-        rbh.end();
-        wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp1D>(0,numRHS,wdp);
-      }
-    }
     else {
       if (trans == Teuchos::NO_TRANS) {
-        Op2D wdp;
+        Op wdp;
         rbh.begin();
-        wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
-        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer< Scalar *>(valPtrs_);
         wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
         wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
+        wdp.ptrs    = rbh.template addConstBuffer<     size_t>(ptrs_);
+        wdp.inds    = rbh.template addConstBuffer<    Ordinal>(inds_);
+        wdp.vals    = rbh.template addConstBuffer<     Scalar>(vals_);
         rbh.end();
         wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
+        wdp.unitDiag = (unit_diag_ == Teuchos::UNIT_DIAG ? true : false);
+        wdp.upper    = ( tri_uplo_ == Teuchos::UPPER_TRI ? true : false);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op2D>(0,numRHS,wdp);
+        wdp.numRHS  = X.getNumCols();
+        // no parallel for you
+        wdp.execute();
       }
       else {
-        TOp2D wdp;
+        TOp wdp;
         rbh.begin();
-        wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
-        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer< Scalar *>(valPtrs_);
         wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
         wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
+        wdp.ptrs    = rbh.template addConstBuffer<     size_t>(ptrs_);
+        wdp.inds    = rbh.template addConstBuffer<    Ordinal>(inds_);
+        wdp.vals    = rbh.template addConstBuffer<     Scalar>(vals_);
         rbh.end();
         wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
+        wdp.unitDiag = (unit_diag_ == Teuchos::UNIT_DIAG ? true : false);
+        wdp.upper    = ( tri_uplo_ == Teuchos::UPPER_TRI ? true : false);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp2D>(0,numRHS,wdp);
+        wdp.numRHS  = X.getNumCols();
+        // no parallel for you
+        wdp.execute();
       }
     }
     return;
@@ -472,96 +620,61 @@ namespace Kokkos {
                                 Teuchos::ETransp trans,
                                 RangeScalar alpha,
                                 const MultiVector<DomainScalar,Node> &X,
-                                MultiVector<RangeScalar,Node> &Y) const
+                                      MultiVector<RangeScalar ,Node> &Y) const
   {
-    // the 1 parameter to the template means that beta is ignored and the output multivector enjoys overwrite semantics
-    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op1D;
-    typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op2D;
-    typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp1D;
-    typedef DefaultSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp2D;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
+    // the 1 template parameter below means that beta is not used in computations
+    // and the output multivector enjoys overwrite semantics (i.e., will overwrite data/NaNs in Y)
+    typedef DefaultSparseMultiplyOp<         Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op;
+    typedef DefaultSparseTransposeMultiplyOp<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, " sparse ops not initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getNumCols() != Y.getNumCols(),
+        std::runtime_error, " X and Y do not have the same number of columns.");
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= 0 * X
       //   <= 0
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Init(Y,Teuchos::ScalarTraits<RangeScalar>::zero());
     }
-    else if (begs1D_ != null) {
-      if (trans == Teuchos::NO_TRANS) {
-        Op1D wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
-        wdp.numRows = numRows_;
-        wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-        wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
-        wdp.vals    = rbh.template addConstBuffer<Scalar>(vals1D_);
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
-      }
-      else {
-        TOp1D wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
-        wdp.numRows = numRows_;
-        wdp.numCols = Y.getNumRows();
-        wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-        wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
-        wdp.vals    = rbh.template addConstBuffer<Scalar>(vals1D_);
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp1D>(0,numRHS,wdp);
-      }
-    }
     else {
       if (trans == Teuchos::NO_TRANS) {
-        Op2D wdp;
+        Op wdp;
         rbh.begin();
         wdp.alpha   = alpha;
         wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
         wdp.numRows = numRows_;
-        wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
-        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
-        wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        rbh.end();
+        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.ptrs    = rbh.template addConstBuffer<      size_t>(ptrs_);
+        wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
+        wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+        wdp.numRHS  = X.getNumCols();
+        rbh.end();
+        node_->template parallel_for<Op>(0,numRows_,wdp);
       }
       else {
-        TOp2D wdp;
+        TOp wdp;
         rbh.begin();
         wdp.alpha   = alpha;
         wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
         wdp.numRows = numRows_;
         wdp.numCols = Y.getNumRows();
-        wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
-        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
-        wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.ptrs    = rbh.template addConstBuffer<      size_t>(ptrs_);
+        wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
+        wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
+        wdp.numRHS  = X.getNumCols();
         rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp2D>(0,numRHS,wdp);
+        // no parallel for you
+        wdp.execute();
       }
     }
     return;
@@ -575,481 +688,17 @@ namespace Kokkos {
                                 RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
   {
-    // the 0 parameter means that beta is considered, and the output multivector enjoys accumulate semantics
-    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op1D;
-    typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op2D;
-    typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp1D;
-    typedef DefaultSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp2D;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
-    ReadyBufferHelper<Node> rbh(node_);
-    if (isEmpty_ == true) {
-      // Y <= alpha * 0 * X + beta * Y
-      //   <= beta * Y
-      // NOTE: this neglects NaNs in X, which don't satisfy 0*NaN == 0
-      //       however, X and Y may be of different size, and we need entries to determine how to mix those potential NaNs in X into Y
-      //       therefore, the best we can do is scale Y to zero. Setting Y to zero would destroy NaNs in Y, which violates the semantics of the call.
-      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta);
-    }
-    else if (begs1D_ != null) {
-      if (trans == Teuchos::NO_TRANS) {
-        Op1D wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = beta;
-        wdp.numRows = numRows_;
-        wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-        wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
-        wdp.vals    = rbh.template addConstBuffer< Scalar>(vals1D_);
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
-      }
-      else {
-        TOp1D wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = beta;
-        wdp.numRows = numRows_;
-        wdp.numCols = Y.getNumRows();
-        wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-        wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
-        wdp.vals    = rbh.template addConstBuffer< Scalar>(vals1D_);
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp1D>(0,numRHS,wdp);
-      }
-    }
-    else {
-      if (trans == Teuchos::NO_TRANS) {
-        Op2D wdp;
-        rbh.begin();
-        wdp.numRows = numRows_;
-        wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
-        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
-        wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        rbh.end();
-        wdp.alpha   = alpha;
-        wdp.beta    = beta;
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
-      }
-      else {
-        TOp2D wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = beta;
-        wdp.numRows = numRows_;
-        wdp.numCols = Y.getNumRows();
-        wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
-        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
-        wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp2D>(0,numRHS,wdp);
-      }
-    }
-    return;
-  }
-
-
-
-
-  template <class Scalar, class Ordinal, class Node>
-  template <class VectorScalar>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X)
-  {
-    typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
-    typedef DefaultSparseScaleOp2<Scalar,Ordinal,VectorScalar>  Op2D;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::leftScale(): operation not fully initialized.");
-    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != 1);
-    ReadyBufferHelper<Node> rbh(node_);
-    if (begs1D_ != null) {
-      Op1D wdp;
-      rbh.begin();
-      wdp.numRows = numRows_;
-      wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-      wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-      wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
-      wdp.vals    = rbh.template addNonConstBuffer<Scalar>(vals1D_);
-      wdp.x       = rbh.template addConstBuffer<VectorScalar>(X.getValues());
-      rbh.end();
-      node_->template parallel_for<Op1D>(0,numRows_,wdp);
-    }
-    else {
-      Op2D wdp;
-      rbh.begin();
-      wdp.numRows = numRows_;
-      wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
-      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-      wdp.vals_beg   = rbh.template addNonConstBuffer<Scalar *>(valPtrs_);
-      wdp.x          = rbh.template addConstBuffer<VectorScalar>(X.getValues());
-      rbh.end();
-      node_->template parallel_for<Op2D>(0,numRows_,wdp);
-    }
-    return;
-  }
-
-
-  /** \brief Default implementation of sparse matrix-vector multiplication and solve routines, for device-based nodes.
-      \ingroup kokkos_crs_ops
-    */
-  template <class Scalar, class Ordinal, class Node>
-  class DefaultDeviceSparseOps {
-  public:
-    //@{
-    //! @name Typedefs and structs
-
-    //! The type of the individual entries of the sparse matrix.
-    typedef Scalar  ScalarType;
-    //! The type of the (local) indices describing the structure of the sparse matrix.
-    typedef Ordinal OrdinalType;
-    //! The Kokkos Node type.
-    typedef Node    NodeType;
-
-    /// \brief Sparse operations type for a different scalar type.
-    ///
-    /// The "rebind" struct defines the type responsible for sparse
-    /// operations for a scalar type S2, which may be different from
-    /// \c Scalar.
-    ///
-    /// \tparam S2 A scalar type possibly different from \c Scalar.
-    template <class S2>
-    struct rebind {
-      typedef DefaultDeviceSparseOps<S2,Ordinal,Node> other;
-    };
-
-    //@}
-    //! @name Constructors/Destructor
-    //@{
-
-    //! Constructor accepting and retaining a node object.
-    DefaultDeviceSparseOps(const RCP<Node> &node);
-
-    //! Destructor
-    ~DefaultDeviceSparseOps();
-
-    //@}
-    //! @name Accessor routines.
-    //@{
-
-    //! The Kokkos Node with which this object was instantiated.
-    RCP<Node> getNode() const;
-
-    //@}
-    //! @name Initialization of structure
-    //@{
-
-    //! Initialize structure of matrix, using CrsGraphDeviceCompute
-    void initializeStructure(const CrsGraphDeviceCompute<Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &graph);
-
-    //! Initialize values of matrix, using CrsMatrixDeviceCompute
-    void initializeValues(const CrsMatrixDeviceCompute<Scalar,Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &matrix);
-
-    //! Clear all matrix structure and values.
-    void clear();
-
-    //@}
-    //! @name Computational methods
-    //@{
-
-    /// \brief Y := alpha * Op(A) * X.
-    ///
-    /// Apply the local sparse matrix A (or its transpose or conjugate
-    /// transpose) to a multivector X, overwriting Y with the result.
-    /// Op(A) means A, the transpose of A, or the conjugate transpose
-    /// of A, depending on the \c trans argument.
-    ///
-    /// \tparam DomainScalar The type of entries in the input
-    ///   multivector X.  This may differ from the type of entries in
-    ///   A or in Y.
-    ///
-    /// \tparam RangeScalar The type of entries in the output
-    ///   multivector Y.  This may differ from the type of entries in
-    ///   A or in X.
-    template <class DomainScalar, class RangeScalar>
-    void multiply(Teuchos::ETransp trans, RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, MultiVector<RangeScalar,Node> &Y) const;
-
-    /// \brief Y := Y + alpha * Op(A) * X.
-    ///
-    /// Apply the local sparse matrix A (or its transpose or conjugate
-    /// transpose) to a multivector X, accumulating the result into Y.
-    /// Op(A) means A, the transpose of A, or the conjugate transpose
-    /// of A, depending on the \c trans argument.
-    ///
-    /// \tparam DomainScalar The type of entries in the input
-    ///   multivector X.  This may differ from the type of entries in
-    ///   A or in Y.
-    ///
-    /// \tparam RangeScalar The type of entries in the output
-    ///   multivector Y.  This may differ from the type of entries in
-    ///   A or in X.
-    template <class DomainScalar, class RangeScalar>
-    void multiply(Teuchos::ETransp trans,
-                  RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
-
-    /// \brief Solve Y = Op(A) X for X, where we assume A is triangular.
-    ///
-    /// Solve the (upper or lower) triangular system Y = Op(A) X.
-    /// Op(A) means A, the transpose of A, or the conjugate transpose
-    /// of A, depending on the \c trans argument.
-    ///
-    /// \tparam DomainScalar The type of entries in the input
-    ///   multivector X.  This may differ from the type of entries in
-    ///   A or in Y.
-    ///
-    /// \tparam RangeScalar The type of entries in the output
-    ///   multivector Y.  This may differ from the type of entries in
-    ///   A or in X.
-    template <class DomainScalar, class RangeScalar>
-    void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag,
-               const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
-
-
-    //! Left-scales a matrix by a vector
-    template <class VectorScalar>
-    void leftScale(const MultiVector<VectorScalar,Node> &X);
-
-    //@}
-
-  protected:
-    //! Copy constructor (protected and unimplemented)
-    DefaultDeviceSparseOps(const DefaultDeviceSparseOps& source);
-
-    //! The Kokkos Node with which this object was instantiated.
-    RCP<Node> node_;
-
-    // we do this one of two ways:
-    // 1D: array of offsets, pointer for ordinals, pointer for values.
-    ArrayRCP<const size_t>  pbuf_offsets1D_;
-    ArrayRCP<const Ordinal> pbuf_inds1D_;
-    ArrayRCP<Scalar>  pbuf_vals1D_;
-
-    size_t numRows_;
-    bool indsInit_, valsInit_, isEmpty_;
-  };
-
-  template<class Scalar, class Ordinal, class Node>
-  DefaultDeviceSparseOps<Scalar,Ordinal,Node>::DefaultDeviceSparseOps(const RCP<Node> &node)
-  : node_(node)
-  {
-    clear();
-  }
-
-  template<class Scalar, class Ordinal, class Node>
-  DefaultDeviceSparseOps<Scalar,Ordinal,Node>::~DefaultDeviceSparseOps() {
-  }
-
-  template <class Scalar, class Ordinal, class Node>
-  RCP<Node> DefaultDeviceSparseOps<Scalar,Ordinal,Node>::getNode() const {
-    return node_;
-  }
-
-  template <class Scalar, class Ordinal, class Node>
-  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::clear() {
-    pbuf_offsets1D_  = null;
-    pbuf_inds1D_     = null;
-    pbuf_vals1D_     = null;
-    numRows_  = 0;
-    indsInit_ = false;
-    valsInit_ = false;
-    isEmpty_  = false;
-  }
-
-  template <class Scalar, class Ordinal, class Node>
-  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::initializeStructure(const CrsGraphDeviceCompute<Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &graph) {
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
-    numRows_ = graph.getNumRows();
-    if (graph.isEmpty() || numRows_ == 0) {
-      isEmpty_ = true;
-    }
-    else {
-      ArrayRCP<Ordinal> inds;
-      ArrayRCP<size_t > offs;
-      const_cast<CrsGraphDeviceCompute<Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &>(graph).getDeviceBuffers(inds, offs);
-      pbuf_inds1D_    = inds;
-      pbuf_offsets1D_ = offs;
-    }
-    indsInit_ = true;
-  }
-
-  template <class Scalar, class Ordinal, class Node>
-  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::initializeValues(const CrsMatrixDeviceCompute<Scalar,Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &matrix) {
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::initializeValues(): must initialize values after graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty(), std::runtime_error,
-        Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
-    if (!isEmpty_) {
-      ArrayRCP<Scalar> vals;
-      const_cast<CrsMatrixDeviceCompute<Scalar,Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &>(matrix).getDeviceBuffer(vals);
-      pbuf_vals1D_ = vals;
-    }
-    valsInit_ = true;
-  }
-
-
-  template <class Scalar, class Ordinal, class Node>
-  template <class DomainScalar, class RangeScalar>
-  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::solve(
-                      Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag,
-                      const MultiVector<DomainScalar,Node> &Y,
-                            MultiVector<RangeScalar,Node> &X) const {
-    typedef DefaultSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
-    typedef DefaultSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp1D;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): this solve was not fully initialized.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumCols() != Y.getNumCols(), std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): Left hand side and right hand side multivectors have differing numbers of vectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumRows() < numRows_, std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): Left-hand-side multivector does not have enough rows. Likely cause is that the column map was not provided to the Tpetra::CrsMatrix in the case of an implicit unit diagonal.");
-
-    ReadyBufferHelper<Node> rbh(node_);
-    if (numRows_ == 0) {
-      // null op
-    }
-    else if (isEmpty_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(diag != Teuchos::UNIT_DIAG, std::runtime_error,
-          Teuchos::typeName(*this) << "::solve(): solve of empty matrix only valid for an implicit unit diagonal.");
-      // solve I * X = Y for X = Y
-      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
-    }
-    else {
-      if (trans == Teuchos::NO_TRANS) {
-        Op1D wdp;
-        rbh.begin();
-        wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
-        wdp.ends    = wdp.begs+1;
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-        wdp.vals    = rbh.template addConstBuffer< Scalar>(pbuf_vals1D_);
-        wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
-        wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-        rbh.end();
-        wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op1D>(0,numRHS,wdp);
-      }
-      else {
-        TOp1D wdp;
-        rbh.begin();
-        wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
-        wdp.ends    = wdp.begs+1;
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-        wdp.vals    = rbh.template addConstBuffer< Scalar>(pbuf_vals1D_);
-        wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
-        wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-        rbh.end();
-        wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp1D>(0,numRHS,wdp);
-      }
-    }
-    return;
-  }
-
-
-  template <class Scalar, class Ordinal, class Node>
-  template <class DomainScalar, class RangeScalar>
-  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::multiply(
-                                Teuchos::ETransp trans,
-                                RangeScalar alpha,
-                                const MultiVector<DomainScalar,Node> &X,
-                                MultiVector<RangeScalar,Node> &Y) const {
-    // the 1 parameter to the template means that beta is ignored and the output multivector enjoys overwrite semantics
-    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op1D;
-    typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp1D;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
-    ReadyBufferHelper<Node> rbh(node_);
-    if (isEmpty_ == true) {
-      // Y <= 0 * X
-      //   <= 0
-      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Init(Y,Teuchos::ScalarTraits<RangeScalar>::zero());
-    }
-    else {
-      if (trans == Teuchos::NO_TRANS) {
-        Op1D wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
-        wdp.numRows = numRows_;
-        wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
-        wdp.ends    = wdp.begs+1;
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-        wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
-      }
-      else {
-        TOp1D wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
-        wdp.numRows = numRows_;
-        wdp.numCols = Y.getNumRows();
-        wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
-        wdp.ends    = wdp.begs+1;
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-        wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp1D>(0,numRHS,wdp);
-      }
-    }
-    return;
-  }
-
-
-  template <class Scalar, class Ordinal, class Node>
-  template <class DomainScalar, class RangeScalar>
-  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::multiply(
-                                Teuchos::ETransp trans,
-                                RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
-                                RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
-    // the 0 parameter means that beta is considered, and the output multivector enjoys accumulate semantics
-    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op1D;
-    typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp1D;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
+    // the 0 template parameter below means that beta is used in computations
+    // and the output multivector enjoys accumulation semantics (i.e., will not overwrite data/NaNs in Y)
+    typedef DefaultSparseMultiplyOp<         Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op;
+    typedef DefaultSparseTransposeMultiplyOp<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, " sparse ops not initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getNumCols() != Y.getNumCols(),
+        std::runtime_error, " X and Y do not have the same number of columns.");
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= alpha * 0 * X + beta * Y
@@ -1061,78 +710,70 @@ namespace Kokkos {
     }
     else {
       if (trans == Teuchos::NO_TRANS) {
-        Op1D wdp;
+        Op wdp;
         rbh.begin();
         wdp.alpha   = alpha;
         wdp.beta    = beta;
         wdp.numRows = numRows_;
-        wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
-        wdp.ends    = wdp.begs+1;
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-        wdp.vals    = rbh.template addConstBuffer< Scalar>(pbuf_vals1D_);
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.ptrs    = rbh.template addConstBuffer<      size_t>(ptrs_);
+        wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
+        wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
+        wdp.numRHS  = X.getNumCols();
         rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
+        node_->template parallel_for<Op>(0,numRows_,wdp);
       }
       else {
-        TOp1D wdp;
+        TOp wdp;
         rbh.begin();
         wdp.alpha   = alpha;
         wdp.beta    = beta;
         wdp.numRows = numRows_;
         wdp.numCols = Y.getNumRows();
-        wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
-        wdp.ends    = wdp.begs+1;
-        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-        wdp.vals    = rbh.template addConstBuffer< Scalar>(pbuf_vals1D_);
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.ptrs    = rbh.template addConstBuffer<      size_t>(ptrs_);
+        wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
+        wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
+        wdp.numRHS  = X.getNumCols();
         rbh.end();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<TOp1D>(0,numRHS,wdp);
+        // no parallel for you
+        wdp.execute();
       }
     }
     return;
   }
 
 
-
-
-
+  // ======= pointer allocation ===========
   template <class Scalar, class Ordinal, class Node>
-  template <class VectorScalar>
-  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X)
+  ArrayRCP<size_t>
+  DefaultHostSparseOps<Scalar,Ordinal,Node>::allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow)
   {
-    typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::scale(): operation not fully initialized.");
-    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != 1);
-    ReadyBufferHelper<Node> rbh(node_);
-
-
-    Op1D wdp;
-    rbh.begin();
-    wdp.numRows = numRows_;
-    wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
-    wdp.ends    = wdp.begs+1;
-    wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-    wdp.vals    = rbh.template addNonConstBuffer<Scalar>(pbuf_vals1D_);
-    wdp.x       = rbh.template addConstBuffer<VectorScalar>(X.getValues());
-    rbh.end();
-    const size_t numRHS = X.getNumCols();
-    node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
-
-    return;
+    ArrayRCP<size_t> ptrs = arcp<size_t>( numEntriesPerRow.size() + 1 );
+    ptrs[0] = 0;
+    std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
+    return ptrs;
   }
 
-
-
+  // ======= other allocation ===========
+  template <class Scalar, class Ordinal, class Node>
+  template <class T>
+  ArrayRCP<T>
+  DefaultHostSparseOps<Scalar,Ordinal,Node>::allocStorage(const ArrayView<const size_t> &rowPtrs)
+  {
+    const size_t totalNumEntries = *(rowPtrs.end()-1);
+    // alloc data
+    ArrayRCP<T> vals;
+    if (totalNumEntries > 0) vals = arcp<T>(totalNumEntries);
+    std::fill( vals.begin(), vals.end(), Teuchos::ScalarTraits<T>::zero() );
+    return vals;
+  }
 
 
   /** \example CrsMatrix_DefaultMultiplyTests.hpp

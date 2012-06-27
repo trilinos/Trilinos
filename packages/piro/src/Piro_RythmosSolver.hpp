@@ -84,6 +84,7 @@ class RythmosSolver
 
   ~RythmosSolver();
 
+  Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> > getRythmosIntegrator() const;
 
   /** \name Overridden from Thyra::ModelEvaluatorBase . */
   //@{

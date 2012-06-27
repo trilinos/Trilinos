@@ -212,10 +212,10 @@ namespace Kokkos {
 
   inline void CUDANodeMemoryModel::readyBuffers(ArrayView<ArrayRCP<const char> > buffers, ArrayView<ArrayRCP<char> > ncBuffers) {
 #ifdef HAVE_KOKKOS_DEBUG
-    for (size_t i=0; i < buffers.size(); ++i) {
+    for (size_t i=0; i < (size_t)buffers.size(); ++i) {
       CHECK_COMPUTE_BUFFER(buffers[i]);
     }
-    for (size_t i=0; i < ncBuffers.size(); ++i) {
+    for (size_t i=0; i < (size_t)ncBuffers.size(); ++i) {
       CHECK_COMPUTE_BUFFER(ncBuffers[i]);
     }
 #endif

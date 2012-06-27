@@ -94,7 +94,10 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
     }
   }
 
-  transposeMatrix_->fillComplete(origMatrix_.getRangeMap(), origMatrix_.getDomainMap(), optimizeTranspose_);
+  RCP<ParameterList> params = parameterList();
+  if (optimizeTranspose_ == DoOptimizeStorage) params->set("Optimize Storage",true);
+  else                                         params->set("Optimize Storage",false);
+  transposeMatrix_->fillComplete(origMatrix_.getRangeMap(), origMatrix_.getDomainMap(), params);
 
   return transposeMatrix_;
 }

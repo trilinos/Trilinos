@@ -725,7 +725,7 @@ namespace Tpetra {
     using std::endl;
 
     RCP<FancyOStream> out = getFancyOStream (rcpFromRef (os));
-    this->describe (Teuchos::VERB_DEFAULT, *out);
+    this->describe (*out, Teuchos::VERB_DEFAULT);
   }
 
 } // namespace Tpetra

@@ -90,38 +90,37 @@ functions that include the macro:
 #include "Teuchos_Assert.hpp"
 
 /*! \class Teuchos::BLAS
-    \brief The Templated BLAS Wrapper Class.
+    \brief Templated BLAS wrapper.
 
     The Teuchos::BLAS class provides functionality similar to the BLAS
-    (Basic Linear Algebra Subprograms).  The BLAS provide portable, high-
-    performance implementations of kernels such as dense std::vector multiplication,
-    dot products, dense matrix-std::vector multiplication and dense matrix-matrix
-    multiplication.
+    (Basic Linear Algebra Subprograms).  The BLAS provide portable,
+    high- performance implementations of kernels such as dense vector
+    sums, inner products, and norms (the BLAS 1 routines), dense
+    matrix-vector multiplication and triangular solve (the BLAS 2
+    routines), and dense matrix-matrix multiplication and triangular
+    solve with multiple right-hand sides (the BLAS 3 routines).
 
-    The standard BLAS interface is Fortran-specific.  Unfortunately, the 
-    interface between C++ and Fortran is not standard across all computer
-    platforms.  The Teuchos_BLAS class provides C++ bindings for the BLAS
-    kernels in order to insulate the rest of Petra from the details of 
-    C++ to Fortran translation.
+    The standard BLAS interface is Fortran-specific.  Unfortunately,
+    the interface between C++ and Fortran is not standard across all
+    computer platforms.  The Teuchos::BLAS class provides C++ bindings
+    for the BLAS kernels in order to insulate the rest of Petra from
+    the details of C++ to Fortran translation.
 
-    In addition to giving access the standard BLAS functionality.
-    Teuchos::BLAS also provide functionality for any <ScalarType> class that
-    defines the +, - * and / operators.
+    In addition to giving access to the standard BLAS functionality,
+    Teuchos::BLAS also provides a generic fall-back implementation for
+    any ScalarType class that defines the +, - * and / operators.
 
-    Teuchos::BLAS is a single memory image interface only.  This is appropriate 
-    since the standard BLAS are only specified for serial execution 
-    (or shared memory parallel).
+    Teuchos::BLAS only operates within a single shared-memory space,
+    just like the BLAS.  It does not attempt to implement
+    distributed-memory parallel matrix operations.
 
-    \note
-    <ol>
-            <li>These templates are specialized to use the Fortran BLAS routines for
-            scalar types \c float and \c double.
-
-            <li>If Teuchos is configured with \c -DTeuchos_ENABLE_COMPLEX:BOOL=ON then these templates
-            are specialized for scalar types \c std::complex<float> and \c std::complex<double> also.
-    </ol>
+    \note This class has specializations for ScalarType=float and
+      double, which use the BLAS library directly.  If you configure
+      Teuchos to enable complex arithmetic support, via the CMake
+      option -DTeuchos_ENABLE_COMPLEX:BOOL=ON, then this class will
+      also invoke the BLAS library directly for
+      ScalarType=std::complex<float> and std::complex<double>.
 */
-
 namespace Teuchos
 {
   extern TEUCHOS_LIB_DLL_EXPORT const char ESideChar[];
@@ -137,14 +136,14 @@ namespace Teuchos
    */
   template<typename OrdinalType, typename ScalarType>
   class DefaultBLASImpl
-  {    
+  {
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    
+
   public:
     //! @name Constructor/Destructor.
-    //@{ 
-    
+    //@{
+
     //! Default constructor.
     inline DefaultBLASImpl(void) {}
 
@@ -156,7 +155,7 @@ namespace Teuchos
     //@}
 
     //! @name Level 1 BLAS Routines.
-    //@{ 
+    //@{
 
     //! Computes a Givens plane rotation.
     void ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const;
@@ -186,32 +185,36 @@ namespace Teuchos
 
     //! Return the index of the element of \c x with the maximum magnitude.
     OrdinalType IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
-
     //@}
 
     //! @name Level 2 BLAS Routines.
-    //@{ 
+    //@{
 
     //! Performs the matrix-std::vector operation:  \c y \c <- \c alpha*A*x+beta*y or \c y \c <- \c alpha*A'*x+beta*y where \c A is a general \c m by \c n matrix.
     template <typename alpha_type, typename A_type, typename x_type, typename beta_type>
-    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, 
-	      const OrdinalType lda, const x_type* x, const OrdinalType incx, const beta_type beta, ScalarType* y, const OrdinalType incy) const;
+    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A,
+              const OrdinalType lda, const x_type* x, const OrdinalType incx, const beta_type beta, ScalarType* y, const OrdinalType incy) const;
 
     //! Performs the matrix-std::vector operation:  \c x \c <- \c A*x or \c x \c <- \c A'*x where \c A is a unit/non-unit \c n by \c n upper/lower triangular matrix.
     template <typename A_type>
-    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const A_type* A, 
-	      const OrdinalType lda, ScalarType* x, const OrdinalType incx) const;
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const A_type* A,
+              const OrdinalType lda, ScalarType* x, const OrdinalType incx) const;
 
-    //! \brief Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A. 
+    //! \brief Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A.
     template <typename alpha_type, typename x_type, typename y_type>
-    void GER(const OrdinalType m, const OrdinalType n, const alpha_type alpha, const x_type* x, const OrdinalType incx, 
-	     const y_type* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const;
+    void GER(const OrdinalType m, const OrdinalType n, const alpha_type alpha, const x_type* x, const OrdinalType incx,
+             const y_type* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const;
     //@}
-    
-    //! @name Level 3 BLAS Routines. 
-    //@{ 
 
-    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*op(B)+beta*C where \c op(A) is either \c A or \c A', \c op(B) is either \c B or \c B', and C is an \c m by \c k matrix.
+    //! @name Level 3 BLAS Routines.
+    //@{
+
+    /// \brief General matrix-matrix multiply.
+    ///
+    /// This computes C = alpha*op(A)*op(B) + beta*C.  op(X) here may
+    /// be either X, the transpose of X, or the conjugate transpose of
+    /// X.  op(A) has m rows and k columns, op(B) has k rows and n
+    /// columns, and C has m rows and n columns.
     template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
     void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const;
 
@@ -237,14 +240,14 @@ namespace Teuchos
 
   template<typename OrdinalType, typename ScalarType>
   class TEUCHOS_LIB_DLL_EXPORT BLAS : public DefaultBLASImpl<OrdinalType,ScalarType>
-  {    
+  {
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    
+
   public:
     //! @name Constructor/Destructor.
-    //@{ 
-    
+    //@{
+
     //! Default constructor.
     inline BLAS(void) {}
 
@@ -257,9 +260,9 @@ namespace Teuchos
   };
 
 //------------------------------------------------------------------------------------------
-//      LEVEL 1 BLAS ROUTINES  
+//      LEVEL 1 BLAS ROUTINES
 //------------------------------------------------------------------------------------------
-    
+
   /// \namespace details
   /// \brief Teuchos implementation details.
   ///
@@ -272,33 +275,33 @@ namespace Teuchos
     template<typename ScalarType, bool isComplex>
     class GivensRotator {
     public:
-      void 
-      ROTG (ScalarType* a, 
-	    ScalarType* b, 
-	    typename ScalarTraits<ScalarType>::magnitudeType* c,
-	    ScalarType* s) const;
+      void
+      ROTG (ScalarType* a,
+            ScalarType* b,
+            typename ScalarTraits<ScalarType>::magnitudeType* c,
+            ScalarType* s) const;
     };
 
     // Complex-arithmetic specialization.
     template<typename ScalarType>
     class GivensRotator<ScalarType, true> {
     public:
-      void 
-      ROTG (ScalarType* ca, 
-	    ScalarType* cb, 
-	    typename ScalarTraits<ScalarType>::magnitudeType* c,
-	    ScalarType* s) const;
+      void
+      ROTG (ScalarType* ca,
+            ScalarType* cb,
+            typename ScalarTraits<ScalarType>::magnitudeType* c,
+            ScalarType* s) const;
     };
 
     // Real-arithmetic specialization.
     template<typename ScalarType>
     class GivensRotator<ScalarType, false> {
     public:
-      void 
-      ROTG (ScalarType* da, 
-	    ScalarType* db, 
-	    ScalarType* c, 
-	    ScalarType* s) const;
+      void
+      ROTG (ScalarType* da,
+            ScalarType* db,
+            ScalarType* c,
+            ScalarType* s) const;
 
     private:
       /// Return ABS(x) if y > 0 or y is +0, else -ABS(x) (if y is -0 or < 0).
@@ -314,45 +317,45 @@ namespace Teuchos
       /// real-arithmetic specialization of GivensRotator.  Complex
       /// numbers don't have a sign; they have an angle.
       ScalarType SIGN (ScalarType x, ScalarType y) const {
-	typedef ScalarTraits<ScalarType> STS;
+        typedef ScalarTraits<ScalarType> STS;
 
-	if (y > STS::zero()) {
-	  return STS::magnitude (x);
-	} else if (y < STS::zero()) {
-	  return -STS::magnitude (x);
-	} else { // y == STS::zero()
-	  // Suppose that ScalarType implements signed zero, as IEEE
-	  // 754 - compliant floating-point numbers should.  You can't
-	  // use == to test for signed zero, since +0 == -0.  However,
-	  // 1/0 = Inf > 0 and 1/-0 = -Inf < 0.  Let's hope ScalarType
-	  // supports Inf... we don't need to test for Inf, just see
-	  // if it's greater than or less than zero.
-	  //
-	  // NOTE: This ONLY works if ScalarType is real.  Complex
-	  // infinity doesn't have a sign, so we can't compare it with
-	  // zero.  That's OK, because finite complex numbers don't
-	  // have a sign either; they have an angle.
-	  ScalarType signedInfinity = STS::one() / y;
-	  if (signedInfinity > STS::zero()) {
-	    return STS::magnitude (x);
-	  } else {
-	    // Even if ScalarType doesn't implement signed zero,
-	    // Fortran's SIGN intrinsic returns -ABS(X) if the second
-	    // argument Y is zero.  We imitate this behavior here.
-	    return -STS::magnitude (x);
-	  }
-	}
+        if (y > STS::zero()) {
+          return STS::magnitude (x);
+        } else if (y < STS::zero()) {
+          return -STS::magnitude (x);
+        } else { // y == STS::zero()
+          // Suppose that ScalarType implements signed zero, as IEEE
+          // 754 - compliant floating-point numbers should.  You can't
+          // use == to test for signed zero, since +0 == -0.  However,
+          // 1/0 = Inf > 0 and 1/-0 = -Inf < 0.  Let's hope ScalarType
+          // supports Inf... we don't need to test for Inf, just see
+          // if it's greater than or less than zero.
+          //
+          // NOTE: This ONLY works if ScalarType is real.  Complex
+          // infinity doesn't have a sign, so we can't compare it with
+          // zero.  That's OK, because finite complex numbers don't
+          // have a sign either; they have an angle.
+          ScalarType signedInfinity = STS::one() / y;
+          if (signedInfinity > STS::zero()) {
+            return STS::magnitude (x);
+          } else {
+            // Even if ScalarType doesn't implement signed zero,
+            // Fortran's SIGN intrinsic returns -ABS(X) if the second
+            // argument Y is zero.  We imitate this behavior here.
+            return -STS::magnitude (x);
+          }
+        }
       }
     };
 
     // Implementation of complex-arithmetic specialization.
     template<typename ScalarType>
-    void 
+    void
     GivensRotator<ScalarType, true>::
-    ROTG (ScalarType* ca, 
-	  ScalarType* cb, 
-	  typename ScalarTraits<ScalarType>::magnitudeType* c,
-	  ScalarType* s) const
+    ROTG (ScalarType* ca,
+          ScalarType* cb,
+          typename ScalarTraits<ScalarType>::magnitudeType* c,
+          ScalarType* s) const
     {
       typedef ScalarTraits<ScalarType> STS;
       typedef typename STS::magnitudeType MagnitudeType;
@@ -370,7 +373,7 @@ namespace Teuchos
       // DOUBLE PRECISION -> MagnitudeType
       // DOUBLE COMPLEX -> ScalarType
       // CDABS -> STS::magnitude
-      // DCMPLX -> ScalarType constructor (assuming that ScalarType 
+      // DCMPLX -> ScalarType constructor (assuming that ScalarType
       //   is std::complex<MagnitudeType>)
       // DCONJG -> STS::conjugate
       // DSQRT -> STM::squareroot
@@ -378,36 +381,36 @@ namespace Teuchos
       MagnitudeType norm, scale;
 
       if (STS::magnitude (*ca) == STM::zero()) {
-	*c = STM::zero();
-	*s = STS::one();
-	*ca = *cb;
+        *c = STM::zero();
+        *s = STS::one();
+        *ca = *cb;
       } else {
-	scale = STS::magnitude (*ca) + STS::magnitude (*cb);
-	{ // I introduced temporaries into the translated BLAS code in
-	  // order to make the expression easier to read and also save a
-	  // few floating-point operations.
-	  const MagnitudeType ca_scaled = 
-	    STS::magnitude (*ca / ScalarType(scale, STM::zero()));
-	  const MagnitudeType cb_scaled = 
-	    STS::magnitude (*cb / ScalarType(scale, STM::zero()));
-	  norm = scale * 
-	    STM::squareroot (ca_scaled*ca_scaled + cb_scaled*cb_scaled);
-	}
-	alpha = *ca / STS::magnitude (*ca);
-	*c = STS::magnitude (*ca) / norm;
-	*s = alpha * STS::conjugate (*cb) / norm;
-	*ca = alpha * norm;
+        scale = STS::magnitude (*ca) + STS::magnitude (*cb);
+        { // I introduced temporaries into the translated BLAS code in
+          // order to make the expression easier to read and also save a
+          // few floating-point operations.
+          const MagnitudeType ca_scaled =
+            STS::magnitude (*ca / ScalarType(scale, STM::zero()));
+          const MagnitudeType cb_scaled =
+            STS::magnitude (*cb / ScalarType(scale, STM::zero()));
+          norm = scale *
+            STM::squareroot (ca_scaled*ca_scaled + cb_scaled*cb_scaled);
+        }
+        alpha = *ca / STS::magnitude (*ca);
+        *c = STS::magnitude (*ca) / norm;
+        *s = alpha * STS::conjugate (*cb) / norm;
+        *ca = alpha * norm;
       }
     }
 
     // Implementation of real-arithmetic specialization.
     template<typename ScalarType>
-    void 
+    void
     GivensRotator<ScalarType, false>::
-    ROTG (ScalarType* da, 
-	  ScalarType* db, 
-	  ScalarType* c, 
-	  ScalarType* s) const
+    ROTG (ScalarType* da,
+          ScalarType* db,
+          ScalarType* c,
+          ScalarType* s) const
     {
       typedef ScalarTraits<ScalarType> STS;
 
@@ -436,31 +439,31 @@ namespace Teuchos
 
       roe = *db;
       if (STS::magnitude (*da) > STS::magnitude (*db)) {
-	roe = *da;
+        roe = *da;
       }
       scale = STS::magnitude (*da) + STS::magnitude (*db);
       if (scale == STS::zero()) {
-	*c = STS::one();
-	*s = STS::zero();
-	r = STS::zero();
-	z = STS::zero();
+        *c = STS::one();
+        *s = STS::zero();
+        r = STS::zero();
+        z = STS::zero();
       } else {
-	// I introduced temporaries into the translated BLAS code in
-	// order to make the expression easier to read and also save
-	// a few floating-point operations.
-	const ScalarType da_scaled = *da / scale;
-	const ScalarType db_scaled = *db / scale;
-	r = scale * STS::squareroot (da_scaled*da_scaled + db_scaled*db_scaled);
-	r = SIGN (STS::one(), roe) * r;
-	*c = *da / r;
-	*s = *db / r;
-	z = STS::one();
-	if (STS::magnitude (*da) > STS::magnitude (*db)) {
-	  z = *s;
-	}
-	if (STS::magnitude (*db) >= STS::magnitude (*da) && *c != STS::zero()) {
-	  z = STS::one() / *c;
-	}
+        // I introduced temporaries into the translated BLAS code in
+        // order to make the expression easier to read and also save
+        // a few floating-point operations.
+        const ScalarType da_scaled = *da / scale;
+        const ScalarType db_scaled = *db / scale;
+        r = scale * STS::squareroot (da_scaled*da_scaled + db_scaled*db_scaled);
+        r = SIGN (STS::one(), roe) * r;
+        *c = *da / r;
+        *s = *db / r;
+        z = STS::one();
+        if (STS::magnitude (*da) > STS::magnitude (*db)) {
+          z = *s;
+        }
+        if (STS::magnitude (*db) >= STS::magnitude (*da) && *c != STS::zero()) {
+          z = STS::one() / *c;
+        }
       }
 
       *da = r;
@@ -469,12 +472,12 @@ namespace Teuchos
   } // namespace details
 
   template<typename OrdinalType, typename ScalarType>
-  void 
+  void
   DefaultBLASImpl<OrdinalType, ScalarType>::
-  ROTG (ScalarType* da, 
-	ScalarType* db, 
-	MagnitudeType* c, 
-	ScalarType* s) const
+  ROTG (ScalarType* da,
+        ScalarType* db,
+        MagnitudeType* c,
+        ScalarType* s) const
   {
     typedef ScalarTraits<ScalarType> STS;
     details::GivensRotator<ScalarType, STS::isComplex> rotator;
@@ -516,7 +519,7 @@ namespace Teuchos
     OrdinalType i, ix = izero;
     if ( n > izero ) {
         // Set the initial index (ix).
-        if (incx < izero) { ix = (-n+ione)*incx; } 
+        if (incx < izero) { ix = (-n+ione)*incx; }
         // Scale the std::vector.
         for(i = izero; i < n; i++)
         {
@@ -533,15 +536,15 @@ namespace Teuchos
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     OrdinalType i, ix = izero, iy = izero;
     if ( n > izero ) {
-	// Set the initial indices (ix, iy).
-    	if (incx < izero) { ix = (-n+ione)*incx; }
-    	if (incy < izero) { iy = (-n+ione)*incy; }
+        // Set the initial indices (ix, iy).
+        if (incx < izero) { ix = (-n+ione)*incx; }
+        if (incy < izero) { iy = (-n+ione)*incy; }
 
         for(i = izero; i < n; i++)
           {
-	    y[iy] = x[ix];
-	    ix += incx;
-	    iy += incy;
+            y[iy] = x[ix];
+            ix += incx;
+            iy += incy;
           }
       }
   } /* end COPY */
@@ -555,15 +558,15 @@ namespace Teuchos
     OrdinalType i, ix = izero, iy = izero;
     if( n > izero && alpha != ScalarTraits<alpha_type>::zero())
       {
-	// Set the initial indices (ix, iy).
-    	if (incx < izero) { ix = (-n+ione)*incx; }
-    	if (incy < izero) { iy = (-n+ione)*incy; }
+        // Set the initial indices (ix, iy).
+        if (incx < izero) { ix = (-n+ione)*incx; }
+        if (incy < izero) { iy = (-n+ione)*incy; }
 
         for(i = izero; i < n; i++)
           {
-	    y[iy] += alpha * x[ix];
-	    ix += incx;
-	    iy += incy;
+            y[iy] += alpha * x[ix];
+            ix += incx;
+            iy += incy;
           }
       }
   } /* end AXPY */
@@ -573,22 +576,22 @@ namespace Teuchos
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    typename ScalarTraits<ScalarType>::magnitudeType result = 
+    typename ScalarTraits<ScalarType>::magnitudeType result =
       ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
     OrdinalType i, ix = izero;
     if( n > izero ) {
-	// Set the initial indices
-	if (incx < izero) { ix = (-n+ione)*incx; }
+        // Set the initial indices
+        if (incx < izero) { ix = (-n+ione)*incx; }
 
-    	for(i = izero; i < n; i++)
+        for(i = izero; i < n; i++)
           {
-	    result += ScalarTraits<ScalarType>::magnitude(x[ix]);
-	    ix += incx;
+            result += ScalarTraits<ScalarType>::magnitude(x[ix]);
+            ix += incx;
           }
-    } 
+    }
    return result;
   } /* end ASUM */
-  
+
   template<typename OrdinalType, typename ScalarType>
   template <typename x_type, typename y_type>
   ScalarType DefaultBLASImpl<OrdinalType, ScalarType>::DOT(const OrdinalType n, const x_type* x, const OrdinalType incx, const y_type* y, const OrdinalType incy) const
@@ -597,45 +600,45 @@ namespace Teuchos
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     ScalarType result = ScalarTraits<ScalarType>::zero();
     OrdinalType i, ix = izero, iy = izero;
-    if( n > izero ) 
+    if( n > izero )
       {
-	// Set the initial indices (ix,iy). 	    
-	if (incx < izero) { ix = (-n+ione)*incx; }
-	if (incy < izero) { iy = (-n+ione)*incy; }
+        // Set the initial indices (ix,iy).
+        if (incx < izero) { ix = (-n+ione)*incx; }
+        if (incy < izero) { iy = (-n+ione)*incy; }
 
-	for(i = izero; i < n; i++)
-	  {
-	    result += ScalarTraits<x_type>::conjugate(x[ix]) * y[iy];
-	    ix += incx;
-	    iy += incy;
-	  }
+        for(i = izero; i < n; i++)
+          {
+            result += ScalarTraits<x_type>::conjugate(x[ix]) * y[iy];
+            ix += incx;
+            iy += incy;
+          }
       }
     return result;
   } /* end DOT */
-  
+
   template<typename OrdinalType, typename ScalarType>
   typename ScalarTraits<ScalarType>::magnitudeType DefaultBLASImpl<OrdinalType, ScalarType>::NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    typename ScalarTraits<ScalarType>::magnitudeType result = 
+    typename ScalarTraits<ScalarType>::magnitudeType result =
       ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
     OrdinalType i, ix = izero;
-    if ( n > izero ) 
+    if ( n > izero )
       {
-	// Set the initial index.
-	if (incx < izero) { ix = (-n+ione)*incx; }	
-    
-	for(i = izero; i < n; i++)
-      	  {
-	    result += ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::conjugate(x[ix]) * x[ix]);
-	    ix += incx;
-       	  }
-    	result = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::squareroot(result);
-      }	
+        // Set the initial index.
+        if (incx < izero) { ix = (-n+ione)*incx; }
+
+        for(i = izero; i < n; i++)
+          {
+            result += ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::conjugate(x[ix]) * x[ix]);
+            ix += incx;
+          }
+        result = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::squareroot(result);
+      }
     return result;
   } /* end NRM2 */
-  
+
   template<typename OrdinalType, typename ScalarType>
   OrdinalType DefaultBLASImpl<OrdinalType, ScalarType>::IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
   {
@@ -645,20 +648,20 @@ namespace Teuchos
     typename ScalarTraits<ScalarType>::magnitudeType maxval =
       ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
 
-    if ( n > izero ) 
+    if ( n > izero )
       {
-	if (incx < izero) { ix = (-n+ione)*incx; }
-	maxval = ScalarTraits<ScalarType>::magnitude(x[ix]);
-	ix += incx;
-    	for(i = ione; i < n; i++)
-      	  {
-	    if(ScalarTraits<ScalarType>::magnitude(x[ix]) > maxval)
-	      {
-	    	result = i;
-	        maxval = ScalarTraits<ScalarType>::magnitude(x[ix]);
-	      }
-	    ix += incx;
-	  }
+        if (incx < izero) { ix = (-n+ione)*incx; }
+        maxval = ScalarTraits<ScalarType>::magnitude(x[ix]);
+        ix += incx;
+        for(i = ione; i < n; i++)
+          {
+            if(ScalarTraits<ScalarType>::magnitude(x[ix]) > maxval)
+              {
+                result = i;
+                maxval = ScalarTraits<ScalarType>::magnitude(x[ix]);
+              }
+            ix += incx;
+          }
       }
     return result + 1; // the BLAS I?AMAX functions return 1-indexed (Fortran-style) values
   } /* end IAMAX */
@@ -682,45 +685,45 @@ namespace Teuchos
 
     // Quick return if there is nothing to do!
     if( m == izero || n == izero || ( alpha == alpha_zero && beta == beta_one ) ){ return; }
-    
+
     // Otherwise, we need to check the argument list.
-    if( m < izero ) { 
-	std::cout << "BLAS::GEMV Error: M == " << m << std::endl;	    
-	BadArgument = true;
+    if( m < izero ) {
+        std::cout << "BLAS::GEMV Error: M == " << m << std::endl;
+        BadArgument = true;
     }
-    if( n < izero ) { 
-	std::cout << "BLAS::GEMV Error: N == " << n << std::endl;	    
-	BadArgument = true;
+    if( n < izero ) {
+        std::cout << "BLAS::GEMV Error: N == " << n << std::endl;
+        BadArgument = true;
     }
-    if( lda < m ) { 
-	std::cout << "BLAS::GEMV Error: LDA < MAX(1,M)"<< std::endl;	    
-	BadArgument = true;
+    if( lda < m ) {
+        std::cout << "BLAS::GEMV Error: LDA < MAX(1,M)"<< std::endl;
+        BadArgument = true;
     }
     if( incx == izero ) {
-	std::cout << "BLAS::GEMV Error: INCX == 0"<< std::endl;
-	BadArgument = true;
+        std::cout << "BLAS::GEMV Error: INCX == 0"<< std::endl;
+        BadArgument = true;
     }
     if( incy == izero ) {
-	std::cout << "BLAS::GEMV Error: INCY == 0"<< std::endl;
-	BadArgument = true;
+        std::cout << "BLAS::GEMV Error: INCY == 0"<< std::endl;
+        BadArgument = true;
     }
 
     if(!BadArgument) {
-      OrdinalType i, j, lenx, leny, ix, iy, jx, jy; 
+      OrdinalType i, j, lenx, leny, ix, iy, jx, jy;
       OrdinalType kx = izero, ky = izero;
       ScalarType temp;
 
       // Determine the lengths of the vectors x and y.
       if(ETranspChar[trans] == 'N') {
-	lenx = n;
-	leny = m;
+        lenx = n;
+        leny = m;
       } else {
-	lenx = m;
-	leny = n;
+        lenx = m;
+        leny = n;
       }
- 
-      // Determine if this is a conjugate tranpose 
-      noConj = (ETranspChar[trans] == 'T'); 
+
+      // Determine if this is a conjugate tranpose
+      noConj = (ETranspChar[trans] == 'T');
 
       // Set the starting pointers for the vectors x and y if incx/y < 0.
       if (incx < izero ) { kx =  (ione - lenx)*incx; }
@@ -729,92 +732,92 @@ namespace Teuchos
       // Form y = beta*y
       ix = kx; iy = ky;
       if(beta != beta_one) {
-	if (incy == ione) {
-	  if (beta == beta_zero) {
-	    for(i = izero; i < leny; i++) { y[i] = y_zero; }
-	  } else {
-	    for(i = izero; i < leny; i++) { y[i] *= beta; }
-	  }
-	} else {
-	  if (beta == beta_zero) {
-	    for(i = izero; i < leny; i++) {
-	      y[iy] = y_zero;
-	      iy += incy;
-	    }
-	  } else {
-	    for(i = izero; i < leny; i++) {
-	      y[iy] *= beta;
-	      iy += incy;
-	    }
-	  }
-	}
+        if (incy == ione) {
+          if (beta == beta_zero) {
+            for(i = izero; i < leny; i++) { y[i] = y_zero; }
+          } else {
+            for(i = izero; i < leny; i++) { y[i] *= beta; }
+          }
+        } else {
+          if (beta == beta_zero) {
+            for(i = izero; i < leny; i++) {
+              y[iy] = y_zero;
+              iy += incy;
+            }
+          } else {
+            for(i = izero; i < leny; i++) {
+              y[iy] *= beta;
+              iy += incy;
+            }
+          }
+        }
       }
-	
+
       // Return if we don't have to do anything more.
       if(alpha == alpha_zero) { return; }
 
       if( ETranspChar[trans] == 'N' ) {
-	// Form y = alpha*A*y
-	jx = kx;
-	if (incy == ione) {
-	  for(j = izero; j < n; j++) {
-	    if (x[jx] != x_zero) {
-	      temp = alpha*x[jx];
-	      for(i = izero; i < m; i++) {
-		y[i] += temp*A[j*lda + i];
-	      }
-	    }
-	    jx += incx;
-	  }
-	} else {
-	  for(j = izero; j < n; j++) {
-	    if (x[jx] != x_zero) {
-	      temp = alpha*x[jx];
-	      iy = ky;
-	      for(i = izero; i < m; i++) {
-		y[iy] += temp*A[j*lda + i];
-		iy += incy;
-	      }
-	    }
-	    jx += incx;
-	  }
-	}
-      } else {
-	jy = ky;
-	if (incx == ione) {
-	  for(j = izero; j < n; j++) {
-	    temp = y_zero;
-            if ( noConj ) {
+        // Form y = alpha*A*y
+        jx = kx;
+        if (incy == ione) {
+          for(j = izero; j < n; j++) {
+            if (x[jx] != x_zero) {
+              temp = alpha*x[jx];
               for(i = izero; i < m; i++) {
-	        temp += A[j*lda + i]*x[i];
-              }
-            } else {
-              for(i = izero; i < m; i++) {
-	        temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[i];
-              }
-            } 
-	    y[jy] += alpha*temp;
-	    jy += incy;
-	  }
-	} else {
-	  for(j = izero; j < n; j++) {
-	    temp = y_zero;
-	    ix = kx;
-            if ( noConj ) {
-              for (i = izero; i < m; i++) {
-	        temp += A[j*lda + i]*x[ix];
-	        ix += incx;
-              }
-            } else {
-              for (i = izero; i < m; i++) {
-	        temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[ix];
-	        ix += incx;
+                y[i] += temp*A[j*lda + i];
               }
             }
-	    y[jy] += alpha*temp;
-	    jy += incy;
-	  }
-	}
+            jx += incx;
+          }
+        } else {
+          for(j = izero; j < n; j++) {
+            if (x[jx] != x_zero) {
+              temp = alpha*x[jx];
+              iy = ky;
+              for(i = izero; i < m; i++) {
+                y[iy] += temp*A[j*lda + i];
+                iy += incy;
+              }
+            }
+            jx += incx;
+          }
+        }
+      } else {
+        jy = ky;
+        if (incx == ione) {
+          for(j = izero; j < n; j++) {
+            temp = y_zero;
+            if ( noConj ) {
+              for(i = izero; i < m; i++) {
+                temp += A[j*lda + i]*x[i];
+              }
+            } else {
+              for(i = izero; i < m; i++) {
+                temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[i];
+              }
+            }
+            y[jy] += alpha*temp;
+            jy += incy;
+          }
+        } else {
+          for(j = izero; j < n; j++) {
+            temp = y_zero;
+            ix = kx;
+            if ( noConj ) {
+              for (i = izero; i < m; i++) {
+                temp += A[j*lda + i]*x[ix];
+                ix += incx;
+              }
+            } else {
+              for (i = izero; i < m; i++) {
+                temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[ix];
+                ix += incx;
+              }
+            }
+            y[jy] += alpha*temp;
+            jy += incy;
+          }
+        }
       }
     } /* if (!BadArgument) */
   } /* end GEMV */
@@ -831,14 +834,14 @@ namespace Teuchos
 
     // Quick return if there is nothing to do!
     if( n == izero ){ return; }
-    
+
     // Otherwise, we need to check the argument list.
-    if( n < izero ) { 
-      std::cout << "BLAS::TRMV Error: N == " << n << std::endl;	    
+    if( n < izero ) {
+      std::cout << "BLAS::TRMV Error: N == " << n << std::endl;
       BadArgument = true;
     }
-    if( lda < n ) { 
-      std::cout << "BLAS::TRMV Error: LDA < MAX(1,N)"<< std::endl;	    
+    if( lda < n ) {
+      std::cout << "BLAS::TRMV Error: LDA < MAX(1,N)"<< std::endl;
       BadArgument = true;
     }
     if( incx == izero ) {
@@ -850,82 +853,82 @@ namespace Teuchos
       OrdinalType i, j, ix, jx, kx = izero;
       ScalarType temp;
       bool noUnit = (EDiagChar[diag] == 'N');
-   
-      // Determine if this is a conjugate tranpose 
-      noConj = (ETranspChar[trans] == 'T'); 
+
+      // Determine if this is a conjugate tranpose
+      noConj = (ETranspChar[trans] == 'T');
 
       // Set the starting pointer for the std::vector x if incx < 0.
       if (incx < izero) { kx = (-n+ione)*incx; }
 
-      // Start the operations for a nontransposed triangular matrix 
+      // Start the operations for a nontransposed triangular matrix
       if (ETranspChar[trans] == 'N') {
-	/* Compute x = A*x */
-	if (EUploChar[uplo] == 'U') {
-	  /* A is an upper triangular matrix */
-	  if (incx == ione) {
-	    for (j=izero; j<n; j++) {
-	      if (x[j] != zero) {
-		temp = x[j];
-		for (i=izero; i<j; i++) {
-		  x[i] += temp*A[j*lda + i];
-		}
-		if ( noUnit ) 
-		  x[j] *= A[j*lda + j];
-	      }
-	    }
-	  } else {
-	    jx = kx;
-	    for (j=izero; j<n; j++) {
-	      if (x[jx] != zero) {
-		temp = x[jx];
-		ix = kx;
-		for (i=izero; i<j; i++) {
-		  x[ix] += temp*A[j*lda + i];
-		  ix += incx;
-		}
-		if ( noUnit )
-		  x[jx] *= A[j*lda + j];
-	      }
-	      jx += incx;
-	    }
-	  } /* if (incx == ione) */
-	} else { /* A is a lower triangular matrix */
-	  if (incx == ione) {
-	    for (j=n-ione; j>-ione; j--) {
-	      if (x[j] != zero) {
-		temp = x[j];
-		for (i=n-ione; i>j; i--) {
-		  x[i] += temp*A[j*lda + i];
-		}
-		if ( noUnit )
-		  x[j] *= A[j*lda + j];
-	      }
-	    }
-	  } else {
-	    kx += (n-ione)*incx;
-	    jx = kx;
-	    for (j=n-ione; j>-ione; j--) {
-	      if (x[jx] != zero) {
-		temp = x[jx];
-		ix = kx;
-		for (i=n-ione; i>j; i--) {
-		  x[ix] += temp*A[j*lda + i];
-		  ix -= incx;
-		}
-		if ( noUnit ) 
-		  x[jx] *= A[j*lda + j];
-	      }
-	      jx -= incx;
-	    }
-	  }
-	} /* if (EUploChar[uplo]=='U') */
+        /* Compute x = A*x */
+        if (EUploChar[uplo] == 'U') {
+          /* A is an upper triangular matrix */
+          if (incx == ione) {
+            for (j=izero; j<n; j++) {
+              if (x[j] != zero) {
+                temp = x[j];
+                for (i=izero; i<j; i++) {
+                  x[i] += temp*A[j*lda + i];
+                }
+                if ( noUnit )
+                  x[j] *= A[j*lda + j];
+              }
+            }
+          } else {
+            jx = kx;
+            for (j=izero; j<n; j++) {
+              if (x[jx] != zero) {
+                temp = x[jx];
+                ix = kx;
+                for (i=izero; i<j; i++) {
+                  x[ix] += temp*A[j*lda + i];
+                  ix += incx;
+                }
+                if ( noUnit )
+                  x[jx] *= A[j*lda + j];
+              }
+              jx += incx;
+            }
+          } /* if (incx == ione) */
+        } else { /* A is a lower triangular matrix */
+          if (incx == ione) {
+            for (j=n-ione; j>-ione; j--) {
+              if (x[j] != zero) {
+                temp = x[j];
+                for (i=n-ione; i>j; i--) {
+                  x[i] += temp*A[j*lda + i];
+                }
+                if ( noUnit )
+                  x[j] *= A[j*lda + j];
+              }
+            }
+          } else {
+            kx += (n-ione)*incx;
+            jx = kx;
+            for (j=n-ione; j>-ione; j--) {
+              if (x[jx] != zero) {
+                temp = x[jx];
+                ix = kx;
+                for (i=n-ione; i>j; i--) {
+                  x[ix] += temp*A[j*lda + i];
+                  ix -= incx;
+                }
+                if ( noUnit )
+                  x[jx] *= A[j*lda + j];
+              }
+              jx -= incx;
+            }
+          }
+        } /* if (EUploChar[uplo]=='U') */
       } else { /* A is transposed/conjugated */
-	/* Compute x = A'*x */
-	if (EUploChar[uplo]=='U') {
-	  /* A is an upper triangular matrix */
-	  if (incx == ione) {
-	    for (j=n-ione; j>-ione; j--) {
-	      temp = x[j];
+        /* Compute x = A'*x */
+        if (EUploChar[uplo]=='U') {
+          /* A is an upper triangular matrix */
+          if (incx == ione) {
+            for (j=n-ione; j>-ione; j--) {
+              temp = x[j];
               if ( noConj ) {
                 if ( noUnit )
                   temp *= A[j*lda + j];
@@ -940,36 +943,36 @@ namespace Teuchos
                 }
               }
               x[j] = temp;
-	    }
-	  } else {
-	    jx = kx + (n-ione)*incx;
-	    for (j=n-ione; j>-ione; j--) {
-	      temp = x[jx];
-	      ix = jx;
+            }
+          } else {
+            jx = kx + (n-ione)*incx;
+            for (j=n-ione; j>-ione; j--) {
+              temp = x[jx];
+              ix = jx;
               if ( noConj ) {
                 if ( noUnit )
                   temp *= A[j*lda + j];
                 for (i=j-ione; i>-ione; i--) {
                   ix -= incx;
                   temp += A[j*lda + i]*x[ix];
-	        }
+                }
               } else {
                 if ( noUnit )
                   temp *= ScalarTraits<A_type>::conjugate(A[j*lda + j]);
                 for (i=j-ione; i>-ione; i--) {
                   ix -= incx;
                   temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[ix];
-	        }
+                }
               }
-	      x[jx] = temp;
-	      jx -= incx;
-	    }
-	  }
-	} else {
-	  /* A is a lower triangular matrix */
-	  if (incx == ione) {
-	    for (j=izero; j<n; j++) {
-	      temp = x[j];
+              x[jx] = temp;
+              jx -= incx;
+            }
+          }
+        } else {
+          /* A is a lower triangular matrix */
+          if (incx == ione) {
+            for (j=izero; j<n; j++) {
+              temp = x[j];
               if ( noConj ) {
                 if ( noUnit )
                   temp *= A[j*lda + j];
@@ -983,37 +986,37 @@ namespace Teuchos
                   temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[i];
                 }
               }
-	      x[j] = temp;
-	    }
-	  } else {
-	    jx = kx;
-	    for (j=izero; j<n; j++) {
-	      temp = x[jx];
-	      ix = jx;
+              x[j] = temp;
+            }
+          } else {
+            jx = kx;
+            for (j=izero; j<n; j++) {
+              temp = x[jx];
+              ix = jx;
               if ( noConj ) {
-                if ( noUnit ) 
+                if ( noUnit )
                   temp *= A[j*lda + j];
                 for (i=j+ione; i<n; i++) {
                   ix += incx;
                   temp += A[j*lda + i]*x[ix];
                 }
               } else {
-                if ( noUnit ) 
+                if ( noUnit )
                   temp *= ScalarTraits<A_type>::conjugate(A[j*lda + j]);
                 for (i=j+ione; i<n; i++) {
                   ix += incx;
                   temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[ix];
                 }
               }
-	      x[jx] = temp;
-	      jx += incx;	      
-	    }
-	  }
-	} /* if (EUploChar[uplo]=='U') */
+              x[jx] = temp;
+              jx += incx;
+            }
+          }
+        } /* if (EUploChar[uplo]=='U') */
       } /* if (ETranspChar[trans]=='N') */
     } /* if (!BadArgument) */
   } /* end TRMV */
-        
+
   template<typename OrdinalType, typename ScalarType>
   template <typename alpha_type, typename x_type, typename y_type>
   void DefaultBLASImpl<OrdinalType, ScalarType>::GER(const OrdinalType m, const OrdinalType n, const alpha_type alpha, const x_type* x, const OrdinalType incx, const y_type* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const
@@ -1025,31 +1028,31 @@ namespace Teuchos
     bool BadArgument = false;
 
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
-	    "Teuchos::BLAS::GER() does not currently support complex data types.");
+            "Teuchos::BLAS::GER() does not currently support complex data types.");
 
     // Quick return if there is nothing to do!
     if( m == izero || n == izero || alpha == alpha_zero ){ return; }
-    
+
     // Otherwise, we need to check the argument list.
-    if( m < izero ) { 
-	std::cout << "BLAS::GER Error: M == " << m << std::endl;	    
-	BadArgument = true;
+    if( m < izero ) {
+        std::cout << "BLAS::GER Error: M == " << m << std::endl;
+        BadArgument = true;
     }
-    if( n < izero ) { 
-	std::cout << "BLAS::GER Error: N == " << n << std::endl;	    
-	BadArgument = true;
+    if( n < izero ) {
+        std::cout << "BLAS::GER Error: N == " << n << std::endl;
+        BadArgument = true;
     }
-    if( lda < m ) { 
-	std::cout << "BLAS::GER Error: LDA < MAX(1,M)"<< std::endl;	    
-	BadArgument = true;
+    if( lda < m ) {
+        std::cout << "BLAS::GER Error: LDA < MAX(1,M)"<< std::endl;
+        BadArgument = true;
     }
     if( incx == 0 ) {
-	std::cout << "BLAS::GER Error: INCX == 0"<< std::endl;
-	BadArgument = true;
+        std::cout << "BLAS::GER Error: INCX == 0"<< std::endl;
+        BadArgument = true;
     }
     if( incy == 0 ) {
-	std::cout << "BLAS::GER Error: INCY == 0"<< std::endl;
-	BadArgument = true;
+        std::cout << "BLAS::GER Error: INCY == 0"<< std::endl;
+        BadArgument = true;
     }
 
     if(!BadArgument) {
@@ -1062,36 +1065,36 @@ namespace Teuchos
 
       // Start the operations for incx == 1
       if( incx == ione ) {
-	for( j=izero; j<n; j++ ) {
-	  if ( y[jy] != y_zero ) {
-	    temp = alpha*y[jy];
-	    for ( i=izero; i<m; i++ ) {
-	      A[j*lda + i] += x[i]*temp;
-	    }
-	  }
-	  jy += incy;
-	}
-      } 
+        for( j=izero; j<n; j++ ) {
+          if ( y[jy] != y_zero ) {
+            temp = alpha*y[jy];
+            for ( i=izero; i<m; i++ ) {
+              A[j*lda + i] += x[i]*temp;
+            }
+          }
+          jy += incy;
+        }
+      }
       else { // Start the operations for incx != 1
-	for( j=izero; j<n; j++ ) {
-	  if ( y[jy] != y_zero ) {
-	    temp = alpha*y[jy];
-	    ix = kx;
-	    for( i=izero; i<m; i++ ) {
-	      A[j*lda + i] += x[ix]*temp;
-	      ix += incx;
-	    }
-	  }
-	  jy += incy;
-	}
+        for( j=izero; j<n; j++ ) {
+          if ( y[jy] != y_zero ) {
+            temp = alpha*y[jy];
+            ix = kx;
+            for( i=izero; i<m; i++ ) {
+              A[j*lda + i] += x[ix]*temp;
+              ix += incx;
+            }
+          }
+          jy += incy;
+        }
       }
     } /* if(!BadArgument) */
   } /* end GER */
-  
+
 //------------------------------------------------------------------------------------------
 //      LEVEL 3 BLAS ROUTINES
 //------------------------------------------------------------------------------------------
-        
+
   template<typename OrdinalType, typename ScalarType>
   template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
   void DefaultBLASImpl<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const
@@ -1122,80 +1125,80 @@ namespace Teuchos
 
     // Quick return if there is nothing to do!
     if( (m==izero) || (n==izero) || (((alpha==alpha_zero)||(k==izero)) && (beta==beta_one)) ){ return; }
-    if( m < izero ) { 
-      std::cout << "BLAS::GEMM Error: M == " << m << std::endl;	    
+    if( m < izero ) {
+      std::cout << "BLAS::GEMM Error: M == " << m << std::endl;
       BadArgument = true;
     }
-    if( n < izero ) { 
-      std::cout << "BLAS::GEMM Error: N == " << n << std::endl;	    
+    if( n < izero ) {
+      std::cout << "BLAS::GEMM Error: N == " << n << std::endl;
       BadArgument = true;
     }
-    if( k < izero ) { 
-      std::cout << "BLAS::GEMM Error: K == " << k << std::endl;	    
+    if( k < izero ) {
+      std::cout << "BLAS::GEMM Error: K == " << k << std::endl;
       BadArgument = true;
     }
-    if( lda < NRowA ) { 
-      std::cout << "BLAS::GEMM Error: LDA < "<<NRowA<<std::endl;	    
+    if( lda < NRowA ) {
+      std::cout << "BLAS::GEMM Error: LDA < "<<NRowA<<std::endl;
       BadArgument = true;
     }
-    if( ldb < NRowB ) { 
-      std::cout << "BLAS::GEMM Error: LDB < "<<NRowB<<std::endl;	    
+    if( ldb < NRowB ) {
+      std::cout << "BLAS::GEMM Error: LDB < "<<NRowB<<std::endl;
       BadArgument = true;
     }
-     if( ldc < m ) { 
-      std::cout << "BLAS::GEMM Error: LDC < MAX(1,M)"<< std::endl;	    
+     if( ldc < m ) {
+      std::cout << "BLAS::GEMM Error: LDC < MAX(1,M)"<< std::endl;
       BadArgument = true;
     }
 
     if(!BadArgument) {
 
-      // Determine if this is a conjugate tranpose 
-      conjA = (ETranspChar[transa] == 'C'); 
-      conjB = (ETranspChar[transb] == 'C'); 
+      // Determine if this is a conjugate tranpose
+      conjA = (ETranspChar[transa] == 'C');
+      conjB = (ETranspChar[transb] == 'C');
 
       // Only need to scale the resulting matrix C.
       if( alpha == alpha_zero ) {
-	if( beta == beta_zero ) {
-	  for (j=izero; j<n; j++) {
-	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] = C_zero;
-	    }
-	  }
-	} else {
-	  for (j=izero; j<n; j++) {
-	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] *= beta;
-	    }
-	  }
-	}
-	return;
+        if( beta == beta_zero ) {
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<m; i++) {
+              C[j*ldc + i] = C_zero;
+            }
+          }
+        } else {
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<m; i++) {
+              C[j*ldc + i] *= beta;
+            }
+          }
+        }
+        return;
       }
       //
       // Now start the operations.
       //
       if ( ETranspChar[transb]=='N' ) {
-	if ( ETranspChar[transa]=='N' ) {
-	  // Compute C = alpha*A*B + beta*C
-	  for (j=izero; j<n; j++) {
-	    if( beta == beta_zero ) {
-	      for (i=izero; i<m; i++){
-		C[j*ldc + i] = C_zero;
-	      }
-	    } else if( beta != beta_one ) {
-	      for (i=izero; i<m; i++){
-		C[j*ldc + i] *= beta;
-	      }
-	    }
-	    for (p=izero; p<k; p++){
-	      if (B[j*ldb + p] != B_zero ){
-		temp = alpha*B[j*ldb + p];
-		for (i=izero; i<m; i++) {
-		  C[j*ldc + i] += temp*A[p*lda + i];
-		}
-	      }
-	    }
-	  }
-	} else if ( conjA ) {
+        if ( ETranspChar[transa]=='N' ) {
+          // Compute C = alpha*A*B + beta*C
+          for (j=izero; j<n; j++) {
+            if( beta == beta_zero ) {
+              for (i=izero; i<m; i++){
+                C[j*ldc + i] = C_zero;
+              }
+            } else if( beta != beta_one ) {
+              for (i=izero; i<m; i++){
+                C[j*ldc + i] *= beta;
+              }
+            }
+            for (p=izero; p<k; p++){
+              if (B[j*ldb + p] != B_zero ){
+                temp = alpha*B[j*ldb + p];
+                for (i=izero; i<m; i++) {
+                  C[j*ldc + i] += temp*A[p*lda + i];
+                }
+              }
+            }
+          }
+        } else if ( conjA ) {
           // Compute C = alpha*conj(A')*B + beta*C
           for (j=izero; j<n; j++) {
             for (i=izero; i<m; i++) {
@@ -1211,21 +1214,21 @@ namespace Teuchos
             }
           }
         } else {
-	  // Compute C = alpha*A'*B + beta*C
-	  for (j=izero; j<n; j++) {
-	    for (i=izero; i<m; i++) {
-	      temp = C_zero;
-	      for (p=izero; p<k; p++) {
-		temp += A[i*lda + p]*B[j*ldb + p];
-	      }
-	      if (beta == beta_zero) {
-		C[j*ldc + i] = alpha*temp;
-	      } else {
-		C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
-	      }
-	    }
-	  }
-	}
+          // Compute C = alpha*A'*B + beta*C
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<m; i++) {
+              temp = C_zero;
+              for (p=izero; p<k; p++) {
+                temp += A[i*lda + p]*B[j*ldb + p];
+              }
+              if (beta == beta_zero) {
+                C[j*ldc + i] = alpha*temp;
+              } else {
+                C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
+              }
+            }
+          }
+        }
       } else if ( ETranspChar[transa]=='N' ) {
         if ( conjB ) {
           // Compute C = alpha*A*conj(B') + beta*C
@@ -1249,27 +1252,27 @@ namespace Teuchos
             }
           }
         } else {
-	  // Compute C = alpha*A*B' + beta*C
-	  for (j=izero; j<n; j++) {
-	    if (beta == beta_zero) {
-	      for (i=izero; i<m; i++) {
-		C[j*ldc + i] = C_zero;
-	      } 
-	    } else if ( beta != beta_one ) {
-	      for (i=izero; i<m; i++) {
-		C[j*ldc + i] *= beta;
-	      }
-	    }
-	    for (p=izero; p<k; p++) {
-	      if (B[p*ldb + j] != B_zero) {
-		temp = alpha*B[p*ldb + j];
-		for (i=izero; i<m; i++) {
-		  C[j*ldc + i] += temp*A[p*lda + i];
-		}
-	      }
-	    }
-	  }
-	} 
+          // Compute C = alpha*A*B' + beta*C
+          for (j=izero; j<n; j++) {
+            if (beta == beta_zero) {
+              for (i=izero; i<m; i++) {
+                C[j*ldc + i] = C_zero;
+              }
+            } else if ( beta != beta_one ) {
+              for (i=izero; i<m; i++) {
+                C[j*ldc + i] *= beta;
+              }
+            }
+            for (p=izero; p<k; p++) {
+              if (B[p*ldb + j] != B_zero) {
+                temp = alpha*B[p*ldb + j];
+                for (i=izero; i<m; i++) {
+                  C[j*ldc + i] += temp*A[p*lda + i];
+                }
+              }
+            }
+          }
+        }
       } else if ( conjA ) {
         if ( conjB ) {
           // Compute C = alpha*conj(A')*conj(B') + beta*C
@@ -1322,21 +1325,21 @@ namespace Teuchos
             }
           }
         } else {
-	  // Compute C = alpha*A'*B' + beta*C
-	  for (j=izero; j<n; j++) {
-	    for (i=izero; i<m; i++) {
-	      temp = C_zero;
-	      for (p=izero; p<k; p++) {
-		temp += A[i*lda + p]*B[p*ldb + j];
-	      }
-	      if (beta == beta_zero) {
-		C[j*ldc + i] = alpha*temp;
-	      } else {
-		C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
-	      }
-	    }
-	  }
-	} // end if (ETranspChar[transa]=='N') ...
+          // Compute C = alpha*A'*B' + beta*C
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<m; i++) {
+              temp = C_zero;
+              for (p=izero; p<k; p++) {
+                temp += A[i*lda + p]*B[p*ldb + j];
+              }
+              if (beta == beta_zero) {
+                C[j*ldc + i] = alpha*temp;
+              } else {
+                C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
+              }
+            }
+          }
+        } // end if (ETranspChar[transa]=='N') ...
       } // end if (ETranspChar[transb]=='N') ...
     } // end if (!BadArgument) ...
   } // end of GEMM
@@ -1360,7 +1363,7 @@ namespace Teuchos
 
     // Quick return.
     if ( (m==izero) || (n==izero) || ( (alpha==alpha_zero)&&(beta==beta_one) ) ) { return; }
-    if( m < izero ) { 
+    if( m < izero ) {
       std::cout << "BLAS::SYMM Error: M == "<< m << std::endl;
       BadArgument = true; }
     if( n < izero ) {
@@ -1380,94 +1383,94 @@ namespace Teuchos
 
       // Only need to scale C and return.
       if (alpha == alpha_zero) {
-	if (beta == beta_zero ) {
-	  for (j=izero; j<n; j++) {
-	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] = C_zero;
-	    }
-	  }
-	} else {
-	  for (j=izero; j<n; j++) {
-	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] *= beta;
-	    }
-	  }
-	}
-	return;
+        if (beta == beta_zero ) {
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<m; i++) {
+              C[j*ldc + i] = C_zero;
+            }
+          }
+        } else {
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<m; i++) {
+              C[j*ldc + i] *= beta;
+            }
+          }
+        }
+        return;
       }
 
       if ( ESideChar[side] == 'L') {
-	// Compute C = alpha*A*B + beta*C
+        // Compute C = alpha*A*B + beta*C
 
-	if (Upper) {
-	  // The symmetric part of A is stored in the upper triangular part of the matrix.
-	  for (j=izero; j<n; j++) {
-	    for (i=izero; i<m; i++) {
-	      temp1 = alpha*B[j*ldb + i];
-	      temp2 = C_zero;
-	      for (k=izero; k<i; k++) {
-		C[j*ldc + k] += temp1*A[i*lda + k];
-		temp2 += B[j*ldb + k]*A[i*lda + k];
-	      }
-	      if (beta == beta_zero) {
-		C[j*ldc + i] = temp1*A[i*lda + i] + alpha*temp2;
-	      } else {
-		C[j*ldc + i] = beta*C[j*ldc + i] + temp1*A[i*lda + i] + alpha*temp2;
-	      }
-	    }
-	  }
-	} else {
-	  // The symmetric part of A is stored in the lower triangular part of the matrix.
-	  for (j=izero; j<n; j++) {
-	    for (i=m-ione; i>-ione; i--) {
-	      temp1 = alpha*B[j*ldb + i];
-	      temp2 = C_zero;
-	      for (k=i+ione; k<m; k++) {
-		C[j*ldc + k] += temp1*A[i*lda + k];
-		temp2 += B[j*ldb + k]*A[i*lda + k];
-	      }
-	      if (beta == beta_zero) {
-		C[j*ldc + i] = temp1*A[i*lda + i] + alpha*temp2;
-	      } else {
-		C[j*ldc + i] = beta*C[j*ldc + i] + temp1*A[i*lda + i] + alpha*temp2;
-	      }
-	    }
-	  }
-	}
+        if (Upper) {
+          // The symmetric part of A is stored in the upper triangular part of the matrix.
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<m; i++) {
+              temp1 = alpha*B[j*ldb + i];
+              temp2 = C_zero;
+              for (k=izero; k<i; k++) {
+                C[j*ldc + k] += temp1*A[i*lda + k];
+                temp2 += B[j*ldb + k]*A[i*lda + k];
+              }
+              if (beta == beta_zero) {
+                C[j*ldc + i] = temp1*A[i*lda + i] + alpha*temp2;
+              } else {
+                C[j*ldc + i] = beta*C[j*ldc + i] + temp1*A[i*lda + i] + alpha*temp2;
+              }
+            }
+          }
+        } else {
+          // The symmetric part of A is stored in the lower triangular part of the matrix.
+          for (j=izero; j<n; j++) {
+            for (i=m-ione; i>-ione; i--) {
+              temp1 = alpha*B[j*ldb + i];
+              temp2 = C_zero;
+              for (k=i+ione; k<m; k++) {
+                C[j*ldc + k] += temp1*A[i*lda + k];
+                temp2 += B[j*ldb + k]*A[i*lda + k];
+              }
+              if (beta == beta_zero) {
+                C[j*ldc + i] = temp1*A[i*lda + i] + alpha*temp2;
+              } else {
+                C[j*ldc + i] = beta*C[j*ldc + i] + temp1*A[i*lda + i] + alpha*temp2;
+              }
+            }
+          }
+        }
       } else {
-	// Compute C = alpha*B*A + beta*C.
-	for (j=izero; j<n; j++) {
-	  temp1 = alpha*A[j*lda + j];
-	  if (beta == beta_zero) {
-	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] = temp1*B[j*ldb + i];
-	    }
-	  } else {
-	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] = beta*C[j*ldc + i] + temp1*B[j*ldb + i];
-	    }
-	  }
-	  for (k=izero; k<j; k++) {
-	    if (Upper) {
-	      temp1 = alpha*A[j*lda + k];
-	    } else {
-	      temp1 = alpha*A[k*lda + j];
-	    }
-	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] += temp1*B[k*ldb + i];
-	    }
-	  }
-	  for (k=j+ione; k<n; k++) {
-	    if (Upper) {
-	      temp1 = alpha*A[k*lda + j];
-	    } else {
-	      temp1 = alpha*A[j*lda + k];
-	    }
-	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] += temp1*B[k*ldb + i];
-	    }
-	  }
-	}
+        // Compute C = alpha*B*A + beta*C.
+        for (j=izero; j<n; j++) {
+          temp1 = alpha*A[j*lda + j];
+          if (beta == beta_zero) {
+            for (i=izero; i<m; i++) {
+              C[j*ldc + i] = temp1*B[j*ldb + i];
+            }
+          } else {
+            for (i=izero; i<m; i++) {
+              C[j*ldc + i] = beta*C[j*ldc + i] + temp1*B[j*ldb + i];
+            }
+          }
+          for (k=izero; k<j; k++) {
+            if (Upper) {
+              temp1 = alpha*A[j*lda + k];
+            } else {
+              temp1 = alpha*A[k*lda + j];
+            }
+            for (i=izero; i<m; i++) {
+              C[j*ldc + i] += temp1*B[k*ldb + i];
+            }
+          }
+          for (k=j+ione; k<n; k++) {
+            if (Upper) {
+              temp1 = alpha*A[k*lda + j];
+            } else {
+              temp1 = alpha*A[j*lda + k];
+            }
+            for (i=izero; i<m; i++) {
+              C[j*ldc + i] += temp1*B[k*ldb + i];
+            }
+          }
+        }
       } // end if (ESideChar[side]=='L') ...
     } // end if(!BadArgument) ...
 } // end SYMM
@@ -1523,13 +1526,13 @@ namespace Teuchos
       // Scale C when alpha is zero
       if (alpha == alpha_zero) {
         if (Upper) {
-          if (beta==beta_zero) {      
+          if (beta==beta_zero) {
             for (j=izero; j<n; j++) {
               for (i=izero; i<=j; i++) {
-	        C[j*ldc + i] = C_zero;
+                C[j*ldc + i] = C_zero;
               }
             }
-          } 
+          }
           else {
             for (j=izero; j<n; j++) {
               for (i=izero; i<=j; i++) {
@@ -1539,13 +1542,13 @@ namespace Teuchos
           }
         }
         else {
-          if (beta==beta_zero) {      
+          if (beta==beta_zero) {
             for (j=izero; j<n; j++) {
               for (i=j; i<n; i++) {
                 C[j*ldc + i] = C_zero;
               }
             }
-          } 
+          }
           else {
             for (j=izero; j<n; j++) {
               for (i=j; i<n; i++) {
@@ -1556,11 +1559,11 @@ namespace Teuchos
         }
         return;
       }
-  
+
       // Now we can start the computation
 
       if ( ETranspChar[trans]=='N' ) {
-  
+
         // Form C <- alpha*A*A' + beta*C
         if (Upper) {
           for (j=izero; j<n; j++) {
@@ -1639,10 +1642,10 @@ namespace Teuchos
               else {
                 C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
               }
-            }  
+            }
           }
         }
-      }  
+      }
     } /* if (!BadArgument) */
   } /* END SYRK */
 
@@ -1685,200 +1688,200 @@ namespace Teuchos
 
       // B only needs to be zeroed out.
       if( alpha == alpha_zero ) {
-	for( j=izero; j<n; j++ ) {
-	  for( i=izero; i<m; i++ ) {
-	    B[j*ldb + i] = B_zero;
-	  }
-	}
-	return;
+        for( j=izero; j<n; j++ ) {
+          for( i=izero; i<m; i++ ) {
+            B[j*ldb + i] = B_zero;
+          }
+        }
+        return;
       }
-      
-      //  Start the computations. 
+
+      //  Start the computations.
       if ( LSide ) {
-	// A is on the left side of B.
-	
-	if ( ETranspChar[transa]=='N' ) {
-	  // Compute B = alpha*A*B
+        // A is on the left side of B.
 
-	  if ( Upper ) {
-	    // A is upper triangular
-	    for( j=izero; j<n; j++ ) {
-	      for( k=izero; k<m; k++) {
-		if ( B[j*ldb + k] != B_zero ) {
-		  temp = alpha*B[j*ldb + k];
-		  for( i=izero; i<k; i++ ) {
-		    B[j*ldb + i] += temp*A[k*lda + i];
-		  }
-		  if ( noUnit )
-		    temp *=A[k*lda + k];
-		  B[j*ldb + k] = temp;
-		}
-	      }
-	    }
-	  } else {
-	    // A is lower triangular
-	    for( j=izero; j<n; j++ ) {
-	      for( k=m-ione; k>-ione; k-- ) {
-		if( B[j*ldb + k] != B_zero ) {
-		  temp = alpha*B[j*ldb + k];
-		  B[j*ldb + k] = temp;
-		  if ( noUnit )
-		    B[j*ldb + k] *= A[k*lda + k];
-		  for( i=k+ione; i<m; i++ ) {
-		    B[j*ldb + i] += temp*A[k*lda + i];
-		  }
-		}
-	      }
-	    }
-	  }
-	} else {
-	  // Compute B = alpha*A'*B or B = alpha*conj(A')*B
-	  if( Upper ) {
-	    for( j=izero; j<n; j++ ) {
-	      for( i=m-ione; i>-ione; i-- ) {
-		temp = B[j*ldb + i];
-                if ( noConj ) {
-                  if( noUnit )
-                    temp *= A[i*lda + i];
-                  for( k=izero; k<i; k++ ) {
-                    temp += A[i*lda + k]*B[j*ldb + k];
+        if ( ETranspChar[transa]=='N' ) {
+          // Compute B = alpha*A*B
+
+          if ( Upper ) {
+            // A is upper triangular
+            for( j=izero; j<n; j++ ) {
+              for( k=izero; k<m; k++) {
+                if ( B[j*ldb + k] != B_zero ) {
+                  temp = alpha*B[j*ldb + k];
+                  for( i=izero; i<k; i++ ) {
+                    B[j*ldb + i] += temp*A[k*lda + i];
                   }
-                } else {
-                  if( noUnit )
-                    temp *= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
-                  for( k=izero; k<i; k++ ) {
-                    temp += ScalarTraits<A_type>::conjugate(A[i*lda + k])*B[j*ldb + k];
-                  }
+                  if ( noUnit )
+                    temp *=A[k*lda + k];
+                  B[j*ldb + k] = temp;
                 }
-		B[j*ldb + i] = alpha*temp;
-	      }
-	    }
-	  } else {
-	    for( j=izero; j<n; j++ ) {
-	      for( i=izero; i<m; i++ ) {
-		temp = B[j*ldb + i];
-                if ( noConj ) {
-                  if( noUnit ) 
-                    temp *= A[i*lda + i];
-                  for( k=i+ione; k<m; k++ ) {
-                    temp += A[i*lda + k]*B[j*ldb + k];
-                  }
-                } else {
-                  if( noUnit )
-                    temp *= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
-                  for( k=i+ione; k<m; k++ ) {
-                    temp += ScalarTraits<A_type>::conjugate(A[i*lda + k])*B[j*ldb + k];
-                  }
-                }
-		B[j*ldb + i] = alpha*temp;
-	      }
-	    }
-	  }
-	}
-      } else {
-	// A is on the right hand side of B.
-	
-	if( ETranspChar[transa] == 'N' ) {
-	  // Compute B = alpha*B*A
-
-	  if( Upper ) {
-	    // A is upper triangular.
-	    for( j=n-ione; j>-ione; j-- ) {
-	      temp = alpha;
-	      if( noUnit )
-		temp *= A[j*lda + j];
-	      for( i=izero; i<m; i++ ) {
-		B[j*ldb + i] *= temp;
-	      }
-	      for( k=izero; k<j; k++ ) {
-		if( A[j*lda + k] != A_zero ) {
-		  temp = alpha*A[j*lda + k];
-		  for( i=izero; i<m; i++ ) {
-		    B[j*ldb + i] += temp*B[k*ldb + i];
-		  }
-		}
-	      }
-	    }
-	  } else {
-	    // A is lower triangular.
-	    for( j=izero; j<n; j++ ) {
-	      temp = alpha;
-	      if( noUnit )
-		temp *= A[j*lda + j];
-	      for( i=izero; i<m; i++ ) {
-		B[j*ldb + i] *= temp;
-	      }
-	      for( k=j+ione; k<n; k++ ) {
-		if( A[j*lda + k] != A_zero ) {
-		  temp = alpha*A[j*lda + k];
-		  for( i=izero; i<m; i++ ) {
-		    B[j*ldb + i] += temp*B[k*ldb + i];
-		  }
-		}
-	      }
-	    }
-	  }
-	} else {
-	  // Compute B = alpha*B*A' or B = alpha*B*conj(A')
-
-	  if( Upper ) {
-	    for( k=izero; k<n; k++ ) {
-	      for( j=izero; j<k; j++ ) {
-		if( A[k*lda + j] != A_zero ) {
-                  if ( noConj )
-		    temp = alpha*A[k*lda + j];
-                  else 
-		    temp = alpha*ScalarTraits<A_type>::conjugate(A[k*lda + j]);
-		  for( i=izero; i<m; i++ ) {
-		    B[j*ldb + i] += temp*B[k*ldb + i];
-		  }
-		}
-	      }
-	      temp = alpha;
-	      if( noUnit ) {
-                if ( noConj ) 
-		  temp *= A[k*lda + k];
-                else 
-                  temp *= ScalarTraits<A_type>::conjugate(A[k*lda + k]);
               }
-	      if( temp != one ) {
-		for( i=izero; i<m; i++ ) {
-		  B[k*ldb + i] *= temp;
-		}
-	      }
-	    }
-	  } else {
-	    for( k=n-ione; k>-ione; k-- ) {
-	      for( j=k+ione; j<n; j++ ) {
-		if( A[k*lda + j] != A_zero ) {
+            }
+          } else {
+            // A is lower triangular
+            for( j=izero; j<n; j++ ) {
+              for( k=m-ione; k>-ione; k-- ) {
+                if( B[j*ldb + k] != B_zero ) {
+                  temp = alpha*B[j*ldb + k];
+                  B[j*ldb + k] = temp;
+                  if ( noUnit )
+                    B[j*ldb + k] *= A[k*lda + k];
+                  for( i=k+ione; i<m; i++ ) {
+                    B[j*ldb + i] += temp*A[k*lda + i];
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          // Compute B = alpha*A'*B or B = alpha*conj(A')*B
+          if( Upper ) {
+            for( j=izero; j<n; j++ ) {
+              for( i=m-ione; i>-ione; i-- ) {
+                temp = B[j*ldb + i];
+                if ( noConj ) {
+                  if( noUnit )
+                    temp *= A[i*lda + i];
+                  for( k=izero; k<i; k++ ) {
+                    temp += A[i*lda + k]*B[j*ldb + k];
+                  }
+                } else {
+                  if( noUnit )
+                    temp *= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
+                  for( k=izero; k<i; k++ ) {
+                    temp += ScalarTraits<A_type>::conjugate(A[i*lda + k])*B[j*ldb + k];
+                  }
+                }
+                B[j*ldb + i] = alpha*temp;
+              }
+            }
+          } else {
+            for( j=izero; j<n; j++ ) {
+              for( i=izero; i<m; i++ ) {
+                temp = B[j*ldb + i];
+                if ( noConj ) {
+                  if( noUnit )
+                    temp *= A[i*lda + i];
+                  for( k=i+ione; k<m; k++ ) {
+                    temp += A[i*lda + k]*B[j*ldb + k];
+                  }
+                } else {
+                  if( noUnit )
+                    temp *= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
+                  for( k=i+ione; k<m; k++ ) {
+                    temp += ScalarTraits<A_type>::conjugate(A[i*lda + k])*B[j*ldb + k];
+                  }
+                }
+                B[j*ldb + i] = alpha*temp;
+              }
+            }
+          }
+        }
+      } else {
+        // A is on the right hand side of B.
+
+        if( ETranspChar[transa] == 'N' ) {
+          // Compute B = alpha*B*A
+
+          if( Upper ) {
+            // A is upper triangular.
+            for( j=n-ione; j>-ione; j-- ) {
+              temp = alpha;
+              if( noUnit )
+                temp *= A[j*lda + j];
+              for( i=izero; i<m; i++ ) {
+                B[j*ldb + i] *= temp;
+              }
+              for( k=izero; k<j; k++ ) {
+                if( A[j*lda + k] != A_zero ) {
+                  temp = alpha*A[j*lda + k];
+                  for( i=izero; i<m; i++ ) {
+                    B[j*ldb + i] += temp*B[k*ldb + i];
+                  }
+                }
+              }
+            }
+          } else {
+            // A is lower triangular.
+            for( j=izero; j<n; j++ ) {
+              temp = alpha;
+              if( noUnit )
+                temp *= A[j*lda + j];
+              for( i=izero; i<m; i++ ) {
+                B[j*ldb + i] *= temp;
+              }
+              for( k=j+ione; k<n; k++ ) {
+                if( A[j*lda + k] != A_zero ) {
+                  temp = alpha*A[j*lda + k];
+                  for( i=izero; i<m; i++ ) {
+                    B[j*ldb + i] += temp*B[k*ldb + i];
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          // Compute B = alpha*B*A' or B = alpha*B*conj(A')
+
+          if( Upper ) {
+            for( k=izero; k<n; k++ ) {
+              for( j=izero; j<k; j++ ) {
+                if( A[k*lda + j] != A_zero ) {
                   if ( noConj )
                     temp = alpha*A[k*lda + j];
                   else
-		    temp = alpha*ScalarTraits<A_type>::conjugate(A[k*lda + j]);
-		  for( i=izero; i<m; i++ ) {
-		    B[j*ldb + i] += temp*B[k*ldb + i];
-		  }
-		}
-	      }
-	      temp = alpha;
-	      if( noUnit ) {
-		if ( noConj ) 
+                    temp = alpha*ScalarTraits<A_type>::conjugate(A[k*lda + j]);
+                  for( i=izero; i<m; i++ ) {
+                    B[j*ldb + i] += temp*B[k*ldb + i];
+                  }
+                }
+              }
+              temp = alpha;
+              if( noUnit ) {
+                if ( noConj )
                   temp *= A[k*lda + k];
                 else
-		  temp *= ScalarTraits<A_type>::conjugate(A[k*lda + k]);
+                  temp *= ScalarTraits<A_type>::conjugate(A[k*lda + k]);
               }
-	      if( temp != one ) {
-		for( i=izero; i<m; i++ ) {
-		  B[k*ldb + i] *= temp;
-		}
-	      }
-	    }
-	  }
-	} // end if( ETranspChar[transa] == 'N' ) ...
+              if( temp != one ) {
+                for( i=izero; i<m; i++ ) {
+                  B[k*ldb + i] *= temp;
+                }
+              }
+            }
+          } else {
+            for( k=n-ione; k>-ione; k-- ) {
+              for( j=k+ione; j<n; j++ ) {
+                if( A[k*lda + j] != A_zero ) {
+                  if ( noConj )
+                    temp = alpha*A[k*lda + j];
+                  else
+                    temp = alpha*ScalarTraits<A_type>::conjugate(A[k*lda + j]);
+                  for( i=izero; i<m; i++ ) {
+                    B[j*ldb + i] += temp*B[k*ldb + i];
+                  }
+                }
+              }
+              temp = alpha;
+              if( noUnit ) {
+                if ( noConj )
+                  temp *= A[k*lda + k];
+                else
+                  temp *= ScalarTraits<A_type>::conjugate(A[k*lda + k]);
+              }
+              if( temp != one ) {
+                for( i=izero; i<m; i++ ) {
+                  B[k*ldb + i] *= temp;
+                }
+              }
+            }
+          }
+        } // end if( ETranspChar[transa] == 'N' ) ...
       } // end if ( LSide ) ...
     } // end if (!BadArgument)
   } // end TRMM
-  
+
   template<typename OrdinalType, typename ScalarType>
   template <typename alpha_type, typename A_type>
   void DefaultBLASImpl<OrdinalType, ScalarType>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
@@ -1895,7 +1898,7 @@ namespace Teuchos
     bool BadArgument = false;
     bool noUnit = (EDiagChar[diag]=='N');
     bool noConj = (EUploChar[transa] == 'T');
-    
+
     if (!(ESideChar[side] == 'L')) { NRowA = n; }
 
     // Quick return.
@@ -1915,50 +1918,50 @@ namespace Teuchos
 
     if(!BadArgument)
       {
-	int i, j, k;
-	// Set the solution to the zero std::vector.
-	if(alpha == alpha_zero) {
-	    for(j = izero; j < n; j++) {
-	    	for( i = izero; i < m; i++) {
-		    B[j*ldb+i] = B_zero;
-	      	}
-	    }
-	}
-	else 
-	{ // Start the operations.
-	    if(ESideChar[side] == 'L') {
-		//
-	    	// Perform computations for OP(A)*X = alpha*B	    
-		//
-		if(ETranspChar[transa] == 'N') {
-		    //
-		    //  Compute B = alpha*inv( A )*B
-		    //
-		    if(EUploChar[uplo] == 'U') { 
-			// A is upper triangular.
-			for(j = izero; j < n; j++) {
-	    		    // Perform alpha*B if alpha is not 1.
-			  if(alpha != alpha_one) {
-	    	    		for( i = izero; i < m; i++) {
-		    		    B[j*ldb+i] *= alpha;
-		    		}
-			    }
-			    // Perform a backsolve for column j of B.
-			    for(k = (m - ione); k > -ione; k--) {
-				// If this entry is zero, we don't have to do anything.
-				if (B[j*ldb + k] != B_zero) {
-				    if ( noUnit ) {
-					B[j*ldb + k] /= A[k*lda + k];
-				    }
-				    for(i = izero; i < k; i++) {
-					B[j*ldb + i] -= B[j*ldb + k] * A[k*lda + i];
-				    }
-				}
-			    }
-			}
-		    }
-		    else 
-		    { // A is lower triangular.
+        int i, j, k;
+        // Set the solution to the zero std::vector.
+        if(alpha == alpha_zero) {
+            for(j = izero; j < n; j++) {
+                for( i = izero; i < m; i++) {
+                    B[j*ldb+i] = B_zero;
+                }
+            }
+        }
+        else
+        { // Start the operations.
+            if(ESideChar[side] == 'L') {
+                //
+                // Perform computations for OP(A)*X = alpha*B
+                //
+                if(ETranspChar[transa] == 'N') {
+                    //
+                    //  Compute B = alpha*inv( A )*B
+                    //
+                    if(EUploChar[uplo] == 'U') {
+                        // A is upper triangular.
+                        for(j = izero; j < n; j++) {
+                            // Perform alpha*B if alpha is not 1.
+                          if(alpha != alpha_one) {
+                                for( i = izero; i < m; i++) {
+                                    B[j*ldb+i] *= alpha;
+                                }
+                            }
+                            // Perform a backsolve for column j of B.
+                            for(k = (m - ione); k > -ione; k--) {
+                                // If this entry is zero, we don't have to do anything.
+                                if (B[j*ldb + k] != B_zero) {
+                                    if ( noUnit ) {
+                                        B[j*ldb + k] /= A[k*lda + k];
+                                    }
+                                    for(i = izero; i < k; i++) {
+                                        B[j*ldb + i] -= B[j*ldb + k] * A[k*lda + i];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    { // A is lower triangular.
                         for(j = izero; j < n; j++) {
                             // Perform alpha*B if alpha is not 1.
                             if(alpha != alpha_one) {
@@ -1969,7 +1972,7 @@ namespace Teuchos
                             // Perform a forward solve for column j of B.
                             for(k = izero; k < m; k++) {
                                 // If this entry is zero, we don't have to do anything.
-                                if (B[j*ldb + k] != B_zero) {   
+                                if (B[j*ldb + k] != B_zero) {
                                     if ( noUnit ) {
                                         B[j*ldb + k] /= A[k*lda + k];
                                     }
@@ -1979,102 +1982,102 @@ namespace Teuchos
                                 }
                             }
                         }
-		    } // end if (uplo == 'U')
-		}  // if (transa =='N')	
-	    	else { 
-		    //
-		    //  Compute B = alpha*inv( A' )*B 
+                    } // end if (uplo == 'U')
+                }  // if (transa =='N')
+                else {
+                    //
+                    //  Compute B = alpha*inv( A' )*B
                     //  or      B = alpha*inv( conj(A') )*B
-		    //
-		    if(EUploChar[uplo] == 'U') { 
-			// A is upper triangular.
-			for(j = izero; j < n; j++) {
-	    	    	    for( i = izero; i < m; i++) {
-		    		temp = alpha*B[j*ldb+i];
+                    //
+                    if(EUploChar[uplo] == 'U') {
+                        // A is upper triangular.
+                        for(j = izero; j < n; j++) {
+                            for( i = izero; i < m; i++) {
+                                temp = alpha*B[j*ldb+i];
                                 if ( noConj ) {
                                   for(k = izero; k < i; k++) {
-				      temp -= A[i*lda + k] * B[j*ldb + k];
-				  }
-				  if ( noUnit ) {
-				      temp /= A[i*lda + i];
-				  }
+                                      temp -= A[i*lda + k] * B[j*ldb + k];
+                                  }
+                                  if ( noUnit ) {
+                                      temp /= A[i*lda + i];
+                                  }
                                 } else {
                                   for(k = izero; k < i; k++) {
-                                      temp -= ScalarTraits<A_type>::conjugate(A[i*lda + k]) 
+                                      temp -= ScalarTraits<A_type>::conjugate(A[i*lda + k])
                                             * B[j*ldb + k];
                                   }
                                   if ( noUnit ) {
                                       temp /= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
                                   }
                                 }
-				B[j*ldb + i] = temp;
-			    }
-			}
-		    }
-		    else
-		    { // A is lower triangular.
+                                B[j*ldb + i] = temp;
+                            }
+                        }
+                    }
+                    else
+                    { // A is lower triangular.
                         for(j = izero; j < n; j++) {
                             for(i = (m - ione) ; i > -ione; i--) {
                                 temp = alpha*B[j*ldb+i];
                                 if ( noConj ) {
-                            	  for(k = i+ione; k < m; k++) {
-				    temp -= A[i*lda + k] * B[j*ldb + k];
-				  }
-				  if ( noUnit ) {
-				    temp /= A[i*lda + i];
-				  }
+                                  for(k = i+ione; k < m; k++) {
+                                    temp -= A[i*lda + k] * B[j*ldb + k];
+                                  }
+                                  if ( noUnit ) {
+                                    temp /= A[i*lda + i];
+                                  }
                                 } else {
                                   for(k = i+ione; k < m; k++) {
-                                    temp -= ScalarTraits<A_type>::conjugate(A[i*lda + k]) 
+                                    temp -= ScalarTraits<A_type>::conjugate(A[i*lda + k])
                                           * B[j*ldb + k];
                                   }
                                   if ( noUnit ) {
                                     temp /= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
                                   }
                                 }
-				B[j*ldb + i] = temp;
+                                B[j*ldb + i] = temp;
                             }
                         }
-		    }
-		}
-	    }  // if (side == 'L')
-	    else { 
-	       // side == 'R'
-	       //
-	       // Perform computations for X*OP(A) = alpha*B	    
-	       //
-	      if (ETranspChar[transa] == 'N') {
-		    //
-		    //  Compute B = alpha*B*inv( A )
-		    //
-		    if(EUploChar[uplo] == 'U') { 
-			// A is upper triangular.
-	    		// Perform a backsolve for column j of B.
-			for(j = izero; j < n; j++) {
-	    		    // Perform alpha*B if alpha is not 1.
-	    		    if(alpha != alpha_one) {
-	    	    		for( i = izero; i < m; i++) {
-		    		    B[j*ldb+i] *= alpha;
-		    		}
-			    }
-			    for(k = izero; k < j; k++) {
-				// If this entry is zero, we don't have to do anything.
-				if (A[j*lda + k] != A_zero) {
-				    for(i = izero; i < m; i++) {
-					B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i];
-				    }
-				}
-			    }
-			    if ( noUnit ) {
-				temp = B_one/A[j*lda + j];
-				for(i = izero; i < m; i++) {
-				    B[j*ldb + i] *= temp;
-				}
-			    }
-			}
-		    }
-		    else 
-		    { // A is lower triangular.
+                    }
+                }
+            }  // if (side == 'L')
+            else {
+               // side == 'R'
+               //
+               // Perform computations for X*OP(A) = alpha*B
+               //
+              if (ETranspChar[transa] == 'N') {
+                    //
+                    //  Compute B = alpha*B*inv( A )
+                    //
+                    if(EUploChar[uplo] == 'U') {
+                        // A is upper triangular.
+                        // Perform a backsolve for column j of B.
+                        for(j = izero; j < n; j++) {
+                            // Perform alpha*B if alpha is not 1.
+                            if(alpha != alpha_one) {
+                                for( i = izero; i < m; i++) {
+                                    B[j*ldb+i] *= alpha;
+                                }
+                            }
+                            for(k = izero; k < j; k++) {
+                                // If this entry is zero, we don't have to do anything.
+                                if (A[j*lda + k] != A_zero) {
+                                    for(i = izero; i < m; i++) {
+                                        B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i];
+                                    }
+                                }
+                            }
+                            if ( noUnit ) {
+                                temp = B_one/A[j*lda + j];
+                                for(i = izero; i < m; i++) {
+                                    B[j*ldb + i] *= temp;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    { // A is lower triangular.
                         for(j = (n - ione); j > -ione; j--) {
                             // Perform alpha*B if alpha is not 1.
                             if(alpha != alpha_one) {
@@ -2085,89 +2088,89 @@ namespace Teuchos
                             // Perform a forward solve for column j of B.
                             for(k = j+ione; k < n; k++) {
                                 // If this entry is zero, we don't have to do anything.
-				if (A[j*lda + k] != A_zero) {
-				    for(i = izero; i < m; i++) {
-                                        B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i]; 
+                                if (A[j*lda + k] != A_zero) {
+                                    for(i = izero; i < m; i++) {
+                                        B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i];
                                     }
-                                } 
+                                }
                             }
-			    if ( noUnit ) {
-				temp = B_one/A[j*lda + j];
-				for(i = izero; i < m; i++) {
-				    B[j*ldb + i] *= temp;
-				}
-			    }			
+                            if ( noUnit ) {
+                                temp = B_one/A[j*lda + j];
+                                for(i = izero; i < m; i++) {
+                                    B[j*ldb + i] *= temp;
+                                }
+                            }
                         }
-		    } // end if (uplo == 'U')
-		}  // if (transa =='N')	
-	    	else { 
-		    //
-		    //  Compute B = alpha*B*inv( A' )
+                    } // end if (uplo == 'U')
+                }  // if (transa =='N')
+                else {
+                    //
+                    //  Compute B = alpha*B*inv( A' )
                     //  or      B = alpha*B*inv( conj(A') )
-		    //
-		    if(EUploChar[uplo] == 'U') { 
-			// A is upper triangular.
-			for(k = (n - ione); k > -ione; k--) {
-			    if ( noUnit ) {
+                    //
+                    if(EUploChar[uplo] == 'U') {
+                        // A is upper triangular.
+                        for(k = (n - ione); k > -ione; k--) {
+                            if ( noUnit ) {
                                 if ( noConj )
-				  temp = B_one/A[k*lda + k];
+                                  temp = B_one/A[k*lda + k];
                                 else
-				  temp = B_one/ScalarTraits<A_type>::conjugate(A[k*lda + k]);
-	    	    	    	for(i = izero; i < m; i++) {
-		    		    B[k*ldb + i] *= temp;
-				}
-			    }
-			    for(j = izero; j < k; j++) {
-				if (A[k*lda + j] != A_zero) {
-                                    if ( noConj ) 
-				      temp = A[k*lda + j];
-                                    else
-				      temp = ScalarTraits<A_type>::conjugate(A[k*lda + j]);
-				    for(i = izero; i < m; i++) {
-					B[j*ldb + i] -= temp*B[k*ldb + i];
-				    }
-				}
-			    }
-			    if (alpha != alpha_one) {
-				for (i = izero; i < m; i++) {
-				    B[k*ldb + i] *= alpha;
-				}
-			    }
-			}
-		    }
-		    else
-		    { // A is lower triangular.
-			for(k = izero; k < n; k++) {
-			    if ( noUnit ) {
-                                if ( noConj )
-				  temp = B_one/A[k*lda + k];
-                                else
-				  temp = B_one/ScalarTraits<A_type>::conjugate(A[k*lda + k]);
-				for (i = izero; i < m; i++) {
-				    B[k*ldb + i] *= temp;
-				}
-			    }
-			    for(j = k+ione; j < n; j++) {
-				if(A[k*lda + j] != A_zero) {
+                                  temp = B_one/ScalarTraits<A_type>::conjugate(A[k*lda + k]);
+                                for(i = izero; i < m; i++) {
+                                    B[k*ldb + i] *= temp;
+                                }
+                            }
+                            for(j = izero; j < k; j++) {
+                                if (A[k*lda + j] != A_zero) {
                                     if ( noConj )
-				      temp = A[k*lda + j];
+                                      temp = A[k*lda + j];
                                     else
-				      temp = ScalarTraits<A_type>::conjugate(A[k*lda + j]);
-				    for(i = izero; i < m; i++) {
-					B[j*ldb + i] -= temp*B[k*ldb + i];
-				    }
-				}
-			    }
-			    if (alpha != alpha_one) {
-				for (i = izero; i < m; i++) {
-				    B[k*ldb + i] *= alpha;
-				}
-			    }
+                                      temp = ScalarTraits<A_type>::conjugate(A[k*lda + j]);
+                                    for(i = izero; i < m; i++) {
+                                        B[j*ldb + i] -= temp*B[k*ldb + i];
+                                    }
+                                }
+                            }
+                            if (alpha != alpha_one) {
+                                for (i = izero; i < m; i++) {
+                                    B[k*ldb + i] *= alpha;
+                                }
+                            }
                         }
-		    }
-		}		
-	    }
-	}
+                    }
+                    else
+                    { // A is lower triangular.
+                        for(k = izero; k < n; k++) {
+                            if ( noUnit ) {
+                                if ( noConj )
+                                  temp = B_one/A[k*lda + k];
+                                else
+                                  temp = B_one/ScalarTraits<A_type>::conjugate(A[k*lda + k]);
+                                for (i = izero; i < m; i++) {
+                                    B[k*ldb + i] *= temp;
+                                }
+                            }
+                            for(j = k+ione; j < n; j++) {
+                                if(A[k*lda + j] != A_zero) {
+                                    if ( noConj )
+                                      temp = A[k*lda + j];
+                                    else
+                                      temp = ScalarTraits<A_type>::conjugate(A[k*lda + j]);
+                                    for(i = izero; i < m; i++) {
+                                        B[j*ldb + i] -= temp*B[k*ldb + i];
+                                    }
+                                }
+                            }
+                            if (alpha != alpha_one) {
+                                for (i = izero; i < m; i++) {
+                                    B[k*ldb + i] *= alpha;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
   }
 
@@ -2175,7 +2178,7 @@ namespace Teuchos
 
   template <>
   class TEUCHOS_LIB_DLL_EXPORT BLAS<int, float>
-  {    
+  {
   public:
     inline BLAS(void) {}
     inline BLAS(const BLAS<int, float>& /*BLAS_source*/) {}
@@ -2203,7 +2206,7 @@ namespace Teuchos
 
   template<>
   class TEUCHOS_LIB_DLL_EXPORT BLAS<int, double>
-  {    
+  {
   public:
     inline BLAS(void) {}
     inline BLAS(const BLAS<int, double>& /*BLAS_source*/) {}
@@ -2231,7 +2234,7 @@ namespace Teuchos
 
   template<>
   class TEUCHOS_LIB_DLL_EXPORT BLAS<int, std::complex<float> >
-  {    
+  {
   public:
     inline BLAS(void) {}
     inline BLAS(const BLAS<int, std::complex<float> >& /*BLAS_source*/) {}
@@ -2259,7 +2262,7 @@ namespace Teuchos
 
   template<>
   class TEUCHOS_LIB_DLL_EXPORT BLAS<int, std::complex<double> >
-  {    
+  {
   public:
     inline BLAS(void) {}
     inline BLAS(const BLAS<int, std::complex<double> >& /*BLAS_source*/) {}

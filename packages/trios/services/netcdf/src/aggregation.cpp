@@ -325,6 +325,9 @@ void cleanup_aggregation_chunks(const int ncid)
     var_iter = details->nc_vars.begin();
     for (; var_iter != details->nc_vars.end(); ++var_iter) {
         var_details = var_iter->second;
+        if (!var_details) {
+            continue;
+        }
         cleanup_aggregation_chunks(ncid, var_details->varid);
     }
 }
@@ -925,6 +928,9 @@ int try_aggregation(const int ncid)
     var_iter = file_details->nc_vars.begin();
     for (; var_iter != file_details->nc_vars.end(); var_iter++) {
         var_details = var_iter->second;
+        if (!var_details) {
+            continue;
+        }
         while(try_aggregation(ncid, var_details->varid) == TRUE);
     }
 
@@ -1030,6 +1036,9 @@ aggregation_chunk_details_t **get_chunks(const int ncid, int *chunk_count)
     var_iter = details->nc_vars.begin();
     for (; var_iter != details->nc_vars.end(); ++var_iter) {
         var_details = var_iter->second;
+        if (!var_details) {
+            continue;
+        }
         *chunk_count += var_details->chunks->size();
     }
 
@@ -1044,6 +1053,9 @@ aggregation_chunk_details_t **get_chunks(const int ncid, int *chunk_count)
     var_iter = details->nc_vars.begin();
     for (; var_iter != details->nc_vars.end(); var_iter++) {
         var_details = var_iter->second;
+        if (!var_details) {
+            continue;
+        }
         var_details->chunks->sort(compare_chunks_for_caching);
         chunks_iter = var_details->chunks->begin();
         for (;chunks_iter != var_details->chunks->end(); ++chunks_iter,i++) {

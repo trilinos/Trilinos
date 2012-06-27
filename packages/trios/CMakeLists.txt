@@ -17,6 +17,8 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # B) Set up package-specific options
 #
 
+set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
+
 # Various Trios checks
 INCLUDE(TriosProbeTimers)
 # Checks for a supported interconnect

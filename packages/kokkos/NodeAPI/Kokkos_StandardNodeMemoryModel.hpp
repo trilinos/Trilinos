@@ -59,6 +59,7 @@ namespace Kokkos {
     public:
       //! Indicates that parallel buffers allocated by this node are available for use on the host thread.
       static const bool isHostNode = true;
+      static const bool isCUDANode = false;
 
       //@{ Memory management
 

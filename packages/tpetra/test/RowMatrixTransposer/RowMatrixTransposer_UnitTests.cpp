@@ -248,7 +248,7 @@ typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
 #endif
 
 // don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-#if defined(HAVE_KOKKOS_THRUST) && !defined(HAVE_TPETRA_MPI)
+#if defined(HAVE_KOKKOS_CUSPARSE) && !defined(HAVE_TPETRA_MPI)
 // float
 #if defined(HAVE_KOKKOS_CUDA_FLOAT)
 #  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \

@@ -117,7 +117,7 @@ public:
 
     memory_manager::enable_memory_view_tracking();
 
-    cuda_parallel_launch( driver , grid , block , 0 );
+    CudaParallelLaunch< ParallelFor >::execute( driver , grid , block , 0 );
   }
 };
 

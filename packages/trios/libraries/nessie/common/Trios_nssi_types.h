@@ -51,11 +51,12 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *
  */
 
-#ifndef _TYPES_H_
-#define _TYPES_H_
+#ifndef TRIOS_NSSI_TYPES_H_
+#define TRIOS_NSSI_TYPES_H_
 
 #include "Trios_config.h"
 
+#include <stdint.h>
 
 /* If sockaddr_in is not defined, create some bogus
  * definition. (We don't use it anyway, but sys/socket.h
@@ -69,6 +70,15 @@ struct sockaddr_in {
 };
 #endif
 #endif
+
+
+
+typedef struct {
+    uint8_t  use_buffer_queue;
+    uint32_t buffer_queue_initial_size;
+    uint32_t buffer_queue_max_size;
+    uint8_t  buffer_queue_create_if_empty;
+} nssi_config_t;
 
 
 

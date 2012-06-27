@@ -83,7 +83,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
       matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
     }
     // fill, but do not pack, because we will add new entries below
-    TEST_NOTHROW       ( matrix.fillComplete( DoNotOptimizeStorage ) );
+    RCP<ParameterList> params = parameterList(); 
+    params->set("Optimize Storage",false);
+    TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
     TEST_EQUALITY      ( matrix.getGlobalNumEntries(), numLocal*numImages );
@@ -100,7 +102,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
       }
     }
     // fill, but do not pack, because we will add new entries below
-    TEST_NOTHROW       ( matrix.fillComplete( DoNotOptimizeStorage ) );
+    params->set("Optimize Storage",false);
+    TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
     TEST_EQUALITY      ( matrix.getGlobalNumEntries(), 2*numLocal*numImages-numLocal );
@@ -121,7 +124,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
       }
     }
     // fill; it is okay to pack now
-    TEST_NOTHROW       ( matrix.fillComplete( DoOptimizeStorage ) );
+    params->set("Optimize Storage",true);
+    TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
     TEST_EQUALITY      ( matrix.getGlobalNumEntries(), 3*numLocal*numImages-2*numLocal );

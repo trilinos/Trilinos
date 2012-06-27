@@ -9,6 +9,7 @@
 #define XFER_UTIL_H_
 
 #include <mpi.h>
+#include <string>
 #include <vector>
 #include "xfer_service_args.h"
 
@@ -53,8 +54,8 @@ extern int xfer_block_partition(
         const int num_bins,
         const int num_vals,
         const int val,
-        int &bin,
-        int &rank);
+        int *bin,
+        int *rank);
 
 
 #ifdef __cplusplus

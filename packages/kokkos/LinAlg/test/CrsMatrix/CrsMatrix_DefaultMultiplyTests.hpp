@@ -48,50 +48,39 @@
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DefaultSparseOps, NodeTest, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
-    typedef CrsGraph<Ordinal,Node,DSM>                             GRPH;
-    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>                      MAT;
-    typedef MultiVector<Scalar,Node>                                 MV;
-    typedef Teuchos::ScalarTraits<Scalar>                            ST;
-    typename DSM::template rebind<Scalar>::other dsm(node);
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    OPS dsm(node);
     TEST_EQUALITY(dsm.getNode(), node);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DefaultSparseOps, ResubmitMatrix, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
-    typedef CrsGraph<Ordinal,Node,DSM>                             GRPH;
-    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>                      MAT;
-    typedef MultiVector<Scalar,Node>                                 MV;
-    typedef Teuchos::ScalarTraits<Scalar>                            ST;
-    const size_t numRows = 5;
-    GRPH G(numRows,node);
-    MAT  A(G);
-    A.finalize(true);
-    out << "\n**\n** Can't submit the values before the structure\n**\n";
-    {
-      typename DSM::template rebind<Scalar>::other dsm(node);
-      TEST_THROW( dsm.initializeValues(A), std::runtime_error );
-    }
-    out << "\n**\n** Can't submit the graph twice\n**\n";
-    {
-      typename DSM::template rebind<Scalar>::other dsm(node);
-      dsm.initializeStructure(G);
-      TEST_THROW( dsm.initializeStructure(G), std::runtime_error );
-    }
-    out << "\n**\n** Can submit the graph again after calling clear\n**\n";
-    {
-      typename DSM::template rebind<Scalar>::other dsm(node);
-      dsm.initializeStructure(G);
-      dsm.clear();
-      TEST_NOTHROW( dsm.initializeStructure(G) );
-    }
-    out << "\n**\n** Can submit the values twice\n**\n";
-    {
-      typename DSM::template rebind<Scalar>::other dsm(node);
-      dsm.initializeStructure(G);
-      dsm.initializeValues(A);
-      TEST_NOTHROW( dsm.initializeValues(A) );
-    }
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    const size_t numRows = 0;
+    Teuchos::ArrayRCP<size_t> ptrs(1); ptrs[0] = 0;
+    RCP<GRPH> G = rcp( new GRPH(numRows,node,null) );
+    RCP<MAT>  A = rcp( new MAT(G,null) );
+    G->setStructure(ptrs,null);
+    A->setValues(null);
+    OPS::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
+    Teuchos::EDiag diag; 
+    Teuchos::EUplo uplo;
+    G->getMatDesc(uplo,diag);
+    TEST_EQUALITY_CONST( uplo, Teuchos::UNDEF_TRI );
+    TEST_EQUALITY_CONST( diag, Teuchos::NON_UNIT_DIAG );
+    out << "\n**\n** Can't submit the data twice\n**\n";
+    OPS dsm(node);
+    dsm.setGraphAndMatrix(G,A);
+    TEST_THROW( dsm.setGraphAndMatrix(G,A), std::runtime_error );
   }

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -67,7 +67,7 @@ namespace Kokkos {
 
   //! \class CUDANodeCopyBackDeallocator
   /*! \brief Allocator/deallocator with host/device copy-back capability.
-  
+
     Allocates a segment of page-locked memory associated with CUDA
     device memory. Upon deallocation, performs a copy-back of the allocated host
     memory before the host memory is deallocated. This copy-back is only performed
@@ -92,11 +92,11 @@ namespace Kokkos {
   };
 
   template <class T>
-  CUDANodeCopyBackDeallocator<T>::CUDANodeCopyBackDeallocator(const ArrayRCP<T> &buffer,   
+  CUDANodeCopyBackDeallocator<T>::CUDANodeCopyBackDeallocator(const ArrayRCP<T> &buffer,
                                                               const RCP<CUDANodeMemoryModel> &node)
   : devbuf_(buffer.create_weak())
   , node_(node)
-  { 
+  {
 #ifdef HAVE_KOKKOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT(node_ == null);
     originalHostPtr_ = NULL;
@@ -112,14 +112,15 @@ namespace Kokkos {
 #endif
     T *hostPtr = NULL;
     // alloc page-locked ("pinned") memory on the host
+    // TODO: review: instead of cudaHostAllocDefault, this might should be cudaHostAllocWriteCombined
     cudaError_t err = cudaHostAlloc( (void**)&hostPtr, devbuf_.size()*sizeof(T), cudaHostAllocDefault);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
         "Kokkos::CUDANodeCopyBackDeallocator::alloc(): cudaHostAlloc() returned error:\n"
-        << cudaGetErrorString(err) 
+        << cudaGetErrorString(err)
     );
 #ifdef HAVE_KOKKOS_DEBUG
     // save the allocated address for debug checking
-    originalHostPtr_ = hostPtr; 
+    originalHostPtr_ = hostPtr;
 #endif
     // create an ARCP<T> owning this memory, with a copy of *this for the deallocator
     const bool OwnsMem = true;
@@ -140,12 +141,95 @@ namespace Kokkos {
       ArrayView<const T> tmpav((const T*)hostPtr, devbuf_.size(), Teuchos::RCP_DISABLE_NODE_LOOKUP);
       node_->template copyToBuffer<T>(devbuf_.size(), tmpav, devbuf_);
     }
-    cudaError_t err = cudaFreeHost( (void**)hostPtr );
+    cudaError_t err = cudaFreeHost( hostPtr );
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
         "Kokkos::CUDANodeCopyBackDeallocator::free(): cudaFreeHost() returned error:\n"
-        << cudaGetErrorString(err) 
+        << cudaGetErrorString(err)
     );
     hostPtr = NULL;
+  }
+
+  //! \class CUDANodeHostPinnedAllocator
+  /*! \brief Allocator/deallocator with pinned-host capability.
+
+    Allocates a segment of page-locked memory associated with CUDA
+    device memory. Upon deallocation, delete it appropriately.
+  */
+  template <class T>
+  class CUDANodeHostPinnedDeallocator {
+  public:
+    // Constructor.
+    CUDANodeHostPinnedDeallocator();
+
+    /// \brief Allocate a buffer of the requested size.
+    ///
+    /// \warning This method may be called at most once on a single
+    ///   instance.  In a debug build, calling this method more than
+    ///   once throws an exception.
+    ///
+    /// \param sz [in] Number of entries in the buffer.
+    ///
+    /// \return An ArrayRCP of the requested type and with at least sz
+    ///   entries, which copies back to GPU memory at deallocation.
+    ArrayRCP<T> alloc (const size_t sz) const ;
+
+    /// \brief Deallocate the memory pointed to by ptr.
+    ///
+    /// \note In a debug build of Kokkos, ptr must be the same as the
+    ///   memory allocated by alloc().
+    void free (void *ptr) const;
+
+    private:
+#ifdef HAVE_KOKKOS_DEBUG
+    /// \brief The memory allocated by the last call to alloc().
+    ///
+    /// This is NULL if alloc() has not yet been called.
+    mutable T* originalHostPtr_;
+#endif // HAVE_KOKKOS_DEBUG
+  };
+
+  template <class T>
+  CUDANodeHostPinnedDeallocator<T>::CUDANodeHostPinnedDeallocator()
+#ifdef HAVE_KOKKOS_DEBUG
+  : originalHostPtr_(NULL)
+#endif // HAVE_KOKKOS_DEBUG
+  { }
+
+  template <class T>
+  ArrayRCP<T>
+  CUDANodeHostPinnedDeallocator<T>::alloc(const size_t sz) const {
+#ifdef HAVE_KOKKOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(originalHostPtr_ != NULL, std::runtime_error,
+      Teuchos::typeName(*this) << "::alloc(): alloc() has already been called." );
+#endif
+    T *hostPtr = NULL;
+    // alloc page-locked ("pinned") memory on the host
+    cudaError_t err = cudaHostAlloc( (void**)&hostPtr, sz*sizeof(T), cudaHostAllocDefault);
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+        "Kokkos::CUDANodeHostPinnedDeallocator::alloc(): cudaHostAlloc() returned error:\n"
+        << cudaGetErrorString(err)
+    );
+#ifdef HAVE_KOKKOS_DEBUG
+    // save the allocated address for debug checking
+    originalHostPtr_ = hostPtr;
+#endif
+    // create an ARCP<T> owning this memory, with a copy of *this for the deallocator
+    const bool OwnsMem = true;
+    return arcp<T>( hostPtr, 0, sz, *this, OwnsMem );
+  }
+
+  template <class T>
+  void CUDANodeHostPinnedDeallocator<T>::free(void *hostPtr) const {
+#ifdef HAVE_KOKKOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION( hostPtr != originalHostPtr_, std::logic_error,
+        Teuchos::typeName(*this) << "::free(): pointer to free not consistent with originally allocated pointer." );
+    originalHostPtr_ = NULL;
+#endif
+    cudaError_t err = cudaFreeHost( hostPtr );
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+        "Kokkos::CUDANodeHostPinnedDeallocator::free(): cudaFreeHost() returned error:\n"
+        << cudaGetErrorString(err)
+    );
   }
 
 }

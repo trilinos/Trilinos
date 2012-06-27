@@ -94,6 +94,11 @@ class test_isGlobalBuildFileRequiringGlobalRebuild(unittest.TestCase):
       False )
 
 
+  def test_TPLsList_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/ExtraRepositoriesList.cmake' ),
+      False )
+
+
   def test_experimental_build_test_cmake(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/ctest/experimental_build_test.cmake' ),
       False )
@@ -212,24 +217,6 @@ class testProjectPackageFilePathUtils(unittest.TestCase):
 
     packagesList_expected = \
       [u"TrilinosFramework", u"Stratimikos", u"ThyraCoreLibs", u"Thyra"]
-
-    self.assertEqual( packagesList, packagesList_expected )
-
-
-  def test_getPackageCheckinEmailAddressesListFromFilePathsList_01(self):
-
-    filesList = extractFilesListMatchingPattern( updateOutputList,
-      re.compile(r"^[AMP] (.+)$") )
-    
-    packagesList = getPackageCheckinEmailAddressesListFromFilePathsList(
-      trilinosDependencies, filesList )
-
-    packagesList_expected = [
-      u"trilinos-checkins@software.sandia.gov",
-      u"trilinosframework-checkins@software.sandia.gov",
-      u"stratimikos-checkins@software.sandia.gov",
-      u"thyra-checkins@software.sandia.gov",
-      ]
 
     self.assertEqual( packagesList, packagesList_expected )
 

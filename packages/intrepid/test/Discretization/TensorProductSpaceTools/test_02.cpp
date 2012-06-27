@@ -126,6 +126,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> a_2(2);
     FieldContainer<double> a_4(4);
     FieldContainer<double> a_4_4(4,4);
+    FieldContainer<double> a_4_1_4(4,1,4);
     FieldContainer<double> a_4_2(4,2);
     Array<RCP<FieldContainer<double> > > bases_2(2);
     Array<RCP<FieldContainer<double> > > bases_1(1);
@@ -136,9 +137,9 @@ int main(int argc, char *argv[]) {
     // work with evaluate
 
     // first arg wrong shape
-    INTREPID_TEST_COMMAND( tpst::evaluate<double>( a_4 , a_4_4 , bases_2 ) );
+    INTREPID_TEST_COMMAND( tpst::evaluate<double>( a_4 , a_4_1_4 , bases_2 ) );
     // second arg wrong shape
-    INTREPID_TEST_COMMAND( tpst::evaluate<double>( a_4_4 , a_4 , bases_2 ) );
+    INTREPID_TEST_COMMAND( tpst::evaluate<double>( a_4_4 , a_4_4 , bases_2 ) );
     // bases wrong length
     INTREPID_TEST_COMMAND( tpst::evaluate<double>( a_4_4 , a_4_4, bases_1 ) );
     // internal bases wrong shape

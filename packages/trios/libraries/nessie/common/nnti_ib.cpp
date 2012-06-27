@@ -213,6 +213,9 @@ typedef struct {
     struct ibv_cq           *data_cq;
     struct ibv_srq          *data_srq;
 
+    int32_t req_srq_count;
+    int32_t data_srq_count;
+
     uint16_t nic_lid;
     int      nic_port;
 
@@ -596,7 +599,7 @@ NNTI_result_t NNTI_ib_init (
         setup_data_channel();
 
         if (config.use_wr_pool) {
-            rc=wr_pool_init(100);
+            rc=wr_pool_init(101);
             if (rc!=NNTI_OK) {
                 log_error(nnti_debug_level, "wr_pool_init(): %d", rc);
                 goto cleanup;
@@ -1527,6 +1530,7 @@ NNTI_result_t NNTI_ib_wait (
 
         timeout_per_call = MIN_TIMEOUT;
 
+        log_level old_log_level=logger_get_default_level();
         while (1)   {
             if (trios_exit_now()) {
                 log_debug(debug_level, "caught abort signal");
@@ -1574,6 +1578,7 @@ retry:
 //            nthread_unlock(&nnti_ib_lock);
                 /* case 1: success */
                 if (rc == NNTI_OK) {
+                    logger_set_default_level(old_log_level);
                     nnti_rc = NNTI_OK;
                     continue;
                 }
@@ -1594,15 +1599,20 @@ retry:
 
                     nthread_yield();
 
+                    log_debug(debug_level, "***** disable debug logging.  will enable after polling success. *****");
+                    logger_set_default_level(LOG_OFF);
+
                     goto retry;
                 }
                 /* case 3: poll was interupted */
                 else if (rc==NNTI_EAGAIN) {
+                    logger_set_default_level(old_log_level);
                     nnti_rc = NNTI_EAGAIN;
                     break;
                 }
                 /* case 4: failure */
                 else {
+                    logger_set_default_level(old_log_level);
                     log_error(debug_level, "poll_comp_channel failed (cq==%p): %s",
                             cq, strerror(errno));
                     nnti_rc = NNTI_EIO;
@@ -1620,6 +1630,8 @@ retry:
     }
 
     if (nnti_rc==NNTI_OK) {
+        ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
+
         if (ib_mem_hdl->type == REQUEST_BUFFER) {
             wr=ib_mem_hdl->wr_queue.front();
             ib_mem_hdl->wr_queue.pop_front();
@@ -2153,6 +2165,8 @@ static NNTI_result_t setup_request_channel(void)
         return NNTI_EIO;
     }
 
+    transport_global_data.req_srq_count=0;
+
     struct ibv_srq_init_attr attr;
     memset(&attr, 0, sizeof(attr)); // initialize to avoid valgrind uninitialized warning
     attr.attr.max_wr = transport_global_data.srq_count;
@@ -2213,6 +2227,8 @@ static NNTI_result_t setup_data_channel(void)
         log_error(nnti_debug_level, "ibv_create_cq failed");
         return NNTI_EIO;
     }
+
+    transport_global_data.data_srq_count=0;
 
     struct ibv_srq_init_attr attr;
     memset(&attr, 0, sizeof(attr));   // initialize to avoid valgrind warning
@@ -2277,9 +2293,17 @@ static int register_memory(
     trios_start_timer(callTime);
     mr = ibv_reg_mr(transport_global_data.pd, buf, len, access);
     if (!mr) {
-        log_error(nnti_debug_level, "failed to register memory region");
-        perror("errno");
-        return errno;
+        if (errno == EFAULT) {
+            log_debug(nnti_debug_level, "ibv_reg_mr failed with EFAULT.  trying to register with IBV_ACCESS_REMOTE_READ.");
+            mr = ibv_reg_mr(transport_global_data.pd, buf, len, IBV_ACCESS_REMOTE_READ);
+            if (!mr) {
+                log_error(nnti_debug_level, "failed to register memory region with IBV_ACCESS_REMOTE_READ: %s", strerror(errno));
+                return(errno);
+            }
+        } else {
+            log_error(nnti_debug_level, "failed to register memory region (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE): %s", strerror(errno));
+            return errno;
+        }
     }
     trios_stop_timer("register", callTime);
 
@@ -2570,6 +2594,11 @@ int process_event(
                     log_debug(debug_level, "req_queue.req_received(%llu) != wc->wr_id(%llu)", transport_global_data.req_queue.req_received, wc->wr_id);
                 }
                 transport_global_data.req_queue.req_received++;
+
+                if (wr->cq == transport_global_data.req_cq) {
+                    transport_global_data.req_srq_count--;
+                    log_debug(nnti_debug_level, "transport_global_data.req_srq_count==%ld", transport_global_data.req_srq_count);
+                }
             }
             break;
         case RECEIVE_BUFFER:
@@ -2577,6 +2606,11 @@ int process_event(
                 log_debug(debug_level, "recv completion - wc==%p, event_buf==%p", wc, event_buf);
                 wr->last_op=IB_OP_RECEIVE;
                 wr->op_state = RECV_COMPLETE;
+
+                if (wr->cq == transport_global_data.data_cq) {
+                    transport_global_data.data_srq_count--;
+                    log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+                }
             }
             break;
         case PUT_DST_BUFFER:
@@ -2584,6 +2618,11 @@ int process_event(
                 log_debug(debug_level, "RDMA write (target) completion - wc==%p, event_buf==%p", wc, event_buf);
                 wr->last_op=IB_OP_PUT_TARGET;
                 wr->op_state = RDMA_WRITE_COMPLETE;
+
+                if (wr->cq == transport_global_data.data_cq) {
+                    transport_global_data.data_srq_count--;
+                    log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+                }
             }
 //            if (wr->op_state == RDMA_WRITE_COMPLETE) {
 //                print_xfer_buf((void *)wr->reg_buf->payload, wr->reg_buf->payload_size);
@@ -2595,6 +2634,11 @@ int process_event(
                 log_debug(debug_level, "RDMA read (target) completion - wc==%p, event_buf==%p", wc, event_buf);
                 wr->last_op=IB_OP_GET_TARGET;
                 wr->op_state = RDMA_READ_COMPLETE;
+
+                if (wr->cq == transport_global_data.data_cq) {
+                    transport_global_data.data_srq_count--;
+                    log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+                }
             }
 //            if (wr->op_state == RDMA_READ_COMPLETE) {
 //                print_xfer_buf((void *)wr->reg_buf->payload, wr->reg_buf->payload_size);
@@ -2607,6 +2651,11 @@ int process_event(
                 wr->op_state = RDMA_TARGET_COMPLETE;
                 if (config.use_rdma_target_ack) {
                     wr->last_op=wr->ack.op;
+                }
+
+                if (wr->cq == transport_global_data.data_cq) {
+                    transport_global_data.data_srq_count--;
+                    log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
                 }
             }
 //            if (wr->op_state == RDMA_TARGET_COMPLETE) {
@@ -2625,6 +2674,8 @@ static NNTI_result_t post_recv_work_request(
         uint64_t        offset,
         uint64_t        length)
 {
+    int ibv_rc=0;
+
     struct ibv_recv_wr *bad_wr=NULL;
 
     ib_memory_handle *ib_mem_hdl=NULL;
@@ -2693,10 +2744,25 @@ static NNTI_result_t post_recv_work_request(
     wr->rq_wr.sg_list=&wr->sge;
     wr->rq_wr.num_sge=1;
 
-    if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
-        log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
-                &wr->rq_wr, bad_wr, strerror(errno));
-        return (NNTI_result_t)errno;
+    if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                    &wr->rq_wr, bad_wr, strerror(ibv_rc));
+            return (NNTI_result_t)errno;
+        }
+
+        transport_global_data.data_srq_count++;
+        log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+    }
+    if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                    &wr->rq_wr, bad_wr, strerror(ibv_rc));
+            return (NNTI_result_t)errno;
+        }
+
+        transport_global_data.req_srq_count++;
+        log_debug(nnti_debug_level, "transport_global_data.req_srq_count==%ld", transport_global_data.req_srq_count);
     }
 
     ib_mem_hdl->wr_queue.push_back(wr);
@@ -2709,6 +2775,8 @@ static NNTI_result_t post_recv_work_request(
 static NNTI_result_t post_ack_recv_work_request(
         NNTI_buffer_t  *reg_buf)
 {
+    int ibv_rc=0;
+
     struct ibv_recv_wr *bad_wr=NULL;
     struct ibv_srq   *srq;
 
@@ -2774,10 +2842,25 @@ static NNTI_result_t post_ack_recv_work_request(
     wr->rq_wr.sg_list=&wr->sge;
     wr->rq_wr.num_sge=1;
 
-    if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
-        log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
-                &wr->rq_wr, bad_wr, strerror(errno));
-        return (NNTI_result_t)errno;
+    if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                    &wr->rq_wr, bad_wr, strerror(ibv_rc));
+            return (NNTI_result_t)errno;
+        }
+
+        transport_global_data.data_srq_count++;
+        log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+    }
+    if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                    &wr->rq_wr, bad_wr, strerror(ibv_rc));
+            return (NNTI_result_t)errno;
+        }
+
+        transport_global_data.req_srq_count++;
+        log_debug(nnti_debug_level, "transport_global_data.req_srq_count==%ld", transport_global_data.req_srq_count);
     }
 
     ib_mem_hdl->wr_queue.push_back(wr);
@@ -2791,6 +2874,8 @@ static NNTI_result_t repost_recv_work_request(
         NNTI_buffer_t  *reg_buf,
         ib_work_request  *wr)
 {
+    int ibv_rc=0;
+
     struct ibv_recv_wr *bad_wr=NULL;
 
     ib_memory_handle *ib_mem_hdl=NULL;
@@ -2834,10 +2919,25 @@ static NNTI_result_t repost_recv_work_request(
         wr->cq          =transport_global_data.data_cq;
     }
 
-    if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
-        log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
-                &wr->rq_wr, bad_wr, strerror(errno));
-        return (NNTI_result_t)errno;
+    if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                    &wr->rq_wr, bad_wr, strerror(ibv_rc));
+            return (NNTI_result_t)errno;
+        }
+
+        transport_global_data.data_srq_count++;
+        log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+    }
+    if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                    &wr->rq_wr, bad_wr, strerror(ibv_rc));
+            return (NNTI_result_t)errno;
+        }
+
+        transport_global_data.req_srq_count++;
+        log_debug(nnti_debug_level, "transport_global_data.req_srq_count==%ld", transport_global_data.req_srq_count);
     }
 
     ib_mem_hdl->wr_queue.push_back(wr);
@@ -2851,6 +2951,8 @@ static NNTI_result_t repost_ack_recv_work_request(
         NNTI_buffer_t    *reg_buf,
         ib_work_request  *wr)
 {
+    int ibv_rc=0;
+
     struct ibv_recv_wr *bad_wr=NULL;
     struct ibv_srq   *srq;
 
@@ -2891,10 +2993,25 @@ static NNTI_result_t repost_ack_recv_work_request(
         wr->cq          =transport_global_data.data_cq;
     }
 
-    if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
-        log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
-                &wr->rq_wr, bad_wr, strerror(errno));
-        return (NNTI_result_t)errno;
+    if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                    &wr->rq_wr, bad_wr, strerror(ibv_rc));
+            return (NNTI_result_t)errno;
+        }
+
+        transport_global_data.data_srq_count++;
+        log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+    }
+    if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                    &wr->rq_wr, bad_wr, strerror(ibv_rc));
+            return (NNTI_result_t)errno;
+        }
+
+        transport_global_data.req_srq_count++;
+        log_debug(nnti_debug_level, "transport_global_data.req_srq_count==%ld", transport_global_data.req_srq_count);
     }
 
     ib_mem_hdl->wr_queue.push_back(wr);
@@ -3486,6 +3603,10 @@ static int new_client_connection(
     } param_in, param_out;
 
     trios_declare_timer(callTime);
+
+    // Initialize to avoid an "uninitialized bytes messages from valgrind
+    memset(&param_out, 0, sizeof(param_out));
+    memset(&param_in, 0, sizeof(param_in));
 
     strcpy(param_out.name, transport_global_data.listen_name);
     param_out.addr = htonl((uint32_t)transport_global_data.listen_addr);

@@ -136,6 +136,8 @@ namespace {
   using Teuchos::EUplo;
   using Teuchos::UPPER_TRI;
   using Teuchos::LOWER_TRI;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
 
   using Tpetra::Map;
   using Tpetra::MultiVector;
@@ -384,9 +386,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyFillComplete, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    // generate a tridiagonal matrix
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef CrsGraph<LO,GO,Node>  GRPH;
     typedef Vector<Scalar,LO,GO,Node> V;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
@@ -397,14 +399,42 @@ namespace {
     const size_t numLocal = 10;
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     {
+      // send in a parameterlist, check the defaults
+      RCP<ParameterList> defparams = parameterList();
       // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
       MAT matrix(map,1,StaticProfile);
-      matrix.fillComplete(DoOptimizeStorage);
+      matrix.fillComplete(defparams);
+      TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
+      TEST_EQUALITY_CONST(defparams->isSublist("Local Matrix"), true);
+      TEST_EQUALITY_CONST(defparams->isSublist("Local Sparse Ops"), true);
     }
     {
+      // send in a parameterlist, check the defaults
+      RCP<ParameterList> defparams = parameterList();
       // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
       MAT matrix(map,1,DynamicProfile);
-      matrix.fillComplete(DoOptimizeStorage);
+      matrix.fillComplete(defparams);
+      TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
+      TEST_EQUALITY_CONST(defparams->isSublist("Local Matrix"), true);
+      TEST_EQUALITY_CONST(defparams->isSublist("Local Sparse Ops"), true);
+    }
+    {
+      // send in a parameterlist, check the defaults
+      RCP<ParameterList> defparams = parameterList();
+      // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
+      GRPH graph(map,1,StaticProfile);
+      graph.fillComplete(defparams);
+      TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
+      TEST_EQUALITY_CONST(defparams->isSublist("Local Graph"), true);
+    }
+    {
+      // send in a parameterlist, check the defaults
+      RCP<ParameterList> defparams = parameterList();
+      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
+      GRPH graph(map,1,DynamicProfile);
+      graph.fillComplete(defparams);
+      TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
+      TEST_EQUALITY_CONST(defparams->isSublist("Local Graph"), true);
     }
   }
 
@@ -437,19 +467,22 @@ namespace {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
       // fill-complete the graph, but do not optimize the storage
-      diaggraph.fillComplete(DoNotOptimizeStorage);
+      RCP<ParameterList> params = parameterList();
+      params->set("Optimize Storage",false);
+      diaggraph.fillComplete(params);
       TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
       TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), false );
       // matrix constructed with non-storage-optimized graph
       MAT mat1(rcpFromRef(diaggraph));
       // fill complete the matrix and ask it to optimize storage.
       // this is not allowed on a static graph, and will either throw an exception or ignore the request to optimize storage.
+      params->set("Optimize Storage",false);
 #ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
-      TEST_THROW( mat1.fillComplete(DoOptimizeStorage), std::runtime_error );
+      TEST_THROW( mat1.fillComplete(params), std::runtime_error );
       TEST_EQUALITY_CONST( mat1.isFillComplete(), false );
       TEST_EQUALITY_CONST( mat1.isStorageOptimized(), false );
 #else
-      mat1.fillComplete(DoOptimizeStorage);
+      mat1.fillComplete(params);
       TEST_EQUALITY_CONST( mat1.isFillComplete(), true );
       TEST_EQUALITY_CONST( mat1.isStorageOptimized(), false );
 #endif
@@ -463,10 +496,10 @@ namespace {
     RCP<Node> node = getNode<Node>();
     // generate a tridiagonal matrix
     typedef ScalarTraits<Scalar> ST;
-    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef CrsGraph<LO,GO,Node>        GRPH;
-    typedef Vector<Scalar,LO,GO,Node> V;
-    typedef typename ST::magnitudeType Mag;
+    typedef CrsMatrix<Scalar,LO,GO,Node>  MAT;
+    typedef CrsGraph<LO,GO,Node>         GRPH;
+    typedef Vector<Scalar,LO,GO,Node>       V;
+    typedef typename ST::magnitudeType    Mag;
     typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar SONE  = ST::one();
@@ -477,6 +510,8 @@ namespace {
     // create a Map with numLocal entries per node
     const size_t numLocal = 10;
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<ParameterList> params = parameterList();
+    params->set("Optimize Storage",true);
     {
       //////////////////////////////////
       // create a simple tridiagonal graph
@@ -492,7 +527,7 @@ namespace {
           trigraph.insertGlobalIndices(r,tuple(r-1,r,r+1));
         }
       }
-      trigraph.fillComplete(DoOptimizeStorage);
+      trigraph.fillComplete(params);
       // create a matrix using the tri-diagonal graph and test allowed functionality
       MAT matrix(rcpFromRef(trigraph));
       TEST_EQUALITY_CONST( matrix.getProfileType() == StaticProfile, true );
@@ -531,7 +566,7 @@ namespace {
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
-      diaggraph.fillComplete(DoOptimizeStorage);
+      diaggraph.fillComplete(params);
       // Bug verification:
       //  Tpetra::CrsMatrix constructed with a graph was experiencing a seg-fault if setAllToScalar is called before 
       //  some other call allocates memory. This was because setAllToScalar has an incorrect if-statement that is 
@@ -547,7 +582,7 @@ namespace {
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
-      diaggraph.fillComplete(DoOptimizeStorage);
+      diaggraph.fillComplete(params);
       TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
       TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), true );
       TEST_EQUALITY_CONST( diaggraph.isUpperTriangular(), true );
@@ -559,7 +594,7 @@ namespace {
       // fail with a complaint regarding the initialization of these objects.
       MAT matrix(rcpFromRef(diaggraph));
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
-      matrix.fillComplete(DoOptimizeStorage);
+      matrix.fillComplete(params);
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
       TEST_EQUALITY_CONST( matrix.isUpperTriangular(), true );
@@ -579,7 +614,7 @@ namespace {
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph->insertGlobalIndices(r,tuple(r));
       }
-      diaggraph->fillComplete(DoOptimizeStorage);
+      diaggraph->fillComplete(params);
       TEST_EQUALITY_CONST( diaggraph->isFillComplete(), true );
       TEST_EQUALITY_CONST( diaggraph->isStorageOptimized(), true );
       TEST_EQUALITY_CONST( diaggraph->isUpperTriangular(), true );
@@ -706,7 +741,7 @@ namespace {
         graph.insertGlobalIndices(r,tuple(r-1,r,r+1));
       }
     }
-    graph.fillComplete(DoOptimizeStorage);
+    graph.fillComplete();
     // create a matrix using the graph
     MAT matrix(rcpFromRef(graph));
     TEST_EQUALITY_CONST( matrix.getProfileType() == StaticProfile, true );
@@ -806,6 +841,7 @@ namespace {
     // create a Map
     const size_t numLocal = 1; // change to 10
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<ParameterList> params = parameterList();
     {
       // room for two on each row
       MAT matrix(map,2,StaticProfile);
@@ -820,7 +856,8 @@ namespace {
       }
       // fill complete adds them
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
-      TEST_NOTHROW( matrix.fillComplete(DoNotOptimizeStorage) );
+      params->set("Optimize Storage",false);
+      TEST_NOTHROW( matrix.fillComplete(params) );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
       // now there is room for more
@@ -829,7 +866,8 @@ namespace {
       {
         matrix.insertLocalValues(r,tuple(r),tuple(ST::one()));
       }
-      TEST_NOTHROW( matrix.fillComplete(DoOptimizeStorage) );
+      params->set("Optimize Storage",true);
+      TEST_NOTHROW( matrix.fillComplete(params) );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
       // test that matrix is 3*I
@@ -889,9 +927,10 @@ namespace {
     }
     Array<Scalar> vals(ginds.size(),ST::one());
     RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm,node) );
+    RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-      OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
+      params->set("Optimize Storage",((T & 2) == 2));
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
@@ -911,7 +950,7 @@ namespace {
       if (pftype == StaticProfile) {
         TEST_THROW( matrix.insertGlobalValues(myrowind,arrayView(&myrowind,1),tuple(ST::one())), std::runtime_error );
       }
-      matrix.fillComplete(os);
+      matrix.fillComplete(params);
       // check for throws and no-throws/values
       TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
       TEST_THROW( matrix.getLocalRowCopy(    0       ,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
@@ -1150,6 +1189,7 @@ namespace {
     TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
     A.fillComplete(lclmap,rowmap);
     out << "A: " << endl << A << endl;
+    //A.describe(out, VERB_EXTREME);
     // build the input multivector X
     MV X(rowmap,numVecs);
     for (size_t i=myImageID*M; i<myImageID*M+M; ++i) {
@@ -1166,7 +1206,13 @@ namespace {
     }
     // test the action
     Bout.randomize();
+    X.setObjectLabel("Input");
+    //X.describe(out, VERB_EXTREME);
     A.apply(X,Bout,CONJ_TRANS);
+    Bout.setObjectLabel("Actual output");
+    Bexp.setObjectLabel("Expected output");
+    //Bout.describe(out, VERB_EXTREME);
+    //Bexp.describe(out, VERB_EXTREME);
     Bout.update(-ST::one(),Bexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     Bout.norm2(norms());
@@ -1460,7 +1506,7 @@ namespace {
         RCP<MAT> ZeroMat;
         // must explicitly provide the column map for implicit diagonals
         ZeroMat = rcp(new MAT(map,map,0));
-        ZeroMat->fillComplete(DoOptimizeStorage);
+        ZeroMat->fillComplete();
         TEST_EQUALITY_CONST(ZeroMat->isUpperTriangular(), true);
         TEST_EQUALITY_CONST(ZeroMat->isLowerTriangular(), true);
         TEST_EQUALITY_CONST(ZeroMat->getGlobalNumDiags(), 0);
@@ -1524,10 +1570,11 @@ namespace {
     B.setObjectLabel("B");
     Xhat.setObjectLabel("Xhat");
     X.randomize();
+    RCP<ParameterList> params = parameterList();
     for (size_t tnum=0; tnum < 16; ++tnum) {
       EUplo   uplo      = ((tnum & 1) == 1 ? UPPER_TRI         : LOWER_TRI);
       EDiag   diag      = ((tnum & 2) == 2 ? UNIT_DIAG         : NON_UNIT_DIAG);
-      OptimizeOption os = ((tnum & 4) == 4 ? DoOptimizeStorage : DoNotOptimizeStorage);
+      params->set("Optimize Storage",((tnum & 4) == 4));
       ETransp trans     = ((tnum & 8) == 8 ? CONJ_TRANS        : NO_TRANS);
       RCP<OP> AIOp;
       {
@@ -1585,7 +1632,7 @@ namespace {
             }
           }
         }
-        AMat->fillComplete(os);
+        AMat->fillComplete(params);
         TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
         TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
         TEST_EQUALITY(AMat->getGlobalNumDiags() == 0, diag == UNIT_DIAG);
@@ -1724,7 +1771,7 @@ namespace {
       A->insertGlobalValues(3*myImageID,  tuple<GO>(3*myImageID  ), tuple<Scalar>(ST::one()) );
       A->insertGlobalValues(3*myImageID+1,tuple<GO>(3*myImageID+1), tuple<Scalar>(ST::one()) );
       A->insertGlobalValues(3*myImageID+2,tuple<GO>(3*myImageID+2), tuple<Scalar>(ST::one()) );
-      A->fillComplete(DoOptimizeStorage);
+      A->fillComplete();
       AOp = A;
     }
     MV X(map,1), Y(map,1), Z(map,1);
@@ -1770,7 +1817,7 @@ namespace {
       A->insertGlobalValues(3*myImageID,  tuple<GO>(3*myImageID  ), tuple<int>(1) );
       A->insertGlobalValues(3*myImageID+1,tuple<GO>(3*myImageID+1), tuple<int>(1) );
       A->insertGlobalValues(3*myImageID+2,tuple<GO>(3*myImageID+2), tuple<int>(1) );
-      A->fillComplete(DoOptimizeStorage);
+      A->fillComplete();
       AOp = createCrsMatrixMultiplyOp<Scalar>(A.getConst());
     }
     MV X(map,1), Y(map,1), Z(map,1);
@@ -1897,7 +1944,9 @@ namespace {
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
       //
-      matrix.fillComplete(DoNotOptimizeStorage);
+      RCP<ParameterList> params = parameterList();
+      params->set("Optimize Storage",false);
+      matrix.fillComplete(params);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       TEST_THROW( matrix.insertLocalValues ( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
@@ -1914,7 +1963,9 @@ namespace {
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
       //
-      matrix.fillComplete(DoNotOptimizeStorage);
+      RCP<ParameterList> params = parameterList();
+      params->set("Optimize Storage",false);
+      matrix.fillComplete(params);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       //
@@ -2096,7 +2147,7 @@ typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
 #endif
 
 // don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-#if defined(HAVE_KOKKOS_THRUST) && !defined(HAVE_TPETRA_MPI)
+#if defined(HAVE_KOKKOS_CUSPARSE) && !defined(HAVE_TPETRA_MPI)
 // float
 #if defined(HAVE_KOKKOS_CUDA_FLOAT)
 #  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \

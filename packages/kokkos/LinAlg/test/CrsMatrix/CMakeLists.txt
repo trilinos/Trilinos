@@ -9,10 +9,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultMultiply
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
-INCLUDE(TribitsAddExecutableAndTest)   
-TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_Scale
+TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultSolve  
   SOURCES 
-    CrsMatrix_Scale.cpp  
+    CrsMatrix_DefaultSolve.cpp  
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -30,41 +29,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
-IF (Kokkos_ENABLE_ThreadPool) 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTPI
+IF (Kokkos_ENABLE_CUSPARSE) 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_CUSPARSE
     SOURCES   
-      CrsMatrix_FirstTouchTPI.cpp
+      CrsMatrix_CUSPARSE.cpp 
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkos kokkoslinalg kokkosnodeapi
-    INSTALLABLE
-  ) 
-ENDIF (Kokkos_ENABLE_ThreadPool) 
-
-IF (Kokkos_ENABLE_TBB) 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTBB
-    SOURCES   
-      CrsMatrix_FirstTouchTBB.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
-    INSTALLABLE
-  ) 
-ENDIF (Kokkos_ENABLE_TBB) 
-
-IF (Kokkos_ENABLE_CUSP) 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_CUSP
-    SOURCES   
-      CrsMatrix_CUSP.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
-    INSTALLABLE
   ) 
 ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST( DefaultSparseOps_TestSparseOps 
+  SOURCES   
+    DefaultSparseOps_TestSparseOps.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+) 

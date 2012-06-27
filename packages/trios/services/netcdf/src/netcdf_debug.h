@@ -19,17 +19,8 @@ extern "C" {
 
     extern log_level netcdf_debug_level;
 
-/* Check for netcdf 4, if not, define some constants */
-#ifdef NC4_FIRST_ERROR
-
-#define USING_NETCDF4 1
-
-#else
-
 #define NC_ENOTNC4  (-111)
 #define NC_ENOGRP   (-125)
-
-#endif
 
 
 #if defined(__STDC__) || defined(__cplusplus)

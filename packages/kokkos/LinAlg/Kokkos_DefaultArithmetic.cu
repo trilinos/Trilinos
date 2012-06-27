@@ -41,11 +41,17 @@
 //@HEADER
 */
 
+#include <cuComplex.h>
+
 // include for ThrustGPUNode method implementations
 #include "Kokkos_ThrustGPUNode.cuh"
 
 // includes for all ops
 #include "Kokkos_MultiVectorKernelOps.hpp"
+
+#ifdef HAVE_KOKKOS_CUSP
+#include <cusp/complex.h>
+#endif
 
 
 #define INSTANTIATE_MULTIVECTOR_SCALAR(SCALAR) \
@@ -65,11 +71,20 @@
   template Kokkos::DotOp1      <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::DotOp1      <SCALAR> >(int, int, Kokkos::DotOp1      <SCALAR> ); \
   template Kokkos::DotOp2      <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::DotOp2      <SCALAR> >(int, int, Kokkos::DotOp2      <SCALAR> );
 
+INSTANTIATE_MULTIVECTOR_SCALAR(int)
+INSTANTIATE_MULTIVECTOR_SCALAR(long)
+
 #ifdef HAVE_KOKKOS_CUDA_FLOAT
 INSTANTIATE_MULTIVECTOR_SCALAR(float)
 #endif
 #ifdef HAVE_KOKKOS_CUDA_DOUBLE
 INSTANTIATE_MULTIVECTOR_SCALAR(double)
 #endif
-INSTANTIATE_MULTIVECTOR_SCALAR(int)
-INSTANTIATE_MULTIVECTOR_SCALAR(long)
+//typedef cusp::complex<float>  ComplexFloat;
+//typedef cusp::complex<double> ComplexDouble;
+//#ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+//INSTANTIATE_MULTIVECTOR_SCALAR(ComplexFloat)
+//#endif
+//#ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+//INSTANTIATE_MULTIVECTOR_SCALAR(ComplexDouble)
+//#endif

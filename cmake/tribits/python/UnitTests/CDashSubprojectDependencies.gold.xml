@@ -1,12 +1,12 @@
 <Project name="Trilinos">
   <SubProject name="TrilinosFramework">
     <EmailAddresses>
-      <Email address="trilinosframework-regression@software.sandia.gov"/>
+      <Email address="trilinosframework-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Teuchos">
     <EmailAddresses>
-      <Email address="teuchos-regression@software.sandia.gov"/>
+      <Email address="teuchos-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="RTOp">
@@ -17,24 +17,24 @@
   </SubProject>
   <SubProject name="Epetra">
     <EmailAddresses>
-      <Email address="epetra-regression@software.sandia.gov"/>
+      <Email address="epetra-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Zoltan">
     <EmailAddresses>
-      <Email address="zoltan-regression@software.sandia.gov"/>
+      <Email address="zoltan-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Shards">
     <Dependency name="Teuchos" type="TO"/>
     <EmailAddresses>
-      <Email address="shards-regression@software.sandia.gov"/>
+      <Email address="shards-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Triutils">
     <Dependency name="Epetra" type="LR"/>
     <EmailAddresses>
-      <Email address="triutils-regression@software.sandia.gov"/>
+      <Email address="triutils-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Tpetra">
@@ -42,7 +42,7 @@
     <Dependency name="Epetra" type="ITO"/>
     <Dependency name="Triutils" type="TO"/>
     <EmailAddresses>
-      <Email address="tpetra-regression@software.sandia.gov"/>
+      <Email address="tpetra-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="EpetraExt">
@@ -51,13 +51,13 @@
     <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="LO"/>
     <EmailAddresses>
-      <Email address="epetraext-regression@software.sandia.gov"/>
+      <Email address="epetraext-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Stokhos">
     <Dependency name="Teuchos" type="LR"/>
     <EmailAddresses>
-      <Email address="stokhos-regression@software.sandia.gov"/>
+      <Email address="stokhos-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Sacado">
@@ -68,7 +68,7 @@
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Stokhos" type="LO"/>
     <EmailAddresses>
-      <Email address="sacado-regression@software.sandia.gov"/>
+      <Email address="sacado-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Thyra">
@@ -90,7 +90,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <EmailAddresses>
-      <Email address="isorropia-regression@software.sandia.gov"/>
+      <Email address="isorropia-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="AztecOO">
@@ -98,7 +98,7 @@
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Triutils" type="LR"/>
     <EmailAddresses>
-      <Email address="aztecoo-regression@software.sandia.gov"/>
+      <Email address="aztecoo-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Galeri">
@@ -108,7 +108,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <EmailAddresses>
-      <Email address="galeri-regression@software.sandia.gov"/>
+      <Email address="galeri-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Amesos">
@@ -119,7 +119,7 @@
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Galeri" type="TO"/>
     <EmailAddresses>
-      <Email address="amesos-regression@software.sandia.gov"/>
+      <Email address="amesos-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Intrepid">
@@ -133,7 +133,7 @@
     <Dependency name="Sacado" type="LO"/>
     <Dependency name="Amesos" type="TO"/>
     <EmailAddresses>
-      <Email address="intrepid-regression@software.sandia.gov"/>
+      <Email address="intrepid-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Ifpack">
@@ -146,7 +146,7 @@
     <Dependency name="Galeri" type="TO"/>
     <Dependency name="Amesos" type="LO"/>
     <EmailAddresses>
-      <Email address="ifpack-regression@software.sandia.gov"/>
+      <Email address="ifpack-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="ML">
@@ -161,7 +161,7 @@
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Ifpack" type="LO"/>
     <EmailAddresses>
-      <Email address="ml-regression@software.sandia.gov"/>
+      <Email address="ml-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Belos">
@@ -178,7 +178,7 @@
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="ML" type="TO"/>
     <EmailAddresses>
-      <Email address="belos-regression@software.sandia.gov"/>
+      <Email address="belos-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Stratimikos">
@@ -197,7 +197,7 @@
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
     <EmailAddresses>
-      <Email address="stratimikos-regression@software.sandia.gov"/>
+      <Email address="stratimikos-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="RBGen">
@@ -207,7 +207,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <EmailAddresses>
-      <Email address="rbgen-regression@software.sandia.gov"/>
+      <Email address="rbgen-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Phalanx">
@@ -226,7 +226,7 @@
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="Belos" type="TO"/>
     <EmailAddresses>
-      <Email address="phalanx-regression@software.sandia.gov"/>
+      <Email address="phalanx-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
 </Project>
