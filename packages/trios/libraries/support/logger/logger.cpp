@@ -60,7 +60,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 
-static nthread_mutex_t logger_mutex; // = NTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+static nthread_lock_t logger_mutex;
 
 void logger_mutex_lock() {
 
@@ -68,7 +68,7 @@ void logger_mutex_lock() {
 
     if (!mutex_initialized) {
         mutex_initialized = true;
-        nthread_mutex_init(&logger_mutex, NTHREAD_MUTEX_RECURSIVE);
+        nthread_lock_init(&logger_mutex);
     }
     nthread_lock(&logger_mutex);
 }

@@ -37,9 +37,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /**
- * This API is modeled after pthreads.  pthreads is a POSIX API.  TRIOS runs in non-POSIX
- * environments such as Cray MTA.  These systems don't have pthreads, but may have other
- * threading libs.  This is lib creates a single API for TRIOS internal usage.
+ * TRIOS does not have any internal threading, but it should run in a
+ * multithreaded environment.  The nthread library provides a single API
+ * for locks and atomic counters.
  */
 
 #ifndef _TRIOS_THREADS_H_
@@ -59,44 +59,20 @@ extern log_level thread_debug_level;
 
 
 
-int nthread_create(
-        nthread_t *thread,
-        const nthread_attr_t *attr,
-        void *(*start_routine)(void*),
-        void *arg);
+int nthread_lock_init(
+        nthread_lock_t *lock);
+int nthread_lock(
+        nthread_lock_t *lock);
+int nthread_unlock(
+        nthread_lock_t *lock);
 
-/**
- * Reclaim the space allocated for the thread when the thread exits.
- */
-int nthread_detach(nthread_t thread);
 
-void nthread_exit(void *retval);
-
-int nthread_cond_init(
-        nthread_cond_t *cond);
-int nthread_cond_broadcast(nthread_cond_t *cond);
-int nthread_cond_signal(nthread_cond_t *cond);
-int nthread_cond_timedwait(
-        nthread_cond_t *cond,
-        nthread_mutex_t *mutex,
-        const struct timespec *abstime);
-int nthread_cond_wait(
-        nthread_cond_t *cond,
-        nthread_mutex_t *mutex);
-
-int nthread_mutex_init(nthread_mutex_t *mutex, int mutex_type);
-int nthread_lock(nthread_mutex_t *mutex);
-int nthread_unlock(nthread_mutex_t *mutex);
-
-nthread_id_t nthread_self(void);
-
-void nthread_yield(void);
-int nthread_join(
-        nthread_t thread,
-        void **value_ptr);
-
-int64_t nthread_counter_increment(nthread_counter_t *c);
-int64_t nthread_counter_decrement(nthread_counter_t *c);
+int     nthread_counter_init(
+        nthread_counter_t *c);
+int64_t nthread_counter_increment(
+        nthread_counter_t *c);
+int64_t nthread_counter_decrement(
+        nthread_counter_t *c);
 
 #ifdef __cplusplus
 }

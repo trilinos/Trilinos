@@ -123,6 +123,9 @@ int main(int argc, char *argv[])
     int rc = 0;
     nssi_service xfer_svc;
 
+    int server_index=0;
+    int rank_in_server=0;
+
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -353,11 +356,11 @@ int main(int argc, char *argv[])
         // Split the communicators. Put all the servers as the first ranks.
         if (rank < args.num_servers) {
             color = 0;
-            log_debug(LOG_ALL, "rank=%d is a server", rank);
+            log_debug(debug_level, "rank=%d is a server", rank);
         }
         else {
             color = 1;  // all others are clients
-            log_debug(LOG_ALL, "rank=%d is a client", rank);
+            log_debug(debug_level, "rank=%d is a client", rank);
         }
 
         MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
@@ -408,7 +411,7 @@ int main(int argc, char *argv[])
         if (color == 0) {
             assert(args.num_servers == splitsize);  // these should be equal
 
-            log_debug(LOG_ALL, "%d: Gathering urls: my_url=%s", rank, my_url.c_str());
+            log_debug(debug_level, "%d: Gathering urls: my_url=%s", rank, my_url.c_str());
 
             // gather all urls to rank 0 of the server comm (also rank 0 of MPI_COMM_WORLD)
             MPI_Gather(&my_url[0], NSSI_URL_LEN, MPI_CHAR,
@@ -422,9 +425,6 @@ int main(int argc, char *argv[])
 
         if (color == 1) {
 
-            int server_index;
-            int rank_in_server;
-
             // For block distribution scheme use the utility function (in xfer_util.cpp)
             if (args.block_distribution) {
                 // Use this utility function to calculate the server_index
@@ -433,7 +433,8 @@ int main(int argc, char *argv[])
 
             // Use a simple round robin distribution scheme
             else {
-                server_index = splitrank % args.num_servers;
+                server_index   = splitrank % args.num_servers;
+                rank_in_server = splitrank / args.num_servers;
             }
 
             // Copy the server url out of the list of urls
@@ -455,9 +456,6 @@ int main(int argc, char *argv[])
         xfer_read_server_url_file(args.url_file.c_str(), urlbuf, comm);
         args.num_servers = urlbuf.size();
 
-        int server_index=0;
-        int rank_in_server=0;
-
         // For block distribution scheme use the utility function (in xfer_util.cpp)
         if (args.block_distribution) {
             // Use this utility function to calculate the server_index
@@ -466,11 +464,12 @@ int main(int argc, char *argv[])
 
         // Use a simple round robin distribution scheme
         else {
-            server_index = splitrank % args.num_servers;
+            server_index   = splitrank % args.num_servers;
+            rank_in_server = splitrank / args.num_servers;
         }
 
         args.server_url = urlbuf[server_index];
-        log_debug(LOG_ALL, "client %d assigned to server \"%s\"", splitrank, args.server_url.c_str());
+        log_debug(debug_level, "client %d assigned to server \"%s\"", splitrank, args.server_url.c_str());
     }
 
     else if (args.server_flag && !args.client_flag) {
@@ -491,7 +490,7 @@ int main(int argc, char *argv[])
     args.io_method_name = std::string(io_method_names[args.io_method]);
     args.transport_name = std::string(nssi_transport_names[args.transport]);
 
-    log_debug(LOG_ALL, "%d: server_url=%s", rank, args.server_url.c_str());
+    log_debug(debug_level, "%d: server_url=%s", rank, args.server_url.c_str());
 
     print_args(out, args, "%");
 
@@ -503,7 +502,7 @@ int main(int argc, char *argv[])
      */
     if (color == 0) {
         rc = xfer_server_main((nssi_rpc_transport)args.transport, comm);
-        log_debug(LOG_ALL, "Server is finished");
+        log_debug(debug_level, "Server is finished");
     }
 
     // ------------------------------------------------------------------------------
@@ -560,7 +559,7 @@ int main(int argc, char *argv[])
             MPI_Barrier(comm);
 
             // Tell one of the clients to kill the server
-            if (client_rank == 0) {
+            if (rank_in_server == 0) {
                 log_debug(debug_level, "%d: Halting xfer service", rank);
                 rc = nssi_kill(&xfer_svc, 0, 5000);
             }

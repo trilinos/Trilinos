@@ -371,8 +371,7 @@ def emitFuncSig (defDict, indent=0):
         ind + 'void\n' + \
         ind + emitFuncName(defDict) + ' (\n' + \
         ind + '  const Ordinal numRows,\n' + \
-        ind + '  const Ordinal start${RowCol},\n' + \
-        ind + '  const Ordinal end${RowCol}PlusOne,\n' + \
+        ind + '  const Ordinal numCols,\n' + \
         ind + '  const Ordinal numVecs,\n' + \
         ind + '  RangeScalar* const X,\n' + \
         ind + '  const Ordinal ${denseRowCol}StrideX,\n' + \
@@ -414,16 +413,16 @@ def emitOuterLoop (defDict, indent=0):
     
     if defDict['sparseFormat'] == 'CSC':
         if defDict['upLo'] == 'upper':
-            loopBounds = 'for (Ordinal c = endColPlusOne - 1; c >= startCol; --c) {\n'
+            loopBounds = 'for (Ordinal c = numCols-1; c >= 0; --c) {\n'
         elif defDict['upLo'] == 'lower':            
-            loopBounds = 'for (Ordinal c = startCol; c < endColPlusOne; ++c) {\n'
+            loopBounds = 'for (Ordinal c = 0; c < numCols; ++c) {\n'
         else:
             raise ValueError ('Invalid upLo "' + defDict['upLo'] + '"')
     elif defDict['sparseFormat'] == 'CSR':    
         if defDict['upLo'] == 'upper':
-            loopBounds = 'for (Ordinal r = endRowPlusOne - 1; r >= startRow; --r) {\n'
+            loopBounds = 'for (Ordinal r = numRows-1; r >= 0; --r) {\n'
         elif defDict['upLo'] == 'lower':            
-            loopBounds = 'for (Ordinal r = startRow; r < endRowPlusOne; ++r) {\n'
+            loopBounds = 'for (Ordinal r = 0; r < numRows; ++r) {\n'
         else:
             raise ValueError ('Invalid upLo "' + defDict['upLo'] + '"')
     else:
@@ -518,50 +517,38 @@ def emitCsrOuterLoopBody (defDict, indent=0):
     body = ''
     X_rj = emitDenseAref(defDict, 'X', 'r', 'j')
     Y_rj = emitDenseAref(defDict, 'Y', 'r', 'j')
-    Y_cj = emitDenseAref(defDict, 'Y', 'c', 'j')
-    if not defDict['unitDiag']:
+    X_cj = emitDenseAref(defDict, 'X', 'c', 'j')
+
+    if defDict['conjugateMatrixEntries']:
+        diagValExpr = 'STS::conjugate (val[ptr[r]])'
+        offDiagValExpr = 'STS::conjugate (val[k])'
+    else:
+        diagValExpr = 'val[ptr[r]]'
+        offDiagValExpr = 'val[k]'
+
+    body = body + \
+        indStr + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
+        indStr + ' '*2 + X_rj + ' = ' + Y_rj + ';\n' + \
+        indStr + '}\n'
+    if defDict['unitDiag']:
         body = body + \
-            indStr + 'MatrixScalar A_rr = STS::zero ();\n' + \
-            indStr + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
-            indStr + ' '*2 + X_rj + ' = STS::zero ();\n' + \
-            indStr + '}\n' + \
-            indStr + 'for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {\n' + \
-            indStr + ' '*2 + 'const Ordinal c = ind[k];\n'
-        if defDict['conjugateMatrixEntries']:
-            body = body + \
-                indStr + ' '*2 + 'const MatrixScalar A_rc = STS::conjugate (val[k]);\n'
-        else:            
-            body = body + \
-                indStr + ' '*2 + 'const MatrixScalar A_rc = val[k];\n'
-        body = body + \
-            indStr + ' '*2 + 'if (r == c) {\n' + \
-            indStr + ' '*4 + 'A_rr = A_rr + A_rc;\n' + \
-            indStr + ' '*2 + '} else {\n' + \
-            indStr + ' '*4 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
-            indStr + ' '*6 + X_rj + ' -= A_rc * ' + Y_cj + ';\n' + \
-            indStr + ' '*4 + '}\n' + \
-            indStr + ' '*2 + '}\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
-            indStr + ' '*4 + X_rj + ' = (' + X_rj + ' + ' + Y_rj + ') / A_rr;\n' + \
-            indStr + ' '*2 + '}\n' + \
-            indStr + '}\n'
+            indStr + 'for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {\n'            
     else:
         body = body + \
-            indStr + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
-            indStr + ' '*2 + X_rj + ' = STS::zero ();\n' + \
-            indStr + '}\n' + \
-            indStr + 'for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {\n' + \
-            indStr + ' '*2 + 'const Ordinal c = ind[k];\n'
-        if defDict['conjugateMatrixEntries']:
-            body = body + \
-                indStr + ' '*2 + 'const MatrixScalar A_rc = STS::conjugate (val[k]);\n'
-        else:            
-            body = body + \
-                indStr + ' '*2 + 'const MatrixScalar A_rc = val[k];\n'
+            indStr + '// We assume the diagonal entry is first in the row.\n' + \
+            indStr + 'const MatrixScalar A_rr = ' + diagValExpr + ';\n' + \
+            indStr + 'for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {\n'
+    body = body + \
+        indStr + ' '*2 + 'const MatrixScalar A_rc = ' + offDiagValExpr + ';\n' + \
+        indStr + ' '*2 + 'const Ordinal c = ind[k];\n' + \
+        indStr + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
+        indStr + ' '*4 + X_rj + ' -= A_rc * ' + X_cj + ';\n' + \
+        indStr + ' '*2 + '}\n' + \
+        indStr + '}\n'
+    if not defDict['unitDiag']:
         body = body + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
-            indStr + ' '*4 + X_rj + ' -= A_rc * ' + Y_cj + ';\n' + \
-            indStr + ' '*2 + '}\n' + \
+            indStr + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
+            indStr + ' '*2 + X_rj + ' = ' + X_rj + ' / A_rr;\n' + \
             indStr + '}\n'
     return body
         
@@ -714,14 +701,8 @@ def emitFuncDoc (defDict, indent=0):
 ///   This may differ from the type of entries in the output matrix X.'''
 
     body = body + '\n' + \
-        '''/// \param ${startIndex} [in] The least (zero-based) ${fmtRowCol} index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param ${endIndex} [in] The largest (zero-based) ${fmtRowCol} index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that ${startIndex}, ${endIndex} makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of ${fmtRowCol}s in the sparse matrix (on the calling process).
+        '''/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.'''
 
     if inPlace:
@@ -755,11 +736,6 @@ def emitFuncDoc (defDict, indent=0):
     # Indent each line.
     return '\n'.join(' '*indent + line for line in doc.split('\n'))
         
-        
-
-
-
-
 def emitHeaderDeclFile (filename):
     '''Make a header file with declarations of the sparse triangular solve routines.
     

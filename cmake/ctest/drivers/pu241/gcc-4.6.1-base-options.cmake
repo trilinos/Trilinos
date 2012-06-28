@@ -4,8 +4,10 @@
 
 # Define the core compilers
 SET(TRILINOS_TOOLSET_BASE  /opt/gcc-4.6.1/trilinos-toolset)
-# Add rpath for compiler libraries
-SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64" CACHE STRING "")
+# Add rpath for compiler libraries and gomp for parts built with OpenMP
+SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS
+  "-lgomp -Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64"
+  CACHE STRING "")
 # This dicates downstream the intel fortran compiler to be used
 # Include MKL and TBB; these should match version of Intel compilers being used
 IF ("${HYBRIDBUILD_INTEL_VERSION}" STREQUAL "")

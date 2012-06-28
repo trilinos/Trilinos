@@ -47,6 +47,7 @@ APPEND_SET(HEADERS
     Kokkos_DefaultSparseSolveKernelOps.hpp
     Kokkos_DefaultRelaxationKernelOps.hpp
     Kokkos_MultiVectorKernelOps.hpp
+    Kokkos_SeqSparseOps.hpp
     # traits
     Kokkos_DefaultArithmetic.hpp
     Kokkos_DefaultBlockSparseOps.hpp

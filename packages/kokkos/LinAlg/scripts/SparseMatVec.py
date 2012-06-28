@@ -141,6 +141,15 @@ faster than column-major storage if there are multiple input and
 output columns.  (This is because column-major storage accesses the
 input and output matrices with nonunit stride.)
 
+Note that sparse matrix data structures other than compressed sparse
+row or column often perform much better, especially if you make
+assumptions about the structure of the sparse matrix.  Rich Vuduc's
+PhD thesis, the OSKI project, etc. all refer to this.  We do not
+attempt to generate such code here.
+
+Algorithm variant
+-----------------
+
 The usual CSC and CSR sparse matrix-vector multiply routines have two
 nested 'for' loops: one for the columns resp. rows, and one for the
 entries within a column resp. row.  We have chosen instead to generate
@@ -149,11 +158,33 @@ that 'for' loop is a 'while' loop for incrementing the current column
 resp. row index.  Epetra uses this variant, and our experience is that
 it performs slightly better.
 
-Note that sparse matrix data structures other than compressed sparse
-row or column often perform much better, especially if you make
-assumptions about the structure of the sparse matrix.  Rich Vuduc's
-PhD thesis, the OSKI project, etc. all refer to this.  We do not
-attempt to generate such code here.
+Here is a sketch of a correctness proof for this variant (I'll
+consider the CSR case without loss of generality):
+
+Invariants inside the while loop:
+* 0 <= k < ptr[numRows]
+  
+Invariants inside this loop, before ++i
+* 0 <= i < numRows
+* k >= ptr[i+1], which means that i is still too small.
+* We have not yet initialized Y(i+1,:).
+  
+Since we know that 0 <= k < ptr[numRows], we know that A_ij = val[k]
+and j = ind[k] are valid.  Thus, the correct i is the one for which
+ptr[i] <= k < ptr[i+1].  If ptr[i] == ptr[i+1], then the corresponding
+row i is empty.  In that case, k >= ptr[i] and k >= ptr[i+1] as well,
+so this loop will move i past that row.
+  
+If the last row of the matrix is empty, then ptr[numRows-1] ==
+ptr[numRows].  However, k < ptr[numRows] always (see above invariant),
+so we would never enter this 'while' loop in that case.  Thus, we
+don't need to check in the 'while' clause whether i < numRows.
+  
+We need a while loop, and not just an if test, specifically for the
+case of empty rows.  If we forbid empty rows (this is easy to do by
+simply adding an entry with a zero value to each empty row when
+constructing ptr,ind,val), then we can replace the while loop with a
+single if test.  This saves a branch.
 
 How to use the code generator
 =============================
@@ -338,8 +369,7 @@ def emitFuncSig (defDict, indent=0):
         ind + 'void\n' + \
         ind + emitFuncName(defDict) + ' (\n' + \
         ind + '  const Ordinal numRows,\n' + \
-        ind + '  const Ordinal start${RowCol},\n' + \
-        ind + '  const Ordinal end${RowCol}PlusOne,\n' + \
+        ind + '  const Ordinal numCols,\n' + \
         ind + '  const Ordinal numVecs,\n' + \
         ind + '  const RangeScalar& beta,\n' + \
         ind + '  RangeScalar Y[],\n' + \
@@ -357,11 +387,7 @@ def emitFuncSig (defDict, indent=0):
         denseRowCol = 'row'        
     else:
         raise ValueError('Invalid dataLayout "' + defDict['dataLayout'] + '"')
-
-    if defDict['sparseFormat'] == 'CSC':
-        return Template(sig).substitute(denseRowCol=denseRowCol, RowCol='Col')
-    elif defDict['sparseFormat'] == 'CSR':
-        return Template(sig).substitute(denseRowCol=denseRowCol, RowCol='Row')
+    return Template(sig).substitute(denseRowCol=denseRowCol)
 
 
 # Includes the curly braces.
@@ -505,10 +531,11 @@ def emitForLoop (defDict, indent=0):
         RowCol = 'Row'
 
     ind = ' '*indent
-    s = ind + 'const Ordinal startInd = ptr[start${RowCol}];\n' + \
-        ind + 'const Ordinal endInd = ptr[end${RowCol}PlusOne];\n' + \
+    s = ''
+    s = s + \
+        ind + 'const Ordinal nnz = ptr[num${RowCol}s];\n' + \
         ind + 'if (alpha == STS::one()) {\n' + \
-        ind + ' '*2 + 'for (Ordinal k = startInd; k < endInd; ++k) {\n'
+        ind + ' '*2 + 'for (Ordinal k = 0; k < nnz; ++k) {\n'
     if defDict['conjugateMatrixEntries']:
         s = s + \
             ind + ' '*4 + 'const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);\n'
@@ -517,7 +544,7 @@ def emitForLoop (defDict, indent=0):
             ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n'
     s = s + \
         ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
-        ind + ' '*4 + 'while (k > ptr[${loopIndex}]) {\n' + \
+        ind + ' '*4 + 'while (k >= ptr[${loopIndex}+1]) {\n' + \
         ind + ' '*6 + '++${loopIndex};\n'
     if defDict['sparseFormat'] == 'CSR':
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
@@ -538,7 +565,7 @@ def emitForLoop (defDict, indent=0):
         ind + ' '*2 + '}\n' + \
         ind + '}\n' + \
         ind + 'else { // alpha != STS::one()\n' + \
-        ind + ' '*2 + 'for (Ordinal k = startInd; k < endInd; ++k) {\n'
+        ind + ' '*2 + 'for (Ordinal k = 0; k < nnz; ++k) {\n'
     if defDict['conjugateMatrixEntries']:
         s = s + \
             ind + ' '*4 + 'const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);\n'
@@ -547,7 +574,7 @@ def emitForLoop (defDict, indent=0):
             ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n'
     s = s + \
         ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
-        ind + ' '*4 + 'while (k > ptr[${loopIndex}]) {\n' + \
+        ind + ' '*4 + 'while (k >= ptr[${loopIndex}+1]) {\n' + \
         ind + ' '*6 + '++${loopIndex};\n'
     if defDict['sparseFormat'] == 'CSR':
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')

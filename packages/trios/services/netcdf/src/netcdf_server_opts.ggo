@@ -1,7 +1,0 @@
-option "daemon" - "Run server as a daemon process in the background" flag off
-option "verbose"   - "Debug level of logger [0-5]" int default="3" optional
-option "logfile"   - "Path to logfile" string optional
-option "num-threads" - "The number of extra threads to use for the service" int default="0" optional
-option "server-pid" - "The process ID to use for this server" int default="128" optional
-option "server-addr" - "The IP address of this server" string default="" optional
-option "server-port" - "The TCP port the server communicates on" int default="7128" optional

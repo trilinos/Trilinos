@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <sched.h>
 #include <alps/libalpslli.h>
 #include <gni_pub.h>
 
@@ -358,7 +359,7 @@ typedef struct {
 
 
 
-static nthread_mutex_t nnti_gni_lock;
+static nthread_lock_t nnti_gni_lock;
 
 
 static NNTI_result_t register_memory(
@@ -415,7 +416,7 @@ static void copy_peer(
         NNTI_peer_t *src,
         NNTI_peer_t *dest);
 static int init_server_listen_socket(void);
-static int start_connection_listener_thread(void);
+static int check_listen_socket_for_new_connections(void);
 static uint32_t get_cpunum(void);
 static void get_alps_info(alpsAppGni_t *alps_info);
 static int tcp_read(int sock, void *incoming, size_t len);
@@ -612,26 +613,26 @@ static uint32_t hash6432shift(uint64_t key)
 static std::map<addrport_key, gni_connection *> connections_by_peer;
 typedef std::map<addrport_key, gni_connection *>::iterator conn_by_peer_iter_t;
 typedef std::pair<addrport_key, gni_connection *> conn_by_peer_t;
-static nthread_mutex_t nnti_conn_peer_lock;
+static nthread_lock_t nnti_conn_peer_lock;
 
 static std::map<NNTI_instance_id, gni_connection *> connections_by_instance;
 typedef std::map<NNTI_instance_id, gni_connection *>::iterator conn_by_inst_iter_t;
 typedef std::pair<NNTI_instance_id, gni_connection *> conn_by_inst_t;
-static nthread_mutex_t nnti_conn_instance_lock;
+static nthread_lock_t nnti_conn_instance_lock;
 
 static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
 typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
 typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
-static nthread_mutex_t nnti_buf_bufhash_lock;
+static nthread_lock_t nnti_buf_bufhash_lock;
 
 static std::map<uint32_t, gni_work_request *> wr_by_wrhash;
 typedef std::map<uint32_t, gni_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, gni_work_request *> wr_by_wrhash_t;
-static nthread_mutex_t nnti_wr_wrhash_lock;
+static nthread_lock_t nnti_wr_wrhash_lock;
 
 typedef std::deque<gni_work_request *>           wr_pool_t;
 typedef std::deque<gni_work_request *>::iterator wr_pool_iter_t;
-static nthread_mutex_t nnti_wr_pool_lock;
+static nthread_lock_t nnti_wr_pool_lock;
 
 static wr_pool_t target_wr_pool;
 static wr_pool_t initiator_wr_pool;
@@ -693,15 +694,15 @@ NNTI_result_t NNTI_gni_init (
         nnti_event_debug_level=nnti_debug_level;
         nnti_ee_debug_level=nnti_debug_level;
 
-        nthread_mutex_init(&nnti_gni_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_gni_lock);
 
         // initialize the mutexes for the connection maps
-        nthread_mutex_init(&nnti_conn_peer_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_conn_instance_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_wr_wrhash_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_buf_bufhash_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_conn_peer_lock);
+        nthread_lock_init(&nnti_conn_instance_lock);
+        nthread_lock_init(&nnti_wr_wrhash_lock);
+        nthread_lock_init(&nnti_buf_bufhash_lock);
 
-        nthread_mutex_init(&nnti_wr_pool_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_wr_pool_lock);
 
         config_init(&config);
         config_get_from_env(&config);
@@ -858,9 +859,9 @@ NNTI_result_t NNTI_gni_init (
         trios_start_timer(call_time);
         init_server_listen_socket();
         trios_stop_timer("init_server_listen_socket", call_time);
-        trios_start_timer(call_time);
-        start_connection_listener_thread();
-        trios_stop_timer("start_connection_listener_thread", call_time);
+//        trios_start_timer(call_time);
+//        start_connection_listener_thread();
+//        trios_stop_timer("start_connection_listener_thread", call_time);
 
         if (logging_info(nnti_debug_level)) {
             fprintf(logger_get_file(), "Gemini Initialized: host(%s) port(%u)\n",
@@ -967,9 +968,9 @@ NNTI_result_t NNTI_gni_connect (
 
     NNTI_peer_t *key;
 
-    double start_time;
-    uint64_t elapsed_time = 0;
-    int timeout_per_call;
+    long start_time;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
 
     assert(trans_hdl);
@@ -1114,14 +1115,14 @@ NNTI_result_t NNTI_gni_connect (
         goto cleanup;
     }
     trios_start_timer(call_time);
-    start_time=trios_get_time();
+    start_time=trios_get_time_ms();
     while((timeout==-1) || (elapsed_time < timeout)) {
         log_debug(nnti_debug_level, "calling connect");
         if (connect(s, (struct sockaddr *)&skin, skin_size) == 0) {
             log_debug(nnti_debug_level, "connected");
             break;
         }
-        elapsed_time=(uint64_t)((trios_get_time()-start_time)*1000.0);
+        elapsed_time=trios_get_time_ms()-start_time;
         log_warn(nnti_debug_level, "failed to connect to server (%s:%u): errno=%d (%s)", hostname, port, errno, strerror(errno));
         if ((timeout>0) && (elapsed_time >= timeout)) {
             rc=NNTI_EIO;
@@ -1775,10 +1776,10 @@ NNTI_result_t NNTI_gni_wait (
 //    nnti_gni_work_completion wc;
 
     gni_return_t rc=GNI_RC_SUCCESS;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
 
@@ -1789,9 +1790,10 @@ NNTI_result_t NNTI_gni_wait (
 
     q_hdl      =&transport_global_data.req_queue;
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
-
     assert(q_hdl);
     assert(gni_mem_hdl);
+
+    check_listen_socket_for_new_connections();
 
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
@@ -1817,6 +1819,8 @@ NNTI_result_t NNTI_gni_wait (
                 nnti_rc=NNTI_ECANCELED;
                 break;
             }
+
+            check_listen_socket_for_new_connections();
 
             cq_hdl=get_cq(reg_buf);
 
@@ -1868,7 +1872,7 @@ NNTI_result_t NNTI_gni_wait (
             }
             /* case 2: timed out */
             else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
-                elapsed_time = (trios_get_time() - entry_time);
+                elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -1884,8 +1888,6 @@ NNTI_result_t NNTI_gni_wait (
                 //                fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 //                        "NNTI_wait() timeout(5+ sec)", reg_buf);
                 //            }
-
-                nthread_yield();
 
                 continue;
             }
@@ -2017,14 +2019,16 @@ NNTI_result_t NNTI_gni_waitany (
     nnti_gni_work_completion wc;
 
     gni_return_t rc=GNI_RC_SUCCESS;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
 
     log_debug(nnti_ee_debug_level, "enter");
+
+    check_listen_socket_for_new_connections();
 
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
@@ -2069,6 +2073,8 @@ NNTI_result_t NNTI_gni_waitany (
                 break;
             }
 
+            check_listen_socket_for_new_connections();
+
             memset(&ev_data, 0, sizeof(ev_data));
             log_debug(nnti_event_debug_level, "calling CqVectorWaitEvent(wait)");
 //            log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait) on cq_hdl(%llu) (l.qw1=%llu l.qw2=%llu r.qw1=%llu r.qw2=%llu)",
@@ -2094,7 +2100,7 @@ NNTI_result_t NNTI_gni_waitany (
             }
             /* case 2: timed out */
             else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
-                elapsed_time = (trios_get_time() - entry_time);
+                elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -2110,8 +2116,6 @@ NNTI_result_t NNTI_gni_waitany (
                 //                fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 //                        "NNTI_wait() timeout(5+ sec)", reg_buf);
                 //            }
-
-                nthread_yield();
 
                 continue;
             }
@@ -2242,14 +2246,16 @@ NNTI_result_t NNTI_gni_waitall (
     nnti_gni_work_completion wc;
 
     gni_return_t rc=GNI_RC_SUCCESS;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
 
     log_debug(nnti_ee_debug_level, "enter");
+
+    check_listen_socket_for_new_connections();
 
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
@@ -2296,6 +2302,8 @@ NNTI_result_t NNTI_gni_waitall (
                 break;
             }
 
+            check_listen_socket_for_new_connections();
+
             memset(&ev_data, 0, sizeof(ev_data));
             log_debug(nnti_event_debug_level, "calling CqVectorWaitEvent(wait)");
 //            log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait) on cq_hdl(%llu) (l.qw1=%llu l.qw2=%llu r.qw1=%llu r.qw2=%llu)",
@@ -2321,7 +2329,7 @@ NNTI_result_t NNTI_gni_waitall (
             }
             /* case 2: timed out */
             else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
-                elapsed_time = (trios_get_time() - entry_time);
+                elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -2337,8 +2345,6 @@ NNTI_result_t NNTI_gni_waitall (
                 //                fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 //                        "NNTI_wait() timeout(5+ sec)", reg_buf);
                 //            }
-
-                nthread_yield();
 
                 continue;
             }
@@ -3938,11 +3944,15 @@ static int init_server_listen_socket()
     trios_stop_timer("socket", call_time);
     if (transport_global_data.listen_sock < 0)
         log_error(nnti_debug_level, "failed to create tcp socket: %s", strerror(errno));
+
     flags = 1;
     trios_start_timer(call_time);
     if (setsockopt(transport_global_data.listen_sock, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags)) < 0)
         log_error(nnti_debug_level, "failed to set tcp socket REUSEADDR flag: %s", strerror(errno));
     trios_stop_timer("setsockopt", call_time);
+
+    flags=fcntl(transport_global_data.listen_sock, F_GETFL, 0);
+    fcntl(transport_global_data.listen_sock, F_SETFL, flags | O_NONBLOCK);
 
     log_debug(nnti_debug_level, "listen_name (%s).", transport_global_data.listen_name);
     if (transport_global_data.listen_name[0]!='\0') {
@@ -4926,9 +4936,14 @@ static int check_listen_socket_for_new_connections()
     len = sizeof(ssin);
     s = accept(transport_global_data.listen_sock, (struct sockaddr *) &ssin, &len);
     if (s < 0) {
-        if (!(errno == EAGAIN)) {
+        if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+            log_debug(nnti_debug_level, "no connections waiting to be accepted: %s", strerror(errno));
+            rc = NNTI_OK;
+            goto cleanup;
+        } else {
             log_error(nnti_debug_level, "failed to accept tcp socket connection: %s", strerror(errno));
             rc = NNTI_EIO;
+            goto cleanup;
         }
     } else {
         peer=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
@@ -4979,62 +4994,16 @@ static int check_listen_socket_for_new_connections()
             fprint_NNTI_peer(logger_get_file(), "peer",
                     "end of check_listen_socket_for_new_connections", peer);
         }
-
-        nthread_yield();
     }
 
 cleanup:
     if (rc != NNTI_OK) {
         if (peer!=NULL) free(peer);
         if (conn!=NULL) free(conn);
+        if (key!=NULL)  free(key);
     }
     return rc;
 }
-
-/**
- * @brief Continually check for new connection attempts.
- *
- */
-static void *connection_listener_thread(void *args)
-{
-    int rc=NNTI_OK;
-
-    log_debug(nnti_debug_level, "started thread to listen for client connection attempts");
-
-    /* SIGINT (Ctrl-C) will get us out of this loop */
-    while (!trios_exit_now()) {
-        log_debug(nnti_debug_level, "listening for new connection");
-        rc = check_listen_socket_for_new_connections();
-        if (rc != NNTI_OK) {
-            log_fatal(nnti_debug_level, "error returned from trios_gni_server_listen_for_client: %d", rc);
-            continue;
-        }
-    }
-
-    nthread_exit(&rc);
-
-    return(NULL);
-}
-
-/**
- * @brief Start a thread to check for new connection attempts.
- *
- */
-static int start_connection_listener_thread()
-{
-    int rc = NNTI_OK;
-    nthread_t thread;
-
-    /* Create the thread. Do we want special attributes for this? */
-    rc = nthread_create(&thread, NULL, connection_listener_thread, NULL);
-    if (rc) {
-        log_error(nnti_debug_level, "could not spawn thread");
-        rc = NNTI_EBADRPC;
-    }
-
-    return rc;
-}
-
 
 static uint32_t get_cpunum(void)
 {

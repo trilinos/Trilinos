@@ -112,8 +112,9 @@ namespace {
 
     if (benchmark) {
       std::vector<std::pair<std::string, double> > results;
-      tester.benchmarkSparseOps (results, node, numRows, numVecs, numTrials);
-      Teuchos::TimeMonitor::summarize ();
+      tester.benchmarkSparseOps (results, "DefaultSparseHostOps", node,
+                                 numRows, numVecs, numTrials);
+      //Teuchos::TimeMonitor::summarize ();
     }
     else {
       tester.testSparseOps (node, numRows, numVecs, tol);
@@ -130,7 +131,8 @@ namespace {
 
     if (benchmark) {
       std::vector<std::pair<std::string, double> > results;
-      tester.benchmarkSparseOps (results, node, numRows, numVecs, numTrials);
+      tester.benchmarkSparseOps (results, "SeqSparseOps", node,
+                                 numRows, numVecs, numTrials);
       Teuchos::TimeMonitor::summarize ();
     }
     else {

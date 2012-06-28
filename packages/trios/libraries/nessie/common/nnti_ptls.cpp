@@ -174,7 +174,7 @@ typedef struct portals_transport_global {
 
 
 
-static nthread_mutex_t nnti_ptl_lock;
+static nthread_lock_t nnti_ptl_lock;
 
 
 static const NNTI_buffer_t *decode_event_buffer(
@@ -243,12 +243,12 @@ static uint32_t hash6432shift(uint64_t key)
 static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
 typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
 typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
-static nthread_mutex_t nnti_buf_bufhash_lock;
+static nthread_lock_t nnti_buf_bufhash_lock;
 
 static std::map<uint32_t, portals_work_request *> wr_by_wrhash;
 typedef std::map<uint32_t, portals_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, portals_work_request *> wr_by_wrhash_t;
-static nthread_mutex_t nnti_wr_wrhash_lock;
+static nthread_lock_t nnti_wr_wrhash_lock;
 
 
 
@@ -294,7 +294,9 @@ int NNTI_ptl_init (
 
     if (!initialized) {
 
-        nthread_mutex_init(&nnti_ptl_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_ptl_lock);
+        nthread_lock_init(&nnti_buf_bufhash_lock);
+        nthread_lock_init(&nnti_wr_wrhash_lock);
 
         if (my_url != NULL) {
             if ((rc=nnti_url_get_transport(my_url, transport, NNTI_URL_LEN)) != NNTI_OK) {

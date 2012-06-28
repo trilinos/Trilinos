@@ -2382,7 +2382,7 @@ int main(int argc, char **argv)
 
     /* start processing requests */
     netcdf_svc.max_reqs = -1;
-    rc = nssi_service_start(&netcdf_svc, 0);
+    rc = nssi_service_start(&netcdf_svc);
     if (rc != NSSI_OK) {
         log_info(netcdf_debug_level, "exited xfer_svc: %s",
                 nssi_err_str(rc));
