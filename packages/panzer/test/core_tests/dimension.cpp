@@ -55,8 +55,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(dimension, default)
   {
-    Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy> a;
-    Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy> b;
+    Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> a;
+    Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> b;
     
     a = b;
   }
