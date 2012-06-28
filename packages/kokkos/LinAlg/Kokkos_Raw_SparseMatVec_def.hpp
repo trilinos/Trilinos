@@ -99,7 +99,7 @@ matVecCscColMajor (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal i = ind[k];
-      while (k > ptr[j+1]) {
+      while (k >= ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -111,7 +111,7 @@ matVecCscColMajor (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal i = ind[k];
-      while (k > ptr[j+1]) {
+      while (k >= ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -163,7 +163,7 @@ matVecCsrColMajor (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal j = ind[k];
-      while (k > ptr[i+1]) {
+      while (k >= ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i];
@@ -180,7 +180,7 @@ matVecCsrColMajor (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal j = ind[k];
-      while (k > ptr[i+1]) {
+      while (k >= ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i];
@@ -243,7 +243,7 @@ matVecCscRowMajor (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal i = ind[k];
-      while (k > ptr[j+1]) {
+      while (k >= ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -255,7 +255,7 @@ matVecCscRowMajor (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal i = ind[k];
-      while (k > ptr[j+1]) {
+      while (k >= ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -307,7 +307,7 @@ matVecCsrRowMajor (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal j = ind[k];
-      while (k > ptr[i+1]) {
+      while (k >= ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -324,7 +324,7 @@ matVecCsrRowMajor (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal j = ind[k];
-      while (k > ptr[i+1]) {
+      while (k >= ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -387,7 +387,7 @@ matVecCscColMajorConj (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal i = ind[k];
-      while (k > ptr[j+1]) {
+      while (k >= ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -399,7 +399,7 @@ matVecCscColMajorConj (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal i = ind[k];
-      while (k > ptr[j+1]) {
+      while (k >= ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -451,7 +451,7 @@ matVecCsrColMajorConj (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal j = ind[k];
-      while (k > ptr[i+1]) {
+      while (k >= ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i];
@@ -468,7 +468,7 @@ matVecCsrColMajorConj (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal j = ind[k];
-      while (k > ptr[i+1]) {
+      while (k >= ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i];
@@ -531,7 +531,7 @@ matVecCscRowMajorConj (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal i = ind[k];
-      while (k > ptr[j+1]) {
+      while (k >= ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -543,7 +543,7 @@ matVecCscRowMajorConj (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal i = ind[k];
-      while (k > ptr[j+1]) {
+      while (k >= ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -595,7 +595,7 @@ matVecCsrRowMajorConj (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal j = ind[k];
-      while (k > ptr[i+1]) {
+      while (k >= ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -612,7 +612,7 @@ matVecCsrRowMajorConj (
     for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal j = ind[k];
-      while (k > ptr[i+1]) {
+      while (k >= ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i*rowStrideY];

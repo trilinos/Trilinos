@@ -544,7 +544,7 @@ def emitForLoop (defDict, indent=0):
             ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n'
     s = s + \
         ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
-        ind + ' '*4 + 'while (k > ptr[${loopIndex}+1]) {\n' + \
+        ind + ' '*4 + 'while (k >= ptr[${loopIndex}+1]) {\n' + \
         ind + ' '*6 + '++${loopIndex};\n'
     if defDict['sparseFormat'] == 'CSR':
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
@@ -574,7 +574,7 @@ def emitForLoop (defDict, indent=0):
             ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n'
     s = s + \
         ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
-        ind + ' '*4 + 'while (k > ptr[${loopIndex}+1]) {\n' + \
+        ind + ' '*4 + 'while (k >= ptr[${loopIndex}+1]) {\n' + \
         ind + ' '*6 + '++${loopIndex};\n'
     if defDict['sparseFormat'] == 'CSR':
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
