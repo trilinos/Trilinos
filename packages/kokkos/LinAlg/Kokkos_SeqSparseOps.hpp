@@ -779,30 +779,11 @@ namespace Kokkos {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::lowerTriSolveCsrColMajorUnitDiag;
-
-            if (true) {
-              lowerTriSolveCsrColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
-                                                                   numVecs,
-                                                                   X_raw, X_stride,
-                                                                   ptr, ind, val,
-                                                                   Y_raw, Y_stride);
-            }
-            else {
-              for (Ordinal r = 0; r < numRows; ++r) {
-                for (Ordinal j = 0; j < numVecs; ++j) {
-                  X_raw[r + j*X_stride] = Y_raw[r + j*Y_stride];
-                }
-                for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
-                  const MST A_rc = val[k];
-                  const Ordinal c = ind[k];
-                  TEUCHOS_TEST_FOR_EXCEPTION(c >= r, std::invalid_argument,
-                                             "c = " << c << " >= r = " << r << ".");
-                  for (Ordinal j = 0; j < numVecs; ++j) {
-                    X_raw[r + j*X_stride] -= A_rc * X_raw[c + j*Y_stride];
-                  }
-                }
-              }
-            }
+            lowerTriSolveCsrColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
+                                                                 numVecs,
+                                                                 X_raw, X_stride,
+                                                                 ptr, ind, val,
+                                                                 Y_raw, Y_stride);
           }
           else { // non unit diagonal
             using Kokkos::Raw::lowerTriSolveCsrColMajor;
@@ -824,34 +805,11 @@ namespace Kokkos {
           }
           else { // non unit diagonal
             using Kokkos::Raw::upperTriSolveCsrColMajor;
-            if (true) {
-              upperTriSolveCsrColMajor<OT, MST, DST, RST> (numRows, numCols,
-                                                           numVecs,
-                                                           X_raw, X_stride,
-                                                           ptr, ind, val,
-                                                           Y_raw, Y_stride);
-            }
-            else {
-              typedef Teuchos::ScalarTraits<MST> STS;
-
-              for (Ordinal r = numRows-1; r >= 0; --r) {
-                for (Ordinal j = 0; j < numVecs; ++j) {
-                  X_raw[r + j*X_stride] = Y_raw[r + j*Y_stride];
-                }
-                // We assume there's an entry for the diagonal element.
-                const MST A_rr = val[ptr[r]];
-                for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
-                  const MST A_rc = val[k];
-                  const Ordinal c = ind[k];
-                  for (Ordinal j = 0; j < numVecs; ++j) {
-                    X_raw[r + j*X_stride] -= A_rc * X_raw[c + j*Y_stride];
-                  }
-                }
-                for (Ordinal j = 0; j < numVecs; ++j) {
-                  X_raw[r + j*X_stride] = X_raw[r + j*X_stride] / A_rr;
-                }
-              }
-            }
+            upperTriSolveCsrColMajor<OT, MST, DST, RST> (numRows, numCols,
+                                                         numVecs,
+                                                         X_raw, X_stride,
+                                                         ptr, ind, val,
+                                                         Y_raw, Y_stride);
           }
         }
       }
