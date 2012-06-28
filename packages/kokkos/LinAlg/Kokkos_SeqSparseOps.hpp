@@ -999,85 +999,17 @@ namespace Kokkos {
     // numCols for CSC.
     if (trans == Teuchos::NO_TRANS) {
       using Kokkos::Raw::matVecCsrColMajor;
-
-      if (true) { // One 'for' loop with 'while' loop to advance row index
-        if (true) {
-          matVecCsrColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
-                                                beta, Y_raw, Y_stride,
-                                                alpha, ptr, ind, val,
-                                                X_raw, X_stride);
-        }
-        else {
-          for (Ordinal c = 0; c < numVecs; ++c) {
-            Y_raw[c*Y_stride] = beta * Y_raw[c*Y_stride];
-          }
-          Ordinal i = 0;
-          const Ordinal nnz = ptr[numRows];
-          for (Ordinal k = 0; k < nnz; ++k) {
-            const MST A_ij = val[k];
-            const Ordinal j = ind[k];
-            while (k >= ptr[i+1]) {
-              ++i;
-              RST* const Y_i = &Y_raw[i];
-              for (Ordinal c = 0; c < numVecs; ++c) {
-                Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
-              }
-            }
-            const DST* const X_j = &X_raw[j];
-            RST* const Y_i = &Y_raw[i];
-            for (Ordinal c = 0; c < numVecs; ++c) {
-              Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
-            }
-          }
-        }
-      }
-      else { // Two nested 'for' loops
-        for (Ordinal i = 0; i < numRows; ++i) {
-          RST* const Y_i = &Y_raw[i];
-          for (Ordinal c = 0; c < numVecs; ++c) {
-            Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
-          }
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
-            const MST A_ij = val[k];
-            const Ordinal j = ind[k];
-            const DST* const X_j = &X_raw[j];
-            for (Ordinal c = 0; c < numVecs; ++c) {
-              Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
-            }
-          }
-        }
-      }
+      matVecCsrColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
+                                            beta, Y_raw, Y_stride,
+                                            alpha, ptr, ind, val,
+                                            X_raw, X_stride);
     }
     else if (trans == Teuchos::TRANS) {
       using Kokkos::Raw::matVecCscColMajor;
-      if (true) {
-        matVecCscColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
-                                              beta, Y_raw, Y_stride,
-                                              alpha, ptr, ind, val,
-                                              X_raw, X_stride);
-      }
-      else {
-        // Prescale Y.
-        for (Ordinal i = 0; i < numRows; ++i) {
-          RST* const Y_i = &Y_raw[i];
-          for (Ordinal c = 0; c < numVecs; ++c) {
-            Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
-          }
-        }
-        // It's still numRows, even though we're iterating over columns
-        // of the matrix.
-        for (Ordinal j = 0; j < numRows; ++j) {
-          const DST* const X_j = &X_raw[j];
-          for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
-            const MST A_ij = val[k];
-            const Ordinal i = ind[k];
-            RST* const Y_i = &Y_raw[i];
-            for (Ordinal c = 0; c < numVecs; ++c) {
-              Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
-            }
-          }
-        }
-      }
+      matVecCscColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
+                                            beta, Y_raw, Y_stride,
+                                            alpha, ptr, ind, val,
+                                            X_raw, X_stride);
     }
     else if (trans == Teuchos::CONJ_TRANS) {
       using Kokkos::Raw::matVecCscColMajorConj;
