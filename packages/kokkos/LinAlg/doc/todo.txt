@@ -1,0 +1,13 @@
+Complex
+* use cusp::complex<T> on the node
+* need a bridge between std::complex<T> (host) and cusp::complex<T> (device)
+
+CUSPARSE
+* support for computing the tranpose for faster multiply()
+* support for deleting the non-transpose matrix if it isn't needed
+
+Cusp
+* Cusp TPL support
+* usage for CUSPARSE gaps under DefaultSparseOps
+* user-specified selection of matrix storage format
+* factory for Kokkos::Operator encapsulation of Cusp preconditioners
