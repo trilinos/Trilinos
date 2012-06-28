@@ -338,8 +338,7 @@ def emitFuncSig (defDict, indent=0):
         ind + 'void\n' + \
         ind + emitFuncName(defDict) + ' (\n' + \
         ind + '  const Ordinal numRows,\n' + \
-        ind + '  const Ordinal start${RowCol},\n' + \
-        ind + '  const Ordinal end${RowCol}PlusOne,\n' + \
+        ind + '  const Ordinal numCols,\n' + \
         ind + '  const Ordinal numVecs,\n' + \
         ind + '  const RangeScalar& beta,\n' + \
         ind + '  RangeScalar Y[],\n' + \
@@ -357,11 +356,7 @@ def emitFuncSig (defDict, indent=0):
         denseRowCol = 'row'        
     else:
         raise ValueError('Invalid dataLayout "' + defDict['dataLayout'] + '"')
-
-    if defDict['sparseFormat'] == 'CSC':
-        return Template(sig).substitute(denseRowCol=denseRowCol, RowCol='Col')
-    elif defDict['sparseFormat'] == 'CSR':
-        return Template(sig).substitute(denseRowCol=denseRowCol, RowCol='Row')
+    return Template(sig).substitute(denseRowCol=denseRowCol)
 
 
 # Includes the curly braces.
