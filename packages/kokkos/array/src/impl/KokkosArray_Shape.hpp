@@ -516,8 +516,8 @@ template< class T , unsigned RankDynamic , unsigned Rank >
 inline
 size_t allocation_count( const Shape<LayoutLeft,T,RankDynamic,Rank> & shape )
 {
-  return ( 0 == Rank ? 1 : shape.Stride * (
-           1 == Rank ? 1 : shape.N1 * (
+  return ( 0 == Rank ? 1 : (
+           1 == Rank ? shape.N0 : shape.Stride * shape.N1 * (
            2 == Rank ? 1 : shape.N2 * (
            3 == Rank ? 1 : shape.N3 * (
            4 == Rank ? 1 : shape.N4 * (

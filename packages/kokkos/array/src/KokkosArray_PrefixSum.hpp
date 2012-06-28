@@ -45,6 +45,7 @@
 #define KOKKOS_PREFIXSUM_HPP
 
 #include <string>
+#include <KokkosArray_View.hpp>
 #include <impl/KokkosArray_forward.hpp>
 #include <impl/KokkosArray_ArrayBounds.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>

@@ -147,6 +147,18 @@ public:
   template< typename iType0 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
+  value_type & operator[]( const iType0 & i0 ) const
+    {
+      typedef typename Impl::assert_shape_is_rank< shape_type , 1 >::type ok_rank ;
+
+      KOKKOS_MACRO_CHECK( Impl::array_bounds_check( m_shape, i0 ) );
+
+      return m_ptr_on_device[ i0 ]; 
+    }
+
+  template< typename iType0 >
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator()( const iType0 & i0 ) const
     {
       typedef typename Impl::assert_shape_is_rank< shape_type , 1 >::type ok_rank ;

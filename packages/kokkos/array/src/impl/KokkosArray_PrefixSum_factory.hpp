@@ -55,33 +55,35 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< typename IntType , class Device >
-struct Factory< PrefixSum< IntType , Device > ,
-                PrefixSum< IntType , Device > >
+template< typename IntType , class DeviceDst , class DeviceSrc >
+struct Factory< PrefixSum< IntType , DeviceDst > ,
+                PrefixSum< IntType , DeviceSrc > >
 {
-  typedef PrefixSum< IntType, Device > output_type ;
+  typedef PrefixSum< IntType, DeviceDst > output_type ;
+  typedef PrefixSum< IntType, DeviceSrc > input_type ;
+
+  typedef typename output_type::view_type output_view_type ;
+  typedef typename input_type::view_type  input_view_type ;
+
+  typedef Factory< output_view_type , input_view_type > view_factory ;
 
   static inline
-  void deep_copy( output_type & output , const output_type & input )
+  void deep_copy( output_type & output , const input_type & input )
   {
-    typedef MemoryView< typename output_type::size_type ,
-                        typename Device::memory_space > data_type ;
-
-    Factory< data_type , data_type >
-      ::deep_copy( output.m_data, input.m_data , output.m_length + 1 );
-
+    view_factory::deep_copy( output.m_data , input.m_data );
     output.m_sum = input.m_sum ;
   }
 
   static inline
-  output_type create( const output_type & input )
+  output_type create( const input_type & input )
   {
     output_type output ;
-    output.m_length = input.m_length ;
-    output.m_sum    = input.m_sum ;
-    output.m_data.allocate( input.m_length + 1 , std::string() );
 
-    deep_copy( output , input );
+    output.m_data = view_factory::create( input.m_data );
+
+    view_factory::deep_copy( output.m_data , input.m_data );
+
+    output.m_sum = input.m_sum ;
 
     return output ;
   }
@@ -119,6 +121,11 @@ struct Factory< PrefixSum< IntTypeOutput , DeviceOutput > ,
   static
   output_type create( const std::string & label , const input_type & input )
   {
+    typedef typename output_type::view_type output_view_type ;
+    typedef typename output_view_type::HostMirror  mirror_view_type ;
+
+    typedef Factory< output_view_type , unsigned_<1> > output_view_factory ;
+
     typedef MemoryView< IntTypeOutput ,
                         typename DeviceOutput::memory_space > memory_output ;
 
@@ -128,12 +135,11 @@ struct Factory< PrefixSum< IntTypeOutput , DeviceOutput > ,
 
     output_type output ;
 
-    output.m_length = count ;
-    output.m_data.allocate( count + 1 , label );
+    output.m_data = output_view_factory::create( label , count + 1 );
 
     // If same memory space then a view:
-    memory_mirror tmp = Factory< memory_mirror , MirrorUseView >
-                          ::create( output.m_data , count + 1 );
+    typename output_view_type::HostMirror tmp =
+      create_mirror( output.m_data , MirrorUseView() );
 
     // Could be made parallel
     output.m_sum = tmp[0] = 0 ;
@@ -141,8 +147,7 @@ struct Factory< PrefixSum< IntTypeOutput , DeviceOutput > ,
       tmp[i+1] = output.m_sum += input[i] ;
     }
 
-    Factory< memory_output , memory_mirror >
-      ::deep_copy( output.m_data , tmp , count + 1 );
+    deep_copy( output.m_data , tmp );
 
     return output ;
   }

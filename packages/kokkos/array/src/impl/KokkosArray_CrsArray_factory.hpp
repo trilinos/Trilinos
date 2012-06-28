@@ -193,11 +193,12 @@ struct Factory< CrsArray< ValueType , DeviceOutput , MapSizeType > ,
   output_type create( const std::string & label , const input_type & input )
   {
     typedef typename output_type::row_map_type   row_map_type ;
+    typedef typename row_map_type::view_type     row_map_data_type ;
+
     typedef typename output_type::entries_type   entries_type ;
     typedef typename DeviceOutput::memory_space  memory_space ;
 
-    typedef MemoryView< MapSizeType , memory_space > data_type ;
-    typedef typename data_type::HostMirror data_mirror_type ;
+    typedef Factory< row_map_data_type , unsigned_<1> > row_map_data_factory ;
 
     // Create the row map:
 
@@ -205,19 +206,17 @@ struct Factory< CrsArray< ValueType , DeviceOutput , MapSizeType > ,
 
     output_type output ;
 
-    output.row_map.m_length = length ;
-    output.row_map.m_data.allocate( length + 1 , label );
+    output.row_map.m_data = row_map_data_factory::create( label , length + 1 );
 
-    data_mirror_type tmp = Factory< data_mirror_type , MirrorUseView >
-                             ::create( output.row_map.m_data , length + 1 );
+    typename row_map_data_type::HostMirror tmp =
+      create_mirror( output.row_map.m_data );
 
     output.row_map.m_sum = tmp[0] = 0 ;
     for ( size_t i = 0 ; i < length ; ++i ) {
       tmp[i+1] = output.row_map.m_sum += input[i].size();
     }
 
-    Factory< data_type , data_mirror_type >
-      ::deep_copy( output.row_map.m_data , tmp , length + 1 );
+    deep_copy( output.row_map.m_data , tmp );
 
     // Create an populate the entries:
 

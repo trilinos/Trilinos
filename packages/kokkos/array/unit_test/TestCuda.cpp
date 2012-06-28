@@ -101,7 +101,7 @@ TEST_F( cuda, multi_vector )
 
 TEST_F( cuda, array )
 {
-  test_device_cuda_crsarray();
+  test_device_cuda_array();
 }
 
 TEST_F( cuda, crsarray )

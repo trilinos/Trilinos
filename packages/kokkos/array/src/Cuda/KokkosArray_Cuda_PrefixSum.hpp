@@ -63,6 +63,8 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#if 0
+
 namespace KokkosArray {
 namespace Impl {
 
@@ -129,6 +131,8 @@ struct Factory< PrefixSum< IntType , HostMapped< Cuda > > ,
 
 } // namespace Impl
 } // namespace KokkosArray
+
+#endif
 
 #endif /* #ifndef KOKKOS_CUDA_PREFIXSUM_HPP */
 

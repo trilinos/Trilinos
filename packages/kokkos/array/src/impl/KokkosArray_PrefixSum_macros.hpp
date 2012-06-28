@@ -64,7 +64,7 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type length() const { return m_length ; }
+  size_type length() const { return m_data.dimension_0() - 1 ; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -86,16 +86,14 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   PrefixSum()
     : m_data()
-    , m_length(0)
     , m_sum(0)
     {}
 
   /** \brief  Construct a view of the array */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   PrefixSum( const PrefixSum & rhs )
-    : m_data(   rhs.m_data )
-    , m_length( rhs.m_length )
-    , m_sum(    rhs.m_sum )
+    : m_data( rhs.m_data )
+    , m_sum(  rhs.m_sum )
     {}
 
   /** \brief  Assign to a view of the rhs array.
@@ -105,9 +103,8 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   PrefixSum & operator = ( const PrefixSum & rhs )
   {
-    m_data   = rhs.m_data ;
-    m_length = rhs.m_length ;
-    m_sum    = rhs.m_sum ;
+    m_data = rhs.m_data ;
+    m_sum  = rhs.m_sum ;
     return *this ;
   }
 
@@ -115,7 +112,7 @@ public:
    *           If the last view then allocated memory is deallocated.
    */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  ~PrefixSum() { m_length = 0 ; m_sum = 0 ; }
+  ~PrefixSum() { m_sum = 0 ; }
 
   /*------------------------------------------------------------------*/
 
@@ -141,11 +138,11 @@ public:
 
 private:
 
-  typedef device_type::memory_space  memory_space ;
+  typedef View< size_type[] , typename device_type::array_layout ,
+                              typename device_type::device_type > view_type ;
 
-  Impl::MemoryView< size_type ,  memory_space > m_data ;
-  size_type                                     m_length ;
-  size_type                                     m_sum ;
+  view_type  m_data ;
+  size_type  m_sum ;
 
   template< typename , class > friend class PrefixSum ;
   template< class Dst , class Src >  friend class Impl::Factory ;

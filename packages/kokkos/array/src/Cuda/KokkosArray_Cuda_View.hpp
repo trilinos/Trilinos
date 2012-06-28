@@ -49,6 +49,12 @@
 #include <impl/KokkosArray_View_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 
+#include <KokkosArray_Host_macros.hpp>
+#undef KOKKOS_MACRO_DEVICE
+#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
+#include <impl/KokkosArray_View_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
+
 
 namespace KokkosArray {
 namespace Impl {
@@ -74,6 +80,7 @@ struct Factory< View< DataType , LayoutSpec , Cuda > , unsigned_<1> >
     output_type output ;
 
     output.m_shape = Factory< shape_type , memory_space >::create(n0);
+
     output.m_ptr_on_device = (value_type *)
       memory_space::allocate( label ,
                               typeid(value_type) ,

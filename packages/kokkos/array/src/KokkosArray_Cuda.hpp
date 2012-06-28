@@ -60,6 +60,8 @@ public:
   //! \name Type declarations that all KokkosArray devices must provide.
   //@{
 
+  typedef Cuda          type ;
+  typedef Cuda          device_type ;
   typedef Cuda          memory_space ;
   typedef unsigned int  size_type ;
 

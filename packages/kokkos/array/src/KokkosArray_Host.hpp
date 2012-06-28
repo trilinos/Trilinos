@@ -63,6 +63,8 @@ public:
   //! \name Type declarations that all KokkosArray devices must provide.
   //@{
 
+  typedef Host    type ;
+  typedef Host    device_type ;
   typedef Host    memory_space ;
   typedef size_t  size_type ;
 
@@ -166,6 +168,7 @@ template< class Device >
 struct HostMapped {
 public:
   typedef HostMapped< Device >        type ;
+  typedef Host                        device_type ;
   typedef typename Device::size_type  size_type ;
   typedef Host::memory_space          memory_space ;
 
@@ -177,10 +180,19 @@ public:
     typedef typename
       Device::template IndexMap<Rank,N1,N2,N3,N4,N5,N6,N7>::type type ;
   };
+
+  typedef Impl::HostMemorySpace          memory_space_new ;
+  typedef typename Device::array_layout  array_layout ;
 };
 
 /** \brief  The host mapped onto the host is the host */
-template<> struct HostMapped<Host> { typedef Host type ; };
+template<> struct HostMapped<Host>
+{
+  typedef Host                   type ;
+  typedef Host                   device_type ;
+  typedef Impl::HostMemorySpace  memory_space_new ;
+  typedef Host::array_layout     array_layout ;
+};
 
 /*--------------------------------------------------------------------------*/
 
