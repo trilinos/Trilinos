@@ -772,36 +772,41 @@ namespace Kokkos {
       const Ordinal* const ind = ind_.getRawPtr ();
       const Scalar*  const val = val_.getRawPtr ();
       const Ordinal numRows = X.getNumRows ();
-      // const Ordinal numCols = Y.getNumRows ();
+      const Ordinal numCols = Y.getNumRows ();
       const Ordinal numVecs = X.getNumCols ();
 
       if (trans == Teuchos::NO_TRANS) {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::lowerTriSolveCsrColMajorUnitDiag;
-            // lowerTriSolveCsrColMajorUnitDiag<OT, MST, DST, RST> (numRows_, 0, numRows_,
-            //                                                      numVecs,
-            //                                                      X_raw, X_stride,
-            //                                                      ptr, ind, val,
-            //                                                      Y_raw, Y_stride);
-            for (Ordinal r = 0; r < numRows; ++r) {
-              for (Ordinal j = 0; j < numVecs; ++j) {
-                X_raw[r + j*X_stride] = Y_raw[r + j*Y_stride];
-              }
-              for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
-                const MST A_rc = val[k];
-                const Ordinal c = ind[k];
-                TEUCHOS_TEST_FOR_EXCEPTION(c >= r, std::invalid_argument,
-                  "c = " << c << " >= r = " << r << ".");
+
+            if (true) {
+              lowerTriSolveCsrColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
+                                                                   numVecs,
+                                                                   X_raw, X_stride,
+                                                                   ptr, ind, val,
+                                                                   Y_raw, Y_stride);
+            }
+            else {
+              for (Ordinal r = 0; r < numRows; ++r) {
                 for (Ordinal j = 0; j < numVecs; ++j) {
-                  X_raw[r + j*X_stride] -= A_rc * X_raw[c + j*Y_stride];
+                  X_raw[r + j*X_stride] = Y_raw[r + j*Y_stride];
+                }
+                for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+                  const MST A_rc = val[k];
+                  const Ordinal c = ind[k];
+                  TEUCHOS_TEST_FOR_EXCEPTION(c >= r, std::invalid_argument,
+                                             "c = " << c << " >= r = " << r << ".");
+                  for (Ordinal j = 0; j < numVecs; ++j) {
+                    X_raw[r + j*X_stride] -= A_rc * X_raw[c + j*Y_stride];
+                  }
                 }
               }
             }
           }
           else { // non unit diagonal
             using Kokkos::Raw::lowerTriSolveCsrColMajor;
-            lowerTriSolveCsrColMajor<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            lowerTriSolveCsrColMajor<OT, MST, DST, RST> (numRows, numCols,
                                                          numVecs,
                                                          X_raw, X_stride,
                                                          ptr, ind, val,
@@ -811,7 +816,7 @@ namespace Kokkos {
         else { // upper triangular
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::upperTriSolveCsrColMajorUnitDiag;
-            upperTriSolveCsrColMajorUnitDiag<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            upperTriSolveCsrColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
                                                                  numVecs,
                                                                  X_raw, X_stride,
                                                                  ptr, ind, val,
@@ -819,44 +824,32 @@ namespace Kokkos {
           }
           else { // non unit diagonal
             using Kokkos::Raw::upperTriSolveCsrColMajor;
-            // upperTriSolveCsrColMajor<OT, MST, DST, RST> (numRows_, 0, numRows_,
-            //                                              numVecs,
-            //                                              X_raw, X_stride,
-            //                                              ptr, ind, val,
-            //                                              Y_raw, Y_stride);
-            typedef Teuchos::ScalarTraits<MST> STS;
-            // using std::cerr;
-            // using std::endl;
+            if (true) {
+              upperTriSolveCsrColMajor<OT, MST, DST, RST> (numRows, numCols,
+                                                           numVecs,
+                                                           X_raw, X_stride,
+                                                           ptr, ind, val,
+                                                           Y_raw, Y_stride);
+            }
+            else {
+              typedef Teuchos::ScalarTraits<MST> STS;
 
-            // cerr << "X_raw = ";
-            // std::copy (X_raw, X_raw+numRows, std::ostream_iterator<RST> (cerr, " "));
-            // cerr << endl << "Y_raw = ";
-            // std::copy (Y_raw, Y_raw+numRows, std::ostream_iterator<DST> (cerr, " "));
-            // cerr << endl;
-
-            for (Ordinal r = numRows-1; r >= 0; --r) {
-              for (Ordinal j = 0; j < numVecs; ++j) {
-                X_raw[r + j*X_stride] = Y_raw[r + j*Y_stride];
-              }
-              // We assume there's an entry for the diagonal element.
-              const MST A_rr = val[ptr[r]];
-              // cerr << "r = " << r << ", ptr[r] = " << ptr[r]
-              //      << ", val[ptr[r]] = " << A_rr << endl;
-
-              for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
-                const MST A_rc = val[k];
-                const Ordinal c = ind[k];
-                // TEUCHOS_TEST_FOR_EXCEPTION(c < r, std::invalid_argument,
-                //   "c = " << c << " < r = " << r << ".");
+              for (Ordinal r = numRows-1; r >= 0; --r) {
                 for (Ordinal j = 0; j < numVecs; ++j) {
-                  X_raw[r + j*X_stride] -= A_rc * X_raw[c + j*Y_stride];
+                  X_raw[r + j*X_stride] = Y_raw[r + j*Y_stride];
                 }
-              }
-              // TEUCHOS_TEST_FOR_EXCEPTION(A_rr == STS::zero(),
-              //   std::invalid_argument,
-              //   "A(" << r << "," << r << ") = 0.");
-              for (Ordinal j = 0; j < numVecs; ++j) {
-                X_raw[r + j*X_stride] = X_raw[r + j*X_stride] / A_rr;
+                // We assume there's an entry for the diagonal element.
+                const MST A_rr = val[ptr[r]];
+                for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+                  const MST A_rc = val[k];
+                  const Ordinal c = ind[k];
+                  for (Ordinal j = 0; j < numVecs; ++j) {
+                    X_raw[r + j*X_stride] -= A_rc * X_raw[c + j*Y_stride];
+                  }
+                }
+                for (Ordinal j = 0; j < numVecs; ++j) {
+                  X_raw[r + j*X_stride] = X_raw[r + j*X_stride] / A_rr;
+                }
               }
             }
           }
@@ -866,7 +859,10 @@ namespace Kokkos {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiag;
-            lowerTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            // numRows resp. numCols come from the number of rows in Y
+            // resp. X, so they still appear in the same order as
+            // in the not transposed cases above.
+            lowerTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
                                                                  numVecs,
                                                                  X_raw, X_stride,
                                                                  ptr, ind, val,
@@ -874,7 +870,7 @@ namespace Kokkos {
           }
           else {
             using Kokkos::Raw::lowerTriSolveCscColMajor;
-            lowerTriSolveCscColMajor<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            lowerTriSolveCscColMajor<OT, MST, DST, RST> (numRows, numCols,
                                                          numVecs,
                                                          X_raw, X_stride,
                                                          ptr, ind, val,
@@ -884,7 +880,7 @@ namespace Kokkos {
         else { // upper triangular
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::upperTriSolveCscColMajorUnitDiag;
-            upperTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            upperTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
                                                                  numVecs,
                                                                  X_raw, X_stride,
                                                                  ptr, ind, val,
@@ -892,7 +888,7 @@ namespace Kokkos {
           }
           else {
             using Kokkos::Raw::upperTriSolveCscColMajor;
-            upperTriSolveCscColMajor<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            upperTriSolveCscColMajor<OT, MST, DST, RST> (numRows, numCols,
                                                          numVecs,
                                                          X_raw, X_stride,
                                                          ptr, ind, val,
@@ -904,7 +900,7 @@ namespace Kokkos {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiagConj;
-            lowerTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            lowerTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
                                                                      numVecs,
                                                                      X_raw, X_stride,
                                                                      ptr, ind, val,
@@ -912,7 +908,7 @@ namespace Kokkos {
           }
           else {
             using Kokkos::Raw::lowerTriSolveCscColMajorConj;
-            lowerTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            lowerTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
                                                              numVecs,
                                                              X_raw, X_stride,
                                                              ptr, ind, val,
@@ -922,7 +918,7 @@ namespace Kokkos {
         else { // upper triangular
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::upperTriSolveCscColMajorUnitDiagConj;
-            upperTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            upperTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
                                                                      numVecs,
                                                                      X_raw, X_stride,
                                                                      ptr, ind, val,
@@ -930,7 +926,7 @@ namespace Kokkos {
           }
           else {
             using Kokkos::Raw::upperTriSolveCscColMajorConj;
-            upperTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows_, 0, numRows_,
+            upperTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
                                                              numVecs,
                                                              X_raw, X_stride,
                                                              ptr, ind, val,
@@ -966,6 +962,9 @@ namespace Kokkos {
             RangeScalar beta,
             MultiVector<RangeScalar, Node> &Y) const
   {
+    using std::cerr;
+    using std::endl;
+
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isInitialized_,
@@ -981,6 +980,8 @@ namespace Kokkos {
     typedef DomainScalar DST;
     typedef RangeScalar RST;
 
+    // These dimensions come from the input and output multivectors,
+    // so they apply for the transpose case as well.
     const Ordinal numRows = Y.getNumRows ();
     const Ordinal numCols = X.getNumRows ();
     const Ordinal numVecs = X.getNumCols ();
@@ -998,21 +999,76 @@ namespace Kokkos {
     // numCols for CSC.
     if (trans == Teuchos::NO_TRANS) {
       using Kokkos::Raw::matVecCsrColMajor;
-      // matVecCsrColMajor<OT, MST, DST, RST> (numRows, 0, numRows, numVecs,
-      //                                       beta, Y_raw, Y_stride,
-      //                                       alpha, ptr, ind, val,
-      //                                       X_raw, X_stride);
-      for (Ordinal i = 0; i < numRows; ++i) {
-        RST* const Y_i = &Y_raw[i];
+
+      if (true) { // One 'for' loop with 'while' loop to advance row index
+        // matVecCsrColMajor<OT, MST, DST, RST> (numRows, 0, numRows, numVecs,
+        //                                       beta, Y_raw, Y_stride,
+        //                                       alpha, ptr, ind, val,
+        //                                       X_raw, X_stride);
         for (Ordinal c = 0; c < numVecs; ++c) {
-          Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
+          Y_raw[c*Y_stride] = beta * Y_raw[c*Y_stride];
         }
-        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+        Ordinal i = 0;
+        const Ordinal nnz = ptr[numRows];
+        for (Ordinal k = 0; k < nnz; ++k) {
+          // cerr << "Iteration k = " << k << endl;
           const MST A_ij = val[k];
           const Ordinal j = ind[k];
+          while (k >= ptr[i+1]) {
+            // Invariants inside this loop:
+            // * 0 <= k < ptr[numRows]
+            //
+            // Invariants inside this loop, before ++i
+            // * 0 <= i < numRows
+            // * k >= ptr[i+1], which means that i is still too small.
+            // * We have not yet initialized Y(i+1,:).
+            //
+            // Since we know that 0 <= k < ptr[numRows], we know that
+            // A_ij = val[k] and j = ind[k] are valid.  Thus, the
+            // correct i is the one for which ptr[i] <= k < ptr[i+1].
+            // If ptr[i] == ptr[i+1], then the corresponding row i is
+            // empty.  In that case, k >= ptr[i] and k >= ptr[i+1] as
+            // well, so this loop will move i past that row.
+            //
+            // If the last row of the matrix is empty, then
+            // ptr[numRows-1] == ptr[numRows].  However, k <
+            // ptr[numRows] always (see above invariant), so we would
+            // never enter this 'while' loop in that case.  Thus, we
+            // don't need to check in the 'while' clause whether i <
+            // numRows.
+            //
+            // We need a while loop here specifically for the case of
+            // empty rows.  If we forbid empty rows (this is easy to
+            // do by simply adding an entry with a zero value to each
+            // empty row when constructing ptr,ind,val), then we can
+            // replace the while loop with a single if test.  This
+            // saves a branch.
+            ++i;
+            RST* const Y_i = &Y_raw[i];
+            for (Ordinal c = 0; c < numVecs; ++c) {
+              Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
+            }
+          }
           const DST* const X_j = &X_raw[j];
+          RST* const Y_i = &Y_raw[i];
           for (Ordinal c = 0; c < numVecs; ++c) {
             Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
+          }
+        }
+      }
+      else { // Two nested 'for' loops
+        for (Ordinal i = 0; i < numRows; ++i) {
+          RST* const Y_i = &Y_raw[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
+          }
+          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+            const MST A_ij = val[k];
+            const Ordinal j = ind[k];
+            const DST* const X_j = &X_raw[j];
+            for (Ordinal c = 0; c < numVecs; ++c) {
+              Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
+            }
           }
         }
       }

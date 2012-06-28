@@ -79,14 +79,8 @@ namespace Raw {
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -110,8 +104,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscColMajor (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -133,14 +126,8 @@ lowerTriSolveCscColMajor (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -164,8 +151,7 @@ template<class Ordinal,
 void
 lowerTriSolveCsrColMajor (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -187,14 +173,8 @@ lowerTriSolveCsrColMajor (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -218,8 +198,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscRowMajor (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -241,14 +220,8 @@ lowerTriSolveCscRowMajor (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -272,8 +245,7 @@ template<class Ordinal,
 void
 lowerTriSolveCsrRowMajor (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -296,14 +268,8 @@ lowerTriSolveCsrRowMajor (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -327,8 +293,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscColMajorUnitDiag (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -351,14 +316,8 @@ lowerTriSolveCscColMajorUnitDiag (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -382,8 +341,7 @@ template<class Ordinal,
 void
 lowerTriSolveCsrColMajorUnitDiag (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -406,14 +364,8 @@ lowerTriSolveCsrColMajorUnitDiag (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -437,8 +389,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscRowMajorUnitDiag (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -461,14 +412,8 @@ lowerTriSolveCscRowMajorUnitDiag (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -492,8 +437,7 @@ template<class Ordinal,
 void
 lowerTriSolveCsrRowMajorUnitDiag (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -515,14 +459,8 @@ lowerTriSolveCsrRowMajorUnitDiag (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -546,8 +484,7 @@ template<class Ordinal,
 void
 upperTriSolveCscColMajor (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -569,14 +506,8 @@ upperTriSolveCscColMajor (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -600,8 +531,7 @@ template<class Ordinal,
 void
 upperTriSolveCsrColMajor (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -623,14 +553,8 @@ upperTriSolveCsrColMajor (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -654,8 +578,7 @@ template<class Ordinal,
 void
 upperTriSolveCscRowMajor (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -677,14 +600,8 @@ upperTriSolveCscRowMajor (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -708,8 +625,7 @@ template<class Ordinal,
 void
 upperTriSolveCsrRowMajor (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -732,14 +648,8 @@ upperTriSolveCsrRowMajor (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -763,8 +673,7 @@ template<class Ordinal,
 void
 upperTriSolveCscColMajorUnitDiag (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -787,14 +696,8 @@ upperTriSolveCscColMajorUnitDiag (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -818,8 +721,7 @@ template<class Ordinal,
 void
 upperTriSolveCsrColMajorUnitDiag (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -842,14 +744,8 @@ upperTriSolveCsrColMajorUnitDiag (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -873,8 +769,7 @@ template<class Ordinal,
 void
 upperTriSolveCscRowMajorUnitDiag (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -897,14 +792,8 @@ upperTriSolveCscRowMajorUnitDiag (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -928,8 +817,7 @@ template<class Ordinal,
 void
 upperTriSolveCsrRowMajorUnitDiag (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -950,14 +838,8 @@ upperTriSolveCsrRowMajorUnitDiag (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -977,8 +859,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscColMajorInPlace (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -997,14 +878,8 @@ lowerTriSolveCscColMajorInPlace (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1024,8 +899,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscRowMajorInPlace (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1045,14 +919,8 @@ lowerTriSolveCscRowMajorInPlace (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1072,8 +940,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscColMajorUnitDiagInPlace (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1093,14 +960,8 @@ lowerTriSolveCscColMajorUnitDiagInPlace (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1120,8 +981,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscRowMajorUnitDiagInPlace (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1140,14 +1000,8 @@ lowerTriSolveCscRowMajorUnitDiagInPlace (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1167,8 +1021,7 @@ template<class Ordinal,
 void
 upperTriSolveCscColMajorInPlace (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1187,14 +1040,8 @@ upperTriSolveCscColMajorInPlace (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1214,8 +1061,7 @@ template<class Ordinal,
 void
 upperTriSolveCscRowMajorInPlace (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1235,14 +1081,8 @@ upperTriSolveCscRowMajorInPlace (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1262,8 +1102,7 @@ template<class Ordinal,
 void
 upperTriSolveCscColMajorUnitDiagInPlace (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1283,14 +1122,8 @@ upperTriSolveCscColMajorUnitDiagInPlace (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1310,8 +1143,7 @@ template<class Ordinal,
 void
 upperTriSolveCscRowMajorUnitDiagInPlace (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1332,14 +1164,8 @@ upperTriSolveCscRowMajorUnitDiagInPlace (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1363,8 +1189,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscColMajorConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1387,14 +1212,8 @@ lowerTriSolveCscColMajorConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1418,8 +1237,7 @@ template<class Ordinal,
 void
 lowerTriSolveCsrColMajorConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1442,14 +1260,8 @@ lowerTriSolveCsrColMajorConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1473,8 +1285,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscRowMajorConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1497,14 +1308,8 @@ lowerTriSolveCscRowMajorConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1528,8 +1333,7 @@ template<class Ordinal,
 void
 lowerTriSolveCsrRowMajorConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1553,14 +1357,8 @@ lowerTriSolveCsrRowMajorConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1584,8 +1382,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscColMajorUnitDiagConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1609,14 +1406,8 @@ lowerTriSolveCscColMajorUnitDiagConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1640,8 +1431,7 @@ template<class Ordinal,
 void
 lowerTriSolveCsrColMajorUnitDiagConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1665,14 +1455,8 @@ lowerTriSolveCsrColMajorUnitDiagConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1696,8 +1480,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscRowMajorUnitDiagConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1721,14 +1504,8 @@ lowerTriSolveCscRowMajorUnitDiagConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1752,8 +1529,7 @@ template<class Ordinal,
 void
 lowerTriSolveCsrRowMajorUnitDiagConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1776,14 +1552,8 @@ lowerTriSolveCsrRowMajorUnitDiagConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1807,8 +1577,7 @@ template<class Ordinal,
 void
 upperTriSolveCscColMajorConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1831,14 +1600,8 @@ upperTriSolveCscColMajorConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -1862,8 +1625,7 @@ template<class Ordinal,
 void
 upperTriSolveCsrColMajorConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -1886,14 +1648,8 @@ upperTriSolveCsrColMajorConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1917,8 +1673,7 @@ template<class Ordinal,
 void
 upperTriSolveCscRowMajorConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1941,14 +1696,8 @@ upperTriSolveCscRowMajorConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -1972,8 +1721,7 @@ template<class Ordinal,
 void
 upperTriSolveCsrRowMajorConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -1997,14 +1745,8 @@ upperTriSolveCsrRowMajorConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -2028,8 +1770,7 @@ template<class Ordinal,
 void
 upperTriSolveCscColMajorUnitDiagConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -2053,14 +1794,8 @@ upperTriSolveCscColMajorUnitDiagConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -2084,8 +1819,7 @@ template<class Ordinal,
 void
 upperTriSolveCsrColMajorUnitDiagConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -2109,14 +1843,8 @@ upperTriSolveCsrColMajorUnitDiagConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -2140,8 +1868,7 @@ template<class Ordinal,
 void
 upperTriSolveCscRowMajorUnitDiagConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -2165,14 +1892,8 @@ upperTriSolveCscRowMajorUnitDiagConj (
 ///   matrices.
 /// \tparam DomainScalar The type of entries in the input matrix Y.
 ///   This may differ from the type of entries in the output matrix X.
-/// \param startRow [in] The least (zero-based) row index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [out] Output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -2196,8 +1917,7 @@ template<class Ordinal,
 void
 upperTriSolveCsrRowMajorUnitDiagConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -2219,14 +1939,8 @@ upperTriSolveCsrRowMajorUnitDiagConj (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -2246,8 +1960,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscColMajorInPlaceConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -2267,14 +1980,8 @@ lowerTriSolveCscColMajorInPlaceConj (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -2294,8 +2001,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscRowMajorInPlaceConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -2316,14 +2022,8 @@ lowerTriSolveCscRowMajorInPlaceConj (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -2343,8 +2043,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscColMajorUnitDiagInPlaceConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -2365,14 +2064,8 @@ lowerTriSolveCscColMajorUnitDiagInPlaceConj (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -2392,8 +2085,7 @@ template<class Ordinal,
 void
 lowerTriSolveCscRowMajorUnitDiagInPlaceConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -2413,14 +2105,8 @@ lowerTriSolveCscRowMajorUnitDiagInPlaceConj (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -2440,8 +2126,7 @@ template<class Ordinal,
 void
 upperTriSolveCscColMajorInPlaceConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -2461,14 +2146,8 @@ upperTriSolveCscColMajorInPlaceConj (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -2488,8 +2167,7 @@ template<class Ordinal,
 void
 upperTriSolveCscRowMajorInPlaceConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
@@ -2510,14 +2188,8 @@ upperTriSolveCscRowMajorInPlaceConj (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
@@ -2537,8 +2209,7 @@ template<class Ordinal,
 void
 upperTriSolveCscColMajorUnitDiagInPlaceConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
@@ -2559,14 +2230,8 @@ upperTriSolveCscColMajorUnitDiagInPlaceConj (
 /// \tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
 ///   matrices.
-/// \param startCol [in] The least (zero-based) column index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param endColPlusOne [in] The largest (zero-based) column index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startCol, endColPlusOne makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of columns in the sparse matrix (on the calling process).
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
 /// \param X [in/out] Input/output dense matrix, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
@@ -2586,8 +2251,7 @@ template<class Ordinal,
 void
 upperTriSolveCscRowMajorUnitDiagInPlaceConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
