@@ -1001,58 +1001,62 @@ namespace Kokkos {
       using Kokkos::Raw::matVecCsrColMajor;
 
       if (true) { // One 'for' loop with 'while' loop to advance row index
-        // matVecCsrColMajor<OT, MST, DST, RST> (numRows, 0, numRows, numVecs,
-        //                                       beta, Y_raw, Y_stride,
-        //                                       alpha, ptr, ind, val,
-        //                                       X_raw, X_stride);
-        for (Ordinal c = 0; c < numVecs; ++c) {
-          Y_raw[c*Y_stride] = beta * Y_raw[c*Y_stride];
+        if (false) {
+          matVecCsrColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
+                                                beta, Y_raw, Y_stride,
+                                                alpha, ptr, ind, val,
+                                                X_raw, X_stride);
         }
-        Ordinal i = 0;
-        const Ordinal nnz = ptr[numRows];
-        for (Ordinal k = 0; k < nnz; ++k) {
-          // cerr << "Iteration k = " << k << endl;
-          const MST A_ij = val[k];
-          const Ordinal j = ind[k];
-          while (k >= ptr[i+1]) {
-            // Invariants inside this loop:
-            // * 0 <= k < ptr[numRows]
-            //
-            // Invariants inside this loop, before ++i
-            // * 0 <= i < numRows
-            // * k >= ptr[i+1], which means that i is still too small.
-            // * We have not yet initialized Y(i+1,:).
-            //
-            // Since we know that 0 <= k < ptr[numRows], we know that
-            // A_ij = val[k] and j = ind[k] are valid.  Thus, the
-            // correct i is the one for which ptr[i] <= k < ptr[i+1].
-            // If ptr[i] == ptr[i+1], then the corresponding row i is
-            // empty.  In that case, k >= ptr[i] and k >= ptr[i+1] as
-            // well, so this loop will move i past that row.
-            //
-            // If the last row of the matrix is empty, then
-            // ptr[numRows-1] == ptr[numRows].  However, k <
-            // ptr[numRows] always (see above invariant), so we would
-            // never enter this 'while' loop in that case.  Thus, we
-            // don't need to check in the 'while' clause whether i <
-            // numRows.
-            //
-            // We need a while loop here specifically for the case of
-            // empty rows.  If we forbid empty rows (this is easy to
-            // do by simply adding an entry with a zero value to each
-            // empty row when constructing ptr,ind,val), then we can
-            // replace the while loop with a single if test.  This
-            // saves a branch.
-            ++i;
+        else {
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_raw[c*Y_stride] = beta * Y_raw[c*Y_stride];
+          }
+          Ordinal i = 0;
+          const Ordinal nnz = ptr[numRows];
+          for (Ordinal k = 0; k < nnz; ++k) {
+            // cerr << "Iteration k = " << k << endl;
+            const MST A_ij = val[k];
+            const Ordinal j = ind[k];
+            while (k >= ptr[i+1]) {
+              // Invariants inside this loop:
+              // * 0 <= k < ptr[numRows]
+              //
+              // Invariants inside this loop, before ++i
+              // * 0 <= i < numRows
+              // * k >= ptr[i+1], which means that i is still too small.
+              // * We have not yet initialized Y(i+1,:).
+              //
+              // Since we know that 0 <= k < ptr[numRows], we know that
+              // A_ij = val[k] and j = ind[k] are valid.  Thus, the
+              // correct i is the one for which ptr[i] <= k < ptr[i+1].
+              // If ptr[i] == ptr[i+1], then the corresponding row i is
+              // empty.  In that case, k >= ptr[i] and k >= ptr[i+1] as
+              // well, so this loop will move i past that row.
+              //
+              // If the last row of the matrix is empty, then
+              // ptr[numRows-1] == ptr[numRows].  However, k <
+              // ptr[numRows] always (see above invariant), so we would
+              // never enter this 'while' loop in that case.  Thus, we
+              // don't need to check in the 'while' clause whether i <
+              // numRows.
+              //
+              // We need a while loop here specifically for the case of
+              // empty rows.  If we forbid empty rows (this is easy to
+              // do by simply adding an entry with a zero value to each
+              // empty row when constructing ptr,ind,val), then we can
+              // replace the while loop with a single if test.  This
+              // saves a branch.
+              ++i;
+              RST* const Y_i = &Y_raw[i];
+              for (Ordinal c = 0; c < numVecs; ++c) {
+                Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
+              }
+            }
+            const DST* const X_j = &X_raw[j];
             RST* const Y_i = &Y_raw[i];
             for (Ordinal c = 0; c < numVecs; ++c) {
-              Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
+              Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
             }
-          }
-          const DST* const X_j = &X_raw[j];
-          RST* const Y_i = &Y_raw[i];
-          for (Ordinal c = 0; c < numVecs; ++c) {
-            Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
           }
         }
       }
@@ -1075,35 +1079,38 @@ namespace Kokkos {
     }
     else if (trans == Teuchos::TRANS) {
       using Kokkos::Raw::matVecCscColMajor;
-      // matVecCscColMajor<OT, MST, DST, RST> (numRows, 0, numCols, numVecs,
-      //                                       beta, Y_raw, Y_stride,
-      //                                       alpha, ptr, ind, val,
-      //                                       X_raw, X_stride);
-
-      // Prescale Y.
-      for (Ordinal i = 0; i < numRows; ++i) {
-        RST* const Y_i = &Y_raw[i];
-        for (Ordinal c = 0; c < numVecs; ++c) {
-          Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
-        }
+      if (true) {
+        matVecCscColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
+                                              beta, Y_raw, Y_stride,
+                                              alpha, ptr, ind, val,
+                                              X_raw, X_stride);
       }
-      // It's still numRows, even though we're iterating over columns
-      // of the matrix.
-      for (Ordinal j = 0; j < numRows; ++j) {
-        const DST* const X_j = &X_raw[j];
-        for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
-          const MST A_ij = val[k];
-          const Ordinal i = ind[k];
+      else {
+        // Prescale Y.
+        for (Ordinal i = 0; i < numRows; ++i) {
           RST* const Y_i = &Y_raw[i];
           for (Ordinal c = 0; c < numVecs; ++c) {
-            Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
+            Y_i[c*Y_stride] = beta * Y_i[c*Y_stride];
+          }
+        }
+        // It's still numRows, even though we're iterating over columns
+        // of the matrix.
+        for (Ordinal j = 0; j < numRows; ++j) {
+          const DST* const X_j = &X_raw[j];
+          for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
+            const MST A_ij = val[k];
+            const Ordinal i = ind[k];
+            RST* const Y_i = &Y_raw[i];
+            for (Ordinal c = 0; c < numVecs; ++c) {
+              Y_i[c*Y_stride] += alpha * A_ij * X_j[c*X_stride];
+            }
           }
         }
       }
     }
     else if (trans == Teuchos::CONJ_TRANS) {
       using Kokkos::Raw::matVecCscColMajorConj;
-      matVecCscColMajorConj<OT, MST, DST, RST> (numRows, 0, numCols, numVecs,
+      matVecCscColMajorConj<OT, MST, DST, RST> (numRows, numCols, numVecs,
                                                 beta, Y_raw, Y_stride,
                                                 alpha, ptr, ind, val,
                                                 X_raw, X_stride);

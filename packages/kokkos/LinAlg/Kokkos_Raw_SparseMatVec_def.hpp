@@ -58,8 +58,7 @@ template<class Ordinal,
 void
 matVecCscColMajor (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -95,13 +94,12 @@ matVecCscColMajor (
   if (alpha == STS::zero()) {
     return; // Our work is done!
   }
-  const Ordinal startInd = ptr[startCol];
-  const Ordinal endInd = ptr[endColPlusOne];
+  const Ordinal nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal i = ind[k];
-      while (k > ptr[j]) {
+      while (k > ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -110,10 +108,10 @@ matVecCscColMajor (
     }
   }
   else { // alpha != STS::one()
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal i = ind[k];
-      while (k > ptr[j]) {
+      while (k > ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -130,8 +128,7 @@ template<class Ordinal,
 void
 matVecCsrColMajor (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -161,13 +158,12 @@ matVecCsrColMajor (
   if (alpha == STS::zero()) {
     return; // Our work is done!
   }
-  const Ordinal startInd = ptr[startRow];
-  const Ordinal endInd = ptr[endRowPlusOne];
+  const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal j = ind[k];
-      while (k > ptr[i]) {
+      while (k > ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i];
@@ -181,10 +177,10 @@ matVecCsrColMajor (
     }
   }
   else { // alpha != STS::one()
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal j = ind[k];
-      while (k > ptr[i]) {
+      while (k > ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i];
@@ -206,8 +202,7 @@ template<class Ordinal,
 void
 matVecCscRowMajor (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -243,13 +238,12 @@ matVecCscRowMajor (
   if (alpha == STS::zero()) {
     return; // Our work is done!
   }
-  const Ordinal startInd = ptr[startCol];
-  const Ordinal endInd = ptr[endColPlusOne];
+  const Ordinal nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal i = ind[k];
-      while (k > ptr[j]) {
+      while (k > ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -258,10 +252,10 @@ matVecCscRowMajor (
     }
   }
   else { // alpha != STS::one()
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal i = ind[k];
-      while (k > ptr[j]) {
+      while (k > ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -278,8 +272,7 @@ template<class Ordinal,
 void
 matVecCsrRowMajor (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -309,13 +302,12 @@ matVecCsrRowMajor (
   if (alpha == STS::zero()) {
     return; // Our work is done!
   }
-  const Ordinal startInd = ptr[startRow];
-  const Ordinal endInd = ptr[endRowPlusOne];
+  const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal j = ind[k];
-      while (k > ptr[i]) {
+      while (k > ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -329,10 +321,10 @@ matVecCsrRowMajor (
     }
   }
   else { // alpha != STS::one()
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
       const Ordinal j = ind[k];
-      while (k > ptr[i]) {
+      while (k > ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -354,8 +346,7 @@ template<class Ordinal,
 void
 matVecCscColMajorConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -391,13 +382,12 @@ matVecCscColMajorConj (
   if (alpha == STS::zero()) {
     return; // Our work is done!
   }
-  const Ordinal startInd = ptr[startCol];
-  const Ordinal endInd = ptr[endColPlusOne];
+  const Ordinal nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal i = ind[k];
-      while (k > ptr[j]) {
+      while (k > ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -406,10 +396,10 @@ matVecCscColMajorConj (
     }
   }
   else { // alpha != STS::one()
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal i = ind[k];
-      while (k > ptr[j]) {
+      while (k > ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -426,8 +416,7 @@ template<class Ordinal,
 void
 matVecCsrColMajorConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -457,13 +446,12 @@ matVecCsrColMajorConj (
   if (alpha == STS::zero()) {
     return; // Our work is done!
   }
-  const Ordinal startInd = ptr[startRow];
-  const Ordinal endInd = ptr[endRowPlusOne];
+  const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal j = ind[k];
-      while (k > ptr[i]) {
+      while (k > ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i];
@@ -477,10 +465,10 @@ matVecCsrColMajorConj (
     }
   }
   else { // alpha != STS::one()
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal j = ind[k];
-      while (k > ptr[i]) {
+      while (k > ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i];
@@ -502,8 +490,7 @@ template<class Ordinal,
 void
 matVecCscRowMajorConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -539,13 +526,12 @@ matVecCscRowMajorConj (
   if (alpha == STS::zero()) {
     return; // Our work is done!
   }
-  const Ordinal startInd = ptr[startCol];
-  const Ordinal endInd = ptr[endColPlusOne];
+  const Ordinal nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal i = ind[k];
-      while (k > ptr[j]) {
+      while (k > ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -554,10 +540,10 @@ matVecCscRowMajorConj (
     }
   }
   else { // alpha != STS::one()
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal i = ind[k];
-      while (k > ptr[j]) {
+      while (k > ptr[j+1]) {
         ++j;
       }
       for (Ordinal c = 0; c < numVecs; ++c) {
@@ -574,8 +560,7 @@ template<class Ordinal,
 void
 matVecCsrRowMajorConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -605,13 +590,12 @@ matVecCsrRowMajorConj (
   if (alpha == STS::zero()) {
     return; // Our work is done!
   }
-  const Ordinal startInd = ptr[startRow];
-  const Ordinal endInd = ptr[endRowPlusOne];
+  const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal j = ind[k];
-      while (k > ptr[i]) {
+      while (k > ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -625,10 +609,10 @@ matVecCsrRowMajorConj (
     }
   }
   else { // alpha != STS::one()
-    for (Ordinal k = startInd; k < endInd; ++k) {
+    for (Ordinal k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
       const Ordinal j = ind[k];
-      while (k > ptr[i]) {
+      while (k > ptr[i+1]) {
         ++i;
         // We haven't seen row i before; prescale Y(i,:).
         RangeScalar* const Y_i = &Y[i*rowStrideY];

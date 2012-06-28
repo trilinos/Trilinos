@@ -97,8 +97,7 @@ template<class Ordinal,
 void
 matVecCscColMajor (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -156,8 +155,7 @@ template<class Ordinal,
 void
 matVecCsrColMajor (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -215,8 +213,7 @@ template<class Ordinal,
 void
 matVecCscRowMajor (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -274,8 +271,7 @@ template<class Ordinal,
 void
 matVecCsrRowMajor (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -334,8 +330,7 @@ template<class Ordinal,
 void
 matVecCscColMajorConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -394,8 +389,7 @@ template<class Ordinal,
 void
 matVecCsrColMajorConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -454,8 +448,7 @@ template<class Ordinal,
 void
 matVecCscRowMajorConj (
   const Ordinal numRows,
-  const Ordinal startCol,
-  const Ordinal endColPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
@@ -514,8 +507,7 @@ template<class Ordinal,
 void
 matVecCsrRowMajorConj (
   const Ordinal numRows,
-  const Ordinal startRow,
-  const Ordinal endRowPlusOne,
+  const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
