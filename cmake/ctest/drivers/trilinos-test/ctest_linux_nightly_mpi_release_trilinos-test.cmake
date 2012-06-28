@@ -78,12 +78,16 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DMPI_BASE_DIR:PATH=/home/trilinos/openmpi-1.4"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_38_0"
+  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_49_0"
   "-DTPL_ENABLE_ParMETIS:BOOL=ON"
   "-DParMETIS_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/openmpi1.4/ParMETIS_3.1"
   "-DTPL_ENABLE_Scotch:BOOL=ON"
   "-DScotch_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/openmpi1.4/Scotch_5.1.7/include"
   "-DScotch_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/openmpi1.4/Scotch_5.1.7/lib "
+  "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/include"
+  "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
+  "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/lib"
+  "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/include"
   )
 
 #
