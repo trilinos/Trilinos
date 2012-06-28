@@ -71,8 +71,11 @@ SET(EXTRA_EXCLUDE_PACKAGES Zoltan)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS=/Users/bmpersc/lib/boost_1_38_0"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
+  "-DNetcdf_LIBRARY_DIRS=/Users/bmpersc/lib/pnetcdf-4.2/lib"
+  "-DNetcdf_INCLUDE_DIRS=/Users/bmpersc/lib/pnetcdf-4.2/include"
+  "-DHDF5_LIBRARY_DIRS=/Users/bmpersc/lib/phdf5-1.8.6/lib"
+  "-DHDF5_INCLUDE_DIRS=/Users/bmpersc/lib/phdf5=1.8.6/include"
   )
 
 #
