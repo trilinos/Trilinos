@@ -623,11 +623,11 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t> allocRowPtrs(const ArrayView<const size_t> &rowPtrs);
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs);
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T>
-    static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &ptrs);
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &ptrs);
 
     //! Finalize a graph is null for CUSPARSE.
     static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params);
@@ -952,7 +952,7 @@ namespace Kokkos {
   // ======= pointer allocation ===========
   template <class Scalar, class Node>
   ArrayRCP<size_t>
-  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow)
+  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
     CUDANodeHostPinnedDeallocator<size_t> dealloc;
@@ -966,7 +966,7 @@ namespace Kokkos {
   template <class Scalar, class Node>
   template <class T>
   ArrayRCP<T>
-  CUSPARSEOps<Scalar,Node>::allocStorage(const ArrayView<const size_t> &rowPtrs)
+  CUSPARSEOps<Scalar,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const size_t> &rowPtrs)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
     const size_t totalNumEntries = *(rowPtrs.end()-1);

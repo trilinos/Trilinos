@@ -178,7 +178,7 @@ namespace KokkosExamples {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t> allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow)
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
     {
       ArrayRCP<size_t> ptrs = arcp<size_t>( numEntriesPerRow.size() + 1 );
       ptrs[0] = 0;
@@ -188,7 +188,7 @@ namespace KokkosExamples {
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T> 
-    static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &rowPtrs)
+    static ArrayRCP<T> allocStorage(const RCP<Node> &/*node*/, const ArrayView<const size_t> &rowPtrs)
     { 
       const size_t totalNumEntries = *(rowPtrs.end()-1);
       // alloc data

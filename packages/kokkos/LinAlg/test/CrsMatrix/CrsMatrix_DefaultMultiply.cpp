@@ -121,15 +121,6 @@ namespace {
     clp.setOption("test-size",&N,"Vector length for tests.");
   }
 
-  // The default version of getNode() throws an exception.  You may
-  // invoke getNode() for one of the supported Node types below, or
-  // specialize getNode() if you wish to invoke it for a different
-  // Node type.
-  //
-  // mfh 18 June 2012: This should help us diagnose the assert(false)
-  // reported in the failed test below:
-  //
-  // http://testing.sandia.gov/cdash/testDetails.php?test=7210650&build=544260
   template <class Node>
   RCP<Node> getNode() {
     using Teuchos::TypeNameTraits;

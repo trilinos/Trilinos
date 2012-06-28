@@ -509,9 +509,9 @@ namespace Tpetra {
     // 
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = sparse_ops_type::allocRowPtrs( numRowEntries_() );
-      inds = sparse_ops_type::template allocStorage<LocalOrdinal>( ptrs() );
-      vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+      ptrs = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
+      inds = sparse_ops_type::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
+      vals = sparse_ops_type::template allocStorage<Scalar      >( getRowMap()->getNode(), ptrs() );
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
         std::copy( lclInds2D_[row].begin(), lclInds2D_[row].begin() + numentrs, inds+ptrs[row] );
@@ -521,9 +521,9 @@ namespace Tpetra {
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries_ != nodeNumAllocated_) {
-        ptrs = sparse_ops_type::allocRowPtrs( numRowEntries_() );
-        inds = sparse_ops_type::template allocStorage<LocalOrdinal>( ptrs() );
-        vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+        ptrs = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
+        inds = sparse_ops_type::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
+        vals = sparse_ops_type::template allocStorage<Scalar      >( getRowMap()->getNode(), ptrs() );
         for (size_t row=0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries_[row];
           std::copy( lclInds1D_.begin()+rowPtrs_[row], lclInds1D_.begin()+rowPtrs_[row]+numentrs, inds+ptrs[row] );
@@ -615,8 +615,8 @@ namespace Tpetra {
 
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = sparse_ops_type::allocRowPtrs( numRowEntries() );
-      vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+      ptrs = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numRowEntries() );
+      vals = sparse_ops_type::template allocStorage<Scalar      >( getRowMap()->getNode(), ptrs() );
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries[row];
         std::copy( values2D_[row].begin(), values2D_[row].begin()+numentrs, vals+ptrs[row] );
@@ -625,8 +625,8 @@ namespace Tpetra {
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries != nodeNumAllocated) {
-        ptrs = sparse_ops_type::allocRowPtrs( numRowEntries() );
-        vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+        ptrs = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numRowEntries() );
+        vals = sparse_ops_type::template allocStorage<Scalar      >( getRowMap()->getNode(), ptrs() );
         for (size_t row=0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries[row];
           std::copy( values1D_.begin()+rowPtrs[row], values1D_.begin()+rowPtrs[row]+numentrs, vals+ptrs[row] );
