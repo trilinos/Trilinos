@@ -183,11 +183,12 @@ public:
       MT& AA = *A;
 
       for (ordinal_type i = 0; i < N; ++i) {
-        for (ordinal_type j = 0; j <= i; ++j) {
-          UU(i,j) = AA(i,j);
-        }
-        for (ordinal_type j = i+1; j < N; ++j) {
+        // LL has an implicitly stored unit diagonal, so don't include j==i.
+        for (ordinal_type j = 0; j < i; ++j) {
           LL(i,j) = AA(i,j);
+        }
+        for (ordinal_type j = i; j < N; ++j) {
+          UU(i,j) = AA(i,j);
         }
       }
     }
@@ -640,6 +641,7 @@ public:
                as<int> (Y_hat->getStride ()));
     A_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
                                                            (const MV) *X, *Y);
+
     // Compare Y and Y_hat.  Use Z as scratch space.
     relErr = maxRelativeError (Y_hat, Y, Z);
     if (relErr > tol) {
@@ -777,6 +779,7 @@ public:
 
   void
   benchmarkSparseOps (std::vector<std::pair<std::string, double> >& results,
+                      const std::string& label,
                       const Teuchos::RCP<node_type>& node,
                       const ordinal_type numRows,
                       const ordinal_type numVecs,
@@ -814,11 +817,12 @@ public:
     MVT::Random (*X);
     RCP<MV> Y = makeMultiVector (node, numRows, numVecs); // output MV.
 
-    benchmarkSparseMatVec (results, *A_sparse, numRows, numVecs, numTrials);
-    benchmarkSparseTriSolve (results, *L_sparse, "lower, unit diag",
-                             numRows, numVecs, numTrials);
-    benchmarkSparseTriSolve (results, *U_sparse, "upper, non unit diag",
-                             numRows, numVecs, numTrials);
+    benchmarkSparseMatVec (results, label, *A_sparse,
+                           numRows, numVecs, numTrials);
+    benchmarkSparseTriSolve (results, label, "lower tri, unit diag",
+                             *L_sparse, numRows, numVecs, numTrials);
+    benchmarkSparseTriSolve (results, label, "upper tri, non unit diag",
+                             *U_sparse, numRows, numVecs, numTrials);
   }
 
 private:
@@ -845,6 +849,7 @@ private:
   ///   elapsed time, for each benchmark.
   void
   benchmarkSparseMatVec (std::vector<std::pair<std::string, double> >& results,
+                         const std::string& label,
                          const SparseOpsType& ops,
                          const ordinal_type numRows,
                          const ordinal_type numVecs,
@@ -867,7 +872,7 @@ private:
 
     // Time sparse matrix-vector multiply, overwrite mode, no transpose.
     {
-      const std::string timerName ("Y = A*X");
+      const std::string timerName (label + ": Y = A*X");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -885,7 +890,7 @@ private:
     // Time sparse matrix-vector multiply, update mode, no transpose.
     // We subtract to simulate a residual computation.
     {
-      const std::string timerName ("Y = Y - A*X");
+      const std::string timerName (label + ": Y = Y - A*X");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -903,7 +908,7 @@ private:
 
     // Time sparse matrix-vector multiply, overwrite mode, transpose.
     {
-      const std::string timerName ("Y = A^T * X");
+      const std::string timerName (label + ": Y = A^T * X");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -921,7 +926,7 @@ private:
     // Time sparse matrix-vector multiply, update mode, transpose.
     // We subtract to simulate a residual computation.
     {
-      const std::string timerName ("Y = Y - A^T * X");
+      const std::string timerName (label + ": Y = Y - A^T * X");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -941,7 +946,7 @@ private:
     if (STS::isComplex) {
       // Time sparse matrix-vector multiply, overwrite mode, conjugate transpose.
       {
-        const std::string timerName ("Y = A^H * X");
+        const std::string timerName (label + ": Y = A^H * X");
         RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
         if (timer.is_null ()) {
           timer = TimeMonitor::getNewCounter (timerName);
@@ -959,7 +964,7 @@ private:
       // Time sparse matrix-vector multiply, update mode, conjugate transpose.
       // We subtract to simulate a residual computation.
       {
-        const std::string timerName ("Y = Y - A^H * X");
+        const std::string timerName (label + ": Y = Y - A^H * X");
         RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
         if (timer.is_null ()) {
           timer = TimeMonitor::getNewCounter (timerName);
@@ -1000,9 +1005,12 @@ private:
   ///
   /// \param results [out] Pairs of (benchmark name, elapsed time for
   ///   that benchmark over all trials).
-  /// \param label [in] Extra timer label.  Use this to distinguish
-  ///   e.g., lower triangular solve benchmarks from upper triangular
-  ///   solve benchmarks.
+  /// \param opsLabel [in] Label to identify the SparseOpsType type.
+  ///   This is helpful if running benchmarks with different
+  ///   SparseOpsType types.
+  /// \param benchmarkLabel [in] Extra timer label.  Use this to
+  ///   distinguish e.g., lower triangular solve benchmarks from upper
+  ///   triangular solve benchmarks.
   /// \param ops [in] The sparse kernels instance to benchmark.
   /// \param numRows [in] Number of rows in the linear operator
   ///   represented by ops.  We need this because SparseOpsType
@@ -1013,8 +1021,9 @@ private:
   ///   elapsed time, for each benchmark.
   void
   benchmarkSparseTriSolve (std::vector<std::pair<std::string, double> >& results,
+                           const std::string& opsLabel,
+                           const std::string& benchmarkLabel,
                            const SparseOpsType& ops,
-                           const std::string& label,
                            const ordinal_type numRows,
                            const ordinal_type numVecs,
                            const int numTrials) const
@@ -1036,7 +1045,7 @@ private:
 
     // Time sparse triangular solve, no transpose.
     {
-      const std::string timerName ("Y = A \\ X (" + label + ")");
+      const std::string timerName (opsLabel + "Y = A \\ X (" + benchmarkLabel + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -1053,7 +1062,7 @@ private:
 
     // Time sparse triangular solve, transpose.
     {
-      const std::string timerName ("Y = A^T \\ X (" + label + ")");
+      const std::string timerName (opsLabel + "Y = A^T \\ X (" + benchmarkLabel + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -1071,7 +1080,7 @@ private:
     // Only test conjugate transpose if scalar_type is complex.
     if (STS::isComplex) {
       // Time sparse triangular solve, conjugate transpose.
-      const std::string timerName ("Y = A^H \\ X (" + label + ")");
+      const std::string timerName (opsLabel + "Y = A^H \\ X (" + benchmarkLabel + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);

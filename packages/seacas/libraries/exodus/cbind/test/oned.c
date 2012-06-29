@@ -76,25 +76,25 @@ int main (int argc, char **argv)
 {
    int exoid, num_dim, num_nodes, num_elem, num_elem_blk;
    int num_elem_in_block[10], num_nodes_per_elem[10];
-   int num_face_in_sset[10], num_nodes_in_nset[10];
-   int num_node_sets, num_side_sets, error;
+   int num_nodes_in_nset[10];
+   int num_node_sets, num_side_sets;
    int i, j, k, m, *elem_map, *connect;
-   int node_list[100],elem_list[100],side_list[100];
-   int ebids[10], ssids[10], nsids[10];
+   int node_list[100];
+   int ebids[10], nsids[10];
    int  num_qa_rec, num_info;
-   int num_glo_vars, num_nod_vars, num_ele_vars, num_sset_vars, num_nset_vars;
+   int num_glo_vars, num_nod_vars, num_ele_vars, num_nset_vars;
    int *truth_tab;
    int whole_time_step, num_time_steps;
    int CPU_word_size,IO_word_size;
    int prop_array[2];
 
    float *glob_var_vals, *nodal_var_vals, *elem_var_vals;
-   float *sset_var_vals, *nset_var_vals;
+   float *nset_var_vals;
    float time_value;
-   float x[100], y[100], z[100];
+   float x[100];
    float attrib[10], dist_fact[100];
    char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-   char *block_names[10], *nset_names[10], *sset_names[10];
+   char *block_names[10], *nset_names[10];
    char *prop_names[2], *attrib_names[2];
    char *title = "This is a test";
    ex_opts (EX_VERBOSE | EX_ABORT );
@@ -360,7 +360,6 @@ int main (int argc, char **argv)
    glob_var_vals = (float *) calloc (num_glo_vars, CPU_word_size);
    nodal_var_vals = (float *) calloc (num_nodes, CPU_word_size);
    elem_var_vals = (float *) calloc (num_elem, CPU_word_size);
-   sset_var_vals = (float *) calloc (10, CPU_word_size);
    nset_var_vals = (float *) calloc (10, CPU_word_size);
    
    for (i=0; i<num_time_steps; i++)

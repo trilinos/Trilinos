@@ -1,6 +1,7 @@
 #include "exodusII.h"
 #include <stdio.h>
 #include <stdlib.h> /* for malloc(), free() */
+#include <inttypes.h>
 
 #define EX_TEST_FILENAME "edgeFace.exo"
 
@@ -131,23 +132,23 @@ int cReadEdgeFace( int argc, char* argv[] )
 
   fprintf( stdout,
     "Title: <%s>\n"
-    "Dimension: %d\n"
-    "Nodes: %d\n"
-    "Edges: %d\n"
-    "Faces: %d\n"
-    "Elements: %d\n"
-    "Edge Blocks: %d\n"
-    "Face Blocks: %d\n"
-    "Element Blocks: %d\n"
-    "Node Sets: %d\n"
-    "Edge Sets: %d\n"
-    "Face Sets: %d\n"
-    "Side Sets: %d\n"
-    "Element Sets: %d\n"
-    "Node Maps: %d\n"
-    "Edge Maps: %d\n"
-    "Face Maps: %d\n"
-    "Element Maps: %d\n",
+    "Dimension: %"PRId64"\n"
+    "Nodes: %"PRId64"\n"
+    "Edges: %"PRId64"\n"
+    "Faces: %"PRId64"\n"
+    "Elements: %"PRId64"\n"
+    "Edge Blocks: %"PRId64"\n"
+    "Face Blocks: %"PRId64"\n"
+    "Element Blocks: %"PRId64"\n"
+    "Node Sets: %"PRId64"\n"
+    "Edge Sets: %"PRId64"\n"
+    "Face Sets: %"PRId64"\n"
+    "Side Sets: %"PRId64"\n"
+    "Element Sets: %"PRId64"\n"
+    "Node Maps: %"PRId64"\n"
+    "Edge Maps: %"PRId64"\n"
+    "Face Maps: %"PRId64"\n"
+    "Element Maps: %"PRId64"\n",
     modelParams.title, modelParams.num_dim,
     modelParams.num_nodes, modelParams.num_edge, modelParams.num_face, modelParams.num_elem,
     modelParams.num_edge_blk, modelParams.num_face_blk, modelParams.num_elem_blk,
@@ -156,27 +157,7 @@ int cReadEdgeFace( int argc, char* argv[] )
     modelParams.num_node_maps, modelParams.num_edge_maps, modelParams.num_face_maps,
     modelParams.num_elem_maps );
 
-  /* *** NEW API *** */
-  EXCHKPI( ex_inquire( exoid, EX_INQ_EDGE,       itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_EDGE : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_EDGE_BLK,   itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_EDGE_BLK : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_EDGE_SETS,  itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_EDGE_SETS : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_ES_LEN,     itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_ES_LEN : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_ES_DF_LEN,  itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_ES_DF_LEN : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_EDGE_PROP,  itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_EDGE_PROP : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_ES_PROP,    itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_ES_PROP : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_FACE,       itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_FACE : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_FACE_BLK,   itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_FACE_BLK : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_FACE_SETS,  itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_FACE_SETS : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_FS_LEN,     itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_FS_LEN : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_FS_DF_LEN,  itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_FS_DF_LEN : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_FACE_PROP,  itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_FACE_PROP : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_FS_PROP,    itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_FS_PROP : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_ELEM_SETS,  itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_ELEM_SETS : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_ELS_LEN,    itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_ELS_LEN : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_ELS_DF_LEN, itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_ELS_DF_LEN : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_ELS_PROP,   itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_ELS_PROP : %d\n", itmp[0] );
-  EXCHKPI( ex_inquire( exoid, EX_INQ_TIME,       itmp, 0, 0 ), "Inquire failed.\n", "EX_INQ_TIME     : %d\n", itmp[0] );
-  num_timesteps = itmp[0];
+  num_timesteps = ex_inquire_int( exoid, EX_INQ_TIME );
 
   /* *** NEW API *** */
   for ( i = 0; i < sizeof(obj_types)/sizeof(obj_types[0]); ++i ) {

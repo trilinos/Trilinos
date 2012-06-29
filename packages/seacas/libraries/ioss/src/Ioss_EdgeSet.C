@@ -47,7 +47,7 @@ Ioss::EdgeSet::EdgeSet()
 {}
 
 Ioss::EdgeSet::EdgeSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
-		       size_t number_edges)
+		       int64_t number_edges)
   : Ioss::EntitySet(io_database, my_name, number_edges)
 {
   // Add the standard fields...
@@ -56,13 +56,13 @@ Ioss::EdgeSet::EdgeSet(Ioss::DatabaseIO *io_database, const std::string& my_name
 			 Ioss::Field::MESH, number_edges));
 }
 
-int Ioss::EdgeSet::internal_get_field_data(const Ioss::Field& field,
+int64_t Ioss::EdgeSet::internal_get_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::EdgeSet::internal_put_field_data(const Ioss::Field& field,
+int64_t Ioss::EdgeSet::internal_put_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);

@@ -118,7 +118,8 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
     m_field_repo(),
     m_field_relations( ),
     m_properties( ),
-    m_entity_rank_names( entity_rank_names )
+    m_entity_rank_names( entity_rank_names ),
+    m_spatial_dimension( 0 /*invalid spatial dimension*/)
 {
   ThrowErrorMsgIf( entity_rank_names.empty(), "entity ranks empty" );
 
@@ -139,7 +140,8 @@ MetaData::MetaData()
     m_field_repo(),
     m_field_relations( ),
     m_properties( ),
-    m_entity_rank_names( )
+    m_entity_rank_names( ),
+    m_spatial_dimension( 0 /*invalid spatial dimension*/)
 {
   // Declare the predefined parts
 
@@ -238,7 +240,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
 
   // The new superset / subset relationship can cause a
   // field restriction to become incompatible or redundant.
-  m_field_repo.verify_and_clean_restrictions(method, m_part_repo.get_all_parts());
+  m_field_repo.verify_and_clean_restrictions(method, superset, subset, m_part_repo.get_all_parts());
 }
 
 void MetaData::declare_part_relation(
@@ -306,6 +308,30 @@ void MetaData::declare_field_restriction(
       arg_field,
       arg_entity_rank,
       arg_part,
+      m_part_repo.get_all_parts(),
+      arg_stride,
+      arg_init_value
+      );
+}
+
+void MetaData::declare_field_restriction(
+  FieldBase      & arg_field ,
+  EntityRank       arg_entity_rank ,
+  const Selector & arg_selector ,
+  const unsigned * arg_stride ,
+  const void     * arg_init_value )
+{
+  static const char method[] =
+    "std::mesh::MetaData::declare_field_restriction" ;
+
+  //require_not_committed(); // Moved to FieldBaseImpl::declare_field_restriction
+  require_same_mesh_meta_data( MetaData::get(arg_field) );
+
+  m_field_repo.declare_field_restriction(
+      method,
+      arg_field,
+      arg_entity_rank,
+      arg_selector,
       m_part_repo.get_all_parts(),
       arg_stride,
       arg_init_value

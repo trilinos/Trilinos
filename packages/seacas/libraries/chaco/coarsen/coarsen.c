@@ -74,7 +74,7 @@ coarsen (
     int       i, j;		/* loop counters */
     double    time;		/* time marker */
 
-    double   dot(), normalize(), find_maxdeg(), seconds();
+    double   dot(), ch_normalize(), find_maxdeg(), seconds();
     struct orthlink *makeorthlnk();
     void      makevwsqrt(), eigensolve(), coarsen1(), orthogvec(), rqi_ext();
     void      ch_interpolate(), orthog1(), rqi(), scadd(), free_graph();
@@ -268,7 +268,7 @@ coarsen (
 	initshift = 0;
 	orthlist = NULL;
 	for (i = 1; i < ndims; i++) {
-	    normalize(yvecs[i], 1, nvtxs);
+	    ch_normalize(yvecs[i], 1, nvtxs);
 	    rqi(graph, yvecs, i, nvtxs, r1, r2, v, w, x, y, work,
 		eigtol, initshift, &evalest, vwsqrt, orthlist,
 		0, nsets, space, morespace, 3, goal, vwgt_max, ndims);
@@ -288,7 +288,7 @@ coarsen (
 	    orthlist = newlink;
 
 	}
-	normalize(yvecs[ndims], 1, nvtxs);
+	ch_normalize(yvecs[ndims], 1, nvtxs);
 
 	if (term_wgts[1] != NULL && ndims == 1) {
 	    /* Solve extended eigen problem */

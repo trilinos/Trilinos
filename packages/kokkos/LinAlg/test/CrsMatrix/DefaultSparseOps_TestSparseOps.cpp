@@ -44,8 +44,10 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
+#include "Kokkos_SeqSparseOps.hpp"
 #include "Kokkos_Version.hpp"
 #include "DefaultSparseOps_TestSparseOps.hpp"
+
 
 namespace {
   using Kokkos::DefaultNode;
@@ -101,7 +103,7 @@ namespace {
   //
 
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
-  TEUCHOS_UNIT_TEST( DefaultHostSparseOps, TestSparseOps )
+  TEUCHOS_UNIT_TEST( DefaultSparseOps, TestSparseOps )
   {
     using Kokkos::DefaultHostSparseOps;
     typedef DefaultHostSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
@@ -110,7 +112,27 @@ namespace {
 
     if (benchmark) {
       std::vector<std::pair<std::string, double> > results;
-      tester.benchmarkSparseOps (results, node, numRows, numVecs, numTrials);
+      tester.benchmarkSparseOps (results, "DefaultSparseHostOps", node,
+                                 numRows, numVecs, numTrials);
+      //Teuchos::TimeMonitor::summarize ();
+    }
+    else {
+      tester.testSparseOps (node, numRows, numVecs, tol);
+    }
+  }
+
+  // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
+  TEUCHOS_UNIT_TEST( SeqSparseOps, TestSparseOps )
+  {
+    using Kokkos::SeqSparseOps;
+    typedef SeqSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+    RCP<node_type> node = Kokkos::DefaultNode::getDefaultNode();
+    TestSparseOps<sparse_ops_type> tester;
+
+    if (benchmark) {
+      std::vector<std::pair<std::string, double> > results;
+      tester.benchmarkSparseOps (results, "SeqSparseOps", node,
+                                 numRows, numVecs, numTrials);
       Teuchos::TimeMonitor::summarize ();
     }
     else {

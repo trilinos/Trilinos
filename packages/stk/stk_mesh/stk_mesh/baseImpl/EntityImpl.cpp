@@ -21,27 +21,11 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-EntityImpl::~EntityImpl()
-{
-}
-
-EntityImpl::EntityImpl( const EntityKey & arg_key )
-  : m_key(arg_key),
-    m_relation(),
-    m_comm(),
-    m_bucket( NULL ),
-    m_bucket_ord(0),
-    m_owner_rank(0),
-    m_sync_count(0),
-    m_mod_log( EntityLogCreated )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
-}
 
 PairIterRelation EntityImpl::relations( unsigned rank ) const
 {
-  std::vector<Relation>::const_iterator i = m_relation.begin();
-  std::vector<Relation>::const_iterator e = m_relation.end();
+  RelationVector::const_iterator i = m_relation.begin();
+  RelationVector::const_iterator e = m_relation.end();
 
   //Nodes
   if ( rank != 0 ) {
@@ -55,120 +39,6 @@ PairIterRelation EntityImpl::relations( unsigned rank ) const
   return PairIterRelation( i , e );
 }
 
-PairIterEntityComm EntityImpl::sharing() const
-{
-  EntityCommInfoVector::const_iterator i = m_comm.begin();
-  EntityCommInfoVector::const_iterator e = m_comm.end();
-
-  e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
-                                               0 ) ); // proc
-
-  // Contains everything up the first aura comm (IE, only contains shared comms)
-  return PairIterEntityComm( i , e );
-}
-
-PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const
-{
-  typedef std::vector< EntityCommInfo > EntityComm ;
-
-  const EntityCommInfo s_begin( sub.ordinal() ,     0 );
-  const EntityCommInfo s_end(   sub.ordinal() + 1 , 0 );
-
-  EntityComm::const_iterator i = m_comm.begin();
-  EntityComm::const_iterator e = m_comm.end();
-
-  i = std::lower_bound( i , e , s_begin );
-  e = std::lower_bound( i , e , s_end );
-
-  return PairIterEntityComm( i , e );
-}
-
-bool EntityImpl::insert( const EntityCommInfo & val )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::insert", LOG_ENTITY, key());
-
-  std::vector< EntityCommInfo >::iterator i =
-    std::lower_bound( m_comm.begin() , m_comm.end() , val );
-
-  const bool result = i == m_comm.end() || val != *i ;
-
-  if ( result ) {
-    m_comm.insert( i , val );
-  }
-
-  return result ;
-}
-
-bool EntityImpl::erase( const EntityCommInfo & val )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::erase(comm)", LOG_ENTITY, key());
-
-  std::vector< EntityCommInfo >::iterator i =
-    std::lower_bound( m_comm.begin() , m_comm.end() , val );
-
-  const bool result = i != m_comm.end() && val == *i ;
-
-  if ( result ) {
-    m_comm.erase( i );
-  }
-
-  return result ;
-}
-
-bool EntityImpl::erase( const Ghosting & ghost )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::erase(ghost)", LOG_ENTITY, key());
-
-  typedef std::vector< EntityCommInfo > EntityComm ;
-
-  const EntityCommInfo s_begin( ghost.ordinal() ,     0 );
-  const EntityCommInfo s_end(   ghost.ordinal() + 1 , 0 );
-
-  EntityComm::iterator i = m_comm.begin();
-  EntityComm::iterator e = m_comm.end();
-
-  i = std::lower_bound( i , e , s_begin );
-  e = std::lower_bound( i , e , s_end );
-
-  const bool result = i != e ;
-
-  if ( result ) {
-    m_comm.erase( i , e );
-  }
-
-  return result ;
-}
-
-void EntityImpl::comm_clear_ghosting()
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::comm_clear_ghosting", LOG_ENTITY, key());
-
-  std::vector< EntityCommInfo >::iterator j = m_comm.begin();
-  while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
-  m_comm.erase( j , m_comm.end() );
-}
-
-void EntityImpl::comm_clear()
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::comm_clear", LOG_ENTITY, key());
-  m_comm.clear();
-}
-
-bool EntityImpl::marked_for_destruction() const
-{
-  // The original implementation of this method checked bucket capacity. In
-  // order to ensure that the addition of EntityLogDeleted does not change
-  // behavior, we put error check here.
-  ThrowErrorMsgIf((bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted),
-      "Inconsistent destruction state; " <<
-      "destroyed entities should be in the nil bucket and vice versa.\n" <<
-      "Problem is with entity: " <<
-      print_entity_key( MetaData::get( bucket() ), key() ) <<
-      "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
-      "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
-
-  return m_mod_log == EntityLogDeleted;
-}
 
 namespace {
 
@@ -232,7 +102,7 @@ bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_
   TraceIfWatching("stk::mesh::impl::EntityImpl::destroy_relation", LOG_ENTITY, key());
 
   bool destroyed_relations = false;
-  for ( std::vector<Relation>::iterator
+  for ( RelationVector::iterator
         i = m_relation.begin() ; i != m_relation.end() ; ++i ) {
     if ( i->entity() == & e_to && i->identifier() == local_id ) {
       i = m_relation.erase( i ); // invalidates iterators, but we're breaking so it's OK
@@ -252,11 +122,15 @@ bool EntityImpl::declare_relation( Entity & e_to,
 
   const MetaData & meta_data = MetaData::get( bucket() );
 
-  const Relation new_relation( e_to , local_id );
+  Relation new_relation( e_to , local_id );
+#ifdef SIERRA_MIGRATION
+  new_relation.setRelationType( e_to.entity_rank() > entity_rank() ? Relation::USED_BY : Relation::USES );
+  new_relation.setOrientation(0);
+#endif
 
-  const std::vector<Relation>::iterator rel_end   = m_relation.end();
-        std::vector<Relation>::iterator rel_begin = m_relation.begin();
-        std::vector<Relation>::iterator lower;
+  const RelationVector::iterator rel_end   = m_relation.end();
+        RelationVector::iterator rel_begin = m_relation.begin();
+        RelationVector::iterator lower;
 
   lower = std::lower_bound( rel_begin , rel_end , new_relation , LessRelation() );
 
@@ -285,11 +159,11 @@ bool EntityImpl::declare_relation( Entity & e_to,
     // Since LessRelation takes the related entity into account, we must check
     // the result of lower_bound AND the iter before to be sure this isn't a
     // bad degenerate relation.
-    std::vector<Relation>::iterator start, end;
+    RelationVector::iterator start, end;
     start = (lower == rel_begin) ? rel_begin : lower - 1;
     end   = (lower == rel_end)   ? rel_end   : lower + 1;
 
-    for (std::vector<Relation>::iterator itr = start; itr != end; ++itr) {
+    for (RelationVector::iterator itr = start; itr != end; ++itr) {
       ThrowErrorMsgIf( is_degenerate_relation ( new_relation , *itr ),
                        "Could not declare relation from " <<
                        print_entity_key( meta_data, key() ) << " to " <<
@@ -314,6 +188,70 @@ bool EntityImpl::declare_relation( Entity & e_to,
   else {
     return false;
   }
+}
+
+void EntityImpl::set_key(EntityKey key)
+{
+  m_key = key;
+}
+
+void EntityImpl::update_key(EntityKey key)
+{
+  m_key = key;
+
+  std::sort(m_relation.begin(), m_relation.end(), LessRelation());
+  log_modified_and_propagate();
+
+  for ( RelationVector::iterator i = m_relation.begin(), e = m_relation.end();
+        i != e;
+        ++i
+      )
+  {
+    EntityImpl & entity = i->entity()->m_entityImpl;
+    std::sort(entity.m_relation.begin(), entity.m_relation.end(), LessRelation());
+    entity.log_modified_and_propagate();
+  }
+
+}
+
+PairIterEntityComm EntityImpl::comm() const
+{
+  return BulkData::get(bucket()).entity_comm(m_key);
+}
+
+PairIterEntityComm EntityImpl::sharing() const
+{
+  return BulkData::get(bucket()).entity_comm_sharing(m_key);
+}
+
+PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const
+{
+  return BulkData::get(bucket()).entity_comm(m_key,sub);
+}
+
+bool EntityImpl::insert( const EntityCommInfo & val )
+{
+  return BulkData::get(bucket()).entity_comm_insert(m_key,val);
+}
+
+bool EntityImpl::erase( const EntityCommInfo & val )
+{
+  return BulkData::get(bucket()).entity_comm_erase(m_key,val);
+}
+
+bool EntityImpl::erase( const Ghosting & ghost )
+{
+  return BulkData::get(bucket()).entity_comm_erase(m_key,ghost);
+}
+
+void EntityImpl::comm_clear_ghosting()
+{
+  return BulkData::get(bucket()).entity_comm_clear_ghosting(m_key);
+}
+
+void EntityImpl::comm_clear()
+{
+  return BulkData::get(bucket()).entity_comm_clear(m_key);
 }
 
 } // namespace impl

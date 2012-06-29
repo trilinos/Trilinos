@@ -25,8 +25,22 @@
 #include <stk_mesh/base/Entity.hpp>
 
 #include <boost/iterator/transform_iterator.hpp>
+#include <boost/iterator/indirect_iterator.hpp>
 
 //----------------------------------------------------------------------
+
+#ifdef SIERRA_MIGRATION
+
+namespace sierra {
+namespace Fmwk {
+
+class MeshBulkData;
+
+}
+}
+
+
+#endif
 
 namespace stk {
 namespace mesh {
@@ -68,174 +82,6 @@ bool has_superset( const Bucket & ,  const unsigned & ordinal );
  */
 bool has_superset( const Bucket & , const PartVector & );
 
-//----------------------------------------------------------------------
-/** \brief  A random access iterator for a
- *  \ref stk::mesh::Bucket "bucket" that dereferences to a
- *  \ref stk::mesh::Entity "entity" reference.
- */
-class BucketIterator : public std::iterator<std::random_access_iterator_tag,Entity&, ptrdiff_t, Entity*, Entity& > {
-private:
-  const Bucket * m_bucket_ptr;
-  size_t         m_current_entity;
-
-  inline Entity & entity( const size_t ) const ;
-
-  template< class field_type >
-    friend
-    typename FieldTraits< field_type >::data_type *
-    field_data( const field_type & f , const BucketIterator &i );
-
-  template< class field_type > friend struct BucketArray ;
-
-public:
-
-  /** \brief Constructor
-    * \param bucket_ptr \ref stk::mesh::Bucket "bucket" pointer
-    * \param offset int
-    */
-  template< typename intType >
-  BucketIterator(const Bucket * const bucket_ptr, intType offset) {
-    m_bucket_ptr = bucket_ptr;
-    m_current_entity = offset;
-  }
-
-  /** \brief Default constructor */
-  BucketIterator() {
-    m_bucket_ptr = NULL;
-    m_current_entity = 0;
-  }
-
-  /** \brief Copy Constructor */
-  BucketIterator(const BucketIterator &i) {
-    m_bucket_ptr = i.m_bucket_ptr;
-    m_current_entity = i.m_current_entity;
-  }
-
-  /** \brief Assignment operator */
-  BucketIterator & operator=(const BucketIterator &i) {
-    m_bucket_ptr = i.m_bucket_ptr;
-    m_current_entity = i.m_current_entity;
-    return *this;
-  }
-
-  /** \brief Dereference operator
-    * \return \ref stk::mesh::Entity "entity" reference
-   */
-  inline Entity & operator*() const { return entity(0); }
-
-  /** \brief Pointer operator
-    * \return \ref stk::mesh::Entity "entity" pointer
-   */
-  inline Entity * operator->() const { return & entity(0); }
-
-  /** \brief Pre increment */
-  inline BucketIterator & operator++() {
-    ++m_current_entity;
-    return *this;
-  }
-
-  /** \brief Pre decrement */
-  inline BucketIterator & operator--() {
-    --m_current_entity;
-    return *this;
-  }
-
-  /** \brief Post increment */
-  inline BucketIterator operator++(int) {
-    BucketIterator temp = *this;
-    ++m_current_entity;
-    return temp;
-  }
-
-  /** \brief Post decrement */
-  inline BucketIterator operator--(int) {
-    BucketIterator temp = *this;
-    --m_current_entity;
-    return temp;
-  }
-
-  /** \brief Less than */
-  inline bool operator<(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator < given iterator from different bucket");
-    return (m_current_entity < i.m_current_entity);
-  }
-
-  /** \brief Less than equal to */
-  inline bool operator<=(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator <= given iterator from different bucket");
-    return (m_current_entity <= i.m_current_entity);
-  }
-
-  /** \brief Greater than  */
-  inline bool operator>(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator > given iterator from different bucket");
-    return (m_current_entity > i.m_current_entity);
-  }
-
-  /** \brief Greater than equal to */
-  inline bool operator>=(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator >= given iterator from different bucket");
-    return (m_current_entity >= i.m_current_entity);
-  }
-
-  /** \brief Equal to */
-  inline bool operator==(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator == given iterator from different bucket");
-    return (m_current_entity == i.m_current_entity);
-  }
-
-  /** \brief Not equal */
-  inline bool operator!=(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator != given iterator from different bucket");
-    return (m_current_entity != i.m_current_entity);
-  }
-
-  inline BucketIterator & operator+=(int n) {
-    m_current_entity += n;
-    return *this;
-  }
-
-  inline BucketIterator & operator-=(int n) {
-    m_current_entity -= n;
-    return *this;
-  }
-
-  inline BucketIterator operator+(int n) const {
-    return BucketIterator(m_bucket_ptr, m_current_entity + n);
-  }
-
-  inline BucketIterator operator-(int n) const {
-    return BucketIterator(m_bucket_ptr, m_current_entity - n);
-  }
-
-  /** \brief Distance between iterators */
-  inline ptrdiff_t operator-(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator - given iterator from different bucket");
-    return static_cast<ptrdiff_t>(m_current_entity - i.m_current_entity);
-  }
-
-  template< typename intType >
-  inline Entity & operator[]( const intType & n ) const { return entity(n); }
-
-}; // class BucketIterator
-
-struct To_Ptr : std::unary_function<Entity&, Entity*>
-{
-  Entity* operator()(Entity& entity) const
-  {
-    return &entity;
-  }
-};
-
-// Sometimes, we want a bucket-iterator to dereference to an Entity*
-typedef boost::transform_iterator<To_Ptr, BucketIterator> BucketPtrIterator;
 
 //----------------------------------------------------------------------
 /** \brief  A container for the \ref stk_mesh_field_data "field data"
@@ -247,23 +93,27 @@ typedef boost::transform_iterator<To_Ptr, BucketIterator> BucketPtrIterator;
  */
 class Bucket {
 private:
-  friend class impl::BucketRepository ;
-  friend class impl::BucketImpl ;
+  friend class impl::BucketRepository;
+  friend class impl::BucketImpl;
 
-  impl::BucketImpl       m_bucketImpl ;
+  impl::BucketImpl       m_bucketImpl;
+
+#ifdef SIERRA_MIGRATION
+  const void*            m_fmwk_mesh_bulk_data;
+#endif
 
 public:
 
   //--------------------------------
   // Container-like types and methods:
 
-  typedef BucketIterator iterator ;
+  typedef boost::indirect_iterator<Entity*const*> iterator ;
 
   /** \brief Beginning of the bucket */
-  inline iterator begin() const { return iterator(this,(size_t)0); }
+  inline iterator begin() const { return iterator(m_bucketImpl.begin()); }
 
   /** \brief End of the bucket */
-  inline iterator end() const { return iterator(this,size()); }
+  inline iterator end() const { return iterator(m_bucketImpl.end()); }
 
   /** \brief  Number of entities associated with this bucket */
   size_t size() const { return m_bucketImpl.size() ; }
@@ -286,6 +136,17 @@ public:
   unsigned char * field_data_location( const FieldBase & field, const Entity & entity ) const
   { return m_bucketImpl.field_data_location(field,entity); }
 
+  /** \brief  Query the location of this field data specified by FieldBase and Entity-bucket-ordinal */
+  unsigned char * field_data_location( const FieldBase & field, unsigned ordinal ) const
+  { return m_bucketImpl.field_data_location(field, ordinal); }
+
+  /** \brief  Query the location of this field data specified by FieldBase and Entity-bucket-ordinal
+     This method should only be called if the caller knows that the field exists on the bucket.
+     In an attempt to improve performance, this method skips the if-test that is normally done.
+   */
+  unsigned char * fast_field_data_location( const FieldBase & field, unsigned ordinal ) const
+  { return m_bucketImpl.fast_field_data_location(field, ordinal); }
+
   /** \brief  Query the location of this field data specified by FieldBase */
   unsigned char * field_data_location( const FieldBase & field ) const
   { return m_bucketImpl.field_data_location(field); }
@@ -307,16 +168,19 @@ public:
 
   /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
   void supersets( PartVector & ) const ;
+  void supersets( OrdinalVector & ) const ;
 
   //--------------------------------
   /** \brief  Bucket is a subset of the given part */
   bool member( const Part & ) const ;
 
   /** \brief  Bucket is a subset of all of the given parts */
-  bool member_all( const std::vector<Part*> & ) const ;
+  bool member_all( const PartVector & ) const ;
+  bool member_all( const OrdinalVector & ) const ;
 
   /** \brief  Bucket is a subset of any of the given parts */
-  bool member_any( const std::vector<Part*> & ) const ;
+  bool member_any( const PartVector & ) const ;
+  bool member_any( const OrdinalVector & ) const ;
 
   //--------------------------------
   /** Query bucket's supersets' ordinals. */
@@ -339,28 +203,41 @@ public:
   /** \brief  A method to assist in unit testing - accesses private data as necessary. */
   bool assert_correct() const;
 
+#ifdef SIERRA_MIGRATION
+  typedef std::pair<iterator, iterator> EntityRange;
+
+  bool is_empty() const { return size() == 0; }
+
+  const sierra::Fmwk::MeshBulkData* get_bulk_data() const
+  {
+    return static_cast<const sierra::Fmwk::MeshBulkData*>(m_fmwk_mesh_bulk_data);
+  }
+
+  template <class T>
+  void set_bulk_data(const T* bulk_ptr) { m_fmwk_mesh_bulk_data = bulk_ptr; }
+#endif
+
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
    */
   BulkData & bulk_data() const { return m_bucketImpl.mesh(); }
 
-  ~Bucket();
+  // Only reason to define this at all is to ensure it's private
+  ~Bucket() {}
+
   Bucket();
   Bucket( const Bucket & );
   Bucket & operator = ( const Bucket & );
 
-  Bucket( BulkData        & arg_mesh ,
-          EntityRank        arg_entity_rank ,
-          const unsigned  * arg_key ,
-          size_t            arg_alloc_size ,
-          size_t            arg_capacity ,
-          impl::BucketImpl::DataMap * arg_field_map ,
-          Entity         ** arg_entity_array );
+  Bucket( BulkData & arg_mesh ,
+          EntityRank arg_entity_rank,
+          const std::vector<unsigned> & arg_key,
+          size_t arg_capacity
+        );
 
   friend class ::stk::mesh::BulkData;
 };
-
 
 
 struct BucketLess {
@@ -374,27 +251,49 @@ std::vector<Bucket*>::iterator
 lower_bound( std::vector<Bucket*> & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , BucketLess() ); }
 
-
+inline
+Bucket::Bucket( BulkData & arg_mesh ,
+                EntityRank arg_entity_rank,
+                const std::vector<unsigned> & arg_key,
+                size_t arg_capacity
+        )
+  : m_bucketImpl(arg_mesh,arg_entity_rank,arg_key,arg_capacity)
+{}
 
 /** \} */
+
+inline
+bool Bucket::member_all( const OrdinalVector& parts ) const
+{
+  const unsigned * const i_beg = key() + 1 ;
+  const unsigned * const i_end = key() + key()[0] ;
+
+  const OrdinalVector::const_iterator ip_end = parts.end();
+        OrdinalVector::const_iterator ip     = parts.begin() ;
+
+  bool result_all = true ;
+
+  for ( ; result_all && ip_end != ip ; ++ip ) {
+    const unsigned ord = *ip;
+    result_all = contains_ordinal(i_beg, i_end, ord);
+  }
+  return result_all ;
+}
+
+struct To_Ptr : std::unary_function<Entity&, Entity*>
+{
+  Entity* operator()(Entity& entity) const
+  {
+    return &entity;
+  }
+};
+
+// Sometimes, we want a bucket-iterator to dereference to an Entity*
+typedef boost::transform_iterator<To_Ptr, Bucket::iterator> BucketPtrIterator;
+
+typedef Bucket::iterator BucketIterator;
 
 } // namespace mesh
 } // namespace stk
 
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
-namespace stk {
-namespace mesh {
-
-inline Entity & BucketIterator::entity( const size_t i ) const
-{
-  ThrowAssert( m_bucket_ptr );
-  return (*m_bucket_ptr)[ m_current_entity + i ] ;
-}
-
-}
-}
-
 #endif
-

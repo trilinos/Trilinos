@@ -112,6 +112,8 @@ def isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
     if modifiedFileFullPathArray[0].rfind(".cmake") != -1:
       return True
   elif modifiedFileFullPathArray[0] == 'cmake':
+    if modifiedFileFullPathArray[1]=='ExtraRepositoriesList.cmake':
+      return False
     if modifiedFileFullPathArray[1] == 'ctest':
       return False
     if modifiedFileFullPathArray[1] == 'TPLs':

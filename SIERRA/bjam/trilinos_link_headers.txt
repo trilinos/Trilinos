@@ -12,11 +12,13 @@ intrepid: src/[*.hpp] src/Cell[*.hpp] src/Discretization/Basis[*.hpp] src/Discre
 ml: src[*.h *.H]
 moocho: src[*.hpp *.h *.ud] thyra/src[*.hpp]
 nox: src[*.H] src-belos[*.H] src-epetra[*.H] src-lapack[*.H] src-loca/src[*.H] src-loca/src-epetra[*.H] src-petsc[*.H] src-thyra[*.H *.hpp]
+pamgen:  rtcompiler[*.hh]
 rtop: src[*.hpp *.h]
 rythmos: src[*.h *.hpp]
 sacado: src[Sacado*.hpp Sacado*.h]
 stokhos: src[*.hpp] src/nox[*.hpp] src/sacado[*.hpp]
 shards: src[*.h *.hpp]
+mesquite: src/Mesh[*.hpp] src/TargetCalculator[*.hpp] src/ObjectiveFunction[*.hpp] src/Misc[*.hpp] src/MappingFunction[*.hpp] src/MappingFunction/Lagrange[*.hpp] src/MappingFunction/Linear[*.hpp] src/QualityAssessor[*.hpp] src/QualityMetric[*.hpp] src/QualityMetric/Shape[*.hpp] src/QualityMetric/Untangle[*.hpp] src/QualityMetric/Smoothness[*.hpp] src/QualityMetric/TMP[*.hpp] src/QualityMetric/Debug[*.hpp] src/QualityMetric/Volume[*.hpp] src/Wrappers[*.hpp] src/TargetMetric[*.hpp] src/TargetMetric/Shape[*.hpp] src/TargetMetric/Untangle[*.hpp] src/TargetMetric/ShapeSizeOrient[*.hpp] src/TargetMetric/Misc[*.hpp] src/TargetMetric/ShapeSize[*.hpp] src/TargetMetric/Size[*.hpp] src/TargetMetric/ShapeOrient[*.hpp] src/QualityImprover[*.hpp] src/QualityImprover/TopologyModifier[*.hpp] src/QualityImprover/OptSolvers[*.hpp] src/QualityImprover/Relaxation[*.hpp] src/include[*.hpp] src/Control
 stratimikos: src[*.hpp] adapters/amesos/src[*.hpp] adapters/aztecoo/src[*.hpp] adapters/belos/src[*.hpp]  adapters/ifpack/src[*.hpp] adapters/ml/src[*.hpp]
 teuchos: src[*.h *.hpp]
 ThreadPool: src[*.h *.hpp]

@@ -117,7 +117,7 @@ int trios_buffer_queue_init(
 
     log_debug(bq_debug_level, "enter");
 
-    nthread_mutex_init(&bq->mutex, NTHREAD_MUTEX_NORMAL);
+    nthread_lock_init(&bq->mutex);
 
     nthread_lock(&bq->mutex);
 

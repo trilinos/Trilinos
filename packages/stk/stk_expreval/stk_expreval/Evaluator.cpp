@@ -47,6 +47,9 @@ enum Opcode {
   OPCODE_ARGUMENT,
 
   OPCODE_TIERNARY,
+
+
+
   OPCODE_MULTIPLY,
   OPCODE_DIVIDE,
   OPCODE_MODULUS,
@@ -66,13 +69,23 @@ enum Opcode {
   OPCODE_LOGICAL_AND,
   OPCODE_LOGICAL_OR,
 
+  OPCODE_EXPONENIATION,
+
   OPCODE_ASSIGN
 };
 
 
 class Node
 {
+  //
+  // 0,1,2,3,4 argument overloads allowed. Increase this
+  // value when 5 argument functions are added. Probably
+  // some way to automate this given that it's related to
+  // the number of CFunction classes defined.
+  //
 public:
+  enum { MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES = 5 };
+
   explicit Node(Opcode opcode)
     : m_opcode(opcode),
       m_left(0),
@@ -87,7 +100,7 @@ private:
 public:
   ~Node()
   {}
-  
+
   double eval() const;
 
   const Opcode	m_opcode;
@@ -106,7 +119,7 @@ public:
 
     struct _function
     {
-      CFunctionBase *	function;
+      CFunctionBase* function[MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES];
     } function;
   } m_data;
 
@@ -119,7 +132,6 @@ public:
 double
 Node::eval() const
 {
-  /* %TRACE[NONE]% */  /* %TRACE% */
   switch (m_opcode) {
   case OPCODE_STATEMENT:
     {
@@ -141,6 +153,9 @@ Node::eval() const
 
   case OPCODE_MULTIPLY:
     return m_left->eval()*m_right->eval();
+
+  case OPCODE_EXPONENIATION:
+    return std::pow(m_left->eval(),m_right->eval());
 
   case OPCODE_DIVIDE:
     return m_left->eval()/m_right->eval();
@@ -206,9 +221,17 @@ Node::eval() const
 
       int argc = 0;
       for (Node *arg = m_right; arg; arg = arg->m_right)
+      {
 	argv[argc++] = arg->m_left->eval();
+      }
 
-      return (*m_data.function.function)(argc, argv);
+      for(unsigned int i=0; i<Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i)
+      {
+        // Linear search to match the function name and number of arguments.
+        if( m_data.function.function[i]->getArgCount() == argc) {
+          return (*m_data.function.function[i])(argc, argv);
+        }
+      }
     }
 
   default: // Unknown opcode
@@ -288,6 +311,9 @@ parseExpression(
   LexemVector::const_iterator assign_it = to;		// First = at paren_level 0 for assignment
   LexemVector::const_iterator term_it = to;		// Last + or - at paren_level 0 for adding or subtracting
   LexemVector::const_iterator factor_it = to;		// Last * or / at paren_level 0 for multiplying or dividing
+  LexemVector::const_iterator expon_it = to;            // Last ^ for exponenation
+
+
   LexemVector::const_iterator relation_it = to;		// Last relational at paren_level 0 for relational operator
   LexemVector::const_iterator logical_it = to;		// Last logical at paren_level 0 for logical operator
   LexemVector::const_iterator question_it = to;		// Last tiernary at paren_level 0 for tiernary operator
@@ -349,6 +375,12 @@ parseExpression(
 	colon_it = it;
       break;
 
+    case TOKEN_EXPONENTIATION:
+      if (paren_level == 0) // && expon_it == to)
+	expon_it = it;
+      break;
+
+
     case TOKEN_MULTIPLY:
     case TOKEN_DIVIDE:
     case TOKEN_PERCENT:
@@ -378,7 +410,7 @@ parseExpression(
 	// After any of these, we are a unary operator, not a term
 	if (it == from || it == assign_it + 1
 	    || it == term_it + 1 || it == factor_it + 1
-	    || it == last_unary_it + 1)
+	    || it == last_unary_it + 1 || it == expon_it + 1)
 	{ // Unary operator
 	  if (unary_it == to) // First unary operator?
 	    unary_it = it;
@@ -434,6 +466,11 @@ parseExpression(
   // Unary
   if (unary_it != to)
     return parseUnary(eval, from, unary_it, to);
+
+  if (expon_it != to) 
+    return parseFactor(eval, from, expon_it, to);
+
+
 
   // Parenthetical
   if (lparen_open_it != to) {
@@ -526,7 +563,16 @@ parseFactor(
   LexemVector::const_iterator	factor_it,
   LexemVector::const_iterator	to)
 {
-  Node *factor = eval.newNode((*factor_it).getToken() == TOKEN_MULTIPLY ? OPCODE_MULTIPLY : ((*factor_it).getToken() == TOKEN_DIVIDE ? OPCODE_DIVIDE : OPCODE_MODULUS));
+  Node *factor = eval.newNode
+    (
+     (*factor_it).getToken() == TOKEN_MULTIPLY ? OPCODE_MULTIPLY : 
+     (
+      (*factor_it).getToken() == TOKEN_DIVIDE ? OPCODE_DIVIDE : 
+      (
+       (*factor_it).getToken() == TOKEN_EXPONENTIATION ? OPCODE_EXPONENIATION : OPCODE_MODULUS
+      )
+     )
+    );
 
   factor->m_left = parseExpression(eval, from, factor_it);
   factor->m_right = parseExpression(eval, factor_it + 1, to);
@@ -659,19 +705,46 @@ parseFunction(
 
   CFunctionBase *c_function = NULL;
   CFunctionMap::iterator it = getCFunctionMap().find(function_name);
-  if (it != getCFunctionMap().end())
-    c_function = (*it).second;
-
-//   if (!c_function)
-//     throw std::runtime_error(std::string("Undefined function ") + function_name);
-
   Node *function = eval.newNode(OPCODE_FUNCTION);
-  function->m_data.function.function = c_function;
+  // only 1 function found with that function name.
+  if ( getCFunctionMap().count(function_name) == 1 ) {
+    if (it != getCFunctionMap().end()) {
+      c_function = (*it).second;
+    }
+    function->m_data.function.function[0] = c_function;
 
-  if (!c_function)
-    eval.getUndefinedFunctionSet().insert(function_name);
+    if (!c_function)
+      eval.getUndefinedFunctionSet().insert(function_name);
 
+  } else {
+    std::pair<CFunctionMap::iterator, CFunctionMap::iterator> ppp;
+    ppp = getCFunctionMap().equal_range(function_name);
+
+    using std::cout;
+    using std::endl;
+    //cout << endl << "Range of \"function_name\" elements:" << endl;
+    int iCount=0;
+    for (CFunctionMap::iterator it2 = ppp.first;
+        it2 != ppp.second;
+        ++it2,
+        ++iCount)
+    {
+      //cout << "  [" << (*it2).first << ", " << (*it2).second->getArgCount() << "]" << endl;
+      c_function = (*it2).second;
+      function->m_data.function.function[iCount] = c_function;
+
+      if (!c_function)
+        eval.getUndefinedFunctionSet().insert(function_name);
+    }
+    if( iCount == Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES) {
+      //cout << "Found multiple functions with the same name" << endl;
+      throw std::runtime_error(std::string("Exceeded maximum number of overloaded function names for function named= ") + function_name);
+    }
+  }
   function->m_right = parseFunctionArg(eval, lparen + 1, rparen);
+
+  //   if (!c_function)
+  //     throw std::runtime_error(std::string("Undefined function ") + function_name);
 
   return function;
 }

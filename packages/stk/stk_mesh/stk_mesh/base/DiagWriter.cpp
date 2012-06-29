@@ -151,4 +151,11 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entit
 } // namespace mesh
 } // namespace stk
 
+#else
+int dummy_DiagWriter()
+{
+  // This function is present just to put a symbol in the object
+  // file and eliminate a "empty object file" warning on the mac...
+  return 1;
+}
 #endif // STK_MESH_TRACE_ENABLED

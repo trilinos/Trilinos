@@ -41,9 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_03.cpp
+/** \file   example_03AD.cpp
     \brief  Example building stiffness matrix and right hand side for a Poisson equation 
-            using nodal (Hgrad) elements.  Here we exercise Sacado's DFad type for an
+            using nodal (Hgrad) elements.  Here we exercise Sacado's Fad types for an
             automated construction of PDE Jacobians through automatic differentiation.
 
     \verbatim
@@ -121,12 +121,21 @@
 using namespace std;
 using namespace Intrepid;
 
-typedef Sacado::Fad::DFad<double> FadType;
+#define INTREPID_INTEGRATE_COMP_ENGINE COMP_BLAS
+
+#define BATCH_SIZE 10
+
+//typedef Sacado::Fad::DFad<double> FadType;
 //typedef Sacado::CacheFad::DFad<double> FadType;
 //typedef Sacado::ELRCacheFad::DFad<double> FadType;
-//typedef Sacado::CacheFad::SFad<double,8> FadType;
+//typedef Sacado::Fad::SFad<double,8> FadType;
+typedef Sacado::CacheFad::SFad<double,8> FadType;
 //typedef Sacado::ELRCacheFad::SFad<double,8> FadType;
+//typedef Sacado::Fad::SLFad<double,8> FadType;
+//typedef Sacado::CacheFad::SLFad<double,8> FadType;
 //typedef Sacado::ELRCacheFad::SLFad<double,8> FadType;
+
+//#define DUMP_DATA
 
 // Functions to evaluate exact solution and derivatives
 double evalu(double & x, double & y, double & z);
@@ -139,7 +148,7 @@ int main(int argc, char *argv[]) {
     if (argc < 4) {
       std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
       std::cout <<"Usage:\n\n";
-      std::cout <<"  ./Intrepid_example_Drivers_Example_03.exe NX NY NZ verbose\n\n";
+      std::cout <<"  ./Intrepid_example_Drivers_Example_03AD.exe NX NY NZ verbose\n\n";
       std::cout <<" where \n";
       std::cout <<"   int NX              - num intervals in x direction (assumed box domain, 0,1) \n";
       std::cout <<"   int NY              - num intervals in y direction (assumed box domain, 0,1) \n";
@@ -180,14 +189,14 @@ int main(int argc, char *argv[]) {
 
     // ************************************ GET INPUTS **************************************
 
-    int NX            = atoi(argv[1]);  // num intervals in x direction (assumed box domain, 0,1)
-    int NY            = atoi(argv[2]);  // num intervals in y direction (assumed box domain, 0,1)
-    int NZ            = atoi(argv[3]);  // num intervals in z direction (assumed box domain, 0,1)
+    int NX = atoi(argv[1]);  // num intervals in x direction (assumed box domain, 0,1)
+    int NY = atoi(argv[2]);  // num intervals in y direction (assumed box domain, 0,1)
+    int NZ = atoi(argv[3]);  // num intervals in z direction (assumed box domain, 0,1)
 
     // *********************************** CELL TOPOLOGY **********************************
 
     // Get cell topology for base hexahedron
-    typedef shards::CellTopology    CellTopology;
+    typedef shards::CellTopology CellTopology;
     CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
     // Get dimensions 
@@ -200,8 +209,8 @@ int main(int argc, char *argv[]) {
 
     *outStream << "   NX" << "   NY" << "   NZ\n";
     *outStream << std::setw(5) << NX <<
-                 std::setw(5) << NY <<
-                 std::setw(5) << NZ << "\n\n";
+                  std::setw(5) << NY <<
+                  std::setw(5) << NZ << "\n\n";
 
     // Print mesh information
     int numElems = NX*NY*NZ;
@@ -239,7 +248,7 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-#define DUMP_DATA
+
 #ifdef DUMP_DATA
     // Print nodal coords
     ofstream fcoordout("coords.dat");
@@ -321,14 +330,15 @@ int main(int argc, char *argv[]) {
     hexHGradBasis.getValues(hexGrads, cubPoints, OPERATOR_GRAD);
 
 
-    // ******** LOOP OVER ELEMENTS TO CREATE LOCAL STIFFNESS MATRIX *************
+    // ******** FEM ASSEMBLY *************
 
     *outStream << "Building stiffness matrix and right hand side ... \n\n";
 
     // Settings and data structures for mass and stiffness matrices
     typedef CellTools<double>  CellTools;
     typedef FunctionSpaceTools fst;
-    int numCells = 1; 
+    int numCells = BATCH_SIZE; 
+    int numBatches = numElems/numCells; 
 
     // Container for nodes
     FieldContainer<double> hexNodes(numCells, numNodesPerElem, spaceDim);
@@ -352,8 +362,7 @@ int main(int argc, char *argv[]) {
     // Global arrays in Epetra format 
     Epetra_SerialComm Comm;
     Epetra_Map globalMapG(numNodes, 0, Comm);
-    Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
-    Epetra_FECrsMatrix StiffMatrixViaAD(Copy, globalMapG, numFieldsG);    
+    Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 64);
     Epetra_FEVector rhs(globalMapG);
     Epetra_FEVector rhsViaAD(globalMapG);
 
@@ -361,21 +370,35 @@ int main(int argc, char *argv[]) {
     FieldContainer<FadType> cellResidualAD(numCells, numFieldsG);
     FieldContainer<FadType> FEFunc(numCells, numCubPoints, spaceDim);
     FieldContainer<FadType> x_fad(numCells, numFieldsG);  
-    for(int j=0; j<numFieldsG; j++){
-        x_fad(0,j) = FadType(numFieldsG, j, 0.0);
+    for (int ci=0; ci<numCells; ci++) {
+      for(int j=0; j<numFieldsG; j++) {
+          x_fad(ci,j) = FadType(numFieldsG, j, 0.0);
+      }
     }
 
     Teuchos::Time timer_jac_analytic("Time to compute element PDE Jacobians analytically: ");
     Teuchos::Time timer_jac_fad     ("Time to compute element PDE Jacobians using AD:     ");
-      
-    // *** Element loop ***
-    for (int k=0; k<numElems; k++) {
+    Teuchos::Time timer_jac_insert  ("Time for global insert,  w/o graph: ");
+    Teuchos::Time timer_jac_insert_g("Time for global insert,  w/  graph: ");
+    Teuchos::Time timer_jac_ga      ("Time for GlobalAssemble, w/o graph: ");
+    Teuchos::Time timer_jac_ga_g    ("Time for GlobalAssemble, w/  graph: ");
+    Teuchos::Time timer_jac_fc      ("Time for FillComplete,   w/o graph: ");
+    Teuchos::Time timer_jac_fc_g    ("Time for FillComplete,   w/  graph: ");
+
+
+
+
+    // *** Analytic element loop ***
+    for (int bi=0; bi<numBatches; bi++) {
 
       // Physical cell coordinates
-      for (int i=0; i<numNodesPerElem; i++) {
-          hexNodes(0,i,0) = nodeCoord(elemToNode(k,i),0);
-          hexNodes(0,i,1) = nodeCoord(elemToNode(k,i),1);
-          hexNodes(0,i,2) = nodeCoord(elemToNode(k,i),2);
+      for (int ci=0; ci<numCells; ci++) {
+        int k = bi*numCells+ci;
+        for (int i=0; i<numNodesPerElem; i++) {
+            hexNodes(ci,i,0) = nodeCoord(elemToNode(k,i),0);
+            hexNodes(ci,i,1) = nodeCoord(elemToNode(k,i),1);
+            hexNodes(ci,i,2) = nodeCoord(elemToNode(k,i),2);
+        }
       }
 
       // Compute cell Jacobians, their inverses and their determinants
@@ -398,17 +421,29 @@ int main(int argc, char *argv[]) {
       // integrate to compute element stiffness matrix
       timer_jac_analytic.start();
       fst::integrate<double>(localStiffMatrix,
-                             hexGradsTransformed, hexGradsTransformedWeighted, COMP_BLAS);
+                             hexGradsTransformed, hexGradsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE);
       timer_jac_analytic.stop();
 
       // assemble into global matrix
-      for (int row = 0; row < numFieldsG; row++){
+      for (int ci=0; ci<numCells; ci++) {
+        int k = bi*numCells+ci;
+        std::vector<int> rowIndex(numFieldsG);
+        std::vector<int> colIndex(numFieldsG);
+        for (int row = 0; row < numFieldsG; row++){
+          rowIndex[row] = elemToNode(k,row);
+        }
         for (int col = 0; col < numFieldsG; col++){
-            int rowIndex = elemToNode(k,row);
-            int colIndex = elemToNode(k,col);
-            double val = localStiffMatrix(0,row,col);
-            StiffMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-         }
+          colIndex[col] = elemToNode(k,col);
+        }
+        // We can insert an entire matrix at a time, but we opt for rows only.
+        //timer_jac_insert.start();
+        //StiffMatrix.InsertGlobalValues(numFieldsG, &rowIndex[0], numFieldsG, &colIndex[0], &localStiffMatrix(ci,0,0));
+        //timer_jac_insert.stop();
+        for (int row = 0; row < numFieldsG; row++){
+          timer_jac_insert.start();
+          StiffMatrix.InsertGlobalValues(1, &rowIndex[row], numFieldsG, &colIndex[0], &localStiffMatrix(ci,row,0));
+          timer_jac_insert.stop();
+        }
       }
 
       // *******************  COMPUTE RIGHT-HAND SIDE WITHOUT AD *******************
@@ -417,11 +452,13 @@ int main(int argc, char *argv[]) {
       CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
 
       // evaluate right hand side function at physical points
-      for (int nPt = 0; nPt < numCubPoints; nPt++){
-          double x = physCubPoints(0,nPt,0);
-          double y = physCubPoints(0,nPt,1);
-          double z = physCubPoints(0,nPt,2);
-          rhsData(0,nPt) = evalDivGradu(x, y, z);
+      for (int ci=0; ci<numCells; ci++) {
+        for (int nPt = 0; nPt < numCubPoints; nPt++){
+            double x = physCubPoints(ci,nPt,0);
+            double y = physCubPoints(ci,nPt,1);
+            double z = physCubPoints(ci,nPt,2);
+            rhsData(ci,nPt) = evalDivGradu(x, y, z);
+        }
       }
 
       // transform basis values to physical coordinates 
@@ -432,19 +469,52 @@ int main(int argc, char *argv[]) {
                                    weightedMeasure, hexGValsTransformed);
 
       // integrate rhs term
-      fst::integrate<double>(localRHS, rhsData, hexGValsTransformedWeighted, COMP_BLAS);
+      fst::integrate<double>(localRHS, rhsData, hexGValsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE);
 
       // assemble into global vector
-      for (int row = 0; row < numFieldsG; row++){
-          int rowIndex = elemToNode(k,row);
-          double val = -localRHS(0,row);
-          rhs.SumIntoGlobalValues(1, &rowIndex, &val);
+      for (int ci=0; ci<numCells; ci++) {
+        int k = bi*numCells+ci;
+        for (int row = 0; row < numFieldsG; row++){
+            int rowIndex = elemToNode(k,row);
+            double val = -localRHS(ci,row);
+            rhs.SumIntoGlobalValues(1, &rowIndex, &val);
+        }
       }
+
+    } // *** end analytic element loop ***
      
+    // Assemble global objects
+    timer_jac_ga.start(); StiffMatrix.GlobalAssemble(); timer_jac_ga.stop();
+    timer_jac_fc.start(); StiffMatrix.FillComplete(); timer_jac_fc.stop();
+    rhs.GlobalAssemble();
+
+
+
+
+    // *** AD element loop ***
+
+    Epetra_CrsGraph mgraph = StiffMatrix.Graph();
+    Epetra_FECrsMatrix StiffMatrixViaAD(Copy, mgraph);
+    //Epetra_FECrsMatrix StiffMatrixViaAD(Copy, globalMapG, numFieldsG*numFieldsG*numFieldsG);
+
+    for (int bi=0; bi<numBatches; bi++) {
 
       // ******************** COMPUTE ELEMENT HGrad STIFFNESS MATRICES AND RIGHT-HAND SIDE WITH AD ********************
 
-      // ***** NOTE: FOR POSTERITY, WE RECOMPUTE hexGradsTransformed, weightedMeasure, ..., rhsData.
+      // Physical cell coordinates
+      for (int ci=0; ci<numCells; ci++) {
+        int k = bi*numCells+ci;
+        for (int i=0; i<numNodesPerElem; i++) {
+            hexNodes(ci,i,0) = nodeCoord(elemToNode(k,i),0);
+            hexNodes(ci,i,1) = nodeCoord(elemToNode(k,i),1);
+            hexNodes(ci,i,2) = nodeCoord(elemToNode(k,i),2);
+        }
+      }
+
+      // Compute cell Jacobians, their inverses and their determinants
+      CellTools::setJacobian(hexJacobian, cubPoints, hexNodes, hex_8);
+      CellTools::setJacobianInv(hexJacobInv, hexJacobian );
+      CellTools::setJacobianDet(hexJacobDet, hexJacobian );
 
       // transform to physical coordinates
       fst::HGRADtransformGRAD<double>(hexGradsTransformed, hexJacobInv, hexGrads);
@@ -459,11 +529,13 @@ int main(int argc, char *argv[]) {
       CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
 
       // evaluate right hand side function at physical points
-      for (int nPt = 0; nPt < numCubPoints; nPt++){
-          double x = physCubPoints(0,nPt,0);
-          double y = physCubPoints(0,nPt,1);
-          double z = physCubPoints(0,nPt,2);
-          rhsData(0,nPt) = evalDivGradu(x, y, z);
+      for (int ci=0; ci<numCells; ci++) {
+        for (int nPt = 0; nPt < numCubPoints; nPt++){
+            double x = physCubPoints(ci,nPt,0);
+            double y = physCubPoints(ci,nPt,1);
+            double z = physCubPoints(ci,nPt,2);
+            rhsData(ci,nPt) = evalDivGradu(x, y, z);
+        }
       }
 
       // transform basis values to physical coordinates 
@@ -472,8 +544,6 @@ int main(int argc, char *argv[]) {
       // multiply values with weighted measure
       fst::multiplyMeasure<double>(hexGValsTransformedWeighted,
                                    weightedMeasure, hexGValsTransformed);
-
-      // ***** DONE RECOMPUTING.
 
       timer_jac_fad.start();
       // must zero out FEFunc due to the strange default sum-into behavior of evaluate function
@@ -484,36 +554,56 @@ int main(int argc, char *argv[]) {
       fst::evaluate<FadType>(FEFunc,x_fad,hexGradsTransformed);
      
       // integrate to compute element residual   
-      fst::integrate<FadType>(cellResidualAD, FEFunc,  hexGradsTransformedWeighted, COMP_CPP);
+      fst::integrate<FadType>(cellResidualAD, FEFunc,  hexGradsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE);
       timer_jac_fad.stop();
-      fst::integrate<FadType>(cellResidualAD, rhsData, hexGValsTransformedWeighted, COMP_CPP, true);
+      fst::integrate<FadType>(cellResidualAD, rhsData, hexGValsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE, true);
 
       // assemble into global matrix
-      for (int row = 0; row < numFieldsG; row++){
+      for (int ci=0; ci<numCells; ci++) {
+        int k = bi*numCells+ci;
+        std::vector<int> rowIndex(numFieldsG);
+        std::vector<int> colIndex(numFieldsG);
+        for (int row = 0; row < numFieldsG; row++){
+          rowIndex[row] = elemToNode(k,row);
+        }
         for (int col = 0; col < numFieldsG; col++){
-            int rowIndex = elemToNode(k,row);
-            int colIndex = elemToNode(k,col);
-            double val = cellResidualAD[row].fastAccessDx(col);
-            StiffMatrixViaAD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-         }
+          colIndex[col] = elemToNode(k,col);
+	}
+        for (int row = 0; row < numFieldsG; row++){
+	  timer_jac_insert_g.start();
+          StiffMatrixViaAD.SumIntoGlobalValues(1, &rowIndex[row], numFieldsG, &colIndex[0], cellResidualAD(ci,row).dx());
+          timer_jac_insert_g.stop();
+        }
       }
  
       // assemble into global vector
-      for (int row = 0; row < numFieldsG; row++){
-          int rowIndex = elemToNode(k,row);
-          double val = -cellResidualAD[row].val();
-          rhsViaAD.SumIntoGlobalValues(1, &rowIndex, &val);
+      for (int ci=0; ci<numCells; ci++) {
+        int k = bi*numCells+ci;
+        for (int row = 0; row < numFieldsG; row++){
+            int rowIndex = elemToNode(k,row);
+            double val = -cellResidualAD(ci,row).val();
+            rhsViaAD.SumIntoGlobalValues(1, &rowIndex, &val);
+        }
       }
 
-    } // *** end element loop ***
+    } // *** end AD element loop ***
 
-
-    // Assemble global matrices
-    StiffMatrix.GlobalAssemble(); StiffMatrix.FillComplete();
-    StiffMatrixViaAD.GlobalAssemble(); StiffMatrixViaAD.FillComplete();
-    rhs.GlobalAssemble();
+    // Assemble global objects
+    timer_jac_ga_g.start(); StiffMatrixViaAD.GlobalAssemble(); timer_jac_ga_g.stop();
+    timer_jac_fc_g.start(); StiffMatrixViaAD.FillComplete(); timer_jac_fc_g.stop();
     rhsViaAD.GlobalAssemble();
 
+
+
+    /****** Output *******/
+
+#ifdef DUMP_DATA
+    // Dump matrices to disk
+    EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+    EpetraExt::RowMatrixToMatlabFile("stiff_matrixAD.dat",StiffMatrixViaAD);
+    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
+    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vectorAD.dat",rhsViaAD,0,0,false);
+#endif
 
     // take the infinity norm of the difference between StiffMatrix and StiffMatrixViaAD to see that 
     // the two matrices are the same
@@ -528,10 +618,19 @@ int main(int argc, char *argv[]) {
     rhsViaAD.NormInf(&normVec);
     *outStream << "Infinity norm of difference between right-hand side vectors = " << normVec << "\n";
 
+    *outStream << "\n\nNumber of global nonzeros: " << StiffMatrix.NumGlobalNonzeros() << "\n\n";
+
     *outStream << timer_jac_analytic.name() << " " << timer_jac_analytic.totalElapsedTime() << " sec\n";
-    *outStream << timer_jac_fad.name()      << " " << timer_jac_fad.totalElapsedTime()      << " sec\n";
+    *outStream << timer_jac_fad.name()      << " " << timer_jac_fad.totalElapsedTime()      << " sec\n\n";
+    *outStream << timer_jac_insert.name()   << " " << timer_jac_insert.totalElapsedTime()   << " sec\n";
+    *outStream << timer_jac_insert_g.name() << " " << timer_jac_insert_g.totalElapsedTime() << " sec\n\n";
+    *outStream << timer_jac_ga.name()       << " " << timer_jac_ga.totalElapsedTime()       << " sec\n";
+    *outStream << timer_jac_ga_g.name()     << " " << timer_jac_ga_g.totalElapsedTime()     << " sec\n\n";
+    *outStream << timer_jac_fc.name()       << " " << timer_jac_fc.totalElapsedTime()       << " sec\n";
+    *outStream << timer_jac_fc_g.name()     << " " << timer_jac_fc_g.totalElapsedTime()     << " sec\n\n";
 
     // Adjust stiffness matrix and rhs based on boundary conditions
+    /* skip this part ...
     for (int row = 0; row<numNodes; row++){
       if (nodeOnBoundary(row)) {
          int rowindex = row;
@@ -546,12 +645,7 @@ int main(int argc, char *argv[]) {
          rhs.ReplaceGlobalValues(1, &rowindex, &val);
       }
     }
-
-#ifdef DUMP_DATA
-    // Dump matrices to disk
-    EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
-#endif
+    */
 
    if ((normMat < 1.0e4*INTREPID_TOL) && (normVec < 1.0e4*INTREPID_TOL)) {
      std::cout << "End Result: TEST PASSED\n";
@@ -566,41 +660,6 @@ int main(int argc, char *argv[]) {
    return 0;
 }
 
-
-// Calculates value of exact solution u
- double evalu(double & x, double & y, double & z)
- {
- /*
-   // function1
-    double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
- */
-
-   // function2
-   double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-
-   return exactu;
- }
-
-// Calculates gradient of exact solution u
- int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3)
- {
- /*
-   // function 1
-       gradu1 = M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
-       gradu2 = M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
-       gradu3 = M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
- */
-
-   // function2
-       gradu1 = (M_PI*cos(M_PI*x)+sin(M_PI*x))
-                  *sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-       gradu2 = (M_PI*cos(M_PI*y)+sin(M_PI*y))
-                  *sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z);
-       gradu3 = (M_PI*cos(M_PI*z)+sin(M_PI*z))
-                  *sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z);
-  
-   return 0;
- }
 
 // Calculates Laplacian of exact solution u
  double evalDivGradu(double & x, double & y, double & z)
@@ -619,4 +678,3 @@ int main(int argc, char *argv[]) {
    
    return divGradu;
  }
-

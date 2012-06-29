@@ -162,7 +162,7 @@ typedef struct mpi_transport_global {
 
 
 
-static nthread_mutex_t nnti_mpi_lock;
+static nthread_lock_t nnti_mpi_lock;
 
 
 //static const NNTI_buffer_t *decode_event_buffer(
@@ -254,16 +254,16 @@ static uint32_t hash6432shift(uint64_t key)
 static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
 typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
 typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
-static nthread_mutex_t nnti_buf_bufhash_lock;
+static nthread_lock_t nnti_buf_bufhash_lock;
 
 static std::map<uint32_t, mpi_work_request *> wr_by_wrhash;
 typedef std::map<uint32_t, mpi_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, mpi_work_request *> wr_by_wrhash_t;
-static nthread_mutex_t nnti_wr_wrhash_lock;
+static nthread_lock_t nnti_wr_wrhash_lock;
 
 typedef std::deque<NNTI_buffer_t *>           target_buffer_queue_t;
 typedef std::deque<NNTI_buffer_t *>::iterator target_buffer_queue_iter_t;
-static nthread_mutex_t                        nnti_target_buffer_queue_lock;
+static nthread_lock_t                        nnti_target_buffer_queue_lock;
 
 target_buffer_queue_t target_buffers;
 
@@ -307,7 +307,10 @@ int NNTI_mpi_init (
 
     if (!initialized) {
 
-        nthread_mutex_init(&nnti_mpi_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_mpi_lock);
+        nthread_lock_init(&nnti_buf_bufhash_lock);
+        nthread_lock_init(&nnti_wr_wrhash_lock);
+        nthread_lock_init(&nnti_target_buffer_queue_lock);
 
         if (my_url != NULL) {
             log_error(nnti_debug_level,"The MPI transport does not accept a URL at init.  Ignoring URL.");
@@ -987,8 +990,8 @@ int NNTI_mpi_wait (
 //    const NNTI_buffer_t  *wait_buf=NULL;
 
     int rc=MPI_SUCCESS;
-    int elapsed_time=0;
-    int timeout_per_call;
+    long elapsed_time=0;
+    long timeout_per_call;
     MPI_Status event;
     int done=FALSE;
 
@@ -998,7 +1001,7 @@ int NNTI_mpi_wait (
 
     log_level debug_level=nnti_debug_level;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
@@ -1059,7 +1062,7 @@ int NNTI_mpi_wait (
                 }
                 /* case 2: timed out */
                 else {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {
@@ -1222,10 +1225,10 @@ int NNTI_mpi_waitany (
 //    const NNTI_buffer_t  *wait_buf=NULL;
 
     int rc=MPI_SUCCESS;
-    int elapsed_time=0;
-    int timeout_per_call;
+    long elapsed_time=0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     log_level debug_level=nnti_debug_level;
 
@@ -1310,7 +1313,7 @@ int NNTI_mpi_waitany (
                 }
                 /* case 2: timed out */
                 else {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {
@@ -1410,10 +1413,10 @@ int NNTI_mpi_waitall (
     int i=0;
 
     int rc=MPI_SUCCESS;
-    int elapsed_time=0;
-    int timeout_per_call;
+    long elapsed_time=0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     log_level debug_level=nnti_debug_level;
 
@@ -1499,7 +1502,7 @@ int NNTI_mpi_waitall (
                 }
                 /* case 2: timed out */
                 else {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {

@@ -56,7 +56,7 @@ namespace stk {
 
       ~HeterogeneousFixture();
 
-      HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit = true);
+      HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit = true, bool do_sidesets=false);
 
       void populate();
 
@@ -67,11 +67,16 @@ namespace stk {
       stk::mesh::Part & m_block_hex;
       stk::mesh::Part & m_block_wedge;
       stk::mesh::Part & m_block_tet;
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
       stk::mesh::Part & m_block_pyramid;
+#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
       stk::mesh::Part & m_block_quad_shell;
       stk::mesh::Part & m_block_tri_shell;
 #endif
+      stk::mesh::Part * m_sideset_quad;
+      stk::mesh::Part * m_sideset_quad_subset;
+      stk::mesh::Part * m_sideset_tri;
+      stk::mesh::Part * m_sideset_tri_subset;
+
       const stk::mesh::EntityRank m_elem_rank;
 
       VectorFieldType & m_coordinates_field;

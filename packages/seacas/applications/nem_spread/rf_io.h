@@ -69,4 +69,3 @@ int Num_Nset_Var = 0;		/* The number of nodeset variables to reserve */
 				/* space in the output file for. */
 int Num_Sset_Var = 0;		/* The number of sideset variables to reserve */
 				/* space in the output file for. */
-RESTART Restart_Info;		/* Restart information structure */

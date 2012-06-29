@@ -80,10 +80,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
-    "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/bmpersc/lib/boost_1_38_0"
-    "-DTPL_ENABLE_Netcdf:BOOL=ON"
-    "-DNetcdf_LIBRARY_DIRS=/Users/bmpersc/lib/netcdf-4.0/lib"
-    "-DNetcdf_INCLUDE_DIRS=/Users/bmpersc/lib/netcdf-4.0/include"
+    "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/bmpersc/lib/boost_1_49_0"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
     "-DTPL_ENABLE_MATLAB=OFF"

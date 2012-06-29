@@ -22,29 +22,29 @@ class UseCases(unittest.TestCase):
             uniform_refiner.doBreak()                  # refine the mesh 3 times
             i = i + 1
 
-        pMesh.saveAs("tet-mesh-refined-3-times.e")     # save in exodus format
+        pMesh.save_as("tet-mesh-refined-3-times.e")     # save in exodus format
 
     def test_fieldFunction_demo_2(self):   
         eMesh = PerceptMesh()
-        eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))      # use a fixture to generate a 3x3x3 hex mesh
+        eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))      # use a fixture to generate a 3x3x3 hex mesh
 
         vectorDimension = 0
         # add a field
-        eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)  
+        eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)  
         eMesh.commit()
 
-        f_coords = eMesh.getField("coordinates")                # get pre-existing field
-        coords_mag_field = eMesh.getField("coords_mag_field")   # get the field we just created
+        f_coords = eMesh.get_field("coordinates")                # get pre-existing field
+        coords_mag_field = eMesh.get_field("coords_mag_field")   # get the field we just created
 
         ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)  # define a field function
-        evalVec3Print(0.1,0.1,0.1,0.0,ff_coords)  # evaluate and print the field function a point {0.1, 0.1, 0.1} time=0.0
+        eval_vec3_print(0.1,0.1,0.1,0.0,ff_coords)  # evaluate and print the field function a point {0.1, 0.1, 0.1} time=0.0
 
         coords_mag_sf = StringFunction("sqrt(x*x + y*y + z*z)" , "coords_mag_sf", 3, 1)  # define coordinate magnitude function
         x = 0.123
         y = 0.234
         z = 0.345
         vv = sqrt(x*x + y*y + z*z)
-        v1 = evalFunc(x,y,z,0,coords_mag_sf)
+        v1 = eval_func(x,y,z,0,coords_mag_sf)
         print "vv = ", vv, "== v1 = ", v1
         self.assertEqual(vv, v1)               # ensure correctness of string function
 
@@ -54,10 +54,10 @@ class UseCases(unittest.TestCase):
         # interpolate the function onto the mesh
         coords_mag_field_function.interpolateFrom(coords_mag_sf)
 
-        eMesh.saveAs("./cubehex8_withCoordMag_out.e")
+        eMesh.save_as("./cubehex8_withCoordMag_out.e")
 
         # demonstrate how to usa an alias
-        ff_coords.addAlias("mc")
+        ff_coords.add_alias("mc")
 
         sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", 3, 1)
 
@@ -69,12 +69,12 @@ class UseCases(unittest.TestCase):
             bulk = wedgeFixture.createMesh(MPI.COMM_WORLD, 4,3,2,0,1,0,1,0,1,"")   # create stk::mesh::BulkData from wedge fixture
             eMesh = PerceptMesh(wedgeFixture.getMetaData(), bulk, False)           # adopt bulk data
             scalarDimension = 0
-            proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension)
+            proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
             breaker = Refiner(eMesh, WEDGE6_WEDGE15_1, proc_rank_field)
             eMesh.commit()
             wedgeFixture.createBulkAfterMetaCommit(MPI.COMM_WORLD)         # generate the mesh
             breaker.doBreak()                                              # refine
-            eMesh.saveAs("./wedge6-15.e")                                  # save
+            eMesh.save_as("./wedge6-15.e")                                  # save
 
 
 if __name__ == "__main__":

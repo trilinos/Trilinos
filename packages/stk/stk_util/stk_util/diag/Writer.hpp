@@ -266,7 +266,7 @@ public:
    * @return      a <b>Writer</b> reference to this diagnostic
    *        writer.
    */
-  Writer &setPrintMask(const char *mask_string);
+  //Writer &setPrintMask(const char *mask_string);
 
   /**
    * @brief Member function <b>setLineMask</b> sets the line mask of this line.
@@ -436,6 +436,7 @@ public:
    */
   Writer &resetLineMask();
 
+#ifndef SWIG
   /**
    * @brief Member function <b>operator<<</b> is the manipulator instantiation function
    *
@@ -458,7 +459,7 @@ public:
    * @return      a <b>Writer</b> reference to this object
    */
   Writer& operator<<(std::ostream& (*f)(std::ostream&));
-
+#endif
   /**
    * @brief Member function <b>incTraceDepth</b> increments the tracing count.
    *
@@ -595,9 +596,11 @@ inline _setlinemask setlinemask(PrintMask line_mask) {
  *
  * @return    a <b>Writer</b> reference to this object
  */
+#ifndef SWIG
 inline Writer &operator<<(Writer &dout, _setlinemask set_line_mask) {
   return dout.setLineMask(set_line_mask.m_lineMask);
 }
+#endif
 
 /**
  * @brief Function <b>resetlinemask</b> calls the Writer::resetLineMask manipulator.
@@ -622,6 +625,7 @@ inline Writer &resetlinemask(Writer &dout) {
  *
  * @return    a <b>Writer</b> reference to this object
  */
+#ifndef SWIG
 Writer &operator<<(Writer &dout, const char *c_str);
 Writer &operator<<(Writer &dout, const std::string &str);
 Writer &operator<<(Writer &dout, const void *ptr);
@@ -636,6 +640,7 @@ Writer &operator<<(Writer &dout, const short &x);
 Writer &operator<<(Writer &dout, const unsigned short &x);
 Writer &operator<<(Writer &dout, const long long &x);
 Writer &operator<<(Writer &dout, const unsigned long long &x);
+#endif
 /**
  * @brief Class <b>c_ptr_</b> simply stores a pointer to an object of type T.  This
  * allows pointers which want to be deferenced if they are not null to be output using
@@ -689,14 +694,15 @@ public:
    * @param pmf    a <b>T::*</b> member function pointer to call
    *
    */
+#ifndef SWIG
   explicit c_ptr_func_(const T *t, R (T::*pmf)() const)
     : m_t(t),
       m_pmf(pmf)
   {}
-
 public:
   const T *  m_t;      ///< Pointer to object
   R (T::*m_pmf)() const;    ///< Function to call for dump
+#endif
 };
 
 /**
@@ -713,6 +719,7 @@ public:
  * @return    a <b>c_ptr_</b> object which contains the pointer t and a
  *      member function whch takes no arguments.
  */
+#ifndef SWIG
 template <class T, typename R>
 c_ptr_func_<T, R> c_ptr_func(const T *t, R (T::*pmf)() const) {
   return c_ptr_func_<T, R>(t, pmf);
@@ -766,6 +773,7 @@ Writer &operator<<(Writer &dout, const c_ptr_func_<T, R> &c) {
 
   return dout;
 }
+#endif
 
 ///
 /// @}

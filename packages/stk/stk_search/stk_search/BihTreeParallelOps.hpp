@@ -95,7 +95,7 @@ bool oct_tree_bih_tree_proximity_search(
         box[x] = tmp.lower(x);
         box[x+Dim] = tmp.upper(x);
       }
-
+      
       const bool valid =
         hsfc_box_covering( arg_global_box, box, covering, number, scale );
 

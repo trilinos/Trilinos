@@ -94,6 +94,11 @@ class test_isGlobalBuildFileRequiringGlobalRebuild(unittest.TestCase):
       False )
 
 
+  def test_TPLsList_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/ExtraRepositoriesList.cmake' ),
+      False )
+
+
   def test_experimental_build_test_cmake(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/ctest/experimental_build_test.cmake' ),
       False )

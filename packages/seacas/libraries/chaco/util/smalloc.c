@@ -283,7 +283,7 @@ void sfree(void *ptr)
       }
       else {
 	*prev = dbptr->next;
-	bytes_used =- dbptr->size;
+	bytes_used -= dbptr->size;
 	free(dbptr);
       }
     }

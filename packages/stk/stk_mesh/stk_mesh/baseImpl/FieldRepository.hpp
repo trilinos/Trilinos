@@ -53,6 +53,7 @@ class FieldRepository {
 
     void verify_and_clean_restrictions(
         const char       * arg_method ,
+        const Part& superset, const Part& subset,
         const PartVector & arg_all_parts );
 
     const FieldVector & get_fields() const {
@@ -83,7 +84,18 @@ class FieldRepository {
         const void     * arg_init_value = NULL)
     {
       arg_field.m_impl.insert_restriction( arg_method, arg_entity_rank, arg_part, arg_stride, arg_init_value);
-      verify_and_clean_restrictions( arg_method, arg_all_parts );
+    }
+
+    void declare_field_restriction(
+        const char     * arg_method,
+        FieldBase      & arg_field ,
+        unsigned         arg_entity_rank ,
+        const Selector & arg_selector ,
+        const PartVector & arg_all_parts,
+        const unsigned * arg_stride ,
+        const void     * arg_init_value = NULL)
+    {
+      arg_field.m_impl.insert_restriction( arg_method, arg_entity_rank, arg_selector, arg_stride, arg_init_value);
     }
 
   private:

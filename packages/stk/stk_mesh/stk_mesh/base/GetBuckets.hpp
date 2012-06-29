@@ -33,9 +33,19 @@ namespace mesh {
  *         On entry, the output vector is cleared before being filled with
  *         selected buckets.
  */
-void get_buckets( const Selector & selector ,
+template<class SELECTOR>
+inline
+void get_buckets( const SELECTOR & selector ,
                   const std::vector< Bucket * > & input ,
-                        std::vector< Bucket * > & output );
+                        std::vector< Bucket * > & output )
+{
+  output.clear();
+  for ( std::vector< Bucket * >::const_iterator
+        i = input.begin() ; i != input.end() ; ++i ) {
+    Bucket * const b = *i ;
+    if ( selector( *b ) ) { output.push_back( b ); }
+  }
+}
 
 /**
  * For all the buckets in the mesh, return a range of selected buckets.

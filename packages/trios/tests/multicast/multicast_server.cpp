@@ -238,7 +238,6 @@ int multicast_server_main(struct multicast_args &args, MPI_Comm server_comm)
 
     /* options that can be overriden by the command-line */
     int verbose = 3;  /* default debug_level */
-    int num_threads = 0;
     std::string server_url(NSSI_URL_LEN, '\0');          /* NNTI-style url of the server */
     std::string logfile("");
     const char *log_str=NULL;
@@ -277,7 +276,7 @@ int multicast_server_main(struct multicast_args &args, MPI_Comm server_comm)
     //rpc_debug_level = multicast_debug_level;
 
     // start processing requests, the client will send a request to exit when done
-    rc = nssi_service_start(&multicast_svc, num_threads);
+    rc = nssi_service_start(&multicast_svc);
     if (rc != NSSI_OK) {
         log_info(multicast_debug_level, "exited multicast_svc: %s",
                 nssi_err_str(rc));

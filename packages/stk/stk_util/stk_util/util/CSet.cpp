@@ -45,15 +45,6 @@ bool less_cset::operator()( const std::type_info & lhs ,
 { return lhs.before( *rhs.first ) && lhs != *rhs.first ; }
 
 
-std::vector< Manager >::const_iterator
-lower_bound( const std::vector< Manager > & v , const std::type_info & t )
-{
-  std::vector< Manager >::const_iterator i = v.begin();
-  std::vector< Manager >::const_iterator j = v.end();
-
-  return std::lower_bound( i , j , t , less_cset() );
-}
-
 std::vector< Manager >::iterator
 lower_bound( std::vector< Manager > & v , const std::type_info & t )
 {
@@ -65,20 +56,22 @@ lower_bound( std::vector< Manager > & v , const std::type_info & t )
 
 }
 
+struct equal_cset {
+  bool operator()(const Manager& lhs, const std::type_info& rhs) const
+  { return *lhs.first == rhs; }
+  bool operator()(const std::type_info& lhs, const Manager& rhs) const
+  { return lhs == *rhs.first; }
+};
+
 //----------------------------------------------------------------------
 
 const void * CSet::p_get( const std::type_info & t ) const
 {
-  const void * result = NULL ;
-
-  const std::vector< Manager >::const_iterator im = lower_bound(m_manager,t);
-
-  if ( im < m_manager.end() && t == * im->first ) {
-    const size_t offset = im - m_manager.begin();
-    result = m_value[ offset ];
+  for(std::vector<Manager>::const_iterator it=m_manager.begin(), end=m_manager.end(); it!=end; ++it) {
+    if (*it->first == t) return m_value[it-m_manager.begin()];
   }
 
-  return result ;
+  return NULL ;
 }
 
 const void *

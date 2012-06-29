@@ -19,11 +19,11 @@ namespace mesh {
 //
 // Incrementing this iterator will take us to the next valid low-level iterator, skipping past
 // empty high-level containers, until the end iterator.
-template<typename HighLevelItrType, typename LowLevelItrType, typename ValueType>
-class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, ValueType>
+template<typename HighLevelItrType, typename LowLevelItrType>
+class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typename LowLevelItrType::value_type>
 {
  public:
-  typedef TwoLevelIterator<HighLevelItrType, LowLevelItrType, ValueType>  self;
+  typedef TwoLevelIterator<HighLevelItrType, LowLevelItrType>  self;
 
   // Construct an iterator from a starting point specified by high_itr and low_itr
   TwoLevelIterator(HighLevelItrType high_itr, LowLevelItrType low_itr, HighLevelItrType high_end_itr) :
@@ -43,20 +43,11 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, ValueTy
     m_high_end_itr(high_end_itr)
   {}
 
-  TwoLevelIterator(const self& rhs) :
-    m_high_itr(rhs.m_high_itr),
-    m_low_itr(rhs.m_low_itr),
-    m_high_end_itr(rhs.m_high_end_itr)
+  TwoLevelIterator() :
+    m_high_itr(),
+    m_low_itr(),
+    m_high_end_itr()
   {}
-
-  self& operator=(const self& rhs)
-  {
-    m_high_itr     = rhs.m_high_itr;
-    m_low_itr      = rhs.m_low_itr;
-    m_high_end_itr = rhs.m_high_end_itr;
-
-    return *this;
-  }
 
   bool operator==(const self& rhs) const
   {
@@ -68,27 +59,27 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, ValueTy
     return !(*this == rhs);
   }
 
-  // ++x
-  self& operator++(int)
-  {
-    increment();
-    return *this;
-  }
-
   // x++
-  self operator++()
+  self operator++(int)
   {
     self copy = *this;
     increment();
     return copy;
   }
 
-  ValueType operator*() const
+  // ++x
+  self& operator++()
+  {
+    increment();
+    return *this;
+  }
+
+  typename LowLevelItrType::reference operator*() const
   {
     return *m_low_itr;
   }
 
-  ValueType* operator->() const
+  typename LowLevelItrType::pointer operator->() const
   {
     return &*m_low_itr;
   }
@@ -155,8 +146,16 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, ValueTy
 //
 // Incrementing this iterator will take us to the next *selected* bucket, skipping past
 // unselected buckets, until the end.
+//
+// As long as we're using a pointer as the value type, we need to
+// specify the reference type to be the value_type in order for this
+// class to work with boost
 template <typename BucketIteratorType>
-class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag, Bucket*>
+class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
+                                                    typename BucketIteratorType::value_type,
+                                                    typename BucketIteratorType::difference_type,
+                                                    typename BucketIteratorType::pointer,
+                                                    typename BucketIteratorType::value_type>
 {
  public:
   typedef SelectedBucketIterator<BucketIteratorType> self;
@@ -175,6 +174,12 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag, B
   SelectedBucketIterator(BucketIteratorType bucket_end_itr) :
     m_bucket_itr(bucket_end_itr),
     m_bucket_end_itr(bucket_end_itr),
+    m_selector()
+  {}
+
+  SelectedBucketIterator() :
+    m_bucket_itr(),
+    m_bucket_end_itr(),
     m_selector()
   {}
 
@@ -208,30 +213,30 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag, B
     return !(*this == rhs);
   }
 
-  // ++x
-  self& operator++(int)
-  {
-    increment();
-    return *this;
-  }
-
   // x++
-  self operator++()
+  self operator++(int)
   {
     self copy = *this;
     increment();
     return copy;
   }
 
+  // ++x
+  self& operator++()
+  {
+    increment();
+    return *this;
+  }
+
   // The method below is why boost::filter_iterator won't work for us. filter_iterator
   // deferences to a reference, tranform iterator dereferences to a copy, making them
   // incompatible.
-  Bucket* operator*() const
+  typename BucketIteratorType::value_type operator*() const
   {
     return *m_bucket_itr;
   }
 
-  Bucket** operator->() const
+  typename BucketIteratorType::pointer operator->() const
   {
     return &*m_bucket_itr;
   }
@@ -256,20 +261,21 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag, B
 };
 
 // Iterator for iterating over all entities within each bucket of a vector of buckets
-typedef TwoLevelIterator<std::vector<Bucket*>::const_iterator, BucketPtrIterator, Entity* const> BucketVectorEntityIterator;
-typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>                        BucketVectorEntityIteratorRange;
+typedef TwoLevelIterator<std::vector<Bucket*>::const_iterator, BucketPtrIterator> BucketVectorEntityIterator;
+typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>         BucketVectorEntityIteratorRange;
 
 // Iterator for iterating over selected buckets within a vector of buckets
 typedef SelectedBucketIterator<std::vector<Bucket*>::const_iterator>                      SelectedBucketVectorIterator;
 //typedef boost::filter_iterator<Selector, std::vector<Bucket*>::const_iterator>            SelectedBucketVectorIterator;
+typedef std::pair<SelectedBucketVectorIterator, SelectedBucketVectorIterator>             SelectedBucketVectorIteratorRange;
 
 // Iterator for iterating over all entities within each *selected* bucket of a vector of buckets
-typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketPtrIterator, Entity* const>  SelectedBucketVectorEntityIterator;
+typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketPtrIterator>                 SelectedBucketVectorEntityIterator;
 typedef std::pair<SelectedBucketVectorEntityIterator, SelectedBucketVectorEntityIterator> SelectedBucketVectorEntityIteratorRange;
 
 // Iterator for iterating over all buckets in a vector of vectors of buckets
-typedef TwoLevelIterator<std::vector<std::vector<Bucket*> >::const_iterator, std::vector<Bucket*>::const_iterator, Bucket* const> AllBucketsIterator;
-typedef std::pair<AllBucketsIterator, AllBucketsIterator>                                                                         AllBucketsRange;
+typedef TwoLevelIterator<std::vector<std::vector<Bucket*> >::const_iterator, std::vector<Bucket*>::const_iterator> AllBucketsIterator;
+typedef std::pair<AllBucketsIterator, AllBucketsIterator>                                                          AllBucketsRange;
 
 // Iterator for iterating over all *selected* buckets in a bucket range
 typedef SelectedBucketIterator<AllBucketsIterator>                         AllSelectedBucketsIterator;
@@ -277,12 +283,12 @@ typedef SelectedBucketIterator<AllBucketsIterator>                         AllSe
 typedef std::pair<AllSelectedBucketsIterator, AllSelectedBucketsIterator>  AllSelectedBucketsRange;
 
 // Iterator for iterating over all entities within each bucket of a bucket range
-typedef TwoLevelIterator<AllBucketsIterator, BucketPtrIterator, Entity* const>  BucketRangeEntityIterator;
-typedef std::pair<BucketRangeEntityIterator, BucketRangeEntityIterator>         BucketRangeEntityIteratorRange;
+typedef TwoLevelIterator<AllBucketsIterator, BucketPtrIterator>         BucketRangeEntityIterator;
+typedef std::pair<BucketRangeEntityIterator, BucketRangeEntityIterator> BucketRangeEntityIteratorRange;
 
 // Iterator for iterating over all *selected* entities withing a bucket range
-typedef TwoLevelIterator<AllSelectedBucketsIterator, BucketPtrIterator, Entity* const>    SelectedBucketRangeEntityIterator;
-typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIterator>   SelectedBucketRangeEntityIteratorRange;
+typedef TwoLevelIterator<AllSelectedBucketsIterator, BucketPtrIterator>                  SelectedBucketRangeEntityIterator;
+typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIterator>  SelectedBucketRangeEntityIteratorRange;
 
 //
 // API - Convert collections into ranges. For internal use only. Clients should use
@@ -305,6 +311,9 @@ AllBucketsRange get_bucket_range(const std::vector<std::vector<Bucket*> >& bucke
 
 // Get a range allowing you to iterate over all *selected* buckets within a collection of collections of buckets
 AllSelectedBucketsRange get_selected_bucket_range(const AllBucketsRange& bucket_range, const Selector& selector);
+
+// Get a range allowing you iterate over selected buckets in a vector
+SelectedBucketVectorIteratorRange get_selected_bucket_range(const std::vector<Bucket*>& buckets, const Selector& selector);
 
 // Get a range allowing you to iterate over all *selected* buckets within a collection of collections of buckets
 SelectedBucketRangeEntityIteratorRange get_selected_bucket_entity_range(const AllBucketsRange& bucket_range, const Selector& selector);

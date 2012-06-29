@@ -121,7 +121,7 @@ namespace stk {
               tp2.stkMeshCreateMetaNoCommit(parallel_machine);
             }
 
-          return tp2.getBulkData();
+          return tp2.get_bulk_data();
 
         }
 
@@ -132,7 +132,7 @@ namespace stk {
         createBulkAfterMetaCommit(stk::ParallelMachine parallel_machine)
         {
           m_sweepMesher.stkMeshCreateBulkAfterMetaCommit(parallel_machine);
-          //return m_sweepMesher.getBulkData();
+          //return m_sweepMesher.get_bulk_data();
         }
 
         void createFixedSizeMesh(stk::ParallelMachine parallel_machine, std::string output_filename)

@@ -33,6 +33,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
           ${STK_SOURCE_DIR}/stk_io/stk_io/util
           ${STK_SOURCE_DIR}/stk_mesh
           ${STK_SOURCE_DIR}/stk_util
+          ${STK_SOURCE_DIR}/stk_util/diag
           ${STK_SOURCE_DIR}/stk_util/stk_util/parallel
           ${STK_SOURCE_DIR}/stk_percept
           ${STK_SOURCE_DIR}/stk_percept/stk_percept
@@ -57,6 +58,8 @@ SET(PERCEPT_LIBS
    stk_mesh_fem
    stk_io_util
    stk_util_util
+   stk_util_diag
+   stk_search
    intrepid
    shards   
    teuchos
@@ -103,6 +106,7 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/PyPercept/PerceptMesh.py DESTINATION s
 INSTALL(TARGETS PyPercept DESTINATION site-packages)
 
 set(dirs
+  ${NETCDF_LIB_DIR}
   ${CMAKE_BINARY_DIR}/packages/seacas/libraries/nemesis
   ${CMAKE_BINARY_DIR}/packages/seacas/libraries/ioss/src
   ${CMAKE_BINARY_DIR}/packages/seacas/libraries/ioss/src/exodusII
@@ -130,7 +134,6 @@ set(dirs
   ${CMAKE_BINARY_DIR}/packages/stk/stk_expreval/stk_expreval
   ${CMAKE_BINARY_DIR}/packages/stk/stk_adapt/stk_adapt
   ${BoostLib_LIBRARY_DIRS}
-  ${NETCDF_LIB_DIR}
   ${MPI_LIB_DIR}
 )
 

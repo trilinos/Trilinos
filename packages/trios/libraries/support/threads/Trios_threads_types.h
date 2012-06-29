@@ -37,9 +37,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /**
- * This API is modeled after pthreads.  pthreads is a POSIX API.  TRIOS runs in non-POSIX
- * environments such as Cray MTA.  These systems don't have pthreads, but may have other
- * threading libs.  This is lib creates a single API for TRIOS internal usage.
+ * TRIOS does not have any internal threading, but it should run in a
+ * multithreaded environment.  The nthread library provides a single API
+ * for locks and atomic counters.
  */
 
 #ifndef _TRIOS_THREADS_TYPES_H_
@@ -49,184 +49,16 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 #include <stdint.h>
-
-
-#ifdef HAVE_TRIOS_PTHREAD
-
-#include <pthread.h>
-
-typedef pthread_t nthread_id_t;
+#include <semaphore.h>
 
 typedef struct {
-    pthread_t thread;
-} nthread_t;
+    sem_t lock;
+} nthread_lock_t;
 
 typedef struct {
-    pthread_attr_t attr;
-} nthread_attr_t;
-
-typedef struct {
-    pthread_cond_t cond;
-} nthread_cond_t;
-
-typedef struct {
-    pthread_condattr_t condattr;
-} nthread_condattr_t;
-
-typedef struct {
-    pthread_mutex_t mutex;
-} nthread_mutex_t;
-
-typedef struct {
-    nthread_mutex_t mutex;
-    int64_t         value;
+    nthread_lock_t lock;
+    int64_t        value;
 } nthread_counter_t;
 
-#elif HAVE_TRIOS_MTA
-
-#if __MTA__
-#include <machine/runtime.h>
-#define MTA_SYNC sync uint64_t
-#else
-#define MTA_SYNC uint64_t
-#endif
-#include <time.h>
-
-typedef uint64_t nthread_id_t;
-
-typedef struct {
-    uint64_t thread;
-} nthread_t;
-
-typedef struct {
-    uint64_t attr;
-} nthread_attr_t;
-
-typedef struct {
-    MTA_SYNC mutex;
-    uint64_t      is_recursive;
-
-//    MTA_SYNC locker_mutex;
-    uint64_t      is_locked;
-    nthread_id_t locker;
-    int64_t      lock_count;
-} nthread_mutex_t;
-
-typedef struct {
-    MTA_SYNC mutex;
-    int64_t      value;
-} nthread_counter_t;
-
-typedef struct {
-    uint64_t         cond;
-    int64_t         waiter_count;
-    nthread_mutex_t *bound_mutex;
-} nthread_cond_t;
-
-typedef struct {
-    uint64_t condattr;
-} nthread_condattr_t;
-
-#else
-
-#include <time.h>
-
-typedef uint64_t nthread_id_t;
-
-typedef struct {
-    uint32_t thread;
-} nthread_t;
-
-typedef struct {
-    uint32_t attr;
-} nthread_attr_t;
-
-typedef struct {
-    uint32_t cond;
-} nthread_cond_t;
-
-typedef struct {
-    uint32_t condattr;
-} nthread_condattr_t;
-
-typedef struct {
-    uint32_t mutex;
-} nthread_mutex_t;
-
-typedef struct {
-    nthread_mutex_t mutex;
-    int64_t         value;
-} nthread_counter_t;
-
-#endif
-
-
-
-enum {
-    NTHREAD_MUTEX_NORMAL,
-    NTHREAD_MUTEX_RECURSIVE,
-    NTHREAD_MUTEX_ERRORCHECK,
-    NTHREAD_MUTEX_DEFAULT
-};
-
-#ifdef HAVE_TRIOS_PTHREAD
-
-#define NTHREAD_MUTEX_INITIALIZER \
-    { PTHREAD_MUTEX_INITIALIZER }
-#ifdef __USE_GNU
-#define NTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP \
-    { PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP }
-#define NTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP \
-    { PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP }
-#define NTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP \
-    { PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP }
-#endif
-
-
-#define NTHREAD_COND_INITIALIZER \
-    { PTHREAD_COND_INITIALIZER }
-
-#define NTHREAD_COUNTER_INITIALIZER \
-    { NTHREAD_MUTEX_INITIALIZER, 0 }
-
-#elif HAVE_TRIOS_MTA
-
-#define NTHREAD_MUTEX_INITIALIZER \
-    { 0, 0, 0, 0, 0 }
-#define NTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP \
-    { 0, 1, 0, 0, 0 }
-#define NTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP \
-    { 0, 0, 0, 0, 0 }
-#define NTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP \
-    { 0, 0, 0, 0, 0 }
-
-
-#define NTHREAD_COND_INITIALIZER \
-    { 0, 0, NULL }
-
-#define NTHREAD_COUNTER_INITIALIZER \
-    { 0, 0 }
-
-#else
-
-#define NTHREAD_MUTEX_INITIALIZER \
-    { 0 }
-#ifdef __USE_GNU
-#define NTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP \
-    { 0 }
-#define NTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP \
-    { 0 }
-#define NTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP \
-    { 0 }
-#endif
-
-
-#define NTHREAD_COND_INITIALIZER \
-    { 0 }
-
-#define NTHREAD_COUNTER_INITIALIZER \
-    { 0, 0 }
-
-#endif
 
 #endif /* _TRIOS_THREADS_TYPES_H_ */

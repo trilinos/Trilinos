@@ -44,7 +44,7 @@ namespace Excn {
   typedef std::vector<int>  IntVector;
   typedef std::vector<char> DistVector;
 
-  struct Mesh
+  template <typename INT> struct Mesh
   {
     Mesh() :   dimensionality(0), nodeCount(0), elementCount(0),
 	       blockCount(0), nodesetCount(0), sidesetCount(0),
@@ -74,18 +74,18 @@ namespace Excn {
     }
     
     IntVector truthTable[3];
-    IntVector localNodeToGlobal;
-    IntVector localElementToGlobal;
+    std::vector<INT> localNodeToGlobal;
+    std::vector<INT> localElementToGlobal;
     
     std::string title;
 
-    int dimensionality;
-    int nodeCount;
-    int elementCount;
-    int blockCount;
-    int nodesetCount;
-    int sidesetCount;
-    int timestepCount;
+    size_t dimensionality;
+    size_t nodeCount;
+    size_t elementCount;
+    size_t blockCount;
+    size_t nodesetCount;
+    size_t sidesetCount;
+    size_t timestepCount;
 
     bool isActive;
   };
@@ -113,12 +113,12 @@ namespace Excn {
     char elType[MAX_STR_LENGTH+1];
     std::string name_;
     std::vector<std::string> attributeNames;
-    int id;
-    int elementCount;
-    int nodesPerElement;
-    int attributeCount;
-    int offset_;
-    int position_;
+    int64_t id;
+    size_t elementCount;
+    size_t nodesPerElement;
+    size_t attributeCount;
+    size_t offset_;
+    size_t position_;
 
     Block& operator=(const Block& other) {
       id = other.id;
@@ -134,19 +134,19 @@ namespace Excn {
     }
   };
   
-  struct NodeSet
+  template <typename INT> struct NodeSet
   {
-    NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(-1), name_("") {}
+    NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
     
-    int id;
-    int nodeCount;
-    int dfCount;
-    int offset_;
-    int position_;
+    int64_t id;
+    size_t nodeCount;
+    size_t dfCount;
+    size_t offset_;
+    size_t position_;
     std::string name_;
     
-    IntVector  nodeSetNodes;
-    IntVector  nodeOrderMap;
+    std::vector<INT> nodeSetNodes;
+    std::vector<INT> nodeOrderMap;
     DistVector distFactors;
     
     size_t entity_count() const {return nodeCount;}
@@ -158,7 +158,7 @@ namespace Excn {
 
     void dump_order() const {
       dump();
-      for (int i=0; i < nodeCount; i++) {
+      for (size_t i=0; i < nodeCount; i++) {
 	std::cerr << nodeOrderMap[i] << ", ";
       }
       std::cerr << "\n";
@@ -166,23 +166,23 @@ namespace Excn {
   };
   
   typedef std::pair<int,int> Side;
-  struct SideSet
+  template <typename INT> struct SideSet
   {
-    SideSet() : id(0), sideCount(0), dfCount(0), offset_(-1), position_(-1), name_("") {}
+    SideSet() : id(0), sideCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
     
-    int id;
-    int sideCount;
-    int dfCount;
-    int offset_;
-    int position_;
+    int64_t id;
+    size_t sideCount;
+    size_t dfCount;
+    size_t offset_;
+    size_t position_;
     std::string name_;
     
-    IntVector  elems;
-    IntVector  sides;
+    std::vector<INT>  elems;
+    std::vector<INT>  sides;
 
     // For conjoin only. Maps the location (of elems, sides, vars) within this sideset into
     // the location in the corresponding global sideset
-    IntVector  elemOrderMap; 
+    std::vector<INT>  elemOrderMap; 
     DistVector distFactors;
     
     size_t entity_count() const {return sideCount;}
@@ -196,10 +196,10 @@ namespace Excn {
   struct CommunicationMap
   {
     CommunicationMap() : id(0), entityCount(0), type('U') {}
-    CommunicationMap(int the_id, int count, char the_type) :
+    CommunicationMap(size_t the_id, size_t count, char the_type) :
       id(the_id), entityCount(count), type(the_type) {}
-    int id;
-    int entityCount;
+    int64_t id;
+    size_t entityCount;
     char type; // 'n' for node, 'e' for element
   };
 
@@ -213,15 +213,15 @@ namespace Excn {
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
 
-    int processorId;
-    int processorCount;
-    int globalNodes;
-    int globalElements;
-    int nodesInternal;
-    int nodesBorder;
-    int nodesExternal;
-    int elementsInternal;
-    int elementsBorder;
+    size_t processorId;
+    size_t processorCount;
+    size_t globalNodes;
+    size_t globalElements;
+    size_t nodesInternal;
+    size_t nodesBorder;
+    size_t nodesExternal;
+    size_t elementsInternal;
+    size_t elementsBorder;
     
     private:
     CommunicationMetaData(const CommunicationMetaData &);

@@ -149,6 +149,7 @@ int main (int argc, char **argv)
 
   /* Check that ex_inquire gives same title */
   error = ex_inquire (exoid, EX_INQ_TITLE, &idum, &fdum, title_chk);
+  printf (" after ex_inquire, error = %d\n", error);
   if (strcmp(title, title_chk) != 0) {
     printf ("error in ex_inquire for EX_INQ_TITLE\n");
   }
@@ -227,6 +228,7 @@ int main (int argc, char **argv)
   {
     int num_attrs = 0;
     error = ex_get_attr_param(exoid, EX_NODAL, 0, &num_attrs);
+    printf (" after ex_get_attr_param, error = %d\n", error);
     printf ("num nodal attributes = %d\n", num_attrs);
     if (num_attrs > 0) {
       for (j=0; j<num_attrs; j++) {
@@ -240,6 +242,7 @@ int main (int argc, char **argv)
 	for (j=0; j<num_attrs; j++) {
 	  printf ("nodal attribute %d = '%s'\n", j, attrib_names[j]);
 	  error = ex_get_one_attr(exoid, EX_NODAL, 0, j+1, attrib);
+	  printf (" after ex_get_one_attr, error = %d\n", error);
 	  for (i=0; i < num_nodes; i++) {
 	    printf ("%5.1f\n", attrib[i]);
 	  }
@@ -464,6 +467,7 @@ int main (int argc, char **argv)
 	{
 	  int num_attrs = 0;
 	  error = ex_get_attr_param(exoid, EX_NODE_SET, ids[i], &num_attrs);
+	  printf (" after ex_get_attr_param, error = %d\n", error);
 	  printf ("num nodeset attributes for nodeset %d = %d\n", ids[i], num_attrs);
 	  if (num_attrs > 0) {
 	    for (j=0; j<num_attrs; j++) {
@@ -477,6 +481,7 @@ int main (int argc, char **argv)
 	      for (j=0; j<num_attrs; j++) {
 		printf ("nodeset attribute %d = '%s'\n", j, attrib_names[j]);
 		error = ex_get_one_attr(exoid, EX_NODE_SET, ids[i], j+1, attrib);
+		printf (" after ex_get_one_attr, error = %d\n", error);
 		for (k=0; k < num_nodes_in_set; k++) {
 		  printf ("%5.1f\n", attrib[k]);
 		}

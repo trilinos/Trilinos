@@ -49,8 +49,9 @@ namespace Ioxf {
 
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
 				       Ioss::DatabaseUsage db_usage,
-				       MPI_Comm communicator) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator); }
+				       MPI_Comm communicator,
+				       const Ioss::PropertyManager &properties) const
+  { return new DatabaseIO(NULL, filename, db_usage, communicator, properties); }
 
   void IOFactory::finalize()
   {

@@ -1,5 +1,6 @@
 import sys
-sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+sys.path.insert(0,"/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
 
 from mpi4py import MPI
 from PerceptMesh import *
@@ -33,177 +34,28 @@ class FieldFunctionUnitTests(unittest.TestCase):
                            [0.101,      0.02,      0.1020, 0.0122],
                            [0.003,      0.89,      0.01,   0.5] ]
    
-    def test_fieldFunction_demo_1_0_0(self):
-       eMesh = PerceptMesh(3)
-       eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
-       eMesh.commit()
-       eMesh.printInfo("fieldFunction_demo_1_0_0", 2)
-
-       f_coords = eMesh.getField("coordinates")
-
-       ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
-       x = 0.123
-       y = 0.234
-       z = 0.345
-       time = 0.0
-
-       evalVec3Print(x, y, z, time, ff_coords)
-
-    def test_fieldFunction_read_print(self):
-       printInfo = 0
-
-       x = 3
-       y = 3
-       z = 3
-       config_mesh = str(x) + "x" + str(y) + "x" + str(z) + "|bbox:0,0,0,1,1,1"
-
-       eMesh = PerceptMesh()
-       eMesh.newMeshReadOnly(GMeshSpec(config_mesh))
-
-       metaData = eMesh.getFEM_meta_data()
-       
-       parts = metaData.get_parts()       
-       nparts = len(parts)
-       
-       if printInfo == 1:
-          print "Number of parts = ", nparts
-       fields = metaData.get_fields()
-       nfields = len(fields)
-       if printInfo == 1:
-          print "Number of fields = ", nfields      
-          for i in range(nfields):
-             field = fields[i] 
-             # here we have a FieldBase* which we cannot access from Python
-             # is this a problem and will we want this functionality?
-                 
-    def test_fieldFunction_demo_1(self):
-       gms = Gmesh_STKmesh_Fixture(MPI.COMM_WORLD, "3x3x3|bbox:0,0,0,1,1,1")
-       print "gms = ", gms
-       print "gms= end"
-
-       eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
-       eMesh.commit()
-
-       f_coords = eMesh.getField("coordinates")
-       ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
-
-       x = 0.123
-       y = 0.234
-       z = 0.345
-       time = 0.0
-       evalVec3Print(x,y,z,time,ff_coords)
-
-    def test_fieldFunction_demo_2(self):   
-       eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
-
-       vectorDimension = 0
-       eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
-       eMesh.commit()
-
-       f_coords = eMesh.getField("coordinates")
-       coords_mag_field = eMesh.getField("coords_mag_field")
-
-       ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
-       evalVec3Print(0.1,0.1,0.1,0.0,ff_coords)
-       
-       coords_mag_sf = StringFunction("sqrt(x*x + y*y + z*z)" , "coords_mag_sf", 3, 1)
-       x = 0.123
-       y = 0.234
-       z = 0.345
-       vv = sqrt(x*x + y*y + z*z)
-       v1 = evalFunc(x,y,z,0,coords_mag_sf)
-       print "vv = ", vv, "== v1 = ", v1
-       self.assertEqual(vv, v1)
-       
-       coords_mag_field_function = FieldFunction("coords_mag_field_function", coords_mag_field, eMesh, 3, 1)
-
-       coords_mag_field_function.interpolateFrom(coords_mag_sf)
-
-       eMesh.saveAs("./cubehex8_withCoordMag_out.e")
-
-       ff_coords.addAlias("mc")
-       
-       sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", 3, 1)
-
-    def test_fieldFunction_readMesh_createField_interpolateFrom(self):
-       num_x = 3
-       num_y = 3
-       num_z = 3
-       config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
-
-       eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec(config_mesh))
-       vectorDimension = 0
-       eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
-       eMesh.commit()
-
-       #p_rank = eMesh.getBulkData().parallel_rank()
-       #setRank(p_rank)        
-          #from Util 
-       f_coords = eMesh.getField("coordinates")
-
-       coords_mag_field = eMesh.getField("coords_mag_field")
-       #VERIFY_OP_ON      Here the unit test does something
-       
-       ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3, FieldFunction.SIMPLE_SEARCH)
-
-       #here we could evaluate the function
-       #evalVec3Print(0.1,0.2,0.3,0.0,ff_coords)
-       
-       coords_mag_sf = StringFunction("sqrt(x*x + y*y + z*z)", "coords_mag_sf", 3, 1)
-       coords_mag_field_function = FieldFunction("coords_mag_field_function", coords_mag_field, eMesh, 3, 3, FieldFunction.SIMPLE_SEARCH)
-       coords_mag_field_function.interpolateFrom(coords_mag_sf)
-
-       #The following is not doable from Python
-      
-       checkCoordMag = CheckCoordMag()
-       #eMesh.nodalOpLoop(checkCoordMag, coords_mag_field)
-       print checkCoordMag.error   
-
-       ff_coords.addAlias("mc")
-       sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", Dimensions(3), Dimensions(1))
-      
-       tol1 = 1.e-12
-      
-       vv = evalVec3(0.1, 0.2, 0.3, 0.0, ff_coords)
-       print 
-       print "0.1 == vv[0] = ", vv[0], "passed"
-       print "0.2 == vv[1] = ", vv[1], "passed"
-       print "0.3 == vv[2] = ", vv[2], "passed"
-
-       self.assertAlmostEqual(.1, vv[0], delta=tol1)
-       self.assertAlmostEqual(.2, vv[1], delta=tol1)
-       self.assertAlmostEqual(.3, vv[2], delta=tol1)
-
-       vv = evalFunc(0.1, 0.2, 0.3, 0.0, sfcm)
-       v_expect = sqrt(0.1*0.1+0.2*0.2+0.3*0.3)
-
-       if ((vv-v_expect) < tol1):
-          print "vv = ", vv, " == v_expect = ", v_expect, "passed"
-
-       coords_mag_field_function.interpolateFrom(sfcm)
-
     def test_fieldFunction_multiplePoints(self):
+       print "start..."
        num_x = 3
        num_y = 3
        num_z = 3
        config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
 
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec(config_mesh))
+       eMesh.new_mesh(GMeshSpec(config_mesh))
        vectorDimension = 0
-       eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
        eMesh.commit()
-       f_coords = eMesh.getField("coordinates")
+       f_coords = eMesh.get_field("coordinates")
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, Dimensions(3), Dimensions(3), FieldFunction.SIMPLE_SEARCH)
-       val1 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords)
+       val1 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords)
        print "val1= ", val1
      
        points = zeros(shape=(4,3))
        output_expect = zeros(shape=(4,3))    
-  
+       output = zeros(shape=(4,3))
+       
+       print "here 1"
        i = 0 
        for xyzt in self.testpoints:
           x = xyzt[0]
@@ -214,7 +66,7 @@ class FieldFunctionUnitTests(unittest.TestCase):
           points[i][1] = y
           points[i][2] = z
 
-          vec = evalVec3(x,y,z,t,ff_coords)
+          vec = eval_vec3(x,y,z,t,ff_coords)
 
           tol0 = fabs(1.e-5*x)
           tol1 = fabs(1.e-5*y)
@@ -236,15 +88,172 @@ class FieldFunctionUnitTests(unittest.TestCase):
        print "field_op: NPTS= 4"
        ff_coords.setDomainDimensions(Dimensions(3))
        ff_coords.setCodomainDimensions(Dimensions(3))
-       output = ff_coords.evaluate(points)
+       #output = ff_coords.evaluate(points)
+       # pass in the output array to ensure result is properly dimensioned
+       output = ff_coords.value(points, output)
+       print "here 2, output= ", output
  
        for j in range(4): #NLM
            output_expect_j = output_expect[j][0]
            output_j = output[j][0]
 
            tol = 1.e-5*(fabs(output_expect_j))
-           print "output[j] = ", output_j, " == output_expect[j] = ", output_expect_j  
+           print "output[j] = ", output_j, " == output_expect[j] = ", output_expect_j  , " points[j] = ", points[j]
            self.assertAlmostEqual(output_j, output_expect_j, delta = tol) 
+       print "start...done"
+
+    def test_fieldFunction_demo_1_0_0(self):
+       eMesh = PerceptMesh(3)
+       eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
+       eMesh.commit()
+       eMesh.print_info("fieldFunction_demo_1_0_0", 2)
+
+       f_coords = eMesh.get_field("coordinates")
+
+       ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
+       x = 0.123
+       y = 0.234
+       z = 0.345
+       time = 0.0
+
+       eval_vec3_print(x, y, z, time, ff_coords)
+
+    def test_fieldFunction_read_print(self):
+       print_info = 0
+
+       x = 3
+       y = 3
+       z = 3
+       config_mesh = str(x) + "x" + str(y) + "x" + str(z) + "|bbox:0,0,0,1,1,1"
+
+       eMesh = PerceptMesh()
+       eMesh.new_mesh_read_only(GMeshSpec(config_mesh))
+
+       metaData = eMesh.get_fem_meta_data()
+       
+       parts = metaData.get_parts()       
+       nparts = len(parts)
+       
+       if print_info == 1:
+          print "Number of parts = ", nparts
+       fields = metaData.get_fields()
+       nfields = len(fields)
+       if print_info == 1:
+          print "Number of fields = ", nfields      
+          for i in range(nfields):
+             field = fields[i] 
+             # here we have a FieldBase* which we cannot access from Python
+             # is this a problem and will we want this functionality?
+                 
+    def test_fieldFunction_demo_1(self):
+       gms = Gmesh_STKmesh_Fixture(MPI.COMM_WORLD, "3x3x3|bbox:0,0,0,1,1,1")
+       print "gms = ", gms
+       print "gms= end"
+
+       eMesh = PerceptMesh()
+       eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
+       eMesh.commit()
+
+       f_coords = eMesh.get_field("coordinates")
+       ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
+
+       x = 0.123
+       y = 0.234
+       z = 0.345
+       time = 0.0
+       eval_vec3_print(x,y,z,time,ff_coords)
+
+    def test_fieldFunction_demo_2(self):   
+       eMesh = PerceptMesh()
+       eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
+
+       vectorDimension = 0
+       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.commit()
+
+       f_coords = eMesh.get_field("coordinates")
+       coords_mag_field = eMesh.get_field("coords_mag_field")
+
+       ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
+       eval_vec3_print(0.1,0.1,0.1,0.0,ff_coords)
+       
+       coords_mag_sf = StringFunction("sqrt(x*x + y*y + z*z)" , "coords_mag_sf", 3, 1)
+       x = 0.123
+       y = 0.234
+       z = 0.345
+       vv = sqrt(x*x + y*y + z*z)
+       v1 = eval_func(x,y,z,0,coords_mag_sf)
+       print "vv = ", vv, "== v1 = ", v1
+       self.assertEqual(vv, v1)
+       
+       coords_mag_field_function = FieldFunction("coords_mag_field_function", coords_mag_field, eMesh, 3, 1)
+
+       coords_mag_field_function.interpolateFrom(coords_mag_sf)
+
+       eMesh.save_as("./cubehex8_withCoordMag_out.e")
+
+       ff_coords.add_alias("mc")
+       
+       sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", 3, 1)
+
+    def test_fieldFunction_readMesh_createField_interpolateFrom(self):
+       num_x = 3
+       num_y = 3
+       num_z = 3
+       config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
+
+       eMesh = PerceptMesh()
+       eMesh.new_mesh(GMeshSpec(config_mesh))
+       vectorDimension = 0
+       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.commit()
+
+       #p_rank = eMesh.get_bulk_data().parallel_rank()
+       #setRank(p_rank)        
+          #from Util 
+       f_coords = eMesh.get_field("coordinates")
+
+       coords_mag_field = eMesh.get_field("coords_mag_field")
+       #VERIFY_OP_ON      Here the unit test does something
+       
+       ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3, FieldFunction.SIMPLE_SEARCH)
+
+       #here we could evaluate the function
+       #eval_vec3_print(0.1,0.2,0.3,0.0,ff_coords)
+       
+       coords_mag_sf = StringFunction("sqrt(x*x + y*y + z*z)", "coords_mag_sf", 3, 1)
+       coords_mag_field_function = FieldFunction("coords_mag_field_function", coords_mag_field, eMesh, 3, 3, FieldFunction.SIMPLE_SEARCH)
+       coords_mag_field_function.interpolateFrom(coords_mag_sf)
+
+       #The following is not doable from Python
+      
+       checkCoordMag = CheckCoordMag()
+       #eMesh.nodalOpLoop(checkCoordMag, coords_mag_field)
+       print checkCoordMag.error   
+
+       ff_coords.add_alias("mc")
+       sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", Dimensions(3), Dimensions(1))
+      
+       tol1 = 1.e-12
+      
+       vv = eval_vec3(0.1, 0.2, 0.3, 0.0, ff_coords)
+       print 
+       print "0.1 == vv[0] = ", vv[0], "passed"
+       print "0.2 == vv[1] = ", vv[1], "passed"
+       print "0.3 == vv[2] = ", vv[2], "passed"
+
+       self.assertAlmostEqual(.1, vv[0], delta=tol1)
+       self.assertAlmostEqual(.2, vv[1], delta=tol1)
+       self.assertAlmostEqual(.3, vv[2], delta=tol1)
+
+       vv = eval_func(0.1, 0.2, 0.3, 0.0, sfcm)
+       v_expect = sqrt(0.1*0.1+0.2*0.2+0.3*0.3)
+
+       if ((vv-v_expect) < tol1):
+          print "vv = ", vv, " == v_expect = ", v_expect, "passed"
+
+       coords_mag_field_function.interpolateFrom(sfcm)
+
              
  
     def test_fieldFunction_point_eval_verify(self):
@@ -254,24 +263,25 @@ class FieldFunctionUnitTests(unittest.TestCase):
        config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
 
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec(config_mesh))
+       eMesh.new_mesh(GMeshSpec(config_mesh))
        eMesh.commit()
 
-       f_coords = eMesh.getField("coordinates") 
+       f_coords = eMesh.get_field("coordinates") 
        
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, Dimensions(3), Dimensions(3), FieldFunction.SIMPLE_SEARCH)
 
-       val1 = evalVec3Print(0.2,0.3,0.4,0.0,ff_coords)
+       val1 = eval_vec3_print(0.2,0.3,0.4,0.0,ff_coords)
 
-       bulkData = eMesh.getBulkData()
+       bulkData = eMesh.get_bulk_data()
 
        try:
-          val10 = evalPrintVec3(1.2, 1.3, 1.4, 0.0, ff_coords)
+          val10 = eval_print_vec3(1.2, 1.3, 1.4, 0.0, ff_coords)
        except:
           print "expected to catch this exception: "
 
        pts = array([0.2, 0.3, 0.4])
-       output_pts = ff_coords.evaluate(pts)
+       output_pts = array([0.0, 0.0, 0.0])
+       output_pts = ff_coords.value(pts, output_pts)
        
        tol = 1.e-9
          
@@ -290,13 +300,13 @@ class FieldFunctionUnitTests(unittest.TestCase):
        config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
 
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec(config_mesh))
+       eMesh.new_mesh(GMeshSpec(config_mesh))
        eMesh.commit()
 
        #FIXME
-       #p_size = eMesh.getBulkData->parallel_size()
+       #p_size = eMesh.get_bulk_data->parallel_size()
 
-       f_coords = eMesh.getField("coordinates")
+       f_coords = eMesh.get_field("coordinates")
 
        for iSearchType in range(2):
           if iSearchType == 0:
@@ -308,8 +318,8 @@ class FieldFunctionUnitTests(unittest.TestCase):
           ff_coords = FieldFunction("ff_coords", f_coords, eMesh, Dimensions(3), Dimensions(3), search_type)
          
           t1st = time.time()
-          val1 = evalVec3(0.2,0.3,0.4,0.0,ff_coords)
-          val1 = evalVec3(0.2,0.3,0.4,0.0,ff_coords) #evaluated twice???
+          val1 = eval_vec3(0.2,0.3,0.4,0.0,ff_coords)
+          val1 = eval_vec3(0.2,0.3,0.4,0.0,ff_coords) #evaluated twice???
           t1st = time.time() - t1st
 
           numIter = 10000
@@ -322,7 +332,8 @@ class FieldFunctionUnitTests(unittest.TestCase):
              num1 = random.randint(1, max_rand)*1.0
              num2 = random.randint(1, max_rand)*1.0
              pts = array([(num0/max_rand), (num1/max_rand), (num2/max_rand)])
-             output_pts = ff_coords.evaluate(pts, 0.0)
+             output_pts = array([0.0,0.0,0.0])
+             output_pts = ff_coords.value(pts, output_pts, 0.0)
 
           total_time = time.time() - total_time
 

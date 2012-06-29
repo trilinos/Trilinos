@@ -44,8 +44,8 @@ namespace Ioss {
   public:
     NodeBlock(DatabaseIO *io_database,
 	      const std::string& name,
-	      size_t node_count,
-	      size_t degrees_of_freedom);
+	      int64_t node_count,
+	      int64_t degrees_of_freedom);
 
     ~NodeBlock();
 
@@ -58,10 +58,10 @@ namespace Ioss {
     Property get_implicit_property(const std::string& name) const;
 
   protected:
-    int internal_get_field_data(const Field& field,
+    int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
-    int internal_put_field_data(const Field& field,
+    int64_t internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
   };

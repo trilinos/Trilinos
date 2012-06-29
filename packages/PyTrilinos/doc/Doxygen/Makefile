@@ -4,7 +4,7 @@ DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null; ls $(DEPDIR)/dummy)
 
 # Define the list of packages that are supported
 PACKAGES  = Teuchos Epetra TriUtils EpetraExt Isorropia AztecOO \
-	    Galeri Amesos IFPACK Komplex Anasazi ML NOX
+	    Galeri Amesos IFPACK Komplex Anasazi ML NOX Percept
 
 # Define the list of swig output files to be generated, the generated
 # dependency files, and the generated XML files

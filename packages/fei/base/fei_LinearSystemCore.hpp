@@ -47,6 +47,7 @@ class Data;
 class Lookup;
 
 #include <fei_defs.h>
+#include <cstdlib>
 
 /**  
   This is the original internal FEI interface to solver-libraries --
@@ -625,6 +626,13 @@ class LinearSystemCore {
     by the FEI implementation.
    */
    virtual int writeSystem(const char* name) = 0;
+
+   virtual double* getMatrixBeginPointer()
+   { return NULL; }
+
+   virtual int getMatrixOffset(int /*row*/, int /*col*/)
+   { return -1; }
+
 };
 
 #endif

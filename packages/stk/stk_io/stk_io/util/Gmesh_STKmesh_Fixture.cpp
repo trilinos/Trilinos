@@ -10,6 +10,7 @@
 #include <generated/Iogn_GeneratedMesh.h>
 
 #include <init/Ionit_Initializer.h>
+#include <Ioss_Region.h>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -35,15 +36,12 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
   // types and the exodusII default database type.
   Ioss::Init::Initializer init_db;
 
-  stk::io::util::MeshData mesh_data;
-  stk::io::util::create_input_mesh("generated", gmesh_spec,
-                                   ".", comm,
-                                   m_meta_data,
-                                   m_mesh_data,
-                                   false);
+  stk::io::MeshData mesh_data;
+  stk::io::create_input_mesh("generated", gmesh_spec, comm,
+			     m_meta_data, m_mesh_data);
 
   const Iogn::DatabaseIO* database =
-    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.m_region->get_database());
+    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.m_input_region->get_database());
 
   // compute m_num_{x|y|z}
   m_num_x = database->get_generated_mesh()->get_num_x();
@@ -66,7 +64,7 @@ void Gmesh_STKmesh_Fixture::commit()
 {
   m_meta_data.commit();
 
-  stk::io::util::populate_bulk_data(m_bulk_data, m_mesh_data, "generated");
+  stk::io::populate_bulk_data(m_bulk_data, m_mesh_data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

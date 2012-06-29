@@ -73,7 +73,7 @@ struct LocalFixture
   ConstantFunction sfx_res;
 
   LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z)),
-                                                                     metaData(*eMesh.getFEM_meta_data()), bulkData(*eMesh.getBulkData()),
+                                                                     metaData(*eMesh.get_fem_meta_data()), bulkData(*eMesh.get_bulk_data()),
                                                                      coords_field( metaData.get_field<mesh::FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
                                                                      sfx_res (0.0, "sfx_res")
@@ -93,7 +93,7 @@ struct LocalFixture
       Ioss::Utils::to_string(num_y) + "x" +
       Ioss::Utils::to_string(num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5";
 	
-    eMesh.newMesh(GMeshSpec(config_mesh));
+    eMesh.new_mesh(GMeshSpec(config_mesh));
     eMesh.commit();
     return 1;
   }
@@ -239,7 +239,7 @@ STKUNIT_UNIT_TEST(norm, volume)
 
 #if DO_IO_TESTING
   if (1 || EXTRA_PRINT) std::cout << "TEST.norm.volume: writing gmesh_hex8_original_out.e ..." << std::endl;
-  eMesh.saveAs("./gmesh_hex8_original_out.e");
+  eMesh.save_as("./gmesh_hex8_original_out.e");
   if (1 || EXTRA_PRINT) std::cout << "TEST.norm.volume: writing gmesh_hex8_original_out.e done" << std::endl;
 #endif
 
@@ -258,7 +258,7 @@ STKUNIT_UNIT_TEST(norm, volume)
     // for testing
 #if DO_IO_TESTING
     if (1 || EXTRA_PRINT) std::cout << "TEST.norm.volume: writing gmesh_hex8_rotated_out.e ..." << std::endl;
-    eMesh.saveAs("./gmesh_hex8_rotated_out.e");
+    eMesh.save_as("./gmesh_hex8_rotated_out.e");
     if (1 || EXTRA_PRINT) std::cout << "TEST.norm.volume: writing gmesh_hex8_rotated_out.e done" << std::endl;
 #endif
 
@@ -288,7 +288,7 @@ STKUNIT_UNIT_TEST(norm, volume)
     // for testing
 #if DO_IO_TESTING
     if (1 || EXTRA_PRINT) std::cout << "TEST.norm.volume: writing gmesh_hex8_scaled_out.e ..." << std::endl;
-    eMesh.saveAs("./gmesh_hex8_scaled_out.e");
+    eMesh.save_as("./gmesh_hex8_scaled_out.e");
     if (1 || EXTRA_PRINT) std::cout << "TEST.norm.volume: writing gmesh_hex8_scaled_out.e done" << std::endl;
 #endif
 
@@ -363,6 +363,16 @@ STKUNIT_UNIT_TEST(norm, string_function)
   sfx_expect = 0.25;
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 
+  /// the function to be integrated:  (Max[ x^2+y^3+z^4, dxdydz]) =?= (@ [-0.5, 0.5]^3 ) ==> .5^2+.5^3+.5^4)
+  StringFunction sfmax("x^2 + y^3 + z^4", Name("sfmax"), Dimensions(3), Dimensions(1) );
+  Norm<-1> lInfNorm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  lInfNorm.setCubDegree(10);
+  lInfNorm(sfmax, sfx_res);
+  double sf1=eval(.5,.5,.5,0.0, sfmax);
+  sfx_expect = 0.5*0.5 + 0.5*0.5*0.5 + 0.5*0.5*0.5*0.5;
+  std::cout << "sfmax= " << sf1 << " sfx_expect= " << sfx_expect << " sfx_res= " << sfx_res.getValue() << std::endl;
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
+
   /// the function to be integrated:  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest1.py)
   StringFunction sfxyz("x*y*z", Name("sfxyz"), Dimensions(3), Dimensions(1) );
   l2Norm(sfxyz, sfx_res);
@@ -421,7 +431,7 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   /// the function to be integrated:  sqrt(Integral[x^2, dxdydz]) =?= sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
   //StringFunction sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) );
 
-  ff_coords.addAlias("mc");
+  ff_coords.add_alias("mc");
   //StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), Dimensions(3), Dimensions(1));
   StringFunction sfx_mc("mc[0]", Name("sfx_mc"), Dimensions(3), Dimensions(1) );
   StringFunction sfx_mc1("mc[0]", Name("sfx_mc1"), Dimensions(3), Dimensions(1) );
@@ -579,13 +589,13 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
       Ioss::Utils::to_string(num_y) + "x" +
       Ioss::Utils::to_string(num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5";
 	
-    eMesh.newMesh(GMeshSpec(config_mesh));
+    eMesh.new_mesh(GMeshSpec(config_mesh));
 
     eMesh.commit();
   }
 
-  mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
-  mesh::BulkData& bulkData = *eMesh.getBulkData();
+  mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
+  mesh::BulkData& bulkData = *eMesh.get_bulk_data();
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
   mesh::FieldBase *coords_field = metaData.get_field<mesh::FieldBase>("coordinates");
@@ -597,7 +607,7 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
   /// the function to be integrated:  sqrt(Integral[x^2, dxdydz]) =?= sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
   StringFunction sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) );
 
-  ff_coords.addAlias("mc");
+  ff_coords.add_alias("mc");
   //StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), Dimensions(3), Dimensions(1));
   StringFunction sfx_mc("mc[0]", Name("sfx_mc"), Dimensions(3), Dimensions(1) );
 

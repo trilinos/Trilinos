@@ -1,5 +1,6 @@
 import sys
-sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+sys.path.insert(0,"/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
 
 from mpi4py import MPI
 from PerceptMesh import *
@@ -16,12 +17,12 @@ class PerceptMeshUnitTests(unittest.TestCase):
     def fixture_setup_0(self):
        eMesh = PerceptMesh()
 
-       p_size = eMesh.getParallelSize()
+       p_size = eMesh.get_parallel_size()
       
        gmesh_spec = "4x4x" + str((4*p_size)) + "|bbox:0,0,0,1,1,1"
-       eMesh.newMesh(GMeshSpec(gmesh_spec))
+       eMesh.new_mesh(GMeshSpec(gmesh_spec))
        eMesh.commit()
-       eMesh.saveAs("hex_fixture.e")
+       eMesh.save_as("./exodus_files/hex_fixture.e")
 
     def fixture_setup_1(self):
 
@@ -35,8 +36,8 @@ class PerceptMeshUnitTests(unittest.TestCase):
          fixture.generate_mesh()
          
          eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data)
-         eMesh.printInfo("quad fixture", 2)
-         eMesh.saveAs("quad_fixture.e")
+         eMesh.print_info("quad fixture", 2)
+         eMesh.save_as("./exodus_files/quad_fixture.e")
        
        if p_size <= 2:
          n = 12
@@ -48,8 +49,8 @@ class PerceptMeshUnitTests(unittest.TestCase):
          fixture.generate_mesh()
 
          eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data)
-         eMesh.printInfo("quad fixture no sidesets", 2)
-         eMesh.saveAs("quad_fixture_no_sidesets.e")
+         eMesh.print_info("quad fixture no sidesets", 2)
+         eMesh.save_as("./exodus_files/quad_fixture_no_sidesets.e")
 
     def fixture_setup(self): 
        if self.is_setup == 1:
@@ -61,7 +62,7 @@ class PerceptMeshUnitTests(unittest.TestCase):
           
     def test_unit_perceptMesh_wedge6_1(self):     
        eMesh = PerceptMesh()
-       p_size = eMesh.getParallelSize()
+       p_size = eMesh.get_parallel_size()
        if p_size == 1:
          wedgeFixture = WedgeFixture()
          wedgeFixture.createMesh(self.pm, 4, 3, 2, 0, 1, 0, 1, 0, 1, "swept-wedge_0.e")
@@ -81,9 +82,9 @@ class PerceptMeshUnitTests(unittest.TestCase):
          fixture.generate_mesh()
 
          eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data)
-         eMesh.printInfo("quad fixture", 2)
+         eMesh.print_info("quad fixture", 2)
 
-         metaData = eMesh.getFEM_meta_data()
+         metaData = eMesh.get_fem_meta_data()
          parts = metaData.get_parts()
 
          nparts = len(parts)
@@ -91,12 +92,12 @@ class PerceptMeshUnitTests(unittest.TestCase):
 
          surface_id = 2
          surface_name = "surface_" + str(surface_id)
-         part = eMesh.getNonConstPart(surface_name)
+         part = eMesh.get_part(surface_name)
          in_surface_selector = Selector(part)
-         bulkData = eMesh.getBulkData()
-         coordField = eMesh.getCoordinatesField()
+         bulkData = eMesh.get_bulk_data()
+         coordField = eMesh.get_coordinates_field()
 
-         if eMesh.getSpatialDim() == 2:
+         if eMesh.get_spatial_dim() == 2:
            buckets_arg = eMesh.edge_rank()
          else:
            buckets_arg = eMesh.face_rank
@@ -123,33 +124,33 @@ class PerceptMeshUnitTests(unittest.TestCase):
 
       if p_size <= 2:
         eMesh_0 = PerceptMesh(2)
-        eMesh_0.openReadOnly("quad_fixture.e")
-        eMesh_0.saveAs("quad_fixture_readwrite.e")
+        eMesh_0.open_read_only("./exodus_files/quad_fixture.e")
+        eMesh_0.save_as("./exodus_files/quad_fixture_readwrite.e")
 
         eMesh_1 = PerceptMesh(2)
         eMesh_2 = PerceptMesh(2)
-        eMesh_1.openReadOnly("quad_fixture_readwrite.e")
-        eMesh_2.openReadOnly("quad_fixture.e")
+        eMesh_1.open_read_only("./exodus_files/quad_fixture_readwrite.e")
+        eMesh_2.open_read_only("./exodus_files/quad_fixture.e")
 
       if p_size == 1:
         add_newlines = False
-        eMesh_1.printInfo("quad fixture", 2, add_newlines)
-        eMesh_2.printInfo("quad fixture", 2, add_newlines)
-        #Here the unit test compares an expected output string with the output of the printInfos
+        eMesh_1.print_info("quad fixture", 2, add_newlines)
+        eMesh_2.print_info("quad fixture", 2, add_newlines)
+        #Here the unit test compares an expected output string with the output of the print_infos
 
       diff_msg = "diff report: "
       diff = PerceptMesh.mesh_difference(eMesh_1, eMesh_2, diff_msg, True )
       self.assertFalse(diff)      
       
-      metaData_1 = eMesh_1.getFEM_meta_data()
-      metaData_2 = eMesh_2.getFEM_meta_data()
-      bulkData_1 = eMesh_1.getBulkData()
-      bulkData_2 = eMesh_2.getBulkData()
-      coordField_1 = eMesh_1.getCoordinatesField()
-      coordField_2 = eMesh_2.getCoordinatesField()
+      #metaData_1 = eMesh_1.get_fem_meta_data()
+      #metaData_2 = eMesh_2.get_fem_meta_data()
+      bulkData_1 = eMesh_1.get_bulk_data()
+      #bulkData_2 = eMesh_2.get_bulk_data()
+      #coordField_1 = eMesh_1.get_coordinates_field()
+      #coordField_2 = eMesh_2.get_coordinates_field()
 
-      diff = PerceptMesh.mesh_difference(metaData_1, metaData_2, bulkData_1, bulkData_2, diff_msg, True)
-      self.assertFalse(diff)
+      #diff = PerceptMesh.mesh_difference(metaData_1, metaData_2, bulkData_1, bulkData_2, diff_msg, True)
+      #self.assertFalse(diff)
 
       buckets = bulkData_1.buckets(FEMMetaData.NODE_RANK)
     #  for bucket in buckets: #FIXME
@@ -161,6 +162,108 @@ class PerceptMeshUnitTests(unittest.TestCase):
     #  diff_msg = "diff report after mod: "
     #  diff = PerceptMesh.mesh_difference(eMesh_1, eMesh_2, diff_msg, True)
     #  self.assertTrue(diff)
+
+    # new tests of simplified high-level PerceptMesh interface
+    def test_high_level_interface(self):
+      self.fixture_setup()
+      p_size = parallel_machine_size(self.pm)
+
+      if p_size <= 2:
+        eMesh = PerceptMesh(2)
+        eMesh.open("./exodus_files/quad_fixture.e")
+
+        vectorDimension = 0
+        eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+        eMesh.commit()
+
+        f_coords = eMesh.get_field("coordinates")
+        coords_mag_field = eMesh.get_field("coords_mag_field")
+
+        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 2, 2)
+        #eval_vec3_print(0.1,0.1,0.1,0.0,ff_coords)
+
+        coords_mag_sf = StringFunction("sqrt(x*x + y*y )" , "coords_mag_sf", 2, 1)
+        x = 0.123
+        y = 0.234
+        vv = sqrt(x*x + y*y )
+        v1 = eval_func2(x,y,0,coords_mag_sf)
+        print "vv = ", vv, "== v1 = ", v1
+        self.assertEqual(vv, v1)
+
+        coords_mag_field_function = FieldFunction("coords_mag_field_function", coords_mag_field, eMesh, 2, 1)
+
+        coords_mag_field_function.interpolateFrom(coords_mag_sf)
+
+        eMesh.save_as("./exodus_files/quad_fixture_with_coords_mag.e")
+
+        ff_coords.add_alias("mc")
+
+        sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", 3, 1)
+
+        add_newlines = True
+        eMesh.print_info("quad fixture", 2, add_newlines)
+
+        self.assertTrue(eMesh.get_spatial_dim() == 2)
+        self.assertTrue(eMesh.get_number_elements() == 12*12)
+        self.assertTrue(eMesh.get_number_nodes() == 13*13)
+
+        self.assertTrue(eMesh.get_parallel_size() == p_size)
+
+        self.assertTrue(eMesh.get_bulk_data() != 0)
+        self.assertTrue(eMesh.get_fem_meta_data() != 0)
+
+        # // entity data setter/getters
+        node = eMesh.get_node(1)
+        self.assertTrue(node != 0)
+        cm1 = eMesh.get_field_data(coords_mag_field, node)
+        co1 = [0,0]
+        co1[0] = eMesh.get_field_data(f_coords, node, 0)
+        co1[1] = eMesh.get_field_data(f_coords, node, 1)
+        print "cm1= ", cm1, " co1= ", co1
+        eMesh.set_field_data(123.0, f_coords, node, 0)
+        co1[0] = eMesh.get_field_data(f_coords, node, 0)
+        print " co1= ", co1
+        
+        element = eMesh.get_element(1)
+        self.assertTrue(element != 0)
+
+        element1 = eMesh.get_entity(eMesh.element_rank(), 1)
+        self.assertTrue(element == element1)
+        
+        #/// find node closest to given point
+        node = eMesh.get_node(0,0)
+        self.assertTrue(node != 0)
+
+        #/// find element that contains given point
+        element = eMesh.get_element(0.01, 0.01)
+        self.assertTrue(element != 0)
+        
+
+
+        #self.assertFalse(diff)
+
+    # 
+    def test_time_dep_interface(self):
+      p_size = parallel_machine_size(self.pm)
+
+      if p_size <= 2:
+        eMesh = PerceptMesh(2)
+        eMesh.open("./exodus_files/time-dep.e")
+        eMesh.commit()
+
+        Tnd_field = eMesh.get_field("Tnd")
+
+        # // entity data setter/getters
+        eMesh.read_database_at_time(0.0)
+        node = eMesh.get_node(2,2)
+        self.assertTrue(node != 0)
+        t0 = eMesh.get_field_data(Tnd_field, node)
+        self.assertTrue(t0 == 0.0)
+        eMesh.read_database_at_time(1.0)
+        t1 = eMesh.get_field_data(Tnd_field, node)
+        self.assertTrue(t1 == 11.0)
+        
+        print "t0= " , t0, " t1= " , t1
 
 
 if __name__ == "__main__":

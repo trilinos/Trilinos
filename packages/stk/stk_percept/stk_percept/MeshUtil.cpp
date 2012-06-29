@@ -50,14 +50,14 @@ namespace stk {
       std::vector<stk::mesh::Entity *> side_nodes;
       fillSideNodes(element, iside, side_nodes);
 
-      //int spatialDim = eMesh.getSpatialDim();
+      //int spatialDim = eMesh.get_spatial_dim();
       double a[3]={0,0,0};
       double b[3]={0,0,0};
       double c[3]={0,0,0};
 
-      double *fdata0 = stk::mesh::field_data( *eMesh.getCoordinatesField() , *side_nodes[0]);
-      double *fdata1 = stk::mesh::field_data( *eMesh.getCoordinatesField() , *side_nodes[1]);
-      double *fdata2 = stk::mesh::field_data( *eMesh.getCoordinatesField() , *side_nodes[2]);
+      double *fdata0 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[0]);
+      double *fdata1 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[1]);
+      double *fdata2 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[2]);
       for (int idim=0; idim < 3; idim++)
         {
           a[idim] = fdata1[idim] - fdata0[idim];
@@ -140,7 +140,7 @@ namespace stk {
 
     bool MeshUtil::facesConsistent1(percept::PerceptMesh& eMesh, stk::mesh::Entity& element1, stk::mesh::Entity& element2)
     {
-      //int spatialDim = eMesh.getSpatialDim();
+      //int spatialDim = eMesh.get_spatial_dim();
       //unsigned side_rank = (spatialDim == 3 ? m_eMesh.face_rank() : m_eMesh.edge_rank());
       double tol = 1.e-5;
 
@@ -203,7 +203,7 @@ namespace stk {
 
     bool MeshUtil::facesConsistent(percept::PerceptMesh& eMesh)
     {
-      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( eMesh.element_rank() );
+      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
@@ -237,7 +237,7 @@ namespace stk {
 
     void MeshUtil::checkTopology(percept::PerceptMesh& eMesh)
     {
-      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( eMesh.element_rank() );
+      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
@@ -254,7 +254,7 @@ namespace stk {
                     continue;
 
                   std::cout << "Error MeshUtil::checkTopology null" << std::endl;
-                  eMesh.printEntity(std::cout, element);
+                  eMesh.print_entity(std::cout, element);
                   throw std::logic_error("Error MeshUtil::checkTopology null" );
                 }
             }

@@ -32,7 +32,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-extern void gds_iqsort(int v[], int iv[], int N);
-extern void gds_qsort(int v[], int N);
-extern int  gds_ibin_search(int value, int v[], int iv[], int N);
-extern int  gds_bin_search(int  value, int v[], int N);
+template <typename INT>
+void gds_iqsort(INT v[], INT iv[], size_t N);
+
+template <typename INT>
+void gds_qsort(INT v[], size_t N);
+
+template <typename INT>
+void indexed_sort(INT v[], INT iv[], size_t N);

@@ -108,8 +108,10 @@ void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
 
   const unsigned num_elems = 4;
 
-  int numProcs = 1, myProc = 0;
-  numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+  //int numProcs = 1; 
+  //numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+
+  int myProc = 0;
   myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
 
   stk::mesh::EntityId elem_id = 1 + myProc*num_elems;

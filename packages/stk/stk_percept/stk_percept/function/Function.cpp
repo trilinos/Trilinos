@@ -77,7 +77,7 @@ namespace stk
       getNameToFunctionMap()[m_name] = this;
     }
 
-    Function * Function::addAlias(const char *alias)
+    Function * Function::add_alias(const char *alias)
     {
       const std::string str_alias(alias);
       getNameToFunctionMap()[str_alias] = this;
@@ -117,6 +117,10 @@ namespace stk
         }
       for (int icodomain = 0; icodomain < codomain_rank; icodomain++)
         {
+          if(out.dimension(icodomain+out_offset) != m_codomain_dimensions[icodomain])
+            {
+              std::cout << "out= " << out << "\n" << " m_codomain_dimensions= " << m_codomain_dimensions << std::endl;
+            }
           VERIFY_OP_ON(out.dimension(icodomain+out_offset), ==,  m_codomain_dimensions[icodomain], 
                        join("Function::argsAreValid: in dimensions are inconsistent with function's codomain dimensions. \nFunction.name= ", getName()) );
         }
@@ -151,6 +155,27 @@ namespace stk
       return out;
     }
 
+    double eval(double x, double y, double z, double t, Teuchos::RCP<Function>& func)
+    {
+      return eval(x,y,z,t,*func.access_private_ptr());
+    }
+    void eval_print(double x, double y, double z, double t, Teuchos::RCP<Function>& func)
+    {
+      eval_print(x,y,z,t,*func.access_private_ptr());
+    }
+    void eval_print2(double x, double y, double t, Teuchos::RCP<Function>& func)
+    {
+      eval_print2(x,y,t,*func.access_private_ptr());
+    }
+    MDArray eval_vec3(double x, double y, double z, double t, Teuchos::RCP<Function>& func)
+    {
+      return eval_vec3(x,y,z,t,*func.access_private_ptr());
+    }
+    void eval_vec3_print(double x, double y, double z, double t, Teuchos::RCP<Function>& func)
+    {
+      eval_vec3_print(x,y,z,t,*func.access_private_ptr());
+    }
+
     double eval(double x, double y, double z, double t, Function& func)
     {
       MDArray val(1);
@@ -163,16 +188,40 @@ namespace stk
       return val(0);
     }
 
-    void evalPrint(double x, double y, double z, double t, Function& func)
+    double eval2(double x, double y, double t, Teuchos::RCP<Function>& func)
+    {
+      return eval2(x,y,t,*func.access_private_ptr());
+    }
+    double eval2(double x, double y, double t, Function& func)
+    {
+      MDArray val(1);
+      MDArray pt(2);
+      pt(0)=x;
+      pt(1)=y;
+
+      func(pt, val, t);
+      return val(0);
+    }
+
+    void eval_print(double x, double y, double z, double t, Function& func)
     {
       MDArray pt(3);
       pt(0)=x;
       pt(1)=y;
       pt(2)=z;
-      std::cout << "evalPrint:: pt=\n" << pt << " val= " << eval(x,y,z,t,func) << std::endl;
+      std::cout << "eval_print:: pt=\n" << pt << " val= " << eval(x,y,z,t,func) << std::endl;
     }
 
-    MDArray evalVec3(double x, double y, double z, double t, Function& func)
+    void eval_print2(double x, double y, double t, Function& func)
+    {
+      MDArray pt(2);
+      pt(0)=x;
+      pt(1)=y;
+      //std::cout << "eval_print:: pt=\n" << pt << " val= " << eval2(x,y,t,func) << std::endl;
+      std::cout << eval2(x,y,t,func);
+    }
+
+    MDArray eval_vec3(double x, double y, double z, double t, Function& func)
     {
       MDArray pt(3);
       MDArray val(3);
@@ -183,13 +232,13 @@ namespace stk
       return val;
     }
 
-    void evalVec3Print(double x, double y, double z, double t, Function& func)
+    void eval_vec3_print(double x, double y, double z, double t, Function& func)
     {
       MDArray pt(3);
       pt(0)=x;
       pt(1)=y;
       pt(2)=z;
-      std::cout << "evalVec3Print:: pt= \n" << pt << " val= \n" << evalVec3(x,y,z,t,func) << std::endl;
+      std::cout << "eval_vec3_print:: pt= \n" << pt << " val= \n" << eval_vec3(x,y,z,t,func) << std::endl;
     }
 
   }

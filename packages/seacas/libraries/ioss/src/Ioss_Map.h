@@ -36,11 +36,12 @@
 #include <Ioss_CodeTypes.h>
 #include <vector>
 #include <string>
+#include <stdint.h>
 
 namespace Ioss {
-  typedef std::vector<int> MapContainer;
+  typedef std::vector<int64_t> MapContainer;
   // map global to local ids
-  typedef std::pair<int,int> IdPair;
+  typedef std::pair<int64_t,int64_t> IdPair;
   typedef std::vector<IdPair> ReverseMapContainer;
 
   typedef ReverseMapContainer::value_type RMCValuePair;
@@ -84,8 +85,12 @@ namespace Ioss {
   public:
     Map(); // Default constructor
 
-    int global_to_local(int global, bool must_exist = true) const;
-    int local_to_global(int local) const;
+    int64_t global_to_local(int64_t global, bool must_exist = true) const;
+    int64_t local_to_global(int64_t local) const;
+
+    static void build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
+				  int64_t num_to_get, int64_t offset,
+				  const std::string& type, int processor);
 
     static void build_reverse_map(ReverseMapContainer *Map, const int *ids,
 				  int num_to_get, int offset,
@@ -93,12 +98,12 @@ namespace Ioss {
 
     // Determines whether the input map is sequential (map[i] == i)
     // Assumes that map is '1-based', size stored in [0]
-    static bool is_sequential(const std::vector<int>& the_map);
+    static bool is_sequential(const MapContainer& the_map);
 
     static void verify_no_duplicate_ids(ReverseMapContainer &reverse_map,
 					const std::string &type, int processor);
 
-    int  entityCount;
+    int64_t  entityCount;
     bool sequentialG2L; // true if reverse node map is sequential (local==global)
     bool entityReordered;
     MapContainer forwardMap;

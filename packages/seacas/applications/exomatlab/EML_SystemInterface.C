@@ -61,7 +61,7 @@ namespace {
 
 SystemInterface::SystemInterface()
   : minimumTime_(0.0), maximumTime_(-1.0), inputFile_(), outputFile_(),
-    listVars_(false), fieldSuffix_('_')
+    listVars_(false), fieldSuffix_(0)
 {
   enroll_options();
 }
@@ -82,8 +82,8 @@ void SystemInterface::enroll_options()
 
   options_.enroll("field_suffix", GetLongOption::MandatoryValue,
 		  "Character used to separate a field component suffix from the field name.\n"
-		  "\t\tEnter 'none' for no separator (fieldx, fieldy fieldz).\n"
-		  "\t\tDefault = '_' (field_x, field_y, field_z)", "_");
+		  "\t\tEnter '_' to treat field_x, field_y, field_z as a 3-component vector 'field'.\n"
+		  "\t\tDefault = none (field_x, field_y, field_z are different fields)", "none");
   
   options_.enroll("minimum_time", GetLongOption::MandatoryValue,
 		  "Minimum timestep for which to transfer data to matlab file.", 0);
@@ -97,7 +97,7 @@ void SystemInterface::enroll_options()
   
   options_.enroll("gvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of global variables to be output or ALL or NONE.",
-		  0);
+		  "ALL");
 
   options_.enroll("evar", GetLongOption::MandatoryValue,
 		  "(NI) Comma-separated list of element variables to be output or ALL or NONE.\n"
@@ -154,7 +154,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("field_suffix");
     if (strcmp("none", temp) == 0) {
-      fieldSuffix_ = 0;
+      // This is ASCII 1 which means it won't be found so
+      // vector/tensor won't be recognized by default.
+      fieldSuffix_ = 1; 
     } else {
       fieldSuffix_ = temp[0];
     }

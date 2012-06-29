@@ -34,7 +34,10 @@ namespace stk
       getFunctionString() { return m_func_string; }
 
       void 
-      setGradientStrings(std::string gstring[3], int len);
+      set_gradient_strings(std::string gstring[3], int len);
+
+      void 
+      set_gradient_strings(MDArrayString& gstring);
 
       virtual Teuchos::RCP<Function > 
       derivative(MDArrayString& deriv_spec);

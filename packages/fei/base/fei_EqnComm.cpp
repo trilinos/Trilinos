@@ -82,6 +82,12 @@ EqnComm::EqnComm(MPI_Comm comm, int numLocalEqns)
 #endif
 }
   
+EqnComm::EqnComm(MPI_Comm comm, int numLocalEqns, const std::vector<int>& globalOffsets)
+ : comm_(comm),
+   globalOffsets_(globalOffsets)
+{
+}
+  
 EqnComm::~EqnComm()
 {
 }

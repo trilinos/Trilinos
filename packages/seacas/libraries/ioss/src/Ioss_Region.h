@@ -85,7 +85,7 @@ namespace Ioss {
     bool supports_field_type(Ioss::EntityType fld_type) const;
 
     // Helper function...
-    int node_global_to_local(int global, bool must_exist=true) const;
+    int64_t node_global_to_local(int64_t global, bool must_exist=true) const;
 
     bool begin_mode(State new_state);
     bool end_mode(State current_state);
@@ -187,7 +187,7 @@ namespace Ioss {
     // The 'local_id' is the local database id (1-based), not the global id.
     // returns NULL if no element block contains this element (local_id <= 0
     // or greater than number of elements in database)
-    ElementBlock* get_element_block(int local_id) const;
+    ElementBlock* get_element_block(size_t local_id) const;
 
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
@@ -199,10 +199,10 @@ namespace Ioss {
     void add_information_record(const std::string &info);
     
   protected:
-    int internal_get_field_data(const Field& field,
+    int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
-    int internal_put_field_data(const Field& field,
+    int64_t internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
   private:
@@ -232,7 +232,7 @@ namespace Ioss {
 inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const
 {return get_database()->entity_field_support() & fld_type;}
 
-inline int Ioss::Region::node_global_to_local(int global, bool must_exist) const
+inline int64_t Ioss::Region::node_global_to_local(int64_t global, bool must_exist) const
 { return get_database()->node_global_to_local(global,must_exist); }
 
 inline const std::vector<std::string> &Ioss::Region::get_information_records() const

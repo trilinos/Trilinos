@@ -47,11 +47,17 @@ APPEND_SET(HEADERS
     Kokkos_DefaultSparseSolveKernelOps.hpp
     Kokkos_DefaultRelaxationKernelOps.hpp
     Kokkos_MultiVectorKernelOps.hpp
+    Kokkos_SeqSparseOps.hpp
     # traits
     Kokkos_DefaultArithmetic.hpp
     Kokkos_DefaultBlockSparseOps.hpp
     Kokkos_DefaultSparseOps.hpp
     Kokkos_DefaultRelaxation.hpp
+    # raw sequential kernels
+    Kokkos_Raw_SparseMatVec_decl.hpp
+    Kokkos_Raw_SparseMatVec_def.hpp
+    Kokkos_Raw_SparseTriangularSolve_decl.hpp
+    Kokkos_Raw_SparseTriangularSolve_def.hpp
   )
 
 APPEND_SET(SOURCES

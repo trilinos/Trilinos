@@ -44,7 +44,7 @@ namespace Ioss {
   public:
     NodeSet(); // Used for template typing only
     NodeSet(DatabaseIO *io_database, const std::string& name,
-	    size_t number_nodes);
+	    int64_t number_nodes);
 
     std::string type_string() const {return "NodeSet";}
     EntityType type() const {return NODESET;}
@@ -55,10 +55,10 @@ namespace Ioss {
     Property get_implicit_property(const std::string& name) const;
 
   protected:
-    int internal_get_field_data(const Field& field,
+    int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
-    int internal_put_field_data(const Field& field,
+    int64_t internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
   };

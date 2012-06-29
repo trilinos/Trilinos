@@ -62,12 +62,6 @@ void PartImpl::set_intersection_of( const PartVector & pv )
   m_intersect = pv ;
 }
 
-
-PartImpl::~PartImpl()
-{
-}
-
-
 // Subset part constructor:
 PartImpl::PartImpl( MetaData          * arg_meta_data ,
             const std::string & arg_name ,

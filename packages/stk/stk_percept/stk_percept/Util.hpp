@@ -122,7 +122,7 @@ namespace stk {
       static void setFlag(int which_flag, bool val);
       static bool getFlag(int which_flag);
       static void setRank(int rank);
-      static int getRank();
+      static int get_rank();
       static void debug_stop();
       static void replace(std::string &str, const std::string &find_what, const std::string &replace_with);
 
@@ -225,16 +225,22 @@ namespace stk {
     LapCountType getAccumulatedLap(stk::diag::Timer& timer, bool option=false);
 
     //========================================================================================================================
-//     inline std::string toString(int v) { return boost::lexical_cast<std::string>(v); }
-//     inline std::string toString(unsigned v) { return boost::lexical_cast<std::string>(v); }
-//     inline std::string toString(double v) { return boost::lexical_cast<std::string>(v); }
+
     template<class T> 
     std::string toString(T t) { return boost::lexical_cast<std::string>(t); }
+
+    template<class T> 
+    inline
+    T square(T t) { return t*t; }
+
+    inline int toInt(std::string t) { return boost::lexical_cast<int>(t); }
 
     //========================================================================================================================
 
 #define QUOTE(A) #A
 #define EXPAND_AND_QUOTE(A) QUOTE(A)
+
+#define PERCEPT_OUT(a) " " << QUOTE(a) << " = " << a 
 
 #define TOKENPASTE2(x,y) x ## y
 #define TOKENPASTE(x,y) TOKENPASTE2(x,y)

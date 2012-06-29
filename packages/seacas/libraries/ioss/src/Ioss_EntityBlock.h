@@ -54,8 +54,8 @@ namespace Ioss {
     bool contains(size_t local_id) const
       { return idOffset < local_id && local_id <= idOffset + entityCount; }
 
-    void  set_offset(int offset) {idOffset = offset;}
-    int get_offset() const {return idOffset;}
+    void  set_offset(size_t offset) {idOffset = offset;}
+    size_t get_offset() const {return idOffset;}
 
   protected:
     EntityBlock(DatabaseIO *io_database,

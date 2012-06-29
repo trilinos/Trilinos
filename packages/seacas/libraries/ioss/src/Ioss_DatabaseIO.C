@@ -90,11 +90,13 @@ namespace {
 
 Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
 			     Ioss::DatabaseUsage db_usage,
-			     MPI_Comm communicator)
-  : commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
-    isParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
-    fieldSuffixSeparator('_'), splitType(Ioss::SPLIT_BY_TOPOLOGIES), dbUsage(db_usage),
-    nodeGlobalIdBackwardCompatibility(false),
+			     MPI_Comm communicator,
+			     const Ioss::PropertyManager &props)
+  : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
+    isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
+    fieldSuffixSeparator('_'), splitType(Ioss::SPLIT_BY_TOPOLOGIES),
+    dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API),
+    nodeGlobalIdBackwardCompatibility(false), lowerCaseVariableNames(true),
     util_(communicator), region_(region), isInput(is_input_event(db_usage)),
     singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || Ioss::SerializeIO::isEnabled()),
     doLogging(false)
@@ -105,6 +107,20 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
 
 Ioss::DatabaseIO::~DatabaseIO()
 {
+}
+
+int Ioss::DatabaseIO::int_byte_size_api() const
+{
+  if (dbIntSizeAPI == Ioss::USE_INT32_API) {
+    return 4;
+  } else {
+    return 8;
+  }
+}
+
+void Ioss::DatabaseIO::set_int_byte_size_api(Ioss::DataSize size) const
+{
+  dbIntSizeAPI = size; // mutable
 }
 
 void Ioss::DatabaseIO::verify_and_log(const Ioss::GroupingEntity *ge, const Ioss::Field& field) const
@@ -140,7 +156,7 @@ void Ioss::DatabaseIO::set_common_side_topology() const
   Ioss::ElementBlockContainer::const_iterator IE = element_blocks.end();
 
   while (I != IE) {
-    int element_count = (*I)->get_property("entity_count").get_int();
+    size_t element_count = (*I)->get_property("entity_count").get_int();
 
     // Check face types.
     if (element_count > 0) {
@@ -254,11 +270,11 @@ namespace {
       initial_time = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
     }
 
-    std::vector<int> all_sizes;
+    std::vector<int64_t> all_sizes;
     if (single_proc_only) {
-      all_sizes.push_back(static_cast<int>(field.get_size()));
+      all_sizes.push_back(field.get_size());
     } else {
-      util.gather(static_cast<int>(field.get_size()), all_sizes);
+      util.gather(field.get_size(), all_sizes);
     }
 
     if (util.parallel_rank() == 0 || single_proc_only) {
@@ -269,9 +285,9 @@ namespace {
       strm << symbol << " [" << std::fixed << std::setprecision(3)
 	   << time_now-initial_time << "]\t";
 
-      int total = 0;
+      int64_t total = 0;
       // Now append each processors size onto the stream...
-      std::vector<int>::const_iterator pos = all_sizes.begin();
+      std::vector<int64_t>::const_iterator pos = all_sizes.begin();
       for (; pos != all_sizes.end(); ++pos) {
 	strm << std::setw(8) << *pos << ":";
 	total += *pos;

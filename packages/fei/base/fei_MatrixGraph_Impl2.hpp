@@ -743,6 +743,8 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
    int* vspcEqnPtr_;
 
    std::set<int> constrained_indices_;
+
+   bool includeAllSlaveConstraints_;
 };//class MatrixGraph_Impl2
 
  inline fei::SharedPtr<fei::VectorSpace> MatrixGraph_Impl2::getRowSpace()

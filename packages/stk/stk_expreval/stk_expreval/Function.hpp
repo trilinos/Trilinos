@@ -79,11 +79,11 @@ template <class S>
 class CFunction;
 
 /**
- * @brief Class <b>CFunctionMap</b> maps function names to c-style function pointers via
+ * @brief Class <b>CFunctionMap</b> maps (function names, num arguments) to c-style function pointers via
  * the <b>CFunctionBase</b> base class.  The mapping is case insensitive.
  *
  */
-class CFunctionMap : public std::map<std::string, CFunctionBase *, LessCase>
+class CFunctionMap : public std::multimap< std::string, CFunctionBase *, LessCase>
 {
 public:
   /**
@@ -122,12 +122,7 @@ CFunctionMap &getCFunctionMap();
  */
 inline
 void addFunction(const std::string &name, CFunctionBase *function) {
-  CFunctionMap& cfmap = getCFunctionMap();
-  CFunctionMap::iterator iter = cfmap.find(name);
-  if (iter != cfmap.end()) {
-    delete iter->second;
-  }
-  getCFunctionMap()[name] = function;
+  getCFunctionMap().insert(std::make_pair(name, function));
 }
 
 } // namespace expreval

@@ -75,9 +75,18 @@ namespace stk
                Dimensions codomain_dimensions = Dimensions(),
                unsigned integration_order = 0);
 
-      void value(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
+      /// this version uses the MDOutVal argument as a predefined array to ensure the python returned value is properly sized
+      void value(MDArray& domain, MDArray& MDOutVal, double time_value_optional=0.0)
       {
-        this->operator()(domain, codomain, time_value_optional);
+        this->operator()(domain, MDOutVal, time_value_optional);
+      }
+
+      /// this version creates a dummy output and returns it based on the codomain-dimensions specified at construction
+      MDArray value(MDArray& domain, double time_value_optional=0.0)
+      {
+        MDArray output = getNewCodomain();
+        this->operator()(domain, output, time_value_optional);
+        return output;
       }
 
       virtual void operator()(MDArray& domain, MDArray& codomain, double time = 0.0)=0;
@@ -169,7 +178,7 @@ namespace stk
 
       /// allow this function to have one or more aliases 
       //    FIXME add ability to delete an alias
-      Function * addAlias(const char *alias);
+      Function * add_alias(const char *alias);
 
       std::string& getName() { return m_name; }
 
@@ -200,15 +209,28 @@ namespace stk
 
     };
 
+#ifndef SWIG
     std::ostream &operator<<(std::ostream& out,  Function& func);
+#endif
 
     double eval(double x, double y, double z, double t, Function& func);
+    double eval(double x, double y, double z, double t, Teuchos::RCP<Function>& func);
 
-    void evalPrint(double x, double y, double z, double t, Function& func);
+    double eval2(double x, double y, double t, Function& func);
+    double eval2(double x, double y, double t, Teuchos::RCP<Function>& func);
 
-    MDArray evalVec3(double x, double y, double z, double t, Function& func);
+    void eval_print(double x, double y, double z, double t, Function& func);
+    void eval_print(double x, double y, double z, double t, Teuchos::RCP<Function>& func);
 
-    void evalVec3Print(double x, double y, double z, double t, Function& func);
+    void eval_print2(double x, double y, double t, Function& func);
+    void eval_print2(double x, double y, double t, Teuchos::RCP<Function>& func);
+
+    MDArray eval_vec3(double x, double y, double z, double t, Function& func);
+    MDArray eval_vec3(double x, double y, double z, double t, Teuchos::RCP<Function>& func);
+
+    void eval_vec3_print(double x, double y, double z, double t, Function& func);
+    void eval_vec3_print(double x, double y, double z, double t, Teuchos::RCP<Function>& func);
+
 
   }//namespace percept
 }//namespace stk

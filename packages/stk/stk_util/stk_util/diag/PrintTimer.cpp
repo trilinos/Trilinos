@@ -350,58 +350,92 @@ collect_timers(
 
   // Gather the send counts on root processor
   std::string send_string(mout.str());
-  int send_count = send_string.size();
-  std::vector<int> recv_count(parallel_size, 0);
-  int * const recv_count_ptr = &recv_count[0] ;
 
-  int result = MPI_Gather(&send_count, 1, MPI_INT,
-                          recv_count_ptr, 1, MPI_INT,
-                          parallel_root, comm);
-  if (MPI_SUCCESS != result) {
-    std::ostringstream message ;
-    message << "stk::diag::collect_timers FAILED: MPI_Gather = " << result ;
-    throw std::runtime_error(message.str());
+  ParallelTimer root_parallel_timer;
+
+  //We need to gather the timer data in a number of 'cycles' where we
+  //only receive from a portion of the other processors each cycle.
+  //This is because buffer allocation-failures have been observed for
+  //runs on very large numbers of processors if the 'root' processor tries
+  //to allocate a buffer large enough to hold timing data from all other
+  //procesors.
+  int num_cycles = 16;
+  if (parallel_size < 1024) {
+    //If less than 1024 processors, just do them all at once.
+    num_cycles = 1;
   }
 
-  // Receive counts are only non-zero on the root processor:
-  std::vector<int> recv_displ(parallel_size + 1, 0);
+  std::vector<char> buffer;
 
-  for (int i = 0 ; i < parallel_size ; ++i) {
-    recv_displ[i + 1] = recv_displ[i] + recv_count[i] ;
-  }
+  for(int ii=0; ii<num_cycles; ++ii) {
+    std::vector<int> recv_count(parallel_size, 0);
+    int * const recv_count_ptr = &recv_count[0] ;
+  
+    //send_count is the amount of data this processor needs to send.
+    int send_count = send_string.size();
 
-  const int recv_size = recv_displ[parallel_size] ;
+    //should this processor send on the current cycle ? If not, set send_count to 0.
+    if ((parallel_rank+ii)%num_cycles!=0) {
+      send_count = 0;
+    }
 
-  std::vector<char> buffer(recv_size);
-
-  {
-    const char * const send_ptr = send_string.data();
-    char * const recv_ptr = recv_size ? & buffer[0] : 0;
-    int * const recv_displ_ptr = & recv_displ[0] ;
-
-    result = MPI_Gatherv((void *) send_ptr, send_count, MPI_CHAR,
-                         recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
-                         parallel_root, comm);
+    int result = MPI_Gather(&send_count, 1, MPI_INT,
+                            recv_count_ptr, 1, MPI_INT,
+                            parallel_root, comm);
     if (MPI_SUCCESS != result) {
       std::ostringstream message ;
-      message << "stk::diag::collect_timers FAILED: MPI_Gatherv = " << result ;
+      message << "stk::diag::collect_timers FAILED: MPI_Gather = " << result ;
       throw std::runtime_error(message.str());
     }
-
-    std::vector<ParallelTimer> parallel_timer_vector(parallel_size);
-
-    if (parallel_rank == parallel_root) {
-      for (int j = 0; j < parallel_size; ++j) {
-        Marshal min(std::string(recv_ptr + recv_displ[j], recv_ptr + recv_displ[j + 1]));
-        min >> parallel_timer_vector[j];
+  
+    // Receive counts are only non-zero on the root processor:
+    std::vector<int> recv_displ(parallel_size + 1, 0);
+  
+    for (int i = 0 ; i < parallel_size ; ++i) {
+      recv_displ[i + 1] = recv_displ[i] + recv_count[i] ;
+    }
+  
+    const int recv_size = recv_displ[parallel_size] ;
+  
+    buffer.assign(recv_size, 0);
+  
+    {
+      const char * const send_ptr = send_string.data();
+      char * const recv_ptr = recv_size ? & buffer[0] : 0;
+      int * const recv_displ_ptr = & recv_displ[0] ;
+  
+      result = MPI_Gatherv((void *) send_ptr, send_count, MPI_CHAR,
+                           recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
+                           parallel_root, comm);
+      if (MPI_SUCCESS != result) {
+        std::ostringstream message ;
+        message << "stk::diag::collect_timers FAILED: MPI_Gatherv = " << result ;
+        throw std::runtime_error(message.str());
       }
-
-      parallel_timer = parallel_timer_vector[0];
-
-      for (size_t j = 0; j < parallel_timer_vector.size(); ++j)
-        merge_parallel_timer(parallel_timer, parallel_timer_vector[j], checkpoint);
+  
+      std::vector<ParallelTimer> parallel_timer_vector;
+      parallel_timer_vector.reserve(parallel_size);
+  
+      if (parallel_rank == parallel_root) {
+        for (int j = 0; j < parallel_size; ++j) {
+          int received_count = recv_displ[j+1] - recv_displ[j];
+          if (received_count > 0) {
+            //grow parallel_timer_vector by 1:
+            parallel_timer_vector.resize(parallel_timer_vector.size()+1);
+            Marshal min(std::string(recv_ptr + recv_displ[j], recv_ptr + recv_displ[j + 1]));
+            //put this data into the last entry of parallel_timer_vector:
+            min >> parallel_timer_vector[parallel_timer_vector.size()-1];
+          }
+        }
+  
+        if (parallel_rank==parallel_root && send_count>0) root_parallel_timer = parallel_timer_vector[0];
+  
+        for (size_t j = 0; j < parallel_timer_vector.size(); ++j)
+          merge_parallel_timer(root_parallel_timer, parallel_timer_vector[j], checkpoint);
+      }
     }
   }
+  parallel_timer = root_parallel_timer;
 #endif
 }
 

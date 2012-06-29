@@ -1,0 +1,586 @@
+#! /bin/sh
+# Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+# certain rights in this software
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+# 
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+
+#
+#  Install procedure for Sandia Albuquerque graphics
+#
+
+#  Define where some things are
+ROOTDIR=`pwd`
+TMPDIR=$ROOTDIR/tmp_grx
+
+#   to specify a non-standard location for your X11 include files, 
+#   set X11INCLUDE to the correct directory.  The symbol should be
+#   set to the correct syntax to specify an alternate include
+#   directory. For example, on our HP system, the correct line is:
+#   X11INCLUDE="-I/usr/local/X11R5/include"
+#
+#   NOTE: If your X11 libraries are also in a directory that is not
+#	searched by your loader, you must change the X11 symbol in 
+#	graphics/grfenv.csh.SYSTEM and graphics/grfenv.sh.SYSTEM
+
+X11INCLUDE=""
+CDEFS=""
+# RANLIB is set later to ranlib on certain systems.
+RANLIB="/bin/true"
+
+#   to turn debug on for makefile, set DEBUG=
+#   to turn debug off, set DEBUG=-s
+DEBUG=
+
+#  Check for and process any parameters
+if test $# -gt 0
+then
+  ARG=`echo $1 | tr "[a-z]" "[A-Z]"`
+
+  if test "$ARG" = "CLEAN"      # clean up the tmp_grx directory
+  then 
+     echo "Cleaning up"
+     if test -d $TMPDIR
+     then rm -f -r $TMPDIR
+     fi
+     exit 0
+  elif test "$ARG" = "DEBUG"    # turn debug on for the makefiles
+  then
+     DEBUG=""
+  fi
+fi
+
+#  This is a fix for the echo parameter. SUN, DEC use -n for
+#  no newline, HP and CRA use \c.
+contains=''
+: some greps do not return status, grrr.
+echo "grimblepritz" >grimble
+if grep blurfldyick grimble >/dev/null 2>&1 ; then
+    contains=contains
+elif grep grimblepritz grimble >/dev/null 2>&1 ; then
+    contains=grep
+else
+    contains=contains
+fi
+rm -f grimble
+: the following should work in any shell
+case "$contains" in
+contains*)
+    echo " "
+    echo "AGH!  Grep doesn't return a status.  Attempting remedial action."
+    cat >contains <<'EOSS'
+grep "$1" "$2" >.greptmp && cat .greptmp && test -s .greptmp
+EOSS
+chmod +x contains
+esac
+
+: first determine how to suppress newline on echo command
+(echo "hi there\c" ; echo " ") >.echotmp
+if $contains c .echotmp >/dev/null 2>&1 ; then
+    EP1='-n'
+    EP2=''
+else
+    cat <<'EOM'
+EOM
+    EP1=''
+    EP2='\c'
+fi
+rm -f .echotmp
+
+echo "        Begin Graphics Installation."
+echo ""
+
+#  Set up the directory structure if it doesn't exist
+if test ! -d $ROOTDIR/lib ; then mkdir $ROOTDIR/lib ; fi 
+if test ! -d $ROOTDIR/bin ; then mkdir $ROOTDIR/bin ; fi 
+if test ! -d $ROOTDIR/doc ; then mkdir $ROOTDIR/doc ; fi 
+if test ! -d $ROOTDIR/man ; then mkdir $ROOTDIR/man ; fi 
+
+#  Make sure temp directory doesn't already exist
+if test -d $TMPDIR 
+then 
+  echo "Install error : "
+  echo "Trying to build temporary directory $TMPDIR"
+  echo "...directory already exists."
+  echo "Please delete ( install clean ) or rename."
+  exit 1
+fi
+
+#  Find out what system installing on
+DONE="FALSE"
+while test "$DONE" != "TRUE"
+do
+  echo " Which system is the installation for?:"
+  echo "       1. HP"
+  echo "       2. SUN"
+  echo "       3. CRAY"
+  echo "       4. DEC (ULTRIX)"
+  echo "       5. SGI"
+  echo "       6. CONVEX"
+  echo "       7. SOLARIS (SUN SYSV)"
+  echo $EP1 " Enter number or name: " $EP2
+  read ANS
+
+  #    check for valid answer and set SYSTEM variable
+  if test "$ANS" = ""
+  then
+    echo " ...Exiting." 
+    exit 0
+  else
+    DONE="TRUE"
+    ANS1=`echo $ANS | tr "[a-z]" "[A-Z]"`
+# NOTE: When adding a system, ensure that the cases below are unique.
+    case $ANS1 in
+    1)      SYSTEM=HP ;;
+    HP)     SYSTEM=HP ;;
+    2)      SYSTEM=SUN 
+	    RANLIB=ranlib ;;
+    SUN)    SYSTEM=SUN 
+	    RANLIB=ranlib ;;
+    3)      SYSTEM=CRA ;;
+    CRA)    SYSTEM=CRA ;;
+    4)      SYSTEM=DEC ;;
+    DEC)    SYSTEM=DEC
+	    RANLIB=ranlib ;;  
+    5)      SYSTEM=SGI ;;
+    SGI)    SYSTEM=SGI ;;
+    6)      SYSTEM=CONVEX
+            RANLIB=ranlib ;;
+    CONVEX) SYSTEM=CONVEX
+            RANLIB=ranlib ;;
+    7)      SYSTEM=SUN
+	    CDEFS="-DSYSV";;
+    SOLARIS) SYSTEM=SUN
+	     CDEFS="-DSYSV";;
+    * )     DONE="FALSE"
+            echo "" 
+            echo " Invalid answer: $ANS. Try again. ( <CR> to exit )" 
+    esac
+  fi
+done
+
+#  Convert SYSTEM to lower case for later use
+LSYSTEM=`echo $SYSTEM | tr "[A-Z]" "[a-z]"`  
+  
+# Added for the CRAY to insure static memory allocation     01-aug-90
+if test "$SYSTEM" = "CRA"
+then
+  FC='cf77 -a static'
+  export FC
+fi
+
+echo ""
+echo " Installing graphics for system = $SYSTEM"
+echo ""
+
+#  Ask for the path name to the production source
+DONE="FALSE"
+while test "$DONE" != "TRUE"
+do
+  echo " Enter path to where the production source is"
+  echo $EP1 " >> " $EP2
+  read PRODSRC
+  echo ""
+  
+  #  Check for valid answer - make sure the directory exists
+  if test "$PRODSRC" = ""
+  then 
+      echo " ...Exiting." 
+      exit 0
+  elif test ! -d $PRODSRC
+  then
+      echo " Production source path is: $PRODSRC" 
+      echo " Directory does not exist! Try again.( <CR> to exit )" 
+  else
+      DONE="TRUE"
+  fi
+done
+#  Find out what pieces of graphics to install
+DONE="FALSE"
+while test "$DONE" != "TRUE"
+do
+  echo " What would you like installed?"
+  echo "       1. All graphics"
+  echo "       2. Graphics procedure files"
+  echo "       3. Computer Dependent Routines"
+  echo "       4. CGI"
+  echo "       5. CGI devices"
+  echo "       6. Weasel"
+  echo "       7. Post Processor"
+  echo "       8. DISSPLA-CGI interface"
+  echo "       9. Test programs"
+  echo "      10. Help"
+  echo $EP1 " Enter all numbers that apply >> " $EP2
+  read ANS
+  
+  #    check for valid answer and set INSTALL variable
+  if test "$ANS" = ""
+  then
+    echo " ...Exiting." 
+    exit 0
+  else
+    DONE="TRUE"
+    INSTALL=""
+    LIST=""
+    for i in $ANS
+    do
+        case $i in
+        1)  INSTALL="graphics cdr cgi cgidev discgi post weasel test"  
+            LIST="All Graphics"
+            CGIDEV="TRUE" 
+            break ;;
+        2)  INSTALL="$INSTALL graphics" ; LIST="$LIST Procedures" ;;
+        3)  INSTALL="$INSTALL cdr" ; LIST="$LIST CDR" ;; 
+        4)  INSTALL="$INSTALL cgi" ; LIST="$LIST CGI" ;;
+        5)  INSTALL="$INSTALL cgidev"  
+            LIST="$LIST CGI devices"
+            CGIDEV="TRUE" ;;
+        6)  INSTALL="$INSTALL weasel" ; LIST="$LIST Weasel" ;;
+        7)  INSTALL="$INSTALL post" ; LIST="$LIST Post" ;;
+        8)  INSTALL="$INSTALL discgi" ; LIST="$LIST Disspla-CGI" ;;
+        9)  INSTALL="$INSTALL test" ; LIST="$LIST Test" ;;
+       10)  echo ""
+            echo "Graphics Procedure files:"
+            echo "  Files which define environment variables" \
+                 "necessary for running graphics."
+            echo ""
+            echo "Computer Dependent Routines:"
+            echo "  Low level computer dependent graphics routines."\
+                 "These routines must"
+            echo "  be installed with CGI, Weasel, and Post."
+            echo ""
+            echo "CGI:"
+            echo "  Computer Graphics Interface routines. CGI must be" \
+                 "installed with"
+            echo "  CGI devices, Weasel, Post, and Discgi."
+            echo ""
+            echo "CGI devices:"
+            echo "  Computer Graphics Interface device drivers. You" \
+                 "may enter or be"
+            echo "  prompted for which devices you would like installed." \
+                 "At least"
+            echo "  one device must be installed with Weasel, Post, and Discgi." 
+            echo ""
+            echo "Weasel:"
+            echo "  A simple XY plotting package. Computer Dependent" \
+                 "routines, CGI, and"
+            echo "  a least one CGI device must be installed with Weasel."
+            echo ""
+            echo "Post Processor:"
+            echo "  Utility for post processing metafiles generated" \
+                 "with CGI device"
+            echo "  'met' . Computer dependent routines, CGI and, at" \
+                 "least one CGI "
+            echo "  device must be installed with Post."
+            echo ""
+            echo "DISSPLA-CGI interface:"
+            echo "  Routines necessary for running DISSPLA with CGI" \
+                 "devices.  Note that"
+            echo "  DISSPLA can be run without CGI devices.  Computer" \
+                 "dependent routines,"
+            echo "  CGI and at least one CGI device must be installed" \
+                 "with DISCGI."
+            echo ""
+            echo "Test programs:"
+            echo "  Test programs are provided to test your graphics" \
+                 "installation."
+            echo ""
+            echo $EP1 " Hit any key to continue >> " $EP2
+            read ANS1
+            DONE="FALSE"  ;;
+        *)  DONE="FALSE"
+            echo ""
+           echo " Invalid answer: $i. Try again. ( <CR> to exit )" 
+        esac
+    done 
+
+    # Double check choices:
+    if test "$DONE" != "FALSE"
+    then 
+      echo " Installing: $LIST"
+      echo $EP1 " OK? [Y] >> " $EP2
+      read ANS1
+      ANS2=`echo $ANS1 | tr "[a-z]" "[A-Z]"`
+      if test "$ANS2" = "N" || test "$ANS2" = "NO" 
+      then
+         DONE="FALSE"
+      fi
+    fi
+  fi
+done
+
+#  If chose cgi devices, ask which ones
+if test "$CGIDEV"
+then
+  DONE="FALSE"
+  while test "$DONE" != "TRUE"
+  do
+    echo " "
+    echo " Which CGI devices would you like?"
+    echo "       1. None"
+    echo "       2. All devices"
+    echo "       3. Let me enter a list"
+    echo "       4. Prompt me"
+    echo $EP1 " Enter number >> " $EP2
+    read ANS
+  
+    #  Check for valid answer 
+    if test "$ANS" = ""
+    then
+      echo " ...Exiting." 
+      exit 0
+    else
+  
+      #  Process dev stuff based on answer and set DEVLIST variable
+      DONE="TRUE"
+      DEVLIST=""
+      case $ANS in
+      1)  echo " Not installing any devices."
+          DEVLIST="" ;;
+  
+      2)  echo " Installing all devices."
+          TEMP=`ls $PRODSRC/cgi/makefile.*`
+          for i in $TEMP
+          do
+            DEV=`echo $i | awk 'BEGIN{ FS="."} {print $2}'` 
+            if test "$DEV" != "cgi"
+            then 
+               DEVLIST="$DEVLIST $DEV"
+            fi
+          done ;;
+  
+      3)  echo " Enter three letter device codes ( <CR> = done )"
+          DONE="FALSE"
+          while test "$DONE" != "TRUE"
+          do
+            echo $EP1 " >> " $EP2
+            read ANS1
+            if test "$ANS1" = ""
+            then
+              DONE=TRUE
+            else
+              # make sure device code is in lower case
+              ANS2=`echo $ANS1 | tr "[A-Z]" "[a-z]"`  
+
+              # check that this is a valid device
+              if test ! -s $PRODSRC/cgi/makefile.$ANS2
+              then
+                 echo "Invalid device choice: $ANS1" 
+              else
+                 DEVLIST="$DEVLIST $ANS2"
+              fi
+            fi
+          done ;;
+  
+      4)  echo " Prompting for possible devices. Enter y/n/quit."
+          TEMP=`ls $PRODSRC/cgi/makefile.*`
+          for i in $TEMP
+          do
+            DEV=`echo $i | awk 'BEGIN{ FS="."} {print $2}'` 
+            if test "$DEV" != "cgi"
+            then 
+              echo $EP1 " $DEV? [y] >> " $EP2
+              read ANS1
+              ANS2=`echo $ANS1 | tr "[a-z]" "[A-Z]"`
+              if test "$ANS2" = "QUIT" || test "$ANS2" = "Q"
+              then 
+                break
+              else
+                if test "$ANS2" != "N" && test "$ANS2" != "NO"
+                then
+                  DEVLIST="$DEVLIST $DEV"
+                fi
+              fi
+            fi
+          done ;;
+  
+      *) DONE="FALSE"
+         echo "" 
+         echo " Invalid answer: $ANS. Try again. ( <CR> to exit )" ;;
+      esac
+    fi
+  done
+fi
+ 
+#  Do the install
+echo "Beginning Installation of Graphics"
+
+#  Make a temporary directory  (TMPDIR is defined above)
+mkdir $TMPDIR 
+
+#  Loop thru all options in INSTALL list, and process
+for i in $INSTALL
+do  
+  case $i in
+
+  graphics)
+     echo "Installing procedures"
+     (cd $PRODSRC/graphics; tar cf - . | (cd $TMPDIR; tar xf -) )
+     (cd $TMPDIR ; make -f makefile.grx $DEBUG "SYSTEM=$SYSTEM" "CDEFS=$CDEFS" "RANLIB=$RANLIB")
+     if test -d $TMPDIR/doc 
+     then mv -f $TMPDIR/doc/* $ROOTDIR/doc 
+     fi
+     if test -d $TMPDIR/man 
+     then mv -f $TMPDIR/man/* $ROOTDIR/man 
+     fi
+     rm -f -r $TMPDIR/*
+     ;;
+
+  cdr)
+     echo "Installing cdr"
+     (cd $PRODSRC/cdr/unix; tar cf - . | (cd $TMPDIR; tar xf -) )
+     (cd $TMPDIR; make -f makefile.cdr $DEBUG "SYSTEM=$SYSTEM" "CDEFS=$CDEFS" "RANLIB=$RANLIB")
+     if test -d $TMPDIR/doc
+     then mv -f $TMPDIR/doc/* $ROOTDIR/doc
+     fi
+     if test -d $TMPDIR/man
+     then mv -f $TMPDIR/man/* $ROOTDIR/man
+     fi
+     rm -f -r $TMPDIR/*
+     ;;
+
+  cgi)
+     echo "Installing cgi"
+     (cd $PRODSRC/cgi; tar cf - *cgi* | (cd $TMPDIR; tar xf -) )
+     (cd $PRODSRC/cgi; tar cf - man | (cd $TMPDIR; tar xf -) )
+     (cd $TMPDIR; make -f makefile.cgi $DEBUG "SYSTEM=$SYSTEM" "CDEFS=$CDEFS" "RANLIB=$RANLIB")
+     mv -f $TMPDIR/cgi.$SYSTEM $ROOTDIR/bin/cgi 
+     chmod +x $ROOTDIR/bin/cgi
+     if test -d $TMPDIR/doc
+     then mv -f $TMPDIR/doc/* $ROOTDIR/doc
+     fi
+     if test -d $TMPDIR/man
+     then mv -f $TMPDIR/man/* $ROOTDIR/man
+     fi
+     rm -f -r $TMPDIR/*
+     ;;
+
+  cgidev)
+     cd $TMPDIR
+       for j in $DEVLIST
+       do
+         echo Installing device: $j
+         (cd $PRODSRC/cgi; tar cf - "$j"_* | (cd $TMPDIR; tar xf -) )
+         cp $PRODSRC/cgi/makefile.$j $TMPDIR
+	 if test "$j" = "x11" 
+         then 
+           make -f makefile.$j  $DEBUG "SYSTEM=$SYSTEM" X11INCLUDE=$X11INCLUDE "CDEFS=$CDEFS" "RANLIB=$RANLIB"
+	 else
+           make -f makefile.$j  $DEBUG "SYSTEM=$SYSTEM" "CDEFS=$CDEFS" "RANLIB=$RANLIB"
+         fi
+       done
+     cd $ROOTDIR
+     rm -f -r $TMPDIR/*
+     ;;
+
+  discgi)
+     echo "Installing discgi"
+     (cd $PRODSRC/disspla; tar cf - . | (cd $TMPDIR; tar xf -) )
+     (cd $TMPDIR; make -f makefile.diss $DEBUG "SYSTEM=$SYSTEM" "CDEFS=$CDEFS" "RANLIB=$RANLIB")
+     mv -f $TMPDIR/diss.$SYSTEM $ROOTDIR/bin/diss 
+     chmod +x $ROOTDIR/bin/diss
+     if test -d $TMPDIR/doc
+     then mv -f $TMPDIR/doc/* $ROOTDIR/doc
+     fi
+     if test -d $TMPDIR/man
+     then mv -f $TMPDIR/man/* $ROOTDIR/man
+     fi
+     rm -f -r $TMPDIR/*
+     ;;
+      
+  post)
+     echo "Installing post"
+     (cd $PRODSRC/post; tar cf - . | (cd $TMPDIR; tar xf -) )
+     (cd $TMPDIR; make -f makefile.post $DEBUG "SYSTEM=$SYSTEM" "CDEFS=$CDEFS" "RANLIB=$RANLIB") 
+     mv -f $TMPDIR/post.$SYSTEM $ROOTDIR/bin/post 
+     chmod +x $ROOTDIR/bin/post
+     if test -d $TMPDIR/doc
+     then mv -f $TMPDIR/doc/* $ROOTDIR/doc
+     fi
+     if test -d $TMPDIR/man
+     then mv -f $TMPDIR/man/* $ROOTDIR/man
+     fi
+     rm -f -r $TMPDIR/*
+     ;;
+      
+  test)
+     echo "Installing test"
+     if test ! -d $ROOTDIR/test ; \
+     then mkdir $ROOTDIR/test ; \
+     fi
+     (cd $PRODSRC/test; tar cf - . | (cd $TMPDIR; tar xf -) )
+     (cd $TMPDIR; make -f makefile.test $DEBUG "SYSTEM=$SYSTEM" "CDEFS=$CDEFS"  "RANLIB=$RANLIB")
+     if test -d $TMPDIR/doc ; \
+     then mv -f $TMPDIR/doc/* $ROOTDIR/doc ; \
+     fi
+     if test -d $TMPDIR/man ; \
+     then mv -f $TMPDIR/man/* $ROOTDIR/man ; \
+     fi
+     rm -f -r $TMPDIR/*
+     ;;
+
+  weasel)
+     echo "Installing weasel"
+     (cd $PRODSRC/weasel; tar cf - . | (cd $TMPDIR; tar xf -) )
+     (cd $TMPDIR; make -f makefile.wsl $DEBUG "SYSTEM=$SYSTEM" "CDEFS=$CDEFS"  "RANLIB=$RANLIB")
+     mv -f $TMPDIR/wsl.$SYSTEM $ROOTDIR/bin/wsl 
+     chmod +x $ROOTDIR/bin/wsl
+     if test -d $TMPDIR/doc
+     then mv -f $TMPDIR/doc/* $ROOTDIR/doc
+     fi
+     if test -d $TMPDIR/man
+     then mv -f $TMPDIR/man/* $ROOTDIR/man
+     fi
+     rm -f -r $TMPDIR/*
+     ;;
+
+   *)
+     echo "Unknown install choice"   # should never get here
+     exit
+     ;;
+
+  esac
+done
+
+#  Clean up the temporary directory
+echo "Cleaning up"
+if test -d $TMPDIR
+then rm -f -r $TMPDIR
+fi
+
+#  All done with installation
+echo ""
+echo "Graphics installation complete."
+echo ""
+echo "If this is your first installation: "
+echo "  1. To install man pages, see Readme in `pwd`/man. "
+echo "  2. Once man pages are installed, see man graphics for"
+echo "     instructions on usage."
+echo ""

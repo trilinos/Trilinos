@@ -56,6 +56,9 @@ std::string Utils::trimWhiteSpace( const std::string& str )
 {
   typedef std::string::size_type size_type;
   const size_type len = str.length();
+  if (len==0) {
+      return str;
+    }
   size_type first_non_white = 0;
   for(
     first_non_white = 0 ;

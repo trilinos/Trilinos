@@ -202,12 +202,13 @@ FieldBase * FieldRepository::declare_field(
 
 void FieldRepository::verify_and_clean_restrictions(
     const char       * arg_method ,
+    const Part& superset, const Part& subset,
     const PartVector & arg_all_parts )
 {
   TraceIf("stk::mesh::impl::FieldRepository::verify_and_clean_restrictions", LOG_FIELD);
 
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
-    (*f)->m_impl.verify_and_clean_restrictions( arg_method , arg_all_parts );
+    (*f)->m_impl.verify_and_clean_restrictions( arg_method, superset, subset, arg_all_parts );
   }
 }
 

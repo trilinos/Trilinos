@@ -1,0 +1,22 @@
+      COMMON /XYOPT/  DOGRID, LINTYP, ISYTYP, OVERLY, OVERTM
+      LOGICAL DOGRID, OVERLY, OVERTM
+      COMMON /XYOPC/  LABSID, IAXSCA
+      CHARACTER*8 LABSID, IAXSCA
+C      --DOGRID - true iff grid lines will be drawn on plot
+C      --LINTYP - the line to be drawn for the curves
+C      --   0 = no line
+C      --  -n = vary line type
+C      --  +n = line line n (1=solid)
+C      --ISYTYP - the symbol to be drawn for the curves
+C      --   0 = no symbols
+C      --  -n = vary symbol
+C      --  +n = fixed symbol n
+C      --LABSID - the curve numbering flag
+C      --   'NONE'     = no numbering
+C      --   'FIRST'    = number at first point
+C      --   'MIDDLE'   = number at middle point
+C      --   'LAST'     = number at last point
+C      --OVERLY - true iff all curves in a set will be on the same frame
+C      --OVERLY - true iff all curves in a set will be on the same frame
+C      --IAXSCA - the curve scaling type (see IXSCAL of /XYLIM/)
+

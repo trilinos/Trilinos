@@ -1,0 +1,13 @@
+      COMMON /DBNUMG/ NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL, LNPSDF
+C   --   NUMNPS - the number of node sets
+C   --   LNPSNL - the length of the node sets node list
+C   --   NUMESS - the number of side sets
+C   --   LESSEL - the length of the side sets element list
+C   --   LESSNL - the length of the side sets node list
+C   --   LNPSDF - the length of the side set distribution list
+
+      COMMON /DBNUMQ/ EXODUS, NQAREC, NINFO
+      LOGICAL EXODUS
+C   --   EXODUS - true iff EXODUS versus GENESIS database
+C   --   NQAREC - the number of QA records
+C   --   NINFO - the number of information records

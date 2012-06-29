@@ -19,86 +19,86 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
 namespace stk {
-  namespace mesh {
-    class MetaData;
-    class BulkData;
-  }
-  
-  namespace io {
-    namespace util {
+namespace mesh {
+class MetaData;
+class BulkData;
+}
 
-      struct GearFields {
+namespace io {
+namespace util {
 
-	enum { SpatialDimension = 3 };
+struct GearFields {
 
-	typedef stk::mesh::Field<double,stk::mesh::Cartesian>            CartesianField ;
-	typedef stk::mesh::Field<double,stk::mesh::Cylindrical>          CylindricalField ;
+  enum { SpatialDimension = 3 };
 
-	CylindricalField & gear_coord ;
-	CartesianField   & model_coord ;
+  typedef stk::mesh::Field<double,stk::mesh::Cartesian>            CartesianField ;
+  typedef stk::mesh::Field<double,stk::mesh::Cylindrical>          CylindricalField ;
 
-	GearFields( stk::mesh::MetaData & S );
-	GearFields( stk::mesh::fem::FEMMetaData & S );
+  CylindricalField & gear_coord ;
+  CartesianField   & model_coord ;
 
-      private:
-	GearFields();
-	GearFields( const GearFields & );
-	GearFields & operator = ( const GearFields & );
-      };
+  GearFields( stk::mesh::MetaData & S );
+  GearFields( stk::mesh::fem::FEMMetaData & S );
 
-      class Gear {
-      public:
-	Gear( stk::mesh::fem::FEMMetaData & S ,
-	      const std::string & name ,
-	      const GearFields & gear_fields ,
-	      const double   center[] ,
-	      const double   rad_min ,
-	      const double   rad_max ,
-	      const size_t   rad_num ,
-	      const double   z_min ,
-	      const double   z_max ,
-	      const size_t   z_num ,
-	      const size_t   angle_num ,
-	      const int      turn_direction );
+private:
+  GearFields();
+  GearFields( const GearFields & );
+  GearFields & operator = ( const GearFields & );
+};
 
-	void mesh( stk::mesh::BulkData &M );
-	void turn( double turn_angle ) const ;
+class Gear {
+public:
+  Gear( stk::mesh::fem::FEMMetaData & S ,
+        const std::string & name ,
+        const GearFields & gear_fields ,
+        const double   center[] ,
+        const double   rad_min ,
+        const double   rad_max ,
+        const size_t   rad_num ,
+        const double   z_min ,
+        const double   z_max ,
+        const size_t   z_num ,
+        const size_t   angle_num ,
+        const int      turn_direction );
 
-	stk::mesh::fem::FEMMetaData *m_mesh_fem_meta_data ;
-	stk::mesh::MetaData & m_mesh_meta_data ;
-	stk::mesh::BulkData * m_mesh ;
-	stk::mesh::Part & m_gear ;
-	stk::mesh::Part & m_surf ;
-	const GearFields::CylindricalField  & m_gear_coord ;
-	const GearFields::CartesianField    & m_model_coord ;
+  void mesh( stk::mesh::BulkData &M );
+  void turn( double turn_angle ) const ;
 
-      private:
+  stk::mesh::fem::FEMMetaData *m_mesh_fem_meta_data ;
+  stk::mesh::MetaData & m_mesh_meta_data ;
+  stk::mesh::BulkData * m_mesh ;
+  stk::mesh::Part & m_gear ;
+  stk::mesh::Part & m_surf ;
+  const GearFields::CylindricalField  & m_gear_coord ;
+  const GearFields::CartesianField    & m_model_coord ;
 
-	Gear( const Gear & );
-	Gear & operator = ( const Gear & );
+private:
 
-	double m_center[3] ;
-	double m_z_min ;
-	double m_z_max ;
-	double m_z_inc ;
-	double m_rad_min ;
-	double m_rad_max ;
-	double m_rad_inc ;
-	double m_ang_inc ;
-	size_t m_rad_num ;
-	size_t m_z_num ;
-	size_t m_angle_num ;
-	int    m_turn_dir ;
+  Gear( const Gear & );
+  Gear & operator = ( const Gear & );
 
-	stk::mesh::Entity &create_node( const std::vector<stk::mesh::Part*> &parts ,
-					stk::mesh::EntityId node_id_base ,
-					size_t iz ,
-					size_t ir ,
-					size_t ia ) const ;
-      };
+  double m_center[3] ;
+  double m_z_min ;
+  double m_z_max ;
+  double m_z_inc ;
+  double m_rad_min ;
+  double m_rad_max ;
+  double m_rad_inc ;
+  double m_ang_inc ;
+  size_t m_rad_num ;
+  size_t m_z_num ;
+  size_t m_angle_num ;
+  int    m_turn_dir ;
 
-    }
-  }
+  stk::mesh::Entity &create_node( const std::vector<stk::mesh::Part*> &parts ,
+                                  stk::mesh::EntityId node_id_base ,
+                                  size_t iz ,
+                                  size_t ir ,
+                                  size_t ia ) const ;
+};
+
+}
+}
 }
 
 #endif

@@ -36,6 +36,13 @@
 #define SEACAS_Internals_h
 
 #include <vector>
+#include <smart_assert.h>               // for SMART_ASSERT
+extern "C" {
+#define NO_NETCDF_2
+#include <netcdf.h>
+#include <exodusII.h>
+#include <exodusII_int.h>
+}
 
   /*!
    * This set of classes provides a thin wrapper around the exodusII
@@ -69,59 +76,68 @@
    * <li> ne_put_cmap_params(),
    * </ul>
    */
+
 namespace Excn {
   class Mesh;
   class Block;
-  class NodeSet;
-  class SideSet;
+  template <typename INT>class NodeSet;
+  template <typename INT>class SideSet;
   class CommunicationMetaData;
   
   class Redefine
+  {
+  public:
+    explicit Redefine(int exoid);
+    ~Redefine();
+
+  private:
+    int exodusFilePtr;
+  };
+
+  template <typename INT>
+    class Internals
     {
     public:
-      explicit Redefine(int exoid);
-      ~Redefine();
+      Internals(int exoid, int maximum_name_length)
+	: exodusFilePtr(exoid),
+	nodeMapVarID(),
+	elementMapVarID(),
+	commIndexVar(0),
+	elemCommIndexVar(0),
+	maximumNameLength(maximum_name_length)
+	  {}
+
+	int write_meta_data(const Mesh &mesh,
+			    const std::vector<Block>   &blocks,
+			    const std::vector<NodeSet<INT> > &nodesets,
+			    const std::vector<SideSet<INT> > &sidesets,
+			    const CommunicationMetaData &comm);
+
+	bool check_meta_data(const Mesh &mesh,
+			     const std::vector<Block>   &blocks,
+			     const std::vector<NodeSet<INT> > &nodesets,
+			     const std::vector<SideSet<INT> > &sidesets,
+			     const CommunicationMetaData &comm);
 
     private:
-      int exodusFilePtr;
-    };
+	int put_metadata(const Mesh &mesh,
+			 const CommunicationMetaData &comm);
+	int put_metadata(const std::vector<Block> &blocks);
+	int put_metadata(const std::vector<NodeSet<INT> > &nodesets);
+	int put_metadata(const std::vector<SideSet<INT> > &sidesets);
 
-  class Internals
-    {
-    public:
-      explicit Internals(int exoid, int maximum_name_length);
+	int put_non_define_data(const Mesh &mesh,
+				const CommunicationMetaData &comm);
+	int put_non_define_data(const std::vector<Block> &blocks);
+	int put_non_define_data(const std::vector<NodeSet<INT> > &nodesets);
+	int put_non_define_data(const std::vector<SideSet<INT> > &sidesets);
 
-      int write_meta_data(const Mesh &mesh,
-			  const std::vector<Block>   &blocks,
-			  const std::vector<NodeSet> &nodesets,
-			  const std::vector<SideSet> &sidesets,
-			  const CommunicationMetaData &comm);
-
-      bool check_meta_data(const Mesh &mesh,
-			   const std::vector<Block>   &blocks,
-			   const std::vector<NodeSet> &nodesets,
-			   const std::vector<SideSet> &sidesets,
-			   const CommunicationMetaData &comm);
-
-    private:
-      int put_metadata(const Mesh &mesh,
-		       const CommunicationMetaData &comm);
-      int put_metadata(const std::vector<Block> &blocks);
-      int put_metadata(const std::vector<NodeSet> &nodesets);
-      int put_metadata(const std::vector<SideSet> &sidesets);
-
-      int put_non_define_data(const Mesh &mesh,
-			      const CommunicationMetaData &comm);
-      int put_non_define_data(const std::vector<Block> &blocks);
-      int put_non_define_data(const std::vector<NodeSet> &nodesets);
-      int put_non_define_data(const std::vector<SideSet> &sidesets);
-
-      int exodusFilePtr;
-      int nodeMapVarID[3];
-      int elementMapVarID[2];
-      int commIndexVar;
-      int elemCommIndexVar;
-      int maximumNameLength; 
+	int exodusFilePtr;
+	int nodeMapVarID[3];
+	int elementMapVarID[2];
+	int commIndexVar;
+	int elemCommIndexVar;
+	int maximumNameLength; 
     };
 }
 #endif /* SEACAS_Internals_h */

@@ -53,14 +53,16 @@ namespace Iogn {
 
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
 				       Ioss::DatabaseUsage db_usage,
-				       MPI_Comm communicator) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator); }
+				       MPI_Comm communicator,
+				       const Ioss::PropertyManager &properties) const
+  { return new DatabaseIO(NULL, filename, db_usage, communicator, properties); }
 
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
 			 Ioss::DatabaseUsage db_usage,
-			 MPI_Comm communicator) :
-    Ioss::DatabaseIO(region, filename, db_usage, communicator), 
+			 MPI_Comm communicator,
+			 const Ioss::PropertyManager &properties) :
+    Ioss::DatabaseIO(region, filename, db_usage, communicator, properties), 
     m_generatedMesh(NULL),  spatialDimension(3), nodeCount(0),
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
@@ -122,7 +124,7 @@ namespace Iogn {
     return true;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
+  int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
@@ -134,19 +136,25 @@ namespace Iogn {
 	if (field.get_name() == "mesh_model_coordinates") {
 	  // Cast 'data' to correct size -- double
 	  double *rdata = static_cast<double*>(data);
-	  std::vector<double> xyz(3*num_to_get);
-	  m_generatedMesh->coordinates(xyz);
-	  std::copy(xyz.begin(), xyz.end(), rdata);
+	  m_generatedMesh->coordinates(rdata);
 	}
 
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this node block
 	  // (1...node_count) to global node ids.
 	  const Ioss::MapContainer &map = get_node_map();
-	  int *ids = static_cast<int*>(data);
-	  
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ids[i] = map[1 + i];
+	  if (field.is_type(Ioss::Field::INTEGER)) {
+	    int *ids = static_cast<int*>(data);
+	    
+	    for (size_t i=0; i < num_to_get; i++) {
+	      ids[i] = map[1 + i];
+	    }
+	  } else {
+	    int64_t *ids = static_cast<int64_t*>(data);
+	    
+	    for (size_t i=0; i < num_to_get; i++) {
+	      ids[i] = map[1 + i];
+	    }
 	  }
 	}
 	else if (field.get_name() == "connectivity") {
@@ -166,53 +174,53 @@ namespace Iogn {
     return num_to_get;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::Region* /* reg */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::Region* /* reg */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
+  int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
 
-      int id = eb->get_property("id").get_int();
-      int element_count = eb->get_property("entity_count").get_int();
+      int64_t id = eb->get_property("id").get_int();
+      int64_t element_count = eb->get_property("entity_count").get_int();
       Ioss::Field::RoleType role = field.get_role();
 
       if (role == Ioss::Field::MESH) {
 	// Handle the MESH fields required for an ExodusII file model.
 	// (The 'genesis' portion)
 
-	if (field.get_name() == "connectivity") {
+	if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
 	  assert(field.raw_storage()->component_count() == m_generatedMesh->topology_type(id).second);
 
 	  // The generated mesh connectivity is returned in a vector.  Ids are global
-	  std::vector<int> connectivity;
-	  m_generatedMesh->connectivity(id, connectivity);
-	  int *connect = static_cast<int*>(data);
-	  std::copy(connectivity.begin(), connectivity.end(), connect);
-	}
-	else if (field.get_name() == "connectivity_raw") {
-	  assert(field.raw_storage()->component_count() == m_generatedMesh->topology_type(id).second);
-
-	  // The generated mesh connectivity is returned in a vector.  Ids are global
-	  std::vector<int> connectivity;
-	  m_generatedMesh->connectivity(id, connectivity);
-	  int *connect = static_cast<int*>(data);
-	  std::copy(connectivity.begin(), connectivity.end(), connect);
+	  if (field.is_type(Ioss::Field::INTEGER)) {
+	    int *connect = static_cast<int*>(data);
+	    m_generatedMesh->connectivity(id, connect);
+	  } else {
+	    int64_t *connect = static_cast<int64_t*>(data);
+	    m_generatedMesh->connectivity(id, connect);
+	  }
 	}
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this element block
 	  // (eb_offset+1...eb_offset+1+element_count) to global element ids.
 	  const Ioss::MapContainer &map = get_element_map();
-	  int eb_offset = eb->get_offset();
-	  int *ids = static_cast<int*>(data);
-
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ids[i] = map[eb_offset + 1 + i];
+	  int64_t eb_offset = eb->get_offset();
+	  if (field.is_type(Ioss::Field::INTEGER)) {
+	    int *ids = static_cast<int*>(data);
+	    for (size_t i=0; i < num_to_get; i++) {
+	      ids[i] = map[eb_offset + 1 + i];
+	    }
+	  } else {
+	    int64_t*ids = static_cast<int64_t*>(data);
+	    for (size_t i=0; i < num_to_get; i++) {
+	      ids[i] = map[eb_offset + 1 + i];
+	    }
 	  }
 	}
 	else {
@@ -249,14 +257,14 @@ namespace Iogn {
     return num_to_get;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::SideBlock* ef_blk,
+  int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock* ef_blk,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
 
-      int id = ef_blk->get_property("id").get_int();
+      int64_t id = ef_blk->get_property("id").get_int();
       size_t entity_count = ef_blk->get_property("entity_count").get_int();
       if (num_to_get != entity_count) {
 	std::ostringstream errmsg;
@@ -273,33 +281,49 @@ namespace Iogn {
 	  // element side (1-based) The side id is: side_id =
 	  // 10*element_id + local_side_number This assumes that all
 	  // sides in a sideset are boundary sides.
-	  std::vector<int> elem_side;
+	  std::vector<int64_t> elem_side;
 	  m_generatedMesh->sideset_elem_sides(id, elem_side);
-	  int *ids = static_cast<int*>(data);
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ids[i] = 10 * elem_side[2*i+0] + elem_side[2*i+1] + 1;
+	  if (field.is_type(Ioss::Field::INTEGER)) {
+	    int *ids = static_cast<int*>(data);
+	    for (size_t i=0; i < num_to_get; i++) {
+	      ids[i] = 10 * elem_side[2*i+0] + elem_side[2*i+1] + 1;
+	    }
+	  } else {
+	    int64_t *ids = static_cast<int64_t*>(data);
+	    for (size_t i=0; i < num_to_get; i++) {
+	      ids[i] = 10 * elem_side[2*i+0] + elem_side[2*i+1] + 1;
+	    }
 	  }
 	}
 
-	else if (field.get_name() == "element_side") {
+	else if (field.get_name() == "element_side" ||
+		 field.get_name() == "element_side_raw") {
 	  // Since we only have a single array, we need to allocate an extra
 	  // array to store all of the data.  Note also that the element_id
 	  // is the global id but only the local id is stored so we need to
 	  // map from local_to_global prior to generating the side id...
 
-	  std::vector<int> elem_side;
+	  std::vector<int64_t> elem_side;
 	  m_generatedMesh->sideset_elem_sides(id, elem_side);
 
-	  int *element_side = static_cast<int*>(data);
-	  for (size_t i=0; i < num_to_get; i++) {
-	    element_side[2*i+0] = elem_side[2*i+0];
-	    element_side[2*i+1] = elem_side[2*i+1] + 1;
+	  if (field.is_type(Ioss::Field::INTEGER)) {
+	    int *element_side = static_cast<int*>(data);
+	    for (size_t i=0; i < num_to_get; i++) {
+	      element_side[2*i+0] = elem_side[2*i+0];
+	      element_side[2*i+1] = elem_side[2*i+1] + 1;
+	    }
+	  } else {
+	    int64_t *element_side = static_cast<int64_t*>(data);
+	    for (size_t i=0; i < num_to_get; i++) {
+	      element_side[2*i+0] = elem_side[2*i+0];
+	      element_side[2*i+1] = elem_side[2*i+1] + 1;
+	    }
 	  }
 	}
 
 	else if (field.get_name() == "distribution_factors") {
 	  double *dist_fact = static_cast<double*>(data);
-	  int comp_count = ef_blk->get_field("distribution_factors").transformed_storage()->component_count();
+	  size_t comp_count = ef_blk->get_field("distribution_factors").transformed_storage()->component_count();
 	  for (size_t i=0; i < num_to_get * comp_count; i++) {
 	    dist_fact[i] = 1.0;
 	  }
@@ -315,22 +339,28 @@ namespace Iogn {
     return num_to_get;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::NodeSet* ns,
+  int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet* ns,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
 
-      int id = ns->get_property("id").get_int();
+      int64_t id = ns->get_property("id").get_int();
       Ioss::Field::RoleType role = field.get_role();
       if (role == Ioss::Field::MESH) {
 
-	if (field.get_name() == "ids") {
-	  std::vector<int> nodes;
+	if (field.get_name() == "ids" ||
+	    field.get_name() == "ids_raw") {
+	  std::vector<int64_t> nodes;
 	  m_generatedMesh->nodeset_nodes(id, nodes);
-	  int *ids = static_cast<int*>(data);
-	  std::copy(nodes.begin(), nodes.end(), ids);
+	  if (field.is_type(Ioss::Field::INTEGER)) {
+	    int *ids = static_cast<int*>(data);
+	    std::copy(nodes.begin(), nodes.end(), ids);
+	  } else {
+	    int64_t *ids = static_cast<int64_t*>(data);
+	    std::copy(nodes.begin(), nodes.end(), ids);
+	  }
 	} else if (field.get_name() == "distribution_factors") {
 	  double *rdata = static_cast<double*>(data);
 	  for (size_t i=0; i < num_to_get; i++)
@@ -345,38 +375,38 @@ namespace Iogn {
     return num_to_get;
   }
     
-  int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* fs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* fs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* fs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::ElementSet* /* fs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::ElementSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
+  int64_t DatabaseIO::get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
@@ -392,17 +422,27 @@ namespace Iogn {
 
 	if (type == "node") {
 	  // Allocate temporary storage space
-	  Ioss::IntVector entities(num_to_get);
+	  Ioss::Int64Vector entities(num_to_get);
 	  Ioss::IntVector procs(num_to_get);
 	  m_generatedMesh->node_communication_map(entities, procs);
 	  
 	  // and store in 'data' ...
-	  int* entity_proc = static_cast<int*>(data);
-	  
-	  size_t j=0;
-	  for (size_t i=0; i < entity_count; i++) {
-	    entity_proc[j++] = entities[i];
-	    entity_proc[j++] = procs[i];
+	  if (field.is_type(Ioss::Field::INTEGER)) {
+	    int* entity_proc = static_cast<int*>(data);
+	    
+	    size_t j=0;
+	    for (size_t i=0; i < entity_count; i++) {
+	      entity_proc[j++] = entities[i];
+	      entity_proc[j++] = procs[i];
+	    }
+	  } else {
+	    int64_t* entity_proc = static_cast<int64_t*>(data);
+	    
+	    size_t j=0;
+	    for (size_t i=0; i < entity_count; i++) {
+	      entity_proc[j++] = entities[i];
+	      entity_proc[j++] = procs[i];
+	    }
 	  }
 	} else {
 	  std::ostringstream errmsg;
@@ -410,6 +450,8 @@ namespace Iogn {
 	  IOSS_ERROR(errmsg);
 	}
 
+      } else if (field.get_name() == "ids") {
+	// Do nothing, just handles an idiosyncracy of the GroupingEntity
       } else {
 	num_to_get = Ioss::Utils::field_warning(cs, field, "input");
       }
@@ -418,18 +460,18 @@ namespace Iogn {
   }
 
   // Input only database -- these will never be called...
-  int DatabaseIO::put_field_internal(const Ioss::Region*,      const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::ElementBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::FaceBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::NodeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::ElementSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::FaceSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::EdgeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::NodeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::SideSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::SideBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::CommSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::Region*,      const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::SideSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::CommSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
 
   const Ioss::MapContainer& DatabaseIO::get_node_map() const
   {
@@ -439,7 +481,7 @@ namespace Iogn {
       nodeMap.resize(nodeCount+1);
 
       if (is_input()) {
-	std::vector<int> map;
+	std::vector<int64_t> map;
 	m_generatedMesh->node_map(map);
 
 	// Map needed for Ioss starts at position 1 since the
@@ -449,7 +491,7 @@ namespace Iogn {
 	// Check for sequential node map.
 	// If not, build the reverse G2L node map...
 	sequentialNG2L = true;
-	for (int i=1; i < nodeCount+1; i++) {
+	for (int64_t i=1; i < nodeCount+1; i++) {
 	  if (i != nodeMap[i]) {
 	    sequentialNG2L = false;
 	    nodeMap[0] = 1;
@@ -469,7 +511,7 @@ namespace Iogn {
 
       } else {
 	// Output database; nodeMap not set yet... Build a default map.
-	for (int i=1; i < nodeCount+1; i++) {
+	for (int64_t i=1; i < nodeCount+1; i++) {
 	  nodeMap[i] = i;
 	}
 	// Sequential map
@@ -488,7 +530,7 @@ namespace Iogn {
       elementMap.resize(elementCount+1);
 
       if (is_input()) {
-	std::vector<int> map;
+	std::vector<int64_t> map;
 	m_generatedMesh->element_map(map);
 
 	// Map needed for Ioss starts at position 1 since the
@@ -498,7 +540,7 @@ namespace Iogn {
 	// Check for sequential element map.
 	// If not, build the reverse G2L element map...
 	sequentialEG2L = true;
-	for (int i=1; i < elementCount+1; i++) {
+	for (int64_t i=1; i < elementCount+1; i++) {
 	  if (i != elementMap[i]) {
 	    sequentialEG2L = false;
 	    elementMap[0] = 1;
@@ -518,7 +560,7 @@ namespace Iogn {
 
       } else {
 	// Output database; elementMap not set yet... Build a default map.
-	for (int i=1; i < elementCount+1; i++) {
+	for (int64_t i=1; i < elementCount+1; i++) {
 	  elementMap[i] = i;
 	}
 	// Sequential map
@@ -561,12 +603,12 @@ namespace Iogn {
       
       // Maintain block order on output database...
       block->property_add(Ioss::Property("original_block_order", i));
-      block->property_add(Ioss::Property("global_entity_count", (int)m_generatedMesh->element_count(i+1)));
+      block->property_add(Ioss::Property("global_entity_count", (int64_t)m_generatedMesh->element_count(i+1)));
       
       int attribute_count = i == 0 ? 0 : 1;
       if (attribute_count > 0) {
 	block->field_add(Ioss::Field("thickness", Ioss::Field::REAL, "scalar", Ioss::Field::ATTRIBUTE,
-				     (int)m_generatedMesh->element_count_proc(i+1)));
+				     (int64_t)m_generatedMesh->element_count_proc(i+1)));
       }
       
       get_region()->add(block);
@@ -589,7 +631,7 @@ namespace Iogn {
 
     // Get nodeset metadata
     for (int ins = 0; ins < nodesetCount; ins++) {
-      int number_nodes = m_generatedMesh->nodeset_node_count_proc(ins+1);
+      int64_t number_nodes = m_generatedMesh->nodeset_node_count_proc(ins+1);
       
       std::string name = Ioss::Utils::encode_entity_name("nodelist", ins+1);
       Ioss::NodeSet *nodeset = new Ioss::NodeSet(this, name, number_nodes);
@@ -611,7 +653,7 @@ namespace Iogn {
       std::string ef_block_name = name + "_quad4";
       std::string side_topo_name = "quad4";
       std::string elem_topo_name = "unknown";
-      int number_faces = m_generatedMesh->sideset_side_count_proc(ifs+1);
+      int64_t number_faces = m_generatedMesh->sideset_side_count_proc(ifs+1);
 
       Ioss::SideBlock *ef_block = new Ioss::SideBlock(this, ef_block_name,
 						      side_topo_name,

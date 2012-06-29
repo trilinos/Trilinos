@@ -40,7 +40,10 @@
 #include <string>
 #include <cstring>
 
+typedef int64_t entity_id;
+
 namespace Ioss {
+  
   class NodeBlock;
   class EdgeBlock;
   class FaceBlock;
@@ -106,9 +109,9 @@ namespace Ioex {
     bool operator!=(const NodeBlock& other) const {return !(*this == other);}
 
     std::string name;
-    int id;
-    int entityCount;
-    int attributeCount;
+    entity_id id;
+    int64_t entityCount;
+    int64_t attributeCount;
     private:
   };
 
@@ -136,10 +139,10 @@ namespace Ioex {
 
     char elType[MAX_STR_LENGTH+1];
     std::string name;
-    int id;
-    int entityCount;
-    int nodesPerEntity;
-    int attributeCount;
+    entity_id id;
+    int64_t entityCount;
+    int64_t nodesPerEntity;
+    int64_t attributeCount;
     private:
   };
 
@@ -168,11 +171,11 @@ namespace Ioex {
 
     char elType[MAX_STR_LENGTH+1];
     std::string name;
-    int id;
-    int entityCount;
-    int nodesPerEntity;
-    int edgesPerEntity;
-    int attributeCount;
+    entity_id id;
+    int64_t entityCount;
+    int64_t nodesPerEntity;
+    int64_t edgesPerEntity;
+    int64_t attributeCount;
     private:
   };
 
@@ -205,13 +208,13 @@ namespace Ioex {
 
     char elType[MAX_STR_LENGTH+1];
     std::string name;
-    int id;
-    int entityCount;
-    int nodesPerEntity;
-    int edgesPerEntity;
-    int facesPerEntity;
-    int attributeCount;
-    int offset_;
+    entity_id id;
+    int64_t entityCount;
+    int64_t nodesPerEntity;
+    int64_t edgesPerEntity;
+    int64_t facesPerEntity;
+    int64_t attributeCount;
+    int64_t offset_;
     private:
   };
 
@@ -225,10 +228,10 @@ namespace Ioex {
     bool operator!=(const NodeSet& other) const {return !(*this == other);}
 
     std::string name;
-    int id;
-    int entityCount;
-    int attributeCount;
-    int dfCount;
+    entity_id id;
+    int64_t entityCount;
+    int64_t attributeCount;
+    int64_t dfCount;
   };
 
   struct EdgeSet
@@ -241,10 +244,10 @@ namespace Ioex {
     bool operator!=(const EdgeSet& other) const {return !(*this == other);}
 
     std::string name;
-    int id;
-    int entityCount;
-    int attributeCount;
-    int dfCount;
+    entity_id id;
+    int64_t entityCount;
+    int64_t attributeCount;
+    int64_t dfCount;
   };
 
   struct FaceSet
@@ -257,10 +260,10 @@ namespace Ioex {
     bool operator!=(const FaceSet& other) const {return !(*this == other);}
 
     std::string name;
-    int id;
-    int entityCount;
-    int attributeCount;
-    int dfCount;
+    entity_id id;
+    int64_t entityCount;
+    int64_t attributeCount;
+    int64_t dfCount;
   };
 
   struct ElemSet
@@ -273,10 +276,10 @@ namespace Ioex {
     bool operator!=(const ElemSet& other) const {return !(*this == other);}
 
     std::string name;
-    int id;
-    int entityCount;
-    int attributeCount;
-    int dfCount;
+    entity_id id;
+    int64_t entityCount;
+    int64_t attributeCount;
+    int64_t dfCount;
   };
 
   struct SideSet
@@ -288,20 +291,20 @@ namespace Ioex {
     bool operator!=(const SideSet& other) const {return !(*this == other);}
 
     std::string name;
-    int id;
-    int sideCount;
-    int dfCount;
+    entity_id id;
+    int64_t sideCount;
+    int64_t dfCount;
   };
 
   struct CommunicationMap
   {
     CommunicationMap() : id(0), entityCount(0), type('U') {}
-    CommunicationMap(int the_id, int count, char the_type) :
+    CommunicationMap(entity_id the_id, int64_t count, char the_type) :
       id(the_id), entityCount(count), type(the_type) {}
     bool operator==(const CommunicationMap&) const;
     bool operator!=(const CommunicationMap& other) const {return !(*this == other);}
-    int id;
-    int entityCount;
+    entity_id id;
+    int64_t entityCount;
     char type; // 'n' for node, 'e' for element
   };
 
@@ -309,21 +312,25 @@ namespace Ioex {
   {
     CommunicationMetaData() : processorId(0), processorCount(0),
 			      globalNodes(0), globalElements(0),
+			      globalElementBlocks(0), globalNodeSets(0), globalSideSets(0),
 			      nodesInternal(0), nodesBorder(0), nodesExternal(0),
-			      elementsInternal(0), elementsBorder(0) {}
+			      elementsInternal(0), elementsBorder(0), outputNemesis(false) {}
 
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
     int processorId;
     int processorCount;
-    int globalNodes;
-    int globalElements;
-    int nodesInternal;
-    int nodesBorder;
-    int nodesExternal;
-    int elementsInternal;
-    int elementsBorder;
-
+    int64_t globalNodes;
+    int64_t globalElements;
+    int64_t globalElementBlocks;
+    int64_t globalNodeSets;
+    int64_t globalSideSets;
+    int64_t nodesInternal;
+    int64_t nodesBorder;
+    int64_t nodesExternal;
+    int64_t elementsInternal;
+    int64_t elementsBorder;
+    bool    outputNemesis;
     private:
     CommunicationMetaData(const CommunicationMetaData &);
   };

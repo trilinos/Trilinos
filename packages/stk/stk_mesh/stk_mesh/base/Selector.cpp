@@ -27,17 +27,6 @@ Selector::Selector( )
 }
 
 
-Selector::~Selector( )
-{ }
-
-
-// Deep copy
-Selector::Selector( const Selector & selector )
-  : m_mesh_meta_data(selector.m_mesh_meta_data), m_op(selector.m_op)
-{
-}
-
-
 Selector::Selector( const Part & p )
   : m_mesh_meta_data( & MetaData::get(p) ) , m_op()
 {
@@ -64,12 +53,17 @@ Selector & Selector::complement()
   return *this;
 }
 
+bool Selector::operator()( const Bucket & candidate ) const
+{ return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals(), PartOrdLess() ); }
 
-Selector & Selector::operator = ( const Selector & B )
+bool Selector::operator()( const Bucket * candidate ) const{
+  return operator()(*candidate);
+}
+
+bool Selector::operator()( const Entity & candidate ) const
 {
-  this->m_mesh_meta_data = B.m_mesh_meta_data;
-  this->m_op = B.m_op;
-  return *this;
+  const Bucket & b = candidate.bucket();
+  return this->operator()(b);
 }
 
 Selector & Selector::operator &= ( const Selector & B )
@@ -77,7 +71,7 @@ Selector & Selector::operator &= ( const Selector & B )
   if (m_mesh_meta_data == 0) {
     m_mesh_meta_data = B.m_mesh_meta_data;
   }
-  verify_compatible( B );
+
   m_op.insert( m_op.end() , B.m_op.begin() , B.m_op.end() );
   return *this;
 }
@@ -88,7 +82,6 @@ Selector & Selector::operator |= ( const Selector & B )
   if (m_mesh_meta_data == 0) {
     m_mesh_meta_data = B.m_mesh_meta_data;
   }
-  verify_compatible( B );
 
   Selector notB = B; notB.complement();
 
@@ -134,70 +127,6 @@ Selector & Selector::operator |= ( const Selector & B )
   }
 
   return *this;
-}
-
-
-void Selector::verify_compatible( const Selector & B ) const
-{
-  ThrowErrorMsgIf( B.m_mesh_meta_data != m_mesh_meta_data,
-      "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data <<
-      "\nSelector = " << B << " has mesh meta data pointer = " << B.m_mesh_meta_data <<
-      "\nThese selectors contain incompatible mesh meta data pointers!" );
-}
-
-
-void Selector::verify_compatible( const Bucket & B ) const
-{
-  const MetaData * B_mesh_meta_data = & MetaData::get(B);
-  ThrowErrorMsgIf( B_mesh_meta_data != m_mesh_meta_data,
-      "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data <<
-      "\nBucket has mesh meta data pointer = " << B_mesh_meta_data <<
-      "\nThis selector is incompatible with this bucket!" );
-}
-
-
-bool Selector::apply(
-    unsigned part_id,
-    const Bucket & candidate
-    ) const
-{
-  // Search for 'part_id' in the bucket's list of sorted integer part ids
-  return has_superset(candidate,part_id);
-}
-
-bool Selector::apply(
-    std::vector<OpType>::const_iterator i,
-    std::vector<OpType>::const_iterator j,
-    const Bucket & candidate
-    ) const
-{
-  bool result = i != j ;
-  while ( result && i != j ) {
-    if ( i->m_count ) { // Compound statement
-      result = i->m_unary ^ apply( i + 1 , i + i->m_count , candidate );
-      i += i->m_count ;
-    }
-    else { // Test for containment of bucket in this part, or not in
-      result = i->m_unary ^ apply( i->m_part_id , candidate );
-      ++i ;
-    }
-  }
-  return result ;
-}
-
-
-bool Selector::operator()( const Bucket & candidate ) const
-{
-  if (m_mesh_meta_data != NULL) {
-    verify_compatible(candidate);
-  }
-  return apply( m_op.begin() , m_op.end() , candidate );
-}
-
-bool Selector::operator()( const Entity & candidate ) const
-{
-  const Bucket & b = candidate.bucket();
-  return this->operator()(b);
 }
 
 Selector operator & ( const Part & A , const Part & B )
@@ -355,6 +284,12 @@ Selector selectField( const FieldBase& field )
   for(size_t i=0; i<rvec.size(); ++i) {
     selector |= meta.get_part(rvec[i].part_ordinal());
   }
+
+  const FieldRestrictionVector& sel_rvec = field.selector_restrictions();
+  for(size_t i=0; i<sel_rvec.size(); ++i) {
+    selector |= sel_rvec[i].selector();
+  }
+
   return selector;
 }
 

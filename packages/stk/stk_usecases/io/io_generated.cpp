@@ -38,7 +38,10 @@ namespace {
               size_t dimension,
 	      const std::string &working_directory,
 	      const std::string &filename,
-	      const std::string &type);
+	      const std::string &type,
+	      int  compression_level,
+	      bool compression_shuffle,
+	      int  db_integer_size);
 }
 
 namespace bopt = boost::program_options;
@@ -49,6 +52,9 @@ int main(int argc, char** argv)
   std::string mesh = "";
   std::string type = "exodusii";
   size_t spatial_dimension = 3;
+  int compression_level = 0;
+  bool compression_shuffle = false;
+  int db_integer_size = 4;
 
 
   //----------------------------------
@@ -61,7 +67,11 @@ int main(int argc, char** argv)
      "working directory with trailing '/'" )
     ("mesh",          bopt::value<std::string>(&mesh),
      "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'" )
-    ("dimension", bopt::value<size_t>(&spatial_dimension), "problem spatial dimension" );
+    ("dimension", bopt::value<size_t>(&spatial_dimension), "problem spatial dimension" )
+    ("compression_level", bopt::value<int>(&compression_level), "compression level [1..9] to use" )
+    ("shuffle", bopt::value<bool>(&compression_shuffle), "use shuffle filter prior to compressing data" )
+    ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
+    
 
   stk::get_options_description().add(desc);
 
@@ -79,7 +89,8 @@ int main(int argc, char** argv)
     type = "generated";
   }
   driver(use_case_environment.m_comm, spatial_dimension,
-	 working_directory, mesh, type);
+	 working_directory, mesh, type,
+	 compression_level, compression_shuffle, db_integer_size);
 
   return 0;
 }
@@ -89,7 +100,10 @@ namespace {
               size_t spatial_dimension,
 	      const std::string &working_directory,
 	      const std::string &filename,
-	      const std::string &type)
+	      const std::string &type,
+	      int  compression_level,
+	      bool compression_shuffle,
+	      int  db_integer_size)
   {
 
     // Initialize IO system.  Registers all element types and storage
@@ -100,6 +114,22 @@ namespace {
     stk::mesh::MetaData &meta_data = fem_meta_data.get_meta_data( fem_meta_data );
     stk::io::MeshData mesh_data;
 
+    bool use_netcdf4 = false;
+    if (compression_level > 0) {
+      mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
+      use_netcdf4 = true;
+    }
+    if (compression_shuffle) {
+      mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_SHUFFLE", 1));
+      use_netcdf4 = true;
+    }
+    if (use_netcdf4) {
+      mesh_data.m_property_manager.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+    }
+    if (db_integer_size == 8) {
+      mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
+    }
+      
     std::string file = working_directory;
     file += filename;
     stk::io::create_input_mesh(type, file, comm, fem_meta_data, mesh_data);

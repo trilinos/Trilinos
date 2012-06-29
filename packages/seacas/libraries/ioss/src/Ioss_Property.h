@@ -35,6 +35,7 @@
 
 #include <Ioss_CodeTypes.h>
 #include <string>
+#include <stdint.h>
 
 namespace Ioss {
   class GroupingEntity;
@@ -48,7 +49,9 @@ namespace Ioss {
     Property(const std::string &name, const BasicType type,
 		  const VariableType storage, void *data,
 		  bool is_implicit = false);
-    Property(const std::string &name, const int    value,
+    Property(const std::string &name, const int64_t  value,
+		  bool is_implicit = false);
+    Property(const std::string &name, const int      value,
 		  bool is_implicit = false);
     Property(const std::string &name, const double   value,
 		  bool is_implicit = false);
@@ -65,15 +68,10 @@ namespace Ioss {
 
     ~Property();
 
-    bool get_value(int    *value) const;
-    bool get_value(double   *value) const;
-    bool get_value(std::string *value) const;
-    bool get_value(void   *&value) const;
-
     std::string get_string()  const;
-    int    get_int()     const;
+    int64_t  get_int()     const;
     double   get_real()    const;
-    void*  get_pointer() const;
+    void*    get_pointer() const;
 
     bool is_implicit() const {return isImplicit_;}
     bool is_explicit() const {return !isImplicit_;}
@@ -89,6 +87,11 @@ namespace Ioss {
     BasicType       type_;
     VariableType    storage_;
 
+    bool get_value(int64_t *value) const;
+    bool get_value(double  *value) const;
+    bool get_value(std::string *value) const;
+    bool get_value(void   *&value) const;
+
     // True if property is calculated rather than stored.
     // False if property is stored in 'data_'
     bool            isImplicit_;
@@ -100,7 +103,7 @@ namespace Ioss {
       void*   pval;
       const GroupingEntity *ge;
       double    rval;
-      int     ival;
+      int64_t   ival;
     };
     Data data_;
   };

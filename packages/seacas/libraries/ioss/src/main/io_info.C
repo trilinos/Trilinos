@@ -64,6 +64,8 @@
 #include "Ioss_SideSet.h"
 #include "Ioss_VariableType.h"
 
+#include "info_interface.h"
+
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
@@ -81,32 +83,20 @@ namespace {
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
-  struct Globals
-  {
-    bool summary;
-    bool check_node_status;
-    bool compute_element_volume;
-    double maximum_time;
-    double minimum_time;
-    int  surface_split_type;
-    char field_suffix_separator;
-    std::string working_directory;
-  };
-
   void show_usage(const std::string &prog);
   void show_step(int istep, double time);
 
-  void info_nodeblock(Ioss::Region &region, const Globals &options);
+  void info_nodeblock(Ioss::Region &region, const Info::Interface &interface, bool summary);
   void info_edgeblock(Ioss::Region &region, bool summary);
   void info_faceblock(Ioss::Region &region, bool summary);
-  void info_elementblock(Ioss::Region &region, bool summary);
+  void info_elementblock(Ioss::Region &region, const Info::Interface &interface, bool summary);
 
   void info_nodesets(Ioss::Region &region, bool summary);
   void info_edgesets(Ioss::Region &region, bool summary);
   void info_facesets(Ioss::Region &region, bool summary);
   void info_elementsets(Ioss::Region &region, bool summary);
 
-  void info_sidesets(Ioss::Region &region, bool summary);
+  void info_sidesets(Ioss::Region &region, const Info::Interface &interface, bool summary);
   void info_commsets(Ioss::Region &region, bool summary);
 
   void info_fields(Ioss::GroupingEntity *ige,
@@ -123,14 +113,14 @@ namespace {
 				const std::string &field_name);
 
   void file_info(const std::string& inpfile, const std::string& input_type,
-		 Globals& globals);
+		 Info::Interface& interface);
 
   std::string name(Ioss::GroupingEntity *entity) {
-    return entity->type_string() + " " + entity->name();
+    return entity->type_string() + " '" + entity->name() + "'";
   }
 
-  int id(Ioss::GroupingEntity *entity) {
-    int id = -1;
+  int64_t id(Ioss::GroupingEntity *entity) {
+    int64_t id = -1;
     if (entity->property_exists("id")) {
       id = entity->get_property("id").get_int();
     }
@@ -154,17 +144,11 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
   
+  Info::Interface interface;
+  interface.parse_options(argc, argv);
+  
   std::string in_type = "exodusII";
 
-  Globals globals;
-
-  globals.maximum_time = 0.0;
-  globals.minimum_time = 0.0;
-  globals.surface_split_type = 1;
-  globals.check_node_status = false;
-  globals.compute_element_volume = false;
-  globals.field_suffix_separator = '_';
-  
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
   if (ind != std::string::npos)
@@ -175,75 +159,10 @@ int main(int argc, char *argv[])
   Ioxf::Initializer ioxf;
 #endif
 
-  // Skip past any options...
-  int i=1;
-  while (i < argc && argv[i][0] == '-') {
-    if (std::strcmp("-h", argv[i]) == 0 ||
-	std::strcmp("--help", argv[i]) == 0) {
-      show_usage(codename);
-      exit(0);
-    }
-    else if (std::strcmp("--directory", argv[i]) == 0 ||
-	std::strcmp("-d", argv[i]) == 0) {
-      i++;
-      globals.working_directory = argv[i++];
-    }
-    else if (std::strcmp("--in_type", argv[i]) == 0) {
-      i++;
-      in_type = argv[i++];
-    }
-    else if (std::strcmp("--Field_Suffix_Separator", argv[i]) == 0) {
-      i++;
-      globals.field_suffix_separator = argv[i++][0];
-      if (globals.field_suffix_separator == '0')
-	globals.field_suffix_separator = '\0';
-    }
-    else if (std::strcmp("--Maximum_Time", argv[i]) == 0) {
-      i++;
-      globals.maximum_time = std::strtod(argv[i++], NULL);
-    }
-    else if (std::strcmp("--Minimum_Time", argv[i]) == 0) {
-      i++;
-      globals.minimum_time = std::strtod(argv[i++], NULL);
-    }
-    else if (std::strcmp("--Surface_Split_Scheme", argv[i]) == 0) {
-      i++;
-      char *split_scheme = argv[i++];
-      if (std::strcmp(split_scheme, "TOPOLOGY") == 0)
-	globals.surface_split_type = 1;
-      else if (std::strcmp(split_scheme, "ELEMENT_BLOCK") == 0)
-	globals.surface_split_type = 2;
-      else if (std::strcmp(split_scheme, "NO_SPLIT") == 0)
-	globals.surface_split_type = 3;
-    }
-
-    else if (std::strcmp("--Node_Status", argv[i]) == 0) {
-      i++;
-      globals.check_node_status = true;
-    }
-
-    else if (std::strcmp("--Compute_Volume", argv[i]) == 0) {
-      i++;
-      globals.compute_element_volume = true;
-    }
-
-    // Found an option.  See if it has an argument...
-    else if (i+1 < argc && argv[i+1][0] == '-') {
-      // No argument, another option
-      i++;
-    } else {
-      // Skip the argument...
-      i += 2;
-    }
-  }
-
-  // Last argument is the filename...
-  std::string in_file   = Ioss::Utils::local_filename(argv[argc-1], in_type, globals.working_directory);
-
-  OUTPUT << "Input:    '" << in_file  << "', Type: " << in_type  << '\n';
+  OUTPUT << "Input:    '" << interface.filename()  << "', Type: " << interface.type()  << '\n';
   OUTPUT << '\n';
 
-  file_info(in_file, in_type, globals);
+  file_info(interface.filename(), interface.type(), interface);
 
   OUTPUT << "\n" << codename << " execution successful.\n";
 #ifdef HAVE_MPI
@@ -253,22 +172,6 @@ int main(int argc, char *argv[])
 }
 
 namespace {
-  void show_usage(const std::string &prog)
-  {
-    OUTPUT << "\nUSAGE: " << prog << " input_database\n";
-    OUTPUT << "       version: " << version << "\n\n";
-    OUTPUT << "Options: --Node_Status --Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT}\n"
-	   << "         --Maximum_Time <t> --Minimum_Time <t> --Field_Suffix_Separator <char>\n"
-	   << "         --Compute_Volume --directory <dir> --in_type <db_type>\n";
-    Ioss::NameList db_types;
-    Ioss::IOFactory::describe(&db_types);
-    OUTPUT << "\nSupports database types:\n\t";
-    for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-      OUTPUT << *IF << "  ";
-    }
-    OUTPUT << "\n\n";
-  }
-
   void element_volume(Ioss::Region &region)
   {
     std::vector<double> coordinates;
@@ -285,7 +188,7 @@ namespace {
     }
   }
 
-  void file_info(const std::string& inpfile, const std::string& input_type, Globals& globals)
+  void file_info(const std::string& inpfile, const std::string& input_type, Info::Interface& interface)
   {
     //========================================================================
     // INPUT ...
@@ -297,28 +200,30 @@ namespace {
       std::exit(EXIT_FAILURE);
     }
 
-    dbi->set_surface_split_type(Ioss::int_to_surface_split(globals.surface_split_type));
-    dbi->set_field_separator(globals.field_suffix_separator);
+    dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
+    dbi->set_field_separator(interface.field_suffix_separator());
     dbi->set_node_global_id_backward_compatibility(false);
+    if (interface.ints_64_bit())
+      dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
 
     // Get all properties of input database...
-    globals.summary = true;
+    bool summary = true;
     info_properties(&region);
-    info_nodeblock(region,    globals);
-    info_edgeblock(region,    globals.summary);
-    info_faceblock(region,    globals.summary);
-    info_elementblock(region, globals.summary);
+    info_nodeblock(region,    interface, summary);
+    info_edgeblock(region,    summary);
+    info_faceblock(region,    summary);
+    info_elementblock(region, interface, summary);
 
-    info_nodesets(region,     globals.summary);
-    info_edgesets(region,     globals.summary);
-    info_facesets(region,     globals.summary);
-    info_elementsets(region,  globals.summary);
+    info_nodesets(region,     summary);
+    info_edgesets(region,     summary);
+    info_facesets(region,     summary);
+    info_elementsets(region,  summary);
 
-    info_sidesets(region,     globals.summary);
-    info_commsets(region,     globals.summary);
+    info_sidesets(region,     interface, summary);
+    info_commsets(region,     summary);
 
     if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
       std::pair<int, double> state_time_max = region.get_max_time();
@@ -329,37 +234,39 @@ namespace {
 	     << "    Maximum time = " << state_time_max.second << " at step " << state_time_max.first << "\n\n";
     }
 
-    globals.summary = false;
-    info_properties(&region);
-    info_nodeblock(region,    globals);
-    info_edgeblock(region,    globals.summary);
-    info_faceblock(region,    globals.summary);
-    info_elementblock(region, globals.summary);
-
-    info_nodesets(region,     globals.summary);
-    info_edgesets(region,     globals.summary);
-    info_facesets(region,     globals.summary);
-    info_elementsets(region,  globals.summary);
-
-    info_sidesets(region,     globals.summary);
-    info_commsets(region,     globals.summary);
-
-    if (globals.compute_element_volume) {
+    if (!interface.summary()) {
+      summary = false;
+      info_properties(&region);
+      info_nodeblock(region,    interface, summary);
+      info_edgeblock(region,    summary);
+      info_faceblock(region,    summary);
+      info_elementblock(region, interface, summary);
+      
+      info_nodesets(region,     summary);
+      info_edgesets(region,     summary);
+      info_facesets(region,     summary);
+      info_elementsets(region,  summary);
+      
+      info_sidesets(region,     interface, summary);
+      info_commsets(region,     summary);
+    }
+    
+    if (interface.compute_volume()) {
       element_volume(region);
     }
   }
 
 
-  void info_nodeblock(Ioss::Region &region, const Globals &options)
+  void info_nodeblock(Ioss::Region &region, const Info::Interface &interface, bool summary)
   {
     Ioss::NodeBlockContainer    nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i = nbs.begin();
     while (i != nbs.end()) {
       //      std::string name      = (*i)->name();
-      int    num_nodes = (*i)->get_property("entity_count").get_int();
-      int    degree    = (*i)->get_property("component_degree").get_int();
-      int    num_attrib= (*i)->get_property("attribute_count").get_int();
-      if (options.summary) {
+      int64_t    num_nodes = (*i)->get_property("entity_count").get_int();
+      int64_t    degree    = (*i)->get_property("component_degree").get_int();
+      int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
+      if (summary) {
 	OUTPUT << " Number of spatial dimensions =" << std::setw(12) << degree << "\n";
 	OUTPUT << " Number of nodeblocks         =" << std::setw(12) << 1 << "\t";
 	OUTPUT << " Number of nodes            =" << std::setw(12) << num_nodes << "\n";
@@ -367,9 +274,9 @@ namespace {
 	OUTPUT << '\n' << name(*i) 
 	       << std::setw(12) << num_nodes << " nodes, "
 	       << std::setw(3) << num_attrib << " attributes.\n";
-	if (options.check_node_status) {
+	if (interface.check_node_status()) {
 	  std::vector<char> node_status;
-	  std::vector<int>  ids;
+	  std::vector<int64_t>  ids;
 	  (*i)->get_field_data("node_connectivity_status", node_status);
 	  (*i)->get_field_data("ids", ids);
 	  bool header = false;
@@ -393,32 +300,34 @@ namespace {
     }
   }
 
-  void info_elementblock(Ioss::Region &region, bool summary)
+  void info_elementblock(Ioss::Region &region, const Info::Interface &interface, bool summary)
   {
     Ioss::ElementBlockContainer ebs = region.get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i = ebs.begin();
-    int total_elements = 0;
+    int64_t total_elements = 0;
     while (i != ebs.end()) {
-      int    num_elem  = (*i)->get_property("entity_count").get_int();
+      int64_t    num_elem  = (*i)->get_property("entity_count").get_int();
       total_elements += num_elem;
 
       if (!summary) {
 	std::string type      = (*i)->get_property("topology_type").get_string();
-	int    num_attrib= (*i)->get_property("attribute_count").get_int();
+	int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
 	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)
 	       << ", topology: " << std::setw(10) << type << ", "
 	       << std::setw(12) << num_elem << " elements, "
-	       << std::setw(3) << num_attrib << " attributes.\n";
+	       << std::setw(3) << num_attrib << " attributes.";
 
-	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
+	info_fields(*i, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
 
-	std::vector<std::string> blocks;
-	(*i)->get_block_adjacencies(blocks);
-	OUTPUT << "\tAdjacent to  " << blocks.size() << " element block(s):\t";
-	std::vector<std::string>::iterator b = blocks.begin();
-	while (b != blocks.end()) {
-	  OUTPUT << *b++ << "  ";
+	if (interface.adjacencies()) {
+	  std::vector<std::string> blocks;
+	  (*i)->get_block_adjacencies(blocks);
+	  OUTPUT << "\n\tAdjacent to  " << blocks.size() << " element block(s):\t";
+	  std::vector<std::string>::iterator b = blocks.begin();
+	  while (b != blocks.end()) {
+	    OUTPUT << *b++ << "  ";
+	  }
 	}
 	info_fields(*i, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
 	OUTPUT << "\n";
@@ -437,14 +346,14 @@ namespace {
   {
     Ioss::EdgeBlockContainer ebs = region.get_edge_blocks();
     Ioss::EdgeBlockContainer::const_iterator i = ebs.begin();
-    int total_edges = 0;
+    int64_t total_edges = 0;
     while (i != ebs.end()) {
-      int    num_edge  = (*i)->get_property("entity_count").get_int();
+      int64_t    num_edge  = (*i)->get_property("entity_count").get_int();
       total_edges += num_edge;
 
       if (!summary) {
 	std::string type      = (*i)->get_property("topology_type").get_string();
-	int    num_attrib= (*i)->get_property("attribute_count").get_int();
+	int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
 	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)
 	       << ", topology: " << std::setw(10) << type << ", "
@@ -479,14 +388,14 @@ namespace {
   {
     Ioss::FaceBlockContainer ebs = region.get_face_blocks();
     Ioss::FaceBlockContainer::const_iterator i = ebs.begin();
-    int total_faces = 0;
+    int64_t total_faces = 0;
     while (i != ebs.end()) {
-      int    num_face  = (*i)->get_property("entity_count").get_int();
+      int64_t    num_face  = (*i)->get_property("entity_count").get_int();
       total_faces += num_face;
 
       if (!summary) {
 	std::string type      = (*i)->get_property("topology_type").get_string();
-	int    num_attrib= (*i)->get_property("attribute_count").get_int();
+	int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
 	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)
 	       << ", topology: " << std::setw(10) << type << ", "
@@ -517,29 +426,34 @@ namespace {
 
   }
 
-  void info_sidesets(Ioss::Region &region, bool summary)
+  void info_sidesets(Ioss::Region &region, const Info::Interface &interface, bool summary)
   {
     Ioss::SideSetContainer      fss = region.get_sidesets();
     Ioss::SideSetContainer::const_iterator i = fss.begin();
-    int total_sides = 0;
+    int64_t total_sides = 0;
     while (i != fss.end()) {
       if (!summary) {
-	std::vector<std::string> blocks;
-	(*i)->block_membership(blocks);
 	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
-	       << " id: " << std::setw(6)<< id(*i) << ":\n";
-	OUTPUT << "\tTouches " << blocks.size() << " element block(s):\t";
-	std::vector<std::string>::iterator b = blocks.begin();
-	while (b != blocks.end()) {
-	  OUTPUT << *b++ << "  ";
+	       << " id: " << std::setw(6)<< id(*i) << ":";
+	if (interface.adjacencies()) {
+	  std::vector<std::string> blocks;
+	  (*i)->block_membership(blocks);
+	  OUTPUT << "\n\tTouches " << blocks.size() << " element block(s):\t";
+	  std::vector<std::string>::iterator b = blocks.begin();
+	  while (b != blocks.end()) {
+	    OUTPUT << *b++ << "  ";
+	  }
+	  OUTPUT << "\n";
 	}
+      }
+      if (!summary) {
 	OUTPUT << "\n\tContains: \n";
       }
-
+      
       Ioss::SideBlockContainer fbs = (*i)->get_side_blocks();
       Ioss::SideBlockContainer::const_iterator j = fbs.begin();
       while (j != fbs.end()) {
-	int    num_side  = (*j)->get_property("entity_count").get_int();
+	int64_t    num_side  = (*j)->get_property("entity_count").get_int();
 	if (!summary) {
 	  std::string fbtype    = (*j)->get_property("topology_type").get_string();
 	  std::string partype   = (*j)->get_property("parent_topology_type").get_string();
@@ -549,35 +463,40 @@ namespace {
 		 << num_side << " " << fbtype << " sides"
 		 << ", parent topology: " << partype 
 		 << "\n";
-	  std::vector<std::string> blocks;
-	  (*j)->block_membership(blocks);
-	  OUTPUT << "\t\t\tTouches " << blocks.size() << " element block(s):\t";
-	  std::vector<std::string>::iterator b = blocks.begin();
-	  while (b != blocks.end()) {
-	    OUTPUT << *b++ << "  ";
+	  if (interface.adjacencies()) {
+	    std::vector<std::string> blocks;
+	    (*j)->block_membership(blocks);
+	    OUTPUT << "\t\t\tTouches " << blocks.size() << " element block(s):\t";
+	    std::vector<std::string>::iterator b = blocks.begin();
+	    while (b != blocks.end()) {
+	      OUTPUT << *b++ << "  ";
+	    }
+	    OUTPUT << "\n";
 	  }
 	  OUTPUT << "\n";
-	  info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient:  ");
+	  info_fields(*j, Ioss::Field::ATTRIBUTE, "\t\tAttributes: ");
+	  info_fields(*j, Ioss::Field::TRANSIENT, "\t\tTransient:  ");
 	}
 	total_sides += num_side;
 	++j;
       }
       ++i;
     }
+
     if (summary) {
-      OUTPUT << " Number of element side sets  =" << std::setw(12) << fss.size() << "\t";
+      OUTPUT << " Number of side sets          =" << std::setw(12) << fss.size() << "\t";
       OUTPUT << " Number of element sides    =" << std::setw(12) << total_sides << "\n";
     }
   }
-
+  
   void info_nodesets(Ioss::Region &region, bool summary)
   {
     Ioss::NodeSetContainer      nss = region.get_nodesets();
     Ioss::NodeSetContainer::const_iterator i = nss.begin();
-    int total_nodes = 0;
+    int64_t total_nodes = 0;
     while (i != nss.end()) {
-      int    count     = (*i)->get_property("entity_count").get_int();
-      int    num_attrib= (*i)->get_property("attribute_count").get_int();
+      int64_t    count     = (*i)->get_property("entity_count").get_int();
+      int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
       if (!summary) {
 	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
 	       << " id: " << std::setw(6) << id(*i)   << ", "
@@ -599,10 +518,10 @@ namespace {
   {
     Ioss::EdgeSetContainer      nss = region.get_edgesets();
     Ioss::EdgeSetContainer::const_iterator i = nss.begin();
-    int total_edges = 0;
+    int64_t total_edges = 0;
     while (i != nss.end()) {
-      int    count     = (*i)->get_property("entity_count").get_int();
-      int    num_attrib= (*i)->get_property("attribute_count").get_int();
+      int64_t    count     = (*i)->get_property("entity_count").get_int();
+      int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
       if (!summary) {
 	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
 	       << " id: " << std::setw(6) << id(*i)   << ", "
@@ -624,10 +543,10 @@ namespace {
   {
     Ioss::FaceSetContainer      nss = region.get_facesets();
     Ioss::FaceSetContainer::const_iterator i = nss.begin();
-    int total_faces = 0;
+    int64_t total_faces = 0;
     while (i != nss.end()) {
-      int    count     = (*i)->get_property("entity_count").get_int();
-      int    num_attrib= (*i)->get_property("attribute_count").get_int();
+      int64_t    count     = (*i)->get_property("entity_count").get_int();
+      int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
       if (!summary) {
 	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
 	       << " id: " << std::setw(6) << id(*i)   << ", "
@@ -649,9 +568,9 @@ namespace {
   {
     Ioss::ElementSetContainer      nss = region.get_elementsets();
     Ioss::ElementSetContainer::const_iterator i = nss.begin();
-    int total_elements = 0;
+    int64_t total_elements = 0;
     while (i != nss.end()) {
-      int    count     = (*i)->get_property("entity_count").get_int();
+      int64_t    count     = (*i)->get_property("entity_count").get_int();
       if (!summary) {
 	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
 	       << " id: " << std::setw(6) << id(*i)   << ", "

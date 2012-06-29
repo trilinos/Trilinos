@@ -49,17 +49,17 @@ Ioss::ElementSet::ElementSet()
 {}
 
 Ioss::ElementSet::ElementSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
-			     size_t number_elements)
+			     int64_t number_elements)
   : Ioss::EntitySet(io_database, my_name, number_elements)
 {}
 
-int Ioss::ElementSet::internal_get_field_data(const Ioss::Field& field,
+int64_t Ioss::ElementSet::internal_get_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::ElementSet::internal_put_field_data(const Ioss::Field& field,
+int64_t Ioss::ElementSet::internal_put_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);

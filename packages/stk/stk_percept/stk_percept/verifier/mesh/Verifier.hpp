@@ -41,7 +41,7 @@ namespace stk
     class Verifier
     {
     public:
-      Verifier() {}
+      Verifier() : printTable_opt(1), fullPrint_opt(0) {}
       void verify(int argc,  char** argv);
 
       void process_options(RunEnvironment& re);

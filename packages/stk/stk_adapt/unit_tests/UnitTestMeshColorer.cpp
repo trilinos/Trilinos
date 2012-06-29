@@ -69,16 +69,16 @@ STKUNIT_UNIT_TEST(mesh_colorer, test1)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 	
   percept::PerceptMesh eMesh(3u);
-  eMesh.newMesh(percept::GMeshSpec(config_mesh));
+  eMesh.new_mesh(percept::GMeshSpec(config_mesh));
   int vectorDimension = 0;
-  mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
+  mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
   eMesh.commit();
 
   std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
   Colorer meshColorer(mer);
   unsigned elementType = 0u;
   meshColorer.color(eMesh, &elementType, 0, element_color_field);
-  //eMesh.saveAs("./cube_colored.e");
+  //eMesh.save_as("./cube_colored.e");
 
   //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
         

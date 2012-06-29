@@ -32,7 +32,7 @@ namespace stk {
         URP<shards::ShellQuadrilateral<8>, shards::ShellQuadrilateral<8>  >(eMesh)
       {
 
-        if (m_eMesh.getSpatialDim() != 3)
+        if (m_eMesh.get_spatial_dim() != 3)
           {
             throw std::runtime_error("can't refine shell elements in 2D");
           }
@@ -44,7 +44,7 @@ namespace stk {
 #if EDGE_QU8_QU8_4_BREAKER
 
         //m_edge_breaker = Teuchos::rcp( new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) );
-        if (m_eMesh.getSpatialDim() == 3)
+        if (m_eMesh.get_spatial_dim() == 3)
           {
             m_edge_breaker = new UniformRefinerPattern<shards::ShellLine<3>, shards::ShellLine<3>, 2, SierraPort > (eMesh, block_names) ;
             m_face_breaker = new UniformRefinerPattern<shards::Quadrilateral<8>, shards::Quadrilateral<8>, 4, SierraPort > (eMesh, block_names) ;
@@ -64,7 +64,7 @@ namespace stk {
         EXCEPTWATCH;
         bp.resize(0);
 
-        if (eMesh.getSpatialDim() == 3)
+        if (eMesh.get_spatial_dim() == 3)
           {
             bp.push_back(this);
 #if EDGE_QU8_QU8_4_BREAKER
@@ -72,7 +72,7 @@ namespace stk {
             bp.push_back( m_edge_breaker);  
 #endif
           }
-        else if (eMesh.getSpatialDim() != 3)
+        else if (eMesh.get_spatial_dim() != 3)
           {
             // FIXME
              std::cout << "ERROR" ;
@@ -84,7 +84,7 @@ namespace stk {
       virtual void doBreak() {}
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
-        if (m_eMesh.getSpatialDim() == 2)
+        if (m_eMesh.get_spatial_dim() == 2)
           {
             throw std::runtime_error("ERROR in shell quad class fillNeededEntities");
           }

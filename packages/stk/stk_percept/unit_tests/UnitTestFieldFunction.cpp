@@ -37,7 +37,7 @@ namespace unit_tests {
 
 #define EXTRA_PRINT 0
 
-      static int printInfoLevel = 0;
+      static int print_infoLevel = 0;
 
 //=============================================================================
 //=============================================================================
@@ -49,19 +49,19 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_1_0_0)
 
   // start_demo_fieldFunction_1
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
+  eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
   eMesh.commit();
-  eMesh.printInfo("fieldFunction_demo_1_0_0",  printInfoLevel);
+  eMesh.print_info("fieldFunction_demo_1_0_0",  print_infoLevel);
 
   // the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  stk::mesh::FieldBase *f_coords = eMesh.getField("coordinates");
+  stk::mesh::FieldBase *f_coords = eMesh.get_field("coordinates");
 
   // create a field function from the existing coordinates field
   FieldFunction ff_coords("ff_coords", f_coords, eMesh, 3, 3);
 
   // here we could evaluate this field function
   double x=0.123, y=0.234, z=0.345, time=0.0;
-  evalVec3Print(x, y, z, time, ff_coords);
+  eval_vec3_print(x, y, z, time, ff_coords);
   // end_demo
 
 }
@@ -71,7 +71,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
   EXCEPTWATCH;
   // just reads a mesh file and prints some info about the meta data
 
-  bool printInfo = false;
+  bool print_info = false;
 
   const size_t num_x = 3;
   const size_t num_y = 3;
@@ -82,14 +82,14 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMeshReadOnly(GMeshSpec(config_mesh));
+  eMesh.new_mesh_read_only(GMeshSpec(config_mesh));
 
-  mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
+  mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
 
   const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
 
   unsigned nparts = parts.size();
-  if (printInfo) std::cout << "Number of parts = " << nparts << std::endl;
+  if (print_info) std::cout << "Number of parts = " << nparts << std::endl;
 
   // here's where we can add parts
   // ...
@@ -97,21 +97,21 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
 
   const stk::mesh::FieldVector & fields =  metaData.get_fields();
   unsigned nfields = fields.size();
-  if (printInfo)
+  if (print_info)
   {
     std::cout << "Number of fields = " << fields.size() << std::endl;
     for (unsigned ifld = 0; ifld < nfields; ifld++)
     {
       stk::mesh::FieldBase *field = fields[ifld];
-      if (printInfo) std::cout << "Field[" << ifld << "]= " << field->name() << " rank= " << field->rank() << std::endl;
-      if (printInfo) std::cout << *field << std::endl;
+      if (print_info) std::cout << "Field[" << ifld << "]= " << field->name() << " rank= " << field->rank() << std::endl;
+      if (print_info) std::cout << *field << std::endl;
       unsigned nfr = field->restrictions().size();
-      if (printInfo) std::cout << " number of field restrictions= " << nfr << std::endl;
+      if (print_info) std::cout << " number of field restrictions= " << nfr << std::endl;
       for (unsigned ifr = 0; ifr < nfr; ifr++)
       {
         const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
         mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
-        if (printInfo) std::cout << " field restriction " << ifr << " stride[0] = " << fr.dimension() <<
+        if (print_info) std::cout << " field restriction " << ifr << " stride[0] = " << fr.dimension() <<
                          " type= " << fr.entity_rank() << " ord= " << fr.part_ordinal() <<
                          " which corresponds to Part= " << frpart.name() << std::endl;
       }
@@ -169,18 +169,18 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_1)
 
   // start_demo_fieldFunction_1
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
+  eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
   eMesh.commit();
 
   // the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  stk::mesh::FieldBase *f_coords = eMesh.getField("coordinates");
+  stk::mesh::FieldBase *f_coords = eMesh.get_field("coordinates");
 
   // create a field function from the existing coordinates field
   FieldFunction ff_coords("ff_coords", f_coords, eMesh, 3, 3);
 
   // here we could evaluate this field function
   double x=0.123, y=0.234, z=0.345, time=0.0;
-  evalVec3Print(x, y, z, time, ff_coords);
+  eval_vec3_print(x, y, z, time, ff_coords);
   // end_demo
 
 }
@@ -191,23 +191,23 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_2)
 
   // start_demo_fieldFunction_2
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1")); // create a 3x3x3 hex mesh in the unit cube
+  eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1")); // create a 3x3x3 hex mesh in the unit cube
 
   // add a new field
   // NOTE: we have to create the fields here before committing the mesh
   int vectorDimension = 0;  // signifies a scalar field
-  eMesh.addField("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+  eMesh.add_field("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
 
   // the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  stk::mesh::FieldBase *f_coords = eMesh.getField("coordinates");
+  stk::mesh::FieldBase *f_coords = eMesh.get_field("coordinates");
 
   // get the new field created by PerceptMesh
-  stk::mesh::FieldBase* coords_mag_field = eMesh.getField("coords_mag_field");
+  stk::mesh::FieldBase* coords_mag_field = eMesh.get_field("coords_mag_field");
 
   // create a field function from the existing coordinates field
   FieldFunction ff_coords("ff_coords", f_coords, eMesh,  3, 3);
-  evalVec3Print(0.1,0.1,0.1,0.0, ff_coords);
+  eval_vec3_print(0.1,0.1,0.1,0.0, ff_coords);
 
   // create a StringFunction to define the magnitude of the coordinates
   StringFunction coords_mag_sf( "sqrt(x*x + y*y + z*z)" , Name("coords_mag_sf"), 3, 1);
@@ -223,13 +223,13 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_2)
   coords_mag_field_function.interpolateFrom(coords_mag_sf);
 
   // We can now write the model with the new coordinates magnitude field to an Exodus file
-  eMesh.saveAs("./cube_hex8_withCoordMag_out.e");
+  eMesh.save_as("./cube_hex8_withCoordMag_out.e");
   // end_demo
 
   // start_demo_fieldFunction_3
 
   // tell Percept that we want to refer to the ff_coords FieldFunction by a simple alias "mc"
-  ff_coords.addAlias("mc");
+  ff_coords.add_alias("mc");
 
   // define a new StringFunction that does the same thing as coords_mag_sf, evaluates the coordinate magnitudes
   StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), 3, 1);
@@ -251,20 +251,20 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(GMeshSpec(config_mesh));
+  eMesh.new_mesh(GMeshSpec(config_mesh));
   int vectorDimension = 0;  // signifies a scalar field
-  eMesh.addField("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+  eMesh.add_field("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
 
-  unsigned p_rank = eMesh.getBulkData()->parallel_rank();
-  //unsigned p_size = eMesh.getBulkData()->parallel_size();
+  unsigned p_rank = eMesh.get_bulk_data()->parallel_rank();
+  //unsigned p_size = eMesh.get_bulk_data()->parallel_size();
   Util::setRank(p_rank);
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  stk::mesh::FieldBase *f_coords = eMesh.getField("coordinates");
+  stk::mesh::FieldBase *f_coords = eMesh.get_field("coordinates");
 
   /// get the new field created by readModelCreateOptionalFields()
-  stk::mesh::FieldBase* coords_mag_field = eMesh.getField("coords_mag_field");
+  stk::mesh::FieldBase* coords_mag_field = eMesh.get_field("coords_mag_field");
   VERIFY_OP_ON(coords_mag_field, !=, 0, "TEST::function::fieldFunction_readMesh_createField_interpolateFrom: null coords_mag_field");
 
   /// create a field function from the existing coordinates field
@@ -276,7 +276,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
     if (p_rank == 0)
     {
       std::cout << "TEST::function::fieldFunction_readMesh_createField_interpolateFrom eval ff_coords=" << std::endl;
-      evalVec3Print(0.1, 0.2, 0.3, 0.0, ff_coords);
+      eval_vec3_print(0.1, 0.2, 0.3, 0.0, ff_coords);
     }
   }
 
@@ -297,13 +297,13 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
   }
 
   try {
-    ff_coords.addAlias("mc");
+    ff_coords.add_alias("mc");
     StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), Dimensions(3), Dimensions(1));
 
     double tol1 = 1.e-12;
 
     {
-      MDArray vv = evalVec3(0.1, 0.2, 0.3, 0.0, ff_coords);
+      MDArray vv = eval_vec3(0.1, 0.2, 0.3, 0.0, ff_coords);
 
       STKUNIT_ASSERT_NEAR(vv(0), 0.1, tol1);
       STKUNIT_ASSERT_NEAR(vv(1), 0.2, tol1);
@@ -362,17 +362,17 @@ STKUNIT_UNIT_TEST(function, fieldFunction_multiplePoints)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(GMeshSpec(config_mesh));
+  eMesh.new_mesh(GMeshSpec(config_mesh));
   int vectorDimension = 0;  // signifies a scalar field
-  eMesh.addField("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+  eMesh.add_field("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  stk::mesh::FieldBase *f_coords = eMesh.getField("coordinates");
+  stk::mesh::FieldBase *f_coords = eMesh.get_field("coordinates");
 
   FieldFunction ff_coords("ff_coords", f_coords, eMesh,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
-  MDArray val1 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+  MDArray val1 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
   std::cout << "val1= \n" << val1 << std::endl;
 
   MDArray points(NPTS, 3);
@@ -393,7 +393,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_multiplePoints)
 
     //std::cout << "field_op: ipts= " << ipts << std::endl;
 
-    MDArray vec = evalVec3(x, y, z, t, ff_coords);
+    MDArray vec = eval_vec3(x, y, z, t, ff_coords);
     STKUNIT_EXPECT_NEAR(vec(0), x, fabs(1.e-5*x));
     STKUNIT_EXPECT_NEAR(vec(1), y, fabs(1.e-5*y));
     STKUNIT_EXPECT_NEAR(vec(2), z, fabs(1.e-5*z));
@@ -431,29 +431,29 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(GMeshSpec(config_mesh));
+  eMesh.new_mesh(GMeshSpec(config_mesh));
 
   eMesh.commit();
   // no need for this in create mode: eMesh.readBulkData();
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  stk::mesh::FieldBase *f_coords = eMesh.getField("coordinates");
+  stk::mesh::FieldBase *f_coords = eMesh.get_field("coordinates");
 
   /// create a field function from the existing coordinates field
   FieldFunction ff_coords("ff_coords", f_coords, eMesh,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// here we evaluate this field function
-  MDArray val1 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+  MDArray val1 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
   //std::cout << "eval = \n" << val1 << std::endl;
 
-  stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
+  stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
 
 
   bool didCatch = false;
   try {
     // evaluate a point that is known to be outside the domain
-    MDArray val10 = evalVec3(1.2, 1.3, 1.4, 0.0, ff_coords);
+    MDArray val10 = eval_vec3(1.2, 1.3, 1.4, 0.0, ff_coords);
   }
   catch ( const std::exception & X ) {
     std::cout << "  expected to catch this exception: " << X.what() << std::endl;
@@ -498,31 +498,31 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(GMeshSpec(config_mesh));
+  eMesh.new_mesh(GMeshSpec(config_mesh));
 
   eMesh.commit();
   // no need for this in create mode: eMesh.readBulkData();
 
-  //unsigned p_rank = eMesh.getBulkData()->parallel_rank();
-  unsigned p_size = eMesh.getBulkData()->parallel_size();
+  //unsigned p_rank = eMesh.get_bulk_data()->parallel_rank();
+  unsigned p_size = eMesh.get_bulk_data()->parallel_size();
   // FIXME
   if (p_size > 1) return;
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  stk::mesh::FieldBase *f_coords = eMesh.getField("coordinates");
+  stk::mesh::FieldBase *f_coords = eMesh.get_field("coordinates");
 
   for (unsigned iSearchType = 0; iSearchType < 2; iSearchType++)
   {
     /// create a field function from the existing coordinates field
     FieldFunction::SearchType search_type = (iSearchType == 0 ? FieldFunction::SIMPLE_SEARCH : FieldFunction::STK_SEARCH);
-    //std::cout <<  "P[" << Util::getRank() <<  "] search_type = " << search_type << " = " << typeid(search_type).name() << std::endl;
+    //std::cout <<  "P[" << Util::get_rank() <<  "] search_type = " << search_type << " = " << typeid(search_type).name() << std::endl;
     FieldFunction ff_coords("ff_coords", f_coords, eMesh,
                             Dimensions(3), Dimensions(3), search_type
                             );
 
     // The first point that is evaluated fires the setup of the stk::search data structure (oct-tree, bih-tree)
     double t1st =  stk::wall_time();
-    MDArray val11 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
-    val11 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+    MDArray val11 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+    val11 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
     t1st = stk::wall_dtime(t1st);
 
     // timings
@@ -563,7 +563,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
                             << "    for " << numIter << " iterations, evaluating field(x,y,z) time = " << total_time  << "\n"
                             << "    average per point lookup and eval time = " << (total_time/((double)numIter)) << std::endl;
   }
-  //std::cout << "P[" << Util::getRank() <<  "] TEST::function::fieldFunction_point_eval_timing done " << std::endl;
+  //std::cout << "P[" << Util::get_rank() <<  "] TEST::function::fieldFunction_point_eval_timing done " << std::endl;
 }
 
 #if 0

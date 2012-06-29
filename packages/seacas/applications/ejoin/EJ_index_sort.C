@@ -44,14 +44,17 @@
  */
 
 #include <iostream>
+#include <unistd.h>
+#include <stdint.h>
+
 #include "EJ_index_sort.h"
 
 #define EX_QSORT_CUTOFF 12
 
 namespace {
   /* swap - interchange v[i] and v[j] */
-  template <typename T>
-  void ex_swap (T *v, int i, int j)
+  template <typename T, typename INT>
+  void ex_swap (T *v, INT i, INT j)
 {
   T temp;
 
@@ -60,11 +63,11 @@ namespace {
   v[j] = temp;
 }
 
-  template <typename T>
-  int ex_int_median3(T *v, int iv[], int left, int right)
+  template <typename T, typename INT>
+  int ex_int_median3(T *v, INT iv[], size_t left, size_t right)
   {
-    int center;
-    center = (left + right) / 2;
+    size_t center;
+    center = ((ssize_t)left + (ssize_t)right) / 2;
 
     if (v[iv[left]] > v[iv[center]])
       ex_swap(iv, left, center);
@@ -77,11 +80,11 @@ namespace {
     return iv[right-1];
   }
 
-  template <typename T>
-  void ex_int_iqsort(T *v, int iv[], int left, int right)
+  template <typename T, typename INT>
+  void ex_int_iqsort(T *v, INT iv[], size_t left, size_t right)
   {
-    int pivot;
-    int i, j;
+    size_t pivot;
+    size_t i, j;
   
     if (left + EX_QSORT_CUTOFF <= right) {
       pivot = ex_int_median3(v, iv, left, right);
@@ -104,27 +107,27 @@ namespace {
     }
   }
 
-  template <typename T>
-  void ex_int_iisort(T *v, int iv[], int N)
+  template <typename T, typename INT>
+  void ex_int_iisort(T *v, INT iv[], size_t N)
   {
-    int ndx = 0;
-    int j;
+    size_t ndx = 0;
+    size_t j;
     
     if (N == 0)
       return;
 
     double small = v[iv[0]];
-    for (int i = 1; i < N; i++) {
+    for (size_t i = 1; i < N; i++) {
       if (v[iv[i]] < small) {
 	small = v[iv[i]];
 	ndx = i;
       }
     }
     /* Put smallest value in slot 0 */
-    ex_swap(iv, 0, ndx);
+    ex_swap(iv, (size_t)0, ndx);
 
-    for (int i=1; i <N; i++) {
-      int tmp = iv[i];
+    for (size_t i=1; i <N; i++) {
+      INT tmp = iv[i];
       for (j=i; v[tmp] < v[iv[j-1]]; j--) {
 	iv[j] = iv[j-1];
       }
@@ -132,9 +135,12 @@ namespace {
     }
   }
 
-  template <typename T>
-  void ex_iqsort(T *v, int iv[], int N)
+  template <typename T, typename INT>
+  void ex_iqsort(T *v, INT iv[], size_t N)
   {
+    if (N <= 1)
+      return;
+
     ex_int_iqsort(v, iv, 0, N-1);
     ex_int_iisort(v, iv, N);
 
@@ -148,21 +154,30 @@ namespace {
   }
 }
 
-void index_coord_sort(const std::vector<double> &xyz, std::vector<int> &index, int axis)
+template <typename INT>
+void index_coord_sort(const std::vector<double> &xyz, std::vector<INT> &index, int axis)
 {
   // For now, let's extract the component we want to sort on into a separate vector.
   std::vector<double> comp(xyz.size()/3);
   size_t j = 0;
   for (size_t i=axis; i < xyz.size(); i+=3)
     comp[j++] = xyz[i];
-  ex_iqsort(&comp[0], &index[0], (int)index.size());
+  ex_iqsort(&comp[0], &index[0], index.size());
 }
 
-void index_sort(const std::vector<int> &ids, std::vector<int> &index)
+template <typename INT>
+void index_sort(const std::vector<INT> &ids, std::vector<INT> &index)
 {
   index.resize(ids.size());
   for (size_t i=0; i < index.size(); i++)
     index[i] = i;
   
-  ex_iqsort(&ids[0], &index[0], (int)index.size());
+  ex_iqsort(&ids[0], &index[0], index.size());
 }
+
+
+template void index_coord_sort(const std::vector<double> &xyz, std::vector<int> &index, int axis);
+template void index_coord_sort(const std::vector<double> &xyz, std::vector<int64_t> &index, int axis);
+
+template void index_sort(const std::vector<int> &ids,     std::vector<int> &index);
+template void index_sort(const std::vector<int64_t> &ids, std::vector<int64_t> &index);

@@ -48,53 +48,232 @@ SOREV = 5
 
 DEFINES = $(PICFLAGS)
 
-SRCS =  exclos.c   exggvt.c   exgpa.c    exgvp.c    expfrm.c   expqa.c	 \
-	excn2s.c   exgids.c   exgp.c     expinf.c   expset.c	 \
-	ex_conv.c  exginf.c   exgpem.c   exinq.c    expini.c   expsetd.c \
-	excopy.c   exgini.c   exgpn.c    exopen.c   expinix.c  expsetp.c \
-	excre.c    exginix.c  exgqa.c    exopts.c   expmap.c   expssv.c  \
-	exerr.c    exgmap.c   exgset.c   expatn.c   expmp.c    exptim.c  \
-	exgatm.c   exgmp.c    exgsetd.c  expatt.c   expnam.c   exptt.c   \
-	exgatn.c   exgnam.c   exgsetp.c  expattp.c  expnams.c  expvan.c  \
-	exgatt.c   exgnams.c  exgsnl.c   expblk.c   expnmap.c  expvar.c  \
-	exgattp.c  exgnmap.c  exgssc.c   expcab.c   expnnm.c   expvnm.c  \
-	exgblk.c   exgnnm.c   exgssn.c   expclb.c   expnsv.c   expvpax.c \
-	exgcon.c   exgnsv.c   exgssv.c   expcon.c   expnv.c    expvp.c   \
-	exgconn.c  exgnv.c    exgtim.c   expconn.c  \
-	exgcor.c   exgtt.c    expcor.c   expoatt.c  exupda.c  \
-	exgcset.c  exgnvt.c   exgvan.c   expcset.c  exppa.c    expidm.c	 \
-	exgenm.c   exgvar.c   expelc.c   expp.c     exgfrm.c  \
-	exgoatt.c  exgvart.c  expenm.c   exppem.c   exggv.c    exgotv.c  \
-	exgvnm.c   expev.c    exppn.c    exppsetd.c exgidm.c   ex_utils.c 		 \
-	exgvarnam.c  expvarnam.c exgvarnams.c  expvarnams.c \
-	exgvartab.c  expvartab.c exgvarparam.c expvarparam.c \
-	exgcns.c   exgnstt.c   expem.c   exgnconn.c \
-	exgcss.c   expgv.c   \
-	exgean.c   exgoea.c    expnm.c   \
-	exgeat.c   exgsp.c     expnp.c   \
-	exgebi.c   exgss.c     expns.c   \
-	exgelb.c   exgssd.c    expnsd.c  \
-	exgelc.c   exgssi.c    expnstt.c \
-	exgem.c    exgsstt.c   expoea.c  \
-	exgev.c    expsp.c   \
-	expss.c   \
-	exgevt.c   exgvtt.c    expssd.c  \
-	exgnm.c    expcns.c    expsstt.c \
-	exgnp.c    expcss.c    expvpa.c  \
-	exgns.c    expean.c    expvpc.c  \
-	exgnsd.c   expeat.c    expvtt.c  \
-	exgnsi.c   expelb.c    exgncor.c \
-        expncor.c  exgnoatt.c  expnoatt.c \
-	expnvar.c  exgnvar.c   expnnv.c   exgnnv.c exgcssc.c \
-	expecpp.c  exgecpp.c   exppidm.c
+SRCS = 	ex_close.c \
+	ex_conv.c \
+	ex_copy.c \
+	ex_create.c \
+	ex_cvt_nodes_to_sides.c \
+	ex_err.c \
+	ex_get_all_times.c \
+	ex_get_attr.c \
+	ex_get_attr_names.c \
+	ex_get_attr_param.c \
+	ex_get_block.c \
+	ex_get_block_param.c \
+	ex_get_cmap_params.c \
+	ex_get_concat_node_sets.c \
+	ex_get_concat_sets.c \
+	ex_get_concat_side_set_node_count.c \
+	ex_get_concat_side_sets.c \
+	ex_get_conn.c \
+	ex_get_coord.c \
+	ex_get_coord_names.c \
+	ex_get_coordinate_frames.c \
+	ex_get_eb_info_global.c \
+	ex_get_elem_attr.c \
+	ex_get_elem_attr_names.c \
+	ex_get_elem_blk_ids.c \
+	ex_get_elem_block.c \
+	ex_get_elem_cmap.c \
+	ex_get_elem_conn.c \
+	ex_get_elem_map.c \
+	ex_get_elem_num_map.c \
+	ex_get_elem_type.c \
+	ex_get_elem_var.c \
+	ex_get_elem_var_tab.c \
+	ex_get_elem_var_time.c \
+	ex_get_entity_count_per_polyhedra.c \
+	ex_get_glob_var_time.c \
+	ex_get_glob_vars.c \
+	ex_get_id_map.c \
+	ex_get_ids.c \
+	ex_get_info.c \
+	ex_get_init.c \
+	ex_get_init_ext.c \
+	ex_get_init_global.c \
+	ex_get_init_info.c \
+	ex_get_loadbal_param.c \
+	ex_get_map.c \
+	ex_get_map_param.c \
+	ex_get_n_conn.c \
+	ex_get_n_coord.c \
+	ex_get_n_elem_attr.c \
+	ex_get_n_elem_conn.c \
+	ex_get_n_elem_num_map.c \
+	ex_get_n_elem_var.c \
+	ex_get_n_nodal_var.c \
+	ex_get_n_node_num_map.c \
+	ex_get_n_node_set.c \
+	ex_get_n_node_set_df.c \
+	ex_get_n_one_attr.c \
+	ex_get_n_side_set.c \
+	ex_get_n_side_set_df.c \
+	ex_get_n_var.c \
+	ex_get_name.c \
+	ex_get_names.c \
+	ex_get_nodal_var.c \
+	ex_get_nodal_var_time.c \
+	ex_get_node_cmap.c \
+	ex_get_node_map.c \
+	ex_get_node_num_map.c \
+	ex_get_node_set.c \
+	ex_get_node_set_dist_fact.c \
+	ex_get_node_set_ids.c \
+	ex_get_node_set_param.c \
+	ex_get_ns_param_global.c \
+	ex_get_nset_var.c \
+	ex_get_nset_var_tab.c \
+	ex_get_num_map.c \
+	ex_get_object_truth_vector.c \
+	ex_get_one_attr.c \
+	ex_get_one_elem_attr.c \
+	ex_get_partial_elem_map.c \
+	ex_get_partial_num_map.c \
+	ex_get_processor_elem_maps.c \
+	ex_get_processor_node_maps.c \
+	ex_get_prop.c \
+	ex_get_prop_array.c \
+	ex_get_prop_names.c \
+	ex_get_qa.c \
+	ex_get_set.c \
+	ex_get_sets.c \
+	ex_get_set_dist_fact.c \
+	ex_get_set_param.c \
+	ex_get_side_set.c \
+	ex_get_side_set_dist_fact.c \
+	ex_get_side_set_ids.c \
+	ex_get_side_set_node_count.c \
+	ex_get_side_set_node_list.c \
+	ex_get_side_set_node_list_len.c \
+	ex_get_side_set_param.c \
+	ex_get_ss_param_global.c \
+	ex_get_sset_var.c \
+	ex_get_sset_var_tab.c \
+	ex_get_time.c \
+	ex_get_truth_table.c \
+	ex_get_var.c \
+	ex_get_var_name.c \
+	ex_get_var_names.c \
+	ex_get_var_param.c \
+	ex_get_var_tab.c \
+	ex_get_var_time.c \
+	ex_get_variable_name.c \
+	ex_get_variable_names.c \
+	ex_get_variable_param.c \
+	ex_inquire.c \
+	ex_ne_util.c \
+	ex_open.c \
+	ex_opts.c \
+	ex_put_all_var_param.c \
+	ex_put_all_var_param_ext.c \
+	ex_put_attr.c \
+	ex_put_attr_names.c \
+	ex_put_attr_param.c \
+	ex_put_block.c \
+	ex_put_block_param.c \
+	ex_put_cmap_params.c \
+	ex_put_cmap_params_cc.c \
+	ex_put_concat_all_blocks.c \
+	ex_put_concat_elem_block.c \
+	ex_put_concat_node_sets.c \
+	ex_put_concat_sets.c \
+	ex_put_concat_side_sets.c \
+	ex_put_concat_var_param.c \
+	ex_put_conn.c \
+	ex_put_coord.c \
+	ex_put_coord_names.c \
+	ex_put_coordinate_frames.c \
+	ex_put_eb_info_global.c \
+	ex_put_elem_attr.c \
+	ex_put_elem_attr_names.c \
+	ex_put_elem_block.c \
+	ex_put_elem_cmap.c \
+	ex_put_elem_conn.c \
+	ex_put_elem_map.c \
+	ex_put_elem_num_map.c \
+	ex_put_elem_var.c \
+	ex_put_elem_var_slab.c \
+	ex_put_elem_var_tab.c \
+	ex_put_entity_count_per_polyhedra.c \
+	ex_put_glob_vars.c \
+	ex_put_id_map.c \
+	ex_put_info.c \
+	ex_put_init.c \
+	ex_put_init_ext.c \
+	ex_put_init_global.c \
+	ex_put_init_info.c \
+	ex_put_loadbal_param.c \
+	ex_put_loadbal_param_cc.c \
+	ex_put_map.c \
+	ex_put_map_param.c \
+	ex_put_n_coord.c \
+	ex_put_n_elem_attr.c \
+	ex_put_n_elem_conn.c \
+	ex_put_n_elem_num_map.c \
+	ex_put_n_nodal_var.c \
+	ex_put_n_node_num_map.c \
+	ex_put_n_node_set.c \
+	ex_put_n_node_set_df.c \
+	ex_put_n_one_attr.c \
+	ex_put_n_side_set.c \
+	ex_put_n_side_set_df.c \
+	ex_put_n_var.c \
+	ex_put_name.c \
+	ex_put_names.c \
+	ex_put_nodal_var.c \
+	ex_put_nodal_var_slab.c \
+	ex_put_node_cmap.c \
+	ex_put_node_map.c \
+	ex_put_node_num_map.c \
+	ex_put_node_set.c \
+	ex_put_node_set_dist_fact.c \
+	ex_put_node_set_param.c \
+	ex_put_ns_param_global.c \
+	ex_put_nset_var.c \
+	ex_put_nset_var_tab.c \
+	ex_put_num_map.c \
+	ex_put_one_attr.c \
+	ex_put_one_elem_attr.c \
+	ex_put_partial_elem_map.c \
+	ex_put_partial_id_map.c \
+	ex_put_partial_num_map.c \
+	ex_put_partial_set_dist_fact.c \
+	ex_put_processor_elem_maps.c \
+	ex_put_processor_node_maps.c \
+	ex_put_prop.c \
+	ex_put_prop_array.c \
+	ex_put_prop_names.c \
+	ex_put_qa.c \
+	ex_put_set.c \
+	ex_put_sets.c \
+	ex_put_set_dist_fact.c \
+	ex_put_set_param.c \
+	ex_put_side_set.c \
+	ex_put_side_set_dist_fact.c \
+	ex_put_side_set_param.c \
+	ex_put_ss_param_global.c \
+	ex_put_sset_var.c \
+	ex_put_sset_var_tab.c \
+	ex_put_time.c \
+	ex_put_truth_table.c \
+	ex_put_var.c \
+	ex_put_var_name.c \
+	ex_put_var_names.c \
+	ex_put_var_param.c \
+	ex_put_var_tab.c \
+	ex_put_variable_name.c \
+	ex_put_variable_names.c \
+	ex_put_variable_param.c \
+	ex_update.c \
+	ex_utils.c
 
-OBJS = ${SRCS:.c=.o}
+OBJS   = ${SRCS:.c=.o}
 
-#include <Library.tmpl>
+#include <Library.tmpl> 
 
-LibraryTargetSubdirsCopy(libexodus.a,$(OBJS),../../)
+LibraryTargetSubdirsCopy(libexodus.a,$(OBJS),../../) 
 
-$(OBJS): ../include/exodusII.h ../include/exodusII_int.h ../include/exodusII_ext.h
+$(OBJS): ../include/exodusII.h ../include/exodusII_int.h
 
 DependTarget()
 LibraryObjectRule()

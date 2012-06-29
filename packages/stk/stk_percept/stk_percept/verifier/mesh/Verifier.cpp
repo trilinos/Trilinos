@@ -77,18 +77,18 @@ namespace stk
       //RunEnvironment::doLoadBalance(run_environment.m_comm, file_name);
 
       PerceptMesh mesh(3, run_environment.m_comm);
-      mesh.openReadOnly(file_name);
+      mesh.open_read_only(file_name);
       std::cout << "read in file: " << file_name << std::endl;
 
       TopologyVerifier topoVerifier;
-      bool isBad= topoVerifier.isTopologyBad( *mesh.getBulkData() );
+      bool isBad= topoVerifier.isTopologyBad( *mesh.get_bulk_data() );
       if (isBad)
         {
           std::cout << "found bad topology" << std::endl;
         }
 
       GeometryVerifier geomVerifier(fullJacobianPrints);
-      isBad= geomVerifier.isGeometryBad( *mesh.getBulkData(), printTable );
+      isBad= geomVerifier.isGeometryBad( *mesh.get_bulk_data(), printTable );
       if (isBad)
         {
           std::cout << "found bad jacobian" << std::endl;

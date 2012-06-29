@@ -12,14 +12,15 @@
 #include <set>
 #include <vector>
 
-#ifdef STK_BUILT_IN_SIERRA
+// ibm can't compile mesquite
+#if defined(STK_BUILT_IN_SIERRA) && !defined(__IBMCPP__)
 #define STK_ADAPT_HAS_GEOMETRY
 #else
 #undef STK_ADAPT_HAS_GEOMETRY
 #endif
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
-#include <stk_adapt/geometry/MeshGeometry.hpp>
+#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #endif
 
 #include <Shards_BasicTopologies.hpp>
@@ -53,6 +54,8 @@ namespace stk {
   namespace adapt {
 
     typedef std::set<stk::mesh::Entity *> ElementUnrefineCollection;
+    //typedef std::map<stk::mesh::Part*, stk::mesh::Part*> SidePartMap;
+    typedef std::map<std::string, std::string> SidePartMap;
 
     using std::vector;
     using std::map;
@@ -108,6 +111,13 @@ namespace stk {
       setRemoveOldElements(bool do_remove);
       bool
       getRemoveOldElements();
+
+      /* for future
+      void
+      setIOSaveInactiveElements(bool do_save) { m_doIOSaveInactiveElements = do_save; }
+      bool
+      getIOSaveInactiveElements() { return m_doIOSaveInactiveElements; }
+      */
 
       void
       setGeometryFile(std::string file_name);
@@ -166,8 +176,12 @@ namespace stk {
       void check_sidesets_2(std::string msg);
       void fix_side_sets_1();
       void fix_side_sets_2();
+      void fix_side_sets_3(bool checkParentChild, SidePartMap& side_part_map);
 
-      bool connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem);
+      /// determine side part to elem part relations
+      void get_side_part_relations(bool checkParentChild, SidePartMap& side_part_map);
+
+      bool connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem, SidePartMap* side_part_map=0);
       void fixElementSides2();
       void fixSides(stk::mesh::Entity *parent);
 
@@ -226,7 +240,8 @@ namespace stk {
        */
 
       virtual unsigned
-      doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
+      doForAllElements(unsigned irank, std::string function_info,
+                       stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                        vector< ColorerSetType >& elementColors, unsigned elementType,
                        vector<NeededEntityType>& needed_entity_ranks,  
                        bool only_count=false, bool doAllElements=true) ;
@@ -248,7 +263,7 @@ namespace stk {
        *  A sample implementation is shown in @see UniformRefiner
        */
       virtual void
-      createElementsAndNodesAndConnectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern,
+      createElementsAndNodesAndConnectLocal(unsigned irank,  stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern,
                                             vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
                                             vector<stk::mesh::Entity *>& new_elements_pool) ;
 
@@ -273,10 +288,10 @@ namespace stk {
       removeFamilyTrees();
 
       void
-      removeOldElements(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
+      removeOldElements(unsigned irank, stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
 
       void
-      removeElements( elements_to_be_destroyed_type& elements_to_be_destroyed);
+      removeElements( elements_to_be_destroyed_type& elements_to_be_destroyed, unsigned irank=0);
 
       void
       removeEmptyElements();
@@ -334,6 +349,9 @@ namespace stk {
       NodeRegistry* m_nodeRegistry;
       stk::mesh::FieldBase *m_proc_rank_field;
       bool m_doRemove;
+
+      // for future: 
+      // bool m_doIOSaveInactiveElements; // default false
 
       std::vector<stk::mesh::EntityRank> m_ranks;
       bool m_ignoreSideSets;

@@ -1,0 +1,13 @@
+      COMMON /LEGOPT/ DOQA(2), DOLEG(2), DOAXIS(2), DOBOX
+      LOGICAL DOQA, DOLEG, DOAXIS, DOBOX
+      COMMON /LEGOPC/ CAPTN(3,2)
+      CHARACTER*80 CAPTN
+C      --DOQA - true iff QA information is to be drawn on legend
+C      --   (1) for mesh plots, (2) for curve plots
+C      --DOLEG - true iff non-QA legend information is to be drawn
+C      --   (1) for mesh plots, (2) for curve plots
+C      --DOAXIS - true iff axis is to be labeled
+C      --   (1) for mesh plots, (2) for curve plots
+C      --CAPTN - plot caption
+C      --   (1) for mesh plots, (2) for curve plots
+

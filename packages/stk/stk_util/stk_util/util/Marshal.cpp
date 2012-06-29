@@ -11,6 +11,7 @@
 #include <cstring>
 
 #include <stk_util/util/Marshal.hpp>
+#include <iostream>
 
 namespace stk {
 
@@ -184,7 +185,7 @@ Marshal::size() const
 
 Marshal::operator void * () const
 {
-  return static_cast<void *>(stream);
+  return static_cast<void *>(const_cast<std::stringstream*>(&stream));
 }
 
 

@@ -46,7 +46,7 @@ namespace Ioss {
   public:
     ElementBlock(DatabaseIO *io_database,
 		 const std::string& name, const std::string& element_type,
-		 size_t number_elements);
+		 int64_t number_elements);
 
     ~ElementBlock();
 
@@ -61,10 +61,10 @@ namespace Ioss {
     void get_block_adjacencies(std::vector<std::string> &block_adjacency_list) const;
 
   protected:
-    int internal_get_field_data(const Field& field,
+    int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
-    int internal_put_field_data(const Field& field,
+    int64_t internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
   private:
 

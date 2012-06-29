@@ -6,7 +6,7 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 #define EDGE_BREAKER_Q4_Q8_1 1
 #if EDGE_BREAKER_Q4_Q8_1
@@ -29,7 +29,7 @@ namespace stk {
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Quadrilateral<4> , shards::Quadrilateral<8> >(eMesh)
       {
         m_primaryEntityRank = m_eMesh.face_rank();
-        if (m_eMesh.getSpatialDim() == 2)
+        if (m_eMesh.get_spatial_dim() == 2)
           m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, false);
@@ -54,14 +54,14 @@ namespace stk {
         EXCEPTWATCH;
         bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
 
-        if (eMesh.getSpatialDim() == 2)
+        if (eMesh.get_spatial_dim() == 2)
           {
             bp[0] = this;
 #if EDGE_BREAKER_Q4_Q8_1
             bp[1] = m_edge_breaker;
 #endif
           }
-        else if (eMesh.getSpatialDim() == 3)
+        else if (eMesh.get_spatial_dim() == 3)
           {
           }
 

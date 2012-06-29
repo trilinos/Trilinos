@@ -1,0 +1,18 @@
+C  Flag for rainbow spectrum
+      COMMON /ICRNBW/ IRAINB, ISPEC, ISINV, SATUR, RMULT, GMULT, BMULT
+      SAVE /ICRNBW/
+
+C      --CINTOK - if true, contour intervals are in CINTV, if false, derive
+C      --   intervals from CMIN and DELC
+C      --LINCON - if true, CMAX is set for line contours versus painted contours
+C      --NCNTR - the number of contours defined
+C      --CMIN - the minimum contour value
+C      --CMAX - the maximum contour value
+C      --DELC - the contour interval
+C      --CINTV - the contour intervals (if CINTOK true only)
+C      --NOCMIN - if true, contour minimum is open (painted) versus closed
+C      --NOCMAX - if true, contour maximum is open (painted) versus closed
+C      --LABINC - the interior line labelling increment
+C      --MAXMIN - include minimum symbols only if number of minimums <= MAXMIN
+C      --MAXMAX - include maximum symbols only if number of maximums <= MAXMAX
+

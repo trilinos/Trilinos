@@ -36,8 +36,14 @@ namespace stk
     {
     public:
 
+      enum AccumulationType {
+        ACCUMULATE_SUM,
+        ACCUMULATE_MAX
+      };
+
       IntegratedOp(Function& integrand,  TurboOption turboOpt=TURBO_NONE, mesh::FieldBase *field=0) :
-        m_nDOFs(1), m_accumulation_buffer(), m_count_elems(0), m_is_field(false), m_integrand(integrand), m_turboOpt(turboOpt)
+        m_nDOFs(1), m_accumulation_buffer(), m_count_elems(0), m_is_field(false), m_integrand(integrand), m_turboOpt(turboOpt),
+        m_cubDegree(2), m_accumulation_type(ACCUMULATE_SUM)
       {
         if (typeid(integrand) == typeid(FieldFunction))
           {
@@ -62,12 +68,18 @@ namespace stk
         m_accumulation_buffer.resize(m_nDOFs);
       }
 
+      void setAccumulationType(AccumulationType type) { m_accumulation_type = type; }
+      AccumulationType getAccumulationType() { return m_accumulation_type; }
+
+      void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
+      unsigned getCubDegree() { return m_cubDegree; }
+
       void init()
       {
         m_count_elems=0;
         m_accumulation_buffer.assign(m_nDOFs, 0.0);
       }
-
+      
       std::vector<double>& getValue(void) { return m_accumulation_buffer; }
       unsigned getElementCount() { return m_count_elems; }
 
@@ -101,8 +113,15 @@ namespace stk
         m_count_elems += nCells;
 
         typedef IntrepidManager IM;
-        unsigned cubDegree = 2;
+        unsigned cubDegree = m_cubDegree;
         IM im(Elements_Tag(nCells), cell_topo, cubDegree);
+        if (0)
+          {
+            unsigned numCubPoints = im.m_cub->getNumPoints(); 
+            std::cout << "numCubPoints= " << numCubPoints << std::endl;
+          }
+
+
         // FIXME
         im.m_DOFs_Tag.num = m_nDOFs;
         // FIXME
@@ -134,7 +153,7 @@ namespace stk
 
         if (0)
           {
-	    using namespace shards;
+            using namespace shards;
 
             std::cout << "dJ= \n" << dJ << std::endl;
             std::cout << "wXdJ= \n" << wXdJ << std::endl;
@@ -200,7 +219,8 @@ namespace stk
             iv.copyFrom(im, iv_mda, iDof);
 
             // get the integral
-            Io(iv, wXdJ, COMP_BLAS);
+            if (m_accumulation_type == ACCUMULATE_SUM)
+              Io(iv, wXdJ, COMP_BLAS);
 
             //optional design:
             //
@@ -213,7 +233,20 @@ namespace stk
 //                     std::cout << "tmp Io(iCell)= " << Io(iCell) << std::endl;
 //                     Util::pause(true, "Io(iCell)");
 //                   }
-                m_accumulation_buffer[iDof] += Io(iCell);
+                if (m_accumulation_type == ACCUMULATE_SUM)
+                  {
+                    m_accumulation_buffer[iDof] += Io(iCell);
+                  }
+                else if (m_accumulation_type == ACCUMULATE_MAX)
+                  {
+                    double valIo = 0.0;
+                    for (int ivpts = 0; ivpts < iv.dimension(1); ivpts++)
+                      {
+                        valIo = std::max(valIo, iv((int)iCell, ivpts));
+                      }
+                    //std::cout << "m_accumulation_buffer[iDof] = " << m_accumulation_buffer[iDof] << " valIO= " << valIo  << std::endl;
+                    m_accumulation_buffer[iDof] = std::max(m_accumulation_buffer[iDof], valIo);
+                  }
               }
           }
         return false;
@@ -229,6 +262,8 @@ namespace stk
       bool m_is_field;
       Function& m_integrand;
       TurboOption m_turboOpt;
+      unsigned m_cubDegree;
+      AccumulationType m_accumulation_type;
     };
 
     //template<>

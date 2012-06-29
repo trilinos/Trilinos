@@ -4,14 +4,14 @@ after ex_open
 after ex_get_init, error =   0
 database parameters:
 title =  'This is a test'
-num_dim =   3
-num_nodes =  14
-num_edge =   0
-num_face =  15
-num_elem =   3
-num_elem_blk =   1
-num_node_sets =   0
-num_side_sets =   0
+num_dim = 3
+num_nodes = 14
+num_edge = 0
+num_face = 15
+num_elem = 3
+num_elem_blk = 1
+num_node_sets = 0
+num_side_sets = 0
 
 after ex_get_coord, error =   0
 x, y, z coords = 

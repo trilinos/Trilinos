@@ -26,7 +26,7 @@ Excn::SystemInterface::SystemInterface()
   : outputName_(),
     debugLevel_(0), screenWidth_(0),
     omitNodesets_(false), omitSidesets_(false),
-    aliveValue_(-1.0)
+    ints64Bit_(false), aliveValue_(-1.0)
 {
   enroll_options();
 }
@@ -70,6 +70,10 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\tIf NONE, then not created. Default = node_status",
 		  "node_status");
   
+  options_.enroll("64-bit", GetLongOption::NoValue,
+                  "True if forcing the use of 64-bit integers for the output file",
+                  NULL);
+
   options_.enroll("omit_nodesets", GetLongOption::NoValue,
 		  "Don't transfer nodesets to output file.",
 		  NULL);
@@ -217,6 +221,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
+  if (options_.retrieve("64-bit")) {
+    ints64Bit_ = true;
+  }
+  
   if (options_.retrieve("omit_nodesets")) {
     omitNodesets_ = true;
   } else {

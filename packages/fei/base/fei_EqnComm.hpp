@@ -53,6 +53,7 @@ class EqnComm {
  public:
   /** constructor */
   EqnComm(MPI_Comm comm, int numLocalEqns);
+  EqnComm(MPI_Comm comm, int numLocalEqns, const std::vector<int>& globalOffsets);
 
   /** destructor */
   virtual ~EqnComm();

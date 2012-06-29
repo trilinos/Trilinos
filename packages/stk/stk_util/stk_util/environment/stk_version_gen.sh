@@ -33,7 +33,7 @@ if test $(git rev-parse --git-dir 2>/dev/null) &&
     NEW_VERSION=$(git describe --abbrev=8 HEAD 2>/dev/null) &&
     case "$NEW_VERSION" in
         *$LF*) (exit 1) ;;
-        v[0-9]*)
+        [0-9]*)
             git update-index -q --refresh > /dev/null
             test -z "$(git diff-index --name-only HEAD --)" ||
             NEW_VERSION="${NEW_VERSION}-modified" ;;

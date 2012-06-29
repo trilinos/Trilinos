@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_NOXSOLVER_H
-#define PIRO_NOXSOLVER_H
+#ifndef PIRO_EPETRA_NOXSOLVER_H
+#define PIRO_EPETRA_NOXSOLVER_H
 
 #include <iostream>
 

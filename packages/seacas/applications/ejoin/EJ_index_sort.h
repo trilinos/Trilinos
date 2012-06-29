@@ -33,6 +33,9 @@
 #define INDEX_SORT_H
 #include <vector>
 
-void index_coord_sort(const std::vector<double> &xyz, std::vector<int> &index, int axis);
-void index_sort(const std::vector<int> &ids, std::vector<int> &index);
+template <typename INT>
+void index_coord_sort(const std::vector<double> &xyz, std::vector<INT> &index, int axis);
+
+template <typename INT>
+void index_sort(const std::vector<INT> &ids, std::vector<INT> &index);
 #endif

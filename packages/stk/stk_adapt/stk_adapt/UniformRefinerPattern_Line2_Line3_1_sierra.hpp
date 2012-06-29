@@ -6,7 +6,7 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 
 namespace stk {
@@ -21,7 +21,7 @@ namespace stk {
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Line<2> , shards::Line<3> >(eMesh)
       {
         m_primaryEntityRank = m_eMesh.edge_rank();
-        if (m_eMesh.getSpatialDim() == 1)
+        if (m_eMesh.get_spatial_dim() == 1)
           m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, false);
@@ -37,7 +37,7 @@ namespace stk {
         EXCEPTWATCH;
         bp = std::vector<UniformRefinerPatternBase *>(1u, 0);
 
-        if (eMesh.getSpatialDim() == 1)
+        if (eMesh.get_spatial_dim() == 1)
           {
             bp[0] = this;
           }
@@ -51,7 +51,7 @@ namespace stk {
       {
         needed_entities.resize(1);
         //needed_entities[0].first = m_eMesh.edge_rank();   
-        needed_entities[0].first = (m_eMesh.getSpatialDim() == 1 ? m_eMesh.element_rank() : m_eMesh.edge_rank());
+        needed_entities[0].first = (m_eMesh.get_spatial_dim() == 1 ? m_eMesh.element_rank() : m_eMesh.edge_rank());
         setToOne(needed_entities);
       }
 
@@ -78,12 +78,12 @@ namespace stk {
         double coord_x[3];
         for (int iedge = 0; iedge < 1; iedge++)
           {
-            double * mp = midPoint(VERT_COORD(0), VERT_COORD(1), eMesh.getSpatialDim(), coord_x);
-            //double * mp = midPoint(EDGE_COORD(iedge,0), EDGE_COORD(iedge,1), eMesh.getSpatialDim(), coord_x);
+            double * mp = midPoint(VERT_COORD(0), VERT_COORD(1), eMesh.get_spatial_dim(), coord_x);
+            //double * mp = midPoint(EDGE_COORD(iedge,0), EDGE_COORD(iedge,1), eMesh.get_spatial_dim(), coord_x);
 
             if (!EDGE_N(iedge))
               {
-                std::cout << "P[" << eMesh.getRank() << " nid ## = 0  " << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << " nid ## = 0  " << std::endl;
               }
             eMesh.createOrGetNode(EDGE_N(iedge), mp);
           }
@@ -129,12 +129,11 @@ namespace stk {
 
             change_entity_parts(eMesh, element, newElement);
 
-            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             {
               if (!elems[ielem][0])
                 {
-                  std::cout << "P[" << eMesh.getRank() << " nid = 0  " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << " nid = 0  " << std::endl;
                   exit(1);
                 }
 
@@ -143,8 +142,10 @@ namespace stk {
               {
                 stk::mesh::EntityId eid = elems[ielem][inode];
                 stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
-                eMesh.getBulkData()->declare_relation(newElement, node, inode);
+                eMesh.get_bulk_data()->declare_relation(newElement, node, inode);
               }
+
+            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             element_pool++;
 

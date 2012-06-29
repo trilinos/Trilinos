@@ -36,6 +36,7 @@
 #include <Ioss_CodeTypes.h>
 #include <string>
 #include <Ioss_State.h>
+#include <Ioss_Field.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_FieldManager.h>
@@ -78,7 +79,7 @@ namespace Ioss {
 
     GroupingEntity();
     GroupingEntity(DatabaseIO *io_database, const std::string& name,
-		   size_t entity_count);
+		   int64_t entity_count);
     
     virtual ~GroupingEntity();
 
@@ -149,13 +150,22 @@ namespace Ioss {
     int get_field_data(const std::string& field_name, std::vector<char>    &data) const;
     int get_field_data(const std::string& field_name, std::vector<double>  &data) const;
     int get_field_data(const std::string& field_name, std::vector<int>     &data) const;
+    int get_field_data(const std::string& field_name, std::vector<int64_t> &data) const;
     int get_field_data(const std::string& field_name, std::vector<Complex> &data) const;
 
     int put_field_data(const std::string& field_name, std::vector<char>    &data) const;
     int put_field_data(const std::string& field_name, std::vector<double>  &data) const;
     int put_field_data(const std::string& field_name, std::vector<int>     &data) const;
+    int put_field_data(const std::string& field_name, std::vector<int64_t> &data) const;
     int put_field_data(const std::string& field_name, std::vector<Complex> &data) const;
 
+    Ioss::Field::BasicType field_int_type() const {
+      if (get_database() == NULL || get_database()->int_byte_size_api() == 4)
+	return Ioss::Field::INTEGER;
+      else
+	return Ioss::Field::INT64;
+    }	
+	  
 
   protected:
     void count_attributes() const;
@@ -183,12 +193,12 @@ namespace Ioss {
     PropertyManager properties;
     FieldManager    fields;
 
-    virtual int internal_get_field_data(const Field& field,
+    virtual int64_t internal_get_field_data(const Field& field,
 					void *data, size_t data_size=0) const = 0;
-    virtual int internal_put_field_data(const Field& field,
+    virtual int64_t internal_put_field_data(const Field& field,
 					void *data, size_t data_size=0) const = 0;
 
-    size_t entityCount;
+    int64_t entityCount;
 
   private:
     GroupingEntity(const GroupingEntity&); // do not implement
@@ -199,7 +209,7 @@ namespace Ioss {
     DatabaseIO* database_;
 
     State entityState;
-    mutable size_t attributeCount;
+    mutable int64_t attributeCount;
   };
 }
 inline void

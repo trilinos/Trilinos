@@ -203,8 +203,8 @@ void debug_print_decomp_export(Zoltan   *zoltan,
 
 
 extern "C" {
-  int Callback_Num_Elements( void *data, int *ierr );
-  void Callback_Element_List( void *data,
+  int stkCallback_Num_Elements( void *data, int *ierr );
+  void stkCallback_Element_List( void *data,
                              int Num_gid_entries,
                              int Num_lid_entries,
                              ZOLTAN_ID_PTR global_ids,
@@ -212,21 +212,21 @@ extern "C" {
                              int wdim,
                              float *weights,
                              int *ierr );
-  int Callback_Num_Dimensions( void *data, int *ierr );
-  void Callback_Centroid_Coord( void *data,
+  int stkCallback_Num_Dimensions( void *data, int *ierr );
+  void stkCallback_Centroid_Coord( void *data,
                                 int Num_gid_entries,
                                 int Num_lid_entries,
                                 ZOLTAN_ID_PTR global_id,
                                 ZOLTAN_ID_PTR local_id,  //{Iterator or index}
                                 double *geom,
                                 int *ierr );
-  int Callback_Num_Edges( void *data,
+  int stkCallback_Num_Edges( void *data,
                           int Num_gid_entries,
                           int Num_lid_entries,
                           ZOLTAN_ID_PTR global_id,
                           ZOLTAN_ID_PTR local_id,  //{Iterator or index}
                           int *ierr );
-  void Callback_Edge_List( void *data,
+  void stkCallback_Edge_List( void *data,
                            int Num_gid_entries,
                            int Num_lid_entries,
                            ZOLTAN_ID_PTR global_id,
@@ -239,7 +239,7 @@ extern "C" {
 }
 
 
-int Callback_Num_Elements( void *data, int *ierr )
+int stkCallback_Num_Elements( void *data, int *ierr )
 {
   if ( data == NULL ) {
     *ierr = ZOLTAN_FATAL;  // Set FATAL Zoltan error flag
@@ -259,7 +259,7 @@ int Callback_Num_Elements( void *data, int *ierr )
   return ne;
 }
 
-void Callback_Element_List( void *data,
+void stkCallback_Element_List( void *data,
                             int Num_gid_entries,
                             int Num_lid_entries,
                             ZOLTAN_ID_PTR global_ids,
@@ -301,7 +301,7 @@ void Callback_Element_List( void *data,
 
 }
 
-int Callback_Num_Dimensions( void *data, int *ierr )
+int stkCallback_Num_Dimensions( void *data, int *ierr )
 {
   if ( !data ) {
     *ierr = ZOLTAN_FATAL;
@@ -322,7 +322,7 @@ int Callback_Num_Dimensions( void *data, int *ierr )
 
 }
 
-void Callback_Centroid_Coord( void *data,
+void stkCallback_Centroid_Coord( void *data,
                                      int Num_gid_entries,
                                      int Num_lid_entries,
                                      ZOLTAN_ID_PTR global_id,
@@ -398,7 +398,7 @@ int numEdges( const mesh::Entity & entity ) {
   return nodes.size();
 }
 
-int Callback_Num_Edges( void *data,
+int stkCallback_Num_Edges( void *data,
                         int Num_gid_entries,
                         int Num_lid_entries,
                         ZOLTAN_ID_PTR global_id,
@@ -431,7 +431,7 @@ int Callback_Num_Edges( void *data,
 
 }
 
-void Callback_Edge_List( void *data,
+void stkCallback_Edge_List( void *data,
                          int Num_gid_entries,
                          int Num_lid_entries,
                          ZOLTAN_ID_PTR global_id,
@@ -785,30 +785,30 @@ int Zoltan::register_callbacks()
    */
 
   if ( Zoltan_Set_Num_Obj_Fn( m_zoltan_id_,
-                              Callback_Num_Elements,
+                              stkCallback_Num_Elements,
                               this )
        != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_Num_Obj_Fn using Callback_Num_Elements failed to register");
+    throw std::runtime_error("Zoltan_Set_Num_Obj_Fn using stkCallback_Num_Elements failed to register");
   }
-  if ( Zoltan_Set_Obj_List_Fn( m_zoltan_id_, Callback_Element_List,this )
+  if ( Zoltan_Set_Obj_List_Fn( m_zoltan_id_, stkCallback_Element_List,this )
        != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_Obj_List_Fn using Callback_Element_List");
+    throw std::runtime_error("Zoltan_Set_Obj_List_Fn using stkCallback_Element_List");
   }
-  if ( Zoltan_Set_Num_Geom_Fn( m_zoltan_id_, Callback_Num_Dimensions,this )
+  if ( Zoltan_Set_Num_Geom_Fn( m_zoltan_id_, stkCallback_Num_Dimensions,this )
        != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_Num_Geom_Fn using Callback_Num_Dimensions");
+    throw std::runtime_error("Zoltan_Set_Num_Geom_Fn using stkCallback_Num_Dimensions");
   }
-  if ( Zoltan_Set_Geom_Fn( m_zoltan_id_, Callback_Centroid_Coord,this )
+  if ( Zoltan_Set_Geom_Fn( m_zoltan_id_, stkCallback_Centroid_Coord,this )
        != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_Geom_Fn using Callback_Centroid_Coord");
+    throw std::runtime_error("Zoltan_Set_Geom_Fn using stkCallback_Centroid_Coord");
   }
-  if ( Zoltan_Set_Num_Edges_Fn( m_zoltan_id_, Callback_Num_Edges,this )
+  if ( Zoltan_Set_Num_Edges_Fn( m_zoltan_id_, stkCallback_Num_Edges,this )
        != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_Num_Edges_Fn using Callback_Num_Edges");
+    throw std::runtime_error("Zoltan_Set_Num_Edges_Fn using stkCallback_Num_Edges");
   }
-  if ( Zoltan_Set_Edge_List_Fn( m_zoltan_id_, Callback_Edge_List,this )
+  if ( Zoltan_Set_Edge_List_Fn( m_zoltan_id_, stkCallback_Edge_List,this )
        != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_Edge_List_Fn using Callback_Edge_List");
+    throw std::runtime_error("Zoltan_Set_Edge_List_Fn using stkCallback_Edge_List");
   }
 
   return 0;

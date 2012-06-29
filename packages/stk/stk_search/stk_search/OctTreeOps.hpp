@@ -145,7 +145,10 @@ void box_global_bounds(
 {
   enum { Dim = 3 };
 
-  const bool symmetric = static_cast<const void * const>(arg_range_boxes) == static_cast<const void *const>(arg_domain_boxes ) ||
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 1210)
+#pragma warning disable 191
+#endif
+  const bool symmetric = static_cast<const void * const>(arg_range_boxes) == static_cast<const void * const>(arg_domain_boxes ) ||
     arg_range_boxes == NULL;
 
 

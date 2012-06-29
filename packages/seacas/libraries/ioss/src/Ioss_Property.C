@@ -77,7 +77,12 @@ Ioss::Property::Property(const std::string &name,
   name_(name), type_(type), storage_(storage), isImplicit_(is_it_implicit)
 { data_.pval = data; }
 
-Ioss::Property::Property(const std::string &name, const int    value,
+Ioss::Property::Property(const std::string &name, const int value,
+			     bool is_it_implicit) :
+  name_(name), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
+{ data_.ival = value; }
+
+Ioss::Property::Property(const std::string &name, const int64_t  value,
 			     bool is_it_implicit) :
   name_(name), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
 { data_.ival = value; }
@@ -124,9 +129,9 @@ std::string Ioss::Property::get_string()  const
   return value;
 }
 
-int    Ioss::Property::get_int()     const
+int64_t Ioss::Property::get_int()     const
 {
-  int value;
+  int64_t value;
   bool valid = get_value(&value);
   if (!valid) {
     error_message(*this, "int");
@@ -154,7 +159,7 @@ void*  Ioss::Property::get_pointer() const
   return value;
 }
 
-bool Ioss::Property::get_value(int *value) const
+bool Ioss::Property::get_value(int64_t *value) const
 {
   bool valid_request = false;
   if (type_ == INTEGER) {

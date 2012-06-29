@@ -70,6 +70,35 @@ namespace fei {
     static const char* typeName()
       { return("Epetra_CrsMatrix"); }
 
+    static double* getBeginPointer(Epetra_CrsMatrix* mat)
+      {
+        return (*mat)[0];
+      }
+
+    static int getOffset(Epetra_CrsMatrix* A, int row, int col)
+      {
+        const Epetra_Map& erowmap = A->RowMap();
+        const Epetra_Map& ecolmap = A->ColMap();
+        int local_row = erowmap.LID(row);
+        int local_col = ecolmap.LID(col);
+    
+        int* rowOffsets;
+        int* colIndices;
+        double* coefs;
+        A->ExtractCrsDataPointers(rowOffsets, colIndices, coefs);
+    
+        int* row_ptr = &colIndices[rowOffsets[local_row]];
+        int* end_row = &colIndices[rowOffsets[local_row+1]];
+    
+        int col_offset = 0;
+        for(; row_ptr != end_row; ++row_ptr) {
+          if (*row_ptr == local_col) break;
+          ++col_offset;
+        }
+    
+        return rowOffsets[local_row] + col_offset;
+      }
+
     static int setValues(Epetra_CrsMatrix* mat, double scalar)
       {
         return( mat->PutScalar(scalar) );

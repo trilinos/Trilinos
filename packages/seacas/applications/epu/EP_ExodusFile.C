@@ -55,6 +55,7 @@ int Excn::ExodusFile::startPart_ = 0;
 int Excn::ExodusFile::outputId_ = -1;
 int Excn::ExodusFile::ioWordSize_ = 0;
 int Excn::ExodusFile::cpuWordSize_ = 0;
+int Excn::ExodusFile::mode64bit_ = 0;
 std::string Excn::ExodusFile::outputFilename_;
 bool Excn::ExodusFile::keepOpen_ = false;
 int Excn::ExodusFile::maximumNameLength_ = 32;
@@ -72,8 +73,11 @@ Excn::ExodusFile::ExodusFile(int processor)
     float version = 0.0;
     int cpu_word_size = cpuWordSize_;
     int io_word_size_var  = ioWordSize_;
+    int mode = EX_READ;
+    mode |= mode64bit_;
+    
     fileids_[processor] = ex_open(filenames_[processor].c_str(),
-				  EX_READ, &cpu_word_size,
+				  mode, &cpu_word_size,
 				  &io_word_size_var, &version);
     if (fileids_[processor] < 0) {
       std::cerr << "Cannot open file '" << filenames_[processor]
@@ -127,6 +131,15 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si, int start_part, int
   startPart_      = start_part;      // Which one to start with
   SMART_ASSERT(partCount_ + startPart_ <= processorCount_)(partCount_)(startPart_)(processorCount_);
   
+  // EPU always wants entity (block, set, map) ids as 64-bit quantities...
+  mode64bit_ = EX_IDS_INT64_API;
+  if (si.int64()) {
+    mode64bit_ |= EX_ALL_INT64_API;
+
+    // For output...
+    mode64bit_ |= EX_ALL_INT64_DB;
+  }
+
   // See if we can keep files open 
   int max_files = get_free_descriptor_count();
   if (partCount_ <= max_files) {
@@ -167,14 +180,24 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si, int start_part, int
     if (p == 0) {
       int cpu_word_size  = sizeof(float);
       int io_word_size_var   = 0;
+      int mode = EX_READ;
+      mode |= mode64bit_;
       int exoid = ex_open(filenames_[p].c_str(),
-			  EX_READ, &cpu_word_size,
+			  mode, &cpu_word_size,
 			  &io_word_size_var, &version);
       if (exoid < 0) {
 	std::cerr << "Cannot open file '" << filenames_[p] << "'" << std::endl;
 	return false;
       }
 
+      int int64db = ex_int64_status(exoid) & EX_ALL_INT64_DB;
+      if (int64db) {
+	// If anything stored on input db as 64-bit int, then output db will have
+	// everything stored as 64-bit ints and all API functions will use 64-bit
+	mode64bit_ |= EX_ALL_INT64_API;
+	mode64bit_ |= EX_ALL_INT64_DB;
+      }
+      
       int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
       if (max_name_length > maximumNameLength_)
 	maximumNameLength_ = max_name_length;
@@ -190,8 +213,11 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si, int start_part, int
 
     if (keepOpen_ || p == 0) {
       int io_word_size_var   = 0;
+      int mode = EX_READ;
+      // All entity ids (block, sets) are read/written as 64-bit...
+      mode |= mode64bit_;
       fileids_[p] = ex_open(filenames_[p].c_str(),
-			    EX_READ, &cpuWordSize_,
+			    mode, &cpuWordSize_,
 			    &io_word_size_var, &version);
       if (fileids_[p] < 0) {
 	std::cerr << "Cannot open file '" << filenames_[p] << "'" << std::endl;
@@ -201,12 +227,18 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si, int start_part, int
       SMART_ASSERT(ioWordSize_ == io_word_size_var)(ioWordSize_)(io_word_size_var);
     }
     
-    if (si.debug()&2 || p==0 || p==partCount_-1) {
+    if (si.debug()&64 || p==0 || p==partCount_-1) {
       std::cout << "Input(" << p << "): '" << name.c_str() << "'" << std::endl;
-      if (!(si.debug()&2) && p==0)
+      if (!(si.debug()&64) && p==0)
 	std::cout << "..." << std::endl;
     }
   }
+
+  if (mode64bit_ & EX_ALL_INT64_DB) {
+    std::cout << "Input files contain 8-byte integers.\n";
+    si.set_int64();
+  }
+
   return true;
 }
 
@@ -229,19 +261,33 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si, int cycle)
 
   // See if output file should be opened in the large model format...
   // Did user specify it via -large_model argument...
-  int mode = EX_CLOBBER;
+  int mode = 0;
   
-  if (si.large_model() || ex_large_model(fileids_[0]) == 1) {
+  if (si.large_model()) {
+    mode |= EX_NETCDF4;
+  } else if (ex_large_model(fileids_[0]) == 1) {
     mode |= EX_LARGE_MODEL;
   }
   
+  mode |= mode64bit_;
+  
+  if (si.int64()) {
+    mode |= EX_ALL_INT64_DB;
+    mode |= EX_ALL_INT64_API;
+  }
+
   if (si.append()) {
     std::cout << "Output:   '" << outputFilename_ << "' (appending)" << std::endl;
     float version = 0.0;
-    mode = EX_WRITE;
+    mode |= EX_WRITE;
     outputId_ = ex_open(outputFilename_.c_str(), mode, 
 			&cpuWordSize_, &ioWordSize_, &version);
   } else {
+    mode |= EX_CLOBBER;
+    if (si.compress_data() > 0) {
+      // Force netcdf-4 if compression is specified...
+      mode |= EX_NETCDF4;
+    }
     std::cout << "Output:   '" << outputFilename_ << "'" << std::endl;
     outputId_ = ex_create(outputFilename_.c_str(), mode,
 			  &cpuWordSize_, &ioWordSize_);
@@ -251,14 +297,22 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si, int cycle)
     return false;
   }
 
+  if (si.compress_data() > 0) {
+    ex_set_option(outputId_, EX_OPT_COMPRESSION_LEVEL, si.compress_data());
+    ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
+  }
+
   // EPU Can add a name of "processor_id_epu" which is 16 characters long.
   // Make sure maximumNameLength_ is at least that long...
   
   if (maximumNameLength_ < 16)
     maximumNameLength_ = 16;
-  ex_set_max_name_length(outputId_, maximumNameLength_);
+  ex_set_option(outputId_, EX_OPT_MAX_NAME_LENGTH, maximumNameLength_);
 
-  std::cout << "IO Word size is " << ioWordSize_ << " bytes.\n";
+  int int_size = si.int64() ? 8 : 4;
+  std::cout << "IO Word sizes: "
+	    << ioWordSize_ << " bytes floating point and "
+	    << int_size << " bytes integer.\n";
   return true;
 }
 

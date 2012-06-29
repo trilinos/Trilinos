@@ -34,44 +34,57 @@
  */
 #ifndef _RF_UTIL_H
 #define _RF_UTIL_H
+#include <limits.h>
 
-/*****************************************************************************/
-/*     EXTERN STATEMENTS FOR GLOBAL FUNCTIONS IN rf_util.c                   */
-/*****************************************************************************/
+template <typename T>
+inline void swap(T &r, T &s)
+{
+  T tmp = r;
+  r = s;
+  s = tmp;
+}
 
-extern int   ilog2i (unsigned int n);
-extern void  sort_int_int    (int nval, int ra[], int rb[]);
-extern void  sort_int_float  (int nval, int ra[], float rb[]);
-extern void  sort_int_double (int nval, int ra[], double rb[]);
-extern void  sort_int_ptr(int nval, int ra[], char *rb[]);
-extern void  sort_int_int_ptr(int nval, int ra[], int rb[], char *rc[]);
-extern void  sort_int_int_int(int nval, int ra[], int rb[], int rc[]);
-extern void  sort_int (int n, int ra[]);
-extern int   find_max (int list_length, int list[]);
-extern int   find_min (int list_length, int list[]);
-extern int   find_inter (int inter_ptr[], int set1[], int set2[],
-                         int length1, int length2, int prob_type);
-extern int   find_inter_pos (int intersect[], int length1, int set1[],
-                             int length2, int set2[], int prob_type);
-extern void  init_vec_value (double *u, double value, int n);
-extern void  dcopy1 (int N, double *dx, double *dy);
-extern void  exchange_pointers (void **pointer1, void **pointer2);
-extern void  get_remap_index (int n,int arrin[], int indx[]);
-extern void  remap_int_array    (int N, int index[], int array[]);
-extern void  remap_double_array (int N, int index[], double array[]);
-extern void  print_global_vec (int total_nodes, double sol_vec[], int gnodes[],
-                               int var_no, int k, int proc, int num_procs);
-extern int   in_list_mono   (int ivalue, int *ibegin, int iend, int ivector[]);
-extern void  iindexx        (unsigned int n, int arr[], unsigned int indx[]);
-extern void  sort3 (int n, int ra[], int rb[], int m);
-extern int   find_range     (int start_value, int end_value, int List[],
-                             int num, int *start_pos, int *end_pos);
-extern int   bin_search     (int List[],  int num, int value);
-extern int   bin_search2    (int value,   int num, int List[]);
-extern int   bin_search_min (int List[],  int num, int value);
-extern void  print_line     (char *charstr, int ntimes);
+template <typename T, typename U>
+void siftDown( T *a, U *b, int64_t start, int64_t end)
+{
+  int64_t root = start;
+ 
+  while ( root*2+1 < end ) {
+    int64_t child = 2*root + 1;
+    if ((child + 1 < end) && (a[child] < a[child+1])) {
+      child += 1;
+    }
+    if (a[root] < a[child]) {
+      swap(a[child], a[root] );
+      swap(b[child], b[root] );
+      root = child;
+    }
+    else
+      return;
+  }
+}
+
+template <typename T, typename U>
+void my_sort(int64_t count, T ra[], U rb[])
+{
+  int64_t start, end;
+ 
+  /* heapify */
+  for (start = (count-2)/2; start >=0; start--) {
+    siftDown( ra, rb, start, count);
+  }
+ 
+  for (end=count-1; end > 0; end--) {
+    swap(ra[end],ra[0]);
+    swap(rb[end],rb[0]);
+    siftDown(ra, rb, 0, end);
+  }
+}
+ 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+extern void  print_line     (const char *charstr, int ntimes);
 extern int   break_message_up(size_t, size_t, size_t, int **);
-extern double srandom1      (int *seed);
-/*****************************************************************************/
 
 #endif /* #ifndef _RF_UTIL_H */

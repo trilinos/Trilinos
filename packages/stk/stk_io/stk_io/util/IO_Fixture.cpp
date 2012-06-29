@@ -1,5 +1,5 @@
 #include <stk_io/util/IO_Fixture.hpp>
-#include <stk_io/util/UseCase_mesh.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
@@ -18,7 +18,18 @@ IO_Fixture::IO_Fixture(stk::ParallelMachine comm)
   , m_mesh_data()
 {}
 
-IO_Fixture::~IO_Fixture() {}
+IO_Fixture::~IO_Fixture()
+{
+  // There are duplicate pointers in the IO_Fixture class
+  // If both try to delete, bad things happen...
+  m_mesh_data.m_input_region = NULL;
+  m_mesh_data.m_output_region = NULL;
+}
+
+void IO_Fixture::output_ioss_region(Teuchos::RCP<Ioss::Region> ioss_output_region) {
+  m_ioss_output_region = ioss_output_region;
+  m_mesh_data.m_output_region = m_ioss_output_region.get();
+}
 
 void IO_Fixture::create_output_mesh(
                                     const std::string & base_exodus_filename,
@@ -39,8 +50,18 @@ void IO_Fixture::create_output_mesh(
       "ERROR: Could not open results database '" << base_exodus_filename <<
       "' of type 'exodusII'");
 
+  // If the m_ioss_input_region exists for this fixture,
+  // check the integer size it is using and replicate that
+  // on the output mesh...
+  if (!Teuchos::is_null(m_ioss_input_region)) {
+    if (m_ioss_input_region->get_database()->int_byte_size_api() == 8)
+      dbo->set_int_byte_size_api(Ioss::USE_INT64_API);
+  }
+
   // NOTE: 'm_ioss_output_region' owns 'dbo' pointer at this time
-  m_ioss_output_region = Teuchos::rcp(new Ioss::Region(dbo, "results_output"));
+  const std::string name = std::string("results_output_")+base_exodus_filename;
+  m_ioss_output_region = Teuchos::rcp(new Ioss::Region(dbo, name));
+  m_mesh_data.m_output_region = m_ioss_output_region.get();
 
   /* Given the newly created Ioss::Region 'm_ioss_output_region', define the
    * model corresponding to the stk::mesh 'bulk_data'.  If the
@@ -53,7 +74,8 @@ void IO_Fixture::create_output_mesh(
    * deals with the non-transient portion of the model; no transient
    * fields are defined at this point.
    */
-  stk::io::define_output_db( *m_ioss_output_region, bulk_data(), m_ioss_input_region.get() );
+  stk::io::define_output_db( *m_ioss_output_region, bulk_data(), m_ioss_input_region.get(),
+			     m_mesh_data.m_anded_selector);
 
   /* Given an Ioss::Region 'm_ioss_output_region' which has already had its
    * metadata defined via 'define_output_db()' call; transfer all bulk
@@ -62,7 +84,8 @@ void IO_Fixture::create_output_mesh(
    * return, all non-transient portions of the output database will
    * have been output.
    */
-  stk::io::write_output_db( *m_ioss_output_region, bulk_data());
+  stk::io::write_output_db( *m_ioss_output_region, bulk_data(),
+			    m_mesh_data.m_anded_selector);
 
   if (add_transient) {
     m_ioss_output_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
@@ -107,10 +130,7 @@ void IO_Fixture::add_timestep_to_output_mesh( double time )
 {
   ThrowErrorMsgIf( Teuchos::is_null(m_ioss_output_region),
                    "Please call create_output_mesh before add_timestep_to_output_mesh" );
-  m_ioss_output_region->begin_mode(Ioss::STATE_TRANSIENT);
-  int out_step = m_ioss_output_region->add_state(time);
-  stk::io::util::process_output_request(*m_ioss_output_region, bulk_data(), out_step);
-  m_ioss_output_region->end_mode(Ioss::STATE_TRANSIENT);
+  stk::io::process_output_request(m_mesh_data, bulk_data(), time);
 }
 
 void IO_Fixture::set_meta_data( Teuchos::RCP<stk::mesh::fem::FEMMetaData> arg_meta_data )
@@ -137,21 +157,18 @@ void IO_Fixture::initialize_meta_data( const std::string & base_filename, const 
   m_fem_meta_data = Teuchos::rcp( new stk::mesh::fem::FEMMetaData());
   m_mesh_type = mesh_type;
 
-  std::string no_working_dir = "";
-
   Ioss::Init::Initializer init_db;
 
-  stk::io::util::create_input_mesh(
-                                    m_mesh_type,
-                                    base_filename,
-                                    no_working_dir,
-                                    m_comm,
-                                    meta_data(),
-                                    m_mesh_data
-                                  );
+  stk::io::create_input_mesh(
+			     m_mesh_type,
+			     base_filename,
+			     m_comm,
+			     meta_data(),
+			     m_mesh_data
+			     );
 
   // TODO: Restore this once m_mesh_data is fixed
-  //m_ioss_input_region = Teuchos::rcp( m_mesh_data.m_region );
+  m_ioss_input_region = Teuchos::rcp( m_mesh_data.m_input_region );
 }
 
 void IO_Fixture::initialize_bulk_data()
@@ -165,11 +182,10 @@ void IO_Fixture::initialize_bulk_data()
 
   m_bulk_data = Teuchos::rcp( new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::get_meta_data(meta_data()), m_comm));
 
-  stk::io::util::populate_bulk_data(
-                                    bulk_data(),
-                                    m_mesh_data,
-                                    m_mesh_type
-                                   );
+  stk::io::populate_bulk_data(
+			      bulk_data(),
+			      m_mesh_data
+			      );
 }
 
 void IO_Fixture::set_input_ioss_region( Teuchos::RCP<Ioss::Region> input_region )

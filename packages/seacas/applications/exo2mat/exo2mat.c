@@ -221,7 +221,7 @@ int main (int argc, char *argv[])
 {
 
   char  
-    *str,**str2,c[1],*(*qa_records)[4],*line, *oname, *dot, *filename;
+    *str,**str2,*(*qa_records)[4],*line, *oname, *dot, *filename;
 
   const char* ext=EXT;
 
@@ -240,7 +240,7 @@ int main (int argc, char *argv[])
     exo_version;
 
   double
-    f,*scr,*x,*y,*z;
+    f, *scr,*x,*y,*z;
 
   oname=0;
 
@@ -333,9 +333,9 @@ int main (int argc, char *argv[])
   err = ex_get_init(exo_file,line,
 	&num_axes,&num_nodes,&num_elements,&num_blocks,
         &num_node_sets,&num_side_sets);
-  err=ex_inquire(exo_file,EX_INQ_QA,&num_qa_lines,&f,c);
-  err=ex_inquire(exo_file,EX_INQ_INFO,&num_info_lines,&f,c);
-  err=ex_inquire(exo_file,EX_INQ_TIME,&num_time_steps,&f,c);
+  num_qa_lines   = ex_inquire_int(exo_file,EX_INQ_QA);
+  num_info_lines = ex_inquire_int(exo_file,EX_INQ_INFO);
+  num_time_steps = ex_inquire_int(exo_file,EX_INQ_TIME);
   err=ex_get_var_param(exo_file,"g",&num_global_vars);
   err=ex_get_var_param(exo_file,"n",&num_nodal_vars);
   err=ex_get_var_param(exo_file,"e",&num_element_vars);

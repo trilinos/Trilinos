@@ -39,9 +39,10 @@
 #include <Ioss_SubSystem.h>
 
 namespace {
-  void do_matching(IntVector &i_inrange, const RealVector &i_coord, int i_offset,
-		   IntVector &j_inrange, const RealVector &j_coord, int j_offset,
-		   double epsilon, int XYZ, IntVector &local_node_map);
+  template <typename INT>
+  void do_matching(std::vector<INT> &i_inrange, const RealVector &i_coord, size_t i_offset,
+		   std::vector<INT> &j_inrange, const RealVector &j_coord, size_t j_offset,
+		   double epsilon, int XYZ, std::vector<INT> &local_node_map);
 
   double max3(double x, double y, double z)
   {
@@ -73,7 +74,8 @@ namespace {
     }
   }
 
-  void find_in_range(std::vector<double> coord, vector3d &min, vector3d &max, IntVector &in_range)
+  template <typename INT>
+  void find_in_range(std::vector<double> coord, vector3d &min, vector3d &max, std::vector<INT> &in_range)
   {
     if (!coord.empty()) {
       for (size_t i=0; i < coord.size(); i+=3) {
@@ -87,9 +89,10 @@ namespace {
   }
 }
 
+template <typename INT>
 void match_node_xyz(RegionVector &part_mesh,
 		    double tolerance,
-		    IdMap &global_node_map, IdMap &local_node_map)
+		    std::vector<INT> &global_node_map, std::vector<INT> &local_node_map)
 {
   // See if any omitted element blocks...
   bool has_omissions = false;
@@ -105,7 +108,7 @@ void match_node_xyz(RegionVector &part_mesh,
       local_node_map[i] = i;
     }
   } else {
-    IdMap dummy;
+    std::vector<INT> dummy;
     eliminate_omitted_nodes(part_mesh, dummy, local_node_map);
 
     // The local_node_map is not quite in the correct format after the
@@ -119,7 +122,6 @@ void match_node_xyz(RegionVector &part_mesh,
   size_t part_count = part_mesh.size();
   enum {X=0, Y=1, Z=2};
 
-  IntVector global_map();
   for (size_t ip=0; ip < part_count; ip++) {
     vector3d i_max;
     vector3d i_min;
@@ -128,7 +130,7 @@ void match_node_xyz(RegionVector &part_mesh,
     inb->get_field_data("mesh_model_coordinates", i_coord);
     find_range(i_coord, i_min, i_max);
     
-    int i_offset = part_mesh[ip]->get_property("node_offset").get_int();
+    size_t i_offset = part_mesh[ip]->get_property("node_offset").get_int();
 
     for (size_t jp=ip+1; jp < part_count; jp++) {
       vector3d j_max;
@@ -138,7 +140,7 @@ void match_node_xyz(RegionVector &part_mesh,
       jnb->get_field_data("mesh_model_coordinates", j_coord);
       find_range(j_coord, j_min, j_max);
 
-      int j_offset = part_mesh[jp]->get_property("node_offset").get_int();
+      size_t j_offset = part_mesh[jp]->get_property("node_offset").get_int();
 
       // See if the ranges overlap...
       vector3d max;
@@ -172,8 +174,8 @@ void match_node_xyz(RegionVector &part_mesh,
 
       if (tolerance >= 0.0) epsilon = tolerance;
 
-      IntVector j_inrange;
-      IntVector i_inrange;
+      std::vector<INT> j_inrange;
+      std::vector<INT> i_inrange;
 
       find_in_range(j_coord, min, max, j_inrange);
       find_in_range(i_coord, min, max, i_inrange);
@@ -197,7 +199,7 @@ void match_node_xyz(RegionVector &part_mesh,
   // Build the global and local maps...
   size_t j = 1;
   for (size_t i=0; i < local_node_map.size(); i++) {
-    if (local_node_map[i] == (int)i) {
+    if (local_node_map[i] == (INT)i) {
       global_node_map.push_back(j);
       local_node_map[i] = j-1;
       j++;
@@ -206,32 +208,39 @@ void match_node_xyz(RegionVector &part_mesh,
     }
   }
 }
+template void match_node_xyz(RegionVector &part_mesh,
+			     double tolerance,
+			     std::vector<int> &global_node_map, std::vector<int> &local_node_map);
+template void match_node_xyz(RegionVector &part_mesh,
+			     double tolerance,
+			     std::vector<int64_t> &global_node_map, std::vector<int64_t> &local_node_map);
   
 namespace {
-  void do_matching(IntVector &i_inrange, const RealVector &i_coord, int i_offset,
-		   IntVector &j_inrange, const RealVector &j_coord, int j_offset,
-		   double epsilon, int XYZ, IntVector &local_node_map)
+  template <typename INT>
+  void do_matching(std::vector<INT> &i_inrange, const RealVector &i_coord, size_t i_offset,
+		   std::vector<INT> &j_inrange, const RealVector &j_coord, size_t j_offset,
+		   double epsilon, int XYZ, std::vector<INT> &local_node_map)
   {
-    size_t j2beg = 0;
+    INT j2beg = 0;
       
-    size_t match = 0;
-    size_t compare = 0;
+    INT match = 0;
+    INT compare = 0;
 
     double g_dismin =  FLT_MAX;
     double dismax = -FLT_MAX;
 
     for (size_t i=0; i < i_inrange.size(); i++) {
-      int ii = i_inrange[i];
+      INT ii = i_inrange[i];
       if (local_node_map[ii+i_offset] < 0)
 	continue;
 
       double dismin =  FLT_MAX;
       double dmin = FLT_MAX;
-      int node_dmin = -1;
+      INT node_dmin = -1;
 
       for (size_t j = j2beg; j < j_inrange.size(); j++) {
 	compare++;
-	int  jj = j_inrange[j];
+	INT  jj = j_inrange[j];
 	if (jj < 0 || local_node_map[jj+j_offset] < 0)
 	  continue;
 
@@ -262,12 +271,12 @@ namespace {
       }
 
       if (dmin <= epsilon) {
-	size_t jnod = j_inrange[node_dmin] + j_offset;
-	size_t inod = ii+i_offset;
+	INT jnod = j_inrange[node_dmin] + j_offset;
+	INT inod = ii+i_offset;
 	match++;
 	if (dmin > dismax) dismax = dmin;
 	j_inrange[node_dmin] *= -1;
-	SMART_ASSERT(jnod < local_node_map.size());
+	SMART_ASSERT(jnod < (INT)local_node_map.size());
 	if (inod < jnod)
 	  local_node_map[jnod] = inod;
 	else

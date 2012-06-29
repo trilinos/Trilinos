@@ -118,9 +118,11 @@ z coords =
 after ex_get_coord_names, error =   0
 x coord name = 'xcoor'
 y coord name = 'ycoor'
+ after ex_get_attr_param, error = 0
 num nodal attributes = 2
  after ex_get_attr_names, error = 0
 nodal attribute 0 = 'Node_attr_1'
+ after ex_get_one_attr, error = 0
   0.0
   1.0
   1.0
@@ -155,6 +157,7 @@ nodal attribute 0 = 'Node_attr_1'
  10.0
  10.0
 nodal attribute 1 = 'Node_attr_2'
+ after ex_get_one_attr, error = 0
   0.0
   0.0
   1.0
@@ -253,9 +256,11 @@ dist factors for node set 20
  3.00
  4.00
  5.00
+ after ex_get_attr_param, error = 0
 num nodeset attributes for nodeset 20 = 1
  after ex_get_attr_names, error = 0
 nodeset attribute 0 = 'Nodeset_attribute'
+ after ex_get_one_attr, error = 0
   0.0
   1.0
   1.0
@@ -280,6 +285,7 @@ dist factors for node set 21
  1.10
  2.10
  3.10
+ after ex_get_attr_param, error = 0
 num nodeset attributes for nodeset 21 = 0
 
 after ex_inquire, error = 0

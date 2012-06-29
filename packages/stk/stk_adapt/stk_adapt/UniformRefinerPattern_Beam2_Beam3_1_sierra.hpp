@@ -6,7 +6,7 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 
 namespace stk {
@@ -93,12 +93,10 @@ namespace stk {
 
             change_entity_parts(eMesh, element, newElement);
 
-            set_parent_child_relations(eMesh, element, newElement, ielem);
-
             {
               if (!elems[ielem][0])
                 {
-                  std::cout << "P[" << eMesh.getRank() << " nid = 0  " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << " nid = 0  " << std::endl;
                   exit(1);
                 }
 
@@ -107,8 +105,10 @@ namespace stk {
               {
                 stk::mesh::EntityId eid = elems[ielem][inode];
                 stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
-                eMesh.getBulkData()->declare_relation(newElement, node, inode);
+                eMesh.get_bulk_data()->declare_relation(newElement, node, inode);
               }
+
+            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             element_pool++;
 

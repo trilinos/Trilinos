@@ -79,6 +79,7 @@ void FEMMetaData::internal_set_spatial_dimension_and_ranks(size_t spatial_dimens
 {
   ThrowRequireMsg( spatial_dimension != 0, "FEMMetaData::internal_set_spatial_dimension_and_ranks: spatial_dimension == 0!");
   m_spatial_dimension = spatial_dimension;
+  m_meta_data.m_spatial_dimension = spatial_dimension;
 
   // TODO:  Decide on correct terminology for the FEM Entity Ranks (consider topological vs spatial names and incompatibilities).
   // spatial_dimension = 1

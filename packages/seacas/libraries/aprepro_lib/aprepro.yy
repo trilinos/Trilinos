@@ -149,7 +149,7 @@ sexp:     QSTRING		{ $$ = $1;				}
 				  int len3 = strlen($3);
 				  $$ = (char*)calloc(1, (len1+len3+1));
 				  memcpy($$, $1, len1+1);
-				  (void *)strcat($$, $3); }
+				  strcat($$, $3); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp COMMA sexp COMMA sexp RPAR
 				{ $$ = (char*)(*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp  RPAR

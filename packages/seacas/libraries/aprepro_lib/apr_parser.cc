@@ -672,7 +672,7 @@ namespace SEAMS {
 				  int len3 = strlen((yysemantic_stack_[(3) - (3)].string));
 				  (yyval.string) = (char*)calloc(1, (len1+len3+1));
 				  memcpy((yyval.string), (yysemantic_stack_[(3) - (1)].string), len1+1);
-				  (void *)strcat((yyval.string), (yysemantic_stack_[(3) - (3)].string)); }
+				  strcat((yyval.string), (yysemantic_stack_[(3) - (3)].string)); }
     break;
 
   case 36:

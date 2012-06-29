@@ -73,6 +73,7 @@ C     --   FACESS - IN/OUT - the distribution factors for all sets????????????
       JESS = 0
       JNE = 0
       JDF = 0
+      idfe = 0
       DO 120 IESS = 1, NUMESS
          JNELST = JNE
          JDFLST = JDF

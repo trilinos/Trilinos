@@ -50,7 +50,7 @@ unsigned BulkData::determine_new_owner( Entity & entity ) const
     EntityLogDeleted == entity.log_query() ? ~0u : m_parallel_rank ;
 
   for ( PairIterEntityComm
-        share = entity.sharing(); ! share.empty() ; ++share ) {
+        share = m_entity_comm_map.sharing(entity.key()); ! share.empty() ; ++share ) {
     if ( share->proc < m_parallel_size &&
          ( new_owner < share->proc || m_parallel_size <= new_owner ) ) {
       new_owner = share->proc ;
@@ -109,7 +109,7 @@ bool pack_entity_modification( const BulkData & mesh ,
     if ( entity.log_query() == EntityLogModified ||
          entity.log_query() == EntityLogDeleted ) {
 
-      for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
+      for ( PairIterEntityComm ec = mesh.entity_comm(entity.key()); ! ec.empty() ; ++ec ) {
         const bool shared = 0 == ec->ghost_id ;
         if ( pack_shared == shared ) {
           comm.send_buffer( ec->proc )
@@ -255,7 +255,7 @@ void BulkData::internal_update_distributed_index(
           }
 
           // Add the other_process to the entity's sharing info.
-          m_entity_repo.insert_comm_info( *entity, EntityCommInfo( 0, // sharing
+          m_entity_comm_map.insert(entity->key(), EntityCommInfo( 0, // sharing
                                                                    modifying_proc ) );
         }
       }
@@ -308,7 +308,7 @@ void resolve_shared_removed_from_owned_closure( BulkData & mesh )
 
     Entity * entity = *i ;
 
-    if ( ! entity->sharing().empty() &&
+    if ( ! mesh.entity_comm_sharing(entity->key()).empty() &&
          ! in_owned_closure( *entity , mesh.parallel_rank() ) ) {
 
       destroy_dependent_ghosts( mesh , entity );
@@ -376,7 +376,7 @@ void BulkData::internal_resolve_shared_modify_delete()
       // guarantee that the comm list is correct or up-to-date).
 
       if ( remotely_destroyed ) {
-        m_entity_repo.erase_comm_info( *entity, EntityCommInfo(0,remote_proc) );
+        m_entity_comm_map.erase(entity->key(), EntityCommInfo(0,remote_proc) );
 
         // check if owner is destroying
         if ( entity->owner_rank() == remote_proc ) {
@@ -387,7 +387,7 @@ void BulkData::internal_resolve_shared_modify_delete()
 
     // Have now processed all remote changes knowledge for this entity.
 
-    PairIterEntityComm new_sharing = entity->sharing();
+    PairIterEntityComm new_sharing = m_entity_comm_map.sharing(entity->key());
     const bool   exists_somewhere = ! ( remote_owner_destroyed &&
                                         locally_destroyed &&
                                         new_sharing.empty() );
@@ -443,7 +443,7 @@ void BulkData::internal_resolve_shared_modify_delete()
 
     if ( EntityLogDeleted == entity->log_query() ) {
       // m_ghosting[0] is the SHARED communication
-      m_entity_repo.erase_ghosting( *entity , *m_ghosting[0] );
+      m_entity_comm_map.erase(entity->key(), *m_ghosting[0] );
     }
   }
 }
@@ -495,7 +495,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
         // remove from ghost-send list
 
         for ( size_t j = ghosting_count ; j-- ; ) {
-          if ( m_entity_repo.erase_comm_info( *entity, EntityCommInfo( j , remote_proc ) ) ) {
+          if ( m_entity_comm_map.erase( entity->key(), EntityCommInfo( j , remote_proc ) ) ) {
             ghosting_change_flags[ j ] = true ;
           }
         }
@@ -508,13 +508,13 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
       // Owner modified or destroyed, must locally destroy.
 
-      for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
+      for ( PairIterEntityComm ec = m_entity_comm_map.comm(entity->key()) ; ! ec.empty() ; ++ec ) {
         ghosting_change_flags[ ec->ghost_id ] = true ;
       }
 
       // This is a receive ghost so the only communication information
       // is the ghosting information, can clear it all out.
-      m_entity_repo.comm_clear( *entity );
+      m_entity_comm_map.comm_clear(entity->key());
 
       if ( ! locally_destroyed ) {
 
@@ -552,7 +552,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
       // m_ghosting[0] is the SHARED communication
 
       for ( size_t j = ghosting_count ; j-- ; ) {
-        if ( m_entity_repo.erase_ghosting( entity, *m_ghosting[j] ) ) {
+        if ( m_entity_comm_map.erase( entity.key(), *m_ghosting[j] ) ) {
           ghosting_change_flags[ j ] = true ;
         }
       }
@@ -605,7 +605,7 @@ void BulkData::internal_resolve_parallel_create()
            entity.log_query()  != EntityLogCreated ) {
 
         for ( PairIterEntityComm
-                jc = entity.sharing() ; ! jc.empty() ; ++jc ) {
+                jc = m_entity_comm_map.sharing(entity.key()) ; ! jc.empty() ; ++jc ) {
           comm_all.send_buffer( jc->proc ) .pack<EntityKey>( entity.key() );
         }
       }
@@ -668,7 +668,7 @@ void BulkData::internal_resolve_parallel_create()
       m_entity_repo.set_entity_sync_count( *entity, m_sync_count);
       internal_change_entity_parts( *entity , shared_part /*add*/, owned_part /*remove*/);
     }
-    else if ( ! entity->sharing().empty() ) {
+    else if ( ! m_entity_comm_map.sharing(entity->key()).empty() ) {
       // Own it and has sharing information.
       // Add the globally_shared
       internal_change_entity_parts( *entity , shared_part /*add*/, PartVector() /*remove*/ );
@@ -761,7 +761,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
       else if ( EntityLogDeleted == entity.log_query() ) { msg << " del" ; }
       else { msg << "    " ; }
 
-      for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
+      for ( PairIterEntityComm ec = mesh.entity_comm(entity.key()); ! ec.empty() ; ++ec ) {
         msg << " (" << ec->ghost_id << "," << ec->proc << ")" ;
       }
       msg << std::endl ;
@@ -798,7 +798,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
       std::vector<Entity*>::iterator i = m_entity_comm.begin();
       bool changed = false ;
       for ( ; i != m_entity_comm.end() ; ++i ) {
-        if ( (*i)->comm().empty() ) { *i = NULL ; changed = true ; }
+        if ( m_entity_comm_map.comm((*i)->key()).empty() ) { *i = NULL ; changed = true ; }
       }
       if ( changed ) {
         i = std::remove( m_entity_comm.begin() ,
@@ -838,7 +838,12 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
   // However, it insures that the ordering of entities and buckets
   // is independent of the order in which a set of changes were
   // performed.
-  m_bucket_repository.internal_sort_bucket_entities();
+  //
+  //optimize_buckets combines multiple buckets in a bucket-family into
+  //a single larger bucket, and also does a sort.
+  //If optimize_buckets has not been requested, still do the sort.
+  if (m_optimize_buckets) m_bucket_repository.optimize_buckets();
+  else m_bucket_repository.internal_sort_bucket_entities();
 
   // ------------------------------
 
@@ -867,7 +872,7 @@ void pack_induced_memberships( CommAll & comm ,
     if ( in_shared( entity , entity.owner_rank() ) ) {
       // Is shared with owner, send to owner.
 
-      PartVector empty , induced ;
+      OrdinalVector empty , induced ;
 
       induced_part_membership( entity , empty , induced );
 
@@ -877,10 +882,9 @@ void pack_induced_memberships( CommAll & comm ,
 
       buf.pack<unsigned>( tmp );
 
-      for ( PartVector::iterator
+      for ( OrdinalVector::iterator
             j = induced.begin() ; j != induced.end() ; ++j ) {
-        tmp = (*j)->mesh_meta_data_ordinal();
-        buf.pack<unsigned>( tmp );
+        buf.pack<unsigned>( *j );
       }
     }
   }
@@ -1013,7 +1017,7 @@ void BulkData::internal_resolve_shared_membership()
       if ( entity.owner_rank() == p_rank ) {
         // Receiving from all sharing processes
 
-        PartVector empty , induced_parts , current_parts , remove_parts ;
+        OrdinalVector empty , induced_parts , current_parts , remove_parts ;
 
         induced_part_membership( entity , empty , induced_parts );
 
@@ -1025,7 +1029,7 @@ void BulkData::internal_resolve_shared_membership()
           unsigned count = 0 ; buf.unpack<unsigned>( count );
           for ( unsigned j = 0 ; j < count ; ++j ) {
             unsigned part_ord = 0 ; buf.unpack<unsigned>( part_ord );
-            insert( induced_parts , * all_parts[ part_ord ] );
+            insert_ordinal( induced_parts , part_ord );
           }
         }
 
@@ -1034,10 +1038,13 @@ void BulkData::internal_resolve_shared_membership()
 
         entity.bucket().supersets( current_parts );
 
-        for ( PartVector::iterator
+        OrdinalVector::const_iterator induced_parts_begin = induced_parts.begin(),
+                                      induced_parts_end   = induced_parts.end();
+
+        for ( OrdinalVector::iterator
               p = current_parts.begin() ; p != current_parts.end() ; ++p ) {
-          if ( membership_is_induced( **p , entity.entity_rank() ) &&
-               ! contain( induced_parts , **p ) ) {
+          if ( membership_is_induced( *meta.get_parts()[*p] , entity.entity_rank() ) &&
+               ! contains_ordinal( induced_parts_begin, induced_parts_end , *p ) ) {
             remove_parts.push_back( *p );
           }
         }

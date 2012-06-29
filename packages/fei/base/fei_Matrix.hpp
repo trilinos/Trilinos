@@ -282,6 +282,9 @@ namespace fei {
     */
     virtual bool changedSinceMark() = 0;
 
+    virtual double* getBeginPointer() { return NULL; }
+    virtual int getOffset(int row, int col) { return -1; }
+
   };//class Matrix
 }//namespace fei
 

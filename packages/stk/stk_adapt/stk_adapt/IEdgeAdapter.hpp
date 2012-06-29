@@ -55,7 +55,7 @@ namespace stk {
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-      VectorFieldType* coordField = m_eMesh.getCoordinatesField();
+      VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
@@ -122,7 +122,7 @@ namespace stk {
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-      VectorFieldType* coordField = m_eMesh.getCoordinatesField();
+      VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
       unsigned numSubDimNeededEntities = 0;
       numSubDimNeededEntities = cell_topo_data->edge_count;
@@ -153,7 +153,7 @@ namespace stk {
     {
       ElementUnrefineCollection elements_to_unref;
 
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
@@ -182,7 +182,7 @@ namespace stk {
                       {
                         elements_to_unref.insert(&element);
                         //std::cout << "tmp unref element id= " << element.identifier() << std::endl;
-                        //m_eMesh.printEntity(std::cout, element);
+                        //m_eMesh.print_entity(std::cout, element);
                       }
                   }
               }

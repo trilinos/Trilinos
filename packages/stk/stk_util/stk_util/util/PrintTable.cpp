@@ -12,6 +12,7 @@
 #include <iomanip>
 
 #include <stk_util/util/PrintTable.hpp>
+#include <iostream>
 
 namespace stk {
 

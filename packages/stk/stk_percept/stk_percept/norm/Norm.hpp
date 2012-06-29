@@ -83,6 +83,7 @@ namespace stk
     };
 #endif
 
+    /// for Power = -1, compute the inf-norm
     template<int Power=2>
     class LN_NormOp  : public Function, public HasFinalOp<std::vector<double> >
     {
@@ -98,7 +99,7 @@ namespace stk
         VERIFY_OP(integrand_values.size(), ==, output_values.size(), "LN_NormOp::operator() bad sizes");
         for (int i = 0; i < integrand_values.size(); i++)
           {
-            output_values[i] = std::pow(std::fabs(integrand_values[i]), double(Power) );
+            output_values[i] = std::pow(std::fabs(integrand_values[i]), double(std::fabs(Power)) );
           }
       }
       virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
@@ -113,19 +114,54 @@ namespace stk
       void finalOp(const std::vector<double>& vin, std::vector<double>& vout)
       {
         for (unsigned i = 0; i < vin.size(); i++)
-          vout[i] = std::pow(vin[i], 1./(double(Power)) );
+          vout[i] = std::pow(vin[i], 1./(double(std::fabs(Power))) );
       }
     };
 
+    class MaxOfNodeValues : public Function
+    {
+    public:
 
+      MaxOfNodeValues(int spatialDim, Function& integrand) : Function("MaxOfNodeValues", Dimensions(spatialDim), integrand.getCodomainDimensions()), m_integrand(integrand), maxVal(0) {}
+      Function& m_integrand;
+      std::vector<double> maxVal;
+
+      void operator()(MDArray& coords, MDArray& output_values, double time_value_optional)
+      {
+        //VERIFY_OP(coords.size(), ==, output_values.size(), "MaxOfNodeValues::operator() bad sizes");
+        if (maxVal.size()==0) maxVal.resize(m_integrand.getCodomainDimensions()[0]);
+        MDArray out(maxVal.size());
+        m_integrand(coords, out);
+
+        for (unsigned i = 0; i < maxVal.size(); i++)
+          {
+            maxVal[i] = std::max(maxVal[i], out(i));
+          }
+      }
+
+    };
+
+
+    /// for Power = -1, compute the inf-norm
     template<int Power=2>
     class Norm : public FunctionOperator
     {
       TurboOption m_turboOpt;
+      unsigned m_cubDegree;
     public:
       Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE) :
-        FunctionOperator(bulkData, part), m_turboOpt(turboOpt)
+        FunctionOperator(bulkData, part), m_turboOpt(turboOpt), m_cubDegree(2)
      {}
+
+      void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
+      unsigned getCubDegree() { return m_cubDegree; }
+
+      double evaluate(Function& integrand)
+      {
+        ConstantFunction sfx_res(0.0, "sfx_res");
+        (*this)(integrand, sfx_res);
+        return sfx_res.getValue();
+      }
 
       virtual void operator()(Function& integrand, Function& result)
       {
@@ -152,7 +188,12 @@ namespace stk
             LN_NormOp<Power> LN_op(integrand);
             CompositeFunction LN_of_integrand("LN_of_integrand", integrand, LN_op);
             IntegratedOp integrated_LN_op(LN_of_integrand, m_turboOpt);
-            eMesh.printInfo("Norm");
+            integrated_LN_op.setCubDegree(m_cubDegree);
+            if (Power == -1) {
+              integrated_LN_op.setAccumulationType(IntegratedOp::ACCUMULATE_MAX);
+            }
+
+            //eMesh.print_info("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
                 eMesh.elementOpLoop(integrated_LN_op, 0, &mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part());
@@ -162,14 +203,36 @@ namespace stk
                 eMesh.bucketOpLoop(integrated_LN_op, 0, &mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part());
               }
 
+
             unsigned vec_sz = integrated_LN_op.getValue().size();
-            std::vector<double>& local = integrated_LN_op.getValue();
+            std::vector<double> local = integrated_LN_op.getValue();
+
+            if (Power == -1)
+              {
+                MaxOfNodeValues maxOfNodeValues(eMesh.get_spatial_dim(), integrand);
+                eMesh.nodalOpLoop(maxOfNodeValues);
+                for (unsigned iDim = 0; iDim < local.size(); iDim++)
+                  local[iDim] = std::max(local[iDim], maxOfNodeValues.maxVal[iDim]);
+              }
+
 
             //unsigned p_rank = m_bulkData.parallel_rank();
             //std::cout  << "P["<<p_rank<<"] value = " << local << std::endl;
 
             std::vector<double> global_sum(vec_sz, 0.0);
-            stk::all_reduce_sum(m_bulkData.parallel(), &local[0], &global_sum[0], vec_sz);
+            if (Power != -1)
+              {
+                stk::all_reduce_sum(m_bulkData.parallel(), &local[0], &global_sum[0], vec_sz);
+              }
+            else
+              {
+                for (unsigned iDim = 0; iDim < local.size(); iDim++)
+                  {
+                    double global = local[iDim];
+                    stk::all_reduce( m_bulkData.parallel(), stk::ReduceMax<1>( &global ) );
+                    global_sum[iDim] = global;
+                  }
+              }
 
             std::vector<double> result1(vec_sz);
             LN_op.finalOp(global_sum, result1);

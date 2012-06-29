@@ -30,7 +30,7 @@ namespace stk {
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::ShellTriangle<3>, shards::ShellTriangle<3>  >(eMesh)
       {
 
-        if (m_eMesh.getSpatialDim() != 3)
+        if (m_eMesh.get_spatial_dim() != 3)
           {
             throw std::runtime_error("can't refine shell elements in 2D");
           }
@@ -42,7 +42,7 @@ namespace stk {
 #if EDGE_ST3_ST3_4_BREAKER
 
         //m_edge_breaker = Teuchos::rcp( new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) );
-        if (m_eMesh.getSpatialDim() == 3)
+        if (m_eMesh.get_spatial_dim() == 3)
           {
             m_edge_breaker = new UniformRefinerPattern<shards::ShellLine<2>, shards::ShellLine<2>, 2, SierraPort > (eMesh, block_names) ;
             m_face_breaker = new UniformRefinerPattern<shards::Triangle<3>, shards::Triangle<3>, 4, SierraPort > (eMesh, block_names) ;
@@ -66,7 +66,7 @@ namespace stk {
         bp = std::vector<UniformRefinerPatternBase *>(1u, 0);
 #endif
 
-        if (eMesh.getSpatialDim() == 3)
+        if (eMesh.get_spatial_dim() == 3)
           {
             bp[0] = this;
 #if EDGE_ST3_ST3_4_BREAKER
@@ -74,7 +74,7 @@ namespace stk {
             bp[2] = m_edge_breaker;
 #endif
           }
-        else if (eMesh.getSpatialDim() != 3)
+        else if (eMesh.get_spatial_dim() != 3)
           {
             // FIXME
              std::cout << "ERROR" ;

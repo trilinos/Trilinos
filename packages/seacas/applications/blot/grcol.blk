@@ -1,0 +1,7 @@
+      COMMON /GRCOL/ LSTMAP, LSTDEV, LSTCOL, IBLACK, IWHITE
+      INTEGER LSTMAP, LSTDEV, LSTCOL, IBLACK, IWHITE
+C      --LSTMAP - the last color map (saved so that change in
+C      --   color map can be detected)
+C      --LSTDEV - the last current device
+C      --LSTCOL - the last color set
+C      --IBLACK, IWHITE - the color indices for black and white

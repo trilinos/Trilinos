@@ -122,13 +122,13 @@ void BulkData::destroy_all_ghosting()
     Entity * entity = *--ie ;
 
     if ( in_receive_ghost( *entity ) ) {
-      m_entity_repo.comm_clear( *entity );
+      m_entity_comm_map.comm_clear(entity->key());
       destroy_entity( entity );
       *ie = NULL ;
     }
     else {
-      m_entity_repo.comm_clear_ghosting( * entity);
-      if ( entity->comm().empty() ) {
+      m_entity_comm_map.comm_clear_ghosting(entity->key());
+      if ( m_entity_comm_map.comm(entity->key()).empty() ) {
         *ie = NULL ;
       }
     }
@@ -317,22 +317,22 @@ void BulkData::internal_change_ghosting(
       // Have to make a copy
 
       std::vector<EntityCommInfo> comm_ghost ;
-      const PairIterEntityComm ec = entity->comm( ghosts );
+      const PairIterEntityComm ec = m_entity_comm_map.comm(entity->key(),ghosts);
       comm_ghost.assign( ec.first , ec.second );
 
       for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
         const EntityCommInfo tmp = comm_ghost.back();
 
         if ( 0 == new_send.count( EntityProc( entity , tmp.proc ) ) ) {
-          m_entity_repo.erase_comm_info( *entity, tmp );
+          m_entity_comm_map.erase(entity->key(),tmp);
         }
       }
     }
     else if ( remove_recv ) {
-      m_entity_repo.erase_ghosting( *entity, ghosts );
+      m_entity_comm_map.erase(entity->key(),ghosts);
     }
 
-    if ( entity->comm().empty() ) {
+    if ( m_entity_comm_map.comm(entity->key()).empty() ) {
       removed = true ;
       *i = NULL ; // No longer communicated
       if ( remove_recv ) {
@@ -392,9 +392,7 @@ void BulkData::internal_change_ghosting(
         pack_entity_info(  buf , entity );
         pack_field_values( buf , entity );
 
-        m_entity_repo.insert_comm_info( entity,
-                                        EntityCommInfo(ghosts.ordinal(), proc)
-                                        );
+        m_entity_comm_map.insert(entity.key(), EntityCommInfo(ghosts.ordinal(), proc));
 
         m_entity_comm.push_back( & entity );
       }
@@ -457,7 +455,7 @@ void BulkData::internal_change_ghosting(
 
           const EntityCommInfo tmp( ghosts.ordinal() , owner );
 
-          if ( m_entity_repo.insert_comm_info( *entity, tmp ) ) {
+          if ( m_entity_comm_map.insert(entity->key(),tmp) ) {
             m_entity_comm.push_back( entity );
           }
         }

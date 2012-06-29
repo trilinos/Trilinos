@@ -135,9 +135,9 @@ namespace moab {
       }
 
     //p perform edge length calculations in a consistent way (see below, we do it on permuted values)
-    double edge_length2[6];
-    for ( int ei = 0; ei < 6; ++ ei )
-      edge_length2[ei] = 0.;
+    //double edge_length2[6];
+    //for ( int ei = 0; ei < 6; ++ ei )
+    //  edge_length2[ei] = 0.;
 
 
     if (PERCEPT_DEBUG)
@@ -178,6 +178,7 @@ namespace moab {
       midpt3t, midpt4t, midpt5t,
       facept0t, facept1t, facept2t, facept3t
     };
+    (void)vertex_tags;
 
     EntityHandle vertex_hash[14] = {
       h0, h1, h2, h3,
@@ -189,7 +190,9 @@ namespace moab {
     // Generate tetrahedra that are compatible except when edge
     // lengths are equal on indeterminately subdivided faces.
     double* permuted_coords[14];
+#if PERCEPT_MOAB_ALLOW_FACE_DISAMB
     void* permuted_tags[14];
+#endif
     EntityHandle permuted_hash[14];
     int permuted_local_ids[14];   // this is just a copy of permutations_from_index, for readability
     double permlen[6]; // permuted edge lengths
@@ -204,7 +207,9 @@ namespace moab {
       {
         permuted_local_ids[i] = SimplexTemplateRefiner::permutations_from_index[P][i];
         permuted_coords[i] = vertex_coords[SimplexTemplateRefiner::permutations_from_index[P][i]];
+#if PERCEPT_MOAB_ALLOW_FACE_DISAMB
         permuted_tags[i] = vertex_tags[SimplexTemplateRefiner::permutations_from_index[P][i]];
+#endif
         permuted_hash[i] = vertex_hash[SimplexTemplateRefiner::permutations_from_index[P][i]];
       }
 
@@ -220,12 +225,12 @@ namespace moab {
 
         double *c0 = permuted_coords[tet_edges[i][0]];
         double *c1 = permuted_coords[tet_edges[i][1]];
-        bool reverse=false;
+        //bool reverse=false;
         if (permuted_hash[tet_edges[i][0]] > permuted_hash[tet_edges[i][1]])
           {
             c0 = permuted_coords[tet_edges[i][1]];
             c1 = permuted_coords[tet_edges[i][0]];
-            reverse=true;
+            //reverse=true;
           }
         permlen[i] = compute_edge_length_squared(c0, c1);
       }

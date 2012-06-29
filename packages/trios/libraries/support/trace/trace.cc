@@ -87,25 +87,25 @@ static TraceFile *tracefile = 0;
 static std::map<string, TraceGroup *> gname_map;
 typedef std::map<string, TraceGroup *>::iterator gname_iterator_t;
 typedef std::pair<string, TraceGroup *> gname_pair_t;
-static nthread_mutex_t gname_mutex = NTHREAD_MUTEX_INITIALIZER;
+static nthread_lock_t gname_mutex;
 
 static std::map<int, TraceGroup *> gid_map;
 typedef std::map<int, TraceGroup *>::iterator gid_iterator_t;
 typedef std::pair<int, TraceGroup *> gid_pair_t;
-static nthread_mutex_t gid_mutex = NTHREAD_MUTEX_INITIALIZER;
+static nthread_lock_t gid_mutex;
 
 /* --- Hashtable that stores the intervals --- */
 static std::map<int, stack<double> > interval_map;
 typedef std::map<int, stack<double> >::iterator interval_iterator_t;
 typedef std::pair<int,stack<double> > interval_pair_t;
-static nthread_mutex_t interval_mutex = NTHREAD_MUTEX_INITIALIZER;
+static nthread_lock_t interval_mutex;
 
 /* --- Hashtable to store counter information --- */
 static std::map<int, int> count_map;
 typedef std::map<int, int>::iterator count_iterator_t;
 typedef std::pair<int,int> count_pair_t;
 
-static nthread_mutex_t count_mutex = NTHREAD_MUTEX_INITIALIZER;
+static nthread_lock_t count_mutex;
 
 
 static bool default_enable_flag = false;
@@ -516,6 +516,12 @@ int trace_init(const char *fname, const int ftype)
     log_debug(debug_level, "trace_init(ftype=%d)",ftype);
 
     log_debug(trace_debug_level, "trace_init(%s,%d)",fname,ftype);
+
+    nthread_lock_init(&gname_mutex);
+    nthread_lock_init(&gid_mutex);
+    nthread_lock_init(&interval_mutex);
+    nthread_lock_init(&count_mutex);
+
 
     if (!tracefile && fname) {
         int fd;

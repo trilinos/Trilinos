@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   if (argc>1) doAll = !strcmp(argv[1],"-v");
  
 #ifdef Piro_ENABLE_Rythmos
-  int numTests=4;
+  int numTests=5;
 #else
   int numTests=3;
 #endif
@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
        case 1: inputFile="input_Solve_NOX_Adjoint.xml"; break;
        case 2: inputFile="input_Solve_LOCA_1.xml"; break;
        case 3: inputFile="input_Solve_Rythmos_1.xml"; break;
+       case 4: inputFile="input_Solve_Rythmos_1new.xml"; break;
        default : cout << "iTest logic error " << endl; exit(-1);
       }
     }

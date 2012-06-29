@@ -1,0 +1,41 @@
+      COMMON /MSHOPT/ MSHLIN(4), MLNTYP(-1:1,4), NNPSET(4), NESSET(4),
+     &   IHIDOP, NALVAR, DEADNP, ALIVAL
+      LOGICAL DEADNP
+      COMMON /MSHOPC/ MSHDEF(4), MSHNUM(4)
+      CHARACTER*8 MSHDEF, MSHNUM
+C      --MSHDEF - the display mode for each view:
+C      --   'NONE'     = undefined view
+C      --   'EMPTY'    = empty view
+C      --   'DEFORM'   = deform mesh
+C      --   'UNDEFORM' = undeformed mesh
+C      --MSHNUM - the mesh numbering:
+C      --   'NONE'     = no numbering
+C      --   'NODE'     = number nodes
+C      --   'ELEMENT'  = number elements
+C      --   'ALL'      = number both
+C      --   'SELECTED' = number selected nodes or elements
+C      --MSHLIN - the mesh lines to display:
+C      --   0 = MSHNON = none
+C      --   1 = MSHBOR = boundary lines only
+C      --   2 = MSHDIV = above + element block boundary lines
+C      --   3 = MSHSEL = above + lines of selected element blocks
+C      --   4 = MSHALL = above + lines of all element blocks
+C      --MLNTYP - the line type (and color) of the lines:
+C      --      (-1) for mesh boundary,
+C      --      ( 0) for element block boundary,
+C      --      ( 1) for element boundary
+C      --  -2 = dotted line in black
+C      --  -1 = solid line in black
+C      --   0 = valid only if undefined/empty view
+C      --   1 = solid line
+C      --   2 = dotted line
+C      --NNPSET - the number of node sets to be displayed
+C      --NESSET - the number of side sets to be displayed
+C      --IHIDOP - hidden line removal flag (3D only)
+C      --   0 = no hidden lines removed
+C      --   1 = hidden surfaces not facing screen removed
+C      --   2 = hidden surfaces with hidden nodes removed
+C      --   3 = 2 + partial lines
+C      --NALVAR - the index of the element birth/death variable
+C      --DEADNP - true iff dead nodes are to be displayed
+C      --ALIVAL - value to indicate element is alive -- 0.0 by default

@@ -49,13 +49,13 @@ namespace stk {
       vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
       ColorerElementSetType all_elements; 
 
-      mesh::Selector selector(eMesh.getFEM_meta_data()->universal_part());
+      mesh::Selector selector(eMesh.get_fem_meta_data()->universal_part());
       if (fromParts) 
         {
           if (0)
             {
-              //std::cout << "tmp Colorer::color fromParts= " << *fromParts << std::endl;
-              //std::cout << "tmp Colorer::color elementType= " << *elementType << std::endl;
+              std::cout << "tmp Colorer::color fromParts= " << *fromParts << std::endl;
+              std::cout << "tmp Colorer::color elementType= " << *elementType << std::endl;
               for (unsigned i_part = 0; i_part < fromParts->size(); i_part++)
                 {
                   std::cout << "tmp Colorer::color i_part = " << i_part << " fromParts= " << (*fromParts)[i_part]->name() << std::endl;
@@ -65,7 +65,7 @@ namespace stk {
           selector = mesh::selectUnion(*fromParts);
         }
 
-      stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
+      stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
       unsigned ncolor = 0;
       int nelem = 0;
       unsigned num_max_colors = MAX_COLORS;

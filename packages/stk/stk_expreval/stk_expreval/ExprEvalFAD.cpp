@@ -70,6 +70,7 @@ enum Opcode {
   OPCODE_LOGICAL_AND,
   OPCODE_LOGICAL_OR,
 
+  OPCODE_EXPONENIATION,
   OPCODE_ASSIGN
 };
 
@@ -144,6 +145,9 @@ Node::eval() const
 
   case OPCODE_MULTIPLY:
     return m_left->eval()*m_right->eval();
+
+  case OPCODE_EXPONENIATION:
+    return std::pow(m_left->eval(),m_right->eval());
 
   case OPCODE_DIVIDE:
     return m_left->eval()/m_right->eval();
@@ -352,6 +356,7 @@ parseExpression(
 	colon_it = it;
       break;
 
+    case TOKEN_EXPONENTIATION:
     case TOKEN_MULTIPLY:
     case TOKEN_DIVIDE:
 //    case TOKEN_PERCENT:
@@ -485,7 +490,7 @@ parseAssign(
   LexemVector::const_iterator	to)
 {
   if ((*from).getToken() != TOKEN_IDENTIFIER) //  || from + 1 != assign_it) {
-    throw std::runtime_error("expected identifier");
+    throw std::runtime_error("stk::expreval::parseAssign: expected identifier");
 
   Node *assign;
 
@@ -674,6 +679,9 @@ parseFunction(
     eval.getUndefinedFunctionSet().insert(function_name);
 
   function->m_right = parseFunctionArg(eval, lparen + 1, rparen);
+
+  //   if (!c_function)
+  //     throw std::runtime_error(std::string("Undefined function ") + function_name);
 
   return function;
 }
@@ -1142,7 +1150,6 @@ Eval::getCFunctionMap()
   return s_functionMap;
 }
 
-
 Eval::Eval(
   VariableMap::Resolver &		resolver,
   const std::string &			expression)
@@ -1225,8 +1232,9 @@ Eval::parse()
 void
 Eval::resolve()
 {
-  for (VariableMap::iterator it = m_variableMap.begin(); it != m_variableMap.end(); ++it)
+  for (VariableMap::iterator it = m_variableMap.begin(); it != m_variableMap.end(); ++it) {
     m_variableMap.getResolver().resolve(it);
+  }
 }
 
 

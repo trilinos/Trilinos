@@ -70,66 +70,11 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 NSESS4 (1)    ! (R)
-        INTEGER*4 NDESS4 (1)    ! (R)
-        INTEGER*4 IXEESS4 (1)   ! (R)
-        INTEGER*4 IXNESS4 (1)   ! (R)
-        INTEGER*4 LTEESS4 (1)   ! (R)
-        INTEGER*4 LTNESS4 (1)   ! (R)
-        INTEGER*4 LTSESS4 (1)   ! (W)
-        POINTER (PNSESS4, NSESS4)
-        POINTER (PNDESS4, NDESS4)
-        POINTER (PIXEESS4, IXEESS4)
-        POINTER (PIXNESS4, IXNESS4)
-        POINTER (PLTEESS4, LTEESS4)
-        POINTER (PLTNESS4, LTNESS4)
-        POINTER (PLTSESS4, LTSESS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXSIDS
-        INTEGER NEXELEM
-        INTEGER NEXNODE
-        INTEGER NEXNSNL
-        INTEGER NEXSSEL
-        INTEGER I
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXSIDS
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSIDS = INTRET4
-        INFREQ4 = EXELEM
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXELEM = INTRET4
-        INFREQ4 = EXNODE
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNODE = INTRET4
-        NEXNSNL = 0
-        NEXSSEL = 0
-        DO I = 1, NEXSIDS
-                NEXNSNL = NEXNSNL + NDESS(I)
-                NEXSSEL = NEXSSEL + NSESS(I)
-        END DO
-        CALL I8I4 (NEXSIDS, NSESS, PNSESS4)
-        CALL I8I4 (NEXSIDS, NDESS, PNDESS4)
-        CALL I8I4 (NEXSIDS, IXEESS, PIXEESS4)
-        CALL I8I4 (NEXSIDS, IXNESS, PIXNESS4)
-        CALL I8I4 (NEXSSEL, LTEESS, PLTEESS4)
-        CALL I8I4 (NEXNSNL, LTNESS, PLTNESS4)
-        CALL I4ALLOC (NEXSSEL, PLTSESS4)
-        CALL EXCN2S4 (IDEXO4, NSESS4, NDESS4, IXEESS4, IXNESS4,
-     &          LTEESS4, LTNESS4, LTSESS4, IERR4)
-        CALL I4I8 (NEXSSEL, PLTSESS4, LTSESS)
-        CALL I4FREE (PNSESS4)
-        CALL I4FREE (PNDESS4)
-        CALL I4FREE (PIXEESS4)
-        CALL I4FREE (PIXNESS4)
-        CALL I4FREE (PLTEESS4)
-        CALL I4FREE (PLTNESS4)
+        CALL EXCN2S4 (IDEXO4, NSESS, NDESS, IXEESS, IXNESS,
+     &          LTEESS, LTNESS, LTSESS, IERR4)
         IERR = IERR4
         END
 
@@ -152,13 +97,31 @@ C
         INTEGER*4 ICOMPWS4      ! (RW)
         INTEGER*4 IOWS4         ! (RW)
         INTEGER*4 IERR4         ! (W)
+        INTEGER*4 IFLAG4
 
+C ... This is hardwired instead of getting from exodusII.inc due to compiler errors about
+C     exopen/excre already having a type...        
+        integer EX_MAPS_INT64_API
+        integer EX_BULK_INT64_API
+        integer EX_IDS_INT64_API
+        integer EX_INQ_INT64_API
+        parameter (EX_MAPS_INT64_API=   8192) ! All maps (id, order, ...) store int64_t values
+        parameter (EX_IDS_INT64_API =  16384) ! All entity ids
+        parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data
+        parameter (EX_INQ_INT64_API =  65536) ! All integer inquire arguments
+
+C ... All wrapper routines are passing INTEGER*8, but at this 
+C     time, only the maps are supported...
         ICMODE4 = ICMODE
+        IFLAG4 = EX_MAPS_INT64_API+EX_IDS_INT64_API+EX_BULK_INT64_API+
+     *    EX_INQ_INT64_API
+        ICMODE4 = IOR(ICMODE4,  IFLAG4)
 
 C ... This needs to be set explicitly since all wrapper routines
 C     are passing REAL*8 and the exo_jack.c routines all take double*
         ICOMPWS4 = 8
         IOWS4 = IOWS
+
         IRET4 = EXCRE4 (PATH, ICMODE4, ICOMPWS4, IOWS4, IERR4)
         ICOMPWS = ICOMPWS4
         IOWS = IOWS4
@@ -217,49 +180,13 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPSS4 (1)   ! (W)
-        INTEGER*4 NNNPS4 (1)    ! (W)
-        INTEGER*4 NDNPS4 (1)    ! (W)
-        INTEGER*4 IXNNPS4 (1)   ! (W)
-        INTEGER*4 IXDNPS4 (1)   ! (W)
-        INTEGER*4 LTNNPS4 (1)   ! (W)
-        POINTER (PIDNPSS4, IDNPSS4)
-        POINTER (PNNNPS4, NNNPS4)
-        POINTER (PNDNPS4, NDNPS4)
-        POINTER (PIXNNPS4, IXNNPS4)
-        POINTER (PIXDNPS4, IXDNPS4)
-        POINTER (PLTNNPS4, LTNNPS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXNODS
-        INTEGER NEXNSNL
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXNODS
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNODS = INTRET4
-        INFREQ4 = EXNSNL
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNSNL = INTRET4
-        CALL I4ALLOC (NEXNODS, PIDNPSS4)
-        CALL I4ALLOC (NEXNODS, PNNNPS4)
-        CALL I4ALLOC (NEXNODS, PNDNPS4)
-        CALL I4ALLOC (NEXNODS, PIXNNPS4)
-        CALL I4ALLOC (NEXNODS, PIXDNPS4)
-        CALL I4ALLOC (NEXNSNL, PLTNNPS4)
-        CALL EXGCNS4 (IDEXO4, IDNPSS4, NNNPS4, NDNPS4, IXNNPS4,
-     &                IXDNPS4, LTNNPS4, FACNPS, IERR4)
-        CALL I4I8 (NEXNODS, PIDNPSS4, IDNPSS)
-        CALL I4I8 (NEXNODS, PNNNPS4, NNNPS)
-        CALL I4I8 (NEXNODS, PNDNPS4, NDNPS)
-        CALL I4I8 (NEXNODS, PIXNNPS4, IXNNPS)
-        CALL I4I8 (NEXNODS, PIXDNPS4, IXDNPS)
-        CALL I4I8 (NEXNSNL, PLTNNPS4, LTNNPS)
+
+        CALL EXGCNS4 (IDEXO4, IDNPSS, NNNPS, NDNPS, IXNNPS,
+     &                IXDNPS, LTNNPS, FACNPS, IERR4)
+
         IERR = IERR4
         END
 
@@ -280,31 +207,20 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         integer*4 nframe4       ! (R)
-        integer*4 idscf4(1)     ! (W)
         integer*4 itags4(1)     ! (W)
         INTEGER*4 IERR4         ! (W)
 
-        POINTER (PIDSCF4, IDSCF4)
         POINTER (PITAGS4, ITAGS4)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
         idexo4 = idexo
-        infreq4 = EXNCF
 
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
+        NFRAME = EXINQI (IDEXO, EXNCF)
+        NFRAME4 = NFRAME
 
-        NFRAME4 = INTRET4
-        NFRAME = NFRAME4
-        CALL I4ALLOC (NFRAME, PIDSCF4)
         CALL I4ALLOC (NFRAME, PITAGS4)
 
-        call exgfrm4(idexo4, nframe4, idscf4, coord, itags4, ierr4)
+        call exgfrm4(idexo4, nframe4, idscf, coord, itags4, ierr4)
 
-        CALL I4I8 (NFRAME, PIDSCF4, IDSCF)
         CALL I4I8 (NFRAME, PITAGS4, ITAGS)
         ierr = ierr4
 
@@ -327,22 +243,18 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         integer*4 nframe4       ! (R)
-        integer*4 idscf4(1)     ! (R)
         integer*4 itags4(1)     ! (R)
         INTEGER*4 IERR4         ! (W)
 
-        POINTER (PIDSCF4, IDSCF4)
         POINTER (PITAGS4, ITAGS4)
 
         idexo4 = idexo
         NFRAME4 = NFRAME
 
-        CALL I8I4 (NFRAME, IDSCF, PIDSCF4)
         CALL I8I4 (NFRAME, ITAGS, PITAGS4)
 
-        call expfrm4(idexo4, nframe4, idscf4, coord, itags4, ierr4)
+        call expfrm4(idexo4, nframe4, idscf, coord, itags4, ierr4)
 
-        CALL I4FREE (PIDSCF4)
         CALL I4FREE (PITAGS4)
         ierr = ierr4
 
@@ -406,57 +318,12 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESSS4 (1)   ! (W)
-        INTEGER*4 NSESS4 (1)    ! (W)
-        INTEGER*4 NDESS4 (1)    ! (W)
-        INTEGER*4 IXEESS4 (1)   ! (W)
-        INTEGER*4 IXDESS4 (1)   ! (W)
-        INTEGER*4 LTEESS4 (1)   ! (W)
-        INTEGER*4 LTSESS4 (1)   ! (W)
-        POINTER (PIDESSS4, IDESSS4)
-        POINTER (PNSESS4, NSESS4)
-        POINTER (PNDESS4, NDESS4)
-        POINTER (PIXEESS4, IXEESS4)
-        POINTER (PIXDESS4, IXDESS4)
-        POINTER (PLTEESS4, LTEESS4)
-        POINTER (PLTSESS4, LTSESS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXSIDS
-        INTEGER NEXSSEL
-        INTEGER NEXSSDF
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXSIDS
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSIDS = INTRET4
-        INFREQ4 = EXSSEL
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSSEL = INTRET4
-        INFREQ4 = EXSSDF
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSSDF = INTRET4
-        CALL I4ALLOC (NEXSIDS, PIDESSS4)
-        CALL I4ALLOC (NEXSIDS, PNSESS4)
-        CALL I4ALLOC (NEXSIDS, PNDESS4)
-        CALL I4ALLOC (NEXSIDS, PIXEESS4)
-        CALL I4ALLOC (NEXSIDS, PIXDESS4)
-        CALL I4ALLOC (NEXSSEL, PLTEESS4)
-        CALL I4ALLOC (NEXSSEL, PLTSESS4)
-        CALL EXGCSS4 (IDEXO4, IDESSS4, NSESS4, NDESS4, IXEESS4,
-     &          IXDESS4, LTEESS4, LTSESS4, FACESS, IERR4)
-        CALL I4I8 (NEXSIDS, PIDESSS4, IDESSS)
-        CALL I4I8 (NEXSIDS, PNSESS4, NSESS)
-        CALL I4I8 (NEXSIDS, PNDESS4, NDESS)
-        CALL I4I8 (NEXSIDS, PIXEESS4, IXEESS)
-        CALL I4I8 (NEXSIDS, PIXDESS4, IXDESS)
-        CALL I4I8 (NEXSSEL, PLTEESS4, LTEESS)
-        CALL I4I8 (NEXSSEL, PLTSESS4, LTSESS)
+
+        CALL EXGCSS4 (IDEXO4, IDESSS, NSESS, NDESS, IXEESS,
+     &    IXDESS, LTEESS, LTSESS, FACESS, IERR4)
 
         IERR = IERR4
         END
@@ -470,8 +337,8 @@ C
         INCLUDE 'exodusII.inc'
         INTEGER IDEXO           ! (R)
         INTEGER IDESSS (*)      ! (W)
-        INTEGER NSESS (*)       ! (W)
-        INTEGER NDESS (*)       ! (W)
+        INTEGER NSESS  (*)      ! (W)
+        INTEGER NDESS  (*)      ! (W)
         INTEGER IXEESS (*)      ! (W)
         INTEGER IXDESS (*)      ! (W)
         INTEGER LTEESS (*)      ! (W)
@@ -479,57 +346,12 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESSS4 (1)   ! (W)
-        INTEGER*4 NSESS4 (1)    ! (W)
-        INTEGER*4 NDESS4 (1)    ! (W)
-        INTEGER*4 IXEESS4 (1)   ! (W)
-        INTEGER*4 IXDESS4 (1)   ! (W)
-        INTEGER*4 LTEESS4 (1)   ! (W)
-        INTEGER*4 LTSESS4 (1)   ! (W)
-        POINTER (PIDESSS4, IDESSS4)
-        POINTER (PNSESS4, NSESS4)
-        POINTER (PNDESS4, NDESS4)
-        POINTER (PIXEESS4, IXEESS4)
-        POINTER (PIXDESS4, IXDESS4)
-        POINTER (PLTEESS4, LTEESS4)
-        POINTER (PLTSESS4, LTSESS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXSIDS
-        INTEGER NEXSSEL
-        INTEGER NEXSSDF
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXSIDS
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSIDS = INTRET4
-        INFREQ4 = EXSSEL
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSSEL = INTRET4
-        INFREQ4 = EXSSDF
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSSDF = INTRET4
-        CALL I4ALLOC (NEXSIDS, PIDESSS4)
-        CALL I4ALLOC (NEXSIDS, PNSESS4)
-        CALL I4ALLOC (NEXSIDS, PNDESS4)
-        CALL I4ALLOC (NEXSIDS, PIXEESS4)
-        CALL I4ALLOC (NEXSIDS, PIXDESS4)
-        CALL I4ALLOC (NEXSSEL, PLTEESS4)
-        CALL I4ALLOC (NEXSSEL, PLTSESS4)
-        CALL EXGCSSF4 (IDEXO4, IDESSS4, NSESS4, NDESS4, IXEESS4,
-     &          IXDESS4, LTEESS4, LTSESS4, IERR4)
-        CALL I4I8 (NEXSIDS, PIDESSS4, IDESSS)
-        CALL I4I8 (NEXSIDS, PNSESS4, NSESS)
-        CALL I4I8 (NEXSIDS, PNDESS4, NDESS)
-        CALL I4I8 (NEXSIDS, PIXEESS4, IXEESS)
-        CALL I4I8 (NEXSIDS, PIXDESS4, IXDESS)
-        CALL I4I8 (NEXSSEL, PLTEESS4, LTEESS)
-        CALL I4I8 (NEXSSEL, PLTSESS4, LTSESS)
+
+        CALL EXGCSSF4 (IDEXO4, IDESSS, NSESS, NDESS, IXEESS,
+     &          IXDESS, LTEESS, LTSESS, IERR4)
 
         IERR = IERR4
         END
@@ -546,12 +368,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDELB4 = IDELB
-        CALL EXGEAT4 (IDEXO4, IDELB4, ATRIB, IERR4)
+        CALL EXGEAT4 (IDEXO4, IDELB, ATRIB, IERR4)
         IERR = IERR4
         END
 
@@ -568,14 +388,12 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
         INTEGER*4 NATTR4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDELB4 = IDELB
         NATTR4 = NATTR
-        CALL EXGEAN4 (IDEXO4, IDELB4, NATTR4, NAMES, IERR4)
+        CALL EXGEAN4 (IDEXO4, IDELB, NATTR4, NAMES, IERR4)
         IERR = IERR4
         END
 
@@ -590,24 +408,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELBS4 (1)   ! (W)
-        POINTER (PIDELBS4, IDELBS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXELBL
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXELBL
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXELBL = INTRET4
-        CALL I4ALLOC (NEXELBL, PIDELBS4)
-        CALL EXGEBI4 (IDEXO4, IDELBS4, IERR4)
-        CALL I4I8 (NEXELBL, PIDELBS4, IDELBS)
+        CALL EXGEBI4 (IDEXO4, IDELBS, IERR4)
         IERR = IERR4
         END
 
@@ -627,19 +431,11 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
-        INTEGER*4 NUMELB4       ! (W)
-        INTEGER*4 NUMLNK4       ! (W)
-        INTEGER*4 NUMATR4       ! (W)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDELB4 = IDELB
-        CALL EXGELB4 (IDEXO4, IDELB4, NAMELB, NUMELB4, NUMLNK4,
-     &          NUMATR4, IERR4)
-        NUMELB = NUMELB4
-        NUMLNK = NUMLNK4
-        NUMATR = NUMATR4
+        CALL EXGELB4 (IDEXO4, IDELB, NAMELB, NUMELB, NUMLNK,
+     &          NUMATR, IERR4)
         IERR = IERR4
         END
 
@@ -655,34 +451,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
-        INTEGER*4 LINK4 (1)     ! (NUMLNK,NUMELB) ! (W)
-        POINTER (PLINK4, LINK4)
         INTEGER*4 IERR4         ! (W)
 
-        CHARACTER* (MXSTLN) NAMELB
-        INTEGER*4 NUMELB4
-        INTEGER*4 NUMLNK4
-        INTEGER*4 NUMATR4
-        INTEGER NUMLNK
-        INTEGER NUMELB
-
         IDEXO4 = IDEXO
-        IDELB4 = IDELB
-        CALL EXGELB4 (IDEXO4, IDELB4, NAMELB, NUMELB4, NUMLNK4,
-     &          NUMATR4, IERR4)
-        IF (NAMELB .EQ. 'NSIDED' .OR. NAMELB .EQ. 'nsided') THEN
-          NUMLNK = NUMLNK4
-          CALL I4ALLOC (NUMLNK, PLINK4)
-          CALL EXGELC4 (IDEXO4, IDELB4, LINK4, IERR4)
-          CALL I4I8 (NUMLNK, PLINK4, LINK)
-        ELSE
-          NUMLNK = NUMLNK4
-          NUMELB = NUMELB4
-          CALL I4ALLOC (NUMLNK*NUMELB, PLINK4)
-          CALL EXGELC4 (IDEXO4, IDELB4, LINK4, IERR4)
-          CALL I4I8 (NUMLNK*NUMELB, PLINK4, LINK)
-        ENDIF
+        CALL EXGELC4 (IDEXO4, IDELB, LINK, IERR4)
         IERR = IERR4
         END
 
@@ -699,28 +471,24 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
         INTEGER*4 ITYPE4        ! (R)
         INTEGER*4 COUNTS4 (1)   ! (NUMELB) ! (W)
         POINTER (PCOUNTS4, COUNTS4)
         INTEGER*4 IERR4         ! (W)
 
         CHARACTER* (MXSTLN) NAMELB
-        INTEGER*4 NUMELB4
-        INTEGER*4 NUMLNK4
-        INTEGER*4 NUMATR4
 
         INTEGER NUMELB
-
+        INTEGER NUMATR
+        INTEGER NUMLNK
+        
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
-        IDELB4 = IDELB
-        CALL EXGELB4 (IDEXO4, IDELB4, NAMELB, NUMELB4, NUMLNK4,
-     &          NUMATR4, IERR4)
-        numelb = numelb4
-        
+        CALL EXGELB4 (IDEXO4, IDELB, NAMELB, NUMELB, NUMLNK,
+     &          NUMATR, IERR4)
+
         CALL I4ALLOC (NUMELB, PCOUNTS4)
-        CALL EXGECPP4 (IDEXO4, ITYPE4, IDELB4, COUNTS4, IERR4)
+        CALL EXGECPP4 (IDEXO4, ITYPE4, IDELB, COUNTS4, IERR4)
         CALL I4I8 (NUMELB, PCOUNTS4, COUNTS)
         IERR = IERR4
         END
@@ -736,24 +504,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPEL4 (1)    ! (W)
-        POINTER (PMAPEL4, MAPEL4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXELEM
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXELEM
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXELEM = INTRET4
-        CALL I4ALLOC (NEXELEM, PMAPEL4)
-        CALL EXGENM4 (IDEXO4, MAPEL4, IERR4)
-        CALL I4I8 (NEXELEM, PMAPEL4, MAPEL)
+        CALL EXGENM4 (IDEXO4, MAPEL, IERR4)
         IERR = IERR4
         END
 
@@ -769,26 +523,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPID4        ! (R)
-        INTEGER*4 MAPEL4 (1)    ! (W)
-        POINTER (PMAPEL4, MAPEL4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXELEM
-
         IDEXO4 = IDEXO
-        MAPID4 = MAPID
-        INFREQ4 = EXELEM
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXELEM = INTRET4
-        CALL I4ALLOC (NEXELEM, PMAPEL4)
-        CALL EXGEM4 (IDEXO4, MAPID4, MAPEL4, IERR4)
-        CALL I4I8 (NEXELEM, PMAPEL4, MAPEL)
+        CALL EXGEM4 (IDEXO4, MAPID, MAPEL, IERR4)
         IERR = IERR4
         END
 
@@ -806,20 +544,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPID4        ! (R)
-        INTEGER*4 ISTART4       ! (R)
-        INTEGER*4 ICOUNT4       ! (R)
-        INTEGER*4 MAPEL4 (1)    ! (W)
-        POINTER (PMAPEL4, MAPEL4)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        MAPID4 = MAPID
-        ISTART4 = ISTART
-        ICOUNT4 = ICOUNT
-        CALL I4ALLOC (ICOUNT, PMAPEL4)
-        CALL EXGPEM4 (IDEXO4, MAPID4, ISTART4, ICOUNT4, MAPEL4, IERR4)
-        CALL I4I8 (ICOUNT, PMAPEL4, MAPEL)
+        CALL EXGPEM4 (IDEXO4, MAPID, ISTART, ICOUNT, MAPEL, IERR4)
         IERR = IERR4
         END
 
@@ -841,16 +569,12 @@ C
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ISTEP4        ! (R)
         INTEGER*4 IXELEV4       ! (R)
-        INTEGER*4 IDELB4        ! (R)
-        INTEGER*4 NUMELB4       ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         ISTEP4 = ISTEP
         IXELEV4 = IXELEV
-        IDELB4 = IDELB
-        NUMELB4 = NUMELB
-        CALL EXGEV4 (IDEXO4, ISTEP4, IXELEV4, IDELB4, NUMELB4,
+        CALL EXGEV4 (IDEXO4, ISTEP4, IXELEV4, IDELB, NUMELB,
      &          VALEV, IERR4)
         IERR = IERR4
         END
@@ -872,18 +596,16 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 IXELEV4       ! (R)
-        INTEGER*4 IELNUM4       ! (R)
         INTEGER*4 ISTPB4        ! (R)
         INTEGER*4 ISTPE4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4  = IDEXO
         IXELEV4 = IXELEV
-        IELNUM4 = IELNUM
         ISTPB4  = ISTPB
         ISTPE4  = ISTPE
 
-        CALL EXGEVT4 (IDEXO4, IXELEV4, IELNUM4, ISTPB4, ISTPE4,
+        CALL EXGEVT4 (IDEXO4, IXELEV4, IELNUM, ISTPB4, ISTPE4,
      &          VALEV, IERR4)
         IERR = IERR4
         END
@@ -905,16 +627,12 @@ C
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ISTEP4        ! (R)
         INTEGER*4 IXV4  ! (R)
-        INTEGER*4 ID4   ! (R)
-        INTEGER*4 NUM4  ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         ISTEP4 = ISTEP
         IXV4   = IXV
-        ID4    = ID
-        NUM4   = NUM
-        CALL EXGNSV4 (IDEXO4, ISTEP4, IXV4, ID4, NUM4, VAL, IERR4)
+        CALL EXGNSV4 (IDEXO4, ISTEP4, IXV4, ID, NUM, VAL, IERR4)
         IERR = IERR4
         END
 
@@ -934,17 +652,13 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ISTEP4        ! (R)
-        INTEGER*4 IXV4  ! (R)
-        INTEGER*4 ID4   ! (R)
-        INTEGER*4 NUM4  ! (R)
+        INTEGER*4 IXV4          ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         ISTEP4 = ISTEP
         IXV4   = IXV
-        ID4    = ID
-        NUM4   = NUM
-        CALL EXGSSV4 (IDEXO4, ISTEP4, IXV4, ID4, NUM4, VAL, IERR4)
+        CALL EXGSSV4 (IDEXO4, ISTEP4, IXV4, ID, NUM, VAL, IERR4)
         IERR = IERR4
         END
 
@@ -1035,23 +749,11 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 NDIM4         ! (W)
-        INTEGER*4 NUMNP4        ! (W)
-        INTEGER*4 NUMEL4        ! (W)
-        INTEGER*4 NELBLK4       ! (W)
-        INTEGER*4 NUMNPS4       ! (W)
-        INTEGER*4 NUMESS4       ! (W)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        CALL EXGINI4 (IDEXO4, TITLE, NDIM4, NUMNP4, NUMEL4, NELBLK4,
-     &          NUMNPS4, NUMESS4, IERR4)
-        NDIM = NDIM4
-        NUMNP = NUMNP4
-        NUMEL = NUMEL4
-        NELBLK = NELBLK4
-        NUMNPS = NUMNPS4
-        NUMESS = NUMESS4
+        CALL EXGINI4 (IDEXO4, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
+     &          NUMNPS, NUMESS, IERR4)
         IERR = IERR4
         END
 
@@ -1112,24 +814,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPEL4 (1)    ! (W)
-        POINTER (PMAPEL4, MAPEL4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXELEM
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXELEM
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXELEM = INTRET4
-        CALL I4ALLOC (NEXELEM, PMAPEL4)
-        CALL EXGMAP4 (IDEXO4, MAPEL4, IERR4)
-        CALL I4I8 (NEXELEM, PMAPEL4, MAPEL)
+        CALL EXGMAP4 (IDEXO4, MAPEL, IERR4)
         IERR = IERR4
         END
 
@@ -1144,24 +832,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPNOD4 (1)   ! (W)
-        POINTER (PMAPNOD4, MAPNOD4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXNODE
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXNODE
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNODE = INTRET4
-        CALL I4ALLOC (NEXNODE, PMAPNOD4)
-        CALL EXGNNM4 (IDEXO4, MAPNOD4, IERR4)
-        CALL I4I8 (NEXNODE, PMAPNOD4, MAPNOD)
+        CALL EXGNNM4 (IDEXO4, MAPNOD, IERR4)
         IERR = IERR4
         END
 
@@ -1177,26 +851,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPID4        ! (R)
-        INTEGER*4 MAPNOD4 (1)   ! (W)
-        POINTER (PMAPNOD4, MAPNOD4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXNODE
-
         IDEXO4 = IDEXO
-        MAPID4 = MAPID
-        INFREQ4 = EXNODE
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNODE = INTRET4
-        CALL I4ALLOC (NEXNODE, PMAPNOD4)
-        CALL EXGNM4 (IDEXO4, MAPID4, MAPNOD4, IERR4)
-        CALL I4I8 (NEXNODE, PMAPNOD4, MAPNOD)
+        CALL EXGNM4 (IDEXO4, MAPID, MAPNOD, IERR4)
         IERR = IERR4
         END
 
@@ -1213,16 +871,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPS4        ! (R)
-        INTEGER*4 NNNPS4        ! (W)
-        INTEGER*4 NDNPS4        ! (W)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDNPS4 = IDNPS
-        CALL EXGNP4 (IDEXO4, IDNPS4, NNNPS4, NDNPS4, IERR4)
-        NNNPS = NNNPS4
-        NDNPS = NDNPS4
+        CALL EXGNP4 (IDEXO4, IDNPS, NNNPS, NDNPS, IERR4)
         IERR = IERR4
         END
 
@@ -1238,22 +890,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPS4        ! (R)
-        INTEGER*4 LTNNPS4 (1)   ! (W)
-        POINTER (PLTNNPS4, LTNNPS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 NNNPS4
-        INTEGER*4 NDNPS4
-        integer   nnnps
-
         IDEXO4 = IDEXO
-        IDNPS4 = IDNPS
-        CALL EXGNP4 (IDEXO4, IDNPS4, NNNPS4, NDNPS4, IERR4)
-        nnnps = nnnps4
-        CALL I4ALLOC (NNNPS, PLTNNPS4)
-        CALL EXGNS4 (IDEXO4, IDNPS4, LTNNPS4, IERR4)
-        CALL I4I8 (NNNPS, PLTNNPS4, LTNNPS)
+        CALL EXGNS4 (IDEXO4, IDNPS, LTNNPS, IERR4)
         IERR = IERR4
         END
 
@@ -1269,13 +909,11 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPS4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDNPS4 = IDNPS
 
-        CALL EXGNSD4 (IDEXO4, IDNPS4, FACNPS, IERR4)
+        CALL EXGNSD4 (IDEXO4, IDNPS, FACNPS, IERR4)
         IERR = IERR4
         END
 
@@ -1290,24 +928,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPSS4 (1)   ! (W)
-        POINTER (PIDNPSS4, IDNPSS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXNODS
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXNODS
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNODS = INTRET4
-        CALL I4ALLOC (NEXNODS, PIDNPSS4)
-        CALL EXGNSI4 (IDEXO4, IDNPSS4, IERR4)
-        CALL I4I8 (NEXNODS, PIDNPSS4, IDNPSS)
+        CALL EXGNSI4 (IDEXO4, IDNPSS, IERR4)
         IERR = IERR4
         END
 
@@ -1327,14 +951,12 @@ C
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ISTEP4        ! (R)
         INTEGER*4 IXNODV4       ! (R)
-        INTEGER*4 NUMNP4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4  = IDEXO
         ISTEP4  = ISTEP
         IXNODV4 = IXNODV
-        NUMNP4  = NUMNP
-        CALL EXGNV4 (IDEXO4, ISTEP4, IXNODV4, NUMNP4, VALNV, IERR4)
+        CALL EXGNV4 (IDEXO4, ISTEP4, IXNODV4, NUMNP, VALNV, IERR4)
         IERR = IERR4
         END
 
@@ -1355,17 +977,15 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 IXNODV4       ! (R)
-        INTEGER*4 NODNUM4       ! (R)
         INTEGER*4 ISTPB4        ! (R)
         INTEGER*4 ISTPE4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4  = IDEXO
         IXNODV4 = IXNODV
-        NODNUM4 = NODNUM
         ISTPB4  = ISTPB
         ISTPE4  = ISTPE
-        CALL EXGNVT4 (IDEXO4, IXNODV4, NODNUM4, ISTPB4, ISTPE4,
+        CALL EXGNVT4 (IDEXO4, IXNODV4, NODNUM, ISTPB4, ISTPE4,
      &          VALNV, IERR4)
         IERR = IERR4
         END
@@ -1385,15 +1005,11 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ITYPE4        ! (R)
-        INTEGER*4 ID4           ! (R)
-        INTEGER*4 IVAL4         ! (W)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
-        ID4 = ID
-        CALL EXGP4 (IDEXO4, ITYPE4, ID4, NAMEPR, IVAL4, IERR4)
-        IVAL = IVAL4
+        CALL EXGP4 (IDEXO4, ITYPE4, ID, NAMEPR, IVAL, IERR4)
         IERR = IERR4
         END
 
@@ -1411,35 +1027,11 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ITYPE4        ! (R)
-        INTEGER*4 IVAL4 (1)     ! (W)
-        POINTER (PIVAL4, IVAL4)
         INTEGER*4 IERR4         ! (W)
-
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NUMOBJ
 
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
-        IF (ITYPE4 .EQ. EXEBLK) THEN
-                INFREQ4 = EXELBL
-        ELSE IF (ITYPE4 .EQ. EXNSET) THEN
-                INFREQ4 = EXNODS
-        ELSE IF (ITYPE4 .EQ. EXSSET) THEN
-                INFREQ4 = EXSIDS
-        ELSE IF (ITYPE4 .EQ. EXEMAP) THEN
-                INFREQ4 = EXNEM
-        ELSE IF (ITYPE4 .EQ. EXNMAP) THEN
-                INFREQ4 = EXNNM
-        END IF
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NUMOBJ = INTRET4
-        CALL I4ALLOC (NUMOBJ, PIVAL4)
-        CALL EXGPA4 (IDEXO4, ITYPE4, NAMEPR, IVAL4, IERR4)
-        CALL I4I8 (NUMOBJ, PIVAL4, IVAL)
+        CALL EXGPA4 (IDEXO4, ITYPE4, NAMEPR, IVAL, IERR4)
         IERR = IERR4
         END
 
@@ -1495,16 +1087,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
-        INTEGER*4 NSESS4        ! (W)
-        INTEGER*4 NDESS4        ! (W)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-        CALL EXGSP4 (IDEXO4, IDESS4, NSESS4, NDESS4, IERR4)
-        NSESS = NSESS4
-        NDESS = NDESS4
+        CALL EXGSP4 (IDEXO4, IDESS, NSESS, NDESS, IERR4)
         IERR = IERR4
         END
 
@@ -1520,14 +1106,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
-        INTEGER*4 NNESS4        ! (W)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-        CALL EXGSNL4 (IDEXO4, IDESS4, NNESS4, IERR4)
-        NNESS = NNESS4
+        CALL EXGSNL4 (IDEXO4, IDESS, NNESS, IERR4)
         IERR = IERR4
         END
 
@@ -1544,27 +1126,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
-        INTEGER*4 LTEESS4 (1)   ! (W)
-        INTEGER*4 LTSESS4 (1)   ! (W)
-        POINTER (PLTEESS4, LTEESS4)
-        POINTER (PLTSESS4, LTSESS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 NSESS4
-        INTEGER*4 NDESS4
-
-        integer   nsess
-        
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-        CALL EXGSP4 (IDEXO4, IDESS4, NSESS4, NDESS4, IERR4)
-        nsess = nsess4
-        CALL I4ALLOC (NSESS, PLTEESS4)
-        CALL I4ALLOC (NSESS, PLTSESS4)
-        CALL EXGSS4 (IDEXO4, IDESS4, LTEESS4, LTSESS4, IERR4)
-        CALL I4I8 (NSESS, PLTEESS4, LTEESS)
-        CALL I4I8 (NSESS, PLTSESS4, LTSESS)
+        CALL EXGSS4 (IDEXO4, IDESS, LTEESS, LTSESS, IERR4)
         IERR = IERR4
         END
 
@@ -1580,13 +1145,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
-
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-        CALL EXGSSD4 (IDEXO4, IDESS4, FACESS, IERR4)
+        CALL EXGSSD4 (IDEXO4, IDESS, FACESS, IERR4)
         IERR = IERR4
         END
 
@@ -1601,23 +1163,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESSS4 (1)   ! (W)
-        POINTER (PIDESSS4, IDESSS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-        INTEGER NEXSIDS
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXSIDS
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSIDS = INTRET4
-        CALL I4ALLOC (NEXSIDS, PIDESSS4)
-        CALL EXGSSI4 (IDEXO4, IDESSS4, IERR4)
-        CALL I4I8 (NEXSIDS, PIDESSS4, IDESSS)
+        CALL EXGSSI4 (IDEXO4, IDESSS, IERR4)
         IERR = IERR4
         END
 
@@ -1634,55 +1183,16 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
-        INTEGER*4 INCNT4 (1)    ! (W)
-        INTEGER*4 LTNESS4 (1)   ! (W)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 TMP4(1)
-        POINTER (PTMP4, TMP4)
-        POINTER (PINCNT4, INCNT4)
-        POINTER (PLTNESS4, LTNESS4)
-
-        INTEGER*4 NSESS4
-        INTEGER*4 NDESS4
-        INTEGER NLTNESS
-
-        INTEGER NINCNT
-        integer i
-
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-C ... NOTE: It is not permissible to assume that the number of
-C           distribution factors is the same as the number of
-C           nodes associated with a sideset since some codes
-C           are not maintaining that associativity...
-        CALL EXGSP4 (IDEXO4, IDESS4, NSESS4, NDESS4, IERR4)
-        NINCNT = NSESS4
-
-C       MUST COMPUTE NODE LIST SIZE
-
-        NINCNT = NSESS4
-        CALL I4ALLOC (NINCNT, PTMP4)
-
-        CALL EXGSSC4 (IDEXO4, IDESS4, TMP4, IERR4)
-        nltness = 0
-        do 11 i=1, nincnt
-           nltness = nltness + tmp4(i)
- 11     continue
-        CALL I4FREE (PTMP4)
-        CALL I4ALLOC (NINCNT, PINCNT4)
-        CALL I4ALLOC (NLTNESS, PLTNESS4)
-
-        CALL EXGSSN4 (IDEXO4, IDESS4, INCNT4, LTNESS4, IERR4)
-        CALL I4I8 (NLTNESS, PLTNESS4, LTNESS)
-        CALL I4I8 (NINCNT, PINCNT4, INCNT)
+        CALL EXGSSN4 (IDEXO4, IDESS, INCNT, LTNESS, IERR4)
         IERR = IERR4
         END
 
         SUBROUTINE EXGSSC (IDEXO, IDESS, INCNT, IERR)
 C
-C       READ SIDE SET NODE LIST
+C       READ SIDE SET NODE LIST COUNT
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1692,7 +1202,6 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
         INTEGER*4 INCNT4 (1)    ! (W)
         POINTER (PINCNT4, INCNT4)
         INTEGER*4 IERR4         ! (W)
@@ -1702,12 +1211,11 @@ C
         INTEGER   NINCNT
 
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-        CALL EXGSP4 (IDEXO4, IDESS4, NSESS4, NDESS4, IERR4)
+        CALL EXGSP4 (IDEXO4, IDESS, NSESS4, NDESS4, IERR4)
         NINCNT = NSESS4
         CALL I4ALLOC (NINCNT, PINCNT4)
 
-        CALL EXGSSC4 (IDEXO4, IDESS4, INCNT4, IERR4)
+        CALL EXGSSC4 (IDEXO4, IDESS, INCNT4, IERR4)
 
         CALL I4I8 (NINCNT, PINCNT4, INCNT)
         IERR = IERR4
@@ -1729,17 +1237,11 @@ C
         POINTER (PINCNT4, INCNT4)
         INTEGER*4 IERR4         ! (W)
 
-        integer*4 nsess4
         INTEGER   NINCNT
 
-        INTEGER*4 INFREQ4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXSSEL
-        CALL EXINQ4 (IDEXO4, INFREQ4, NSESS4, RELRET4, CHRRET, IERR4)
-        NINCNT = NSESS4
+        NINCNT = EXINQI (IDEXO, EXSSEL)
+
         CALL I4ALLOC (NINCNT, PINCNT4)
 
         CALL EXGCSSC4 (IDEXO4, INCNT4, IERR4)
@@ -1955,16 +1457,33 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 INFREQ4       ! (R)
-        INTEGER*4 INTRET4       ! (W)
         REAL*4 RELRET4          ! (W)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         INFREQ4 = INFREQ
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        INTRET = INTRET4
+        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET, RELRET4, CHRRET, IERR4)
         RELRET = RELRET4
         IERR = IERR4
+        END
+
+        INTEGER FUNCTION EXINQI (IDEXO, INFREQ)
+C
+C       INQUIRE EXODUS PARAMETERS
+C
+        IMPLICIT NONE
+        INTEGER IDEXO           ! (R)
+        INTEGER INFREQ          ! (R)
+
+        INTEGER*4 EXINQI4
+        EXTERNAL EXINQI4
+
+        INTEGER*4 IDEXO4        ! (R)
+        INTEGER*4 INFREQ4       ! (R)
+
+        IDEXO4 = IDEXO
+        INFREQ4 = INFREQ
+        EXINQI = EXINQI4 (IDEXO4, INFREQ4)
         END
 
         INTEGER FUNCTION EXOPEN (PATH, IMODE, ICOMPWS, IOWS, VERS, IERR)
@@ -1988,6 +1507,18 @@ C
         INTEGER*4 IOWS4         ! (RW)
         REAL*4 VERS4            ! (W)
         INTEGER*4 IERR4         ! (W)
+        INTEGER*4 IFLAG4
+
+C ... This is hardwired instead of getting from exodusII.inc due to compiler errors about
+C     exopen/excre already having a type...        
+        integer EX_MAPS_INT64_API
+        integer EX_BULK_INT64_API
+        integer EX_IDS_INT64_API
+        integer EX_INQ_INT64_API
+        parameter (EX_MAPS_INT64_API=   8192) ! All maps (id, order, ...) store int64_t values
+        parameter (EX_IDS_INT64_API =  16384) ! All entity ids
+        parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data
+        parameter (EX_INQ_INT64_API =  65536) ! All integer inquire arguments
 
         IMODE4 = IMODE
 
@@ -1995,6 +1526,13 @@ C ... This needs to be set explicitly since all wrapper routines
 C     are passing REAL*8 and the exo_jack.c routines all take double*
         ICOMPWS4 = 8
         IOWS4 = IOWS
+
+C ... All wrapper routines are passing INTEGER*8, but at this 
+C     time, only the maps are supported...
+        IFLAG4 = EX_MAPS_INT64_API+EX_IDS_INT64_API+EX_BULK_INT64_API+
+     *    EX_INQ_INT64_API
+        IMODE4 = IOR(IMODE4, IFLAG4)
+
         IRET4 = EXOPEN4 (PATH, IMODE4, ICOMPWS4, IOWS4, VERS4, IERR4)
         ICOMPWS = ICOMPWS4
         IOWS = IOWS4
@@ -2078,51 +1616,13 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPSS4 (1)   ! (R)
-        INTEGER*4 NNNPS4 (1)    ! (R)
-        INTEGER*4 NDNPS4 (1)    ! (R)
-        INTEGER*4 IXNNPS4 (1)   ! (R)
-        INTEGER*4 IXDNPS4 (1)   ! (R)
-        INTEGER*4 LTNNPS4 (1)   ! (R)
-        POINTER (PIDNPSS4, IDNPSS4)
-        POINTER (PNNNPS4, NNNPS4)
-        POINTER (PNDNPS4, NDNPS4)
-        POINTER (PIXNNPS4, IXNNPS4)
-        POINTER (PIXDNPS4, IXDNPS4)
-        POINTER (PLTNNPS4, LTNNPS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXNODS
-        INTEGER NEXNSNL
-        INTEGER I
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXNODS
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNODS = INTRET4
-        NEXNSNL = 0
-        DO I = 1, NEXNODS
-                NEXNSNL = NEXNSNL + NNNPS(I)
-        END DO
-        CALL I8I4 (NEXNODS, IDNPSS, PIDNPSS4)
-        CALL I8I4 (NEXNODS, NNNPS, PNNNPS4)
-        CALL I8I4 (NEXNODS, NDNPS, PNDNPS4)
-        CALL I8I4 (NEXNODS, IXNNPS, PIXNNPS4)
-        CALL I8I4 (NEXNODS, IXDNPS, PIXDNPS4)
-        CALL I8I4 (NEXNSNL, LTNNPS, PLTNNPS4)
-        CALL EXPCNS4 (IDEXO4, IDNPSS4, NNNPS4, NDNPS4, IXNNPS4,
-     &          IXDNPS4, LTNNPS4, FACNPS, IERR4)
-        CALL I4FREE (PIDNPSS4)
-        CALL I4FREE (PNNNPS4)
-        CALL I4FREE (PNDNPS4)
-        CALL I4FREE (PIXNNPS4)
-        CALL I4FREE (PIXDNPS4)
-        CALL I4FREE (PLTNNPS4)
+
+        CALL EXPCNS4 (IDEXO4, IDNPSS, NNNPS, NDNPS, IXNNPS,
+     &          IXDNPS, LTNNPS, FACNPS, IERR4)
+
         IERR = IERR4
         END
 
@@ -2140,7 +1640,9 @@ C
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
+
         CALL EXPCON4 (IDEXO4, NAMECO, IERR4)
+
         IERR = IERR4
         END
 
@@ -2160,7 +1662,9 @@ C
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
+
         CALL EXPCOR4 (IDEXO4, XN, YN, ZN, IERR4)
+
         IERR = IERR4
         END
 
@@ -2183,55 +1687,13 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESSS4 (1)   ! (R)
-        INTEGER*4 NSESS4 (1)    ! (R)
-        INTEGER*4 NDESS4 (1)    ! (R)
-        INTEGER*4 IXEESS4 (1)   ! (R)
-        INTEGER*4 IXDESS4 (1)   ! (R)
-        INTEGER*4 LTEESS4 (1)   ! (R)
-        INTEGER*4 LTSESS4 (1)   ! (R)
-        POINTER (PIDESSS4, IDESSS4)
-        POINTER (PNSESS4, NSESS4)
-        POINTER (PNDESS4, NDESS4)
-        POINTER (PIXEESS4, IXEESS4)
-        POINTER (PIXDESS4, IXDESS4)
-        POINTER (PLTEESS4, LTEESS4)
-        POINTER (PLTSESS4, LTSESS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXSIDS
-        INTEGER NEXSSEL
-        INTEGER I
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXSIDS
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXSIDS = INTRET4
-        NEXSSEL = 0
-        DO I = 1, NEXSIDS
-                NEXSSEL = NEXSSEL + NSESS(I)
-        END DO
-        CALL I8I4 (NEXSIDS, IDESSS, PIDESSS4)
-        CALL I8I4 (NEXSIDS, NSESS, PNSESS4)
-        CALL I8I4 (NEXSIDS, NDESS, PNDESS4)
-        CALL I8I4 (NEXSIDS, IXEESS, PIXEESS4)
-        CALL I8I4 (NEXSIDS, IXDESS, PIXDESS4)
-        CALL I8I4 (NEXSSEL, LTEESS, PLTEESS4)
-        CALL I8I4 (NEXSSEL, LTSESS, PLTSESS4)
-        CALL EXPCSS4 (IDEXO4, IDESSS4, NSESS4, NDESS4, IXEESS4,
-     &          IXDESS4, LTEESS4, LTSESS4, FACESS, IERR4)
-        CALL I4FREE (PIDESSS4)
-        CALL I4FREE (PNSESS4)
-        CALL I4FREE (PNDESS4)
-        CALL I4FREE (PIXEESS4)
-        CALL I4FREE (PIXDESS4)
-        CALL I4FREE (PLTEESS4)
-        CALL I4FREE (PLTSESS4)
+
+        CALL EXPCSS4 (IDEXO4, IDESSS, NSESS, NDESS, IXEESS,
+     &          IXDESS, LTEESS, LTSESS, FACESS, IERR4)
+
         IERR = IERR4
         END
 
@@ -2247,13 +1709,11 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDELB4 = IDELB
 
-        CALL EXPEAT4 (IDEXO4, IDELB4, ATRIB, IERR4)
+        CALL EXPEAT4 (IDEXO4, IDELB, ATRIB, IERR4)
 
         IERR = IERR4
         END
@@ -2271,15 +1731,13 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
         INTEGER*4 NATTR4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDELB4 = IDELB
         NATTR4 = NATTR
 
-        CALL EXPEAN4 (IDEXO4, IDELB4, NATTR4, NAMES, IERR4)
+        CALL EXPEAN4 (IDEXO4, IDELB, NATTR4, NAMES, IERR4)
 
         IERR = IERR4
         END
@@ -2301,38 +1759,14 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4(1)     ! (R)
-        INTEGER*4 NUMELB4(1)    ! (R)
-        INTEGER*4 NUMLNK4(1)    ! (R)
-        INTEGER*4 NUMATR4(1)    ! (R)
         INTEGER*4 MKMAP4        ! (R)
-        POINTER (PIDELB4,  IDELB4)
-        POINTER (PNUMELB4, NUMELB4)
-        POINTER (PNUMLNK4, NUMLNK4)
-        POINTER (PNUMATR4, NUMATR4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NUMBLK
-
         IDEXO4 = IDEXO
-
-        INFREQ4 = EXELBL
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NUMBLK = INTRET4
-
-        CALL I8I4 (NUMBLK, IDELB,  PIDELB4)
-        CALL I8I4 (NUMBLK, NUMELB, PNUMELB4)
-        CALL I8I4 (NUMBLK, NUMLNK, PNUMLNK4)
-        CALL I8I4 (NUMBLK, NUMATR, PNUMATR4)
         MKMAP4  = MKMAP
 
-        CALL EXPCLB4 (IDEXO4, IDELB4, NAMELB, NUMELB4, NUMLNK4,
-     &          NUMATR4, MKMAP4, IERR4)
+        CALL EXPCLB4 (IDEXO4, IDELB, NAMELB, NUMELB, NUMLNK,
+     &          NUMATR, MKMAP4, IERR4)
         IERR = IERR4
         END
 
@@ -2352,19 +1786,13 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
-        INTEGER*4 NUMELB4       ! (R)
-        INTEGER*4 NUMLNK4       ! (R)
-        INTEGER*4 NUMATR4       ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDELB4 = IDELB
-        NUMELB4 = NUMELB
-        NUMLNK4 = NUMLNK
-        NUMATR4 = NUMATR
-        CALL EXPELB4 (IDEXO4, IDELB4, NAMELB, NUMELB4, NUMLNK4,
-     &          NUMATR4, IERR4)
+
+        CALL EXPELB4 (IDEXO4, IDELB, NAMELB, NUMELB, NUMLNK,
+     &          NUMATR, IERR4)
+
         IERR = IERR4
         END
 
@@ -2380,38 +1808,18 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
-        INTEGER*4 LINK4 (1)     ! (NUMLNK,NUMELB) ! (R)
-        POINTER (PLINK4, LINK4)
         INTEGER*4 IERR4         ! (W)
 
-        CHARACTER* (MXSTLN) NAMELB
-        INTEGER*4 NUMELB4
-        INTEGER*4 NUMLNK4
-        INTEGER*4 NUMATR4
-        INTEGER   NUMLNK
-        INTEGER   NUMELB
-
         IDEXO4 = IDEXO
-        IDELB4 = IDELB
-        CALL EXGELB4 (IDEXO4, IDELB4, NAMELB, NUMELB4, NUMLNK4,
-     &          NUMATR4, IERR4)
-        NUMLNK = NUMLNK4
-        NUMELB = NUMELB4
-        
-        IF (NAMELB .EQ. 'NSIDED' .OR. NAMELB .EQ. 'nsided') THEN
-          CALL I8I4 (NUMLNK, LINK, PLINK4)
-        ELSE
-          CALL I8I4 (NUMLNK*NUMELB, LINK, PLINK4)
-        ENDIF
-        CALL EXPELC4 (IDEXO4, IDELB4, LINK4, IERR4)
-        CALL I4FREE (PLINK4)
+
+        CALL EXPELC4 (IDEXO4, IDELB, LINK, IERR4)
+
         IERR = IERR4
         END
 
         SUBROUTINE EXPECPP (IDEXO, ITYPE, IDELB, COUNTS, IERR)
 C
-C       WRITE ELEMENT BLOCK CONNECTIVITY
+C       WRITE ELEMENT BLOCK ELEMENT COUNT PER POLYHEDRA
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2423,26 +1831,24 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ITYPE4        ! (R)
-        INTEGER*4 IDELB4        ! (R)
         INTEGER*4 COUNTS4 (1)   ! (NUMELB) ! (R)
         POINTER (PCOUNTS4, COUNTS4)
         INTEGER*4 IERR4         ! (W)
 
         CHARACTER* (MXSTLN) NAMELB
-        INTEGER*4 NUMELB4
-        INTEGER*4 NUMLNK4
-        INTEGER*4 NUMATR4
 
         INTEGER   NUMELB
-
+        INTEGER   NUMLNK
+        INTEGER   NUMATR
+        
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
-        IDELB4 = IDELB
-        CALL EXGELB4 (IDEXO4, IDELB4, NAMELB, NUMELB4, NUMLNK4,
-     &          NUMATR4, IERR4)
-        numelb = numelb4
+
+        CALL EXGELB4 (IDEXO4, IDELB, NAMELB, NUMELB, NUMLNK,
+     &    NUMATR, IERR4)
+
         CALL I8I4 (NUMELB, COUNTS, PCOUNTS4)
-        CALL EXPECPP4 (IDEXO4, ITYPE4, IDELB4, COUNTS4, IERR4)
+        CALL EXPECPP4 (IDEXO4, ITYPE4, IDELB, COUNTS4, IERR4)
         CALL I4FREE (PCOUNTS4)
         IERR = IERR4
         END
@@ -2458,24 +1864,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPEL4 (1)    ! (R)
-        POINTER (PMAPEL4, MAPEL4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER  NEXELEM
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXELEM
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXELEM = INTRET4
-        CALL I8I4 (NEXELEM, MAPEL, PMAPEL4)
-        CALL EXPENM4 (IDEXO4, MAPEL4, IERR4)
-        CALL I4FREE (PMAPEL4)
+        CALL EXPENM4 (IDEXO4, MAPEL, IERR4)
         IERR = IERR4
         END
 
@@ -2491,26 +1883,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPID4        ! (R)
-        INTEGER*4 MAPEL4 (1)    ! (R)
-        POINTER (PMAPEL4, MAPEL4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXELEM
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXELEM
-        MAPID4 = MAPID
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXELEM = INTRET4
-        CALL I8I4 (NEXELEM, MAPEL, PMAPEL4)
-        CALL EXPEM4 (IDEXO4, MAPID4, MAPEL4, IERR4)
-        CALL I4FREE (PMAPEL4)
+        CALL EXPEM4 (IDEXO4, MAPID, MAPEL, IERR4)
         IERR = IERR4
         END
 
@@ -2528,20 +1904,12 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPID4        ! (R)
-        INTEGER*4 ISTART4       ! (R)
-        INTEGER*4 ICOUNT4       ! (R)
-        INTEGER*4 MAPEL4 (1)    ! (R)
-        POINTER (PMAPEL4, MAPEL4)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        MAPID4 = MAPID
-        ISTART4 = ISTART
-        ICOUNT4 = ICOUNT
-        CALL I8I4 (ICOUNT, MAPEL, PMAPEL4)
-        CALL EXPPEM4 (IDEXO4, MAPID4, ISTART4, ICOUNT4, MAPEL4, IERR4)
-        CALL I4FREE (PMAPEL4)
+
+        CALL EXPPEM4 (IDEXO4, MAPID, ISTART, ICOUNT, MAPEL, IERR4)
+
         IERR = IERR4
         END
 
@@ -2563,16 +1931,12 @@ C
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ISTEP4        ! (R)
         INTEGER*4 IXELEV4       ! (R)
-        INTEGER*4 IDELB4        ! (R)
-        INTEGER*4 NUMELB4       ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4  = IDEXO
         ISTEP4  = ISTEP
         IXELEV4 = IXELEV
-        IDELB4  = IDELB
-        NUMELB4 = NUMELB
-        CALL EXPEV4 (IDEXO4, ISTEP4, IXELEV4, IDELB4, NUMELB4,
+        CALL EXPEV4 (IDEXO4, ISTEP4, IXELEV4, IDELB, NUMELB,
      &          VALEV, IERR4)
         IERR = IERR4
         END
@@ -2594,16 +1958,12 @@ C
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ISTEP4        ! (R)
         INTEGER*4 IXV4  ! (R)
-        INTEGER*4 ID4   ! (R)
-        INTEGER*4 NUM4  ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4  = IDEXO
         ISTEP4  = ISTEP
         IXV4 = IXV
-        ID4  = ID
-        NUM4 = NUM
-        CALL EXPNSV4 (IDEXO4, ISTEP4, IXV4, ID4, NUM4, VAL, IERR4)
+        CALL EXPNSV4 (IDEXO4, ISTEP4, IXV4, ID, NUM, VAL, IERR4)
         IERR = IERR4
         END
 
@@ -2624,16 +1984,12 @@ C
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ISTEP4        ! (R)
         INTEGER*4 IXV4  ! (R)
-        INTEGER*4 ID4   ! (R)
-        INTEGER*4 NUM4  ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4  = IDEXO
         ISTEP4  = ISTEP
         IXV4 = IXV
-        ID4  = ID
-        NUM4 = NUM
-        CALL EXPSSV4 (IDEXO4, ISTEP4, IXV4, ID4, NUM4, VAL, IERR4)
+        CALL EXPSSV4 (IDEXO4, ISTEP4, IXV4, ID, NUM, VAL, IERR4)
         IERR = IERR4
         END
 
@@ -2700,23 +2056,11 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 NDIM4         ! (R)
-        INTEGER*4 NUMNP4        ! (R)
-        INTEGER*4 NUMEL4        ! (R)
-        INTEGER*4 NELBLK4       ! (R)
-        INTEGER*4 NUMNPS4       ! (R)
-        INTEGER*4 NUMESS4       ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        NDIM4 = NDIM
-        NUMNP4 = NUMNP
-        NUMEL4 = NUMEL
-        NELBLK4 = NELBLK
-        NUMNPS4 = NUMNPS
-        NUMESS4 = NUMESS
-        CALL EXPINI4 (IDEXO4, TITLE, NDIM4, NUMNP4, NUMEL4, NELBLK4,
-     &          NUMNPS4, NUMESS4, IERR4)
+        CALL EXPINI4 (IDEXO4, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
+     &          NUMNPS, NUMESS, IERR4)
         IERR = IERR4
         END
 
@@ -2731,24 +2075,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPEL4 (1)    ! (R)
-        POINTER (PMAPEL4, MAPEL4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXELEM
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXELEM
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXELEM = INTRET4
-        CALL I8I4 (NEXELEM, MAPEL, PMAPEL4)
-        CALL EXPMAP4 (IDEXO4, MAPEL4, IERR4)
-        CALL I4FREE (PMAPEL4)
+        CALL EXPMAP4 (IDEXO4, MAPEL, IERR4)
         IERR = IERR4
         END
 
@@ -2763,24 +2093,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPNOD4 (1)   ! (R)
-        POINTER (PMAPNOD4, MAPNOD4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXNODE
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXNODE
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNODE = INTRET4
-        CALL I8I4 (NEXNODE, MAPNOD, PMAPNOD4)
-        CALL EXPNNM4 (IDEXO4, MAPNOD4, IERR4)
-        CALL I4FREE (PMAPNOD4)
+        CALL EXPNNM4 (IDEXO4, MAPNOD, IERR4)
         IERR = IERR4
         END
 
@@ -2796,26 +2112,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 MAPID4        ! (R)
-        INTEGER*4 MAPNOD4 (1)   ! (R)
-        POINTER (PMAPNOD4, MAPNOD4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NEXNODE
-
         IDEXO4 = IDEXO
-        INFREQ4 = EXNODE
-        MAPID4 = MAPID
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NEXNODE = INTRET4
-        CALL I8I4 (NEXNODE, MAPNOD, PMAPNOD4)
-        CALL EXPNM4 (IDEXO4, MAPID4, MAPNOD4, IERR4)
-        CALL I4FREE (PMAPNOD4)
+        CALL EXPNM4 (IDEXO4, MAPID, MAPNOD, IERR4)
         IERR = IERR4
         END
 
@@ -2832,16 +2132,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPS4        ! (R)
-        INTEGER*4 NNNPS4        ! (R)
-        INTEGER*4 NDNPS4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDNPS4 = IDNPS
-        NNNPS4 = NNNPS
-        NDNPS4 = NDNPS
-        CALL EXPNP4 (IDEXO4, IDNPS4, NNNPS4, NDNPS4, IERR4)
+        CALL EXPNP4 (IDEXO4, IDNPS, NNNPS, NDNPS, IERR4)
         IERR = IERR4
         END
 
@@ -2857,22 +2151,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPS4        ! (R)
-        INTEGER*4 LTNNPS4 (1)   ! (R)
-        POINTER (PLTNNPS4, LTNNPS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 NNNPS4
-        INTEGER*4 NDNPS4
-        integer   nnnps
-        
         IDEXO4 = IDEXO
-        IDNPS4 = IDNPS
-        CALL EXGNP4 (IDEXO4, IDNPS4, NNNPS4, NDNPS4, IERR4)
-        nnnps = nnnps4
-        CALL I8I4 (NNNPS, LTNNPS, PLTNNPS4)
-        CALL EXPNS4 (IDEXO4, IDNPS4, LTNNPS4, IERR4)
-        CALL I4FREE (PLTNNPS4)
+        CALL EXPNS4 (IDEXO4, IDNPS, LTNNPS, IERR4)
         IERR = IERR4
         END
 
@@ -2888,12 +2170,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDNPS4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDNPS4 = IDNPS
-        CALL EXPNSD4 (IDEXO4, IDNPS4, FACNPS, IERR4)
+        CALL EXPNSD4 (IDEXO4, IDNPS, FACNPS, IERR4)
         IERR = IERR4
         END
 
@@ -2913,14 +2193,12 @@ C
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ISTEP4        ! (R)
         INTEGER*4 IXNODV4       ! (R)
-        INTEGER*4 NUMNP4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4  = IDEXO
         ISTEP4  = ISTEP
         IXNODV4 = IXNODV
-        NUMNP4  = NUMNP
-        CALL EXPNV4 (IDEXO4, ISTEP4, IXNODV4, NUMNP4, VALNV, IERR4)
+        CALL EXPNV4 (IDEXO4, ISTEP4, IXNODV4, NUMNP, VALNV, IERR4)
         IERR = IERR4
         END
 
@@ -2939,15 +2217,11 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ITYPE4        ! (R)
-        INTEGER*4 ID4           ! (R)
-        INTEGER*4 IVAL4         ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
-        ID4 = ID
-        IVAL4 = IVAL
-        CALL EXPP4 (IDEXO4, ITYPE4, ID4, NAMEPR, IVAL4, IERR4)
+        CALL EXPP4 (IDEXO4, ITYPE4, ID, NAMEPR, IVAL, IERR4)
         IERR = IERR4
         END
 
@@ -2965,35 +2239,11 @@ C
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ITYPE4        ! (R)
-        INTEGER*4 IVAL4 (1)     ! (R)
-        POINTER (PIVAL4, IVAL4)
         INTEGER*4 IERR4         ! (W)
-
-        INTEGER*4 INFREQ4
-        INTEGER*4 INTRET4
-        REAL*4 RELRET4
-        CHARACTER* (4) CHRRET
-
-        INTEGER NUMOBJ
 
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
-        IF (ITYPE4 .EQ. EXEBLK) THEN
-                INFREQ4 = EXELBL
-        ELSE IF (ITYPE4 .EQ. EXNSET) THEN
-                INFREQ4 = EXNODS
-        ELSE IF (ITYPE4 .EQ. EXSSET) THEN
-                INFREQ4 = EXSIDS
-        ELSE IF (ITYPE4 .EQ. EXEMAP) THEN
-                INFREQ4 = EXNEM
-        ELSE IF (ITYPE4 .EQ. EXNMAP) THEN
-                INFREQ4 = EXNNM
-        END IF
-        CALL EXINQ4 (IDEXO4, INFREQ4, INTRET4, RELRET4, CHRRET, IERR4)
-        NUMOBJ = INTRET4
-        CALL I8I4 (NUMOBJ, IVAL, PIVAL4)
-        CALL EXPPA4 (IDEXO4, ITYPE4, NAMEPR, IVAL4, IERR4)
-        CALL I4FREE (PIVAL4)
+        CALL EXPPA4 (IDEXO4, ITYPE4, NAMEPR, IVAL, IERR4)
         IERR = IERR4
         END
 
@@ -3055,16 +2305,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
-        INTEGER*4 NSESS4        ! (R)
-        INTEGER*4 NDESS4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-        NSESS4 = NSESS
-        NDESS4 = NDESS
-        CALL EXPSP4 (IDEXO4, IDESS4, NSESS4, NDESS4, IERR4)
+        CALL EXPSP4 (IDEXO4, IDESS, NSESS, NDESS, IERR4)
         IERR = IERR4
         END
 
@@ -3081,26 +2325,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
-        INTEGER*4 LTEESS4 (1)   ! (R)
-        INTEGER*4 LTSESS4 (1)   ! (R)
-        POINTER (PLTEESS4, LTEESS4)
-        POINTER (PLTSESS4, LTSESS4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER*4 NSESS4
-        INTEGER*4 NDESS4
-        integer   nsess
-
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-        CALL EXGSP4 (IDEXO4, IDESS4, NSESS4, NDESS4, IERR4)
-        nsess = nsess4
-        CALL I8I4 (NSESS, LTEESS, PLTEESS4)
-        CALL I8I4 (NSESS, LTSESS, PLTSESS4)
-        CALL EXPSS4 (IDEXO4, IDESS4, LTEESS4, LTSESS4, IERR4)
-        CALL I4FREE (PLTEESS4)
-        CALL I4FREE (PLTSESS4)
+        CALL EXPSS4 (IDEXO4, IDESS, LTEESS, LTSESS, IERR4)
         IERR = IERR4
         END
 
@@ -3116,12 +2344,10 @@ C
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 IDESS4        ! (R)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
-        IDESS4 = IDESS
-        CALL EXPSSD4 (IDEXO4, IDESS4, FACESS, IERR4)
+        CALL EXPSSD4 (IDEXO4, IDESS, FACESS, IERR4)
         IERR = IERR4
         END
 
@@ -3358,6 +2584,1180 @@ C
         IERR = IERR4
         END
 
+
+C-----------------------------------------------------------------------
+C
+C   Get initial information from nemesis file
+C
+      subroutine exgii (idexo, nproc, nproc_in_f, ftype, ierr)
+      implicit none
+      integer idexo 
+      integer nproc 
+      integer nproc_in_f 
+      character*(*) ftype 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 nproc4 
+      integer*4 nproc_in_f4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgii4 (idexo4, nproc4, nproc_in_f4, ftype, ierr4)
+      nproc = nproc4
+      nproc_in_f = nproc_in_f4
+      ierr = ierr4
+C       
+      end
+      
+C-----------------------------------------------------------------------
+C
+C   Write initial information from nemesis file
+C
+      subroutine expii (idexo, nproc, nproc_in_f, ftype, ierr)
+      implicit none
+      integer idexo 
+      integer nproc 
+      integer nproc_in_f 
+      character*(*) ftype 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 nproc4 
+      integer*4 nproc_in_f4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      nproc4 = nproc
+      nproc_in_f4 = nproc_in_f
+      call expii4 (idexo4, nproc4, nproc_in_f4, ftype, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read initial global information
+C
+      subroutine exgig (idexo, nnodes_g, nelems_g, nelem_blks_g,
+     $  nnode_sets_g, nside_sets_g, ierr)
+      implicit none
+      integer idexo 
+      integer nnodes_g 
+      integer nelems_g 
+      integer nelem_blks_g 
+      integer nnode_sets_g 
+      integer nside_sets_g 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgig4 (idexo4, nnodes_g, nelems_g, nelem_blks_g,
+     $  nnode_sets_g, nside_sets_g, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write initial global information
+C
+      subroutine expig (idexo, nnodes_g, nelems_g, nelem_blks_g,
+     $  nnode_sets_g, nside_sets_g, ierr)
+      implicit none
+      integer idexo 
+      integer nnodes_g 
+      integer nelems_g 
+      integer nelem_blks_g 
+      integer nnode_sets_g 
+      integer nside_sets_g 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expig4 (idexo4, nnodes_g, nelems_g, nelem_blks_g,
+     $  nnode_sets_g, nside_sets_g, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read load balance parameters
+C
+      subroutine exglbp (idexo, nint_nodes, nbor_nodes, next_nodes,
+     $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
+     $  processor, ierr)
+      implicit none
+      integer idexo 
+      integer nint_nodes 
+      integer nbor_nodes 
+      integer next_nodes 
+      integer nint_elems 
+      integer nbor_elems 
+      integer nnode_cmaps 
+      integer nelem_cmaps 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call exglbp4 (idexo4, nint_nodes, nbor_nodes, next_nodes,
+     $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
+     $  processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write load balance parameters
+C
+      subroutine explbp (idexo, nint_nodes, nbor_nodes, next_nodes,
+     $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
+     $  processor, ierr)
+      implicit none
+      integer idexo 
+      integer nint_nodes 
+      integer nbor_nodes 
+      integer next_nodes 
+      integer nint_elems 
+      integer nbor_elems 
+      integer nnode_cmaps 
+      integer nelem_cmaps 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call explbp4 (idexo4, nint_nodes, nbor_nodes, next_nodes,
+     $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
+     $  processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write concatenated load balance parameters
+C
+      subroutine explbpc (idexo, nint_nodes, nbor_nodes, next_nodes,
+     $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps, ierr)
+      implicit none
+      integer idexo 
+      integer nint_nodes(*) 
+      integer nbor_nodes(*) 
+      integer next_nodes(*) 
+      integer nint_elems(*) 
+      integer nbor_elems(*) 
+      integer nnode_cmaps(*) 
+      integer nelem_cmaps(*) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call explbpc4 (idexo4, nint_nodes, nbor_nodes, next_nodes,
+     $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
+     $  ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read global node set parameters
+C
+      subroutine exgnspg (idexo, ns_ids_glob, ns_n_cnt_glob,
+     $  ns_df_cnt_glob, ierr)
+      implicit none
+      integer idexo 
+      integer ns_ids_glob(*) 
+      integer ns_n_cnt_glob(*) 
+      integer ns_df_cnt_glob(*) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgnspg4 (idexo4, ns_ids_glob, ns_n_cnt_glob,
+     $  ns_df_cnt_glob, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write global node set parameters
+C
+      subroutine expnspg (idexo, global_ids, global_n_cnts,
+     $  global_df_cnts, ierr)
+      integer idexo 
+      integer global_ids(*) 
+      integer global_n_cnts(*) 
+      integer global_df_cnts(*) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expnspg4 (idexo4, global_ids, global_n_cnts,
+     $  global_df_cnts, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read global side set parameters
+C
+      subroutine exgsspg (idexo, ss_ids_glob, ss_n_cnt_glob,
+     $  ss_df_cnt_glob, ierr)
+      implicit none
+      integer idexo 
+      integer ss_ids_glob(*) 
+      integer ss_n_cnt_glob(*) 
+      integer ss_df_cnt_glob(*) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgsspg4 (idexo4, ss_ids_glob, ss_n_cnt_glob,
+     $  ss_df_cnt_glob, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write global side set parameters
+C
+      subroutine expsspg (idexo, global_ids, global_el_cnts,
+     $  global_df_cnts, ierr)
+      implicit none
+      integer idexo 
+      integer global_ids(*) 
+      integer global_el_cnts(*) 
+      integer global_df_cnts(*) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expsspg4 (idexo4, global_ids, global_el_cnts,
+     $  global_df_cnts, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read global element block information
+C
+      subroutine exgebig (idexo, el_blk_ids, el_blk_cnts, ierr)
+      implicit none
+      integer idexo 
+      integer el_blk_ids(*) 
+      integer el_blk_cnts(*) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgebig4 (idexo4, el_blk_ids, el_blk_cnts, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write global element block information
+C
+      subroutine expebig (idexo, el_blk_ids, el_blk_cnts, ierr)
+      implicit none
+      integer idexo 
+      integer el_blk_ids(*) 
+      integer el_blk_cnts(*) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expebig4 (idexo4, el_blk_ids, el_blk_cnts, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read side set element list and side set side list
+C
+      subroutine exgnss (idexo, ss_id, start_side_num, num_sides,
+     $  ss_elem_list, ss_side_list, ierr)
+      implicit none
+      integer idexo 
+      integer ss_id 
+      integer start_side_num 
+      integer num_sides 
+      integer ss_elem_list(num_sides) 
+      integer ss_side_list(num_sides) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgnss4 (idexo4, ss_id, start_side_num, num_sides,
+     $  ss_elem_list, ss_side_list, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write side set element list and side set side list
+C
+      subroutine expnss (idexo, ss_id, start_side_num, num_sides,
+     $  ss_elem_list, ss_side_list, ierr)
+      implicit none
+      integer idexo 
+      integer ss_id 
+      integer start_side_num 
+      integer num_sides 
+      integer ss_elem_list(num_sides) 
+      integer ss_side_list(num_sides) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expnss4 (idexo4, ss_id, start_side_num, num_sides,
+     $  ss_elem_list, ss_side_list, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read side set distribution factor
+C
+      subroutine exgnssd (idexo, ss_id, start_num, num_df_to_get,
+     $  ss_df, ierr)
+      implicit none
+      integer idexo 
+      integer ss_id 
+      integer start_num 
+      integer num_df_to_get 
+      real ss_df(num_df_to_get) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgnssd4 (idexo4, ss_id, start_num, num_df_to_get,
+     $  ss_df, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write side set distribution factor
+C
+      subroutine expnssd (idexo, ss_id, start_num, num_df_to_get,
+     $  ss_df, ierr)
+      implicit none
+      integer idexo 
+      integer ss_id 
+      integer start_num 
+      integer num_df_to_get 
+      real ss_df(num_df_to_get) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expnssd4 (idexo4, ss_id, start_num, num_df_to_get,
+     $  ss_df, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read node set list for a single node set
+C
+      subroutine exgnns (idexo, ns_id, start_node_num, num_node,
+     $  ns_node_list, ierr)
+      implicit none
+      integer idexo 
+      integer ns_id 
+      integer start_node_num 
+      integer num_node 
+      integer ns_node_list(num_node) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgnns4 (idexo4, ns_id, start_node_num, num_node,
+     $  ns_node_list, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write node set list for a single node set
+C
+      subroutine expnns (idexo, ns_id, start_node_num, num_node,
+     $  ns_node_list, ierr)
+      implicit none
+      integer idexo 
+      integer ns_id 
+      integer start_node_num 
+      integer num_node 
+      integer ns_node_list(num_node) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expnns4 (idexo4, ns_id, start_node_num, num_node,
+     $  ns_node_list, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read node set distribution factor
+C
+      subroutine exgnnsd (idexo, ns_id, start_num, num_df_to_get,
+     $  ns_df, ierr)
+      implicit none
+      integer idexo 
+      integer ns_id 
+      integer start_num 
+      integer num_df_to_get 
+      real ns_df(num_df_to_get) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgnnsd4 (idexo4, ns_id, start_num, num_df_to_get,
+     $  ns_df, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write node set distribution factor
+C
+      subroutine expnnsd (idexo, ns_id, start_num, num_df_to_get,
+     $  ns_df, ierr)
+      implicit none
+      integer idexo 
+      integer ns_id 
+      integer start_num 
+      integer num_df_to_get 
+      real ns_df(num_df_to_get) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expnnsd4 (idexo4, ns_id, start_num, num_df_to_get,
+     $  ns_df, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read coordinates of the nodes
+C
+      subroutine exgncor (idexo, start_node_num, num_nodes, x_coor,
+     $  y_coor, z_coor, ierr)
+      implicit none
+      integer idexo 
+      integer start_node_num 
+      integer num_nodes 
+      real x_coor(num_nodes) 
+      real y_coor(num_nodes) 
+      real z_coor(num_nodes) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgcor4 (idexo4, start_node_num, num_nodes, x_coor,
+     $  y_coor, z_coor, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write coordinates of the nodes
+C
+      subroutine expncor (idexo, start_node_num, num_nodes, x_coor,
+     $  y_coor, z_coor, ierr)
+      implicit none
+      integer idexo 
+      integer start_node_num 
+      integer num_nodes 
+      real x_coor(num_nodes) 
+      real y_coor(num_nodes) 
+      real z_coor(num_nodes) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expcor4 (idexo4, start_node_num, num_nodes, x_coor,
+     $  y_coor, z_coor, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read an element blocks connectivity list
+C
+      subroutine exgnec (idexo, elem_blk_id, start_elem_num,
+     $  num_elems, connect, ierr)
+      implicit none
+      integer idexo 
+      integer elem_blk_id 
+      integer start_elem_num 
+      integer num_elems 
+      integer connect(num_elems) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgnec4 (idexo4, elem_blk_id, start_elem_num,
+     $  num_elems, connect, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write an element blocks connectivity list
+C
+      subroutine expnec (idexo, elem_blk_id, start_elem_num,
+     $  num_elems, connect, ierr)
+      implicit none
+      integer idexo 
+      integer elem_blk_id 
+      integer start_elem_num 
+      integer num_elems 
+      integer connect(num_elems) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expnec4 (idexo4, elem_blk_id, start_elem_num,
+     $  num_elems, connect, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read an element blocks attributes
+C
+      subroutine exgneat (idexo, elem_blk_id, start_elem_num,
+     $  num_elems, attrib, ierr)
+      implicit none
+      integer idexo 
+      integer elem_blk_id 
+      integer start_elem_num 
+      integer num_elems 
+      real attrib(num_elems) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgneat4 (idexo4, elem_blk_id, start_elem_num,
+     $  num_elems, attrib, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write an element blocks attributes
+C
+      subroutine expneat (idexo, elem_blk_id, start_elem_num,
+     $  num_elems, attrib, ierr)
+      implicit none
+      integer idexo 
+      integer elem_blk_id 
+      integer start_elem_num 
+      integer num_elems 
+      real attrib(num_elems) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expneat4 (idexo4, elem_blk_id, start_elem_num,
+     $  num_elems, attrib, ierr4)
+      ierr = ierr4
+C
+      end
+C
+C-----------------------------------------------------------------------
+C  Read the element type for a specific element block
+C
+      subroutine exgelt (idexo, elem_blk_id, elem_type, ierr)
+      implicit none
+      integer idexo 
+      integer elem_blk_id 
+      character*(*) elem_type 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgelt4 (idexo4, elem_blk_id, elem_type, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read a variable for an element block
+C
+      subroutine exgnev (idexo, time_step, elem_var_index,
+     $  elem_blk_id, num_elem_this_blk, start_elem_num,
+     $  num_elem, elem_var_vals, ierr)
+      implicit none
+      integer idexo 
+      integer time_step 
+      integer elem_var_index 
+      integer elem_blk_id 
+      integer num_elem_this_blk 
+      integer start_elem_num 
+      integer num_elem 
+      real elem_var_vals(num_elem) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 time_step4 
+      integer*4 elem_var_index4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      time_step4 = time_step
+      elem_var_index4 = elem_var_index
+      call exgnev4 (idexo4, time_step4, elem_var_index4,
+     $  elem_blk_id, num_elem_this_blk, start_elem_num,
+     $  num_elem, elem_var_vals, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write a variable slab for an element block
+C
+      subroutine expevs (idexo, time_step, elem_var_index,
+     $  elem_blk_id, start_pos, num_vals, elem_var_vals,
+     $  ierr)
+      implicit none
+      integer idexo 
+      integer time_step 
+      integer elem_var_index 
+      integer elem_blk_id 
+      integer start_pos 
+      integer num_vals 
+      real elem_var_vals(num_vals) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 time_step4 
+      integer*4 elem_var_index4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      time_step4 = time_step
+      elem_var_index4 = elem_var_index
+      call expevs4 (idexo4, time_step4, elem_var_index4,
+     $  elem_blk_id, start_pos, num_vals, elem_var_vals,
+     $  ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read the values of a single nodal variable for a single time step
+C
+      subroutine exgnnv (idexo, time_step, nodal_var_index,
+     $  start_node_num, num_nodes, nodal_vars, ierr)
+      implicit none
+      integer idexo 
+      integer time_step 
+      integer nodal_var_index 
+      integer start_node_num 
+      integer num_nodes 
+      real nodal_vars(num_nodes) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 time_step4 
+      integer*4 nodal_var_index4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      time_step4 = time_step
+      nodal_var_index4 = nodal_var_index
+      call exgnnv4 (idexo4, time_step4, nodal_var_index4,
+     $  start_node_num, num_nodes, nodal_vars, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write nodal variable slab
+C
+      subroutine expnvs (idexo, time_step, nodal_var_index,
+     $  start_pos, num_vals, nodal_var_vals, ierr)
+      implicit none
+      integer idexo 
+      integer time_step 
+      integer nodal_var_index 
+      integer start_pos 
+      integer num_vals 
+      real nodal_var_vals(num_vals) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 time_step4 
+      integer*4 nodal_var_index4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      time_step4 = time_step
+      nodal_var_index4 = nodal_var_index
+      call expnvs4 (idexo4, time_step4, nodal_var_index4,
+     $  start_pos, num_vals, nodal_var_vals, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read the element numbering map
+C
+      subroutine exgnenm (idexo, starte, num_ent, elem_map, ierr)
+      implicit none
+      integer idexo 
+      integer starte 
+      integer num_ent 
+      integer elem_map(num_ent) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgnenm4 (idexo4, starte, num_ent, elem_map, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write the element numbering map
+C
+      subroutine expnenm (idexo, starte, num_ent, elem_map, ierr)
+      implicit none
+      integer idexo 
+      integer starte 
+      integer num_ent 
+      integer elem_map(num_ent) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expnenm4 (idexo4, starte, num_ent, elem_map, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read the node numbering map
+C
+      subroutine exgnnnm (idexo, startn, num_ent, node_map, ierr)
+      implicit none
+      integer idexo 
+      integer startn 
+      integer num_ent 
+      integer node_map(num_ent) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call exgnnnm4 (idexo4, startn, num_ent, node_map, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write the node numbering map
+C
+      subroutine expnnnm (idexo, startn, num_ent, node_map, ierr)
+      implicit none
+      integer idexo 
+      integer startn 
+      integer num_ent 
+      integer node_map(num_ent) 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expnnnm4 (idexo4, startn, num_ent, node_map, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read the node map for a processor
+C
+      subroutine exgnmp (idexo, node_mapi, node_mapb, node_mape,
+     $  processor, ierr)
+      implicit none
+      integer idexo 
+      integer node_mapi(*) 
+      integer node_mapb(*) 
+      integer node_mape(*) 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call exgnmp4 (idexo4, node_mapi, node_mapb, node_mape,
+     $  processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write a node map for a processor
+C
+      subroutine expnmp (idexo, node_mapi, node_mapb, node_mape,
+     $  processor, ierr)
+      implicit none
+      integer idexo 
+      integer node_mapi(*) 
+      integer node_mapb(*) 
+      integer node_mape(*) 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call expnmp4 (idexo4, node_mapi, node_mapb, node_mape,
+     $  processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read the element map for a processor
+C
+      subroutine exgemp (idexo, elem_mapi, elem_mapb, processor, ierr)
+      implicit none
+      integer idexo 
+      integer elem_mapi(*) 
+      integer elem_mapb(*) 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call exgemp4 (idexo4, elem_mapi, elem_mapb, processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write the element map for a processor
+C
+      subroutine expemp (idexo, elem_mapi, elem_mapb, processor, ierr)
+      implicit none
+      integer idexo 
+      integer elem_mapi(*) 
+      integer elem_mapb(*) 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call expemp4 (idexo4, elem_mapi, elem_mapb, processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read the communications map parameters for a single processor
+C
+      subroutine exgcmp (idexo, ncmap_ids, ncmap_node_cnts,
+     $  ecmap_ids, ecmap_elem_cnts, processor, ierr)
+      implicit none
+      integer idexo 
+      integer ncmap_ids(*) 
+      integer ncmap_node_cnts(*) 
+      integer ecmap_ids(*) 
+      integer ecmap_elem_cnts(*) 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call exgcmp4 (idexo4, ncmap_ids, ncmap_node_cnts,
+     $  ecmap_ids, ecmap_elem_cnts, processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write the communications map parameters for a single processor
+C
+      subroutine expcmp (idexo, nmap_ids, nmap_node_cnts, emap_ids,
+     $  emap_elem_cnts, processor, ierr)
+      implicit none
+      integer idexo 
+      integer nmap_ids(*) 
+      integer nmap_node_cnts(*) 
+      integer emap_ids(*) 
+      integer emap_elem_cnts(*) 
+      integer processor 
+      integer ierr
+
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call expcmp4 (idexo4, nmap_ids, nmap_node_cnts, emap_ids,
+     $  emap_elem_cnts, processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write the communications map parameters for all processors
+C
+      subroutine expcmpc (idexo, nmap_ids, nmap_node_cnts,
+     $  nproc_ptrs, emap_ids, emap_elem_cnts, eproc_ptrs, ierr)
+      implicit none
+      integer idexo 
+      integer nmap_ids(*) 
+      integer nmap_node_cnts(*) 
+      integer nproc_ptrs(*) 
+      integer emap_ids(*) 
+      integer emap_elem_cnts(*) 
+      integer eproc_ptrs(*) 
+      integer ierr
+      
+      integer*4 idexo4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      call expcmpc4 (idexo4, nmap_ids, nmap_node_cnts,
+     $  nproc_ptrs, emap_ids, emap_elem_cnts, eproc_ptrs, ierr4)
+      ierr = ierr4
+      
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read the nodal communications map for a single processor
+C
+      subroutine exgncm (idexo, map_id, node_ids, proc_ids,
+     $  processor, ierr)
+      implicit none
+      integer idexo 
+      integer map_id 
+      integer node_ids(*) 
+      integer proc_ids(*) 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call exgncm4 (idexo4, map_id, node_ids, proc_ids,
+     $  processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write the nodal communications map for a single processor
+C
+      subroutine expncm (idexo, map_id, node_ids, proc_ids,
+     $  processor, ierr)
+      implicit none
+      integer idexo 
+      integer map_id 
+      integer node_ids(*) 
+      integer proc_ids(*) 
+      integer processor 
+      integer ierr
+C
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call expncm4 (idexo4, map_id, node_ids, proc_ids,
+     $  processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Read the elemental communications map for a single processor
+C
+      subroutine exgecm (idexo, map_id, elem_ids, side_ids,
+     $  proc_ids, processor, ierr)
+      implicit none
+      integer idexo 
+      integer map_id 
+      integer elem_ids(*) 
+      integer side_ids(*) 
+      integer proc_ids(*) 
+      integer processor 
+      integer ierr
+
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+C
+      idexo4 = idexo
+      processor4 = processor
+      call exgecm4 (idexo4, map_id, elem_ids, side_ids,
+     $  proc_ids, processor4, ierr4)
+      ierr = ierr4
+C
+      end
+      
+C-----------------------------------------------------------------------
+C
+C  Write the elemental communications map for a single processor
+C
+      subroutine expecm (idexo, map_id, elem_ids, side_ids,
+     $  proc_ids, processor, ierr)
+      implicit none
+      integer idexo 
+      integer map_id 
+      integer elem_ids(*) 
+      integer side_ids(*) 
+      integer proc_ids(*) 
+      integer processor 
+      integer ierr
+
+      integer*4 idexo4 
+      integer*4 processor4 
+      integer*4 ierr4
+
+      idexo4 = idexo
+      processor4 = processor
+      call expecm4 (idexo4, map_id, elem_ids, side_ids,
+     $  proc_ids, processor4, ierr4)
+      ierr = ierr4
+
+         end
+C-----------------------------------------------------------------------
 
         SUBROUTINE I8I4 (N, I8, PI4)
 C

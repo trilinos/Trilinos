@@ -261,7 +261,7 @@ void Gear::generate_gear()
 //-----------------------------------------------------------------------------
 //
 
-void Gear::move( const GearMovement & data) {
+void Gear::move( const GearMovement & data) { 
 
   enum { Node = 0 };
 

@@ -20,6 +20,7 @@
 #include <stk_mesh/base/Ghosting.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Trace.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
@@ -47,6 +48,8 @@ namespace mesh {
  */
 class BulkData {
 public:
+
+  void optimize_buckets_at_modification_end(bool b) { m_optimize_buckets = b; }
 
   inline static BulkData & get( const Bucket & bucket);
   inline static BulkData & get( const Entity & entity);
@@ -79,12 +82,6 @@ public:
 
   /** \brief  Rank of the parallel machine's local processor */
   unsigned parallel_rank()   const { return m_parallel_rank ; }
-
-  //------------------------------------
-  /** \brief  Query the upper bound on the number of mesh entities
-   *         that may be associated with a single bucket.
-   */
-  unsigned bucket_capacity() const { return m_bucket_repository.bucket_capacity(); }
 
   //------------------------------------
   /** \brief  Bulk data has two states:
@@ -165,7 +162,7 @@ public:
    *           - Fields that exist on the src that don't exist on the dest will
    *             be ignored
    *           - Fields that exist on the dest that don't exist on the src will
-   *             be zeroed
+   *             be zeroed or initialized with the Field-specified initial-value.
    */
   void copy_entity_fields( const Entity & src, Entity & dest) {
     //TODO fix const correctness for src
@@ -223,6 +220,8 @@ public:
   Entity & declare_entity( EntityRank ent_rank ,
       EntityId ent_id , const PartVector& parts);
 
+  void change_entity_id( EntityId id, Entity & entity);
+
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
    *
@@ -241,10 +240,15 @@ public:
                         remove_parts.begin(), remove_parts.end());
   }
 
+//Optional parameter 'always_propagate_internal_changes' is always true except when this function
+//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+//the propagation that stk-mesh does.
   template<typename AddIterator, typename RemoveIterator>
   void change_entity_parts( Entity & entity,
                             AddIterator begin_add_parts, AddIterator end_add_parts,
-                            RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts );
+                            RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
+                            bool always_propagate_internal_changes=true );
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -392,6 +396,20 @@ public:
   /** \brief  Query all ghostings */
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
+  /** \brief  Entity Comm functions that are now moved to BulkData
+   * These functions are only here for backwards compatibility.
+   * We plan to remove all comm accessors from the Entity in the future.
+   */
+  PairIterEntityComm entity_comm(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
+  PairIterEntityComm entity_comm_sharing(const EntityKey & key) const { return m_entity_comm_map.sharing(key); }
+  PairIterEntityComm entity_comm(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
+  bool entity_comm_insert( const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.insert(key,val); }
+  bool entity_comm_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
+  bool entity_comm_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
+  void entity_comm_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
+  void entity_comm_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
+  void entity_comm_swap(const EntityKey & key1, const EntityKey & key2) { m_entity_comm_map.comm_swap(key1, key2); }
+
 private:
 
   /** \brief  The meta data manager for this bulk data manager. */
@@ -418,6 +436,8 @@ private:
   size_t             m_sync_count ;
   BulkDataSyncState  m_sync_state ;
   bool               m_meta_data_verified ;
+  bool               m_optimize_buckets;
+  EntityComm         m_entity_comm_map;
 
   /**
    * For all processors sharing an entity, find one to be the new
@@ -434,7 +454,17 @@ private:
                                      const PartVector & add_parts ,
                                      const PartVector & remove_parts );
 
+//Optional parameter 'always_propagate_internal_changes' is always true except when this function
+//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+//the propagation that stk-mesh does.
+  void internal_change_entity_parts( Entity & ,
+                                     const OrdinalVector & add_parts ,
+                                     const OrdinalVector & remove_parts,
+                                     bool always_propagate_internal_changes=true);
+
   void internal_propagate_part_changes( Entity & entity, const PartVector & removed );
+  void internal_propagate_part_changes( Entity & entity, const OrdinalVector & removed );
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
@@ -456,19 +486,29 @@ private:
    */
   void internal_regenerate_shared_aura();
 
+  void internal_basic_part_check(const Part* part,
+                                 const unsigned entity_rank,
+                                 const unsigned undef_rank,
+                                 bool& intersection_ok,
+                                 bool& rel_target_ok,
+                                 bool& rank_ok) const;
+
   // Returns false if there is a problem. It is expected that
   // verify_change_parts will be called if quick_verify_change_part detects
   // a problem, therefore we leave the generation of an exception to
   // verify_change_parts. We want this function to be as fast as
   // possible.
-  inline bool internal_quick_verify_change_part(const Entity& entity,
-                                                const Part* part,
-                                                const unsigned entity_rank,
-                                                const unsigned undef_rank) const;
+  bool internal_quick_verify_change_part(const Part* part,
+                                         const unsigned entity_rank,
+                                         const unsigned undef_rank) const;
 
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity     & entity ,
                                      const PartVector & parts ) const;
+
+  void internal_verify_change_parts( const MetaData   & meta ,
+                                     const Entity     & entity ,
+                                     const OrdinalVector & parts ) const;
 
   //------------------------------------
 
@@ -524,29 +564,47 @@ void set_field_relations( Entity & e_from ,
                           Entity & e_to ,
                           const unsigned ident );
 
-inline bool BulkData::internal_quick_verify_change_part(const Entity& entity,
-                                                        const Part* part,
+inline
+void BulkData::internal_basic_part_check(const Part* part,
+                                         const unsigned entity_rank,
+                                         const unsigned undef_rank,
+                                         bool& intersection_ok,
+                                         bool& rel_target_ok,
+                                         bool& rank_ok) const
+{
+  // const unsigned part_rank = part->primary_entity_rank();
+
+  intersection_ok = part->intersection_of().empty();
+  rel_target_ok   = ( part->relations().empty() ||
+                      part != part->relations().begin()->m_target );
+  // Do we allow arbitrary part changes to entities regardless of part rank? For the sake of the migration, we will for now.
+#ifdef SIERRA_MIGRATION
+  rank_ok = true;
+#else
+  const unsigned part_rank = part->primary_entity_rank();
+  rank_ok         = ( entity_rank == part_rank ||
+                      undef_rank  == part_rank );
+#endif
+}
+
+inline bool BulkData::internal_quick_verify_change_part(const Part* part,
                                                         const unsigned entity_rank,
                                                         const unsigned undef_rank) const
 {
-  const unsigned part_rank = part->primary_entity_rank();
-
-  // The code below is coupled with the code in verify_change_parts. If we
-  // change what it means for a part to be valid, code will need to be
-  // changed in both places unfortunately.
-  const bool intersection_ok = part->intersection_of().empty();
-  const bool rel_target_ok   = ( part->relations().empty() ||
-                                 part != part->relations().begin()->m_target );
-  const bool rank_ok         = ( entity_rank == part_rank ||
-                                 undef_rank  == part_rank );
-
+  bool intersection_ok, rel_target_ok, rank_ok;
+  internal_basic_part_check(part, entity_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
   return intersection_ok && rel_target_ok && rank_ok;
 }
 
+//Optional parameter 'always_propagate_internal_changes' is always true except when this function
+//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+//the propagation that stk-mesh does.
 template<typename AddIterator, typename RemoveIterator>
 void BulkData::change_entity_parts( Entity & entity,
                                     AddIterator begin_add_parts, AddIterator end_add_parts,
-                                    RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts )
+                                    RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
+                                    bool always_propagate_internal_changes)
 {
   TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
@@ -568,21 +626,28 @@ void BulkData::change_entity_parts( Entity & entity,
   // most parts will at least have universal and topology part as supersets
   const unsigned expected_min_num_supersets = 2;
 
-  PartVector a_parts;
+  OrdinalVector a_parts;
   a_parts.reserve( std::distance(begin_add_parts, end_add_parts) * (expected_min_num_supersets + 1) );
-  a_parts.insert( a_parts.begin(), begin_add_parts, end_add_parts );
+  for(AddIterator add_iter=begin_add_parts; add_iter!=end_add_parts; ++add_iter) {
+    a_parts.push_back((*add_iter)->mesh_meta_data_ordinal());
+  }
   bool quick_verify_check = true;
 
   for ( AddIterator ia = begin_add_parts; ia != end_add_parts ; ++ia ) {
     quick_verify_check = quick_verify_check &&
-      internal_quick_verify_change_part(entity, *ia, entity_rank, undef_rank);
-    a_parts.insert( a_parts.end(), (*ia)->supersets().begin(),
-                                   (*ia)->supersets().end() );
+      internal_quick_verify_change_part(*ia, entity_rank, undef_rank);
+    const PartVector& supersets = (*ia)->supersets();
+    for(PartVector::const_iterator s_iter=supersets.begin(), s_end=supersets.end();
+        s_iter!=s_end; ++s_iter) {
+      a_parts.push_back((*s_iter)->mesh_meta_data_ordinal());
+    }
   }
 
-  order( a_parts );
+  order(a_parts);
 
-  PartVector r_parts ;
+  OrdinalVector::const_iterator a_parts_begin = a_parts.begin(),
+                                a_parts_end   = a_parts.end();
+  OrdinalVector r_parts ;
 
   for ( RemoveIterator ir = begin_remove_parts; ir != end_remove_parts ; ++ir ) {
 
@@ -601,19 +666,19 @@ void BulkData::change_entity_parts( Entity & entity,
     */
 
     quick_verify_check = quick_verify_check &&
-      internal_quick_verify_change_part(entity, *ir, entity_rank, undef_rank);
+      internal_quick_verify_change_part(*ir, entity_rank, undef_rank);
 
-    if ( ! contain( a_parts , **ir ) ) {
-      r_parts.push_back( *ir );
+    if ( ! contains_ordinal( a_parts_begin, a_parts_end , (*ir)->mesh_meta_data_ordinal() ) ) {
+      r_parts.push_back( (*ir)->mesh_meta_data_ordinal() );
       for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
             cur_part != (*ir)->subsets().end() ;
             ++cur_part )
         if ( entity.bucket().member ( **cur_part ) )
-          r_parts.push_back ( *cur_part );
+          r_parts.push_back ( (*cur_part)->mesh_meta_data_ordinal() );
     }
   }
 
-  order( r_parts );
+  order(r_parts);
 
   // If it looks like we have a problem, run the full check and we should
   // expect to see an exception thrown; otherwise, only do the full check in
@@ -630,7 +695,7 @@ void BulkData::change_entity_parts( Entity & entity,
 #endif
   }
 
-  internal_change_entity_parts( entity , a_parts , r_parts );
+  internal_change_entity_parts( entity , a_parts , r_parts , always_propagate_internal_changes );
 
   return ;
 }

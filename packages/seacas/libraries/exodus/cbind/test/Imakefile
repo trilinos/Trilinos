@@ -43,9 +43,9 @@ PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
 	testwt_ss testwt_nossnsdf testrd_ss testrdwt testcp testcpd testcp_nl  \
 	testcp_ln testwt_clb testwt_nc testrd_nc testwt-zeroe testwt-zeron \
 	testwt-one-attrib create_mesh rd_wt_mesh \
-	testrd-partial testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
+	testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
 	testrd-nfaced testwt-long-name testrd-long-name \
-	oned twod MakeTestData
+	oned twod MakeTestData test_nemesis
 #if 0
 	CreateEdgeFace ReadEdgeFace
 #endif
@@ -83,7 +83,6 @@ NormalProgramTarget(testwt-zeroe, testwt-zeroe.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-zeron, testwt-zeron.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-one-attrib, testwt-one-attrib.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-partial, testwt-partial.o, $(LOCALEXO), /**/, $(LIBS))
-NormalProgramTarget(testrd-partial, testrd-partial.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-nsided, testwt-nsided.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testrd-nsided, testrd-nsided.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-nfaced, testwt-nfaced.o, $(LOCALEXO), /**/, $(LIBS))
@@ -94,6 +93,8 @@ NormalProgramTarget(rd_wt_mesh,  rd_wt_mesh.o, $(LOCALEXO), /**/, $(LIBS))
 
 NormalProgramTarget(CreateEdgeFace, CreateEdgeFace.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(ReadEdgeFace,   ReadEdgeFace.o,   $(LOCALEXO), /**/, $(LIBS))
+
+NormalProgramTarget(test_nemesis,   test_nemesis.o,   $(LOCALEXO), /**/, $(LIBS))
 
 testall: testall.in1 $(CONFIGDIR)/$(MACROFILE)
 	rm -f testall

@@ -28,7 +28,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Transaction.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
@@ -88,7 +87,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   // Create two scalar fields, temperature and volume. Put temperature
   // on all the nodes and put volume on all the elements.
   unsigned number_of_states = 4;
-  
+
   ScalarFieldType & temperature =
     meta.declare_field < ScalarFieldType > ( "temperature" , number_of_states );
   ScalarFieldType & volume =
@@ -254,26 +253,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   bulk2.modification_begin();
   bulk2.declare_entity( edge_rank, rank+1 , no_part );
   bulk2.modification_end();
-
-  const std::vector<Bucket*> & buckets3 = bulk2.buckets( edge_rank );
-
-  std::vector<Bucket*>::const_iterator k3;
-
-  k3 = buckets3.begin();
-
-  Bucket& b3 = **k3;
-  BucketIterator bitr3 = b3.begin();
-
-  Bucket& b2 = **k2;
-  BucketIterator bitr2 = b2.begin();
-
-#ifndef NDEBUG
-  //tests operator != given iterator from different bucket - bucket.hpp
-  STKUNIT_ASSERT_THROW( bitr2 != bitr3 , std::logic_error );
-
-  //tests operator - given iterator from different bucket - bucket.hpp
-  STKUNIT_ASSERT_THROW( bitr2 - bitr3, std::logic_error );
-#endif
 }
 
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
@@ -321,7 +300,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   k2 = buckets2.begin();
 
   Bucket& b2 = **k2;
-  BucketIterator bitr2 = b2.begin();
 
   //define a new meta and bulkdata
   std::vector<std::string> entity_names(10);
@@ -407,7 +385,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
 
   const int spatial_dimension = 3;
   FEMMetaData meta( spatial_dimension );
-  
+
   BulkData bulk ( FEMMetaData::get_meta_data(meta) , pm , 100 );
   std::vector<Part *>  add_part4;
 
@@ -416,9 +394,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
 
   add_part4.push_back ( &partLeft_1 );
 
-  int  size , rank;
-  rank = stk::parallel_machine_rank( pm );
-  size = stk::parallel_machine_size( pm );
+  //int rank = stk::parallel_machine_rank( pm );
+  // int size = stk::parallel_machine_size( pm );
   PartVector tmp(1);
 
   bulk.modification_begin();

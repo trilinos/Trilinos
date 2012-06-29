@@ -32,7 +32,7 @@ get_extval (
     double    lambda;		/* the parameter that iterates to extval */
     int       cnt;		/* debug iteration counter */
     double    diff;		/* distance between lambda limits */
-    double    norm(), Tevec();
+    double    ch_norm(), Tevec();
     void      tri_solve(), cpvec();
 
     /* Compute the Ritz vector */
@@ -71,7 +71,7 @@ get_extval (
     while (diff > tol) {
 	lambda = 0.5 * (lambda_low + lambda_high);
 	tri_solve(alpha, beta, j, lambda, v, wnorm_g, work1, work2);
-	norm_v = norm(v, 1, j);
+	norm_v = ch_norm(v, 1, j);
 	if (DEBUG_EVECS > 3) {
 	    printf("%2i   %18.16f  %18.16f  %18.16f  %g\n",
 		   cnt++, lambda_low, lambda, lambda_high, norm_v);

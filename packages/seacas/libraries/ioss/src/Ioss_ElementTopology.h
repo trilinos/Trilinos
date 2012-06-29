@@ -41,7 +41,6 @@
 
 namespace Ioss {
   class ElementTopology;
-  typedef std::vector<int> IntVector;
   typedef std::vector<std::string> NameList;
   typedef std::map<std::string, ElementTopology*,
     std::less<std::string> > ElementTopologyMap;

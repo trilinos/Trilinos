@@ -76,7 +76,10 @@ int main (int argc, char **argv)
    int *num_elem_in_block, *num_nodes_per_elem, *num_attr;
    int num_nodes_in_set, num_elem_in_set;
    int num_sides_in_set, num_df_in_set;
-   int list_len, elem_list_len, node_list_len, df_list_len;
+   int list_len = 0;
+   int elem_list_len = 0;
+   int node_list_len = 0;
+   int df_list_len = 0;
    int node_num, time_step, var_index, beg_time, end_time, elem_num;
    int CPU_word_size,IO_word_size;
    int num_props, prop_value, *prop_values;
@@ -140,6 +143,7 @@ int main (int argc, char **argv)
    printf ("\nafter ex_get_coord, error = %3d\n", error);
 
    error = ex_get_coord (exoid, xyz, NULL, NULL);
+   printf ("\nafter ex_get_coord (x), error = %3d\n", error);
    printf ("x coords = \n");
    for (i=0; i<num_nodes; i++)
    {
@@ -147,6 +151,7 @@ int main (int argc, char **argv)
    }
 
    error = ex_get_coord (exoid, NULL, xyz, NULL);
+   printf ("\nafter ex_get_coord (y), error = %3d\n", error);
    printf ("y coords = \n");
    for (i=0; i<num_nodes; i++)
    {
@@ -154,6 +159,7 @@ int main (int argc, char **argv)
    }
 
    error = ex_get_coord (exoid, NULL, NULL, xyz);
+   printf ("\nafter ex_get_coord (z), error = %3d\n", error);
    if (num_dim >= 3)
    {
      printf ("z coords = \n");

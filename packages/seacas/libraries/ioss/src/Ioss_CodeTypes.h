@@ -33,6 +33,14 @@
 #ifndef IOSS_code_types_h
 #define IOSS_code_types_h
 
+#include <stdint.h>
+#include <vector>
+
+namespace Ioss {
+  typedef std::vector<int> IntVector;
+  typedef std::vector<int64_t> Int64Vector;
+}
+
 #if !defined(HAVE_MPI) 
 #if defined(SIERRA_PARALLEL_MPI)
 #define HAVE_MPI
