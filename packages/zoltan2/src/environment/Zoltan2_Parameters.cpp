@@ -617,6 +617,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
   strValidatorP = rcp(new StringValidator(
     tuple<string>(
       "rcb",
+      "PQJagged",
       "rib",
       "hsfc",
       "patoh",

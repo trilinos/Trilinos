@@ -259,6 +259,7 @@ template <typename Adapter>
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), timer_()
 {
+
   initializeProblem();
 }
 #endif
@@ -441,8 +442,9 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
-    else if (algorithm_ == string("mehmet")){
-      throw std::logic_error("partitioning algorithm mehmet not supported yet; uncomment call to AlgMehmet in Zoltan2_PartitioningProblem.hpp");
+    else if (algorithm_ == string("PQJagged")){
+    	AlgPQJagged<Adapter>(this->envConst_, problemComm_,
+    	        this->coordinateModel_, solution_);
 //      AlgMehmet<Adapter>(this->envConst_, problemComm_,
 //        this->coordinateModel_, solution_);
     }
@@ -546,7 +548,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == string("rcb") ||
              algorithm == string("rib") ||
-             algorithm == string("mehmet") ||
+             algorithm == string("PQJagged") ||
              algorithm == string("hsfc")){
 
       modelType_ = CoordinateModelType;
@@ -651,6 +653,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (inputType_ == CoordinateAdapterType){
       modelType_ = CoordinateModelType;
+      if(algorithm_ != string("PQJagged"))
       algorithm_ = string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
