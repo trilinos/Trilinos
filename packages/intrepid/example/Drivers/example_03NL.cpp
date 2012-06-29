@@ -41,22 +41,15 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_03AD.cpp
-    \brief  Example building stiffness matrix and right hand side for a Poisson equation 
-            using nodal (Hgrad) elements.  Here we exercise Sacado's Fad types for an
-            automated construction of PDE Jacobians through automatic differentiation.
+/** \file   example_03NL.cpp
+    \brief  Example building PDE Jacobian for a nonlinear reaction-diffusion
+            equation using nodal (Hgrad) elements.  Here we exercise Sacado's
+            Fad types for an automated construction of PDE Jacobians through
+            automatic differentiation.
 
     \verbatim
-             div grad u = f in Omega
-                      u = 0 on Gamma 
+             div grad u + f (u) = 0 in Omega
 
-     Discrete linear system for nodal coefficients(x):
-        
-                 Kx = b
-
-            K - HGrad stiffness matrix
-            b - right hand side vector 
-                
     \endverbatim
 
     \author Created by P. Bochev, D. Ridzal, K. Peterson and J. Gohlke.
@@ -75,7 +68,7 @@
      \endverbatim
 
     \remark Sample command line
-    \code   ./Intrepid_example_Drivers_Example_03.exe 10 10 10 \endcode
+    \code   ./Intrepid_example_Drivers_Example_03NL.exe 10 10 10 \endcode
 */
 
 // Intrepid includes
@@ -137,10 +130,12 @@ typedef Sacado::CacheFad::SFad<double,8> FadType;
 
 //#define DUMP_DATA
 
-// Functions to evaluate exact solution and derivatives
-double evalu(double & x, double & y, double & z);
-int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3);
-double evalDivGradu(double & x, double & y, double & z);
+// Functions to evaluate nonlinear terms
+void dfunc_u(FieldContainer<double>, FieldContainer<double>);
+
+template<class ScalarT>
+void func_u(FieldContainer<ScalarT>, FieldContainer<ScalarT>);
+// 
 
 int main(int argc, char *argv[]) {
 
@@ -148,7 +143,7 @@ int main(int argc, char *argv[]) {
     if (argc < 4) {
       std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
       std::cout <<"Usage:\n\n";
-      std::cout <<"  ./Intrepid_example_Drivers_Example_03AD.exe NX NY NZ verbose\n\n";
+      std::cout <<"  ./Intrepid_example_Drivers_Example_03NL.exe NX NY NZ verbose\n\n";
       std::cout <<" where \n";
       std::cout <<"   int NX              - num intervals in x direction (assumed box domain, 0,1) \n";
       std::cout <<"   int NY              - num intervals in y direction (assumed box domain, 0,1) \n";
@@ -174,8 +169,8 @@ int main(int argc, char *argv[]) {
     *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|  Example: Generate Stiffness Matrix and Right Hand Side Vector for          |\n" \
-    << "|                   Poisson Equation on Hexahedral Mesh                       |\n" \
+    << "|  Example: Generate PDE Jacobian for a Nonlinear Reaction-Diffusion          |\n" \
+    << "|                   Equation on Hexahedral Mesh                               |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
@@ -332,7 +327,7 @@ int main(int argc, char *argv[]) {
 
     // ******** FEM ASSEMBLY *************
 
-    *outStream << "Building stiffness matrix and right hand side ... \n\n";
+    *outStream << "Building PDE Jacobian ... \n\n";
 
     // Settings and data structures for mass and stiffness matrices
     typedef CellTools<double>  CellTools;
@@ -346,33 +341,35 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> hexJacobian(numCells, numCubPoints, spaceDim, spaceDim);
     FieldContainer<double> hexJacobInv(numCells, numCubPoints, spaceDim, spaceDim);
     FieldContainer<double> hexJacobDet(numCells, numCubPoints);
-    // Containers for element HGRAD stiffness matrix
-    FieldContainer<double> localStiffMatrix(numCells, numFieldsG, numFieldsG);
+    // Containers for HGRAD bases
+    FieldContainer<double> localPDEjacobian(numCells, numFieldsG, numFieldsG);
     FieldContainer<double> weightedMeasure(numCells, numCubPoints);
-    FieldContainer<double> hexGradsTransformed(numCells, numFieldsG, numCubPoints, spaceDim);
-    FieldContainer<double> hexGradsTransformedWeighted(numCells, numFieldsG, numCubPoints, spaceDim);
-    // Containers for right hand side vectors
-    FieldContainer<double> rhsData(numCells, numCubPoints);
-    FieldContainer<double> localRHS(numCells, numFieldsG);
     FieldContainer<double> hexGValsTransformed(numCells, numFieldsG, numCubPoints);
     FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
-    // Container for cubature points in physical space
-    FieldContainer<double> physCubPoints(numCells, numCubPoints, cubDim);
+    FieldContainer<double> hexGradsTransformed(numCells, numFieldsG, numCubPoints, spaceDim);
+    FieldContainer<double> hexGradsTransformedWeighted(numCells, numFieldsG, numCubPoints, spaceDim);
 
     // Global arrays in Epetra format 
     Epetra_SerialComm Comm;
     Epetra_Map globalMapG(numNodes, 0, Comm);
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 64);
-    Epetra_FEVector rhs(globalMapG);
-    Epetra_FEVector rhsViaAD(globalMapG);
+
+    // Additional arrays used in analytic assembly
+    FieldContainer<double> u_coeffs(numCells, numFieldsG);
+    FieldContainer<double> u_FE_val(numCells, numCubPoints);
+    FieldContainer<double> df_of_u(numCells, numCubPoints);
+    FieldContainer<double> df_of_u_times_basis(numCells, numFieldsG, numCubPoints);
+
 
     // Additional arrays used in AD-based assembly.
+    FieldContainer<FadType> u_coeffsAD(numCells, numFieldsG);  
+    FieldContainer<FadType> u_FE_gradAD(numCells, numCubPoints, spaceDim);
+    FieldContainer<FadType> u_FE_valAD(numCells, numCubPoints);
+    FieldContainer<FadType> f_of_u_AD(numCells, numCubPoints);
     FieldContainer<FadType> cellResidualAD(numCells, numFieldsG);
-    FieldContainer<FadType> FEFunc(numCells, numCubPoints, spaceDim);
-    FieldContainer<FadType> x_fad(numCells, numFieldsG);  
-    for (int ci=0; ci<numCells; ci++) {
-      for(int j=0; j<numFieldsG; j++) {
-          x_fad(ci,j) = FadType(numFieldsG, j, 0.0);
+    for (int c=0; c<numCells; c++) {
+      for(int f=0; f<numFieldsG; f++) {
+          u_coeffsAD(c,f) = FadType(numFieldsG, f, 1.3);
       }
     }
 
@@ -418,11 +415,26 @@ int main(int argc, char *argv[]) {
       fst::multiplyMeasure<double>(hexGradsTransformedWeighted,
                                    weightedMeasure, hexGradsTransformed);
 
-      // integrate to compute element stiffness matrix
-      timer_jac_analytic.start();
-      fst::integrate<double>(localStiffMatrix,
-                             hexGradsTransformed, hexGradsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE);
-      timer_jac_analytic.stop();
+      // u_coeffs equals the value of u_coeffsAD
+      for(int i=0; i<numFieldsG; i++){
+        u_coeffs(0,i) = u_coeffsAD(0,i).val();
+      }
+
+      timer_jac_analytic.start(); // START TIMER
+      // integrate to account for linear stiffness term
+      fst::integrate<double>(localPDEjacobian, hexGradsTransformed, hexGradsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE);
+
+      // represent value of the current state (iterate) as a linear combination of the basis functions
+      u_FE_val.initialize();
+      fst::evaluate<double>(u_FE_val, u_coeffs, hexGValsTransformed);
+     
+      // evaluate derivative of the nonlinear term and multiply by basis function
+      dfunc_u(df_of_u, u_FE_val);
+      fst::scalarMultiplyDataField<double>(df_of_u_times_basis, df_of_u, hexGValsTransformed);
+
+      // integrate to account for nonlinear reaction term
+      fst::integrate<double>(localPDEjacobian, df_of_u_times_basis, hexGValsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE, true);
+      timer_jac_analytic.stop(); // STOP TIMER
 
       // assemble into global matrix
       for (int ci=0; ci<numCells; ci++) {
@@ -437,47 +449,12 @@ int main(int argc, char *argv[]) {
         }
         // We can insert an entire matrix at a time, but we opt for rows only.
         //timer_jac_insert.start();
-        //StiffMatrix.InsertGlobalValues(numFieldsG, &rowIndex[0], numFieldsG, &colIndex[0], &localStiffMatrix(ci,0,0));
+        //StiffMatrix.InsertGlobalValues(numFieldsG, &rowIndex[0], numFieldsG, &colIndex[0], &localPDEjacobian(ci,0,0));
         //timer_jac_insert.stop();
         for (int row = 0; row < numFieldsG; row++){
           timer_jac_insert.start();
-          StiffMatrix.InsertGlobalValues(1, &rowIndex[row], numFieldsG, &colIndex[0], &localStiffMatrix(ci,row,0));
+          StiffMatrix.InsertGlobalValues(1, &rowIndex[row], numFieldsG, &colIndex[0], &localPDEjacobian(ci,row,0));
           timer_jac_insert.stop();
-        }
-      }
-
-      // *******************  COMPUTE RIGHT-HAND SIDE WITHOUT AD *******************
-
-      // transform integration points to physical points
-      CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
-
-      // evaluate right hand side function at physical points
-      for (int ci=0; ci<numCells; ci++) {
-        for (int nPt = 0; nPt < numCubPoints; nPt++){
-            double x = physCubPoints(ci,nPt,0);
-            double y = physCubPoints(ci,nPt,1);
-            double z = physCubPoints(ci,nPt,2);
-            rhsData(ci,nPt) = evalDivGradu(x, y, z);
-        }
-      }
-
-      // transform basis values to physical coordinates 
-      fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
-
-      // multiply values with weighted measure
-      fst::multiplyMeasure<double>(hexGValsTransformedWeighted,
-                                   weightedMeasure, hexGValsTransformed);
-
-      // integrate rhs term
-      fst::integrate<double>(localRHS, rhsData, hexGValsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE);
-
-      // assemble into global vector
-      for (int ci=0; ci<numCells; ci++) {
-        int k = bi*numCells+ci;
-        for (int row = 0; row < numFieldsG; row++){
-            int rowIndex = elemToNode(k,row);
-            double val = -localRHS(ci,row);
-            rhs.SumIntoGlobalValues(1, &rowIndex, &val);
         }
       }
 
@@ -486,7 +463,6 @@ int main(int argc, char *argv[]) {
     // Assemble global objects
     timer_jac_ga.start(); StiffMatrix.GlobalAssemble(); timer_jac_ga.stop();
     timer_jac_fc.start(); StiffMatrix.FillComplete(); timer_jac_fc.stop();
-    rhs.GlobalAssemble();
 
 
 
@@ -495,7 +471,6 @@ int main(int argc, char *argv[]) {
 
     Epetra_CrsGraph mgraph = StiffMatrix.Graph();
     Epetra_FECrsMatrix StiffMatrixViaAD(Copy, mgraph);
-    //Epetra_FECrsMatrix StiffMatrixViaAD(Copy, globalMapG, numFieldsG*numFieldsG*numFieldsG);
 
     for (int bi=0; bi<numBatches; bi++) {
 
@@ -525,19 +500,6 @@ int main(int argc, char *argv[]) {
       // multiply values with weighted measure
       fst::multiplyMeasure<double>(hexGradsTransformedWeighted, weightedMeasure, hexGradsTransformed);
 
-      // transform integration points to physical points
-      CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
-
-      // evaluate right hand side function at physical points
-      for (int ci=0; ci<numCells; ci++) {
-        for (int nPt = 0; nPt < numCubPoints; nPt++){
-            double x = physCubPoints(ci,nPt,0);
-            double y = physCubPoints(ci,nPt,1);
-            double z = physCubPoints(ci,nPt,2);
-            rhsData(ci,nPt) = evalDivGradu(x, y, z);
-        }
-      }
-
       // transform basis values to physical coordinates 
       fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
 
@@ -545,18 +507,23 @@ int main(int argc, char *argv[]) {
       fst::multiplyMeasure<double>(hexGValsTransformedWeighted,
                                    weightedMeasure, hexGValsTransformed);
 
-      timer_jac_fad.start();
-      // must zero out FEFunc due to the strange default sum-into behavior of evaluate function
-      FEFunc.initialize();
+      timer_jac_fad.start(); // START TIMER
+      // represent gradient of the current state (iterate) as a linear combination of the gradients of basis functions
+      // use AD arrays !
+      u_FE_gradAD.initialize();
+      fst::evaluate<FadType>(u_FE_gradAD, u_coeffsAD, hexGradsTransformed);
 
-      // compute FEFunc, a linear combination of the gradients of the basis functions, with coefficients x_fad
-      // this will replace the gradient of the trial function in the weak form of the equation
-      fst::evaluate<FadType>(FEFunc,x_fad,hexGradsTransformed);
-     
+      // represent value of the current state (iterate) as a linear combination of the basis functions
+      // use AD arrays !
+      u_FE_valAD.initialize();
+      fst::evaluate<FadType>(u_FE_valAD, u_coeffsAD, hexGValsTransformed);
+      // compute nonlinear term
+      func_u(f_of_u_AD, u_FE_valAD);
+
       // integrate to compute element residual   
-      fst::integrate<FadType>(cellResidualAD, FEFunc,  hexGradsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE);
-      timer_jac_fad.stop();
-      fst::integrate<FadType>(cellResidualAD, rhsData, hexGValsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE, true);
+      fst::integrate<FadType>(cellResidualAD, u_FE_gradAD,  hexGradsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE);
+      fst::integrate<FadType>(cellResidualAD, f_of_u_AD, hexGValsTransformedWeighted, INTREPID_INTEGRATE_COMP_ENGINE, true);
+      timer_jac_fad.stop(); // STOP TIMER
 
       // assemble into global matrix
       for (int ci=0; ci<numCells; ci++) {
@@ -576,22 +543,11 @@ int main(int argc, char *argv[]) {
         }
       }
  
-      // assemble into global vector
-      for (int ci=0; ci<numCells; ci++) {
-        int k = bi*numCells+ci;
-        for (int row = 0; row < numFieldsG; row++){
-            int rowIndex = elemToNode(k,row);
-            double val = -cellResidualAD(ci,row).val();
-            rhsViaAD.SumIntoGlobalValues(1, &rowIndex, &val);
-        }
-      }
-
     } // *** end AD element loop ***
 
     // Assemble global objects
     timer_jac_ga_g.start(); StiffMatrixViaAD.GlobalAssemble(); timer_jac_ga_g.stop();
     timer_jac_fc_g.start(); StiffMatrixViaAD.FillComplete(); timer_jac_fc_g.stop();
-    rhsViaAD.GlobalAssemble();
 
 
 
@@ -601,8 +557,6 @@ int main(int argc, char *argv[]) {
     // Dump matrices to disk
     EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
     EpetraExt::RowMatrixToMatlabFile("stiff_matrixAD.dat",StiffMatrixViaAD);
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vectorAD.dat",rhsViaAD,0,0,false);
 #endif
 
     // take the infinity norm of the difference between StiffMatrix and StiffMatrixViaAD to see that 
@@ -611,12 +565,6 @@ int main(int argc, char *argv[]) {
     double normMat = StiffMatrixViaAD.NormInf();
     *outStream << "Infinity norm of difference between stiffness matrices = " << normMat << "\n";
 
-    // take the infinity norm of the difference between rhs and rhsViaAD to see that 
-    // the two vectors are the same
-    double normVec;
-    rhsViaAD.Update(-1.0, rhs, 1.0);
-    rhsViaAD.NormInf(&normVec);
-    *outStream << "Infinity norm of difference between right-hand side vectors = " << normVec << "\n";
 
     *outStream << "\n\nNumber of global nonzeros: " << StiffMatrix.NumGlobalNonzeros() << "\n\n";
 
@@ -629,52 +577,38 @@ int main(int argc, char *argv[]) {
     *outStream << timer_jac_fc.name()       << " " << timer_jac_fc.totalElapsedTime()       << " sec\n";
     *outStream << timer_jac_fc_g.name()     << " " << timer_jac_fc_g.totalElapsedTime()     << " sec\n\n";
 
-    // Adjust stiffness matrix and rhs based on boundary conditions
-    /* skip this part ...
-    for (int row = 0; row<numNodes; row++){
-      if (nodeOnBoundary(row)) {
-         int rowindex = row;
-         for (int col=0; col<numNodes; col++){
-             double val = 0.0;
-             int colindex = col;
-             StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &colindex, &val);
-         }
-         double val = 1.0;
-         StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
-         val = 0.0;
-         rhs.ReplaceGlobalValues(1, &rowindex, &val);
-      }
+    if ((normMat < 1.0e4*INTREPID_TOL)) {
+      std::cout << "End Result: TEST PASSED\n";
     }
-    */
-
-   if ((normMat < 1.0e4*INTREPID_TOL) && (normVec < 1.0e4*INTREPID_TOL)) {
-     std::cout << "End Result: TEST PASSED\n";
-   }
-   else {
-     std::cout << "End Result: TEST FAILED\n";
-   }
+    else {
+      std::cout << "End Result: TEST FAILED\n";
+    }
    
-   // reset format state of std::cout
-   std::cout.copyfmt(oldFormatState);
+    // reset format state of std::cout
+    std::cout.copyfmt(oldFormatState);
    
-   return 0;
+    return 0;
 }
 
 
-// Calculates Laplacian of exact solution u
- double evalDivGradu(double & x, double & y, double & z)
- {
- /*
-   // function 1
-    double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
- */
+template<class ScalarT>
+void func_u(FieldContainer<ScalarT> fu, FieldContainer<ScalarT> u) {
+  int num_cells = u.dimension(0);
+  int num_cub_p = u.dimension(1);
+  for(int c=0; c<num_cells; c++){
+    for(int p=0; p<num_cub_p; p++){
+      fu(c,p) = std::pow(u(c,p),3) + std::exp(u(c,p));
+    }
+  }
+}
 
-   // function 2
-   double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*y)*sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*z)*sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z)
-                    + 3.0*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-   
-   return divGradu;
- }
+
+void dfunc_u(FieldContainer<double> dfu, FieldContainer<double> u) {
+  int num_cells = u.dimension(0);
+  int num_cub_p = u.dimension(1);
+  for(int c=0; c<num_cells; c++) {
+    for(int p=0; p<num_cub_p; p++) {
+      dfu(c,p) = 3*u(c,p)*u(c,p) + std::exp(u(c,p));
+    }
+  }
+}
