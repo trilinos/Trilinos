@@ -25,6 +25,9 @@ namespace Xpetra {
 
   public:
 
+    //! The specialization of Map used by this class.
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
 $TMPL_PUBLIC_FUNCTIONS
 
     //! @name Xpetra specific

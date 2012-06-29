@@ -11,8 +11,6 @@
 
 #include "Epetra_Export.h"
 
-namespace Teuchos { class ParameterList; }
-
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
 
 namespace Xpetra {
@@ -28,6 +26,8 @@ namespace Xpetra {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    //! The specialization of Map used by this class.
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
   public:
 
@@ -35,10 +35,10 @@ namespace Xpetra {
     //@{
 
     //! Construct a Export object from the source and target Map.
-    EpetraExport(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target);
+    EpetraExport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target);
 
     //! Constructor (with list of parameters).
-    EpetraExport(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist);
+    EpetraExport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist);
 
     //! Copy constructor.
     EpetraExport(const Export< LocalOrdinal, GlobalOrdinal, Node > &rhs);

@@ -15,7 +15,7 @@ $TMPL_HEADERS
 #include "Xpetra_TpetraExport.hpp"
 
 namespace Xpetra {
- 
+
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toXpetra(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > );
@@ -37,6 +37,7 @@ namespace Xpetra {
 
     // The following typedef is used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsGraphClass;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
   public:
 

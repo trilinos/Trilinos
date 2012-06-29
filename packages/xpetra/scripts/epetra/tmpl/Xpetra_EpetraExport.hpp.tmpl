@@ -8,8 +8,6 @@ $TMPL_HEADERS
 
 #include "Epetra_Export.h"
 
-namespace Teuchos { class ParameterList; }
-
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
 
 namespace Xpetra {
@@ -25,6 +23,8 @@ namespace Xpetra {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    //! The specialization of Map used by this class.
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
   public:
 

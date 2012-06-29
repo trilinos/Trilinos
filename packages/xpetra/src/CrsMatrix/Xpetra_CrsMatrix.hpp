@@ -45,10 +45,10 @@ namespace Xpetra {
     //@{
 
     //! Signal that data entry is complete, specifying domain and range maps.
-    virtual void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage)= 0;
+    virtual void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null)= 0;
 
     //! Signal that data entry is complete.
-    virtual void fillComplete(OptimizeOption os=DoOptimizeStorage)= 0;
+    virtual void fillComplete(const RCP< ParameterList > &params=null)= 0;
 
     //@}
 
@@ -134,7 +134,7 @@ namespace Xpetra {
     //! @name Overridden from Teuchos::Describable
     //@{
 
-    //! Return a simple one-line description of this object.
+    //! A simple one-line description of this object.
     virtual std::string description() const = 0;
 
     //! Print the object with some verbosity level to an FancyOStream object.

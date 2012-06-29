@@ -8,8 +8,6 @@ $TMPL_HEADERS
 
 #include "Epetra_Import.h"
 
-namespace Teuchos { class ParameterList; }
-
 namespace Xpetra {
 
   // TODO: move that elsewhere
@@ -25,6 +23,8 @@ namespace Xpetra {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    //! The specialization of Map used by this class.
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
   public:
 
