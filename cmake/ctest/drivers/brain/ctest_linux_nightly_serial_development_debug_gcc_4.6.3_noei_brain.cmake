@@ -77,9 +77,11 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   "-DMPI_BASE_DIR:PATH=$ENV{HOME}/tpls/gcc/4.6.3/openmpi/1.4.3"
-  "-DNetcdf_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/netcdf/4.1.3/include"
-  "-DNetcdf_LIBRARY_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/netcdf/4.1.3/lib"
-  "-DBoost_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/boost/1.46.1/include"
+  "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc/netcdf_4.2"
+  "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc/netcdf_4.2"
+  "-DHDF5_INCLUDE_DIRS=/home/trilinos/tpl/gcc/hdf5-1.8.6"
+  "-DHDF5_LIBRARY_DIRS=/home/trilinos/tpl/gcc/hdf5-1.8.6"
+  "-DBoost_INCLUDE_DIRS=/home/trilinos/tpl/gcc/boost_1_49_0"
   )
 
 #
