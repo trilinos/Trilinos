@@ -124,25 +124,27 @@ void * CudaMemorySpace::allocate(
 
   void * ptr = 0 ;
 
-  bool ok = true ;
+  if ( value_size * value_count ) {
+    bool ok = true ;
 
-  if ( ok ) ok = cudaSuccess == cudaMalloc( & ptr , size );
-  if ( ok ) ok = 0 != ptr ;
-  if ( ok ) ok = cudaSuccess == cudaMemset( ptr , 0 , size );
-  if ( ok ) ok = cudaSuccess == cudaThreadSynchronize();
+    if ( ok ) ok = cudaSuccess == cudaMalloc( & ptr , size );
+    if ( ok ) ok = 0 != ptr ;
+    if ( ok ) ok = cudaSuccess == cudaMemset( ptr , 0 , size );
+    if ( ok ) ok = cudaSuccess == cudaThreadSynchronize();
 
-  if ( ! ok ) {
-    std::ostringstream msg ;
-    msg << "KokkosArray::Impl::CudaMemorySpace::allocate( "
-        << label
-        << " , " << value_type.name()
-        << " , " << value_size
-        << " , " << value_count
-        << " ) FAILED memory allocation" ;
-    throw std::runtime_error( msg.str() );
+    if ( ! ok ) {
+      std::ostringstream msg ;
+      msg << "KokkosArray::Impl::CudaMemorySpace::allocate( "
+          << label
+          << " , " << value_type.name()
+          << " , " << value_size
+          << " , " << value_count
+          << " ) FAILED memory allocation" ;
+      throw std::runtime_error( msg.str() );
+    }
+
+    s.m_allocations.track( ptr, & value_type, value_size, value_count, label );
   }
-
-  s.m_allocations.track( ptr, & value_type, value_size, value_count, label );
 
   return ptr ;
 }

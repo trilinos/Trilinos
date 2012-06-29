@@ -151,7 +151,7 @@ public:
     {
       typedef typename Impl::assert_shape_is_rank< shape_type , 1 >::type ok_rank ;
 
-      KOKKOS_MACRO_CHECK( Impl::array_bounds_check( m_shape, i0 ) );
+      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0 ) );
 
       return m_ptr_on_device[ i0 ]; 
     }
@@ -163,7 +163,7 @@ public:
     {
       typedef typename Impl::assert_shape_is_rank< shape_type , 1 >::type ok_rank ;
 
-      KOKKOS_MACRO_CHECK( Impl::array_bounds_check( m_shape, i0 ) );
+      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0 ) );
 
       return m_ptr_on_device[ i0 ]; 
     }
@@ -176,7 +176,7 @@ public:
     {
       typedef typename Impl::assert_shape_is_rank< shape_type , 2 >::type ok_rank ;
 
-      KOKKOS_MACRO_CHECK( Impl::array_bounds_check( m_shape, i0, i1 ) );
+      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0, i1 ) );
 
       return m_ptr_on_device[ shape_map::offset( m_shape, i0, i1 ) ];
     }
@@ -190,7 +190,7 @@ public:
     {
       typedef typename Impl::assert_shape_is_rank< shape_type , 3 >::type ok_rank ;
 
-      KOKKOS_MACRO_CHECK( Impl::array_bounds_check( m_shape, i0, i1, i2 ) );
+      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0, i1, i2 ) );
 
       return m_ptr_on_device[ shape_map::offset( m_shape, i0 , i1 , i2 ) ];
     }
@@ -207,7 +207,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 4 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3 ) );
 
       return m_ptr_on_device[ shape_map::offset( m_shape, i0, i1, i2, i3 ) ];
     }
@@ -225,7 +225,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 5 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3, i4 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4 ) );
 
       return m_ptr_on_device[
                shape_map::offset( m_shape, i0, i1, i2, i3, i4 ) ];
@@ -245,7 +245,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 6 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3, i4, i5 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5 ) );
 
       return m_ptr_on_device[
                shape_map::offset( m_shape, i0, i1, i2, i3, i4, i5 ) ];
@@ -267,7 +267,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 7 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
 
       return m_ptr_on_device[
                shape_map::offset( m_shape, i0, i1, i2, i3, i4, i5, i6 ) ];
@@ -290,7 +290,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 8 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
 
       return m_ptr_on_device[ shape_map::offset(m_shape,i0,i1,i2,i3,i4,i5,i6,i7) ];
     }
@@ -309,7 +309,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 1 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0 ) );
+        Impl::assert_shape_bounds( m_shape, i0 ) );
 
       return View<value_type,device_type>(
              m_ptr_on_device + shape_map::offset(m_shape,i0) );
@@ -324,7 +324,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 2 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1 ) );
 
       return View<value_type,device_type>(
              m_ptr_on_device + shape_map::offset(m_shape,i0,i1) );
@@ -340,7 +340,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 3 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2 ) );
 
       return View<value_type,device_type>(
              m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2) );
@@ -357,7 +357,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 4 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3 ) );
 
       return View<value_type,device_type>(
              m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3) );
@@ -375,7 +375,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 5 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3, i4 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4 ) );
 
       return View<value_type,device_type>(
              m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3,i4) );
@@ -393,7 +393,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 6 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3, i4, i5 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5 ) );
 
       return View<value_type,device_type>(
              m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3,i4,i5) );
@@ -413,7 +413,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 7 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
 
       return View<value_type,device_type>(
              m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3,i4,i5,i6) );
@@ -433,7 +433,7 @@ public:
       typedef typename Impl::assert_shape_is_rank< shape_type , 8 >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
-        Impl::array_bounds_check( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
+        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
 
       return View<value_type,device_type>(
              m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3,i4,i5,i6,i7) );
@@ -473,7 +473,7 @@ public:
    *           If the last view then allocated memory is deallocated.
    */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  ~View() { memory_space::decrement( m_ptr_on_device ); }
+  ~View() { memory_space::decrement( m_ptr_on_device ); m_ptr_on_device = 0 ; }
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a compatible view */
@@ -567,6 +567,9 @@ private:
 
   template< class , class , class > friend class View ;
   template< class Dst , class Src >  friend class Impl::Factory ;
+
+  /// TO BE REMOVED:
+  template< class , class > friend class MultiVector ;
 };
 
 //----------------------------------------------------------------------------

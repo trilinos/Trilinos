@@ -46,6 +46,7 @@
 
 #include <cstddef>
 #include <string>
+#include <KokkosArray_View.hpp>
 #include <impl/KokkosArray_forward.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayBounds.hpp>

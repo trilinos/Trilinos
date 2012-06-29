@@ -207,12 +207,75 @@ void assert_shapes_are_equal(
 
 //----------------------------------------------------------------------------
 
+void assert_shape_effective_rank1_at_leastN_throw(
+  const size_t x_rank , const size_t x_N0 ,
+  const size_t x_N1 ,   const size_t x_N2 ,
+  const size_t x_N3 ,   const size_t x_N4 ,
+  const size_t x_N5 ,   const size_t x_N6 ,
+  const size_t x_N7 ,
+  const size_t N0 );
+
+template <
+  class xLayout , class xDataType , unsigned xRankDynamic , unsigned xRank >
+void assert_shape_effective_rank1_at_leastN(
+  const Shape<xLayout,xDataType,xRankDynamic,xRank> & x ,
+  const size_t n0 )
+{
+  if ( 1 < x.N1 || 1 < x.N2 || 1 < x.N3 || 1 < x.N4 ||
+       1 < x.N5 || 1 < x.N6 || 1 < x.N7 ||
+       x.N0 < n0 ) {
+     assert_shape_effective_rank1_at_leastN_throw(
+       x.rank, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7, n0 );
+  }
+}
+
+//----------------------------------------------------------------------------
+
 template < class ShapeType , unsigned Rank >
 struct assert_shape_is_rank ;
 
 template < class Layout , class Type , unsigned RankDynamic , unsigned Rank >
 struct assert_shape_is_rank< Shape< Layout , Type , RankDynamic , Rank > , Rank >
   : public true_type {};
+
+//----------------------------------------------------------------------------
+
+void assert_shape_bounds( const size_t rank ,
+                          const size_t n0 , const size_t n1 ,
+                          const size_t n2 , const size_t n3 ,
+                          const size_t n4 , const size_t n5 ,
+                          const size_t n6 , const size_t n7 ,
+                          const size_t i0 , const size_t i1 ,
+                          const size_t i2 , const size_t i3 ,
+                          const size_t i4 , const size_t i5 ,
+                          const size_t i6 , const size_t i7 );
+
+template< class ShapeType >
+inline
+void assert_shape_bounds( const ShapeType & shape ,
+                          const size_t i0 = 0 ,
+                          const size_t i1 = 0 ,
+                          const size_t i2 = 0 ,
+                          const size_t i3 = 0 ,
+                          const size_t i4 = 0 ,
+                          const size_t i5 = 0 ,
+                          const size_t i6 = 0 ,
+                          const size_t i7 = 0 )
+{
+  const bool ok = 0 == ShapeType::rank ? true : i0 < shape.N0 && (
+                  1 == ShapeType::rank ? true : i1 < shape.N1 && (
+                  2 == ShapeType::rank ? true : i2 < shape.N2 && (
+                  3 == ShapeType::rank ? true : i3 < shape.N3 && (
+                  4 == ShapeType::rank ? true : i4 < shape.N4 && (
+                  5 == ShapeType::rank ? true : i5 < shape.N5 && (
+                  6 == ShapeType::rank ? true : i6 < shape.N6 && (
+                  7 == ShapeType::rank ? true : i7 < shape.N7 )))))));
+
+  assert_shape_bounds_throw( ShapeType::rank ,
+                             shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
+                             shape.N4 , shape.N5 , shape.N6 , shape.N7 ,
+                             i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -563,7 +626,13 @@ struct Factory< Shape<LayoutLeft,T,0,Rank>, MemorySpace> {
   output_type create()
   {
     output_type shape ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , shape.N0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -594,7 +663,13 @@ struct Factory< Shape<LayoutLeft,T,1,Rank>, MemorySpace> {
   {
     output_type shape ;
     shape.N0 = n0 ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , shape.N0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -612,7 +687,13 @@ struct Factory< Shape<LayoutLeft,T,2,Rank>, MemorySpace> {
     output_type shape ;
     shape.N0 = n0 ;
     shape.N1 = n1 ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , n0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -629,7 +710,13 @@ struct Factory< Shape<LayoutLeft,T,3,Rank>, MemorySpace> {
     shape.N0 = n0 ;
     shape.N1 = n1 ;
     shape.N2 = n2 ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , n0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -647,7 +734,13 @@ struct Factory< Shape<LayoutLeft,T,4,Rank>, MemorySpace> {
     shape.N1 = n1 ;
     shape.N2 = n2 ;
     shape.N3 = n3 ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , n0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -667,7 +760,13 @@ struct Factory< Shape<LayoutLeft,T,5,Rank> , MemorySpace> {
     shape.N2 = n2 ;
     shape.N3 = n3 ;
     shape.N4 = n4 ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , n0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -688,7 +787,13 @@ struct Factory< Shape<LayoutLeft,T,6,Rank> , MemorySpace> {
     shape.N3 = n3 ;
     shape.N4 = n4 ;
     shape.N5 = n5 ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , n0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -710,7 +815,13 @@ struct Factory< Shape<LayoutLeft,T,7,Rank> , MemorySpace> {
     shape.N4 = n4 ;
     shape.N5 = n5 ;
     shape.N6 = n6 ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , n0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -733,7 +844,13 @@ struct Factory< Shape<LayoutLeft,T,8,Rank> , MemorySpace> {
     shape.N5 = n5 ;
     shape.N6 = n6 ;
     shape.N7 = n7 ;
-    shape.Stride = MemorySpace::preferred_alignment( shape.value_size , n0 );
+
+    shape.Stride =
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ?  MemorySpace::preferred_alignment( shape.value_size , shape.N0 )
+      :  shape.N0 ;
+
     return shape ;
   }
 };
@@ -801,15 +918,14 @@ struct Factory< Shape<LayoutRight,T,0,Rank> , MemorySpace > {
   output_type create()
   {
     output_type shape ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size ,
-        shape.N1 * ( 2 == Rank ? 1 : shape.N2 * (
-                     3 == Rank ? 1 : shape.N3 * (
-                     4 == Rank ? 1 : shape.N4 * (
-                     5 == Rank ? 1 : shape.N5 * (
-                     6 == Rank ? 1 : shape.N6 * (
-                     7 == Rank ? 1 : shape.N7 )))))) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };
@@ -840,9 +956,14 @@ struct Factory< Shape<LayoutRight,T,1,Rank> , MemorySpace > {
   {
     output_type shape ;
     shape.N0 = n0 ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size , shape_right_block_count( shape ) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };
@@ -858,9 +979,14 @@ struct Factory< Shape<LayoutRight,T,2,Rank> , MemorySpace > {
     output_type shape ;
     shape.N0 = n0 ;
     shape.N1 = n1 ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size , shape_right_block_count( shape ) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };
@@ -877,9 +1003,14 @@ struct Factory< Shape<LayoutRight,T,3,Rank> , MemorySpace > {
     shape.N0 = n0 ;
     shape.N1 = n1 ;
     shape.N2 = n2 ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size , shape_right_block_count( shape ) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };
@@ -897,9 +1028,14 @@ struct Factory< Shape<LayoutRight,T,4,Rank> , MemorySpace > {
     shape.N1 = n1 ;
     shape.N2 = n2 ;
     shape.N3 = n3 ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size , shape_right_block_count( shape ) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };
@@ -919,9 +1055,14 @@ struct Factory< Shape<LayoutRight,T,5,Rank> , MemorySpace > {
     shape.N2 = n2 ;
     shape.N3 = n3 ;
     shape.N4 = n4 ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size , shape_right_block_count( shape ) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };
@@ -942,9 +1083,14 @@ struct Factory< Shape<LayoutRight,T,6,Rank> , MemorySpace > {
     shape.N3 = n3 ;
     shape.N4 = n4 ;
     shape.N5 = n5 ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size , shape_right_block_count( shape ) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };
@@ -966,9 +1112,14 @@ struct Factory< Shape<LayoutRight,T,7,Rank> , MemorySpace > {
     shape.N4 = n4 ;
     shape.N5 = n5 ;
     shape.N6 = n6 ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size , shape_right_block_count( shape ) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };
@@ -991,9 +1142,14 @@ struct Factory< Shape<LayoutRight,T,8,Rank> , MemorySpace > {
     shape.N5 = n5 ;
     shape.N6 = n6 ;
     shape.N7 = n7 ;
+
     shape.Stride =
-      MemorySpace::preferred_alignment(
-        shape.value_size , shape_right_block_count( shape ) );
+      ( 1 < shape.N1 || 1 < shape.N2 || 1 < shape.N3 || 1 < shape.N4 ||
+        1 < shape.N5 || 1 < shape.N6 || 1 < shape.N7 )
+      ? MemorySpace::preferred_alignment(
+          shape.value_size , shape_right_block_count( shape ) )
+        : 1 ;
+
     return shape ;
   }
 };

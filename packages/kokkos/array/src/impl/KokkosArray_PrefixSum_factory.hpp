@@ -45,7 +45,6 @@
 #define KOKKOS_IMPL_PREFIXSUM_FACTORY_HPP
 
 #include <vector>
-#include <impl/KokkosArray_MemoryView.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -122,20 +121,13 @@ struct Factory< PrefixSum< IntTypeOutput , DeviceOutput > ,
   output_type create( const std::string & label , const input_type & input )
   {
     typedef typename output_type::view_type output_view_type ;
-    typedef typename output_view_type::HostMirror  mirror_view_type ;
-
-    typedef Factory< output_view_type , unsigned_<1> > output_view_factory ;
-
-    typedef MemoryView< IntTypeOutput ,
-                        typename DeviceOutput::memory_space > memory_output ;
-
-    typedef typename memory_output::HostMirror  memory_mirror ;
 
     const size_t count = input.size();
 
     output_type output ;
 
-    output.m_data = output_view_factory::create( label , count + 1 );
+    output.m_data =
+      KokkosArray::create< output_view_type >( label , count + 1 );
 
     // If same memory space then a view:
     typename output_view_type::HostMirror tmp =

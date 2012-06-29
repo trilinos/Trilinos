@@ -59,7 +59,7 @@ struct Factory< Value< ValueType , Device > , void >
   type create()
   {
     type output ;
-    output.m_memory.allocate( 1 , std::string() );
+    output.m_memory = KokkosArray::create< typename type::view_type >( std::string() );
     return output ;
   }
 
@@ -67,7 +67,7 @@ struct Factory< Value< ValueType , Device > , void >
   type create( const std::string & label )
   {
     type output ;
-    output.m_memory.allocate( 1 , label );
+    output.m_memory = KokkosArray::create< typename type::view_type >( label );
     return output ;
   }
 };

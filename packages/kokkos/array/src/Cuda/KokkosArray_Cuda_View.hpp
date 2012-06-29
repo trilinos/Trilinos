@@ -44,6 +44,9 @@
 #ifndef KOKKOS_CUDA_VIEW_HPP
 #define KOKKOS_CUDA_VIEW_HPP
 
+#include <KokkosArray_Host.hpp>
+#include <KokkosArray_View.hpp>
+
 #include <KokkosArray_Cuda_macros.hpp>
 #include <impl/KokkosArray_Shape_macros.hpp>
 #include <impl/KokkosArray_View_macros.hpp>
@@ -60,6 +63,32 @@ namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
+
+template< typename DataType , class LayoutSpec >
+struct Factory< View< DataType , LayoutSpec , Cuda > , void >
+{
+  typedef View< DataType , LayoutSpec , Cuda >  output_type ;
+  typedef typename output_type::shape_type      shape_type ;
+
+  typedef typename StaticAssertSame<
+                      unsigned_< shape_type::rank_dynamic > ,
+                      unsigned_< 0 > >::type ok_rank ;
+
+  static output_type create( const std::string & label )
+  {
+    typedef Cuda::memory_space_new  memory_space ;
+    typedef typename output_type::value_type value_type ;
+    typedef typename output_type::shape_type shape_type ;
+
+    output_type output ;
+
+    output.m_ptr_on_device = (value_type *)
+      memory_space::allocate( label ,
+                              typeid(value_type) ,
+                              sizeof(value_type) , 1 );
+    return output ;
+  }
+};
 
 template< typename DataType , class LayoutSpec >
 struct Factory< View< DataType , LayoutSpec , Cuda > , unsigned_<1> >
@@ -333,6 +362,27 @@ public:
     }
   }
 
+  static inline
+  void deep_copy( const output_type & output ,
+                  const input_type  & input ,
+                  const size_t count )
+  {
+    typedef Cuda::memory_space_new            memory_space ;
+    typedef typename output_type::value_type value_type ;
+
+    // Only for rank-1 arrays, or arrays where higher ranks are one
+
+    assert_shape_effective_rank1_at_leastN( output.m_shape , count );
+    assert_shape_effective_rank1_at_leastN( input.m_shape , count );
+
+    const size_t size = output.m_shape.value_size * count ;
+
+    memory_space::copy_to_device_from_device( output.ptr_on_device() ,
+                                              input. ptr_on_device() ,
+                                              size );
+  }
+
+
   // Called by create_mirror
   static inline
   output_type create( const input_type & input )
@@ -380,6 +430,26 @@ public:
                                                 size );
     }
   }
+
+  static inline
+  void deep_copy( const output_type & output ,
+                  const input_type  & input ,
+                  const size_t count )
+  {
+    typedef Cuda::memory_space_new            memory_space ;
+    typedef typename output_type::value_type value_type ;
+
+    // Only for rank-1 arrays, or arrays where higher ranks are one
+
+    assert_shape_effective_rank1_at_leastN( output.m_shape , count );
+    assert_shape_effective_rank1_at_leastN( input.m_shape , count );
+
+    const size_t size = output.m_shape.value_size * count ;
+
+    memory_space::copy_to_device_from_device( output.ptr_on_device() ,
+                                              input. ptr_on_device() ,
+                                              size );
+  }
 };
 
 template< class OutDataType , class OutLayoutSpec ,
@@ -402,6 +472,26 @@ public:
 
     const size_t size = output.m_shape.value_size *
                         allocation_count( output.m_shape );
+
+    memory_space::copy_to_host_from_device( output.ptr_on_device() ,
+                                            input. ptr_on_device() ,
+                                            size );
+  }
+
+  static inline
+  void deep_copy( const output_type & output ,
+                  const input_type  & input ,
+                  const size_t count )
+  {
+    typedef Cuda::memory_space_new  memory_space ;
+    typedef typename output_type::value_type value_type ;
+
+    // Only for rank-1 arrays, or arrays where higher ranks are one
+
+    assert_shape_effective_rank1_at_leastN( output.m_shape , count );
+    assert_shape_effective_rank1_at_leastN( input.m_shape , count );
+
+    const size_t size = output.m_shape.value_size * count ;
 
     memory_space::copy_to_host_from_device( output.ptr_on_device() ,
                                             input. ptr_on_device() ,
@@ -448,6 +538,26 @@ public:
 
     const size_t size = output.m_shape.value_size *
                         allocation_count( output.m_shape );
+
+    memory_space::copy_to_device_from_host( output.ptr_on_device() ,
+                                            input. ptr_on_device() ,
+                                            size );
+  }
+
+  static inline
+  void deep_copy( const output_type & output ,
+                  const input_type  & input ,
+                  const size_t count )
+  {
+    typedef Cuda::memory_space_new  memory_space ;
+    typedef typename output_type::value_type value_type ;
+
+    // Only for rank-1 arrays, or arrays where higher ranks are one
+
+    assert_shape_effective_rank1_at_leastN( output.m_shape , count );
+    assert_shape_effective_rank1_at_leastN( input.m_shape , count );
+
+    const size_t size = output.m_shape.value_size * count ;
 
     memory_space::copy_to_device_from_host( output.ptr_on_device() ,
                                             input. ptr_on_device() ,

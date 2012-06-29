@@ -71,7 +71,8 @@ struct Factory< MDArray< ValueType , Host > , void >
     output_type array ;
 
     array.m_map.template assign< ValueType >(nP,n1,n2,n3,n4,n5,n6,n7);
-    array.m_memory.allocate( array.m_map.allocation_size() , label );
+    array.m_memory = KokkosArray::create< typename output_type::view_type >
+                       ( label , array.m_map.allocation_size() );
 
     HostParallelFill<ValueType>( array.m_memory.ptr_on_device() , 0 ,
                                  array.m_map.allocation_size() );
@@ -97,7 +98,8 @@ struct Factory< MDArray< ValueType , HostMapped< Device > > , void >
     output_type array ;
 
     array.m_map.template assign< ValueType >(nP,n1,n2,n3,n4,n5,n6,n7);
-    array.m_memory.allocate( array.m_map.allocation_size() , label );
+    array.m_memory = KokkosArray::create< typename output_type::view_type >
+                       ( label , array.m_map.allocation_size() );
 
     HostParallelFill<ValueType>( array.m_memory.ptr_on_device() , 0 ,
                                  array.m_map.allocation_size() );

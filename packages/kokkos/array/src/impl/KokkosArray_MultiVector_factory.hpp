@@ -56,28 +56,37 @@ struct Factory< MultiVector< ValueType , Device > , void >
   typedef MultiVector< ValueType , Device > output_type ;
 
   static inline
-  output_type create( const std::string & label ,
-                      size_t length ,
-                      size_t count ,
-                      size_t stride = 0 )
+  output_type create( const std::string & label , size_t length , size_t count )
   {
-    typedef Impl::MemoryManager<typename Device::memory_space> memory_manager ;
-
-    if ( 0 == stride ) {
-      stride = length ;
-      if ( 1 < count ) {
-        stride = memory_manager::template preferred_alignment<ValueType>(length);
-      }
-    }
-
     output_type output ;
 
-    output.m_length = length ;
-    output.m_count  = count ;
-    output.m_stride = stride ;
-    output.m_memory.allocate( output.m_count * output.m_stride , label );
-    output.m_ptr_on_device = output.m_memory.ptr_on_device();
+    output.m_memory = KokkosArray::create< typename output_type::view_type >( label , length , count );
 
+    return output ;
+  }
+};
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+struct Factory< MultiVector< ValueType , DeviceDst > ,
+                MultiVector< ValueType , DeviceSrc > >
+{
+  typedef MultiVector< ValueType , DeviceDst > output_type ;
+  typedef MultiVector< ValueType , DeviceSrc > input_type ;
+
+  inline
+  static void deep_copy( const output_type & output ,
+                         const input_type  & input )
+  {
+    KokkosArray::deep_copy( output.m_memory , input.m_memory );
+  }
+
+  inline static 
+  output_type create( const input_type & input )
+  {
+    output_type output ;
+    output.m_memory = Factory< typename output_type::view_type ,
+                               typename input_type::view_type >
+                       ::create( input.m_memory );
     return output ;
   }
 };

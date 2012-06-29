@@ -44,6 +44,9 @@
 #ifndef KOKKOS_HOST_VIEW_HPP
 #define KOKKOS_HOST_VIEW_HPP
 
+#include <KokkosArray_View.hpp>
+#include <Host/KokkosArray_Host_Parallel.hpp>
+
 #include <KokkosArray_Host_macros.hpp>
 #include <impl/KokkosArray_Shape_macros.hpp>
 #include <impl/KokkosArray_View_macros.hpp>
@@ -54,6 +57,33 @@ namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
+
+template< typename DataType , class LayoutSpec >
+struct Factory< View< DataType , LayoutSpec , Host > , void >
+{
+  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef typename output_type::shape_type      shape_type ;
+
+  typedef typename StaticAssertSame<
+                      unsigned_< shape_type::rank_dynamic > ,
+                      unsigned_< 0 > >::type ok_rank ;
+
+  static output_type create( const std::string & label )
+  {
+    typedef Host::memory_space_new  memory_space ;
+    typedef typename output_type::value_type value_type ;
+    typedef typename output_type::shape_type shape_type ;
+
+    output_type output ;
+
+    output.m_ptr_on_device = (value_type *)
+      memory_space::allocate( label ,
+                              typeid(value_type) ,
+                              sizeof(value_type) , 1 );
+
+    return output ;
+  }
+};
 
 template< typename DataType , class LayoutSpec >
 struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<1> >
@@ -353,6 +383,23 @@ public:
                                                input. ptr_on_device() ,
                                                count );
     }
+  }
+
+  static inline
+  void deep_copy( const output_type & output ,
+                  const input_type  & input ,
+                  const size_t count )
+  {
+    typedef typename output_type::value_type value_type ;
+
+    // Only for rank-1 arrays, or arrays where higher ranks are one
+
+    assert_shape_effective_rank1_at_leastN( output.m_shape , count );
+    assert_shape_effective_rank1_at_leastN( input.m_shape , count );
+
+    HostParallelCopy<value_type,value_type>( output.ptr_on_device() ,
+                                             input. ptr_on_device() ,
+                                             count );
   }
 
   // Called by create_mirror

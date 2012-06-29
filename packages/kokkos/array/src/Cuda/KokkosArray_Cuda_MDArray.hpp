@@ -78,7 +78,8 @@ struct Factory< MDArray< ValueType , Cuda > , void >
     output_type array ;
 
     array.m_map.template assign< ValueType >(nP,n1,n2,n3,n4,n5,n6,n7);
-    array.m_memory.allocate( array.m_map.allocation_size() , label );
+    array.m_memory = KokkosArray::create< typename output_type::view_type >
+                       ( label , array.m_map.allocation_size() );
 
     // Cuda 'allocate' initializes to zero 
 

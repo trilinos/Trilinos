@@ -111,6 +111,10 @@ HostInternal::HostInternal()
 {
   m_worker = NULL ;
 
+  if ( ! is_master_thread() ) {
+    throw std::runtime_error( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread"));
+  }
+
   // Master thread:
   m_thread[0] = & m_master_thread ;
 

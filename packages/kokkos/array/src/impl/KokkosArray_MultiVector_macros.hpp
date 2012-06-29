@@ -67,59 +67,43 @@ public:
   /** \brief  Query length of vectors */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type length() const { return m_length ; }
+  size_type length() const { return m_memory.dimension_0() ; }
 
   /** \brief  Query count of vectors */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type count()  const { return m_count ; }
+  size_type count()  const { return m_memory.dimension_1() ; }
 
   /** \brief  Query if NULL view */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  operator bool ()  const { return 0 != m_ptr_on_device ; }
+  operator bool ()  const { return m_memory.operator bool(); }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const MultiVector & rhs ) const
-  {
-    return m_ptr_on_device == rhs.m_ptr_on_device &&
-           m_count         == rhs.m_count ;
-  }
+  { return m_memory == rhs.m_memory ; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const MultiVector & rhs ) const
-  {
-    return m_ptr_on_device != rhs.m_ptr_on_device ||
-           m_count         != rhs.m_count ;
-  }
+  { return m_memory != rhs.m_memory ; }
 
   template< class DeviceRHS >
   inline
   bool operator == ( const MultiVector< value_type , DeviceRHS > & rhs ) const
-  {
-    return Impl::SameType< typename device_type::memory_space ,
-                           typename DeviceRHS  ::memory_space >::value &&
-           m_ptr_on_device == rhs.m_ptr_on_device &&
-           m_count         == rhs.m_count ;
-  }
+  { return m_memory == rhs.m_memory ; }
 
   template< class DeviceRHS >
   inline
   bool operator != ( const MultiVector< value_type , DeviceRHS > & rhs ) const
-  {
-    return ( ! Impl::SameType< typename device_type::memory_space ,
-                               typename DeviceRHS  ::memory_space >::value ) ||
-           m_ptr_on_device != rhs.m_ptr_on_device ||
-           m_count         != rhs.m_count ;
-  }
+  { return m_memory != rhs.m_memory ; }
 
   /*------------------------------------------------------------------*/
   /** \brief  Because memory is contiguous this is exposed */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  value_type * ptr_on_device() const { return m_ptr_on_device ; }
+  value_type * ptr_on_device() const { return m_memory.ptr_on_device() ; }
 
   /*------------------------------------------------------------------*/
 
@@ -129,12 +113,12 @@ public:
   template< typename iTypeP , typename iTypeV >
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator()( const iTypeP & iP , const iTypeV & iV ) const
-    { return m_ptr_on_device[ iP + m_stride * iV ]; }
+    { return m_memory( iP , iV ); }
 
   template< typename iTypeP >
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator()( const iTypeP & iP ) const
-    { return m_ptr_on_device[ iP ]; }
+    { return m_memory( iP , 0 ); }
 
 #endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
 
@@ -144,10 +128,6 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVector()
     : m_memory()
-    , m_ptr_on_device(0)
-    , m_stride(0)
-    , m_length(0)
-    , m_count(0)
     {}
 
   /** \brief  Construct a view of the array */
@@ -155,10 +135,6 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVector( const MultiVector & rhs )
     : m_memory(        rhs.m_memory )
-    , m_ptr_on_device( rhs.m_ptr_on_device )
-    , m_stride(        rhs.m_stride )
-    , m_length(        rhs.m_length )
-    , m_count(         rhs.m_count )
     {}
 
   /** \brief  Assign to a view of the rhs.
@@ -170,10 +146,6 @@ public:
   MultiVector & operator = ( const MultiVector & rhs )
     {
       m_memory.operator=( rhs.m_memory );
-      m_ptr_on_device  = rhs.m_ptr_on_device ;
-      m_stride         = rhs.m_stride ;
-      m_length         = rhs.m_length ;
-      m_count          = rhs.m_count ;
       return *this ;
     }
 
@@ -183,12 +155,7 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ~MultiVector()
-    {
-      m_ptr_on_device = 0 ;
-      m_stride        = 0 ;
-      m_length        = 0 ;
-      m_count         = 0 ;
-    }
+    {}
 
   /*------------------------------------------------------------------*/
   /* \brief  Construct a view to a range of vectors */
@@ -196,33 +163,42 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVector( const MultiVector & rhs , size_type iBeg ,
                                          size_type iEnd )
-    : m_memory(        rhs.m_memory )
-    , m_ptr_on_device( rhs.m_ptr_on_device + rhs.m_stride * iBeg )
-    , m_stride(        rhs.m_stride )
-    , m_length(        rhs.m_length )
-    , m_count(         iEnd - iBeg )
-    { KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iEnd , rhs.m_count ) ); }
+    : m_memory()
+    {
+      m_memory.m_shape.N0     = rhs.m_memory.m_shape.N0 ;
+      m_memory.m_shape.N1     = iEnd - iBeg ;
+      m_memory.m_shape.Stride = rhs.m_memory.m_shape.Stride ;
+      m_memory.m_ptr_on_device = rhs.m_memory.m_ptr_on_device +
+                                 rhs.m_memory.m_shape.Stride * iBeg ;
+
+      typedef device_type::memory_space_new memory_space ;
+
+      memory_space::increment( m_memory.m_ptr_on_device );
+    }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVector( const MultiVector & rhs , size_type iBeg )
-    : m_memory(        rhs.m_memory )
-    , m_ptr_on_device( rhs.m_ptr_on_device + rhs.m_stride * iBeg )
-    , m_stride(        rhs.m_stride )
-    , m_length(        rhs.m_length )
-    , m_count(         1 )
-    { KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iBeg+1 , rhs.m_count ) ); }
+    : m_memory()
+    {
+      m_memory.m_shape.N0     = rhs.m_memory.m_shape.N0 ;
+      m_memory.m_shape.N1     = 1 ;
+      m_memory.m_shape.Stride = rhs.m_memory.m_shape.Stride ;
+      m_memory.m_ptr_on_device = rhs.m_memory.m_ptr_on_device +
+                                 rhs.m_memory.m_shape.Stride * iBeg ;
+
+      typedef device_type::memory_space_new memory_space ;
+
+      memory_space::increment( m_memory.m_ptr_on_device );
+    }
 
 private:
 
-  typedef device_type::memory_space                     memory_space ;
-  typedef Impl::MemoryView< value_type , memory_space > memory_view ;
+  typedef View< value_type[0][0] ,
+                LayoutLeft ,
+                typename device_type::device_type > view_type ;
 
-  memory_view m_memory ;
-  ValueType * m_ptr_on_device ;
-  size_type   m_stride ;
-  size_type   m_length ;
-  size_type   m_count ;
+  view_type  m_memory ;
 
   template < typename V , class M > friend class MultiVector ;
 

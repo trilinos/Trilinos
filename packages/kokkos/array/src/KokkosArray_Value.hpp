@@ -46,6 +46,7 @@
 
 #include <cstddef>
 #include <string>
+#include <KokkosArray_View.hpp>
 #include <impl/KokkosArray_forward.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
 
@@ -124,8 +125,9 @@ inline
 Value< typename Type::value_type , typename Type::device_type >
 create_value()
 {
-  typedef Value< typename Type::value_type , typename Type::device_type > type ;
-  return Impl::Factory<type,void>::create();
+  typedef Value< typename Type::value_type ,
+                 typename Type::device_type > value_type ;
+  return Impl::Factory<value_type,void>::create();
 }
 
 /// \fn create_value()
@@ -136,8 +138,9 @@ inline
 Value< typename Type::value_type , typename Type::device_type >
 create_value( const std::string & label )
 {
-  typedef Value< typename Type::value_type , typename Type::device_type > type ;
-  return Impl::Factory<type,void>::create( label );
+  typedef Value< typename Type::value_type ,
+                 typename Type::device_type > value_type ;
+  return Impl::Factory<value_type,void>::create( label );
 }
 
 //----------------------------------------------------------------------------

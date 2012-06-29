@@ -45,7 +45,6 @@
 #define KOKKOS_IMPL_CRSARRAY_FACTORY_HPP
 
 #include <vector>
-#include <impl/KokkosArray_MemoryView.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

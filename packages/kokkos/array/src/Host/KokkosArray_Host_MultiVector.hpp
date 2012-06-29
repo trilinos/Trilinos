@@ -59,8 +59,6 @@ namespace Impl {
 template< typename ValueType >
 struct Factory< MultiVector< ValueType , Host > , void >
 {
-  typedef Impl::MemoryManager<Host> memory_manager ;
-
   //------------------------------------
 
   template< class Device >
@@ -94,11 +92,7 @@ struct Factory< MultiVector< ValueType , Host > , void >
 
     static void run( const type & arg )
     {
-      memory_manager::disable_memory_view_tracking();
-
       Initialize driver( arg );
-
-      memory_manager::enable_memory_view_tracking();
 
       HostThreadWorker<void>::execute( driver );
     }
@@ -108,68 +102,68 @@ struct Factory< MultiVector< ValueType , Host > , void >
 
   typedef MultiVector< ValueType , Host > output_type ;
 
-  template< class Device >
   static inline
-  MultiVector< ValueType , Device >
-  create( const std::string & label ,
-          size_t length ,
-          size_t count ,
-          size_t stride )
+  output_type 
+  create( const std::string & label , size_t length , size_t count )
   {
-    enum { OK = StaticAssert< SameType< Host ,
-                              typename Device::memory_space >::value >::value };
+    typedef Host::memory_space_new  memory_space ;
+    typedef typename output_type::value_type value_type ;
+    typedef typename output_type::view_type  view_type ;
+    typedef typename view_type::shape_type   shape_type ;
 
-    typedef MultiVector< ValueType , Device > type ;
+    output_type output ;
 
-    type output ;
+    // Want different 'first touch' and the View factory will give
 
-    output.m_length = length ;
-    output.m_count  = count ;
-    output.m_stride = stride ;
-    output.m_memory.allocate( output.m_count * output.m_stride , label );
-    output.m_ptr_on_device = output.m_memory.ptr_on_device();
+    output.m_memory.m_shape = Factory< shape_type , memory_space >
+                                ::create(length,count);
 
-    Initialize<Device>::run( output );
+    output.m_memory.m_ptr_on_device = (value_type *)
+      memory_space::allocate( label ,
+                              typeid(value_type) ,
+                              sizeof(value_type) ,
+                              allocation_count( output.m_memory.m_shape ) );
+
+    Initialize< Host >::run( output );
 
     return output ;
   }
-
-  static inline
-  output_type create( const std::string & label ,
-                      size_t length ,
-                      size_t count ,
-                      size_t stride = 0 )
-  {
-    if ( 0 == stride ) {
-      stride = 1 == count ? length :
-        memory_manager::preferred_alignment<ValueType>(length);
-    }
-
-    return create<Host>( label , length , count , stride );
-  }
 };
 
+
 template< typename ValueType , class Device >
-struct Factory< MultiVector< ValueType , HostMapped< Device > > , void >
+struct Factory< MultiVector< ValueType , HostMapped< Device > > , 
+                MultiVector< ValueType , Device > >
 {
-  typedef HostMapped< Device >                    MappedDevice ;
-  typedef MultiVector< ValueType , MappedDevice > output_type ;
+  typedef MultiVector< ValueType , HostMapped< Device > > output_type ;
+  typedef MultiVector< ValueType , Device >               input_type ;
 
   static inline
-  output_type create( const std::string & label ,
-                      size_t length ,
-                      size_t count ,
-                      size_t stride = 0 )
+  output_type create( const input_type & input )
   {
-    if ( 0 == stride ) {
-      // Stride based upon the original device's preference:
-      stride = 1 == count ? length :
-        Impl::MemoryManager<Device>
-            ::template preferred_alignment<ValueType>(length);
-    }
+    typedef Host::memory_space_new  memory_space ;
+    typedef typename output_type::value_type value_type ;
+    typedef typename output_type::shape_type shape_type ;
 
-    return Factory< MultiVector<ValueType,Host> , void >
-             ::template create<MappedDevice>( label , length , count , stride );
+    output_type output ;
+
+    // Want different 'first touch' and the View factory will give
+
+    output.m_memory.m_shape = input.m_memory.m_shape ;
+
+    output.m_memory.m_ptr_on_device = (value_type *)
+      memory_space::allocate( std::string("mirror") ,
+                              typeid(value_type) ,
+                              sizeof(value_type) ,
+                              allocation_count( output.m_shape ) );
+
+    typedef typename
+      Factory< MultiVector< ValueType , Host > , void >
+        ::template Initialize< HostMapped< Device > > Initialize ;
+
+    Initialize::run( output );
+
+    return output ;
   }
 };
 
@@ -187,27 +181,26 @@ struct Factory< MultiVector< ValueType , Host > ,
 
 private:
 
-  output_type     output ;
-  input_type      input ;
-  const size_type length ;
-  const size_type count ;
+  output_type  output ;
+  input_type   input ;
 
   Factory( const output_type & arg_output , const input_type & arg_input ,
            const size_t arg_length , const size_t arg_count )
     : output( arg_output )
     , input( arg_input )
-    , length( arg_length )
-    , count(  arg_count )
     {}
 
   void execute_on_thread( HostThread & this_thread ) const
   {
+    const size_type count = output.m_memory.dimension_1();
+
     const std::pair<size_type,size_type> range =
-      this_thread.work_range( length );
+      this_thread.work_range( output.m_memory.dimension_0() );
 
     for ( size_type i = 0 ; i < count ; ++i ) {
       const output_type x( output , i );
-      const input_type y( input , i );
+      const input_type  y( input , i );
+
       ValueType * const x_end = x.ptr_on_device() + range.second ;
       ValueType *       x_ptr = x.ptr_on_device() + range.first ;
       const ValueType * y_ptr = y.ptr_on_device() + range.first ;
@@ -222,10 +215,8 @@ public:
   static inline
   void deep_copy( const output_type & output , const input_type & input )
   {
-    typedef MemoryManager< Host::memory_space > memory_manager ;
-    memory_manager::disable_memory_view_tracking();
+    typedef MemoryManager< Host::memory_space > HostMemorySpace ;
     Factory driver( output , input , output.length() , output.count() );
-    memory_manager::enable_memory_view_tracking();
     HostThreadWorker<void>::execute( driver );
   }
 
@@ -233,20 +224,19 @@ public:
   void deep_copy( const output_type & output , const input_type & input ,
                   const size_t length )
   {
-    typedef MemoryManager< Host::memory_space > memory_manager ;
-    memory_manager::disable_memory_view_tracking();
+    typedef MemoryManager< Host::memory_space > HostMemorySpace ;
     Factory driver( output , input , length , 1 );
-    memory_manager::enable_memory_view_tracking();
     HostThreadWorker<void>::execute( driver );
   }
 
   static inline
   output_type create( const input_type & input )
   {
-    return Factory<output_type,void>::create( std::string(),
-                                              input.m_length ,
-                                              input.m_count ,
-                                              input.m_stride );
+    output_type output ;
+    output.m_memory = Factory< typename output_type::view_type ,
+                               typename input_type::view_type >
+                        ::create( input.m_memory );
+    return output ;
   }
 };
 

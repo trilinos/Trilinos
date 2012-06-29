@@ -268,10 +268,10 @@ public:
 
 private:
 
-  typedef typename device_type::memory_space  memory_space ;
-  typedef Impl::MemoryView< value_type , memory_space >  memory_view ;
+  typedef View< value_type[] , typename device_type::array_layout ,
+                               typename device_type::device_type > view_type ;
 
-  memory_view  m_memory ;
+  view_type    m_memory ;
   index_map    m_map ;
 
   template< typename V , class D >

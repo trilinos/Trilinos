@@ -51,13 +51,13 @@
 
 namespace KokkosArray {
 
-template< class ArrayType >
-class Array< ArrayType , KOKKOS_MACRO_DEVICE >
+template< class DataType >
+class Array< DataType , KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE                                  device_type ;
   typedef device_type::size_type                               size_type ;
-  typedef ArrayType                                            array_type ;
+  typedef DataType                                            array_type ;
   typedef typename Impl::remove_all_extents<array_type>::type  value_type ;
 
   typedef Array< array_type ,
@@ -189,8 +189,8 @@ public:
   /** \brief  Construct a view of the array */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   Array( const Array & rhs )
-    : m_data(        rhs.m_data )
-    , m_index_map(   rhs.m_index_map )
+    : m_data(      rhs.m_data )
+    , m_index_map( rhs.m_index_map )
     {}
 
   /** \brief  Assign to a view of the rhs array.
@@ -200,8 +200,8 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   Array & operator = ( const Array & rhs )
   {
-    m_data        = rhs.m_data ;
-    m_index_map   = rhs.m_index_map ;
+    m_data      = rhs.m_data ;
+    m_index_map = rhs.m_index_map ;
     return *this ;
   }
 
@@ -227,21 +227,19 @@ public:
   /*------------------------------------------------------------------*/
 
   template< class DevRHS >
-  bool operator == ( const Array< ArrayType , DevRHS > & rhs ) const
+  bool operator == ( const Array< DataType , DevRHS > & rhs ) const
   {
     return Impl::SameType< device_type , DevRHS >::value &&
            m_data.ptr_on_device() == rhs.m_data.ptr_on_device() ;
   }
 
   template< class DevRHS >
-  bool operator != ( const Array< ArrayType , DevRHS > & rhs ) const
+  bool operator != ( const Array< DataType , DevRHS > & rhs ) const
   { return ! operator == ( rhs ); }
 
   /*------------------------------------------------------------------*/
 
 private:
-
-  typedef device_type::memory_space  memory_space ;
 
   typedef typename device_type::IndexMap<
     Rank ,
@@ -254,8 +252,12 @@ private:
     7 < Rank ? Impl::extent< array_type, 6 >::value : 0 >::type
   internal_index_map_type ;
 
-  Impl::MemoryView< value_type,  memory_space > m_data ;
-  internal_index_map_type                       m_index_map ;
+  typedef View< value_type[] ,
+                typename device_type::array_layout ,
+                typename device_type::device_type > view_type ;
+
+  view_type                m_data ;
+  internal_index_map_type  m_index_map ;
 
   template< typename , class > friend class Array ;
   template< class Dst , class Src >  friend class Impl::Factory ;

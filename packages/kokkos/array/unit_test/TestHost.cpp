@@ -156,8 +156,9 @@ TEST_F( host, mdarray_index_map) {
   TestMDArrayIndexMap< KokkosArray::Host >();
 }
 
-TEST_F( host, array_view_double) {
+TEST_F( host, array ) {
   TestArray< double, KokkosArray::Host >();
+  TestArray< int, KokkosArray::Host >();
 }
 
 TEST_F( host, array_view_int) {

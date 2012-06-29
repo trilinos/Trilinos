@@ -60,10 +60,6 @@ namespace Impl {
 class HostMemorySpace {
 public:
 
-  static int m_memory_view_tracking ;
-
-public:
-
   typedef size_t size_type ;
 
   static void * allocate( const std::string    & label ,
@@ -76,11 +72,6 @@ public:
   static void decrement( const void * );
 
   static void print_memory_view( std::ostream & );
-
-  /*--------------------------------*/
-
-  static void disable_memory_view_tracking();
-  static void enable_memory_view_tracking();
 
   /*--------------------------------*/
 

@@ -67,8 +67,8 @@ struct Factory< Value< ValueType , Host > , void >
   output_type create( const std::string & label )
   {
     output_type output ;
-    output.m_memory.allocate( 1 , label );
-    memset( output.ptr_on_device() , 0 , sizeof(ValueType) );
+    output.m_memory = KokkosArray::create< typename output_type::view_type >( label );
+    memset( output.m_memory.ptr_on_device() , 0 , sizeof(ValueType) );
     return output ;
   }
 

@@ -145,7 +145,10 @@ public:
 
 private:
 
-  Impl::MemoryView< value_type , device_type::memory_space > m_memory ;
+  typedef View< value_type , typename device_type::array_layout ,
+                             typename device_type::device_type >  view_type ;
+
+  view_type m_memory ;
 
   template< class DstType , class SrcType > friend class Impl::Factory ;
 };

@@ -141,6 +141,8 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
+#include <Cuda/KokkosArray_Cuda_View.hpp>
+
 #include <Cuda/KokkosArray_Cuda_MemoryManager.hpp>
 #include <Cuda/KokkosArray_Cuda_Value.hpp>
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
@@ -151,11 +153,6 @@ public:
 
 //----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
-
-#if   defined( KOKKOS_VIEW_HPP ) && \
-    ! defined( KOKKOS_CUDA_VIEW_HPP )
-#include <Cuda/KokkosArray_Cuda_View.hpp>
-#endif
 
 #if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
     ! defined( KOKKOS_CUDA_MULTIVECTOR_HPP )

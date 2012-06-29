@@ -65,11 +65,12 @@ struct Factory< Array< ArrayType , Host > , void >
   {
     typedef MemoryManager< Host > memory_manager ;
     typedef typename output_type::value_type value_type ;
+    typedef typename output_type::view_type  view_type ;
 
     output_type array ;
 
     array.m_index_map.template assign< value_type >(nP);
-    array.m_data.allocate( array.m_index_map.allocation_size() , label );
+    array.m_data = KokkosArray::create< view_type >( label , array.m_index_map.allocation_size() );
 
     HostParallelFill<value_type>( array.m_data.ptr_on_device() , 0 ,
                                   array.m_index_map.allocation_size() );
@@ -89,11 +90,12 @@ struct Factory< Array< ArrayType , HostMapped< Device > > , void >
   {
     typedef MemoryManager< Host > memory_manager ;
     typedef typename output_type::value_type value_type ;
+    typedef typename output_type::view_type  view_type ;
 
     output_type array ;
 
     array.m_index_map.template assign< value_type >(nP);
-    array.m_data.allocate( array.m_index_map.allocation_size() , label );
+    array.m_data = KokkosArray::create< view_type >( label , array.m_index_map.allocation_size() );
 
     HostParallelFill<value_type>( array.m_data.ptr_on_device() , 0 ,
                                   array.m_index_map.allocation_size() );

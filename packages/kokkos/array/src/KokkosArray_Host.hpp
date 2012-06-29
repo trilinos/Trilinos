@@ -198,6 +198,8 @@ template<> struct HostMapped<Host>
 
 } // namespace KokkosArray
 
+#include <Host/KokkosArray_Host_View.hpp>
+
 #include <Host/KokkosArray_Host_MemoryManager.hpp>
 #include <Host/KokkosArray_Host_Parallel.hpp>
 #include <Host/KokkosArray_Host_ParallelFor.hpp>
@@ -207,11 +209,6 @@ template<> struct HostMapped<Host>
 
 //----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
-
-#if   defined( KOKKOS_VIEW_HPP ) && \
-    ! defined( KOKKOS_HOST_VIEW_HPP )
-#include <Host/KokkosArray_Host_View.hpp>
-#endif
 
 #if   defined( KOKKOS_VALUE_HPP ) && \
     ! defined( KOKKOS_HOST_VALUE_HPP )

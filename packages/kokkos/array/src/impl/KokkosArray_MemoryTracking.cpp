@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include <iostream>
+
 #include <sstream>
 #include <stdexcept>
 #include <algorithm>
@@ -66,6 +68,10 @@ struct LessMemoryTrackingInfo {
   bool operator()( const MemoryTracking::Info & lhs ,
                    const void * const rhs_ptr ) const
   { return lhs.end < rhs_ptr ; }
+
+  bool operator()( const void * const lhs_ptr ,
+                   const MemoryTracking::Info & rhs ) const
+  { return lhs_ptr < rhs.end ; }
 };
 
 void MemoryTracking::track(
@@ -78,7 +84,7 @@ void MemoryTracking::track(
   const LessMemoryTrackingInfo compare ;
 
   std::vector<Info>::iterator i =
-    std::lower_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
+    std::upper_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
 
   if ( i != m_tracking.end() && contains( *i , ptr ) ) {
     std::ostringstream msg ;
@@ -118,11 +124,12 @@ MemoryTracking::increment( const void * ptr )
   const LessMemoryTrackingInfo compare ;
 
   std::vector<Info>::iterator i =
-    std::lower_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
+    std::upper_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
 
   if ( i == m_tracking.end() || ! contains( *i , ptr ) ) {
     std::ostringstream msg ;
-    msg << "MemoryTracking::increment( "
+    msg << "MemoryTracking(" << (void *) this
+        << ")::increment( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
     throw std::runtime_error(msg.str());
   }
@@ -138,18 +145,19 @@ MemoryTracking::decrement( const void * ptr )
   const LessMemoryTrackingInfo compare ;
 
   std::vector<Info>::iterator i =
-    std::lower_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
+    std::upper_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
 
   if ( i == m_tracking.end() || ! contains( *i , ptr ) ) {
     std::ostringstream msg ;
-    msg << "MemoryTracking::decrement( "
+    msg << "MemoryTracking(" << (void *) this
+        << ")::decrement( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
     throw std::runtime_error(msg.str());
   }
 
-  const size_t count = --( i->count );
+  --( i->count );
 
-  if ( 0 == count ) {
+  if ( 0 == i->count ) {
     Info entry = *i ;
     m_tracking.erase( i );
     return entry ;
@@ -165,7 +173,7 @@ MemoryTracking::query( const void * ptr ) const
   const LessMemoryTrackingInfo compare ;
 
   std::vector<Info>::const_iterator i =
-    std::lower_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
+    std::upper_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
 
   return ( i != m_tracking.end() && contains( *i , ptr ) ) ? *i : Info();
 }

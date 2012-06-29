@@ -63,24 +63,16 @@ public:
   static void deep_copy( const MultiVector< ValueType , Cuda > & dst ,
                          const MultiVector< ValueType , Cuda > & src )
   {
-    const Cuda::size_type alloc_size =
-      dst.m_count == 1 ? 
-        dst.m_length * sizeof(ValueType) : 
-        dst.m_stride * dst.m_count * sizeof(ValueType );
-
-    MemoryManager< Cuda >::
-      copy_to_device_from_device( dst.m_ptr_on_device ,
-                                  src.m_ptr_on_device ,
-                                  alloc_size );
+    KokkosArray::deep_copy( dst.m_memory , src.m_memory );
   }
 
   static void deep_copy( const MultiVector< ValueType , Cuda > & dst ,
                          const MultiVector< ValueType , Cuda > & src ,
                          const size_t length )
   {
-    MemoryManager< Cuda >::
-      copy_to_device_from_device( dst.m_ptr_on_device ,
-                                  src.m_ptr_on_device ,
+    CudaMemorySpace::
+      copy_to_device_from_device( dst.ptr_on_device() ,
+                                  src.ptr_on_device() ,
                                   length * sizeof(ValueType) );
   }
 };
@@ -95,26 +87,26 @@ struct Factory< MultiVector< ValueType , Cuda > ,
 
   static void deep_copy( const dst_type & dst , const src_type & src )
   {
-    const Cuda::size_type size = 
-      dst.m_count == 1 ? 
-        dst.m_length * sizeof(ValueType) : 
-        dst.m_stride * dst.m_count * sizeof(ValueType);
+    assert_shapes_are_equal( dst.m_memory.m_shape , src.m_memory.m_shape );
+
+    const Cuda::size_type size =
+      allocation_count( dst.m_memory.m_shape ) * sizeof(ValueType);
 
     // Require src.m_stride == dst.m_stride
     // Require src.m_count  == dst.m_count 
 
-    MemoryManager< Cuda >::
-      copy_to_device_from_host( dst.m_ptr_on_device ,
-                                src.m_ptr_on_device ,
+    CudaMemorySpace::
+      copy_to_device_from_host( dst.ptr_on_device() ,
+                                src.ptr_on_device() ,
                                 size );
   }
 
   static void deep_copy( const dst_type & dst , const src_type & src ,
                          const size_t length )
   {
-    MemoryManager< Cuda >::
-      copy_to_device_from_host( dst.m_ptr_on_device ,
-                                src.m_ptr_on_device ,
+    CudaMemorySpace::
+      copy_to_device_from_host( dst.ptr_on_device() ,
+                                src.ptr_on_device() ,
                                 length * sizeof(ValueType) );
   }
 };
@@ -128,24 +120,26 @@ struct Factory< MultiVector< ValueType , Host > ,
 
   static void deep_copy( const output_type & output , const input_type & input )
   {
+    assert_shapes_are_equal( output.m_memory.m_shape , input.m_memory.m_shape );
+
     const Cuda::size_type size =
-      output.m_stride * output.m_count * sizeof(ValueType);
+      allocation_count( output.m_memory.m_shape ) * sizeof(ValueType);
 
     // Require src.m_stride == dst.m_stride
     // Require src.m_count  == dst.m_count 
 
-    MemoryManager< Cuda >::
-      copy_to_host_from_device( output.m_ptr_on_device ,
-                                input.m_ptr_on_device ,
+    CudaMemorySpace::
+      copy_to_host_from_device( output.ptr_on_device() ,
+                                input.ptr_on_device() ,
                                 size );
   }
 
   static void deep_copy( const output_type & output , const input_type & input ,
                          const size_t length )
   {
-    MemoryManager< Cuda >::
-      copy_to_host_from_device( output.m_ptr_on_device ,
-                                input.m_ptr_on_device ,
+    CudaMemorySpace::
+      copy_to_host_from_device( output.ptr_on_device() ,
+                                input.ptr_on_device() ,
                                 length * sizeof(ValueType) );
   }
 
@@ -153,9 +147,11 @@ struct Factory< MultiVector< ValueType , Host > ,
   static inline
   output_type create( const input_type & input )
   {
-    return Factory< output_type , void >
-             ::create( std::string(),
-                       input.m_length , input.m_count , input.m_stride );
+    output_type output ;
+    output.m_memory = Factory< typename output_type::view_type ,
+                               typename input_type::view_type >
+                       ::create( input.m_memory );
+    return output ;
   }
 };
 

@@ -158,6 +158,8 @@ public:
 
   void driver( const size_t );
 
+  bool is_master_thread() const ;
+
   //! Access the one HostInternal instance.
   static HostInternal & singleton();
 
