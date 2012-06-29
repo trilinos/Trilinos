@@ -374,7 +374,7 @@ namespace Kokkos {
       RCP<cusparseSolveAnalysisInfo_t> analysisNoTrans_, analysisConjTrans_, analysisTrans_;
       // matrix data
       ArrayRCP<const Scalar> vals_, dev_vals_;
-      // TODO: add CSC data, for efficient tranpose multiply
+      // TODO: add CSC data, for efficient transpose multiply
   };
 
   template <class Node>
@@ -780,10 +780,14 @@ namespace Kokkos {
     graph.setMatDesc(uplo,diag);
     // allocate and initialize data
     if (diag == Teuchos::UNIT_DIAG) {
-      // cusparse, unfortunately, always assumes that the diagonal entries are present in the storage.
-      // therefore, this flag only specifies whether they are considered or not; they are assumed to be present,
-      // and neglecting them will result in incorrect behavior (causing the adjacent entry to be neglected instead)
-      // therefore, because our API doesn't give us diags if TEUCHOS_UNIT_DIAG, then we must allocate space for them
+      // cuSPARSE, unfortunately, always assumes that the diagonal
+      // entries are present in the storage.  Therefore, this flag
+      // only specifies whether they are considered or not; they are
+      // assumed to be present, and neglecting them will result in
+      // incorrect behavior (causing the adjacent entry to be
+      // neglected instead).  Therefore, because our API doesn't give
+      // us explicit diagonal entries if diag == Teuchos::UNIT_DIAG,
+      // we must allocate space for them.
       const size_t numnz = hostinds.size() + numRows;
       devptrs = node->template allocBuffer<int>( numRows+1 );
       if (numnz) devinds = node->template allocBuffer<int>( numnz );
@@ -793,11 +797,15 @@ namespace Kokkos {
         h_devptrs[r] = (int)(hostptrs[r]+r);
         if (uplo == Teuchos::LOWER_TRI) {
           // leave one space at the end
-          std::copy( hostinds.begin()+hostptrs[r], hostinds.begin()+hostptrs[r+1], h_devinds.begin()+h_devptrs[r] );
+          std::copy (hostinds.begin()+hostptrs[r],
+                     hostinds.begin()+hostptrs[r+1],
+                     h_devinds.begin()+h_devptrs[r]);
         }
         else {
           // leave one space at the beginning
-          std::copy( hostinds.begin()+hostptrs[r], hostinds.begin()+hostptrs[r+1], h_devinds.begin()+h_devptrs[r]+1 );
+          std::copy (hostinds.begin()+hostptrs[r],
+                     hostinds.begin()+hostptrs[r+1],
+                     h_devinds.begin()+h_devptrs[r]+1);
         }
       }
       h_devptrs[numRows] = (int)(hostptrs[numRows]+numRows);
@@ -824,8 +832,10 @@ namespace Kokkos {
 
   // ======= matrix finalization ===========
   template <class Scalar, class Node>
-  void CUSPARSEOps<Scalar,Node>::finalizeMatrix(const CUSPARSECrsGraph<Node> &graph, CUSPARSECrsMatrix<Scalar,Node> &matrix,
-                                                const RCP<ParameterList> &params)
+  void CUSPARSEOps<Scalar,Node>::
+  finalizeMatrix (const CUSPARSECrsGraph<Node> &graph,
+                  CUSPARSECrsMatrix<Scalar,Node> &matrix,
+                  const RCP<ParameterList> &params)
   {
     std::string FuncName("Kokkos::CUSPARSEOps::finalizeMatrix()");
     RCP<Node> node = graph.getNode();
@@ -842,10 +852,14 @@ namespace Kokkos {
     ArrayRCP<const Scalar> hostvals = matrix.getValues();
     const size_t numRows = graph.getNumRows();
     if (diag == Teuchos::UNIT_DIAG) {
-      // cusparse, unfortunately, always assumes that the diagonal entries are present in the storage.
-      // therefore, this flag only specifies whether they are considered or not; they are assumed to be present,
-      // and neglecting them will result in incorrect behavior (causing the adjacent entry to be neglected instead)
-      // therefore, because our API doesn't give us diags if TEUCHOS_UNIT_DIAG, then we must allocate space for them
+      // cuSPARSE, unfortunately, always assumes that the diagonal
+      // entries are present in the storage.  Therefore, this flag
+      // only specifies whether they are considered or not; they are
+      // assumed to be present, and neglecting them will result in
+      // incorrect behavior (causing the adjacent entry to be
+      // neglected instead).  Therefore, because our API doesn't give
+      // us diagonal entries if diag == Teuchos::UNIT_DIAG, we must
+      // allocate space for them.
       const size_t numnz = hostptrs[numRows] + numRows;
       devvals = node->template allocBuffer<Scalar>( numnz );
       ArrayRCP<Scalar> h_devvals = node->viewBufferNonConst(WriteOnly, numnz, devvals);
