@@ -6838,14 +6838,14 @@ and thus provides all Epetra_MultiVector functionality.
 The added functionality provided by Epetra_FEVector is the ability to
 perform finite-element style vector assembly. It accepts sub-vector
 contributions, such as those that would come from element-load
-vectors, etc., and these sub-vectors need not be owned by the local
+vectors, etc. These sub-vectors need not be owned by the local
 processor. In other words, the user can assemble overlapping data
 (e.g., corresponding to shared finite-element nodes). When the user is
 finished assembling their vector data, they then call the method
 Epetra_FEVector::GlobalAssemble() which gathers the overlapping data
 (all non-local data that was input on each processor) into the data-
-distribution specified by the map that the Epetra_FEVector is
-constructed with.
+distribution specified by the map with which the Epetra_FEVector was
+constructed.
 
 C++ includes: Epetra_FEVector.h ";
 
@@ -6859,8 +6859,7 @@ Parameters:
 -----------
 
 Map:  Map describing a non-overlapping distribution for the underlying
-Epetra_MultiVector that this Epetra_FEVector will be funnelling data
-into.
+Epetra_MultiVector into which this Epetra_FEVector will funnel data.
 
 numVectors:  Optional argument, default value is 1. (See the
 documentation for Epetra_MultiVector for the meaning of this argument.
