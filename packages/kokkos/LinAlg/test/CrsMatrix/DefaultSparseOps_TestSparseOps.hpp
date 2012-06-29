@@ -201,6 +201,13 @@ public:
     U_out = U;
   }
 
+  // mfh 28 Jun 2012: It would be nice to use LAPACK's banded solver
+  // to generate test problems, but it may be more trouble than it's
+  // worth to get the indexing right.  Having a good source of valid
+  // LU factorizations without needing N^2 data would be helpful,
+  // though for now we disable this code, since we don't know that it
+  // works.
+#if 0
   void
   makeBandedTestProblem (Teuchos::RCP<dense_matrix_type>& A_out,
                          Teuchos::RCP<dense_matrix_type>& L_out,
@@ -280,15 +287,29 @@ public:
     U_out = U;
   }
 
-
+  /// \brief Repack LAPACK _GBTRF-style banded format into sparse format.
+  ///
+  /// A_in, L_in, and U_in come from makeBandedTestProblem() above.
+  ///
+  /// For an explanation of LAPACK's packed banded format, especially
+  /// that of the L and U factors from an LU factorization, see the <a
+  /// href="http://www.netlib.org/lapack/double/dgbtrf.f">DGBTRF</a>
+  /// documentation or the <a
+  /// href="http://www.netlib.org/lapack/lug/node124.html">LAPACK
+  /// Users' Guide.</a>
   void
   denseBandedToSparseOps (Teuchos::RCP<SparseOpsType>& A_out,
                           Teuchos::RCP<SparseOpsType>& L_out,
                           Teuchos::RCP<SparseOpsType>& U_out,
+                          const Teuchos::RCP<node_type>& node,
                           const Teuchos::RCP<const dense_matrix_type>& A_in,
                           const Teuchos::RCP<const dense_matrix_type>& L_in,
                           const Teuchos::RCP<const dense_matrix_type>& U_in) const
   {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
     const ordinal_type LDAB = A_in.numRows (); // == 2*KL + KU + 1
     const ordinal_type LDU = U_in.numRows ();  // == KL + KU + 1
     const ordinal_type LDL = L_in.numRows ();  // == KL
@@ -299,22 +320,83 @@ public:
     const ordinal_type KU = LDU - LDL - 1;
 
     TEUCHOS_TEST_FOR_EXCEPTION(2*KL + KU + 1 != LDAB, std::logic_error,
-      "Failed to compute KL and KU correctly.");
+      "Failed to compute KL and KU correctly.  2*KL + KU + 1 = "
+      << 2*KL + KU + 1 << " != LDAB = " << LDAB << ".  KL = " << KL
+      << ", KU = " << KU << ".  Please report this bug to the Kokkos "
+      "developers.");
     TEUCHOS_TEST_FOR_EXCEPTION(KL + KU + 1 != LDU, std::logic_error,
-      "Failed to compute KL and KU correctly.");
+      "Failed to compute KL and KU correctly.  KL + KU + 1 = "
+      << KL + KU + 1 << " != LDU = " << LDU << ".  KL = " << KL
+      << ", KU = " << KU << ".  Please report this bug to the Kokkos "
+      "developers.");
 
+    // Make U.
+    RCP<SparseOpsType> U_sparse;
+    {
+      const ordinal_type nnz = LDU * N - ((LDU-1)*LDU)/2;
+      ArrayRCP<ordinal_type> ptr (LDU+1);
+      ArrayRCP<ordinal_type> ind (nnz);
+      ArrayRCP<scalar_type> val (nnz);
+      ordinal_type ctr = 0;
+      ptr[0] = 0;
+      for (ordinal_type r = 0; r < LDU; ++r) {
+        // Row 0 of U starts in the last row of the packed U matrix, at
+        // the (LDU-1, 0) entry (zero-based).  Read the entries in each
+        // row diagonally and to the northeast.  Row 1 starts at (LDU-1,
+        // 1).  In general, row r starts at (LDU-1, r), and has min(LDU,
+        // N-r) entries.
+        const ordinal_type numEntries = std::min (LDU, N-r);
+        ordinal_type curRow = LDU - 1;
+        ordinal_type curCol = r;
+        ordinal_type c = r; // start here; it's the upper triangle
+        for (ordinal_type k = 0; k < numEntries; ++k, ++ctr) {
+          val[ctr] = U(curRow--, curCol++);
+          ind[ctr] = c++;
+        }
+        ptr[r+1] = ctr;
+      }
+      U_sparse = makeSparseOps (node, ptr, ind, val, Teuchos::UPPER_TRI,
+                                Teuchos::NON_UNIT_DIAG);
+    }
 
-    ordinal_type ctr = 0;
-    ordinal_type i = 0;
-    for (ordinal_type j = 0; j < N; ++j) {
-      val[ctr] = A(KL+KU+1+i-j, j); // == A(i,j)
+    // Make L
+    RCP<SparseOpsType> L_sparse;
+    {
+      // Row 0 of L starts in the first row of the packed L matrix, at
+      // the (0, 0) entry (zero-based).  Row 1 of L
 
+      // Read the entries in each row diagonally and to the northeast.
 
+      const ordinal_type nnz = LDU * N - ((LDU-1)*LDU)/2;
+      ArrayRCP<ordinal_type> ptr (LDU+1);
+      ArrayRCP<ordinal_type> ind (nnz);
+      ArrayRCP<scalar_type> val (nnz);
+      ordinal_type ctr = 0;
+      ptr[0] = 0;
+      for (ordinal_type r = 0; r < LDU; ++r) {
+        // Row 0 of U starts in the last row of the packed U matrix, at
+        // the (LDU-1, 0) entry (zero-based).  Read the entries in each
+        // row diagonally and to the northeast.  Row 1 starts at (LDU-1,
+        // 1).  In general, row r starts at (LDU-1, r), and has min(LDU,
+        // N-r) entries.
+        const ordinal_type numEntries = std::min (LDU, N-r);
+        ordinal_type curRow = LDU - 1;
+        ordinal_type curCol = r;
+        ordinal_type c = r; // start here; it's the upper triangle
+        for (ordinal_type k = 0; k < numEntries; ++k, ++ctr) {
+          val[ctr] = U(curRow--, curCol++);
+          ind[ctr] = c++;
+        }
+        ptr[r+1] = ctr;
+      }
+      U_sparse = makeSparseOps (node, ptr, ind, val, Teuchos::UPPER_TRI,
+                                Teuchos::NON_UNIT_DIAG);
 
+    }
   }
-
-
-
+  // mfh 28 Jun 2012: See note above on using LAPACK's banded solver
+  // to generate sparse test problems.
+#endif // 0
 
   /// \brief Read a CSR-format sparse matrix from a Matrix Market file.
   ///
@@ -379,6 +461,55 @@ public:
     values = arcp_const_cast<const scalar_type> (val);
   }
 
+  /// \brief Initialize and return a sparse kernels object from a Matrix Market file.
+  ///
+  /// A Kokkos sparse kernels object turns a sparse matrix
+  /// (represented in compressed sparse row format, more or less) into
+  /// an opaque implementation of sparse matrix-(multi)vector multiply
+  /// and sparse triangular solve.
+  ///
+  /// \param numRows [out] Number of rows in the sparse matrix.
+  ///   SparseOpsType doesn't currently require a method that tells
+  ///   you the number of rows in the sparse matrix, so we output it
+  ///   here for later use.
+  /// \param numCols [out] Number of columns in the sparse matrix.
+  ///   SparseOpsType doesn't currently require a method that tells
+  ///   you the number of columns in the sparse matrix, so we output it
+  ///   here for later use.
+  /// \param node [in/out] Kokkos Node instance, which the
+  ///   constructors of graph_type and SparseOpsType require.
+  /// \param filename [in] Name of a Matrix Market sparse matrix file.
+  /// \param uplo [in] Whether the matrix is lower triangular
+  ///   (LOWER_TRI), upper triangular (UPPER_TRI), or neither
+  ///   (UNDEF_TRI).  The latter is the default.
+  /// \param diag [in] Whether the matrix has an implicitly stored
+  ///   unit diagonal (UNIT_DIAG) or not (NON_UNIT_DIAG).  The latter
+  ///   is the default.  Kokkos' convention is to ignore this for
+  ///   sparse matrix-vector multiply, and respect it only for
+  ///   triangular solves.
+  Teuchos::RCP<SparseOpsType>
+  makeSparseOpsFromFile (ordinal_type& numRows,
+                         ordinal_type& numCols,
+                         const Teuchos::RCP<node_type>& node,
+                         const std::string& filename,
+                         const Teuchos::EUplo uplo = Teuchos::UNDEF_TRI,
+                         const Teuchos::EDiag diag = Teuchos::NON_UNIT_DIAG) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
+    using Teuchos::as;
+
+    size_t theNumRows = 0, theNumCols = 0;
+    ArrayRCP<const size_t> ptr;
+    ArrayRCP<const ordinal_type> ind;
+    ArrayRCP<const scalar_type> val;
+    readFile (theNumRows, theNumCols, ptr, ind, val, filename);
+    numRows = as<ordinal_type> (theNumRows);
+    numCols = as<ordinal_type> (theNumCols);
+    return makeSparseOps (node, ptr, ind, val, uplo, diag);
+  }
+
+
   /// \brief Initialize and return a sparse kernels object.
   ///
   /// A Kokkos sparse kernels object turns a sparse matrix
@@ -395,6 +526,14 @@ public:
   ///   indices.
   /// \param val [in] The third of the three CSR arrays; the values of
   ///   the matrix.
+  /// \param uplo [in] Whether the matrix is lower triangular
+  ///   (LOWER_TRI), upper triangular (UPPER_TRI), or neither
+  ///   (UNDEF_TRI).  The latter is the default.
+  /// \param diag [in] Whether the matrix has an implicitly stored
+  ///   unit diagonal (UNIT_DIAG) or not (NON_UNIT_DIAG).  The latter
+  ///   is the default.  Kokkos' convention is to ignore this for
+  ///   sparse matrix-vector multiply, and respect it only for
+  ///   triangular solves.
   ///
   /// After calling this method, you can set ptr, ind, and val to
   /// null.  This may free memory if the SparseOpsType copies into its
@@ -403,7 +542,9 @@ public:
   makeSparseOps (const Teuchos::RCP<node_type>& node,
                  const Teuchos::ArrayRCP<const size_t>& ptr,
                  const Teuchos::ArrayRCP<const ordinal_type>& ind,
-                 const Teuchos::ArrayRCP<const scalar_type>& val) const
+                 const Teuchos::ArrayRCP<const scalar_type>& val,
+                 const Teuchos::EUplo uplo = Teuchos::UNDEF_TRI,
+                 const Teuchos::EDiag diag = Teuchos::NON_UNIT_DIAG) const
   {
     using Teuchos::ArrayRCP;
     using Teuchos::null;
@@ -421,8 +562,6 @@ public:
     RCP<matrix_type> matrix = rcp (new matrix_type (graph, matParams));
     matrix->setValues (val);
 
-    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
-    Teuchos::EDiag diag = Teuchos::NON_UNIT_DIAG;
     RCP<ParameterList> finParams = parameterList ("Finalize");
     SparseOpsType::finalizeGraphAndMatrix (uplo, diag, *graph, *matrix, finParams);
 
@@ -896,6 +1035,7 @@ public:
                       const std::string& label,
                       const Teuchos::RCP<node_type>& node,
                       const ordinal_type numRows,
+                      const ordinal_type numCols,
                       const ordinal_type numVecs,
                       const int numTrials) const
   {
@@ -914,29 +1054,86 @@ public:
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
     typedef Kokkos::DefaultArithmetic<MV> MVT;
 
-    RCP<dense_matrix_type> A_dense, L_dense, U_dense;
-    Array<ordinal_type> ipiv;
-    makeDenseTestProblem (A_dense, L_dense, U_dense, ipiv, numRows);
+    const bool testTriSolve = (numRows == numCols);
 
-    // Convert A_dense, L_dense, and U_dense into sparse matrices.
-    RCP<SparseOpsType> L_sparse =
-      denseTriToSparseOps (*L_dense, node, LOWER_TRI, UNIT_DIAG);
-    RCP<SparseOpsType> U_sparse =
-      denseTriToSparseOps (*U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
-    // Convert A_dense into a separate sparse matrix.
-    RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node);
+    RCP<dense_matrix_type> A_dense, L_dense, U_dense;
+    RCP<SparseOpsType> A_sparse, L_sparse, U_sparse;
+    Array<ordinal_type> ipiv;
+
+    if (testTriSolve) {
+      makeDenseTestProblem (A_dense, L_dense, U_dense, ipiv, numRows);
+      // Convert L_dense and U_dense into sparse matrices.
+      L_sparse = denseTriToSparseOps (*L_dense, node, LOWER_TRI, UNIT_DIAG);
+      U_sparse = denseTriToSparseOps (*U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
+    }
+    else {
+      A_dense = rcp (new dense_matrix_type (numRows, numCols));
+    }
+    // Convert A_dense into a sparse matrix.
+    A_sparse = denseToSparseOps (*A_dense, node);
+
+    // // Compute a random input multivector.
+    // RCP<MV> X = makeMultiVector (node, numCols, numVecs);
+    // MVT::Random (*X);
+    // RCP<MV> Y = makeMultiVector (node, numRows, numVecs);
+    // MVT::Init (*Y, STS::zero ());
+
+    benchmarkSparseMatVec (results, label, *A_sparse,
+                           numRows, numCols, numVecs, numTrials);
+    if (testTriSolve) {
+      benchmarkSparseTriSolve (results, label, "lower tri, unit diag",
+                               *L_sparse, numRows, numCols, numVecs, numTrials);
+      benchmarkSparseTriSolve (results, label, "upper tri, non unit diag",
+                               *U_sparse, numRows, numCols, numVecs, numTrials);
+    }
+  }
+
+  /// \brief Benchmark sparse mat-vec with a matrix read from a Matrix Market file.
+  ///
+  /// \param results [out] Timing results.  You can also use
+  ///   TimeMonitor::report() or TimeMonitor::summarize() to display
+  ///   results.
+  /// \param filename [in] Name of the Matrix Market sparse matrix file.
+  /// \param label [in] Label to distinguish the SparseOpsType, in case
+  ///   you are running multiple benchmarks with different SparseOpsType
+  ///   types.
+  /// \param node [in/out] Kokkos Node instance.
+  /// \param numVecs Number of columns in the multivectors to benchmark.
+  /// \param numTrials Number of trials.  We time a loop around all the
+  ///   trials to increase accuracy and smooth out variance.
+  void
+  benchmarkSparseMatVecFromFile (std::vector<std::pair<std::string, double> >& results,
+                                 const std::string& filename,
+                                 const std::string& label,
+                                 const Teuchos::RCP<node_type>& node,
+                                 const ordinal_type numVecs,
+                                 const int numTrials) const
+  {
+    using Teuchos::RCP;
+    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
+    typedef Kokkos::DefaultArithmetic<MV> MVT;
+
+    // SparseOpsType isn't required to tell us how many rows and
+    // columns the sparse matrix has, so we find out when we read the
+    // file.  Kokkos ignores uplo and diag for sparse mat-vec, so we
+    // don't need to provide those arguments to
+    // makeSparseOpsFromFile() here.
+    ordinal_type numRows = 0;
+    ordinal_type numCols = 0;
+    RCP<SparseOpsType> A_sparse =
+      makeSparseOpsFromFile (numRows, numCols, node, filename);
 
     // Compute a random input multivector.
-    RCP<MV> X = makeMultiVector (node, numRows, numVecs);
+    RCP<MV> X = makeMultiVector (node, numCols, numVecs);
     MVT::Random (*X);
     RCP<MV> Y = makeMultiVector (node, numRows, numVecs); // output MV.
 
     benchmarkSparseMatVec (results, label, *A_sparse,
-                           numRows, numVecs, numTrials);
-    benchmarkSparseTriSolve (results, label, "lower tri, unit diag",
-                             *L_sparse, numRows, numVecs, numTrials);
-    benchmarkSparseTriSolve (results, label, "upper tri, non unit diag",
-                             *U_sparse, numRows, numVecs, numTrials);
+                           numRows, numCols, numVecs, numTrials);
+    // benchmarkSparseTriSolve (results, label, "lower tri, unit diag",
+    //                          *L_sparse, numRows, numCols, numVecs, numTrials);
+    // benchmarkSparseTriSolve (results, label, "upper tri, non unit diag",
+    //                          *U_sparse, numRows, numCols, numVecs, numTrials);
   }
 
 private:
@@ -957,6 +1154,9 @@ private:
   /// \param numRows [in] Number of rows in the linear operator
   ///   represented by ops.  We need this because SparseOpsType
   ///   doesn't necessarily tell us.
+  /// \param numCols [in] Number of columns in the linear operator
+  ///   represented by ops.  We need this because SparseOpsType
+  ///   doesn't necessarily tell us.
   /// \param numVecs [in] Number of columns in the multivectors to
   ///   benchmark.
   /// \param numTrials [in] Number of runs over which to measure
@@ -966,6 +1166,7 @@ private:
                          const std::string& label,
                          const SparseOpsType& ops,
                          const ordinal_type numRows,
+                         const ordinal_type numCols,
                          const ordinal_type numVecs,
                          const int numTrials) const
   {
@@ -1129,6 +1330,9 @@ private:
   /// \param numRows [in] Number of rows in the linear operator
   ///   represented by ops.  We need this because SparseOpsType
   ///   doesn't necessarily tell us.
+  /// \param numCols [in] Number of columns in the linear operator
+  ///   represented by ops.  We need this because SparseOpsType
+  ///   doesn't necessarily tell us.
   /// \param numVecs [in] Number of columns in the multivectors to
   ///   benchmark.
   /// \param numTrials [in] Number of runs over which to measure
@@ -1139,6 +1343,7 @@ private:
                            const std::string& benchmarkLabel,
                            const SparseOpsType& ops,
                            const ordinal_type numRows,
+                           const ordinal_type numCols,
                            const ordinal_type numVecs,
                            const int numTrials) const
   {
@@ -1149,7 +1354,7 @@ private:
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
     typedef Kokkos::DefaultArithmetic<MV> MVT;
 
-    RCP<MV> X = makeMultiVector (ops.getNode (), numRows, numVecs);
+    RCP<MV> X = makeMultiVector (ops.getNode (), numCols, numVecs);
     RCP<MV> Y = makeMultiVector (ops.getNode (), numRows, numVecs);
     //MVT::Init (*X, STS::zero()); // makeMultiVector() already does this.
     MVT::Random (*Y);
