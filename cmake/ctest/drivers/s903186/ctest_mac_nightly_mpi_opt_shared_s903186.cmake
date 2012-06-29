@@ -74,6 +74,10 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DSWIG_EXECUTABLE:FILEPATH=/Users/jmwille/install/swig-2.0.4/bin/swig"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
+  "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/lib"
+  "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/include"
+  "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/lib"
+  "-DHDf5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/include"
   "-DTrilinos_ENABLE_STK:BOOL=OFF"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   )

@@ -70,6 +70,10 @@ SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos SEACAS Mesquite MueLu)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/lib"
+  "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/include"
+  "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/lib"
+  "-DHDf5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/include"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   "-DMOOCHO_ENABLE_TESTS:BOOL=OFF"
   "-DMOOCHO_ENABLE_EXAMPLES:BOOL=OFF"
