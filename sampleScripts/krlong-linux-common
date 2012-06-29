@@ -26,6 +26,8 @@
 ENABLE_SEACAS=ON
 # Decide whether to build Stokhos. Default is yes.
 ENABLE_STOKHOS=ON
+# Decide whether to build Zoltan mesh partitioning. Default is yes.
+ENABLE_ZOLTAN=ON
 
 
 # ----------------------------------------------------------------------------
@@ -192,7 +194,9 @@ ${ECHO} cmake \
 -D Trilinos_ENABLE_SEACAS:BOOL=${ENABLE_SEACAS} \
 -D Trilinos_ENABLE_Sacado:BOOL=${ENABLE_SACADO} \
 -D Trilinos_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
+-D Trilinos_ENABLE_Zoltan:BOOL=${ENABLE_ZOLTAN} \
 -D Stokhos_ENABLE_TESTS:BOOL=OFF \
+-D Zoltan_ENABLE_TESTS:BOOL=OFF \
 -D SEACAS_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_SEACASNemsplit:BOOL=ON \
 -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
