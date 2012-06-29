@@ -59,18 +59,37 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  //
+  // mfh 28 Jun 2012: scalar_type, ordinal_type, and node_type are the
+  // template parameters of interest for Kokkos local sparse kernels.
+  // In practice, ordinal_type is usually int, and always should be a
+  // signed integer type.  You may want to modify scalar_type if you
+  // want to check correctness or performance of single-precision,
+  // extended-precision, or complex arithmetic kernels.
+  //
+
   typedef double scalar_type;
   typedef int ordinal_type;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_type;
+  // mfh 28 Jun 2012: DefaultNodeType is usually TPINode, which may
+  // start threads by default.  We use SerialNode to make absolutely
+  // sure that this is a comparison of sequential kernels.
+  //
+  //typedef Kokkos::DefaultNode::DefaultNodeType node_type;
+  typedef Kokkos::SerialNode node_type;
 
   typedef Teuchos::ScalarTraits<double> STM;
 
-  // Values of command-line arguments.  CommandLineProcessor only
-  // accepts double for floating-point values, and int for integer
-  // values.  The given tolerance allows some rounding error for
-  // triangular solves, given that the test problems we generate
-  // should be well conditioned on average.
-  double tol = 1000 * STM::eps ();
+  //
+  // Values of command-line arguments.
+  //
+  // CommandLineProcessor only accepts double for floating-point
+  // values, and int for integer values, so we don't use scalar_type
+  // or ordinal_type here.
+
+  // The given tolerance allows some rounding error for triangular
+  // solves, given that the test problems we generate should be well
+  // conditioned on average.
+  double tol = 1000 * Teuchos::ScalarTraits<double>::eps ();
   // Number of rows (and columns) in the sparse matrices to test.
   int numRows = 100;
   // Number of benchmark trials; timings are cumulative over all trials.
@@ -102,7 +121,8 @@ namespace {
   // UNIT TESTS
   //
 
-  // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
+  // Test sparse matrix-(multi)vector multiply and sparse triangular
+  // solve, using DefaultHostSparseOps.
   TEUCHOS_UNIT_TEST( DefaultSparseOps, TestSparseOps )
   {
     using Kokkos::DefaultHostSparseOps;
@@ -114,7 +134,6 @@ namespace {
       std::vector<std::pair<std::string, double> > results;
       tester.benchmarkSparseOps (results, "DefaultSparseHostOps", node,
                                  numRows, numVecs, numTrials);
-      //Teuchos::TimeMonitor::summarize ();
     }
     else {
       tester.testSparseOps (node, numRows, numVecs, tol);
@@ -133,9 +152,19 @@ namespace {
       std::vector<std::pair<std::string, double> > results;
       tester.benchmarkSparseOps (results, "SeqSparseOps", node,
                                  numRows, numVecs, numTrials);
+      // Summarize timing results.  You should only call summarize()
+      // for all the different SparseOps types you plan to test in
+      // this executable.
+      //
+      // Extra endline makes the summarize() output nicer.  In
+      // benchmark mode, you should run with only one MPI process (if
+      // building with MPI at all).  We don't plan to run benchmark
+      // mode for the check-in or continuous integration tests.
+      std::cout << "\n";
       Teuchos::TimeMonitor::summarize ();
     }
     else {
+      // The test runs by default.
       tester.testSparseOps (node, numRows, numVecs, tol);
     }
   }

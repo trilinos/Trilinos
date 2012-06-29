@@ -201,6 +201,120 @@ public:
     U_out = U;
   }
 
+  void
+  makeBandedTestProblem (Teuchos::RCP<dense_matrix_type>& A_out,
+                         Teuchos::RCP<dense_matrix_type>& L_out,
+                         Teuchos::RCP<dense_matrix_type>& U_out,
+                         Teuchos::Array<ordinal_type>& pivots,
+                         const ordinal_type numRows) const
+  {
+    using Teuchos::Array;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef dense_matrix_type MT;
+
+    const ordinal_type M = numRows; // Number of rows in the matrix
+    const ordinal_type N = numRows; // Number of columns in the matrix
+    const ordinal_type KL = 1; // Number of subdiagonals
+    const ordinal_type KU = 1; // Number of superdiagonals
+    const ordinal_type LDAB = 2*KL + KU + 1; // As required by LAPACK
+
+    // On input: Don't fill top KL rows of A.
+    //
+    // On output: The top KL rows of A may be filled with elements of
+    // the U factor on output, due to row interchanges.
+
+    RCP<MT> A = rcp (new MT (LDAB, N));
+    // Just fill the whole matrix A with random numbers.  LAPACK won't
+    // use some of those elements; that's OK.
+    A->random ();
+
+    // Keep a copy of A, since LAPACK's LU factorization overwrites
+    // its input matrix with the L and U factors.
+    RCP<MT> A_copy = rcp (new MT (*A));
+
+    // Compute the LU factorization of A.
+    lapack_type lapack;
+    int info = 0;
+    Array<ordinal_type> ipiv (N);
+    lapack.GBTRF (M, N, KL, KU, A->values (), A->stride (), ipiv.getRawPtr (), &info);
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error, "LAPACK's _GBTRF "
+      "routine reported that its " << (-info) << "-th argument had an illegal "
+      "value.  This probably indicates a bug in the way Kokkos is calling the "
+      "routine.  Please report this bug to the Kokkos developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::runtime_error, "LAPACK's _GBTRF "
+      "routine reported that the " << info << "-th diagonal element of the U "
+      "factor is exactly zero.  This indicates that the matrix A is singular.  "
+      "A is pseudorandom, so it is possible but unlikely that it actually is "
+      "singular.  More likely is that the pseudorandom number generator isn't "
+      "working correctly.  This is not a Kokkos bug, but it could be a Teuchos "
+      "bug, since Teuchos is invoking the generator.");
+
+    // Create L and U, and copy out the lower resp. upper triangle
+    // (both packed in banded form) of A into L resp. U.
+    const ordinal_type LDU = KL + KU + 1;
+    RCP<MT> L = rcp (new MT (LDAB - LDU, N));
+    RCP<MT> U = rcp (new MT (LDU, N));
+    {
+      // Get the MT refs so we don't have to dereference the RCPs each
+      // time we change an entry.
+      MT& LL = *L;
+      MT& UU = *U;
+      MT& AA = *A;
+
+      for (ordinal_type j = 0; j < N; ++j) {
+        for (ordinal_type i = 0; i < LDU; ++i) {
+          U(i,j) = A(i,j);
+        }
+        for (ordinal_type i = LDU; i < LDAB; ++i) {
+          L(i,j) = A(i,j);
+        }
+      }
+    }
+
+    // "Commit" the outputs.
+    pivots.resize (N);
+    std::copy (ipiv.begin (), ipiv.end (), pivots.begin ());
+    A_out = A_copy; // Return the "original" A, before the factorization.
+    L_out = L;
+    U_out = U;
+  }
+
+
+  void
+  denseBandedToSparseOps (Teuchos::RCP<SparseOpsType>& A_out,
+                          Teuchos::RCP<SparseOpsType>& L_out,
+                          Teuchos::RCP<SparseOpsType>& U_out,
+                          const Teuchos::RCP<const dense_matrix_type>& A_in,
+                          const Teuchos::RCP<const dense_matrix_type>& L_in,
+                          const Teuchos::RCP<const dense_matrix_type>& U_in) const
+  {
+    const ordinal_type LDAB = A_in.numRows (); // == 2*KL + KU + 1
+    const ordinal_type LDU = U_in.numRows ();  // == KL + KU + 1
+    const ordinal_type LDL = L_in.numRows ();  // == KL
+
+    const ordinal_type M = A_in.numCols ();
+    const ordinal_type N = A_in.numCols ();
+    const ordinal_type KL = LDL;
+    const ordinal_type KU = LDU - LDL - 1;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(2*KL + KU + 1 != LDAB, std::logic_error,
+      "Failed to compute KL and KU correctly.");
+    TEUCHOS_TEST_FOR_EXCEPTION(KL + KU + 1 != LDU, std::logic_error,
+      "Failed to compute KL and KU correctly.");
+
+
+    ordinal_type ctr = 0;
+    ordinal_type i = 0;
+    for (ordinal_type j = 0; j < N; ++j) {
+      val[ctr] = A(KL+KU+1+i-j, j); // == A(i,j)
+
+
+
+  }
+
+
+
 
   /// \brief Read a CSR-format sparse matrix from a Matrix Market file.
   ///
