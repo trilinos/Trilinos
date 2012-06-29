@@ -304,12 +304,18 @@ namespace {
     RHS.initializeValues(N,1,rhsdat,N);
     typedef  Teuchos::ScalarTraits<Scalar> SCT;
     typedef  typename SCT::magnitudeType   Magnitude;
-    Magnitude norms,norm0;
+    Magnitude norms;
+    // FIXME (mfh 29 Jun 2012) norm0 gets assigned (below), but never used.
+    // gcc 4.6 warns about this; gcc 4.5 doesn't.
+    //Magnitude norm0;
 
     // Set starting vector & run Chebyshev
     DefaultArithmetic<MV>::Init(X0,0);
     DefaultArithmetic<MV>::Init(RHS,1);
-    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
+    norms=-666;
+    // FIXME (mfh 29 Jun 2012) norm0 gets assigned, but never used.
+    // gcc 4.6 warns about this; gcc 4.5 doesn't.
+    //norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
     norms=DefaultArithmetic<MV>::Norm2Squared(RHS);
     dj.setup_chebyshev((Scalar)1.9594929736,(Scalar) 0.097974648681);
     for(int i=0;i<its;i++){
