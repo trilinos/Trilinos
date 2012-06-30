@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cmath>
+#include <iostream>
 
 namespace stk {
 

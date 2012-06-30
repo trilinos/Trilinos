@@ -12,7 +12,7 @@
 #include <vector>
 #include <iostream>
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 #include <Shards_Array.hpp>
 #include <Shards_ArrayVector.hpp>
@@ -198,7 +198,7 @@ namespace stk
           m_elems[i] = source.m_elems[i];
       }
 
-      stk::mesh::BulkData * getBulkData() { return m_bulkData;}
+      stk::mesh::BulkData * get_bulk_data() { return m_bulkData;}
       stk::mesh::fem::FEMMetaData * getMetaData() { return m_metaData; }
 
     private:

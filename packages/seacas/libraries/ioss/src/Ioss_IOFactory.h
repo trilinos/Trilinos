@@ -37,6 +37,7 @@
 #include <string>
 
 #include <Ioss_DBUsage.h>
+#include <Ioss_PropertyManager.h>
 
 #include <map>
 #include <vector>
@@ -47,7 +48,6 @@ class IOFactory;
 
 typedef std::vector<std::string> NameList;
 typedef std::map<std::string, IOFactory*, std::less<std::string> > IOFactoryMap;
-typedef IOFactoryMap::value_type IOFactoryValuePair;
 
 class DatabaseIO;
 class IOFactory {
@@ -56,7 +56,8 @@ public:
   static DatabaseIO* create(const std::string& type,
                             const std::string& filename,
                             DatabaseUsage db_usage,
-                            MPI_Comm communicator = MPI_COMM_WORLD);
+                            MPI_Comm communicator = MPI_COMM_WORLD,
+			    const Ioss::PropertyManager &properties = Ioss::PropertyManager());
 
   static int describe(NameList *names);
   static void clean();
@@ -66,12 +67,12 @@ protected:
 
   virtual DatabaseIO* make_IO(const std::string& filename,
                               DatabaseUsage db_usage,
-                              MPI_Comm communicator) const = 0;
+                              MPI_Comm communicator,
+			      const Ioss::PropertyManager &properties) const = 0;
 
   static void alias(const std::string& base, const std::string& syn);
 
 private:
-  //    static IOFactoryMap* registry_;
   static IOFactoryMap* registry();
 };
 

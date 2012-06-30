@@ -25,7 +25,8 @@ namespace Iovs {
       IOFactory();
       Ioss::DatabaseIO* make_IO(const std::string& filename,
 				Ioss::DatabaseUsage db_usage,
-				MPI_Comm communicator) const;
+				MPI_Comm communicator,
+				const Ioss::PropertyManager &properties) const;
 
       /**
        * Call the sierra product registry and register all dependent third-party libraries

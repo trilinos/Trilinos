@@ -149,6 +149,7 @@ C ... 'TRI' can be triangle or trishell
 
       lstelem = 0
       lstblk = 1
+      iblk = 0
       do i = 1, numsid
          elem = elems(i)
          if (elem .gt. lstelem) then

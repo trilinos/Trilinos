@@ -41,18 +41,17 @@ CCOPTIONS=
 CODE = nem_spread
 
 SRCS = \
-el_check_monot.c         el_elm_info.c            el_exoII_io.c \
-el_exoII_io_util.c       pe_check_inp.c           pe_exoII_2par_exoII.c \
-pe_init_info.c           pe_input.c               pe_load_lb_info.c \
-pe_str_util.c            pe_util.c                pe_write_parExo_info.c \
-ps_restart.c             rf_allo.c                rf_comm.c \
-rf_mesh_param.c          rf_pre_proc.c            rf_util.c \
-sort_utils.c		 md_timer_getrusage.c md_wrap_generic_c.c
+el_elm_info.C            el_exoII_io.C            pe_check_inp.C \
+nem_spread.C             pe_input.C               pe_load_lb_info.C \
+pe_str_util.C            pe_util.C                pe_write_parExo_info.C \
+ps_restart.C             rf_allo.C                rf_mesh_param.C \
+rf_pre_proc.C            rf_util.C                sort_utils.C \
+md_timer_getrusage.C 	 md_wrap_generic_c.C
 
-LIBS = $(SUPLIB) $(NEMESISC) $(EXOIIV2C) $(NETCDF) -lm
-OBJS = ${SRCS:.c=.o}
+LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) -lm
+OBJS = ${SRCS:.C=.o}
 
-NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+NormalCCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
 
 InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))
 

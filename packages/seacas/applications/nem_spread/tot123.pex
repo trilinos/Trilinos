@@ -1,0 +1,9 @@
+Input FEM file                   = tot123.g
+LB file                          = tot123.nem
+File Extension for Spread Files  = .g
+Number of Processors             = 4 
+------------------------------------------------------------
+                Parallel I/O section
+------------------------------------------------------------
+Parallel Disk Info= number=1, offset=1, zeros, nosubdirectory
+Parallel file location = root=/ascldap/users/gdsjaar/src/SEACAS/ACCESS/applications/nem_spread/, subdir=.

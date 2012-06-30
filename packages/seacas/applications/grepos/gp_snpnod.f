@@ -52,7 +52,11 @@ C=======================================================================
       numnod = 0
       dmax = 0.0
       delmx2 = delmax**2
-
+      svdel = 0.0
+      saveit(1) = 0.0
+      saveit(2) = 0.0
+      saveit(3) = 0.0
+      
       do 130 inod = 1, numnp
         armax = -1.0e38
         svmax = -1.0e38

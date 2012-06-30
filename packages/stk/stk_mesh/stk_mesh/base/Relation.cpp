@@ -30,14 +30,11 @@ operator << ( std::ostream & s , const Relation & rel )
 
   if ( e ) {
     const MetaData & meta_data = MetaData::get(*e);
-
-    s << meta_data.entity_rank_name( rel.entity_rank() );
     s << "[" << rel.identifier() << "]->" ;
     print_entity_key( s , meta_data , e->key() );
   }
   else {
-    s << rel.entity_rank();
-    s << "[" << rel.identifier() << "]->NULL" ;
+    s << "[" << rel.identifier() << "]->" << rel.entity_rank();
   }
 
   return s ;
@@ -47,26 +44,63 @@ operator << ( std::ostream & s , const Relation & rel )
 
 Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
-    m_entity( & entity )
-{}
+    m_target_entity( & entity )
+{
+#ifdef SIERRA_MIGRATION
+  setRelationType(INVALID);
+#endif
+}
 
-
-bool Relation::operator < ( const Relation & r ) const
+bool Relation::operator < ( const Relation & rhs ) const
 {
   bool result = false;
 
-  if ( m_raw_relation.value != r.m_raw_relation.value ) {
-    result = m_raw_relation.value < r.m_raw_relation.value ;
+#ifdef SIERRA_MIGRATION
+  if (entity_rank() != rhs.entity_rank()) {
+    result = entity_rank() < rhs.entity_rank();
   }
+  else if (getRelationType() != rhs.getRelationType()) {
+    result = getRelationType() < rhs.getRelationType();
+  }
+  else if (identifier() != rhs.identifier()) {
+    result = identifier() < rhs.identifier();
+  }
+#else
+  if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
+    result = m_raw_relation.value < rhs.m_raw_relation.value ;
+  }
+#endif
   else {
-    const EntityKey lhs = m_entity   ? m_entity->key()   : EntityKey() ;
-    const EntityKey rhs = r.m_entity ? r.m_entity->key() : EntityKey() ;
-    result = lhs < rhs ;
+    const EntityKey lhs_key = m_target_entity     ? m_target_entity->key()     : EntityKey();
+    const EntityKey rhs_key = rhs.m_target_entity ? rhs.m_target_entity->key() : EntityKey();
+    result = lhs_key < rhs_key ;
   }
   return result ;
 }
 
 //----------------------------------------------------------------------
+
+#ifdef SIERRA_MIGRATION
+
+Relation::Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient)
+  :
+  m_raw_relation( Relation::raw_relation_id( obj->entity_rank(), ordinal )),
+  m_attribute( (relation_type << fmwk_orientation_digits) | orient ),
+  m_target_entity(obj)
+{
+  ThrowAssertMsg( orient <= fmwk_orientation_mask,
+                  "orientation " << orient << " exceeds maximum allowed value");
+}
+
+void Relation::setMeshObj(Entity *object)
+{
+  if (object != NULL) {
+    m_raw_relation = Relation::raw_relation_id( object->entity_rank(), identifier() );
+  }
+  m_target_entity = object;
+}
+
+#endif
 
 namespace {
 
@@ -94,6 +128,25 @@ void get_entities_through_relations(
 
     if ( i == i_end ) {
       entities_related.push_back( e );
+    }
+  }
+}
+
+inline
+void insert_part_and_supersets(OrdinalVector& induced_parts, 
+                               Part& part,
+                               bool include_supersets)
+{
+  insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
+
+  // In order to preserve superset/subset consistency we should add supersets of
+  // induced parts to the induced part lists. Unfortunately, this opens up an ambiguity
+  // where, when a relation is removed, we cannot know if an unranked superset
+  // part should be removed.
+  if (include_supersets) {
+    const PartVector & supersets = part.supersets();
+    for (PartVector::const_iterator itr = supersets.begin(), end = supersets.end(); itr != end; ++itr) {
+      insert_ordinal( induced_parts, (*itr)->mesh_meta_data_ordinal() );
     }
   }
 }
@@ -159,14 +212,15 @@ void induced_part_membership( Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
                               RelationIdentifier relation_identifier ,
-                              PartVector & induced_parts )
+                              OrdinalVector & induced_parts,
+                              bool include_supersets)
 {
   if ( entity_rank_to < entity_rank_from &&
        part.primary_entity_rank() == entity_rank_from ) {
 
     // Direct relationship:
 
-    insert( induced_parts , part );
+    insert_part_and_supersets( induced_parts , part, include_supersets );
 
     // Stencil relationship where 'part' is the root:
     // The 'target' should not have subsets or supersets.
@@ -179,7 +233,7 @@ void induced_part_membership( Part & part ,
       if ( & part == j->m_root &&
            0 <= (* j->m_function)( entity_rank_from , entity_rank_to ,
                                    relation_identifier ) ) {
-        insert( induced_parts , * j->m_target );
+        insert_part_and_supersets( induced_parts , * j->m_target, include_supersets );
       }
     }
   }
@@ -191,10 +245,11 @@ void induced_part_membership( Part & part ,
 //  accurate if it is owned by the local process.
 
 void induced_part_membership( const Entity           & entity_from ,
-                              const PartVector       & omit ,
+                              const OrdinalVector       & omit ,
                                     unsigned           entity_rank_to ,
                                     RelationIdentifier relation_identifier ,
-                                    PartVector       & induced_parts )
+                                    OrdinalVector       & induced_parts,
+                                    bool include_supersets)
 {
   const Bucket   & bucket_from    = entity_from.bucket();
   const BulkData & mesh           = BulkData::get(bucket_from);
@@ -205,11 +260,13 @@ void induced_part_membership( const Entity           & entity_from ,
   // 'entity_from' to be accurate if it is owned by the local process.
   if ( entity_rank_to < entity_rank_from &&
        local_proc_rank == entity_from.owner_rank() ) {
-    const MetaData   & meta        = MetaData::get(mesh);
-    const PartVector & all_parts   = meta.get_parts();
+    const PartVector & all_parts   = mesh.mesh_meta_data().get_parts();
 
     const std::pair<const unsigned *, const unsigned *>
       bucket_superset_ordinals = bucket_from.superset_part_ordinals();
+
+    OrdinalVector::const_iterator omit_begin = omit.begin(),
+                                  omit_end   = omit.end();
 
     // Contributions of the 'from' entity:
     for ( const unsigned * i = bucket_superset_ordinals.first ;
@@ -217,13 +274,13 @@ void induced_part_membership( const Entity           & entity_from ,
       ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
       Part & part = * all_parts[*i] ;
 
-      if ( part.primary_entity_rank() == entity_rank_from &&
-           ! contain( omit , part )) {
+      if ( part.primary_entity_rank() == entity_rank_from && ! contains_ordinal( omit_begin, omit_end , *i )) {
         induced_part_membership( part,
                                  entity_rank_from ,
                                  entity_rank_to ,
                                  relation_identifier ,
-                                 induced_parts );
+                                 induced_parts,
+                                 include_supersets);
       }
     }
   }
@@ -232,8 +289,9 @@ void induced_part_membership( const Entity           & entity_from ,
 //----------------------------------------------------------------------
 
 void induced_part_membership( const Entity     & entity ,
-                              const PartVector & omit ,
-                                    PartVector & induced_parts )
+                              const OrdinalVector & omit ,
+                                    OrdinalVector & induced_parts,
+                                    bool include_supersets)
 {
   for ( PairIterRelation
         rel = entity.relations() ; ! rel.empty() ; ++rel ) {
@@ -241,7 +299,8 @@ void induced_part_membership( const Entity     & entity ,
     induced_part_membership( * rel->entity() , omit ,
                              entity.entity_rank() ,
                              rel->identifier() ,
-                             induced_parts );
+                             induced_parts,
+                             include_supersets);
   }
 }
 

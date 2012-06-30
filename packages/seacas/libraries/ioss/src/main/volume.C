@@ -138,12 +138,11 @@ namespace {
   }
 }
 
-void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates)
+template <typename T>
+void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &coordinates, const std::vector<T> &connectivity,
+			 size_t nelem)
 {
   const double one12th = 1.0 / 12.0;
-  size_t nelem  = block->get_property("entity_count").get_int();
-  std::vector<int> connectivity;
-  block->get_field_data("connectivity_raw", connectivity);
 
   double gradop12x[24];
   double x[8], y[8], z[8];
@@ -151,7 +150,12 @@ void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinate
 
   size_t t1 = timer();
 
+  size_t count = 0;
   for(size_t ielem=0; ielem < nelem; ++ielem) {
+    if (count++ >= nelem/100) {
+      OUTPUT << ".";
+      count = 0;
+    }
     for (size_t j = 0; j < 8; j++) {
       size_t node = connectivity[ielem*8 + j] - 1;
       x[j] = coordinates[node*3 + 0];
@@ -164,11 +168,25 @@ void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinate
     volume[ielem] = volume12x * one12th;
   }
   size_t t2 = timer();
-
-  OUTPUT << std::setw(12) << block->name()
+  
+  OUTPUT << "\n" << std::setw(12) << block->name()
 	 << "\tMin volume = " << std::setw(12) << *std::min_element(volume.begin(), volume.end()) 
 	 << "  Max volume = " << std::setw(12) << *std::max_element(volume.begin(), volume.end()) 
 	 << "  Elements = "   << std::setw(12) << nelem
-	 << "  Time/Elem = " << double(t2-t1)/nelem << "\n";
+	 << "  Time/Elem = " << double(t2-t1)/nelem << " micro-sec\n";
 }
   
+void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates)
+{
+
+  size_t nelem  = block->get_property("entity_count").get_int();
+  if (block->get_database()->int_byte_size_api() == 8) {
+    std::vector<int64_t> connectivity(nelem);
+    block->get_field_data("connectivity_raw", connectivity);
+    hex_volume_internal(block, coordinates, connectivity, nelem);
+  } else {
+    std::vector<int> connectivity(nelem);
+    block->get_field_data("connectivity_raw", connectivity);
+    hex_volume_internal(block, coordinates, connectivity, nelem);
+  }
+}

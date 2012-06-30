@@ -46,7 +46,6 @@ APPEND_SET(NOINSTHEADERS
   common/nnti_internal.h
   common/nnti_ptls.h
   common/nnti_utils.h
-  common/nssi_debug.h
   common/nssi_opcodes.h
   common/nssi_trace.h
   common/buffer_queue.h
@@ -55,6 +54,7 @@ APPEND_SET(NOINSTHEADERS
 APPEND_SET(HEADERS
   common/Trios_nssi_rpc.h
   common/Trios_nssi_types.h
+  common/Trios_nssi_debug.h
   common/Trios_nssi_fprint_types.h
   common/Trios_nssi_xdr.h
   common/Trios_nssi_TypeManip.h
@@ -67,7 +67,7 @@ APPEND_SET(SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/Trios_nnti_xdr.c
   ${CMAKE_CURRENT_BINARY_DIR}/Trios_nssi_types_xdr.c
   ${CMAKE_CURRENT_BINARY_DIR}/nssi_service_args.c
-  common/fprint_types.c
+  common/fprint_types.cpp
   common/nnti.c
   common/nnti_utils.c
   common/nssi_common.cpp

@@ -43,7 +43,7 @@ you should keep your dirs_to_emails file under version control and just create
 a symbolic link in order to allow anyone with access to your repository to
 change the mappings.
 
-4) Set group ownership
+4) Set group or world ownership
 
   $ cd GIT_REPO_BASE_DIR
   $ THIS_DIR/setup-shared-repo.sh GROUP_NAME
@@ -53,3 +53,6 @@ change the mappings.
   GROUP_NAME ...' was used, then it should not be strictly necessary
   to run setup-shared-repo.sh but if there is any question about the
   state of the repo it is a good idea to run this script.
+
+  NOTE: If you pass in GROUP_NAME == WORLD, then the repository will be set up
+  to be world accessible.

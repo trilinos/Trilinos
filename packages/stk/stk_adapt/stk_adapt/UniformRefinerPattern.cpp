@@ -5,9 +5,15 @@
 namespace stk {
   namespace adapt {
 
+    STK_Adapt_Auto_Part stk_adapt_auto_part;
+    
+    const std::string UniformRefinerPatternBase::m_oldElementsPartName = "urp_oldElements";
+
     std::string UniformRefinerPatternBase::s_convert_options = "Hex8_Tet4_24, Hex8_Tet4_6, Quad4_Tri3_2, Quad4_Tri3_6, Quad4_Tri3_4";
-    std::string UniformRefinerPatternBase::s_refine_options = "DEFAULT, Quad4_Quad4_4, Tri3_Tri3_4, Tet4_Tet4_8, Hex8_Hex8_8, Wedge6_Wedge6_8, Tri6_Tri6_4, Quad9_Quad9_4, Hex27_Hex27_8, Tet10_Tet10_8, Wedge18_Wedge18_8, ShellTri3_ShellTri3_4, ShellQuad4_ShellQuad4_4";
-    std::string UniformRefinerPatternBase::s_enrich_options = "DEFAULT, Quad4_Quad8_1, Quad4_Quad9_1, Tri3_Tri6_1, Tet4_Tet10_1, Hex8_Hex20_1, Hex8_Hex27_1, Wedge6_Wedge15_1, Wedge6_Wedge18_1";
+    std::string UniformRefinerPatternBase::s_refine_options = "DEFAULT, Quad4_Quad4_4, Tri3_Tri3_4, Tet4_Tet4_8, Hex8_Hex8_8, Wedge6_Wedge6_8, Pyramid5_Pyramid5_10, "
+      " Tri6_Tri6_4, Quad9_Quad9_4, Hex27_Hex27_8, Tet10_Tet10_8, Wedge15_Wedge15_8, Pyramid13_Pyramid13_10, ShellTri3_ShellTri3_4, ShellQuad4_ShellQuad4_4";
+    std::string UniformRefinerPatternBase::s_enrich_options = "DEFAULT, Quad4_Quad8_1, Quad4_Quad9_1, Tri3_Tri6_1, Tet4_Tet10_1, Hex8_Hex20_1, Hex8_Hex27_1, "
+      " Wedge6_Wedge15_1, Wedge6_Wedge18_1, Pyramid5_Pyramid13_1";
     
 
 #if 0
@@ -37,6 +43,7 @@ namespace stk {
       else if (refine == "Tet4_Tet4_8")      pattern  = Teuchos::rcp(new Tet4_Tet4_8(eMesh, block_names));
       else if (refine == "Hex8_Hex8_8")      pattern  = Teuchos::rcp(new Hex8_Hex8_8(eMesh, block_names));
       else if (refine == "Wedge6_Wedge6_8")  pattern  = Teuchos::rcp(new Wedge6_Wedge6_8(eMesh, block_names));
+      else if (refine == "Pyramid5_Pyramid5_10")  pattern  = Teuchos::rcp(new Pyramid5_Pyramid5_10(eMesh, block_names));
 
       //    shells
       else if (refine == "ShellTri3_ShellTri3_4")      pattern  = Teuchos::rcp(new ShellTri3_ShellTri3_4(eMesh, block_names));
@@ -48,6 +55,7 @@ namespace stk {
       else if (refine == "Tet10_Tet10_8")    pattern  = Teuchos::rcp(new Tet10_Tet10_8(eMesh, block_names));
       else if (refine == "Wedge15_Wedge15_8") pattern = Teuchos::rcp(new Wedge15_Wedge15_8(eMesh, block_names));
       //else if (refine == "Wedge18_Wedge18_8") pattern = Teuchos::rcp(new Wedge18_Wedge18_8(eMesh, block_names));
+      else if (refine == "Pyramid13_Pyramid13_10") pattern = Teuchos::rcp(new Pyramid13_Pyramid13_10(eMesh, block_names));
 
       // enrich
       else if (enrich == "DEFAULT")          pattern  = Teuchos::rcp(new URP_Heterogeneous_Enrich_3D(eMesh, block_names));
@@ -59,6 +67,7 @@ namespace stk {
       else if (enrich == "Hex8_Hex27_1")     pattern  = Teuchos::rcp(new Hex8_Hex27_1(eMesh, block_names));
       else if (enrich == "Wedge6_Wedge15_1") pattern  = Teuchos::rcp(new Wedge6_Wedge15_1(eMesh, block_names));
       else if (enrich == "Wedge6_Wedge18_1") pattern  = Teuchos::rcp(new Wedge6_Wedge18_1(eMesh, block_names));
+      else if (enrich == "Pyramid5_Pyramid13_1") pattern  = Teuchos::rcp(new Pyramid5_Pyramid13_1(eMesh, block_names));
 
       // convert
       //else if (convert == "DEFAULT")         pattern  = findDefaultConvert(eMesh, block_names);
@@ -132,7 +141,7 @@ namespace stk {
     {
 #if NEW_FIX_ELEMENT_SIDES
 
-      VERIFY_OP(ordinal, < , getNumNewElemPerElem(), "logic error in set_parent_child_relations");
+      //VERIFY_OP(ordinal, < , getNumNewElemPerElem(), "logic error in set_parent_child_relations");
       VERIFY_OP(&parent_elem, != , 0, "set_parent_child_relations: parent_elem is null");
       VERIFY_OP(&newElement, != , 0, "set_parent_child_relations: newElement is null");
 
@@ -159,7 +168,7 @@ namespace stk {
 
       if (parent_to_family_tree_relations.size() == 0 || (parent_to_family_tree_relations.size() == 1 && eMesh.isChildElement(parent_elem) ) )
         {
-          stk::mesh::PartVector add(1, &eMesh.getFEM_meta_data()->universal_part());
+          stk::mesh::PartVector add(1, &eMesh.get_fem_meta_data()->universal_part());
 
           // explanation: we want to avoid the above use of BulkData::generate_new_entities due to the parallel comm required, so we
           //   use the parent_id for the familty_tree_id.
@@ -181,7 +190,6 @@ namespace stk {
               //std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;
             }
 
-
 #if DEBUG_MULTI_LEVEL
           if (parent_to_family_tree_relations.size() == 1) 
             {
@@ -192,15 +200,15 @@ namespace stk {
           unsigned FT_SHIFT = 0u;
           family_tree_id += FT_SHIFT;
 
-          family_tree = & eMesh.getBulkData()->declare_entity(FAMILY_TREE_RANK, family_tree_id, add);
+          family_tree = & eMesh.get_bulk_data()->declare_entity(FAMILY_TREE_RANK, family_tree_id, add);
 
           // make the parent be the first relation; children are at the end
           // from->to
 #if DEBUG_MULTI_LEVEL
           std::cout << "tmp super->parent " << family_tree->identifier() << " -> " << parent_elem.identifier() << " " << parent_elem << std::endl;
 #endif
-          eMesh.getBulkData()->declare_relation(*family_tree, parent_elem, FAMILY_TREE_PARENT);
-          //eMesh.getBulkData()->declare_relation( parent_elem, *family_tree, ptft_size-1);
+          eMesh.get_bulk_data()->declare_relation(*family_tree, parent_elem, FAMILY_TREE_PARENT);
+          //eMesh.get_bulk_data()->declare_relation( parent_elem, *family_tree, ptft_size-1);
           parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
 
 #if DEBUG_MULTI_LEVEL
@@ -254,8 +262,9 @@ namespace stk {
         }
 
       //entity_vector.reserve(getNumNewElemPerElem());
-      unsigned nchild = getNumNewElemPerElem();
-      if (numChild) nchild = *numChild;
+      //
+      //unsigned nchild = getNumNewElemPerElem();
+      //if (numChild) nchild = *numChild;
 
 #if DEBUG_MULTI_LEVEL
       std::cout << "tmp parent_to_family_tree_relations_size_0 = " << parent_to_family_tree_relations_size_0 << " parent_to_family_tree_relations_size_1= " << parent_to_family_tree_relations_size_1 << std::endl;
@@ -270,13 +279,14 @@ namespace stk {
             {
               if (family_tree_relations[i].identifier() == (ordinal + 1))
                 {
-                  std::cout << "UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal" << std::endl;
+                  std::cout << "UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal [" 
+                            << ordinal << "]" << " family_tree_relations.size= " << family_tree_relations.size() << std::endl;
                   throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal");
                 }
             }
         }
 
-      eMesh.getBulkData()->declare_relation(*family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
+      eMesh.get_bulk_data()->declare_relation(*family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
 
       // add all the nodes for ghosting purposes
       /** Explanation: child elements can be created in the aura that have nodes in the aura but aren't shared
@@ -305,11 +315,15 @@ namespace stk {
                 }
               if (!found)
                 {
-                  eMesh.getBulkData()->declare_relation(*family_tree, *parent_elem_nodes[i].entity(), ft_nodes.size());
+                  eMesh.get_bulk_data()->declare_relation(*family_tree, *parent_elem_nodes[i].entity(), ft_nodes.size());
                 }
             }
 
           stk::mesh::PairIterRelation child_elem_nodes = newElement.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          if (child_elem_nodes.size() == 0)
+            {
+              throw std::runtime_error("child_elem has no nodes");
+            }
           for (unsigned i = 0; i < child_elem_nodes.size(); i++)
             {
               if (!stk::mesh::in_shared(*child_elem_nodes[i].entity())) continue;
@@ -326,7 +340,7 @@ namespace stk {
                 }
               if (!found)
                 {
-                  eMesh.getBulkData()->declare_relation(*family_tree, *child_elem_nodes[i].entity(), ft_nodes.size());
+                  eMesh.get_bulk_data()->declare_relation(*family_tree, *child_elem_nodes[i].entity(), ft_nodes.size());
                 }
             }
 
@@ -353,7 +367,7 @@ namespace stk {
                     }
                   if (!found)
                     {
-                      eMesh.getBulkData()->declare_relation(*family_tree, *ft_level_0_nodes[i].entity(), ft_nodes.size());
+                      eMesh.get_bulk_data()->declare_relation(*family_tree, *ft_level_0_nodes[i].entity(), ft_nodes.size());
                     }
                 }
             }
@@ -362,6 +376,10 @@ namespace stk {
 
 
       if (0) std::cout << "tmp here 12 ordinal= " << ordinal << " [ " << getNumNewElemPerElem() << "] newElement_ptr= "<< &newElement<< std::endl;
+      bool foundSide = findSideRelations(eMesh, &parent_elem, &newElement);
+      if (!foundSide) {
+        //throw std::runtime_error("UniformRefinerPatternBase:: set_parent_child_relations couldn't set child side to elem relations");
+      }
 #endif
     }
 #endif
@@ -373,7 +391,7 @@ namespace stk {
 //         {
 //           return;
 //         }
-      const stk::mesh::FieldVector & fields = eMesh.getFEM_meta_data()->get_fields();
+      const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
       unsigned nfields = fields.size();
       for (unsigned ifld = 0; ifld < nfields; ifld++)
         {
@@ -424,6 +442,129 @@ namespace stk {
                 }
             }
       
+        }
+    }
+
+    bool UniformRefinerPatternBase::findSideRelations(percept::PerceptMesh& eMesh, stk::mesh::Entity* parent, stk::mesh::Entity* child)
+    {
+      VERIFY_OP_ON(parent->entity_rank(), ==, child->entity_rank(), "UniformRefinerPatternBase::findSideRelations: bad ranks");
+      if (parent->entity_rank() == eMesh.element_rank()) 
+        return true;
+      
+      for (unsigned higher_order_rank = parent->entity_rank()+1u; higher_order_rank <= eMesh.element_rank(); higher_order_rank++)
+        {
+          stk::mesh::PairIterRelation parent_to_elem_rels = parent->relations(higher_order_rank);
+          VERIFY_OP_ON(parent_to_elem_rels.size(), <=, 1, "UniformRefinerPatternBase::findSideRelations bad number of side to elem relations");
+          if (parent_to_elem_rels.size() == 0)
+            {
+              // nothing to do
+              return true;
+            }
+
+          for (unsigned i_parent_to_elem=0; i_parent_to_elem < parent_to_elem_rels.size(); i_parent_to_elem++)
+            {
+              stk::mesh::Entity *parents_volume_element = parent_to_elem_rels[i_parent_to_elem].entity();
+
+              std::vector<stk::mesh::Entity*> parents_volume_elements_children;
+              VERIFY_OP_ON(eMesh.hasFamilyTree(*parents_volume_element), == , true, "UniformRefinerPatternBase::findSideRelations parent's volume element has no children.");
+              //if (! eMesh.hasFamilyTree(*parents_volume_element) ) return true;
+              eMesh.getChildren(*parents_volume_element, parents_volume_elements_children);
+              for (unsigned i_vol_child=0; i_vol_child < parents_volume_elements_children.size(); i_vol_child++)
+                {
+                  stk::mesh::Entity* parents_volume_elements_child = parents_volume_elements_children[i_vol_child];
+                  
+                  VERIFY_OP_ON(parents_volume_elements_child->entity_rank(), ==, higher_order_rank, "UniformRefinerPatternBase::findSideRelations: bad ranks 2");
+                  if (connectSides(eMesh, parents_volume_elements_child, child))
+                    return true;
+                }
+            }
+        }
+      return false;
+    }
+
+    // if the element (element) has a side that matches  the given side (side_elem), connect them but first delete old connections
+    bool UniformRefinerPatternBase::connectSides(percept::PerceptMesh& eMesh, stk::mesh::Entity *element, stk::mesh::Entity *side_elem)
+    {
+      EXCEPTWATCH;
+      shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(*element));
+      unsigned element_nsides = (unsigned)element_topo.getSideCount();
+
+      // special case for shells
+      int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
+
+      bool isShell = false;
+      if (topoDim < (int)element->entity_rank())
+        {
+          isShell = true;
+        }
+      int spatialDim = eMesh.get_spatial_dim();
+      if (spatialDim == 3 && isShell && side_elem->entity_rank() == eMesh.edge_rank())
+        {
+          element_nsides = (unsigned) element_topo.getEdgeCount();
+        }
+
+      int permIndex = -1;
+      int permPolarity = 1;
+
+      unsigned k_element_side = 0;
+
+      // try search
+      for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
+        {
+          PerceptMesh::element_side_permutation(*element, *side_elem, j_element_side, permIndex, permPolarity);
+          if (permIndex >= 0)
+            {
+              k_element_side = j_element_side;
+              break;
+            }
+        }
+
+      if (permIndex >= 0)
+        {
+          mesh::PairIterRelation rels = side_elem->relations(eMesh.element_rank());
+
+          if (rels.size() > 1)
+            {
+              throw std::logic_error("rels.size() > 1");
+            }
+
+          if (rels.size())
+            {
+              stk::mesh::Entity *to_rel = rels[0].entity();
+              stk::mesh::RelationIdentifier to_id = rels[0].identifier();
+              bool del = eMesh.get_bulk_data()->destroy_relation( *to_rel, *side_elem, to_id);
+              if (!del)
+                throw std::logic_error("connectSides:: destroy_relation failed");
+            }
+
+          // special case for shells
+          if (0 && isShell)
+            {
+              // FIXME for 2D
+              if (side_elem->entity_rank() == eMesh.face_rank())
+                {
+                  stk::mesh::PairIterRelation elem_sides = element->relations(side_elem->entity_rank());
+                  unsigned elem_sides_size= elem_sides.size();
+                  //std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
+                  if (elem_sides_size == 1)
+                    {
+                      stk::mesh::RelationIdentifier rel_id = elem_sides[0].identifier();
+                      if (rel_id > 1) 
+                        throw std::logic_error("connectSides:: logic 1");
+                      k_element_side = (rel_id == 0 ? 1 : 0);
+                      //std::cout << "tmp srk k_element_side= " << k_element_side << " rel_id= " << rel_id << std::endl;
+                    }
+                }
+            }
+
+          eMesh.get_bulk_data()->declare_relation(*element, *side_elem, k_element_side);
+          return true;
+        }
+      else
+        {
+          // error condition?
+          //throw std::runtime_error("connectSides: couldn't find a matching face");
+          return false;
         }
     }
 

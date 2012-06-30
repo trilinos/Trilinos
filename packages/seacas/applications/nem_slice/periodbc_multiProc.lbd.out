@@ -1,0 +1,82 @@
+===========================================================
+| Sandia Engineering Analysis Access procedure for: loadbal
+| $Revision: 1.57 $, $Date: 2008/05/19 12:29:22 $
+===========================================================
+nem_slice version 4.01
+Performing an elemental load balance with the following parameters...
+Machine Description
+	architecture: mesh
+	dimension(s): 1
+	total number of processors: 1
+Load Balance Parameters
+	type: rcb
+	refinement: none
+Weighting Parameters
+	no weighting
+Miscellaneous Options
+	WARNING: side id error checks turned off
+ExodusII mesh information
+	title: cubit(/scratch/sierra/code/sandbox/pBC/diff/barRVE.g): 07/12/2010: 15:35:28
+	geometry dimension: 3
+	number of nodes: 12	number of elements: 2
+	number of element blocks: 2
+	number of node sets: 3	number of side sets: 6
+Time to read mesh parameters: 0.001000s
+ex_get_coord
+ex_get_elem_blk_ids
+ex_get_elem_block 378
+ex_get_elem_conn 397
+ex_get_elem_conn 403
+ex_get_elem_block 378
+ex_get_elem_conn 397
+ex_get_elem_conn 403
+Time to read mesh: 0.001000s
+Time to find surrounding elements: 0.000000s
+Time to generate graph: 0.000000s
+ZOLTAN Load balancing method = 3 (RCB)
+Using Zoltan version 3.601000, method RCB
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned int (4 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 0
+ZOLTAN Parameter RETURN_LISTS = PARTITION ASSIGNMENTS
+ZOLTAN Parameter NUM_GLOBAL_PARTS = 1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 0
+ZOLTAN Parameter SEED = 123456789 (123456789)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter RCB_OVERALLOC = 1.200000
+ZOLTAN Parameter RCB_REUSE = 0
+ZOLTAN Parameter CHECK_GEOM = 1
+ZOLTAN Parameter RCB_OUTPUT_LEVEL = 0
+ZOLTAN Parameter KEEP_CUTS = 0
+ZOLTAN Parameter RCB_LOCK_DIRECTIONS = 0
+ZOLTAN Parameter RCB_SET_DIRECTIONS = 0
+ZOLTAN Parameter RCB_RECTILINEAR_BLOCKS = 0
+ZOLTAN Parameter OBJ_WEIGHTS_COMPARABLE = 0
+ZOLTAN Parameter RCB_MULTICRITERIA_NORM = 1
+ZOLTAN Parameter RCB_MAX_ASPECT_RATIO = 10.000000
+ZOLTAN Parameter AVERAGE_CUTS = 0
+ZOLTAN Parameter RANDOM_PIVOTS = 0
+ZOLTAN Parameter RCB_RECOMPUTE_BOX = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 0.000000
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter KEEP_CUTS = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 10.000000
+Zoltan_LB No changes to the decomposition due to partitioning; no migration is needed.

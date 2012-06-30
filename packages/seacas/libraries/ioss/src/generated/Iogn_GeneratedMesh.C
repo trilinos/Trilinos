@@ -44,7 +44,7 @@
 #include <assert.h>
 
 namespace Iogn {
-  GeneratedMesh::GeneratedMesh(int num_x, int num_y, int num_z,
+  GeneratedMesh::GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z,
 			       int proc_count, int my_proc) :
     numX(num_x), numY(num_y), numZ(num_z), myNumZ(num_z), myStartZ(0),
     processorCount(proc_count), myProcessor(my_proc),
@@ -121,19 +121,19 @@ namespace Iogn {
     }
   }
 
-  size_t GeneratedMesh::add_shell_block(ShellLocation loc)
+  int64_t GeneratedMesh::add_shell_block(ShellLocation loc)
   {
     shellBlocks.push_back(loc);
     return shellBlocks.size();
   }
 
-  size_t GeneratedMesh::add_nodeset(ShellLocation loc)
+  int64_t GeneratedMesh::add_nodeset(ShellLocation loc)
   {
     nodesets.push_back(loc);
     return nodesets.size();
   }
 
-  size_t GeneratedMesh::add_sideset(ShellLocation loc)
+  int64_t GeneratedMesh::add_sideset(ShellLocation loc)
   {
     sidesets.push_back(loc);
     return sidesets.size();
@@ -305,7 +305,7 @@ namespace Iogn {
 	std::vector<std::string> tokens;
 	Ioss::tokenize(option[1], ",", tokens);
 	assert(tokens.size() == processorCount);
-	std::vector<size_t> Zs;
+	Int64Vector Zs;
 	numZ = 0;
 	for (size_t j = 0; j < processorCount; j++) {
 	  Zs.push_back(std::strtol(tokens[j].c_str(), NULL, 10));
@@ -400,50 +400,50 @@ namespace Iogn {
     }
   }
 
-  size_t GeneratedMesh::node_count() const
+  int64_t GeneratedMesh::node_count() const
   {
     return (numX+1) * (numY+1) * (numZ+1);
   }
 
-  size_t GeneratedMesh::node_count_proc() const
+  int64_t GeneratedMesh::node_count_proc() const
   {
     return (numX+1) * (numY+1) * (myNumZ+1);
   }
 
-  size_t GeneratedMesh::block_count() const
+  int64_t GeneratedMesh::block_count() const
   {
     return shellBlocks.size() + 1;
   }
 
-  size_t GeneratedMesh::nodeset_count() const
+  int64_t GeneratedMesh::nodeset_count() const
   {
     return nodesets.size();
   }
 
-  size_t GeneratedMesh::sideset_count() const
+  int64_t GeneratedMesh::sideset_count() const
   {
     return sidesets.size();
   }
 
-  size_t GeneratedMesh::element_count() const
+  int64_t GeneratedMesh::element_count() const
   {
-    size_t count = element_count(1);
+    int64_t count = element_count(1);
     for (size_t i=0; i < shellBlocks.size(); i++) {
       count += element_count(i+2);
     }
     return count;
   }
 
-  size_t GeneratedMesh::element_count_proc() const
+  int64_t GeneratedMesh::element_count_proc() const
   {
-    size_t count = 0;
-    for (size_t i=0; i < block_count(); i++) {
+    int64_t count = 0;
+    for (int64_t i=0; i < block_count(); i++) {
       count += element_count_proc(i+1);
     }
     return count;
   }
 
-  size_t GeneratedMesh::element_count(size_t block_number) const
+  int64_t GeneratedMesh::element_count(int64_t block_number) const
   {
     assert(block_number <= block_count());
 
@@ -455,7 +455,7 @@ namespace Iogn {
     }
   }
 
-  size_t GeneratedMesh::shell_element_count(ShellLocation loc) const
+  int64_t GeneratedMesh::shell_element_count(ShellLocation loc) const
   {
     switch (loc) {
     case MX:
@@ -471,7 +471,7 @@ namespace Iogn {
     return 0;
   }
 
-  size_t GeneratedMesh::element_count_proc(size_t block_number) const
+  int64_t GeneratedMesh::element_count_proc(int64_t block_number) const
   {
     assert(block_number <= block_count());
 
@@ -483,7 +483,7 @@ namespace Iogn {
     }
   }
 
-  size_t GeneratedMesh::shell_element_count_proc(ShellLocation loc) const
+  int64_t GeneratedMesh::shell_element_count_proc(ShellLocation loc) const
   {
     switch (loc) {
     case MX:
@@ -506,10 +506,10 @@ namespace Iogn {
     return 0;
   }
 
-  size_t GeneratedMesh::nodeset_node_count(size_t id) const
+  int64_t GeneratedMesh::nodeset_node_count(int64_t id) const
   {
     // id is position in nodeset list + 1
-    assert(id > 0 && id <= nodesets.size());
+    assert(id > 0 && (size_t)id <= nodesets.size());
     ShellLocation loc = nodesets[id-1];
     switch (loc) {
     case MX:
@@ -525,10 +525,10 @@ namespace Iogn {
     return 0;
   }
 
-  size_t GeneratedMesh::nodeset_node_count_proc(size_t id) const
+  int64_t GeneratedMesh::nodeset_node_count_proc(int64_t id) const
   {
     // id is position in nodeset list + 1
-    assert(id > 0 && id <= nodesets.size());
+    assert(id > 0 && (size_t)id <= nodesets.size());
     ShellLocation loc = nodesets[id-1];
     switch (loc) {
     case MX:
@@ -551,10 +551,10 @@ namespace Iogn {
     return 0;
   }
 
-  size_t GeneratedMesh::sideset_side_count(size_t id) const
+  int64_t GeneratedMesh::sideset_side_count(int64_t id) const
   {
     // id is position in sideset list + 1
-    assert(id > 0 && id <= sidesets.size());
+    assert(id > 0 && (size_t)id <= sidesets.size());
     ShellLocation loc = sidesets[id-1];
     switch (loc) {
     case MX:
@@ -570,10 +570,10 @@ namespace Iogn {
     return 0;
   }
 
-  size_t GeneratedMesh::sideset_side_count_proc(size_t id) const
+  int64_t GeneratedMesh::sideset_side_count_proc(int64_t id) const
   {
     // id is position in sideset list + 1
-    assert(id > 0 && id <= sidesets.size());
+    assert(id > 0 && (size_t)id <= sidesets.size());
     ShellLocation loc = sidesets[id-1];
     switch (loc) {
     case MX:
@@ -596,7 +596,7 @@ namespace Iogn {
     return 0;
   }
 
-  std::pair<std::string,int> GeneratedMesh::topology_type(size_t block_number) const
+  std::pair<std::string,int> GeneratedMesh::topology_type(int64_t block_number) const
   {
     assert(block_number <= block_count() && block_number > 0);
 
@@ -607,73 +607,83 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_map(std::vector<int> &map)
+  void GeneratedMesh::node_map(Int64Vector &map)
   {
-    size_t count = node_count_proc();
-    map.resize(count);
-    size_t offset = myStartZ * (numX+1) * (numY+1);
-    for (size_t i=0; i < count; i++) {
-      map[i] = static_cast<int>(offset + i + 1);
+    int64_t count = node_count_proc();
+    map.reserve(count);
+    int64_t offset = myStartZ * (numX+1) * (numY+1);
+    for (int64_t i=0; i < count; i++) {
+      map.push_back(offset + i + 1);
     }
   }
 
-  size_t GeneratedMesh::communication_node_count_proc() const
+  void GeneratedMesh::node_map(IntVector &map)
   {
-    size_t count = (numX+1) * (numY+1);
+    int count = node_count_proc();
+    map.resize(count);
+    int offset = myStartZ * (numX+1) * (numY+1);
+    for (int i=0; i < count; i++) {
+      map[i] = offset + i + 1;
+    }
+  }
+
+  int64_t GeneratedMesh::communication_node_count_proc() const
+  {
+    int64_t count = (numX+1) * (numY+1);
     if (myProcessor != 0 && myProcessor != processorCount-1)
       count *= 2;
     
     return count;
   }
 
-  void GeneratedMesh::node_communication_map(std::vector<int> &map, std::vector<int> &proc)
+  void GeneratedMesh::node_communication_map(Int64Vector &map, std::vector<int> &proc)
   {
-    size_t count = (numX+1) * (numY+1);
-    size_t slab = count;
+    int64_t count = (numX+1) * (numY+1);
+    int64_t slab = count;
     if (myProcessor != 0 && myProcessor != processorCount-1)
       count *= 2;
 
     map.resize(count);
     proc.resize(count);
-    size_t j = 0;
+    int64_t j = 0;
     if (myProcessor != 0) {
-      size_t offset = myStartZ * (numX+1) * (numY+1);
-      for (size_t i=0; i < slab; i++) {
-	map[j] = static_cast<int>(offset + i + 1);
+      int64_t offset = myStartZ * (numX+1) * (numY+1);
+      for (int64_t i=0; i < slab; i++) {
+	map[j] = offset + i + 1;
 	proc[j++] = static_cast<int>(myProcessor-1);
       }
     }
     if (myProcessor != processorCount-1) {
-      size_t offset = (myStartZ + myNumZ) * (numX+1) * (numY+1);
-      for (size_t i=0; i < slab; i++) {
-	map[j] = static_cast<int>(offset + i + 1);
+      int64_t offset = (myStartZ + myNumZ) * (numX+1) * (numY+1);
+      for (int64_t i=0; i < slab; i++) {
+	map[j] = offset + i + 1;
 	proc[j++] = static_cast<int>(myProcessor+1);
       }
     }
   }
 
-  void GeneratedMesh::element_map(size_t block_number, std::vector<int> &map) const
+  void GeneratedMesh::element_map(int64_t block_number, Int64Vector &map) const
   {
     assert(block_number <= block_count() && block_number > 0);
 
-    size_t count = element_count_proc(block_number);
-    map.resize(count);
+    int64_t count = element_count_proc(block_number);
+    map.reserve(count);
 
     if (block_number == 1) {
       // Hex block...
       count = element_count_proc(1);
-      size_t offset = myStartZ * numX * numY;
-      for (size_t i=0; i < count; i++) {
-	map[i] = static_cast<int>(offset + i + 1);
+      int64_t offset = myStartZ * numX * numY;
+      for (int64_t i=0; i < count; i++) {
+	map.push_back(offset + i + 1);
       }
     } else {
-      size_t start = element_count(1);
+      int64_t start = element_count(1);
 
       // Shell blocks...
-      for (size_t ib=0; ib < shellBlocks.size(); ib++) {
+      for (int64_t ib=0; (size_t)ib < shellBlocks.size(); ib++) {
 	count = element_count_proc(ib+2);
-	if (static_cast<size_t>(block_number) == ib + 2) {
-	  size_t offset = 0;
+	if (block_number == ib + 2) {
+	  int64_t offset = 0;
 	  ShellLocation loc = shellBlocks[ib];
 
 	  switch (loc) {
@@ -692,8 +702,8 @@ namespace Iogn {
 	    offset = 0;
 	    break;
 	  }
-	  for (size_t i=0; i < count; i++) {
-	    map[i] = static_cast<int>(start + offset + i + 1);
+	  for (int64_t i=0; i < count; i++) {
+	    map.push_back(start + offset + i + 1);
 	  }
 	} else {
 	  start += element_count(ib+2);
@@ -702,23 +712,72 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::element_map(std::vector<int> &map) const
+  void GeneratedMesh::element_map(int block_number, IntVector &map) const
   {
-    size_t count = element_count_proc();
+    assert(block_number <= block_count() && block_number > 0);
+
+    int count = element_count_proc(block_number);
     map.resize(count);
 
-    size_t k = 0;
+    if (block_number == 1) {
+      // Hex block...
+      count = element_count_proc(1);
+      int offset = myStartZ * numX * numY;
+      for (int i=0; i < count; i++) {
+	map[i] = offset + i + 1;
+      }
+    } else {
+      int start = element_count(1);
+
+      // Shell blocks...
+      for (int ib=0; (size_t)ib < shellBlocks.size(); ib++) {
+	count = element_count_proc(ib+2);
+	if (block_number == ib + 2) {
+	  int offset = 0;
+	  ShellLocation loc = shellBlocks[ib];
+
+	  switch (loc) {
+	  case MX:
+	  case PX:
+	    offset = myStartZ * numY;
+	    break;
+
+	  case MY:
+	  case PY:
+	    offset = myStartZ * numX;
+	    break;
+
+	  case MZ:
+	  case PZ:
+	    offset = 0;
+	    break;
+	  }
+	  for (int i=0; i < count; i++) {
+	    map[i] = start + offset + i + 1;
+	  }
+	} else {
+	  start += element_count(ib+2);
+	}
+      }
+    }
+  }
+
+  void GeneratedMesh::element_map(Int64Vector &map) const
+  {
+    int64_t count = element_count_proc();
+    map.reserve(count);
+
     // Hex block...
     count = element_count_proc(1);
-    size_t offset = myStartZ * numX * numY;
-    for (size_t i=0; i < count; i++) {
-      map[k++] = static_cast<int>(offset + i + 1);
+    int64_t offset = myStartZ * numX * numY;
+    for (int64_t i=0; i < count; i++) {
+      map.push_back(offset + i + 1);
     }
 
-    size_t start = element_count(1);
+    int64_t start = element_count(1);
 
     // Shell blocks...
-    for (size_t ib=0; ib < shellBlocks.size(); ib++) {
+    for (int64_t ib=0; (size_t)ib < shellBlocks.size(); ib++) {
       count = element_count_proc(ib+2);
       offset = 0;
       ShellLocation loc = shellBlocks[ib];
@@ -739,20 +798,64 @@ namespace Iogn {
 	offset = 0;
 	break;
       }
-      for (size_t i=0; i < count; i++) {
-	map[k++] = static_cast<int>(start + offset + i + 1);
+      for (int64_t i=0; i < count; i++) {
+	map.push_back(start + offset + i + 1);
       }
       start += element_count(ib+2);
     }
   }
 
-  void GeneratedMesh::element_surface_map(ShellLocation loc, std::vector<int> &map) const
+  void GeneratedMesh::element_map(IntVector &map) const
   {
-    size_t count = shell_element_count_proc(loc);
+    int count = element_count_proc();
+    map.resize(count);
+
+    int k = 0;
+    // Hex block...
+    count = element_count_proc(1);
+    int offset = myStartZ * numX * numY;
+    for (int i=0; i < count; i++) {
+      map[k++] = offset + i + 1;
+    }
+
+    int start = element_count(1);
+
+    // Shell blocks...
+    for (int ib=0; (size_t)ib < shellBlocks.size(); ib++) {
+      count = element_count_proc(ib+2);
+      offset = 0;
+      ShellLocation loc = shellBlocks[ib];
+
+      switch (loc) {
+      case MX:
+      case PX:
+	offset = myStartZ * numY;
+	break;
+
+      case MY:
+      case PY:
+	offset = myStartZ * numX;
+	break;
+
+      case MZ:
+      case PZ:
+	offset = 0;
+	break;
+      }
+      for (int i=0; i < count; i++) {
+	map[k++] = start + offset + i + 1;
+      }
+      start += element_count(ib+2);
+    }
+  }
+
+  void GeneratedMesh::element_surface_map(ShellLocation loc, Int64Vector &map) const
+  {
+    int64_t count = shell_element_count_proc(loc);
     map.resize(2*count);
 
-    size_t index  = 0;
-    size_t offset = 0;
+    int64_t index  = 0;
+    int64_t offset = 0;
 
     switch (loc) {
     case MX:
@@ -828,10 +931,17 @@ namespace Iogn {
   void GeneratedMesh::coordinates(std::vector<double> &coord) const
   {
     /* create global coordinates */
-    size_t count = node_count_proc();
+    int64_t count = node_count_proc();
     coord.resize(count * 3);
+    coordinates(&coord[0]);
+  }
 
-    size_t k = 0;
+  void GeneratedMesh::coordinates(double *coord) const
+  {
+    /* create global coordinates */
+    int64_t count = node_count_proc();
+
+    int64_t k = 0;
     for (size_t m=myStartZ; m < myStartZ+myNumZ+1; m++) {
       for (size_t i=0; i < numY+1; i++) {
 	for (size_t j=0; j < numX+1; j++) {
@@ -843,7 +953,7 @@ namespace Iogn {
     }
 
     if (doRotation) {
-      for (size_t i=0; i < count*3; i+=3) {
+      for (int64_t i=0; i < count*3; i+=3) {
 	double xn = coord[i+0];
 	double yn = coord[i+1];
 	double zn = coord[i+2];
@@ -859,43 +969,89 @@ namespace Iogn {
 				  std::vector<double> &z) const
   {
     /* create global coordinates */
-    size_t count = node_count_proc();
-    x.resize(count);
-    y.resize(count);
-    z.resize(count);
+    int64_t count = node_count_proc();
+    x.reserve(count);
+    y.reserve(count);
+    z.reserve(count);
 
-    size_t k = 0;
+    int64_t k = 0;
     for (size_t m=myStartZ; m < myStartZ+myNumZ+1; m++) {
       for (size_t i=0; i < numY+1; i++) {
 	for (size_t j=0; j < numX+1; j++) {
-	  x[k] = sclX * static_cast<double>(j) + offX;
-	  y[k] = sclY * static_cast<double>(i) + offY;
-	  z[k] = sclZ * static_cast<double>(m) + offZ;
+	  x.push_back(sclX * static_cast<double>(j) + offX);
+	  y.push_back(sclY * static_cast<double>(i) + offY);
+	  z.push_back(sclZ * static_cast<double>(m) + offZ);
 	  ++k;
 	}
       }
     }
     if (doRotation) {
-      for (size_t i=0; i < count; i++) {
+      for (int64_t i=0; i < count; i++) {
 	double xn = x[i];
 	double yn = y[i];
 	double zn = z[i];
-	x[i] = xn * rotmat[0][0] + yn * rotmat[1][0] + zn * rotmat[2][0];
-	y[i] = xn * rotmat[0][1] + yn * rotmat[1][1] + zn * rotmat[2][1];
-	z[i] = xn * rotmat[0][2] + yn * rotmat[1][2] + zn * rotmat[2][2];
+	x.push_back(xn * rotmat[0][0] + yn * rotmat[1][0] + zn * rotmat[2][0]);
+	y.push_back(xn * rotmat[0][1] + yn * rotmat[1][1] + zn * rotmat[2][1]);
+	z.push_back(xn * rotmat[0][2] + yn * rotmat[1][2] + zn * rotmat[2][2]);
       }
     }
   }
 
-  void GeneratedMesh::connectivity(size_t block_number, std::vector<int> &connect) const
+  void GeneratedMesh::coordinates(int component,
+				  std::vector<double> &xyz) const
+  {
+    assert(!doRotation);
+    /* create global coordinates */
+    size_t count = node_count_proc();
+    xyz.reserve(count);
+
+    if (component == 1) {
+      for (size_t m=myStartZ; m < myStartZ+myNumZ+1; m++) {
+	for (size_t i=0; i < numY+1; i++) {
+	  for (size_t j=0; j < numX+1; j++) {
+	    xyz.push_back(sclX * static_cast<double>(j) + offX);
+	  }
+	}
+      }
+    }
+    else if (component == 2) {
+      for (size_t m=myStartZ; m < myStartZ+myNumZ+1; m++) {
+	for (size_t i=0; i < numY+1; i++) {
+	  for (size_t j=0; j < numX+1; j++) {
+	    xyz.push_back(sclY * static_cast<double>(i) + offY);
+	  }
+	}
+      }
+    }
+    else if (component == 3) {
+      for (size_t m=myStartZ; m < myStartZ+myNumZ+1; m++) {
+	for (size_t i=0; i < numY+1; i++) {
+	  for (size_t j=0; j < numX+1; j++) {
+	    xyz.push_back(sclZ * static_cast<double>(m) + offZ);
+	  }
+	}
+      }
+    }    
+  }
+
+  void GeneratedMesh::connectivity(int64_t block_number, Int64Vector &connect) const
+  {
+    if (block_number == 1) {  // HEX Element Block
+      connect.resize(element_count_proc(block_number)*8);
+    } else {
+      connect.resize(element_count_proc(block_number)*4);
+    }
+    connectivity(block_number, &connect[0]);
+  }
+
+  void GeneratedMesh::connectivity(int64_t block_number, int64_t *connect) const
   {
     assert(block_number <= block_count());
 
-    size_t xp1yp1 = (numX+1) * (numY+1);
+    int64_t xp1yp1 = (numX+1) * (numY+1);
 
     /* build connectivity array (node list) for mesh */
     if (block_number == 1) {  // HEX Element Block
-      connect.resize(element_count_proc(block_number)*8);
 
       size_t cnt = 0;
       for (size_t m=myStartZ; m < myNumZ+myStartZ; m++) {
@@ -903,21 +1059,20 @@ namespace Iogn {
 	  for (size_t j=0; j < numX; j++, k++) {
 	    size_t base = (m*xp1yp1) + k + i + 1;
 	    ;
-	    connect[cnt++] = static_cast<int>(base);
-	    connect[cnt++] = static_cast<int>(base+1);
-	    connect[cnt++] = static_cast<int>(base+numX+2);
-	    connect[cnt++] = static_cast<int>(base+numX+1);
+	    connect[cnt++] = base;
+	    connect[cnt++] = base+1;
+	    connect[cnt++] = base+numX+2;
+	    connect[cnt++] = base+numX+1;
 
-	    connect[cnt++] = static_cast<int>(xp1yp1 + base);
-	    connect[cnt++] = static_cast<int>(xp1yp1 + base+1);
-	    connect[cnt++] = static_cast<int>(xp1yp1 + base+numX+2);
-	    connect[cnt++] = static_cast<int>(xp1yp1 + base+numX+1);
+	    connect[cnt++] = xp1yp1 + base;
+	    connect[cnt++] = xp1yp1 + base+1;
+	    connect[cnt++] = xp1yp1 + base+numX+2;
+	    connect[cnt++] = xp1yp1 + base+numX+1;
 	  }
 	}
       }
     } else { // Shell blocks....
       ShellLocation loc = shellBlocks[block_number-2];
-      connect.resize(element_count_proc(block_number)*4);
 
       size_t cnt = 0;
       switch (loc) {
@@ -926,10 +1081,10 @@ namespace Iogn {
 	  size_t layer_off = i * xp1yp1;
 	  for (size_t j=0; j < numY; j++) {
 	    size_t base = layer_off + j * (numX+1) + 1 + myStartZ * xp1yp1;
-	    connect[cnt++] = static_cast<int>(base);
-	    connect[cnt++] = static_cast<int>(base + xp1yp1);
-	    connect[cnt++] = static_cast<int>(base + xp1yp1 + (numX+1));
-	    connect[cnt++] = static_cast<int>(base + (numX+1));
+	    connect[cnt++] = base;
+	    connect[cnt++] = base + xp1yp1;
+	    connect[cnt++] = base + xp1yp1 + (numX+1);
+	    connect[cnt++] = base + (numX+1);
 	  }
 	}
 	break;
@@ -938,10 +1093,10 @@ namespace Iogn {
 	  size_t layer_off = i * xp1yp1;
 	  for (size_t j=0; j < numY; j++) {
 	    size_t base = layer_off + j * (numX+1) + numX + 1 + myStartZ * xp1yp1;
-	    connect[cnt++] = static_cast<int>(base);
-	    connect[cnt++] = static_cast<int>(base + (numX+1));
-	    connect[cnt++] = static_cast<int>(base + xp1yp1 + (numX+1));
-	    connect[cnt++] = static_cast<int>(base + xp1yp1);
+	    connect[cnt++] = base;
+	    connect[cnt++] = base + (numX+1);
+	    connect[cnt++] = base + xp1yp1 +(numX+1);
+	    connect[cnt++] = base + xp1yp1;
 	  }
 	}
 	break;
@@ -950,10 +1105,10 @@ namespace Iogn {
 	  size_t layer_off = i * xp1yp1;
 	  for (size_t j=0; j < numX; j++) {
 	    size_t base = layer_off + j + 1 + myStartZ * xp1yp1;
-	    connect[cnt++] = static_cast<int>(base);
-	    connect[cnt++] = static_cast<int>(base + 1);
-	    connect[cnt++] = static_cast<int>(base + xp1yp1 + 1);
-	    connect[cnt++] = static_cast<int>(base + xp1yp1);
+	    connect[cnt++] = base;
+	    connect[cnt++] = base + 1;
+	    connect[cnt++] = base + xp1yp1 + 1;
+	    connect[cnt++] = base + xp1yp1;
 	  }
 	}
 	break;
@@ -962,10 +1117,10 @@ namespace Iogn {
 	  size_t layer_off = i * xp1yp1;
 	  for (size_t j=0; j < numX; j++) {
 	    size_t base = layer_off + (numX+1)*(numY) + j + 1 + myStartZ * xp1yp1;
-	    connect[cnt++] = static_cast<int>(base);
-	    connect[cnt++] = static_cast<int>(base + xp1yp1);
-	    connect[cnt++] = static_cast<int>(base + xp1yp1 + 1);
-	    connect[cnt++] = static_cast<int>(base + 1);
+	    connect[cnt++] = base;
+	    connect[cnt++] = base + xp1yp1;
+	    connect[cnt++] = base + xp1yp1 + 1;
+	    connect[cnt++] = base + 1;
 	  }
 	}
 	break;
@@ -974,10 +1129,10 @@ namespace Iogn {
 	  for (size_t i=0, k=0; i < numY; i++) {
 	    for (size_t j=0; j < numX; j++, k++) {
 	      size_t base = i + k + 1 + myStartZ * xp1yp1;
-	      connect[cnt++] = static_cast<int>(base);
-	      connect[cnt++] = static_cast<int>(base+numX+1);
-	      connect[cnt++] = static_cast<int>(base+numX+2);
-	      connect[cnt++] = static_cast<int>(base+1);
+	      connect[cnt++] = base;
+	      connect[cnt++] = base+numX+1;
+	      connect[cnt++] = base+numX+2;
+	      connect[cnt++] = base+1;
 	    }
 	  }
 	}
@@ -987,24 +1142,146 @@ namespace Iogn {
 	  for (size_t i=0, k=0; i < numY; i++) {
 	    for (size_t j=0; j < numX; j++, k++) {
 	      size_t base = xp1yp1 * (numZ - myStartZ) + k + i + 1 + myStartZ * xp1yp1;
-	      connect[cnt++] = static_cast<int>(base);
-	      connect[cnt++] = static_cast<int>(base+1);
-	      connect[cnt++] = static_cast<int>(base+numX+2);
-	      connect[cnt++] = static_cast<int>(base+numX+1);
+	      connect[cnt++] = base;
+	      connect[cnt++] = base+1;
+	      connect[cnt++] = base+numX+2;
+	      connect[cnt++] = base+numX+1;
 	    }
 	  }
 	}
 	break;
       }
-      assert(cnt == 4 * element_count_proc(block_number));
+      assert(cnt == size_t(4 * element_count_proc(block_number)));
     }
     return;
   }
 
-  void GeneratedMesh::nodeset_nodes(size_t id, std::vector<int> &nodes) const
+  void GeneratedMesh::connectivity(int64_t block_number, IntVector &connect) const
+  {
+    if (block_number == 1) {  // HEX Element Block
+      connect.resize(element_count_proc(block_number)*8);
+    } else {
+      connect.resize(element_count_proc(block_number)*4);
+    }
+    connectivity(block_number, &connect[0]);
+  }
+
+  void GeneratedMesh::connectivity(int64_t block_number, int *connect) const
+  {
+    assert(block_number <= block_count());
+
+    int xp1yp1 = (numX+1) * (numY+1);
+
+    /* build connectivity array (node list) for mesh */
+    if (block_number == 1) {  // HEX Element Block
+
+      int cnt = 0;
+      for (size_t m=myStartZ; m < myNumZ+myStartZ; m++) {
+	for (size_t i=0, k=0; i < numY; i++) {
+	  for (size_t j=0; j < numX; j++, k++) {
+	    size_t base = (m*xp1yp1) + k + i + 1;
+	    ;
+	    connect[cnt++] = base;
+	    connect[cnt++] = base+1;
+	    connect[cnt++] = base+numX+2;
+	    connect[cnt++] = base+numX+1;
+
+	    connect[cnt++] = xp1yp1 + base;
+	    connect[cnt++] = xp1yp1 + base+1;
+	    connect[cnt++] = xp1yp1 + base+numX+2;
+	    connect[cnt++] = xp1yp1 + base+numX+1;
+	  }
+	}
+      }
+    } else { // Shell blocks....
+      ShellLocation loc = shellBlocks[block_number-2];
+
+      size_t cnt = 0;
+      switch (loc) {
+      case MX:  // Minumum X Face
+	for (size_t i=0; i < myNumZ; i++) {
+	  size_t layer_off = i * xp1yp1;
+	  for (size_t j=0; j < numY; j++) {
+	    size_t base = layer_off + j * (numX+1) + 1 + myStartZ * xp1yp1;
+	    connect[cnt++] = base;
+	    connect[cnt++] = base + xp1yp1;
+	    connect[cnt++] = base + xp1yp1 + (numX+1);
+	    connect[cnt++] = base + (numX+1);
+	  }
+	}
+	break;
+      case PX: // Maximum X Face
+	for (size_t i=0; i < myNumZ; i++) {
+	  size_t layer_off = i * xp1yp1;
+	  for (size_t j=0; j < numY; j++) {
+	    size_t base = layer_off + j * (numX+1) + numX + 1 + myStartZ * xp1yp1;
+	    connect[cnt++] = base;
+	    connect[cnt++] = base + (numX+1);
+	    connect[cnt++] = base + xp1yp1 +(numX+1);
+	    connect[cnt++] = base + xp1yp1;
+	  }
+	}
+	break;
+      case MY: // Minumum Y Face
+	for (size_t i=0; i < myNumZ; i++) {
+	  size_t layer_off = i * xp1yp1;
+	  for (size_t j=0; j < numX; j++) {
+	    size_t base = layer_off + j + 1 + myStartZ * xp1yp1;
+	    connect[cnt++] = base;
+	    connect[cnt++] = base + 1;
+	    connect[cnt++] = base + xp1yp1 + 1;
+	    connect[cnt++] = base + xp1yp1;
+	  }
+	}
+	break;
+      case PY: // Maximum Y Face
+	for (size_t i=0; i < myNumZ; i++) {
+	  size_t layer_off = i * xp1yp1;
+	  for (size_t j=0; j < numX; j++) {
+	    size_t base = layer_off + (numX+1)*(numY) + j + 1 + myStartZ * xp1yp1;
+	    connect[cnt++] = base;
+	    connect[cnt++] = base + xp1yp1;
+	    connect[cnt++] = base + xp1yp1 + 1;
+	    connect[cnt++] = base + 1;
+	  }
+	}
+	break;
+      case MZ: // Minumum Z Face
+	if (myProcessor == 0) {
+	  for (size_t i=0, k=0; i < numY; i++) {
+	    for (size_t j=0; j < numX; j++, k++) {
+	      size_t base = i + k + 1 + myStartZ * xp1yp1;
+	      connect[cnt++] = base;
+	      connect[cnt++] = base+numX+1;
+	      connect[cnt++] = base+numX+2;
+	      connect[cnt++] = base+1;
+	    }
+	  }
+	}
+	break;
+      case PZ: // Maximum Z Face
+	if (myProcessor == processorCount-1) {
+	  for (size_t i=0, k=0; i < numY; i++) {
+	    for (size_t j=0; j < numX; j++, k++) {
+	      size_t base = xp1yp1 * (numZ - myStartZ) + k + i + 1 + myStartZ * xp1yp1;
+	      connect[cnt++] = base;
+	      connect[cnt++] = base+1;
+	      connect[cnt++] = base+numX+2;
+	      connect[cnt++] = base+numX+1;
+	    }
+	  }
+	}
+	break;
+      }
+      assert(cnt == size_t(4 * element_count_proc(block_number)));
+    }
+    return;
+  }
+
+  void GeneratedMesh::nodeset_nodes(int64_t id, Int64Vector &nodes) const
   {
     // id is position in nodeset list + 1
-    assert(id > 0 && id <= nodesets.size());
+    assert(id > 0 && (size_t)id <= nodesets.size());
     ShellLocation loc = nodesets[id-1];
     nodes.resize(nodeset_node_count_proc(id));
 
@@ -1062,17 +1339,17 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::sideset_elem_sides(size_t id, std::vector<int> &elem_sides) const
+  void GeneratedMesh::sideset_elem_sides(int64_t id, Int64Vector &elem_sides) const
   {
     // id is position in sideset list + 1
-    assert(id > 0 && id <= sidesets.size());
+    assert(id > 0 && (size_t)id <= sidesets.size());
     ShellLocation loc = sidesets[id-1];
     
     // If there is a shell block on this face, then the sideset is
     // applied to the shell block; if not, it is applied to the
     // underlying hex elements.
     bool underlying_shell = false;
-    size_t shell_block = 0;
+    int64_t shell_block = 0;
     for (size_t i = 0; i < shellBlocks.size(); i++) {
       if (shellBlocks[i] == loc) {
 	underlying_shell = true;
@@ -1088,9 +1365,9 @@ namespace Iogn {
       // Insert face_ordinal in between each entry in elem_sides...
       // Face will be 0 for all shells...
       elem_sides.resize(2*sideset_side_count_proc(id));
-      int face_ordinal = 0;
-      int i = 2* (int)sideset_side_count_proc(id) - 1;
-      int j =    (int)sideset_side_count_proc(id) - 1;
+      ssize_t face_ordinal = 0;
+      ssize_t i = 2* sideset_side_count_proc(id) - 1;
+      ssize_t j =    sideset_side_count_proc(id) - 1;
       while (i >= 0) {
 	elem_sides[i--] = face_ordinal;
 	elem_sides[i--] = elem_sides[j--];
@@ -1139,7 +1416,7 @@ namespace Iogn {
     by[n3][n3] = 1.0;
 
     double res[3][3];
-    for (size_t i=0; i < 3; i++) {
+    for (int i=0; i < 3; i++) {
       res[i][0] = rotmat[i][0]*by[0][0] + rotmat[i][1]*by[1][0] + rotmat[i][2]*by[2][0];
       res[i][1] = rotmat[i][0]*by[0][1] + rotmat[i][1]*by[1][1] + rotmat[i][2]*by[2][1];
       res[i][2] = rotmat[i][0]*by[0][2] + rotmat[i][1]*by[1][2] + rotmat[i][2]*by[2][2];

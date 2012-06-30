@@ -86,6 +86,8 @@ namespace stk {
         {
           enum { SpatialDim = 2 };
           
+          set_bounding_box(0,(double)NX,0,(double)NY);
+
           // Set topology of the element block part
           //stk::mesh::fem::set_cell_topology(meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
           stk::mesh::fem::set_cell_topology<QuadOrTriTopo>(quad_part);
@@ -116,6 +118,13 @@ namespace stk {
           if (generate_sidesets)
             generate_sides_meta( );
 
+        }
+        void set_bounding_box(double xmin, double xmax, double ymin, double ymax)
+        {
+          m_xmin=xmin;
+          m_xmax=xmax;
+          m_ymin=ymin;
+          m_ymax=ymax;
         }
 
         void generate_mesh() {
@@ -209,11 +218,11 @@ namespace stk {
 
                   Scalar * data = stk::mesh::field_data( coord_field , *node );
 
-                   data[0] = nx ;
-                   data[1] = ny ;
-//                  data[0] = -1 + 2.0*((double)nx) / ((double)NX) ;
-//                  data[1] = -1 + 2.0*((double)ny) / ((double)NY) ;
-
+                  //data[0] = nx ;
+                  // data[1] = ny ;
+                  data[0] = m_xmin + (m_xmax-m_xmin)*((double)nx) / ((double)NX) ;
+                  data[1] = m_ymin + (m_ymax-m_ymin)*((double)ny) / ((double)NY) ;
+                   
                 }
               }
             }
@@ -322,29 +331,29 @@ namespace stk {
               unsigned ix1 = NX;
               unsigned iy0 = 0;
               unsigned iy1 = NY;
-              unsigned ixp = 0;
-              unsigned iyp = 0;
+              //unsigned ixp = 0;
+              //unsigned iyp = 0;
               switch(i_side)
                 {
                 case 0:
                   iy0 = 0;
                   iy1 = 1;
-                  ixp = 1;
+                  //ixp = 1;
                   break;
                 case 1:
                   ix0 = NX-1;
                   ix1 = ix0+1;
-                  iyp = 1;
+                  //iyp = 1;
                   break;
                 case 2:
                   iy0 = NY-1;
                   iy1 = iy0+1;
-                  ixp = 1;
+                  //ixp = 1;
                   break;
                 case 3:
                   ix0 = 0;
                   ix1 = 1;
-                  iyp = 1;
+                  //iyp = 1;
                   break;
                 }
               for (unsigned ix = ix0; ix < ix1; ix++)
@@ -362,7 +371,7 @@ namespace stk {
 
                               if (0)
                                 {
-                                  std::cout << "P[" <<  bulk_data.parallel_rank() << "]"
+                                  std::cout << "P[" <<  bulk_data.parallel_rank() << "] name= " << side_parts[i_side]->name()
                                             << " ix= " << ix
                                             << " iy= " << iy
                                             << " i_side= " << i_side
@@ -399,7 +408,7 @@ namespace stk {
 
                               if (0)
                                 {
-                                  std::cout << "P[" <<  bulk_data.parallel_rank() << "]"
+                                  std::cout << "P[" <<  bulk_data.parallel_rank() << "] name= " << side_parts[i_side]->name()
                                             << " ix= " << ix
                                             << " iy= " << iy
                                             << " i_side= " << i_side
@@ -433,6 +442,12 @@ namespace stk {
         QuadFixture();
         QuadFixture( const QuadFixture & );
         QuadFixture & operator = ( const QuadFixture & );
+        
+        double m_xmin;
+        double m_xmax;
+        double m_ymin;
+        double m_ymax;
+        
       };
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

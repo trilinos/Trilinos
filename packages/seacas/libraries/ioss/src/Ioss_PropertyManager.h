@@ -67,8 +67,6 @@ namespace Ioss {
     size_t count() const;
 
   private:
-    // Disallow copying; don't implement...
-    PropertyManager(const PropertyManager&);
     PropertyManager& operator=(const PropertyManager& from); // do not implement
 
     PropMapType properties;

@@ -27,14 +27,14 @@ namespace stk {
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Quadrilateral<4>, shards::Quadrilateral<4>  >(eMesh)
       {
         m_primaryEntityRank = eMesh.face_rank(); 
-        if (m_eMesh.getSpatialDim() == 2)
+        if (m_eMesh.get_spatial_dim() == 2)
           m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
 
 #if EDGE_BREAKER_Q4_Q4_4_S
-        if (m_eMesh.getSpatialDim() == 2)
+        if (m_eMesh.get_spatial_dim() == 2)
           m_edge_breaker =  new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) ;
         else
           m_edge_breaker = 0;
@@ -51,14 +51,14 @@ namespace stk {
         EXCEPTWATCH;
         bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
 
-        if (eMesh.getSpatialDim() == 2)
+        if (eMesh.get_spatial_dim() == 2)
           {
             bp[0] = this;
 #if EDGE_BREAKER_Q4_Q4_4_S
             bp[1] = m_edge_breaker;
 #endif
           }
-        else if (eMesh.getSpatialDim() == 3)
+        else if (eMesh.get_spatial_dim() == 3)
           {
             // FIXME
             //             std::cout << "ERROR" ;
@@ -72,7 +72,7 @@ namespace stk {
       {
         needed_entities.resize(2);
         needed_entities[0].first = m_eMesh.edge_rank();    
-        needed_entities[1].first = (m_eMesh.getSpatialDim() == 2 ? m_eMesh.element_rank() : m_eMesh.face_rank());
+        needed_entities[1].first = (m_eMesh.get_spatial_dim() == 2 ? m_eMesh.element_rank() : m_eMesh.face_rank());
         setToOne(needed_entities);
       }
 

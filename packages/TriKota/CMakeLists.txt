@@ -52,8 +52,10 @@ IF(TriKota_ENABLE_DakotaCMake)
     SET(DAKOTA_HAVE_MPI ON CACHE BOOL "DAKOTA MPI set by Trilinos")
   ENDIF()
 
-  # Tell DAKOTA (and all sub-packages) to use Trilinos for export targets
-  SET(ExportTarget Trilinos)
+  # Tell DAKOTA (and all sub-packages) to use PROJECT_NAME, e.g.,
+  # Trilinos or VERA for export targets.  For a non TriBITS system
+  # would instead want CMAKE_PROJECT_NAME
+  SET(ExportTarget ${PROJECT_NAME})
 
   # Tell Dakota it is building inside Trilinos
   # (affects use of Teuchos and exported lists of includes and libs)

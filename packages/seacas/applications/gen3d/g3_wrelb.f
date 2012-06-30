@@ -129,7 +129,7 @@ C      --Block id and start/end for blocks that become multiple blocks
          NRSTRT = 1
          IDEBL3 = IDELB(IELB)
          IBLK = 1
-
+         LSTID = 1
          IF (BLKTYP(IELB) .EQ. 'T') THEN
             NREND = IBPARM(1,IELB) - 1
             NBLK = IBPARM(4,IELB)

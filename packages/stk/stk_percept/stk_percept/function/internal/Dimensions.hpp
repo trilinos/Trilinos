@@ -28,7 +28,9 @@ namespace stk
       }
     };
 
+#ifndef SWIG
     std::ostream &operator<<(std::ostream& out, const Dimensions& dim);
+#endif
 
   }
 }

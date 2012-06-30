@@ -30,8 +30,8 @@ namespace impl {
 class EntityImpl {
 public:
 
-  ~EntityImpl();
   EntityImpl( const EntityKey & arg_key );
+  EntityImpl();
 
   // Exposed in external interface:
   EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
@@ -41,18 +41,21 @@ public:
   PairIterRelation relations( unsigned rank ) const ;
   PairIterRelation node_relations( ) const
   {
-    std::vector<Relation>::const_iterator i = m_relation.begin();
-    std::vector<Relation>::const_iterator e = m_relation.end();
-  
+    RelationVector::const_iterator i = m_relation.begin();
+    RelationVector::const_iterator e = m_relation.end();
+
     const Relation::raw_relation_id_type hi = Relation::raw_relation_id(1, 0);
     e = std::lower_bound( i , e , hi , LessRelation() );
-  
+
     return PairIterRelation( i , e );
   }
 
-  PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
-  PairIterEntityComm sharing() const ;
-  PairIterEntityComm comm( const Ghosting & sub ) const ;
+  RelationVector::const_iterator node_relation(unsigned ordinal) const
+  { return m_relation.begin() + ordinal; }
+
+  PairIterEntityComm comm() const;
+  PairIterEntityComm sharing() const;
+  PairIterEntityComm comm( const Ghosting & sub ) const;
 
   Bucket & bucket() const
   {
@@ -80,11 +83,11 @@ public:
                          bool is_back_relation = false);
 
   // Communication info access:
-  bool insert( const EntityCommInfo & );
-  bool erase(  const EntityCommInfo & ); ///< Erase this entry
-  bool erase(  const Ghosting & );       ///< Erase this ghosting info.
-  void comm_clear_ghosting(); ///< Clear ghosting
-  void comm_clear(); ///< Clear everything
+  bool insert( const EntityCommInfo & val );
+  bool erase( const EntityCommInfo & val );
+  bool erase( const Ghosting & ghost );
+  void comm_clear_ghosting();
+  void comm_clear();
 
   void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
   {
@@ -148,23 +151,67 @@ public:
   /** \brief  Log that this entity was created as a parallel copy. */
   void log_created_parallel_copy();
 
-  bool marked_for_destruction() const;
+  bool marked_for_destruction() const
+  {
+    // The original implementation of this method checked bucket capacity. In
+    // order to ensure that the addition of EntityLogDeleted does not change
+    // behavior, we put error check here.
+    //  ThrowErrorMsgIf((bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted),
+    //      "Inconsistent destruction state; " <<
+    //      "destroyed entities should be in the nil bucket and vice versa.\n" <<
+    //      "Problem is with entity: " <<
+    //      print_entity_key( MetaData::get( bucket() ), key() ) <<
+    //      "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
+    //      "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
+
+    return m_mod_log == EntityLogDeleted;
+  }
+
+  //set_key is only to be used for setting a key on a newly-constructed entity.
+  void set_key(EntityKey key);
+
+  //update_key is used to change the key for an entity that has been in use with
+  //a different key.
+  void update_key(EntityKey key);
 
  private:
 
-  const EntityKey         m_key ;        ///< Globally unique key
+  EntityKey               m_key ;        ///< Globally unique key
   RelationVector          m_relation ;   ///< This entity's relationships
-  EntityCommInfoVector    m_comm ;       ///< This entity's communications
   Bucket                * m_bucket ;     ///< Bucket for the entity's field data
   unsigned                m_bucket_ord ; ///< Ordinal within the bucket
   unsigned                m_owner_rank ; ///< Owner processors' rank
   size_t                  m_sync_count ; ///< Last membership change
   EntityModificationLog   m_mod_log ;
 
-  EntityImpl();
-  EntityImpl( const EntityImpl & ); ///< Copy constructor not allowed
+//  EntityImpl( const EntityImpl & ); ///< Copy constructor not allowed
   EntityImpl & operator = ( const EntityImpl & ); ///< Assignment operator not allowed
 };
+
+inline
+EntityImpl::EntityImpl( const EntityKey & arg_key )
+  : m_key(arg_key),
+    m_relation(),
+    m_bucket( NULL ),
+    m_bucket_ord(0),
+    m_owner_rank(0),
+    m_sync_count(0),
+    m_mod_log( EntityLogCreated )
+{
+  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
+}
+
+inline
+EntityImpl::EntityImpl()
+  : m_key(),
+    m_relation(),
+    m_bucket( NULL ),
+    m_bucket_ord(0),
+    m_owner_rank(0),
+    m_sync_count(0),
+    m_mod_log( EntityLogCreated )
+{
+}
 
 //----------------------------------------------------------------------
 

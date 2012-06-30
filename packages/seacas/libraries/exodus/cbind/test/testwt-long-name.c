@@ -80,7 +80,7 @@ int main (int argc, char **argv)
    printf ("after ex_create for test.exo, exoid = %d\n", exoid);
    printf (" cpu word size: %d io word size: %d\n",CPU_word_size,IO_word_size);
 
-   ex_set_max_name_length(exoid, 127); /* Using long names */
+   ex_set_option(exoid, EX_OPT_MAX_NAME_LENGTH, 127); /* Using long names */
 
    /* initialize file with parameters */
 

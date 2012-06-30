@@ -61,6 +61,16 @@ namespace fei {
     static const char* typeName()
       { return("FillableMat"); }
 
+    static double* getBeginPointer(FillableMat* /*mat*/)
+      {
+        return NULL;
+      }
+
+    static int getOffset(FillableMat* /*mat*/, int /*row*/, int /*col*/)
+      {
+        return -1;
+      }
+
     /** Set a specified scalar value throughout the matrix.
      */
     static int setValues(FillableMat* mat, double scalar)

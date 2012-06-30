@@ -5,7 +5,7 @@
 #include <math.h>
 
 /* Returns 2-norm of a double n-vector over range. */
-double    norm(double *vec, int beg, int end)
+double    ch_norm(double *vec, int beg, int end)
 {
     double    dot(double *vec1, int beg, int end, double *vec2);
 

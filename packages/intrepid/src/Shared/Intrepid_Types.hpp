@@ -120,7 +120,7 @@ namespace Intrepid {
   /** \brief  General purpose tolerance in, e.g., internal Newton's method to invert ref to phys maps
    */
   static const double INTREPID_TOL       = 10.0* INTREPID_THRESHOLD;
-  
+
   /** \enum   Intrepid::ECoordinates
       \brief  Enumeration of coordinate systems for geometrical entities (cells, points).
    */

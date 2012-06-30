@@ -88,11 +88,11 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
     testrd-long-name
     testwt-one-attrib
     testwt-partial
-    testrd-partial
     testrd-nsided
     testwt-nsided
     testrd-nfaced
     testwt-nfaced
+    test_nemesis
     create_mesh
     rd_wt_mesh
   )

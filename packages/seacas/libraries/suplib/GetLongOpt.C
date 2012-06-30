@@ -1,6 +1,7 @@
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 #include <GetLongOpt.h>
 #include <string.h>
+#include <sstream>
 
 GetLongOption::GetLongOption(const char optmark)
   : table(NULL), ustring(NULL), pname(NULL), last(NULL),
@@ -83,11 +84,15 @@ GetLongOption::parse(int argc, char * const *argv)
    while ( argc >= 1 ) {
       char *token = *++argv; --argc;
 
-      if ( token[0] != optmarker || token[1] == optmarker )
+      // '--' signifies end of options if followed by space
+      if ( token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2))
 	 break;	/* end of options */
 
       ++my_optind;
       char *tmptoken = ++token;
+      if (token[0] == optmarker) // Handle a double '--'
+	tmptoken = ++token;
+
       while ( *tmptoken && *tmptoken != '=' )
 	 ++tmptoken;
       /* (tmptoken - token) is now equal to the command line option
@@ -97,6 +102,7 @@ GetLongOption::parse(int argc, char * const *argv)
       enum { NoMatch, ExactMatch, PartialMatch, MultipleMatch}
       matchStatus = NoMatch;
 
+      std::ostringstream errmsg;
       Cell *pc = 0;	// pointer to the partially-matched cell
       for ( t = table; t != 0; t = t->next ) {
 	 if ( strncmp(t->option, token, (tmptoken - token)) == 0 ) {
@@ -120,14 +126,14 @@ GetLongOption::parse(int argc, char * const *argv)
 		 if (matchStatus == PartialMatch) {
 		   // First time, print the message header and the first
 		   // matched duplicate...
-		   std::cerr << "ERROR: " << pname
-			     << ": Multiple matches found for option '"
-			     << optmarker << strtok(token,"= ") << "'.\n";
-		   std::cerr << "\t" << optmarker << pc->option << ": "
-			<< pc->description << "\n";
+		   errmsg << "ERROR: " << pname
+			  << ": Multiple matches found for option '"
+			  << optmarker << strtok(token,"= ") << "'.\n";
+		   errmsg << "\t" << optmarker << pc->option << ": "
+			  << pc->description << "\n";
 		 }
-		 std::cerr << "\t" << optmarker << t->option  << ": "
-		      <<  t->description << "\n";
+		 errmsg << "\t" << optmarker << t->option  << ": "
+			<<  t->description << "\n";
 		 matchStatus = MultipleMatch;
 	       }
 	    }
@@ -147,7 +153,8 @@ GetLongOption::parse(int argc, char * const *argv)
 	 return -1;		/* no match */
       }
       else if ( matchStatus == MultipleMatch ) {
-	 return -1;		/* no match */
+	std::cerr << errmsg.str();
+	return -1;		/* no match */
       }
 
    } /* end while */
@@ -163,7 +170,7 @@ GetLongOption::parse(char * const str, char * const p)
    const char *name = p ? p : "GetLongOption";
 
    while ( token ) {
-      if ( token[0] != optmarker || token[1] == optmarker ) {
+     if ( token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2)) {
 	 std::cerr << name << ": nonoptions not allowed\n";
 	 return -1;	/* end of options */
       }
@@ -263,7 +270,8 @@ GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *nam
 	 return 0;
       }
       else {
-	 if ( nexttoken != 0 && nexttoken[0] != optmarker ) {
+	// KLUGE for exodiff "-steps -1" parsing.  need to do a better way...
+	if ( nexttoken != 0 && (nexttoken[0] != optmarker || (nexttoken[0] == optmarker && nexttoken[1] == '1') )) {
 	    c->value = nexttoken;
 	    return 1;
 	 }
@@ -295,4 +303,3 @@ GetLongOption::usage(std::ostream &outfile) const
    }
    outfile.flush();
 }
-

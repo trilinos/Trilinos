@@ -92,12 +92,12 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
   num_p = model->createInArgs().Np();
   num_g = model->createOutArgs().Ng();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
-                     std::endl << "Error in Piro::RythmosSolver " <<
-                     "Not Implemented for Np>1 : " << num_p << std::endl);
-  TEUCHOS_TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
-                     std::endl << "Error in Piro::RythmosSolver " <<
-                     "Not Implemented for Ng>1 : " << num_g << std::endl);
+//   TEUCHOS_TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
+//                      std::endl << "Error in Piro::RythmosSolver " <<
+//                      "Not Implemented for Np>1 : " << num_p << std::endl);
+//   TEUCHOS_TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
+//                      std::endl << "Error in Piro::RythmosSolver " <<
+//                      "Not Implemented for Ng>1 : " << num_g << std::endl);
 
   //
   *out << "\nA) Get the base parameter list ...\n";
@@ -229,6 +229,13 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::~RythmosSolver()
 {
+}
+
+template <typename Scalar>
+Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> > 
+Piro::RythmosSolver<Scalar>::getRythmosIntegrator() const
+{
+  return fwdStateIntegrator;
 }
 
 template<typename Scalar>

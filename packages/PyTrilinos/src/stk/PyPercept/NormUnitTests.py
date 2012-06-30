@@ -1,5 +1,6 @@
 import sys
-sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+sys.path.insert(0,"/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
 
 from mpi4py import MPI
 import unittest
@@ -19,10 +20,10 @@ class LocalFixture:
     self.num_z = num_z
     config_mesh = str(self.num_x) + "x" + str(self.num_y) + "x" + str(self.num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5"
 
-    self.eMesh.newMesh(GMeshSpec(config_mesh))
+    self.eMesh.new_mesh(GMeshSpec(config_mesh))
     self.eMesh.commit()
-    self.metaData = self.eMesh.getFEM_meta_data()
-    self.bulkData = self.eMesh.getBulkData()
+    self.metaData = self.eMesh.get_fem_meta_data()
+    self.bulkData = self.eMesh.get_bulk_data()
     self.coords_field = self.metaData.get_field("coordinates")
     self.sfx = StringFunction("x", "sfx", Dimensions(3), Dimensions(1))
     self.sfx_res = ConstantFunction(0.0, "sfx_res")
@@ -103,12 +104,12 @@ class NormUnitTests(unittest.TestCase):
        l2Norm = L2Norm(bulkData) 
 
        result = l2Norm.evaluate(identity) 
-       #result = evalNorm(bulkData, identity, 2)
+       #result = eval_norm(bulkData, identity, 2)
        
        self.assertAlmostEqual(1.0, result)
 
        print "TEST.norm.volume: writing gmesh_hex8_original_out.e .."
-       eMesh.saveAs("./gmesh_hex8_original_out.e")
+       eMesh.save_as("./gmesh_hex8_original_out.e")
        print "TEST.norm.volume: writing gmesh_hex8_original_out.e done"
 
        rmx = rotationMatrix(0, 30)
@@ -118,7 +119,7 @@ class NormUnitTests(unittest.TestCase):
        rm = rmx*rm
 
        print "TEST.norm.volume: writing gmesh_hex8_rotated_out.e .."
-       eMesh.saveAs("./gmesh_hex8_rotated_out.e")
+       eMesh.save_as("./gmesh_hex8_rotated_out.e")
        print "TEST.norm.volume: writing gmesh_hex8_rotated_out.e done"
 
        scx = pi 
@@ -179,7 +180,7 @@ class NormUnitTests(unittest.TestCase):
        sfx_res = fix.sfx_res
  
        ff_coords = FieldFunction("ff_coords", coords_field, bulkData, Dimensions(3), Dimensions(3), FieldFunction.SIMPLE_SEARCH)
-       ff_coords.addAlias("mc")
+       ff_coords.add_alias("mc")
 
        sfx_mc = StringFunction("mc[0]", "sfx_mc", Dimensions(3), Dimensions(1))
        sfx_mc1 = StringFunction("mc[0]", "sfx_mc1", Dimensions(3), Dimensions(1))
@@ -188,8 +189,8 @@ class NormUnitTests(unittest.TestCase):
        y = -0.49+.98*random01()
        z = -0.49+.98*random01()
 
-       self.assertAlmostEqual(evalFunc(x,y,z,0.0,sfx), evalFunc(x,y,z,0.0,sfx_mc))
-       self.assertAlmostEqual(evalFunc(0.34,0,0,0.0,sfx), evalFunc(0.34,0,0,0.0,sfx_mc))
+       self.assertAlmostEqual(eval_func(x,y,z,0.0,sfx), eval_func(x,y,z,0.0,sfx_mc))
+       self.assertAlmostEqual(eval_func(0.34,0,0,0.0,sfx), eval_func(0.34,0,0,0.0,sfx_mc))
 
        sfx_res_turbo(0.0, "sfx_res_turbo")
 

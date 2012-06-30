@@ -361,10 +361,32 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
       PartVector add_parts ;
       {
-        Part * topo_part = &fem::FEMMetaData::get(mesh).get_cell_topology_root_part(side_key.first);
+        fem::FEMMetaData &fem_meta_data =  fem::FEMMetaData::get(mesh);
+        Part * topo_part = &fem_meta_data.get_cell_topology_root_part(side_key.first);
         add_parts.push_back( topo_part);
-        if (skin_part) {
+        if (skin_part) { 
           add_parts.push_back(skin_part);
+          fem::CellTopology topo = fem_meta_data.get_cell_topology(*topo_part);
+          const PartVector topo_parts =  skin_part->subsets();
+          for (stk::mesh::PartVector::const_iterator i=topo_parts.begin(); i!=topo_parts.end(); ++i) {
+            // Decode side to element topology. Specific to tri and quad on linear hex and wedges
+            if (topo == fem_meta_data.get_cell_topology(**i)) {
+              if (std::string(side_key.first->name) == "Quadrilateral_4") { // A enum would be nice 
+                // Quad could be the face of a hex or wedge.
+                if (std::string("Hexahedron_8") == stk::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() && 
+                                                   std::string::npos != (*i)->name().find("hex8")) { // Magic string
+                  add_parts.push_back(*i);
+                }
+                else if (std::string("Wedge_6") == stk::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() &&
+                                                   std::string::npos != (*i)->name().find("wedge6")) { // Magic string
+                  add_parts.push_back(*i);
+                }
+              }
+              else {
+                add_parts.push_back(*i);
+              }
+            }
+          }
         }
       }
       mesh.change_entity_parts(side, add_parts);
@@ -438,10 +460,32 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
       PartVector add_parts ;
       {
-        Part * topo_part = &fem::FEMMetaData::get(mesh).get_cell_topology_root_part(side_key.first);
+        fem::FEMMetaData &fem_meta_data =  fem::FEMMetaData::get(mesh);
+        Part * topo_part = &fem_meta_data.get_cell_topology_root_part(side_key.first);
         add_parts.push_back( topo_part);
         if (skin_part) {
           add_parts.push_back(skin_part);
+          fem::CellTopology topo = fem_meta_data.get_cell_topology(*topo_part);
+          PartVector topo_parts =  skin_part->subsets();
+          for (stk::mesh::PartVector::const_iterator i=topo_parts.begin(); i!=topo_parts.end(); ++i) {
+            // Decode side to element topology. Specific to tri and quad on linear hex and wedges
+            if (topo == fem_meta_data.get_cell_topology(**i)) {
+              if (std::string(side_key.first->name) == "Quadrilateral_4") { // A enum would be nice 
+                // Quad could be the face of a hex or wedge.
+                if (std::string("Hexahedron_8") == stk::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() && 
+                                                   std::string::npos != (*i)->name().find("hex8")) { // Magic string
+                  add_parts.push_back(*i);
+                }
+                else if (std::string("Wedge_6") == stk::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() &&
+                                                   std::string::npos != (*i)->name().find("wedge6")) { // Magic string
+                  add_parts.push_back(*i);
+                }
+              }
+              else {
+                add_parts.push_back(*i);
+              }
+            }
+          }
         }
       }
       Entity & side = mesh.declare_entity(element_rank-1,generated_side_id,add_parts);

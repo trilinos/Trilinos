@@ -64,8 +64,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_nssi_xdr.h"
 #include "Trios_logger.h"
 #include "Trios_threads.h"
+#include "Trios_nssi_debug.h"
 
-#include "nssi_debug.h"
 #include "nssi_opcodes.h"
 #include "nssi_service_args.h"
 
@@ -113,7 +113,7 @@ struct xdr_encodings {
  */
 static std::map<int, struct xdr_encodings> encodings_map;
 typedef std::map<int, struct xdr_encodings>::iterator encodings_map_iterator_t;
-static nthread_mutex_t encodings_map_mutex = NTHREAD_MUTEX_INITIALIZER;
+static nthread_lock_t encodings_map_mutex;
 
 
 /* --------------------- Public functions ------------------- */
@@ -131,6 +131,8 @@ int nssi_xdr_init()
     if (logger_not_initialized()) {
         logger_set_file(stderr);
     }
+
+    nthread_lock_init(&encodings_map_mutex);
 
     initialized = TRUE;
 

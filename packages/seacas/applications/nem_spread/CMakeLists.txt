@@ -9,16 +9,15 @@ INCLUDE_DIRECTORIES(
 )
 
 SET(HEADERS "")
-SET(SOURCES el_check_monot.c      el_elm_info.c   el_exoII_io.c
-	    el_exoII_io_util.c    pe_check_inp.c
-	    pe_init_info.c        pe_input.c      pe_load_lb_info.c
-	    pe_str_util.c         pe_util.c       pe_write_parExo_info.c
-	    ps_restart.c          rf_allo.c       rf_comm.c
-	    rf_mesh_param.c       rf_pre_proc.c   rf_util.c
-	    sort_utils.c          md_timer_getrusage.c  md_wrap_generic_c.c)
+SET(SOURCES  el_elm_info.C            el_exoII_io.C            pe_check_inp.C
+	     pe_input.C               pe_load_lb_info.C
+	     pe_str_util.C            pe_util.C                pe_write_parExo_info.C
+	     ps_restart.C             rf_allo.C
+	     rf_mesh_param.C          rf_pre_proc.C            rf_util.C
+	     sort_utils.C	      md_timer_getrusage.C md_wrap_generic_c.C)
 
 TRIBITS_ADD_LIBRARY(nem_spread_app_lib SOURCES ${SOURCES} DEPLIBS exodus nemesis suplib)
-TRIBITS_ADD_EXECUTABLE(nem_spread NOEXEPREFIX NOEXESUFFIX SOURCES pe_exoII_2par_exoII.c DEPLIBS nem_spread_app_lib COMM serial mpi)
+TRIBITS_ADD_EXECUTABLE(nem_spread NOEXEPREFIX NOEXESUFFIX SOURCES nem_spread.C DEPLIBS nem_spread_app_lib COMM serial mpi)
 install_executable(nem_spread)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()

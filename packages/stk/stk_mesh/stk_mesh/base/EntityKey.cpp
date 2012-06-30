@@ -26,11 +26,11 @@ EntityKey::EntityKey( EntityRank entity_rank ,
   enum { OK = StaticAssert< sizeof(EntityKey) ==
                             sizeof(EntityKey::raw_key_type) >::OK };
 
-  ThrowErrorMsgIf( rank() != entity_rank,
-                   "entity_rank " << entity_rank << " out of range");
+  ThrowAssertMsg( rank() == entity_rank,
+                  "entity_rank out of range, entity_rank= " << entity_rank << " rank() = " << rank() << " entity_id= " << entity_id << " id() = " << id() );
 
-  ThrowErrorMsgIf( id() != entity_id,
-                   "entity_id " << entity_id << " out of range");
+  ThrowAssertMsg( id() == entity_id,
+                  "entity_id out of range, entity_rank= " << entity_rank << " rank() = " << rank() << " entity_id= " << entity_id << " id() = " << id() );
 }
 
 

@@ -83,7 +83,7 @@ class FillableVec {
 
   typedef
     std::map<int,double,std::less<int>,
-     fei_Pool_alloc<std::pair<const int,int> > > feipoolmap;
+     fei_Pool_alloc<std::pair<const int,double> > > feipoolmap;
 
   typedef feipoolmap::iterator iterator;
   typedef feipoolmap::const_iterator const_iterator;

@@ -582,68 +582,67 @@ int main (int argc, char **argv)
    ids[5] = 35;
 
    /* side set #1  - quad */
-   node_list[0] = 8; node_list[1] = 5;
-   node_list[2] = 6; node_list[3] = 7;
+   node_list[0] = 8; node_list[1] = 5; elem_list[0] = 3;
+   node_list[2] = 6; node_list[3] = 7; elem_list[1] = 3;
 
    /* side set #2  - quad/hex, spanning 2 element types  */
-   node_list[4] = 2; node_list[5] = 3;
-   node_list[6] = 7; node_list[7] = 8;
+   node_list[4] = 2; node_list[5] = 3; elem_list[2] = 1; 
+   node_list[6] = 7; node_list[7] = 8; elem_list[3] = 3;
 
    /* side set #3  - hex */
-   node_list[8] = 9; node_list[9] = 12;
-   node_list[10] = 11; node_list[11] = 10;
-
+   node_list[ 8] =  9; node_list[ 9] = 12;
+   node_list[10] = 11; node_list[11] = 10; elem_list[4] = 4;
 
    node_list[12] = 11; node_list[13] = 12;
-   node_list[14] = 16; node_list[15] = 15;
+   node_list[14] = 16; node_list[15] = 15; elem_list[5] = 4;
  
    node_list[16] = 16; node_list[17] = 15;
-   node_list[18] = 11; node_list[19] = 12;
+   node_list[18] = 11; node_list[19] = 12; elem_list[6] = 4;
 
    node_list[20] = 10; node_list[21] = 11;
-   node_list[22] = 15; node_list[23] = 14;
+   node_list[22] = 15; node_list[23] = 14; elem_list[7] = 4;
 
    node_list[24] = 13; node_list[25] = 16;
-   node_list[26] = 12; node_list[27] =  9;
+   node_list[26] = 12; node_list[27] =  9; elem_list[8] = 4;
 
    node_list[28] = 14; node_list[29] = 13;
-   node_list[30] =  9; node_list[31] = 10;
+   node_list[30] =  9; node_list[31] = 10; elem_list[9] = 4;
 
    node_list[32] = 16; node_list[33] = 13;
-   node_list[34] = 14; node_list[35] = 15;
+   node_list[34] = 14; node_list[35] = 15; elem_list[10] = 4;
 
    /* side set #4  - tetras */
    node_list[36] = 17; node_list[37] = 18;
-   node_list[38] = 20;
+   node_list[38] = 20;                     elem_list[11] = 5;
 
    node_list[39] = 18; node_list[40] = 19;
-   node_list[41] = 20;
+   node_list[41] = 20;                     elem_list[12] = 5;
 
    node_list[42] = 20; node_list[43] = 19;
-   node_list[44] = 17;
+   node_list[44] = 17;                     elem_list[13] = 5;
 
    node_list[45] = 19; node_list[46] = 18;
-   node_list[47] = 17;
+   node_list[47] = 17;                     elem_list[14] = 5;
 
    /* side set #5  - circle and sphere */
-   node_list[48] = 21; 
-   node_list[49] = 22;
+   node_list[48] = 21;                     elem_list[15] = 6;
+   node_list[49] = 22;                     elem_list[16] = 7;
 
    /* side set #6  - wedges */
    node_list[50] = 27; node_list[51] = 26;
-   node_list[52] = 23; node_list[53] = 24;
+   node_list[52] = 23; node_list[53] = 24; elem_list[17] = 8;
 
    node_list[54] = 28; node_list[55] = 27;
-   node_list[56] = 24; node_list[57] = 25;
+   node_list[56] = 24; node_list[57] = 25; elem_list[18] = 8;
 
    node_list[58] = 28; node_list[59] = 25;
-   node_list[60] = 23; node_list[61] = 26;
+   node_list[60] = 23; node_list[61] = 26; elem_list[19] = 8;
 
    node_list[62] = 25; node_list[63] = 24;
-   node_list[64] = 23;
+   node_list[64] = 23;                     elem_list[20] = 8;
 
    node_list[65] = 26; node_list[66] = 27;
-   node_list[67] = 28;
+   node_list[67] = 28;                     elem_list[21] = 8;
 
    node_ind[0] = 0;
    node_ind[1] = 4;
@@ -673,19 +672,6 @@ int main (int argc, char **argv)
    elem_ind[3] = 11;
    elem_ind[4] = 15;
    elem_ind[5] = 17;
-
-   elem_list[0] = 3; elem_list[1] = 3; /* side set 1: Quad #2 */
-   elem_list[2] = 1; elem_list[3] = 3; /* side set 2: Quad #1 & #2 */
-   elem_list[4] = 4; elem_list[5] = 4; /* side set 3: Hex */
-   elem_list[6] = 4; elem_list[7] = 4;
-   elem_list[8] = 4; elem_list[9] = 4;
-   elem_list[10] = 4; 
-   elem_list[11] = 5; elem_list[12] = 5; /* side set 4: Tetra */
-   elem_list[13] = 5; elem_list[14] = 5; 
-   elem_list[15] = 6; elem_list[16] = 7; /* side set 5: Circle & Sphere */
-   elem_list[17] = 8; elem_list[18] = 8; /* side set 6: Wedge  */
-   elem_list[19] = 8; elem_list[20] = 8; 
-   elem_list[21] = 8;
 
 /* side set 0 
    side_list[0]= 4; side_list[1]= 2;*/

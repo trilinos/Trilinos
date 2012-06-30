@@ -32,14 +32,14 @@ namespace stk
 
       // transformed_basis_values: ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
       // output_field_values: ([C],[P],[DOF])
-      void getFieldValues(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
+      void get_fieldValues(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
       {
-        VERIFY_OP(output_field_values.rank(), ==, 3, "FieldValuesComputer::getFieldValues output_field_values bad rank");
-        VERIFY_OP(transformed_basis_values.rank(), ==, 3, "FieldValuesComputer::getFieldValues transformed_basis_values bad rank");
+        VERIFY_OP(output_field_values.rank(), ==, 3, "FieldValuesComputer::get_fieldValues output_field_values bad rank");
+        VERIFY_OP(transformed_basis_values.rank(), ==, 3, "FieldValuesComputer::get_fieldValues transformed_basis_values bad rank");
         VERIFY_OP(output_field_values.dimension(0), ==, transformed_basis_values.dimension(0), 
-                  "FieldValuesComputer::getFieldValues output_field_values.dim(0) doesn't match transformed_basis_values.dim(0)");
+                  "FieldValuesComputer::get_fieldValues output_field_values.dim(0) doesn't match transformed_basis_values.dim(0)");
         VERIFY_OP(output_field_values.dimension(1), ==, transformed_basis_values.dimension(1), 
-                  "FieldValuesComputer::getFieldValues output_field_values.dim(1) doesn't match transformed_basis_values.dim(1)");
+                  "FieldValuesComputer::get_fieldValues output_field_values.dim(1) doesn't match transformed_basis_values.dim(1)");
 
         // [P] = num integration points
         int numInterpPoints = transformed_basis_values.dimension(2);
@@ -53,7 +53,7 @@ namespace stk
 #ifndef NDEBUG
         int nOutDim = output_field_values.dimension(2); // FIXME for tensor
         VERIFY_OP((int)nDOF, == , nOutDim,
-                  "FieldValuesComputer::getFieldValues: invalid dimensions nDof, m_codomain_dimensions[0]= ");
+                  "FieldValuesComputer::get_fieldValues: invalid dimensions nDof, m_codomain_dimensions[0]= ");
 #endif
 
         int numCells = transformed_basis_values.dimension(0); // FIXME for multiple cells

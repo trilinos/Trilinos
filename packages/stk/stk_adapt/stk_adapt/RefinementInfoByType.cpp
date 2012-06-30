@@ -6,18 +6,20 @@
 namespace stk {
   namespace adapt {
 
-    /** iRefinePass is used to predict number of new elements in query_only mode of UniformRefiner.
+    /** Estimate number of elements for each topology based on old/new saved in m_numOrigElems, m_numNewElems.
+     *  Saves estimates in m_numOrigElemsLast, m_numNewElemsLast corresponding to iRefinePass.
+     *  iRefinePass is used to predict number of new elements in query_only mode of UniformRefiner.
      *  Pass in 0 for iRefinePass unless you are using UniformRefiner in query_only mode, in which case
      *  pass in the current refinement pass
      */
-    void RefinementInfoByType::printTable(std::ostream& os, std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass, bool printAll)
+    void RefinementInfoByType::estimateNew(std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass)
     {
-      RefinementInfoCount numOrigTot = 0;
-      RefinementInfoCount numNewTot = 0;
       for (unsigned irank = 0; irank < refinementInfoByType.size(); irank++)
         {
           RefinementInfoCount numOrig = refinementInfoByType[irank].m_numOrigElems;
           RefinementInfoCount numNew = refinementInfoByType[irank].m_numNewElems;
+          refinementInfoByType[irank].m_numOrigElemsLast = numOrig;
+          refinementInfoByType[irank].m_numNewElemsLast = numNew;
           if (numOrig)
             {
               double refFactor = ((double)numNew)/((double)numOrig);
@@ -25,9 +27,29 @@ namespace stk {
               double refFactorOld = std::pow(refFactor, ((double)(iRefinePass) ));
               numNew = (RefinementInfoCount)((double)numOrig * refFactorNew);
               numOrig = (RefinementInfoCount)((double)numOrig * refFactorOld);
+              refinementInfoByType[irank].m_numOrigElemsLast = numOrig;
+              refinementInfoByType[irank].m_numNewElemsLast = numNew;
             }
-          numOrigTot += numOrig;
-          numNewTot += numNew;
+        }
+    }
+
+    /** iRefinePass is used to predict number of new elements in query_only mode of UniformRefiner.
+     *  Pass in 0 for iRefinePass unless you are using UniformRefiner in query_only mode, in which case
+     *  pass in the current refinement pass
+     */
+    void RefinementInfoByType::printTable(std::ostream& os, std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass, bool printAll)
+    {
+      if (refinementInfoByType.size() == 0) return;
+
+      RefinementInfoCount numOrigTot = 0;
+      RefinementInfoCount numNewTot = 0;
+      estimateNew(refinementInfoByType, iRefinePass);
+      for (unsigned irank = 0; irank < refinementInfoByType.size(); irank++)
+        {
+          RefinementInfoCount numOrigLast = refinementInfoByType[irank].m_numOrigElemsLast;
+          RefinementInfoCount numNewLast = refinementInfoByType[irank].m_numNewElemsLast;
+          numOrigTot += numOrigLast;
+          numNewTot += numNewLast;
         }
 
       RefinementInfoCount numOrigNodes = refinementInfoByType[0].m_numOrigNodes;
@@ -51,16 +73,8 @@ namespace stk {
           if (!printAll && refinementInfoByType[irank].m_numOrigElems == 0)
             continue;
 
-          RefinementInfoCount numOrig = refinementInfoByType[irank].m_numOrigElems;
-          RefinementInfoCount numNew = refinementInfoByType[irank].m_numNewElems;
-          if (numOrig)
-            {
-              double refFactor = ((double)numNew)/((double)numOrig);
-              double refFactorNew = std::pow(refFactor, ((double)(iRefinePass+1) ));
-              double refFactorOld = std::pow(refFactor, ((double)(iRefinePass) ));
-              numNew = (RefinementInfoCount)((double)numOrig * refFactorNew);
-              numOrig = (RefinementInfoCount)((double)numOrig * refFactorOld);
-            }
+          RefinementInfoCount numOrig = refinementInfoByType[irank].m_numOrigElemsLast;
+          RefinementInfoCount numNew = refinementInfoByType[irank].m_numNewElemsLast;
 
           table << "|" << refinementInfoByType[irank].m_topology.getName() << "|"
                 << numOrig << stk::end_col << " " << "|"
@@ -87,13 +101,13 @@ namespace stk {
 
     void RefinementInfoByType::countCurrentNodes(stk::percept::PerceptMesh& eMesh, std::vector< RefinementInfoByType >& refinementInfoByType)
     {
-      mesh::Selector selector(eMesh.getFEM_meta_data()->locally_owned_part());
+      mesh::Selector selector(eMesh.get_fem_meta_data()->locally_owned_part());
       std::vector<unsigned> count ;
-      stk::mesh::count_entities( selector, *eMesh.getBulkData(), count );
+      stk::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
       
       unsigned nnodes = count[0];
 
-      stk::ParallelMachine pm = eMesh.getBulkData()->parallel();
+      stk::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
       stk::all_reduce( pm, stk::ReduceSum<1>( &nnodes ) );
 
       for (unsigned i = 0; i < refinementInfoByType.size(); i++)

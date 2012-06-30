@@ -155,7 +155,7 @@ Tevec (
 	    }
 	    residual = (alpha[1] - ritz) * s[1] + beta[2] * s[2];
 	}
-	residual = fabs(residual) / normalize(s,1,j); 
+	residual = fabs(residual) / ch_normalize(s,1,j); 
 */
 
 

@@ -63,23 +63,23 @@
     interface between C++ and Fortran is not standard across all computer
     platforms.  The Teuchos::LAPACK class provides C++ wrappers for the LAPACK
     kernels in order to insulate the rest of Teuchos from the details of C++ to Fortran
-    translation.  A Teuchos::LAPACK object is essentially nothing, but allows access to 
+    translation.  A Teuchos::LAPACK object is essentially nothing, but allows access to
     the LAPACK wrapper functions.
 
     Teuchos::LAPACK is a serial interface only.  This is appropriate since the standard
     LAPACK are only specified for serial execution (or shared memory parallel).
 
-    \note 
-	<ol>
-	    	<li>These templates are specialized to use the Fortran LAPACK routines for
-		scalar types \c float and \c double.
-    
-		<li>If Teuchos is configured with \c -DTeuchos_ENABLE_COMPLEX:BOOL=ON then these templates
-		are specialized for scalar types \c std::complex<float> and \c std::complex<double> also.
+    \note
+        <ol>
+                <li>These templates are specialized to use the Fortran LAPACK routines for
+                scalar types \c float and \c double.
 
-		<li>A short description is given for each method.  For more detailed documentation, see the
-		LAPACK website (\c http://www.netlib.org/lapack/ ).
-	</ol>
+                <li>If Teuchos is configured with \c -DTeuchos_ENABLE_COMPLEX:BOOL=ON then these templates
+                are specialized for scalar types \c std::complex<float> and \c std::complex<double> also.
+
+                <li>A short description is given for each method.  For more detailed documentation, see the
+                LAPACK website (\c http://www.netlib.org/lapack/ ).
+        </ol>
 */
 
 namespace Teuchos
@@ -94,13 +94,13 @@ namespace Teuchos
 
   template<typename OrdinalType, typename ScalarType>
   class LAPACK
-  {    
+  {
   public:
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
     //! @name Constructors/Destructors.
-    //@{ 
+    //@{
 
     //! Default Constructor.
     inline LAPACK(void) {}
@@ -113,7 +113,7 @@ namespace Teuchos
     //@}
 
     //! @name Symmetric Positive Definite Linear System Routines.
-    //@{ 
+    //@{
 
     //! Computes the \c L*D*L' factorization of a Hermitian/symmetric positive definite tridiagonal matrix \c A.
     void PTTRF(const OrdinalType n, ScalarType* d, ScalarType* e, OrdinalType* info) const;
@@ -121,7 +121,7 @@ namespace Teuchos
     //! Solves a tridiagonal system \c A*X=B using the \L*D*L' factorization of \c A computed by PTTRF.
     void PTTRS(const OrdinalType n, const OrdinalType nrhs, const ScalarType* d, const ScalarType* e, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
 
-    //! Computes Cholesky factorization of a real symmetric positive definite matrix \c A.    
+    //! Computes Cholesky factorization of a real symmetric positive definite matrix \c A.
     void POTRF(const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* info) const;
 
     //! Solves a system of linear equations \c A*X=B, where \c A is a symmetric positive definite matrix factored by POTRF and the \c nrhs solutions are returned in \c B.
@@ -134,7 +134,7 @@ namespace Teuchos
 
     void POCON(const char UPLO, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
 
-    //! Computes the solution to a real system of linear equations \c A*X=B, where \c A is a symmetric positive definite matrix and the \c nrhs solutions are returned in \c B. 
+    //! Computes the solution to a real system of linear equations \c A*X=B, where \c A is a symmetric positive definite matrix and the \c nrhs solutions are returned in \c B.
     void POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
 
     //! Computes row and column scalings intended to equilibrate a symmetric positive definite matrix \c A and reduce its condition number (w.r.t. 2-norm).
@@ -148,7 +148,7 @@ namespace Teuchos
     //@}
 
     //! @name General Linear System Routines.
-    //@{ 
+    //@{
 
     //! Solves an over/underdetermined real \c m by \c n linear system \c A using QR or LQ factorization of A.
     void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
@@ -185,7 +185,7 @@ namespace Teuchos
     /// capability to solve complex-valued least-squares problems.
     /// The RWORK argument is ignored when ScalarType is real, and may
     /// therefore be set to NULL in that case.
-    /// 
+    ///
     void GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, MagnitudeType* S, const MagnitudeType rcond, OrdinalType* rank, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const;
 
     //! Legacy GELSS interface for real-valued ScalarType.
@@ -203,6 +203,16 @@ namespace Teuchos
     //! Solves a system of linear equations \c A*X=B or \c A'*X=B with a general \c n by \c n matrix \c A using the LU factorization computed by GETRF.
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
 
+    //! Apply a series of row interchanges to the matrix A.
+    void
+    LASWP (const OrdinalType N,
+           ScalarType A[],
+           const OrdinalType LDA,
+           const OrdinalType K1,
+           const OrdinalType K2,
+           const OrdinalType IPIV[],
+           const OrdinalType INCX) const;
+
     //! Computes an LU factorization of a \c n by \c n matrix tridiagonal matrix \c A using partial pivoting with row interchanges.
     void GTTRF(const OrdinalType n, ScalarType* dl, ScalarType* d, ScalarType* du, ScalarType* du2, OrdinalType* IPIV, OrdinalType* info) const;
 
@@ -212,22 +222,22 @@ namespace Teuchos
     //! Computes the inverse of a matrix \c A using the LU factorization computed by GETRF.
     void GETRI(const OrdinalType n, ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
-    /// \brief Robustly solve a possibly singular triangular linear system.  
+    /// \brief Robustly solve a possibly singular triangular linear system.
     ///
     /// \note This routine is slower than the BLAS' TRSM, but can
     ///   detect possible singularity of A.
-    void 
-    LATRS (const char UPLO, 
-	   const char TRANS, 
-	   const char DIAG, 
-	   const char NORMIN, 
-	   const OrdinalType N,
-	   ScalarType* A, 
-	   const OrdinalType LDA,
-	   ScalarType* X, 
-	   MagnitudeType* SCALE,
-	   MagnitudeType* CNORM,
-	   OrdinalType* INFO) const;
+    void
+    LATRS (const char UPLO,
+           const char TRANS,
+           const char DIAG,
+           const char NORMIN,
+           const OrdinalType N,
+           ScalarType* A,
+           const OrdinalType LDA,
+           ScalarType* X,
+           MagnitudeType* SCALE,
+           MagnitudeType* CNORM,
+           OrdinalType* INFO) const;
 
     //! Estimates the reciprocal of the condition number of a general real matrix \c A, in either the 1-norm or the infinity-norm, using the LU factorization computed by GETRF.
     void GECON(const char NORM, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
@@ -253,14 +263,14 @@ namespace Teuchos
     void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
     //! Solves a triangular linear system of the form \c A*X=B or \c A**T*X=B, where \c A is a triangular matrix.
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const; 
-    
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
+
     //! Computes the inverse of an upper or lower triangular matrix \c A.
-    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const ScalarType* A, const OrdinalType lda, OrdinalType* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const ScalarType* A, const OrdinalType lda, OrdinalType* info) const;
     //@}
 
     //! @name Symmetric Eigenproblem Routines
-    //@{ 
+    //@{
     /*! \brief Computes the eigenvalues and, optionally, eigenvectors of a symmetric \c n by \c n matrix \c A in packed storage.
         \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>.
     */
@@ -291,24 +301,24 @@ namespace Teuchos
     //@}
 
     //! @name Non-Hermitian Eigenproblem Routines
-    //@{ 
-    //! Computes the eigenvalues of a real upper Hessenberg matrix \c H and, optionally, the matrices \c T and \c Z from the Schur decomposition, where T is an upper quasi-triangular matrix and Z contains the Schur vectors. 
+    //@{
+    //! Computes the eigenvalues of a real upper Hessenberg matrix \c H and, optionally, the matrices \c T and \c Z from the Schur decomposition, where T is an upper quasi-triangular matrix and Z contains the Schur vectors.
     void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* H, const OrdinalType ldh, ScalarType* WR, ScalarType* WI, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    
+
     /*! Computes for an \c n by \c n nonsymmetric matrix \c A, the eigenvalues, the Schur form \c T, and, optionally, the matrix of Schur vectors \c Z. When \c ScalarType is \c float or \c double, the real Schur form is computed.
        \note (This is the version used for \c float and \c double, where \c select requires two arguments to represent a complex eigenvalue.)
     */
-    void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*, ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* WR, ScalarType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const;    
+    void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*, ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* WR, ScalarType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const;
 
     /*! Computes for an \c n by \c n nonsymmetric matrix \c A, the eigenvalues, the Schur form \c T, and, optionally, the matrix of Schur vectors \c Z. When \c ScalarType is \c float or \c double, the real Schur form is computed.
        \note (This is the version used for \c std::complex<float> and \c std::complex<double>, where \c select requires one arguments to represent a complex eigenvalue.)
     */
-    void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* W, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
+    void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* W, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* BWORK, OrdinalType* info) const;
 
     /*! Computes for an \c n by \c n nonsymmetric matrix \c A, the eigenvalues, the Schur form \c T, and, optionally, the matrix of Schur vectors \c Z. When \c ScalarType is \c float or \c double, the real Schur form is computed.
        \note (This is the version used for any \c ScalarType, when the user doesn't want to enable the sorting functionality.)
     */
-    void GEES(const char JOBVS, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, MagnitudeType* WR, MagnitudeType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
+    void GEES(const char JOBVS, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, MagnitudeType* WR, MagnitudeType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* BWORK, OrdinalType* info) const;
 
     //! Computes for an \c n by \c n real nonsymmetric matrix \c A, the eigenvalues and, optionally, the left and/or right eigenvectors.
     void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* WR, ScalarType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
@@ -325,7 +335,7 @@ namespace Teuchos
 
 
     //! @name Singular Value Decompositon Routines
-    //@{ 
+    //@{
     //! Computes the singular values (and optionally, vectors) of a real matrix \c A.
     void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* S, ScalarType* U, const OrdinalType ldu, ScalarType* V, const OrdinalType ldv, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const;
     //@}
@@ -388,7 +398,7 @@ namespace Teuchos
     //@}
 
     //! @name Triangular Matrix Routines
-    //@{ 
+    //@{
 
     /*! Computes some or all of the right and/or left eigenvectors of an upper triangular matrix \c T. If ScalarType is \c float or \c double, then the matrix is quasi-triangular and arugments \c RWORK is ignored.
     */
@@ -407,7 +417,7 @@ namespace Teuchos
     //@}
 
     //! @name Rotation/Reflection generators
-    //@{ 
+    //@{
 
     //! Gnerates a plane rotation that zeros out the second component of the input vector.
     void LARTG( const ScalarType f, const ScalarType g, MagnitudeType* c, ScalarType* s, ScalarType* r ) const;
@@ -421,40 +431,40 @@ namespace Teuchos
     //@{
 
     //! Balances a general matrix A, through similarity transformations to make the rows and columns as close in norm as possible.
-    void GEBAL(const char JOBZ, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, MagnitudeType* scale, OrdinalType* info) const; 
+    void GEBAL(const char JOBZ, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, MagnitudeType* scale, OrdinalType* info) const;
 
     //! Forms the left or right eigenvectors of a general matrix that has been balanced by GEBAL by backward transformation of the computed eigenvectors \c V.
-    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const MagnitudeType* scale , const OrdinalType m, ScalarType* V, const OrdinalType ldv, OrdinalType* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const MagnitudeType* scale , const OrdinalType m, ScalarType* V, const OrdinalType ldv, OrdinalType* info) const;
 
     //@}
 
     //! @name Random number generators
-    //@{ 
+    //@{
     //! Returns a random number from a uniform or normal distribution.
     ScalarType LARND( const OrdinalType idist, OrdinalType* seed ) const;
 
     //! Returns a vector of random numbers from a chosen distribution.
-    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const;    
+    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const;
     //@}
 
     //! @name Machine Characteristics Routines.
-    //@{ 
+    //@{
     /*! \brief Determines machine parameters for floating point characteristics.
-        \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>. 
+        \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>.
     */
     ScalarType LAMCH(const char CMACH) const;
 
     /*! \brief Chooses problem-dependent parameters for the local environment.
-	\note This method should give parameters for good, but not optimal, performance on many currently 
-	available computers.
+        \note This method should give parameters for good, but not optimal, performance on many currently
+        available computers.
     */
     OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
     //@}
 
     //! @name Miscellaneous Utilities.
-    //@{ 
+    //@{
     /*! \brief Computes x^2 + y^2 safely, to avoid overflow.
-        \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>. 
+        \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>.
     */
     ScalarType LAPY2(const ScalarType x, const ScalarType y) const;
     //@}
@@ -470,55 +480,55 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::PTTRS(const OrdinalType n, const OrdinalType nrhs, const ScalarType* d, const ScalarType* e, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POTRF(const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POTRI(const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POCON(const char UPLO, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
-  }  
+  }
 
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POEQU(const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* S, ScalarType* scond, ScalarType* amax, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* AF, const OrdinalType ldaf, char EQUED, ScalarType* S, ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
@@ -549,7 +559,7 @@ namespace Teuchos
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
-  template<typename OrdinalType, typename ScalarType>  
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GEQRF( const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -560,9 +570,23 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void
+  LAPACK<OrdinalType, ScalarType>::
+  LASWP (const OrdinalType N,
+         ScalarType A[],
+         const OrdinalType LDA,
+         const OrdinalType K1,
+         const OrdinalType K2,
+         const OrdinalType IPIV[],
+         const OrdinalType INCX) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -578,7 +602,7 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GETRI(const OrdinalType n, ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
@@ -586,53 +610,53 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void 
+  void
   LAPACK<OrdinalType,ScalarType>::
-  LATRS (const char UPLO, 
-	 const char TRANS, 
-	 const char DIAG, 
-	 const char NORMIN, 
-	 const OrdinalType N, 
-	 ScalarType* A, 
-	 const OrdinalType LDA, 
-	 ScalarType* X, 
-	 MagnitudeType* SCALE, 
-	 MagnitudeType* CNORM, 
-	 OrdinalType* INFO) const
+  LATRS (const char UPLO,
+         const char TRANS,
+         const char DIAG,
+         const char NORMIN,
+         const OrdinalType N,
+         ScalarType* A,
+         const OrdinalType LDA,
+         ScalarType* X,
+         MagnitudeType* SCALE,
+         MagnitudeType* CNORM,
+         OrdinalType* INFO) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GECON(const char NORM, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GESV(const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GEEQU(const OrdinalType m, const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* R, ScalarType* C, ScalarType* rowcond, ScalarType* colcond, ScalarType* amax, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, ScalarType* R, ScalarType* C, ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::SYTRD(const char UPLO, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* D, ScalarType* E, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
@@ -644,19 +668,19 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType,ScalarType>::TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const 
+  void LAPACK<OrdinalType,ScalarType>::TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType,ScalarType>::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const ScalarType* A, const OrdinalType lda, OrdinalType* info) const 
+  void LAPACK<OrdinalType,ScalarType>::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const ScalarType* A, const OrdinalType lda, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::SPEV(const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* AP, ScalarType* W, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, OrdinalType* info) const
   {
@@ -698,21 +722,21 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*, ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* WR, ScalarType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const    
+  void LAPACK<OrdinalType, ScalarType>::GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*, ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* WR, ScalarType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* W, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType *RWORK, OrdinalType* BWORK, OrdinalType* info) const    
+  void LAPACK<OrdinalType, ScalarType>::GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* W, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType *RWORK, OrdinalType* BWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::GEES(const char JOBVS, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, MagnitudeType* WR, MagnitudeType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType *RWORK, OrdinalType* BWORK, OrdinalType* info) const    
+  void LAPACK<OrdinalType, ScalarType>::GEES(const char JOBVS, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, MagnitudeType* WR, MagnitudeType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType *RWORK, OrdinalType* BWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -724,7 +748,7 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* S, ScalarType* U, const OrdinalType ldu, ScalarType* V, const OrdinalType ldv, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const 
+  void LAPACK<OrdinalType, ScalarType>::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* S, ScalarType* U, const OrdinalType ldu, ScalarType* V, const OrdinalType ldv, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -758,37 +782,37 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::TREVC(const char SIDE, const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, MagnitudeType* RWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::TREXC(const char COMPQ, const OrdinalType n, ScalarType* T, const OrdinalType ldt, ScalarType* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, ScalarType* WORK, OrdinalType* info) const
   {
@@ -806,7 +830,7 @@ namespace Teuchos
   {
     return UndefinedLAPACKRoutine<OrdinalType>::notDefined();
   }
- 
+
   template<typename OrdinalType, typename ScalarType>
   ScalarType LAPACK<OrdinalType, ScalarType>::LAPY2(const ScalarType x, const ScalarType y) const
   {
@@ -830,10 +854,10 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
- 
+
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::GEBAK( const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const MagnitudeType* scale, const OrdinalType m, ScalarType* V, const OrdinalType ldv, OrdinalType* info ) const 
+  void LAPACK<OrdinalType, ScalarType>::GEBAK( const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const MagnitudeType* scale, const OrdinalType m, ScalarType* V, const OrdinalType ldv, OrdinalType* info ) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -845,7 +869,7 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const    
+  void LAPACK<OrdinalType, ScalarType>::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -858,7 +882,7 @@ namespace Teuchos
 
   template<>
   class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, float>
-  {    
+  {
   public:
     inline LAPACK(void) {}
     inline LAPACK(const LAPACK<int, float>& lapack) {}
@@ -874,7 +898,7 @@ namespace Teuchos
     void POSV(const char UPLO, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, int* info) const;
     void POEQU(const int n, const float* A, const int lda, float* S, float* scond, float* amax, int* info) const;
     void PORFS(const char UPLO, const int n, const int nrhs, float* A, const int lda, const float* AF, const int ldaf, const float* B, const int ldb, float* X, const int ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
-    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, float* A, const int lda, float* AF, const int ldaf, char EQUED, float* S, float* B, const int ldb, float* X, const int ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const; 
+    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, float* A, const int lda, float* AF, const int ldaf, char EQUED, float* S, float* B, const int ldb, float* X, const int ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
 
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* WORK, const int lwork, int* info) const;
@@ -884,6 +908,15 @@ namespace Teuchos
     void GEQRF( const int m, const int n, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
     void GETRF(const int m, const int n, float* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const;
+
+    void LASWP (const int N,
+                float A[],
+                const int LDA,
+                const int K1,
+                const int K2,
+                const int IPIV[],
+                const int INCX) const;
+
     void GTTRF(const int n, float* dl, float* d, float* du, float* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const float* dl, const float* d, const float* du, const float* du2, const int* IPIV, float* B, const int ldb, int* info) const;
 
@@ -897,8 +930,8 @@ namespace Teuchos
     void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, float* A, const int lda, float* AF, const int ldaf, int* IPIV, char EQUED, float* R, float* C, float* B, const int ldb, float* X, const int ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
     void SYTRD(const char UPLO, const int n, float* A, const int lda, float* D, float* E, float* TAU, float* WORK, const int lwork, int* info) const;
     void GEHRD(const int n, const int ilo, const int ihi, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const float* A, const int lda, float* B, const int ldb, int* info) const; 
-    void TRTRI(const char UPLO, const char DIAG, const int n, const float* A, const int lda, int* info) const; 
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const float* A, const int lda, float* B, const int ldb, int* info) const;
+    void TRTRI(const char UPLO, const char DIAG, const int n, const float* A, const int lda, int* info) const;
 
     // Symmetric eigenvalue routines.
     void SPEV(const char JOBZ, const char UPLO, const int n, float* AP, float* W, float* Z, const int ldz, float* WORK, int* info) const;
@@ -910,8 +943,8 @@ namespace Teuchos
 
     // Non-Hermitian eigenvalue routines.
     void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, float* H, const int ldh, float* WR, float* WI, float* Z, const int ldz, float* WORK, const int lwork, int* info) const;
-    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(float*, float*), const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, int* BWORK, int* info) const;    
-    void GEES(const char JOBVS, const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;    
+    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(float*, float*), const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, int* BWORK, int* info) const;
+    void GEES(const char JOBVS, const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
     void GEEV(const char JOBVL, const char JOBVR, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, float* WORK, const int lwork, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* B, const int ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, float *A, const int lda, float *B, const int ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const int ldvl, float *VR, const int ldvr, float *WORK, const int lwork, int *info) const;
@@ -938,12 +971,12 @@ namespace Teuchos
     void LARFG( const int n, float* alpha, float* x, const int incx, float* tau ) const;
 
     // Matrix balancing routines.
-    void GEBAL(const char JOBZ, const int n, float* A, const int lda, int ilo, int ihi, float* scale, int* info) const; 
-    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const float* scale, const int m, float* V, const int ldv, int* info) const; 
+    void GEBAL(const char JOBZ, const int n, float* A, const int lda, int ilo, int ihi, float* scale, int* info) const;
+    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const float* scale, const int m, float* V, const int ldv, int* info) const;
 
     // Random number generators
     float LARND( const int idist, int* seed ) const;
-    void LARNV( const int idist, int* seed, const int n, float* v ) const;    
+    void LARNV( const int idist, int* seed, const int n, float* v ) const;
 
     // Machine characteristics.
     float LAMCH(const char CMACH) const;
@@ -960,7 +993,7 @@ namespace Teuchos
 
   template<>
   class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, double>
-  {    
+  {
   public:
     inline LAPACK(void) {}
     inline LAPACK(const LAPACK<int, double>& lapack) {}
@@ -976,7 +1009,7 @@ namespace Teuchos
     void POSV(const char UPLO, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, int* info) const;
     void POEQU(const int n, const double* A, const int lda, double* S, double* scond, double* amax, int* info) const;
     void PORFS(const char UPLO, const int n, const int nrhs, double* A, const int lda, const double* AF, const int ldaf, const double* B, const int ldb, double* X, const int ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
-    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, double* A, const int lda, double* AF, const int ldaf, char EQUED, double* S, double* B, const int ldb, double* X, const int ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const; 
+    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, double* A, const int lda, double* AF, const int ldaf, char EQUED, double* S, double* B, const int ldb, double* X, const int ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
 
     // General linear system routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* WORK, const int lwork, int* info) const;
@@ -986,6 +1019,15 @@ namespace Teuchos
     void GEQRF( const int m, const int n, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
     void GETRF(const int m, const int n, double* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const int* IPIV, double* B, const int ldb, int* info) const;
+
+    void LASWP (const int N,
+                double A[],
+                const int LDA,
+                const int K1,
+                const int K2,
+                const int IPIV[],
+                const int INCX) const;
+
     void GTTRF(const int n, double* dl, double* d, double* du, double* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const double* dl, const double* d, const double* du, const double* du2, const int* IPIV, double* B, const int ldb, int* info) const;
     void GETRI(const int n, double* A, const int lda, const int* IPIV, double* WORK, const int lwork, int* info) const;
@@ -997,7 +1039,7 @@ namespace Teuchos
     void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, double* A, const int lda, double* AF, const int ldaf, int* IPIV, char EQUED, double* R, double* C, double* B, const int ldb, double* X, const int ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
     void SYTRD(const char UPLO, const int n, double* A, const int lda, double* D, double* E, double* TAU, double* WORK, const int lwork, int* info) const;
     void GEHRD(const int n, const int ilo, const int ihi, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const double* A, const int lda, double* B, const int ldb, int* info) const; 
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const double* A, const int lda, double* B, const int ldb, int* info) const;
     void TRTRI(const char UPLO, const char DIAG, const int n, const double* A, const int lda, int* info) const;
 
     // Symmetric eigenproblem routines.
@@ -1010,8 +1052,8 @@ namespace Teuchos
 
     // Non-Hermitian eigenproblem routines.
     void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, double* H, const int ldh, double* WR, double* WI, double* Z, const int ldz, double* WORK, const int lwork, int* info) const;
-    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(double*, double*), const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, int* BWORK, int* info) const;    
-    void GEES(const char JOBVS, const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;    
+    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(double*, double*), const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, int* BWORK, int* info) const;
+    void GEES(const char JOBVS, const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
     void GEEV(const char JOBVL, const char JOBVR, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, double* WORK, const int lwork, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* B, const int ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, double *A, const int lda, double *B, const int ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const int ldvl, double *VR, const int ldvr, double *WORK, const int lwork, int *info) const;
@@ -1038,12 +1080,12 @@ namespace Teuchos
     void LARFG( const int n, double* alpha, double* x, const int incx, double* tau ) const;
 
     // Matrix balancing routines.
-    void GEBAL(const char JOBZ, const int n, double* A, const int lda, int ilo, int ihi, double* scale, int* info) const; 
-    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const double* scale, const int m, double* V, const int ldv, int* info) const; 
+    void GEBAL(const char JOBZ, const int n, double* A, const int lda, int ilo, int ihi, double* scale, int* info) const;
+    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const double* scale, const int m, double* V, const int ldv, int* info) const;
 
     // Random number generators
     double LARND( const int idist, int* seed ) const;
-    void LARNV( const int idist, int* seed, const int n, double* v ) const;    
+    void LARNV( const int idist, int* seed, const int n, double* v ) const;
 
     // Machine characteristic routines.
     double LAMCH(const char CMACH) const;
@@ -1062,7 +1104,7 @@ namespace Teuchos
 
   template<>
   class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, std::complex<float> >
-  {    
+  {
   public:
     inline LAPACK(void) {}
     inline LAPACK(const LAPACK<int, std::complex<float> >& lapack) {}
@@ -1078,7 +1120,7 @@ namespace Teuchos
     void POSV(const char UPLO, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, int* info) const;
     void POEQU(const int n, const std::complex<float>* A, const int lda, float* S, float* scond, float* amax, int* info) const;
     void PORFS(const char UPLO, const int n, const int nrhs, std::complex<float>* A, const int lda, const std::complex<float>* AF, const int ldaf, const std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
-    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* AF, const int ldaf, char EQUED, float* S, std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const; 
+    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* AF, const int ldaf, char EQUED, float* S, std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
 
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, std::complex<float>* WORK, const int lwork, int* info) const;
@@ -1088,6 +1130,15 @@ namespace Teuchos
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* C, const int ldc, std::complex<float>* WORK, const int lwork, int* info) const;
     void GETRF(const int m, const int n, std::complex<float>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
+
+    void LASWP (const int N,
+                std::complex<float> A[],
+                const int LDA,
+                const int K1,
+                const int K2,
+                const int IPIV[],
+                const int INCX) const;
+
     void GTTRF(const int n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* dl, const std::complex<float>* d, const std::complex<float>* du, const std::complex<float>* du2, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GETRI(const int n, std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* WORK, const int lwork, int* info) const;
@@ -1098,7 +1149,7 @@ namespace Teuchos
     void GERFS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const std::complex<float>* AF, const int ldaf, const int* IPIV, const std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
     void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* AF, const int ldaf, int* IPIV, char EQUED, float* R, float* C, std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
     void GEHRD(const int n, const int ilo, const int ihi, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, int* info) const; 
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, int* info) const;
     void TRTRI(const char UPLO, const char DIAG, const int n, const std::complex<float>* A, const int lda, int* info) const;
 
     // Symmetric eigenvalue routines.
@@ -1108,8 +1159,8 @@ namespace Teuchos
 
     // Non-Hermitian eigenvalue routines.
     void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, std::complex<float>* H, const int ldh, std::complex<float>* W, std::complex<float>* Z, const int ldz, std::complex<float>* WORK, const int lwork, int* info) const;
-    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<float>*), const int n, std::complex<float>* A, const int lda, int* sdim, std::complex<float>* W, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;    
-    void GEES(const char JOBVS, const int n, std::complex<float>* A, const int lda, int* sdim, float* WR, float* WI, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;    
+    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<float>*), const int n, std::complex<float>* A, const int lda, int* sdim, std::complex<float>* W, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
+    void GEES(const char JOBVS, const int n, std::complex<float>* A, const int lda, int* sdim, float* WR, float* WI, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
     void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<float>* A, const int lda, std::complex<float>* W, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
 //    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* ALPHAR, float* ALPHAI, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* work, const int lwork, int* IWORK, int* BWORK, int* info) const;
 
@@ -1126,12 +1177,12 @@ namespace Teuchos
     void LARFG( const int n, std::complex<float>* alpha, std::complex<float>* x, const int incx, std::complex<float>* tau ) const;
 
     // Matrix balancing routines.
-    void GEBAL(const char JOBZ, const int n, std::complex<float>* A, const int lda, int ilo, int ihi, float* scale, int* info) const; 
-    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const float* scale, const int m, std::complex<float>* V, const int ldv, int* info) const; 
+    void GEBAL(const char JOBZ, const int n, std::complex<float>* A, const int lda, int ilo, int ihi, float* scale, int* info) const;
+    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const float* scale, const int m, std::complex<float>* V, const int ldv, int* info) const;
 
     // Random number generators
     std::complex<float> LARND( const int idist, int* seed ) const;
-    void LARNV( const int idist, int* seed, const int n, std::complex<float>* v ) const;    
+    void LARNV( const int idist, int* seed, const int n, std::complex<float>* v ) const;
 
     // Machine characteristics
     int ILAENV( const int ispec, const std::string& NAME, const std::string& OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
@@ -1144,7 +1195,7 @@ namespace Teuchos
 
   template<>
   class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, std::complex<double> >
-  {    
+  {
   public:
     inline LAPACK(void) {}
     inline LAPACK(const LAPACK<int, std::complex<double> >& lapack) {}
@@ -1160,7 +1211,7 @@ namespace Teuchos
     void POSV(const char UPLO, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, int* info) const;
     void POEQU(const int n, const std::complex<double>* A, const int lda, double* S, double* scond, double* amax, int* info) const;
     void PORFS(const char UPLO, const int n, const int nrhs, std::complex<double>* A, const int lda, const std::complex<double>* AF, const int ldaf, const std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
-    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* AF, const int ldaf, char EQUED, double* S, std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const; 
+    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* AF, const int ldaf, char EQUED, double* S, std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
 
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, std::complex<double>* WORK, const int lwork, int* info) const;
@@ -1170,6 +1221,15 @@ namespace Teuchos
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* C, const int ldc, std::complex<double>* WORK, const int lwork, int* info) const;
     void GETRF(const int m, const int n, std::complex<double>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
+
+    void LASWP (const int N,
+                std::complex<double> A[],
+                const int LDA,
+                const int K1,
+                const int K2,
+                const int IPIV[],
+                const int INCX) const;
+
     void GTTRF(const int n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* dl, const std::complex<double>* d, const std::complex<double>* du, const std::complex<double>* du2, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GETRI(const int n, std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* WORK, const int lwork, int* info) const;
@@ -1180,7 +1240,7 @@ namespace Teuchos
     void GERFS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const std::complex<double>* AF, const int ldaf, const int* IPIV, const std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
     void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* AF, const int ldaf, int* IPIV, char EQUED, double* R, double* C, std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
     void GEHRD(const int n, const int ilo, const int ihi, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, int* info) const; 
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, int* info) const;
     void TRTRI(const char UPLO, const char DIAG, const int n, const std::complex<double>* A, const int lda, int* info) const;
 
     // Symmetric eigenvalue routines.
@@ -1190,8 +1250,8 @@ namespace Teuchos
 
     // Non-hermitian eigenvalue routines.
     void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, std::complex<double>* H, const int ldh, std::complex<double>* W, std::complex<double>* Z, const int ldz, std::complex<double>* WORK, const int lwork, int* info) const;
-    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<double>*), const int n, std::complex<double>* A, const int lda, int* sdim, std::complex<double>* W, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;    
-    void GEES(const char JOBVS, const int n, std::complex<double>* A, const int lda, int* sdim, double* WR, double* WI, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;    
+    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<double>*), const int n, std::complex<double>* A, const int lda, int* sdim, std::complex<double>* W, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
+    void GEES(const char JOBVS, const int n, std::complex<double>* A, const int lda, int* sdim, double* WR, double* WI, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
     void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<double>* A, const int lda, std::complex<double>* W, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
 //    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* ALPHAR, double* ALPHAI, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* work, const int lwork, int* IWORK, int* BWORK, int* info) const;
 
@@ -1208,12 +1268,12 @@ namespace Teuchos
     void LARFG( const int n, std::complex<double>* alpha, std::complex<double>* x, const int incx, std::complex<double>* tau ) const;
 
     // Matrix balancing routines.
-    void GEBAL(const char JOBZ, const int n, std::complex<double>* A, const int lda, int ilo, int ihi, double* scale, int* info) const; 
-    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const double* scale, const int m, std::complex<double>* V, const int ldv, int* info) const; 
+    void GEBAL(const char JOBZ, const int n, std::complex<double>* A, const int lda, int ilo, int ihi, double* scale, int* info) const;
+    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const double* scale, const int m, std::complex<double>* V, const int ldv, int* info) const;
 
     // Random number generators
     std::complex<double> LARND( const int idist, int* seed ) const;
-    void LARNV( const int idist, int* seed, const int n, std::complex<double>* v ) const;    
+    void LARNV( const int idist, int* seed, const int n, std::complex<double>* v ) const;
 
     // Machine characteristics
     int ILAENV( const int ispec, const std::string& NAME, const std::string& OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;

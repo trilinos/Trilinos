@@ -42,7 +42,7 @@ namespace stk {
         // list all types of known break patterns to be used here
         m_bp.resize(0);
 
-        int spatialDim = eMesh.getSpatialDim();
+        int spatialDim = eMesh.get_spatial_dim();
 
         // refine
 
@@ -60,9 +60,10 @@ namespace stk {
 
 
         // enrich
-        m_bp.push_back ( new UniformRefinerPattern< shards::Wedge<6>, shards::Wedge<15>, 1, SierraPort >                 (eMesh, block_names) );
+        m_bp.push_back ( new UniformRefinerPattern< shards::Wedge<6>,        shards::Wedge<15>, 1, SierraPort >          (eMesh, block_names) );
         m_bp.push_back ( new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >   (eMesh, block_names) );
         m_bp.push_back ( new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<27>,   1, SierraPort >   (eMesh, block_names) );
+        m_bp.push_back ( new UniformRefinerPattern< shards::Pyramid<5>,      shards::Pyramid<13>, 1, SierraPort >        (eMesh, block_names) );
 
         //m_bp.push_back(  new UniformRefinerPattern<shards::ShellQuadrilateral<4>,  shards::ShellQuadrilateral<9>,   1, SierraPort > (eMesh, block_names) );
         //m_bp.push_back(  new UniformRefinerPattern<shards::ShellTriangle<3>,       shards::ShellTriangle<3>,   4, SierraPort > (eMesh, block_names) );

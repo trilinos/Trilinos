@@ -16,25 +16,60 @@
 !
 !       Define Exodus functions that return values
 !
-      integer excre,exopen,exlgmd
-      external excre, exopen, exlgmd
+        integer excre,exopen,exlgmd, exinqi
+        external excre, exopen, exlgmd, exinqi
 !
 !       Define access modes
 !
-      integer EXNOCL,EXCLOB,EXREAD,EXWRIT,EXWRT,EXNORM,EXLARG
-      integer EXNET4, EXNOSH, EXSHAR
+        integer EXNOCL,EXCLOB,EXREAD,EXWRIT,EXWRT,EXNORM,EXLARG
+        integer EXNET4, EXNOSH, EXSHAR
 
-      parameter (EXNOCL = 0)   !       EXNOCL - File create with no overwrite (no clobber), default
-      parameter (EXCLOB = 1)   !       EXCLOB - File create with overwrite (clobber)
-      parameter (EXNORM = 2)   !       EXNORM - Disable large model modifications
-      parameter (EXLARG = 4)   !       EXLARG - Large model modifications
-      parameter (EXNET4 = 8)   !       EXNET4 - use the hdf5-based netcdf4 output
-      parameter (EXNOSH = 16)  !       EXNOSH - Do not open netcdf file in "share" mode
-      parameter (EXSHAR = 32)  !       EXSHAR - Do open netcdf file in "share" mode
+        integer EX_READ,EX_WRITE,EX_NOCLOBBER,EX_CLOBBER,EX_NORMAL_MODEL
+        integer EX_LARGE_MODEL,EX_NETCDF4,EX_NOSHARE,EX_SHARE
+        integer EX_NOCLASSIC,EX_MAPS_INT64_DB,EX_IDS_INT64_DB
+        integer EX_BULK_INT64_DB,EX_ALL_INT64_DB
+        integer EX_MAPS_INT64_API
+        integer EX_IDS_INT64_API,EX_BULK_INT64_API,EX_ALL_INT64_API
 
-      parameter (EXREAD = 0)   !       EXREAD - File open for read
-      parameter (EXWRIT = 1)   !       EXWRIT - File open for write
-      parameter (EXWRT  = 1)   !       EXWRT  - File open for write (alternate to EXWRIT)
+        parameter (EXREAD =     0)   !       EXREAD - File open for read
+        parameter (EXWRIT =     1)   !       EXWRIT - File open for write
+        parameter (EXWRT  =     1)   !       EXWRT  - File open for write (alternate to EXWRIT)
+
+        parameter (EXNOCL =     4)   !       EXNOCL - File create with no overwrite (no clobber), default
+        parameter (EXCLOB =     8)   !       EXCLOB - File create with overwrite (clobber)
+        parameter (EXNORM =    16)   !       EXNORM - Disable large model modifications
+        parameter (EXLARG =    32)   !       EXLARG - Large model modifications
+        parameter (EXNET4 =    64)   !       EXNET4 - use the hdf5-based netcdf4 output
+        parameter (EXNOSH =   128)   !       EXNOSH - Do not open netcdf file in "share" mode
+        parameter (EXSHAR =   256)   !       EXSHAR - Do open netcdf file in "share" mode
+
+! Some of these are repeated from above, but use the same name as the C/C++ versions...
+
+        parameter (EX_READ          =      0) !ex_open(): open file for reading (default)
+        parameter (EX_WRITE         =      1) ! ex_open(): open existing file for appending.
+
+        parameter (EX_NOCLOBBER     =      4) ! Don't overwrite existing database, default
+        parameter (EX_CLOBBER       =      8) ! Overwrite existing database if it exists
+        parameter (EX_NORMAL_MODEL  =     16) ! disable mods that permit storage of larger models
+        parameter (EX_LARGE_MODEL   =     32) ! enable mods that permit storage of larger models
+        parameter (EX_NETCDF4       =     64) ! use the hdf5-based netcdf4 output
+        parameter (EX_NOSHARE       =    128) ! Do not open netcdf file in "share" mode
+        parameter (EX_SHARE         =    256) ! Do open netcdf file in "share" mode
+        parameter (EX_NOCLASSIC     =    512) ! Do not force netcdf to classic mode in netcdf4 mode
+
+! Need to distinguish between storage on database (DB in name) and
+! passed through the API functions (API in name).
+
+        parameter (EX_MAPS_INT64_DB =   1024) ! All maps (id, order, ...) store int64_t values
+        parameter (EX_IDS_INT64_DB  =   2048) ! All entity ids (sets, blocks, maps) are int64_t values
+        parameter (EX_BULK_INT64_DB =   4096) ! All integer bulk data (local indices, counts, maps); not ids
+        parameter (EX_ALL_INT64_DB  =   1024+2048+4096) ! All of the above...
+
+        parameter (EX_MAPS_INT64_API=   8192) ! All maps (id, order, ...) store int64_t values
+        parameter (EX_IDS_INT64_API =  16384) ! All entity ids (sets, blocks, maps) are int64_t values
+        parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data (local indices, counts, maps); not ids
+        parameter (EX_ALL_INT64_API =  8192+16384+32768) ! All of the above...
+
 !
 !  --INQUIRE FLAGS
       integer EXTYPE, EXVERS, EXDBVR, EXTITL, EXDIM, EXNODE
@@ -130,7 +165,6 @@
 !     Define coordinate frames
 !
       integer EXCFREC, EXCFCYL, EXCFSPH
-
       parameter (EXCFREC = 1)     ! Rectangular
       parameter (EXCFCYL = 2)     ! Cylindrical
       parameter (EXCFSPH = 3)     ! Spherical
@@ -147,7 +181,7 @@
 !     Define error return codes and flags
 !
       integer EXMEMF, EXBFMD, EXBFID, EXBTID, EXBPRM, EXNULL
-      integer    EXPMSG, EXLMSG
+      integer EXPMSG, EXLMSG
 
       parameter (EXMEMF =  1000)   ! EXMEMF - memory allocation failure flag def
       parameter (EXBFMD =  1001)   ! EXBFMD - wrong file mode

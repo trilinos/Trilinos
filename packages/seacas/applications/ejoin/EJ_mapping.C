@@ -52,12 +52,13 @@ namespace {
   }
 }
 
+template <typename INT>
 void eliminate_omitted_nodes(RegionVector &part_mesh,
-			     IdMap &global_node_map,
-			     IdMap &local_node_map)
+			     std::vector<INT> &global_node_map,
+			     std::vector<INT> &local_node_map)
 {
-  int offset = 0;
-  int j = 0;
+  size_t offset = 0;
+  size_t j = 0;
   size_t part_count = part_mesh.size();
   for (size_t p = 0; p < part_count; p++) {
     bool has_omissions = part_mesh[p]->get_property("block_omission_count").get_int() > 0;
@@ -89,10 +90,19 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
   }
 }
 
+template void eliminate_omitted_nodes(RegionVector &part_mesh,
+				      std::vector<int> &global_node_map,
+				      std::vector<int> &local_node_map);
+template void eliminate_omitted_nodes(RegionVector &part_mesh,
+				      std::vector<int64_t> &global_node_map,
+				      std::vector<int64_t> &local_node_map);
+
+
+  template <typename INT>
   void build_reverse_node_map(Ioss::Region &global,
 			      RegionVector &part_mesh,
-			      IdMap &global_node_map,
-			      IdMap &local_node_map)
+			      std::vector<INT> &global_node_map,
+			      std::vector<INT> &local_node_map)
   {
     // Instead of using <set> and <map>, consider using a sorted vector...
     // Append all local node maps to the global node map.
@@ -109,7 +119,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
     size_t tot_size = 0;
     for (size_t p = 0; p < part_count; p++) {
       Ioss::NodeBlock *nb = part_mesh[p]->get_node_blocks()[0];
-      int loc_size = nb->get_property("entity_count").get_int();
+      size_t loc_size = nb->get_property("entity_count").get_int();
       tot_size += loc_size;
       global_nodes[p].resize(loc_size);
     }
@@ -146,7 +156,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
     // If any omitted nodes, remove them from the global_node_map.
     // The id will be 0
     if (any_omitted_nodes) {
-      std::vector<int>::iterator pos = std::remove(global_node_map.begin(),
+      typename std::vector<INT>::iterator pos = std::remove(global_node_map.begin(),
 						   global_node_map.end(), 0);
       global_node_map.erase(pos, global_node_map.end());
     }
@@ -167,20 +177,21 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
     // 'global id' and then 'global id' to global position. The
     // mapping is now a direct lookup instead of a lookup followed by
     // a reverse map.
-    IdMap::iterator cur_pos = global_node_map.begin();
+    typedef typename std::vector<INT>::iterator V_INT_iterator;
+    V_INT_iterator cur_pos = global_node_map.begin();
     for (size_t p = 0; p < part_count; p++) {
-      int noffset = part_mesh[p]->get_property("node_offset").get_int();
+      size_t noffset = part_mesh[p]->get_property("node_offset").get_int();
       size_t node_count = global_nodes[p].size();
       for (size_t i = 0; i < node_count; i++) {
-	int global_node = global_nodes[p][i];
+	INT global_node = global_nodes[p][i];
 
 	if (global_node > 0) {
 	if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
-	  std::pair<IdMap::iterator, IdMap::iterator> iter = std::equal_range(global_node_map.begin(),
-									  global_node_map.end(),
-									  global_node);
+	  std::pair<V_INT_iterator, V_INT_iterator> iter = std::equal_range(global_node_map.begin(),
+									    global_node_map.end(),
+									    global_node);
 	  if (iter.first == iter.second) {
-	    int n = global_node;
+	    INT n = global_node;
 	    std::cerr << n << "\n";
 	    SMART_ASSERT(iter.first != iter.second);
 	  }
@@ -200,7 +211,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
     // repeats (id reuse) and if so, generate a new id for the repeated uses.
     if (!is_contiguous) {
       bool repeat_found = false;
-      int id_last = global_node_map[0];
+      INT id_last = global_node_map[0];
       for (size_t i=1; i < output_node_count; i++) {
 	if (global_node_map[i] == id_last) {
 	  global_node_map[i] = ++max_id;
@@ -215,11 +226,21 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
     }
   }
 
+template void build_reverse_node_map(Ioss::Region &global,
+				     RegionVector &part_mesh,
+				     std::vector<int> &global_node_map,
+				     std::vector<int> &local_node_map);
+template void build_reverse_node_map(Ioss::Region &global,
+				     RegionVector &part_mesh,
+				     std::vector<int64_t> &global_node_map,
+				     std::vector<int64_t> &local_node_map);
+
+template <typename INT>
 void build_local_element_map(RegionVector &part_mesh,
-			     IdMap &local_element_map)
+			     std::vector<INT> &local_element_map)
 {
-  int global = 0;
-  int offset = 0;
+  size_t global = 0;
+  size_t offset = 0;
   for (size_t p = 0; p < part_mesh.size(); p++) {
 
     Ioss::ElementBlockContainer ebs = part_mesh[p]->get_element_blocks();
@@ -227,14 +248,14 @@ void build_local_element_map(RegionVector &part_mesh,
 
     while (i != ebs.end()) {
       Ioss::ElementBlock *eb = *i++; 
-      int    num_elem  = eb->get_property("entity_count").get_int();
+      size_t num_elem  = eb->get_property("entity_count").get_int();
       if (entity_is_omitted(eb)) {
 	// Fill local_element_map with -1 for the omitted elements.
-	for (int j = 0; j < num_elem; j++) {
+	for (size_t j = 0; j < num_elem; j++) {
 	  local_element_map[offset+j] = -1;
 	}
       } else {
-	for (int j = 0; j < num_elem; j++) {
+	for (size_t j = 0; j < num_elem; j++) {
 	  local_element_map[offset+j] = global++;
 	}
       }
@@ -243,9 +264,15 @@ void build_local_element_map(RegionVector &part_mesh,
   }
 }
 
+template void build_local_element_map(RegionVector &part_mesh,
+				      std::vector<int> &local_element_map);
+template void build_local_element_map(RegionVector &part_mesh,
+				      std::vector<int64_t> &local_element_map);
+
+template <typename INT>
 void generate_element_ids(RegionVector &part_mesh,
-			  const IdMap &local_element_map,
-			  IdMap &global_element_map)
+			  const std::vector<INT> &local_element_map,
+			  std::vector<INT> &global_element_map)
 {
   // Follow same logic as 'build_local_element_map' to ensure elements
   // are processed in same order.
@@ -257,21 +284,21 @@ void generate_element_ids(RegionVector &part_mesh,
   // the global_element_map, but check whether any of the part blocks
   // have a non-1..numel map...
   bool has_map = false;
-  int offset = 0;
+  size_t offset = 0;
   for (size_t p = 0; p < part_mesh.size(); p++) {
     Ioss::ElementBlockContainer ebs = part_mesh[p]->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i = ebs.begin();
 
     while (i != ebs.end()) {
       Ioss::ElementBlock *eb = *i++; 
-      int    num_elem  = eb->get_property("entity_count").get_int();
+      INT num_elem  = eb->get_property("entity_count").get_int();
       if (!entity_is_omitted(eb)) {
-	IdMap part_ids;
+	std::vector<INT> part_ids;
 	eb->get_field_data("ids", part_ids);
 
 	if (!has_map) { 
-	  int eb_offset = eb->get_offset();
-	  for (int j = 0; j < num_elem; j++) {
+	  INT eb_offset = eb->get_offset();
+	  for (INT j = 0; j < num_elem; j++) {
 	    if (part_ids[j] != eb_offset+j+1) {
 	      has_map = true;
 	      break;
@@ -279,8 +306,8 @@ void generate_element_ids(RegionVector &part_mesh,
 	  }
 	}
 
-	for (int j = 0; j < num_elem; j++) {
-	  int gpos = local_element_map[offset+j];
+	for (INT j = 0; j < num_elem; j++) {
+	  INT gpos = local_element_map[offset+j];
 	  if (gpos >= 0)
 	    global_element_map[gpos] = part_ids[j];
 	}
@@ -294,14 +321,14 @@ void generate_element_ids(RegionVector &part_mesh,
   // index came first which causes really screwy element maps.
   // Instead, lets sort a vector containing pairs of <id, index> where
   // the index will always? increase for increasing part numbers...
-  std::vector<std::pair<int,int> > index(global_element_map.size());
+  std::vector<std::pair<INT,INT> > index(global_element_map.size());
   for (size_t i=0; i < index.size(); i++) {
-    index[i] = std::make_pair(global_element_map[i],(int)i);
+    index[i] = std::make_pair(global_element_map[i],(INT)i);
   }
 
   std::sort(index.begin(), index.end());
 
-  int max_id = index[index.size()-1].first + 1;
+  INT max_id = index[index.size()-1].first + 1;
   
   size_t beg = 0;
   for (size_t i=1; i < index.size(); i++) {
@@ -315,3 +342,11 @@ void generate_element_ids(RegionVector &part_mesh,
     }
   }
 }
+
+template void generate_element_ids(RegionVector &part_mesh,
+				   const std::vector<int> &local_element_map,
+				   std::vector<int> &global_element_map);
+template void generate_element_ids(RegionVector &part_mesh,
+				   const std::vector<int64_t> &local_element_map,
+				   std::vector<int64_t> &global_element_map);
+

@@ -143,7 +143,7 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::ArrayRCP<const size_t>
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeRowOffsets() const
 {
-  return ptGraph_->getNodeRowBegs();
+  return ptGraph_->getNodeRowPtrs();
 }
 
 //-------------------------------------------------------------------
@@ -170,8 +170,11 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillComplete(const Teuchos::RCP<
   blkDomainMap_ = blkDomainMap;
   blkRangeMap_  = blkRangeMap;
 
+  RCP<ParameterList> params = parameterList();
+  if (os == DoOptimizeStorage) params->set("Optimize Storage",true);
+  else                         params->set("Optimize Storage",false);
   ptGraph_->fillComplete(convertBlockMapToPointMap(*blkDomainMap),
-                         convertBlockMapToPointMap(*blkRangeMap), os);
+                         convertBlockMapToPointMap(*blkRangeMap), params);
 
   //Now we need to take the point-column-map from ptGraph_ and create a
   //corresponding block-column-map.

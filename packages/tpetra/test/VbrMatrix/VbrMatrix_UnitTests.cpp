@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -259,7 +259,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, Basic, LO, GO, Scalar, Node )
@@ -324,7 +324,7 @@ namespace {
           LO numPtRows, numPtCols;
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
- 
+
           Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
           blk.putScalar(row+col+1);
 
@@ -372,7 +372,7 @@ namespace {
           LO numPtRows, numPtCols;
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
- 
+
           Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
           blk.putScalar(row+col+1);
 
@@ -425,10 +425,10 @@ namespace {
           LO numPtRows, numPtCols;
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
- 
+
           Teuchos::ArrayRCP<Scalar> nonconstblockEntry;
           vbr->getGlobalBlockEntryViewNonConst(row, col, numPtRows, numPtCols, nonconstblockEntry);
- 
+
           Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
           blk.putScalar(row+col+1);
 
@@ -499,10 +499,10 @@ namespace {
           LO numPtRows, numPtCols;
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
- 
+
           Teuchos::ArrayRCP<Scalar> nonconstblockEntry;
           vbr->getGlobalBlockEntryViewNonConst(row, col, numPtRows, numPtCols, nonconstblockEntry);
- 
+
           Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
           blk.putScalar(2*(row+col+1)+10.0);
 
@@ -610,10 +610,10 @@ namespace {
           LO numPtRows, numPtCols;
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
- 
+
           Teuchos::ArrayRCP<Scalar> nonconstblockEntry;
           vbr->getGlobalBlockEntryViewNonConst(row, col, numPtRows, numPtCols, nonconstblockEntry);
- 
+
           Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
           blk.putScalar(2*(row+col+1)+10.0);
 
@@ -1414,7 +1414,7 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( v2, v3, 2*Teuchos::ScalarTraits<Scalar>::eps());
   }
 
-// 
+//
 // INSTANTIATIONS
 //
 
@@ -1462,43 +1462,45 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR)
 #endif
 
-// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-#if defined(HAVE_KOKKOS_THRUST) && !defined(HAVE_TPETRA_MPI)
-// float
-#if defined(HAVE_KOKKOS_CUDA_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, float, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-#endif
-// double
-#if defined(HAVE_KOKKOS_CUDA_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, double, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-#endif
-// complex<float>
-#if defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexFloat, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
-#endif
-// complex<double>
-#if defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexDouble, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
-#endif
-#else
-// none
+#if 0
+//// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
+//#if defined(HAVE_KOKKOS_CUSPARSE) && !defined(HAVE_TPETRA_MPI)
+//// float
+//#if defined(HAVE_KOKKOS_CUDA_FLOAT)
+//#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \
+//          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, float, ThrustGPUNode )
+//#else
+//#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
+//#endif
+//// double
+//#if defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO) \
+//          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, double, ThrustGPUNode )
+//#else
+//#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
+//#endif
+//// complex<float>
+//#if defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
+//#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO) \
+//          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexFloat, ThrustGPUNode )
+//#else
+//#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
+//#endif
+//// complex<double>
+//#if defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
+//#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO) \
+//          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexDouble, ThrustGPUNode )
+//#else
+//#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
+//#endif
+//#else
+//// none
+#endif // 0
 # define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
 # define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
 # define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
 # define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
-#endif
+//#endif
 
 #define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
     UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
@@ -1528,13 +1530,13 @@ typedef std::complex<double> ComplexDouble;
 #if !defined(FAST_DEVELOPMENT_UNIT_TEST_BUILD)
 # if defined(HAVE_TPETRA_INST_FLOAT)
     UNIT_TEST_FLOAT(int, int)
-# endif 
+# endif
 # if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
     UNIT_TEST_COMPLEX_FLOAT(int, int)
-# endif 
+# endif
 # if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
     UNIT_TEST_COMPLEX_DOUBLE(int, int)
-# endif 
+# endif
 #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

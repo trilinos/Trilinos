@@ -46,7 +46,7 @@ namespace Ioss {
   public:
     EdgeBlock(DatabaseIO *io_database,
 	      const std::string& name, const std::string& edge_type,
-	      size_t number_edges);
+	      int64_t number_edges);
 
     ~EdgeBlock();
 
@@ -59,10 +59,10 @@ namespace Ioss {
     Property get_implicit_property(const std::string& name) const;
 
   protected:
-    int internal_get_field_data(const Field& field,
+    int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
-    int internal_put_field_data(const Field& field,
+    int64_t internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
   };
 }

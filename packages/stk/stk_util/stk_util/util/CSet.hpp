@@ -130,7 +130,7 @@ const T * CSet::insert_no_delete( const T * arg_value)
 {
   Manager m ;
   m.first = & typeid(T);
-  m.second = NULL ;
+  m.second = 0 ;
 
   return (const T *) p_insert( m , arg_value );
 }

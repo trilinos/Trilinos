@@ -54,6 +54,7 @@
 /* TPL Dependencies */
 #cmakedefine HAVE_KOKKOS_TBB
 #cmakedefine HAVE_KOKKOS_CUDA
+#cmakedefine HAVE_KOKKOS_CUSPARSE
 #cmakedefine HAVE_KOKKOS_THRUST
 #cmakedefine HAVE_KOKKOS_CUSP
 

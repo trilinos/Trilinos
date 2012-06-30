@@ -46,6 +46,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <exodusII.h>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -61,20 +62,31 @@
 
 namespace {
 
+  size_t MAX(size_t a, size_t b)
+  {
+    return b ^ ((a ^ b) & -(a>b));
+  }
+
   template<typename T>  struct remove_pointer     { typedef T type; };
   template<typename T>  struct remove_pointer<T*> { typedef T type; };
   
   // Data space shared by most field input/output routines...
   std::vector<char> data;
+  size_t max_field_size = 0;
 
   struct Globals
   {
-    bool debug;
-    bool do_transform_fields;
+    std::string working_directory;
     double maximum_time;
     double minimum_time;
     int  surface_split_type;
-    std::string working_directory;
+    int  compression_level;
+    bool debug;
+    bool do_transform_fields;
+    bool ints_64_bit;
+    bool reals_32_bit;
+    bool netcdf4;
+    bool shuffle;
   };
 
   void show_usage(const std::string &prog);
@@ -111,8 +123,7 @@ namespace {
   void transfer_field_data(Ioss::GroupingEntity *ige,
 			   Ioss::GroupingEntity *oge,
 			   Ioss::Field::RoleType role,
-			   const std::string &prefix = "",
-			   bool transfer_connectivity = true);
+			   const std::string &prefix = "");
 
   void transfer_properties(Ioss::GroupingEntity *ige,
 			   Ioss::GroupingEntity *oge);
@@ -154,6 +165,11 @@ int main(int argc, char *argv[])
   globals.maximum_time = 0.0;
   globals.minimum_time = 0.0;
   globals.surface_split_type = 1;
+  globals.ints_64_bit = false;
+  globals.reals_32_bit = false;
+  globals.netcdf4 = false;
+  globals.compression_level = 0;
+  globals.shuffle = false;
   
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
@@ -198,6 +214,26 @@ int main(int argc, char *argv[])
     else if (std::strcmp("-i", argv[i]) == 0) {
       i++;
       input_file = argv[i++];
+    }
+    else if (std::strcmp("--64", argv[i]) == 0) {
+      i++;
+      globals.ints_64_bit = true;
+    }
+    else if (std::strcmp("--float", argv[i]) == 0) {
+      i++;
+      globals.reals_32_bit = true;
+    }
+    else if (std::strcmp("--netcdf4", argv[i]) == 0) {
+      i++;
+      globals.netcdf4 = true;
+    }
+    else if (std::strcmp("--shuffle", argv[i]) == 0) {
+      i++;
+      globals.shuffle = true;
+    }
+    else if (std::strcmp("--compress", argv[i]) == 0) {
+      i++;
+      globals.compression_level = std::strtol(argv[i++], NULL, 10);
     }
     else if (std::strcmp("--debug", argv[i]) == 0) {
       i++;
@@ -301,7 +337,11 @@ namespace {
     OUTPUT << "\t-i {file} : read input and output filename data from file\n";
     OUTPUT << "\t--in_type {pamgen|generated|exodus} : set input type to the argument. Default exodus\n";
     OUTPUT << "\t--out_type {exodus} : set output type to the argument. Default exodus\n";
+    OUTPUT << "\t--64 : integers will be 64-bit for api.\n";
+    OUTPUT << "\t--float : reals will be stored as floats (32-bits) on the database (output only).\n";
     OUTPUT << "\t--debug : turn on debugging output\n";
+    OUTPUT << "\t--compress {level} : specifies comrpession level [0..9]\n";
+    OUTPUT << "\t--shuffle : enable shuffle filter for use with compression\n";
     OUTPUT << "\t--Maximum_Time {time} : maximum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Minimum_Time {time} : minimum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n";
@@ -329,6 +369,8 @@ namespace {
     }
 
     dbi->set_surface_split_type(Ioss::int_to_surface_split(globals.surface_split_type));
+    if (globals.ints_64_bit)
+      dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
@@ -336,8 +378,31 @@ namespace {
     //========================================================================
     // OUTPUT ...
     //========================================================================
+    Ioss::PropertyManager properties;
+    if (globals.ints_64_bit) {
+      properties.add(Ioss::Property("INTEGER_SIZE_DB",  8));
+      properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
+    }
+
+    if (globals.reals_32_bit) {
+      properties.add(Ioss::Property("REAL_SIZE_DB",  4));
+    }
+
+    if (globals.compression_level > 0 || globals.shuffle) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+      properties.add(Ioss::Property("COMPRESSION_LEVEL", globals.compression_level));
+      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", globals.shuffle));
+    }
+      
+    if (globals.netcdf4) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+    }
+    
+    if (globals.debug)
+      properties.add(Ioss::Property("LOGGING", 1));
+
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(output_type, outfile, Ioss::WRITE_RESTART,
-						    (MPI_Comm)MPI_COMM_WORLD);
+						    (MPI_Comm)MPI_COMM_WORLD, properties);
     if (dbo == NULL || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -374,6 +439,10 @@ namespace {
     if (globals.debug) OUTPUT << "END STATE_DEFINE_MODEL... " << '\n';
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
+    OUTPUT << "Maximum Field size = " << max_field_size << " bytes.\n";
+    data.resize(max_field_size);
+    OUTPUT << "Resize finished...\n";
+    
     if (globals.debug) OUTPUT << "TRANSFERRING MESH FIELD DATA ... " << '\n';
     // Model defined, now fill in the model data...
     output_region.begin_mode(Ioss::STATE_MODEL);
@@ -432,8 +501,8 @@ namespace {
 	    Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 
 	    if (ofb != NULL) {
-	      transfer_field_data(*J, ofb, Ioss::Field::MESH, "", false);
-	      transfer_field_data(*J, ofb, Ioss::Field::ATTRIBUTE, "", false);
+	      transfer_field_data(*J, ofb, Ioss::Field::MESH);
+	      transfer_field_data(*J, ofb, Ioss::Field::ATTRIBUTE);
 	    }
 	    ++J;
 	  }
@@ -561,7 +630,7 @@ namespace {
 	      Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 	      
 	      if (ofb != NULL) {
-		transfer_field_data(*J, ofb, Ioss::Field::TRANSIENT, "", false);
+		transfer_field_data(*J, ofb, Ioss::Field::TRANSIENT);
 	      }
 	      ++J;
 	    }
@@ -580,12 +649,12 @@ namespace {
   {
     Ioss::NodeBlockContainer    nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i = nbs.begin();
-    int id = 1;
+    size_t id = 1;
     while (i != nbs.end()) {
       std::string name      = (*i)->name();
       if (debug) OUTPUT << name << ", ";
-      int    num_nodes = (*i)->get_property("entity_count").get_int();
-      int    degree    = (*i)->get_property("component_degree").get_int();
+      size_t num_nodes = (*i)->get_property("entity_count").get_int();
+      size_t degree    = (*i)->get_property("component_degree").get_int();
       if (!debug) {
 	OUTPUT << " Number of coordinates per node       =" << std::setw(12) << degree << "\n";
 	OUTPUT << " Number of nodes                      =" << std::setw(12) << num_nodes << "\n";
@@ -647,12 +716,12 @@ namespace {
   {
     if (!blocks.empty()) {
       typename std::vector<T*>::const_iterator i = blocks.begin();
-      int total_entities = 0;
+      size_t total_entities = 0;
       while (i != blocks.end()) {
 	std::string name      = (*i)->name();
 	if (debug) OUTPUT << name << ", ";
 	std::string type      = (*i)->get_property("topology_type").get_string();
-	int    count  = (*i)->get_property("entity_count").get_int();
+	size_t    count  = (*i)->get_property("entity_count").get_int();
 	total_entities += count;
 	
 	T* block = new T(output_region.get_database(), name, type, count);
@@ -694,7 +763,7 @@ namespace {
   {
     Ioss::SideSetContainer      fss = region.get_sidesets();
     Ioss::SideSetContainer::const_iterator i = fss.begin();
-    int total_sides = 0;
+    size_t total_sides = 0;
     while (i != fss.end()) {
       std::string name      = (*i)->name();
       if (debug) OUTPUT << name << ", ";
@@ -707,7 +776,7 @@ namespace {
 	if (debug) OUTPUT << fbname << ", ";
 	std::string fbtype    = (*j)->get_property("topology_type").get_string();
 	std::string partype   = (*j)->get_property("parent_topology_type").get_string();
-	int    num_side  = (*j)->get_property("entity_count").get_int();
+	size_t    num_side  = (*j)->get_property("entity_count").get_int();
 	total_sides += num_side;
 
 	Ioss::SideBlock *block = new Ioss::SideBlock(output_region.get_database(), fbname, fbtype,
@@ -737,11 +806,11 @@ namespace {
   {
     if (!sets.empty()) {
       typename std::vector<T*>::const_iterator i = sets.begin();
-      int total_entities = 0;
+      size_t total_entities = 0;
       while (i != sets.end()) {
 	std::string name      = (*i)->name();
 	if (debug) OUTPUT << name << ", ";
-	int    count     = (*i)->get_property("entity_count").get_int();
+	size_t    count     = (*i)->get_property("entity_count").get_int();
 	total_entities += count;
 	T* set = new T(output_region.get_database(), name, count);
 	output_region.add(set);
@@ -795,7 +864,7 @@ namespace {
       std::string name      = (*i)->name();
       if (debug) OUTPUT << name << ", ";
       std::string type      = (*i)->get_property("entity_type").get_string();
-      int    count     = (*i)->get_property("entity_count").get_int();
+      size_t    count     = (*i)->get_property("entity_count").get_int();
       Ioss::CommSet *cs = new Ioss::CommSet(output_region.get_database(), name, type, count);
       output_region.add(cs);
       transfer_properties(*i, cs);
@@ -822,10 +891,11 @@ namespace {
     Ioss::NameList::const_iterator IF;
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string field_name = *IF;
+      Ioss::Field field = ige->get_field(field_name);
+      max_field_size = MAX(max_field_size, field.get_size());
       if (field_name != "ids" && !oge->field_exists(field_name) &&
 	  (prefix.length() == 0 || std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
 	// If the field does not already exist, add it to the output node block
-	Ioss::Field field = ige->get_field(field_name);
 	oge->field_add(field);
       }
     }
@@ -885,7 +955,7 @@ namespace {
       size_t osize = oge->get_field(out_field_name).get_size();
       assert (isize == osize);
 
-      data.resize(isize);
+      assert(data.size() >= isize);
       ige->get_field_data(field_name,     &data[0], isize);
       oge->put_field_data(out_field_name, &data[0], osize);
     }
@@ -894,8 +964,7 @@ namespace {
   void transfer_field_data(Ioss::GroupingEntity *ige,
 			   Ioss::GroupingEntity *oge,
 			   Ioss::Field::RoleType role,
-			   const std::string &prefix,
-			   bool transfer_connectivity)
+			   const std::string &prefix)
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
@@ -922,7 +991,7 @@ namespace {
       // 'connectivity' field, but it is only interesting on the
       // Ioss::ElementBlock class. On the other classes, it just
       // generates overhead...
-      if (!transfer_connectivity && field_name == "connectivity")
+      if (field_name == "connectivity" && ige->type() != Ioss::ELEMENTBLOCK)
 	continue;
 
 
@@ -945,9 +1014,20 @@ namespace {
       assert(isize == oge->get_field(field_name).get_size());
     }
 
-    data.resize(isize);
-
+    if (field_name == "mesh_model_coordinates_x") return;
+    if (field_name == "mesh_model_coordinates_y") return;
+    if (field_name == "mesh_model_coordinates_z") return;
     if (field_name == "connectivity_raw") return;
+    if (field_name == "element_side_raw") return;
+    if (field_name == "ids_raw") return;
+    if (field_name == "node_connectivity_status") return;
+
+    if (data.size() < isize) {
+      std::cerr << "Field: " << field_name << "\tIsize = " << isize << "\tdata size = " << data.size() << "\n";
+      data.resize(isize);
+    }
+
+    assert(data.size() >= isize);
     ige->get_field_data(field_name, &data[0], isize);
     oge->put_field_data(field_name, &data[0], isize);
   }

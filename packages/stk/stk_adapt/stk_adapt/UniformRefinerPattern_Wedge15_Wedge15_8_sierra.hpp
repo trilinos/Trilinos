@@ -10,7 +10,7 @@
 #include "UniformRefinerPattern_Tri6_Tri6_4_sierra.hpp"
 #endif
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 namespace stk {
   namespace adapt {

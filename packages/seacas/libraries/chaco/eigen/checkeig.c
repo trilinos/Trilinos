@@ -12,12 +12,12 @@ checkeig (double *err, struct vtx_data **A, double *y, int n, double lambda, dou
 {
     double    resid;
     double    normy;
-    double    norm();
+    double    ch_norm();
     void      splarax(), scadd();
 
     splarax(err, A, n, y, vwsqrt, work);
     scadd(err, 1, n, -lambda, y);
-    normy = norm(y, 1, n);
-    resid = norm(err, 1, n) / normy;
+    normy = ch_norm(y, 1, n);
+    resid = ch_norm(err, 1, n) / normy;
     return (resid);
 }

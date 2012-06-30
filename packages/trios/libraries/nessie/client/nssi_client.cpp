@@ -57,9 +57,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "buffer_queue.h"
 #include "Trios_nssi_rpc.h"
 #include "Trios_nssi_xdr.h"
-
-
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -77,8 +75,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <stdlib.h>
 
 
-
-#include "nssi_debug.h"
 #include "nssi_opcodes.h"
 #include "nssi_service_args.h"
 
@@ -90,6 +86,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
 extern nssi_config_t nssi_config;
+
+static nthread_counter_t request_count;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
@@ -120,6 +118,8 @@ client_init ()
     }
 
 //    register_service_encodings();
+
+    nthread_counter_init(&request_count);
 
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_GET_SERVICE, void, void, nssi_service);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_KILL_SERVICE, nssi_kill_service_args, void, void);
@@ -422,7 +422,7 @@ int nssi_get_service(
     unsigned long len=0;
 
 
-    log_debug(rpc_debug_level, "thread_id(%llu): entered nssi_get_service", nthread_self());
+    log_debug(rpc_debug_level, "entered nssi_get_service");
 
     client_init();
 
@@ -591,7 +591,7 @@ cleanup:
         free(buf);
     }
 
-    log_debug(rpc_debug_level, "%llu: finished nssi_get_service (rc=%d)", nthread_self(), rc);
+    log_debug(rpc_debug_level, "finished nssi_get_service (rc=%d)", rc);
 
     return rc;
 }
@@ -959,7 +959,7 @@ complete:
 //    /* release the event queue for the short result */
 //    log_debug(rpc_debug_level, "unpinning req_array[*which]->short_result_hdl");
 //    nssi_ptl_unpin_memory(&req_array[*which]->short_result_hdl);
-////    log_debug(rpc_debug_level,"thread_id(%llu): freeing req_array[*which]->short_result_hdl.eq_h==%d...", nthread_self(), req_array[*which]->short_result_hdl.eq_h);
+////    log_debug(rpc_debug_level,"freeing req_array[*which]->short_result_hdl.eq_h==%d...", req_array[*which]->short_result_hdl.eq_h);
 ////    rc = nssi_PtlEQFree(req_array[*which]->short_result_hdl.eq_h);
 ////    if (rc != PTL_OK) {
 ////        log_error(rpc_debug_level, "failed to free short result EQ");
@@ -1264,9 +1264,6 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
     }
 
 
-
-
-
 cleanup:
 
     /* Did we get here because of an error in this code? */
@@ -1561,8 +1558,6 @@ int nssi_call_rpc(
         void *result,
         nssi_request *request)
 {
-    /* global counter that needs mutex protection */
-    static nthread_counter_t global_count = NTHREAD_COUNTER_INITIALIZER;
     long timeout = (10)*(DEFAULT_RPC_TIMEOUT);
 
     /* local count does not need protection */
@@ -1570,6 +1565,8 @@ int nssi_call_rpc(
 
     /* local variables */
     int rc=NSSI_OK;  /* return code */
+
+    log_level debug_level = rpc_debug_level;
 
     nssi_request_header header;   /* the request header */
     char *buf;
@@ -1582,10 +1579,10 @@ int nssi_call_rpc(
 
     unsigned long len=0;
 
-    log_debug(rpc_debug_level, "thread_id(%llu): entered nssi_call_rpc", nthread_self());
+    log_debug(rpc_debug_level, "entered nssi_call_rpc");
 
     /* increment global counter */
-    local_count = nthread_counter_increment(&global_count);
+    local_count = nthread_counter_increment(&request_count);
 
     /*------ Initialize variables and buffers ------*/
     memset(request, 0, sizeof(nssi_request));
@@ -1613,7 +1610,7 @@ int nssi_call_rpc(
         buf=(char*)malloc(short_req_len);
         trios_stop_timer("malloc - short req", call_time);
         if (!buf)   {
-            log_fatal(rpc_debug_level, "malloc() failed!");
+            log_fatal(debug_level, "malloc() failed!");
             rc = NSSI_ENOMEM;
             goto cleanup;
         }
@@ -1631,15 +1628,17 @@ int nssi_call_rpc(
                 short_req_hdl);
         trios_stop_timer("NNTI_register_memory - short req", call_time);
         if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed registering short request: %s",
+            log_error(debug_level, "failed registering short request: %s",
                     nnti_err_str(rc));
             goto cleanup;
         }
     }
 
-    log_debug(rpc_debug_level, "Registered short req buffer");
+    log_debug(debug_level, "Registered short req buffer");
 
     if (data_size > 0) {
+
+        log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
         trios_start_timer(call_time);
         rc=NNTI_register_memory(
                 &transports[svc->transport_id],
@@ -1663,8 +1662,8 @@ int nssi_call_rpc(
     if (nssi_config.use_buffer_queue) {
         request->short_result_hdl=trios_buffer_queue_pop(&recv_bq);
     } else {
+        log_debug (debug_level, "allocating short result (size=%d)", NSSI_SHORT_RESULT_SIZE);
         request->short_result_hdl=&request->short_result;
-
         trios_start_timer(call_time);
         buf=(char *)malloc(NSSI_SHORT_RESULT_SIZE);  // Freed in cleanup portion of timedwait
         trios_stop_timer("malloc - short result", call_time);
@@ -1758,8 +1757,8 @@ int nssi_call_rpc(
     request->status = NSSI_PROCESSING_REQUEST;
 
 cleanup:
-    log_debug(rpc_debug_level, "thread_id(%llu): finished nssi_call_rpc (req.opcode=%d, req.id=%d)",
-            nthread_self(), request->opcode, request->id);
+    log_debug(rpc_debug_level, "finished nssi_call_rpc (req.opcode=%d, req.id=%d)",
+            request->opcode, request->id);
 
     if (nssi_config.use_buffer_queue) {
         trios_buffer_queue_push(&send_bq, short_req_hdl);

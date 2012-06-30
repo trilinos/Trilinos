@@ -42,13 +42,16 @@
 #include "Ioss_DBUsage.h"
 
 namespace Ioss {
-class DatabaseIO;
+  class DatabaseIO;
+  typedef IOFactoryMap::value_type IOFactoryValuePair;
 }  // namespace Ioss
+
 
 Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
 					  const std::string& filename,
 					  Ioss::DatabaseUsage db_usage,
-					  MPI_Comm communicator)
+					  MPI_Comm communicator,
+					  const Ioss::PropertyManager &properties)
 {
   Ioss::DatabaseIO *db = NULL;
   Ioss::IOFactoryMap::iterator iter = registry()->find(type);
@@ -66,7 +69,7 @@ Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
     }
   } else {
     Ioss::IOFactory* factory = (*iter).second;
-    db = factory->make_IO(filename, db_usage, communicator);
+    db = factory->make_IO(filename, db_usage, communicator, properties);
   }
   return db;
 }

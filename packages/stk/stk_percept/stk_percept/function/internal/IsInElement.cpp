@@ -26,7 +26,7 @@ namespace stk
     {
     }
 
-    bool IsInElement::operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+    bool IsInElement::operator()(const stk::mesh::Entity& element, const mesh::BulkData& bulkData)
     {
 
       unsigned found_it;

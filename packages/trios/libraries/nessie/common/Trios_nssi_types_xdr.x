@@ -166,11 +166,6 @@ const DEFAULT_RPC_TIMEOUT = 10000;
 
 
 /**
- * @brief The size of a service's thread pool.
- */
-const MAX_SVC_THREADS = 1;
-
-/**
  * @brief A descriptor for remote services.
  *
  * The <tt>\ref nssi_service</tt> data
@@ -204,15 +199,6 @@ struct nssi_service {
 
     /** @brief The maximum number of requests to process. */
     int32_t max_reqs;
-
-    /** @brief Number of threads on the service.  (informational) */
-    int32_t num_threads;
-
-    /** @brief A thread ID for the request processing thread (used only on the server). */
-    uint32_t req_thread;
-
-    /** @brief The pool of threads used by the service (used only by the server). */
-    uint32_t thread_pool[MAX_SVC_THREADS];
 
     /** @brief A callback to invoke at intervals defined by progess_callback_timeout. */
     uint64_t progress_callback;

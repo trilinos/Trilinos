@@ -59,13 +59,13 @@ namespace stk {
       percept::PerceptMesh& eMesh = m_eMesh;
 
 #if 0
-      stk::mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
+      stk::mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
       const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
       unsigned nparts = parts.size();
       if (1) std::cout << "Number of parts = " << nparts << std::endl;
-      VectorFieldType* coordField = eMesh.getCoordinatesField();
+      VectorFieldType* coordField = eMesh.get_coordinates_field();
 #endif
-      stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
+      stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
 
       const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( rank );  
 

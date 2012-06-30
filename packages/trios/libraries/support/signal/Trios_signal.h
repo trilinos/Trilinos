@@ -84,27 +84,6 @@ extern "C" {
      */
     extern void trios_abort();
 
-    /**
-     * @brief Register a condition variable to be signaled when on an abort.
-     *
-     * A server process may have a number of threads that wait indefinitely on
-     * condition variables.  Registering such a condition variable here allows
-     * those threads to be woken up by the signal handler (e.g., during a ^C or
-     * an abort() call.
-     *
-     * @param mutex  The mutex protecting the condition variable.
-     * @param cond   The condition variable to register.
-     */
-    extern int trios_signal_register_cv(
-            nthread_mutex_t *mutex,
-            nthread_cond_t *cond);
-
-    extern int trios_signal_remove_cv(
-            nthread_mutex_t *mutex,
-            nthread_cond_t *cond);
-
-
-
 
 #else /* K&R C */
 

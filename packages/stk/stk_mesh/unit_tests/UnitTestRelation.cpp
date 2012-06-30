@@ -50,6 +50,7 @@ const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 {
+  (void)test_info_;
   // Unit test the Part functionality in isolation:
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -237,10 +238,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     Entity * node3 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nNotOwned ] );
     Entity * node4 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nNotOwned ] );
 
-
-    EntityId node_edge_ids[2] ;
-    node_edge_ids[0] = node3->relations()[0].entity()->identifier();
-    node_edge_ids[1] = node3->relations()[1].entity()->identifier();
+    //EntityId node_edge_ids[2] ;
+    //node_edge_ids[0] = node3->relations()[0].entity()->identifier();
+    //node_edge_ids[1] = node3->relations()[1].entity()->identifier();
 
     mesh3.m_bulk_data.modification_begin();
 
@@ -253,8 +253,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     //not owned and not shared
     Entity * node5 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nLocalEdge * p_rank ] );
 
-    node_edge_ids[0] = node5->relations()[0].entity()->identifier();
-    node_edge_ids[1] = node5->relations()[1].entity()->identifier();
+    //node_edge_ids[0] = node5->relations()[0].entity()->identifier();
+    //node_edge_ids[1] = node5->relations()[1].entity()->identifier();
 
     STKUNIT_ASSERT_EQUAL( in_shared( *node5 , p_rank+100 ), false );
     STKUNIT_ASSERT_EQUAL( in_send_ghost( *node4 , p_rank+100 ), false );
@@ -266,6 +266,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
 {
+  (void)test_info_;
   // Test that, if you set up degenerate relations, only of the relations
   // is deleted when you destroy one of the degenerate relations.
   // BulkData::destroy_relation has been changed to take a relation-id so
@@ -318,6 +319,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
 {
+  (void)test_info_;
   // Test relation attribute
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -354,6 +356,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
 {
+ (void)test_info_;
   // It should be legal to declare the same relation between shared
   // entities on two procs.
   //

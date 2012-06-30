@@ -105,6 +105,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
     bulk_data.change_entity_parts(*local_nodes[0], partvector);
     bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
   }
+  (void)bc_node_id; // to avoid a set but not used warning from gcc 4.6.3
 
   bulk_data.modification_end();
   //------------------------------
@@ -151,6 +152,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
   int numProcs = 1, myProc = 0;
   myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
   numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+  STKUNIT_ASSERT(numProcs>=1);
 
   fei::SharedPtr<fei::Matrix> matrix = ls.get_fei_LinearSystem()->getMatrix();
   int num_local_rows = matrix->getLocalNumRows();
@@ -213,6 +215,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
     bulk_data.change_entity_parts(*local_nodes[0], partvector);
     bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
   }
+  (void)bc_node_id; // to avoid a set but not used warning from gcc 4.6.3
 
   bulk_data.modification_end();
   //------------------------------
@@ -261,6 +264,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   int numProcs = 1, myProc = 0;
   myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
   numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+  STKUNIT_ASSERT(numProcs >= 1);
 
   fei::SharedPtr<fei::Matrix> matrix = ls.get_fei_LinearSystem()->getMatrix();
   int num_local_rows = matrix->getLocalNumRows();

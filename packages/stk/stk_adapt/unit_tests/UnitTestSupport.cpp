@@ -19,8 +19,8 @@ namespace stk {
       {
         if (always_do_regression_tests || option == 1)
           {
-            unsigned p_size = eMesh.getParallelSize();
-            unsigned p_rank = eMesh.getParallelRank();
+            unsigned p_size = eMesh.get_parallel_size();
+            unsigned p_rank = eMesh.get_parallel_rank();
             std::string par_filename = filename;
             if (p_size > 1)
               {
@@ -28,16 +28,16 @@ namespace stk {
               }
             if (Util::file_exists(par_filename))
               {
-                int spatialDim = eMesh.getSpatialDim();
+                int spatialDim = eMesh.get_spatial_dim();
 
                 PerceptMesh eMesh1(spatialDim);
-                eMesh.saveAs("./tmp.e");
-                eMesh1.openReadOnly("./tmp.e");
+                eMesh.save_as("./tmp.e");
+                eMesh1.open_read_only("./tmp.e");
 
                 PerceptMesh eMesh_gold(spatialDim);
-                eMesh_gold.openReadOnly(filename);
-                //eMesh_gold.printInfo("gold copy: "+filename, 2);
-                //eMesh1.printInfo("compare to: "+filename, 2);
+                eMesh_gold.open_read_only(filename);
+                //eMesh_gold.print_info("gold copy: "+filename, 2);
+                //eMesh1.print_info("compare to: "+filename, 2);
                 {
                   std::string diff_msg = "gold file diff report: "+filename+" \n";
                   bool print_during_diff = false;
@@ -47,9 +47,9 @@ namespace stk {
                       //std::cout << "tmp writing and reading to cleanup parts" << std::endl;
 
                       // write out and read back in to cleanup old parts
-                      eMesh1.saveAs("./tmp.e");
+                      eMesh1.save_as("./tmp.e");
                       PerceptMesh eMesh2(spatialDim);
-                      eMesh2.openReadOnly("./tmp.e");
+                      eMesh2.open_read_only("./tmp.e");
                       //std::cout << "tmp done writing and reading to cleanup parts" << std::endl;
                       bool diff_2 = PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, print_during_diff);
                       //std::cout << "tmp diff_2= " << diff_2 << std::endl;
@@ -66,12 +66,12 @@ namespace stk {
               }
             else
               {
-                eMesh.saveAs(filename);
+                eMesh.save_as(filename);
               }
           }
         else
           {
-            eMesh.saveAs(filename);
+            eMesh.save_as(filename);
           }
       }
 

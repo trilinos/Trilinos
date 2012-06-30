@@ -38,7 +38,7 @@ time_kernels (
     float    *mkvec_float();
     void      frvec(), frvec_float();
     void      vecran();
-    double    norm(), dot();
+    double    ch_norm(), dot();
     double    norm_float(), dot_float();
     double    seconds();
     void      scadd(), scadd_float(), update(), update_float();
@@ -78,7 +78,7 @@ time_kernels (
 	svec3[i] = dvec3[i];
     }
 
-    /* Set number of loops so that norm() takes about one second. This should
+    /* Set number of loops so that ch_norm() takes about one second. This should
        insulate against inaccurate timings on faster machines. */
 
     loops = 1;
@@ -88,7 +88,7 @@ time_kernels (
     while (time_dvec < min_time) {
 	time = seconds();
 	for (i = loops; i; i--) {
-	    norm_dvec = norm(dvec1, beg, end);
+	    norm_dvec = ch_norm(dvec1, beg, end);
 	}
 	time_dvec = seconds() - time;
 	if (time_dvec < min_time) {
@@ -109,7 +109,7 @@ time_kernels (
     /* Norm operation */
     time = seconds();
     for (i = loops; i; i--) {
-	norm_dvec = norm(dvec1, beg, end);
+	norm_dvec = ch_norm(dvec1, beg, end);
     }
     time_dvec = seconds() - time;
 

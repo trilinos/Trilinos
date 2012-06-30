@@ -41,6 +41,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 #ifndef _WIN32
 #include <sys/utsname.h>
@@ -134,7 +135,7 @@ int Ioss::Utils::decode_entity_name(const std::string &entity_name)
   return id;
 }
 
-std::string Ioss::Utils::encode_entity_name(const std::string &entity_type, int id)
+std::string Ioss::Utils::encode_entity_name(const std::string &entity_type, int64_t id)
 {
   // ExodusII stores block, nodeset, and sideset ids as integers
   // Sierra   stores these as std::strings. The string is created by
@@ -261,8 +262,9 @@ namespace {
 }
 void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
 						 const Ioss::SideBlock *ef_blk,
-						 const int *element, const int *sides,
-						 int number_sides,
+						 size_t int_byte_size,
+						 const void *element, const void *sides,
+						 int64_t number_sides,
 						 const Ioss::Region *region)
 {
   assert(ef_blk != NULL);
@@ -289,7 +291,7 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
   const ElementTopology *topo = NULL;
 
   // The element side that the current face is on the element...
-  int current_side = -1;
+  int64_t current_side = -1;
 
   if (number_sides > 0 && (element == NULL || sides == NULL)) {
     std::ostringstream errmsg;
@@ -298,8 +300,16 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
     IOSS_ERROR(errmsg);
   }
 
-  for (int iel = 0; iel < number_sides; iel++) {
-    int elem_id = element[iel];
+  for (int64_t iel = 0; iel < number_sides; iel++) {
+    int64_t elem_id = 0;
+    int64_t side_id = 0;
+    if (int_byte_size == 4) {
+      elem_id = ((int*)element)[iel];
+      side_id = ((int*)sides)[iel];
+    } else {
+      elem_id = ((int64_t*)element)[iel];
+      side_id = ((int64_t*)sides)[iel];
+    }
 
     // Get the element block containing this face...
     if (block == NULL || !block->contains(elem_id)) {
@@ -315,9 +325,9 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
     // If the element topology of the element block containing this
     // face has heterogeneous topology (eg. wedge), then determine the
     // topology corresponding to the current side..
-    if (common_ftopo == NULL && sides[iel] != current_side) {
-      current_side = sides[iel];
-      topo = block->topology()->boundary_type(sides[iel]);
+    if (common_ftopo == NULL && side_id != current_side) {
+      current_side = side_id;
+      topo = block->topology()->boundary_type(side_id);
     }
 
     // See if the face topology and the parent element topology for

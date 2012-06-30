@@ -25,6 +25,11 @@ EntityRepository::~EntityRepository()
       internal_expunge_entity( m_entities.begin() );
     }
   } catch(...){}
+
+  boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(Entity)>::release_memory();
+#ifdef SIERRA_MIGRATION
+  boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(fmwk_attributes)>::release_memory();
+#endif
 }
 
 void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
@@ -39,9 +44,31 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
     "Key " << print_entity_key(MetaData::get( *i->second ), i->first) <<
     " != " << print_entity_key(i->second));
 
-  delete i->second ;
-  i->second = NULL ;
+  Entity* deleted_entity = i->second;
+#ifdef SIERRA_MIGRATION
+  m_fmwk_attr_alloc.destroy(deleted_entity->m_fmwk_attrs);
+  m_fmwk_attr_alloc.deallocate(deleted_entity->m_fmwk_attrs, 1);
+#endif
+  m_entity_alloc.destroy(deleted_entity);
+  m_entity_alloc.deallocate(deleted_entity, 1);
+  i->second = NULL;
   m_entities.erase( i );
+}
+
+Entity*
+EntityRepository::internal_allocate_entity(EntityKey entity_key)
+{
+  static Entity tmp_entity;
+  Entity* new_entity = m_entity_alloc.allocate();
+  m_entity_alloc.construct(new_entity, tmp_entity);
+  new_entity->set_key(entity_key);
+#ifdef SIERRA_MIGRATION
+  static fmwk_attributes tmp_attributes;
+  fmwk_attributes* fmwk_attrs = m_fmwk_attr_alloc.allocate();
+  m_fmwk_attr_alloc.construct(fmwk_attrs, tmp_attributes);
+  new_entity->m_fmwk_attrs = fmwk_attrs;
+#endif
+  return new_entity;
 }
 
 std::pair<Entity*,bool>
@@ -58,7 +85,8 @@ EntityRepository::internal_create_entity( const EntityKey & key )
     result( insert_result.first->second , insert_result.second );
 
   if ( insert_result.second )  { // A new entity
-    insert_result.first->second = result.first = new Entity( key );
+    Entity* new_entity = internal_allocate_entity(key);
+    insert_result.first->second = result.first = new_entity;
   }
   else if ( EntityLogDeleted == result.first->log_query() ) {
     // resurrection
@@ -215,6 +243,41 @@ void EntityRepository::declare_relation( Entity & e_from,
   if ( caused_change_fwd ) {
     e_to.m_entityImpl.log_modified_and_propagate();
     e_from.m_entityImpl.log_modified_and_propagate();
+  }
+}
+
+void EntityRepository::update_entity_key(EntityKey key, Entity & entity)
+{
+  EntityKey old_key = entity.key();
+
+  EntityMap::iterator old_itr = m_entities.find( old_key );
+
+  EntityMap::iterator itr = m_entities.find(key);
+  if (itr != m_entities.end()) {
+    Entity* key_entity = itr->second;
+    ThrowRequireMsg( key_entity->log_query() == EntityLogDeleted, "update_entity_key ERROR: non-deleted entity already present for new key (" << key.rank()<<","<<key.id()<<")");
+
+    //We found an entity with 'key', we'll change its key to old_key and then
+    //entity (old_itr) will adopt key.
+
+    key_entity->m_entityImpl.update_key(old_key);
+    //key_entity is already marked for deletion
+
+    old_itr->second->m_entityImpl.update_key(key);
+
+    //We also need to swap the entities on these map iterators so that
+    //they map to the right keys:
+    itr->second = old_itr->second;
+    old_itr->second = key_entity;
+  }
+  else {
+    m_entities.insert(std::make_pair(key,&entity));
+
+    entity.m_entityImpl.update_key(key);
+
+    old_itr->second = internal_allocate_entity(old_key);
+
+    old_itr->second->m_entityImpl.log_deleted();
   }
 }
 

@@ -134,7 +134,7 @@ C @HEADER
 *                   |  0   0   0   0  45 |
 *                   | 51  52   0  54   0 |
 *
-*    then the matrix is assumed to be store as
+*    then the matrix is assumed to be stored as
 *
 *    val = ( 11  12  14  21  22  23  32  33  45  51  52  54 )
 *

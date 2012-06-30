@@ -46,7 +46,7 @@ namespace Ioss {
 
   class Field {
   public:
-    enum BasicType {INVALID = -1, REAL, INTEGER, COMPLEX, STRING, CHARACTER};
+    enum BasicType {INVALID = -1, REAL=1, INTEGER=4, INT32=4, INT64=8, COMPLEX, STRING, CHARACTER};
     enum RoleType {INTERNAL, MESH, ATTRIBUTE, COMMUNICATION, INFORMATION, REDUCTION, TRANSIENT};
 
     Field();
@@ -105,6 +105,9 @@ namespace Ioss {
     // Verify that the type 'the_type' matches the field's type.
     // throws exception if the types don't match.
     void check_type(BasicType the_type) const;
+    
+    bool is_type(BasicType the_type) const
+    {return the_type == type_;}
     
     bool add_transform(Transform* transform);
     bool transform(void *data);

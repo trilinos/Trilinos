@@ -1,0 +1,3 @@
+      COMMON /ETCOPT/ VECSCL
+C      --VECSCL - the vector length / symbol scale factor
+C

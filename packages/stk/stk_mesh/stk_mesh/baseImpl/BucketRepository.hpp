@@ -30,7 +30,12 @@ public:
       );
 
   /** \brief  Query all buckets of a given entity rank */
-  const std::vector<Bucket*> & buckets( EntityRank rank ) const ;
+  const std::vector<Bucket*> & buckets( EntityRank rank ) const
+  {
+    ThrowAssertMsg( rank < m_buckets.size(), "Invalid entity rank " << rank );
+  
+    return m_buckets[ rank ];
+  }
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
@@ -73,10 +78,15 @@ public:
       const std::vector< FieldBase * > & field_set
       );
   void copy_fields( Bucket & k_dst , unsigned i_dst ,
-                           Bucket & k_src , unsigned i_src );
+                           Bucket & k_src , unsigned i_src )
+  { k_dst.m_bucketImpl.replace_fields(i_dst,k_src,i_src); }
+
   void initialize_fields( Bucket & k_dst , unsigned i_dst );
 
   void internal_sort_bucket_entities();
+
+  void optimize_buckets();
+  void sort_and_optimize_buckets();
 
   void add_entity_to_bucket( Entity & entity, Bucket & bucket )
   {

@@ -50,14 +50,14 @@ namespace stk {
         EXCEPTWATCH;
         bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
 
-        if (eMesh.getSpatialDim() == 3)
+        if (eMesh.get_spatial_dim() == 3)
           {
             bp[0] = this;
 #if USE_FACE_BREAKER_T4_T4_8
             bp[1] = m_face_breaker;
 #endif
           }
-        else if (eMesh.getSpatialDim() == 2)
+        else if (eMesh.get_spatial_dim() == 2)
           {
             // FIXME
             std::cout << "ERROR" ;

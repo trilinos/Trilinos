@@ -33,7 +33,7 @@
 INCLUDES = -I..
 DEFINES = -DNO_XDMF_SUPPORT -DNO_MPI
 
-LIBS = -L.. -lIonit -lIoex  -lIogn -lIohb -lIotr -lIoss $(EXOIIV2C) $(NEMESISC) $(NETCDF)  
+LIBS = -L.. -lIonit -lIoex   -lIogn -lIohb -lIotr -lIoss $(EXOIIV2C) $(NETCDF)  
 DEPLIBS = ../libIoex.a ../libIogn.a ../libIotr.a ../libIoss.a ../libIonit.a ../libIohb.a
 
 PROGS = cth_pressure_map io_info io_shell shell_to_hex sphgen
@@ -42,11 +42,11 @@ AllTarget($(PROGS))
 
 libIoex.a: ../libIoex.a
 
-SRCS = io_info.C volume.C
+SRCS = io_info.C volume.C Ioss_GetLongOpt.C
 OBJS = $(SRCS:.C=.o)
 
-NormalCCTarget(cth_pressure_map, cth_pressure_map.o vector3d.o, $(DEPLIBS), /**/, $(LIBS))
-NormalCCTarget(io_info,          io_info.o volume.o,            $(DEPLIBS), /**/, $(LIBS))
+NormalCCTarget(cth_pressure_map, cth_pressure_map.o vector3d.o,  $(DEPLIBS), /**/, $(LIBS))
+NormalCCTarget(io_info,          io_info.o volume.o Ioss_GetLongOpt.o info_interface.o, $(DEPLIBS), /**/, $(LIBS))
 NormalCCTarget(io_shell,         io_shell.o,                    $(DEPLIBS), /**/, $(LIBS))
 NormalCCTarget(shell_to_hex,     shell_to_hex.o vector3d.o,     $(DEPLIBS), /**/, $(LIBS))
 NormalCCTarget(sphgen,           sphgen.o,                      $(DEPLIBS), /**/, $(LIBS))

@@ -230,7 +230,7 @@ typedef struct {
 
 
 
-static nthread_mutex_t nnti_ib_lock;
+static nthread_lock_t nnti_ib_lock;
 
 
 static int register_memory(
@@ -295,6 +295,7 @@ static void copy_peer(
         NNTI_peer_t *dest);
 static int init_server_listen_socket(void);
 static int start_connection_listener_thread(void);
+static NNTI_result_t check_listen_socket_for_new_connections();
 static struct ibv_device *get_ib_device(void);
 static int tcp_read(int sock, void *incoming, size_t len);
 static int tcp_write(int sock, const void *outgoing, size_t len);
@@ -417,26 +418,26 @@ static uint32_t hash6432shift(uint64_t key)
 static std::map<addrport_key, ib_connection *> connections_by_peer;
 typedef std::map<addrport_key, ib_connection *>::iterator conn_by_peer_iter_t;
 typedef std::pair<addrport_key, ib_connection *> conn_by_peer_t;
-static nthread_mutex_t nnti_conn_peer_lock;
+static nthread_lock_t nnti_conn_peer_lock;
 
 static std::map<NNTI_qp_num, ib_connection *> connections_by_qpn;
 typedef std::map<NNTI_qp_num, ib_connection *>::iterator conn_by_qpn_iter_t;
 typedef std::pair<NNTI_qp_num, ib_connection *> conn_by_qpn_t;
-static nthread_mutex_t nnti_conn_qpn_lock;
+static nthread_lock_t nnti_conn_qpn_lock;
 
 static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
 typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
 typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
-static nthread_mutex_t nnti_buf_bufhash_lock;
+static nthread_lock_t nnti_buf_bufhash_lock;
 
 static std::map<uint32_t, ib_work_request *> wr_by_wrhash;
 typedef std::map<uint32_t, ib_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, ib_work_request *> wr_by_wrhash_t;
-static nthread_mutex_t nnti_wr_wrhash_lock;
+static nthread_lock_t nnti_wr_wrhash_lock;
 
 typedef std::deque<ib_work_request *>           wr_pool_t;
 typedef std::deque<ib_work_request *>::iterator wr_pool_iter_t;
-static nthread_mutex_t nnti_wr_pool_lock;
+static nthread_lock_t nnti_wr_pool_lock;
 
 static wr_pool_t rdma_wr_pool;
 static wr_pool_t sendrecv_wr_pool;
@@ -492,14 +493,14 @@ NNTI_result_t NNTI_ib_init (
 
     if (!initialized) {
 
-        nthread_mutex_init(&nnti_ib_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_ib_lock);
 
-        nthread_mutex_init(&nnti_conn_peer_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_conn_qpn_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_wr_wrhash_lock, NTHREAD_MUTEX_RECURSIVE);
-        nthread_mutex_init(&nnti_buf_bufhash_lock, NTHREAD_MUTEX_RECURSIVE);
+        nthread_lock_init(&nnti_conn_peer_lock);
+        nthread_lock_init(&nnti_conn_qpn_lock);
+        nthread_lock_init(&nnti_wr_wrhash_lock);
+        nthread_lock_init(&nnti_buf_bufhash_lock);
 
-        nthread_mutex_init(&nnti_wr_pool_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_wr_pool_lock);
 
         config_init(&config);
         config_get_from_env(&config);
@@ -607,7 +608,7 @@ NNTI_result_t NNTI_ib_init (
         }
 
         init_server_listen_socket();
-        start_connection_listener_thread();
+//        start_connection_listener_thread();
 
         if (logging_info(nnti_debug_level)) {
             fprintf(logger_get_file(), "InfiniBand Initialized: host(%s) port(%u)\n",
@@ -1475,15 +1476,15 @@ NNTI_result_t NNTI_ib_wait (
 
     int ibv_rc=0;
     NNTI_result_t rc;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
     struct ibv_comp_channel *comp_channel;
     struct ibv_cq           *cq;
 
     log_level debug_level=nnti_debug_level;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
@@ -1504,6 +1505,8 @@ NNTI_result_t NNTI_ib_wait (
 
     q_hdl     =&transport_global_data.req_queue;
     assert(q_hdl);
+
+    check_listen_socket_for_new_connections();
 
     ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
     assert(ib_mem_hdl);
@@ -1538,6 +1541,8 @@ NNTI_result_t NNTI_ib_wait (
                 break;
             }
 
+            check_listen_socket_for_new_connections();
+
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
             ibv_rc = ibv_poll_cq(cq, 1, &wc);
@@ -1571,6 +1576,8 @@ NNTI_result_t NNTI_ib_wait (
                 }
             } else {
 retry:
+                check_listen_socket_for_new_connections();
+
 //            nthread_lock(&nnti_ib_lock);
                 trios_start_timer(call_time);
                 rc = poll_comp_channel(comp_channel, cq, timeout_per_call);
@@ -1584,7 +1591,7 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
 //                    elapsed_time += timeout_per_call;
 
@@ -1596,8 +1603,6 @@ retry:
                     }
                     /* continue if the timeout has not expired */
                     log_debug(debug_level, "poll_comp_channel timedout... retrying");
-
-                    nthread_yield();
 
                     log_debug(debug_level, "***** disable debug logging.  will enable after polling success. *****");
                     logger_set_default_level(LOG_OFF);
@@ -1702,8 +1707,8 @@ NNTI_result_t NNTI_ib_waitany (
 
     int ibv_rc=0;
     NNTI_result_t rc;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
     log_level debug_level=nnti_debug_level;
 
@@ -1712,11 +1717,13 @@ NNTI_result_t NNTI_ib_waitany (
 
     struct ibv_wc wc;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_start_timer(total_time);
 
     log_debug(debug_level, "enter");
+
+    check_listen_socket_for_new_connections();
 
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
@@ -1760,6 +1767,8 @@ NNTI_result_t NNTI_ib_waitany (
                 break;
             }
 
+            check_listen_socket_for_new_connections();
+
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
@@ -1793,6 +1802,8 @@ NNTI_result_t NNTI_ib_waitany (
                 }
             } else {
 retry:
+                check_listen_socket_for_new_connections();
+
 //            nthread_lock(&nnti_ib_lock);
                 trios_start_timer(call_time);
                 rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
@@ -1805,7 +1816,7 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
 //                    elapsed_time += timeout_per_call;
 
@@ -1817,8 +1828,6 @@ retry:
                     }
                     /* continue if the timeout has not expired */
                     log_debug(debug_level, "poll_comp_channel timedout... retrying");
-
-                    nthread_yield();
 
                     goto retry;
                 }
@@ -1917,8 +1926,8 @@ NNTI_result_t NNTI_ib_waitall (
 
     int ibv_rc=0;
     NNTI_result_t rc;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
     log_level debug_level=nnti_debug_level;
 
@@ -1927,11 +1936,13 @@ NNTI_result_t NNTI_ib_waitall (
 
     struct ibv_wc wc;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_start_timer(total_time);
 
     log_debug(debug_level, "enter");
+
+    check_listen_socket_for_new_connections();
 
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
@@ -1976,6 +1987,8 @@ NNTI_result_t NNTI_ib_waitall (
                 break;
             }
 
+            check_listen_socket_for_new_connections();
+
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
@@ -2009,6 +2022,8 @@ NNTI_result_t NNTI_ib_waitall (
                 }
             } else {
 retry:
+                check_listen_socket_for_new_connections();
+
 //            nthread_lock(&nnti_ib_lock);
                 trios_start_timer(call_time);
                 rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
@@ -2021,7 +2036,7 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
 //                  elapsed_time += timeout_per_call;
 
@@ -2033,8 +2048,6 @@ retry:
                     }
                     /* continue if the timeout has not expired */
                     log_debug(debug_level, "poll_comp_channel timedout... retrying");
-
-                    nthread_yield();
 
                     goto retry;
                 }
@@ -3308,9 +3321,13 @@ static int init_server_listen_socket()
     transport_global_data.listen_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (transport_global_data.listen_sock < 0)
         log_error(nnti_debug_level, "failed to create tcp socket: %s", strerror(errno));
+
     flags = 1;
     if (setsockopt(transport_global_data.listen_sock, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags)) < 0)
         log_error(nnti_debug_level, "failed to set tcp socket REUSEADDR flag: %s", strerror(errno));
+
+    flags=fcntl(transport_global_data.listen_sock, F_GETFL, 0);
+    fcntl(transport_global_data.listen_sock, F_SETFL, flags | O_NONBLOCK);
 
     if (transport_global_data.listen_name[0]!='\0') {
         log_debug(nnti_debug_level, "using hostname from command-line (%s).", transport_global_data.listen_name);
@@ -3603,6 +3620,10 @@ static int new_client_connection(
     } param_in, param_out;
 
     trios_declare_timer(callTime);
+
+    // Initialize to avoid an "uninitialized bytes messages from valgrind
+    memset(&param_out, 0, sizeof(param_out));
+    memset(&param_in, 0, sizeof(param_in));
 
     strcpy(param_out.name, transport_global_data.listen_name);
     param_out.addr = htonl((uint32_t)transport_global_data.listen_addr);
@@ -4008,10 +4029,10 @@ static NNTI_result_t insert_wr_wrhash(ib_work_request *wr)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)wr);
 
-    nthread_lock(&nnti_wr_wrhash_lock);
+//    nthread_lock(&nnti_wr_wrhash_lock);
     assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
     wr_by_wrhash[h] = wr;
-    nthread_unlock(&nnti_wr_wrhash_lock);
+//    nthread_unlock(&nnti_wr_wrhash_lock);
 
     log_debug(nnti_debug_level, "wrhash work request added (wr=%p hash=%x)", wr, h);
 
@@ -4402,9 +4423,14 @@ static NNTI_result_t check_listen_socket_for_new_connections()
     len = sizeof(ssin);
     s = accept(transport_global_data.listen_sock, (struct sockaddr *) &ssin, &len);
     if (s < 0) {
-        if (!(errno == EAGAIN)) {
+        if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+            log_debug(nnti_debug_level, "no connections waiting to be accepted: %s", strerror(errno));
+            rc = NNTI_OK;
+            goto cleanup;
+        } else {
             log_error(nnti_debug_level, "failed to accept tcp socket connection: %s", strerror(errno));
             rc = NNTI_EIO;
+            goto cleanup;
         }
     } else {
         char         *peer_hostname = strdup(inet_ntoa(ssin.sin_addr));
@@ -4447,59 +4473,9 @@ static NNTI_result_t check_listen_socket_for_new_connections()
             fprint_NNTI_peer(logger_get_file(), "peer",
                     "end of check_listen_socket_for_new_connections", &peer);
         }
-
-        nthread_yield();
     }
 
 cleanup:
-    return rc;
-}
-
-/**
- * @brief Continually check for new connection attempts.
- *
- */
-static void *connection_listener_thread(void *args)
-{
-    NNTI_result_t rc=NNTI_OK;
-
-    log_debug(nnti_debug_level, "started thread to listen for client connection attempts");
-
-    /* SIGINT (Ctrl-C) will get us out of this loop */
-    while (!trios_exit_now()) {
-        log_debug(nnti_debug_level, "listening for new connection");
-        rc = check_listen_socket_for_new_connections();
-        if (rc != NNTI_OK) {
-            log_fatal(nnti_debug_level, "error returned from nssi_ib_server_listen_for_client: %d", rc);
-            continue;
-        }
-    }
-
-    nthread_exit(&rc);
-
-    log_debug(LOG_ALL, "exiting listener thread");
-
-    return(NULL);
-}
-
-/**
- * @brief Start a thread to check for new connection attempts.
- *
- */
-static int start_connection_listener_thread()
-{
-    int rc = 0;
-    nthread_t thread;
-
-    /* Create the thread. Do we want special attributes for this? */
-    rc = nthread_create(&thread, NULL, connection_listener_thread, NULL);
-    if (rc) {
-        log_error(nnti_debug_level, "could not spawn thread");
-        rc = 1;
-    } else {
-        /* Tell this thread to clean up after exit -- valgrind detected memory leak */
-        rc = nthread_detach(thread);
-    }
     return rc;
 }
 

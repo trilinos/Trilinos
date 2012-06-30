@@ -1,0 +1,26 @@
+C     mshlim.blk
+C     PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4, KNEA=5, KFAR=6)
+      COMMON /MSHLIM/ UNMESH(KFAR), ALMESH(KFAR), ZMMESH(KTOP),
+     &                RDMESH(KTOP), TICMSH, SQMESH
+      LOGICAL SQMESH
+      COMMON /MSHLIC/ MSCTYP
+      CHARACTER*8 MSCTYP
+C      --UNMESH - the limits of the entire undeformed mesh
+C      --         (1=left, 2=right, 3=bottom, 4=top, 5=near, 6=far)
+C      --ALMESH - the limits of the entire deformed mesh
+C      --         (1=left, 2=right, 3=bottom, 4=top, 5=near, 6=far)
+C      --ZMMESH - the limits of the zoom mesh
+C      --         (1=left, 2=right, 3=bottom, 4=top)
+C      --RDMESH - the limits of the user-requested mesh (valid only if zoom)
+C      --         (1=left, 2=right, 3=bottom, 4=top)
+C      --TICMSH - X and Y axis tick interval for the mesh; 0 for default
+C      --MSCTYP - mesh scaling flag
+C      --         'ZOOM'     = user requested scaling (zoom)
+C      --         'MESH'     = scale to expanded mesh limits (2D only)
+C      --         'ROTATION' = scale for all deformed meshes this rotation
+C      --                      (3D only)
+C      --                     (scale if new rotation matrix or rotation center)
+C      --         'EACH'     = scale for each plot in the set
+C      --         'SELECTED' = scale for each plot, selected nodes only
+C      --SQMESH - true iff mesh is to be forced to be a square
+

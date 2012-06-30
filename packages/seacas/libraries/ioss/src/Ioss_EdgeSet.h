@@ -44,7 +44,7 @@ namespace Ioss {
   public:
     EdgeSet(); // Used for template typing only
     EdgeSet(DatabaseIO *io_database, const std::string& name,
-	    size_t number_edges);
+	    int64_t number_edges);
 
     std::string type_string() const {return "EdgeSet";}
     EntityType type() const {return EDGESET;}
@@ -57,10 +57,10 @@ namespace Ioss {
     virtual void block_membership(std::vector<std::string> &block_membership);
 
   protected:
-    int internal_get_field_data(const Field& field,
+    int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
-    int internal_put_field_data(const Field& field,
+    int64_t internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
   };

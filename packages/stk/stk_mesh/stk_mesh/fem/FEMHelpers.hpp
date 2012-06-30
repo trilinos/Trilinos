@@ -181,6 +181,59 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
   }
 }
 
+inline
+unsigned get_spatial_dimension(const Entity& entity)
+{
+  // expose some dot-chain to ensure everything inlined
+  return entity.bucket().mesh().mesh_meta_data().get_spatial_dimension();
+}
+
+/* The Fmwk uses an enum to identify nodes, edges, faces and elements. The
+   toolkit is similar, but the the toolkit rank depends on the spatial
+   dimension. For 3D parts they are identical. With 2D, the element rank is
+   2 (not 3). etc.
+*/
+
+#ifdef SIERRA_MIGRATION
+
+inline
+unsigned convert_fmwk_rank_to_stk(unsigned fmwk_rank, unsigned spatial_dim)
+{
+  ThrowAssert(spatial_dim > 0);
+  ThrowAssert(spatial_dim < 4);
+  ThrowAssert(fmwk_rank <= 4); // up to four basic entities types and constraints
+  static int map2Stk[4][5] = { {-1,-1,-1,-1, 4},
+                               { 0,-1,-1, 1, 4},
+                               { 0, 1,-1, 2, 4},
+                               { 0, 1, 2, 3, 4}};
+  int stk_rank = map2Stk[spatial_dim][fmwk_rank];
+
+  return static_cast<unsigned>(stk_rank);
+}
+
+inline
+unsigned convert_stk_rank_to_fmwk(unsigned stk_rank,  unsigned spatial_dim)
+{
+  ThrowAssert(spatial_dim > 0);
+  ThrowAssert(spatial_dim < 4);
+  ThrowAssert(stk_rank <= 4); // up to four basic entities types and constraints
+  static int map2Fmwk[4][5]={ {-1,-1,-1,-1, 4},
+                              { 0, 3,-1,-1, 4},
+                              { 0, 1, 3,-1, 4},
+                              { 0, 1, 2, 3, 4}};
+  int fmwk_rank=map2Fmwk[spatial_dim][stk_rank];
+
+  return static_cast<unsigned>(fmwk_rank);
+}
+
+inline
+unsigned get_derived_type(const Entity& entity)
+{
+  return convert_stk_rank_to_fmwk(entity.entity_rank(), get_spatial_dimension(entity));
+}
+
+#endif
+
 /** \} */
 
 } //namespace fem

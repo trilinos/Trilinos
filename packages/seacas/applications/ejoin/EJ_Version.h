@@ -29,14 +29,14 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#ifndef SEACAS_Version_h
-#define SEACAS_Version_h
+#ifndef EJ_Version_h
+#define EJ_Version_h
 
 static char const *qainfo[] =
 {
   "ejoin",
-  "2011/09/13",
-  "1.2.8",
+  "2012/05/07",
+  "1.2.11",
 };
 
-#endif // SEACAS_Version_h
+#endif 

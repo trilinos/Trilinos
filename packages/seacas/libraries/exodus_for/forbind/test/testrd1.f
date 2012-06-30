@@ -31,7 +31,6 @@ c	09/07/93 V.R. Yarberry - Modified for API 2.00
       integer cpu_ws,io_ws
       integer num_props, prop_value, n_node_map, n_elem_map
       integer ival
-      integer ioff
 
       real time_value, time_values(100), var_values(100)
       real x(100), y(100), z(100)
@@ -592,8 +591,6 @@ c
             write (iout, '(f6.3)') dist_fact(i)
 270      continue
       endif
-
-275   continue
 
 c
 c read QA records

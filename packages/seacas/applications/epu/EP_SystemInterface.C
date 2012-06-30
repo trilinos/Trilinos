@@ -77,9 +77,9 @@ Excn::SystemInterface::SystemInterface()
     cwd_(""), rootDirectory_(), subDirectory_(""), basename_(""),
     raidOffset_(0), raidCount_(0), processorCount_(1), startPart_(0), partCount_(-1),
     debugLevel_(0), screenWidth_(0),
-    stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1),
+    stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1), cycle_(-1), compressData_(0),
     sumSharedNodes_(false), addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
-    largeModel_(false), append_(false)
+    largeModel_(false), append_(false), intIs64Bit_(false)
 {
   enroll_options();
 }
@@ -138,13 +138,21 @@ void Excn::SystemInterface::enroll_options()
 		  NULL);
 
   options_.enroll("large_model", GetLongOption::NoValue,
-		  "Create output database in the exodus large model format",
+		  "Create output database using the HDF5-based netcdf which allows for up to 2.1 GB nodes/elements",
 		  NULL);
 
   options_.enroll("append", GetLongOption::NoValue,
 		  "Append to database instead of opening a new database.\n"
 		  "\t\tTimestep transfer will start after last timestep on database",
 		  NULL);
+
+  options_.enroll("64", GetLongOption::NoValue,
+		  "The output database will be written in the 64-bit integer mode",
+		  NULL);
+
+  options_.enroll("compress_data", GetLongOption::MandatoryValue,
+		  "The output database will be written using compression (netcdf-4 mode only)",
+		  0);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
 		  "Specify subset of timesteps to transfer to output file.\n"
@@ -166,7 +174,12 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\tThe subparts can then be joined by a subsequent run of epu.\n"
 		  "\t\tUseful if the maximum number of open files is less\n"
 		  "\t\tthan the processor count.",
-		  "0");
+		  0, "0");
+
+  options_.enroll("cycle", GetLongOption::MandatoryValue,
+		  "Cycle number. If subcycle # is specified, then only execute\n"
+		  "\t\tcycle $val ($val < #).  The cycle number is 0-based.",
+		  "-1");
 
   options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
 		  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
@@ -384,6 +397,17 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     append_ = true;
   }
 
+  if (options_.retrieve("64")) {
+    intIs64Bit_ = true;
+  }
+
+  {
+    const char *temp = options_.retrieve("compress_data");
+    if (temp != NULL) {
+      compressData_ = strtol(temp, NULL, 10);
+    }
+  }
+
   if (options_.retrieve("sum_shared_nodes")) {
     sumSharedNodes_ = true;
   }
@@ -396,6 +420,13 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("subcycle");
     if (temp != NULL) {
       subcycle_ = strtol(temp, NULL, 10);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("cycle");
+    if (temp != NULL) {
+      cycle_ = strtol(temp, NULL, 10);
     }
   }
 

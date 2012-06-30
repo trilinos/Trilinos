@@ -32,26 +32,56 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-#include <EP_ExodusEntity.h>            // for Block, Mesh, NodeSet, etc
+
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+#ifndef PRId64
+#error "PRId64 not defined"
+#endif
+
+#include <EP_ExodusEntity.h>            // for Block, Mesh
 #include <EP_Internals.h>               // for Internals, Redefine
 
+#include <stdint.h>                 // for int64_t
 #include <smart_assert.h>               // for SMART_ASSERT
 #include <stddef.h>                     // for size_t
 #include <stdio.h>                      // for sprintf
 #include <stdlib.h>                     // for exit, EXIT_FAILURE
 #include <algorithm>                    // for sort
 #include <cstring>                      // for strncpy, strlen, memset
-#include <iostream>                     // for operator<<, etc
+
+#include <iostream>                     // for operator<<, basic_ostream, etc
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector
+#include "exodusII.h"                   // for ex_err, ex_opts, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
+// Explicit Initialization of the functions used...
+namespace Excn {
+template int Internals<int>::write_meta_data(const Mesh &mesh,
+					       const std::vector<Block>   &blocks,
+					       const std::vector<NodeSet<int> > &nodesets,
+					       const std::vector<SideSet<int> > &sidesets,
+					       const CommunicationMetaData &comm);
 
-extern "C" {
-#define NO_NETCDF_2
-#include <netcdf.h>
-#include <exodusII.h>
-#include <exodusII_int.h>
-#include "exodusII_ext.h"  
+template bool Internals<int>::check_meta_data(const Mesh &mesh,
+					       const std::vector<Block>   &blocks,
+					       const std::vector<NodeSet<int> > &nodesets,
+					       const std::vector<SideSet<int> > &sidesets,
+					       const CommunicationMetaData &comm);
+
+template int Internals<int64_t>::write_meta_data(const Mesh &mesh,
+					       const std::vector<Block>   &blocks,
+					       const std::vector<NodeSet<int64_t> > &nodesets,
+					       const std::vector<SideSet<int64_t> > &sidesets,
+					       const CommunicationMetaData &comm);
+
+template bool Internals<int64_t>::check_meta_data(const Mesh &mesh,
+					       const std::vector<Block>   &blocks,
+					       const std::vector<NodeSet<int64_t> > &nodesets,
+					       const std::vector<SideSet<int64_t> > &sidesets,
+					       const CommunicationMetaData &comm);
 }
 
 namespace {
@@ -59,9 +89,23 @@ namespace {
     return b1.offset_ < b2.offset_;
   }
 
-  int put_int_array(int exoid, const char *var_type, const std::vector<int> &array);
+  nc_type get_type(int exoid, unsigned int type)
+  {
+    if (ex_int64_status(exoid) & type)
+      return NC_INT64;
+    else
+      return NC_INT;
+  }
 
-  int define_coordinate_vars(int exodusFilePtr, int nodes, int node_dim,
+  int define_netcdf_vars(int exoid, const char *type, size_t count, const char *dim_num,
+			 const char *stat_var, const char *id_var, const char *name_var);
+
+  template <typename INT>
+  int put_array(int exoid, const char *var_type, const std::vector<INT> &array);
+
+  int put_id_array(int exoid, const char *var_type,  const std::vector<ex_entity_id> &array);
+
+  int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim,
 			     int dimension, int dim_dim, int str_dim);
 }
 			 
@@ -96,82 +140,11 @@ Excn::Redefine::~Redefine()
   }
 }
 
-Excn::Internals::Internals(int exoid, int maximum_name_length)
-  : exodusFilePtr(exoid),
-    nodeMapVarID(),
-    elementMapVarID(),
-    commIndexVar(0),
-    elemCommIndexVar(0),
-    maximumNameLength(maximum_name_length)
-{}
-
-bool Excn::Internals::check_meta_data(const Mesh &mesh,
-				      const std::vector<Block>   &blocks,
-				      const std::vector<NodeSet> &nodesets,
-				      const std::vector<SideSet> &sidesets,
-				      const CommunicationMetaData &comm)
-{
-  char* mytitle = new char[MAX_LINE_LENGTH + 1];
-  int dimensionality;
-  int node_count;
-  int element_count;
-  int block_count;
-  int nodeset_count;
-  int sideset_count;
-
-  ex_get_init(exodusFilePtr, mytitle,  &dimensionality, &node_count, &element_count,
-	      &block_count, &nodeset_count, &sideset_count);
-
-  bool matches = true;
-  if (mesh.dimensionality != dimensionality) {
-    std::cerr << "ERROR: original mesh dimensionality ("
-	      << mesh.dimensionality << ") does not match current dimensionality ("
-	      << dimensionality << ")\n";
-    matches = false;
-  }
-
-  if (mesh.nodeCount != node_count) {
-    std::cerr << "ERROR: original mesh node count ("
-	      << mesh.nodeCount << ") does not match current node count ("
-	      << node_count << ")\n";
-    matches = false;
-  }
-
-  if (mesh.elementCount != element_count) {
-    std::cerr << "ERROR: original mesh element count ("
-	      << mesh.elementCount << ") does not match current element count ("
-	      << element_count << ")\n";
-    matches = false;
-  }
-
-  if (mesh.blockCount != block_count) {
-    std::cerr << "ERROR: original mesh block count ("
-	      << mesh.blockCount << ") does not match current block count ("
-	      << block_count << ")\n";
-    matches = false;
-  }
-
-  if (mesh.nodesetCount != nodeset_count) {
-    std::cerr << "ERROR: original mesh nodeset count ("
-	      << mesh.nodesetCount << ") does not match current nodeset count ("
-	      << nodeset_count << ")\n";
-    matches = false;
-  }
-
-  if (mesh.sidesetCount != sideset_count) {
-    std::cerr << "ERROR: original mesh sideset count ("
-	      << mesh.sidesetCount << ") does not match current sideset count ("
-	      << sideset_count << ")\n";
-    matches = false;
-  }
-
-  return matches;
-}
-
-int Excn::Internals::write_meta_data(const Mesh &mesh,
+template <typename INT>
+int Excn::Internals<INT>::write_meta_data(const Mesh &mesh,
 				     const std::vector<Block>   &blocks,
-				     const std::vector<NodeSet> &nodesets,
-				     const std::vector<SideSet> &sidesets,
+				     const std::vector<NodeSet<INT> > &nodesets,
+				     const std::vector<SideSet<INT> > &sidesets,
 				     const CommunicationMetaData &comm)
 {
   SMART_ASSERT((int)blocks.size()   == mesh.blockCount);
@@ -209,7 +182,7 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
   // whether the data are consistent before sorting and if so, don't
   // do the sort.  Concsistent means that all blocks that have a
   // nonzero element count are in the correct order.
-  int last_offset = 0;
+  int64_t last_offset = 0;
   bool order_ok = true;
   for (size_t i=0; i < blocks.size(); i++) {
     if (blocks[i].elementCount > 0) {
@@ -265,7 +238,7 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
 
   // For now, put entity names using the ExodusII api...
   {
-    int max_entity = mesh.blockCount;
+    ssize_t max_entity = mesh.blockCount;
     if (mesh.nodesetCount > max_entity)
       max_entity = mesh.nodesetCount;
     if (mesh.sidesetCount > max_entity)
@@ -280,7 +253,7 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
 
     int name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
     char **names = new char* [max_entity];
-    for (int i=0; i < max_entity; i++) {
+    for (ssize_t i=0; i < max_entity; i++) {
       names[i] = new char [name_size+1];
     }
   	 
@@ -324,7 +297,7 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
       ex_put_names(exodusFilePtr, EX_SIDE_SET, names);
     }
 
-    for (int i=0; i < max_entity; i++) {
+    for (ssize_t i=0; i < max_entity; i++) {
       delete [] names[i];
     }
     delete [] names;
@@ -334,18 +307,72 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
   return(EX_NOERR);
 }
 
-int Excn::Internals::put_metadata(const Mesh &mesh,
-				  const CommunicationMetaData&)
+template <typename INT>
+bool Excn::Internals<INT>::check_meta_data(const Mesh &mesh,
+					   const std::vector<Block>   &blocks,
+					   const std::vector<NodeSet<INT> > &nodesets,
+					   const std::vector<SideSet<INT> > &sidesets,
+					   const CommunicationMetaData &comm)
+{
+  ex_init_params init_data;
+  ex_get_init_ext(exodusFilePtr, &init_data);
+
+  bool matches = true;
+  if (mesh.dimensionality != init_data.num_dim) {
+    std::cerr << "ERROR: original mesh dimensionality ("
+	      << mesh.dimensionality << ") does not match current dimensionality ("
+	      << init_data.num_dim << ")\n";
+    matches = false;
+  }
+
+  if (mesh.nodeCount != init_data.num_nodes) {
+    std::cerr << "ERROR: original mesh node count ("
+	      << mesh.nodeCount << ") does not match current node count ("
+	      << init_data.num_nodes << ")\n";
+    matches = false;
+  }
+
+  if (mesh.elementCount != init_data.num_elem) {
+    std::cerr << "ERROR: original mesh element count ("
+	      << mesh.elementCount << ") does not match current element count ("
+	      << init_data.num_elem << ")\n";
+    matches = false;
+  }
+
+  if (mesh.blockCount != init_data.num_elem_blk) {
+    std::cerr << "ERROR: original mesh element block count ("
+	      << mesh.blockCount << ") does not match current element block count ("
+	      << init_data.num_elem_blk << ")\n";
+    matches = false;
+  }
+
+  if (mesh.nodesetCount != init_data.num_node_sets) {
+    std::cerr << "ERROR: original mesh nodeset count ("
+	      << mesh.nodesetCount << ") does not match current nodeset count ("
+	      << init_data.num_node_sets << ")\n";
+    matches = false;
+  }
+
+  if (mesh.sidesetCount != init_data.num_side_sets) {
+    std::cerr << "ERROR: original mesh sideset count ("
+	      << mesh.sidesetCount << ") does not match current sideset count ("
+	      << init_data.num_side_sets << ")\n";
+    matches = false;
+  }
+
+  return matches;
+}
+
+template <typename INT>
+int Excn::Internals<INT>::put_metadata(const Mesh &mesh,
+				       const CommunicationMetaData&)
 {
   int numdimdim  = 0;
   int numnoddim  = 0;
-  int numelemdim = 0;
-  int elblkdim   = 0;
   int strdim     = 0;
   int namestrdim = 0;
-  int dim[2];
-  int dimid = 0;
-  int varid = 0;
+
+  int map_type  = get_type(exodusFilePtr, EX_MAPS_INT64_DB);
 
   char errmsg[MAX_ERR_LENGTH];
   const char *routine = "Excn::Internals::put_metadata()";
@@ -420,8 +447,9 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     // Define the node map here to avoid a later redefine call
     if (mesh.needNodeMap) {
       int dims[1];
+      int varid = 0;
       dims[0] = numnoddim;
-      status=nc_def_var(exodusFilePtr, VAR_NODE_NUM_MAP, NC_INT, 1, dims, &varid);
+      status=nc_def_var(exodusFilePtr, VAR_NODE_NUM_MAP, map_type, 1, dims, &varid);
       if (status != NC_NOERR) {
 	ex_opts(EX_VERBOSE);
 	if (status == NC_ENAMEINUSE) {
@@ -437,10 +465,12 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
 	}
 	return (EX_FATAL);
       }
+      ex_compress_variable(exodusFilePtr, varid, 1);
     }
   }
 
   if (mesh.elementCount > 0) {
+    int numelemdim = 0;
     status=nc_def_dim(exodusFilePtr, DIM_NUM_ELEM, mesh.elementCount, &numelemdim);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -454,8 +484,8 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     if (mesh.needElementMap) {
       int dims[1];
       dims[0] = numelemdim;
-      varid = 0;
-      status=nc_def_var(exodusFilePtr, VAR_ELEM_NUM_MAP, NC_INT, 1, dims, &varid);
+      int varid = 0;
+      status=nc_def_var(exodusFilePtr, VAR_ELEM_NUM_MAP, map_type, 1, dims, &varid);
       if (status != NC_NOERR) {
 	ex_opts(EX_VERBOSE);
 	if (status == NC_ENAMEINUSE) {
@@ -471,184 +501,25 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
 	}
 	return (EX_FATAL);
       }
+      ex_compress_variable(exodusFilePtr, varid, 1);
     }
   }
 
   if (mesh.blockCount > 0) {
-    status=nc_def_dim (exodusFilePtr, DIM_NUM_EL_BLK, mesh.blockCount, &elblkdim);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define number of element blocks in file id %d",
-	      exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-    // ...and some variables
-    // element block id status array...
-    dim[0] = elblkdim;
-    status=nc_def_var(exodusFilePtr, VAR_STAT_EL_BLK, NC_INT, 1, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define element block status array in file id %d",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-    // element block id array
-    status=nc_def_var(exodusFilePtr, VAR_ID_EL_BLK, NC_INT, 1, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define element block id array in file id %d",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-    // store property name as attribute of property array variable
-    status=nc_put_att_text(exodusFilePtr, varid, ATT_PROP_NAME, 3, "ID");
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to store element block property name %s in file id %d",
-	      "ID",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return (EX_FATAL);
-    }
-
-    dim[0] = elblkdim;
-    dim[1] = namestrdim;
-
-    status = nc_def_var (exodusFilePtr, VAR_NAME_EL_BLK, NC_CHAR, 2, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define element block name array in file id %d",
-	      exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return (EX_FATAL);
-    }
+    status = define_netcdf_vars(exodusFilePtr, "element block", mesh.blockCount,
+				DIM_NUM_EL_BLK, VAR_STAT_EL_BLK, VAR_ID_EL_BLK, VAR_NAME_EL_BLK);
   }
 
   // node set id array:
   if (mesh.nodesetCount > 0) {
-
-    status=nc_def_dim (exodusFilePtr, DIM_NUM_NS, mesh.nodesetCount, &dimid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define number of node sets in file id %d",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-    // node set id status array:
-    dim[0] = dimid;
-    status=nc_def_var(exodusFilePtr, VAR_NS_STAT, NC_INT, 1, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to create node sets status array in file id %d",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-
-    // node set id array:
-    dim[0] = dimid;
-    status=nc_def_var(exodusFilePtr, VAR_NS_IDS, NC_INT, 1, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to create node sets property array in file id %d",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-
-    // store property name as attribute of property array variable
-    status=nc_put_att_text(exodusFilePtr, varid, ATT_PROP_NAME, 3, "ID");
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to store node set property name %s in file id %d",
-	      "ID",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return (EX_FATAL);
-    }
-
-    dim[0] = dimid;
-    dim[1] = namestrdim;
-
-    status=nc_def_var(exodusFilePtr, VAR_NAME_NS, NC_CHAR, 2, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define nodeset name array in file id %d",
-	      exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return (EX_FATAL);
-    }
+    status = define_netcdf_vars(exodusFilePtr, "node set", mesh.nodesetCount,
+				DIM_NUM_NS, VAR_NS_STAT, VAR_NS_IDS, VAR_NAME_NS);
   }
 
   // side set id array:
   if (mesh.sidesetCount > 0) {
-
-    status=nc_def_dim(exodusFilePtr, DIM_NUM_SS, mesh.sidesetCount, &dimid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define number of side sets in file id %d",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-    // side set id status array:
-    dim[0] = dimid;
-    status=nc_def_var(exodusFilePtr, VAR_SS_STAT, NC_INT, 1, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define side set status in file id %d",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-    // side set id array:
-    status=nc_def_var(exodusFilePtr, VAR_SS_IDS, NC_INT, 1, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define side set property in file id %d",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-
-    // store property name as attribute of property array variable
-    status=nc_put_att_text(exodusFilePtr, varid, ATT_PROP_NAME, 3, "ID");
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to store side set property name %s in file id %d",
-	      "ID",exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return (EX_FATAL);
-    }
-
-    dim[0] = dimid;
-    dim[1] = namestrdim;
-
-    status=nc_def_var(exodusFilePtr, VAR_NAME_SS, NC_CHAR, 2, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define sideset name array in file id %d",
-	      exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return (EX_FATAL);
-    }
+    status = define_netcdf_vars(exodusFilePtr, "side set", mesh.sidesetCount,
+				DIM_NUM_SS, VAR_SS_STAT, VAR_SS_IDS, VAR_NAME_SS);
   }
 
   status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality, numdimdim, namestrdim);
@@ -658,11 +529,14 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
   return (EX_NOERR);
 }
 
-int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
+template <typename INT>
+int Excn::Internals<INT>::put_metadata(const std::vector<Block> &blocks)
 {
   char errmsg[MAX_ERR_LENGTH];
   const char *routine = "Internals::put_metadata(blocks)";
   int dims[2];
+
+  int bulk_type = get_type(exodusFilePtr, EX_BULK_INT64_DB);
 
   int status  = 0; // clear error code
 
@@ -720,13 +594,13 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
       if (status == NC_ENAMEINUSE) {	// duplicate entry
 	ex_opts(EX_VERBOSE);
 	sprintf(errmsg,
-		"Error: element block %d already defined in file id %d",
+		"Error: element block %"PRId64" already defined in file id %d",
 		blocks[iblk].id, exodusFilePtr);
 	ex_err(routine, errmsg, status);
       } else {
 	ex_opts(EX_VERBOSE);
 	sprintf(errmsg,
-		"Error: failed to define number of elements/block for block %d file id %d",
+		"Error: failed to define number of elements/block for block %"PRId64" file id %d",
 		blocks[iblk].id, exodusFilePtr);
 	ex_err(routine, errmsg, status);
       }
@@ -739,7 +613,7 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,
-	      "Error: failed to define number of nodes/element for block %d in file id %d",
+	      "Error: failed to define number of nodes/element for block %"PRId64" in file id %d",
 	      blocks[iblk].id, exodusFilePtr);
       ex_err(routine, errmsg, status);
       return (EX_FATAL);
@@ -753,7 +627,7 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
       if (status != NC_NOERR) {
 	ex_opts(EX_VERBOSE);
 	sprintf(errmsg,
-		"Error: failed to define number of attributes in block %d in file id %d",
+		"Error: failed to define number of attributes in block %"PRId64" in file id %d",
 		blocks[iblk].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
 	return (EX_FATAL);
@@ -767,11 +641,12 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
       if (status != NC_NOERR) {
 	ex_opts(EX_VERBOSE);
 	sprintf(errmsg,
-		"Error:  failed to define attributes for element block %d in file id %d",
+		"Error:  failed to define attributes for element block %"PRId64" in file id %d",
 		blocks[iblk].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
 	return (EX_FATAL);
       }
+      ex_compress_variable(exodusFilePtr, varid, 2);
 
       // Attribute name array...
       dims[0] = numattrdim;
@@ -782,7 +657,7 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
       if (status != NC_NOERR) {
 	ex_opts(EX_VERBOSE);
 	sprintf(errmsg,
-		"Error: failed to define attribute name array for element block %d in file id %d",
+		"Error: failed to define attribute name array for element block %"PRId64" in file id %d",
 		blocks[iblk].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
 	return (EX_FATAL);
@@ -794,15 +669,16 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
     dims[1] = nelnoddim;
 
     int connid;
-    status=nc_def_var(exodusFilePtr, VAR_CONN(iblk+1), NC_INT, 2, dims, &connid);
+    status=nc_def_var(exodusFilePtr, VAR_CONN(iblk+1), bulk_type, 2, dims, &connid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,
-	      "Error: failed to create connectivity array for block %d in file id %d",
+	      "Error: failed to create connectivity array for block %"PRId64" in file id %d",
 	      blocks[iblk].id, exodusFilePtr);
       ex_err(routine, errmsg, status);
       return (EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, connid, 1);
 
     // store element type as attribute of connectivity variable
     status=nc_put_att_text(exodusFilePtr, connid, ATT_NAME_ELB,
@@ -820,24 +696,26 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
 }
 
 
-int Excn::Internals::put_non_define_data(const Mesh&,
+template <typename INT>
+int Excn::Internals<INT>::put_non_define_data(const Mesh&,
 				   const CommunicationMetaData&)
 {
   return EX_NOERR;
 }
 
-int Excn::Internals::put_non_define_data(const std::vector<Block> &blocks)
+template <typename INT>
+int Excn::Internals<INT>::put_non_define_data(const std::vector<Block> &blocks)
 {
   int num_elem_blk = blocks.size();  // Verified via SMART_ASSERT earlier...
   
   if (num_elem_blk > 0) {
     // first get id of element block ids array variable
-    std::vector<int> elem_blk_id(num_elem_blk);
+    std::vector<ex_entity_id> elem_blk_id(num_elem_blk);
     for (int iblk = 0; iblk < num_elem_blk; iblk++) {
       elem_blk_id[iblk] = blocks[iblk].id;
     }
 
-    if (put_int_array(exodusFilePtr, VAR_ID_EL_BLK, elem_blk_id) != NC_NOERR)
+    if (put_id_array(exodusFilePtr, VAR_ID_EL_BLK, elem_blk_id) != NC_NOERR)
       return(EX_FATAL);
 
     // Now, write the element block status array
@@ -846,14 +724,15 @@ int Excn::Internals::put_non_define_data(const std::vector<Block> &blocks)
       elem_blk_status[iblk] = blocks[iblk].elementCount > 0 ? 1 : 0;
     }
 
-    if (put_int_array(exodusFilePtr, VAR_STAT_EL_BLK, elem_blk_status) != NC_NOERR)
+    if (put_array(exodusFilePtr, VAR_STAT_EL_BLK, elem_blk_status) != NC_NOERR)
       return(EX_FATAL);
   }
   return (EX_NOERR);
 }
 
 // ========================================================================
-int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
+template <typename INT>
+int Excn::Internals<INT>::put_metadata(const std::vector<NodeSet<INT> > &nodesets)
 {
   const char *routine = "Excn::Internals::put_metadata(nodesets)";
   if (nodesets.empty())
@@ -862,13 +741,12 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
   char errmsg[MAX_ERR_LENGTH];
   int dims[2];
 
+  int bulk_type = get_type(exodusFilePtr, EX_BULK_INT64_DB);
+
   int status  = 0; // clear error code
-  char *cdum = 0;
-  float fdum;
 
   // Get number of node sets defined for this file
   int dimid;
-  int num_node_sets = 0;
   status=nc_inq_dimid (exodusFilePtr, DIM_NUM_NS, &dimid);
   if (status  != NC_NOERR) {
     ex_opts(EX_VERBOSE);
@@ -885,15 +763,7 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
   }
 
   // inquire how many node sets are to be stored
-  if (ex_inquire(exodusFilePtr, EX_INQ_NODE_SETS, &num_node_sets, &fdum, cdum) != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    sprintf(errmsg,
-	    "Error: failed to get number of node sets defined for file id %d",
-	    exodusFilePtr);
-    ex_err(routine, errmsg, status);
-    return (EX_FATAL);
-  }
-
+  int num_node_sets = ex_inquire_int(exodusFilePtr, EX_INQ_NODE_SETS);
   SMART_ASSERT(static_cast<int>(nodesets.size()) == num_node_sets);
 
   for (int i=0; i<num_node_sets; i++) {
@@ -911,12 +781,12 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
       ex_opts(EX_VERBOSE);
       if (status == NC_ENAMEINUSE) {
 	sprintf(errmsg,
-		"Error: node set %d already defined in file id %d",
+		"Error: node set %"PRId64" already defined in file id %d",
 		nodesets[i].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
       } else {
 	sprintf(errmsg,
-		"Error: failed to define number of nodes for set %d in file id %d",
+		"Error: failed to define number of nodes for set %"PRId64" in file id %d",
 		nodesets[i].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
       }
@@ -926,24 +796,25 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
 
     // define variable to store node set node list here instead of in expns
     dims[0] = dimid;
-    int varid;
+    int varid = 0;
     status=nc_def_var(exodusFilePtr,
-		      VAR_NODE_NS(cur_num_node_sets+1),NC_INT,1,dims, &varid);
+		      VAR_NODE_NS(cur_num_node_sets+1),bulk_type,1,dims, &varid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       if (status == NC_ENAMEINUSE) {
 	sprintf(errmsg,
-		"Error: node set %d node list already defined in file id %d",
+		"Error: node set %"PRId64" node list already defined in file id %d",
 		nodesets[i].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
       } else {
 	sprintf(errmsg,
-		"Error: failed to create node set %d node list in file id %d",
+		"Error: failed to create node set %"PRId64" node list in file id %d",
 		nodesets[i].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
       }
       return(EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (nodesets[i].dfCount > 0) {
@@ -952,8 +823,8 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
 	status = EX_FATAL;
 	ex_opts(EX_VERBOSE);
 	sprintf(errmsg,
-		"Error: # dist fact (%d) not equal to # nodes (%d) "
-		"in node set %d file id %d",
+		"Error: # dist fact (%"PRId64") not equal to # nodes (%"PRId64") "
+		"in node set %"PRId64" file id %d",
 		nodesets[i].dfCount, nodesets[i].nodeCount, nodesets[i].id,
 		exodusFilePtr);
 	ex_err(routine, errmsg, status);
@@ -966,52 +837,55 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
 	  ex_opts(EX_VERBOSE);
 	  if (status == NC_ENAMEINUSE) {
 	    sprintf(errmsg,
-		    "Error: node set %d dist factors already exist in file id %d",
+		    "Error: node set %"PRId64" dist factors already exist in file id %d",
 		    nodesets[i].id,exodusFilePtr);
 	    ex_err(routine, errmsg, status);
 	  } else {
 	    sprintf(errmsg,
-		    "Error: failed to create node set %d dist factors in file id %d",
+		    "Error: failed to create node set %"PRId64" dist factors in file id %d",
 		    nodesets[i].id, exodusFilePtr);
 	    ex_err(routine, errmsg, status);
 	  }
 	  return(EX_FATAL);
 	}
+	ex_compress_variable(exodusFilePtr, varid, 2);
       }
     }
   }
   return EX_NOERR;
 }
 
-int Excn::Internals::put_non_define_data(const std::vector<NodeSet> &nodesets)
+template <typename INT>
+int Excn::Internals<INT>::put_non_define_data(const std::vector<NodeSet<INT> > &nodesets)
 {
   if (nodesets.empty())
     return EX_NOERR;
 
   // Output nodeset ids...
-  int num_nodesets = nodesets.size();
-  std::vector<int> nodeset_id(num_nodesets);
-  for (int i = 0; i < num_nodesets; i++) {
+  size_t num_nodesets = nodesets.size();
+  std::vector<ex_entity_id> nodeset_id(num_nodesets);
+  for (size_t i = 0; i < num_nodesets; i++) {
     nodeset_id[i] = nodesets[i].id;
   }
 
-  if (put_int_array(exodusFilePtr, VAR_NS_IDS, nodeset_id) != NC_NOERR)
+  if (put_id_array(exodusFilePtr, VAR_NS_IDS, nodeset_id) != NC_NOERR)
     return(EX_FATAL);
 
   // Now, write the status array
   std::vector<int> status(num_nodesets);
-  for (int i = 0; i < num_nodesets; i++) {
+  for (size_t i = 0; i < num_nodesets; i++) {
     status[i] = nodesets[i].nodeCount > 0 ? 1 : 0;
   }
 
-  if (put_int_array(exodusFilePtr, VAR_NS_STAT, status) != NC_NOERR)
+  if (put_array(exodusFilePtr, VAR_NS_STAT, status) != NC_NOERR)
     return(EX_FATAL);
 
   return (EX_NOERR);
 }
 
 // ========================================================================
-int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
+template <typename INT>
+int Excn::Internals<INT>::put_metadata(const std::vector<SideSet<INT> > &sidesets)
 {
   const char *routine = "Excn::Internals::put_metadata(sidesets)";
   if (sidesets.empty())
@@ -1020,13 +894,12 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
   char errmsg[MAX_ERR_LENGTH];
   int dims[2];
 
+  int bulk_type = get_type(exodusFilePtr, EX_BULK_INT64_DB);
+
   int status  = 0; // clear error code
-  char *cdum = 0;
-  float fdum;
 
   // Get number of side sets defined for this file
   int dimid;
-  int num_side_sets = 0;
   status=nc_inq_dimid (exodusFilePtr, DIM_NUM_SS, &dimid);
   if (status  != NC_NOERR) {
     ex_opts(EX_VERBOSE);
@@ -1042,19 +915,10 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
     return (EX_FATAL);
   }
 
-  // inquire how many side sets are to be stored
-  if (ex_inquire(exodusFilePtr, EX_INQ_SIDE_SETS, &num_side_sets, &fdum, cdum) != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    sprintf(errmsg,
-	    "Error: failed to get number of side sets defined for file id %d",
-	    exodusFilePtr);
-    ex_err(routine, errmsg, status);
-    return (EX_FATAL);
-  }
+  size_t num_side_sets = ex_inquire_int(exodusFilePtr, EX_INQ_SIDE_SETS);
+  SMART_ASSERT(sidesets.size() == num_side_sets);
 
-  SMART_ASSERT(static_cast<int>(sidesets.size()) == num_side_sets);
-
-  for (int i=0; i<num_side_sets; i++) {
+  for (size_t i=0; i<num_side_sets; i++) {
 
     //  NOTE: ex_inc_file_item is used to find the number of side sets
     // for a specific file and returns that value incremented.
@@ -1069,12 +933,12 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
       ex_opts(EX_VERBOSE);
       if (status == NC_ENAMEINUSE) {
 	sprintf(errmsg,
-		"Error: side set %d already defined in file id %d",
+		"Error: side set %"PRId64" already defined in file id %d",
 		sidesets[i].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
       } else {
 	sprintf(errmsg,
-		"Error: failed to define number of sides for set %d in file id %d",
+		"Error: failed to define number of sides for set %"PRId64" in file id %d",
 		sidesets[i].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
       }
@@ -1085,41 +949,43 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
     dims[0] = dimid;
     int varid = 0;
     status=nc_def_var(exodusFilePtr, VAR_ELEM_SS(cur_num_side_sets+1),
-		      NC_INT,1,dims, &varid);
+		      bulk_type,1,dims, &varid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       if (status == NC_ENAMEINUSE) {
 	sprintf(errmsg,
-		"Error: side set %d element list already defined in file id %d",
+		"Error: side set %"PRId64" element list already defined in file id %d",
 		sidesets[i].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
       } else {
 	sprintf(errmsg,
-		"Error: failed to create side set %d element list in file id %d",
+		"Error: failed to create side set %"PRId64" element list in file id %d",
 		sidesets[i].id,exodusFilePtr);
 	ex_err(routine, errmsg, status);
       }
       return(EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // create side list variable for side set
     status=nc_def_var(exodusFilePtr, VAR_SIDE_SS(cur_num_side_sets+1),
-		      NC_INT,1,dims, &varid);
+		      bulk_type,1,dims, &varid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       if (status == NC_ENAMEINUSE) {
 	sprintf(errmsg,
-		"Error: side list already exists for side set %d in file id %d",
+		"Error: side list already exists for side set %"PRId64" in file id %d",
 		sidesets[i].id, exodusFilePtr);
 	ex_err(routine, errmsg, status);
       } else {
 	sprintf(errmsg,
-		"Error: failed to create side list for side set %d in file id %d",
+		"Error: failed to create side list for side set %"PRId64" in file id %d",
 		sidesets[i].id, exodusFilePtr);
 	ex_err(routine, errmsg, status);
       }
       return(EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (sidesets[i].dfCount > 0) {
@@ -1129,12 +995,12 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
 	ex_opts(EX_VERBOSE);
 	if (status == NC_ENAMEINUSE) {
 	  sprintf(errmsg,
-		  "Error: side set df count %d already defined in file id %d",
+		  "Error: side set df count %"PRId64" already defined in file id %d",
 		  sidesets[i].id, exodusFilePtr);
 	  ex_err(routine, errmsg, status);
 	} else {
 	  sprintf(errmsg,
-		  "Error: failed to define side set df count for set %d in file id %d",
+		  "Error: failed to define side set df count for set %"PRId64" in file id %d",
 		  sidesets[i].id, exodusFilePtr);
 	  ex_err(routine, errmsg, status);
 	}
@@ -1149,35 +1015,37 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
 	ex_opts(EX_VERBOSE);
 	if (status == NC_ENAMEINUSE) {
 	  sprintf(errmsg,
-		  "Error: dist factor list already exists for side set %d in file id %d",
+		  "Error: dist factor list already exists for side set %"PRId64" in file id %d",
 		  sidesets[i].id, exodusFilePtr);
 	  ex_err(routine, errmsg, status);
 	} else {
 	  sprintf(errmsg,
-		  "Error: failed to create dist factor list for side set %d in file id %d",
+		  "Error: failed to create dist factor list for side set %"PRId64" in file id %d",
 		  sidesets[i].id, exodusFilePtr);
 	  ex_err(routine, errmsg, status);
 	}
 	return(EX_FATAL);
       }
+      ex_compress_variable(exodusFilePtr, varid, 2);
     }
   }
   return EX_NOERR;
 }
 
-int Excn::Internals::put_non_define_data(const std::vector<SideSet> &sidesets)
+template <typename INT>
+int Excn::Internals<INT>::put_non_define_data(const std::vector<SideSet<INT> > &sidesets)
 {
   if (sidesets.empty())
     return EX_NOERR;
 
   // Output sideset ids...
-  int num_sidesets = sidesets.size();
-  std::vector<int> sideset_id(num_sidesets);
+  int num_sidesets = (int)sidesets.size();
+  std::vector<ex_entity_id> sideset_id(num_sidesets);
   for (int i = 0; i < num_sidesets; i++) {
     sideset_id[i] = sidesets[i].id;
   }
 
-  if (put_int_array(exodusFilePtr, VAR_SS_IDS, sideset_id) != NC_NOERR)
+  if (put_id_array(exodusFilePtr, VAR_SS_IDS, sideset_id) != NC_NOERR)
     return(EX_FATAL);
 
   // Now, write the status array
@@ -1186,14 +1054,15 @@ int Excn::Internals::put_non_define_data(const std::vector<SideSet> &sidesets)
     status[i] = sidesets[i].sideCount > 0 ? 1 : 0;
   }
 
-  if (put_int_array(exodusFilePtr, VAR_SS_STAT, status) != NC_NOERR)
+  if (put_array(exodusFilePtr, VAR_SS_STAT, status) != NC_NOERR)
     return(EX_FATAL);
 
   return (EX_NOERR);
 }
 
 namespace {
-  int put_int_array(int exoid, const char *var_type, const std::vector<int> &array)
+  template <typename INT>
+  int put_array(int exoid, const char *var_type, const std::vector<INT> &array)
   {
     const char *routine = "Internals.C, put_int_array";
     char errmsg[MAX_ERR_LENGTH];
@@ -1209,7 +1078,11 @@ namespace {
       return (EX_FATAL);
     }
 
-    status=nc_put_var_int(exoid, var_id, &array[0]);
+    if (sizeof(INT) == sizeof(int64_t))
+      status=nc_put_var_longlong(exoid, var_id, (long long int*)&array[0]);
+    else
+      status=nc_put_var_int(exoid, var_id, &array[0]);
+    
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,
@@ -1220,7 +1093,44 @@ namespace {
     return (EX_NOERR);
   }
 
-  int define_coordinate_vars(int exodusFilePtr, int nodes, int node_dim, int dimension, int dim_dim, int str_dim)
+  int put_id_array(int exoid, const char *var_type, const std::vector<ex_entity_id> &ids)
+  {
+    const char *routine = "Internals.C, put_id_array";
+    char errmsg[MAX_ERR_LENGTH];
+    int var_id;
+
+    int status=nc_inq_varid(exoid, var_type, &var_id);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to locate %s in file id %d", var_type, exoid);
+      ex_err(routine, errmsg, status);
+      return (EX_FATAL);
+    }
+
+    int id_type = get_type(exoid, EX_IDS_INT64_API);
+
+    if (id_type == NC_INT64) {
+      status=nc_put_var_longlong(exoid, var_id, (long long int*)&ids[0]);
+    } else {
+      // Have ex_entity_id (long long), need ints...
+      std::vector<int> int_ids(ids.size());
+      int_ids.assign(ids.begin(), ids.end());
+      status=nc_put_var_int(exoid, var_id, &int_ids[0]);
+    }
+
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to write %s array in file id %d", var_type, exoid);
+      ex_err(routine, errmsg, status);
+      return (EX_FATAL);
+    }
+    return (EX_NOERR);
+  }
+  
+  int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension, int dim_dim,
+			     int str_dim)
   {
     const char *routine = "Ioex_Internals.C, define_coordinate_vars";
     char errmsg[MAX_ERR_LENGTH];
@@ -1241,6 +1151,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
+	  ex_compress_variable(exodusFilePtr, varid, 2);
 	}
 
 	if (dimension > 1) {
@@ -1252,6 +1163,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
+	  ex_compress_variable(exodusFilePtr, varid, 2);
 	}
 
 	if (dimension > 2) {
@@ -1263,6 +1175,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
+	  ex_compress_variable(exodusFilePtr, varid, 2);
 	}
       } else {
 	// node coordinate arrays:  -- all stored together (old method)2
@@ -1276,6 +1189,7 @@ namespace {
 	  ex_err(routine,errmsg,status);
 	  return(EX_FATAL);
 	}
+	ex_compress_variable(exodusFilePtr, varid, 2);
       }
     }
 
@@ -1294,5 +1208,75 @@ namespace {
     }
     return EX_NOERR;
   }
+
+  int define_netcdf_vars(int exoid, const char *type, size_t count, const char *dim_num,
+			 const char *stat_var, const char *id_var, const char *name_var)
+  {
+    int dimid = 0;
+    int varid = 0;
+    int dim[2];
+    int namestrdim = 0;
+    char errmsg[MAX_ERR_LENGTH];
+    const char *routine = "Internals::define_netcdf_vars()";
+
+    int status=nc_inq_dimid (exoid, DIM_STR_NAME, &namestrdim);
+
+    status=nc_def_dim(exoid, dim_num, count, &dimid);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to define number of %ss in file id %d", type, exoid);
+      ex_err(routine,errmsg,status);
+      return(EX_FATAL);
+    }
+
+    // id status array:
+    dim[0] = dimid;
+    status=nc_def_var(exoid, stat_var, NC_INT, 1, dim, &varid);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to define side %s status in file id %d", type, exoid);
+      ex_err(routine,errmsg,status);
+      return(EX_FATAL);
+    }
+
+    // id array:
+    int ids_type  = get_type(exoid, EX_IDS_INT64_DB);
+    status=nc_def_var(exoid, id_var, ids_type, 1, dim, &varid);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to define %s property in file id %d", type, exoid);
+      ex_err(routine,errmsg,status);
+      return(EX_FATAL);
+    }
+
+    // store property name as attribute of property array variable
+    status=nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID");
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to store %s property name %s in file id %d",
+	      type, "ID",exoid);
+      ex_err(routine,errmsg,status);
+      return (EX_FATAL);
+    }
+
+    dim[0] = dimid;
+    dim[1] = namestrdim;
+
+    status=nc_def_var(exoid, name_var, NC_CHAR, 2, dim, &varid);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to define %s name array in file id %d",
+	      type, exoid);
+      ex_err(routine,errmsg,status);
+      return (EX_FATAL);
+    }
+    return EX_NOERR;
+  }
+
 }
 

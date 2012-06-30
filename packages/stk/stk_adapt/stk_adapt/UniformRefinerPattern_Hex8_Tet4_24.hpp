@@ -139,7 +139,7 @@ namespace stk {
           {
             double * pts[4] = {FACE_COORD(i_face, 0), FACE_COORD(i_face, 1), FACE_COORD(i_face, 2), FACE_COORD(i_face, 3)};
 
-            double * mp = getCentroid(pts, 4, eMesh.getSpatialDim(), tmp_x);
+            double * mp = getCentroid(pts, 4, eMesh.get_spatial_dim(), tmp_x);
 
 #if 0
             std::cout << "pts = \n" 
@@ -196,8 +196,8 @@ namespace stk {
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            //stk::mesh::Entity& newElement = eMesh.getBulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
-            //stk::mesh::Entity& newElement = eMesh.getBulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
 
             stk::mesh::Entity& newElement = *(*element_pool);
 
@@ -208,20 +208,20 @@ namespace stk {
               }
 
             change_entity_parts(eMesh, element, newElement);
-            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             {
               if (!elems[ielem].get<0>())
                 {
-                  std::cout << "P[" << eMesh.getRank() << " nid = 0 << " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << " nid = 0 << " << std::endl;
                   exit(1);
                 }
             }
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
 
+            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             element_pool++;
 

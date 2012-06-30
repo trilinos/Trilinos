@@ -45,6 +45,7 @@
 
 namespace Excn {
   typedef std::vector<int>  IntVector;
+  typedef std::vector<int64_t>  Int64Vector;
   typedef std::vector<char> DistVector;
 
   struct Mesh
@@ -75,8 +76,8 @@ namespace Excn {
 
     std::string title;
     int dimensionality;
-    int nodeCount;
-    int elementCount;
+    int64_t nodeCount;
+    int64_t elementCount;
     int blockCount;
     int nodesetCount;
     int sidesetCount;
@@ -108,11 +109,11 @@ namespace Excn {
     char elType[MAX_STR_LENGTH+1];
     std::string name_;
     std::vector<std::string> attributeNames;
-    int id;
-    int elementCount;
+    int64_t id;
+    int64_t elementCount;
     int nodesPerElement;
     int attributeCount;
-    int offset_;
+    int64_t offset_;
     int position_;
 
     Block& operator=(const Block& other) {
@@ -129,19 +130,20 @@ namespace Excn {
     }
   };
   
+  template <typename INT>
   struct NodeSet
   {
     NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(-1), name_("") {}
     
-    int id;
-    int nodeCount;
-    int dfCount;
-    int offset_;
+    ex_entity_id id;
+    int64_t nodeCount;
+    int64_t dfCount;
+    int64_t offset_;
     int position_;
     std::string name_;
     
-    IntVector  nodeSetNodes;
-    IntVector  nodeOrderMap;
+    std::vector<INT>  nodeSetNodes;
+    std::vector<INT>  nodeOrderMap;
     DistVector distFactors;
     
     size_t entity_count() const {return nodeCount;}
@@ -153,27 +155,28 @@ namespace Excn {
 
     void dump_order() const {
       dump();
-      for (int i=0; i < nodeCount; i++) {
+      for (int64_t i=0; i < nodeCount; i++) {
 	std::cerr << nodeOrderMap[i] << ", ";
       }
       std::cerr << "\n";
     }
   };
   
-  typedef std::pair<int,int> Side;
+  typedef std::pair<int64_t,int64_t> Side;
+  template <typename INT>
   struct SideSet
   {
     SideSet() : id(0), sideCount(0), dfCount(0), offset_(-1), position_(-1), name_("") {}
     
-    int id;
-    int sideCount;
-    int dfCount;
-    int offset_;
+    ex_entity_id id;
+    int64_t sideCount;
+    int64_t dfCount;
+    int64_t offset_;
     int position_;
     std::string name_;
     
-    IntVector  elems;
-    IntVector  sides;
+    std::vector<INT>  elems;
+    std::vector<INT>  sides;
     DistVector distFactors;
     
     size_t entity_count() const {return sideCount;}
@@ -187,10 +190,10 @@ namespace Excn {
   struct CommunicationMap
   {
     CommunicationMap() : id(0), entityCount(0), type('U') {}
-    CommunicationMap(int the_id, int count, char the_type) :
+    CommunicationMap(int the_id, int64_t count, char the_type) :
       id(the_id), entityCount(count), type(the_type) {}
-    int id;
-    int entityCount;
+    int64_t id;
+    int64_t entityCount;
     char type; // 'n' for node, 'e' for element
   };
 
@@ -206,13 +209,13 @@ namespace Excn {
 
     int processorId;
     int processorCount;
-    int globalNodes;
-    int globalElements;
-    int nodesInternal;
-    int nodesBorder;
-    int nodesExternal;
-    int elementsInternal;
-    int elementsBorder;
+    int64_t globalNodes;
+    int64_t globalElements;
+    int64_t nodesInternal;
+    int64_t nodesBorder;
+    int64_t nodesExternal;
+    int64_t elementsInternal;
+    int64_t elementsBorder;
     
     private:
     CommunicationMetaData(const CommunicationMetaData &);

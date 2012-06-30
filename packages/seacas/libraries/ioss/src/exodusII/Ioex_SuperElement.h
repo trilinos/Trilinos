@@ -57,10 +57,10 @@ namespace Ioex {
     Ioss::Property get_implicit_property(const std::string& name) const;
 
   protected:
-    int internal_get_field_data(const Ioss::Field& field,
+    int64_t internal_get_field_data(const Ioss::Field& field,
 				void *data, size_t data_size) const;
 
-    int internal_put_field_data(const Ioss::Field& field,
+    int64_t internal_put_field_data(const Ioss::Field& field,
 				void *data, size_t data_size) const;
 
   private:

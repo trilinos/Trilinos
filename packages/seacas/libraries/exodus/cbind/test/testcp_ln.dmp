@@ -126,6 +126,7 @@ variables:
 // global attributes:
 		:floating_point_word_size = 4 ;
 		:file_size = 0 ;
+		:int64_status = 0 ;
 		:title = "This is a test" ;
 		:maximum_name_length = 32 ;
 data:

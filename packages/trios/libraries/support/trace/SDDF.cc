@@ -126,7 +126,7 @@ int SDDF::define_generic_event(
     delete attributes;
 
     /* initialize the mutex for the genericRecord */
-    nthread_mutex_init(&genericMutex, NTHREAD_MUTEX_DEFAULT);
+    nthread_lock_init(&genericMutex);
 
     return 0;
 }
@@ -198,7 +198,7 @@ int SDDF::define_count_event(
     countRecord = new RecordDossier(tag, *structureP);
 
     /* initialize the mutex  */
-    nthread_mutex_init(&countMutex, NTHREAD_MUTEX_DEFAULT);
+    nthread_lock_init(&countMutex);
 
     delete structureP;
     delete attributes;
@@ -281,7 +281,7 @@ int SDDF::define_interval_event(
     intervalRecord = new RecordDossier(tag, *structureP);
 
     /* initialize the mutex  */
-    nthread_mutex_init(&intervalMutex, NTHREAD_MUTEX_DEFAULT);
+    nthread_lock_init(&intervalMutex);
 
     delete structureP;
     delete attributes;
@@ -373,7 +373,7 @@ int SDDF::define_throughput_event(
     throughputRecord = new RecordDossier(tag, *structureP);
 
     /* initialize the mutex  */
-    nthread_mutex_init(&throughputMutex, NTHREAD_MUTEX_DEFAULT);
+    nthread_lock_init(&throughputMutex);
 
     delete structureP;
     delete attributes;
@@ -455,7 +455,13 @@ SDDF::~SDDF(void)
 int SDDF::output_record(RecordDossier *rec)
 {
     int rc = 0;
-    static nthread_mutex_t mutex = NTHREAD_MUTEX_INITIALIZER;
+    static bool           init=false;
+    static nthread_lock_t mutex;
+
+    if (!init) {
+        nthread_lock_init(&mutex);
+        init=true;
+    }
 
     if (!rec)
         return rc;

@@ -98,8 +98,8 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
       
       DELMAX = MAX(DELTAX, DELTAY, DELTAZ)
 
-      call excpus(time0)
       imat = 0
+      call excpus(time0)
       if (DELMAX .EQ. DELTAX) THEN
         imat = 1
         call indexn(xn, 1, 1, ix, numnp, .FALSE.)

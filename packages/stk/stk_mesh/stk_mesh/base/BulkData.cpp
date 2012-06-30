@@ -29,6 +29,8 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
+#include <boost/foreach.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -63,6 +65,24 @@ convert_entity_keys_to_spans( const MetaData & meta )
   return spans ;
 }
 
+void ensure_part_superset_consistency( const Entity& entity )
+{
+  std::ostringstream errs;
+  PartVector parts;
+  Bucket& bucket = entity.bucket();
+  bucket.supersets(parts);
+  BOOST_FOREACH(Part* part, parts) {
+    const PartVector& supersets = part->supersets();
+    BOOST_FOREACH(Part* superset, supersets) {
+      if (!bucket.member(*superset)) {
+        errs << "  Due to being a member part " << part->name() << ", should have been a member of " << superset->name() << std::endl;
+      }
+    }
+  }
+  ThrowRequireMsg( errs.str() == "",
+                   "Entity " << print_entity_key(entity) << " has bad part list:\n" << errs.str() );
+}
+
 }
 
 //----------------------------------------------------------------------
@@ -86,7 +106,8 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_parallel_rank( parallel_machine_rank( parallel ) ),
     m_sync_count( 0 ),
     m_sync_state( MODIFIABLE ),
-    m_meta_data_verified( false )
+    m_meta_data_verified( false ),
+    m_optimize_buckets(false)
 {
   create_ghosting( std::string("shared") );
   create_ghosting( std::string("shared_aura") );
@@ -229,6 +250,20 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   return *declared_entity ;
 }
 
+void BulkData::change_entity_id( EntityId id, Entity & entity)
+{
+  require_ok_to_modify();
+  require_good_rank_and_id(entity.entity_rank(),id);
+
+  EntityKey key(entity.entity_rank(),id);
+  EntityKey old_key = entity.key();
+
+  m_entity_repo.update_entity_key(key,entity);
+
+  //We also need to swap the comm-vectors for these entities:
+  entity_comm_swap(key, old_key);
+}
+
 //----------------------------------------------------------------------
 
 // TODO Change the methods below to requirements (private, const invariant checkers)
@@ -256,16 +291,10 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
     const Part * const p = *i ;
     const unsigned part_rank = p->primary_entity_rank();
 
-    // The code below is coupled with the code in quick_verify_change_part.
-    // If we change what it means for a part to be valid, code will need to be
-    // changed in both places unfortunately.
-    const bool error_intersection = ! p->intersection_of().empty();
-    const bool error_rel_target   = ! p->relations().empty() &&
-                                    p == p->relations().begin()->m_target ;
-    const bool error_rank = entity_rank != part_rank &&
-                            undef_rank  != part_rank ;
+    bool intersection_ok, rel_target_ok, rank_ok;
+    internal_basic_part_check(p, entity_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
 
-    if ( error_intersection || error_rel_target || error_rank ) {
+    if ( !intersection_ok || !rel_target_ok || !rank_ok ) {
       if ( ok ) {
         ok = false ;
         msg << "change parts for entity " << print_entity_key( entity );
@@ -283,9 +312,56 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
         msg << part_rank ;
       }
       msg << "] " ;
-      if ( error_intersection ) { msg << "is_intersection " ; }
-      if ( error_rel_target )   { msg << "is_relation_target " ; }
-      if ( error_rank )         { msg << "is_bad_rank " ; }
+      if ( !intersection_ok ) { msg << "is_intersection " ; }
+      if ( !rel_target_ok )   { msg << "is_relation_target " ; }
+      if ( !rank_ok )         { msg << "is_bad_rank " ; }
+    }
+  }
+
+  ThrowErrorMsgIf( !ok, msg.str() << "}" );
+}
+
+void BulkData::internal_verify_change_parts( const MetaData   & meta ,
+                                             const Entity     & entity ,
+                                             const OrdinalVector & parts ) const
+{
+  const std::vector<std::string> & rank_names = meta.entity_rank_names();
+  const EntityRank undef_rank  = InvalidEntityRank;
+  const EntityRank entity_rank = entity.entity_rank();
+
+  bool ok = true ;
+  std::ostringstream msg ;
+
+  for ( OrdinalVector::const_iterator
+        i = parts.begin() ; i != parts.end() ; ++i ) {
+
+    const Part * const p = meta.get_parts()[*i] ;
+    const unsigned part_rank = p->primary_entity_rank();
+
+    bool intersection_ok, rel_target_ok, rank_ok;
+    internal_basic_part_check(p, entity_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
+
+    if ( !intersection_ok || !rel_target_ok || !rank_ok ) {
+      if ( ok ) {
+        ok = false ;
+        msg << "change parts for entity " << print_entity_key( entity );
+        msg << " , { " ;
+      }
+      else {
+        msg << " , " ;
+      }
+
+      msg << p->name() << "[" ;
+      if ( part_rank < rank_names.size() ) {
+        msg << rank_names[ part_rank ];
+      }
+      else {
+        msg << part_rank ;
+      }
+      msg << "] " ;
+      if ( !intersection_ok ) { msg << "is_intersection " ; }
+      if ( !rel_target_ok )   { msg << "is_relation_target " ; }
+      if ( !rank_ok )         { msg << "is_bad_rank " ; }
     }
   }
 
@@ -319,6 +395,28 @@ void filter_out( std::vector<unsigned> & vec ,
   if ( i != j ) { vec.erase( i , j ); }
 }
 
+void filter_out( std::vector<unsigned> & vec ,
+                 const OrdinalVector & parts ,
+                 OrdinalVector & removed )
+{
+  std::vector<unsigned>::iterator i , j ;
+  i = j = vec.begin();
+
+  OrdinalVector::const_iterator ip = parts.begin() ;
+
+  while ( j != vec.end() && ip != parts.end() ) {
+    if      ( *ip < *j ) { ++ip ; }
+    else if ( *j < *ip ) { *i = *j ; ++i ; ++j ; }
+    else {
+      removed.push_back( *ip );
+      ++j ;
+      ++ip ;
+    }
+  }
+
+  if ( i != j ) { vec.erase( i , j ); }
+}
+
 void merge_in( std::vector<unsigned> & vec , const PartVector & parts )
 {
   std::vector<unsigned>::iterator i = vec.begin();
@@ -338,6 +436,27 @@ void merge_in( std::vector<unsigned> & vec , const PartVector & parts )
   for ( ; ip != parts.end() ; ++ip ) {
     const unsigned ord = (*ip)->mesh_meta_data_ordinal();
     vec.push_back( ord );
+  }
+}
+
+void merge_in( std::vector<unsigned> & vec , const OrdinalVector & parts )
+{
+  std::vector<unsigned>::iterator i = vec.begin();
+  OrdinalVector::const_iterator ip = parts.begin() ;
+
+  for ( ; i != vec.end() && ip != parts.end() ; ++i ) {
+
+    const unsigned ord = *ip;
+
+    if ( ord <= *i ) {
+      if ( ord < *i ) { i = vec.insert( i , ord ); }
+      // Now have: ord == *i
+      ++ip ;
+    }
+  }
+
+  for ( ; ip != parts.end() ; ++ip ) {
+    vec.push_back( *ip );
   }
 }
 
@@ -371,7 +490,7 @@ void BulkData::internal_change_entity_parts(
 
   PartVector parts_removed ;
 
-  std::vector<unsigned> parts_total ; // The final part list
+  OrdinalVector parts_total ; // The final part list
 
   //--------------------------------
 
@@ -437,7 +556,7 @@ void BulkData::internal_change_entity_parts(
   m_bucket_repository.add_entity_to_bucket( entity, *k_new );
 
   // If changing buckets then remove the entity from the bucket,
-  if ( k_old ) { m_bucket_repository.remove_entity( k_old , i_old ); }
+  if ( k_old && k_old->capacity() > 0) { m_bucket_repository.remove_entity( k_old , i_old ); }
 
   // Update the change counter to the current cycle.
   m_entity_repo.set_entity_sync_count( entity, m_sync_count );
@@ -445,6 +564,129 @@ void BulkData::internal_change_entity_parts(
   // Propagate part changes through the entity's relations.
 
   internal_propagate_part_changes( entity , parts_removed );
+
+#ifndef NDEBUG
+  //ensure_part_superset_consistency( entity );
+#endif
+}
+
+void BulkData::internal_change_entity_parts(
+  Entity & entity ,
+  const OrdinalVector & add_parts ,
+  const OrdinalVector & remove_parts,
+  bool always_propagate_internal_changes )
+{
+  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
+  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
+
+  Bucket * const k_old = m_entity_repo.get_entity_bucket( entity );
+
+  const unsigned i_old = entity.bucket_ordinal() ;
+
+  if ( k_old && k_old->member_all( add_parts ) &&
+              ! k_old->member_any( remove_parts ) ) {
+    // Is already a member of all add_parts,
+    // is not a member of any remove_parts,
+    // thus nothing to do.
+    return ;
+  }
+
+  OrdinalVector parts_removed ;
+
+  OrdinalVector parts_total ; // The final part list
+
+  //--------------------------------
+
+  if ( k_old ) {
+    // Keep any of the existing bucket's parts
+    // that are not a remove part.
+    // This will include the 'intersection' parts.
+    //
+    // These parts are properly ordered and unique.
+
+    const std::pair<const unsigned *, const unsigned*>
+      bucket_parts = k_old->superset_part_ordinals();
+
+    const unsigned * parts_begin = bucket_parts.first;
+    const unsigned * parts_end   = bucket_parts.second;
+
+    const unsigned num_bucket_parts = parts_end - parts_begin;
+    parts_total.reserve( num_bucket_parts + add_parts.size() );
+    parts_total.insert( parts_total.begin(), parts_begin , parts_end);
+
+    if ( !remove_parts.empty() ) {
+      parts_removed.reserve(remove_parts.size());
+      filter_out( parts_total , remove_parts , parts_removed );
+    }
+  }
+  else {
+    parts_total.reserve(add_parts.size());
+  }
+
+  if ( !add_parts.empty() ) {
+    merge_in( parts_total , add_parts );
+  }
+
+  if ( parts_total.empty() ) {
+    // Always a member of the universal part.
+    const unsigned univ_ord =
+      m_mesh_meta_data.universal_part().mesh_meta_data_ordinal();
+    parts_total.push_back( univ_ord );
+  }
+
+  //--------------------------------
+  // Move the entity to the new bucket.
+
+  Bucket * k_new =
+    m_bucket_repository.declare_bucket(
+        entity.entity_rank(),
+        parts_total.size(),
+        & parts_total[0] ,
+        m_mesh_meta_data.get_fields()
+        );
+
+  // If changing buckets then copy its field values from old to new bucket
+
+  if ( k_old ) {
+    m_bucket_repository.copy_fields( *k_new , k_new->size() , *k_old , i_old );
+  }
+  else {
+    m_bucket_repository.initialize_fields( *k_new , k_new->size() );
+  }
+
+  // Set the new bucket
+  m_entity_repo.change_entity_bucket( *k_new, entity, k_new->size() );
+  m_bucket_repository.add_entity_to_bucket( entity, *k_new );
+
+  // If changing buckets then remove the entity from the bucket,
+  if ( k_old && k_old->capacity() > 0) { m_bucket_repository.remove_entity( k_old , i_old ); }
+
+  // Update the change counter to the current cycle.
+  m_entity_repo.set_entity_sync_count( entity, m_sync_count );
+
+  // Propagate part changes through the entity's relations.
+  //(Only propagate part changes for parts which have a primary-entity-rank that matches
+  // the entity's rank. Other parts don't get induced...)
+
+  const PartVector& all_parts = m_mesh_meta_data.get_parts();
+
+  OrdinalVector rank_parts_removed;
+  for(OrdinalVector::const_iterator pr=parts_removed.begin(), prend=parts_removed.end(); pr!=prend; ++pr) {
+    if (all_parts[*pr]->primary_entity_rank() == entity.entity_rank()) {
+      rank_parts_removed.push_back(*pr);
+    }
+  }
+
+  if (always_propagate_internal_changes ||
+      !rank_parts_removed.empty() || !m_mesh_meta_data.get_field_relations().empty()) {
+    internal_propagate_part_changes( entity , rank_parts_removed );
+  }
+
+#ifndef NDEBUG
+  //ensure_part_superset_consistency( entity );
+#endif
 }
 
 //----------------------------------------------------------------------

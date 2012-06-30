@@ -57,8 +57,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_nssi_server.h"
 #include "Trios_logger.h"
 #include "Trios_timer.h"
-
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 #include <iostream>
 #include <string>
@@ -366,7 +365,6 @@ int xfer_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
 
     /* options that can be overriden by the command-line */
     int verbose = 3;  /* default debug_level */
-    int num_threads = 0;
     std::string server_url(NSSI_URL_LEN, '\0');          /* NNTI-style url of the server */
     std::string logfile("");
     const char *log_str=NULL;
@@ -415,7 +413,7 @@ int xfer_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
     //rpc_debug_level = xfer_debug_level;
 
     // start processing requests, the client will send a request to exit when done
-    rc = nssi_service_start(&xfer_svc, num_threads);
+    rc = nssi_service_start(&xfer_svc);
     if (rc != NSSI_OK) {
         log_info(xfer_debug_level, "exited xfer_svc: %s",
                 nssi_err_str(rc));

@@ -26,6 +26,8 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
+#include <boost/pool/pool_alloc.hpp>
+
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -105,10 +107,18 @@ class EntityRepository {
                            const RelationIdentifier local_id,
                            unsigned sync_count );
 
+    void update_entity_key(EntityKey key, Entity & entity);
+
   private:
     void internal_expunge_entity( EntityMap::iterator i);
 
+    Entity* internal_allocate_entity(EntityKey entity_key);
+
     EntityMap m_entities;
+    boost::fast_pool_allocator<Entity> m_entity_alloc;
+#ifdef SIERRA_MIGRATION
+    boost::fast_pool_allocator<fmwk_attributes> m_fmwk_attr_alloc;
+#endif
 
     //disabel copy constructor and assignment operator
     EntityRepository(const EntityRepository &);

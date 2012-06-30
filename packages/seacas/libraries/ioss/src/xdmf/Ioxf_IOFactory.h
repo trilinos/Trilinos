@@ -49,7 +49,8 @@ namespace Ioxf {
       IOFactory();
       Ioss::DatabaseIO* make_IO(const std::string& filename,
 				Ioss::DatabaseUsage db_usage,
-				MPI_Comm communicator) const;
+				MPI_Comm communicator,
+				const Ioss::PropertyManager &properties) const;
 
     };
 }

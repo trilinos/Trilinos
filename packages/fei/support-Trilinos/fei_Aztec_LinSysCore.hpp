@@ -54,6 +54,7 @@
 #include <map>
 
 #include <az_aztec.h>
+#include <fei_AztecDMSR_Matrix.hpp>
 
 //
 //This is the Aztec implementation of LinSysCore.
@@ -268,6 +269,10 @@ class Aztec_LinSysCore: public LinearSystemCore {
      { return(0); }
 
    int writeSystem(const char* name);
+
+   double* getMatrixBeginPointer() { return A_ptr_->getBeginPointer(); }
+
+   int getMatrixOffset(int row, int col) { return A_ptr_->getOffset(row,col); }
 
  private:        //functions
 

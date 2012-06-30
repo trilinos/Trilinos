@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: wrnps.f,v 1.3 1999/02/17 15:26:58 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE WRNPS (A, IA, IDFRO, IDBCK,
      &  IDNPS, NNNPS, IXNNPS, LTNNPS, FACNPS, *)

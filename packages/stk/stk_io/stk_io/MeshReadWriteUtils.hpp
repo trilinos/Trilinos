@@ -10,7 +10,9 @@
 #define STK_IO_MESHREADWRITEUTILS_HPP
 #include <string>
 #include <vector>
+#include <set>
 #include <stk_util/parallel/Parallel.hpp>
+#include <Ioss_PropertyManager.h>
 
 namespace Ioss {
   class Region;
@@ -20,6 +22,7 @@ namespace stk {
   namespace mesh {
     class Part;
     class BulkData;
+    class Selector;
     namespace fem {
       class FEMMetaData;
     }
@@ -29,12 +32,42 @@ namespace stk {
       // Used to maintain state between the meta data and bulk data
       // portions of the mesh generation process for use cases.
     public:
-      MeshData() : m_input_region(NULL), m_output_region(NULL)
+      MeshData() : m_input_region(NULL), m_output_region(NULL),
+		   m_anded_selector(NULL)
       {}
 
       ~MeshData();
+
+      /*! 
+       * The `m_property_manager` member data contains properties that
+       * can be used to set database-specific options in the
+       * Ioss::DatabaseIO class.  Examples include compression, name
+       * lengths, integer sizes, floating point sizes. By convention,
+       * the property name is all uppercase. Some existing properties
+       * recognized by the Exodus Ioex::DatabaseIO class are:
+       *
+       * | Property              | Value
+       * |-----------------------|-------------------
+       * | COMPRESSION_LEVEL     | In the range [0..9]. A value of 0 indicates no compression
+       * | COMPRESSION_SHUFFLE   | (true/false) to enable/disable hdf5's shuffle compression algorithm.
+       * | FILE_TYPE             | netcdf4 
+       * | MAXIMUM_NAME_LENGTH   | Maximum length of names that will be returned/passed via api call.
+       * | INTEGER_SIZE_DB       | 4 or 8 indicating byte size of integers stored on the database.
+       * | INTEGER_SIZE_API      | 4 or 8 indicating byte size of integers used in api functions.
+       * | LOGGING               | (true/false) to enable/disable logging of field input/output
+       */
+      Ioss::PropertyManager m_property_manager;
+
       Ioss::Region *m_input_region;
       Ioss::Region *m_output_region;
+
+      /*!
+       * An optional selector used for filtering entities on the
+       * output database. This can be used for specifying
+       * active/inactive entities.  If present, then this selector is
+       * *anded* with the normal selectors use for output
+       */
+      stk::mesh::Selector *m_anded_selector;
 
     private:
       MeshData(const MeshData&); // Do not implement
@@ -122,7 +155,7 @@ namespace stk {
      *
      */
     void define_input_fields(MeshData &mesh_data, stk::mesh::fem::FEMMetaData &meta_data);
-    
+
     /**
      * For all transient input fields defined either manually or via
      * the define_input_fields() function, read the data at the
@@ -182,28 +215,30 @@ namespace stk {
      * corresponding database field. The database field will have the
      * same name as the stk field.  A transient field will be defined
      * if the stk::io::is_valid_part_field() returns true.  This can
-     * be set via a call to stk::io::set_field_role(). 
+     * be set via a call to stk::io::set_field_role().
      *
      * If the 'add_all_fields' param is true, then all transient
      * stk fields will have a corresponding database field defined.
      */
-    void define_output_fields(MeshData &mesh_data,
-			      stk::mesh::fem::FEMMetaData &fem_meta,
+    void define_output_fields(const MeshData &mesh_data,
+			      const stk::mesh::fem::FEMMetaData &fem_meta,
 			      bool add_all_fields = false);
-    
+
     /**
      * Add a transient step to the mesh database at time 'time' and
      * output the data for all defined fields to the database.
      */
     int process_output_request(MeshData &mesh_data,
 			       stk::mesh::BulkData &bulk,
-			       double time);
+			       double time,
+                               const std::set<const stk::mesh::Part*> &exclude=std::set<const stk::mesh::Part*>());
     /**
      * Method to query a MeshData for the number of element blocks and the
      * number of elements in each. MeshData is input, std:vector is output
      */
+    template <typename INT>
     void get_element_block_sizes(MeshData &mesh_data,
-                                 std::vector<int>& el_blocks);
+                                 std::vector<INT>& el_blocks);
   }
 }
 #endif

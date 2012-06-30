@@ -49,6 +49,7 @@
 
 #include "EpetraExt_ModelEvaluator.h"
 
+#include "Rythmos_IntegratorBuilder.hpp"
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
@@ -59,13 +60,13 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 
 
-Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
+Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams_,
                           Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
                           Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer ) :
-  appParams(appParams_),
+  piroParams(piroParams_),
   model(model_)
 {
-  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
+  //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -73,11 +74,11 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   // Allow for Matrix-Free implementation
-  string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
+  string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
-    if (appParams->isParameter("Matrix-Free Perturbation")) {
+    if (piroParams->isParameter("Matrix-Free Perturbation")) {
       model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model,
-                           appParams->get<double>("Matrix-Free Perturbation")));
+                           piroParams->get<double>("Matrix-Free Perturbation")));
     }
     else model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model));
   }
@@ -97,7 +98,18 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       *out << "\nA) Get the base parameter list ...\n";
       //
 
-      RCP<Teuchos::ParameterList> rythmosPL = sublist(appParams, "Rythmos", true);
+//AGS: 6/2012: Separating into old and new parameter list styles. The
+//  old style has a Rythmos sublist, which is used here but not compatible
+//  with builders in Rythmos. The new style has a sublist called "Rythmos Solver"
+//  which inludes settings for this class, a Rytmos sublist that can be 
+//  directly passed to Rythmols builders, and a Stratimikos sublist. THe
+//  old way will be deprecated at some point.
+
+/** Old parameter list format **/
+  if (piroParams->isSublist("Rythmos")) {
+  
+      oldListStyle=true;
+      RCP<Teuchos::ParameterList> rythmosPL = sublist(piroParams, "Rythmos", true);
       rythmosPL->validateParameters(*getValidRythmosParameters(),0);
 
       {
@@ -137,7 +149,6 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       //
       
       // C.1) Create the underlying EpetraExt::ModelEvaluator
-      
       // already constructed as "model". Decorate if needed.
       
       if (stepperType == "Explicit RK") {
@@ -183,11 +194,9 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       {
         RCP<Teuchos::ParameterList>
           integrationControlPL = sublist(rythmosPL, "Rythmos Integration Control", true);
-        // set default to false
         bool var = integrationControlPL->get( "Take Variable Steps", false );
         integrationControlPL->set( "Fixed dt", Teuchos::as<double>(delta_t) );
 
-       // RCP<Rythmos::IntegratorBase<Scalar> >
         RCP<Rythmos::DefaultIntegrator<Scalar> >
           defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(
             Rythmos::simpleIntegrationControlStrategy<Scalar>(integrationControlPL)
@@ -195,9 +204,96 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
         fwdStateIntegrator = defaultIntegrator;
       }
       fwdStateIntegrator->setParameterList(sublist(rythmosPL, "Rythmos Integrator", true));
+    }
+/** New parameter list format **/
+  else if (piroParams->isSublist("Rythmos Solver")) {
+      oldListStyle=false;
 
-   if (observer != Teuchos::null) 
-     fwdStateIntegrator->setIntegrationObserver(observer);
+      RCP<Teuchos::ParameterList> rythmosSolverPL = sublist(piroParams, "Rythmos Solver", true);
+      RCP<Teuchos::ParameterList> rythmosPL = sublist(rythmosSolverPL, "Rythmos", true);
+      rythmosSolverPL->validateParameters(*getValidRythmosSolverParameters(),0);
+
+      {
+        const string verbosity = rythmosSolverPL->get("Verbosity Level", "VERB_DEFAULT");
+        solnVerbLevel = Teuchos::VERB_DEFAULT;
+        if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
+        else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
+        else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
+        else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
+        else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
+      }
+
+      t_final = rythmosPL->sublist("Integrator Settings").get("Final Time", 0.1);
+
+      const string stepperType = rythmosPL->sublist("Stepper Settings")
+           .sublist("Stepper Selection").get("Stepper Type", "Backward Euler");
+
+      //
+      *out << "\nB) Create the Stratimikos linear solver factory ...\n";
+      //
+      // This is the linear solve strategy that will be used to solve for the
+      // linear system with the W.
+      //
+      
+      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+      linearSolverBuilder.setParameterList(sublist(rythmosSolverPL, "Stratimikos", true));
+      RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+	W_factory = createLinearSolveStrategy(linearSolverBuilder);
+      
+      //
+      *out << "\nC) Create and initalize the forward model ...\n";
+      //
+      
+      // C.1) Create the underlying EpetraExt::ModelEvaluator
+      // already constructed as "model". Decorate if needed.
+      
+      // TODO: Generelize to any explicit method, option to invert mass matrix
+      if (stepperType == "Explicit RK") {
+        if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
+          Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
+          bool lump=rythmosSolverPL->get("Lump Mass Matrix", false);
+          model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
+                   sublist(rythmosSolverPL,"Stratimikos", true), origModel));
+        }
+      }
+      
+      // C.2) Create the Thyra-wrapped ModelEvaluator
+      
+      fwdStateModel = epetraModelEvaluator(model, W_factory);
+      
+      const RCP<const Thyra::VectorSpaceBase<Scalar> >
+	x_space = fwdStateModel->get_x_space();
+      
+      //
+      *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
+      //
+
+      fwdTimeStepSolver = Rythmos::timeStepNonlinearSolver<double>();
+
+      if (rythmosSolverPL->getEntryPtr("NonLinear Solver")) {
+        RCP<Teuchos::ParameterList> nonlinePL =
+           sublist(rythmosSolverPL, "NonLinear Solver", true);
+        fwdTimeStepSolver->setParameterList(nonlinePL);
+      }
+
+    // Force Default Integrator since this is needed for Observers
+    rythmosPL->sublist("Integrator Settings").sublist("Integrator Selection").
+                       set("Integrator Type","Default Integrator");
+
+    RCP<Rythmos::IntegratorBuilder<double> > ib = Rythmos::integratorBuilder<double>();
+    ib->setParameterList(rythmosPL);
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = fwdStateModel->getNominalValues();
+    RCP<Rythmos::IntegratorBase<double> > integrator = ib->create(fwdStateModel,ic,fwdTimeStepSolver);
+    fwdStateIntegrator = Teuchos::rcp_dynamic_cast<Rythmos::DefaultIntegrator<double> >(integrator,true);
+  }
+  else
+      TEUCHOS_TEST_FOR_EXCEPTION(piroParams->isSublist("Rythmos")||piroParams->isSublist("Rythmos Solver"), 
+        Teuchos::Exceptions::InvalidParameter, std::endl << 
+       "Error! Piro::Epetra::RythmosSolver: must have either Rythmos or Rythmos Solver sublist ");
+
+
+  if (observer != Teuchos::null) 
+    fwdStateIntegrator->setIntegrationObserver(observer);
 
 }
 
@@ -321,8 +417,12 @@ void Piro::Epetra::RythmosSolver::evalModel( const InArgs& inArgs,
       *out << "\nE) Solve the forward problem ...\n";
       //
   
-      fwdStateStepper->setInitialCondition(state_ic);
-      fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
+      if (oldListStyle) {
+        fwdStateStepper->setInitialCondition(state_ic);
+        fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
+      } 
+      else 
+        fwdStateIntegrator->getNonconstStepper()->setInitialCondition(state_ic);
   
       Teuchos::Array<RCP<const Thyra::VectorBase<Scalar> > > x_final_array;
       fwdStateIntegrator->getFwdPoints(
@@ -505,6 +605,20 @@ Piro::Epetra::RythmosSolver::getValidRythmosParameters() const
   validPL->set<bool>("Invert Mass Matrix", false, "");
   validPL->set<bool>("Lump Mass Matrix", false, "");
   validPL->set<std::string>("Stepper Method", "", "");
+  return validPL;
+}
+
+Teuchos::RCP<const Teuchos::ParameterList>
+Piro::Epetra::RythmosSolver::getValidRythmosSolverParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> validPL =
+     Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosSolverParams"));;
+  validPL->sublist("Rythmos", false, "");
+  validPL->sublist("Stratimikos", false, "");
+  validPL->sublist("NonLinear Solver", false, "");
+  validPL->set<std::string>("Verbosity Level", "", "");
+  validPL->set<bool>("Invert Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "");
   return validPL;
 }
 

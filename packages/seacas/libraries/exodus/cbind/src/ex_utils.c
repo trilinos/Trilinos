@@ -46,6 +46,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
+
 #include "exodusII.h"
 #include "exodusII_int.h"
 
@@ -138,7 +140,7 @@ int ex_set_max_name_length(int exoid, int length)
     return (EX_FATAL);
   }
   else {
-    ex_max_name_length = length;
+    ex_set_option(exoid, EX_OPT_MAX_NAME_LENGTH, length);
   }
   return EX_NOERR;
 }
@@ -275,10 +277,11 @@ int ex_get_names_internal(int exoid, int varid, size_t num_entity, char **names,
   int status;
 
   /* Query size of names on file
-   * Use the smaller of the size on file or ex_max_name_length
+   * Use the smaller of the size on file or user-specified length
    */
   int db_name_size = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
-  int name_size = db_name_size < ex_max_name_length ? db_name_size : ex_max_name_length;
+  int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
+  int name_size = db_name_size < api_name_size ? db_name_size : api_name_size;
   
   for (i=0; i<num_entity; i++) {
     status = ex_get_name_internal(exoid, varid, i, names[i], name_size, obj_type, routine);
@@ -294,6 +297,7 @@ int ex_get_name_internal(int exoid, int varid, size_t index, char *name, int nam
   size_t start[2], count[2];
   int status;
   char errmsg[MAX_ERR_LENGTH];
+  int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
 
   /* read the name */
   start[0] = index;  count[0] = 1;
@@ -308,7 +312,7 @@ int ex_get_name_internal(int exoid, int varid, size_t index, char *name, int nam
     return (EX_FATAL);
   }
 
-  name[ex_max_name_length] = '\0';
+  name[api_name_size] = '\0';
   
   ex_trim_internal(name);
   return EX_NOERR;
@@ -558,7 +562,7 @@ char* ex_name_of_map(ex_entity_type map_type, int map_index)
 
 int ex_id_lkup( int exoid,
                 ex_entity_type id_type,
-                int num)
+                int64_t num)
 {
 
   char id_table[MAX_VAR_NAME_LENGTH+1];
@@ -566,7 +570,8 @@ int ex_id_lkup( int exoid,
   char stat_table[MAX_VAR_NAME_LENGTH+1];
   int varid, dimid;
   size_t dim_len, i;
-  int *id_vals=NULL, *stat_vals=NULL;
+  int64_t *id_vals=NULL;
+  int *stat_vals=NULL;
 
   static int filled=FALSE;
   struct obj_stats *tmp_stats;
@@ -699,7 +704,7 @@ int ex_id_lkup( int exoid,
     }
 
     /* allocate space for id array */
-    if (!(id_vals = malloc((int)dim_len*sizeof(int)))) {
+    if (!(id_vals = malloc(dim_len*sizeof(int64_t)))) {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
              "Error: failed to allocate memory for %s array for file id %d",
@@ -708,7 +713,9 @@ int ex_id_lkup( int exoid,
       return (EX_FATAL);
     }
 
-    if ((status = nc_get_var_int (exoid, varid, id_vals)) != NC_NOERR) {
+    status = nc_get_var_longlong (exoid, varid, (long long*)id_vals);
+    
+    if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
              "Error: failed to get %s array from file id %d",
@@ -1217,6 +1224,15 @@ static void ex_swap (int v[], int i, int j)
   v[j] = temp;
 }
 
+static void ex_swap64 (int64_t v[], int64_t i, int64_t j)
+{
+  int64_t temp;
+
+  temp = v[i];
+  v[i] = v[j];
+  v[j] = temp;
+}
+
 /*!
  * The following 'indexed qsort' routine is modified from Sedgewicks
  * algorithm It selects the pivot based on the median of the left,
@@ -1235,8 +1251,8 @@ static void ex_swap (int v[], int i, int j)
 
 static int ex_int_median3(int v[], int iv[], int left, int right)
 {
-  int center;
-  center = (left + right) / 2;
+  ssize_t center;
+  center = ((ssize_t)left + (ssize_t)right) / 2;
 
   if (v[iv[left]] > v[iv[center]])
     ex_swap(iv, left, center);
@@ -1246,6 +1262,22 @@ static int ex_int_median3(int v[], int iv[], int left, int right)
     ex_swap(iv, center, right);
 
   ex_swap(iv, center, right-1);
+  return iv[right-1];
+}
+
+static int64_t ex_int_median3_64(int64_t v[], int64_t iv[], int64_t left, int64_t right)
+{
+  int64_t center;
+  center = (left + right) / 2;
+
+  if (v[iv[left]] > v[iv[center]])
+    ex_swap64(iv, left, center);
+  if (v[iv[left]] > v[iv[right]])
+    ex_swap64(iv, left, right);
+  if (v[iv[center]] > v[iv[right]])
+    ex_swap64(iv, center, right);
+
+  ex_swap64(iv, center, right-1);
   return iv[right-1];
 }
 
@@ -1275,6 +1307,32 @@ static void ex_int_iqsort(int v[], int iv[], int left, int right)
   }
 }
 
+static void ex_int_iqsort64(int64_t v[], int64_t iv[], int64_t left, int64_t right)
+{
+  int64_t pivot;
+  int64_t i, j;
+  
+  if (left + EX_QSORT_CUTOFF <= right) {
+    pivot = ex_int_median3_64(v, iv, left, right);
+    i = left;
+    j = right - 1;
+
+    for ( ; ; ) {
+      while (v[iv[++i]] < v[pivot]);
+      while (v[iv[--j]] > v[pivot]);
+      if (i < j) {
+        ex_swap64(iv, i, j);
+      } else {
+        break;
+      }
+    }
+
+    ex_swap64(iv, i, right-1);
+    ex_int_iqsort64(v, iv, left, i-1);
+    ex_int_iqsort64(v, iv, i+1, right);
+  }
+}
+
 static void ex_int_iisort(int v[], int iv[], int N)
 {
   int i,j;
@@ -1301,10 +1359,50 @@ static void ex_int_iisort(int v[], int iv[], int N)
   }
 }
 
+static void ex_int_iisort64(int64_t v[], int64_t iv[], int64_t N)
+{
+  int64_t i,j;
+  int64_t ndx = 0;
+  int64_t small;
+  int64_t tmp;
+  
+  small = v[iv[0]];
+  for (i = 1; i < N; i++) {
+    if (v[iv[i]] < small) {
+      small = v[iv[i]];
+      ndx = i;
+    }
+  }
+  /* Put smallest value in slot 0 */
+  ex_swap64(iv, 0, ndx);
+
+  for (i=1; i <N; i++) {
+    tmp = iv[i];
+    for (j=i; v[tmp] < v[iv[j-1]]; j--) {
+      iv[j] = iv[j-1];
+    }
+    iv[j] = tmp;
+  }
+}
+
 void ex_iqsort(int v[], int iv[], int N)
 {
   ex_int_iqsort(v, iv, 0, N-1);
   ex_int_iisort(v, iv, N);
+
+#if defined(DEBUG_QSORT)
+  fprintf(stderr, "Checking sort of %d values\n", N+1);
+  int i;
+  for (i=1; i < N; i++) {
+    assert(v[iv[i-1]] <= v[iv[i]]);
+  }
+#endif
+}
+
+void ex_iqsort64(int64_t v[], int64_t iv[], int64_t N)
+{
+  ex_int_iqsort64(v, iv, 0, N-1);
+  ex_int_iisort64(v, iv, N);
 
 #if defined(DEBUG_QSORT)
   fprintf(stderr, "Checking sort of %d values\n", N+1);
@@ -1402,123 +1500,35 @@ int ex_get_dimension(int exoid, const char* DIMENSION, const char *label,
   return status;
 }
 
-/*! Calculate the number of words of storage required to store the
- * header information.  Total bytes can be obtained by multiplying
- * words by 4.  Size is slightly underestimated since it only
- * considers the bulk data storage...
- */
+/* Deprecated. do not use */
 size_t ex_header_size(int exoid)
 {
-  const char *routine = NULL;
-  int iows = 0;
-  size_t ndim = 0;
-  size_t num_nodes = 0;
-  size_t num_elem = 0;
-  size_t num_eblk = 0;
-  size_t num_map  = 0;
-  size_t num_nset = 0;
-  size_t num_sset = 0;
-  int mapid;
-  int temp;
-  
-  size_t size = 0;
-  /* Get word size (2 = 8-byte reals, 1 = 4-byte reals */
-  
-  if (nc_flt_code(exoid) == NC_DOUBLE) 
-    iows = 2;
-  else
-    iows = 1;
-  
-  /* coordinates = (ndim * numnp)*iows + maps  */
-  ex_get_dimension(exoid, DIM_NUM_DIM,   "dimension", &ndim,      &temp, routine);
-  ex_get_dimension(exoid, DIM_NUM_NODES, "nodes",     &num_nodes, &temp, routine);
-  size += iows * ndim * num_nodes;
+  return 0;
+}
 
-  /* node maps */
-  if (nc_inq_varid(exoid, VAR_NODE_NUM_MAP, &mapid) != -1)
-    size += num_nodes;
+/* type = 1 for integer, 2 for real, 3 for character */
+void ex_compress_variable(int exoid, int varid, int type)
+{
+#if defined(NC_INT64)
+  struct file_item* file = ex_find_file_item(exoid);
 
-  ex_get_dimension(exoid, DIM_NUM_NM,   "node maps", &num_map, &temp, routine);
-  size += num_map * num_nodes;
-
-  /* Element Data */
-  ex_get_dimension(exoid, DIM_NUM_ELEM, "elements",  &num_elem, &temp, routine);
-  
-  /* Element order map */
-  if (nc_inq_varid (exoid, VAR_MAP, &mapid) != -1)
-    size += num_elem;
-   
-  if (nc_inq_varid (exoid, VAR_ELEM_NUM_MAP, &mapid) != -1)
-    size += num_elem;
-
-  /* Element map(s) */
-  ex_get_dimension(exoid, DIM_NUM_EM,     "element maps",   &num_map, &temp, routine);
-  size += num_map * num_elem;
-
-  /* Element Blocks... */
-  ex_get_dimension(exoid, DIM_NUM_EL_BLK, "element blocks", &num_eblk, &temp, routine);
-  if (num_eblk > 0) {
-    /* Allocate storage for element block parameters... */
-    int *ids = malloc(num_eblk * sizeof(int));
-    size_t i;
-
-    size += 2*num_eblk; /* status + ids */
-    
-    ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
-    for (i=0; i < num_eblk; i++) {
-      int num_elem_this_blk = 0;
-      int num_nodes_per_elem = 0;
-      int num_attr = 0;
-      char elem_type[MAX_STR_LENGTH+1];
-      ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk,
-                        &num_nodes_per_elem, &num_attr);
-      size += num_elem_this_blk * num_nodes_per_elem;
-      size += num_elem_this_blk * num_attr * iows;
+  if (!file ) {
+    char errmsg[MAX_ERR_LENGTH];
+    exerrval = EX_BADFILEID;
+    sprintf(errmsg,"Error: unknown file id %d for ex_compress_variable().",exoid);
+    ex_err("ex_compress_variable",errmsg,exerrval);
+  }
+  else {
+    int deflate_level = file->compression_level;
+    int compress = 1;
+    int shuffle = file->shuffle;
+#if 0
+    if (type == 2)
+      shuffle = 0;
+#endif
+    if (deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
+      nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
     }
-    free(ids);
   }
-  
-  /* Nodesets */
-  ex_get_dimension(exoid, DIM_NUM_NS, "nodesets", &num_nset, &temp, routine);
-  if (num_nset > 0) {
-    /* Allocate storage for nodeset parameters... */
-    int *ids = malloc(num_nset * sizeof(int));
-    size_t i;
-
-    size += 2*num_nset; /* Status + ids */
-    ex_get_ids(exoid, EX_NODE_SET, ids);
-    for (i=0; i < num_nset; i++) {
-      int num_nodes_in_set = 0;
-      int num_df_in_set = 0;
-      ex_get_node_set_param(exoid, ids[i], &num_nodes_in_set, &num_df_in_set);
-      size += num_nodes_in_set;
-      size += num_df_in_set * iows;
-    }
-    free(ids);
-  }
-
-  /* Sidesets */
-  ex_get_dimension(exoid, DIM_NUM_SS, "sidesets", &num_sset, &temp, routine);
-  if (num_sset > 0) {
-    /* Allocate storage for sideset parameters... */
-    int *ids = malloc(num_sset * sizeof(int));
-    size_t i;
-
-    size += 2*num_sset; /* Status + ids */
-    ex_get_ids(exoid, EX_SIDE_SET, ids);
-    for (i=0; i < num_sset; i++) {
-      int num_sides_in_set = 0;
-      int num_df_in_set = 0;
-      ex_get_side_set_param(exoid, ids[i], &num_sides_in_set, &num_df_in_set);
-      size += num_sides_in_set * 2;
-      size += num_df_in_set * iows;
-    }
-    free(ids);
-  }
-
-  if (ex_large_model(exoid) == 0 && size > (1<<29)) {
-
-    fprintf(stderr, "ERROR: Size to store header information exceeds 2GB in file id %d\n       File is probably corrupt, rerun with environment variable EXODUS_LARGE_MODEL set.\n", exoid);
-  }
-  return size;
+#endif
 }

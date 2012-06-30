@@ -95,12 +95,18 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     throw std::runtime_error("fei::Matrix_core constructed with NULL fei::MatrixGraph");
   }
 
-  eqnComm_.reset(new fei::EqnComm(comm_, numLocalEqns));
+  vecSpace_ = matrixGraph->getRowSpace();
+
+  if (vecSpace_->initCompleteAlreadyCalled()) {
+    vecSpace_->getGlobalIndexOffsets(globalOffsets_);
+    eqnComm_.reset(new fei::EqnComm(comm_, numLocalEqns, globalOffsets_));
+  }
+  else {
+    eqnComm_.reset(new fei::EqnComm(comm_, numLocalEqns));
+  }
 
   localProc_ = fei::localProc(comm_);
   numProcs_ = fei::numProcs(comm_);
-
-  vecSpace_ = matrixGraph->getRowSpace();
 
   setName("dbg");
 
@@ -257,7 +263,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
 
     MPI_Send(&bsize, 1, MPI_INT, proc, tag1, comm_);
 
-    remotelyOwned_[proc]->clear();//setValues(0.0);
+    remotelyOwned_[proc]->setValues(0.0);//clear();
   }
 
   int numRecvProcs = recvProcs_.size();
@@ -292,7 +298,9 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   //and finally, unpack and store the received buffers.
   CSRMat recvMat;
   for(size_t ir=0; ir<recvProcs_.size(); ++ir) {
-    fei::impl_utils::unpack_CSRMat(recv_chars[ir], recvMat);
+    bool all_zeros = fei::impl_utils::unpack_CSRMat(recv_chars[ir], recvMat);
+
+    if (all_zeros) continue;
 
     int nrows = recvMat.getNumRows();
 

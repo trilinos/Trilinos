@@ -80,6 +80,10 @@ C ... NOTE: Only sllft(1) and slrgt(1) are used, (2) left for comp. with gen3d
       
       LOGICAL RDTHET, NOSCAL
       
+      rad = 0.0
+      xt = 0.0
+      yt = 0.0
+      
       PI = ATAN2(0.0, -1.0)
       
 C ... Check for valid options...

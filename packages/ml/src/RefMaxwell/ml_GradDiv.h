@@ -28,6 +28,7 @@
 #include "ml_Preconditioner.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack_Preconditioner.h"

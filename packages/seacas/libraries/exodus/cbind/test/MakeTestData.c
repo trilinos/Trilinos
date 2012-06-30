@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if 0
-int mymode = EX_MAPS_INT64_DB|EX_MAPS_INT64_API;
+#if 1
+int mymode = EX_MAPS_INT64_DB|EX_MAPS_INT64_API|EX_BULK_INT64_DB|EX_BULK_INT64_API|EX_IDS_INT64_API|EX_IDS_INT64_DB;
 typedef int64_t INT;
 #else
 int mymode = 0;
@@ -12,6 +12,12 @@ typedef int INT;
 #endif
 
 #define EX_TEST_FILENAME "ExodusTestData.e"
+
+/* ================ Coordinate Frames ================ */
+int cf_ids[2] = {20, 13};
+double pt_coords[9*2] = {1,0,0,  1,0,1,  2,0,0,
+			0,0,0,  1,0,0,  0,1,0};
+char tags[2]={'r', 'c'};
 
 /* ======== Coordinates and connectivity ========= */
 double coordsX[] = {
@@ -34,30 +40,30 @@ double coordsZ[] = {
 
 const char* coordsNames[] = { "X", "Y", "Z" };
 
-int conn1[] = {
+INT conn1[] = {
    1,  2,  3,  4,  5,  6,  7,  8,
    9, 10, 11, 12,  1,  2,  3,  4
 };
 
-int conn2[] = { 1, 2, 3, 5 };
+INT conn2[] = { 1, 2, 3, 5 };
 
-int conn3[] = { 12, 11, 10, 9 };
+INT conn3[] = { 12, 11, 10, 9 };
 
-int conn4[] = {1, 3, 5, 7, 9, 11}; /* Sphere */
+INT conn4[] = {1, 3, 5, 7, 9, 11}; /* Sphere */
 
-int conn5[] = {12, 8,   11, 7,    10, 6,    9, 5}; /* Beam */
+INT conn5[] = {12, 8,   11, 7,    10, 6,    9, 5}; /* Beam */
 
-int econn1[] = {
+INT econn1[] = {
    1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12,
   13, 14, 15, 16,  1,  2,  3,  4, 17, 18, 19, 20
 };
 
-int fconn1[] = {
+INT fconn1[] = {
    4,  5,  7,  6,  3,  2,
    8,  9, 11, 10,  1,  3
 };
 
-int ebconn1[] = {
+INT ebconn1[] = {
    1,  2,
    2,  3,
    3,  4,
@@ -80,16 +86,16 @@ int ebconn1[] = {
   11,  3
 };
 
-int fbconn1[] = {
+INT fbconn1[] = {
   12, 11, 10,  9,
    5,  6,  7,  8
 };
 
-int fbconn2[] = {
+INT fbconn2[] = {
    1,  2,  3,  4
 };
 
-int fbconn3[] = {
+INT fbconn3[] = {
    1,  5,  6,  2,
    3,  7,  8,  4,
    2,  6,  7,  3,
@@ -141,15 +147,15 @@ const char* famap_names[] = { "Sandro_SCARCHILLI" };
 const char* emap_names[] = { "Benito_STEFANELLI" };
 
 /* ======== Sets ========= */
-int nset_nodes[] = {
+INT nset_nodes[] = {
   5, 6, 9
 };
 
-int eset_edges[] = {
+INT eset_edges[] = {
   1, 2, 4, 15, 19, 20
 };
 
-int eset_orient[] = {
+INT eset_orient[] = {
   +1, +1, +1, +1, +1, -1
 };
 
@@ -157,31 +163,31 @@ double eset_df[] = {
   2., 2., 0.5, 0.5, 1., 1.
 };
 
-int fset_faces[] = {
+INT fset_faces[] = {
   3, 9
 };
 
-int fset_orient[] = {
+INT fset_orient[] = {
   +1, -1
 };
 
-int sset_elems[] = {
+INT sset_elems[] = {
   1, 1, 1, 2, 2
 };
 
-int sset_sides[] = {
+INT sset_sides[] = {
   1, 3, 5, 2, 4
 };
 
-int sset1_elems[] = {
+INT sset1_elems[] = {
   4, 4, 4
 };
 
-int sset1_sides[] = {
+INT sset1_sides[] = {
   1, 3, 5
 };
 
-int elset_elems[] = {
+INT elset_elems[] = {
   1,
   2
 };
@@ -434,15 +440,15 @@ int cCreateEdgeFace( int argc, char* argv[] )
   ex_block_params blockParams;
   ex_var_params varParams;
 
-  blockParams.edge_blk_id         = (int*)malloc(1 * sizeof(int));
+  blockParams.edge_blk_id         = (int*)malloc(1 * sizeof(INT));
   blockParams.num_edge_this_blk   = (int*)malloc(1 * sizeof(int));
   blockParams.num_nodes_per_edge  = (int*)malloc(1 * sizeof(int));
   blockParams.num_attr_edge       = (int*)malloc(1 * sizeof(int));
-  blockParams.face_blk_id         = (int*)malloc(3 * sizeof(int));
+  blockParams.face_blk_id         = (int*)malloc(3 * sizeof(INT));
   blockParams.num_face_this_blk   = (int*)malloc(3 * sizeof(int));
   blockParams.num_nodes_per_face  = (int*)malloc(3 * sizeof(int));
   blockParams.num_attr_face       = (int*)malloc(3 * sizeof(int));
-  blockParams.elem_blk_id         = (int*)malloc(5 * sizeof(int));
+  blockParams.elem_blk_id         = (int*)malloc(5 * sizeof(INT));
   blockParams.num_elem_this_blk   = (int*)malloc(5 * sizeof(int));
   blockParams.num_nodes_per_elem  = (int*)malloc(5 * sizeof(int));
   blockParams.num_edges_per_elem  = (int*)malloc(5 * sizeof(int));
@@ -462,14 +468,14 @@ int cCreateEdgeFace( int argc, char* argv[] )
   blockParams.elem_type[3] = (char*)malloc((MAX_STR_LENGTH+1) * sizeof(char));
   blockParams.elem_type[4] = (char*)malloc((MAX_STR_LENGTH+1) * sizeof(char));
 
-  blockParams.edge_blk_id[0]         = 100;
+  ((INT*)blockParams.edge_blk_id)[0]         = 100;
   blockParams.num_edge_this_blk[0]   = 20;
   blockParams.num_nodes_per_edge[0]  = 2;
   blockParams.num_attr_edge[0]       = 1;
 
-  blockParams.face_blk_id[0]         = 500;
-  blockParams.face_blk_id[1]         = 600;
-  blockParams.face_blk_id[2]         = 700;
+  ((INT*)blockParams.face_blk_id)[0]         = 500;
+  ((INT*)blockParams.face_blk_id)[1]         = 600;
+  ((INT*)blockParams.face_blk_id)[2]         = 700;
   blockParams.num_face_this_blk[0]   = 2;
   blockParams.num_face_this_blk[1]   = 1;
   blockParams.num_face_this_blk[2]   = 8;
@@ -480,11 +486,11 @@ int cCreateEdgeFace( int argc, char* argv[] )
   blockParams.num_attr_face[1]       = 1;
   blockParams.num_attr_face[2]       = 1;
 
-  blockParams.elem_blk_id[0]         = 200;
-  blockParams.elem_blk_id[1]         = 201;
-  blockParams.elem_blk_id[2]         = 100;
-  blockParams.elem_blk_id[3]         = 500;
-  blockParams.elem_blk_id[4]         = 2147483647;
+  ((INT*)blockParams.elem_blk_id)[0]         = 200;
+  ((INT*)blockParams.elem_blk_id)[1]         = 201;
+  ((INT*)blockParams.elem_blk_id)[2]         = 100;
+  ((INT*)blockParams.elem_blk_id)[3]         = 500;
+  ((INT*)blockParams.elem_blk_id)[4]         = 2147483647;
 
   blockParams.num_elem_this_blk[0]   = 2;
   blockParams.num_elem_this_blk[1]   = 1;
@@ -568,23 +574,27 @@ int cCreateEdgeFace( int argc, char* argv[] )
   EXCHECK( ex_put_init_ext( exoid, &modelParams ),
 	   "Unable to initialize database.\n" );
 
+  /* Add a coordinate frame just to give test coverage... */
+  EXCHECK( ex_put_coordinate_frames(exoid, 2, cf_ids, pt_coords, tags),
+	   "Unable to output coordinate frame.\n");
+
   if ( concatBlocks ) {
     EXCHECK( ex_put_concat_all_blocks( exoid, &blockParams ),
 	     "Unable to initialize block params.\n" );
   } else {
     int blk;
     for ( blk = 0; blk < modelParams.num_edge_blk; ++blk ) {
-      EXCHECK( ex_put_block( exoid, EX_EDGE_BLOCK, blockParams.edge_blk_id[blk], blockParams.edge_type[blk],
+      EXCHECK( ex_put_block( exoid, EX_EDGE_BLOCK, ((INT*)blockParams.edge_blk_id)[blk], blockParams.edge_type[blk],
 			     blockParams.num_edge_this_blk[blk], blockParams.num_nodes_per_edge[blk], 0, 0,
 			     blockParams.num_attr_edge[blk] ), "Unable to write edge block" );
     }
     for ( blk = 0; blk < modelParams.num_face_blk; ++blk ) {
-      EXCHECK( ex_put_block( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[blk], blockParams.face_type[blk],
+      EXCHECK( ex_put_block( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[blk], blockParams.face_type[blk],
 			     blockParams.num_face_this_blk[blk], blockParams.num_nodes_per_face[blk], 0, 0,
 			     blockParams.num_attr_face[blk] ), "Unable to write face block" );
     }
     for ( blk = 0; blk < modelParams.num_elem_blk; ++blk ) {
-      EXCHECK( ex_put_block( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[blk], blockParams.elem_type[blk],
+      EXCHECK( ex_put_block( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[blk], blockParams.elem_type[blk],
 			     blockParams.num_elem_this_blk[blk], blockParams.num_nodes_per_elem[blk],
 			     blockParams.num_edges_per_elem[blk], blockParams.num_faces_per_elem[blk],
 			     blockParams.num_attr_elem[blk] ), "Unable to write elem block" );
@@ -601,25 +611,25 @@ int cCreateEdgeFace( int argc, char* argv[] )
 	   "Unable to write coordinate names.\n" );
 
   /*                  =============== Connectivity  ================== */
-  EXCHECK( ex_put_conn( exoid, EX_EDGE_BLOCK, blockParams.edge_blk_id[0], ebconn1, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_EDGE_BLOCK, ((INT*)blockParams.edge_blk_id)[0], ebconn1, 0, 0 ),
 	   "Unable to write edge block connectivity.\n" );
 
-  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[0], fbconn1, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[0], fbconn1, 0, 0 ),
 	   "Unable to write face block 1 connectivity.\n" );
-  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[1], fbconn2, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[1], fbconn2, 0, 0 ),
 	   "Unable to write face block 2 connectivity.\n" );
-  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[2], fbconn3, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[2], fbconn3, 0, 0 ),
 	   "Unable to write face block 3 connectivity.\n" );
 
-  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[0], conn1, econn1, fconn1 ),
+  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[0], conn1, econn1, fconn1 ),
 	   "Unable to write elem block 1 connectivity.\n" );
-  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[1], conn2, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[1], conn2, 0, 0 ),
 	   "Unable to write elem block 2 connectivity.\n" );
-  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[2], conn3, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[2], conn3, 0, 0 ),
 	   "Unable to write elem block 3 connectivity.\n" );
-  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[3], conn4, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[3], conn4, 0, 0 ),
 	   "Unable to write elem block 4 connectivity.\n" );
-  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[4], conn5, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[4], conn5, 0, 0 ),
 	   "Unable to write elem block 5 connectivity.\n" );
 
   EXCHECK( ex_put_names( exoid, EX_EDGE_BLOCK, (char**)edblk_names ), "Unable to write edge block names.\n" );
@@ -644,52 +654,52 @@ int cCreateEdgeFace( int argc, char* argv[] )
   EXCHECK( ex_put_id_map( exoid, EX_ELEM_MAP, emap1 ),  "Unable to write element id map.\n" );
 
   /*                 =============== Attribute names ================ */
-  EXCHECK( ex_put_attr_names( exoid, EX_EDGE_BLOCK, blockParams.edge_blk_id[0], (char**)edge_attr_names1 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_EDGE_BLOCK, ((INT*)blockParams.edge_blk_id)[0], (char**)edge_attr_names1 ),
 	   "Unable to write edge block 1 attribute names.\n" );
 
   EXCHECK( ex_put_attr_names( exoid, EX_NODAL, 0, (char**)node_attr_names),
 	   "Unable to write nodal attribute names.\n" );
 
-  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[0], (char**)face_attr_names1 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[0], (char**)face_attr_names1 ),
 	   "Unable to write face block 1 attribute names.\n" );
-  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[1], (char**)face_attr_names2 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[1], (char**)face_attr_names2 ),
 	   "Unable to write face block 1 attribute names.\n" );
-  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[2], (char**)face_attr_names3 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[2], (char**)face_attr_names3 ),
 	   "Unable to write face block 1 attribute names.\n" );
 
-  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[0], (char**)elem_attr_names1 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[0], (char**)elem_attr_names1 ),
 	   "Unable to write elem block 1 attribute names.\n" );
-  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[2], (char**)elem_attr_names3 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[2], (char**)elem_attr_names3 ),
 	   "Unable to write elem block 3 attribute names.\n" );
-  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[3], (char**)elem_attr_names4 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[3], (char**)elem_attr_names4 ),
 	   "Unable to write elem block 4 attribute names.\n" );
-  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[4], (char**)elem_attr_names5 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[4], (char**)elem_attr_names5 ),
 	   "Unable to write elem block 5 attribute names.\n" );
 
   /*                  =============== Attribute values =============== */
-  EXCHECK( ex_put_attr( exoid, EX_EDGE_BLOCK, blockParams.edge_blk_id[0], edge_attr_values1 ),
+  EXCHECK( ex_put_attr( exoid, EX_EDGE_BLOCK, ((INT*)blockParams.edge_blk_id)[0], edge_attr_values1 ),
 	   "Unable to write edge block 1 attribute values.\n" );
   EXCHECK( ex_put_attr( exoid, EX_NODAL, 0, node_attr_values ),
 	   "Unable to write node attribute values.\n" );
 
-  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[0], face_attr_values1 ),
+  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[0], face_attr_values1 ),
 	   "Unable to write face block 1 attribute values.\n" );
-  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[1], face_attr_values2 ),
+  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[1], face_attr_values2 ),
 	   "Unable to write face block 1 attribute values.\n" );
-  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[2], face_attr_values3 ),
+  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, ((INT*)blockParams.face_blk_id)[2], face_attr_values3 ),
 	   "Unable to write face block 1 attribute values.\n" );
 
-  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[0], elem_attr_values1 ),
+  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[0], elem_attr_values1 ),
 	   "Unable to write elem block 1 attribute values.\n" );
-  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[2], elem_attr_values1 ),
+  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[2], elem_attr_values1 ),
 	   "Unable to write elem block 3 attribute values.\n" );
 
   for (i=0; i < 6; i++) {
     elem_attr_values4[2*i+1] = 4.0 / 3.0 * 3.14 * elem_attr_values4[2*i] * elem_attr_values4[2*i] * elem_attr_values4[2*i];
   }
-  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[3], elem_attr_values4 ),
+  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[3], elem_attr_values4 ),
 	   "Unable to write elem block 3 attribute values.\n" );
-  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[4], elem_attr_values5 ),
+  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, ((INT*)blockParams.elem_blk_id)[4], elem_attr_values5 ),
 	   "Unable to write elem block 4 attribute values.\n" );
 
   /*                  =============== Set parameters ================= */
@@ -703,86 +713,101 @@ int cCreateEdgeFace( int argc, char* argv[] )
   if ( concatSets ) {
     ex_set_specs setParams;
 
-    setParams.sets_ids            = (int*)malloc(2*sizeof(int));
+    setParams.sets_ids            = (int*)malloc(2*sizeof(INT));
     setParams.num_entries_per_set = (int*)malloc(2*sizeof(int));
     setParams.num_dist_per_set    = (int*)malloc(2*sizeof(int));
     setParams.sets_entry_index    = (int*)malloc(2*sizeof(int));
     setParams.sets_dist_index     = (int*)malloc(2*sizeof(int));
-    setParams.sets_entry_list     = (int*)malloc(6*sizeof(int));
-    setParams.sets_extra_list     = (int*)malloc(6*sizeof(int));
+    setParams.sets_entry_list     = (INT*)malloc(6*sizeof(INT));
+    setParams.sets_extra_list     = (INT*)malloc(6*sizeof(INT));
     setParams.sets_dist_fact      = (double*)malloc(6*sizeof(double));
 
-    setParams.sets_ids[0]            = 1000;
-    setParams.num_entries_per_set[0] = 3;
-    setParams.num_dist_per_set[0]    = 0;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_dist_index[0]     = 0;
-    setParams.sets_entry_list[0]     = nset_nodes[0];
-    setParams.sets_entry_list[1]     = nset_nodes[1];
-    setParams.sets_entry_list[2]     = nset_nodes[2];
+    ((INT*)setParams.sets_ids)[0]            = 1000;
+    ((INT*)setParams.num_entries_per_set)[0] = 3;
+    ((INT*)setParams.num_dist_per_set)[0]    = 0;
+    ((INT*)setParams.sets_entry_index)[0]    = 0;
+    ((INT*)setParams.sets_dist_index)[0]     = 0;
+
+    {
+      INT* entry_list = setParams.sets_entry_list;
+      entry_list[0] = nset_nodes[0];
+      entry_list[1] = nset_nodes[1];
+      entry_list[2] = nset_nodes[2];
+    }
 
     EXCHECK( ex_put_concat_sets( exoid, EX_NODE_SET, &setParams ), "Unable to write node sets.\n" );
 
-    setParams.sets_ids[0]            = 1200;
-    setParams.num_entries_per_set[0] = 6;
-    setParams.num_dist_per_set[0]    = 6;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_dist_index[0]     = 0;
-    setParams.sets_entry_list[0]     = eset_edges[0];
-    setParams.sets_entry_list[1]     = eset_edges[1];
-    setParams.sets_entry_list[2]     = eset_edges[2];
-    setParams.sets_entry_list[3]     = eset_edges[3];
-    setParams.sets_entry_list[4]     = eset_edges[4];
-    setParams.sets_entry_list[5]     = eset_edges[5];
+    ((INT*)setParams.sets_ids)[0]            = 1200;
+    ((INT*)setParams.num_entries_per_set)[0] = 6;
+    ((INT*)setParams.num_dist_per_set)[0]    = 6;
+    ((INT*)setParams.sets_entry_index)[0]    = 0;
+    ((INT*)setParams.sets_dist_index)[0]     = 0;
 
-    setParams.sets_extra_list[0]     = eset_orient[0];
-    setParams.sets_extra_list[1]     = eset_orient[1];
-    setParams.sets_extra_list[2]     = eset_orient[2];
-    setParams.sets_extra_list[3]     = eset_orient[3];
-    setParams.sets_extra_list[4]     = eset_orient[4];
-    setParams.sets_extra_list[5]     = eset_orient[5];
+    {
+      INT* entry_list = setParams.sets_entry_list;
+      INT* extra_list = setParams.sets_extra_list;
+      
+      entry_list[0]     = eset_edges[0];
+      entry_list[1]     = eset_edges[1];
+      entry_list[2]     = eset_edges[2];
+      entry_list[3]     = eset_edges[3];
+      entry_list[4]     = eset_edges[4];
+      entry_list[5]     = eset_edges[5];
+
+      extra_list[0]     = eset_orient[0];
+      extra_list[1]     = eset_orient[1];
+      extra_list[2]     = eset_orient[2];
+      extra_list[3]     = eset_orient[3];
+      extra_list[4]     = eset_orient[4];
+      extra_list[5]     = eset_orient[5];
+    }
 
     memcpy(setParams.sets_dist_fact, eset_df, sizeof(eset_df)/sizeof(eset_df[0]));
 
     EXCHECK( ex_put_concat_sets( exoid, EX_EDGE_SET, &setParams ), "Unable to write edge sets.\n" );
 
-    setParams.sets_ids[0]            = 1400;
-    setParams.num_entries_per_set[0] = 2;
-    setParams.num_dist_per_set[0]    = 0;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_dist_index[0]     = 0;
-    setParams.sets_entry_list[0]     = fset_faces[0];
-    setParams.sets_entry_list[1]     = fset_faces[1];
+    ((INT*)setParams.sets_ids)[0]            = 1400;
+    ((INT*)setParams.num_entries_per_set)[0] = 2;
+    ((INT*)setParams.num_dist_per_set)[0]    = 0;
+    ((INT*)setParams.sets_entry_index)[0]    = 0;
+    ((INT*)setParams.sets_dist_index)[0]     = 0;
+    {
+      INT *entry_list = setParams.sets_entry_list;
+      INT *extra_list = setParams.sets_extra_list;
+      
+      entry_list[0]     = fset_faces[0];
+      entry_list[1]     = fset_faces[1];
 
-    setParams.sets_extra_list[0]     = fset_orient[0];
-    setParams.sets_extra_list[1]     = fset_orient[1];
+      extra_list[0]     = fset_orient[0];
+      extra_list[1]     = fset_orient[1];
+    }
 
     EXCHECK( ex_put_concat_sets( exoid, EX_FACE_SET, &setParams ), "Unable to write face sets.\n" );
 
-    setParams.sets_ids[0]            = 1400;
-    setParams.sets_ids[1]            = 1441;
-    setParams.num_entries_per_set[0] = 5;
-    setParams.num_entries_per_set[1] = 3;
-    setParams.num_dist_per_set[0]    = 0;
-    setParams.num_dist_per_set[1]    = 0;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_entry_index[5]    = 0;
-    setParams.sets_dist_index[0]     = 0;
+    ((INT*)setParams.sets_ids)[0]            = 1400;
+    ((INT*)setParams.sets_ids)[1]            = 1441;
+    ((INT*)setParams.num_entries_per_set)[0] = 5;
+    ((INT*)setParams.num_entries_per_set)[1] = 3;
+    ((INT*)setParams.num_dist_per_set)[0]    = 0;
+    ((INT*)setParams.num_dist_per_set)[1]    = 0;
+    ((INT*)setParams.sets_entry_index)[0]    = 0;
+    ((INT*)setParams.sets_entry_index)[5]    = 0;
+    ((INT*)setParams.sets_dist_index)[0]     = 0;
     memcpy(setParams.sets_entry_list, sset_elems, sizeof(sset_elems)/sizeof(sset_elems[0]));
     memcpy(setParams.sets_extra_list, sset_sides, sizeof(sset_sides)/sizeof(sset_sides[0]));
 
     EXCHECK( ex_put_concat_sets( exoid, EX_SIDE_SET, &setParams ), "Unable to write side sets.\n" );
 
-    setParams.sets_ids[0]            = 1800;
-    setParams.sets_ids[1]            = 1900;
-    setParams.num_entries_per_set[0] = 1;
-    setParams.num_entries_per_set[1] = 1;
-    setParams.num_dist_per_set[0]    = 0;
-    setParams.num_dist_per_set[1]    = 0;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_entry_index[1]    = 1;
-    setParams.sets_dist_index[0]     = 0;
-    setParams.sets_dist_index[1]     = 0;
+    ((INT*)setParams.sets_ids)[0]            = 1800;
+    ((INT*)setParams.sets_ids)[1]            = 1900;
+    ((INT*)setParams.num_entries_per_set)[0] = 1;
+    ((INT*)setParams.num_entries_per_set)[1] = 1;
+    ((INT*)setParams.num_dist_per_set)[0]    = 0;
+    ((INT*)setParams.num_dist_per_set)[1]    = 0;
+    ((INT*)setParams.sets_entry_index)[0]    = 0;
+    ((INT*)setParams.sets_entry_index)[1]    = 1;
+    ((INT*)setParams.sets_dist_index)[0]     = 0;
+    ((INT*)setParams.sets_dist_index)[1]     = 0;
     memcpy(setParams.sets_entry_list, elset_elems, sizeof(elset_elems)/sizeof(elset_elems[0]));
 
     EXCHECK( ex_put_concat_sets( exoid, EX_ELEM_SET, &setParams ), "Unable to write element sets.\n" );

@@ -10,12 +10,14 @@ num_elem =   0
 num_elem_blk =   0
 num_node_sets =   0
 num_side_sets =   0
+ after ex_inquire, error = 0
 
 after ex_get_coord, error =   0
 x coords = 
 
 after ex_get_coord_names, error =   0
 x coord name = 'xcoor'
+ after ex_get_attr_param, error = 0
 num nodal attributes = 0
 
 after ex_get_map, error =   0

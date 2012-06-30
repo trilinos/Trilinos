@@ -11,6 +11,8 @@ doxygen_objdb_*.tmp
 /CHECKIN
 /flat_headers/
 /TAGS
+.DS_Store
+.cproject
 
 # Trilinos extra repos
 /preCopyrightTrilinos/

@@ -39,14 +39,15 @@ namespace stk
       typedef typename BBB ::IdentProc IdProc;
       typedef std::vector<std::pair<IdProc, IdProc> > IdentProcRelation;
 
-      FieldFunction *m_fieldFunction;
+      stk::mesh::BulkData *m_bulk;
       //std::vector< template<> BuildBoundingBoxes<SpatialDim>::BoundingBox > m_boxes;
       std::vector< BBox > m_boxes;
 
     public:
 
-      STKSearcher(FieldFunction *ff);
-      virtual ~STKSearcher() {}
+      STKSearcher(stk::mesh::BulkData *bulk);
+
+      virtual ~STKSearcher();
 
       void setupSearch();
 
@@ -68,6 +69,6 @@ namespace stk
   }
 }
 
-#include "STKSearcherDef.hpp"
+//#include "STKSearcherDef.hpp"
 
 #endif

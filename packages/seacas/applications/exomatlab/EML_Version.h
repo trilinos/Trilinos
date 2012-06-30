@@ -37,8 +37,8 @@
 static char const *qainfo[] =
 {
   "exomatlab",
-  "2010/06/26",
-  "0.9.2",
+  "2012/04/17",
+  "0.9.4",
 };
 
 #endif // SEACAS_Version_h

@@ -120,6 +120,10 @@ ${NCDUMP} -d5,5 test-nsided.exo | grep -v version | diff - ${SRCDIR}/test-nsided
 echo "testrd_nsid ..."
 ${PREFIX} ${BINDIR}/f_testrd_nsid${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrd_nsid.dmp | tee testrd_nsid.res
 
+# test_nem - nemesis routines
+echo "test_nem ..."
+${PREFIX} ${BINDIR}/f_test_nem
+
 echo "************************************************************************"
 echo "************************************************************************"
 

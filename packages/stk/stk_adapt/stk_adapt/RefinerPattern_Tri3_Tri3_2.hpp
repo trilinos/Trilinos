@@ -25,13 +25,13 @@ namespace stk {
                                                                                                     m_edge_breaker(0)
       {
         m_primaryEntityRank = m_eMesh.face_rank();
-        if (m_eMesh.getSpatialDim() == 2)
+        if (m_eMesh.get_spatial_dim() == 2)
           m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
 
-        if (m_eMesh.getSpatialDim() == 2)
+        if (m_eMesh.get_spatial_dim() == 2)
           {
             m_edge_breaker =  new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) ;
           }
@@ -49,10 +49,10 @@ namespace stk {
         EXCEPTWATCH;
         bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
 
-        if (eMesh.getSpatialDim() == 2)
+        if (eMesh.get_spatial_dim() == 2)
           {
             bp[0] = this;
-            if (m_eMesh.getSpatialDim() == 2)
+            if (m_eMesh.get_spatial_dim() == 2)
               {
                 bp[1] = m_edge_breaker;
               }
@@ -106,7 +106,7 @@ namespace stk {
         double tmp_x[3];
         for (int iedge = 0; iedge < 3; iedge++)
           {
-            double * mp = midPoint(EDGE_COORD(iedge,0), EDGE_COORD(iedge,1), eMesh.getSpatialDim(), tmp_x);
+            double * mp = midPoint(EDGE_COORD(iedge,0), EDGE_COORD(iedge,1), eMesh.get_spatial_dim(), tmp_x);
 
             unsigned num_nodes_on_edge = new_sub_entity_nodes[m_eMesh.edge_rank()][iedge].size();
             if (num_nodes_on_edge)
@@ -128,27 +128,26 @@ namespace stk {
             if (proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                //fdata[0] = double(m_eMesh.getRank());
+                //fdata[0] = double(m_eMesh.get_rank());
                 fdata[0] = double(newElement.owner_rank());
               }
 
-            eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
-
-            set_parent_child_relations(eMesh, element, newElement, ielem);
+            eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
 
             {
               if (!elems[ielem].get<0>())
                 {
-                  std::cout << "P[" << eMesh.getRank() << "] nid = 0 << " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << "] nid = 0 << " << std::endl;
                   //exit(1);
                 }
             }
 
             // 3 nodes of the new tris
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
 
+            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             element_pool++;
 

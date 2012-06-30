@@ -71,7 +71,7 @@ rqi (
     int       first;		/* is this the first RQI step? */
     int       i;		/* loop index */
 
-    double    dot(), norm();
+    double    dot(), ch_norm();
     int       symmlq_();
     void      splarax(), scadd(), vecscale(), doubleout(), assign(), x2y(), strout();
 
@@ -85,7 +85,7 @@ rqi (
     splarax(y, A, n, u, vwsqrt, r1);
     shift = dot(u, 1, n, y);
     scadd(y, 1, n, -shift, u);
-    res = norm(y, 1, n);	/* eigen-residual */
+    res = ch_norm(y, 1, n);	/* eigen-residual */
     rqisteps = 0;		/* a counter */
     symmlqitns = 0;		/* a counter */
 
@@ -143,13 +143,13 @@ rqi (
 		&rnorm, &ynorm, (double *) A, vwsqrt, (double *) orthlist,
 		&macheps, &normxlim, &itnmin);
 	symmlqitns += itn;
-	normx = norm(x, 1, n);
+	normx = ch_norm(x, 1, n);
 	vecscale(u, 1, n, 1.0 / normx, x);
 	splarax(y, A, n, u, vwsqrt, r1);
 	shift = dot(u, 1, n, y);
 	scadd(y, 1, n, -shift, u);
 	last_res = res;
-	res = norm(y, 1, n);
+	res = ch_norm(y, 1, n);
 	if (res > last_res) {
 	    warning = TRUE;
 	}

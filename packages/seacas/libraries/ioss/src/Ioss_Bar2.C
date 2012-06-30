@@ -84,6 +84,8 @@ Ioss::Bar2::Bar2()
   Ioss::ElementTopology::alias("bar2", "rod2d2");
   Ioss::ElementTopology::alias("bar2", "beam-r");
   Ioss::ElementTopology::alias("bar2", "beam-r2");
+  Ioss::ElementTopology::alias("bar2", "line");
+  Ioss::ElementTopology::alias("bar2", "line2");
 }
 
 

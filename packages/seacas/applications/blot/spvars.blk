@@ -1,0 +1,3 @@
+      COMMON /SPVARS/ NSPVAR, ISVID(MXSVAR)
+C      --NSPVAR - the number of selected variables
+C      --ISVID - the variable record numbers of the selected variables

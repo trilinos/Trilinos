@@ -83,6 +83,10 @@ C     --      CENTER, NUMCOL, NUMROW of /PARAMS/
       LOGICAL RDTHET, NOSCAL
       
       PI = ATAN2(0.0, -1.0)
+      xb = 0.0
+      xt = 0.0
+      yb = 0.0
+      yt = 0.0
       
 C ... Check for valid options...
       IF (RDTHET .AND. NOSCAL) THEN
@@ -230,6 +234,7 @@ C     ... Echo spline data
          JNP0 = IXNP(INP) - 1
          DX = XN(INP)
          DY = YN(INP)
+         RAD = 0.0
          IF (SWEEP .EQ. SPHERI) THEN
             RAD = SQRT (DX**2 + DY**2)
          ELSE IF (SWEEP .EQ. XSWEEP) THEN

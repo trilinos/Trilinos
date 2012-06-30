@@ -74,6 +74,7 @@
 #if defined(Build64) && !defined(DEFAULT_REAL_INT)
 /* 64-bit */
 #define real double
+#define entity_id ex_entity_id
 #ifdef ADDC_
 #define F2C(name) name##4_
 #else
@@ -83,6 +84,7 @@
 #else
 /* 32-bit */
 #define real float
+#define entity_id int
 #ifdef ADDC_
 #define F2C(name) name##_
 #else
@@ -244,12 +246,12 @@ F2C(exupda) (int *idexo, int *ierr)
 void
 F2C(expini) (int *idexo,
              char *title,
-             int *num_dim,
-             int *num_nodes,
-             int *num_elem,
-             int *num_elem_blk,
-             int *num_node_sets,
-             int *num_side_sets,
+             void_int *num_dim,
+             void_int *num_nodes,
+             void_int *num_elem,
+             void_int *num_elem_blk,
+             void_int *num_node_sets,
+             void_int *num_side_sets,
              int *ierr,
              int titlelen)
 {
@@ -261,10 +263,29 @@ F2C(expini) (int *idexo,
     slen = titlelen;
   }
   name = malloc((slen + 1) * sizeof(char));
-
   (void) ex_fstrncpy(name, title, slen);
-  *ierr = ex_put_init(*idexo, name, *num_dim, *num_nodes, *num_elem,
-                      *num_elem_blk, *num_node_sets, *num_side_sets);
+
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    int64_t *n_dim 	 = num_dim;
+    int64_t *n_nodes 	 = num_nodes;
+    int64_t *n_elem  	 = num_elem;
+    int64_t *n_elem_blk  = num_elem_blk;
+    int64_t *n_node_sets = num_node_sets;
+    int64_t *n_side_sets = num_side_sets;
+
+    *ierr = ex_put_init(*idexo, name, *n_dim, *n_nodes, *n_elem,
+			*n_elem_blk, *n_node_sets, *n_side_sets);
+  } else {
+    int *n_dim 	     = num_dim;
+    int *n_nodes     = num_nodes;
+    int *n_elem      = num_elem;
+    int *n_elem_blk  = num_elem_blk;
+    int *n_node_sets = num_node_sets;
+    int *n_side_sets = num_side_sets;
+
+    *ierr = ex_put_init(*idexo, name, *n_dim, *n_nodes, *n_elem,
+			*n_elem_blk, *n_node_sets, *n_side_sets);
+  }
   free(name);
 }
 
@@ -274,12 +295,12 @@ F2C(expini) (int *idexo,
 void
 F2C(exgini) (int *idexo,
              char *title,
-             int *num_dim,
-             int *num_nodes,
-             int *num_elem,
-             int *num_elem_blk,
-             int *num_node_sets,
-             int *num_side_sets,
+             void_int *num_dim,
+             void_int *num_nodes,
+             void_int *num_elem,
+             void_int *num_elem_blk,
+             void_int *num_node_sets,
+             void_int *num_side_sets,
              int *ierr,
              int titlelen)
 {
@@ -296,6 +317,7 @@ F2C(exgini) (int *idexo,
 
   *ierr = ex_get_init(*idexo, name, num_dim, num_nodes, num_elem, num_elem_blk,
                       num_node_sets, num_side_sets);
+
   ex_fcdcpy(title, slen, name);
   free(name);
 }
@@ -651,7 +673,7 @@ F2C(exgcon) (int *idexo,
 
   *ierr = 0;                    /* default no error */
 
-  slen = ex_max_name_length;    /* max string size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (coord_nameslen < slen) {
     slen = coord_nameslen;
   }
@@ -697,7 +719,7 @@ F2C(exgcon) (int *idexo,
  */
 void
 F2C(expmap) (int *idexo,
-             int *elem_map,
+             void_int *elem_map,
              int *ierr)
 {
   *ierr = ex_put_map(*idexo, elem_map);
@@ -708,7 +730,7 @@ F2C(expmap) (int *idexo,
  */
 void
 F2C(exgmap) (int *idexo,
-             int *elem_map,
+             void_int *elem_map,
              int *ierr)
 {
   *ierr = ex_get_map(*idexo, elem_map);
@@ -719,21 +741,21 @@ F2C(exgmap) (int *idexo,
  */
 void
 F2C(expclb) (int *idexo,
-             int *elem_blk_id,
+             void_int *elem_blk_id,
              char *elem_type,
-             int *num_elem_this_blk,
-             int *num_nodes_per_elem,
-             int *num_attr,
+             void_int *num_elem_this_blk,
+             void_int *num_nodes_per_elem,
+             void_int *num_attr,
              int *create_maps,
              int *ierr,
              int elem_typelen)
 {
-  int             num_elem_blk;
+  size_t          num_elem_blk;
 
   char          **aptr;         /* ptr to temp staging space for string array
                                  * ptrs */
   char           *sptr;         /* ptr to temp staging space for strings */
-  int             i, slen;
+  size_t          i, slen;
 
   *ierr = 0;                    /* default no error */
 
@@ -774,11 +796,11 @@ F2C(expclb) (int *idexo,
  */
 void
 F2C(expelb) (int *idexo,
-             int *elem_blk_id,
+             entity_id *elem_blk_id,
              char *elem_type,
-             int *num_elem_this_blk,
-             int *num_nodes_per_elem,
-             int *num_attr,
+             void_int *num_elem_this_blk,
+             void_int *num_nodes_per_elem,
+             void_int *num_attr,
              int *ierr,
              int elem_typelen)
 {
@@ -799,9 +821,20 @@ F2C(expelb) (int *idexo,
   /* Copy element type names from Fortran array to staging area */
   ex_fstrncpy(sptr, elem_type, slen);
 
-  if (ex_put_elem_block(*idexo, *elem_blk_id, sptr, *num_elem_this_blk,
-                        *num_nodes_per_elem, *num_attr) == EX_FATAL) {
-    *ierr = EX_FATAL;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    int64_t *n_elem_this_blk  = num_elem_this_blk;
+    int64_t *n_nodes_per_elem = num_nodes_per_elem;
+    int64_t *n_attr           = num_attr;
+
+    *ierr = ex_put_elem_block(*idexo, *elem_blk_id, sptr, *n_elem_this_blk,
+			      *n_nodes_per_elem, *n_attr);
+  } else {
+    int *n_elem_this_blk  = num_elem_this_blk;
+    int *n_nodes_per_elem = num_nodes_per_elem;
+    int *n_attr           = num_attr;
+
+    *ierr = ex_put_elem_block(*idexo, *elem_blk_id, sptr, *n_elem_this_blk,
+			      *n_nodes_per_elem, *n_attr);
   }
   free(sptr);
 }
@@ -811,11 +844,11 @@ F2C(expelb) (int *idexo,
  */
 void
 F2C(exgelb) (int *idexo,
-             int *elem_blk_id,
+             entity_id *elem_blk_id,
              char *elem_type,
-             int *num_elem_this_blk,
-             int *num_nodes_per_elem,
-             int *num_attr,
+             void_int *num_elem_this_blk,
+             void_int *num_nodes_per_elem,
+             void_int *num_attr,
              int *ierr,
              int elem_typelen)
 {
@@ -850,7 +883,7 @@ F2C(exgelb) (int *idexo,
  */
 void
 F2C(exgebi) (int *idexo,
-             int *elem_blk_ids,
+             void_int *elem_blk_ids,
              int *ierr)
 {
   *ierr = ex_get_elem_blk_ids(*idexo, elem_blk_ids);
@@ -861,8 +894,8 @@ F2C(exgebi) (int *idexo,
  */
 void
 F2C(expelc) (int *idexo,
-             int *elem_blk_id,
-             int *connect,
+             entity_id *elem_blk_id,
+             void_int *connect,
              int *ierr)
 {
   *ierr = ex_put_elem_conn(*idexo, *elem_blk_id, connect);
@@ -873,8 +906,8 @@ F2C(expelc) (int *idexo,
  */
 void
 F2C(exgelc) (int *idexo,
-             int *elem_blk_id,
-             int *connect,
+             entity_id *elem_blk_id,
+             void_int *connect,
              int *ierr)
 {
   *ierr = ex_get_elem_conn(*idexo, *elem_blk_id, connect);
@@ -886,7 +919,7 @@ F2C(exgelc) (int *idexo,
 void
 F2C(expecpp) (int *idexo,
               int *obj_type,
-              int *elem_blk_id,
+              entity_id *elem_blk_id,
               int *counts,
               int *ierr)
 {
@@ -899,7 +932,7 @@ F2C(expecpp) (int *idexo,
 void
 F2C(exgecpp) (int *idexo,
               int *obj_type,
-              int *elem_blk_id,
+              entity_id *elem_blk_id,
               int *counts,
               int *ierr)
 {
@@ -911,7 +944,7 @@ F2C(exgecpp) (int *idexo,
  */
 void
 F2C(expeat) (int *idexo,
-             int *elem_blk_id,
+             entity_id *elem_blk_id,
              real * attrib,
              int *ierr)
 {
@@ -924,7 +957,7 @@ F2C(expeat) (int *idexo,
  */
 void
 F2C(exgeat) (int *idexo,
-             int *elem_blk_id,
+             entity_id *elem_blk_id,
              real * attrib,
              int *ierr)
 {
@@ -936,7 +969,7 @@ F2C(exgeat) (int *idexo,
  */
 void
 F2C(exgean) (int *idexo,
-             int *elem_blk_id,
+             entity_id *elem_blk_id,
              int *num_attr,
              char *names,
              int *ierr,
@@ -949,7 +982,7 @@ F2C(exgean) (int *idexo,
 
   *ierr = 0;                    /* default no errror */
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (nameslen < slen) {
     slen = nameslen;
   }
@@ -990,7 +1023,7 @@ F2C(exgean) (int *idexo,
  */
 void
 F2C(expean) (int *idexo,
-             int *elem_blk_id,
+             entity_id *elem_blk_id,
              int *num_attr,
              char *names,
              int *ierr,
@@ -1100,7 +1133,7 @@ F2C(exgnams) (int *idexo,
 
   *ierr = 0;                    /* default no errror */
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (nameslen < slen) {
     slen = nameslen;
   }
@@ -1211,7 +1244,7 @@ F2C(exgpn) (int *idexo,
 
   *ierr = 0;
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (prop_nameslen < slen) {
     slen = prop_nameslen;
   }
@@ -1291,9 +1324,9 @@ F2C(exgpn) (int *idexo,
 void
 F2C(expp) (int *idexo,
            int *obj_type,
-           int *obj_id,
+           entity_id *obj_id,
            char *prop_name,
-           int *value,
+           ex_entity_id *value,
            int *ierr,
            int prop_namelen)
 {
@@ -1314,9 +1347,8 @@ F2C(expp) (int *idexo,
   /* Copy property name from Fortran string to staging area */
   ex_fstrncpy(sptr, prop_name, slen);
 
-  if (ex_put_prop(*idexo, (ex_entity_type) * obj_type, *obj_id, sptr, *value) == EX_FATAL) {
-    *ierr = EX_FATAL;
-  }
+  *ierr = ex_put_prop(*idexo, (ex_entity_type) * obj_type, *obj_id, sptr, *value);
+
   free(sptr);
 }
 
@@ -1326,9 +1358,9 @@ F2C(expp) (int *idexo,
 void
 F2C(exgp) (int *idexo,
            int *obj_type,
-           int *obj_id,
+           entity_id *obj_id,
            char *prop_name,
-           int *value,
+           void_int *value,
            int *ierr,
            int prop_namelen)
 {
@@ -1337,7 +1369,7 @@ F2C(exgp) (int *idexo,
 
   *ierr = 0;
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (prop_namelen < slen) {
     slen = prop_namelen;
   }
@@ -1362,7 +1394,7 @@ void
 F2C(exgpa) (int *idexo,
             int *obj_type,
             char *prop_name,
-            int *values,
+            void_int *values,
             int *ierr,
             int prop_namelen)
 {
@@ -1371,7 +1403,7 @@ F2C(exgpa) (int *idexo,
 
   *ierr = 0;
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (prop_namelen < slen) {
     slen = prop_namelen;
   }
@@ -1399,7 +1431,7 @@ void
 F2C(exppa) (int *idexo,
             int *obj_type,
             char *prop_name,
-            int *values,
+            void_int *values,
             int *ierr,
             int prop_namelen)
 {
@@ -1432,12 +1464,20 @@ F2C(exppa) (int *idexo,
  */
 void
 F2C(expnp) (int *idexo,
-            int *node_set_id,
-            int *num_nodes_in_set,
-            int *num_dist_in_set,
+            entity_id *node_set_id,
+            void_int *num_nodes_in_set,
+            void_int *num_dist_in_set,
             int *ierr)
 {
-  *ierr = ex_put_node_set_param(*idexo, *node_set_id, *num_nodes_in_set, *num_dist_in_set);
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    int64_t nnis = *(int64_t*)num_nodes_in_set;
+    int64_t ndis = *(int64_t*)num_dist_in_set;
+    *ierr = ex_put_node_set_param(*idexo, *node_set_id, nnis, ndis);
+  } else {
+    int nnis = *(int*)num_nodes_in_set;
+    int ndis = *(int*)num_dist_in_set;
+    *ierr = ex_put_node_set_param(*idexo, *node_set_id, nnis, ndis);
+  }
 }
 
 /*
@@ -1445,9 +1485,9 @@ F2C(expnp) (int *idexo,
  */
 void
 F2C(exgnp) (int *idexo,
-            int *node_set_id,
-            int *num_nodes_in_set,
-            int *num_dist_in_set,
+            entity_id *node_set_id,
+            void_int *num_nodes_in_set,
+            void_int *num_dist_in_set,
             int *ierr)
 {
   *ierr = ex_get_node_set_param(*idexo, *node_set_id, num_nodes_in_set, num_dist_in_set);
@@ -1458,8 +1498,8 @@ F2C(exgnp) (int *idexo,
  */
 void
 F2C(expns) (int *idexo,
-            int *node_set_id,
-            int *node_set_node_list,
+            entity_id *node_set_id,
+            void_int *node_set_node_list,
             int *ierr)
 {
   *ierr = ex_put_node_set(*idexo, *node_set_id, node_set_node_list);
@@ -1470,7 +1510,7 @@ F2C(expns) (int *idexo,
  */
 void
 F2C(expnsd) (int *idexo,
-             int *node_set_id,
+             entity_id *node_set_id,
              real * node_set_dist_fact,
              int *ierr)
 {
@@ -1482,8 +1522,8 @@ F2C(expnsd) (int *idexo,
  */
 void
 F2C(exgns) (int *idexo,
-            int *node_set_id,
-            int *node_set_node_list,
+            entity_id *node_set_id,
+            void_int *node_set_node_list,
             int *ierr)
 {
   *ierr = ex_get_node_set(*idexo, *node_set_id, node_set_node_list);
@@ -1494,7 +1534,7 @@ F2C(exgns) (int *idexo,
  */
 void
 F2C(exgnsd) (int *idexo,
-             int *node_set_id,
+             entity_id *node_set_id,
              real * node_set_dist_fact,
              int *ierr)
 {
@@ -1507,7 +1547,7 @@ F2C(exgnsd) (int *idexo,
  */
 void
 F2C(exgnsi) (int *idexo,
-             int *node_set_ids,
+             void_int *node_set_ids,
              int *ierr)
 {
   *ierr = ex_get_node_set_ids(*idexo, node_set_ids);
@@ -1518,48 +1558,57 @@ F2C(exgnsi) (int *idexo,
  */
 void
 F2C(expcns) (int *idexo,
-             int *node_set_ids,
-             int *num_nodes_per_set,
-             int *num_dist_per_set,
-             int *node_sets_node_index,
-             int *node_sets_dist_index,
-             int *node_sets_node_list,
+             void_int *node_set_ids,
+             void_int *num_nodes_per_set,
+             void_int *num_dist_per_set,
+             void_int *node_sets_node_index,
+             void_int *node_sets_dist_index,
+             void_int *node_sets_node_list,
              real * node_sets_dist_fact,
              int *ierr)
 {
-  int             num_node_sets, i, *node_index_ptr, *dist_index_ptr;
+  size_t num_node_sets, i;
+  int int_size;
+
+  void_int *node_index_ptr, *dist_index_ptr;
 
   *ierr = 0;
 
   num_node_sets = ex_inquire_int(*idexo, EX_INQ_NODE_SETS);
 
+  int_size = sizeof(int);
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    int_size = sizeof(int64_t);
+  }
+  
   /* allocate memory for C node index array */
-  if (!(node_index_ptr = malloc(num_node_sets * sizeof(int)))) {
+  if (!(node_index_ptr = malloc(num_node_sets * int_size))) {
     *ierr = EX_MEMFAIL;
     return;
   }
   /* allocate memory for C dist factor index array */
-  if (!(dist_index_ptr = malloc(num_node_sets * sizeof(int)))) {
+  if (!(dist_index_ptr = malloc(num_node_sets * int_size))) {
     free(node_index_ptr);
     *ierr = EX_MEMFAIL;
     return;
   }
-  for (i = 0; i < num_node_sets; i++) { /* change from 1-based to 0 index */
-    node_index_ptr[i] = node_sets_node_index[i] - 1;
-    dist_index_ptr[i] = node_sets_dist_index[i] - 1;
+
+  if (int_size == sizeof(int64_t)) {
+    for (i = 0; i < num_node_sets; i++) { /* change from 1-based to 0 index */
+      ((int64_t*)node_index_ptr)[i] = ((int64_t*)node_sets_node_index)[i] - 1;
+      ((int64_t*)dist_index_ptr)[i] = ((int64_t*)node_sets_dist_index)[i] - 1;
+    }
+  } else {
+    for (i = 0; i < num_node_sets; i++) { /* change from 1-based to 0 index */
+      ((int*)node_index_ptr)[i] = ((int*)node_sets_node_index)[i] - 1;
+      ((int*)dist_index_ptr)[i] = ((int*)node_sets_dist_index)[i] - 1;
+    }
   }
 
-
-
-  if (ex_put_concat_node_sets(*idexo, node_set_ids, num_nodes_per_set,
-                              num_dist_per_set, node_index_ptr,
-                              dist_index_ptr, node_sets_node_list,
-                              node_sets_dist_fact) == EX_FATAL) {
-    *ierr = EX_FATAL;
-    free(node_index_ptr);
-    free(dist_index_ptr);
-    return;
-  }
+  *ierr = ex_put_concat_node_sets(*idexo, node_set_ids, num_nodes_per_set,
+				  num_dist_per_set, node_index_ptr,
+				  dist_index_ptr, node_sets_node_list,
+				  node_sets_dist_fact);
   free(node_index_ptr);
   free(dist_index_ptr);
 }
@@ -1569,49 +1618,35 @@ F2C(expcns) (int *idexo,
  */
 void
 F2C(exgcns) (int *idexo,
-             int *node_set_ids,
-             int *num_nodes_per_set,
-             int *num_dist_per_set,
-             int *node_sets_node_index,
-             int *node_sets_dist_index,
-             int *node_sets_node_list,
+             void_int *node_set_ids,
+             void_int *num_nodes_per_set,
+             void_int *num_dist_per_set,
+             void_int *node_sets_node_index,
+             void_int *node_sets_dist_index,
+             void_int *node_sets_node_list,
              real * node_sets_dist_fact,
              int *ierr)
 {
-  int             num_node_sets, i, *node_index_ptr, *dist_index_ptr;
+  size_t num_node_sets, i;
 
-  *ierr = 0;
+  *ierr = ex_get_concat_node_sets(*idexo, node_set_ids, num_nodes_per_set,
+				  num_dist_per_set, node_sets_node_index,
+				  node_sets_dist_index, node_sets_node_list,
+				  node_sets_dist_fact);
 
   num_node_sets = ex_inquire_int(*idexo, EX_INQ_NODE_SETS);
 
-  /* allocate memory for C node  index array */
-  if (!(node_index_ptr = malloc(num_node_sets * sizeof(int)))) {
-    *ierr = EX_MEMFAIL;
-    return;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    for (i = 0; i < num_node_sets; i++) { /* change from 0-based to 1 index */
+      ((int64_t*)node_sets_node_index)[i] += 1;
+      ((int64_t*)node_sets_dist_index)[i] += 1;
+    }
+  } else {
+    for (i = 0; i < num_node_sets; i++) { /* change from 0-based to 1 index */
+      ((int*)node_sets_node_index)[i] += 1;
+      ((int*)node_sets_dist_index)[i] += 1;
+    }
   }
-  /* allocate memory for C dist factor index array */
-  if (!(dist_index_ptr = malloc(num_node_sets * sizeof(int)))) {
-    free(node_index_ptr);
-    *ierr = EX_MEMFAIL;
-    return;
-  }
-  if (ex_get_concat_node_sets(*idexo, node_set_ids, num_nodes_per_set,
-                              num_dist_per_set, node_index_ptr,
-                              dist_index_ptr, node_sets_node_list,
-                              node_sets_dist_fact) == EX_FATAL) {
-    free(node_index_ptr);
-    free(dist_index_ptr);
-    *ierr = EX_FATAL;
-    return;
-  }
-  for (i = 0; i < num_node_sets; i++) { /* change from 0-based to 1 index */
-    node_sets_node_index[i] = node_index_ptr[i] + 1;
-    node_sets_dist_index[i] = dist_index_ptr[i] + 1;
-  }
-
-  free(node_index_ptr);
-  free(dist_index_ptr);
-
 }
 
 /*
@@ -1619,12 +1654,20 @@ F2C(exgcns) (int *idexo,
  */
 void
 F2C(expsp) (int *idexo,
-            int *side_set_id,
-            int *num_sides_in_set,
-            int *num_df_in_set,
+            entity_id *side_set_id,
+            void_int *num_sides_in_set,
+            void_int *num_df_in_set,
             int *ierr)
 {
-  *ierr = ex_put_side_set_param(*idexo, *side_set_id, *num_sides_in_set, *num_df_in_set);
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    int64_t nsis = *(int64_t*)num_sides_in_set;
+    int64_t ndis = *(int64_t*)num_df_in_set;
+    *ierr = ex_put_side_set_param(*idexo, *side_set_id, nsis, ndis);
+  } else {
+    int nsis = *(int*)num_sides_in_set;
+    int ndis = *(int*)num_df_in_set;
+    *ierr = ex_put_side_set_param(*idexo, *side_set_id, nsis, ndis);
+  }
 }
 
 /*
@@ -1632,9 +1675,9 @@ F2C(expsp) (int *idexo,
  */
 void
 F2C(exgsp) (int *idexo,
-            int *side_set_id,
-            int *num_sides_in_set,
-            int *num_df_in_set,
+            entity_id *side_set_id,
+            void_int *num_sides_in_set,
+            void_int *num_df_in_set,
             int *ierr)
 {
   *ierr = ex_get_side_set_param(*idexo, *side_set_id, num_sides_in_set, num_df_in_set);
@@ -1645,8 +1688,8 @@ F2C(exgsp) (int *idexo,
  */
 void
 F2C(exgsnl) (int *idexo,
-             int *side_set_id,
-             int *num_nodes_in_set,
+             entity_id *side_set_id,
+             void_int *num_nodes_in_set,
              int *ierr)
 {
   *ierr = ex_get_side_set_node_list_len(*idexo, *side_set_id, num_nodes_in_set);
@@ -1657,9 +1700,9 @@ F2C(exgsnl) (int *idexo,
  */
 void
 F2C(expss) (int *idexo,
-            int *side_set_id,
-            int *side_set_elem_list,
-            int *side_set_side_list,
+            entity_id *side_set_id,
+            void_int *side_set_elem_list,
+            void_int *side_set_side_list,
             int *ierr)
 {
   *ierr = ex_put_side_set(*idexo, *side_set_id, side_set_elem_list, side_set_side_list);
@@ -1670,9 +1713,9 @@ F2C(expss) (int *idexo,
  */
 void
 F2C(exgss) (int *idexo,
-            int *side_set_id,
-            int *side_set_elem_list,
-            int *side_set_side_list,
+            entity_id *side_set_id,
+            void_int *side_set_elem_list,
+            void_int *side_set_side_list,
             int *ierr)
 {
   *ierr = ex_get_side_set(*idexo, *side_set_id, side_set_elem_list, side_set_side_list);
@@ -1683,7 +1726,7 @@ F2C(exgss) (int *idexo,
  */
 void
 F2C(expssd) (int *idexo,
-             int *side_set_id,
+             entity_id *side_set_id,
              real * side_set_dist_fact,
              int *ierr)
 {
@@ -1695,7 +1738,7 @@ F2C(expssd) (int *idexo,
  */
 void
 F2C(exgssd) (int *idexo,
-             int *side_set_id,
+             entity_id *side_set_id,
              real * side_set_dist_fact,
              int *ierr)
 {
@@ -1707,7 +1750,7 @@ F2C(exgssd) (int *idexo,
  */
 void
 F2C(exgssi) (int *idexo,
-             int *side_set_ids,
+             void_int *side_set_ids,
              int *ierr)
 {
   *ierr = ex_get_side_set_ids(*idexo, side_set_ids);
@@ -1718,46 +1761,58 @@ F2C(exgssi) (int *idexo,
  */
 void
 F2C(expcss) (int *idexo,
-             int *side_set_ids,
-             int *num_elem_per_set,
-             int *num_dist_per_set,
-             int *side_sets_elem_index,
-             int *side_sets_dist_index,
-             int *side_sets_elem_list,
-             int *side_sets_side_list,
+             void_int *side_set_ids,
+             void_int *num_elem_per_set,
+             void_int *num_dist_per_set,
+             void_int *side_sets_elem_index,
+             void_int *side_sets_dist_index,
+             void_int *side_sets_elem_list,
+             void_int *side_sets_side_list,
              real * side_sets_dist_fact,
              int *ierr)
 {
-  int             num_side_sets, i, *elem_index_ptr, *dist_index_ptr;
+  size_t num_side_sets, i;
+  void_int *elem_index_ptr, *dist_index_ptr;
+  int int_size;
+
   *ierr = 0;
 
   num_side_sets = ex_inquire_int(*idexo, EX_INQ_SIDE_SETS);
 
-  /* allocate memory for C element index array */
-  if (!(elem_index_ptr = malloc(num_side_sets * sizeof(int)))) {
-    *ierr = EX_MEMFAIL;
-    return;
-  }
-  /* allocate memory for C dist factor index array */
-  if (!(dist_index_ptr = malloc(num_side_sets * sizeof(int)))) {
-    free(elem_index_ptr);
-    *ierr = EX_MEMFAIL;
-    return;
-  }
-  for (i = 0; i < num_side_sets; i++) { /* change from 1-based to 0 index */
-    elem_index_ptr[i] = side_sets_elem_index[i] - 1;
-    dist_index_ptr[i] = side_sets_dist_index[i] - 1;
+  int_size = sizeof(int);
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    int_size = sizeof(int64_t);
   }
 
-  if (ex_put_concat_side_sets(*idexo, side_set_ids, num_elem_per_set,
-                              num_dist_per_set, elem_index_ptr,
-                              dist_index_ptr, side_sets_elem_list,
-                    side_sets_side_list, side_sets_dist_fact) == EX_FATAL) {
-    free(elem_index_ptr);
-    free(dist_index_ptr);
-    *ierr = EX_FATAL;
+  /* allocate memory for C element index array */
+  if (!(elem_index_ptr = malloc(num_side_sets * int_size))) {
+    *ierr = EX_MEMFAIL;
     return;
   }
+
+  /* allocate memory for C dist factor index array */
+  if (!(dist_index_ptr = malloc(num_side_sets * int_size))) {
+    free(elem_index_ptr);
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+
+  if (int_size == sizeof(int64_t)) {
+    for (i = 0; i < num_side_sets; i++) { /* change from 1-based to 0 index */
+      ((int64_t*)elem_index_ptr)[i] = ((int64_t*)side_sets_elem_index)[i] - 1;
+      ((int64_t*)dist_index_ptr)[i] = ((int64_t*)side_sets_dist_index)[i] - 1;
+    }
+  } else {
+    for (i = 0; i < num_side_sets; i++) { /* change from 1-based to 0 index */
+      ((int*)elem_index_ptr)[i] = ((int*)side_sets_elem_index)[i] - 1;
+      ((int*)dist_index_ptr)[i] = ((int*)side_sets_dist_index)[i] - 1;
+    }
+  }
+
+  *ierr = ex_put_concat_side_sets(*idexo, side_set_ids, num_elem_per_set,
+				  num_dist_per_set, elem_index_ptr,
+				  dist_index_ptr, side_sets_elem_list,
+				  side_sets_side_list, side_sets_dist_fact);
   free(elem_index_ptr);
   free(dist_index_ptr);
 }
@@ -1767,48 +1822,38 @@ F2C(expcss) (int *idexo,
  */
 void
 F2C(exgcss) (int *idexo,
-             int *side_set_ids,
-             int *num_elem_per_set,
-             int *num_dist_per_set,
-             int *side_sets_elem_index,
-             int *side_sets_dist_index,
-             int *side_sets_elem_list,
-             int *side_sets_side_list,
+             void_int *side_set_ids,
+             void_int *num_elem_per_set,
+             void_int *num_dist_per_set,
+             void_int *side_sets_elem_index,
+             void_int *side_sets_dist_index,
+             void_int *side_sets_elem_list,
+             void_int *side_sets_side_list,
              real * side_sets_dist_fact,
              int *ierr)
 {
-  int             i, num_side_sets, *elem_index_ptr, *dist_index_ptr;
+  size_t i, num_side_sets;
 
   *ierr = 0;
 
   num_side_sets = ex_inquire_int(*idexo, EX_INQ_SIDE_SETS);
 
-  /* allocate memory for C elem index array */
-  if (!(elem_index_ptr = malloc(num_side_sets * sizeof(int)))) {
-    *ierr = EX_MEMFAIL;
-    return;
+  *ierr = ex_get_concat_side_sets(*idexo, side_set_ids, num_elem_per_set,
+				  num_dist_per_set, side_sets_elem_index,
+				  side_sets_dist_index, side_sets_elem_list,
+				  side_sets_side_list, side_sets_dist_fact);
+
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    for (i = 0; i < num_side_sets; i++) { /* change from 0-based to 1 index */
+      ((int64_t*)side_sets_elem_index)[i] += 1;
+      ((int64_t*)side_sets_dist_index)[i] += 1;
+    }
+  } else {
+    for (i = 0; i < num_side_sets; i++) { /* change from 0-based to 1 index */
+      ((int*)side_sets_elem_index)[i] += 1;
+      ((int*)side_sets_dist_index)[i] += 1;
+    }
   }
-  /* allocate memory for C dist factor index array */
-  if (!(dist_index_ptr = malloc(num_side_sets * sizeof(int)))) {
-    free(elem_index_ptr);
-    *ierr = EX_MEMFAIL;
-    return;
-  }
-  if (ex_get_concat_side_sets(*idexo, side_set_ids, num_elem_per_set,
-                              num_dist_per_set, elem_index_ptr,
-                              dist_index_ptr, side_sets_elem_list,
-                    side_sets_side_list, side_sets_dist_fact) == EX_FATAL) {
-    free(elem_index_ptr);
-    free(dist_index_ptr);
-    *ierr = EX_FATAL;
-    return;
-  }
-  for (i = 0; i < num_side_sets; i++) { /* change from 0-based to 1 index */
-    side_sets_elem_index[i] = elem_index_ptr[i] + 1;
-    side_sets_dist_index[i] = dist_index_ptr[i] + 1;
-  }
-  free(elem_index_ptr);
-  free(dist_index_ptr);
 }
 
 /*
@@ -1816,47 +1861,35 @@ F2C(exgcss) (int *idexo,
  */
 void
 F2C(exgcssf) (int *idexo,
-              int *side_set_ids,
-              int *num_elem_per_set,
-              int *num_dist_per_set,
-              int *side_sets_elem_index,
-              int *side_sets_dist_index,
-              int *side_sets_elem_list,
-              int *side_sets_side_list,
+              void_int *side_set_ids,
+              void_int *num_elem_per_set,
+              void_int *num_dist_per_set,
+              void_int *side_sets_elem_index,
+              void_int *side_sets_dist_index,
+              void_int *side_sets_elem_list,
+              void_int *side_sets_side_list,
               int *ierr)
 {
-  int             i, num_side_sets, *elem_index_ptr, *dist_index_ptr;
-
-  *ierr = 0;
+  size_t i, num_side_sets;
 
   num_side_sets = ex_inquire_int(*idexo, EX_INQ_SIDE_SETS);
 
-  /* allocate memory for C elem index array */
-  if (!(elem_index_ptr = malloc(num_side_sets * sizeof(int)))) {
-    *ierr = EX_MEMFAIL;
-    return;
+  *ierr = ex_get_concat_side_sets(*idexo, side_set_ids, num_elem_per_set,
+				  num_dist_per_set, side_sets_elem_index,
+				  side_sets_dist_index, side_sets_elem_list,
+				  side_sets_side_list, 0);
+
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    for (i = 0; i < num_side_sets; i++) { /* change from 0-based to 1 index */
+      ((int64_t*)side_sets_elem_index)[i] += 1;
+      ((int64_t*)side_sets_dist_index)[i] += 1;
+    }
+  } else {
+    for (i = 0; i < num_side_sets; i++) { /* change from 0-based to 1 index */
+      ((int*)side_sets_elem_index)[i] += 1;
+      ((int*)side_sets_dist_index)[i] += 1;
+    }
   }
-  /* allocate memory for C dist factor index array */
-  if (!(dist_index_ptr = malloc(num_side_sets * sizeof(int)))) {
-    free(elem_index_ptr);
-    *ierr = EX_MEMFAIL;
-    return;
-  }
-  if (ex_get_concat_side_sets(*idexo, side_set_ids, num_elem_per_set,
-                              num_dist_per_set, elem_index_ptr,
-                              dist_index_ptr, side_sets_elem_list,
-                              side_sets_side_list, 0) == EX_FATAL) {
-    free(elem_index_ptr);
-    free(dist_index_ptr);
-    *ierr = EX_FATAL;
-    return;
-  }
-  for (i = 0; i < num_side_sets; i++) { /* change from 0-based to 1 index */
-    side_sets_elem_index[i] = elem_index_ptr[i] + 1;
-    side_sets_dist_index[i] = dist_index_ptr[i] + 1;
-  }
-  free(elem_index_ptr);
-  free(dist_index_ptr);
 }
 
 /*
@@ -1952,7 +1985,7 @@ F2C(exgvan) (int *idexo,
 
   *ierr = 0;                    /* default no errror */
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (var_nameslen < slen) {
     slen = var_nameslen;
   }
@@ -2114,11 +2147,18 @@ void
 F2C(expnv) (int *idexo,
             int *time_step,
             int *nodal_var_index,
-            int *num_nodes,
+            void_int *num_nodes,
             real * nodal_var_vals,
             int *ierr)
 {
-  *ierr = ex_put_nodal_var(*idexo, *time_step, *nodal_var_index, *num_nodes, nodal_var_vals);
+  int64_t nnodes;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    nnodes = *(int64_t*)num_nodes;
+  } else {
+    nnodes = *(int*)num_nodes;
+  }
+  
+  *ierr = ex_put_nodal_var(*idexo, *time_step, *nodal_var_index, nnodes, nodal_var_vals);
 }
 
 /*
@@ -2128,11 +2168,18 @@ void
 F2C(exgnv) (int *idexo,
             int *time_step,
             int *nodal_var_index,
-            int *num_nodes,
+            void_int *num_nodes,
             real * nodal_var_vals,
             int *ierr)
 {
-  *ierr = ex_get_nodal_var(*idexo, *time_step, *nodal_var_index, *num_nodes, nodal_var_vals);
+  int64_t nnodes;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    nnodes = *(int64_t*)num_nodes;
+  } else {
+    nnodes = *(int*)num_nodes;
+  }
+  
+  *ierr = ex_get_nodal_var(*idexo, *time_step, *nodal_var_index, nnodes, nodal_var_vals);
 }
 
 /*
@@ -2141,13 +2188,20 @@ F2C(exgnv) (int *idexo,
 void
 F2C(exgnvt) (int *idexo,
              int *nodal_var_index,
-             int *node_number,
+             void_int *node_number,
              int *beg_time_step,
              int *end_time_step,
              real * nodal_var_vals,
              int *ierr)
 {
-  *ierr = ex_get_nodal_var_time(*idexo, *nodal_var_index, *node_number, *beg_time_step, *end_time_step, nodal_var_vals);
+  int64_t nnode;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    nnode = *(int64_t*)node_number;
+  } else {
+    nnode = *(int*)node_number;
+  }
+  
+  *ierr = ex_get_nodal_var_time(*idexo, *nodal_var_index, nnode, *beg_time_step, *end_time_step, nodal_var_vals);
 }
 
 /*
@@ -2157,12 +2211,19 @@ void
 F2C(expev) (int *idexo,
             int *time_step,
             int *elem_var_index,
-            int *elem_blk_id,
-            int *num_elem_this_blk,
+            entity_id *elem_blk_id,
+            void_int *num_elem_this_blk,
             real * elem_var_vals,
             int *ierr)
 {
-  *ierr = ex_put_elem_var(*idexo, *time_step, *elem_var_index, *elem_blk_id, *num_elem_this_blk, elem_var_vals);
+  int64_t neblk;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    neblk = *(int64_t*)num_elem_this_blk;
+  } else {
+    neblk = *(int*)num_elem_this_blk;
+  }
+  
+  *ierr = ex_put_elem_var(*idexo, *time_step, *elem_var_index, *elem_blk_id, neblk, elem_var_vals);
 }
 
 /*
@@ -2172,12 +2233,19 @@ void
 F2C(exgev) (int *idexo,
             int *time_step,
             int *elem_var_index,
-            int *elem_blk_id,
-            int *num_elem_this_blk,
+            entity_id *elem_blk_id,
+            void_int *num_elem_this_blk,
             real * elem_var_vals,
             int *ierr)
 {
-  *ierr = ex_get_elem_var(*idexo, *time_step, *elem_var_index, *elem_blk_id, *num_elem_this_blk, elem_var_vals);
+  int64_t neblk;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    neblk = *(int64_t*)num_elem_this_blk;
+  } else {
+    neblk = *(int*)num_elem_this_blk;
+  }
+  
+  *ierr = ex_get_elem_var(*idexo, *time_step, *elem_var_index, *elem_blk_id, neblk, elem_var_vals);
 }
 
 /*
@@ -2186,13 +2254,20 @@ F2C(exgev) (int *idexo,
 void
 F2C(exgevt) (int *idexo,
              int *elem_var_index,
-             int *elem_number,
+             void_int *elem_number,
              int *beg_time_step,
              int *end_time_step,
              real * elem_var_vals,
              int *ierr)
 {
-  *ierr = ex_get_elem_var_time(*idexo, *elem_var_index, *elem_number, *beg_time_step, *end_time_step, elem_var_vals);
+  int64_t el_num;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    el_num = *(int64_t*)elem_number;
+  } else {
+    el_num = *(int*)elem_number;
+  }
+  
+  *ierr = ex_get_elem_var_time(*idexo, *elem_var_index, el_num, *beg_time_step, *end_time_step, elem_var_vals);
 }
 
 /*
@@ -2202,12 +2277,19 @@ void
 F2C(expnsv) (int *idexo,
              int *time_step,
              int *var_index,
-             int *entity_id,
-             int *num_entity,
+             entity_id *id,
+             void_int *num_entity,
              real * var_vals,
              int *ierr)
 {
-  *ierr = ex_put_nset_var(*idexo, *time_step, *var_index, *entity_id, *num_entity, var_vals);
+  int64_t n_entity;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    n_entity = *(int64_t*)num_entity;
+  } else {
+    n_entity = *(int*)num_entity;
+  }
+  
+  *ierr = ex_put_nset_var(*idexo, *time_step, *var_index, *id, n_entity, var_vals);
 }
 
 /*
@@ -2217,12 +2299,19 @@ void
 F2C(exgnsv) (int *idexo,
              int *time_step,
              int *var_index,
-             int *entity_id,
-             int *num_entity,
+             entity_id *id,
+             void_int *num_entity,
              real * var_vals,
              int *ierr)
 {
-  *ierr = ex_get_nset_var(*idexo, *time_step, *var_index, *entity_id, *num_entity, var_vals);
+  int64_t n_entity;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    n_entity = *(int64_t*)num_entity;
+  } else {
+    n_entity = *(int*)num_entity;
+  }
+  
+  *ierr = ex_get_nset_var(*idexo, *time_step, *var_index, *id, n_entity, var_vals);
 }
 
 /*
@@ -2232,12 +2321,19 @@ void
 F2C(expssv) (int *idexo,
              int *time_step,
              int *var_index,
-             int *entity_id,
-             int *num_entity,
+             entity_id *id,
+             void_int *num_entity,
              real * var_vals,
              int *ierr)
 {
-  *ierr = ex_put_sset_var(*idexo, *time_step, *var_index, *entity_id, *num_entity, var_vals);
+  int64_t n_entity;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    n_entity = *(int64_t*)num_entity;
+  } else {
+    n_entity = *(int*)num_entity;
+  }
+  
+  *ierr = ex_put_sset_var(*idexo, *time_step, *var_index, *id, n_entity, var_vals);
 }
 
 /*
@@ -2247,12 +2343,19 @@ void
 F2C(exgssv) (int *idexo,
              int *time_step,
              int *var_index,
-             int *entity_id,
-             int *num_entity,
+             entity_id *id,
+             void_int *num_entity,
              real * var_vals,
              int *ierr)
 {
-  *ierr = ex_get_sset_var(*idexo, *time_step, *var_index, *entity_id, *num_entity, var_vals);
+  int64_t n_entity;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    n_entity = *(int64_t*)num_entity;
+  } else {
+    n_entity = *(int*)num_entity;
+  }
+  
+  *ierr = ex_get_sset_var(*idexo, *time_step, *var_index, *id, n_entity, var_vals);
 }
 
 /*
@@ -2296,7 +2399,7 @@ F2C(exgatm) (int *idexo,
 void
 F2C(exinq) (int *idexo,
             int *req_info,
-            int *ret_int,
+            void_int *ret_int,
             float *ret_float,
             char *ret_char,
             int *ierr,
@@ -2306,54 +2409,37 @@ F2C(exinq) (int *idexo,
 }
 
 /*
+ * inquire integer EXODUS parameters
+ */
+int64_t
+F2C(exinqi) (int *idexo,
+            int *req_info)
+{
+  return ex_inquire_int(*idexo, (ex_inquiry) *req_info);
+}
+
+/*
  * convert side set node lists to side set side lists
  */
 void
 F2C(excn2s) (int *idexo,
-             int *num_elem_per_set,
-             int *num_nodes_per_set,
-             int *side_sets_elem_index,
-             int *side_sets_node_index,
-             int *side_sets_elem_list,
-             int *side_sets_node_list,
-             int *side_sets_side_list,
+             void_int *num_elem_per_set,
+             void_int *num_nodes_per_set,
+             void_int *side_sets_elem_index,
+             void_int *side_sets_node_index,
+             void_int *side_sets_elem_list,
+             void_int *side_sets_node_list,
+             void_int *side_sets_side_list,
              int *ierr)
 {
-
-  int             i, num_side_sets, *node_index_ptr, *elem_index_ptr;
-  *ierr = 0;
-
-  num_side_sets = ex_inquire_int(*idexo, EX_INQ_SIDE_SETS);
-
-  /* allocate memory for C element index array */
-  if (!(elem_index_ptr = malloc(num_side_sets * sizeof(int)))) {
-    *ierr = EX_MEMFAIL;
-    return;
-  }
-  /* allocate memory for C node factor index array */
-  if (!(node_index_ptr = malloc(num_side_sets * sizeof(int)))) {
-    free(elem_index_ptr);
-    *ierr = EX_MEMFAIL;
-    return;
-  }
-  /* change from 1-based to 0 index */
-  for (i = 0; i < num_side_sets; i++) {
-    elem_index_ptr[i] = side_sets_elem_index[i] - 1;
-    node_index_ptr[i] = side_sets_node_index[i] - 1;
-  }
-
-  if (ex_cvt_nodes_to_sides(*idexo,
-                            num_elem_per_set,
-                            num_nodes_per_set,
-                            elem_index_ptr,
-                            node_index_ptr,
-                            side_sets_elem_list,
-                            side_sets_node_list,
-                            side_sets_side_list) == EX_FATAL) {
-    *ierr = EX_FATAL;
-  }
-  free(elem_index_ptr);
-  free(node_index_ptr);
+  *ierr = ex_cvt_nodes_to_sides(*idexo,
+				num_elem_per_set,
+				num_nodes_per_set,
+				NULL, /* unused */
+				NULL, /* unused */
+				side_sets_elem_list,
+				side_sets_node_list,
+				side_sets_side_list);
 }
 
 /*
@@ -2361,9 +2447,9 @@ F2C(excn2s) (int *idexo,
  */
 void
 F2C(exgssn) (int *idexo,
-             int *side_set_id,
+             entity_id *side_set_id,
              int *side_set_node_cnt_list,
-             int *side_set_node_list,
+             void_int *side_set_node_list,
              int *ierr)
 {
   *ierr = ex_get_side_set_node_list(*idexo, *side_set_id, side_set_node_cnt_list, side_set_node_list);
@@ -2374,7 +2460,7 @@ F2C(exgssn) (int *idexo,
  */
 void
 F2C(exgssc) (int *idexo,
-             int *side_set_id,
+             entity_id *side_set_id,
              int *side_set_node_cnt_list,
              int *ierr)
 {
@@ -2396,7 +2482,7 @@ F2C(exgcssc) (int *idexo,
 void
 F2C(exgfrm) (int *idexo,
              int *nframeo,
-             int *cfids,
+             void_int *cfids,
              real * coord,
              int *tags,
              int *ierr)
@@ -2440,7 +2526,7 @@ F2C(exgfrm) (int *idexo,
 void
 F2C(expfrm) (int *idexo,
              int *nframe,
-             int *cfids,
+             void_int *cfids,
              real * coord,
              int *tags,
              int *ierr)
@@ -2553,12 +2639,13 @@ F2C(excopy) (int *idexo_in,
  * get element map
  */
 void
+
 F2C(exgem) (int *idexo,
-            int *map_id,
-            int *elem_map,
+            entity_id *map_id,
+            void_int *elem_map,
             int *ierr)
 {
-  *ierr = ex_get_elem_map(*idexo, *map_id, elem_map);
+  *ierr = ex_get_num_map(*idexo, EX_ELEM_MAP, *map_id, elem_map);
 }
 
 /*
@@ -2566,13 +2653,22 @@ F2C(exgem) (int *idexo,
  */
 void
 F2C(exgpem) (int *idexo,
-             int *map_id,
-             int *start,
-             int *count,
-             int *elem_map,
+             entity_id *map_id,
+             void_int *start,
+             void_int *count,
+             void_int *elem_map,
              int *ierr)
 {
-  *ierr = ex_get_partial_elem_map(*idexo, *map_id, *start, *count, elem_map);
+  int64_t st, cnt;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+  
+  *ierr = ex_get_partial_num_map(*idexo, EX_ELEM_MAP, *map_id, st, cnt, elem_map);
 }
 
 /*
@@ -2580,10 +2676,10 @@ F2C(exgpem) (int *idexo,
  */
 void
 F2C(exgenm) (int *idexo,
-             int *elem_map,
+             void_int *elem_map,
              int *ierr)
 {
-  *ierr = ex_get_elem_num_map(*idexo, elem_map);
+  *ierr = ex_get_id_map(*idexo, EX_ELEM_MAP, elem_map);
 }
 
 /*
@@ -2603,11 +2699,11 @@ F2C(exgmp) (int *idexo,
  */
 void
 F2C(exgnm) (int *idexo,
-            int *map_id,
-            int *node_map,
+            entity_id *map_id,
+            void_int *node_map,
             int *ierr)
 {
-  *ierr = ex_get_node_map(*idexo, *map_id, node_map);
+  *ierr = ex_get_num_map(*idexo, EX_NODE_MAP, *map_id, node_map);
 }
 
 /*
@@ -2615,10 +2711,10 @@ F2C(exgnm) (int *idexo,
  */
 void
 F2C(exgnnm) (int *idexo,
-             int *node_map,
+             void_int *node_map,
              int *ierr)
 {
-  *ierr = ex_get_node_num_map(*idexo, node_map);
+  *ierr = ex_get_id_map(*idexo, EX_NODE_MAP, node_map);
 }
 
 /*
@@ -2637,7 +2733,7 @@ F2C(exgvnm) (int *idexo,
   int             slen;
   *ierr = 0;                    /* default no errror */
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (var_namelen < slen) {
     slen = var_namelen;
   }
@@ -2665,11 +2761,11 @@ F2C(exgvnm) (int *idexo,
  */
 void
 F2C(expem) (int *idexo,
-            int *map_id,
-            int *elem_map,
+            entity_id *map_id,
+            void_int *elem_map,
             int *ierr)
 {
-  *ierr = ex_put_elem_map(*idexo, *map_id, elem_map);
+  *ierr = ex_put_num_map(*idexo, EX_ELEM_MAP, *map_id, elem_map);
 }
 
 /*
@@ -2677,13 +2773,21 @@ F2C(expem) (int *idexo,
  */
 void
 F2C(exppem) (int *idexo,
-             int *map_id,
-             int *start,
-             int *count,
-             int *elem_map,
+             entity_id *map_id,
+             void_int *start,
+             void_int *count,
+             void_int *elem_map,
              int *ierr)
 {
-  *ierr = ex_put_partial_elem_map(*idexo, *map_id, *start, *count, elem_map);
+  int64_t st, cnt;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+  *ierr = ex_put_partial_num_map(*idexo, EX_ELEM_MAP, *map_id, st, cnt, elem_map);
 }
 
 /*
@@ -2691,10 +2795,10 @@ F2C(exppem) (int *idexo,
  */
 void
 F2C(expenm) (int *idexo,
-             int *elem_map,
+             void_int *elem_map,
              int *ierr)
 {
-  *ierr = ex_put_elem_num_map(*idexo, elem_map);
+  *ierr = ex_put_id_map(*idexo, EX_ELEM_MAP, elem_map);
 }
 
 /*
@@ -2714,11 +2818,11 @@ F2C(expmp) (int *idexo,
  */
 void
 F2C(expnm) (int *idexo,
-            int *map_id,
-            int *node_map,
+            entity_id *map_id,
+            void_int *node_map,
             int *ierr)
 {
-  *ierr = ex_put_node_map(*idexo, *map_id, node_map);
+  *ierr = ex_put_num_map(*idexo, EX_NODE_MAP, *map_id, node_map);
 }
 
 /*
@@ -2726,10 +2830,10 @@ F2C(expnm) (int *idexo,
  */
 void
 F2C(expnnm) (int *idexo,
-             int *node_map,
+             void_int *node_map,
              int *ierr)
 {
-  *ierr = ex_put_node_num_map(*idexo, node_map);
+  *ierr = ex_put_id_map(*idexo, EX_NODE_MAP, node_map);
 }
 
 /*
@@ -2767,4 +2871,1286 @@ F2C(expvnm) (int *idexo,
     return;
   }
   free(sptr);                   /* Free up string staging area */
+}
+
+/*
+ *  Get initial information from nemesis file
+ */
+void
+F2C(exgii)(int	*idne,	
+	   int	*nproc,
+	   int	*nproc_in_f,
+	   char	*ftype,
+	   int  *ierr, 
+	   size_t ftypelen)
+{
+  size_t slen = 1;
+  char *file_type;
+
+  /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
+              the Fortran programmer passed it. It is best at
+              this time to hard code it per NEPII spec. */
+  if (ftypelen != 1) {
+#if defined(EXODUS_STRING_LENGTH_WARNING)
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,"Warning: file type string length is %d in file id %d\n",
+            ftypelen, *idne);
+    ex_err("negii",errmsg,EX_MSG);
+#endif
+    slen = ftypelen;
+  }
+
+  file_type = (char *) malloc((slen+1)*sizeof(char));
+
+  if ((*ierr = ex_get_init_info(*idne, nproc, nproc_in_f, file_type)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to get initial information from file id %d",
+	    *idne);
+    ex_err("negii",errmsg,EX_MSG);
+  }
+
+  if (*ierr == 0)
+    ex_fcdcpy (ftype, slen, file_type);
+
+  free(file_type);
+}
+
+/*
+ *  Write initial information from nemesis file
+ */
+void
+F2C(expii)(int	*idne,
+	   int	*nproc,
+	   int	*nproc_in_f,
+	   char	*ftype,
+	   int  *ierr,
+	   size_t ftypelen)
+{
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  size_t slen = 1;
+  char *file_type;
+
+  /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
+              the Fortran programmer passed it. It is best at
+              this time to hard code it per NEPII spec. */
+  if (ftypelen != 1) {
+    slen = ftypelen;
+#if defined(EXODUS_STRING_LENGTH_WARNING)
+    sprintf(errmsg,"Warning: file type string length is %d in file id %d\n",
+            ftypelen, *idne);
+    ex_err("nepii",errmsg,EX_MSG);
+#endif
+  }
+
+  file_type = (char *) malloc((slen+1)*sizeof(char));
+
+  ex_fstrncpy (file_type, ftype, slen);
+
+  if ((*ierr = ex_put_init_info(*idne, *nproc, *nproc_in_f, file_type)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to put initial information in file id %d",
+	    *idne);
+    ex_err("nepii",errmsg,EX_MSG);
+  }
+
+  free(file_type);
+}
+
+/*
+ * Read initial global information
+ */
+void
+F2C(exgig)(int	*idne,
+	   void_int	*nnodes_g,
+	   void_int	*nelems_g,
+	   void_int	*nelem_blks_g,
+	   void_int	*nnode_sets_g,
+	   void_int	*nside_sets_g,
+	   int	*ierr)
+{
+  if ((*ierr = ex_get_init_global(*idne, nnodes_g, nelems_g, nelem_blks_g,
+                                  nnode_sets_g, nside_sets_g)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read initial global information from file id %d",
+	    *idne);
+    ex_err("negig",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write initial global information
+ */
+void
+F2C(expig)(int	*idne,
+	   void_int	*nnodes_g,
+	   void_int	*nelems_g,
+	   void_int	*nelem_blks_g,
+	   void_int	*nnode_sets_g,
+	   void_int	*nside_sets_g,
+	   int	*ierr)
+{
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    int64_t *n_nnodes_g = (int64_t*)nnodes_g;
+    int64_t *n_nelems_g = (int64_t*)nelems_g;
+    int64_t *n_nelem_blks_g = (int64_t*)nelem_blks_g;
+    int64_t *n_nnode_sets_g = (int64_t*)nnode_sets_g;
+    int64_t *n_nside_sets_g = (int64_t*)nside_sets_g;
+    *ierr =  ex_put_init_global(*idne, *n_nnodes_g, *n_nelems_g, *n_nelem_blks_g,
+				*n_nnode_sets_g, *n_nside_sets_g);
+  } else {
+    int *n_nnodes_g = (int*)nnodes_g;
+    int *n_nelems_g = (int*)nelems_g;
+    int *n_nelem_blks_g = (int*)nelem_blks_g;
+    int *n_nnode_sets_g = (int*)nnode_sets_g;
+    int *n_nside_sets_g = (int*)nside_sets_g;
+    *ierr =  ex_put_init_global(*idne, *n_nnodes_g, *n_nelems_g, *n_nelem_blks_g,
+				*n_nnode_sets_g, *n_nside_sets_g);
+  }
+
+  if (*ierr != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to store initial global information in file id %d",
+	    *idne);
+    ex_err("nepig",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read load balance parameters
+ */
+void
+F2C(exglbp)(int	*idne,
+	    void_int	*nint_nodes,
+	    void_int	*nbor_nodes,
+	    void_int	*next_nodes,
+	    void_int	*nint_elems,
+	    void_int	*nbor_elems,
+	    void_int	*nnode_cmaps,
+	    void_int	*nelem_cmaps,
+	    int	*processor,
+	    int	*ierr)
+{
+  if ((*ierr = ex_get_loadbal_param(*idne, nint_nodes, nbor_nodes,
+                                    next_nodes, nint_elems, nbor_elems,
+                                    nnode_cmaps, nelem_cmaps, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read load balance parameters from file id %d",
+	    *idne);
+    ex_err("neglbp",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write load balance parameters
+ */
+void
+F2C(explbp)(int	*idne,
+	    void_int	*nint_nodes,
+	    void_int	*nbor_nodes,
+	    void_int	*next_nodes,
+	    void_int	*nint_elems,
+	    void_int	*nbor_elems,
+	    void_int	*nnode_cmaps,
+	    void_int	*nelem_cmaps,
+	    int	*processor,
+	    int	*ierr)	
+{
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    int64_t *n_nint_nodes = (int64_t*)nint_nodes;
+    int64_t *n_nbor_nodes = (int64_t*)nbor_nodes;
+    int64_t *n_next_nodes = (int64_t*)next_nodes;
+    int64_t *n_nint_elems = (int64_t*)nint_elems;
+    int64_t *n_nbor_elems = (int64_t*)nbor_elems;
+    int64_t *n_nnode_cmaps = (int64_t*)nnode_cmaps;
+    int64_t *n_nelem_cmaps = (int64_t*)nelem_cmaps;
+    *ierr = ex_put_loadbal_param(*idne, *n_nint_nodes, *n_nbor_nodes,
+				 *n_next_nodes, *n_nint_elems, *n_nbor_elems,
+				 *n_nnode_cmaps, *n_nelem_cmaps,
+				 *processor);
+  } else {
+    int *n_nint_nodes = (int*)nint_nodes;
+    int *n_nbor_nodes = (int*)nbor_nodes;
+    int *n_next_nodes = (int*)next_nodes;
+    int *n_nint_elems = (int*)nint_elems;
+    int *n_nbor_elems = (int*)nbor_elems;
+    int *n_nnode_cmaps = (int*)nnode_cmaps;
+    int *n_nelem_cmaps = (int*)nelem_cmaps;
+    *ierr = ex_put_loadbal_param(*idne, *n_nint_nodes, *n_nbor_nodes,
+				 *n_next_nodes, *n_nint_elems, *n_nbor_elems,
+				 *n_nnode_cmaps, *n_nelem_cmaps,
+				 *processor);
+  }
+  if (*ierr != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to store load balance parameters in file id %d",
+	    *idne);
+    ex_err("neplbp",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write concatenated load balance parameters
+ */
+void
+F2C(explbpc)(int *idne,
+	     void_int *nint_nodes,	
+	     void_int *nbor_nodes,	
+	     void_int *next_nodes,	
+	     void_int *nint_elems,	
+	     void_int *nbor_elems,	
+	     void_int *nnode_cmaps,	
+	     void_int *nelem_cmaps,	
+	     int *ierr)	
+{
+  if ((*ierr = ex_put_loadbal_param_cc(*idne, nint_nodes, nbor_nodes,
+                                       next_nodes, nint_elems, nbor_elems,
+                                       nnode_cmaps, nelem_cmaps)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to store load balance parameters in file id %d",
+	    *idne);
+    ex_err("neplbpc",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read global node set parameters
+ */
+void
+F2C(exgnspg)(int *idne,
+	     void_int *ns_ids_glob,
+	     void_int *ns_n_cnt_glob,
+	     void_int *ns_df_cnt_glob,
+	     int *ierr)
+{
+  if ((*ierr = ex_get_ns_param_global(*idne, ns_ids_glob, ns_n_cnt_glob, ns_df_cnt_glob)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read global node set parameters from file id %d",
+	    *idne);
+    ex_err("negnspg",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write global node set parameters
+ */
+void
+F2C(expnspg)(int *idne,
+	     void_int *global_ids,
+	     void_int *global_n_cnts,
+	     void_int *global_df_cnts,
+	     int *ierr)
+{
+  if ((*ierr = ex_put_ns_param_global(*idne, global_ids, global_n_cnts, global_df_cnts)) != 0)
+  {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to store global node set parameters in file id %d",
+	    *idne);
+    ex_err("nepnspg",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read global side set parameters
+ */
+void
+F2C(exgsspg)(int *idne,
+	     void_int *ss_ids_glob,
+	     void_int *ss_n_cnt_glob,
+	     void_int *ss_df_cnt_glob,
+	     int *ierr)
+{
+
+  if ((*ierr = ex_get_ss_param_global(*idne, ss_ids_glob, ss_n_cnt_glob, ss_df_cnt_glob)) != 0)
+  {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read global side set parameters from file id %d",
+	    *idne);
+    ex_err("negsspg",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write global side set parameters
+ */
+void
+F2C(expsspg)(int *idne,
+	     void_int *global_ids,
+	     void_int *global_el_cnts,
+	     void_int *global_df_cnts,
+	     int *ierr)
+{
+  if ((*ierr = ex_put_ss_param_global(*idne, global_ids, global_el_cnts, global_df_cnts)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to store global side set parameters in file id %d",
+	    *idne);
+    ex_err("nepsspg",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read global element block information
+ */
+void
+F2C(exgebig)(int *idne,
+	     void_int *el_blk_ids,
+	     void_int *el_blk_cnts,
+	     int *ierr)
+{
+  if ((*ierr = ex_get_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read global element block info from file id %d",
+	    *idne);
+    ex_err("negebig",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write global element block information
+ */
+void
+F2C(expebig)(int *idne,
+	     void_int *el_blk_ids,
+	     void_int *el_blk_cnts,
+	     int *ierr)
+{
+  if ((*ierr = ex_put_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to store global element block info in file id %d",
+	    *idne);
+    ex_err("nepebig",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read side set element list and side set side list
+ */
+void
+F2C(exgnss)(int *idne,
+	    entity_id *ss_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *ss_elem_list,
+	    void_int *ss_side_list,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_side_set(*idne, *ss_id, st, cnt, ss_elem_list, ss_side_list)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read side set element list from file id %d",
+	    *idne);
+    ex_err("negnss",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write side set element list and side set side list
+ */
+void
+F2C(expnss)(int *idne,
+	    entity_id *ss_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *ss_elem_list,
+	    void_int *ss_side_list,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_n_side_set(*idne, *ss_id, st, cnt, ss_elem_list, ss_side_list)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write side set element list to file id %d",
+	    *idne);
+    ex_err("nepnss",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read side set distribution factor
+ */
+void
+F2C(exgnssd)(int *idne,
+	     entity_id *ss_id,
+	     void_int *start,
+	     void_int *count,
+	     real *ss_df,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_side_set_df(*idne, *ss_id, st, cnt, ss_df)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read side set dist factor from file id %d",
+	    *idne);
+    ex_err("negnssd",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write side set distribution factor
+ */
+void
+F2C(expnssd)(int *idne,
+	     entity_id *ss_id,
+	     void_int *start,
+	     void_int *count,
+	     real *ss_df,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_n_side_set_df(*idne, *ss_id, st, cnt, ss_df)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write side set dist factor to file id %d",
+	    *idne);
+    ex_err("nepnssd",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read node set list for a single node set
+ */
+void
+F2C(exgnns)(int *idne,
+	    entity_id *ns_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *ns_node_list,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_node_set(*idne, *ns_id, st, cnt,ns_node_list)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read node set node list from file id %d",
+	    *idne);
+    ex_err("negnns",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write node set list for a single node set
+ */
+void
+F2C(expnns)(int *idne,
+	    entity_id *ns_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *ns_node_list,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_n_node_set(*idne, *ns_id, st, cnt, ns_node_list)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write node set node list to file id %d",
+	    *idne);
+    ex_err("nepnns",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read node set distribution factor
+ */
+void
+F2C(exgnnsd)(int *idne,
+	     entity_id *ns_id,
+	     void_int *start,
+	     void_int *count,
+	     real *ns_df,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_node_set_df(*idne, *ns_id, st, cnt, ns_df)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read node set dist factor from file id %d",
+	    *idne);
+    ex_err("negnnsd",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write node set distribution factor
+ */
+void
+F2C(expnnsd)(int *idne,
+	     entity_id *ns_id,
+	     void_int *start,
+	     void_int *count,
+	     real *ns_df,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_n_node_set_df(*idne, *ns_id, st, cnt, ns_df)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write node set dist factor to file id %d",
+	    *idne);
+    ex_err("nepnnsd",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read coordinates of the nodes
+ */
+void
+F2C(exgncor)(int *idne,
+	     void_int *start,
+	     void_int *count,
+	     real *x_coor,
+	     real *y_coor,
+	     real *z_coor,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read node coordinates from file id %d",
+	    *idne);
+    ex_err("negcor",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write coordinates of the nodes
+ */
+void
+F2C(expncor)(int *idne,
+	     void_int *start,
+	     void_int *count,
+	     real *x_coor,
+	     real *y_coor,
+	     real *z_coor,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_n_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write node coordinates to file id %d",
+	    *idne);
+    ex_err("nepcor",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read an element block's connectivity list
+ */
+void
+F2C(exgnec)(int *idne,
+	    entity_id *elem_blk_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *connect,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_elem_conn(*idne, *elem_blk_id, st, cnt, connect)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read element block connectivity from file id %d",
+	    *idne);
+    ex_err("negnec",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write an element block's connectivity list
+ */
+void
+F2C(expnec)(int *idne,
+	    entity_id *elem_blk_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *connect,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_n_elem_conn(*idne, *elem_blk_id, st, cnt, connect)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write element block connectivity to file id %d",
+	    *idne);
+    ex_err("negnec",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read an element block's attributes
+ */
+void
+F2C(exgneat)(int *idne,
+	     entity_id *elem_blk_id,
+	     void_int *start,
+	     void_int *count,
+	     real *attrib,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_elem_attr(*idne, *elem_blk_id, st, cnt, attrib)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read element block attribute from file id %d",
+	    *idne);
+    ex_err("negneat",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write an element block's attributes
+ */
+void
+F2C(expneat)(int *idne,
+	     entity_id *elem_blk_id,
+	     void_int *start,
+	     void_int *count,
+	     real *attrib,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_n_elem_attr(*idne, *elem_blk_id, st, cnt, attrib)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write element block attribute to file id %d",
+	    *idne);
+    ex_err("nepneat",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the element type for a specific element block
+ */
+void
+F2C(exgelt)(int *idne,
+	    entity_id *elem_blk_id,
+	    char *elem_type,
+	    int *ierr,
+	    size_t elem_typelen)
+{
+  size_t slen = MAX_STR_LENGTH;
+  char *etype;
+
+  /* WARNING: ftypelen SHOULD be MAX_STR_LENGTH, but may not be depending
+              on how the Fortran programmer passed it. It is best at
+              this time to hard code it per NEMESIS spec. */
+  if (elem_typelen != MAX_STR_LENGTH) {
+#if defined(EXODUS_STRING_LENGTH_WARNING)
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,"Warning: element type string length is %d in file id %d\n",
+            elem_typelen, *idne);
+    ex_err("negelt",errmsg,EX_MSG);
+#endif
+    slen = elem_typelen;
+  }
+
+  etype = (char *) malloc((slen+1)*sizeof(char));
+
+  if ((*ierr = ex_get_elem_type(*idne, *elem_blk_id, etype)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read element block type from file id %d",
+	    *idne);
+    ex_err("negelt",errmsg,EX_MSG);
+  }
+
+  if (*ierr == 0)
+    ex_fcdcpy (elem_type, slen, etype);
+
+  free(etype);
+}
+
+/*
+ * Read a variable for an element block
+ */
+void
+F2C(exgnev)(int *idne,
+	    int *time_step,
+	    int *elem_var_index,
+	    entity_id *elem_blk_id,
+	    void_int *num_elem_this_blk,
+	    void_int *start,
+	    void_int *count,
+	    real *elem_var_vals,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_var(*idne, *time_step, EX_ELEM_BLOCK, *elem_var_index,
+			    *elem_blk_id, st, cnt, elem_var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read element block variable from file id %d",
+	    *idne);
+    ex_err("negnec",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write a variable slab for an element block
+ */
+void
+F2C(expevs)(int *idne,
+	    int *time_step,
+	    int *elem_var_index,
+	    entity_id *elem_blk_id,
+	    void_int *start,
+	    void_int *count,
+	    real *elem_var_vals,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_elem_var_slab(*idne, *time_step, *elem_var_index,
+                                    *elem_blk_id, st, cnt, elem_var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write elem block variable slab to file id %d",
+	    *idne);
+    ex_err("negnec",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the values of a single nodal variable for a single time step
+ */
+void
+F2C(exgnnv)(int *idne,
+	    int *time_step,
+	    int *nodal_var_index,
+	    void_int *start,
+	    void_int *count,
+	    real *nodal_vars,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_get_n_var(*idne, *time_step, EX_NODAL, *nodal_var_index,
+			    1, st, cnt, nodal_vars)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read nodal variable from file id %d",
+	    *idne);
+    ex_err("negnnv",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write nodal variable slab
+ */
+void
+F2C(expnvs)(int *idne,
+	    int *time_step,
+	    int *nodal_var_index,
+	    void_int *start,
+	    void_int *count,
+	    real *nodal_var_vals,
+	    int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
+
+  if ((*ierr = ex_put_nodal_var_slab(*idne, *time_step, *nodal_var_index,
+                                     st, cnt, nodal_var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write nodal variable slab to file id %d",
+	    *idne);
+    ex_err("nepnvs",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the element numbering map
+ */
+void
+F2C(exgnenm)(int *idne,
+	     void_int *starte,
+	     void_int *num_ent,
+	     void_int *elem_map,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)starte;
+    cnt = *(int64_t*)num_ent;
+  } else {
+    st = *(int*)starte;
+    cnt = *(int*)num_ent;
+  }
+
+  if ((*ierr = ex_get_n_elem_num_map(*idne, st, cnt, elem_map)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read element numbering map from file id %d",
+	    *idne);
+    ex_err("negnenm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the element numbering map
+ */
+void
+F2C(expnenm)(int *idne,
+	     void_int *starte,
+	     void_int *num_ent,
+	     void_int *elem_map,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)starte;
+    cnt = *(int64_t*)num_ent;
+  } else {
+    st = *(int*)starte;
+    cnt = *(int*)num_ent;
+  }
+
+  if ((*ierr = ex_put_partial_id_map(*idne, EX_ELEM_MAP, st, cnt, elem_map)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write element numbering map to file id %d",
+	    *idne);
+    ex_err("nepnenm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the node numbering map
+ */
+void
+F2C(exgnnnm)(int *idne,
+	     void_int *startn,
+	     void_int *num_ent,
+	     void_int *node_map,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)startn;
+    cnt = *(int64_t*)num_ent;
+  } else {
+    st = *(int*)startn;
+    cnt = *(int*)num_ent;
+  }
+
+  if ((*ierr = ex_get_n_node_num_map(*idne, st, cnt, node_map)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read node numbering map from file id %d",
+	    *idne);
+    ex_err("negnnnm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the node numbering map
+ */
+void
+F2C(expnnnm)(int *idne,
+	     void_int *startn,
+	     void_int *num_ent,
+	     void_int *node_map,
+	     int *ierr)
+{
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)startn;
+    cnt = *(int64_t*)num_ent;
+  } else {
+    st = *(int*)startn;
+    cnt = *(int*)num_ent;
+  }
+
+  if ((*ierr = ex_put_partial_id_map(*idne, EX_NODE_MAP, st, cnt, node_map)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write node numbering map to file id %d",
+	    *idne);
+    ex_err("nepnnnm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the node map for a processor
+ */
+void
+F2C(exgnmp)(int *idne,
+	   void_int *node_mapi,
+	   void_int *node_mapb,
+	   void_int *node_mape,
+	   int *processor,
+	   int *ierr)
+{
+  if ((*ierr = ex_get_processor_node_maps(*idne, node_mapi, node_mapb, node_mape, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read processor node map from file id %d",
+	    *idne);
+    ex_err("negnm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write a node map for a processor
+ */
+void
+F2C(expnmp)(int *idne,
+	   void_int *node_mapi,
+	   void_int *node_mapb,
+	   void_int *node_mape,
+	   int *processor,
+	   int *ierr)
+{
+  if ((*ierr = ex_put_processor_node_maps(*idne, node_mapi, node_mapb, node_mape, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write processor node map to file id %d",
+	    *idne);
+    ex_err("nepnm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the element map for a processor
+ */
+void
+F2C(exgemp)(int *idne,
+	   void_int *elem_mapi,
+	   void_int *elem_mapb,
+	   int *processor,
+	   int *ierr)
+{
+  if ((*ierr = ex_get_processor_elem_maps(*idne, elem_mapi, elem_mapb, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read processor element map from file id %d",
+	    *idne);
+    ex_err("negem",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the element map for a processor
+ */
+void
+F2C(expemp)(int *idne,
+	   void_int *elem_mapi,
+	   void_int *elem_mapb,
+	   int *processor,
+	   int *ierr)
+{
+  if ((*ierr = ex_put_processor_elem_maps(*idne, elem_mapi, elem_mapb, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write processor element map to file id %d",
+	    *idne);
+    ex_err("nepem",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the communications map parameters for a single processor
+ */
+void
+F2C(exgcmp)(int *idne,
+	    void_int *ncmap_ids,
+	    void_int *ncmap_node_cnts,
+	    void_int *ecmap_ids,
+	    void_int *ecmap_elem_cnts,
+	    int *processor,
+	    int *ierr)
+{
+  if ((*ierr = ex_get_cmap_params(*idne, ncmap_ids, ncmap_node_cnts,
+                                  ecmap_ids, ecmap_elem_cnts, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read comm map parameters from file id %d",
+	    *idne);
+    ex_err("negcmp",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the communications map parameters for a single processor
+ */
+void
+F2C(expcmp)(int *idne,
+	    void_int *nmap_ids,
+	    void_int *nmap_node_cnts,
+	    void_int *emap_ids,
+	    void_int *emap_elem_cnts,
+	    int *processor,
+	    int *ierr)
+{
+  if ((*ierr = ex_put_cmap_params(*idne, nmap_ids, nmap_node_cnts,
+                                  emap_ids, emap_elem_cnts, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write comm map parameters to file id %d",
+	    *idne);
+    ex_err("nepcmp",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the communications map parameters for all processors
+ */
+void
+F2C(expcmpc)(int *idne,
+	     void_int *nmap_ids,
+	     void_int *nmap_node_cnts,
+	     void_int *nproc_ptrs,
+	     void_int *emap_ids,
+	     void_int *emap_elem_cnts,
+	     void_int *eproc_ptrs,
+	     int *ierr)
+{
+  if ((*ierr = ex_put_cmap_params_cc(*idne, nmap_ids, nmap_node_cnts,
+                                     nproc_ptrs, emap_ids, emap_elem_cnts,
+                                     eproc_ptrs)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write comm map parameters to file id %d",
+	    *idne);
+    ex_err("nepcmpc",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the nodal communications map for a single processor
+ */
+void
+F2C(exgncm)(int *idne,
+	    entity_id *map_id,
+	    void_int *node_ids,
+	    void_int *proc_ids,
+	    int *processor,
+	    int *ierr)
+{
+  if ((*ierr = ex_get_node_cmap(*idne, *map_id, node_ids, proc_ids, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read nodal communications map from file id %d",
+	    *idne);
+    ex_err("negncm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the nodal communications map for a single processor
+ */
+void
+F2C(expncm)(int *idne,
+	    entity_id *map_id,
+	    void_int *node_ids,
+	    void_int *proc_ids,
+	    int *processor,
+	    int *ierr)
+{
+  if ((*ierr = ex_put_node_cmap(*idne, *map_id, node_ids, proc_ids, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write nodal communications map to file id %d",
+	    *idne);
+    ex_err("nepncm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the elemental communications map for a single processor
+ */
+void
+F2C(exgecm)(int *idne,
+	    entity_id *map_id,
+	    void_int *elem_ids,
+	    void_int *side_ids,
+	    void_int *proc_ids,
+	    int *processor,
+	    int *ierr)
+{
+  if ((*ierr = ex_get_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to read elemental comm map from file id %d",
+	    *idne);
+    ex_err("negecm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the elemental communications map for a single processor
+ */
+void
+F2C(expecm)(int *idne,
+	    entity_id *map_id,
+	    void_int *elem_ids,
+	    void_int *side_ids,
+	    void_int *proc_ids,
+	    int *processor,
+	    int *ierr)
+{
+  if ((*ierr = ex_put_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    sprintf(errmsg,
+	    "Error: failed to write elemental comm map to file id %d",
+	    *idne);
+    ex_err("nepecm",errmsg,EX_MSG);
+  }
 }

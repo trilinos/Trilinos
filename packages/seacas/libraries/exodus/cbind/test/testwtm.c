@@ -294,6 +294,7 @@ int main (int argc, char **argv)
 
    error = ex_put_elem_block (exoid, ebids[2], "hex", num_elem_in_block[2],
                                num_nodes_per_elem[2], 1);
+   printf ("after ex_put_elem_block, error = %d\n", error);
 
    error = ex_put_elem_block (exoid, ebids[3], "tetra", num_elem_in_block[3],
                                num_nodes_per_elem[3], 1);

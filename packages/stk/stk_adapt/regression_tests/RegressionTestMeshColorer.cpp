@@ -45,6 +45,8 @@ namespace stk
     namespace unit_tests
     {
 
+#include "RegressionTestFileLoc.hpp"
+
       static stk::diag::Writer &
       dw()
       {
@@ -70,7 +72,7 @@ namespace stk
         dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test1 " << stk::diag::dendl;
 
         percept::PerceptMesh eMesh(3u);
-        if (eMesh.getParallelSize() <= 3)
+        if (eMesh.get_parallel_size() <= 3)
           {
             const size_t numxyz=3;
             const size_t num_x = numxyz;
@@ -81,16 +83,16 @@ namespace stk
               Ioss::Utils::to_string(num_y) + "x" +
               Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 	
-            eMesh.newMesh(percept::GMeshSpec(config_mesh));
+            eMesh.new_mesh(percept::GMeshSpec(config_mesh));
             int vectorDimension = 0;
-            stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
+            stk::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
 
             std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
             Colorer meshColorer(mer);
             unsigned elementType = 0u;
             meshColorer.color(eMesh, &elementType, 0, element_color_field);
-            eMesh.saveAs("./output_files/cube_colored.e");
+            eMesh.save_as(output_files_loc+"cube_colored.e");
             //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
           }
       }
@@ -106,11 +108,11 @@ namespace stk
         dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test_quad " << stk::diag::dendl;
 
         percept::PerceptMesh eMesh(2u);
-        if (eMesh.getParallelSize() == 1 || eMesh.getParallelSize() == 3)
+        if (eMesh.get_parallel_size() == 1 || eMesh.get_parallel_size() == 3)
           {
-            eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
+            eMesh.open(input_files_loc+"break_test._.quad._.square._.square_quad4.e");
             int vectorDimension = 0;
-            stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
+            stk::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
 
             std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.face_rank());
@@ -118,9 +120,9 @@ namespace stk
             unsigned elementType = 0u;
             meshColorer.color(eMesh, &elementType, 0, element_color_field);
             //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
-            eMesh.printInfo();
+            eMesh.print_info();
             eMesh.dump();
-            eMesh.saveAs("./output_files/square_quad4_colored.e");
+            eMesh.save_as(output_files_loc+"square_quad4_colored.e");
           }
       }
 

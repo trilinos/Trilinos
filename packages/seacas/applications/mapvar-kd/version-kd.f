@@ -54,8 +54,8 @@ C      --   (6) = time of current run
 
       
       qainfo(1) = 'mapvar-kd                       '
-      qainfo(2) = '2011/10/07                      '
-      qainfo(3) = ' 1.20                           '
+      qainfo(2) = '2012/03/06                      '
+      qainfo(3) = ' 1.21                           '
       qainfo(4) = '                                '
       qainfo(5) = '                                '
       qainfo(6) = '                                '

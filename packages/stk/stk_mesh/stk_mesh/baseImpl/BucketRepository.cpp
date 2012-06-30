@@ -21,84 +21,6 @@ namespace mesh {
 namespace impl {
 
 //----------------------------------------------------------------------
-namespace {
-
-void * local_malloc( size_t n )
-{
-  void * const ptr = std::malloc( n );
-
-  ThrowErrorMsgIf( NULL == ptr, "malloc of size " << n << " failed" );
-
-  return ptr ;
-}
-
-
-} // namespace
-
-//----------------------------------------------------------------------
-
-namespace {
-
-inline unsigned align( size_t nb )
-{
-  enum { BYTE_ALIGN = 16 };
-  const unsigned gap = nb % BYTE_ALIGN ;
-  if ( gap ) { nb += BYTE_ALIGN - gap ; }
-  return nb ;
-}
-
-const FieldBase::Restriction & empty_field_restriction()
-{
-  static const FieldBase::Restriction empty ;
-  return empty ;
-}
-
-const FieldBase::Restriction & dimension( const FieldBase & field ,
-                                          EntityRank erank ,
-                                          const unsigned num_part_ord ,
-                                          const unsigned part_ord[] ,
-                                          const char * const method )
-{
-  const FieldBase::Restriction & empty = empty_field_restriction();
-  const FieldBase::Restriction * dim = & empty ;
-
-  const std::vector<FieldBase::Restriction> & dim_map = field.restrictions();
-  const std::vector<FieldBase::Restriction>::const_iterator iend = dim_map.end();
-        std::vector<FieldBase::Restriction>::const_iterator ibeg = dim_map.begin();
-
-  for ( PartOrdinal i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
-
-    const FieldRestriction restr(erank,part_ord[i]);
-
-    ibeg = std::lower_bound( ibeg , iend , restr );
-
-    if ( (iend != ibeg) && (*ibeg == restr) ) {
-      if ( dim == & empty ) { dim = & *ibeg ; }
-
-      if ( ibeg->not_equal_stride(*dim) ) {
-
-        Part & p_old = MetaData::get(field).get_part( ibeg->part_ordinal() );
-        Part & p_new = MetaData::get(field).get_part( dim->part_ordinal() );
-
-        std::ostringstream msg ;
-        msg << method ;
-        msg << " FAILED WITH INCOMPATIBLE DIMENSIONS FOR " ;
-        msg << field ;
-        msg << " Part[" << p_old.name() ;
-        msg << "] and Part[" << p_new.name() ;
-        msg << "]" ;
-
-        ThrowErrorMsg( msg.str() );
-      }
-    }
-  }
-
-  return *dim ;
-}
-
-} // namespace
-
-//----------------------------------------------------------------------
 
 
 BucketRepository::BucketRepository(
@@ -190,8 +112,7 @@ void BucketRepository::destroy_bucket( Bucket * bucket )
 {
   TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
 
-  bucket->~Bucket();
-  delete [] reinterpret_cast<unsigned char*>( bucket );
+  delete bucket;
 }
 
 //
@@ -203,52 +124,15 @@ BucketRepository::declare_nil_bucket()
   TraceIf("stk::mesh::impl::BucketRepository::declare_nil_bucket", LOG_BUCKET);
 
   if (m_nil_bucket == NULL) {
-    unsigned field_count = MetaData::get(m_mesh).get_fields().size();
-
-    //----------------------------------
-    // Field map gives NULL for all field data.
-
-    impl::BucketImpl::DataMap * field_map =
-      reinterpret_cast<impl::BucketImpl::DataMap*>(
-        local_malloc( sizeof(impl::BucketImpl::DataMap) * ( field_count + 1 )));
-
-    FieldBase::Restriction::size_type empty_stride[ MaximumFieldDimension ];
-    Copy<MaximumFieldDimension>( empty_stride , FieldBase::Restriction::size_type(0) );
-
-    for ( unsigned i = 0 ; i < field_count ; ++i ) {
-      field_map[ i ].m_base = 0 ;
-      field_map[ i ].m_size = 0 ;
-      field_map[ i ].m_stride = empty_stride;
-    }
-    field_map[ field_count ].m_base   = 0 ;
-    field_map[ field_count ].m_size   = 0 ;
-    field_map[ field_count ].m_stride = NULL ;
-
-    //----------------------------------
-    // Allocation size:  sizeof(Bucket) + key_size * sizeof(unsigned);
-
-    const unsigned alloc_size = align( sizeof(Bucket) ) +
-                                align( sizeof(unsigned) * 2 );
-
-    // All fields checked and sized, Ready to allocate
-
-    unsigned char * const alloc_ptr = new unsigned char[ alloc_size ];
-
-    unsigned char * ptr = alloc_ptr;
-
-    ptr += align( sizeof( Bucket ) );
-
-    unsigned * const new_key = reinterpret_cast<unsigned *>( ptr );
-
     // Key layout:
     // { part_count + 1 , { part_ordinals } , family_count }
 
+    std::vector<unsigned> new_key(2);
     new_key[0] = 1 ; // part_count + 1
     new_key[1] = 0 ; // family_count
 
     Bucket * bucket =
-      new( alloc_ptr ) Bucket( m_mesh , InvalidEntityRank , new_key ,
-                              alloc_size , 0 , field_map , NULL );
+      new Bucket(m_mesh, InvalidEntityRank, new_key, 0);
 
     bucket->m_bucketImpl.set_bucket_family_pointer( bucket );
 
@@ -293,11 +177,9 @@ BucketRepository::declare_bucket(
 {
   enum { KEY_TMP_BUFFER_SIZE = 64 };
 
-  static const char method[] = "stk::mesh::impl::BucketRepository::declare_bucket" ;
   TraceIf("stk::mesh::impl::BucketRepository::declare_bucket", LOG_BUCKET);
 
-  const unsigned max = ~(0u);
-  const size_t   num_fields = field_set.size();
+  const unsigned max = static_cast<unsigned>(-1);
 
   ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
                   "Entity rank " << arg_entity_rank << " is invalid");
@@ -306,19 +188,8 @@ BucketRepository::declare_bucket(
     "m_buckets is empty! Did you forget to initialize MetaData before creating BulkData?");
   std::vector<Bucket *> & bucket_set = m_buckets[ arg_entity_rank ];
 
-  //----------------------------------
-  // For performance try not to allocate a temporary.
 
-  unsigned key_tmp_buffer[ KEY_TMP_BUFFER_SIZE ];
-
-  std::vector<unsigned> key_tmp_vector ;
-
-  const unsigned key_size = 2 + part_count ;
-
-  unsigned * const key =
-    ( key_size <= KEY_TMP_BUFFER_SIZE )
-    ? key_tmp_buffer
-    : ( key_tmp_vector.resize( key_size ) , & key_tmp_vector[0] );
+  std::vector<unsigned> key(2+part_count) ;
 
   //----------------------------------
   // Key layout:
@@ -327,29 +198,28 @@ BucketRepository::declare_bucket(
   //
   // for upper bound search use the maximum key.
 
-  key[ key[0] = part_count + 1 ] = max ;
+  key[0] = part_count+1;
+  key[ key[0] ] = max ;
 
   {
-    unsigned * const k = key + 1 ;
-    for ( unsigned i = 0 ; i < part_count ; ++i ) { k[i] = part_ord[i] ; }
+    for ( unsigned i = 0 ; i < part_count ; ++i ) { key[i+1] = part_ord[i] ; }
   }
 
   //----------------------------------
   // Bucket family has all of the same parts.
   // Look for the last bucket in this family:
 
-  const std::vector<Bucket*>::iterator ik = lower_bound( bucket_set , key );
+  const std::vector<Bucket*>::iterator ik = lower_bound( bucket_set , &key[0] );
 
   //----------------------------------
   // If a member of the bucket family has space, it is the last one
   // since buckets are kept packed.
   const bool bucket_family_exists =
-    ik != bucket_set.begin() && bucket_part_equal( ik[-1]->key() , key );
+    ik != bucket_set.begin() && bucket_part_equal( ik[-1]->key() , &key[0] );
 
   Bucket * const last_bucket = bucket_family_exists ? ik[-1] : NULL ;
 
   Bucket          * bucket    = NULL ;
-  impl::BucketImpl::DataMap * field_map = NULL ;
 
   if ( last_bucket == NULL ) { // First bucket in this family
     key[ key[0] ] = 0 ; // Set the key's family count to zero
@@ -359,7 +229,7 @@ BucketRepository::declare_bucket(
     ThrowRequireMsg( last_bucket->size() != 0,
                      "Last bucket should not be empty.");
 
-    field_map = last_bucket->m_bucketImpl.get_field_map();
+    //field_map = last_bucket->m_bucketImpl.get_field_map();
 
     const unsigned last_count = last_bucket->key()[ key[0] ];
 
@@ -377,84 +247,13 @@ BucketRepository::declare_bucket(
     }
   }
 
-  //----------------------------------
-  // Family's field map does not exist, create it:
-
-  if ( NULL == field_map ) {
-
-    field_map = reinterpret_cast<impl::BucketImpl::DataMap*>(
-                local_malloc( sizeof(impl::BucketImpl::DataMap) * ( num_fields + 1 )));
-
-    // Start field data memory after the array of member entity pointers:
-    unsigned value_offset = align( sizeof(Entity*) * m_bucket_capacity );
-
-    for ( unsigned i = 0 ; i < num_fields ; ++i ) {
-      const FieldBase  & field = * field_set[i] ;
-
-      unsigned num_bytes_per_entity = 0 ;
-
-      const FieldBase::Restriction & dim =
-        dimension( field, arg_entity_rank, part_count, part_ord, method);
-
-      if ( dim.dimension() ) { // Exists
-
-        const unsigned type_stride = field.data_traits().stride_of ;
-        const unsigned field_rank  = field.rank();
-
-        num_bytes_per_entity = type_stride *
-          ( field_rank ? dim.stride( field_rank - 1 ) : 1 );
-      }
-
-      field_map[i].m_base = value_offset ;
-      field_map[i].m_size = num_bytes_per_entity ;
-      field_map[i].m_stride = &dim.stride(0);
-
-      value_offset += align( num_bytes_per_entity * m_bucket_capacity );
-    }
-    field_map[ num_fields ].m_base  = value_offset ;
-    field_map[ num_fields ].m_size = 0 ;
-    field_map[ num_fields ].m_stride = NULL ;
-  }
 
   //----------------------------------
 
-  if ( NULL == bucket ) {
-
-    // Required bucket does not exist, must allocate and insert
-    //
-    // Allocation size:
-    //   sizeof(Bucket) +
-    //   key_size * sizeof(unsigned) +
-    //   sizeof(Entity*) * capacity() +
-    //   sum[number_of_fields]( fieldsize * capacity )
-    //
-    // The field_map[ num_fields ].m_base spans
-    //   sizeof(Entity*) * capacity() +
-    //   sum[number_of_fields]( fieldsize * capacity )
-
-    const unsigned alloc_size = align( sizeof(Bucket) ) +
-                                align( sizeof(unsigned) * key_size ) +
-                                field_map[ num_fields ].m_base ;
-
-    // All fields checked and sized, Ready to allocate
-
-    unsigned char * const alloc_ptr = new unsigned char[ alloc_size ];
-
-    unsigned char * ptr = alloc_ptr;
-
-    ptr += align( sizeof( Bucket ) );
-
-    unsigned * const new_key = reinterpret_cast<unsigned *>( ptr );
-
-    ptr += align( sizeof(unsigned) * key_size );
-
-    Entity ** const entity_array = reinterpret_cast<Entity**>( ptr );
-
-    for ( unsigned i = 0 ; i < key_size ; ++i ) { new_key[i] = key[i] ; }
-
-    bucket = new( alloc_ptr ) Bucket( m_mesh, arg_entity_rank , new_key,
-                                      alloc_size, m_bucket_capacity ,
-                                      field_map , entity_array );
+  //Required bucket does not exist
+  if ( NULL == bucket )
+  {
+    bucket = new Bucket( m_mesh, arg_entity_rank, key, m_bucket_capacity);
 
     Bucket * first_bucket = last_bucket ? last_bucket->m_bucketImpl.first_bucket_in_family() : bucket ;
 
@@ -481,13 +280,6 @@ void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
   k_dst.m_bucketImpl.initialize_fields(i_dst);
 }
 
-void BucketRepository::copy_fields( Bucket & k_dst , unsigned i_dst ,
-                                    Bucket & k_src , unsigned i_src )
-{
-  TraceIfWatching("stk::mesh::impl::BucketRepository::copy_fields", LOG_BUCKET, &k_dst);
-  k_dst.m_bucketImpl.replace_fields(i_dst,k_src,i_src);
-}
-
 //----------------------------------------------------------------------
 
 void BucketRepository::update_field_data_states() const
@@ -506,16 +298,6 @@ void BucketRepository::update_field_data_states() const
   }
 }
 
-
-//----------------------------------------------------------------------
-
-const std::vector<Bucket*> & BucketRepository::buckets( EntityRank rank ) const
-{
-  ThrowRequireMsg( MetaData::get(m_mesh).check_rank(rank),
-                   "Invalid entity rank " << rank );
-
-  return m_buckets[ rank ];
-}
 
 //----------------------------------------------------------------------
 
@@ -555,7 +337,7 @@ void BucketRepository::internal_sort_bucket_entities()
 
       // Determine offset to the end bucket in this family:
       while ( ek < buckets.size() && ik_vacant != buckets[ek] ) { ++ek ; }
-      ++ek ;
+      if (ek < buckets.size()) ++ek ;
 
       unsigned count = 0 ;
       for ( size_t ik = bk ; ik != ek ; ++ik ) {
@@ -626,6 +408,92 @@ void BucketRepository::internal_sort_bucket_entities()
   }
 }
 
+void BucketRepository::optimize_buckets()
+{
+  TraceIf("stk::mesh::impl::BucketRepository::optimize_buckets", LOG_BUCKET);
+
+  for ( EntityRank entity_rank = 0 ;
+      entity_rank < m_buckets.size() ; ++entity_rank )
+  {
+
+    std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
+
+    std::vector<Bucket*> tmp_buckets;
+
+    size_t begin_family = 0 ; // Offset to first bucket of the family
+    size_t end_family = 0 ; // Offset to end   bucket of the family
+
+    //loop over families
+    for ( ; begin_family < buckets.size() ; begin_family = end_family ) {
+      Bucket * last_bucket_in_family  = buckets[begin_family]->m_bucketImpl.last_bucket_in_family();
+
+      // Determine offset to the end bucket in this family:
+      while ( end_family < buckets.size() && last_bucket_in_family != buckets[end_family] ) { ++end_family ; }
+      if (end_family < buckets.size())  ++end_family ; //increment past the end
+
+      //only one bucket in the family
+      //go to the next family
+      if (end_family - begin_family == 1) {
+        tmp_buckets.push_back(buckets[begin_family]);
+        continue;
+      }
+
+      std::vector<unsigned> new_key = buckets[begin_family]->m_bucketImpl.key_vector();
+      //index of bucket in family
+      new_key[ new_key[0] ] = 0;
+
+      unsigned new_capacity = 0 ;
+      for ( size_t i = begin_family ; i != end_family ; ++i ) {
+        new_capacity += buckets[i]->m_bucketImpl.capacity();
+      }
+
+      std::vector<Entity*> entities;
+      entities.reserve(new_capacity);
+
+      for ( size_t i = begin_family ; i != end_family ; ++i ) {
+        Bucket& b = *buckets[i];
+        for(size_t j=0; j<b.size(); ++j) {
+          entities.push_back(&b[j]);
+        }
+      }
+
+      std::sort( entities.begin(), entities.end(), EntityLess() );
+
+      Bucket * new_bucket = new Bucket( m_mesh,
+          entity_rank,
+          new_key,
+          new_capacity
+          );
+
+      new_bucket->m_bucketImpl.set_first_bucket_in_family(new_bucket); // Family members point to first bucket
+      new_bucket->m_bucketImpl.set_last_bucket_in_family(new_bucket); // First bucket points to new last bucket
+
+      tmp_buckets.push_back(new_bucket);
+
+      for(size_t new_ordinal=0; new_ordinal<entities.size(); ++new_ordinal) {
+        //increase size of the new_bucket
+        new_bucket->m_bucketImpl.increment_size();
+
+        Entity & entity = *entities[new_ordinal];
+        Bucket& old_bucket = entity.bucket();
+        unsigned old_ordinal = entity.bucket_ordinal();
+
+        //copy field data from old to new
+        copy_fields( *new_bucket, new_ordinal, old_bucket, old_ordinal);
+        m_entity_repo.change_entity_bucket( *new_bucket, entity, new_ordinal);
+        new_bucket->m_bucketImpl.replace_entity( new_ordinal , &entity ) ;
+        internal_propagate_relocation(entity);
+      }
+
+      for (size_t ik = begin_family; ik != end_family; ++ik) {
+        delete buckets[ik];
+        buckets[ik] = NULL;
+      }
+    }
+
+    buckets.swap(tmp_buckets);
+  }
+}
 //----------------------------------------------------------------------
 
 void BucketRepository::remove_entity( Bucket * k , unsigned i )

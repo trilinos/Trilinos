@@ -412,17 +412,17 @@ int extractDirichletBCs(fei::DirichletBCManager* bcManager,
                 bool resolveConflictRequested,
                 bool bcs_trump_slaves)
 {
-  int numLocalBCs = bcManager->getNumBCRecords();
-  int globalNumBCs = 0;
-  MPI_Comm comm = matrixGraph->getRowSpace()->getCommunicator();
-  fei::GlobalSum(comm, numLocalBCs, globalNumBCs);
-  if (globalNumBCs == 0) {
-    return(0);
-  }
+//  int numLocalBCs = bcManager->getNumBCRecords();
+//  int globalNumBCs = 0;
+//  MPI_Comm comm = matrixGraph->getRowSpace()->getCommunicator();
+//  fei::GlobalSum(comm, numLocalBCs, globalNumBCs);
+//  if (globalNumBCs == 0) {
+//    return(0);
+//  }
 
   fei::SharedPtr<fei::FillableMat> localBCeqns(new fei::FillableMat);
   fei::SharedPtr<fei::Matrix_Impl<fei::FillableMat> > bcEqns;
-  matrixGraph->getRowSpace()->initComplete();
+//  matrixGraph->getRowSpace()->initComplete();
   int numSlaves = matrixGraph->getGlobalNumSlaveConstraints();
   fei::SharedPtr<fei::Reducer> reducer = matrixGraph->getReducer();
 
@@ -460,7 +460,7 @@ int extractDirichletBCs(fei::DirichletBCManager* bcManager,
     fei::impl_utils::separate_BC_eqns( *(it->second), essEqns, values);
   }
 
-  CHK_ERR( bcEqns->gatherFromOverlap(false) );
+//  CHK_ERR( bcEqns->gatherFromOverlap(false) );
 
   fei::impl_utils::separate_BC_eqns( *(bcEqns->getMatrix()), essEqns, values);
 

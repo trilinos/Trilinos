@@ -495,7 +495,7 @@ namespace {
                   } // for each row
 
                   out << "Nonlocal indices and values:" << endl;
-                  for (size_t j = 0; j < nonlocalIndices_.size(); ++j) {
+                  for (size_t j = 0; j < (size_t)nonlocalIndices_.size(); ++j) {
                     ArrayView<const global_ordinal_type> inds = nonlocalIndices_[j]();
                     ArrayView<const scalar_type> vals = nonlocalValues_[j]();
 
@@ -727,8 +727,6 @@ namespace {
       // Default output stream prints nothing.
       RCP<FancyOStream> out = out_.is_null() ?
         getFancyOStream (rcp (new oblackholestream)) : out_;
-      Teuchos::EVerbosityLevel verbLevel =
-        (verbLevel_ == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_NONE : verbLevel_;
 
       Teuchos::OSTab tab (out);
       *out << "locallyAssemble:" << endl;

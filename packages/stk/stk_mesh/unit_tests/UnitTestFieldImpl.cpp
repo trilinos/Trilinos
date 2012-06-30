@@ -22,6 +22,7 @@
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -261,13 +262,6 @@ void UnitTestFieldImpl::testField()
 
 void UnitTestFieldImpl::testFieldRestriction()
 {
-  const char method[] = "UnitTestFieldImpl::testFieldRestriction" ;
-
-  // Arrays for array dimension tags and dimension values
-  const shards::ArrayDimTag * dim_tags[] =
-    { & ATAG::tag() , & BTAG::tag() , & CTAG::tag() , & DTAG::tag() ,
-      & ATAG::tag() , & BTAG::tag() , & CTAG::tag() , & DTAG::tag() };
-
   unsigned stride[8] ;
 
   stride[0] = 10 ;
@@ -275,34 +269,26 @@ void UnitTestFieldImpl::testFieldRestriction()
     stride[i] = ( i + 1 ) * stride[i-1] ;
   }
 
-  MetaData meta_data;
+  std::vector< std::string > dummy_names(1);
+  dummy_names[0].assign("dummy");
 
-  impl::FieldRepository field_repo;
-  const FieldVector  & allocated_fields = field_repo.get_fields();
+  MetaData meta_data(dummy_names);
+
+  const FieldVector  & allocated_fields = meta_data.get_fields();
 
   //------------------------------
-  // Declare a rank two and one state:
 
+  typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
+  
   FieldBase * const f2 =
-    field_repo.declare_field( std::string("F2"),
-                              data_traits<int>(),
-                              2         /* # ranks */ ,
-                              dim_tags  /* dimension tags */ ,
-                              1         /* # states */ ,
-                              &meta_data );
+    &meta_data.declare_field<VectorField>( std::string("F2"), 1/* # states */ );
 
   //------------------------------
-  // Declare a rank three and two states:
 
   FieldBase * const f3 =
-    field_repo.declare_field( std::string("F3"),
-                              data_traits<int>(),
-                              3         /* # ranks */ ,
-                              dim_tags  /* dimension tags */ ,
-                              2         /* # states */ ,
-                              &meta_data );
+    &meta_data.declare_field<VectorField>( std::string("F3"), 2/* #states*/);
 
-  FieldBase * const f3_old = f3->m_impl.field_state( StateOld ) ;
+  FieldBase * const f3_old = f3->field_state( StateOld ) ;
 
   //------------------------------
   // Test for correctness of vector of declared fields.
@@ -322,30 +308,19 @@ void UnitTestFieldImpl::testFieldRestriction()
   STKUNIT_ASSERT( f3_old == f3_old->field_state( StateOld ) );
   STKUNIT_ASSERT( NULL   == f3_old->field_state( StateNM1 ) );
 
-  STKUNIT_ASSERT( f2->rank() == 2 );
-  STKUNIT_ASSERT( f3->rank() == 3 );
-  STKUNIT_ASSERT( f3_old->rank() == 3 );
-
   //------------------------------
   // Declare some parts for restrictions:
 
-  std::vector< std::string > dummy_names(1);
-  dummy_names[0].assign("dummy");
-
-  stk::mesh::MetaData m( dummy_names );
-
-  impl::PartRepository partRepo( &m );
-
-  Part & pA = * partRepo.declare_part( std::string("A") , 0 );
-  Part & pB = * partRepo.declare_part( std::string("B") , 0 );
-  Part & pC = * partRepo.declare_part( std::string("C") , 0 );
-  Part & pD = * partRepo.declare_part( std::string("D") , 0 );
+  Part & pA = meta_data.declare_part( std::string("A") , 0 );
+  Part & pB = meta_data.declare_part( std::string("B") , 0 );
+  Part & pC = meta_data.declare_part( std::string("C") , 0 );
+  Part & pD = meta_data.declare_part( std::string("D") , 0 );
 
   // Declare three restrictions:
 
-  f3->m_impl.insert_restriction( method , 0 , pA , stride );
-  f3->m_impl.insert_restriction( method , 1 , pB , stride + 1 );
-  f3->m_impl.insert_restriction( method , 2 , pC , stride + 2 );
+  meta_data.declare_field_restriction(*f3, 0 , pA , stride );
+  meta_data.declare_field_restriction(*f3, 1 , pB , stride + 1 );
+  meta_data.declare_field_restriction(*f3, 2 , pC , stride + 2 );
 
   // Check for correctness of restrictions:
 
@@ -357,16 +332,16 @@ void UnitTestFieldImpl::testFieldRestriction()
   STKUNIT_ASSERT( f3->restrictions()[2] ==
                   FieldRestriction( 2 , pC.mesh_meta_data_ordinal() ) );
 
-  f3->m_impl.insert_restriction( method , 0 , pB , stride + 1 );
+  meta_data.declare_field_restriction(*f3, 0 , pB , stride + 1 );
 
-  STKUNIT_ASSERT_EQUAL( f3->max_size( 0 ) , stride[3] );
+  STKUNIT_ASSERT_EQUAL( f3->max_size( 0 ) , 20u );
 
   //------------------------------
   // Check for error detection of bad stride:
   {
     unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
     STKUNIT_ASSERT_THROW(
-      f3->m_impl.insert_restriction( method , 0 , pA , bad_stride ),
+      meta_data.declare_field_restriction(*f3, 0 , pA , bad_stride ),
       std::runtime_error
     );
     STKUNIT_ASSERT( f3->restrictions().size() == 4 );
@@ -376,7 +351,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   // field restriction.
   {
     STKUNIT_ASSERT_THROW(
-      f3->m_impl.insert_restriction( method , 0 , pA , stride + 1 ),
+      meta_data.declare_field_restriction(*f3, 0 , pA , stride + 1 ),
       std::runtime_error
     );
     STKUNIT_ASSERT( f3->restrictions().size() == 4 );
@@ -384,22 +359,16 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   // Verify and clean out any redundant restructions:
 
-  f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
-  f3->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
-
   STKUNIT_ASSERT( f3->restrictions().size() == 4 );
 
   //------------------------------
   // Introduce a redundant restriction, clean it, and
   // check that it was cleaned.
 
-  partRepo.declare_subset( pD, pA );
-  f2->m_impl.insert_restriction( method , 0 , pA , stride );
-  f2->m_impl.insert_restriction( method , 0 , pD , stride );
-
-  STKUNIT_ASSERT( f2->restrictions().size() == 2 );
-
-  f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
+std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_data_ordinal()<<std::endl;
+  meta_data.declare_part_subset( pD, pA );
+  meta_data.declare_field_restriction(*f2, 0 , pA , stride );
+  meta_data.declare_field_restriction(*f2, 0 , pD , stride );
 
   STKUNIT_ASSERT( f2->restrictions().size() == 1 );
 
@@ -417,11 +386,9 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check that the verify_and_clean_restrictions method detects
   // this error condition.
   {
-    f2->m_impl.insert_restriction( method , 0 , pB , stride + 1 );
-    f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
-    partRepo.declare_subset( pD, pB );
+    meta_data.declare_field_restriction(*f2, 0 , pB , stride + 1 );
     STKUNIT_ASSERT_THROW(
-      f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() ),
+      meta_data.declare_part_subset( pD, pB ),
       std::runtime_error
     );
   }
@@ -431,18 +398,14 @@ void UnitTestFieldImpl::testFieldRestriction()
     //Create a new field with MetaData m and two restrictions
 
     FieldBase * const f4 =
-      field_repo.declare_field( std::string("F4"),
-                                data_traits<int>(),
-                                3         /* # ranks */ ,
-                                dim_tags  /* dimension tags */ ,
-                                2         /* # states */ ,
-                                &m );
+      &meta_data.declare_field<VectorField>( std::string("F4"),
+                                2         /* # states */ );
 
-    partRepo.declare_subset( pD, pA );
-    partRepo.declare_subset( pC, pB );
+    meta_data.declare_part_subset( pD, pA );
+    meta_data.declare_part_subset( pC, pB );
 
-    f4->m_impl.insert_restriction( method , 0 , pA , stride );
-    f4->m_impl.insert_restriction( method , 1 , pB , stride + 1 );
+    meta_data.declare_field_restriction(*f4, 0 , pA , stride );
+    meta_data.declare_field_restriction(*f4, 1 , pB , stride + 1 );
     stk::mesh::impl::print(std::cout, "Field f4", *f4);
 
     //test stride[i] / stride[i-1] section of else-if
@@ -456,12 +419,8 @@ void UnitTestFieldImpl::testFieldRestriction()
     //Create a new field with MetaData m and two restrictions
 
     FieldBase * const f5 =
-      field_repo.declare_field( std::string("F5"),
-                                data_traits<int>(),
-                                3         /* # ranks */ ,
-                                dim_tags  /* dimension tags */ ,
-                                2         /* # states */ ,
-                                &m );
+      &meta_data.declare_field<VectorField>( std::string("F5"),
+                                2         /* # states */ );
 
     unsigned stride2[8] ;
     stride2[0] = 10 ;
@@ -471,12 +430,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     for ( unsigned i = 3 ; i < 8 ; ++i ) {
       stride2[i] = 0;
     }
-    //  STKUNIT_ASSERT_THROW(
-    f5->m_impl.insert_restriction( method , 0 , pA, stride2 );
-    //  std::runtime_error
-    //  );
-
-    // f5->m_impl.insert_restriction( method , 1 , pB ,stride2 );
+    meta_data.declare_field_restriction(*f5, 0 , pA, stride2 );
 
     stk::mesh::print(std::cout, "Field f5", *f5);
 
@@ -491,7 +445,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     arg_no_stride[1] = 0;
 
     STKUNIT_ASSERT_THROW(
-      f2->m_impl.insert_restriction(method, 0, pA, arg_no_stride),
+      meta_data.declare_field_restriction(*f2, 0, pA, arg_no_stride),
       std::runtime_error
     );
   }

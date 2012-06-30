@@ -64,7 +64,8 @@ namespace Excn {
       static std::string outputFilename_;
       static bool keepOpen_;
       static int maximumNameLength_;
-
+      static int exodusMode_;
+      
       // Disable copying and assignment...
       ExodusFile(const ExodusFile&);
       ExodusFile operator=(const ExodusFile&);

@@ -28,7 +28,7 @@ checkeig_ext (
     extern int DEBUG_EVECS;	/* print debugging output? */
     extern int WARNING_EVECS;	/* print warning messages? */
     double    resid;		/* the extended eigen residual */
-    double    norm();		/* vector norm */
+    double    ch_norm();		/* vector norm */
     void      splarax();	/* sparse matrix vector mult */
     void      scadd();		/* scaled vector add */
     void      scale_diag();	/* scale vector by another's elements */
@@ -39,7 +39,7 @@ checkeig_ext (
     cpvec(work, 1, n, gvec);	/* only need if going to re-use gvec */
     scale_diag(work, 1, n, vwsqrt);
     scadd(err, 1, n, -1.0, work);
-    resid = norm(err, 1, n);
+    resid = ch_norm(err, 1, n);
 
     if (DEBUG_EVECS > 0) {
 	printf("  extended residual: %g\n", resid);

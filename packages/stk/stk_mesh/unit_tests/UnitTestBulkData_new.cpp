@@ -148,9 +148,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
         cell_to_delete = &*cur_entity;
         break;
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
 
   STKUNIT_ASSERT ( cell_to_delete != NULL );
@@ -247,7 +247,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 
   cell_part_vector.push_back ( &fixture.get_cell_part () );
   bulk.change_entity_parts ( new_cell , cell_part_vector );
+#ifdef SIERRA_MIGRATION
+  bulk.change_entity_parts ( new_node , cell_part_vector );
+#else
   STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_node , cell_part_vector ) , std::runtime_error );
+#endif
 }
 
 /************************
@@ -488,9 +492,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
           to_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
         send_rank++;
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
   bulk.change_ghosting ( ghosting , to_send , empty_vector );
   bulk.modification_end();
@@ -561,11 +565,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
         if ( send_rank == fixture1.comm_size() ) send_rank = 0;
         if ( send_rank != fixture1.comm_rank() )
           to_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
-        send_rank++;
+        ++send_rank;
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
 
   stk::mesh::Ghosting &ghosting = bulk1.create_ghosting ( "Ghost 1" );
@@ -610,15 +614,15 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
         if ( send_rank == fixture.comm_size() ) send_rank = 0;
         if ( send_rank != fixture.comm_rank() )
           to_send_unowned.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
-        send_rank++;
+        ++send_rank;
       }
       else
       {
         to_remove_not_ghosted.push_back ( &*cur_entity );
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
 
   stk::mesh::Ghosting &ghosting = bulk.create_ghosting ( "Ghost 1" );
@@ -685,12 +689,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   for ( size_t ix = 0 ; ix < 3 ; ++ix ) {
     stk::mesh::Entity * const node = fixture.node(ix,iy,iz);
     STKUNIT_ASSERT( NULL != node );
-    if ( NULL != node ) {
-      STKUNIT_ASSERT( fixture.node_id(ix,iy,iz) == node->identifier() );
-      stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-        stk::mesh::field_data( fixture.m_coord_field , *node );
-      STKUNIT_ASSERT( node_coord != NULL );
-    }
+
+    STKUNIT_ASSERT( fixture.node_id(ix,iy,iz) == node->identifier() );
+    stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
+      stk::mesh::field_data( fixture.m_coord_field , *node );
+    STKUNIT_ASSERT( node_coord != NULL );
   }
   }
   }
@@ -700,28 +703,28 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   for ( size_t ix = 0 ; ix < 2 ; ++ix ) {
     stk::mesh::Entity * const elem = fixture.elem(ix,iy,iz);
     STKUNIT_ASSERT( NULL != elem );
-    if ( NULL != elem ) {
-      stk::mesh::PairIterRelation elem_nodes = elem->relations();
-      STKUNIT_ASSERT_EQUAL( 8u , elem_nodes.size() );
-      stk::mesh::fixtures::HexFixture::Scalar ** const elem_node_coord =
-        stk::mesh::field_data( fixture.m_coord_gather_field , *elem );
-      for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
-        STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
-        stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-          stk::mesh::field_data( fixture.m_coord_field , *elem_nodes[j].entity() );
-        STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
-      }
-      if ( 8u == elem_nodes.size() ) {
-        STKUNIT_ASSERT( elem_nodes[0].entity() == fixture.node(ix,iy,iz));
-        STKUNIT_ASSERT( elem_nodes[1].entity() == fixture.node(ix+1,iy,iz));
-        STKUNIT_ASSERT( elem_nodes[2].entity() == fixture.node(ix+1,iy,iz+1));
-        STKUNIT_ASSERT( elem_nodes[3].entity() == fixture.node(ix,iy,iz+1));
-        STKUNIT_ASSERT( elem_nodes[4].entity() == fixture.node(ix,iy+1,iz));
-        STKUNIT_ASSERT( elem_nodes[5].entity() == fixture.node(ix+1,iy+1,iz));
-        STKUNIT_ASSERT( elem_nodes[6].entity() == fixture.node(ix+1,iy+1,iz+1));
-        STKUNIT_ASSERT( elem_nodes[7].entity() == fixture.node(ix,iy+1,iz+1));
-      }
+
+    stk::mesh::PairIterRelation elem_nodes = elem->relations();
+    STKUNIT_ASSERT_EQUAL( 8u , elem_nodes.size() );
+    stk::mesh::fixtures::HexFixture::Scalar ** const elem_node_coord =
+      stk::mesh::field_data( fixture.m_coord_gather_field , *elem );
+    for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
+      STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
+      stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
+        stk::mesh::field_data( fixture.m_coord_field , *elem_nodes[j].entity() );
+      STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
     }
+    if ( 8u == elem_nodes.size() ) {
+      STKUNIT_ASSERT( elem_nodes[0].entity() == fixture.node(ix,iy,iz));
+      STKUNIT_ASSERT( elem_nodes[1].entity() == fixture.node(ix+1,iy,iz));
+      STKUNIT_ASSERT( elem_nodes[2].entity() == fixture.node(ix+1,iy,iz+1));
+      STKUNIT_ASSERT( elem_nodes[3].entity() == fixture.node(ix,iy,iz+1));
+      STKUNIT_ASSERT( elem_nodes[4].entity() == fixture.node(ix,iy+1,iz));
+      STKUNIT_ASSERT( elem_nodes[5].entity() == fixture.node(ix+1,iy+1,iz));
+      STKUNIT_ASSERT( elem_nodes[6].entity() == fixture.node(ix+1,iy+1,iz+1));
+      STKUNIT_ASSERT( elem_nodes[7].entity() == fixture.node(ix,iy+1,iz+1));
+    }
+
   }
   }
   }
@@ -808,11 +811,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
         if ( send_rank == size ) send_rank = 0;
         if ( send_rank != rank_count )
           add_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
-        send_rank++;
+        ++send_rank;
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
 
   std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > new_send ;

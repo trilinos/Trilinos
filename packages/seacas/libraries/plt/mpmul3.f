@@ -1,0 +1,60 @@
+C Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
+C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+C certain rights in this software
+C 
+C Redistribution and use in source and binary forms, with or without
+C modification, are permitted provided that the following conditions are
+C met:
+C 
+C     * Redistributions of source code must retain the above copyright
+C       notice, this list of conditions and the following disclaimer.
+C 
+C     * Redistributions in binary form must reproduce the above
+C       copyright notice, this list of conditions and the following
+C       disclaimer in the documentation and/or other materials provided
+C       with the distribution.
+C 
+C     * Neither the name of Sandia Corporation nor the names of its
+C       contributors may be used to endorse or promote products derived
+C       from this software without specific prior written permission.
+C 
+C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C 
+
+C $Id: mpmul3.f,v 1.2 1993/07/16 22:11:17 gdsjaar Exp $ 
+C $Log: mpmul3.f,v $
+C Revision 1.2  1993/07/16 22:11:17  gdsjaar
+C Unrolled do loops to speed up execution.
+C
+c Revision 1.1  1993/07/16  16:47:19  gdsjaar
+c Changed plt to library rather than single source file.
+c 
+C=======================================================================
+      SUBROUTINE MPMUL3(N,X0,Y0,Z0,MAT,RES1,RES2,RES3,RES4)
+      DIMENSION X0(*),Y0(*),Z0(*),MAT(4,4),RES1(*),RES2(*),RES3(*),
+     *          RES4(*)
+      REAL MAT
+
+      DO 3100 I = 1,N
+        RES1(I) = MAT(1,1)*X0(I) + MAT(2,1)*Y0(I) + MAT(3,1)*Z0(I) +
+     *    MAT(4,1)
+        RES2(I) = MAT(1,2)*X0(I) + MAT(2,2)*Y0(I) + MAT(3,2)*Z0(I) +
+     *    MAT(4,2)
+        RES3(I) = MAT(1,3)*X0(I) + MAT(2,3)*Y0(I) + MAT(3,3)*Z0(I) +
+     *    MAT(4,3)
+        RES4(I) = MAT(1,4)*X0(I) + MAT(2,4)*Y0(I) + MAT(3,4)*Z0(I) +
+     *    MAT(4,4)
+ 3100 CONTINUE
+      RETURN
+
+      END

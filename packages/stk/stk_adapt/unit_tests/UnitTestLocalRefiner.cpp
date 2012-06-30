@@ -33,6 +33,9 @@
 #include <unit_tests/TestLocalRefinerTri_N_3_IEdgeAdapter.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_3_IElementAdapter.hpp>
 
+#include <unit_tests/TestLocalRefinerTri_N_3_MeshSizeRatio.hpp>
+#include <unit_tests/TestLocalRefinerTri_N_3_EdgeBasedAnisotropic.hpp>
+
 #include <stk_adapt/IElementBasedAdapterPredicate.hpp>
 #include <stk_adapt/PredicateBasedElementAdapter.hpp>
 
@@ -90,7 +93,7 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
-      static int printInfoLevel = 0;
+      static int print_infoLevel = 0;
       static std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
       /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
@@ -139,7 +142,7 @@ namespace stk {
         SingleTetFixture::Point node_coord_data[4] = {{0,0,0},{0,0,0},{0,0,0},{0,0,0}};
         static  SingleTetFixture::TetIds tetra_node_ids[] = { {0, 1, 2, 3} };
 
-        const vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( eMesh.element_rank() );
+        const vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
 
         for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
           {
@@ -153,7 +156,7 @@ namespace stk {
                 for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                   {
                     stk::mesh::Entity *node = elem_nodes[inode].entity();
-                    double *fdata = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node);
+                    double *fdata = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node);
                     node_coord_data[inode][0] = fdata[0];
                     node_coord_data[inode][1] = fdata[1];
                     node_coord_data[inode][2] = fdata[2];
@@ -187,7 +190,7 @@ namespace stk {
         {
           percept::PerceptMesh eMesh(3u);
 
-          //unsigned p_size = eMesh.getParallelSize();
+          //unsigned p_size = eMesh.get_parallel_size();
 
           // generate a N x N x N mesh
           std::string gmesh_spec = 
@@ -199,10 +202,10 @@ namespace stk {
             toString(N)+","+
             toString(N);
             
-          eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
+          eMesh.new_mesh(percept::GMeshSpec(gmesh_spec));
           eMesh.commit();
 
-          eMesh.saveAs(input_files_loc+"hex_fixture_NxNxN.e");
+          eMesh.save_as(input_files_loc+"hex_fixture_NxNxN.e");
 
           // end_demo
         }
@@ -211,13 +214,13 @@ namespace stk {
         {
           percept::PerceptMesh eMesh(3u);
 
-          //unsigned p_size = eMesh.getParallelSize();
+          //unsigned p_size = eMesh.get_parallel_size();
           eMesh.open(input_files_loc+"hex_fixture_NxNxN.e");
 
           Hex8_Tet4_24 break_hex_to_tet(eMesh);
 
           int scalarDimension = 0; // a scalar
-          stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+          stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
           eMesh.commit();
 
@@ -229,9 +232,9 @@ namespace stk {
           if (0)
           {
             PerceptMesh em1;
-            em1.openReadOnly(input_files_loc+"tet_fixture_NxNxN_tmp.e");
-            em1.saveAs(input_files_loc+"tet_fixture_NxNxN.e");
-            em1.printInfo("srk tmp tet_fixture_NxNxN.e after reopen", 2);
+            em1.open_read_only(input_files_loc+"tet_fixture_NxNxN_tmp.e");
+            em1.save_as(input_files_loc+"tet_fixture_NxNxN.e");
+            em1.print_info("srk tmp tet_fixture_NxNxN.e after reopen", 2);
           }
           // end_demo
         }
@@ -264,7 +267,7 @@ namespace stk {
 
               bool isCommitted = true;
               percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              eMesh.saveAs(input_files_loc+"local_tet_0.e");
+              eMesh.save_as(input_files_loc+"local_tet_0.e");
             }
 
             {
@@ -302,7 +305,7 @@ namespace stk {
                 std::cout << "here" << std::endl;
                 bool isCommitted = true;
                 percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-                eMesh.saveAs(input_files_loc+"local_tet_41.e");
+                eMesh.save_as(input_files_loc+"local_tet_41.e");
               }
 
               {
@@ -323,7 +326,7 @@ namespace stk {
                     double totalVol1 = totalVolume(eMesh);
                     std::cout << "tmp edge_mark_bitcode= " << edge_mark_bitcode << " totalVol1 = " << totalVol1 << std::endl;
 
-                    eMesh.saveAs(output_files_loc+"local_tet_N_2_1_bitcode_"+toString((int)edge_mark_bitcode)+".e" );
+                    eMesh.save_as(output_files_loc+"local_tet_N_2_1_bitcode_"+toString((int)edge_mark_bitcode)+".e" );
                   }
               }
             }
@@ -458,7 +461,7 @@ namespace stk {
               std::cout << "here" << std::endl;
               bool isCommitted = true;
               percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              eMesh.saveAs(input_files_loc+"local_tet_2.e");
+              eMesh.save_as(input_files_loc+"local_tet_2.e");
             }
 
             {
@@ -536,7 +539,7 @@ namespace stk {
                 percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
 
 
-                eMesh.saveAs(input_files_loc+"local_tet_2_rand.e."+toString(icase));
+                eMesh.save_as(input_files_loc+"local_tet_2_rand.e."+toString(icase));
               }
 
               {
@@ -564,7 +567,7 @@ namespace stk {
 
                 if (std::abs(totalVol0 - totalVol1) > 1.e-6)
                   {
-                    eMesh.saveAs( output_files_loc+"local_tet_2_rand_error."+toString(icase)+".e" );
+                    eMesh.save_as( output_files_loc+"local_tet_2_rand_error."+toString(icase)+".e" );
                     throw std::runtime_error("triangulate_tet_2_rand:: error, volumes don't match");
                   }
                 save_or_diff(eMesh, output_files_loc+"local_tet_2_rand.e."+toString(icase) );
@@ -576,7 +579,7 @@ namespace stk {
                 Local_Tet4_Tet4_N break_tet(eMesh);
                 eMesh.commit();
 
-                //eMesh.printInfo("srk tmp SingleTetFixture 2a", 2);
+                //eMesh.print_info("srk tmp SingleTetFixture 2a", 2);
 
                 int edge_mark_bitcode = 0;
                 edge_mark_bitcode = (int)(63.*((double)random())/((double)RAND_MAX));
@@ -587,7 +590,7 @@ namespace stk {
                 breaker.setRemoveOldElements(false);
                 breaker.doBreak();
 
-                //eMesh.printInfo("srk tmp SingleTetFixture 3", 2);
+                //eMesh.print_info("srk tmp SingleTetFixture 3", 2);
 
 #if 1
                 MeshUtil::m_debug = true;
@@ -596,7 +599,7 @@ namespace stk {
                 if (!isConsistent)
                   {
                     std::cout << "tmp error isConsistent= " << isConsistent << std::endl;
-                    eMesh.saveAs( output_files_loc+"local_tet_2_rand_error.e."+toString(icase) );
+                    eMesh.save_as( output_files_loc+"local_tet_2_rand_error.e."+toString(icase) );
                   }
                 STKUNIT_EXPECT_TRUE(isConsistent);
 #endif
@@ -687,15 +690,15 @@ namespace stk {
               if (0)
                 {
                   percept::GeometryVerifier gv(true);
-                  std::cout << "tmp GeometryVerifier= " << eMesh.getBulkData() << std::endl;
-                  bool igb = gv.isGeometryBad(*eMesh.getBulkData(), true);
+                  std::cout << "tmp GeometryVerifier= " << eMesh.get_bulk_data() << std::endl;
+                  bool igb = gv.isGeometryBad(*eMesh.get_bulk_data(), true);
                   std::cout << "tmp isGeometryBad= " << igb << std::endl;
                 }
 
               double totalVol0 = totalVolume(eMesh);
               std::cout << "tmp 64 totalVol0 = " << totalVol0 << std::endl;
 
-              eMesh.saveAs(input_files_loc+"local_tet_64.e");
+              eMesh.save_as(input_files_loc+"local_tet_64.e");
             }
 
             {
@@ -712,8 +715,8 @@ namespace stk {
               if (0)
                 {
                   percept::GeometryVerifier gv(true);
-                  std::cout << "tmp GeometryVerifier= " << eMesh.getBulkData() << std::endl;
-                  bool igb = gv.isGeometryBad(*eMesh.getBulkData(), true);
+                  std::cout << "tmp GeometryVerifier= " << eMesh.get_bulk_data() << std::endl;
+                  bool igb = gv.isGeometryBad(*eMesh.get_bulk_data(), true);
                   std::cout << "tmp isGeometryBad= " << igb << std::endl;
                 }
               
@@ -750,7 +753,7 @@ namespace stk {
               eMesh.open(input_files_loc+"tet_fixture_NxNxN.e");
               Local_Tet4_Tet4_N break_tet(eMesh);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
               TestLocalRefinerTet_N_4 breaker(eMesh, break_tet, proc_rank_field);
@@ -762,11 +765,11 @@ namespace stk {
               for (int ipass = 0; ipass < nref; ipass++)
                 {
                   breaker.doBreak();
-                  eMesh.saveAs( output_files_loc+"local_tet_N_4_planes_iref_"+toString(ipass)+".e");
+                  eMesh.save_as( output_files_loc+"local_tet_N_4_planes_iref_"+toString(ipass)+".e");
                 }
 
               //save_or_diff(eMesh, output_files_loc+"local_tet_N_4_planes.e");
-              eMesh.saveAs( output_files_loc+"local_tet_N_4_planes.e");
+              eMesh.save_as( output_files_loc+"local_tet_N_4_planes.e");
 
               for (int iunref_pass=0; iunref_pass < nunref; ++iunref_pass)
                 {
@@ -775,10 +778,10 @@ namespace stk {
                 }
 
               //save_or_diff(eMesh, output_files_loc+"local_tet_N_4_planes_unref.e");
-              eMesh.saveAs( output_files_loc+"local_tet_N_4_planes_unref.e");
+              eMesh.save_as( output_files_loc+"local_tet_N_4_planes_unref.e");
 
               breaker.deleteParentElements();
-              eMesh.saveAs( output_files_loc+"local_tet_N_4_planes_unref_noParentElements.e");
+              eMesh.save_as( output_files_loc+"local_tet_N_4_planes_unref_noParentElements.e");
 
             }
 
@@ -817,21 +820,21 @@ namespace stk {
 
             Local_Tri3_Tri3_2 break_tri_to_tri_2(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh", printInfoLevel);
-            save_or_diff(eMesh, output_files_loc+"local_tri_0.e");
+            eMesh.print_info("local tri mesh", print_infoLevel);
+            //save_or_diff(eMesh, output_files_loc+"local_tri_0.e");
 
             TestLocalRefinerTri breaker(eMesh, break_tri_to_tri_2, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", printInfoLevel);
-            save_or_diff(eMesh, output_files_loc+"local_tri_1.e");
+            eMesh.print_info("local tri mesh refined", print_infoLevel);
+            //save_or_diff(eMesh, output_files_loc+"local_tri_1.e");
 
             // end_demo
           }
@@ -868,13 +871,13 @@ namespace stk {
 
             Local_Tri3_Tri3_2 break_tri_to_tri_2(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh", printInfoLevel);
+            eMesh.print_info("local tri mesh", print_infoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_1_0.e");
 
             bool diagonals=true;
@@ -882,7 +885,7 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", printInfoLevel);
+            eMesh.print_info("local tri mesh refined", print_infoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_1_1.e");
 
             // end_demo
@@ -921,13 +924,13 @@ namespace stk {
             Local_Tri3_Tri3_2 break_tri_to_tri_2(eMesh);
             //Local_Tri3_Tri3_N break_tri_to_tri_2(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh", printInfoLevel);
+            eMesh.print_info("local tri mesh", print_infoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_2_0.e");
 
             bool diagonals=false;
@@ -935,7 +938,7 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined",  printInfoLevel);
+            eMesh.print_info("local tri mesh refined",  print_infoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_2_1.e");
 
             // end_demo
@@ -971,13 +974,13 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            //eMesh.printInfo("local tri mesh",2);
+            //eMesh.print_info("local tri mesh",2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_1 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
@@ -985,9 +988,9 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             breaker.doBreak();
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
-            //eMesh.printInfo("local tri mesh refined", 2);
+            //eMesh.print_info("local tri mesh refined", 2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
@@ -997,7 +1000,7 @@ namespace stk {
             breaker.unrefineTheseElements(elements_to_unref);
 
             // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_1_1_unref_"+post_fix[p_size]+".e");
+            eMesh.save_as( output_files_loc+"local_tri_N_1_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1_unref_"+post_fix[p_size]+".e");
 
             // end_demo
@@ -1032,13 +1035,13 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            //eMesh.printInfo("local tri mesh",2);
+            //eMesh.print_info("local tri mesh",2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_2_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_2 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
@@ -1046,15 +1049,15 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 4; ipass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
-            //eMesh.printInfo("local tri mesh refined", 2);
+            //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
+            eMesh.save_as(output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
 #if 1           
@@ -1064,7 +1067,7 @@ namespace stk {
             breaker.unrefineTheseElements(elements_to_unref);
 
             // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
+            eMesh.save_as( output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
 #endif
             // end_demo
@@ -1099,13 +1102,13 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            //eMesh.printInfo("local tri mesh",2);
+            //eMesh.print_info("local tri mesh",2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_3 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
@@ -1113,31 +1116,31 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 4; ipass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_1_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_3_1_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
-            //eMesh.printInfo("local tri mesh refined", 2);
+            //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_1_1_"+post_fix[p_size]+".e");
+            eMesh.save_as(output_files_loc+"local_tri_N_3_1_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
 #if 1
 
             for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
                 ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefineList();
                 breaker.unrefineTheseElements(elements_to_unref);
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_1_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_3_1_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
                 //breaker.unrefineAll();
               }
 
             // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_3_1_1_unref_"+post_fix[p_size]+".e");
+            eMesh.save_as( output_files_loc+"local_tri_N_3_1_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_1_unref_"+post_fix[p_size]+".e");
 #endif
             // end_demo
@@ -1172,13 +1175,13 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            //eMesh.printInfo("local tri mesh",2);
+            //eMesh.print_info("local tri mesh",2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_3 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
@@ -1186,53 +1189,53 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 8; ipass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
-            //eMesh.printInfo("local tri mesh refined", 2);
+            //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
+            eMesh.save_as(output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
 #if 1
 
             for (int iunref_pass=0; iunref_pass < 7; iunref_pass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
                 ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefineList();
                 breaker.unrefineTheseElements(elements_to_unref);
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_3_2_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
                 //breaker.unrefineAll();
               }
 
 
 
             // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
+            eMesh.save_as( output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
 
             if (1)
               {
                 for (int ipass=8; ipass < 16; ipass++)
                   {
-                    std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                    std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
                     breaker.doBreak();
-                    eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+                    eMesh.save_as(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
                   }
 
-                //eMesh.dumpElementsCompact();
+                //eMesh.dump_elements_compact();
 
                 // FIXME FIXME FIXME
                 breaker.deleteParentElements();
 
-                //eMesh.printInfo("local tri mesh refined", 2);
+                //eMesh.print_info("local tri mesh refined", 2);
 
                 //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_2_16_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_3_2_16_"+post_fix[p_size]+".e");
               }
 
 
@@ -1271,13 +1274,13 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            //eMesh.printInfo("local tri mesh",2);
+            //eMesh.print_info("local tri mesh",2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_3_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_3 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
@@ -1285,29 +1288,29 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 4; ipass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
-            //eMesh.printInfo("local tri mesh refined", 2);
+            //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_2_"+post_fix[p_size]+".e");
+            eMesh.save_as(output_files_loc+"local_tri_N_3_2_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
 #if 1
 
             for (int iunref_pass=0; iunref_pass < 2; iunref_pass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
                 ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefineList();
                 breaker.unrefineTheseElements(elements_to_unref);
                 //breaker.unrefineAll();
               }
 
             // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_3_2_unref_"+post_fix[p_size]+".e");
+            eMesh.save_as( output_files_loc+"local_tri_N_3_2_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_unref_"+post_fix[p_size]+".e");
             exit(123);
 #endif
@@ -1345,13 +1348,13 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh", printInfoLevel);
+            eMesh.print_info("local tri mesh", print_infoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_0.e");
 
             TestLocalRefinerTri_N breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
@@ -1359,8 +1362,8 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", printInfoLevel);
-            //eMesh.dumpElements();
+            eMesh.print_info("local tri mesh refined", print_infoLevel);
+            //eMesh.dump_elements();
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1.e");
 
             //breaker.unrefineAll();
@@ -1368,7 +1371,7 @@ namespace stk {
             breaker.unrefineTheseElements(elements_to_unref);
 
             // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_1_unref.e");
+            eMesh.save_as( output_files_loc+"local_tri_N_1_unref.e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_1_unref.e");
 
             // end_demo
@@ -1406,13 +1409,13 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            //eMesh.printInfo("local tri mesh",2);
+            //eMesh.print_info("local tri mesh",2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_IEdgeAdapter_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_3_IEdgeAdapter breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
@@ -1420,31 +1423,31 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 4; ipass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
-            //eMesh.printInfo("local tri mesh refined", 2);
+            //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_"+post_fix[p_size]+".e");
+            eMesh.save_as(output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
 #if 1
 
             for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
                 ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
                 breaker.unrefineTheseElements(elements_to_unref);
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
                 //breaker.unrefineAll();
               }
 
             // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_unref_"+post_fix[p_size]+".e");
+            eMesh.save_as( output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_unref_"+post_fix[p_size]+".e");
 #endif
             // end_demo
@@ -1480,13 +1483,13 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
-            //eMesh.printInfo("local tri mesh",2);
+            //eMesh.print_info("local tri mesh",2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_IElementAdapter_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_3_IElementAdapter breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
@@ -1494,32 +1497,32 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 4; ipass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
-                std::cout << "P[" << eMesh.getRank() << "] done... ipass= " << ipass << std::endl;
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_1_IElementAdapter_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+                std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << std::endl;
+                eMesh.save_as(output_files_loc+"local_tri_N_3_1_IElementAdapter_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
-            //eMesh.printInfo("local tri mesh refined", 2);
+            //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_IElementAdapter_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_1_IElementAdapter_1_"+post_fix[p_size]+".e");
+            eMesh.save_as(output_files_loc+"local_tri_N_3_1_IElementAdapter_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
 #if 1
 
             for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
                 ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
                 breaker.unrefineTheseElements(elements_to_unref);
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_1_IElementAdapter_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_3_1_IElementAdapter_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
                 //breaker.unrefineAll();
               }
 
             // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_3_1_IElementAdapter_1_unref_"+post_fix[p_size]+".e");
+            eMesh.save_as( output_files_loc+"local_tri_N_3_1_IElementAdapter_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_IElementAdapter_1_unref_"+post_fix[p_size]+".e");
 #endif
             // end_demo
@@ -1543,7 +1546,7 @@ namespace stk {
           const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
-          VectorFieldType* coordField = m_eMesh.getCoordinatesField();
+          VectorFieldType* coordField = m_eMesh.get_coordinates_field();
                 
           bool found = true;
           for (unsigned inode=0; inode < num_node; inode++)
@@ -1580,7 +1583,7 @@ namespace stk {
           const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
-          VectorFieldType* coordField = m_eMesh.getCoordinatesField();
+          VectorFieldType* coordField = m_eMesh.get_coordinates_field();
                 
           bool found = true;
           for (unsigned inode=0; inode < num_node; inode++)
@@ -1621,7 +1624,7 @@ namespace stk {
             const unsigned n = 2;
             const unsigned nx = n , ny = n;
 
-            bool createEdgeSets = false;
+            bool createEdgeSets = true;
             percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
 
             bool isCommitted = false;
@@ -1629,8 +1632,8 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.addField("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
@@ -1640,7 +1643,7 @@ namespace stk {
 
             save_or_diff(eMesh, output_files_loc+"local_tri_N_5_ElementBased_0_"+post_fix[p_size]+".e");
 
-            stk::mesh::Selector univ_selector(eMesh.getFEM_meta_data()->universal_part());
+            stk::mesh::Selector univ_selector(eMesh.get_fem_meta_data()->universal_part());
 
             ElementRefinePredicate erp(&univ_selector, refine_field, 0.0);
             PredicateBasedElementAdapter<ElementRefinePredicate>
@@ -1651,24 +1654,26 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 4; ipass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
-                std::cout << "P[" << eMesh.getRank() << "] done... ipass= " << ipass << std::endl;
-                eMesh.saveAs(output_files_loc+"local_tri_N_5_ElementBased_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+                std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << std::endl;
+                eMesh.save_as(output_files_loc+"local_tri_N_5_ElementBased_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            eMesh.saveAs(output_files_loc+"local_tri_N_5_ElementBased_1_"+post_fix[p_size]+".e");
+            eMesh.save_as(output_files_loc+"local_tri_N_5_ElementBased_1_"+post_fix[p_size]+".e");
+            //breaker.deleteParentElements();
+            //eMesh.save_as(output_files_loc+"local_tri_N_5_ElementBased_1_"+post_fix[p_size]+"_no_parent_elems.e");
 
 #if 1
             for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
               {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
                 ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
                 breaker.unrefineTheseElements(elements_to_unref);
-                eMesh.saveAs(output_files_loc+"local_tri_N_5_ElementBased_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
+                eMesh.save_as(output_files_loc+"local_tri_N_5_ElementBased_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
               }
 
-            eMesh.saveAs( output_files_loc+"local_tri_N_5_ElementBased_1_unref_"+post_fix[p_size]+".e");
+            eMesh.save_as( output_files_loc+"local_tri_N_5_ElementBased_1_unref_"+post_fix[p_size]+".e");
 #endif
             // end_demo
           }
@@ -1687,8 +1692,8 @@ namespace stk {
         for (unsigned inode=0; inode < elem_nodes.size(); inode++)
           {
             stk::mesh::Entity *node = elem_nodes[inode].entity();
-            double *fdata = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node );
-            for (int dim=0; dim < eMesh.getSpatialDim(); dim++)
+            double *fdata = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node );
+            for (int dim=0; dim < eMesh.get_spatial_dim(); dim++)
               {
                 fdata[dim] = tri_coords[inode][dim];
               }
@@ -1747,6 +1752,138 @@ namespace stk {
         return false;
       }
 
+      // bcarnes: unit test for initial adaptive refinement - element based
+      // use ratio of current to optimal mesh ratio to guide refinement
+      // no coarsening
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_MeshSizeRatio)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 1) {
+
+	  const double global_error_tol = 0.001;
+
+	  const unsigned n = 2;
+	  const unsigned nx = n , ny = n;
+
+	  bool createEdgeSets = false;
+	  percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+
+	  bool isCommitted = false;
+	  percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+	  Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
+	  int scalarDimension = 0;
+	  stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+	  eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+
+	  // field for elem mesh size ratio (non-dimensional)
+	  ScalarFieldType * elem_ratio_field = 
+	    (ScalarFieldType *) eMesh.add_field("elem_ratio", eMesh.element_rank(), scalarDimension);
+	  assert(elem_ratio_field);
+
+	  eMesh.commit();
+
+	  fixture.generate_mesh();
+
+	  //eMesh.print_info("local tri mesh",2);
+	  save_or_diff(eMesh, output_files_loc+"local_tri_N_MeshSizeRatio_0_"+post_fix[p_size]+".e");
+
+	  // main class used to drive the test
+	  TestLocalRefinerTri_N_3_MeshSizeRatio breaker (
+            eMesh, 
+	    break_tri_to_tri_N, 
+	    elem_ratio_field,
+	    proc_rank_field);
+
+	  breaker.setRemoveOldElements(false);
+	  breaker.setAlwaysInitializeNodeRegistry(false);
+
+	  const int max_iter = 5;
+	  for (int ipass=0; ipass < max_iter; ipass++)	{
+
+	    // compute exact elem interp error and then elem mesh size ratio (elem loop)
+	    compute_elem_mesh_size_ratio(eMesh, elem_ratio_field, global_error_tol);
+	    
+	    std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
+	    breaker.doBreak();
+	    std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << std::endl;
+	    eMesh.save_as(output_files_loc+"local_tri_N_MeshSizeRatio_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+	  }
+
+	  eMesh.save_as(output_files_loc+"local_tri_N_MeshSizeRatio_1_"+post_fix[p_size]+".e");
+	}	
+      }
+
+      // bcarnes: unit test for initial adaptive refinement - edge based
+      // use ratio of current to optimal mesh ratio to guide refinement
+      // no coarsening
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_EdgeBasedAnisotropic)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 1) {
+
+	  const unsigned n = 1;
+	  const unsigned nx = n , ny = n;
+
+	  bool createEdgeSets = true;
+	  percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+
+	  bool isCommitted = false;
+	  percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+	  Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
+	  const int scalarDimension = 0;
+	  stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+	  eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+	  
+	  // field for nodal Hessian field
+	  const int spatial_dim = eMesh.get_spatial_dim();
+	  const int tensorDimension = spatial_dim*spatial_dim; //(spatial_dim==2) ? 3 : 6;
+	  VectorFieldType * nodal_hessian_field = 
+	    (VectorFieldType *) eMesh.add_field("nodal_hessian", eMesh.node_rank(), tensorDimension);
+	  assert(nodal_hessian_field);
+
+	  eMesh.commit();
+
+	  fixture.generate_mesh();
+
+	  //save_or_diff(eMesh, output_files_loc+"local_tri_N_EdgeBasedAnisotropic_0_"+post_fix[p_size]+".e");
+
+	  // main class used to drive the test
+	  TestLocalRefinerTri_N_3_EdgeBasedAnisotropic breaker (
+            eMesh, 
+	    break_tri_to_tri_N, 
+	    nodal_hessian_field,
+	    proc_rank_field);
+
+	  breaker.setRemoveOldElements(false);
+	  breaker.setAlwaysInitializeNodeRegistry(false);
+
+	  const int max_iter = 4;
+	  for (int ipass=0; ipass < max_iter; ipass++)	{
+
+	    // compute nodal Hessian from analytic function for testing
+	    const int hess_id = 3;
+	    interp_nodal_hessian(hess_id, eMesh, nodal_hessian_field);
+
+	    std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
+	    breaker.doBreak();
+	    std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << std::endl;
+	    eMesh.save_as(output_files_loc+"local_tri_N_EdgeBasedAnisotropic_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+	  }
+
+	  eMesh.save_as(output_files_loc+"local_tri_N_EdgeBasedAnisotropic_1_"+post_fix[p_size]+".e");
+	}
+      }
+
       /// Create a single triangle mesh and mark the edges, call RefinerPattern_Tri3_Tri3_N::triangulate_face
       ///   and check properties of the result - reverse the triangle polarity and check for consistency
 
@@ -1775,21 +1912,21 @@ namespace stk {
             fixture.generate_mesh();
 
             // delete the first element
-            eMesh.getBulkData()->modification_begin();
-            stk::mesh::Entity* element_0 = &( (**(eMesh.getBulkData()->buckets(eMesh.element_rank()).begin()))[0]);
-            if ( ! eMesh.getBulkData()->destroy_entity( element_0 ) )
+            eMesh.get_bulk_data()->modification_begin();
+            stk::mesh::Entity* element_0 = &( (**(eMesh.get_bulk_data()->buckets(eMesh.element_rank()).begin()))[0]);
+            if ( ! eMesh.get_bulk_data()->destroy_entity( element_0 ) )
               {
                 throw std::logic_error("failed in deleting element");
               }
-            eMesh.getBulkData()->modification_end();
+            eMesh.get_bulk_data()->modification_end();
 
             // single element left
-            //stk::mesh::Entity& element = (**(eMesh.getBulkData()->buckets(eMesh.element_rank()).begin()))[0];
+            //stk::mesh::Entity& element = (**(eMesh.get_bulk_data()->buckets(eMesh.element_rank()).begin()))[0];
 
-            eMesh.saveAs(output_files_loc+"tri_face_0.e");
+            eMesh.save_as(output_files_loc+"tri_face_0.e");
 
             // single element left
-            stk::mesh::Entity& element = (**(eMesh.getBulkData()->buckets(eMesh.element_rank()).begin()))[0];
+            stk::mesh::Entity& element = (**(eMesh.get_bulk_data()->buckets(eMesh.element_rank()).begin()))[0];
             std::cout << "element = " << element << std::endl;
 
             mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);

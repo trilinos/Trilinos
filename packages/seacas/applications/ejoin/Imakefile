@@ -42,7 +42,7 @@ CXXEXTRA_DEFINES = -LANG:std
 LOCAL_LDFLAGS = -LANG:std
 #endif
 
-LIBS = $(SUPLIB) $(IOSS) $(NEMESIS) $(EXODUS) $(NETCDF) -lm
+LIBS = $(SUPLIB) $(IOSS) $(EXODUS) $(NETCDF) -lm
 
 SRCS =	EJoin.C EJ_SystemInterface.C \
 	EJ_match_xyz.C EJ_index_sort.C EJ_vector3d.C EJ_mapping.C

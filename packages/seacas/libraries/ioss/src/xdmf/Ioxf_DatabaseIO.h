@@ -93,7 +93,8 @@ namespace Ioxf {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string& filename,
-	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator);
+	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+	       const Ioss::PropertyManager &properties);
     ~DatabaseIO();
     static void finalize();
 
@@ -113,7 +114,7 @@ namespace Ioxf {
     unsigned entity_field_support() const
        {return Ioss::REGION | Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK;}
 
-    int    node_local_to_global(int local)  const;
+    int64_t    node_local_to_global(int64_t local)  const;
 
     /*!
      * Determine the local position of the node with the global id
@@ -121,9 +122,9 @@ namespace Ioxf {
      * does not exist in the map; otherwise, it must exist and will
      * throw an exception if not found.
      */
-    int    node_global_to_local(int global, bool must_exist) const;
-    int element_local_to_global(int local)  const;
-    int element_global_to_local(int global) const;
+    int64_t    node_global_to_local(int64_t global, bool must_exist) const;
+    int64_t element_local_to_global(int64_t local)  const;
+    int64_t element_global_to_local(int64_t global) const;
 
     bool begin(Ioss::State state);
     bool   end(Ioss::State state);
@@ -143,54 +144,54 @@ namespace Ioxf {
     int    maximum_symbol_length() const {return 32;}
 
   private:
-    int get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
 
-    int put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
 
     // Private member functions
@@ -375,7 +376,7 @@ namespace Ioxf {
   // take care of the mapping from local <-> global
 
   typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
-  inline int DatabaseIO::node_global_to_local(int global, bool must_exist) const
+  inline int64_t DatabaseIO::node_global_to_local(int64_t global, bool must_exist) const
     {
       if (nodeMap.empty()) {
 	get_node_map();
@@ -409,7 +410,7 @@ namespace Ioxf {
       return local;
     }
 
-  inline int DatabaseIO::element_global_to_local(int global) const
+  inline int64_t DatabaseIO::element_global_to_local(int64_t global) const
     {
       if (elementMap.empty()) {
 	get_element_map();

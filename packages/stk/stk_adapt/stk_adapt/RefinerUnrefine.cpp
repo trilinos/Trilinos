@@ -94,7 +94,7 @@ namespace stk {
           family_tree_it != family_trees_to_be_removed.end(); ++family_tree_it)
         {
           stk::mesh::Entity *family_tree = *family_tree_it;
-          if ( ! m_eMesh.getBulkData()->destroy_entity( family_tree ) )
+          if ( ! m_eMesh.get_bulk_data()->destroy_entity( family_tree ) )
             {
               throw std::logic_error("Refiner::unrefineTheseElements couldn't remove element, destroy_entity returned false for family_tree.");
             }
@@ -103,12 +103,12 @@ namespace stk {
 
     void Refiner::removeDeletedNodes(NodeSetType& deleted_nodes)
     {
-      //std::cout << "P["<< m_eMesh.getRank() << "] removeDeletedNodes deleted_nodes.size()= " << deleted_nodes.size() << std::endl;
+      //std::cout << "P["<< m_eMesh.get_rank() << "] removeDeletedNodes deleted_nodes.size()= " << deleted_nodes.size() << std::endl;
       for(SetOfEntities::iterator node_it = deleted_nodes.begin();
           node_it != deleted_nodes.end(); ++node_it)
         {
           stk::mesh::Entity *node = *node_it;
-          if ( ! m_eMesh.getBulkData()->destroy_entity( node ) )
+          if ( ! m_eMesh.get_bulk_data()->destroy_entity( node ) )
             {
               //throw std::logic_error("Refiner::unrefineTheseElements couldn't remove node, destroy_entity returned false for node.");
             }
@@ -182,7 +182,7 @@ namespace stk {
           {
               throw std::logic_error("Refiner::removeChildElements couldn't remove element, Ghost is true.");
           }
-          if ( ! m_eMesh.getBulkData()->destroy_entity( child ) )
+          if ( ! m_eMesh.get_bulk_data()->destroy_entity( child ) )
             {
               CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*child));
 
@@ -193,7 +193,7 @@ namespace stk {
               std::cout << "tmp child_to_ft_relations.size() = " << child_to_ft_relations.size() << std::endl;
               //std::cout << "tmp ft_id loc, outerloop= " << child_to_family_tree_relations[0].entity()->identifier() << " " << family_tree_id << std::endl;
 
-              m_eMesh.printEntity(std::cout, *child);
+              m_eMesh.print_entity(std::cout, *child);
 #endif
 
               throw std::logic_error("Refiner::unrefineTheseElements couldn't remove element, destroy_entity returned false.");
@@ -207,11 +207,11 @@ namespace stk {
           side_elem_it != side_elem_set_to_be_removed.end(); ++side_elem_it)
         {
           stk::mesh::Entity *side_elem = *side_elem_it;
-          bool del =  m_eMesh.getBulkData()->destroy_entity( side_elem );
+          bool del =  m_eMesh.get_bulk_data()->destroy_entity( side_elem );
           if ( ! del )
             {
               std::cout << "Refiner::unrefineTheseElements couldn't remove side element, destroy_entity returned false." << *side_elem << std::endl;
-              del =  m_eMesh.getBulkData()->destroy_entity( side_elem );
+              del =  m_eMesh.get_bulk_data()->destroy_entity( side_elem );
               if (1)
                 {
                   stk::mesh::PairIterRelation rels = side_elem->relations(m_eMesh.element_rank());
@@ -309,9 +309,9 @@ namespace stk {
                   if (!m_eMesh.isGhostElement(parent))
                     {
 #if DEBUG_UNREF
-                      //std::cout << "P["<< m_eMesh.getRank() << "] parent.owner_rank() = " << parent.owner_rank() << std::endl;
+                      //std::cout << "P["<< m_eMesh.get_rank() << "] parent.owner_rank() = " << parent.owner_rank() << std::endl;
                       std::cout << "tmp Parent to be remeshed = ";
-                      m_eMesh.printEntity(std::cout, parent);
+                      m_eMesh.print_entity(std::cout, parent);
 #endif
                       if (createNewNeededNodeIds(cell_topo_data, parent, needed_entity_ranks, new_sub_entity_nodes))
                         {
@@ -341,7 +341,7 @@ namespace stk {
     {
       ElementUnrefineCollection elements_to_unref;
 
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
@@ -385,7 +385,7 @@ namespace stk {
     filterUnrefSet(ElementUnrefineCollection& elements_to_unref)
     {
       int print_filter_info = DEBUG_UNREF_1;
-      if (print_filter_info)  std::cout << "P["<< m_eMesh.getRank() << "] filterUnrefSet: initial set size = " << elements_to_unref.size() << std::endl;
+      if (print_filter_info)  std::cout << "P["<< m_eMesh.get_rank() << "] filterUnrefSet: initial set size = " << elements_to_unref.size() << std::endl;
       
       const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
       ElementUnrefineCollection elements_to_unref_copy;
@@ -536,7 +536,7 @@ namespace stk {
       bool doTest=true;
 
       // mark kept nodes
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
@@ -565,7 +565,7 @@ namespace stk {
                             kept_nodes.insert(node);
 #if DEBUG_UNREF
                             std::cout << "tmp kept node: " << *node << " ";
-                            m_eMesh.printEntity(std::cout, *node);
+                            m_eMesh.print_entity(std::cout, *node);
 #endif
 
                           }
@@ -602,7 +602,7 @@ namespace stk {
                     deleted_nodes.insert(node);
 #if DEBUG_UNREF
                     std::cout << "tmp deleted node: " << *node << " ";
-                    m_eMesh.printEntity(std::cout, *node);
+                    m_eMesh.print_entity(std::cout, *node);
 #endif
                   }
               }
@@ -623,7 +623,7 @@ namespace stk {
 
       //m_nodeRegistry->checkDB("unrefine start"); 
 
-      m_eMesh.getBulkData()->modification_begin();
+      m_eMesh.get_bulk_data()->modification_begin();
 
       //check_sidesets_2(" unrefineTheseElements:: start");
 
@@ -690,7 +690,7 @@ namespace stk {
       // nothing to be done
       if (0 && deleted_nodes.size() == 0)
         {
-          m_eMesh.getBulkData()->modification_end();
+          m_eMesh.get_bulk_data()->modification_end();
           std::cout << "Refiner::unrefineTheseElements: deleted_nodes size is 0, nothing to be done, early return." << std::endl;
           return;
         }
@@ -759,9 +759,9 @@ namespace stk {
 
       fixElementSides1();
 
-      //if (1)  std::cout << "P["<< m_eMesh.getRank() << "] unrefineTheseElements modification_end start..." << std::endl;
-      m_eMesh.getBulkData()->modification_end();
-      //if (1)  std::cout << "P["<< m_eMesh.getRank() << "] unrefineTheseElements modification_end ...end" << std::endl;
+      //if (1)  std::cout << "P["<< m_eMesh.get_rank() << "] unrefineTheseElements modification_end start..." << std::endl;
+      m_eMesh.get_bulk_data()->modification_end();
+      //if (1)  std::cout << "P["<< m_eMesh.get_rank() << "] unrefineTheseElements modification_end ...end" << std::endl;
 
 
 #if CHECK_DEBUG

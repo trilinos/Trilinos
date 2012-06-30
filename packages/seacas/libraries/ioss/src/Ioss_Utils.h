@@ -54,8 +54,6 @@ namespace Ioss {
   class Region;
   class Field;
   
-  typedef std::vector<int> IntVector;
-
   class Utils {
   public:
 
@@ -74,7 +72,7 @@ namespace Ioss {
 
     static std::string decode_filename(const std::string &filename, int processor, int num_processors);
     static int    decode_entity_name(const std::string &entity_name);
-    static std::string encode_entity_name(const std::string &entity_type, int id);
+    static std::string encode_entity_name(const std::string &entity_type, int64_t id);
 
     /*!
      * Convert 'name' to lowercase and convert spaces to '_'
@@ -125,8 +123,9 @@ namespace Ioss {
 
     static void calculate_sideblock_membership(IntVector &face_is_member,
 					       const SideBlock *ef_blk,
-					       const int *element, const int *sides,
-					       int number_sides,
+					       size_t int_byte_size,
+					       const void *element, const void *sides,
+					       int64_t number_sides, 
 					       const Region *region);
 
     static unsigned int hash (const std::string& name);

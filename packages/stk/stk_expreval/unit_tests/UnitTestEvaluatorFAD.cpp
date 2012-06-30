@@ -63,6 +63,7 @@ fail_syntax(
   return false;
 }
 
+/*
 bool
 vectest(
   const char *	expr)
@@ -79,6 +80,7 @@ vectest(
   std::cout << "fail, should have parse error" << std::endl;
   return false;
 }
+*/
 
 typedef stk::expreval::fad::FADDouble FADDouble;
 typedef FADDouble (TestFunc)(stk::expreval::fad::FADDouble);

@@ -32,6 +32,7 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
     testcpln
     testwt_nsid
     testrd_nsid
+    test_nem
   )
 
   CONFIGURE_FILE(

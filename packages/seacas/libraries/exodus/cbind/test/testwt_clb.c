@@ -85,7 +85,7 @@ int main (int argc, char **argv)
   char *prop_names[2];
   char *eb_type[10];
    
-  ex_opts (EX_VERBOSE || EX_ABORT);
+  ex_opts (EX_VERBOSE|EX_ABORT);
 
   /* Specify compute and i/o word size */
 

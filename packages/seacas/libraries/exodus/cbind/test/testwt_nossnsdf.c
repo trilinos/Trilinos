@@ -82,14 +82,12 @@ int main (int argc, char **argv)
 
    float *glob_var_vals, *nodal_var_vals, *elem_var_vals;
    float time_value;
-   float x[100], y[100], z[100], *dummy;
+   float x[100], y[100], z[100];
    float attrib[100], dist_fact[100];
    char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
    char *prop_names[2];
 
    ex_opts (EX_VERBOSE | EX_ABORT);
-
-   dummy = 0; /* assign this so the Cray compiler doesn't complain */
 
 /* Specify compute and i/o word size */
 

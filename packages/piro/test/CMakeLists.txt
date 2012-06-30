@@ -90,6 +90,7 @@ IF (Piro_ENABLE_NOX)
 		 input_Solve_NOX_Adjoint.xml
                  input_Solve_LOCA_1.xml
                  input_Solve_Rythmos_1.xml
+                 input_Solve_Rythmos_1new.xml
                  input_Solve_Rythmos_2.xml
                  input_Solve_VV.xml
                  input_Solve_TR.xml

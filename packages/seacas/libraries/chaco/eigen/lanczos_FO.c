@@ -142,7 +142,7 @@ lanczos_FO (
     double   *mkvec_ret();      /* mkvec() which returns error code */
     double    dot();		/* standard dot product routine */
     struct orthlink *makeorthlnk();	/* make space for entry in orthog. set */
-    double    norm();		/* vector norm */
+    double    ch_norm();		/* vector norm */
     double    Tevec();		/* calc evec of T by linear recurrence */
     struct scanlink *mkscanlist();	/* make scan list for min ritz vecs */
     double    lanc_seconds();	/* current clock timer */
@@ -242,7 +242,7 @@ lanczos_FO (
 	    orthlist2->pntr = NULL;
 	}
     }
-    beta[1] = norm(r, 1, n);
+    beta[1] = ch_norm(r, 1, n);
     q[0] = zeros;
     bji_tol = eigtol;
     orthlist = NULL;
@@ -311,7 +311,7 @@ lanczos_FO (
 	orthlist = makeorthlnk();
 	orthlist->vec = q[j];
 	orthlist->pntr = temp;
-	beta[j + 1] = norm(r, 1, n);
+	beta[j + 1] = ch_norm(r, 1, n);
 	orthog_time += lanc_seconds() - time;
 
 	time = lanc_seconds();

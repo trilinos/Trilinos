@@ -117,6 +117,10 @@ class FieldBase
     return m_impl.restrictions();
   }
 
+  const RestrictionVector &selector_restrictions() const {
+    return m_impl.selector_restrictions();
+  }
+
   /** \brief  Query a field restriction, result is volatile until the owning
    *          \ref stk::mesh::MetaData "meta data manager" is committed.
    */
@@ -133,6 +137,8 @@ class FieldBase
   const void* get_initial_value() const { return m_impl.get_initial_value(); }
 
   void* get_initial_value() { return m_impl.get_initial_value(); }
+
+  unsigned get_initial_value_num_bytes() const { return m_impl.get_initial_value_num_bytes(); }
 
 private:
 
@@ -172,7 +178,6 @@ private:
 
   // WORKAROUND 5/19/2010 [DGB]: intel 10.? and pgi do not link if this is made virtual
   //  virtual ~FieldBase();
-  ~FieldBase();
 
   impl::FieldBaseImpl  m_impl;
 

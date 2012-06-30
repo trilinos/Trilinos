@@ -41,7 +41,6 @@ int main (int argc, char **argv)
 {
   int num_glo_vars = 10;
   int num_nod_vars = 2;
-  int error;
   int CPU_word_size = 8; 
   int IO_word_size = 8;
   const char* title = "This is a 2D mesh example with tri, quad, beam, truss, circle";
@@ -91,10 +90,15 @@ int main (int argc, char **argv)
      }
 
 
+     {
+       int node_map[] = {10,20,30,40,50,60,70,80,90,100,110,120,130};
+       ex_put_node_num_map(exoid, node_map);
+     }
+
      /* write element order map */
      {
        int elem_map[] = {11,21,31,41, 52, 62, 72, 82, 93,103,113,123,133,143,153,163,  174,184,194,204};
-       ex_put_map (exoid, elem_map);
+       ex_put_elem_num_map (exoid, elem_map);
      }
 
      /* write element block parameters */

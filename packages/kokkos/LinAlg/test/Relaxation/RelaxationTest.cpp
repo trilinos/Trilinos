@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,15 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -50,7 +49,6 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_DefaultKernels.hpp"
-#include "Kokkos_CrsMatrix.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
 
 #include "Kokkos_Version.hpp"
@@ -62,8 +60,8 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
+#ifdef HAVE_KOKKOS_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
 #endif
 
 #define TPI_CHUNKS 4
@@ -71,8 +69,6 @@
 namespace {
 
   using Kokkos::MultiVector;
-  using Kokkos::CrsMatrix;
-  using Kokkos::CrsGraph;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultKernels;
   using Kokkos::DefaultRelaxation;
@@ -95,6 +91,10 @@ namespace {
 #ifdef HAVE_KOKKOS_THRUST
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
+#endif
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
 #endif
 
   int N = 10;
@@ -159,15 +159,16 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix_1D, Jacobi, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
-    typedef CrsGraph<Ordinal,Node,DSM>  GRPH;
-    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>  MAT;
-    typedef MultiVector<Scalar,Node> MV;
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          BASESOPS;
+    typedef typename BASESOPS::template bind_scalar<Scalar>::other_type           DSM;
+    typedef typename DSM::template graph<Ordinal,Node>::graph_type               GRPH;
+    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type       MAT;
+    typedef MultiVector<Scalar,Node>                                               MV;
     // generate tridiagonal matrix:
     // [ 2 -1                   ]
     // [-1  2  -1               ]
@@ -176,46 +177,45 @@ namespace {
     // [                -1  2 -1]
     // [                   -1  2]
     if (N<2) return;
-    GRPH G(N,node);
-    MAT  A(G);
-    // allocate buffers for offsets, indices and values
+    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,node,null) );
+    RCP<MAT > A = Teuchos::rcp( new MAT(G,null) );
+    // allocate buffers for ptrs, indices and values
     const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> offsets(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    ArrayRCP<size_t>  ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host
     {
       size_t NNZsofar = 0;
-      offsets[0] = NNZsofar;
+      ptrs[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
       NNZsofar += 2;
       for (int i=1; i != N-1; ++i) {
-        offsets[i] = NNZsofar;
+        ptrs[i] = NNZsofar;
         inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
         vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2; vals[NNZsofar+2] =  -1;
         NNZsofar += 3;
       }
-      offsets[N-1] = NNZsofar;
+      ptrs[N-1] = NNZsofar;
       inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
       vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
-      offsets[N]   = NNZsofar;
+      ptrs[N]   = NNZsofar;
       TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
     }
-    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
-    offsets = Teuchos::null;
-    inds    = Teuchos::null;
-    A.set1DValues(vals);
-    vals    = Teuchos::null;
-    A.finalize(true);
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
+    A->setValues(vals);
+    vals = Teuchos::null;
+    DSM::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
 
     int its=10;
 
     // Allocate Relaxation Object
     DefaultRelaxation<Scalar,Ordinal,Node> dj(node);
-    dj.initializeStructure(G,Teuchos::View);
-    dj.initializeValues(A,Teuchos::View);
+    dj.initializeData(G,A);
 
     // Allocate Vectors
     MV X0(node),RHS(node), AX(node);
@@ -243,10 +243,11 @@ namespace {
   {
     out << "Tests Chebyshev relaxation on matrix stored in \"1D\" format." << std::endl;
     RCP<Node> node = getNode<Node>();
-    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
-    typedef CrsGraph<Ordinal,Node,DSM>  GRPH;
-    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>  MAT;
-    typedef MultiVector<Scalar,Node> MV;
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          BASESOPS;
+    typedef typename BASESOPS::template bind_scalar<Scalar>::other_type           DSM;
+    typedef typename DSM::template graph<Ordinal,Node>::graph_type               GRPH;
+    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type       MAT;
+    typedef MultiVector<Scalar,Node>                                               MV;
     // generate tridiagonal matrix:
     // [ 2 -1                   ]
     // [-1  2  -1               ]
@@ -255,46 +256,45 @@ namespace {
     // [                -1  2 -1]
     // [                   -1  2]
     if (N<2) return;
-    GRPH G(N,node);
-    MAT  A(G);
-    // allocate buffers for offsets, indices and values
+    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,node,null) );
+    RCP<MAT > A = Teuchos::rcp( new MAT(G,null) );
+    // allocate buffers for ptrs, indices and values
     const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> offsets(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    ArrayRCP<size_t>  ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host
     {
       size_t NNZsofar = 0;
-      offsets[0] = NNZsofar;
+      ptrs[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
       NNZsofar += 2;
       for (int i=1; i != N-1; ++i) {
-        offsets[i] = NNZsofar;
+        ptrs[i] = NNZsofar;
         inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
         vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2; vals[NNZsofar+2] =  -1;
         NNZsofar += 3;
       }
-      offsets[N-1] = NNZsofar;
+      ptrs[N-1] = NNZsofar;
       inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
       vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
-      offsets[N]   = NNZsofar;
+      ptrs[N]   = NNZsofar;
       TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
     }
-    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
-    offsets = Teuchos::null;
-    inds    = Teuchos::null;
-    A.set1DValues(vals);
-    vals    = Teuchos::null;
-    A.finalize(true);
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
+    A->setValues(vals);
+    vals = Teuchos::null;
+    DSM::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
 
     int its=10;
 
     // Allocate Relaxation Object
     DefaultRelaxation<Scalar,Ordinal,Node> dj(node);
-    dj.initializeStructure(G,Teuchos::View);
-    dj.initializeValues(A,Teuchos::View);
+    dj.initializeData(G,A);
 
     // Allocate Vectors
     MV X0(node),RHS(node), AX(node);
@@ -304,13 +304,19 @@ namespace {
     RHS.initializeValues(N,1,rhsdat,N);
     typedef  Teuchos::ScalarTraits<Scalar> SCT;
     typedef  typename SCT::magnitudeType   Magnitude;
-    Magnitude norms,norm0;
+    Magnitude norms;
+    // FIXME (mfh 29 Jun 2012) norm0 gets assigned (below), but never used.
+    // gcc 4.6 warns about this; gcc 4.5 doesn't.
+    //Magnitude norm0;
 
     // Set starting vector & run Chebyshev
     DefaultArithmetic<MV>::Init(X0,0);
     DefaultArithmetic<MV>::Init(RHS,1);
-    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);    
-    norms=DefaultArithmetic<MV>::Norm2Squared(RHS);    
+    norms=-666;
+    // FIXME (mfh 29 Jun 2012) norm0 gets assigned, but never used.
+    // gcc 4.6 warns about this; gcc 4.5 doesn't.
+    //norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
+    norms=DefaultArithmetic<MV>::Norm2Squared(RHS);
     dj.setup_chebyshev((Scalar)1.9594929736,(Scalar) 0.097974648681);
     for(int i=0;i<its;i++){
       dj.sweep_chebyshev(X0,RHS);
@@ -327,10 +333,11 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, HybridRelaxation, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
-    typedef CrsGraph<Ordinal,Node,DSM>  GRPH;
-    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>  MAT;
-    typedef MultiVector<Scalar,Node> MV;
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          BASESOPS;
+    typedef typename BASESOPS::template bind_scalar<Scalar>::other_type           DSM;
+    typedef typename DSM::template graph<Ordinal,Node>::graph_type               GRPH;
+    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type       MAT;
+    typedef MultiVector<Scalar,Node>                                               MV;
     // generate tridiagonal matrix:
     // [ 2 -1                   ]
     // [-1  2  -1               ]
@@ -339,39 +346,39 @@ namespace {
     // [                -1  2 -1]
     // [                   -1  2]
     if (N<2) return;
-    GRPH G(N,node);
-    MAT  A(G);
-    // allocate buffers for offsets, indices and values
+    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,node,null) );
+    RCP<MAT > A = Teuchos::rcp( new MAT(G,null) );
+    // allocate buffers for ptrs, indices and values
     const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> offsets(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    ArrayRCP<size_t>  ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host
     {
       size_t NNZsofar = 0;
-      offsets[0] = NNZsofar;
+      ptrs[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
       NNZsofar += 2;
       for (int i=1; i != N-1; ++i) {
-        offsets[i] = NNZsofar;
+        ptrs[i] = NNZsofar;
         inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
         vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2; vals[NNZsofar+2] =  -1;
         NNZsofar += 3;
       }
-      offsets[N-1] = NNZsofar;
+      ptrs[N-1] = NNZsofar;
       inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
       vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
-      offsets[N]   = NNZsofar;
+      ptrs[N]   = NNZsofar;
       TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
     }
-    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
-    offsets = Teuchos::null;
-    inds    = Teuchos::null;
-    A.set1DValues(vals);
-    vals    = Teuchos::null;
-    A.finalize(true);
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
+    A->setValues(vals);
+    vals = Teuchos::null;
+    DSM::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
 
     printf("\n");
 
@@ -379,8 +386,7 @@ namespace {
 
     // Allocate Relaxation Object
     DefaultRelaxation<Scalar,Ordinal,Node> dj(node);
-    dj.initializeStructure(G,Teuchos::View);
-    dj.initializeValues(A,Teuchos::View);
+    dj.initializeData(G,A);
 
     // Allocate Vectors
     MV X0(node),RHS(node), AX(node);
@@ -448,6 +454,13 @@ namespace {
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR)
 #endif
 
+#ifdef HAVE_KOKKOS_OPENMP
+#define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR) \
+      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, OpenMPNode )
+#else
+#define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR)
+#endif
+
 #ifdef HAVE_KOKKOS_THREADPOOL
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TPINode )
@@ -455,39 +468,15 @@ namespace {
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
-#ifdef HAVE_KOKKOS_CUDA_FLOAT
-#define UNIT_TEST_THRUST_ORDINAL_FLOAT(ORDINAL) ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, float, ThrustGPUNode )
-#else
-#define UNIT_TEST_THRUST_ORDINAL_FLOAT(ORDINAL)
-#endif
-#ifdef HAVE_KOKKOS_CUDA_DOUBLE
-#define UNIT_TEST_THRUST_ORDINAL_DOUBLE(ORDINAL) ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, double, ThrustGPUNode )
-#else
-#define UNIT_TEST_THRUST_ORDINAL_DOUBLE(ORDINAL)
-#endif
-#else
-#define UNIT_TEST_THRUST_ORDINAL_FLOAT(ORDINAL)
-#define UNIT_TEST_THRUST_ORDINAL_DOUBLE(ORDINAL)
-#endif
-
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
         UNIT_TEST_SERIALNODE( ORDINAL, SCALAR ) \
+        UNIT_TEST_OPENMPNODE( ORDINAL, SCALAR ) \
         UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
         UNIT_TEST_TPINODE( ORDINAL, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
-
-/*
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-        UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
-        UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float) \
-        UNIT_TEST_THRUST_ORDINAL_DOUBLE( ORDINAL ) \
-        UNIT_TEST_THRUST_ORDINAL_FLOAT( ORDINAL )
-*/
-
 
   /* Macro to run the actual tests */
      UNIT_TEST_GROUP_ORDINAL(int)

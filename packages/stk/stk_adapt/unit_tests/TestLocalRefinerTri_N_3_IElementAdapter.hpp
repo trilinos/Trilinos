@@ -54,8 +54,8 @@ namespace stk {
           {
             stk::mesh::Entity *node = elem_nodes[inode].entity();
             stk::mesh::Entity *node1 = elem_nodes[(inode + 1) % 3].entity();
-            double *coord0 = stk::mesh::field_data( *m_eMesh.getCoordinatesField(), *node );
-            double *coord1 = stk::mesh::field_data( *m_eMesh.getCoordinatesField(), *node1 );
+            double *coord0 = stk::mesh::field_data( *m_eMesh.get_coordinates_field(), *node );
+            double *coord1 = stk::mesh::field_data( *m_eMesh.get_coordinates_field(), *node1 );
 
             // choose to refine or not 
             if (
@@ -82,7 +82,7 @@ namespace stk {
         for (unsigned inode=0; inode < elem_nodes.size(); inode++)
           {
             stk::mesh::Entity *node = elem_nodes[inode].entity();
-            double *coord = stk::mesh::field_data( *m_eMesh.getCoordinatesField(), *node );
+            double *coord = stk::mesh::field_data( *m_eMesh.get_coordinates_field(), *node );
             //if (coord[0] > 2.1 || coord[1] > 2.1)
             if (coord[0] > 1.0001 || coord[1] > 1.0001)
               {

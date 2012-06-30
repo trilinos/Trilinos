@@ -57,10 +57,10 @@ namespace Ioss {
     }
 
   protected:
-    int internal_get_field_data(const Field&, void*, size_t) const
+    int64_t internal_get_field_data(const Field&, void*, size_t) const
     { return 0; }
 
-    int internal_put_field_data(const Field&, void*, size_t) const
+    int64_t internal_put_field_data(const Field&, void*, size_t) const
     { return 0; }
 
   };

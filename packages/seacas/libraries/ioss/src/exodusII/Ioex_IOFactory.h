@@ -44,12 +44,12 @@ namespace Ioex {
     public:
       static const IOFactory* factory();
 
-
     private:
       IOFactory();
       Ioss::DatabaseIO* make_IO(const std::string& filename,
 				Ioss::DatabaseUsage db_usage,
-				MPI_Comm communicator) const;
+				MPI_Comm communicator,
+				const Ioss::PropertyManager &properties) const;
     };
 }
 #endif // IOSS_Ioex_IOFactory_h

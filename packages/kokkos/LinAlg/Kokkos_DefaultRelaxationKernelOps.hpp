@@ -52,50 +52,23 @@
 #include <Teuchos_ScalarTraits.hpp>
 #endif
 
-// NTS: Need to remove Scalar divisions and replace with appropriate inverse listed in Traits
-
 namespace Kokkos {
 
   // Extract Matrix Diagonal for Type 1 storage
   template <class Scalar, class Ordinal>
-  struct ExtractDiagonalOp1 {
+  struct ExtractDiagonalOp {
 
     // mat data
     size_t numRows;
-    const size_t  *begs;
-    const size_t  *ends;
-    const Ordinal *inds;
-    const Scalar  *vals;
+    const size_t  * ptrs;
+    const Ordinal * inds;
+    const Scalar  * vals;
     Scalar * diag;
 
-
     inline KERNEL_PREFIX void execute(size_t row) {
-      for (size_t c=begs[row]; c<ends[row]; ++c) {
-        if(row==(size_t)inds[c]) {
+      for (size_t c=ptrs[row]; c != ptrs[row+1]; ++c) {
+        if (row==(size_t)inds[c]) {
           diag[row]=vals[c];
-          break;
-        }
-      }
-    }
-  };
-
-  // Extract Matrix Diagonal for Type 2 storage
-  template <class Scalar, class Ordinal>
-  struct ExtractDiagonalOp2 {
-
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    Scalar * diag;
-    size_t numRows;
-
-    inline KERNEL_PREFIX void execute(size_t row) {
-      const Scalar  *curval = vals_beg[row];
-      const Ordinal *curind = inds_beg[row];
-      for (size_t j=0;j<numEntries[row];j++) {
-        if(row==(size_t)curind[j]){
-          diag[row]=curval[j];
           break;
         }
       }
@@ -106,12 +79,10 @@ namespace Kokkos {
   /************************************************************************************/
   /********************************* Jacobi Kernels ***********************************/
   /************************************************************************************/
-  // Jacobi for Type 1 storage.
   template <class Scalar, class Ordinal>
-  struct DefaultJacobiOp1 {
+  struct DefaultJacobiOp {
     size_t numRows;
-    const size_t  *begs;
-    const size_t  *ends;
+    const size_t  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -130,7 +101,7 @@ namespace Kokkos {
       const Scalar *bj  = b + rhs * bstride;
 
       Scalar tmp = bj[row];
-      for (size_t c=begs[row]; c<ends[row]; ++c) {
+      for (size_t c=ptrs[row]; c<ptrs[row+1]; ++c) {
         tmp -= vals[c] * x0j[inds[c]];
       }
       xj[row]=x0j[row]+damping_factor*tmp/diag[row];
@@ -138,47 +109,14 @@ namespace Kokkos {
   };
 
 
-  // Jacobi for Type 2 storage.
-  template <class Scalar, class Ordinal>
-  struct DefaultJacobiOp2 {
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    const Scalar  *diag;
-    size_t numRows;
-    // vector data (including multiple rhs)    
-    Scalar        *x;
-    const Scalar *x0;
-    const Scalar  *b;
-    Scalar damping_factor;
-    size_t xstride, bstride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      const size_t row = i % numRows;
-      const size_t rhs = (i - row) / numRows;
-      Scalar       *xj = x + rhs * xstride;
-      const Scalar *x0j = x0 + rhs * xstride;
-      const Scalar *bj = b + rhs * bstride;
-      Scalar tmp = bj[row];
-      const Scalar  *curval = vals_beg[row];
-      const Ordinal *curind = inds_beg[row];
-      for (size_t j=0; j != numEntries[row]; ++j) {
-        tmp -= (curval[j]) * x0j[curind[j]];
-      }
-      xj[row]=x0j[row]+damping_factor*tmp/diag[row];
-    }
-  };
-
   /************************************************************************************/
   /************************ Fine-Grain Gauss-Seidel Kernels ***************************/
   /************************************************************************************/
 
-  // Fine-grain "hybrid" Gauss-Seidel for Type 1 storage.
   // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
   template <class Scalar, class Ordinal>
-  struct DefaultFineGrainHybridGaussSeidelOp1 {
-    const size_t  *offsets;
+  struct DefaultFineGrainHybridGaussSeidelOp {
+    const size_t  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -195,40 +133,8 @@ namespace Kokkos {
       Scalar       *xj = x + rhs * xstride;
       const Scalar *bj = b + rhs * bstride;
       Scalar tmp = bj[row];
-      for (size_t c=offsets[row];c<offsets[row+1];c++) {
+      for (size_t c=ptrs[row];c<ptrs[row+1];c++) {
         tmp -= vals[c] * xj[inds[c]];
-      }
-      xj[row]+=damping_factor*tmp/diag[row];
-    }
-  };
-
-
-  // Fine-grain "hybrid" Gauss-Seidel for Type 2 storage.
-  // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
-  template <class Scalar, class Ordinal>
-  struct DefaultFineGrainHybridGaussSeidelOp2 {
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    const Scalar  *diag;
-    size_t numRows;
-    // vector data (including multiple rhs)    
-    Scalar        *x;
-    const Scalar  *b;
-    Scalar damping_factor;
-    size_t xstride, bstride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      const size_t row = i % numRows;
-      const size_t rhs = (i - row) / numRows;
-      Scalar       *xj = x + rhs * xstride;
-      const Scalar *bj = b + rhs * bstride;
-      Scalar tmp = bj[row];
-      const Scalar  *curval = vals_beg[row];
-      const Ordinal *curind = inds_beg[row];
-      for (size_t j=0; j != numEntries[row]; ++j) {
-        tmp -= (curval[j]) * xj[curind[j]];
       }
       xj[row]+=damping_factor*tmp/diag[row];
     }
@@ -243,7 +149,7 @@ namespace Kokkos {
   // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
   template <class Scalar, class Ordinal>
   struct DefaultCoarseGrainHybridGaussSeidelOp1 {
-    const size_t  *offsets;
+    const size_t  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -264,7 +170,7 @@ namespace Kokkos {
       const Scalar *bj = b + rhs * bstride;
       for (size_t row=start_r;row<stop_r;row++){
         Scalar tmp = bj[row];
-        for (size_t c=offsets[row];c<offsets[row+1];c++) {
+        for (size_t c=ptrs[row];c<ptrs[row+1];c++) {
           tmp -= vals[c] * xj[inds[c]];
         }
         xj[row]+=damping_factor*tmp/diag[row];
@@ -272,51 +178,13 @@ namespace Kokkos {
     }
   };
 
-
-  // Coarse-grain "hybrid" Gauss-Seidel for Type 2 storage.
-  // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
-  template <class Scalar, class Ordinal>
-  struct DefaultCoarseGrainHybridGaussSeidelOp2 {
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    const Scalar  *diag;
-    size_t numRows;
-    size_t numChunks;
-    // vector data (including multiple rhs)    
-    Scalar        *x;
-    const Scalar  *b;
-    Scalar damping_factor;
-    size_t xstride, bstride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      const size_t chunk = i % numChunks;
-      const size_t rhs = (i - chunk) / numChunks;
-      const size_t start_r = chunk * numRows / numChunks;
-      const size_t stop_r  = TEUCHOS_MIN((chunk+1)*numRows/numChunks,numRows);
-      Scalar       *xj = x + rhs * xstride;
-      const Scalar *bj = b + rhs * bstride;
-      for (size_t row=start_r;row<stop_r;row++){
-        Scalar tmp = bj[row];
-        const Scalar  *curval = vals_beg[row];
-        const Ordinal *curind = inds_beg[row];
-        for (size_t j=0; j!=numEntries[row];j++) {
-          tmp -= (curval[j]) * xj[curind[j]];
-        }
-        xj[row]+=damping_factor*tmp/diag[row];
-      }
-    }
-  };
- 
   /************************************************************************************/
   /******************************** Chebyshev Kernels *********************************/
   /************************************************************************************/
 
   template <class Scalar, class Ordinal>
-  struct DefaultChebyshevOp1 {
-    const size_t  *begs;
-    const size_t  *ends;
+  struct DefaultChebyshevOp {
+    const size_t  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -345,7 +213,7 @@ namespace Kokkos {
         } else {
           // v=Ax
           vj=Teuchos::ScalarTraits<Scalar>::zero();
-          for (size_t c=begs[row]; c<ends[row]; ++c) {
+          for (size_t c=ptrs[row]; c<ptrs[row+1]; ++c) {
             vj += vals[c] * x0j[inds[c]];
           }
           // w=theta^{-1} D^{-1} (b -Ax)
@@ -356,7 +224,7 @@ namespace Kokkos {
       } else {
         //v=Ax
         vj=Teuchos::ScalarTraits<Scalar>::zero();
-        for (size_t c=begs[row]; c<ends[row]; ++c) {
+        for (size_t c=ptrs[row]; c<ptrs[row+1]; ++c) {
           vj += vals[c] * x0j[inds[c]];
         }
         // w=dtemp1*w +  D^{-1}*dtemp2*(b-Ax)

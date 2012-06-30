@@ -86,6 +86,16 @@ namespace fei {
     static const char* typeName()
       { return("unsupported"); }
 
+    static double* getBeginPointer(T* /*mat*/)
+      {
+        return NULL;
+      }
+
+    static int getOffset(T* /*mat*/, int /*row*/, int /*col*/)
+      {
+        return -1;
+      }
+
     /** Set a specified scalar value throughout the matrix.
      */
     static int setValues(T* mat, double scalar)

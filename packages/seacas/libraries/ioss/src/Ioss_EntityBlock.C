@@ -73,12 +73,12 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database,
 			       Ioss::Property::INTEGER));
   properties.add(Ioss::Property(this, "topology_type",
 			       Ioss::Property::STRING));
-  fields.add(Ioss::Field("connectivity", Ioss::Field::INTEGER,
+  fields.add(Ioss::Field("connectivity", field_int_type(),
 			topology_->name(),
 			Ioss::Field::MESH, entity_count));
 
   // Returns connectivity in local id space
-  fields.add(Ioss::Field("connectivity_raw", Ioss::Field::INTEGER,
+  fields.add(Ioss::Field("connectivity_raw", field_int_type(),
 			 topology()->name(),
 			 Ioss::Field::MESH, entity_count));
 }

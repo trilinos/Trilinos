@@ -50,7 +50,7 @@ namespace Excn {
       
       bool omit_nodesets() const {return omitNodesets_;}
       bool omit_sidesets() const {return omitSidesets_;}
-  
+      bool ints_64_bit() const {return ints64Bit_;}
       double alive_value() const {return aliveValue_;}
       
       StringIdVector global_var_names() const {return globalVarNames_;}
@@ -84,6 +84,7 @@ namespace Excn {
       int screenWidth_;
       bool omitNodesets_;
       bool omitSidesets_;
+      bool ints64Bit_;
       
       double aliveValue_;
       

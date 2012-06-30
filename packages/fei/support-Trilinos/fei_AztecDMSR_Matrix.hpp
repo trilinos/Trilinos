@@ -68,6 +68,9 @@
 #include <az_aztec.h>
 #include <fei_SharedPtr.hpp>
 #include <fei_Aztec_Map.hpp>
+#include "fei_iostream.hpp"
+#include "fei_fstream.hpp"
+#include "fei_sstream.hpp"
 
 namespace fei_trilinos {
 
@@ -147,6 +150,33 @@ class AztecDMSR_Matrix {
     double rowMax(int row) const;
  
     int getNumNonZeros() {return(nnzeros_);};
+
+    double* getBeginPointer() { return val; }
+
+    int getOffset(int row, int col)
+    {
+      int localRow;
+      if (!amap_->inUpdate(row,localRow)){
+        throw std::runtime_error("row not found");
+      }
+
+      if (row == col) return localRow;
+
+      int* row_ptr = &bindx[bindx[localRow]];
+      int* end_row = &bindx[bindx[localRow+1]];
+
+      int col_offset = 0;
+      for(; row_ptr != end_row; ++row_ptr) {
+        if (amap_->getTransformedEqn(*row_ptr) == col) break;
+        ++col_offset;
+      }
+      if (row_ptr == end_row){
+        FEI_OSTRINGSTREAM osstr;
+        osstr << "Col "<<col << " not found for row "<<row;
+        throw std::runtime_error(osstr.str());
+      }
+      return bindx[localRow] + col_offset;
+    }
 
     //Aztec-specific functions:
 

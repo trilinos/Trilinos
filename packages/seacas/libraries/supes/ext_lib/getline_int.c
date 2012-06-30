@@ -15,7 +15,7 @@
  */
 
 #include       "getline_int.h"
-static int      gl_tab();  /* forward reference needed for gl_tab_hook */
+static int      gl_tab(char *buf, int offset, int *loc);  /* forward reference needed for gl_tab_hook */
 
 /******************** imported interface *********************************/
 
@@ -50,36 +50,36 @@ static char     gl_suspc = 0;		/* keyboard SIGTSTP char */
 static char     gl_dsuspc = 0;		/* delayed SIGTSTP char */
 static int      gl_search_mode = 0;	/* search mode flag */
 
-static void     gl_init();		/* prepare to edit a line */
-static void     gl_cleanup();		/* to undo gl_init */
+static void     gl_init(void);		/* prepare to edit a line */
+static void     gl_cleanup(void);	/* to undo gl_init */
 static void     gl_char_init();		/* get ready for no echo input */
-static void     gl_char_cleanup();	/* undo gl_char_init */
+static void     gl_char_cleanup(void);	/* undo gl_char_init */
 static size_t 	(*gl_strlen)() = (size_t(*)())strlen; 
 					/* returns printable prompt width */
 
-static void     gl_addchar();		/* install specified char */
-static void     gl_del();		/* del, either left (-1) or cur (0) */
-static void     gl_error();		/* write error msg and die */
-static void     gl_fixup();		/* fixup state variables and screen */
-static int      gl_getc();		/* read one char from terminal */
-static void     gl_kill();		/* delete to EOL */
-static void     gl_newline();		/* handle \n or \r */
-static void     gl_putc();		/* write one char to terminal */
-static void     gl_puts();		/* write a line to terminal */
-static void     gl_redraw();		/* issue \n and redraw all */
-static void     gl_transpose();		/* transpose two chars */
-static void     gl_yank();		/* yank killed text */
-static void     gl_word();		/* move a word */
+static void     gl_addchar(int c);	/* install specified char */
+static void     gl_del(int loc);	/* del, either left (-1) or cur (0) */
+static void     gl_error(char *buf);	/* write error msg and die */
+static void     gl_fixup(char *prompt, int change, int cursor);		/* fixup state variables and screen */
+static int      gl_getc(void);		/* read one char from terminal */
+static void     gl_kill(int pos);	/* delete to EOL */
+static void     gl_newline(void);	/* handle \n or \r */
+static void     gl_putc(int c);		/* write one char to terminal */
+static void     gl_puts(char *buf);	/* write a line to terminal */
+static void     gl_redraw(void);	/* issue \n and redraw all */
+static void     gl_transpose(void);	/* transpose two chars */
+static void     gl_yank(void);		/* yank killed text */
+static void     gl_word(int direction);	/* move a word */
 
-static void     hist_init();	/* initializes hist pointers */
-static char    *hist_next();	/* return ptr to next item */
-static char    *hist_prev();	/* return ptr to prev item */
-static char    *hist_save();	/* makes copy of a string, without NL */
+static void     hist_init(void);	/* initializes hist pointers */
+static char    *hist_next(void);	/* return ptr to next item */
+static char    *hist_prev(void);	/* return ptr to prev item */
+static char    *hist_save(char *p);	/* makes copy of a string, without NL */
 
-static void     search_addchar();	/* increment search string */
-static void     search_term();		/* reset with current contents */
+static void     search_addchar(int c);	/* increment search string */
+static void     search_term(void);		/* reset with current contents */
 static void     search_back();		/* look back for current string */
-static void     search_forw();		/* look forw for current string */
+static void     search_forw(int new_search);		/* look forw for current string */
 
 /************************ nonportable part *********************************/
 /* Assume everything we build ACCESS on is POSIX-compatible */

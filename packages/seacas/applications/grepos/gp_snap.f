@@ -61,6 +61,9 @@ C   --   IXEESS - OUT - the index of the first element for each set
       call mdrsrv('VNORM', KVNORM, NUMNP*3)
       call mdrsrv('PLANE', KPLANE, 0)
       
+      indsl = 0
+      indma = 0
+      
 C ... Find master index
       do 100 i=1, numess
         if (idess(i) .eq. idssma(isnp)) then

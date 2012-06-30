@@ -56,20 +56,22 @@ Ioss::GroupingEntity::GroupingEntity()
 
 Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
 				     const std::string& my_name,
-				     size_t entity_count)
+				     int64_t entity_count)
   : entityCount(entity_count), entityName(my_name), database_(io_database),
     entityState(STATE_CLOSED), attributeCount(0)    
 {
   properties.add(Ioss::Property("name", my_name));
 
-  properties.add(Ioss::Property("entity_count", static_cast<int>(entity_count)));
+  properties.add(Ioss::Property("entity_count", entity_count));
 
   properties.add(Ioss::Property(this, "attribute_count",
 				Ioss::Property::INTEGER));
 
   if (my_name != "null_entity") {
-    fields.add(Ioss::Field("ids",
-			   Ioss::Field::INTEGER, "scalar",
+    Ioss::Field::BasicType int_type = Ioss::Field::INTEGER;
+    if (io_database != NULL)
+      int_type = field_int_type();
+    fields.add(Ioss::Field("ids", int_type, "scalar",
 			   Ioss::Field::MESH, entity_count));
   }
 }
@@ -254,6 +256,30 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 }
 
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
+					 std::vector<int64_t> &data) const
+{
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
+  Ioss::Field field = get_field(field_name);
+  field.check_type(Ioss::Field::INT64);
+  
+  data.resize(field.raw_count() * field.raw_storage()->component_count());
+  size_t data_size = data.size() * sizeof(int64_t);
+  int retval = internal_get_field_data(field, TOPTR(data), data_size);
+
+  // At this point, transform the field if specified...
+  if (retval >= 0)
+    field.transform(TOPTR(data));
+
+  return retval;
+}
+
+int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<char>     &data) const
 {
   if (!field_exists(field_name)) {
@@ -332,6 +358,23 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::INTEGER);
   size_t data_size = data.size() * sizeof(int);
+  field.transform(TOPTR(data));
+  return internal_put_field_data(field, TOPTR(data), data_size);
+}
+
+int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
+					 std::vector<int64_t> &data) const
+{
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
+  Ioss::Field field = get_field(field_name);
+  field.check_type(Ioss::Field::INT64);
+  size_t data_size = data.size() * sizeof(int64_t);
   field.transform(TOPTR(data));
   return internal_put_field_data(field, TOPTR(data), data_size);
 }

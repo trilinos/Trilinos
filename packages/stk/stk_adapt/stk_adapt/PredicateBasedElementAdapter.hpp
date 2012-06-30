@@ -36,7 +36,7 @@ namespace stk {
       {
         ElementUnrefineCollection elements_to_unref;
 
-        const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+        const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
 
         for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
           {
@@ -82,7 +82,7 @@ namespace stk {
         CellTopology cell_topo(cell_topo_data);
         const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-        //VectorFieldType* coordField = m_eMesh.getCoordinatesField();
+        //VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
         bool markInfo = (m_predicate_refine(element) & DO_REFINE);
 

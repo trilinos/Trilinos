@@ -14,6 +14,7 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include <stk_util/util/CSet.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -150,10 +151,35 @@ struct PartLess {
 /** \brief  Order a collection of parts: invoke sort and then unique */
 void order( PartVector & );
 
+inline
+void order( OrdinalVector & v )
+{
+  OrdinalVector::iterator ev = v.end();
+  OrdinalVector::iterator iv = v.begin();
+  std::sort( iv , ev );
+  iv = std::unique( iv , ev );
+  v.erase( iv , ev );
+}
+
 /** \brief  Insert a part into a properly ordered collection of parts.
  *          Returns true if this is a new insertion.
  */
 bool insert( PartVector & , Part & );
+
+inline
+bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
+{
+  for(OrdinalVector::iterator i=v.begin(), e=v.end(); i!=e; ++i) {
+    if (*i == part_ordinal) return false;
+    if (*i > part_ordinal) {
+      v.insert(i, part_ordinal);
+      return true;
+    }
+  }
+
+  v.push_back(part_ordinal);
+  return true ;
+}
 
 /** \brief  Remove a part from a properly ordered collection of parts. */
 void remove( PartVector & , Part & );
@@ -163,6 +189,17 @@ Part * find( const PartVector & , const std::string & );
 
 /** \brief  Query containment within properly ordered PartVector */
 bool contain( const PartVector & , const Part & );
+
+template<class Iterator>
+inline
+bool contains_ordinal( Iterator beg, Iterator end, unsigned part_ordinal )
+{
+  for(Iterator i=beg; i!=end; ++i) {
+    if (*i == part_ordinal) return true;
+  }
+
+  return false;
+}
 
 /** \brief  Query containment for two properly ordered PartVector */
 bool contain( const PartVector & , const PartVector & );

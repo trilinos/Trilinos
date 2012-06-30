@@ -98,7 +98,7 @@ lanczos_ext_float (
     float    *mkvec_float();		/* allocates space for a vector */
     float    *mkvec_ret_float();	/* mkvec() which returns error code */
     double    dot_float();		/* standard dot product routine */
-    double    norm();			/* vector norm */
+    double    ch_norm();			/* vector norm */
     double    norm_float();		/* vector norm */
     double    Tevec();			/* calc eigenvector of T by linear recurrence */
     double    lanc_seconds();   	/* switcheable timer */
@@ -470,7 +470,7 @@ lanczos_ext_float (
         scadd(workn_double, 1, n, -extval, y[1]);
         scale_diag(gvec,1,n,vwsqrt);
         scadd(workn_double, 1, n, -1.0, gvec);
-        resid = norm(workn_double, 1, n);
+        resid = ch_norm(workn_double, 1, n);
         if (DEBUG_EVECS > 0) {
 	    printf("  extended residual: %g\n",resid);
 	    if (Output_File != NULL) {

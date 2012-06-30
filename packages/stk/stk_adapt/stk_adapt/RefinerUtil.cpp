@@ -61,10 +61,10 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
       {
         std::string n1 = (last_one ? names : names.substr(0, ipos) );
         bool inc = true;
-        bool exc = false;
+        //bool exc = false;
         if ('-' == n1[0]) 
         {
-          exc = true;
+          //exc = true;
           inc = false;
         }
         else if ('+' == n1[0])
@@ -180,10 +180,10 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
       std::string n1 = (last_one ? names : names.substr(0, ipos) );
 
       bool inc = true;
-      bool exc = false;
+      //bool exc = false;
       if ('-' == n1[0]) 
       {
-        exc = true;
+        //exc = true;
         inc = false;
       }
       else if ('+' == n1[0])
@@ -243,10 +243,10 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
         std::string n1 = (last_one ? names : names.substr(0, ipos) );
 
         bool inc = true;
-        bool exc = false;
+        //bool exc = false;
         if ('-' == n1[0]) 
         {
-          exc = true;
+          //exc = true;
           inc = false;
         }
         else if ('+' == n1[0])
@@ -294,12 +294,14 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
 
 BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks)
 {
+  if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "RefinerUtil::correctBlockNamesForPartPartConsistency..." << std::endl;
+
   if (blocks[eMesh.element_rank()].size() == 0)
     return blocks;
 
-  stk::mesh::EntityRank subDimRank = (eMesh.getSpatialDim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
+  stk::mesh::EntityRank subDimRank = (eMesh.get_spatial_dim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
 
-  mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
+  mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
   for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
   {
     mesh::Part *  part = *i_part ;
@@ -307,7 +309,12 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
     for (mesh::PartVector::iterator i_surfacePart = all_parts.begin(); i_surfacePart != all_parts.end(); ++i_surfacePart)
     {
       mesh::Part *  surfacePart = *i_surfacePart ;
+      if ( stk::mesh::is_auto_declared_part(*surfacePart) )
+        continue;
+
       const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*surfacePart);
+      CellTopology surf_topo(part_cell_topo_data);
+      //if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk surfacePart= " << surfacePart->name() << " topo= " << (part_cell_topo_data?surf_topo.getName() : "NULL") << std::endl;
 
       if (part_cell_topo_data && part->primary_entity_rank() == eMesh.element_rank() && surfacePart->primary_entity_rank() == subDimRank)
       {
@@ -316,6 +323,7 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
         // if this part is not in the blocks list, skip it
         if (partInBlocks == blocks[eMesh.element_rank()].end())
         {
+          //if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk skipping part= " << partNamePlus << std::endl;
           continue;
         }
         std::string surfacePartNamePlus = "+" + surfacePart->name();
@@ -323,9 +331,13 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
         // if this surface is already in the list, skip it
         if (surfacePartInBlocks != blocks[subDimRank].end())
         {
+          //if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk skipping surf= " << surfacePartNamePlus << std::endl;
           continue;
         }
-        if (eMesh.isBoundarySurface(*part, *surfacePart))
+        bool isBoundarySurface= eMesh.isBoundarySurface(*part, *surfacePart);
+        
+        if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk isBoundarySurface for part/surf= " << part->name() << " / " << surfacePart->name() << " = " << isBoundarySurface << std::endl;
+        if (isBoundarySurface)
         {
           if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp part [" << part->name() << "] shares sideset [" << surfacePart->name() << "]" << std::endl;
           blocks[subDimRank].push_back(std::string("+"+surfacePart->name()));

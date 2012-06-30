@@ -265,7 +265,7 @@ int cCreateEdgeFace( int argc, char* argv[] )
   int exoid;
   int appWordSize = 8;
   int diskWordSize = 8;
-  int concatBlocks = ex_have_arg( argc, argv, "-pcab" );
+  /*  int concatBlocks = ex_have_arg( argc, argv, "-pcab" ); */
   int concatSets   = ex_have_arg( argc, argv, "-pcset" );
   int concatResult = ex_have_arg( argc, argv, "-pvpax" );
   double t;
@@ -291,76 +291,60 @@ int cCreateEdgeFace( int argc, char* argv[] )
     1,  /* num_elem_map */
   };
 
-  ex_block_params blockParams;
+  ex_block edgeBlocks[1];
+  ex_block faceBlocks[3];
+  ex_block elemBlocks[2];
+
   ex_var_params varParams;
 
-  blockParams.edge_blk_id         = (int*)malloc(1 * sizeof(int));
-  blockParams.num_edge_this_blk   = (int*)malloc(1 * sizeof(int));
-  blockParams.num_nodes_per_edge  = (int*)malloc(1 * sizeof(int));
-  blockParams.num_attr_edge       = (int*)malloc(1 * sizeof(int));
-  blockParams.face_blk_id         = (int*)malloc(3 * sizeof(int));
-  blockParams.num_face_this_blk   = (int*)malloc(3 * sizeof(int));
-  blockParams.num_nodes_per_face  = (int*)malloc(3 * sizeof(int));
-  blockParams.num_attr_face       = (int*)malloc(3 * sizeof(int));
-  blockParams.elem_blk_id         = (int*)malloc(2 * sizeof(int));
-  blockParams.num_elem_this_blk   = (int*)malloc(2 * sizeof(int));
-  blockParams.num_nodes_per_elem  = (int*)malloc(2 * sizeof(int));
-  blockParams.num_edges_per_elem  = (int*)malloc(2 * sizeof(int));
-  blockParams.num_faces_per_elem  = (int*)malloc(2 * sizeof(int));
-  blockParams.num_attr_elem       = (int*)malloc(2 * sizeof(int));
+  ex_opts (EX_VERBOSE | EX_ABORT );
+
+  edgeBlocks[0].type = EX_EDGE_BLOCK;
+  edgeBlocks[0].id = 100;
+  edgeBlocks[0].num_entry = 20;
+  edgeBlocks[0].num_nodes_per_entry = 2;
+  edgeBlocks[0].num_attribute = 1;
+  strcpy(edgeBlocks[0].topology, "EDGE2");
   
-  blockParams.edge_type    = (char**)malloc(1 * sizeof(char*));
-  blockParams.edge_type[0] = (char*)malloc((MAX_STR_LENGTH+1) * sizeof(char));
-  blockParams.face_type    = (char**)malloc(3 * sizeof(char*));
-  blockParams.face_type[0] = (char*)malloc((MAX_STR_LENGTH+1) * sizeof(char));
-  blockParams.face_type[1] = (char*)malloc((MAX_STR_LENGTH+1) * sizeof(char));
-  blockParams.face_type[2] = (char*)malloc((MAX_STR_LENGTH+1) * sizeof(char));
-  blockParams.elem_type    = (char**)malloc(2 * sizeof(char*));
-  blockParams.elem_type[0] = (char*)malloc((MAX_STR_LENGTH+1) * sizeof(char));
-  blockParams.elem_type[1] = (char*)malloc((MAX_STR_LENGTH+1) * sizeof(char));
-
-  blockParams.edge_blk_id[0]         = 100;
-  blockParams.num_edge_this_blk[0]   = 20;
-  blockParams.num_nodes_per_edge[0]  = 2;
-  blockParams.num_attr_edge[0]       = 1;
-
-  blockParams.face_blk_id[0]         = 500;
-  blockParams.face_blk_id[1]         = 600;
-  blockParams.face_blk_id[2]         = 700;
-  blockParams.num_face_this_blk[0]   = 2;
-  blockParams.num_face_this_blk[1]   = 1;
-  blockParams.num_face_this_blk[2]   = 8;
-  blockParams.num_nodes_per_face[0]  = 4;
-  blockParams.num_nodes_per_face[1]  = 4;
-  blockParams.num_nodes_per_face[2]  = 4;
-  blockParams.num_attr_face[0]       = 1;
-  blockParams.num_attr_face[1]       = 1;
-  blockParams.num_attr_face[2]       = 1;
-
-  blockParams.elem_blk_id[0]         = 200;
-  blockParams.elem_blk_id[1]         = 201;
-  blockParams.num_elem_this_blk[0]   = 2;
-  blockParams.num_elem_this_blk[1]   = 1;
-  blockParams.num_nodes_per_elem[0]  = 8;
-  blockParams.num_nodes_per_elem[1]  = 4;
-  blockParams.num_edges_per_elem[0]  = 12;
-  blockParams.num_edges_per_elem[1]  = 0;
-  blockParams.num_faces_per_elem[0]  = 6;
-  blockParams.num_faces_per_elem[1]  = 0;
-  blockParams.num_attr_elem[0]       = 2;
-  blockParams.num_attr_elem[1]       = 0;
-
-  blockParams.define_maps = 0;
-
-  strcpy(blockParams.edge_type[0], "EDGE2");
-
-  strcpy(blockParams.face_type[0], "QUAD4");
-  strcpy(blockParams.face_type[1], "QUAD4");
-  strcpy(blockParams.face_type[2], "QUAD4");
-
-  strcpy(blockParams.elem_type[0], "HEX8");
-  strcpy(blockParams.elem_type[1], "TET4");
-
+  faceBlocks[0].type = EX_FACE_BLOCK;
+  faceBlocks[0].id = 500;
+  faceBlocks[0].num_entry = 2;
+  faceBlocks[0].num_nodes_per_entry = 4;
+  faceBlocks[0].num_attribute = 1;
+  strcpy(faceBlocks[0].topology, "QUAD4");
+  
+  faceBlocks[1].type = EX_FACE_BLOCK;
+  faceBlocks[1].id = 600;
+  faceBlocks[1].num_entry = 1;
+  faceBlocks[1].num_nodes_per_entry = 4;
+  faceBlocks[1].num_attribute = 1;
+  strcpy(faceBlocks[1].topology, "QUAD4");
+  
+  faceBlocks[2].type = EX_FACE_BLOCK;
+  faceBlocks[2].id = 700;
+  faceBlocks[2].num_entry = 8;
+  faceBlocks[2].num_nodes_per_entry = 4;
+  faceBlocks[2].num_attribute = 1;
+  strcpy(faceBlocks[2].topology, "QUAD4");
+  
+  elemBlocks[0].type = EX_ELEM_BLOCK;
+  elemBlocks[0].id = 200;
+  elemBlocks[0].num_entry = 2;
+  elemBlocks[0].num_nodes_per_entry = 8;
+  elemBlocks[0].num_edges_per_entry = 12;
+  elemBlocks[0].num_faces_per_entry = 6;
+  elemBlocks[0].num_attribute = 2;
+  strcpy(elemBlocks[0].topology, "HEX8");
+  
+  elemBlocks[1].type = EX_ELEM_BLOCK;
+  elemBlocks[1].id = 201;
+  elemBlocks[1].num_entry = 1;
+  elemBlocks[1].num_nodes_per_entry = 4;
+  elemBlocks[1].num_edges_per_entry = 0;
+  elemBlocks[1].num_faces_per_entry = 0;
+  elemBlocks[1].num_attribute = 0;
+  strcpy(elemBlocks[1].topology, "TET4");
+  
   varParams.edge_var_tab  = (int*)malloc(2 * sizeof(int));
   varParams.face_var_tab  = (int*)malloc(3 * sizeof(int));
   varParams.elem_var_tab  = (int*)malloc(2 * sizeof(int));
@@ -396,31 +380,19 @@ int cCreateEdgeFace( int argc, char* argv[] )
       return 1;
     }
 
-  /* *** NEW API *** */
   EXCHECK( ex_put_init_ext( exoid, &modelParams ),
 	   "Unable to initialize database.\n" );
 
-  /* *** NEW API *** */
-  if ( concatBlocks ) {
-    EXCHECK( ex_put_concat_all_blocks( exoid, &blockParams ),
-	     "Unable to initialize block params.\n" );
-  } else {
+  {
     int blk;
     for ( blk = 0; blk < modelParams.num_edge_blk; ++blk ) {
-      EXCHECK( ex_put_block( exoid, EX_EDGE_BLOCK, blockParams.edge_blk_id[blk], blockParams.edge_type[blk],
-			     blockParams.num_edge_this_blk[blk], blockParams.num_nodes_per_edge[blk], 0, 0,
-			     blockParams.num_attr_edge[blk] ), "Unable to write edge block" );
+      EXCHECK( ex_put_block_param( exoid, edgeBlocks[blk]), "Unable to write edge block" );
     }
     for ( blk = 0; blk < modelParams.num_face_blk; ++blk ) {
-      EXCHECK( ex_put_block( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[blk], blockParams.face_type[blk],
-			     blockParams.num_face_this_blk[blk], blockParams.num_nodes_per_face[blk], 0, 0,
-			     blockParams.num_attr_face[blk] ), "Unable to write face block" );
+      EXCHECK( ex_put_block_param( exoid, faceBlocks[blk]), "Unable to write face block" );
     }
     for ( blk = 0; blk < modelParams.num_elem_blk; ++blk ) {
-      EXCHECK( ex_put_block( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[blk], blockParams.elem_type[blk],
-			     blockParams.num_elem_this_blk[blk], blockParams.num_nodes_per_elem[blk],
-			     blockParams.num_edges_per_elem[blk], blockParams.num_faces_per_elem[blk],
-			     blockParams.num_attr_elem[blk] ), "Unable to write elem block" );
+      EXCHECK( ex_put_block_param( exoid, elemBlocks[blk]), "Unable to write elem block" );
     }
   }
 
@@ -432,23 +404,23 @@ int cCreateEdgeFace( int argc, char* argv[] )
 
   /*                  =============== Connectivity  ================== */
   /* *** NEW API *** */
-  EXCHECK( ex_put_conn( exoid, EX_EDGE_BLOCK, blockParams.edge_blk_id[0], ebconn1, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_EDGE_BLOCK, edgeBlocks[0].id, ebconn1, 0, 0 ),
 	   "Unable to write edge block connectivity.\n" );
 
   /* *** NEW API *** */
-  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[0], fbconn1, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, faceBlocks[0].id, fbconn1, 0, 0 ),
 	   "Unable to write face block 1 connectivity.\n" );
-  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[1], fbconn2, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, faceBlocks[1].id, fbconn2, 0, 0 ),
 	   "Unable to write face block 2 connectivity.\n" );
-  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[2], fbconn3, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_FACE_BLOCK, faceBlocks[2].id, fbconn3, 0, 0 ),
 	   "Unable to write face block 3 connectivity.\n" );
 
   /* *** NEW API *** */
-  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[0], conn1, econn1, fconn1 ),
+  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, elemBlocks[0].id, conn1, econn1, fconn1 ),
 	   "Unable to write elem block 1 connectivity.\n" );
 
   /* *** NEW API *** */
-  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[1], conn2, 0, 0 ),
+  EXCHECK( ex_put_conn( exoid, EX_ELEM_BLOCK, elemBlocks[1].id, conn2, 0, 0 ),
 	   "Unable to write elem block 2 connectivity.\n" );
 
   /* *** NEW API *** */
@@ -471,36 +443,36 @@ int cCreateEdgeFace( int argc, char* argv[] )
 
   /*                 =============== Attribute names ================ */
   /* *** NEW API *** */
-  EXCHECK( ex_put_attr_names( exoid, EX_EDGE_BLOCK, blockParams.edge_blk_id[0], (char**)edge_attr_names1 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_EDGE_BLOCK, edgeBlocks[0].id, (char**)edge_attr_names1 ),
 	   "Unable to write edge block 1 attribute names.\n" );
 
   /* *** NEW API *** */
-  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[0], (char**)face_attr_names1 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, faceBlocks[0].id, (char**)face_attr_names1 ),
 	   "Unable to write face block 1 attribute names.\n" );
-  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[1], (char**)face_attr_names2 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, faceBlocks[1].id, (char**)face_attr_names2 ),
 	   "Unable to write face block 1 attribute names.\n" );
-  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[2], (char**)face_attr_names3 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_FACE_BLOCK, faceBlocks[2].id, (char**)face_attr_names3 ),
 	   "Unable to write face block 1 attribute names.\n" );
 
   /* *** NEW API *** */
-  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[0], (char**)elem_attr_names1 ),
+  EXCHECK( ex_put_attr_names( exoid, EX_ELEM_BLOCK, elemBlocks[0].id, (char**)elem_attr_names1 ),
 	   "Unable to write elem block 1 attribute names.\n" );
 
   /*                  =============== Attribute values =============== */
   /* *** NEW API *** */
-  EXCHECK( ex_put_attr( exoid, EX_EDGE_BLOCK, blockParams.edge_blk_id[0], edge_attr_values1 ),
+  EXCHECK( ex_put_attr( exoid, EX_EDGE_BLOCK, edgeBlocks[0].id, edge_attr_values1 ),
 	   "Unable to write edge block 1 attribute values.\n" );
 
   /* *** NEW API *** */
-  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[0], face_attr_values1 ),
+  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, faceBlocks[0].id, face_attr_values1 ),
 	   "Unable to write face block 1 attribute values.\n" );
-  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[1], face_attr_values2 ),
+  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, faceBlocks[1].id, face_attr_values2 ),
 	   "Unable to write face block 1 attribute values.\n" );
-  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, blockParams.face_blk_id[2], face_attr_values3 ),
+  EXCHECK( ex_put_attr( exoid, EX_FACE_BLOCK, faceBlocks[2].id, face_attr_values3 ),
 	   "Unable to write face block 1 attribute values.\n" );
 
   /* *** NEW API *** */
-  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, blockParams.elem_blk_id[0], elem_attr_values1 ),
+  EXCHECK( ex_put_attr( exoid, EX_ELEM_BLOCK, elemBlocks[0].id, elem_attr_values1 ),
 	   "Unable to write elem block 1 attribute values.\n" );
 
   /*                  =============== Set parameters ================= */
@@ -511,112 +483,72 @@ int cCreateEdgeFace( int argc, char* argv[] )
   EXCHECK( ex_put_names( exoid, EX_SIDE_SET,  (char**)sset_names ), "Unable to write side set names.\n" );
   EXCHECK( ex_put_names( exoid, EX_ELEM_SET, (char**)elset_names ), "Unable to write element set names.\n" );
 
-  if ( concatSets ) {
-    ex_set_specs setParams;
+  {
+    ex_set allSets[1+1+1+1+2];
 
-    setParams.sets_ids            = (int*)malloc(2*sizeof(int));
-    setParams.num_entries_per_set = (int*)malloc(2*sizeof(int));
-    setParams.num_dist_per_set    = (int*)malloc(2*sizeof(int));
-    setParams.sets_entry_index    = (int*)malloc(2*sizeof(int));
-    setParams.sets_dist_index     = (int*)malloc(2*sizeof(int));
-    setParams.sets_entry_list     = (int*)malloc(6*sizeof(int));
-    setParams.sets_extra_list     = (int*)malloc(6*sizeof(int));
-    setParams.sets_dist_fact      = (double*)malloc(6*sizeof(double));
-
-    setParams.sets_ids[0]            = 1000;
-    setParams.num_entries_per_set[0] = 3;
-    setParams.num_dist_per_set[0]    = 0;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_dist_index[0]     = 0;
-    setParams.sets_entry_list[0]     = nset_nodes[0];
-    setParams.sets_entry_list[1]     = nset_nodes[1];
-    setParams.sets_entry_list[2]     = nset_nodes[2];
-
-    EXCHECK( ex_put_concat_sets( exoid, EX_NODE_SET, &setParams ), "Unable to write node sets.\n" );
-
-    setParams.sets_ids[0]            = 1200;
-    setParams.num_entries_per_set[0] = 6;
-    setParams.num_dist_per_set[0]    = 6;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_dist_index[0]     = 0;
-    setParams.sets_entry_list[0]     = eset_edges[0];
-    setParams.sets_entry_list[1]     = eset_edges[1];
-    setParams.sets_entry_list[2]     = eset_edges[2];
-    setParams.sets_entry_list[3]     = eset_edges[3];
-    setParams.sets_entry_list[4]     = eset_edges[4];
-    setParams.sets_entry_list[5]     = eset_edges[5];
-
-    setParams.sets_extra_list[0]     = eset_orient[0];
-    setParams.sets_extra_list[1]     = eset_orient[1];
-    setParams.sets_extra_list[2]     = eset_orient[2];
-    setParams.sets_extra_list[3]     = eset_orient[3];
-    setParams.sets_extra_list[4]     = eset_orient[4];
-    setParams.sets_extra_list[5]     = eset_orient[5];
-
-    memcpy(setParams.sets_dist_fact, eset_df, sizeof(eset_df)/sizeof(eset_df[0]));
-
-    EXCHECK( ex_put_concat_sets( exoid, EX_EDGE_SET, &setParams ), "Unable to write edge sets.\n" );
-
-    setParams.sets_ids[0]            = 1400;
-    setParams.num_entries_per_set[0] = 2;
-    setParams.num_dist_per_set[0]    = 0;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_dist_index[0]     = 0;
-    setParams.sets_entry_list[0]     = fset_faces[0];
-    setParams.sets_entry_list[1]     = fset_faces[1];
-
-    setParams.sets_extra_list[0]     = fset_orient[0];
-    setParams.sets_extra_list[1]     = fset_orient[1];
-
-    EXCHECK( ex_put_concat_sets( exoid, EX_FACE_SET, &setParams ), "Unable to write face sets.\n" );
-
-    setParams.sets_ids[0]            = 1400;
-    setParams.num_entries_per_set[0] = 5;
-    setParams.num_dist_per_set[0]    = 0;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_dist_index[0]     = 0;
-    memcpy(setParams.sets_entry_list, sset_elems, sizeof(sset_elems)/sizeof(sset_elems[0]));
-    memcpy(setParams.sets_extra_list, sset_sides, sizeof(sset_sides)/sizeof(sset_sides[0]));
-
-    EXCHECK( ex_put_concat_sets( exoid, EX_SIDE_SET, &setParams ), "Unable to write side sets.\n" );
-
-    setParams.sets_ids[0]            = 1800;
-    setParams.sets_ids[1]            = 1900;
-    setParams.num_entries_per_set[0] = 1;
-    setParams.num_entries_per_set[1] = 1;
-    setParams.num_dist_per_set[0]    = 0;
-    setParams.num_dist_per_set[1]    = 0;
-    setParams.sets_entry_index[0]    = 0;
-    setParams.sets_entry_index[1]    = 1;
-    setParams.sets_dist_index[0]     = 0;
-    setParams.sets_dist_index[1]     = 0;
-    memcpy(setParams.sets_entry_list, elset_elems, sizeof(elset_elems)/sizeof(elset_elems[0]));
-
-    EXCHECK( ex_put_concat_sets( exoid, EX_ELEM_SET, &setParams ), "Unable to write element sets.\n" );
-
-  } else {
-    /* *** NEW API *** */
-    EXCHECK( ex_put_set_param( exoid, EX_NODE_SET, 1000, 3, 0 ), "Unable to write node set params.\n" );
-    EXCHECK( ex_put_set( exoid, EX_NODE_SET, 1000, nset_nodes, 0 ), "Unable to write node set.\n" );
-
-    /* *** NEW API *** */
-    EXCHECK( ex_put_set_param( exoid, EX_EDGE_SET, 1200, 6, 6 ), "Unable to write edge set params.\n" );
-    EXCHECK( ex_put_set( exoid, EX_EDGE_SET, 1200, eset_edges, eset_orient ), "Unable to write edge set.\n" );
-    EXCHECK( ex_put_set_dist_fact( exoid, EX_EDGE_SET, 1200, eset_df ), "Unable to write edge set dist factors.\n" );
-
-    /* *** NEW API *** */
-    EXCHECK( ex_put_set_param( exoid, EX_FACE_SET, 1400, 2, 0 ), "Unable to write face set params.\n" );
-    EXCHECK( ex_put_set( exoid, EX_FACE_SET, 1400, fset_faces, fset_orient ), "Unable to write face set.\n" );
-
-    /* *** NEW API *** */
-    EXCHECK( ex_put_set_param( exoid, EX_SIDE_SET, 1600, 5, 0 ), "Unable to write side set params.\n" );
-    EXCHECK( ex_put_set( exoid, EX_SIDE_SET, 1600, sset_elems, sset_sides ), "Unable to write side set.\n" );
-
-    /* *** NEW API *** */
-    EXCHECK( ex_put_set_param( exoid, EX_ELEM_SET, 1800, 1, 0 ), "Unable to write element set 1 params.\n" );
-    EXCHECK( ex_put_set( exoid, EX_ELEM_SET, 1800, elset_elems + 0, 0 ), "Unable to write element set 1.\n" );
-    EXCHECK( ex_put_set_param( exoid, EX_ELEM_SET, 1900, 1, 0 ), "Unable to write element set 2 params.\n" );
-    EXCHECK( ex_put_set( exoid, EX_ELEM_SET, 1900, elset_elems + 1, 0 ), "Unable to write element set 2.\n" );
+    ex_set *nodeSets = &allSets[0];
+    ex_set *edgeSets = &allSets[1];
+    ex_set *faceSets = &allSets[2];
+    ex_set *sideSets = &allSets[3];
+    ex_set *elemSets = &allSets[4];
+    
+    nodeSets[0].type = EX_NODE_SET;
+    nodeSets[0].id  = 1000;
+    nodeSets[0].num_entry = 3;
+    nodeSets[0].num_distribution_factor = 0;
+    nodeSets[0].entry_list = nset_nodes;
+    nodeSets[0].extra_list = NULL;
+    nodeSets[0].distribution_factor_list  = NULL;
+    
+    edgeSets[0].type = EX_EDGE_SET;
+    edgeSets[0].id  = 1200;
+    edgeSets[0].num_entry = 6;
+    edgeSets[0].num_distribution_factor = 6;
+    edgeSets[0].entry_list = eset_edges;
+    edgeSets[0].extra_list = eset_orient;
+    edgeSets[0].distribution_factor_list  = eset_df;
+    
+    faceSets[0].type = EX_FACE_SET;
+    faceSets[0].id  = 1400;
+    faceSets[0].num_entry = 2;
+    faceSets[0].num_distribution_factor = 0;
+    faceSets[0].entry_list = fset_faces;
+    faceSets[0].extra_list = fset_orient;
+    faceSets[0].distribution_factor_list  = NULL;
+    
+    sideSets[0].type = EX_SIDE_SET;
+    sideSets[0].id  = 1400;
+    sideSets[0].num_entry = 5;
+    sideSets[0].num_distribution_factor = 0;
+    sideSets[0].entry_list = sset_elems;
+    sideSets[0].extra_list = sset_sides;
+    sideSets[0].distribution_factor_list  = NULL;
+    
+    elemSets[0].type = EX_ELEM_SET;
+    elemSets[0].id  = 1800;
+    elemSets[0].num_entry = 1;
+    elemSets[0].num_distribution_factor = 0;
+    elemSets[0].entry_list = &elset_elems[0];
+    elemSets[0].extra_list = NULL;
+    elemSets[0].distribution_factor_list  = NULL;
+    
+    elemSets[1].type = EX_ELEM_SET;
+    elemSets[1].id  = 1900;
+    elemSets[1].num_entry = 1;
+    elemSets[1].num_distribution_factor = 0;
+    elemSets[1].entry_list = &elset_elems[1];
+    elemSets[1].extra_list = NULL;
+    elemSets[1].distribution_factor_list  = NULL;
+    
+    if ( concatSets ) {
+      EXCHECK( ex_put_sets(exoid, 1+2+1+1+1, allSets), "Unable to output concatenated sets.\n" );
+    } else {
+      EXCHECK( ex_put_sets( exoid, 1, nodeSets), "Unable to write node sets.\n" );
+      EXCHECK( ex_put_sets( exoid, 1, edgeSets), "Unable to write edge sets.\n" );
+      EXCHECK( ex_put_sets( exoid, 1, faceSets), "Unable to write face sets.\n" );
+      EXCHECK( ex_put_sets( exoid, 1, sideSets), "Unable to write side sets.\n" );
+      EXCHECK( ex_put_sets( exoid, 2, elemSets), "Unable to write element sets.\n" );
+    }
   }
 
   /*                  =============== Result variable params ========= */

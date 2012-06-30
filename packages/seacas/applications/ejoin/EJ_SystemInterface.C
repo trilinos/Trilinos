@@ -47,7 +47,7 @@ SystemInterface::SystemInterface()
     omitNodesets_(false), omitSidesets_(false),
     matchNodeIds_(false), matchNodeXYZ_(false),
     matchElemIds_(false), matchElemXYZ_(false),
-    disableFieldRecognition_(false),
+    disableFieldRecognition_(false), ints64bit_(false),
     tolerance_(0.0)
 {
   offset_.x = 0.0;
@@ -168,6 +168,10 @@ void SystemInterface::enroll_options()
 		  "\t\tIf 'all' specified, then transfer all information records",
 		  0, "NONE");
 
+  options_.enroll("64-bit", GetLongOption::NoValue,
+                  "True if forcing the use of 64-bit integers for the output file",
+                  NULL);
+
   options_.enroll("disable_field_recognition", GetLongOption::NoValue,
 		  "Do not try to combine scalar fields into higher-order fields such as\n"
 		  "\t\tvectors or tensors based on the field suffix",
@@ -255,7 +259,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   ssetOmissions_.resize(part_count);
   
   // Get options from environment variable also...
-  char *options = getenv("EJoin");
+  char *options = getenv("EJOIN_OPTIONS");
   if (options != NULL) {
     std::cerr << "\nThe following options were specified via the EJOIN_OPTIONS environment variable:\n"
 	      << "\t" << options << "\n\n";
@@ -361,6 +365,10 @@ bool SystemInterface::parse_options(int argc, char **argv)
     disableFieldRecognition_ = false;
   }
 
+  if (options_.retrieve("64-bit")) {
+    ints64bit_ = true;
+  }
+  
   if (options_.retrieve("match_node_ids")) {
     matchNodeIds_ = true;
     matchNodeXYZ_ = false;

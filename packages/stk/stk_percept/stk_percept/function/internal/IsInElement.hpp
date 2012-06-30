@@ -35,7 +35,11 @@ namespace stk
     public:
       IsInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates);
 
-      bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
+      bool operator()(const stk::mesh::Entity& element, const mesh::BulkData& bulkData);
+      bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase* field, const mesh::BulkData& bulkData) 
+      {
+        return (*this)(element, bulkData);
+      }
       void init_elementOp();
       void fini_elementOp();
 
