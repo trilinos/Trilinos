@@ -79,7 +79,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/netcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/netcdf_4.2/include"
   "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/hdf5-1.8.6/lib"
-  "-DHDf5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/hdf5-1.8.6/include"
+  "-DHDF5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/hdf5-1.8.6/include"
   )
 
 #
