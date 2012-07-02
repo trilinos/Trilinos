@@ -72,6 +72,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp
   Stokhos_MonomialGramSchmidtSimplexPCEBasisImp.hpp
+  Stokhos_MonomialGramSchmidtSimplexPCEBasis2.hpp
+  Stokhos_MonomialGramSchmidtSimplexPCEBasis2Imp.hpp
   Stokhos_BasisFactory.hpp
   Stokhos_BasisFactoryImp.hpp
   Stokhos_SparseArray.hpp

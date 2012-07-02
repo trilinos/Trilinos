@@ -28,8 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MONOMIAL_GRAM_SCHMIDT_SIMPLEX_PCE_BASIS_HPP
-#define STOKHOS_MONOMIAL_GRAM_SCHMIDT_SIMPLEX_PCE_BASIS_HPP
+#ifndef STOKHOS_MONOMIAL_PROJ_GRAM_SCHMIDT_SIMPLEX_PCE_BASIS_HPP
+#define STOKHOS_MONOMIAL_PROJ_GRAM_SCHMIDT_SIMPLEX_PCE_BASIS_HPP
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
@@ -57,7 +57,7 @@ namespace Stokhos {
    * using the simplex method.
    */
   template <typename ordinal_type, typename value_type>
-  class MonomialGramSchmidtSimplexPCEBasis : 
+  class MonomialProjGramSchmidtSimplexPCEBasis : 
     public ProductBasis<ordinal_type,value_type> {
   public:
 
@@ -69,14 +69,14 @@ namespace Stokhos {
      * \param Cijk sparse triple product tensor for basis defining pce
      * \param sparse_tol tolerance for dropping terms in sparse tensors
      */
-    MonomialGramSchmidtSimplexPCEBasis(
+    MonomialProjGramSchmidtSimplexPCEBasis(
      ordinal_type p,
      const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
      const Teuchos::ParameterList& params = Teuchos::ParameterList());
 
     //! Destructor
-    virtual ~MonomialGramSchmidtSimplexPCEBasis();
+    virtual ~MonomialProjGramSchmidtSimplexPCEBasis();
 
     //! \name Implementation of Stokhos::OrthogPolyBasis methods
     //@{
@@ -169,8 +169,15 @@ namespace Stokhos {
       ordinal_type i,
       Stokhos::OrthogPolyApprox<ordinal_type,value_type>& pce) const;
 
-    //! Transform coefficients from original basis to this basis
+    //! Transform coefficients to original basis from this basis
     void transformToOriginalBasis(const value_type *in, value_type *out) const;
+
+    //! Transform coefficients from original basis to this basis
+    void transformFromOriginalBasis(const value_type *in, value_type *out) const;
+
+    //! Get transformation matrix
+    const Teuchos::SerialDenseMatrix<ordinal_type,value_type>&
+    getTransformationMatrix() const { return Qpp; }
 
     //! Get reduced basis evaluated at original quadrature points
     void getBasisAtOriginalQuadraturePoints(
@@ -192,56 +199,43 @@ namespace Stokhos {
      */
     ordinal_type compute_index(const Teuchos::Array<ordinal_type>& terms) const;
 
-    void computeQR_CGS(
-      ordinal_type k,
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
-      const Teuchos::Array<value_type>& w,
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& R);
-
-     void computeQR_MGS(
-      ordinal_type k,
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
-      const Teuchos::Array<value_type>& w,
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& R);
-
-    value_type weighted_inner_product(
-      const Teuchos::SerialDenseVector<ordinal_type,value_type>& x,
-      const Teuchos::SerialDenseVector<ordinal_type,value_type>& y,
-      const Teuchos::Array<value_type>& w);
-
-    void saxpy(
-      const value_type& alpha,
-      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
-      const value_type& beta,
-      Teuchos::SerialDenseVector<ordinal_type, value_type>& y);
-
     void reducedQuadrature_QRCP(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
       const Teuchos::Array<value_type>& weights,
       Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values);
+
+    /*
+    void reducedQuadrature_CS(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+      const Teuchos::Array<value_type>& weights,
+      Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values);
+    */
 
     void reducedQuadrature_GLPK(
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
       const Teuchos::Array<value_type>& weights,
       Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values);
+
+    ordinal_type computeRank(
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& R,
+      const value_type tol) const;
 
   private:
 
     // Prohibit copying
-    MonomialGramSchmidtSimplexPCEBasis(const MonomialGramSchmidtSimplexPCEBasis&);
+    MonomialProjGramSchmidtSimplexPCEBasis(const MonomialProjGramSchmidtSimplexPCEBasis&);
 
     // Prohibit Assignment
-    MonomialGramSchmidtSimplexPCEBasis& operator=(const MonomialGramSchmidtSimplexPCEBasis& b);
+    MonomialProjGramSchmidtSimplexPCEBasis& operator=(const MonomialProjGramSchmidtSimplexPCEBasis& b);
     
   protected:
 
@@ -275,14 +269,25 @@ namespace Stokhos {
     //! Norms
     Teuchos::Array<value_type> norms;
 
+    //! Norms of input pce's
+    Teuchos::Array<value_type> pce_norms;
+
     //! Values of PCE basis functions at quadrature points
     Teuchos::SerialDenseMatrix<ordinal_type, value_type> A;
 
     //! Values of transformed basis at quadrature points
     Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q;
 
+    //! Coefficients of transformed basis in original basis
+    Teuchos::SerialDenseMatrix<ordinal_type, value_type> Qpp;
+
     //! Transition matrix between monomial and "Q" basis
     Teuchos::SerialDenseMatrix<ordinal_type, value_type> R;
+
+    Teuchos::Array<value_type> sigma;
+
+    //! V^T from SVD
+    Teuchos::SerialDenseMatrix<ordinal_type, value_type> Vt;
 
     //! Reduced quadrature object
     Teuchos::RCP<const Stokhos::UserDefinedQuadrature<ordinal_type, value_type> > reduced_quad;
@@ -293,17 +298,22 @@ namespace Stokhos {
     //! Whether to print a bunch of stuff out
     bool verbose;
 
+    //! Rank threshold
+    value_type rank_threshold;
+
     //! Dimension reduction tolerance
     value_type reduction_tol;
 
     //! Orthogonalization method
     std::string orthogonalization_method;
 
-  }; // class MonomialGramSchmidtSimplexPCEBasis
+    Teuchos::Array<ordinal_type> piv;
+
+  }; // class MonomialProjGramSchmidtSimplexPCEBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_MonomialGramSchmidtSimplexPCEBasisImp.hpp"
+#include "Stokhos_MonomialProjGramSchmidtSimplexPCEBasisImp.hpp"
 
 #endif

@@ -54,7 +54,8 @@
 
 #include "Stokhos_Epetra.hpp"
 #include "Stokhos_StieltjesGramSchmidtBuilder.hpp"
-#include "Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp"
+#include "Stokhos_MonomialGramSchmidtSimplexPCEBasis2.hpp"
+#include "Stokhos_MonomialProjGramSchmidtSimplexPCEBasis.hpp"
 #include "EpetraExt_MultiComm.h"
 
 Piro::Epetra::NECoupledModelEvaluator::
@@ -921,8 +922,8 @@ do_dimension_reduction(
       // 		 basis, 4*new_order+1));
       // std::cout << "st_quad->size() = " << st_quad->size() << std::endl;
     }
-    Teuchos::RCP< Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double> > gs_basis = 
-      Teuchos::rcp(new Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double>(
+    Teuchos::RCP< Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> > gs_basis = 
+      Teuchos::rcp(new Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double>(
 		     new_order, p_opa, st_quad, reduct_params));
     red_basis = gs_basis;
     red_quad = gs_basis->getReducedQuadrature();
@@ -1075,10 +1076,25 @@ do_dimension_projection(
 	OutArgs::sg_vector_t g_red = reduced_outargs.get_g_sg(i);
 	Epetra_Vector g_val(*(g_red->coefficientMap()));
 	g_sg->init(0.0);
+
 	for (int qp=0; qp<nqp; qp++) {
 	  g_red->evaluate((*red_basis_vals)[qp], g_val);
 	  g_sg->sumIntoAllTerms(weights[qp], basis_vals[qp], norms, g_val);
 	}
+
+	/*
+	Teuchos::RCP<const Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> > red_basis = Teuchos::rcp_dynamic_cast<const Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> >(g_red->basis(), true);
+        int sz = basis->size();
+	int red_sz = red_basis->size();
+	int nrow = g_sg->coefficientMap()->NumMyElements();
+	const Teuchos::SerialDenseMatrix<int,double>& Q = 
+	  red_basis->getTransformationMatrix();
+	Teuchos::SerialDenseMatrix<int,double> g_sdm(
+	  Teuchos::View, g_sg->getBlockVector()->Values(), nrow, nrow, sz);
+	Teuchos::SerialDenseMatrix<int,double> g_red_sdm(
+	  Teuchos::View, g_red->getBlockVector()->Values(),nrow, nrow, red_sz);
+	g_sdm.multiply(Teuchos::NO_TRANS, Teuchos::TRANS, 1.0, g_red_sdm, Q, 0.0);
+	*/
       }
     }
 
@@ -1092,11 +1108,28 @@ do_dimension_projection(
 	Epetra_MultiVector dgdx_val(*(dgdx_red->coefficientMap()), 
 				    dgdx_red->numVectors());
 	dgdx_sg->init(0.0);
+
 	for (int qp=0; qp<nqp; qp++) {
 	  dgdx_red->evaluate((*red_basis_vals)[qp], dgdx_val);
 	  dgdx_sg->sumIntoAllTerms(weights[qp], basis_vals[qp], norms, 
 				   dgdx_val);
 	}
+
+	/*
+	Teuchos::RCP<const Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> > red_basis = Teuchos::rcp_dynamic_cast<const Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> >(dgdx_red->basis(), true);
+        int sz = basis->size();
+	int red_sz = red_basis->size();
+	int nrow = 
+	  dgdx_sg->coefficientMap()->NumMyElements()*dgdx_sg->numVectors();;
+	const Teuchos::SerialDenseMatrix<int,double>& Q = 
+	  red_basis->getTransformationMatrix();
+	Teuchos::SerialDenseMatrix<int,double> dgdx_sdm(
+	  Teuchos::View, dgdx_sg->getBlockMultiVector()->Values(), nrow, nrow, sz);
+	Teuchos::SerialDenseMatrix<int,double> dgdx_red_sdm(
+	  Teuchos::View, dgdx_red->getBlockMultiVector()->Values(), nrow, nrow, red_sz);
+	dgdx_sdm.multiply(Teuchos::NO_TRANS, Teuchos::TRANS, 1.0, dgdx_red_sdm, Q, 0.0);
+	*/
+	
       }
     }
 
@@ -1111,11 +1144,28 @@ do_dimension_projection(
 	  Epetra_MultiVector dgdp_val(*(dgdp_red->coefficientMap()), 
 				      dgdp_red->numVectors());
 	  dgdp_sg->init(0.0);
+
 	  for (int qp=0; qp<nqp; qp++) {
 	    dgdp_red->evaluate((*red_basis_vals)[qp], dgdp_val);
 	    dgdp_sg->sumIntoAllTerms(weights[qp], basis_vals[qp], norms, 
-				     dgdp_val);
+	  			     dgdp_val);
 	  }
+
+	  /*
+	  Teuchos::RCP<const Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> > red_basis = Teuchos::rcp_dynamic_cast<const Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> >(dgdp_red->basis(), true);
+        int sz = basis->size();
+	int red_sz = red_basis->size();
+	int nrow = 
+	  dgdp_sg->coefficientMap()->NumMyElements()*dgdp_sg->numVectors();;
+	const Teuchos::SerialDenseMatrix<int,double>& Q = 
+	  red_basis->getTransformationMatrix();
+	Teuchos::SerialDenseMatrix<int,double> dgdp_sdm(
+	  Teuchos::View, dgdp_sg->getBlockMultiVector()->Values(), nrow, nrow, sz);
+	Teuchos::SerialDenseMatrix<int,double> dgdp_red_sdm(
+	  Teuchos::View, dgdp_red->getBlockMultiVector()->Values(), nrow, nrow, red_sz);
+	dgdp_sdm.multiply(Teuchos::NO_TRANS, Teuchos::TRANS, 1.0, dgdp_red_sdm, Q, 0.0);
+	  */
+
 	}
       }
     }
@@ -1203,6 +1253,8 @@ evalModel(
     EpetraExt::ModelEvaluator::OutArgs::sg_vector_t f_sg = 
       network_outargs.get_f_sg();
     if (f_sg != Teuchos::null) {
+      // std::cout << "g_sg[0] = " << *g_sg[0] << std::endl;
+      // std::cout << "g_sg[1] = " << *g_sg[1] << std::endl;
       f_sg->init(0.0);
       for (int block=0; block<f_sg->size(); block++) {
 	for (int i=0; i<n_p[0]; i++)
@@ -1212,6 +1264,7 @@ evalModel(
 	  (*f_sg)[block][i+n_p[0]] = 
 	    (*p_sg[1])[block][i] - (*g_sg[0])[block][i];
       }
+      std::cout << "f_sg = " << *f_sg << std::endl;
     }
   }
   
@@ -1220,6 +1273,8 @@ evalModel(
     EpetraExt::ModelEvaluator::OutArgs::sg_operator_t W_sg = 
       network_outargs.get_W_sg();
     if (W_sg != Teuchos::null) {
+      std::cout << "dgdp_sg[0] = " << *dgdp_sg[0] << std::endl;
+      std::cout << "dgdp_sg[1] = " << *dgdp_sg[1] << std::endl;
       for (int block=0; block<W_sg->size(); block++) {
 	Teuchos::RCP<Epetra_CrsMatrix> W_crs = 
 	  Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_sg->getCoeffPtr(block), 

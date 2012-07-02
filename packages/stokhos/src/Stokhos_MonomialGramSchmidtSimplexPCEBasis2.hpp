@@ -28,8 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MONOMIAL_GRAM_SCHMIDT_SIMPLEX_PCE_BASIS_HPP
-#define STOKHOS_MONOMIAL_GRAM_SCHMIDT_SIMPLEX_PCE_BASIS_HPP
+#ifndef STOKHOS_MONOMIAL_GRAM_SCHMIDT_SIMPLEX_PCE_BASIS2_HPP
+#define STOKHOS_MONOMIAL_GRAM_SCHMIDT_SIMPLEX_PCE_BASIS2_HPP
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
@@ -57,7 +57,7 @@ namespace Stokhos {
    * using the simplex method.
    */
   template <typename ordinal_type, typename value_type>
-  class MonomialGramSchmidtSimplexPCEBasis : 
+  class MonomialGramSchmidtSimplexPCEBasis2 : 
     public ProductBasis<ordinal_type,value_type> {
   public:
 
@@ -69,14 +69,14 @@ namespace Stokhos {
      * \param Cijk sparse triple product tensor for basis defining pce
      * \param sparse_tol tolerance for dropping terms in sparse tensors
      */
-    MonomialGramSchmidtSimplexPCEBasis(
+    MonomialGramSchmidtSimplexPCEBasis2(
      ordinal_type p,
      const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
      const Teuchos::ParameterList& params = Teuchos::ParameterList());
 
     //! Destructor
-    virtual ~MonomialGramSchmidtSimplexPCEBasis();
+    virtual ~MonomialGramSchmidtSimplexPCEBasis2();
 
     //! \name Implementation of Stokhos::OrthogPolyBasis methods
     //@{
@@ -238,10 +238,10 @@ namespace Stokhos {
   private:
 
     // Prohibit copying
-    MonomialGramSchmidtSimplexPCEBasis(const MonomialGramSchmidtSimplexPCEBasis&);
+    MonomialGramSchmidtSimplexPCEBasis2(const MonomialGramSchmidtSimplexPCEBasis2&);
 
     // Prohibit Assignment
-    MonomialGramSchmidtSimplexPCEBasis& operator=(const MonomialGramSchmidtSimplexPCEBasis& b);
+    MonomialGramSchmidtSimplexPCEBasis2& operator=(const MonomialGramSchmidtSimplexPCEBasis2& b);
     
   protected:
 
@@ -299,11 +299,11 @@ namespace Stokhos {
     //! Orthogonalization method
     std::string orthogonalization_method;
 
-  }; // class MonomialGramSchmidtSimplexPCEBasis
+  }; // class MonomialGramSchmidtSimplexPCEBasis2
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_MonomialGramSchmidtSimplexPCEBasisImp.hpp"
+#include "Stokhos_MonomialGramSchmidtSimplexPCEBasis2Imp.hpp"
 
 #endif

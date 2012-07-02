@@ -28,16 +28,14 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_SerialDenseHelpers.hpp"
+#include "Stokhos_SDMUtils.hpp"
 
-#define DGEQP3_F77  F77_BLAS_MANGLE(dgeqp3,DGEQP3)
+#define DGELSY_F77  F77_BLAS_MANGLE(dgelsy,DGELSY)
 extern "C" {
-void DGEQP3_F77(int*, int*, double*, int*, int*, double*, double*, int*, int*);
+  void DGELSY_F77(int* m, int* n, int* nrhs, double* A, int* lda, 
+		  double *b, int* ldb, int *jpvt, double* rcond, int* rank, 
+		  double *work, int* lwork, int* info);
 }
-
-#ifdef HAVE_STOKHOS_CLP
-#include "coin/ClpSimplex.hpp"
-#endif
 
 #ifdef HAVE_STOKHOS_GLPK
 extern "C" {
@@ -46,30 +44,27 @@ extern "C" {
 #endif
 
 template <typename ordinal_type, typename value_type>
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
-MonomialGramSchmidtSimplexPCEBasis(
-  ordinal_type p_,
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+MonomialProjGramSchmidtSimplexPCEBasis(
+  ordinal_type max_p,
   const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
   const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad_,
   const Teuchos::ParameterList& params_) :
-  name("Monomial Gram Schmidt Simplex PCE Basis"),
+  name("MonomialProj Gram Schmidt Simplex PCE Basis"),
   quad(quad_),
   params(params_),
   pce_sz(pce[0].size()),
-  p(p_),
+  p(max_p),
   d(pce.size()),
   verbose(params.get("Verbose", false)),
+  rank_threshold(params.get("Rank Threshold", 1.0e-12)),
   reduction_tol(params.get("Reduction Tolerance", 1.0e-12)),
   orthogonalization_method(params.get("Orthogonalization Method", 
 				      "Classical Gram-Schmidt"))
 {
-  
-  
   // Compute basis terms -- 2-D array giving powers for each linear index
-  compute_terms(p, d, sz, terms, num_terms);
-
-  // Basis is orthonormal by construction
-  norms.resize(sz, 1.0);
+  ordinal_type max_sz;
+  compute_terms(max_p, d, max_sz, terms, num_terms);
 
   // Get quadrature data
   const Teuchos::Array<value_type>& weights = quad->getQuadWeights();
@@ -86,51 +81,108 @@ MonomialGramSchmidtSimplexPCEBasis(
     for (ordinal_type j=0; j<pce_sz; j++)
       A(i,j) = basis_values[i][j];
 
+  // Compute norms of each pce for rescaling
+  Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis =
+    pce[0].basis();
+  pce_norms.resize(d, 0.0);
+  for (ordinal_type j=0; j<d; j++) {
+    for (ordinal_type i=0; i<pce_sz; i++)
+      pce_norms[j] += pce[j][i]*pce[j][i]*basis->norm_squared(i);
+    pce_norms[j] = std::sqrt(pce_norms[j]);
+  }
+
   // Compute F matrix -- PCEs evaluated at all quadrature points
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> F(nqp, d);
   Teuchos::Array< Teuchos::Array<value_type> > values(nqp);
   for (ordinal_type i=0; i<nqp; i++)
     for (ordinal_type j=0; j<d; j++)
-      F(i,j) = pce[j].evaluate(points[i], basis_values[i]);
+      F(i,j) = pce[j].evaluate(points[i], basis_values[i]) / pce_norms[j];
 
   // Compute B matrix -- monomials in F
   // for i=0,...,nqp-1
-  //   for j=0,...,sz2-1
+  //   for j=0,...,sz-1
   //      B(i,j) = F(i,1)^terms[j][1] * ... * F(i,d)^terms[j][d]
-  // where sz2 is the total size of a basis up to order 2*p and terms[j] 
+  // where sz is the total size of a basis up to order p and terms[j] 
   // is an array of powers for each term in the total-order basis
-  Teuchos::Array< Teuchos::Array<ordinal_type> > terms2;
-  Teuchos::Array<ordinal_type> num_terms2;
-  ordinal_type sz2;
-  compute_terms(2*p, d, sz2, terms2, num_terms2);
-  if (verbose)
-    std::cout << "sz2 = " << sz2 << std::endl;
-  //TEUCHOS_ASSERT(sz2 <= nqp);
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> B2(nqp, sz2);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> B(nqp, max_sz);
   for (ordinal_type i=0; i<nqp; i++) {
-    for (ordinal_type j=0; j<sz2; j++) {
-      B2(i,j) = 1.0;
+    for (ordinal_type j=0; j<max_sz; j++) {
+      B(i,j) = 1.0;
       for (ordinal_type k=0; k<d; k++)
-	B2(i,j) *= std::pow(F(i,k), terms2[j][k]);
+	B(i,j) *= std::pow(F(i,k), terms[j][k]);
     }
   }
 
-  // Get the first sz columns of B to define our basis
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> B(
-    Teuchos::View, B2, nqp, sz, 0, 0);
+  // Project B into original basis -- should use SPAM for this
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Bp(pce_sz, max_sz);
+  const Teuchos::Array<value_type>& basis_norms = basis->norm_squared();
+  for (ordinal_type i=0; i<pce_sz; i++) {
+    for (ordinal_type j=0; j<max_sz; j++) {
+      Bp(i,j) = 0.0;
+      for (ordinal_type k=0; k<nqp; k++)
+	Bp(i,j) += weights[k]*B(k,j)*A(k,i);
+      Bp(i,j) /= basis_norms[i];
+    }
+  }
 
-  // Compute QR factorization of B using Gram-Schmidt
+  // Rescale columns of Bp to have unit norm
+  for (ordinal_type j=0; j<max_sz; j++) {
+    value_type nrm = 0.0;
+    for (ordinal_type i=0; i<pce_sz; i++)
+      nrm += Bp(i,j)*Bp(i,j)*basis_norms[i];
+    nrm = std::sqrt(nrm);
+    for (ordinal_type i=0; i<pce_sz; i++)
+      Bp(i,j) /= nrm;
+  }
+
+  // Compute QR factorization of B using column-pivoted QR
+  // By setting the first d+1 entries of piv, we enforce that they are
+  // permuted to the front of Bp*P
   // Q defines our new basis
-  Q.shape(nqp, sz);
-  R.shape(sz, sz);
-  if (orthogonalization_method == "Classical Gram-Schmidt")
-    computeQR_CGS(sz, B, weights, Q, R);
-  else if (orthogonalization_method == "Modified Gram-Schmidt")
-    computeQR_MGS(sz, B, weights, Q, R);
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid orthogonalization method " << orthogonalization_method);
+  Teuchos::Array<value_type> w(pce_sz, 1.0);
+  piv.resize(max_sz);
+  for (int i=0; i<d+1; i++)
+  //for (int i=0; i<max_sz; i++)
+    piv[i] = 1;
+  sz = CPQR_Householder_threshold(rank_threshold, Bp, w, Qpp, R, piv);
+  //sz = CPQR_MGS_threshold(rank_threshold, Bp, w, Qpp, R, piv);
+  //sz = CPQR_CGS_threshold(rank_threshold, Bp, w, Qpp, R, piv);
+  //sz = svd_threshold(rank_threshold, Bp, sigma, Qpp, Vt);
+  Q.reshape(nqp, sz);
+  Q.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, A, Qpp, 0.0);
+
+  /*
+  if (verbose) {
+    std::cout << "diag(sigma) = [ ";
+    for (ordinal_type i=0; i<sz; i++)
+      std::cout << sigma[i] << " ";
+    std::cout << "]" << std::endl;
+
+    std::cout << "rank = " << sz << std::endl;
+  }
+  */
+
+  if (verbose) {
+    std::cout << "piv = [";
+    for (ordinal_type i=0; i<sz; i++)
+      std::cout << piv[i] << " ";
+    std::cout << "]" << std::endl;
+    
+    std::cout << "diag(R) = [ ";
+    for (ordinal_type i=0; i<sz; i++)
+      std::cout << R(i,i) << " ";
+    std::cout << "]" << std::endl;
+
+    std::cout << "rank = " << sz << std::endl;
+
+    // Check Bpp = Qpp*R
+    std::cout << "||A*P-Q*R||_infty = " 
+	      << Stokhos::residualCPQRError(Bp,Qpp,R,piv) << std::endl;
+
+    // Check Qpp^T*Qpp = I
+    std::cout << "||I - Q^T*Q||_infty = " 
+	      << QROrthogonalizationError(Qpp) << std::endl;
+  }
 
   Teuchos::RCP< Teuchos::Array<value_type> > reduced_weights;
   Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > > reduced_points;
@@ -140,12 +192,12 @@ MonomialGramSchmidtSimplexPCEBasis(
   std::string reduction_method = 
     params.get("Reduced Quadrature Method", "L1 Minimization");
   if (reduction_method == "Column-Pivoted QR")
-    reducedQuadrature_QRCP(B2, Q, F, weights, 
+    reducedQuadrature_QRCP(Q, F, weights, 
 			   reduced_weights, reduced_points, reduced_values);
   else if (reduction_method == "L1 Minimization") {
     std::string solver = params.get("LP Solver", "GLPK");
     if (solver == "GLPK")
-       reducedQuadrature_GLPK(B2, Q, F, weights, 
+       reducedQuadrature_GLPK(Q, F, weights, 
 			      reduced_weights, reduced_points, reduced_values);
     else
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -155,10 +207,13 @@ MonomialGramSchmidtSimplexPCEBasis(
     reduced_weights =
       Teuchos::rcp(new Teuchos::Array<value_type>(weights));
     reduced_points =
-      Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(points));
+      Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(nqp));
     reduced_values =
       Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(nqp));
     for (ordinal_type i=0; i<nqp; i++) {
+      (*reduced_points)[i].resize(d);
+      for (ordinal_type j=0; j<d; j++)
+	(*reduced_points)[i][j] = F(i,j);
       (*reduced_values)[i].resize(sz);
       for (ordinal_type j=0; j<sz; j++)
 	(*reduced_values)[i][j] = Q(i,j);
@@ -180,18 +235,21 @@ MonomialGramSchmidtSimplexPCEBasis(
 		   creduced_points,
 		   creduced_weights,
 		   creduced_values));
+
+  // Basis is orthonormal by construction
+  norms.resize(sz, 1.0);
   
 }
 
 template <typename ordinal_type, typename value_type>
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
-~MonomialGramSchmidtSimplexPCEBasis()
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+~MonomialProjGramSchmidtSimplexPCEBasis()
 {
 }
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 order() const
 {
   return p;
@@ -199,7 +257,7 @@ order() const
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 dimension() const
 {
   return d;
@@ -207,7 +265,7 @@ dimension() const
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 size() const
 {
   return sz;
@@ -215,7 +273,7 @@ size() const
 
 template <typename ordinal_type, typename value_type>
 const Teuchos::Array<value_type>&
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 norm_squared() const
 {
   return norms;
@@ -223,7 +281,7 @@ norm_squared() const
 
 template <typename ordinal_type, typename value_type>
 const value_type&
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 norm_squared(ordinal_type i) const
 {
   return norms[i];
@@ -231,7 +289,7 @@ norm_squared(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 computeTripleProductTensor(ordinal_type order) const
 
 {
@@ -240,7 +298,7 @@ computeTripleProductTensor(ordinal_type order) const
 
 template <typename ordinal_type, typename value_type>
 value_type
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 evaluateZero(ordinal_type i) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented!");
@@ -248,7 +306,7 @@ evaluateZero(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 evaluateBases(const Teuchos::Array<value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
@@ -257,7 +315,7 @@ evaluateBases(const Teuchos::Array<value_type>& point,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 print(std::ostream& os) const
 {
   os << "Gram-Schmidt basis of order " << p << ", dimension " << d 
@@ -271,7 +329,7 @@ print(std::ostream& os) const
 
 template <typename ordinal_type, typename value_type>
 const std::string&
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 getName() const
 {
   return name;
@@ -279,7 +337,7 @@ getName() const
 
 template <typename ordinal_type, typename value_type>
 Teuchos::Array<ordinal_type>
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 getTerm(ordinal_type i) const
 {
   return terms[i];
@@ -287,7 +345,7 @@ getTerm(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 getIndex(const Teuchos::Array<ordinal_type>& term) const
 {
   return compute_index(term);
@@ -295,7 +353,7 @@ getIndex(const Teuchos::Array<ordinal_type>& term) const
 
 template <typename ordinal_type, typename value_type>
 Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 getCoordinateBases() const
 {
   return Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >();
@@ -303,7 +361,7 @@ getCoordinateBases() const
 
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 getReducedQuadrature() const
 {
   return reduced_quad;
@@ -311,29 +369,33 @@ getReducedQuadrature() const
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 transformToOriginalBasis(const value_type *in, value_type *out) const
 {
   Teuchos::SerialDenseVector<ordinal_type, value_type> zbar(
     Teuchos::View, const_cast<value_type*>(in), sz);
   Teuchos::SerialDenseVector<ordinal_type, value_type> z(
     Teuchos::View, out, pce_sz);
-  const Teuchos::Array<value_type>& weights = quad->getQuadWeights();
-  ordinal_type nqp = weights.size();
-  Teuchos::SerialDenseVector<ordinal_type, value_type> tmp(nqp);
 
-  // Compute z = A^T*W*Q*zbar
-  tmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, zbar, 0.0);
-  for (ordinal_type i=0; i<nqp; i++)
-    tmp[i] *= weights[i];
-
-  z.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, A, tmp, 0.0);
-  
+  z.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Qpp, zbar, 0.0);
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+transformFromOriginalBasis(const value_type *in, value_type *out) const
+{
+  Teuchos::SerialDenseVector<ordinal_type, value_type> z(
+    Teuchos::View, const_cast<value_type*>(in), pce_sz);
+  Teuchos::SerialDenseVector<ordinal_type, value_type> zbar(
+    Teuchos::View, out, sz);
+
+  zbar.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Qpp, z, 0.0);
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 computeTransformedPCE(
   ordinal_type i,
   Stokhos::OrthogPolyApprox<ordinal_type,value_type>& pce) const
@@ -341,15 +403,34 @@ computeTransformedPCE(
   // a <- R*a
   Teuchos::SerialDenseVector<ordinal_type, value_type> a(
     Teuchos::View, pce.coeff(), sz);
-  a[i+1] = 1.0;
+  a[piv[i+1]] = pce_norms[i];
   blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
-	    Teuchos::NON_UNIT_DIAG, sz, 1, 1.0, R.values(), sz, a.values(),
-	    sz);
+  	    Teuchos::NON_UNIT_DIAG, sz, 1, 1.0, R.values(), sz, a.values(),
+  	    sz);
+
+  /*
+  Teuchos::SerialDenseVector<ordinal_type, value_type> a(
+    Teuchos::View, pce.coeff(), sz);
+  Teuchos::SerialDenseVector<ordinal_type, value_type> b(Vt.numCols());
+  b[i+1] = pce_norms[i];
+  a.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Vt, b, 0.0);
+  for (ordinal_type j=0; j<sz; j++)
+    a[j] *= sigma[j];
+  */
+ 
+  /*
+  Teuchos::SerialDenseVector<ordinal_type, value_type> a(
+    Teuchos::View, pce.coeff(), sz);
+  Teuchos::SerialDenseVector<ordinal_type, value_type> b(pce_sz);
+  b[i+1] = pce_norms[i];
+  //b[i+1] = 1.0;
+  a.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Qpp, b, 0.0);
+  */
 }
 
 template <typename ordinal_type, typename value_type>
 void 
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 getBasisAtOriginalQuadraturePoints(
   Teuchos::Array< Teuchos::Array<double> >& red_basis_vals) const
 {
@@ -364,7 +445,7 @@ getBasisAtOriginalQuadraturePoints(
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 compute_terms(ordinal_type p, ordinal_type d, ordinal_type& sz,
 	      Teuchos::Array< Teuchos::Array<ordinal_type> >& terms,
 	      Teuchos::Array<ordinal_type>& num_terms)
@@ -493,7 +574,7 @@ compute_terms(ordinal_type p, ordinal_type d, ordinal_type& sz,
 
 template <typename ordinal_type, typename value_type>
 ordinal_type 
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 compute_index(const Teuchos::Array<ordinal_type>& term) const
 {
   // The approach here for computing the index is to find the order block
@@ -535,188 +616,8 @@ compute_index(const Teuchos::Array<ordinal_type>& term) const
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
-computeQR_CGS(
-  ordinal_type k,
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
-  const Teuchos::Array<value_type>& w,
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type>& R)
-{
-  // Compute thin QR factorization using classical Gram-Schmidt
-  using Teuchos::getCol;
-  typedef Teuchos::SerialDenseVector<ordinal_type,value_type> SDV;
-  
-  for (ordinal_type j=0; j<k; j++) {
-    SDV Aj = getCol(Teuchos::View, A, j);
-    SDV Qj = getCol(Teuchos::View, Q, j);
-    Qj.assign(Aj);
-    for (ordinal_type i=0; i<j; i++) {
-      SDV Qi = getCol(Teuchos::View, Q, i);
-      R(i,j) = weighted_inner_product(Qi, Aj, w);
-      saxpy(1.0, Qj, -R(i,j), Qi);  // Q(:,j) = 1.0*Q(:,j) - R(i,j)*Q(:,i)
-    }
-    R(j,j) = std::sqrt(weighted_inner_product(Qj, Qj, w));
-    Qj.scale(1.0/R(j,j));
-  }
-
-  value_type r_max = std::abs(R(0,0));
-  value_type r_min = std::abs(R(0,0));
-  for (ordinal_type i=1; i<k; i++) {
-    if (std::abs(R(i,i)) > r_max)
-      r_max = R(i,i);
-    if (std::abs(R(i,i)) < r_min)
-      r_min = R(i,i);
-  }
-  value_type cond_r = r_max / r_min;
-  std::cout << "Condition number of R = " << cond_r << std::endl;
-
-  // Check Q^T*W*Q = I
-  if (verbose) {
-    ordinal_type m = Q.numRows();
-    ordinal_type n = Q.numCols();
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> Qt(m,n);
-    for (ordinal_type i=0; i<m; i++)
-      for (ordinal_type j=0; j<n; j++)
-	Qt(i,j) = w[i]*Q(i,j);
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> err1(n,n);
-    err1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, Qt, 0.0);
-    for (ordinal_type i=0; i<n; i++)
-      err1(i,i) -= 1.0;
-    std::cout << "||Q^T*W*Q - I||_infty = " << err1.normInf() << std::endl;
-  }
-  
-  // Check A = QR
-  if (verbose) {
-    ordinal_type m = Q.numRows();
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(
-      Teuchos::View, A, m, k, 0, 0);
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> err2(m,k);
-    err2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
-    err2 -= AA;
-    std::cout << "||QR-A||_infty = " << err2.normInf() << std::endl;
-  }
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
-computeQR_MGS(
-  ordinal_type k,
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
-  const Teuchos::Array<value_type>& w,
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type>& R)
-{
-  // Compute thin QR factorization using classical Gram-Schmidt
-  using Teuchos::getCol;
-  typedef Teuchos::SerialDenseVector<ordinal_type,value_type> SDV;
-
-  /*
-  for (ordinal_type i=0; i<k; i++) {
-    SDV Ai = getCol(Teuchos::View, A, i);
-    SDV Qi = getCol(Teuchos::View, Q, i);
-    Qi.assign(Ai);
-  }
-  for (ordinal_type i=0; i<k; i++) {
-    SDV Qi = getCol(Teuchos::View, Q, i);
-    R(i,i) = std::sqrt(weighted_inner_product(Qi, Qi, w));
-    Qi.scale(1.0/R(i,i));
-    for (ordinal_type j=i+1; j<k; j++) {
-      SDV Aj = getCol(Teuchos::View, A, j);
-      SDV Qj = getCol(Teuchos::View, Q, j);
-      R(i,j) = weighted_inner_product(Qi, Aj, w);
-      saxpy(1.0, Qj, -R(i,j), Qi);  // Q(:,j) = 1.0*Q(:,j) - R(i,j)*Q(:,i)
-    }
-  }
-  */
-  
-  for (ordinal_type j=0; j<k; j++) {
-    SDV Aj = getCol(Teuchos::View, A, j);
-    SDV Qj = getCol(Teuchos::View, Q, j);
-    Qj.assign(Aj);
-    for (ordinal_type i=0; i<j; i++) {
-      SDV Qi = getCol(Teuchos::View, Q, i);
-      R(i,j) = weighted_inner_product(Qi, Qj, w);
-      saxpy(1.0, Qj, -R(i,j), Qi);  // Q(:,j) = 1.0*Q(:,j) - R(i,j)*Q(:,i)
-    }
-    R(j,j) = std::sqrt(weighted_inner_product(Qj, Qj, w));
-    Qj.scale(1.0/R(j,j));
-  }
-
-  value_type r_max = std::abs(R(0,0));
-  value_type r_min = std::abs(R(0,0));
-  for (ordinal_type i=1; i<k; i++) {
-    if (std::abs(R(i,i)) > r_max)
-      r_max = R(i,i);
-    if (std::abs(R(i,i)) < r_min)
-      r_min = R(i,i);
-  }
-  value_type cond_r = r_max / r_min;
-  std::cout << "Condition number of R = " << cond_r << std::endl;
-
-  // Check Q^T*W*Q = I
-  if (verbose) {
-    ordinal_type m = Q.numRows();
-    ordinal_type n = Q.numCols();
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> Qt(m,n);
-    for (ordinal_type i=0; i<m; i++)
-      for (ordinal_type j=0; j<n; j++)
-	Qt(i,j) = w[i]*Q(i,j);
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> err1(n,n);
-    err1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, Qt, 0.0);
-    for (ordinal_type i=0; i<n; i++)
-      err1(i,i) -= 1.0;
-    std::cout << "||Q^T*W*Q - I||_infty = " << err1.normInf() << std::endl;
-  }
-  
-  // Check A = QR
-  if (verbose) {
-    ordinal_type m = Q.numRows();
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(
-      Teuchos::View, A, m, k, 0, 0);
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> err2(m,k);
-    err2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
-    err2 -= AA;
-    std::cout << "||QR-A||_infty = " << err2.normInf() << std::endl;
-  }
-}
-      
-template <typename ordinal_type, typename value_type>
-value_type
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
-weighted_inner_product(
-  const Teuchos::SerialDenseVector<ordinal_type,value_type>& x,
-  const Teuchos::SerialDenseVector<ordinal_type,value_type>& y,
-  const Teuchos::Array<value_type>& w)
-{
-  ordinal_type n = x.length();
-  value_type t = 0;
-  for (ordinal_type i=0; i<n; i++)
-    t += x[i]*w[i]*y[i];
-
-  return t;
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
-saxpy(
-  const value_type& alpha,
-  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
-  const value_type& beta,
-  Teuchos::SerialDenseVector<ordinal_type, value_type>& y)
-{
-  ordinal_type n = x.length();
-  for (ordinal_type i=0; i<n; i++)
-    x[i] = alpha*x[i] + beta*y[i];
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 reducedQuadrature_QRCP(
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
   const Teuchos::Array<value_type>& weights,
@@ -726,76 +627,78 @@ reducedQuadrature_QRCP(
 {
   //
   // Find reduced quadrature weights by applying column-pivoted QR to
-  // problem B2^T*w = e_1
+  // problem Q2^T*w = e_1
   //
-  ordinal_type nqp = B2.numRows();
-  ordinal_type sz2 = B2.numCols();
-  ordinal_type m = nqp;
-  if (sz2 < nqp)
-    m = sz2;
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Bt(sz2, nqp);
-  Teuchos::Array<ordinal_type> piv(nqp);
-  Teuchos::Array<value_type> tau(m);
-  ordinal_type info;
-  for (ordinal_type i=0; i<nqp; i++)
-    for (ordinal_type j=0; j<sz2; j++)
-      Bt(j,i) = B2(i,j);
+  //ordinal_type pce_sz = Bp.numRows();
+  ordinal_type sz = Q.numCols();
+  ordinal_type sz2 = sz*(sz+1)/2;
+  ordinal_type nqp = Q.numRows();
 
-  // Workspace query
-  Teuchos::Array<value_type> work(1);
-  ordinal_type lwork = -1;
-  DGEQP3_F77(&sz2, &nqp, Bt.values(), &sz2, &piv[0], &tau[0], &work[0], &lwork, 
-	     &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info < 0, std::logic_error, "dgeqp3 returned info = " << info);
+  if (verbose) {
+    std::cout << "pce_sz = " << pce_sz << std::endl;
+    std::cout << "sz = " << sz << std::endl;
+    std::cout << "nqp = " << nqp << std::endl;
+    std::cout << "sz2 = " << sz2 << std::endl;
+  }
 
-  // Column pivoted QR
-  lwork = work[0];
-  work.resize(lwork);
-  DGEQP3_F77(&sz2, &nqp, Bt.values(), &sz2, &piv[0], &tau[0], &work[0], &lwork, 
-	     &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info < 0, std::logic_error, "dgeqp3 returned info = " << info);
+  // Compute Q matrix with all possible products
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2t(sz2, nqp);
+  ordinal_type jdx=0;
+  for (ordinal_type j=0; j<sz; j++) {
+    for (ordinal_type k=j; k<sz; k++) {
+      for (ordinal_type i=0; i<nqp; i++)
+	Q2t(jdx,i) = Q(i,j)*Q(i,k);
+      jdx++;
+    }
+  }
+  TEUCHOS_ASSERT(jdx == sz2);
 
-  // Determine rank
-  ordinal_type rank;
-  for (rank=0; rank<m; rank++)
-    if (std::abs(Bt(rank,rank)) < reduction_tol)
-      break;
+  // Apply column-pivoted QR to Q2
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> QQ2, R2;
+  Teuchos::Array<ordinal_type> piv2;
+  Stokhos::CPQR_Householder3(Q2t, QQ2, R2, piv2);
+  ordinal_type rank = computeRank(R2, reduction_tol);
 
-  if (verbose)
+  if (verbose) {
     std::cout << "rank = " << rank << std::endl;
 
-  // Apply b = Q^T*B2^T*w
-  Teuchos::SerialDenseVector<ordinal_type,value_type> b(sz2);
-  // Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-  //   Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  // b.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, B2, w, 1.0);
-  b.putScalar(0.0);
-  b[0] = 1.0;
+    std::cout << "diag(R) = [ ";
+    for (ordinal_type i=0; i<rank; i++)
+      std::cout << R2(i,i) << " ";
+    std::cout << "]" << std::endl;
+  }
 
-  //std::cout << "B2^T*w = " << b << std::endl;
-
-  lapack.ORMQR('L', 'T', sz2, 1, sz2, Bt.values(), sz2, &tau[0], 
-	       b.values(), sz2, &work[0], lwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info < 0, std::logic_error, "dormqr returned info = " << info);
+  // Apply c = QQ2^T*Q2^T*w
+  ordinal_type n = QQ2.numCols();
+  //std::cout << "n = " << n << std::endl;
+  Teuchos::SerialDenseVector<ordinal_type,value_type> b(sz2), c(n);
+  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
+    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
+  b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q2t, w, 0.0);
+  c.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, QQ2, b, 0.0);
 
   // Compute [R11^{-1}*b1; 0] where b1 is the first r rows of b
   blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
-	    Teuchos::NON_UNIT_DIAG, rank, 1, 1.0, Bt.values(), sz2, b.values(),
-	    sz2);
-  for (ordinal_type i=rank; i<sz2; i++)
-    b[i] = 0.0;
+	    Teuchos::NON_UNIT_DIAG, rank, 1, 1.0, R2.values(), n, c.values(),
+	    n);
+  for (ordinal_type i=rank; i<n; i++)
+    c[i] = 0.0;
 
   // Get reduced weights, points and values
   Teuchos::SerialDenseVector<ordinal_type,value_type> wt(nqp);
   wt.putScalar(0.0);
-  for (ordinal_type i=0; i<rank; i++)
-    wt[piv[i]-1] = b[i];
+  for (ordinal_type i=0; i<n; i++)
+    wt[piv2[i]] = c[i];
 
-  if (verbose)
-    std::cout << "reduced weights = " << wt << std::endl;
+  if (verbose) {
+    b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -1.0, Q2t, wt, 1.0);
+    std::cout << "product integration error = " << b.normInf() << std::endl;
+
+    Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz);
+    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, w, 0.0);
+    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, wt, 1.0);
+    std::cout << "basis integration error = " << e1.normInf() << std::endl;
+  }
 
   reduced_weights =
     Teuchos::rcp(new Teuchos::Array<value_type>(rank));
@@ -819,11 +722,116 @@ reducedQuadrature_QRCP(
   TEUCHOS_ASSERT(idx == rank);
 }
 
+/*
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+reducedQuadrature_CS(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+  const Teuchos::Array<value_type>& weights,
+  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
+  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
+  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values)
+{
+  //
+  // Find reduced quadrature weights by applying column-pivoted QR to
+  // problem Q2^T*w = e_1
+  //
+  //ordinal_type pce_sz = Bp.numRows();
+  ordinal_type sz = Q.numCols();
+  ordinal_type sz2 = sz*(sz+1)/2;
+  ordinal_type nqp = Q.numRows();
+
+  if (verbose) {
+    std::cout << "pce_sz = " << pce_sz << std::endl;
+    std::cout << "sz = " << sz << std::endl;
+    std::cout << "nqp = " << nqp << std::endl;
+    std::cout << "sz2 = " << sz2 << std::endl;
+  }
+
+  // Compute Q matrix with all possible products
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2t(sz2, nqp);
+  ordinal_type jdx=0;
+  for (ordinal_type j=0; j<sz; j++) {
+    for (ordinal_type k=j; k<sz; k++) {
+      for (ordinal_type i=0; i<nqp; i++)
+	Q2t(jdx,i) = Q(i,j)*Q(i,k);
+      jdx++;
+    }
+  }
+  TEUCHOS_ASSERT(jdx == sz2);
+
+  Teuchos::SerialDenseVector<ordinal_type,value_type> b(sz2), x(nqp);
+  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
+    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
+  b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q2t, w, 0.0);
+  c.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, QQ2, b, 0.0);
+
+  Pecos::CompressedSensing CS;
+  CS.BasisPursuit(Q2t, 
+
+  // Apply column-pivoted QR to Q2
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> QQ2, R2;
+  Teuchos::Array<ordinal_type> piv2;
+  Stokhos::CPQR_Householder3(Q2t, QQ2, R2, piv2);
+  ordinal_type rank = computeRank(R2, reduction_tol);
+
+  if (verbose)
+    std::cout << "rank = " << rank << std::endl;
+
+  
+
+  // Compute [R11^{-1}*b1; 0] where b1 is the first r rows of b
+  blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
+	    Teuchos::NON_UNIT_DIAG, rank, 1, 1.0, R2.values(), n, c.values(),
+	    n);
+  for (ordinal_type i=rank; i<n; i++)
+    c[i] = 0.0;
+
+  // Get reduced weights, points and values
+  Teuchos::SerialDenseVector<ordinal_type,value_type> wt(nqp);
+  wt.putScalar(0.0);
+  for (ordinal_type i=0; i<n; i++)
+    wt[piv2[i]] = c[i];
+
+  if (verbose) {
+    b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -1.0, Q2t, wt, 1.0);
+    std::cout << "product integration error = " << b.normInf() << std::endl;
+
+    Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz);
+    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, w, 0.0);
+    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, wt, 1.0);
+    std::cout << "basis integration error = " << e1.normInf() << std::endl;
+  }
+
+  reduced_weights =
+    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
+  reduced_points =
+    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
+  reduced_values =
+    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
+  ordinal_type idx = 0;
+  for (ordinal_type i=0; i<nqp; i++) {
+    if (wt[i] != 0.0) {
+      (*reduced_weights)[idx] = wt[i];
+      (*reduced_points)[idx].resize(d);
+      for (ordinal_type j=0; j<d; j++)
+	(*reduced_points)[idx][j] = F(i,j);
+      (*reduced_values)[idx].resize(sz);
+      for (ordinal_type j=0; j<sz; j++)
+	(*reduced_values)[idx][j] = Q(i,j);
+      idx++;
+    }
+  }
+  TEUCHOS_ASSERT(idx == rank);
+}
+*/
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 reducedQuadrature_GLPK(
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
   const Teuchos::Array<value_type>& weights,
@@ -834,26 +842,28 @@ reducedQuadrature_GLPK(
 #ifdef HAVE_STOKHOS_GLPK
   //
   // Find reduced quadrature weights by solving linear program
-  // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2 = Q2*R2
+  // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2p = Q2*R2
   //
-  ordinal_type nqp = B2.numRows();
-  ordinal_type sz2 = B2.numCols();
+  //ordinal_type pce_sz = Bp.numRows();
+  ordinal_type sz = Q.numCols();
+  ordinal_type sz2 = sz*(sz+1)/2;
+  ordinal_type nqp = Q.numRows();
 
-  // Compute QR factorization of B2 using Gram-Schmidt
+  // Compute Q matrix with all possible products
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> R2(sz2, sz2);
-  if (orthogonalization_method == "Classical Gram-Schmidt")
-    computeQR_CGS(sz2, B2, weights, Q2, R2);
-  else if (orthogonalization_method == "Modified Gram-Schmidt")
-    computeQR_MGS(sz2, B2, weights, Q2, R2);
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid orthogonalization method " << orthogonalization_method);
+  ordinal_type jdx=0;
+  for (ordinal_type j=0; j<sz; j++) {
+    for (ordinal_type k=j; k<sz; k++) {
+      for (ordinal_type i=0; i<nqp; i++)
+	Q2(i,jdx) = Q(i,j)*Q(i,k);
+      jdx++;
+    }
+  }
+  TEUCHOS_ASSERT(jdx == sz2);
 
   // Setup linear program
   LPX *lp = lpx_create_prob();
-  lpx_set_prob_name(lp, "Monomial PCE Reduction");
+  lpx_set_prob_name(lp, "MonomialProj PCE Reduction");
   lpx_set_obj_dir(lp, LPX_MIN);
   lpx_add_rows(lp, sz2);
   lpx_add_cols(lp, nqp);
@@ -871,7 +881,7 @@ reducedQuadrature_GLPK(
   // Set columns bounds and object coefficients
   for (ordinal_type j=0; j<nqp; j++) {
     lpx_set_col_bnds(lp, j+1, LPX_LO, 0.0, 0.0);
-    lpx_set_obj_coef(lp, j+1, 1.0);
+    lpx_set_obj_coef(lp, j+1, 0.0);
   }
 
   // Set constraint matrix = Q2^T
@@ -900,6 +910,21 @@ reducedQuadrature_GLPK(
     u[i] = lpx_get_col_prim(lp, i+1);
   if (verbose)
     std::cout << "reduced weights = " << u << std::endl;
+
+  /*
+  lpx_interior(lp);
+  int status = lpx_ipt_status(lp);
+  if (verbose) {
+    std::cout << "glpk status = " << status << std::endl;
+    double Z = lpx_ipt_obj_val(lp);
+    std::cout << "glpk objective = " << Z << std::endl;
+  }
+  Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
+  for (ordinal_type i=0; i<nqp; i++)
+    u[i] = lpx_ipt_col_prim(lp, i+1);
+  if (verbose)
+    std::cout << "reduced weights = " << u << std::endl;
+  */
 
   // Clean up linear program
   lpx_delete_prob(lp);
@@ -941,3 +966,36 @@ reducedQuadrature_GLPK(
 #endif
 }
 
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
+computeRank(
+  const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& R,
+  const value_type tol) const 
+{
+  // Compute rank -- since we constrain the first d+1 columns of Bp to lie
+  // in the basis, the diagonal elements of Rp may not be monotonically 
+  // decreasing until we get past d+1
+  ordinal_type rank = 0;
+  ordinal_type m = R.numRows();
+  value_type r_max = std::abs(R(rank,rank));
+  value_type r_min = std::abs(R(rank,rank));
+  for (rank=1; rank<m; rank++) {
+    if (std::abs(R(rank,rank)) > r_max)
+      r_max = std::abs(R(rank,rank));
+    if (std::abs(R(rank,rank)) < r_min)
+      r_min = std::abs(R(rank,rank));
+    if (r_min / r_max < tol)
+      break;
+  }  
+
+  // Print condition number of R
+  if (verbose) {
+    value_type cond_r = r_max / r_min;
+    std::cout << "r_max = " << r_max << std::endl;
+    std::cout << "r_min = " << r_min << std::endl;
+    std::cout << "Condition number of R = " << cond_r << std::endl;
+  }
+
+  return rank;
+}

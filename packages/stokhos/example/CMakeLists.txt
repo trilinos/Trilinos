@@ -365,6 +365,20 @@ IF(Stokhos_ENABLE_Sacado)
     DEPLIBS stokhos
     )
 
+  TRIBITS_ADD_EXECUTABLE(
+    gram_schmidt_example3
+    SOURCES gram_schmidt_example3.cpp
+    COMM serial mpi
+    DEPLIBS stokhos
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    stieltjes_example5
+    SOURCES stieltjes_example5.cpp
+    COMM serial mpi
+    DEPLIBS stokhos
+    )
+
 ENDIF() 
 
 IF(Stokhos_ENABLE_NOX)

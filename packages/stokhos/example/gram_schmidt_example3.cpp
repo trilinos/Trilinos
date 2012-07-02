@@ -33,6 +33,7 @@
 #include <iomanip>
 
 #include "Stokhos.hpp"
+#include "Stokhos_Sacado.hpp"
 #include "Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp"
 #include "Stokhos_MonomialGramSchmidtSimplexPCEBasis2.hpp"
 #include "Stokhos_MonomialProjGramSchmidtSimplexPCEBasis.hpp"
@@ -40,6 +41,30 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
+typedef Sacado::ETPCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > pce_type;
+
+template <class ScalarType>
+inline ScalarType f(const Teuchos::Array<ScalarType>& x,
+		    double a, double b) {
+  ScalarType y = a;
+  int n = x.size();
+  for (int i=0; i<n; i++)
+    y += x[i] / (i+1.0);
+  y = b + 1.0/y;
+  return y;
+}
+
+template <class ScalarType>
+inline ScalarType g(const Teuchos::Array<ScalarType>& x,
+		    const ScalarType& y) {
+  ScalarType z = y;
+  //ScalarType z = 0.0;
+  int n = x.size();
+  for (int i=0; i<n; i++)
+    z += x[i];
+  z = std::exp(z);
+  return z;
+}
 
 int main(int argc, char **argv)
 {
@@ -53,8 +78,26 @@ int main(int argc, char **argv)
     int d = 2;
     CLP.setOption("d", &d, "Stochastic dimension");
 
-    int p = 5;
+    int d2 = 1;
+    CLP.setOption("d2", &d2, "Intermediate stochastic dimension");
+
+    int p = 10;
     CLP.setOption("p", &p, "Polynomial order");
+
+    int p2 = 10;
+    CLP.setOption("p2", &p2, "Intermediate polynomial order");
+
+    double pole = 10.0;
+    CLP.setOption("pole", &pole, "Pole location");
+
+    double shift = 0.0;
+    CLP.setOption("shift", &shift, "Shift location");
+
+    double rank_threshold = 1.0e-10;
+    CLP.setOption("rank_threshold", &rank_threshold, "Rank threshold");
+
+    double reduction_tolerance = 1.0e-12;
+    CLP.setOption("reduction_tolerance", &reduction_tolerance, "Quadrature reduction tolerance");
 
     CLP.parse( argc, argv );
 
@@ -66,13 +109,6 @@ int main(int argc, char **argv)
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
     std::cout << "original basis size = " << basis->size() << std::endl;
-
-    // Create approximation
-    Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis), v(basis), 
-      w(basis), w2(basis);
-    for (int i=0; i<d; i++) {
-      x.term(i, 1) = 1.0;
-    }
 
     // Tensor product quadrature
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
@@ -88,53 +124,55 @@ int main(int argc, char **argv)
       basis->computeTripleProductTensor(basis->size());
     
     // Quadrature expansion
-    Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, Cijk, quad);
+    Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,double> > quad_exp = 
+      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
+								    Cijk, 
+								    quad));
+
+    // Create approximation
+    Teuchos::Array<pce_type> x(d);
+    for (int i=0; i<d; i++) {
+      x[i].copyForWrite();
+      x[i].reset(quad_exp);
+      x[i].term(i,1) = 1.0;
+    }
+    Teuchos::Array<pce_type> x2(d2);
+    for (int i=0; i<d2; i++) {
+      x2[i].copyForWrite();
+      x2[i].reset(quad_exp);
+      x2[i].term(i,1) = 1.0;
+    }
     
     // Compute PCE via quadrature expansion
-    quad_exp.sin(u,x);
-    quad_exp.exp(v,x);
-    quad_exp.times(w,v,u);
+    pce_type y = f(x, pole, shift);
+    pce_type z = g(x2, y);
     
-    // Create new basis from u and v
-    Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > pces(2);
-    pces[0] = u;
-    pces[1] = v;
+    // Create new basis from (x2,y)
+    Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > pces(d2+1);
+    for (int i=0; i<d2; i++)
+      pces[i] = x2[i].getOrthogPolyApprox();
+    pces[d2] = y.getOrthogPolyApprox();
     Teuchos::ParameterList params;
     params.set("Verbose", true);
-    params.set("Reduced Quadrature Method", "None");
+    //params.set("Reduced Quadrature Method", "None");
     //params.set("Reduced Quadrature Method", "L1 Minimization");
-    //params.set("Reduced Quadrature Method", "Column-Pivoted QR");
-    params.set("Orthogonalization Method", "Classical Gram-Schmidt");
+    params.set("Reduced Quadrature Method", "Column-Pivoted QR");
+    //params.set("Reduced Quadrature Method", "GELSY");
+    //params.set("Orthogonalization Method", "Classical Gram-Schmidt");
     //params.set("Orthogonalization Method", "Modified Gram-Schmidt");
+    params.set("Rank Threshold", rank_threshold);
+    params.set("Reduction Tolerance", reduction_tolerance);
     Teuchos::RCP< Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> > gs_basis = 
       Teuchos::rcp(new Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double>(
-    		     p, pces, quad, params));
+    		     p2, pces, quad, params));
     // Teuchos::RCP< Stokhos::MonomialGramSchmidtSimplexPCEBasis2<int,double> > gs_basis = 
     //   Teuchos::rcp(new Stokhos::MonomialGramSchmidtSimplexPCEBasis2<int,double>(
-    // 		     p, pces, quad, params));
+    // 		     7, pces, quad, params));
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > gs_quad =
       gs_basis->getReducedQuadrature();
-    Stokhos::OrthogPolyApprox<int,double>  u_gs(gs_basis), v_gs(gs_basis), 
-      w_gs(gs_basis);
-    gs_basis->computeTransformedPCE(0, u_gs);
-    gs_basis->computeTransformedPCE(1, v_gs);
 
     std::cout << "reduced basis size = " << gs_basis->size() << std::endl;
     std::cout << "reduced quadrature size = " << gs_quad->size() << std::endl;
-
-    Stokhos::OrthogPolyApprox<int,double> u2(basis), v2(basis); 
-    gs_basis->transformToOriginalBasis(u_gs.coeff(), u2.coeff());
-    gs_basis->transformToOriginalBasis(v_gs.coeff(), v2.coeff());
-    double err_u = 0.0;
-    double err_v = 0.0;
-    for (int i=0; i<basis->size(); i++) {
-      double eu = std::abs(u[i]-u2[i]);
-      double ev = std::abs(v[i]-v2[i]);
-      if (eu > err_u) err_u = eu;
-      if (ev > err_v) err_v = ev;
-    }
-    std::cout << "error in u transformation = " << err_u << std::endl;
-    std::cout << "error in v transformation = " << err_v << std::endl;
     
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > gs_Cijk =
@@ -144,39 +182,52 @@ int main(int argc, char **argv)
     Teuchos::RCP< Teuchos::ParameterList > gs_exp_params = 
       Teuchos::rcp(new Teuchos::ParameterList);
     gs_exp_params->set("Use Quadrature for Times", true);
-    Stokhos::QuadOrthogPolyExpansion<int,double> gs_quad_exp(gs_basis, 
-							     gs_Cijk,
-							     gs_quad,
-							     gs_exp_params);
+    Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<int,double> > gs_quad_exp = 
+      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(gs_basis, 
+								    gs_Cijk,
+								    gs_quad,
+								    gs_exp_params));
+
+    // Create new expansions
+    Teuchos::Array<pce_type> x2_gs(d2);
+    for (int i=0; i<d2; i++) {
+      x2_gs[i].copyForWrite();
+      x2_gs[i].reset(gs_quad_exp);
+      gs_basis->transformFromOriginalBasis(x2[i].coeff(), x2_gs[i].coeff());
+    }
+    pce_type y_gs(gs_quad_exp); 
+    gs_basis->transformFromOriginalBasis(y.coeff(), y_gs.coeff());
     
-    // Compute w_gs = u_gs*v_gs in Gram-Schmidt basis
-    gs_quad_exp.times(w_gs, u_gs, v_gs);
+    // Compute z_gs = g(x2_gs, y_gs) in Gram-Schmidt basis
+    pce_type z_gs = g(x2_gs, y_gs);
     
-    // Project w_gs back to original basis
-    gs_basis->transformToOriginalBasis(w_gs.coeff(), w2.coeff());
+    // Project z_gs back to original basis
+    pce_type z2(quad_exp);
+    gs_basis->transformToOriginalBasis(z_gs.coeff(), z2.coeff());
 
     std::cout.precision(12);
-    std::cout << "w = " << std::endl << w;
-    std::cout << "w2 = " << std::endl << w2;
-    std::cout << "w_gs = " << std::endl << w_gs;
+    std::cout << "y = " << std::endl << y;
+    std::cout << "z = " << std::endl << z;
+    std::cout << "z2 = " << std::endl << z2;
+    std::cout << "z_gs = " << std::endl << z_gs;
 
-    double err_w = 0.0;
+    double err_z = 0.0;
     for (int i=0; i<basis->size(); i++) {
-      double ew = std::abs(w[i]-w2[i]);
-      if (ew > err_w) err_w = ew;
+      double ew = std::abs(z.coeff(i)-z2.coeff(i));
+      if (ew > err_z) err_z = ew;
     }
     
     std::cout.setf(std::ios::scientific);
-    std::cout << "w.mean()       = " << w.mean() << std::endl
-	      << "w2.mean()      = " << w2.mean() << std::endl
+    std::cout << "z.mean()       = " << z.mean() << std::endl
+	      << "z2.mean()      = " << z2.mean() << std::endl
 	      << "mean error     = " 
-	      << std::abs(w.mean()-w2.mean()) << std::endl
-	      << "w.std_dev()    = " << w.standard_deviation() << std::endl
-	      << "w2.std_dev()   = " << w2.standard_deviation() << std::endl
+	      << std::abs(z.mean()-z2.mean()) << std::endl
+	      << "z.std_dev()    = " << z.standard_deviation() << std::endl
+	      << "z2.std_dev()   = " << z2.standard_deviation() << std::endl
 	      << "std_dev error  = " 
-	      << std::abs(w.standard_deviation()-w2.standard_deviation()) 
+	      << std::abs(z.standard_deviation()-z2.standard_deviation()) 
 	      << std::endl
-	      << "w coeff error  = " << err_w << std::endl;
+	      << "z coeff error  = " << err_z << std::endl;
     
   }
   catch (std::exception& e) {
