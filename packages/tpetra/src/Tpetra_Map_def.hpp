@@ -39,7 +39,10 @@
 // ************************************************************************
 // @HEADER
 
-// TODO: make sure that Ordinal values in constructors aren't invalid()
+/// \file Tpetra_Map_def.hpp
+///
+/// Implementation of the methods of Tpetra::Map, and of related
+/// nonmember constructors for Tpetra::Map.
 
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
@@ -50,12 +53,12 @@
 #include <stdexcept>
 
 #ifdef DOXYGEN_USE_ONLY
-  #includee "Tpetra_Map_decl.hpp"
+  #include "Tpetra_Map_decl.hpp"
 #endif
 
 namespace {
 
-  //! True if localValue is true on all processes in the communicator, else false.
+  //! Whether localValue is true on all processes in the communicator.
   bool
   allProcsTrue (const Teuchos::Comm<int>& comm,
                 const bool localValue)
@@ -71,7 +74,7 @@ namespace {
     return (globalChar == 1);
   }
 
-  //! Whether [prevGid, curGid] are contiguous (repeats allowed).
+  //! Whether the pair of integers (prevGid, curGid) is contiguous (repeats allowed).
   template<class GO>
   bool
   contiguous (const GO prevGid, const GO curGid) {
@@ -172,11 +175,18 @@ namespace {
   // Contiguous Maps are much faster and take much less memory than
   // noncontiguous Maps, so it's worthwhile to check for contiguity,
   // even when using the most general Map constructor (that accepts a
-  // list on each process of the GIDs that process owns).  One way to
-  // check global contiguity is to compute each process' minimum GID.
-  // If the GIDs do turn out to be contiguous, the list of min GIDs on
-  // each process is useful for constructing the Map's Directory, so
-  // we return that so the Directory doesn't need to compute it again.
+  // list on each process of the GIDs that process owns).
+  //
+  // Global contiguity requires all of the following properties:
+  // 1. The GIDs on each process are locally contiguous.
+  // 2. For all process ranks p in the communicator with p > 0,
+  //    process p's minimum GID is one plus process p-1's maximum GID.
+  //
+  // We can check #2 by computing an array containing the minimum GID
+  // of all processes, replicated on all processes.  This array
+  // minimum GIDs on each process is useful anyway for constructing
+  // the Map's Directory, so we return the array so the Directory
+  // doesn't need to compute it again.
   //
   // This function is a collective over the given communicator.
   //
@@ -308,11 +318,6 @@ namespace {
     return globallyContiguous;
   }
 } // namespace (anonymous)
-
-/** \file Tpetra_Map_def.hpp
-
-    The implementations for the members of Tpetra::Map and related non-member constructors.
- */
 
 //
 // compute isDistributed. it will be global.
