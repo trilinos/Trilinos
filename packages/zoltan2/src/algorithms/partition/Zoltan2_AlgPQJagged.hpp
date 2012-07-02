@@ -48,6 +48,7 @@ public:
 
 	//user is responsible from providing the correct number of part counts
 	void inserToPart (int partNo, lno_t vertexIndex){
+
 		switch (partEnds[partNo]){
 		case -1: // this means partBegins[partNo] is also -1.
 			partBegins[partNo] = vertexIndex;
@@ -58,6 +59,8 @@ public:
 			partBegins[partNo] = vertexIndex;
 			break;
 		}
+
+
 	}
 
 	lno_t *getLinkedList(){ return linkedList;}
@@ -460,57 +463,68 @@ int pqJagged_getNumThreads(){
 	return numThreads;
 }
 
+
+/*
+ * Function to determine the minimum and maximum coordinate
+ * in the given set of points.
+ */
 template <typename scalar_t>
 void pqJagged_getMinMaxCoord(scalar_t *pqJagged_coordinates, scalar_t &minCoordinate, scalar_t &maxCoordinate,
-		size_t numLocalCoords, const RCP<const Environment> &env, int numThreads,
-		bool firstIteration, lno_t *partitionedPointCoordinates, lno_t coordinateBegin, lno_t coordinateEnd){
+		const RCP<const Environment> &env, int numThreads,
+		lno_t *partitionedPointCoordinates, lno_t coordinateBegin, lno_t coordinateEnd, scalar_t *max_min_array /*sized nothreads * 2*/){
 
-	int nt2 = numThreads * 2;
-	scalar_t *max_min = new scalar_t[nt2];
-
+	if(coordinateBegin <= coordinateEnd) minCoordinate=99999999; maxCoordinate = -99999999;
+	cout << coordinateBegin << " end: " << coordinateEnd << endl;
 #pragma omp parallel
 	{
 		int myId = omp_get_thread_num();
 		scalar_t myMin, myMax;
 
-		size_t j = firstIteration ? 0 : partitionedPointCoordinates[coordinateBegin];
+		//size_t j = firstIteration ? 0 : partitionedPointCoordinates[coordinateBegin];
+		size_t j = partitionedPointCoordinates[coordinateBegin];
 		myMin = myMax = pqJagged_coordinates[j];
+
 #pragma omp for
-		for(size_t j = coordinateBegin + 1; j < coordinateEnd; ++j){
-			int i = firstIteration ? j:partitionedPointCoordinates[coordinateBegin];
+		for(lno_t j = coordinateBegin + 1; j < coordinateEnd; ++j){
+
+			//int i = firstIteration ? j:partitionedPointCoordinates[coordinateBegin];
+			int i = partitionedPointCoordinates[j];
 			if(pqJagged_coordinates[i] > myMax) myMax = pqJagged_coordinates[i];
 			if(pqJagged_coordinates[i] < myMin) myMin = pqJagged_coordinates[i];
 		}
-		max_min[myId] = myMin;
-		max_min[myId + numThreads] = myMax;
+		max_min_array[myId] = myMin;
+		max_min_array[myId + numThreads] = myMax;
 #pragma omp barrier
 
 
 #pragma omp single nowait
 		{
-			minCoordinate = max_min[0];
+			minCoordinate = max_min_array[0];
 			for(int i = 1; i < numThreads; ++i){
-				if(max_min[i] < minCoordinate) minCoordinate = max_min[i];
+				if(max_min_array[i] < minCoordinate) minCoordinate = max_min_array[i];
 			}
 		}
 #pragma omp single nowait
 		{
-			maxCoordinate = max_min[numThreads];
-			for(int i = numThreads + 1; i < nt2; ++i){
-				if(max_min[i] > maxCoordinate) maxCoordinate = max_min[i];
+			maxCoordinate = max_min_array[numThreads];
+			for(int i = numThreads + 1; i < numThreads * 2; ++i){
+				if(max_min_array[i] > maxCoordinate) maxCoordinate = max_min_array[i];
 			}
 		}
 
 	}
 
-	delete [] max_min;
+	//Here mpi reduce to get min and max coordinates.
 }
 
 
 template <typename scalar_t>
-void pqJagged_getCutCoord_Weights(scalar_t minCoordinate, scalar_t maxCoordinate,
-		bool pqJagged_uniformParts, scalar_t *pqJagged_partSizes /*p sized, weight ratios of each part*/ , size_t noCuts/*p-1*/ ,
-		scalar_t *cutCoordinates /*p - 1 sized, coordinate of each cut line*/, scalar_t *cutPartRatios /*cumulative weight ratios, at left side of each cut line. p-1 sized*/){
+void pqJagged_getCutCoord_Weights(
+		scalar_t minCoordinate, scalar_t maxCoordinate,
+		bool pqJagged_uniformParts, scalar_t *pqJagged_partSizes /*p sized, weight ratios of each part*/,
+		size_t noCuts/*p-1*/ ,
+		scalar_t *cutCoordinates /*p - 1 sized, coordinate of each cut line*/,
+		scalar_t *cutPartRatios /*cumulative weight ratios, at left side of each cut line. p-1 sized*/){
 
 	scalar_t coordinateRange = maxCoordinate - minCoordinate;
 	if(pqJagged_uniformParts){
@@ -1037,65 +1051,39 @@ void getNewCoordinates_simple(const size_t &total_part_count, const scalar_t * t
 
 
 template <typename scalar_t, typename lno_t>
-void pqJagged_1DPart_simple(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_weights,	bool pqJagged_uniformWeights,
-		const size_t &numLocalCoords,const global_size_t &numGlobalCoords,	scalar_t &minCoordinate,
-		scalar_t &maxCoordinate, bool pqJagged_uniformParts, scalar_t *pqJagged_partSizes, size_t partNo, int noThreads,
-		scalar_t imbalanceTolerance, scalar_t *cutCoordinates,
-		bool firstIteration, lno_t *partitionedPointCoordinates, lno_t coordinateBegin, lno_t coordinateEnd){
+void pqJagged_1DPart_simple(
+		scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_weights,	bool pqJagged_uniformWeights,
+		const size_t &numLocalCoords, const global_size_t &numGlobalCoords,	scalar_t &minCoordinate, scalar_t &maxCoordinate,
+		bool pqJagged_uniformParts, scalar_t *pqJagged_partSizes, size_t partNo, int noThreads,
+		scalar_t imbalanceTolerance, scalar_t *cutCoordinates, lno_t *partitionedPointCoordinates,
+		lno_t coordinateBegin, lno_t coordinateEnd,
+
+		scalar_t *cutCoordinatesWork, 	// work array to manipulate coordinate of cutlines in different iterations.
+		scalar_t *cutPartRatios,		// the weight ratios at left side of the cuts. First is 0, last is 1.
+
+		scalar_t *cutUpperBounds,  //to determine the next cut line with binary search
+		scalar_t *cutLowerBounds,  //to determine the next cut line with binary search
+
+		scalar_t *cutLowerWeight,  //to determine the next cut line with binary search
+		scalar_t *cutUpperWeight,   //to determine the next cut line with binary search
+		bool *isDone,
+		scalar_t **partWeights,
+		scalar_t **leftClosestDistance,
+		scalar_t **rightClosestDistance,
+		scalar_t *totalPartWeights
+		){
+
 
 	scalar_t *cutCoordinates_tmp = cutCoordinates;
-
-
 	size_t noCuts = partNo - 1;
-	scalar_t *cutCoordinatesWork = new scalar_t [noCuts]; // work array to manipulate coordinate of cutlines in different iterations.
-	scalar_t *cutPartRatios = new scalar_t[noCuts]; // the weight ratios at left side of the cuts. First is 0, last is 1.
-
-	scalar_t *cutUpperBounds = new scalar_t [noCuts];  //to determine the next cut line with binary search
-	scalar_t *cutLowerBounds = new scalar_t [noCuts];  //to determine the next cut line with binary search
-
-	scalar_t *cutLowerWeight = new scalar_t [noCuts];  //to determine the next cut line with binary search
-	scalar_t *cutUpperWeight = new scalar_t [noCuts];  //to determine the next cut line with binary search
-
 
 	pqJagged_getCutCoord_Weights<scalar_t>(minCoordinate, maxCoordinate,
 			pqJagged_uniformParts, pqJagged_partSizes, noCuts,
 			cutCoordinates_tmp, cutPartRatios);
 
-	//make a function for this.
-	//assuming that multiplication via 0 or 1 is faster than branches.
-	/*
-	scalar_t *wghts = NULL;
-	scalar_t unit_weight = 1;
-	lno_t v_scaler;
-	if (pqJagged_uniformWeights){
-		wghts = &unit_weight;
-		v_scaler = 0;
-	}
-	else {
-		wghts = pqJagged_weights;
-		v_scaler = 1;
-	}
-	*/
-
-
 	//calculate total weight
 	scalar_t totalWeight = 0;
-
-	bool *isDone = new bool [noCuts];
-	scalar_t **partWeights = new scalar_t *[noThreads];
-
-	scalar_t **leftClosestDistance = new scalar_t* [noThreads];
-	scalar_t **rightClosestDistance = new scalar_t* [noThreads];
-
 	size_t total_part_count = partNo + noCuts;
-	for(int i = 0; i < noThreads; ++i){
-		partWeights[i] = new scalar_t[total_part_count];
-		rightClosestDistance[i] = new scalar_t [noCuts];
-		leftClosestDistance[i] = new scalar_t [noCuts];
-	}
-
-	scalar_t *totalPartWeights = new scalar_t[total_part_count];
-
 	size_t allDone = noCuts;
 
 
@@ -1110,15 +1098,14 @@ void pqJagged_1DPart_simple(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_w
 		if (pqJagged_uniformWeights) {
 			totalWeight = coordinateEnd - coordinateBegin;
 		} else {
-
 #pragma omp for reduction(+:totalWeight)
 			for (size_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
-				int i = firstIteration? ii:partitionedPointCoordinates[ii];
-				scalar_t w = pqJagged_uniformWeights ? 1:pqJagged_weights[i];
-				totalWeight += w;
+				int i = partitionedPointCoordinates[ii];
+				totalWeight += pqJagged_weights[i];
 			}
 		}
 		scalar_t globaltotalWeight = totalWeight; // reduce totalweight here. TODO
+
 
 		int me = omp_get_thread_num();
 		scalar_t *myPartWeights = partWeights[me];
@@ -1129,46 +1116,17 @@ void pqJagged_1DPart_simple(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_w
 		//pqJagged_PartVertices <lno_t, size_t> pqPV;
 		//pqPV.set(numLocalCoords, coordinate_linked_list, myStarts, myEnds);
 
-
 #pragma omp for
 		for(size_t i = 0; i < noCuts; ++i){
 			isDone[i] = false;
 			cutLowerBounds[i] = -1;
 			cutUpperBounds[i] = -1;
-
 		}
 
 
 		while (allDone != 0){
 			iterationCount++;
-/*
-#pragma omp single
-			{
-				if(iterationCount != 1) {
-				cout << "alldone:" << allDone << endl;
-				for (size_t i = 0; i < noCuts; ++i){
-					if (!isDone[i])
-					{cout << "iter:" << iterationCount<< " i:" << i<< " is not done! " << cutCoordinates[i] << " " << cutUpperBounds[i] << " "<< cutLowerBounds[i] << endl;
-					}
-				}
-				}
-			}
-*/
-			/*
-#pragma omp single
-			{
-				int i = 83;
-				if(iterationCount > 1 && !isDone[i])
-				cout << "iter:" << iterationCount<< " i:" << i<< " is not done! " << cutCoordinates[i] << " " << cutUpperBounds[i] << " "<< cutLowerBounds[i] << endl;
-				else
-					cout << "iter:" << iterationCount<< " i:" << i<< " is done! " << cutCoordinates[i] << " " << cutUpperBounds[i] << " "<< cutLowerBounds[i] << endl;
-				i = 84;
-				if(iterationCount > 1 && !isDone[i])
-								cout << "iter:" << iterationCount<< " i:" << i<< " is not done! " << cutCoordinates[i] << " " << cutUpperBounds[i] << " "<< cutLowerBounds[i] << endl;
-				else
-					cout << "iter:" << iterationCount<< " i:" << i<< " is done! " << cutCoordinates[i] << " " << cutUpperBounds[i] << " "<< cutLowerBounds[i] << endl;
-			}
-			*/
+
 			for (size_t i = 0; i < total_part_count; ++i){
 				myPartWeights[i] = 0;
 			}
@@ -1179,7 +1137,7 @@ void pqJagged_1DPart_simple(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_w
 
 #pragma omp for
 			for (size_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
-				int i = firstIteration? ii: partitionedPointCoordinates[ii];
+				int i = partitionedPointCoordinates[ii];
 
 				for(size_t j = 0; j < noCuts; ++j){
 					scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
@@ -1235,60 +1193,12 @@ void pqJagged_1DPart_simple(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_w
 
 			//all to all partweight send;
 			//get totalpartweights from different nodes sized total_part_count
-
-/*
-#pragma omp single
-			{
-
-				cout << "left:";
-				for(size_t j = 0; j < noCuts; ++j){
-					cout <<  leftClosestDistance[0][j] << " " ; //" left:" << myLeftClosest[j] << " right:" << myRightClosest[j] << " ";
-				}
-				cout << endl;
-
-				cout << "right:";
-				for(size_t j = 0; j < noCuts; ++j){
-					cout <<  rightClosestDistance[0][j] << " " ; //" left:" << myLeftClosest[j] << " right:" << myRightClosest[j] << " ";
-				}
-				cout << endl;
-
-
-				cout << "current:";
-				for(size_t j = 0; j < noCuts; ++j){
-					cout << cutCoordinates[j] << " " ; //" left:" << myLeftClosest[j] << " right:" << myRightClosest[j] << " ";
-				}
-				cout << endl;
-
-
-			}
-*/
-
-
-			/*
-#pragma omp single
-			{
-				for(size_t j = 0; j < noCuts; ++j){
-					cout << leftClosestDistance[0][j] << " ";
-				}
-				cout << endl;
-
-				for(size_t j = 0; j < noCuts; ++j){
-					cout << rightClosestDistance[0][j] << " ";
-				}
-				cout << endl;
-			}
-*/
 			//reduce part sizes here within all mpi processes. under totalPartweights TODO
 
 			getNewCoordinates_simple(total_part_count, totalPartWeights, isDone, cutPartRatios,
 					globaltotalWeight, imbalanceTolerance, allDone, cutUpperBounds, cutLowerBounds,
 					cutCoordinates_tmp, noCuts,maxCoordinate, minCoordinate, leftClosestDistance[0],
 					rightClosestDistance[0],cutLowerWeight, cutUpperWeight,cutCoordinatesWork);
-		}
-
-#pragma omp single
-		{
-		cout << "cutCoordinates:" << cutCoordinates << " cutCoordinates_tmp:" << cutCoordinates_tmp << endl;
 		}
 
 		if (cutCoordinates != cutCoordinates_tmp){
@@ -1309,7 +1219,7 @@ void pqJagged_1DPart_simple(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_w
 		}
 	}
 
-
+/*
 	float maxi = imbalanceOf(totalPartWeights[0], totalWeight, cutPartRatios[0]);
 
 	float mini = imbalanceOf(totalPartWeights[0], totalWeight, cutPartRatios[0]);
@@ -1333,30 +1243,7 @@ void pqJagged_1DPart_simple(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_w
 	for(int i = 0; i < noCuts; ++i){
 			cout << "cutCoordinates[" << i<<"]:"<< cutCoordinates_tmp[i]<< endl;
 	}
-
-
-	delete []cutCoordinatesWork; // work array to manipulate coordinate of cutlines in different iterations.
-	delete []cutPartRatios; // the weight ratios at left side of the cuts. First is 0, last is 1.
-
-	delete []cutUpperBounds;  //to determine the next cut line with binary search
-	delete []cutLowerBounds;  //to determine the next cut line with binary search
-
-	delete []cutLowerWeight;  //to determine the next cut line with binary search
-	delete []cutUpperWeight;  //to determine the next cut line with binary search
-
-	delete []isDone;
-	delete []totalPartWeights;
-
-	for(int i = 0; i < noThreads; ++i){
-		delete [] partWeights[i] ;
-		delete [] rightClosestDistance[i];
-		delete [] leftClosestDistance[i];
-	}
-
-	delete [] partWeights;
-
-	delete [] leftClosestDistance ;
-	delete [] rightClosestDistance;
+*/
 
 
 
@@ -1365,21 +1252,20 @@ void pqJagged_1DPart_simple(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_w
 
 
 template <typename lno_t, typename scalar_t>
-void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThreads,
+void getChunksFromCoordinates(size_t partNo, size_t numCoordsInPart, int noThreads,
 		scalar_t *pqJagged_coordinates, scalar_t *cutCoordinates, lno_t *totalCounts,
 		lno_t *partitionedPointCoordinates,
-		bool firstIteration, lno_t *newpartitionedPointCoordinates, lno_t coordinateBegin, lno_t coordinateEnd){
+		bool firstIteration, lno_t *newpartitionedPointCoordinates, lno_t coordinateBegin, lno_t coordinateEnd,
+		lno_t *coordinate_linked_list, lno_t **coordinate_starts, lno_t **coordinate_ends, size_t numLocalCoord){
 
-	lno_t *coordinate_linked_list = new lno_t[coordinateEnd]; // pass it as argument. TODO
-	lno_t **coordinate_starts = new lno_t *[noThreads];
-	lno_t **coordinate_ends = new lno_t *[noThreads];
 
+	//cout << "\n\n\niter ends" << endl;
 	lno_t **partPointCounts = new lno_t *[noThreads];
 	size_t noCuts = partNo - 1;
 
 	for(int i = 0; i < noThreads; ++i){
-		coordinate_starts[i] = new lno_t[partNo];
-		coordinate_ends[i] = new lno_t[partNo];
+		//coordinate_starts[i] = new lno_t[partNo];
+		//coordinate_ends[i] = new lno_t[partNo];
 		if(i == 0){
 			partPointCounts[i] = totalCounts;
 		} else {
@@ -1391,17 +1277,18 @@ void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThread
 	{
 
 		int me = omp_get_thread_num();
+		//cout << "me:" << me << endl;
 		lno_t *myStarts = coordinate_starts[me];
 		lno_t *myEnds = coordinate_ends[me];
 		lno_t *myPartPointCounts = partPointCounts[me];
 
 
 		pqJagged_PartVertices <lno_t, size_t> pqPV;
-		pqPV.set(numLocalCoords, coordinate_linked_list, myStarts, myEnds);
+		pqPV.set(numCoordsInPart, coordinate_linked_list, myStarts, myEnds);
 		memset(myPartPointCounts, 0, sizeof(lno_t) * partNo);
 
 #pragma omp for
-		for (size_t i = 0; i < numLocalCoords; ++i){
+		for (size_t i = 0; i < numLocalCoord; ++i){
 			coordinate_linked_list[i] = -1;
 		}
 
@@ -1413,12 +1300,17 @@ void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThread
 
 
 
+		//cout << "coord begin:" << coordinateBegin << " end:" << coordinateEnd << endl;
 #pragma omp for
 		for (size_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
-			int i = firstIteration ? ii: partitionedPointCoordinates[ii];
+			//int i = firstIteration ? ii: partitionedPointCoordinates[ii];
+			lno_t i = partitionedPointCoordinates[ii];
+
+
 			bool inserted = false;
 			for(size_t j = 0; j < noCuts; ++j){
 				if (pqJagged_coordinates[i] < cutCoordinates[j]){
+
 					pqPV.inserToPart(j, i);
 					inserted = true;
 					break;
@@ -1427,6 +1319,9 @@ void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThread
 				}
 			}
 			if(!inserted){
+				lno_t vertexIndex = i;
+
+
 				pqPV.inserToPart(noCuts, i);
 			}
 		}
@@ -1440,11 +1335,13 @@ void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThread
 			}
 		}
 */
+
+
 #pragma omp for
 		for(size_t i = 0; i < partNo; ++i){
 
 			int head = 0, tail = 0;
-			while(coordinate_ends[head][i] == -1){
+			while(head < noThreads && coordinate_ends[head][i] == -1){
 				++head;
 			}
 			int firstHead = head;
@@ -1469,8 +1366,12 @@ void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThread
 				j = tail;
 
 			}
-			coordinate_starts[0][i] = coordinate_starts[firstHead][i];
+			coordinate_starts[0][i] = firstHead >= noThreads ? -1:coordinate_starts[firstHead][i];
 		}
+
+
+
+
 
 #pragma omp for
 		for(size_t j = 0; j < partNo; ++j){
@@ -1478,7 +1379,7 @@ void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThread
 			for (int i = 0; i < noThreads; ++i){
 				pwj += partPointCounts[i][j];
 			}
-			totalCounts[j] = pwj + numLocalCoords;
+			totalCounts[j] = pwj + numCoordsInPart;
 		}
 
 
@@ -1487,11 +1388,13 @@ void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThread
 			lno_t nextPoint = coordinate_starts[0][i];
 			lno_t pcnt = 0;
 
-			lno_t prevCount = 0;
-			if (i > 0) prevCount = totalCounts[i -1];
+			lno_t prevCount = coordinateBegin;
+			if (i > 0) prevCount = totalCounts[i -1] + coordinateBegin;
+			//cout << "starting to write from:" << prevCount << endl;
+
 			while(nextPoint != -1){
 				//cout << nextPoint << " ";
-				partitionedPointCoordinates[prevCount + pcnt++] = nextPoint;
+				newpartitionedPointCoordinates[prevCount + pcnt++] = nextPoint;
 				nextPoint = coordinate_linked_list[nextPoint];
 			}
 			//cout << endl;
@@ -1503,18 +1406,13 @@ void getChunksFromCoordinates(size_t partNo, size_t numLocalCoords, int noThread
 
 
 
-	delete [] coordinate_linked_list;
 
 	for(int i = 0; i < noThreads; ++i){
-		delete [] coordinate_starts[i];
-		delete [] coordinate_ends[i];
 		if(i != 0){
 			delete [] partPointCounts[i];
 		}
 	}
 
-	delete []coordinate_starts;
-	delete []coordinate_ends;
 	delete []partPointCounts;
 
 }
@@ -1611,25 +1509,18 @@ void AlgPQJagged(
 
 	cout << "numThreads=" << numThreads << endl;
 	scalar_t minCoordinate, maxCoordinate;
-	/*
-	for (int i = 0; i < coordDim; ++i){
-		pqJagged_getMinMaxCoord<scalar_t>(pqJagged_coordinates[i], minCoordinate,maxCoordinate, numLocalCoords, env, numThreads);
-		//cout << "i:" << i << " m:" << minCoordinate << " max:" << maxCoordinate << endl;
-
-	}
-	*/
 
 
 	size_t *partNo = new size_t[coordDim];
 	size_t totalDimensionCut = 0;
 	size_t totalPartCount = 1;
+	size_t maxPartNo = 0;
 	for (int i = 0; i < coordDim; ++i){
-		partNo[i] = numGlobalParts;
+		partNo[i] = numGlobalParts; //TODO:PXPXP partition currently. Need to change the parameters.
 		totalPartCount *= partNo[i];
+		if(partNo[i] > maxPartNo) maxPartNo = partNo[i];
 	}
 	totalDimensionCut = totalPartCount - 1;
-	cout << totalDimensionCut << endl;
-	cout << totalPartCount << endl;
 
 
 
@@ -1639,42 +1530,137 @@ void AlgPQJagged(
 	lno_t *partitionedPointCoordinates = new lno_t [numLocalCoords];
 	lno_t *newpartitionedPointCoordinates = new lno_t [numLocalCoords];
 
-	lno_t currentCoordCount = numLocalCoords;
+
+	scalar_t *max_min_array = new scalar_t[numThreads * 2];
+
+
+	//initial configurations
+
+#pragma omp parallel for
+	for(lno_t i = 0; i < numLocalCoords; ++i){
+		//set each pointer-i to i.
+		partitionedPointCoordinates[i] = i;
+	}
+
+	//initially there is a single partition
 	lno_t currentPartitionCount = 1;
 
+	//single partition starts at index-0, and ends at numLocalCoords
 	lno_t coordinateBegin = 0;
 	lno_t coordinateEnd = numLocalCoords;
 
-	bool firstIteration = true;
-	size_t currentCutCoordinate = 0;
-
+	//inTotalCounts array holds the end points in partitionedPointCoordinates array
+	//for each partition. Initially sized 1, and single element is set to numLocalCoords.
 	lno_t *inTotalCounts = new lno_t [1];
 	inTotalCounts[0] = numLocalCoords;
+
+	//the ends points of the output.
 	lno_t *outTotalCounts = NULL;
 
+	//the array holding the points in each part as linked list
+	lno_t *coordinate_linked_list = new lno_t[numLocalCoords];
+	//the start and end coordinate of  each part.
+	lno_t **coordinate_starts = new lno_t *[numThreads];
+	lno_t **coordinate_ends = new lno_t *[numThreads];
+
+	//assign the max size to starts, as it will be reused.
+	for(int i = 0; i < numThreads; ++i){
+		coordinate_starts[i] = new lno_t[maxPartNo];
+		coordinate_ends[i] = new lno_t[maxPartNo];
+	}
+
+	size_t maxCutNo = maxPartNo - 1;
+	scalar_t *cutCoordinatesWork = new scalar_t [maxCutNo]; // work array to manipulate coordinate of cutlines in different iterations.
+	scalar_t *cutPartRatios = new scalar_t[maxCutNo]; // the weight ratios at left side of the cuts. First is 0, last is 1.
+
+	scalar_t *cutUpperBounds = new scalar_t [maxCutNo];  //to determine the next cut line with binary search
+	scalar_t *cutLowerBounds = new scalar_t [maxCutNo];  //to determine the next cut line with binary search
+
+	scalar_t *cutLowerWeight = new scalar_t [maxCutNo];  //to determine the next cut line with binary search
+	scalar_t *cutUpperWeight = new scalar_t [maxCutNo];  //to determine the next cut line with binary search
+
+	bool *isDone = new bool [maxCutNo];
+	scalar_t **partWeights = new scalar_t *[numThreads];
+
+	scalar_t **leftClosestDistance = new scalar_t* [numThreads];
+	scalar_t **rightClosestDistance = new scalar_t* [numThreads];
+
+	size_t maxTotalPartCount = maxPartNo + maxCutNo;
+	for(int i = 0; i < numThreads; ++i){
+		partWeights[i] = new scalar_t[maxTotalPartCount];
+		rightClosestDistance[i] = new scalar_t [maxCutNo];
+		leftClosestDistance[i] = new scalar_t [maxCutNo];
+	}
+
+	scalar_t *totalPartWeights = new scalar_t[maxTotalPartCount];
+
+
+
+
 	scalar_t *cutCoordinates =  allCutCoordinates;
+
+
+	bool firstIteration = true;
 	for (int i = 0; i < coordDim; ++i){
+
 		lno_t partitionCoordinateBegin = 0;
 		outTotalCounts = new lno_t[currentPartitionCount * partNo[i]];
 
-		for (int j = 0; j < currentPartitionCount; ++j){
+		size_t currentOut = 0;
+		size_t currentIn = 0;
+		size_t previousEnd = 0;
+
+		for (int j = 0; j < currentPartitionCount; ++j, ++currentIn){
+
+			coordinateEnd= inTotalCounts[currentIn];
+			coordinateBegin = currentIn==0 ? 0: inTotalCounts[currentIn -1];
+
+			cout << "begin:" << coordinateBegin << " end: " << coordinateEnd << endl;
 
 			pqJagged_getMinMaxCoord<scalar_t>(pqJagged_coordinates[i], minCoordinate,maxCoordinate,
-					numLocalCoords, env, numThreads,
-					firstIteration, partitionedPointCoordinates, coordinateBegin, coordinateEnd);
+					env, numThreads, partitionedPointCoordinates, coordinateBegin, coordinateEnd, max_min_array);
 
 			pqJagged_1DPart_simple<scalar_t, lno_t>(pqJagged_coordinates[i], pqJagged_weights[0], pqJagged_uniformWeights[0],
 					numLocalCoords, numGlobalCoords,	minCoordinate,
 					maxCoordinate, pqJagged_uniformParts[0], pqJagged_partSizes[0], partNo[i], numThreads,
 					imbalanceTolerance, cutCoordinates,
-					firstIteration,partitionedPointCoordinates, coordinateBegin, coordinateEnd);
+					partitionedPointCoordinates, coordinateBegin, coordinateEnd,
+					cutCoordinatesWork,
+					cutPartRatios,
 
-			getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], numLocalCoords, numThreads,
-					pqJagged_coordinates[i], cutCoordinates, outTotalCounts,
-					partitionedPointCoordinates, firstIteration,newpartitionedPointCoordinates, coordinateBegin, coordinateEnd);
-			partitionCoordinateBegin += coordinateEnd - coordinateBegin;
-			//cutCoordinates += partNo[i] - 1;
+					cutUpperBounds,
+					cutLowerBounds,
+					cutLowerWeight,
+					cutUpperWeight,
+
+					isDone,
+					partWeights,
+					leftClosestDistance,
+					rightClosestDistance,
+					totalPartWeights);
+
+			getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], coordinateEnd - coordinateBegin, numThreads,
+					pqJagged_coordinates[i], cutCoordinates, outTotalCounts + currentOut,
+					partitionedPointCoordinates, firstIteration,newpartitionedPointCoordinates, coordinateBegin, coordinateEnd,
+					coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords);
+
+
+
+			cutCoordinates += partNo[i] - 1;
+
+			partitionCoordinateBegin += coordinateBegin - coordinateEnd;
 			firstIteration = false;
+
+			for (size_t ii = 0;ii < partNo[i]; ++ii){
+				cout << "cnt:" << outTotalCounts[currentOut+ii] << " for i:" << ii << endl;
+				outTotalCounts[currentOut+ii] += previousEnd;
+			}
+
+
+			previousEnd = outTotalCounts[currentOut + partNo[i] - 1];
+
+
+			currentOut += partNo[i];
 #ifdef _debug
 			for (size_t ii = 0;ii < partNo[i]; ++ii){
 				cout << "cnt:" << totalCounts[ii] << " for i:" << ii << endl;
@@ -1701,14 +1687,51 @@ void AlgPQJagged(
 #endif
 
 		}
+
+
+
+#ifdef _debug
+		lno_t *test =  new lno_t [numLocalCoords];
+		memset(test, 0 , numLocalCoords * sizeof(lno_t));
+
+
+		int c = 0;
+		for(size_t iii = 0; iii < numLocalCoords; ++iii){
+			lno_t a = newpartitionedPointCoordinates[iii];
+			test[a]++;
+			c++;
+		}
+
+		bool error = false;
+		int total = 0;
+		if(i > 0)
+		for(size_t iii = 0; iii < numLocalCoords; ++iii){
+			total += test[iii];
+			if(test[iii] != 1){
+				cout << "dim:"<< i <<" i:" << iii << " appears " << test[iii] << " times"<< " local:" << numLocalCoords<< " c:" << c<< endl;
+				error = true;
+			}
+		}
+		cout << "total:" << total << endl;
+
+		if(error) exit(1);
+#endif
+
+		lno_t * tmp = newpartitionedPointCoordinates;
+		newpartitionedPointCoordinates = partitionedPointCoordinates;
+		partitionedPointCoordinates = tmp;
+
+		currentPartitionCount *= partNo[i];
 		delete [] inTotalCounts;
 		inTotalCounts = outTotalCounts;
 		outTotalCounts = NULL;
-		break;
 	}
 
 
-
+	for(int i = 0; i < totalPartCount;++i){
+			cout << inTotalCounts[i] << " ";
+		}
+		cout << endl;
 
 
 
@@ -1973,12 +1996,37 @@ void AlgPQJagged(
 	solution->setParts(gnoList, partId, metrics);
 #endif
 
-	delete []cutCoordinates;
+	delete []allCutCoordinates;
 	delete []pqJagged_coordinates;
 	delete []pqJagged_weights;
 	delete []pqJagged_uniformParts;
 	delete []pqJagged_partSizes;
 	delete []pqJagged_uniformWeights;
+
+	delete []cutCoordinatesWork; // work array to manipulate coordinate of cutlines in different iterations.
+	delete []cutPartRatios; // the weight ratios at left side of the cuts. First is 0, last is 1.
+
+	delete []cutUpperBounds;  //to determine the next cut line with binary search
+	delete []cutLowerBounds;  //to determine the next cut line with binary search
+
+	delete []cutLowerWeight;  //to determine the next cut line with binary search
+	delete []cutUpperWeight;  //to determine the next cut line with binary search
+
+	delete []isDone;
+	delete []totalPartWeights;
+
+	for(int i = 0; i < numThreads; ++i){
+		delete [] partWeights[i] ;
+		delete [] rightClosestDistance[i];
+		delete [] leftClosestDistance[i];
+	}
+
+	delete [] partWeights;
+
+	delete [] leftClosestDistance ;
+	delete [] rightClosestDistance;
+
+
 }
 
 
