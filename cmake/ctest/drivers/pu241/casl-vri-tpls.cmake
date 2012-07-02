@@ -39,7 +39,3 @@ SET(Libmesh_INCLUDE_DIRS  /projects/TPLs/moose_libs/libmesh/include/flat_headers
 SET(Libmesh_LIBRARY_DIRS  /projects/TPLs/moose_libs/libmesh/lib/x86_64-unknown-linux-gnu_opt CACHE FILEPATH "")
 SET(Libmesh_Contrib_INCLUDE_DIRS  /projects/TPLs/moose_libs/libmesh/contrib/flat_headers CACHE FILEPATH "")
 SET(Libmesh_Contrib_LIBRARY_DIRS  /projects/TPLs/moose_libs/libmesh/contrib/lib/x86_64-unknown-linux-gnu_opt CACHE FILEPATH "")
-SET(PETSC_w_FLAPACK_INCLUDE_DIRS  /projects/TPLs/moose_libs/petsc/petsc-3.1-p8/gnu-opt/include CACHE FILEPATH "")
-SET(PETSC_w_FLAPACK_LIBRARY_DIRS  /projects/TPLs/moose_libs/petsc/petsc-3.1-p8/gnu-opt/lib CACHE FILEPATH "")
-SET(HYPRE_INCLUDE_DIRS  /projects/TPLs/moose_libs/hypre-2.8.0b/src CACHE FILEPATH "")
-SET(HYPRE_LIBRARY_DIRS  /projects/TPLs/moose_libs/hypre-2.8.0b/src/lib CACHE FILEPATH "")
