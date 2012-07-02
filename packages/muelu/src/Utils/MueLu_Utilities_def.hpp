@@ -2,6 +2,7 @@
 #define MUELU_UTILITIES_DEF_HPP
 
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -324,17 +325,11 @@ t0 = MPI_Wtime();
 #endif
     }
 
-    RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
+    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
     params->set("Optimize Storage",doOptimizeStorage);
-    if (!doOptimizeStorage) {
-      C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
-                      (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                      params);
-    } else {
-      C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
-                      (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                      params);
-    }
+    C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
+                    (transposeA) ? A->getDomainMap() : A->getRangeMap(),
+                    params);
 
     ///////////////////////// EXPERIMENTAL
     C->CreateView("stridedMaps", A, transposeA, B, transposeB);
@@ -473,6 +468,7 @@ if (mypid == 0)
     if (bindx) ML_free(bindx);
     if (val) ML_free(val);
     ML_Operator_Destroy(&ml_AtimesB);
+    ML_Comm_Destroy(&comm);
 
     return result;
 #else // no MUELU_ML
@@ -1012,12 +1008,9 @@ if (mypid == 0)
       if (doFillComplete) {
         if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
           throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
-        RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
+        RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
         params->set("Optimize Storage",doOptimizeStorage);
-        if (doOptimizeStorage)
-          Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
-        else
-          Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
+        Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
       }
 #else
       throw(Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled."));

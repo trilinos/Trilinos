@@ -134,7 +134,7 @@ namespace Xpetra {
     //! @name Overridden from Teuchos::Describable
     //@{
 
-    //! Return a simple one-line description of this object.
+    //! A simple one-line description of this object.
     virtual std::string description() const = 0;
 
     //! Print the object with some verbosity level to an FancyOStream object.

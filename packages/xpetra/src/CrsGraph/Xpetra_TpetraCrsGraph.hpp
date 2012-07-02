@@ -20,7 +20,7 @@
 using Teuchos::ParameterList;
 
 namespace Xpetra {
- 
+
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toXpetra(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > );
