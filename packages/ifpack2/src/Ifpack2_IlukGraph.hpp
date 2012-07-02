@@ -269,8 +269,10 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
     Teuchos::RCP<const TpetraMapType> L_RangeMap = Graph_->getRangeMap();
     Teuchos::RCP<const TpetraMapType> U_DomainMap = Graph_->getDomainMap();
     Teuchos::RCP<const TpetraMapType> U_RangeMap = OverlapGraph_->getRowMap();
-    L_Graph_->fillComplete(L_DomainMap, L_RangeMap, Tpetra::DoNotOptimizeStorage);
-    U_Graph_->fillComplete(U_DomainMap, U_RangeMap, Tpetra::DoNotOptimizeStorage);
+    Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
+    params->set("Optimize Storage",false);
+    L_Graph_->fillComplete(L_DomainMap, L_RangeMap, params);
+    U_Graph_->fillComplete(U_DomainMap, U_RangeMap, params);
     L_Graph_->resumeFill();
     U_Graph_->resumeFill();
     
