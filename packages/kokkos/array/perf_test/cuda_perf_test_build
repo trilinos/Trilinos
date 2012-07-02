@@ -12,7 +12,6 @@ set GCC_SOURCES="../src/impl/*.cpp"
 set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_Impl.cpp"
 set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_pthread.cpp"
 set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_hwloc.cpp"
-set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_MemoryManager.cpp"
 set GCC_SOURCES="${GCC_SOURCES} PerfTestMain.cpp PerfTestHost.cpp PerfTestCuda.cpp"
 set GCC_SOURCES="${GCC_SOURCES} ../TPL/gtest/gtest-all.cc"
 

@@ -45,14 +45,14 @@ namespace TestFEMesh {
 
 template< typename coordinate_scalar_type >
 struct VerifyUnpack<
-  KokkosArray::Array< coordinate_scalar_type[3] , KOKKOS_MACRO_DEVICE > >
+  KokkosArray::View< coordinate_scalar_type[][3] , KOKKOS_MACRO_DEVICE > >
 {
   typedef KOKKOS_MACRO_DEVICE              device_type ;
   typedef typename device_type::size_type  size_type ;
   typedef size_type                        value_type ;
   typedef KokkosArray::View< coordinate_scalar_type[] , device_type > buffer_type ;
 
-  typedef KokkosArray::Array< coordinate_scalar_type[3] , device_type > array_type ;
+  typedef KokkosArray::View< coordinate_scalar_type[][3] , device_type > array_type ;
 
 private:
 

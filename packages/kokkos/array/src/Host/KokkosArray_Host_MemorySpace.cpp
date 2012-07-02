@@ -107,7 +107,7 @@ void * HostMemorySpace::allocate(
 
   void * ptr = 0 ;
 
-  if ( value_size * value_count ) {
+  if ( 0 < value_size * value_count ) {
 
     ptr = malloc( value_size * value_count );
 

@@ -50,7 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <KokkosArray_Array.hpp>
+#include <KokkosArray_View.hpp>
 #include <KokkosArray_Host.hpp>
 #include <ParallelComm.hpp>
 
@@ -70,14 +70,37 @@ namespace KokkosArray {
  *  send_item { send item offsets within 'send' range }
  */
 struct ParallelDataMap {
-  comm::Machine               machine ;
-  Array< unsigned[2], Host >  host_recv ;
-  Array< unsigned[2], Host >  host_send ;
-  Array< unsigned ,   Host >  host_send_item ;
-  unsigned                    count_interior ;
-  unsigned                    count_send ;
-  unsigned                    count_owned ; // = count_interior + count_send
-  unsigned                    count_receive ;
+  typedef View< unsigned[][2], Host >  host_recv_type ;
+  typedef View< unsigned[][2], Host >  host_send_type ;
+  typedef View< unsigned[] ,   Host >  host_send_item_type ;
+
+  comm::Machine        machine ;
+  host_recv_type       host_recv ;
+  host_send_type       host_send ;
+  host_send_item_type  host_send_item ;
+  unsigned             count_interior ;
+  unsigned             count_send ;
+  unsigned             count_owned ; // = count_interior + count_send
+  unsigned             count_receive ;
+
+  void assign( const unsigned arg_count_interior ,
+               const unsigned arg_count_owned ,
+               const unsigned arg_count_total ,
+               const unsigned arg_recv_msg ,
+               const unsigned arg_send_msg ,
+               const unsigned arg_send_count )
+  {
+    const std::string label("KokkosArray::ParallelDataMap buffer");
+
+    count_interior = arg_count_interior ;
+    count_owned    = arg_count_owned ;
+    count_send     = arg_count_owned - arg_count_interior ;
+    count_receive  = arg_count_total - arg_count_owned ;
+
+    host_recv = KokkosArray::create< host_recv_type >( label , arg_recv_msg );
+    host_send = KokkosArray::create< host_send_type >( label , arg_send_msg );
+    host_send_item = KokkosArray::create< host_send_item_type >( label , arg_send_count );
+  }
 };
 
 template< class ArrayType , class Rank = void > struct PackArray ;

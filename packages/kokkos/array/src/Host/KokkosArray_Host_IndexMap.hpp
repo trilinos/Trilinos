@@ -59,8 +59,8 @@ template< class ValueType ,
           class IndexMapInput >
 struct HostIndexMapDeepCopy : public HostThreadWorker<void>
 {
-  typedef Host::size_type                      size_type ;
-  typedef Impl::MemoryView< ValueType , Host > data_type ;
+  typedef Host::size_type            size_type ;
+  typedef View< ValueType[] , Host > data_type ;
 
 private:
 
@@ -212,13 +212,7 @@ public:
   void deep_copy( const data_type & oData , const IndexMapOutput & oMap ,
                   const data_type & iData , const IndexMapInput & iMap )
   {
-    typedef MemoryManager< Host > memory_manager ;
-
-    memory_manager::disable_memory_view_tracking();
-
     const HostIndexMapDeepCopy driver( oData , oMap , iData , iMap );
-
-    memory_manager::enable_memory_view_tracking();
 
     HostThreadWorker<void>::execute( driver );
   }

@@ -45,15 +45,13 @@
 
 #include <iostream>
 
-#include <impl/KokkosArray_MemoryView.hpp>
+#include <KokkosArray_View.hpp>
+
 #include <KokkosArray_Value.hpp>
 #include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_Array.hpp>
 #include <KokkosArray_MDArray.hpp>
 #include <KokkosArray_PrefixSum.hpp>
 #include <KokkosArray_CrsArray.hpp>
-
-#include <KokkosArray_View.hpp>
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
@@ -68,13 +66,11 @@
 
 #include <impl/KokkosArray_IndexMapRight_macros.hpp>
 
-#include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>
 
 #include <TestMDArrayIndexMap.hpp>
 
-#include <TestArray.hpp>
 #include <TestMDArray.hpp>
 #include <TestCrsArray.hpp>
 
@@ -99,11 +95,6 @@ void test_device_cuda_view_api()
   TestViewAPI< double , KokkosArray::Cuda >();
 }
 
-void test_device_cuda_memory_management() {
-  TestMemoryManagement< int, KokkosArray::Cuda >();
-  TestMemoryManagement< double, KokkosArray::Cuda >();
-}
-
 void test_device_cuda_value() {
   TestValue< int, KokkosArray::Cuda >();
   TestValue< double, KokkosArray::Cuda >();
@@ -116,11 +107,6 @@ void test_device_cuda_multi_vector() {
 
 void test_device_cuda_crsarray() {
   TestCrsArray< KokkosArray::Cuda >();
-}
-
-void test_device_cuda_array() {
-  TestArray< double, KokkosArray::Cuda >();
-  TestArray< int, KokkosArray::Cuda >();
 }
 
 void test_device_cuda_mdarray() {

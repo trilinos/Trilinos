@@ -61,9 +61,12 @@ public:
   //@{
 
   typedef Cuda          type ;
+  typedef Cuda          layout_type ;
   typedef Cuda          device_type ;
-  typedef Cuda          memory_space ;
   typedef unsigned int  size_type ;
+
+  typedef Impl::CudaMemorySpace  memory_space ;
+  typedef LayoutLeft             array_layout ;
 
   /** \brief  The preferred multi-index map of this device.
    *
@@ -79,8 +82,6 @@ public:
     typedef Impl::IndexMapLeft<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
   };
 
-  typedef Impl::CudaMemorySpace  memory_space_new ;
-  typedef LayoutLeft             array_layout ;
 
   //--------------------------------------------------------------------------
 
@@ -143,7 +144,6 @@ public:
 
 #include <Cuda/KokkosArray_Cuda_View.hpp>
 
-#include <Cuda/KokkosArray_Cuda_MemoryManager.hpp>
 #include <Cuda/KokkosArray_Cuda_Value.hpp>
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
 #include <Cuda/KokkosArray_Cuda_ParallelFor.hpp>
@@ -157,11 +157,6 @@ public:
 #if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
     ! defined( KOKKOS_CUDA_MULTIVECTOR_HPP )
 #include <Cuda/KokkosArray_Cuda_MultiVector.hpp>
-#endif
-
-#if   defined( KOKKOS_ARRAY_HPP ) && \
-    ! defined( KOKKOS_CUDA_ARRAY_HPP )
-#include <Cuda/KokkosArray_Cuda_Array.hpp>
 #endif
 
 #if   defined( KOKKOS_PREFIXSUM_HPP ) && \

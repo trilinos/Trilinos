@@ -58,9 +58,9 @@ namespace Impl {
 
 template < class T , unsigned RankDynamic , unsigned Rank >
 struct ShapeMap< Shape<LayoutLeft,T,RankDynamic,Rank> ,
-                 KOKKOS_MACRO_DEVICE::memory_space_new >
+                 KOKKOS_MACRO_DEVICE::memory_space >
 {
-  typedef KOKKOS_MACRO_DEVICE::memory_space_new::size_type size_type ;
+  typedef KOKKOS_MACRO_DEVICE::memory_space::size_type size_type ;
   typedef Shape<LayoutLeft,T,RankDynamic,Rank> shape_type ;
 
   template < typename iType0 , typename iType1 >
@@ -169,9 +169,9 @@ struct ShapeMap< Shape<LayoutLeft,T,RankDynamic,Rank> ,
 
 template < class T , unsigned RankDynamic , unsigned Rank >
 struct ShapeMap< Shape<LayoutRight,T,RankDynamic,Rank> ,
-                 KOKKOS_MACRO_DEVICE::memory_space_new >
+                 KOKKOS_MACRO_DEVICE::memory_space >
 {
-  typedef KOKKOS_MACRO_DEVICE::memory_space_new::size_type size_type ;
+  typedef KOKKOS_MACRO_DEVICE::memory_space::size_type size_type ;
   typedef Shape<LayoutRight,T,RankDynamic,Rank> shape_type ;
 
   template < typename iType0 , typename iType1 >

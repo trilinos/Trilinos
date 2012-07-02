@@ -208,10 +208,9 @@ public:
   void assign( size_t n0 )
     {
       typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-      typedef Impl::MemoryManager< memory_space > memory_manager ;
 
       N0 = n0 ;
-      NAlloc = memory_manager::preferred_alignment< ValueType >( n0 );
+      NAlloc = memory_space::preferred_alignment( sizeof(ValueType) , n0 );
     }
 };
 
@@ -297,10 +296,9 @@ public:
   void assign( size_t n0 )
     {
       typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-      typedef Impl::MemoryManager< memory_space > memory_manager ;
 
       N0 = n0 ;
-      NAlloc = memory_manager::preferred_alignment< ValueType >( n0 );
+      NAlloc = memory_space::preferred_alignment( sizeof(ValueType) , n0 );
     }
 };
 
@@ -391,10 +389,9 @@ public:
   void assign( size_t n0 )
     {
       typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-      typedef Impl::MemoryManager< memory_space > memory_manager ;
 
       N0 = n0 ;
-      NAlloc = memory_manager::preferred_alignment< ValueType >( n0 );
+      NAlloc = memory_space::preferred_alignment( sizeof(ValueType), n0 );
     }
 };
 
@@ -490,10 +487,9 @@ public:
   void assign( size_t n0 )
     {
       typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-      typedef Impl::MemoryManager< memory_space > memory_manager ;
 
       N0 = n0 ;
-      NAlloc = memory_manager::preferred_alignment< ValueType >( n0 );
+      NAlloc = memory_space::preferred_alignment( sizeof(ValueType), n0 );
     }
 };
 
@@ -592,10 +588,9 @@ public:
   void assign( size_t n0 )
     {
       typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-      typedef Impl::MemoryManager< memory_space > memory_manager ;
 
       N0 = n0 ;
-      NAlloc = memory_manager::preferred_alignment< ValueType >( n0 );
+      NAlloc = memory_space::preferred_alignment( sizeof(ValueType), n0 );
     }
 };
 
@@ -700,10 +695,9 @@ public:
   void assign( size_t n0 )
     {
       typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-      typedef Impl::MemoryManager< memory_space > memory_manager ;
 
       N0 = n0 ;
-      NAlloc = memory_manager::preferred_alignment< ValueType >( n0 );
+      NAlloc = memory_space::preferred_alignment( sizeof(ValueType), n0 );
     }
 };
 
@@ -811,10 +805,9 @@ public:
   void assign( size_t n0 )
     {
       typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-      typedef Impl::MemoryManager< memory_space > memory_manager ;
 
       N0 = n0 ;
-      NAlloc = memory_manager::preferred_alignment< ValueType >( n0 );
+      NAlloc = memory_space::preferred_alignment( sizeof(ValueType), n0 );
     }
 };
 
@@ -823,7 +816,7 @@ public:
 
 /** \brief  All dimensions defined at runtime. */
 template<>
-struct IndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space,
+struct IndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space ,
                      0,  0,0,0,0,0,0,0 >
 {
 public:
@@ -1072,12 +1065,11 @@ public:
                size_t n4 , size_t n5 , size_t n6 , size_t n7 )
   {
     typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-    typedef Impl::MemoryManager< memory_space > memory_manager ;
 
     m_rank = mdarray_deduce_rank( n0, n1, n2, n3, n4, n5, n6, n7 );
     m_dims[0] = n0 ; m_dims[1] = n1 ; m_dims[2] = n2 ; m_dims[3] = n3 ;
     m_dims[4] = n4 ; m_dims[5] = n5 ; m_dims[6] = n6 ; m_dims[7] = n7 ;
-    m_dims[S0] = memory_manager::preferred_alignment< ValueType >( n0 );
+    m_dims[S0] = memory_space::preferred_alignment( sizeof(ValueType), n0 );
   }
 };
 

@@ -101,8 +101,6 @@ public:
   static void execute( const Cuda::size_type work_count ,
                        const FunctorType & functor )
   {
-    typedef MemoryManager< Cuda > memory_manager ;
-
     const Cuda::size_type grid_max = cuda_internal_maximum_grid_count();
 
     const dim3 block( CudaTraits::WarpSize * cuda_internal_maximum_warp_count(), 1, 1);
@@ -111,11 +109,7 @@ public:
 
     if ( grid_max < grid.x ) grid.x = grid_max ;
 
-    memory_manager::disable_memory_view_tracking();
-
     const ParallelFor driver( functor , work_count , block.x * grid.x );
-
-    memory_manager::enable_memory_view_tracking();
 
     CudaParallelLaunch< ParallelFor >::execute( driver , grid , block , 0 );
   }

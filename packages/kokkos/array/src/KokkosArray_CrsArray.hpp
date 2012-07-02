@@ -46,8 +46,8 @@
 
 #include <string>
 
+#include <KokkosArray_View.hpp>
 #include <KokkosArray_PrefixSum.hpp>
-#include <KokkosArray_Array.hpp>
 
 namespace KokkosArray {
 
@@ -63,18 +63,25 @@ namespace KokkosArray {
  *  entries( row_map[i0] + i1 , i2 , i3 , ... );
  */
 
-template< class ArrayType , class DeviceType ,
+template< class DataType , class DeviceType ,
           typename SizeType = typename DeviceType::size_type >
 class CrsArray {
+private:
+
+  typedef DataType view_data_type[] ;
+
 public:
+  typedef DataType                              data_type ;
   typedef DeviceType                            device_type ;
   typedef PrefixSum< SizeType ,  device_type >  row_map_type ;
-  typedef Array<     ArrayType , device_type >  entries_type ;
+  typedef View< view_data_type ,
+                typename device_type::layout_type ,
+                typename device_type::device_type >  entries_type ;
 
   row_map_type row_map ;
   entries_type entries ;
 
-  typedef CrsArray< ArrayType ,
+  typedef CrsArray< DataType ,
                     typename HostMapped< device_type >::type ,
                     SizeType > HostMirror ;
 
@@ -102,13 +109,13 @@ public:
 
 template< class CrsArrayType , class InputType >
 inline
-CrsArray< typename CrsArrayType::entries_type::array_type ,
+CrsArray< typename CrsArrayType::data_type ,
           typename CrsArrayType::device_type ,
           typename CrsArrayType::row_map_type::size_type >
 create_crsarray( const std::string & label ,
                  const InputType & input )
 {
-  typedef CrsArray< typename CrsArrayType::entries_type::array_type ,
+  typedef CrsArray< typename CrsArrayType::data_type ,
                     typename CrsArrayType::device_type ,
                     typename CrsArrayType::row_map_type::size_type >
     output_type ;
@@ -119,12 +126,12 @@ create_crsarray( const std::string & label ,
 
 template< class CrsArrayType , class InputType >
 inline
-CrsArray< typename CrsArrayType::entries_type::array_type ,
+CrsArray< typename CrsArrayType::data_type ,
           typename CrsArrayType::device_type ,
           typename CrsArrayType::row_map_type::size_type >
 create_crsarray( const InputType & input )
 {
-  typedef CrsArray< typename CrsArrayType::entries_type::array_type ,
+  typedef CrsArray< typename CrsArrayType::data_type ,
                     typename CrsArrayType::device_type ,
                     typename CrsArrayType::row_map_type::size_type >
     output_type ;
@@ -135,13 +142,13 @@ create_crsarray( const InputType & input )
 
 //----------------------------------------------------------------------------
 
-template< class ArrayType ,
+template< class DataType ,
           class DeviceDst ,
           class DeviceSrc ,
           typename SizeType >
 inline
-void deep_copy(       CrsArray<ArrayType,DeviceDst,SizeType> & dst ,
-                const CrsArray<ArrayType,DeviceSrc,SizeType> & src )
+void deep_copy(       CrsArray<DataType,DeviceDst,SizeType> & dst ,
+                const CrsArray<DataType,DeviceSrc,SizeType> & src )
 {
   deep_copy( dst.entries , src.entries );
   deep_copy( dst.row_map , src.row_map );

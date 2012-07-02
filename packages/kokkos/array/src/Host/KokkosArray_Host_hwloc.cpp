@@ -43,6 +43,8 @@
 
 /*--------------------------------------------------------------------------*/
 
+#define DEBUG_PRINT 0
+
 #include <iostream>
 #include <limits>
 
@@ -80,7 +82,7 @@ public:
   ~HostInternalHWLOC();
   HostInternalHWLOC();
 
-  bool bind_thread( const HostInternal::size_type thread_rank ) const ;
+  bool bind_thread( const unsigned thread_rank ) const ;
 };
 
 //----------------------------------------------------------------------------
@@ -92,12 +94,15 @@ HostInternal & HostInternal::singleton()
 
 //----------------------------------------------------------------------------
 
-bool HostInternalHWLOC::bind_thread(
-  const HostInternal::size_type thread_rank ) const
+bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
 {
   bool result = true ;
 
-  if ( 0 < m_node_core_count ) {
+  // Can only safely bind threads if
+  // (1) the number of cores is known and
+  // (2) the process is bound to a NUMA node.
+
+  if ( 0 < m_node_core_count && 0 <= m_node_rank) {
 
     // How many cores will be used:
     const unsigned max_worker_per_core =
@@ -156,7 +161,7 @@ bool HostInternalHWLOC::bind_thread(
       hwloc_bitmap_free( thread_cpuset );
     }
 
-#if 0
+#if DEBUG_PRINT
     std::cout << ( result ? "SUCCESS " : "FAILED " )
               << "HWLOC::bind_thread thread[ "
               << thread_rank
@@ -188,6 +193,10 @@ HostInternalHWLOC::HostInternalHWLOC()
   const size_t node_count =
     hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_NODE );
 
+#if DEBUG_PRINT
+  std::cout << "HWLOC node_count = " << node_count << std::endl ;
+#endif
+
   if ( node_count ) {
     // Get cpuset binding of this process.
     // This may have been bound by 'mpirun'.
@@ -216,12 +225,18 @@ HostInternalHWLOC::HostInternalHWLOC()
       // then assumed pinned to that node.
       if ( hwloc_bitmap_isincluded( proc_cpuset , node->allowed_cpuset ) ) {
         node_rank = i ;
+
+#if DEBUG_PRINT
+        std::cout << "HWLOC: process is bound to node[" << i << "]"
+                  << std::endl ;
+#endif
+
       }
     }
 
     const bool bound_proc = node_rank < node_count ;
 
-    HostInternal::m_node_rank  = bound_proc ? node_rank : 0 ;
+    HostInternal::m_node_rank  = bound_proc ? node_rank : -1 ;
     HostInternal::m_node_count = node_count ;
 
     for ( unsigned i = 0 ; i < node_count ; ++i ) {
@@ -245,7 +260,7 @@ HostInternalHWLOC::HostInternalHWLOC()
                                                node->allowed_cpuset ,
                                                HWLOC_OBJ_CORE , j );
 
-#if 0
+#if DEBUG_PRINT
         if ( hwloc_bitmap_isincluded( proc_cpuset , core->allowed_cpuset ) ) {
           std::cout << "HWLOC: process is bound to node[" << i << "]"
                     << ".core[" << j << "]"

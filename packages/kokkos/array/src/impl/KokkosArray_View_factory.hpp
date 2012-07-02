@@ -55,12 +55,12 @@ namespace KokkosArray {
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , void >::create( label );
@@ -69,12 +69,12 @@ create( const std::string & label )
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , Impl::unsigned_<1> >::create( label , n0 );
@@ -83,12 +83,12 @@ create( const std::string & label , const size_t n0 )
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , Impl::unsigned_<2> >
@@ -98,13 +98,13 @@ create( const std::string & label , const size_t n0 , const size_t n1 )
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , Impl::unsigned_<3> >
@@ -114,13 +114,13 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , Impl::unsigned_<4> >
@@ -130,14 +130,14 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 ,
                                     const size_t n4 )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , Impl::unsigned_<5> >
@@ -147,14 +147,14 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 ,
                                     const size_t n4 , const size_t n5 )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , Impl::unsigned_<6> >
@@ -164,7 +164,7 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 ,
@@ -172,7 +172,7 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n6 )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , Impl::unsigned_<7> >
@@ -182,7 +182,7 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
 template< class ViewType >
 inline
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 ,
@@ -190,7 +190,7 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n6 , const size_t n7 )
 {
   typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_spec ,
+                typename ViewType::layout_type ,
                 typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , Impl::unsigned_<8> >
@@ -219,19 +219,19 @@ void deep_copy( const View<DataTypeDst,LayoutDst,DeviceDst> & dst ,
 namespace KokkosArray {
 namespace Impl {
 
-template< class DataType , class LayoutSpec , class DeviceOutput >
-struct Factory< View< DataType , LayoutSpec , DeviceOutput > , MirrorUseView >
+template< class DataType , class LayoutType , class DeviceOutput >
+struct Factory< View< DataType , LayoutType , DeviceOutput > , MirrorUseView >
 {
-  typedef View< DataType , LayoutSpec , DeviceOutput > output_type ;
+  typedef View< DataType , LayoutType , DeviceOutput > output_type ;
 
   static inline
   const output_type & create( const output_type & input ) { return input ; }
 
   template< class DeviceInput >
   static inline
-  output_type create( const View< DataType, LayoutSpec, DeviceInput > & input )
+  output_type create( const View< DataType, LayoutType, DeviceInput > & input )
   {
-    typedef View< DataType , LayoutSpec , DeviceInput > input_type ;
+    typedef View< DataType , LayoutType , DeviceInput > input_type ;
     return Factory< output_type , input_type >::create( input );
   }
 };

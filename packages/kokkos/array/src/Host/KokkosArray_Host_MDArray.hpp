@@ -66,8 +66,6 @@ struct Factory< MDArray< ValueType , Host > , void >
                              size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                              size_t n4 , size_t n5 , size_t n6 , size_t n7 )
   {
-    typedef MemoryManager< Host > memory_manager ;
-
     output_type array ;
 
     array.m_map.template assign< ValueType >(nP,n1,n2,n3,n4,n5,n6,n7);
@@ -93,8 +91,6 @@ struct Factory< MDArray< ValueType , HostMapped< Device > > , void >
                              size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                              size_t n4 , size_t n5 , size_t n6 , size_t n7 )
   {
-    typedef MemoryManager< Host > memory_manager ;
-
     output_type array ;
 
     array.m_map.template assign< ValueType >(nP,n1,n2,n3,n4,n5,n6,n7);

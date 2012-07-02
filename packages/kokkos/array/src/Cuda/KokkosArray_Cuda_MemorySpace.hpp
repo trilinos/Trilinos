@@ -83,19 +83,14 @@ public:
 
   /*--------------------------------*/
 
-  static void disable_memory_view_tracking();
-  static void enable_memory_view_tracking();
-
-  /*--------------------------------*/
-
   static 
   size_t preferred_alignment( size_t value_size , size_t value_count );
 
   /*--------------------------------*/
 
-  static void copy_to_device_from_device( void * , void * , size_t );
-  static void copy_to_device_from_host(   void * , void * , size_t );
-  static void copy_to_host_from_device(   void * , void * , size_t );
+  static void copy_to_device_from_device( void * , const void * , size_t );
+  static void copy_to_device_from_host(   void * , const void * , size_t );
+  static void copy_to_host_from_device(   void * , const void * , size_t );
 };
 
 //----------------------------------------------------------------------------

@@ -43,15 +43,13 @@
 
 #include <gtest/gtest.h>
 
-#include <impl/KokkosArray_MemoryView.hpp>
+#include <KokkosArray_View.hpp>
+
 #include <KokkosArray_Value.hpp>
 #include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_Array.hpp>
 #include <KokkosArray_MDArray.hpp>
 #include <KokkosArray_PrefixSum.hpp>
 #include <KokkosArray_CrsArray.hpp>
-
-#include <KokkosArray_View.hpp>
 
 #include <KokkosArray_Host.hpp>
 
@@ -69,10 +67,8 @@
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
 
-#include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>
-#include <TestArray.hpp>
 #include <TestMDArray.hpp>
 #include <TestMDArrayIndexMap.hpp>
 #include <TestCrsArray.hpp>
@@ -116,14 +112,6 @@ TEST_F( host, view_api) {
 }
 
 
-TEST_F( host, memory_management_double) {
-  TestMemoryManagement< double, KokkosArray::Host >();
-}
-
-TEST_F( host, memory_management_int) {
-  TestMemoryManagement< int, KokkosArray::Host >();
-}
-
 TEST_F( host, value_view_double) {
   TestValue< double, KokkosArray::Host >();
 }
@@ -155,19 +143,6 @@ TEST_F( host, mdarray_view_int) {
 TEST_F( host, mdarray_index_map) {
   TestMDArrayIndexMap< KokkosArray::Host >();
 }
-
-TEST_F( host, array ) {
-  TestArray< double, KokkosArray::Host >();
-  TestArray< int, KokkosArray::Host >();
-}
-
-TEST_F( host, array_view_int) {
-  TestArray< int, KokkosArray::Host >();
-}
-
-// TEST_F( host, array_index_map) {
-//   TestArrayIndexMap< KokkosArray::Host >();
-// }
 
 TEST_F( host, long_reduce) {
   TestReduce< long ,   KokkosArray::Host >( 1000000 );

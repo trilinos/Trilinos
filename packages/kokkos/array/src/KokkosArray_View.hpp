@@ -55,18 +55,18 @@ namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
-template< class DataType , class LayoutSpec , class DeviceType = LayoutSpec >
+template< class DataType , class LayoutType , class DeviceType = LayoutType >
 class View {
 public:
   typedef DataType    data_type ;
-  typedef LayoutSpec  layout_spec ;
+  typedef LayoutType  layout_type ;
   typedef DeviceType  device_type ;
 
-  typedef View< data_type , layout_spec , Host >  HostMirror ;
+  typedef View< data_type , layout_type , Host >  HostMirror ;
 
   typedef typename Impl::remove_all_extents<data_type>::type  value_type ;
-  typedef typename LayoutSpec::array_layout                   array_layout ;
-  typedef typename device_type::memory_space_new              memory_space ;
+  typedef typename LayoutType::array_layout                   array_layout ;
+  typedef typename device_type::memory_space              memory_space ;
   typedef typename device_type::size_type                     size_type ;
 
 private:
@@ -191,38 +191,38 @@ public:
 
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label );
 
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 );
 
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 );
 
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 );
 
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 );
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 ,
@@ -230,7 +230,7 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
 
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 ,
@@ -238,7 +238,7 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
 
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 ,
@@ -247,7 +247,7 @@ create( const std::string & label , const size_t n0 , const size_t n1 ,
 
 template< class ViewType >
 View< typename ViewType::data_type ,
-      typename ViewType::layout_spec ,
+      typename ViewType::layout_type ,
       typename ViewType::device_type >
 create( const std::string & label , const size_t n0 , const size_t n1 ,
                                     const size_t n2 , const size_t n3 ,
@@ -267,20 +267,20 @@ template < class >
 struct template_class_View_requires_a_device_specific_specialization_which_is_not_found ;
 
 
-template< class DataType , class LayoutSpec , class DeviceType >
-View<DataType,LayoutSpec,DeviceType>::View()
+template< class DataType , class LayoutType , class DeviceType >
+View<DataType,LayoutType,DeviceType>::View()
 {
  template_class_View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
 }
 
-template< class DataType , class LayoutSpec , class DeviceType >
-View<DataType,LayoutSpec,DeviceType>::~View()
+template< class DataType , class LayoutType , class DeviceType >
+View<DataType,LayoutType,DeviceType>::~View()
 {
  template_class_View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
 }
 
-template< class DataType , class LayoutSpec , class DeviceType >
-View<DataType,LayoutSpec,DeviceType>::View( const View<DataType,LayoutSpec,DeviceType> & rhs )
+template< class DataType , class LayoutType , class DeviceType >
+View<DataType,LayoutType,DeviceType>::View( const View<DataType,LayoutType,DeviceType> & rhs )
 {
  template_class_View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
 }

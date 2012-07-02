@@ -48,7 +48,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <KokkosArray_Array.hpp>
+#include <KokkosArray_View.hpp>
 #include <KokkosArray_MultiVector.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
@@ -292,18 +292,15 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Allocation of arrays to fill the linear system
 
-  typedef KokkosArray::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
-  typedef KokkosArray::Array< scalar_type[ElementNodeCount]                   , device_type >  elem_vectors_type ;
+  typedef KokkosArray::View< scalar_type[][ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
+  typedef KokkosArray::View< scalar_type[][ElementNodeCount]                   , device_type >  elem_vectors_type ;
 
   elem_matrices_type elem_matrices ; // Jacobian matrices
   elem_vectors_type  elem_vectors ;  // Residual vectors
 
   if ( element_count ) {
-    elem_matrices =
-      KokkosArray::create_array< elem_matrices_type >( element_count );
-
-    elem_vectors =
-      KokkosArray::create_array< elem_vectors_type >( element_count );
+    elem_matrices = KokkosArray::create< elem_matrices_type >( std::string("elem_matrices"), element_count );
+    elem_vectors = KokkosArray::create< elem_vectors_type >( std::string("elem_vectors"), element_count );
   }
 
   //------------------------------------

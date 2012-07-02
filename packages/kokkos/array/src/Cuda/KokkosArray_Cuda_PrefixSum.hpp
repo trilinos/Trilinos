@@ -84,7 +84,7 @@ struct Factory< PrefixSum< IntType , Cuda > ,
   {
     const size_t size_data = sizeof(IntType)*(output.m_length + 1 );
 
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_device_from_host( output.m_data.ptr_on_device(),
                                 input.m_data.ptr_on_device(),
                                 size_data );
@@ -105,7 +105,7 @@ struct Factory< PrefixSum< IntType , HostMapped< Cuda > > ,
   {
     const size_t size_data = sizeof(IntType)*(output.m_length + 1 );
 
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_host_from_device( output.m_data.ptr_on_device(),
                                 input.m_data.ptr_on_device(),
                                 size_data );

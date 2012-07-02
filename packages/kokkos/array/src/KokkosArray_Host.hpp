@@ -65,8 +65,11 @@ public:
 
   typedef Host    type ;
   typedef Host    device_type ;
-  typedef Host    memory_space ;
+  typedef Host    layout_type ;
   typedef size_t  size_type ;
+
+  typedef Impl::HostMemorySpace  memory_space ;
+  typedef LayoutRight            array_layout ;
 
   //! The preferred multi-index map of this device.
   template< unsigned Rank = 0 ,
@@ -78,8 +81,6 @@ public:
   };
 
 
-  typedef Impl::HostMemorySpace  memory_space_new ;
-  typedef LayoutRight            array_layout ;
 
 
   //@}
@@ -169,8 +170,11 @@ struct HostMapped {
 public:
   typedef HostMapped< Device >        type ;
   typedef Host                        device_type ;
+  typedef Device                      layout_type ;
   typedef typename Device::size_type  size_type ;
-  typedef Host::memory_space          memory_space ;
+
+  typedef Impl::HostMemorySpace          memory_space ;
+  typedef typename Device::array_layout  array_layout ;
 
   template< unsigned Rank = 0,
             unsigned N1 = 0, unsigned N2 = 0, unsigned N3 = 0,
@@ -180,9 +184,6 @@ public:
     typedef typename
       Device::template IndexMap<Rank,N1,N2,N3,N4,N5,N6,N7>::type type ;
   };
-
-  typedef Impl::HostMemorySpace          memory_space_new ;
-  typedef typename Device::array_layout  array_layout ;
 };
 
 /** \brief  The host mapped onto the host is the host */
@@ -190,7 +191,8 @@ template<> struct HostMapped<Host>
 {
   typedef Host                   type ;
   typedef Host                   device_type ;
-  typedef Impl::HostMemorySpace  memory_space_new ;
+  typedef Host                   layout_type ;
+  typedef Impl::HostMemorySpace  memory_space ;
   typedef Host::array_layout     array_layout ;
 };
 
@@ -200,7 +202,6 @@ template<> struct HostMapped<Host>
 
 #include <Host/KokkosArray_Host_View.hpp>
 
-#include <Host/KokkosArray_Host_MemoryManager.hpp>
 #include <Host/KokkosArray_Host_Parallel.hpp>
 #include <Host/KokkosArray_Host_ParallelFor.hpp>
 #include <Host/KokkosArray_Host_ParallelReduce.hpp>
@@ -218,11 +219,6 @@ template<> struct HostMapped<Host>
 #if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
     ! defined( KOKKOS_HOST_MULTIVECTOR_HPP )
 #include <Host/KokkosArray_Host_MultiVector.hpp>
-#endif
-
-#if   defined( KOKKOS_ARRAY_HPP ) && \
-    ! defined( KOKKOS_HOST_ARRAY_HPP )
-#include <Host/KokkosArray_Host_Array.hpp>
 #endif
 
 #if   defined( KOKKOS_MDARRAY_HPP ) && \

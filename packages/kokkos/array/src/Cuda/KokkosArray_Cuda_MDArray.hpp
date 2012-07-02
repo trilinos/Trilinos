@@ -99,7 +99,7 @@ struct Factory< MDArray< ValueType , Cuda > ,
   {
     const size_t size = dst.m_map.allocation_size() * sizeof(ValueType);
 
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_device_from_device( dst.m_memory.ptr_on_device(),
                                   src.m_memory.ptr_on_device(),
                                   size );
@@ -134,7 +134,7 @@ struct Factory< MDArray< ValueType , Cuda > ,
   {
     const size_t size = output.m_map.allocation_size() * sizeof(ValueType);
 
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_device_from_host( output.m_memory.ptr_on_device(),
                                 input.m_memory.ptr_on_device(),
                                 size );
@@ -152,7 +152,7 @@ struct Factory< MDArray< ValueType , HostMapped< Cuda > > ,
   {
     const size_t size = input.m_map.allocation_size() * sizeof(ValueType);
 
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_host_from_device( output.m_memory.ptr_on_device(),
                                 input.m_memory.ptr_on_device(),
                                 size );

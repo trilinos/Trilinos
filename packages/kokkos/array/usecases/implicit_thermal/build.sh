@@ -12,7 +12,6 @@ CXX_SOURCES="implicit_main.cpp implicit_test_host.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_Impl.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_MemorySpace.cpp"
-CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_MemoryManager.cpp"
 
 #-----------------------------------------------------------------------------
 

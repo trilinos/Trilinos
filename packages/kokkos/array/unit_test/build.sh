@@ -14,7 +14,6 @@ CXX_SOURCES=""
 CXX_SOURCES="${CXX_SOURCES} ${SRC}/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_Impl.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_MemorySpace.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_MemoryManager.cpp"
 CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestHost.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../TPL/gtest/gtest-all.cc"
 

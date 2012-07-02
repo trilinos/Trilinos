@@ -64,7 +64,7 @@ struct Factory< Value< ValueType , Cuda > ,
   void deep_copy( const Value< ValueType , Cuda > & dst ,
                   const Value< ValueType , Cuda > & src )
   {
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_device_from_device( dst.m_memory.ptr_on_device(),
                                   src.m_memory.ptr_on_device(),
                                   sizeof(ValueType) );
@@ -79,7 +79,7 @@ struct Factory< Value< ValueType , Cuda > ,
   void deep_copy( const Value< ValueType , Cuda > & dst ,
                   const Value< ValueType , HostMapped< Cuda > > & src )
   {
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_device_from_host( dst.m_memory.ptr_on_device(),
                                 src.m_memory.ptr_on_device(),
                                 sizeof(ValueType) );
@@ -94,7 +94,7 @@ struct Factory< Value< ValueType , HostMapped< Cuda > > ,
   void deep_copy( const Value< ValueType , HostMapped< Cuda > > & src ,
                   const Value< ValueType , Cuda > & dst )
   {
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_device_from_host( dst.m_memory.ptr_on_device(),
                                 src.m_memory.ptr_on_device(),
                                 sizeof(ValueType) );
@@ -108,7 +108,7 @@ struct Factory< Value< ValueType , Cuda > , ValueType >
   void deep_copy( const Value< ValueType , Cuda > & dst ,
                   const ValueType & src )
   {
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_device_from_host( dst.m_memory.ptr_on_device(),
                                 & src , sizeof(ValueType) );
   }
@@ -121,7 +121,7 @@ public:
   void deep_copy( ValueType & dst ,
                   const Value< ValueType , Cuda > & src )
   {
-    MemoryManager< Cuda >::
+    CudaMemorySpace::
       copy_to_host_from_device( & dst ,
                                 src.m_memory.ptr_on_device(),
                                 sizeof(ValueType) );

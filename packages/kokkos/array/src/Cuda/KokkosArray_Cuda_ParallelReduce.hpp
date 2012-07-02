@@ -447,8 +447,6 @@ public:
                 const FunctorType  & functor ,
                 const FinalizeType & finalize )
   {
-    typedef MemoryManager< Cuda > memory_manager ;
-
     typedef ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Cuda > self_type ;
 
     const size_type maximum_shared_words = cuda_internal_maximum_shared_words();
@@ -482,13 +480,9 @@ public:
     const size_type shmem_size =
       sizeof(size_type) * ( ValueWordStride * (WarpStride * block.y - 1) + 1 );
 
-    memory_manager::disable_memory_view_tracking();
-
     self_type driver( functor , finalize ,
                       work_count , work_stride , 0 ,
                       grid.x , grid.x , 0 , 0 );
-
-    memory_manager::enable_memory_view_tracking();
 
     CudaParallelLaunch< self_type >::execute( driver , grid , block , shmem_size );
   }
@@ -598,8 +592,6 @@ public:
                 const size_type      stream_block_offset ,
                 const size_type      stream_block_recycle ) const
   {
-    typedef MemoryManager< Cuda > memory_manager ;
-
     typedef ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Cuda >  driver_type ;
 
     const dim3 grid( block_count , 1 , 1 );
@@ -607,15 +599,11 @@ public:
     const size_type work_stride =
       block.x * block.y * grid.x * base_type::m_stream_count ;
 
-    memory_manager::disable_memory_view_tracking();
-
     driver_type driver( m_functor , finalize ,
                         m_work_count , work_stride , block_offset ,
                         global_block_count ,
                         std::min( global_block_count , stream_block_count ),
                         stream_block_offset , stream_block_recycle );
-
-    memory_manager::enable_memory_view_tracking();
 
     // Currently must be local memory launch for
     // multiple kernel launches into multiple streams.

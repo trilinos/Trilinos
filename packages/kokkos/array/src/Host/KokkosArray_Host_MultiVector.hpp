@@ -106,7 +106,7 @@ struct Factory< MultiVector< ValueType , Host > , void >
   output_type 
   create( const std::string & label , size_t length , size_t count )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::view_type  view_type ;
     typedef typename view_type::shape_type   shape_type ;
@@ -141,7 +141,7 @@ struct Factory< MultiVector< ValueType , HostMapped< Device > > ,
   static inline
   output_type create( const input_type & input )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -215,7 +215,6 @@ public:
   static inline
   void deep_copy( const output_type & output , const input_type & input )
   {
-    typedef MemoryManager< Host::memory_space > HostMemorySpace ;
     Factory driver( output , input , output.length() , output.count() );
     HostThreadWorker<void>::execute( driver );
   }
@@ -224,7 +223,6 @@ public:
   void deep_copy( const output_type & output , const input_type & input ,
                   const size_t length )
   {
-    typedef MemoryManager< Host::memory_space > HostMemorySpace ;
     Factory driver( output , input , length , 1 );
     HostThreadWorker<void>::execute( driver );
   }

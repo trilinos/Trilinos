@@ -54,11 +54,11 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class ArrayType , class Device , typename SizeType >
-struct Factory< CrsArray< ArrayType , Device , SizeType > ,
-                CrsArray< ArrayType , Device , SizeType > >
+template< class DataType , class Device , typename SizeType >
+struct Factory< CrsArray< DataType , Device , SizeType > ,
+                CrsArray< DataType , Device , SizeType > >
 {
-  typedef CrsArray< ArrayType, Device, SizeType > output_type ;
+  typedef CrsArray< DataType, Device, SizeType > output_type ;
 
   static inline
   output_type create( const output_type & input )
@@ -83,13 +83,13 @@ struct Factory< CrsArray< ArrayType , Device , SizeType > ,
 
 //----------------------------------------------------------------------------
 
-template< class ArrayType ,
+template< class DataType ,
           class DeviceDst , class DeviceSrc , typename SizeType >
-struct Factory< CrsArray< ArrayType , DeviceDst , SizeType > ,
-                CrsArray< ArrayType , DeviceSrc , SizeType > >
+struct Factory< CrsArray< DataType , DeviceDst , SizeType > ,
+                CrsArray< DataType , DeviceSrc , SizeType > >
 {
-  typedef CrsArray< ArrayType, DeviceDst, SizeType > output_type ;
-  typedef CrsArray< ArrayType, DeviceSrc, SizeType > input_type ;
+  typedef CrsArray< DataType, DeviceDst, SizeType > output_type ;
+  typedef CrsArray< DataType, DeviceSrc, SizeType > input_type ;
 
   static inline
   output_type create( const input_type & input )
@@ -116,11 +116,11 @@ struct Factory< CrsArray< ArrayType , DeviceDst , SizeType > ,
 
 //----------------------------------------------------------------------------
 
-template< class ArrayType , class DeviceOutput , typename SizeType >
-struct Factory< CrsArray< ArrayType , DeviceOutput , SizeType > ,
+template< class DataType , class DeviceOutput , typename SizeType >
+struct Factory< CrsArray< DataType , DeviceOutput , SizeType > ,
                 MirrorUseView >
 {
-  typedef CrsArray< ArrayType , DeviceOutput , SizeType > output_type ;
+  typedef CrsArray< DataType , DeviceOutput , SizeType > output_type ;
 
   static inline
   const output_type & create( const output_type & input ) { return input ; }
@@ -128,7 +128,7 @@ struct Factory< CrsArray< ArrayType , DeviceOutput , SizeType > ,
   template< class DeviceInput >
   static inline
   output_type create(
-    const CrsArray< ArrayType , DeviceInput , SizeType > & input )
+    const CrsArray< DataType , DeviceInput , SizeType > & input )
   {
     typedef typename output_type::row_map_type row_map_type ;
     typedef typename output_type::entries_type entries_type ;
@@ -145,14 +145,14 @@ struct Factory< CrsArray< ArrayType , DeviceOutput , SizeType > ,
 
 //----------------------------------------------------------------------------
 
-template< class ArrayType ,
+template< class DataType ,
           class DeviceOutput ,
           typename MapSizeType ,
           typename InputSizeType >
-struct Factory< CrsArray< ArrayType , DeviceOutput , MapSizeType > ,
+struct Factory< CrsArray< DataType , DeviceOutput , MapSizeType > ,
                 std::vector< InputSizeType > >
 {
-  typedef CrsArray< ArrayType , DeviceOutput, MapSizeType > output_type ;
+  typedef CrsArray< DataType , DeviceOutput, MapSizeType > output_type ;
   typedef std::vector< InputSizeType > input_type ;
 
   static
@@ -166,8 +166,8 @@ struct Factory< CrsArray< ArrayType , DeviceOutput , MapSizeType > ,
     output.row_map = Factory< row_map_type , input_type >
                        ::create( label , input );
 
-    output.entries = Factory< entries_type , void >
-                       ::create( label , output.row_map.sum() );
+    output.entries = KokkosArray::create< entries_type >
+                       ( label , output.row_map.sum() );
 
     return output ;
   }
@@ -193,9 +193,7 @@ struct Factory< CrsArray< ValueType , DeviceOutput , MapSizeType > ,
   {
     typedef typename output_type::row_map_type   row_map_type ;
     typedef typename row_map_type::view_type     row_map_data_type ;
-
     typedef typename output_type::entries_type   entries_type ;
-    typedef typename DeviceOutput::memory_space  memory_space ;
 
     typedef Factory< row_map_data_type , unsigned_<1> > row_map_data_factory ;
 
@@ -219,8 +217,9 @@ struct Factory< CrsArray< ValueType , DeviceOutput , MapSizeType > ,
 
     // Create an populate the entries:
 
-    output.entries = Factory< entries_type , void >
-                       ::create( label , output.row_map.m_sum );
+    output.entries = KokkosArray::create< entries_type >
+                       ( label , output.row_map.sum() );
+
 
     typename entries_type::HostMirror host_entries =
       Factory< typename entries_type::HostMirror , MirrorUseView >

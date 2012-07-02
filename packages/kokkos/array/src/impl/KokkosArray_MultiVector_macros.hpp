@@ -171,7 +171,7 @@ public:
       m_memory.m_ptr_on_device = rhs.m_memory.m_ptr_on_device +
                                  rhs.m_memory.m_shape.Stride * iBeg ;
 
-      typedef device_type::memory_space_new memory_space ;
+      typedef device_type::memory_space memory_space ;
 
       memory_space::increment( m_memory.m_ptr_on_device );
     }
@@ -187,7 +187,7 @@ public:
       m_memory.m_ptr_on_device = rhs.m_memory.m_ptr_on_device +
                                  rhs.m_memory.m_shape.Stride * iBeg ;
 
-      typedef device_type::memory_space_new memory_space ;
+      typedef device_type::memory_space memory_space ;
 
       memory_space::increment( m_memory.m_ptr_on_device );
     }

@@ -91,19 +91,19 @@ CudaMemoryImpl::~CudaMemoryImpl()
 /*--------------------------------------------------------------------------*/
 
 void CudaMemorySpace::copy_to_device_from_device(
-  void * dst, void * src, size_t n )
+  void * dst, const void * src, size_t n )
 {
   CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
 }
 
 void CudaMemorySpace::copy_to_device_from_host(
-  void * dst, void * src, size_t n )
+  void * dst, const void * src, size_t n )
 {
   CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
 }
 
 void CudaMemorySpace::copy_to_host_from_device(
-  void * dst, void * src, size_t n )
+  void * dst, const void * src, size_t n )
 {
   CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
 }
@@ -124,7 +124,7 @@ void * CudaMemorySpace::allocate(
 
   void * ptr = 0 ;
 
-  if ( value_size * value_count ) {
+  if ( 0 < value_size * value_count ) {
     bool ok = true ;
 
     if ( ok ) ok = cudaSuccess == cudaMalloc( & ptr , size );
@@ -153,7 +153,7 @@ void * CudaMemorySpace::allocate(
 
 void CudaMemorySpace::increment( const void * ptr )
 {
-  if ( 0 != ptr && m_memory_view_tracking ) {
+  if ( 0 != ptr ) {
     CudaMemoryImpl & s = CudaMemoryImpl::singleton();
 
     s.m_allocations.increment( ptr );
@@ -162,7 +162,7 @@ void CudaMemorySpace::increment( const void * ptr )
 
 void CudaMemorySpace::decrement( const void * ptr )
 {
-  if ( 0 != ptr && m_memory_view_tracking ) {
+  if ( 0 != ptr ) {
 
     CudaMemoryImpl & s = CudaMemoryImpl::singleton();
 
@@ -197,32 +197,6 @@ size_t CudaMemorySpace::preferred_alignment(
   const size_t rem = value_count % align ;
   if ( rem ) value_count += align - rem ;
   return value_count ;
-}
-
-/*--------------------------------------------------------------------------*/
-
-int CudaMemorySpace::m_memory_view_tracking = true ;
-
-void CudaMemorySpace::disable_memory_view_tracking()
-{
-  if ( ! m_memory_view_tracking ) {
-    std::string msg ;
-    msg.append( "KokkosArray::Impl::CudaMemory::disable_memory_view_tracking ");
-    msg.append( " FAILED memory_view_tracking already disabled" );
-    throw std::runtime_error( msg );
-  }
-  m_memory_view_tracking = false ;
-}
-
-void CudaMemorySpace::enable_memory_view_tracking()
-{
-  if ( m_memory_view_tracking ) {
-    std::string msg ;
-    msg.append( "KokkosArray::Impl::CudaMemory::enable_memory_view_tracking ");
-    msg.append( " FAILED memory_view_tracking already enabled" );
-    throw std::runtime_error( msg );
-  }
-  m_memory_view_tracking = true ;
 }
 
 /*--------------------------------------------------------------------------*/

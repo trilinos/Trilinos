@@ -51,20 +51,20 @@
 
 namespace KokkosArray {
 
-template< class DataType , class LayoutSpec >
-class View< DataType , LayoutSpec , KOKKOS_MACRO_DEVICE >
+template< class DataType , class LayoutType >
+class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef View< DataType , LayoutSpec , KOKKOS_MACRO_DEVICE >  type ;
-  typedef View< DataType , LayoutSpec , Host >  HostMirror ;
+  typedef View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >  type ;
+  typedef View< DataType , LayoutType , Host >  HostMirror ;
 
   typedef DataType             data_type ;
-  typedef LayoutSpec           layout_spec ;
+  typedef LayoutType           layout_type ;
   typedef KOKKOS_MACRO_DEVICE  device_type ;
 
   typedef typename Impl::remove_all_extents<data_type>::type  value_type ;
-  typedef typename LayoutSpec::array_layout                   array_layout ;
-  typedef typename device_type::memory_space_new              memory_space ;
+  typedef typename LayoutType::array_layout                   array_layout ;
+  typedef typename device_type::memory_space                  memory_space ;
   typedef typename device_type::size_type                     size_type ;
 
 private:

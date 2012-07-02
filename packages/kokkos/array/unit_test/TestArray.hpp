@@ -116,9 +116,9 @@ public:
 
     size_t count = 0 ;
     for ( size_t ip = 0 ; ip < NP ; ++ip ) {
-    for ( size_t i1 = 0 ; i1 < dView4::template Dimension<1>::value ; ++i1 ) {
-    for ( size_t i2 = 0 ; i2 < dView4::template Dimension<2>::value ; ++i2 ) {
-    for ( size_t i3 = 0 ; i3 < dView4::template Dimension<3>::value ; ++i3 ) {
+    for ( size_t i1 = 0 ; i1 < hx.dimension(1) ; ++i1 ) {
+    for ( size_t i2 = 0 ; i2 < hx.dimension(2) ; ++i2 ) {
+    for ( size_t i3 = 0 ; i3 < hx.dimension(3) ; ++i3 ) {
       hx(ip,i1,i2,i3) = ++count ;
     }}}}
 

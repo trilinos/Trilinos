@@ -63,9 +63,8 @@ template<>
 class TestMDArrayIndexMap< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE        device_type ;
+  typedef KOKKOS_MACRO_DEVICE            device_type ;
   typedef device_type::memory_space  memory_space ;
-  typedef KokkosArray::Impl::MemoryManager<memory_space>  memory_manager ;
 
   typedef KokkosArray::MDArray< int , device_type > array_type ;
   typedef KokkosArray::Impl::IndexMapRight< memory_space , 0 >  map_right_type ;
@@ -118,7 +117,7 @@ public:
   void run_test()
   {
     const size_t left_alignment_jump =
-      memory_manager::preferred_alignment<int>( NP ) - NP ;
+      memory_space::preferred_alignment( sizeof(int), NP ) - NP ;
 
     m_left =  KokkosArray::create_mdarray< array_type >( NP , N1 , N2 );
     m_right = KokkosArray::create_mdarray< array_type >( NP , N1 , N2 );

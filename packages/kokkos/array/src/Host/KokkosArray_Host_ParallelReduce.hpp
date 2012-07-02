@@ -106,11 +106,7 @@ public:
                        const FunctorType  & functor ,
                              value_type   & result )
   {
-    MemoryManager< Host >::disable_memory_view_tracking();
-
     ParallelReduce driver( work_count , functor , result );
-
-    MemoryManager< Host >::enable_memory_view_tracking();
 
     HostThreadWorker<void>::execute( driver );
   }
@@ -167,11 +163,7 @@ public:
                        const FunctorType  & functor ,
                        const FinalizeType & finalize )
   {
-    MemoryManager< Host >::disable_memory_view_tracking();
-
     ParallelReduce driver( work_count , functor , finalize );
-
-    MemoryManager< Host >::enable_memory_view_tracking();
 
     HostThreadWorker<void>::execute( driver );
   }
@@ -285,9 +277,7 @@ public:
 
   void execute() const
   {
-    Impl::MemoryManager< Host >::disable_memory_view_tracking();
     Impl::HostThreadWorker<void>::execute( *this );
-    Impl::MemoryManager< Host >::enable_memory_view_tracking();
   }
 };
 

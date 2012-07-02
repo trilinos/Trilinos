@@ -58,10 +58,10 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , void >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , void >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -70,7 +70,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , void >
 
   static output_type create( const std::string & label )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -85,10 +85,10 @@ struct Factory< View< DataType , LayoutSpec , Host > , void >
   }
 };
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<1> >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , unsigned_<1> >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -97,7 +97,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<1> >
 
   static output_type create( const std::string & label , size_t n0 )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -117,10 +117,10 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<1> >
   }
 };
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<2> >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , unsigned_<2> >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -130,7 +130,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<2> >
   static output_type create( const std::string & label ,
                              size_t n0 , size_t n1 )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -150,10 +150,10 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<2> >
   }
 };
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<3> >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , unsigned_<3> >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -163,7 +163,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<3> >
   static output_type create( const std::string & label ,
                              size_t n0 , size_t n1 , size_t n2 )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -183,10 +183,10 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<3> >
   }
 };
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<4> >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , unsigned_<4> >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -196,7 +196,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<4> >
   static output_type create( const std::string & label ,
                              size_t n0 , size_t n1 , size_t n2 , size_t n3 )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -216,10 +216,10 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<4> >
   }
 };
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<5> >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , unsigned_<5> >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -230,7 +230,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<5> >
                              size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
                              size_t n4 )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -251,10 +251,10 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<5> >
   }
 };
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<6> >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , unsigned_<6> >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -265,7 +265,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<6> >
                              size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
                              size_t n4 , size_t n5 )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -286,10 +286,10 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<6> >
   }
 };
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<7> >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , unsigned_<7> >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -300,7 +300,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<7> >
                              size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
                              size_t n4 , size_t n5 , size_t n6 )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -321,10 +321,10 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<7> >
   }
 };
 
-template< typename DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<8> >
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , unsigned_<8> >
 {
-  typedef View< DataType , LayoutSpec , Host >  output_type ;
+  typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
 
   typedef typename StaticAssertSame<
@@ -335,7 +335,7 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<8> >
                              size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
                              size_t n4 , size_t n5 , size_t n6 , size_t n7 )
   {
-    typedef Host::memory_space_new  memory_space ;
+    typedef Host::memory_space  memory_space ;
     typedef typename output_type::value_type value_type ;
     typedef typename output_type::shape_type shape_type ;
 
@@ -359,13 +359,13 @@ struct Factory< View< DataType , LayoutSpec , Host > , unsigned_<8> >
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class DataType , class LayoutSpec >
-struct Factory< View< DataType , LayoutSpec , Host > ,
-                View< DataType , LayoutSpec , Host > >
+template< class DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > ,
+                View< DataType , LayoutType , Host > >
 {
 public:
-  typedef View< DataType , LayoutSpec , Host > output_type ;
-  typedef View< DataType , LayoutSpec , Host > input_type ;
+  typedef View< DataType , LayoutType , Host > output_type ;
+  typedef View< DataType , LayoutType , Host > input_type ;
 
   static inline
   void deep_copy( const output_type & output ,
@@ -406,7 +406,7 @@ public:
   static inline
   output_type create( const input_type & input )
   {
-    typedef Host::memory_space_new            memory_space ;
+    typedef Host::memory_space            memory_space ;
     typedef typename output_type::value_type  value_type ;
 
     output_type output ;
@@ -421,14 +421,14 @@ public:
   }
 };
 
-template< class OutDataType , class OutLayoutSpec ,
-          class InDataType ,  class InLayoutSpec >
-struct Factory< View< OutDataType , OutLayoutSpec , Host > ,
-                View< InDataType ,  InLayoutSpec ,  Host > >
+template< class OutDataType , class OutLayoutType ,
+          class InDataType ,  class InLayoutType >
+struct Factory< View< OutDataType , OutLayoutType , Host > ,
+                View< InDataType ,  InLayoutType ,  Host > >
 {
 public:
-  typedef View< OutDataType , OutLayoutSpec , Host > output_type ;
-  typedef View< InDataType ,  InLayoutSpec ,  Host > input_type ;
+  typedef View< OutDataType , OutLayoutType , Host > output_type ;
+  typedef View< InDataType ,  InLayoutType ,  Host > input_type ;
 
   static inline
   void deep_copy( const output_type & output ,

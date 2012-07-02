@@ -156,7 +156,6 @@ public:
     ASSERT_EQ( result.value[0], (ScalarType) nw);
     ASSERT_EQ( result.value[1], (ScalarType) nsum);
     ASSERT_EQ( result.value[2], (ScalarType) nsum);
-
   }
 };
 

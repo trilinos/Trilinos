@@ -488,7 +488,7 @@ struct TestLeftAndRight
 template < class Device >
 void test_view_impl()
 {
-  typedef typename Device::memory_space_new memory_space ;
+  typedef typename Device::memory_space memory_space ;
 
   typedef int    type_01 [100];
   typedef int    type_11 [0];

@@ -56,9 +56,7 @@ template< class FunctorType >
 class ParallelFor< FunctorType , Host > : public HostThreadWorker<void> {
 private:
 
-  typedef Host::size_type                size_type ;
-  typedef Host::memory_space             memory_space ;
-  typedef MemoryManager< memory_space >  memory_manager ;
+  typedef Host::size_type  size_type ;
 
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
@@ -88,11 +86,7 @@ public:
   static void execute( const size_type     work_count ,
                        const FunctorType & functor )
   {
-    memory_manager::disable_memory_view_tracking();
-
     ParallelFor driver( work_count , functor );
-
-    memory_manager::enable_memory_view_tracking();
 
     HostThreadWorker<void>::execute( driver );
   }
@@ -141,10 +135,8 @@ template<>
 class MultiFunctorParallelFor< Host >
   : public Impl::HostThreadWorker<void> {
 private:
-  typedef Host::size_type                      size_type ;
-  typedef Host::memory_space                   memory_space ;
-  typedef Impl::MemoryManager< memory_space >  memory_manager ;
-  typedef Impl::HostThreadWorker<void>         worker_type ;
+  typedef Host::size_type               size_type ;
+  typedef Impl::HostThreadWorker<void>  worker_type ;
   
   typedef std::vector< worker_type * > MemberContainer ;
 
@@ -189,9 +181,7 @@ public:
 
   void execute() const
   {
-    memory_manager::disable_memory_view_tracking();
     Impl::HostThreadWorker<void>::execute( *this );
-    memory_manager::enable_memory_view_tracking();
   }
 };
 

@@ -744,7 +744,7 @@ public:
 //----------------------------------------------------------------------------
 /* Runtime defined rank and dimensions */
 template<>
-class IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space,
+class IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
                      0, 0,0,0,0,0,0,0 > {
 public:
 

@@ -102,6 +102,23 @@ void parallel_reduce( const size_t work_count ,
     ::execute( work_count , functor , result );
 }
 
+template< class FunctorType >
+void parallel_reduce(
+  const size_t work_count ,
+  const FunctorType & functor ,
+  const View< typename FunctorType::value_type ,
+              typename FunctorType::device_type ,
+              typename FunctorType::device_type > & result )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef View< value_type , device_type , device_type > view_type ;
+
+  Impl::ParallelReduce< FunctorType , FunctorType , view_type , device_type >
+    ::execute( work_count , functor , result );
+}
+
 template< class FunctorType , class FinalizeType >
 void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
