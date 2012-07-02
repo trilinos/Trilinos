@@ -46,10 +46,10 @@
 
 #ifdef HAVE_IOSS 
 
-#include <stk_io/util/UseCase_mesh.hpp>
 #include <Ionit_Initializer.h>
 #include <Ioss_ElementBlock.h>
-
+#include <Ioss_Region.h>
+#include <stk_io/MeshReadWriteUtils.hpp>
 #include <stk_io/IossBridge.hpp>
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
