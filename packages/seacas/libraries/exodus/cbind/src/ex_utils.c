@@ -703,8 +703,9 @@ int ex_id_lkup( int exoid,
       return (EX_FATAL);
     }
 
-    /* allocate space for id array */
-    if (!(id_vals = malloc(dim_len*sizeof(int64_t)))) {
+    /* allocate space for id array and initialize to zero to ensure
+     that the higher bits don't contain garbage while copy from ints */
+    if (!(id_vals = calloc(dim_len,sizeof(int64_t)))) {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
              "Error: failed to allocate memory for %s array for file id %d",
@@ -713,7 +714,26 @@ int ex_id_lkup( int exoid,
       return (EX_FATAL);
     }
 
-    status = nc_get_var_longlong (exoid, varid, (long long*)id_vals);
+    if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
+      status = nc_get_var_longlong (exoid, varid, (long long*)id_vals);
+    }
+    else {
+      int *id_vals_int;
+      if (!(id_vals_int = malloc(dim_len*sizeof(int)))) {
+        exerrval = EX_MEMFAIL;
+        sprintf(errmsg,
+                "Error: failed to allocate memory for temporary array id_vals_int for file id %d",
+                exoid);
+        ex_err("ex_id_lkup",errmsg,exerrval);
+        return (EX_FATAL);
+      }
+      status = nc_get_var_int(exoid, varid, (int *)id_vals_int);
+      if (status == NC_NOERR) {
+	for (i=0;i<dim_len;i++)
+	  id_vals[i] = (int64_t) id_vals_int[i];
+      }
+      free(id_vals_int);
+    }
     
     if (status != NC_NOERR) {
       exerrval = status;
@@ -1526,9 +1546,11 @@ void ex_compress_variable(int exoid, int varid, int type)
     if (type == 2)
       shuffle = 0;
 #endif
+#if !defined(NOT_NETCDF4)
     if (deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
       nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
     }
+#endif
   }
 #endif
 }

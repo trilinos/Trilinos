@@ -82,13 +82,13 @@ int ex_get_block_param( int exoid,
   /* First, locate index of element block id in VAR_ID_EL_BLK array */
   blk_id_ndx = ex_id_lkup(exoid,block->type,block->id);
   if (exerrval != 0)  {
+    strcpy(block->topology, "NULL");     	/* NULL element type name */
+    block->num_entry = 0;  /* no elements            */
+    block->num_nodes_per_entry = 0;   /* no nodes               */
+    block->num_edges_per_entry = 0;
+    block->num_faces_per_entry = 0;
+    block->num_attribute = 0;    /* no attributes          */
     if (exerrval == EX_NULLENTITY) {    /* NULL element block?    */
-      strcpy(block->topology, "NULL");     	/* NULL element type name */
-      block->num_entry = 0;  /* no elements            */
-      block->num_nodes_per_entry = 0;   /* no nodes               */
-      block->num_edges_per_entry = 0;
-      block->num_faces_per_entry = 0;
-      block->num_attribute = 0;    /* no attributes          */
       return (EX_NOERR);
     } else {
       sprintf(errmsg,
