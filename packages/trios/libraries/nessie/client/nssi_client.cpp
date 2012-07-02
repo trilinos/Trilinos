@@ -634,6 +634,8 @@ int nssi_init(const nssi_rpc_transport transport_id)
  */
 int nssi_fini(const nssi_rpc_transport transport_id)
 {
+    nthread_counter_fini(&request_count);
+
     return nssi_rpc_fini(transport_id);
 }
 

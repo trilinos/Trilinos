@@ -1783,6 +1783,9 @@ int NNTI_ptl_fini (
         const NNTI_transport_t *trans_hdl)
 {
 //    PtlFini();
+    nthread_lock_fini(&nnti_ptl_lock);
+    nthread_lock_fini(&nnti_buf_bufhash_lock);
+    nthread_lock_fini(&nnti_wr_wrhash_lock);
 
     return(NNTI_OK);
 }
