@@ -77,10 +77,10 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
-  "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc/netcdf_4.2"
-  "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc/netcdf_4.2"
-  "-DHDF5_INCLUDE_DIRS=/home/trilinos/tpl/gcc/hdf5-1.8.6"
-  "-DHDF5_LIBRARY_DIRS=/home/trilinos/tpl/gcc/hdf5-1.8.6"
+  "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc/netcdf_4.2/include"
+  "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc/netcdf_4.2/lib"
+  "-DHDF5_INCLUDE_DIRS=/home/trilinos/tpl/gcc/hdf5-1.8.6/include"
+  "-DHDF5_LIBRARY_DIRS=/home/trilinos/tpl/gcc/hdf5-1.8.6/lib"
   "-DBoost_INCLUDE_DIRS=/home/trilinos/tpl/gcc/boost_1_49_0"
   )
 
