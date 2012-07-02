@@ -83,7 +83,6 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     remotelyOwned_last_requested_(NULL),
     sendProcs_(),
     recvProcs_(),
-    recv_chars_(),
     sendRecvProcsNeedUpdated_(true),
     proc_last_requested_(-1),
     haveBlockMatrix_(false),
@@ -227,27 +226,27 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
         sendProcs_.push_back(it->first);
       }
     }
+    sendRecvProcsNeedUpdated_ = false;
 
     //now we can find out which procs we'll be receiving from.
     recvProcs_.clear();
     fei::mirrorProcs(comm_, sendProcs_, recvProcs_);
-    recv_chars_.resize(recvProcs_.size());
   }
 
+  //next we'll declare arrays to receive into.
+  std::vector<std::vector<char> > recv_chars(recvProcs_.size());
+
+  //...and an array for the sizes of the recv buffers:
+  std::vector<int> recv_sizes(recvProcs_.size());
   std::vector<MPI_Request> mpiReqs(recvProcs_.size());
   std::vector<MPI_Request> mpiReqs2(recvProcs_.size());
   std::vector<MPI_Status> mpiStatuses(recvProcs_.size());
 
   int tag1 = 11111;
 
-  //...an array for the sizes of the recv buffers:
-  std::vector<int> recv_sizes(recvProcs_.size());
-
-  if (sendRecvProcsNeedUpdated_) {
-    for(size_t i=0; i<recvProcs_.size(); ++i) {
-      MPI_Irecv(&recv_sizes[i], 1, MPI_INT, recvProcs_[i],
-                tag1, comm_, &mpiReqs[i]);
-    }
+  for(size_t i=0; i<recvProcs_.size(); ++i) {
+    MPI_Irecv(&recv_sizes[i], 1, MPI_INT, recvProcs_[i],
+              tag1, comm_, &mpiReqs[i]);
   }
 
   //now we'll pack our to-be-sent data into buffers, and send the
@@ -260,11 +259,9 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
     fei::impl_utils::pack_FillableMat(*(remotelyOwned_[proc]),
                                       send_chars[i]);
 
-    if (sendRecvProcsNeedUpdated_) {
-      int bsize = send_chars[i].size();
+    int bsize = send_chars[i].size();
 
-      MPI_Send(&bsize, 1, MPI_INT, proc, tag1, comm_);
-    }
+    MPI_Send(&bsize, 1, MPI_INT, proc, tag1, comm_);
 
     remotelyOwned_[proc]->setValues(0.0);//clear();
   }
@@ -273,22 +270,17 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
 
   //now resize our recv buffers, and post the recvs.
   for(size_t i=0; i<recvProcs_.size(); ++i) {
-    int index = i;
-    int bsize = recv_chars_[index].size();
-    if (sendRecvProcsNeedUpdated_) {
-      MPI_Status status;
-      MPI_Waitany(numRecvProcs, &mpiReqs[0], &index, &status);
+    int index;
+    MPI_Status status;
+    MPI_Waitany(numRecvProcs, &mpiReqs[0], &index, &status);
 
-      bsize = recv_sizes[index];
+    int bsize = recv_sizes[index];
 
-      recv_chars_[index].resize(bsize);
-    }
+    recv_chars[index].resize(bsize);
 
-    MPI_Irecv(&(recv_chars_[index][0]), bsize, MPI_CHAR, recvProcs_[index],
+    MPI_Irecv(&(recv_chars[index][0]), bsize, MPI_CHAR, recvProcs_[index],
               tag1, comm_, &mpiReqs2[index]);
   }
-
-  sendRecvProcsNeedUpdated_ = false;
 
   //now send our packed buffers.
   for(size_t i=0; i<sendProcs_.size(); ++i) {
@@ -306,7 +298,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   //and finally, unpack and store the received buffers.
   CSRMat recvMat;
   for(size_t ir=0; ir<recvProcs_.size(); ++ir) {
-    bool all_zeros = fei::impl_utils::unpack_CSRMat(recv_chars_[ir], recvMat);
+    bool all_zeros = fei::impl_utils::unpack_CSRMat(recv_chars[ir], recvMat);
 
     if (all_zeros) continue;
 
