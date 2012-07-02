@@ -90,11 +90,6 @@ void testDofMapper( MPI_Comm comm )
     ++i_node;
   }
 
-  //test the get_global_index function:
-  stk::mesh::EntityId node_id = nodes[i_node]->identifier();
-  index = dof_mapper.get_global_index(NODE_RANK, node_id, *temperature_field);
-  STKUNIT_ASSERT_EQUAL( index, (int)(node_id-1) );
-
   std::cout << "Testing error condition: " << std::endl;
   //call DofMapper::get_global_index with a non-existent ID and verify that an
   //exception is thrown:
