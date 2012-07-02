@@ -44,6 +44,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "Trios_config.h"
 
+#include <fcntl.h>
+#include <sys/stat.h>
+
 #include <assert.h>
 #include <unistd.h>
 
@@ -73,7 +76,8 @@ int nthread_lock_init(
     fflush(stderr);
 #endif
 
-    rc=sem_init(&lock->lock, 0, 1);
+    lock->name=tempnam("/tmp", "trios.");
+    lock->lock=sem_open(lock->name+4, O_CREAT|O_EXCL, 0600, 1);
 
 #ifdef _DEBUG_LOCKS_
     fprintf(stderr, "nthread_lock_init: initialized lock(%p), lock->lock(%p)\n", lock, &lock->lock);
@@ -93,7 +97,7 @@ int nthread_lock(
     fflush(stderr);
 #endif
 
-    rc=sem_wait(&lock->lock);
+    rc=sem_wait(lock->lock);
 
 #ifdef _DEBUG_LOCKS_
     fprintf(stderr, "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, &lock->lock);
@@ -113,7 +117,7 @@ int nthread_unlock(
     fflush(stderr);
 #endif
 
-    rc=sem_post(&lock->lock);
+    rc=sem_post(lock->lock);
 
 #ifdef _DEBUG_LOCKS_
     fprintf(stderr, "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, &lock->lock);
@@ -123,6 +127,27 @@ int nthread_unlock(
     return(rc);
 }
 
+
+int nthread_lock_fini(
+        nthread_lock_t *lock)
+{
+    int rc=0;
+
+#ifdef _DEBUG_LOCKS_
+    fprintf(stderr, "nthread_lock_fini: finalizing lock(%p), lock->lock(%p)\n", lock, &lock->lock);
+    fflush(stderr);
+#endif
+
+    rc=sem_close(lock->lock);
+    rc=sem_unlink(lock->name);
+
+#ifdef _DEBUG_LOCKS_
+    fprintf(stderr, "nthread_lock_fini: finalized lock(%p), lock->lock(%p)\n", lock, &lock->lock);
+    fflush(stderr);
+#endif
+
+    return(rc);
+}
 
 int nthread_counter_init(
         nthread_counter_t *c)
@@ -182,4 +207,17 @@ int64_t nthread_counter_decrement(
 
 cleanup:
     return t;
+}
+
+int nthread_counter_fini(
+        nthread_counter_t *c)
+{
+    int rc=0;
+    int64_t t=0;
+
+    log_debug(thread_debug_level, "nthread_counter_fini(STUB)");
+    rc=nthread_lock_fini(&c->lock);
+    c->value = 0;
+
+    return rc;
 }
