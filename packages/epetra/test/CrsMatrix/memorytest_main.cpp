@@ -41,6 +41,8 @@
 
 // This program tests the memory management system of the class CrsMatrix (memory leak, invalid free).
 // It should be run using valgrind.
+//
+// Initially written to demonstrate bug #5499 and regressions introduced by the first patch.
 
 #include <vector>
 
@@ -104,13 +106,13 @@ int main(int argc, char *argv[])
   if (verbose) cout << "Test the memory management system of the class CrsMatrix (memory leak, invalid free)" << std::endl;
 
   //
-  // Test 1
+  // Test 1: code initially proposed to illustrate bug #5499
   //
   
   if(Comm.NumProc() == 1) { // this is a sequential test
 
-    if (verbose) cout << "* Using Copy, ColMap, Variable number of indices per row and Static profile (cf. bug #5499)" << std::endl;
-    
+    if (verbose) cout << "* Using Copy, ColMap, Variable number of indices per row and Static profile (cf. bug #5499)." << std::endl;
+
     // Row Map
     Epetra_Map RowMap(2, 0, Comm);
     
@@ -127,17 +129,35 @@ int main(int argc, char *argv[])
     
     // Test
     Epetra_CrsMatrix A(Copy, RowMap, ColMap, &NumEntriesPerRow[0], true);
+    // Bug #5499 shows up because InsertGlobalValues() is not called (CrsMatrix::Values_ not allocated but freed)
     A.FillComplete();
     
   }
 
   //
-  // Test 2
+  // Test 1 Bis: same as Test1, but without ColMap and variable number of indices per row. Does not seems to matter
+  //
+  
+  if(Comm.NumProc() == 1) { // this is a sequential test
+
+    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Static profile" << std::endl;
+
+    Epetra_Map RowMap(2, 0, Comm);
+
+    // Test
+    Epetra_CrsMatrix    A(Copy, RowMap, 1, true);
+    // Bug #5499 shows up because InsertGlobalValues() is not called (CrsMatrix::Values_ not allocated but freed)
+    A.FillComplete();
+    
+  }
+
+  //
+  // Test 2: same as Test 1 Bis but with one call to InsertGlobalValues.
   //
 
   if(Comm.NumProc() == 1) {
 
-    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Static profile" << std::endl;
+    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Static profile + InsertGlobalValues()." << std::endl;
 
     Epetra_Map RowMap(2, 0, Comm);
 
@@ -148,12 +168,49 @@ int main(int argc, char *argv[])
     Values[0] = 2;
     Indices[0] = 0;
 
-    A.InsertGlobalValues(0, 1, &Values[0], &Indices[0]);
+    A.InsertGlobalValues(0, 1, &Values[0], &Indices[0]); // Memory leak if CrsMatrix::Values not freed
 
     A.FillComplete();
 
   }
 
+  // 
+  // Test 3: check if the patch is not introducing some obvious regression
+  //
+
+  if(Comm.NumProc() == 1) {
+    
+    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Dynamic profile" << std::endl;
+    
+    Epetra_Map RowMap(2, 0, Comm);
+
+    // Test
+    Epetra_CrsMatrix    A(Copy, RowMap, 1, false);
+    A.FillComplete();
+    
+  }
+
+  // 
+  // Test 4: idem but with one call to InsertGlobalValues.
+  // 
+
+  if(Comm.NumProc() == 1) {
+    
+    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Dynamic profile + InsertGlobalValues()." << std::endl;
+    
+    Epetra_Map RowMap(2, 0, Comm);
+
+    // Test
+    Epetra_CrsMatrix    A(Copy, RowMap, 1, false);
+    std::vector<int>    Indices(1);
+    std::vector<double> Values(1);
+    Values[0] = 2;
+    Indices[0] = 0;
+    
+    A.InsertGlobalValues(0, 1, &Values[0], &Indices[0]);
+    A.FillComplete();
+    
+  }
 
   /*
     if (bool) {
