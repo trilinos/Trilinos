@@ -71,18 +71,18 @@ int nthread_lock_init(
 {
     int rc=0;
 
-#ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock_init: initializing lock(%p), lock->lock(%p)\n", lock, &lock->lock);
-    fflush(stderr);
-#endif
+//    log_debug(thread_debug_level, "nthread_lock_init: initializing lock(%p), lock->lock(%p)", lock, lock->lock);
 
     lock->name=tempnam("/tmp", "trios.");
     lock->lock=sem_open(lock->name+4, O_CREAT|O_EXCL, 0600, 1);
+    if (lock->lock == SEM_FAILED) {
+        fprintf(stderr, "nthread_lock_init: sem_open failed: %s\n", strerror(errno));
+        fflush(stderr);
+        lock->lock=NULL;
+        return(-1);
+    }
 
-#ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock_init: initialized lock(%p), lock->lock(%p)\n", lock, &lock->lock);
-    fflush(stderr);
-#endif
+//    log_debug(thread_debug_level, "nthread_lock_init: initialized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
 
     return(rc);
 }
@@ -93,14 +93,25 @@ int nthread_lock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock: locking lock(%p), lock->lock(%p)\n", lock, &lock->lock);
+    fprintf(stderr, "nthread_lock: locking lock(%p), lock->lock(%p)\n", lock, lock->lock);
     fflush(stderr);
 #endif
 
+    if (lock->lock == NULL) {
+        fprintf(stderr, "nthread_lock: lock not initialized\n");
+        fflush(stderr);
+        return(-1);
+    }
+
     rc=sem_wait(lock->lock);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_lock: sem_wait failed: %s\n", strerror(errno));
+        fflush(stderr);
+        return(-1);
+    }
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, &lock->lock);
+    fprintf(stderr, "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, lock->lock);
     fflush(stderr);
 #endif
 
@@ -113,14 +124,25 @@ int nthread_unlock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", lock, &lock->lock);
+    fprintf(stderr, "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", lock, lock->lock);
     fflush(stderr);
 #endif
 
+    if (lock->lock == NULL) {
+        fprintf(stderr, "nthread_unlock: lock not initialized\n");
+        fflush(stderr);
+        return(-1);
+    }
+
     rc=sem_post(lock->lock);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_unlock: sem_post failed: %s\n", strerror(errno));
+        fflush(stderr);
+        return(-1);
+    }
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, &lock->lock);
+    fprintf(stderr, "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, lock->lock);
     fflush(stderr);
 #endif
 
@@ -133,18 +155,28 @@ int nthread_lock_fini(
 {
     int rc=0;
 
-#ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock_fini: finalizing lock(%p), lock->lock(%p)\n", lock, &lock->lock);
-    fflush(stderr);
-#endif
+//    log_debug(thread_debug_level, "nthread_lock_fini: finalizing lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
+
+    if (lock->lock == NULL) {
+        fprintf(stderr, "nthread_lock_fini: lock not initialized\n");
+        fflush(stderr);
+        return(-1);
+    }
 
     rc=sem_close(lock->lock);
-    rc=sem_unlink(lock->name);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_lock_fini: sem_close failed: %s\n", strerror(errno));
+        fflush(stderr);
+        return(-1);
+    }
+    rc=sem_unlink(lock->name+4);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_lock_fini: sem_unlink failed: %s\n", strerror(errno));
+        fflush(stderr);
+        return(-1);
+    }
 
-#ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock_fini: finalized lock(%p), lock->lock(%p)\n", lock, &lock->lock);
-    fflush(stderr);
-#endif
+//    log_debug(thread_debug_level, "nthread_lock_fini: finalized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
 
     return(rc);
 }
@@ -155,8 +187,13 @@ int nthread_counter_init(
     int rc=0;
     int64_t t=0;
 
-    log_debug(thread_debug_level, "nthread_counter_init(STUB)");
+//    log_debug(thread_debug_level, "nthread_counter_init(STUB)");
     rc=nthread_lock_init(&c->lock);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_counter_init: nthread_lock_init failed: %s\n", strerror(errno));
+        fflush(stderr);
+        return(-1);
+    }
     c->value = 0;
 
     return rc;
@@ -168,10 +205,11 @@ int64_t nthread_counter_increment(
     int rc=0;
     int64_t t=0;
 
-    log_debug(thread_debug_level, "nthread_counter_increment(STUB)");
+//    log_debug(thread_debug_level, "nthread_counter_increment(STUB)");
 
     if (nthread_lock(&c->lock) != 0) {
-        log_error(thread_debug_level, "failed to lock the counter lock: %s", strerror(errno));
+        fprintf(stderr, "nthread_counter_increment: failed to lock the counter lock: %s\n", strerror(errno));
+        fflush(stderr);
         goto cleanup;
     }
 
@@ -179,7 +217,8 @@ int64_t nthread_counter_increment(
     c->value++;
 
     if (nthread_unlock(&c->lock) != 0) {
-        log_error(thread_debug_level, "failed to unlock the counter lock: %s", strerror(errno));
+        fprintf(stderr, "nthread_counter_increment: failed to unlock the counter lock: %s\n", strerror(errno));
+        fflush(stderr);
     }
 
 cleanup:
@@ -191,10 +230,11 @@ int64_t nthread_counter_decrement(
 {
     int64_t t=0;
 
-    log_debug(thread_debug_level, "nthread_counter_decrement(STUB)");
+//    log_debug(thread_debug_level, "nthread_counter_decrement(STUB)");
 
     if (nthread_lock(&c->lock) != 0) {
-        log_error(thread_debug_level, "failed to lock the counter lock: %s", strerror(errno));
+        fprintf(stderr, "nthread_counter_decrement: failed to lock the counter lock: %s\n", strerror(errno));
+        fflush(stderr);
         goto cleanup;
     }
 
@@ -202,7 +242,8 @@ int64_t nthread_counter_decrement(
     c->value--;
 
     if (nthread_unlock(&c->lock) != 0) {
-        log_error(thread_debug_level, "failed to unlock the counter lock: %s", strerror(errno));
+        fprintf(stderr, "nthread_counter_decrement: failed to unlock the counter lock: %s\n", strerror(errno));
+        fflush(stderr);
     }
 
 cleanup:
@@ -215,8 +256,13 @@ int nthread_counter_fini(
     int rc=0;
     int64_t t=0;
 
-    log_debug(thread_debug_level, "nthread_counter_fini(STUB)");
+//    log_debug(thread_debug_level, "nthread_counter_fini(STUB)");
     rc=nthread_lock_fini(&c->lock);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_counter_fini: nthread_lock_fini failed: %s\n", strerror(errno));
+        fflush(stderr);
+        return(-1);
+    }
     c->value = 0;
 
     return rc;
