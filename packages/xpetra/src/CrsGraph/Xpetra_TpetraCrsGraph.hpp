@@ -17,8 +17,6 @@
 
 #include "Xpetra_TpetraExport.hpp"
 
-using Teuchos::ParameterList;
-
 namespace Xpetra {
 
   // TODO: move that elsewhere
