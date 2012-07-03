@@ -600,6 +600,11 @@ int trace_fini()
     interval_map.clear();
     nthread_unlock(&interval_mutex);
 
+    nthread_lock_fini(&gname_mutex);
+    nthread_lock_fini(&gid_mutex);
+    nthread_lock_fini(&interval_mutex);
+    nthread_lock_fini(&count_mutex);
+
     return rc;
 }
 

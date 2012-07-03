@@ -119,8 +119,6 @@ client_init ()
 
 //    register_service_encodings();
 
-    nthread_counter_init(&request_count);
-
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_GET_SERVICE, void, void, nssi_service);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_KILL_SERVICE, nssi_kill_service_args, void, void);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_TRACE_RESET, nssi_trace_reset_args, void, void);
@@ -357,6 +355,12 @@ int nssi_rpc_clnt_init(
     rc = nssi_rpc_init(rpc_transport, NSSI_DEFAULT_ENCODE, my_url);
     if (rc != NSSI_OK) {
         log_error(rpc_debug_level, "could not initialize RPC");
+        return rc;
+    }
+
+    nssi_init(rpc_transport);
+    if (rc != NSSI_OK) {
+        log_error(rpc_debug_level, "could not initialize nssi client");
         return rc;
     }
 
@@ -624,7 +628,9 @@ int nssi_init(const nssi_rpc_transport transport_id)
 {
     int rc = NSSI_OK;
 
-    nssi_rpc_init(transport_id, NSSI_DEFAULT_ENCODE, NULL);
+//    nssi_rpc_init(transport_id, NSSI_DEFAULT_ENCODE, NULL);
+
+    nthread_counter_init(&request_count);
 
     return rc;
 }
@@ -634,7 +640,13 @@ int nssi_init(const nssi_rpc_transport transport_id)
  */
 int nssi_fini(const nssi_rpc_transport transport_id)
 {
-    return nssi_rpc_fini(transport_id);
+    int rc = NSSI_OK;
+
+    nthread_counter_fini(&request_count);
+
+//    return nssi_rpc_fini(transport_id);
+
+    return(rc);
 }
 
 /**

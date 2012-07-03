@@ -47,13 +47,15 @@ int main(int argc, char *argv[]) {
 
     log_level debug_level=LOG_ALL;
 
-    //logger_init(debug_level, logfile.c_str());
+    logger_init(LOG_ERROR, NULL);
 
     log_debug(debug_level, "print number=%d", 10);
     log_info(debug_level, "print number=%d", 11);
     log_warn(debug_level, "warn msg");
     log_error(debug_level, "error msg");
     log_fatal(debug_level, "fatal msg");
+
+    logger_fini();
 
     return 0;
 }

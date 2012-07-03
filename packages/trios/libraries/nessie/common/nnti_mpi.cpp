@@ -1587,6 +1587,10 @@ int NNTI_mpi_fini (
         const NNTI_transport_t *trans_hdl)
 {
 //    PtlFini();
+    nthread_lock_fini(&nnti_mpi_lock);
+    nthread_lock_fini(&nnti_buf_bufhash_lock);
+    nthread_lock_fini(&nnti_wr_wrhash_lock);
+    nthread_lock_fini(&nnti_target_buffer_queue_lock);
 
     return(NNTI_OK);
 }

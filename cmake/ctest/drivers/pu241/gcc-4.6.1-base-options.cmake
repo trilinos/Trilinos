@@ -53,6 +53,10 @@ SET(Zlib_INCLUDE_DIRS   /opt/gcc-4.6.1/tpls/zlib-1.2.7/include CACHE FILEPATH ""
 SET(Zlib_LIBRARY_DIRS   /opt/gcc-4.6.1/tpls/zlib-1.2.7/lib     CACHE FILEPATH "")
 SET(QT_REQUIRED_VERSION 4.7.1                           CACHE STRING   "")
 SET(QT_QMAKE_EXECUTABLE /opt/gcc-4.6.1/tpls/qt-4.7.1/bin/qmake CACHE FILEPATH "")
+SET(MOOSE_PETSC_INCLUDE_DIRS  /opt/gcc-4.6.1/tpls/petsc-3.1-p8/include  CACHE FILEPATH "")
+SET(MOOSE_PETSC_LIBRARY_DIRS  /opt/gcc-4.6.1/tpls/petsc-3.1-p8/lib      CACHE FILEPATH "")
+SET(MOOSE_HYPRE_INCLUDE_DIRS  /opt/gcc-4.6.1/tpls/hypre-2.8.0b/include  CACHE FILEPATH "")
+SET(MOOSE_HYPRE_LIBRARY_DIRS  /opt/gcc-4.6.1/tpls/hypre-2.8.0b/lib      CACHE FILEPATH "")
 # SET(QT_LIBRARY_DIR /opt/gcc-4.6.1/tpls/qt-4.7.1/lib     CACHE FILEPATH "")
 # SET(QT_INCLUDE_DIR /opt/gcc-4.6.1/tpls/qt-4.7.1/include CACHE FILEPATH "")
 

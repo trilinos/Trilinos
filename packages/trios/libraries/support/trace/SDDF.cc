@@ -125,9 +125,6 @@ int SDDF::define_generic_event(
     delete structureP;
     delete attributes;
 
-    /* initialize the mutex for the genericRecord */
-    nthread_lock_init(&genericMutex);
-
     return 0;
 }
 
@@ -196,9 +193,6 @@ int SDDF::define_count_event(
 
     /* create the global countRecord structure */
     countRecord = new RecordDossier(tag, *structureP);
-
-    /* initialize the mutex  */
-    nthread_lock_init(&countMutex);
 
     delete structureP;
     delete attributes;
@@ -279,9 +273,6 @@ int SDDF::define_interval_event(
 
     /* create the global intervalRecord structure */
     intervalRecord = new RecordDossier(tag, *structureP);
-
-    /* initialize the mutex  */
-    nthread_lock_init(&intervalMutex);
 
     delete structureP;
     delete attributes;
@@ -372,9 +363,6 @@ int SDDF::define_throughput_event(
     /* create the global throughputRecord structure */
     throughputRecord = new RecordDossier(tag, *structureP);
 
-    /* initialize the mutex  */
-    nthread_lock_init(&throughputMutex);
-
     delete structureP;
     delete attributes;
 
@@ -402,6 +390,19 @@ SDDF::SDDF(const char *f, const int t):
     starttime = trios_get_time();
 
     Attributes attributes;
+
+
+    /* initialize the mutex for the genericRecord */
+    nthread_lock_init(&genericMutex);
+    /* initialize the mutex for the countRecord  */
+    nthread_lock_init(&countMutex);
+    /* initialize the mutex for the intervalRecord  */
+    nthread_lock_init(&intervalMutex);
+    /* initialize the mutex for the throughputRecord  */
+    nthread_lock_init(&throughputMutex);
+
+    /* initialize the mutex for the output stream  */
+    nthread_lock_init(&outputMutex);
 
 
     /* Open file */
@@ -448,6 +449,18 @@ SDDF::~SDDF(void)
     fprintf(stderr, "delete intervalRecord\n");
     delete intervalRecord;
 
+    /* cleanup the mutex for the genericRecord */
+    nthread_lock_fini(&genericMutex);
+    /* cleanup the mutex for the countRecord  */
+    nthread_lock_fini(&countMutex);
+    /* cleanup the mutex for the intervalRecord  */
+    nthread_lock_fini(&intervalMutex);
+    /* cleanup the mutex for the throughputRecord  */
+    nthread_lock_fini(&throughputMutex);
+
+    /* cleanup the mutex for the output stream  */
+    nthread_lock_fini(&outputMutex);
+
 
     fprintf(stderr, "finished ~SDDF()\n");
 }
@@ -455,13 +468,6 @@ SDDF::~SDDF(void)
 int SDDF::output_record(RecordDossier *rec)
 {
     int rc = 0;
-    static bool           init=false;
-    static nthread_lock_t mutex;
-
-    if (!init) {
-        nthread_lock_init(&mutex);
-        init=true;
-    }
 
     if (!rec)
         return rc;

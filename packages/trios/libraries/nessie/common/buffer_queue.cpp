@@ -256,6 +256,8 @@ int trios_buffer_queue_fini(
     }
     nthread_unlock(&bq->mutex);
 
+    nthread_lock_fini(&bq->mutex);
+
     log_debug(bq_debug_level, "exit");
 
     return((int)nnti_rc);

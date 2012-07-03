@@ -81,6 +81,9 @@ class SDDF : public TraceFile {
         OutputFileStreamPipe *outFile;
         PipeWriter *pipeWriter;
 
+        /* need mutex to protect the output stream */
+        nthread_lock_t outputMutex;
+
         /* When the trace file is initialized */
         double starttime;
 

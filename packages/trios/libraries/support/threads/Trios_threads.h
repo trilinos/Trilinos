@@ -65,6 +65,8 @@ int nthread_lock(
         nthread_lock_t *lock);
 int nthread_unlock(
         nthread_lock_t *lock);
+int nthread_lock_fini(
+        nthread_lock_t *lock);
 
 
 int     nthread_counter_init(
@@ -72,6 +74,8 @@ int     nthread_counter_init(
 int64_t nthread_counter_increment(
         nthread_counter_t *c);
 int64_t nthread_counter_decrement(
+        nthread_counter_t *c);
+int     nthread_counter_fini(
         nthread_counter_t *c);
 
 #ifdef __cplusplus

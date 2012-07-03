@@ -170,6 +170,9 @@ int register_service_encodings(void)
 int nssi_xdr_fini()
 {
     int rc = NSSI_OK;
+
+    nthread_lock_fini(&encodings_map_mutex);
+
     return rc;
 }
 

@@ -1463,6 +1463,10 @@ int nssi_service_add_op(
  */
 int nssi_service_fini(const nssi_service *service)
 {
+//	nthread_lock_fini(&meminfo_mutex);
+    nthread_lock_fini(&supported_ops_mutex);
+    nthread_lock_fini(&request_args_map_mutex);
+
     return NSSI_OK;
 }
 

@@ -2151,6 +2151,14 @@ NNTI_result_t NNTI_ib_fini (
 
     ibv_close_device(transport_global_data.ctx);
 
+    nthread_lock_fini(&nnti_ib_lock);
+    nthread_lock_fini(&nnti_conn_peer_lock);
+    nthread_lock_fini(&nnti_conn_qpn_lock);
+    nthread_lock_fini(&nnti_wr_wrhash_lock);
+    nthread_lock_fini(&nnti_buf_bufhash_lock);
+    nthread_lock_fini(&nnti_wr_pool_lock);
+
+
     return(NNTI_OK);
 }
 

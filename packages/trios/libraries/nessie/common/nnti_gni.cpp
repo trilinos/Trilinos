@@ -2473,6 +2473,13 @@ NNTI_result_t NNTI_gni_fini (
         rc=NNTI_EINVAL;
     }
 
+    nthread_lock_fini(&nnti_gni_lock);
+    nthread_lock_fini(&nnti_conn_peer_lock);
+    nthread_lock_fini(&nnti_conn_instance_lock);
+    nthread_lock_fini(&nnti_wr_wrhash_lock);
+    nthread_lock_fini(&nnti_buf_bufhash_lock);
+    nthread_lock_fini(&nnti_wr_pool_lock);
+
     log_debug(nnti_ee_debug_level, "exit");
 
     return(NNTI_OK);
