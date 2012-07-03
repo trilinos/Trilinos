@@ -1058,21 +1058,21 @@ namespace Kokkos {
     default: // The "general case"
       if (trans == Teuchos::NO_TRANS) {
         using Kokkos::Raw::matVecCsrColMajor;
-        matVecCsrColMajor<OT, MST, DST, RST> (numRows, numCols,
+        matVecCsrColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
                                               beta, Y_raw, Y_stride,
                                               alpha, ptr, ind, val,
                                               X_raw, X_stride);
       }
       else if (trans == Teuchos::TRANS) {
         using Kokkos::Raw::matVecCscColMajor;
-        matVecCscColMajor<OT, MST, DST, RST> (numRows, numCols,
+        matVecCscColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
                                               beta, Y_raw, Y_stride,
                                               alpha, ptr, ind, val,
                                               X_raw, X_stride);
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         using Kokkos::Raw::matVecCscColMajorConj;
-        matVecCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
+        matVecCscColMajorConj<OT, MST, DST, RST> (numRows, numCols, numVecs,
                                                   beta, Y_raw, Y_stride,
                                                   alpha, ptr, ind, val,
                                                   X_raw, X_stride);
