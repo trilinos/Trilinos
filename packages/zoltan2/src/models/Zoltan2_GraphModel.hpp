@@ -546,6 +546,8 @@ template <typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
+return;
+
   numGlobalVertices_ = idMap->getGlobalNumberOfIds();
   gidsAreGnos_ = idMap->gnosAreGids();
 

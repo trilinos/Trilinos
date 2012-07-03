@@ -42,7 +42,7 @@ void check_traits(
   std::cout << "Value: " << id::stringify(val) << std::endl;
   std::cout << "\"Higher\" value: " << id::stringify(higherVal) << std::endl;
   std::cout << "Int hash code (non-unique): " << id::hashCode(val) << std::endl;
-  std::cout << "Supports unique hash key: " << id::hasUniqueKey() << std::endl;
+  std::cout << "Supports unique key: " << id::hasUniqueKey() << std::endl;
   if (id::hasUniqueKey())
     std::cout << "Key value: " << k << std::endl;
   std::cout << "Is Teuchos Global Ordinal: " << id::isGlobalOrdinal() << std::endl;
@@ -61,7 +61,7 @@ void check_traits(
   }
 
   if (supported)
-    std::cout << lo << " " << hi << std::endl;
+    std::cout << id::stringify(lo) << ", " << id::stringify(hi) << std::endl;
   else
     std::cout << "not supported" << std::endl;
 
@@ -78,7 +78,7 @@ void check_traits(
   }
 
   if (supported)
-    std::cout << gmin << " " << gmax << std::endl;
+    std::cout << id::stringify(lo) << ", " << id::stringify(hi) << std::endl;
   else
     std::cout << "not supported" << std::endl;
 
@@ -88,14 +88,14 @@ void check_traits(
   T diff;
   std::cout << "Difference : ";
   try{
-    diff = id::difference(higherVal, val);
+    diff = id::difference(val, higherVal);
   }
   catch(...){
     supported = false;
   }
 
   if (supported)
-    std::cout << diff << std::endl;
+    std::cout << id::stringify(diff) << std::endl;
   else
     std::cout << "not supported" << std::endl;
 
@@ -105,7 +105,7 @@ void check_traits(
   bool consec=false; 
   std::cout << "Are consecutive: ";
   try{
-    diff = id::areConsecutive(valueList, 2);
+    consec = id::areConsecutive(valueList, 2);
   }
   catch(...){
     supported = false;
@@ -121,16 +121,17 @@ void check_traits(
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
+  Teuchos::RCP<const Teuchos::Comm<int> > nullComm;
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+    Teuchos::DefaultComm<int>::getDefaultSerialComm(nullComm);
 
   int rank = session.getRank();
 
   if (rank == 0){
     char c='a';
     char c_other ='v';
-    unsigned char uc='x';
-    unsigned char uc_other ='X';
+    unsigned char uc='A';
+    unsigned char uc_other ='Z';
     short int si=1024;
     short int si_other =11024;
     unsigned short int usi=1024;

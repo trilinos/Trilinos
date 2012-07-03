@@ -24,6 +24,7 @@
 #include <sstream>
 #include <string>
 #include <limits>
+#include <cstdlib>
 
 using Teuchos::SerializationTraits;
 
@@ -46,13 +47,22 @@ template <typename T>
   return std::pair<T,T>(min,max);
 }
 
-/*! \brief helper to hash values larger than int to an int
+/*! \brief helper to hash values larger than int to an int.
+ *  Hash values do not need to be unique, but there should be
+ *  as few overlaps as possible.
  */
 int getHashCode(const unsigned char *a, size_t len)
 {
   int total=0;
-  for (unsigned i=0; i < len; i++)
-    total += static_cast<int>(a[i]);
+  unsigned char *to = reinterpret_cast<unsigned char *>(&total);
+  int c=0;
+  for (size_t i=0; i < len; i++){
+    to[c++] += a[i];
+    if (c == sizeof(int))
+      c = 0;
+  }
+  if (total < 0)
+    total *= -1;
   return total;
 }
 
@@ -327,7 +337,10 @@ struct IdentifierTraits<char> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -348,7 +361,10 @@ struct IdentifierTraits<unsigned char> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-   z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -369,7 +385,10 @@ struct IdentifierTraits<short> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -390,7 +409,10 @@ struct IdentifierTraits<unsigned short> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -411,7 +433,10 @@ struct IdentifierTraits<int> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -432,7 +457,10 @@ struct IdentifierTraits<unsigned int> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -455,7 +483,10 @@ struct IdentifierTraits<long> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -477,7 +508,10 @@ struct IdentifierTraits<unsigned long> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -501,7 +535,10 @@ struct IdentifierTraits<long long> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -523,7 +560,10 @@ struct IdentifierTraits<unsigned long long> {
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
-    z2LocalMinMax(values, n, min, max);}
+    std::pair<T, T> ext = z2LocalMinMax(values, n);
+    min = ext.first;
+    max = ext.second;
+  }
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
@@ -567,23 +607,26 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   }
 
   static inline bool hasUniqueKey() { 
-    if (sizeof(T1) + sizeof(T2) <= sizeof(double))
+    if ((sizeof(T1)*2 <= sizeof(double))&&(sizeof(T2)*2 <= sizeof(double)))
       return true;
     else
       return false;
   }
 
   static inline double key(const pair_t p)  {
-    if (sizeof(T1) + sizeof(T2) <= sizeof(double)){
-      double keyVal;
+    size_t nbytes = sizeof(double) / 2;
+    if ((sizeof(T1) > nbytes)||(sizeof(T2) > nbytes))
+      throw std::logic_error("invalid call");
+    else{
+      double keyVal=0;
       char *cx = reinterpret_cast<char *>(&keyVal);
-      T1 *xpos = reinterpret_cast<T1 *>(cx);
-      T2 *ypos = reinterpret_cast<T2 *>(cx + sizeof(T1));
+      char *cy = cx + nbytes;
+      T1 *xpos = reinterpret_cast<T1 *>(cx + nbytes-sizeof(T1));
+      T2 *ypos = reinterpret_cast<T2 *>(cy + nbytes-sizeof(T2));
       *xpos = p.first;
+      *ypos = p.second;
       return keyVal;
     }
-    else
-      throw std::logic_error("invalid call");
   }
 
   static inline std::string name() {
@@ -607,12 +650,12 @@ struct IdentifierTraits<std::pair<T1, T2> > {
 
   static inline pair_t difference( const pair_t a, const pair_t b) {
       throw std::logic_error("invalid call");
-      return false;}
+      return pair_t();}
 
   static inline bool is_valid_id_type() {
     return (sizeof(T1)+sizeof(T2) <= sizeof(double)); }
 
-  static void minMax(const pair_t *values, size_t n, T &min, T &max) {
+  static void minMax(const pair_t *values, size_t n, pair_t &min, pair_t &max) {
       throw std::logic_error("invalid call");}
 
   static void globalMinMax(const Comm<int> &comm,

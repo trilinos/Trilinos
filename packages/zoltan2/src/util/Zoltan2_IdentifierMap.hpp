@@ -575,6 +575,7 @@ template< typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
+
   gidOutBuf.clear();
 
   if (needGnoInfo){
@@ -737,6 +738,9 @@ template< typename User>
       offsetBuf[p+1] = offsetBuf[p] + countOutBuf[p];
     }
   }
+return;
+
+///////// CRASH here
 
   try{
     ArrayView<const gid_t> gidView = gidOutBuf();
@@ -794,6 +798,7 @@ template< typename User>
         
         if (!badGid){
           indexFound = upper_bound(firstIndex.begin(), firstIndex.end(), index);
+     std::cout << (indexFound - firstIndex.begin() - 1) << std::endl;
           procOutBuf[total] = sendProc[indexFound - firstIndex.begin() - 1];
     
           if (needGnoInfo){
