@@ -1,4 +1,4 @@
-Last updated: 25 June 2012
+Last updated: 03 Jul 2012
 
 This directory contains Python scripts for generating C++
 computational kernels, in particular sparse matrix kernels such as
@@ -51,8 +51,10 @@ documentation for more details.
 * attic/
 
 Directory of older, deprecated scripts, such as
-sparse_triangular_solve.py.  I keep these around to mine for scraps of
-Python code, but there is no guarantee that they will run without
+sparse_triangular_solve.py (old version of SparseTriSolve.py) and
+codegen_util.py (a library of helper functions for
+sparse_triangular_solve.py).  I keep these around to mine for scraps
+of Python code, but there is no guarantee that they will run without
 errors or that they will generate correct or efficient code.
 
 FIXME:
@@ -71,3 +73,9 @@ TODO:
   pseudocode, and generate C++ code from them?  (We could use Python's
   ast module for that.)
 
+* Note that the "one-for-loop" code variant for sparse mat-vec
+  (mentioned in the documentation and comments of SparseMatVec.py)
+  only needs a 'while' loop inside if the sparse matrix might contain
+  rows (for CSR; columns, for CSC) with zero entries.  Otherwise, it
+  suffices to replace 'while' with 'if'.  We could prescan the ptr
+  array to check.
