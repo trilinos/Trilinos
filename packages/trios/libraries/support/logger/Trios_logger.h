@@ -192,20 +192,22 @@ extern log_level default_log_level;
 
 #if defined(__STDC__) || defined(__cplusplus)
 
+extern void logger_mutex_lock(void);
+extern void logger_mutex_unlock(void);
 extern int logger_init(const log_level debug_level, const char *file);
 extern int logger_not_initialized(void);
 extern void logger_set_file(FILE *);
 extern FILE *logger_get_file(void);
 extern void logger_set_default_level(const log_level);
 extern log_level logger_get_default_level(void);
-extern void logger_mutex_lock(void);
-extern void logger_mutex_unlock(void);
 
 void log_output(const char *prefix,
                 const char *func_name,
                 const char *file_name,
                 const int line_no,
                 const char *msg, ...);
+
+extern int logger_fini(void);
 
 #endif
 
