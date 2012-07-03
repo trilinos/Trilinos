@@ -80,7 +80,6 @@ function execute_loadbalance {
     fi
     echo "===========================================================" >  $output
     echo "| Sandia Engineering Analysis Access procedure for: decomp " >> $output
-    echo '| $Revision: 1.57 $, $Date: 2008/05/19 12:29:22 $'           >> $output   
     echo "===========================================================" >> $output
     
     echo ${txtblu}
@@ -175,7 +174,7 @@ txtrst=$(tput sgr0)       # Text reset
 
 echo "==========================================================="
 echo "| Sandia Engineering Analysis Access procedure for: decomp "
-echo "| Version: 2011/06/10                                      "
+echo "| Version: 2012/06/05                                      "
 echo "==========================================================="
 
 
@@ -188,9 +187,10 @@ subdir="."
 
 curdir=`pwd`
 
-ACCESS=@CMAKE_INSTALL_PREFIX@
-NEM_SLICE=${ACCESS}/bin/nem_slice
-NEM_SPREAD=${ACCESS}/bin/nem_spread
+ACCESSBIN="`dirname \"$0\"`"
+ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
+NEM_SLICE=${ACCESSBIN}/nem_slice
+NEM_SPREAD=${ACCESSBIN}/nem_spread
 
 suffix_input='i'
   

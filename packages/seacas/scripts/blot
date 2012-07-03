@@ -1,0 +1,178 @@
+#!/bin/bash -f
+
+function usage {
+USAGE="Usage: blot [-help] [--options option] [--] filename [device]"
+   echo ""
+   echo "${USAGE}"
+   echo "    Other options:  Argument:          Default:"
+   echo "    --device         device             x11"
+   echo "    --input          cmd_file           -none-"
+   echo "    --hardcopy       met_filename       db basename"
+   echo "    --basename       base_filename      db basename"
+   echo "      (Used for basename of .ray, .csv, .neu files)"
+   echo "    --ps_option      num|list|help      7"
+   echo "      (Used for PostScript drivers)      "
+   echo "    --help           (Prints this message)"
+   echo "    "
+   echo "  Contact: gdsjaar@sandia.gov"
+   echo "  "
+    show_device
+exit 1
+}
+
+function show_device {
+ echo " "
+ tempA=`find ${ACCESSBIN} -name ${codename}_\* |sed -e s:${ACCESSBIN}/${codename}_::`
+ echo "Standard options for 'device':" 
+ echo "${txtgrn}" $tempA "${txtrst}"
+ echo " "
+}
+
+function show_ps_option {
+echo ""
+echo "The PostScript drivers have seven options."
+echo "     1. black & white, no polygon fill"
+echo "     3. black & white, polygon fill"
+echo "     5. color,"
+echo "     7. color, black-white interchange"
+echo "     8. gray-scale, black-white interchange"
+echo "     9. color, black background"
+echo "    10. gray-scale, black background"
+echo " "
+echo "Enter -ps_option <num> to select one."
+echo "Default is '7'"
+echo ""
+}
+
+codename=blot
+ACCESSBIN="`dirname \"$0\"`"
+ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
+
+# Text color variables
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+echo " "
+echo "=============================================================="
+echo "| Sandia Engineering Analysis Access procedure for: ${codename}"
+echo "| Send email to gdsjaar@sandia.gov for help"
+echo "=============================================================="
+
+aprepro="false"
+apr_opt=" "
+device="x11"
+
+export EXT04=NO
+
+TEMP=`getopt -o aoidhbp -a --long ps_option:,device:,input:,hardcopy:,basename:,aprepro,help -n 'blot' -- "$@"`
+
+if [ $? != 0 ] ; then usage ; exit 1 ; fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+while true ; do
+	case "$1" in
+	    -h|--help)
+	      usage ; shift ;;
+	    -i|--input)
+	      export FOR007="$2" ; shift 2
+	      export EXT04="YES"
+	      if [ ! -e "${FOR007}" ]
+	      then
+		echo "${txtred}ERROR: Input file '$FOR007' does not exist.${txtrst}"
+                usage
+	      fi
+	      ;;
+	   -p|--ps_option)
+	     ps_option="$2" ; shift 2
+             if [ "${ps_option}" == "list" ] || [ "${ps_option}" == "help" ] 
+	     then
+                show_ps_option
+	        exit 0
+             fi
+	     ;;
+           -d|--device)
+             device="$2" ; shift 2
+            if [ "${device}" == "list" ] || [ "${device}" == "help" ] 
+	    then
+               show_device
+	       exit 0
+            fi
+	    ;;
+           -b|--basename|--hardcopy)
+              filename="$2" ; shift 2 ;;
+           -a|--aprepro)
+              aprepro="true" ; shift ;;
+	    --) shift ; break ;;
+	    *) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
+	esac
+done
+
+if [ $# -eq 0 ] ; then
+    echo "${txtred}ERROR: No exodus database specified.${txtrst}"
+    usage
+else
+    if [ -e "$1" ]
+    then
+	export FOR011=$1
+    else
+        echo "${txtred}ERROR: Exodus database '$1' does not exist.${txtrst}"
+	usage
+    fi
+    shift
+fi    
+
+# Check for device specified, use ${device} if none specified
+if [ $# -gt 0 ] ; then
+  device="$1"
+fi
+
+if test -z "$filename"
+then
+ filename=${FOR011%.*}
+fi
+
+export FOR090="Blot.90.$$"
+
+if [ "${device}" == "dual" ]
+then
+    export DUAL_FILENAME="${filename}.met"
+fi
+
+if [ "${device}" == "xcps" ]
+then
+    export DUAL_FILENAME="${filename}.cps"
+fi
+
+if [ ! -x "${ACCESSBIN}/${codename}_${device}" ]
+then
+   echo "${txtred}ERROR: ${ACCESSBIN}/${codename}_${device} does not exist.${txtrst}"
+   echo "    Contact gdsjaar@sandia.gov if you need this device;"
+   echo "    otherwise use one of the supported devices:"
+   show_device
+   exit 1
+fi
+
+# Run the code, --
+${ACCESSBIN}/${codename}_${device} -basename ${filename} ${FOR011}
+
+if [ ! -z ${filename} ] && [ "${device}" != "dual" ] && [ "${device}" != "xcps" ]
+then
+  if [ ${device} == "met" ] ; then mv cgimet1     ${filename}.met ; fi
+  if [ ${device} == "cps" ] ; then mv vdicps.ps   ${filename}.ps  ; fi
+  if [ ${device} == "eps" ] ; then mv cgiout.epsi ${filename}.eps ; fi
+  if [ ${device} == "pst" ] ; then mv cgiout1     ${filename}.ps  ; fi
+fi
+
+# Remove temporary files
+if [ -e Blot.90.$$ ] ; then rm -f Blot.90.$$ ; fi
+
+echo "${txtgrn}BLOT Successful Execution${txtrst}"
