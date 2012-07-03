@@ -102,8 +102,10 @@ matVecCscColMajor (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -114,8 +116,10 @@ matVecCscColMajor (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += alpha * A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -172,16 +176,19 @@ matVecCscColMajor4Unrolled (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i] += A_ij * X[j];
-        Y[i + colStrideY] += A_ij * X[j + colStrideX];
-        Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
-        Y[i + 3*colStrideY] += A_ij * X[j + 3*colStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -192,16 +199,19 @@ matVecCscColMajor4Unrolled (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i] += alpha * A_ij * X[j];
-        Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-        Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
-        Y[i + 3*colStrideY] += alpha * A_ij * X[j + 3*colStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += alpha * A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -324,8 +334,10 @@ matVecCscColMajor2Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -335,8 +347,10 @@ matVecCscColMajor2Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
     }
   }
 }
@@ -392,9 +406,11 @@ matVecCscColMajor3Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -404,9 +420,11 @@ matVecCscColMajor3Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
     }
   }
 }
@@ -462,10 +480,12 @@ matVecCscColMajor4Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
-      Y[i + 3*colStrideY] += A_ij * X[j + 3*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+      Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -475,10 +495,12 @@ matVecCscColMajor4Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
-      Y[i + 3*colStrideY] += alpha * A_ij * X[j + 3*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+      Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
     }
   }
 }
@@ -527,13 +549,16 @@ matVecCsrColMajor (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
         for (Ordinal c = 0; c < numVecs; ++c) {
           Y_i[c*colStrideY] = beta * Y_i[c*colStrideY];
         }
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -543,13 +568,16 @@ matVecCsrColMajor (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
         for (Ordinal c = 0; c < numVecs; ++c) {
           Y_i[c*colStrideY] = beta * Y_i[c*colStrideY];
         }
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += alpha * A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -599,29 +627,34 @@ matVecCsrColMajor4Unrolled (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
         Ordinal c = 0;
-        // Extra +1 in loop bound ensures first 4 iterations get strip-mined, but requires Ordinal be a signed type.
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
         for ( ; c < numVecs - 3; c += 4) {
-          Y[i] *= beta;
-          Y[i + colStrideY] *= beta;
-          Y[i + 2*colStrideY] *= beta;
-          Y[i + 3*colStrideY] *= beta;
+          Y_i[0] *= beta;
+          Y_i[colStrideY] *= beta;
+          Y_i[2*colStrideY] *= beta;
+          Y_i[3*colStrideY] *= beta;
         }
         for ( ; c < numVecs; ++c) {
           Y_i[c*colStrideY] *= beta;
         }
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i] += A_ij * X[j];
-        Y[i + colStrideY] += A_ij * X[j + colStrideX];
-        Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
-        Y[i + 3*colStrideY] += A_ij * X[j + 3*colStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -631,29 +664,34 @@ matVecCsrColMajor4Unrolled (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
         Ordinal c = 0;
-        // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
         for ( ; c < numVecs - 3; c += 4) {
-          Y[i] *= beta;
-          Y[i + colStrideY] *= beta;
-          Y[i + 2*colStrideY] *= beta;
-          Y[i + 3*colStrideY] *= beta;
+          Y_i[0] *= beta;
+          Y_i[colStrideY] *= beta;
+          Y_i[2*colStrideY] *= beta;
+          Y_i[3*colStrideY] *= beta;
         }
         for ( ; c < numVecs; ++c) {
           Y_i[c*colStrideY] *= beta;
         }
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i] += alpha * A_ij * X[j];
-        Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-        Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
-        Y[i + 3*colStrideY] += alpha * A_ij * X[j + 3*colStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += alpha * A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -703,8 +741,8 @@ matVecCsrColMajor1Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] = beta * Y[i];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        Y[i] *= beta;
       }
       Y[i] += A_ij * X[j];
     }
@@ -715,7 +753,7 @@ matVecCsrColMajor1Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i] *= beta;
       }
       Y[i] += alpha * A_ij * X[j];
@@ -767,12 +805,15 @@ matVecCsrColMajor2Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] = beta * Y[i];
-        Y[i + colStrideY] = beta * Y[i + colStrideY];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -781,12 +822,15 @@ matVecCsrColMajor2Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] *= beta;
-        Y[i + colStrideY] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
     }
   }
 }
@@ -835,14 +879,17 @@ matVecCsrColMajor3Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] = beta * Y[i];
-        Y[i + colStrideY] = beta * Y[i + colStrideY];
-        Y[i + 2*colStrideY] = beta * Y[i + 2*colStrideY];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
+        Y_i[2*colStrideY] *= beta;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -851,14 +898,17 @@ matVecCsrColMajor3Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] *= beta;
-        Y[i + colStrideY] *= beta;
-        Y[i + 2*colStrideY] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
+        Y_i[2*colStrideY] *= beta;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
     }
   }
 }
@@ -907,16 +957,19 @@ matVecCsrColMajor4Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] = beta * Y[i];
-        Y[i + colStrideY] = beta * Y[i + colStrideY];
-        Y[i + 2*colStrideY] = beta * Y[i + 2*colStrideY];
-        Y[i + 3*colStrideY] = beta * Y[i + 3*colStrideY];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
+        Y_i[2*colStrideY] *= beta;
+        Y_i[3*colStrideY] *= beta;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
-      Y[i + 3*colStrideY] += A_ij * X[j + 3*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+      Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -925,16 +978,19 @@ matVecCsrColMajor4Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] *= beta;
-        Y[i + colStrideY] *= beta;
-        Y[i + 2*colStrideY] *= beta;
-        Y[i + 3*colStrideY] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
+        Y_i[2*colStrideY] *= beta;
+        Y_i[3*colStrideY] *= beta;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
-      Y[i + 3*colStrideY] += alpha * A_ij * X[j + 3*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+      Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
     }
   }
 }
@@ -990,8 +1046,10 @@ matVecCscRowMajor (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += A_ij * X[j*rowStrideX + c];
+        Y_i[c] += A_ij * X_j[c];
       }
     }
   }
@@ -1002,8 +1060,10 @@ matVecCscRowMajor (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += alpha * A_ij * X[j*rowStrideX + c];
+        Y_i[c] += alpha * A_ij * X_j[c];
       }
     }
   }
@@ -1060,16 +1120,19 @@ matVecCscRowMajor4Unrolled (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-        Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-        Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
-        Y[i*rowStrideY + 3] += A_ij * X[j*rowStrideX + 3];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+        Y_i[3] += A_ij * X_j[3];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += A_ij * X[j*rowStrideX + c];
+        Y_i[c] += A_ij * X_j[c];
       }
     }
   }
@@ -1080,16 +1143,19 @@ matVecCscRowMajor4Unrolled (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-        Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-        Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
-        Y[i*rowStrideY + 3] += alpha * A_ij * X[j*rowStrideX + 3];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+        Y_i[3] += alpha * A_ij * X_j[3];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += alpha * A_ij * X[j*rowStrideX + c];
+        Y_i[c] += alpha * A_ij * X_j[c];
       }
     }
   }
@@ -1212,8 +1278,10 @@ matVecCscRowMajor2Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
     }
   }
   else { // alpha != STS::one()
@@ -1223,8 +1291,10 @@ matVecCscRowMajor2Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
     }
   }
 }
@@ -1280,9 +1350,11 @@ matVecCscRowMajor3Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
+      Y_i[2] += A_ij * X_j[2];
     }
   }
   else { // alpha != STS::one()
@@ -1292,9 +1364,11 @@ matVecCscRowMajor3Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
+      Y_i[2] += alpha * A_ij * X_j[2];
     }
   }
 }
@@ -1350,10 +1424,12 @@ matVecCscRowMajor4Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
-      Y[i*rowStrideY + 3] += A_ij * X[j*rowStrideX + 3];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
+      Y_i[2] += A_ij * X_j[2];
+      Y_i[3] += A_ij * X_j[3];
     }
   }
   else { // alpha != STS::one()
@@ -1363,10 +1439,12 @@ matVecCscRowMajor4Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
-      Y[i*rowStrideY + 3] += alpha * A_ij * X[j*rowStrideX + 3];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
+      Y_i[2] += alpha * A_ij * X_j[2];
+      Y_i[3] += alpha * A_ij * X_j[3];
     }
   }
 }
@@ -1415,13 +1493,16 @@ matVecCsrRowMajor (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
         for (Ordinal c = 0; c < numVecs; ++c) {
           Y_i[c] = beta * Y_i[c];
         }
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += A_ij * X[j*rowStrideX + c];
+        Y_i[c] += A_ij * X_j[c];
       }
     }
   }
@@ -1431,13 +1512,16 @@ matVecCsrRowMajor (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
         for (Ordinal c = 0; c < numVecs; ++c) {
           Y_i[c] = beta * Y_i[c];
         }
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += alpha * A_ij * X[j*rowStrideX + c];
+        Y_i[c] += alpha * A_ij * X_j[c];
       }
     }
   }
@@ -1487,29 +1571,34 @@ matVecCsrRowMajor4Unrolled (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
         Ordinal c = 0;
-        // Extra +1 in loop bound ensures first 4 iterations get strip-mined, but requires Ordinal be a signed type.
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
         for ( ; c < numVecs - 3; c += 4) {
-          Y[i*rowStrideY] *= beta;
-          Y[i*rowStrideY + 1] *= beta;
-          Y[i*rowStrideY + 2] *= beta;
-          Y[i*rowStrideY + 3] *= beta;
+          Y_i[0] *= beta;
+          Y_i[1] *= beta;
+          Y_i[2] *= beta;
+          Y_i[3] *= beta;
         }
         for ( ; c < numVecs; ++c) {
           Y_i[c] *= beta;
         }
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-        Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-        Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
-        Y[i*rowStrideY + 3] += A_ij * X[j*rowStrideX + 3];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+        Y_i[3] += A_ij * X_j[3];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += A_ij * X[j*rowStrideX + c];
+        Y_i[c] += A_ij * X_j[c];
       }
     }
   }
@@ -1519,29 +1608,34 @@ matVecCsrRowMajor4Unrolled (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
         Ordinal c = 0;
-        // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
         for ( ; c < numVecs - 3; c += 4) {
-          Y[i*rowStrideY] *= beta;
-          Y[i*rowStrideY + 1] *= beta;
-          Y[i*rowStrideY + 2] *= beta;
-          Y[i*rowStrideY + 3] *= beta;
+          Y_i[0] *= beta;
+          Y_i[1] *= beta;
+          Y_i[2] *= beta;
+          Y_i[3] *= beta;
         }
         for ( ; c < numVecs; ++c) {
           Y_i[c] *= beta;
         }
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-        Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-        Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
-        Y[i*rowStrideY + 3] += alpha * A_ij * X[j*rowStrideX + 3];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+        Y_i[3] += alpha * A_ij * X_j[3];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += alpha * A_ij * X[j*rowStrideX + c];
+        Y_i[c] += alpha * A_ij * X_j[c];
       }
     }
   }
@@ -1591,8 +1685,8 @@ matVecCsrRowMajor1Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] = beta * Y[i*rowStrideY];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        Y[i*rowStrideY] *= beta;
       }
       Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
     }
@@ -1603,7 +1697,7 @@ matVecCsrRowMajor1Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i*rowStrideY] *= beta;
       }
       Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
@@ -1655,12 +1749,15 @@ matVecCsrRowMajor2Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] = beta * Y[i*rowStrideY];
-        Y[i*rowStrideY + 1] = beta * Y[i*rowStrideY + 1];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
     }
   }
   else { // alpha != STS::one()
@@ -1669,12 +1766,15 @@ matVecCsrRowMajor2Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] *= beta;
-        Y[i*rowStrideY + 1] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
     }
   }
 }
@@ -1723,14 +1823,17 @@ matVecCsrRowMajor3Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] = beta * Y[i*rowStrideY];
-        Y[i*rowStrideY + 1] = beta * Y[i*rowStrideY + 1];
-        Y[i*rowStrideY + 2] = beta * Y[i*rowStrideY + 2];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
+        Y_i[2] *= beta;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
+      Y_i[2] += A_ij * X_j[2];
     }
   }
   else { // alpha != STS::one()
@@ -1739,14 +1842,17 @@ matVecCsrRowMajor3Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] *= beta;
-        Y[i*rowStrideY + 1] *= beta;
-        Y[i*rowStrideY + 2] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
+        Y_i[2] *= beta;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
+      Y_i[2] += alpha * A_ij * X_j[2];
     }
   }
 }
@@ -1795,16 +1901,19 @@ matVecCsrRowMajor4Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] = beta * Y[i*rowStrideY];
-        Y[i*rowStrideY + 1] = beta * Y[i*rowStrideY + 1];
-        Y[i*rowStrideY + 2] = beta * Y[i*rowStrideY + 2];
-        Y[i*rowStrideY + 3] = beta * Y[i*rowStrideY + 3];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
+        Y_i[2] *= beta;
+        Y_i[3] *= beta;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
-      Y[i*rowStrideY + 3] += A_ij * X[j*rowStrideX + 3];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
+      Y_i[2] += A_ij * X_j[2];
+      Y_i[3] += A_ij * X_j[3];
     }
   }
   else { // alpha != STS::one()
@@ -1813,16 +1922,19 @@ matVecCsrRowMajor4Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] *= beta;
-        Y[i*rowStrideY + 1] *= beta;
-        Y[i*rowStrideY + 2] *= beta;
-        Y[i*rowStrideY + 3] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
+        Y_i[2] *= beta;
+        Y_i[3] *= beta;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
-      Y[i*rowStrideY + 3] += alpha * A_ij * X[j*rowStrideX + 3];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
+      Y_i[2] += alpha * A_ij * X_j[2];
+      Y_i[3] += alpha * A_ij * X_j[3];
     }
   }
 }
@@ -1878,8 +1990,10 @@ matVecCscColMajorConj (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -1890,8 +2004,10 @@ matVecCscColMajorConj (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += alpha * A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -1948,16 +2064,19 @@ matVecCscColMajorConj4Unrolled (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i] += A_ij * X[j];
-        Y[i + colStrideY] += A_ij * X[j + colStrideX];
-        Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
-        Y[i + 3*colStrideY] += A_ij * X[j + 3*colStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -1968,16 +2087,19 @@ matVecCscColMajorConj4Unrolled (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i] += alpha * A_ij * X[j];
-        Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-        Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
-        Y[i + 3*colStrideY] += alpha * A_ij * X[j + 3*colStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += alpha * A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -2100,8 +2222,10 @@ matVecCscColMajorConj2Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -2111,8 +2235,10 @@ matVecCscColMajorConj2Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
     }
   }
 }
@@ -2168,9 +2294,11 @@ matVecCscColMajorConj3Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -2180,9 +2308,11 @@ matVecCscColMajorConj3Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
     }
   }
 }
@@ -2238,10 +2368,12 @@ matVecCscColMajorConj4Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
-      Y[i + 3*colStrideY] += A_ij * X[j + 3*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+      Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -2251,10 +2383,12 @@ matVecCscColMajorConj4Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
-      Y[i + 3*colStrideY] += alpha * A_ij * X[j + 3*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+      Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
     }
   }
 }
@@ -2303,13 +2437,16 @@ matVecCsrColMajorConj (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
         for (Ordinal c = 0; c < numVecs; ++c) {
           Y_i[c*colStrideY] = beta * Y_i[c*colStrideY];
         }
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -2319,13 +2456,16 @@ matVecCsrColMajorConj (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
         for (Ordinal c = 0; c < numVecs; ++c) {
           Y_i[c*colStrideY] = beta * Y_i[c*colStrideY];
         }
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += alpha * A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -2375,29 +2515,34 @@ matVecCsrColMajorConj4Unrolled (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
         Ordinal c = 0;
-        // Extra +1 in loop bound ensures first 4 iterations get strip-mined, but requires Ordinal be a signed type.
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
         for ( ; c < numVecs - 3; c += 4) {
-          Y[i] *= beta;
-          Y[i + colStrideY] *= beta;
-          Y[i + 2*colStrideY] *= beta;
-          Y[i + 3*colStrideY] *= beta;
+          Y_i[0] *= beta;
+          Y_i[colStrideY] *= beta;
+          Y_i[2*colStrideY] *= beta;
+          Y_i[3*colStrideY] *= beta;
         }
         for ( ; c < numVecs; ++c) {
           Y_i[c*colStrideY] *= beta;
         }
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i] += A_ij * X[j];
-        Y[i + colStrideY] += A_ij * X[j + colStrideX];
-        Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
-        Y[i + 3*colStrideY] += A_ij * X[j + 3*colStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -2407,29 +2552,34 @@ matVecCsrColMajorConj4Unrolled (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
         Ordinal c = 0;
-        // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
         for ( ; c < numVecs - 3; c += 4) {
-          Y[i] *= beta;
-          Y[i + colStrideY] *= beta;
-          Y[i + 2*colStrideY] *= beta;
-          Y[i + 3*colStrideY] *= beta;
+          Y_i[0] *= beta;
+          Y_i[colStrideY] *= beta;
+          Y_i[2*colStrideY] *= beta;
+          Y_i[3*colStrideY] *= beta;
         }
         for ( ; c < numVecs; ++c) {
           Y_i[c*colStrideY] *= beta;
         }
       }
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i] += alpha * A_ij * X[j];
-        Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-        Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
-        Y[i + 3*colStrideY] += alpha * A_ij * X[j + 3*colStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i + c*colStrideY] += alpha * A_ij * X[j + c*colStrideX];
+        Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
       }
     }
   }
@@ -2479,8 +2629,8 @@ matVecCsrColMajorConj1Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] = beta * Y[i];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        Y[i] *= beta;
       }
       Y[i] += A_ij * X[j];
     }
@@ -2491,7 +2641,7 @@ matVecCsrColMajorConj1Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i] *= beta;
       }
       Y[i] += alpha * A_ij * X[j];
@@ -2543,12 +2693,15 @@ matVecCsrColMajorConj2Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] = beta * Y[i];
-        Y[i + colStrideY] = beta * Y[i + colStrideY];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -2557,12 +2710,15 @@ matVecCsrColMajorConj2Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] *= beta;
-        Y[i + colStrideY] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
     }
   }
 }
@@ -2611,14 +2767,17 @@ matVecCsrColMajorConj3Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] = beta * Y[i];
-        Y[i + colStrideY] = beta * Y[i + colStrideY];
-        Y[i + 2*colStrideY] = beta * Y[i + 2*colStrideY];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
+        Y_i[2*colStrideY] *= beta;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -2627,14 +2786,17 @@ matVecCsrColMajorConj3Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] *= beta;
-        Y[i + colStrideY] *= beta;
-        Y[i + 2*colStrideY] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
+        Y_i[2*colStrideY] *= beta;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
     }
   }
 }
@@ -2683,16 +2845,19 @@ matVecCsrColMajorConj4Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] = beta * Y[i];
-        Y[i + colStrideY] = beta * Y[i + colStrideY];
-        Y[i + 2*colStrideY] = beta * Y[i + 2*colStrideY];
-        Y[i + 3*colStrideY] = beta * Y[i + 3*colStrideY];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
+        Y_i[2*colStrideY] *= beta;
+        Y_i[3*colStrideY] *= beta;
       }
-      Y[i] += A_ij * X[j];
-      Y[i + colStrideY] += A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += A_ij * X[j + 2*colStrideX];
-      Y[i + 3*colStrideY] += A_ij * X[j + 3*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+      Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
     }
   }
   else { // alpha != STS::one()
@@ -2701,16 +2866,19 @@ matVecCsrColMajorConj4Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i] *= beta;
-        Y[i + colStrideY] *= beta;
-        Y[i + 2*colStrideY] *= beta;
-        Y[i + 3*colStrideY] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] *= beta;
+        Y_i[colStrideY] *= beta;
+        Y_i[2*colStrideY] *= beta;
+        Y_i[3*colStrideY] *= beta;
       }
-      Y[i] += alpha * A_ij * X[j];
-      Y[i + colStrideY] += alpha * A_ij * X[j + colStrideX];
-      Y[i + 2*colStrideY] += alpha * A_ij * X[j + 2*colStrideX];
-      Y[i + 3*colStrideY] += alpha * A_ij * X[j + 3*colStrideX];
+      RangeScalar* const Y_i = &Y[i];
+      const DomainScalar* const X_j = &X[j];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+      Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
     }
   }
 }
@@ -2766,8 +2934,10 @@ matVecCscRowMajorConj (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += A_ij * X[j*rowStrideX + c];
+        Y_i[c] += A_ij * X_j[c];
       }
     }
   }
@@ -2778,8 +2948,10 @@ matVecCscRowMajorConj (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += alpha * A_ij * X[j*rowStrideX + c];
+        Y_i[c] += alpha * A_ij * X_j[c];
       }
     }
   }
@@ -2836,16 +3008,19 @@ matVecCscRowMajorConj4Unrolled (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-        Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-        Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
-        Y[i*rowStrideY + 3] += A_ij * X[j*rowStrideX + 3];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+        Y_i[3] += A_ij * X_j[3];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += A_ij * X[j*rowStrideX + c];
+        Y_i[c] += A_ij * X_j[c];
       }
     }
   }
@@ -2856,16 +3031,19 @@ matVecCscRowMajorConj4Unrolled (
       while (k >= ptr[j+1]) {
         ++j;
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-        Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-        Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
-        Y[i*rowStrideY + 3] += alpha * A_ij * X[j*rowStrideX + 3];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+        Y_i[3] += alpha * A_ij * X_j[3];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += alpha * A_ij * X[j*rowStrideX + c];
+        Y_i[c] += alpha * A_ij * X_j[c];
       }
     }
   }
@@ -2988,8 +3166,10 @@ matVecCscRowMajorConj2Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
     }
   }
   else { // alpha != STS::one()
@@ -2999,8 +3179,10 @@ matVecCscRowMajorConj2Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
     }
   }
 }
@@ -3056,9 +3238,11 @@ matVecCscRowMajorConj3Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
+      Y_i[2] += A_ij * X_j[2];
     }
   }
   else { // alpha != STS::one()
@@ -3068,9 +3252,11 @@ matVecCscRowMajorConj3Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
+      Y_i[2] += alpha * A_ij * X_j[2];
     }
   }
 }
@@ -3126,10 +3312,12 @@ matVecCscRowMajorConj4Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
-      Y[i*rowStrideY + 3] += A_ij * X[j*rowStrideX + 3];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
+      Y_i[2] += A_ij * X_j[2];
+      Y_i[3] += A_ij * X_j[3];
     }
   }
   else { // alpha != STS::one()
@@ -3139,10 +3327,12 @@ matVecCscRowMajorConj4Vec (
       while (k >= ptr[j+1]) {
         ++j;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
-      Y[i*rowStrideY + 3] += alpha * A_ij * X[j*rowStrideX + 3];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
+      Y_i[2] += alpha * A_ij * X_j[2];
+      Y_i[3] += alpha * A_ij * X_j[3];
     }
   }
 }
@@ -3191,13 +3381,16 @@ matVecCsrRowMajorConj (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
         for (Ordinal c = 0; c < numVecs; ++c) {
           Y_i[c] = beta * Y_i[c];
         }
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += A_ij * X[j*rowStrideX + c];
+        Y_i[c] += A_ij * X_j[c];
       }
     }
   }
@@ -3207,13 +3400,16 @@ matVecCsrRowMajorConj (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
         for (Ordinal c = 0; c < numVecs; ++c) {
           Y_i[c] = beta * Y_i[c];
         }
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       for (Ordinal c = 0; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += alpha * A_ij * X[j*rowStrideX + c];
+        Y_i[c] += alpha * A_ij * X_j[c];
       }
     }
   }
@@ -3263,29 +3459,34 @@ matVecCsrRowMajorConj4Unrolled (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
         Ordinal c = 0;
-        // Extra +1 in loop bound ensures first 4 iterations get strip-mined, but requires Ordinal be a signed type.
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
         for ( ; c < numVecs - 3; c += 4) {
-          Y[i*rowStrideY] *= beta;
-          Y[i*rowStrideY + 1] *= beta;
-          Y[i*rowStrideY + 2] *= beta;
-          Y[i*rowStrideY + 3] *= beta;
+          Y_i[0] *= beta;
+          Y_i[1] *= beta;
+          Y_i[2] *= beta;
+          Y_i[3] *= beta;
         }
         for ( ; c < numVecs; ++c) {
           Y_i[c] *= beta;
         }
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-        Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-        Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
-        Y[i*rowStrideY + 3] += A_ij * X[j*rowStrideX + 3];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+        Y_i[3] += A_ij * X_j[3];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += A_ij * X[j*rowStrideX + c];
+        Y_i[c] += A_ij * X_j[c];
       }
     }
   }
@@ -3295,29 +3496,34 @@ matVecCsrRowMajorConj4Unrolled (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
         Ordinal c = 0;
-        // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
         for ( ; c < numVecs - 3; c += 4) {
-          Y[i*rowStrideY] *= beta;
-          Y[i*rowStrideY + 1] *= beta;
-          Y[i*rowStrideY + 2] *= beta;
-          Y[i*rowStrideY + 3] *= beta;
+          Y_i[0] *= beta;
+          Y_i[1] *= beta;
+          Y_i[2] *= beta;
+          Y_i[3] *= beta;
         }
         for ( ; c < numVecs; ++c) {
           Y_i[c] *= beta;
         }
       }
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
       Ordinal c = 0;
-      // Extra +1 in loop bound ensures first 4 gets strip-mined, but requires Ordinal be a signed type.
+      // Extra +1 in loop bound ensures first 4 iterations get
+      // strip-mined, but requires that Ordinal be a signed type.
       for ( ; c < numVecs - 3; c += 4) {
-        Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-        Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-        Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
-        Y[i*rowStrideY + 3] += alpha * A_ij * X[j*rowStrideX + 3];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+        Y_i[3] += alpha * A_ij * X_j[3];
       }
       for ( ; c < numVecs; ++c) {
-        Y[i*rowStrideY + c] += alpha * A_ij * X[j*rowStrideX + c];
+        Y_i[c] += alpha * A_ij * X_j[c];
       }
     }
   }
@@ -3367,8 +3573,8 @@ matVecCsrRowMajorConj1Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] = beta * Y[i*rowStrideY];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        Y[i*rowStrideY] *= beta;
       }
       Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
     }
@@ -3379,7 +3585,7 @@ matVecCsrRowMajorConj1Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
+        // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i*rowStrideY] *= beta;
       }
       Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
@@ -3431,12 +3637,15 @@ matVecCsrRowMajorConj2Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] = beta * Y[i*rowStrideY];
-        Y[i*rowStrideY + 1] = beta * Y[i*rowStrideY + 1];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
     }
   }
   else { // alpha != STS::one()
@@ -3445,12 +3654,15 @@ matVecCsrRowMajorConj2Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] *= beta;
-        Y[i*rowStrideY + 1] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
     }
   }
 }
@@ -3499,14 +3711,17 @@ matVecCsrRowMajorConj3Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] = beta * Y[i*rowStrideY];
-        Y[i*rowStrideY + 1] = beta * Y[i*rowStrideY + 1];
-        Y[i*rowStrideY + 2] = beta * Y[i*rowStrideY + 2];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
+        Y_i[2] *= beta;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
+      Y_i[2] += A_ij * X_j[2];
     }
   }
   else { // alpha != STS::one()
@@ -3515,14 +3730,17 @@ matVecCsrRowMajorConj3Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] *= beta;
-        Y[i*rowStrideY + 1] *= beta;
-        Y[i*rowStrideY + 2] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
+        Y_i[2] *= beta;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
+      Y_i[2] += alpha * A_ij * X_j[2];
     }
   }
 }
@@ -3571,16 +3789,19 @@ matVecCsrRowMajorConj4Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] = beta * Y[i*rowStrideY];
-        Y[i*rowStrideY + 1] = beta * Y[i*rowStrideY + 1];
-        Y[i*rowStrideY + 2] = beta * Y[i*rowStrideY + 2];
-        Y[i*rowStrideY + 3] = beta * Y[i*rowStrideY + 3];
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
+        Y_i[2] *= beta;
+        Y_i[3] *= beta;
       }
-      Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += A_ij * X[j*rowStrideX + 2];
-      Y[i*rowStrideY + 3] += A_ij * X[j*rowStrideX + 3];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += A_ij * X_j[0];
+      Y_i[1] += A_ij * X_j[1];
+      Y_i[2] += A_ij * X_j[2];
+      Y_i[3] += A_ij * X_j[3];
     }
   }
   else { // alpha != STS::one()
@@ -3589,16 +3810,19 @@ matVecCsrRowMajorConj4Vec (
       const Ordinal j = ind[k];
       while (k >= ptr[i+1]) {
         ++i;
-        // We haven't seen row i before; prescale Y(i,:).
-        Y[i*rowStrideY] *= beta;
-        Y[i*rowStrideY + 1] *= beta;
-        Y[i*rowStrideY + 2] *= beta;
-        Y[i*rowStrideY + 3] *= beta;
+        // We haven't seen row i before; scale Y(i,:) by beta.
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] *= beta;
+        Y_i[1] *= beta;
+        Y_i[2] *= beta;
+        Y_i[3] *= beta;
       }
-      Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
-      Y[i*rowStrideY + 1] += alpha * A_ij * X[j*rowStrideX + 1];
-      Y[i*rowStrideY + 2] += alpha * A_ij * X[j*rowStrideX + 2];
-      Y[i*rowStrideY + 3] += alpha * A_ij * X[j*rowStrideX + 3];
+      RangeScalar* const Y_i = &Y[i*rowStrideY];
+      const DomainScalar* const X_j = &X[j*rowStrideX];
+      Y_i[0] += alpha * A_ij * X_j[0];
+      Y_i[1] += alpha * A_ij * X_j[1];
+      Y_i[2] += alpha * A_ij * X_j[2];
+      Y_i[3] += alpha * A_ij * X_j[3];
     }
   }
 }
