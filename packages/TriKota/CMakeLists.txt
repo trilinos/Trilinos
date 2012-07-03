@@ -55,7 +55,10 @@ IF(TriKota_ENABLE_DakotaCMake)
   # Tell DAKOTA (and all sub-packages) to use PROJECT_NAME, e.g.,
   # Trilinos or VERA for export targets.  For a non TriBITS system
   # would instead want CMAKE_PROJECT_NAME
-  SET(ExportTarget ${PROJECT_NAME})
+  SET(ExportTarget ${PROJECT_NAME} CACHE STRING 
+    "Name for the export target for ${PROJECT_NAME}"
+    )
+  message(STATUS "TriKota setting ExportTarget=${ExportTarget}")    
 
   # Tell Dakota it is building inside Trilinos
   # (affects use of Teuchos and exported lists of includes and libs)
