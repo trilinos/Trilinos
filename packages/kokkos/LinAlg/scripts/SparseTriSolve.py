@@ -266,20 +266,30 @@ Python.'''
 from string import Template
 from os.path import basename
 from kokkos import makeCopyrightNotice
+from SparseCodeGen import emitDenseAref, emitDenseArefFixedCol
 
 
 def makeDefDict (sparseFormat, upLo, dataLayout, unitDiag, \
-                     inPlace, conjugateMatrixEntries):
+                     inPlace, conjugateMatrixEntries, \
+                     hardCodeNumVecs=False, numVecs=1, \
+                     unrollLength=1):
     '''Make a suitable input dictionary for any function here that takes one.
 
-    This function is mainly useful for interactive debugging.'''
-    
+    This function is mainly useful for interactive debugging.  See the
+    "Parameters used to generate routines" section in this module's
+    documentation for an explanation of this function's arguments.
+    The optional arguments may not necessarily have any effect yet,
+    because their corresponding implementations might not yet be
+    implemented.'''
     return {'sparseFormat': sparseFormat,
             'upLo': upLo,
             'dataLayout': dataLayout,
             'unitDiag': unitDiag,
             'inPlace': inPlace,
-            'conjugateMatrixEntries': conjugateMatrixEntries}
+            'conjugateMatrixEntries': conjugateMatrixEntries,
+            'hardCodeNumVecs': hardCodeNumVecs,
+            'numVecs': numVecs,
+            'unrollLength': unrollLength}
 
 def emitFuncDeclVariants (indent):
     '''Generate declarations of all sensible sparse triangular solve variants.'''
@@ -293,6 +303,8 @@ def makesSense (defDict):
     '''Whether the sparse triangular solve variant specified by defDict makes sense.'''
     if defDict['sparseFormat'] == 'CSR' and defDict['inPlace']:
         return False
+    elif defDict['hardCodeNumVecs']:
+        return False
     else:
         return True
 
@@ -300,8 +312,9 @@ def emitFuncVariants (f, indent):
     '''String sum over all sensible sparse triangular solve variants.
 
     f: a function that takes (defDict, indent) and returns a string.
-    indent: nonnegative integer indent level.
-    '''
+    indent: nonnegative integer indent level.'''
+
+    maxHardCodedNumVecs = 4
     s = ''
     for conjugateMatrixEntries in [False, True]:
         for inPlace in [False, True]:
@@ -309,15 +322,32 @@ def emitFuncVariants (f, indent):
                 for unitDiag in [False, True]:
                     for dataLayout in ['column major', 'row major']:
                         for sparseFormat in ['CSC', 'CSR']:
-                            d = {'sparseFormat': sparseFormat,
-                                 'upLo': upLo,
-                                 'dataLayout': dataLayout,
-                                 'unitDiag': unitDiag,
-                                 'inPlace': inPlace,
-                                 'conjugateMatrixEntries': conjugateMatrixEntries}
-                            # Not all sparse triangular solve variants make sense.
-                            if makesSense (d):
-                                s = s + f(d, indent) + '\n'
+                            for hardCodeNumVecs in [False, True]:
+                                if hardCodeNumVecs:
+                                    for numVecs in xrange (1, maxHardCodedNumVecs+1):
+                                        d = {'sparseFormat': sparseFormat,
+                                             'upLo': upLo,
+                                             'dataLayout': dataLayout,
+                                             'unitDiag': unitDiag,
+                                             'inPlace': inPlace,
+                                             'conjugateMatrixEntries': conjugateMatrixEntries,
+                                             'hardCodeNumVecs': hardCodeNumVecs,
+                                             'numVecs': numVecs}
+                                        if makesSense (d):
+                                            s = s + f(d, indent) + '\n'
+                                else: # don't hard-code the number of vectors
+                                    unrollLength = 1 # we haven't implemented loop unrolling yet
+                                    d = {'sparseFormat': sparseFormat,
+                                         'upLo': upLo,
+                                         'dataLayout': dataLayout,
+                                         'unitDiag': unitDiag,
+                                         'inPlace': inPlace,
+                                         'conjugateMatrixEntries': conjugateMatrixEntries,
+                                         'hardCodeNumVecs': hardCodeNumVecs,
+                                         'numVecs': 1, # ignored for hardCodeNumVecs==False
+                                         'unrollLength': unrollLength}
+                                    if makesSense (d):
+                                        s = s + f(d, indent) + '\n'
     return s
     
 def emitFuncName (defDict):
@@ -505,8 +535,7 @@ def emitCsrOuterLoopBody (defDict, indent=0):
 
     This only works for CSR-format sparse matrices.  We implement
     sequential CSR sparse triangular solve "out of place," and do not
-    provide an in-place version.
-    '''    
+    provide an in-place version.'''
     
     if defDict['sparseFormat'] != 'CSR':
         raise ValueError('This function requires CSR-format sparse matrices.')
@@ -559,8 +588,8 @@ def emitInPlaceCopy (defDict, indent=0):
     "in-place" algorithm, meaning that it overwrites the input vector
     X with the output.  If the user wants "out-of-place" behavior, so
     that the input vector isn't touched, then we first have to copy
-    the input vector Y into the output X.
-    '''
+    the input vector Y into the output X.'''
+
     X_ij = emitDenseAref (defDict, 'X', 'i', 'j')
     Y_ij = emitDenseAref (defDict, 'Y', 'i', 'j')
     origIndent = ' ' * indent 
@@ -585,40 +614,6 @@ def emitInPlaceCopy (defDict, indent=0):
     else:
         raise ValueError ('Invalid dataLayout "' + layout + '"')
     return s + '\n'
-
-def emitDenseStrides (defDict, name):
-    layout = defDict['dataLayout']
-    if layout == 'column major':
-        # Row stride, column stride
-        return '1', 'colStride' + name
-    elif layout == 'row major':
-        return 'rowStride' + name, '1'
-    else:
-        raise ValueError ('Invalid dataLayout "' + layout + '"')
-
-def emitDenseAref (defDict, varName, rowIndex, colIndex):
-    rowStride, colStride = emitDenseStrides (defDict, varName)
-    s = varName + '['
-
-    rowIndexTrivial = (rowIndex == '' or rowIndex == '0')
-    colIndexTrivial = (colIndex == '' or colIndex == '0')
-
-    if rowIndexTrivial and colIndexTrivial:
-        s = s + '0'
-    else:
-        if not rowIndexTrivial:
-            s = s + rowIndex
-            if rowStride != '1':
-                s = s + '*' + rowStride
-            # Look ahead to see whether there is a nontrival column index.
-            if not colIndexTrivial:
-                s = s + ' + '
-        if not colIndexTrivial:
-            s = s + colIndex
-            if colStride != '1':
-                s = s + '*' + colStride
-    s = s + ']'
-    return s
 
 def emitFuncDoc (defDict, indent=0):
     '''Emit the sparse triangular solve routine's documentation.
@@ -707,10 +702,10 @@ def emitFuncDoc (defDict, indent=0):
 
     if inPlace:
         body = body + \
-            '\n/// \param X [in/out] Input/output dense matrix, stored in ${colRow}-major order.'
+            '\n/// \param X [in/out] Input/output multivector, stored in ${colRow}-major order.'
     else:
         body = body + \
-            '\n/// \param X [out] Output dense matrix, stored in ${colRow}-major order.'
+            '\n/// \param X [out] Output multivector, stored in ${colRow}-major order.'
 
     body = body + '\n' + \
         '''/// \param LDX [in] Stride between ${colRow}s of X.  We assume unit
@@ -726,7 +721,7 @@ def emitFuncDoc (defDict, indent=0):
 
     if not inPlace:
         body = body + '\n' + \
-            '''/// \param Y [in] Input dense matrix, stored in ${colRow}-major order.
+            '''/// \param Y [in] Input multivector, stored in ${colRow}-major order.
 /// \param LDY [in] Stride between ${colRow}s of Y.  We assume unit
 ///   stride between ${rowCol}s of Y.'''
 
@@ -794,8 +789,7 @@ def emitHeaderDefFile (filename):
     classes and functions.  It handles this by separating header files
     into declarations and definitions.  This function generates the
     header file of definitions for the sparse triangular solve
-    routines.
-    '''
+    routines.'''
 
     headerizedFilename = filename.replace ('.', '_')
 
@@ -829,8 +823,7 @@ def run ():
     of function definitions
     'Kokkos_Raw_SparseTriangularSolve_def.hpp', for all variants of
     sparse triangular solve that this module knows how to generate.
-    Both files are written to the current working directory.
-    '''
+    Both files are written to the current working directory.'''
 
     rootName = 'Kokkos_Raw_SparseTriangularSolve'
     declName = rootName + '_decl.hpp'
