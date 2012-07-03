@@ -952,29 +952,131 @@ namespace Kokkos {
     const Ordinal* const ind = ind_.getRawPtr ();
     const Scalar*  const val = val_.getRawPtr ();
 
-    // FIXME (mfh 25 Jun 2012) Think about whether the first argument
-    // should be always numRows, or should be numRows for CSR and
-    // numCols for CSC.
-    if (trans == Teuchos::NO_TRANS) {
-      using Kokkos::Raw::matVecCsrColMajor;
-      matVecCsrColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
-                                            beta, Y_raw, Y_stride,
-                                            alpha, ptr, ind, val,
-                                            X_raw, X_stride);
-    }
-    else if (trans == Teuchos::TRANS) {
-      using Kokkos::Raw::matVecCscColMajor;
-      matVecCscColMajor<OT, MST, DST, RST> (numRows, numCols, numVecs,
-                                            beta, Y_raw, Y_stride,
-                                            alpha, ptr, ind, val,
-                                            X_raw, X_stride);
-    }
-    else if (trans == Teuchos::CONJ_TRANS) {
-      using Kokkos::Raw::matVecCscColMajorConj;
-      matVecCscColMajorConj<OT, MST, DST, RST> (numRows, numCols, numVecs,
-                                                beta, Y_raw, Y_stride,
-                                                alpha, ptr, ind, val,
-                                                X_raw, X_stride);
+    // The switch statement selects one of the hard-coded-numVecs
+    // routines for certain values of numVecs.  Otherwise, it picks a
+    // general routine.
+    //
+    // Note that we're taking numRows and numCols from Y resp. X.
+    // Assuming that the dimensions of X and Y are correct, then
+    // whether or not we're applying the transpose, the (transposed,
+    // if applicable) matrix has dimensions numRows by numCols.
+    // That's why we don't switch the order of numRows, numCols in the
+    // invocations below.
+    switch (numVecs) {
+    case 1:
+      if (trans == Teuchos::NO_TRANS) {
+        using Kokkos::Raw::matVecCsrColMajor1Vec;
+        matVecCsrColMajor1Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
+      else if (trans == Teuchos::TRANS) {
+        using Kokkos::Raw::matVecCscColMajor1Vec;
+        matVecCscColMajor1Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
+      else { // if (trans == Teuchos::CONJ_TRANS) {
+        using Kokkos::Raw::matVecCscColMajorConj1Vec;
+        matVecCscColMajorConj1Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                      beta, Y_raw, Y_stride,
+                                                      alpha, ptr, ind, val,
+                                                      X_raw, X_stride);
+      }
+      break;
+    case 2:
+      if (trans == Teuchos::NO_TRANS) {
+        using Kokkos::Raw::matVecCsrColMajor2Vec;
+        matVecCsrColMajor2Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
+      else if (trans == Teuchos::TRANS) {
+        using Kokkos::Raw::matVecCscColMajor2Vec;
+        matVecCscColMajor2Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
+      else { // if (trans == Teuchos::CONJ_TRANS) {
+        using Kokkos::Raw::matVecCscColMajorConj2Vec;
+        matVecCscColMajorConj2Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                      beta, Y_raw, Y_stride,
+                                                      alpha, ptr, ind, val,
+                                                      X_raw, X_stride);
+      }
+      break;
+    case 3:
+      if (trans == Teuchos::NO_TRANS) {
+        using Kokkos::Raw::matVecCsrColMajor3Vec;
+        matVecCsrColMajor3Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
+      else if (trans == Teuchos::TRANS) {
+        using Kokkos::Raw::matVecCscColMajor3Vec;
+        matVecCscColMajor3Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
+      else { // if (trans == Teuchos::CONJ_TRANS) {
+        using Kokkos::Raw::matVecCscColMajorConj3Vec;
+        matVecCscColMajorConj3Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                      beta, Y_raw, Y_stride,
+                                                      alpha, ptr, ind, val,
+                                                      X_raw, X_stride);
+      }
+      break;
+    case 4:
+      if (trans == Teuchos::NO_TRANS) {
+        using Kokkos::Raw::matVecCsrColMajor4Vec;
+        matVecCsrColMajor4Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
+      else if (trans == Teuchos::TRANS) {
+        using Kokkos::Raw::matVecCscColMajor4Vec;
+        matVecCscColMajor4Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
+      else { // if (trans == Teuchos::CONJ_TRANS) {
+        using Kokkos::Raw::matVecCscColMajorConj4Vec;
+        matVecCscColMajorConj4Vec<OT, MST, DST, RST> (numRows, numCols,
+                                                      beta, Y_raw, Y_stride,
+                                                      alpha, ptr, ind, val,
+                                                      X_raw, X_stride);
+      }
+      break;
+    default: // The "general case"
+      if (trans == Teuchos::NO_TRANS) {
+        using Kokkos::Raw::matVecCsrColMajor;
+        matVecCsrColMajor<OT, MST, DST, RST> (numRows, numCols,
+                                              beta, Y_raw, Y_stride,
+                                              alpha, ptr, ind, val,
+                                              X_raw, X_stride);
+      }
+      else if (trans == Teuchos::TRANS) {
+        using Kokkos::Raw::matVecCscColMajor;
+        matVecCscColMajor<OT, MST, DST, RST> (numRows, numCols,
+                                              beta, Y_raw, Y_stride,
+                                              alpha, ptr, ind, val,
+                                              X_raw, X_stride);
+      }
+      else { // if (trans == Teuchos::CONJ_TRANS) {
+        using Kokkos::Raw::matVecCscColMajorConj;
+        matVecCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
+                                                  beta, Y_raw, Y_stride,
+                                                  alpha, ptr, ind, val,
+                                                  X_raw, X_stride);
+      }
     }
   }
 
@@ -983,10 +1085,7 @@ namespace Kokkos {
   SeqSparseOps<Scalar, Ordinal, Node>::
   allocRowPtrs (const Teuchos::ArrayView<const size_t>& numEntriesPerRow)
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::arcp;
-
-    ArrayRCP<size_t> ptr = arcp<size_t> (numEntriesPerRow.size() + 1);
+    Teuchos::ArrayRCP<size_t> ptr (numEntriesPerRow.size() + 1);
     ptr[0] = 0;
     std::partial_sum (numEntriesPerRow.getRawPtr (),
                       numEntriesPerRow.getRawPtr () + numEntriesPerRow.size (),
@@ -1005,11 +1104,7 @@ namespace Kokkos {
       "least one, but rowPtrs.size() = " << rowPtrs.size() << ".");
 
     const size_t totalNumEntries = rowPtrs[rowPtrs.size() - 1];
-    // TEUCHOS_TEST_FOR_EXCEPTION(totalNumEntries < Ordinal(0), std::invalid_argument,
-    //   "SeqSparseOps::allocStorage: The last element of the input rowPtrs array, "
-    //   "representing the total number of stored entries in the matrix, is negative: "
-    //   "rowPtrs[" << (rowPtrs.size() - 1) << "] = " << totalNumEntries << " < 0.");
-    Teuchos::ArrayRCP<T> val = Teuchos::arcp<T> (totalNumEntries);
+    Teuchos::ArrayRCP<T> val (totalNumEntries);
     std::fill (val.getRawPtr (),
                val.getRawPtr () + totalNumEntries,
                Teuchos::ScalarTraits<T>::zero ());
