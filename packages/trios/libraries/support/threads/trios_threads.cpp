@@ -47,6 +47,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#include <malloc.h>
+
 #include <assert.h>
 #include <unistd.h>
 
@@ -69,12 +71,21 @@ log_level thread_debug_level = LOG_UNDEFINED;
 int nthread_lock_init(
         nthread_lock_t *lock)
 {
-    int rc=0;
+    int  rc=0;
+    bool done=false;
 
 //    log_debug(thread_debug_level, "nthread_lock_init: initializing lock(%p), lock->lock(%p)", lock, lock->lock);
 
-    lock->name=tempnam("/tmp", "trios.");
-    lock->lock=sem_open(lock->name+4, O_CREAT|O_EXCL, 0600, 1);
+    do {
+        lock->name=tempnam("/tmp", "trios.");
+        lock->lock=sem_open(lock->name+4, O_CREAT|O_EXCL, 0600, 1);
+        if ((lock->lock == SEM_FAILED) && (errno == EEXIST)) {
+            done=false;
+        } else {
+            done=true;
+        }
+    } while (!done);
+
     if (lock->lock == SEM_FAILED) {
         fprintf(stderr, "nthread_lock_init: sem_open failed: %s\n", strerror(errno));
         fflush(stderr);
@@ -175,6 +186,8 @@ int nthread_lock_fini(
         fflush(stderr);
         return(-1);
     }
+
+    free(lock->name);
 
 //    log_debug(thread_debug_level, "nthread_lock_fini: finalized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
 
