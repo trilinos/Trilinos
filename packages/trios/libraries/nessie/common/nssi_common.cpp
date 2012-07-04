@@ -85,8 +85,8 @@ static void config_get_from_env(nssi_config_t *c);
 
 NNTI_transport_t transports[NSSI_RPC_COUNT];
 
-static bool       rpc_initialized = FALSE;
-static nssi_rpc_encode encoding   = NSSI_DEFAULT_ENCODE;
+static bool            rpc_initialized = false;
+static nssi_rpc_encode encoding        = NSSI_DEFAULT_ENCODE;
 
 #define BQ_MIN   50
 #define BQ_MAX 1000
@@ -119,13 +119,12 @@ int nssi_rpc_init(
     const char              *url)
 {
     int rc;
-    static bool initialized = false;
 
     NNTI_transport_id_t transport_id;
 
     log_debug(rpc_debug_level, "************************************************************ entered");
 
-    if (initialized) return NSSI_OK;
+    if (rpc_initialized) return NSSI_OK;
 
     /* check to see if logging is enabled */
     if (logger_not_initialized()) {
@@ -213,8 +212,7 @@ int nssi_rpc_init(
                 NSSI_SHORT_REQUEST_SIZE);
     }
 
-    initialized = TRUE;
-    rpc_initialized = TRUE;
+    rpc_initialized = true;
 
     if (logging_debug(rpc_debug_level)) {
         fprint_NNTI_peer(logger_get_file(), "transports[rpc_transport].me",
@@ -304,6 +302,8 @@ int nssi_rpc_fini(const nssi_rpc_transport rpc_transport)
                     "does not exist");
             return rc;
     }
+
+    rpc_initialized=false;
 
     return NSSI_OK;
 }

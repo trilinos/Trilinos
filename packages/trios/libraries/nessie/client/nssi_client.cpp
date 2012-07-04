@@ -87,6 +87,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
 extern nssi_config_t nssi_config;
 
+static bool client_initialized = false;
+
 static nthread_counter_t request_count;
 
 extern trios_buffer_queue_t send_bq;
@@ -111,9 +113,8 @@ client_init ()
 #endif
 {
     int rc = NSSI_OK;
-    static bool init_flag = FALSE;
 
-    if (init_flag) {
+    if (client_initialized) {
         return rc;
     }
 
@@ -123,7 +124,7 @@ client_init ()
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_KILL_SERVICE, nssi_kill_service_args, void, void);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_TRACE_RESET, nssi_trace_reset_args, void, void);
 
-    init_flag = TRUE;
+    client_initialized = true;
 
     return rc;
 }
@@ -628,9 +629,11 @@ int nssi_init(const nssi_rpc_transport transport_id)
 {
     int rc = NSSI_OK;
 
-//    nssi_rpc_init(transport_id, NSSI_DEFAULT_ENCODE, NULL);
-
     nthread_counter_init(&request_count);
+
+    client_init();
+
+    client_initialized=true;
 
     return rc;
 }
@@ -644,7 +647,7 @@ int nssi_fini(const nssi_rpc_transport transport_id)
 
     nthread_counter_fini(&request_count);
 
-//    return nssi_rpc_fini(transport_id);
+    client_initialized=false;
 
     return(rc);
 }
