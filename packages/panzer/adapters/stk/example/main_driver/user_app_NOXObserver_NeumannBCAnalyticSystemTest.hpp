@@ -113,7 +113,7 @@ namespace user_app {
       // linear solve tolerance is 1e-10 and this is a linear problem with a linear basis
       double tol = 1.0e-9;
 
-      TEUCHOS_TEST_FOR_EXCEPTION( std::fabs(local_values[40] - 2.0) > tol, std::runtime_error, "Solution value for Neumann Condition is " << local_values[40] << " and should be 2.0.  The tolerance condition, std::fabs(local_values[0] - 2.0) > tol, where tol is " << tol << " has been violated, causing the test to fail.");
+      TEUCHOS_TEST_FOR_EXCEPTION( std::fabs(local_values[0] - 2.0) > tol, std::runtime_error, "Solution value for Neumann Condition is " << local_values[0] << " and should be 2.0.  The tolerance condition, std::fabs(local_values[0] - 2.0) > tol, where tol is " << tol << " has been violated, causing the test to fail.");
 
       local_values = Teuchos::null;
    
