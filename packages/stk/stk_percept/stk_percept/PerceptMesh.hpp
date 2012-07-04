@@ -343,6 +343,23 @@ namespace stk {
       /// copy field state data from one state (src_state) to another (dest_state)
       void copy_field_state(stk::mesh::FieldBase* field, unsigned dest_state, unsigned src_state);
 
+      /// copy field data from one field (field_src) to another (field_dest)
+      void copy_field(stk::mesh::FieldBase* field_dest, stk::mesh::FieldBase* field_src);
+
+      /// axpby calculates: y = alpha*x + beta*y 
+      void nodal_field_state_axpby(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state);
+
+      /// axpby calculates: y = alpha*x + beta*y
+      void nodal_field_axpby(double alpha, stk::mesh::FieldBase* field_x, double beta, stk::mesh::FieldBase* field_y);
+
+      /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
+      void nodal_field_state_axpbypgz(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state, double gamma, unsigned z_state);
+
+      /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
+      void nodal_field_axpbypgz(double alpha, stk::mesh::FieldBase* field_x, 
+                                double beta, stk::mesh::FieldBase* field_y,
+                                double gamma, stk::mesh::FieldBase* field_z);
+
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces

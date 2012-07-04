@@ -34,6 +34,8 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
+#include <stk_mesh/base/FieldParallel.hpp>
+
 // FIXME
 
 #include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
@@ -3589,6 +3591,12 @@ namespace stk {
       VERIFY_OP_ON(field_dest, !=, 0, "copy_field_state dest null");
       stk::mesh::FieldBase* field_src = field->field_state((stk::mesh::FieldState)src_state);
       VERIFY_OP_ON(field_src, !=, 0, "copy_field_state src null");
+      copy_field(field_dest, field_src);
+    }
+
+    /// copy field state data from one state (src_state) to another (dest_state)
+    void PerceptMesh::copy_field(stk::mesh::FieldBase* field_dest, stk::mesh::FieldBase* field_src)
+    {
       stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -3618,6 +3626,115 @@ namespace stk {
                 }
             }
         }
+    }
+
+    /// axpby calculates: y = alpha*x + beta*y
+    void PerceptMesh::nodal_field_state_axpby(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state)
+    {
+      stk::mesh::FieldBase* field_x = field->field_state((stk::mesh::FieldState)x_state);
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpby x null");
+      stk::mesh::FieldBase* field_y = field->field_state((stk::mesh::FieldState)y_state);
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpby y null");
+      nodal_field_axpby(alpha, field_x, beta, field_y);
+    }
+
+    /// axpby calculates: y = alpha*x + beta*y
+    void PerceptMesh::nodal_field_axpby(double alpha, stk::mesh::FieldBase* field_x, double beta, stk::mesh::FieldBase* field_y)
+    {
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpby x null");
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpby y null");
+      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              unsigned fd_size = bucket.field_data_size(*field_y);
+              unsigned stride = fd_size/sizeof(double);
+              // FIXME
+              //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
+              const unsigned num_nodes_in_bucket = bucket.size();
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  unsigned stride0=0;
+                  double *fdata_y = PerceptMesh::field_data( field_y , node, &stride0 );
+                  VERIFY_OP_ON(stride, ==, stride0,"strides...");
+                  double *fdata_x = PerceptMesh::field_data( field_x , node );
+                  if (fdata_y && fdata_x)
+                    {
+                      for (unsigned istride = 0; istride < stride; istride++)
+                        {
+                          fdata_y[istride] = alpha*fdata_x[istride] + beta*fdata_y[istride];
+                        }
+                    }
+                }
+            }
+        }
+      std::vector< const stk::mesh::FieldBase *> fields;
+      fields.push_back(field_x);
+      fields.push_back(field_y);
+
+      stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+    }
+
+    /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
+    void PerceptMesh::nodal_field_state_axpbypgz(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state, double gamma, unsigned z_state)
+    {
+      stk::mesh::FieldBase* field_x = field->field_state((stk::mesh::FieldState)x_state);
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpbypgz x null");
+      stk::mesh::FieldBase* field_y = field->field_state((stk::mesh::FieldState)y_state);
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpbypgz y null");
+      stk::mesh::FieldBase* field_z = field->field_state((stk::mesh::FieldState)z_state);
+      VERIFY_OP_ON(field_z, !=, 0, "nodal_field_axpbypgz z null");
+      nodal_field_axpbypgz(alpha, field_x, beta, field_y, gamma, field_z);
+    }
+
+    /// axpby calculates: y = alpha*x + beta*y
+    void PerceptMesh::nodal_field_axpbypgz(double alpha, stk::mesh::FieldBase* field_x, 
+                                           double beta, stk::mesh::FieldBase* field_y,
+                                           double gamma, stk::mesh::FieldBase* field_z)
+    {
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpbypgz x null");
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpbypgz y null");
+      VERIFY_OP_ON(field_z, !=, 0, "nodal_field_axpbypgz z null");
+      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              unsigned fd_size = bucket.field_data_size(*field_y);
+              unsigned stride = fd_size/sizeof(double);
+              // FIXME
+              //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
+              const unsigned num_nodes_in_bucket = bucket.size();
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  unsigned stride0=0;
+                  double *fdata_y = PerceptMesh::field_data( field_y , node, &stride0 );
+                  double *fdata_z = PerceptMesh::field_data( field_z , node, &stride0 );
+                  VERIFY_OP_ON(stride, ==, stride0,"strides...");
+                  double *fdata_x = PerceptMesh::field_data( field_x , node );
+                  if (fdata_y && fdata_x && fdata_z)
+                    {
+                      for (unsigned istride = 0; istride < stride; istride++)
+                        {
+                          fdata_z[istride] = alpha*fdata_x[istride] + beta*fdata_y[istride] + gamma*fdata_z[istride];
+                        }
+                    }
+                }
+            }
+        }
+      std::vector< const stk::mesh::FieldBase *> fields;
+      fields.push_back(field_x);
+      fields.push_back(field_y);
+      fields.push_back(field_z);
+
+      stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
     }
 
     /**

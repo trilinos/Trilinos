@@ -462,6 +462,13 @@ STKUNIT_UNIT_TEST(function, stringFunction_multiplePoints)
   {
     STKUNIT_EXPECT_DOUBLE_EQ(output(ipts, 0), output_expect(ipts, 0));
   }
+  /// indirection
+  StringFunction sf2_1("sf2", Name("sf2_1"), Dimensions( 3), Dimensions( 1));
+  sf2_1(points, output, 0.0);
+  for (unsigned ipts = 0; ipts < NPTS; ipts++)
+  {
+    STKUNIT_EXPECT_DOUBLE_EQ(output(ipts, 0), output_expect(ipts, 0));
+  }
 }
 
 //=============================================================================

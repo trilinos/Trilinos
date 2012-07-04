@@ -3,6 +3,8 @@
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
+
 #include "mpi.h"
 
 namespace MESQUITE_NS {
@@ -14,14 +16,10 @@ namespace stk {
   namespace percept {
     using namespace Mesquite;
 
-    void PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_wrapper( Mesh* mesh,
-                                                                    ParallelMesh* pmesh,
-                                                                    MeshDomain* domain,
-                                                                    Settings* settings,
-                                                                    QualityAssessor* qa,
-                                                                    MsqError& err )
+    void PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_one_iteration( Mesh* mesh,
+                                                                                          MsqError& err )
     {
-      std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
+      std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper::run_one_iteration start..." << std::endl;
 
       // define shape improver
       IdealWeightInverseMeanRatio inverse_mean_ratio;
@@ -37,13 +35,13 @@ namespace stk {
 
       //!term_inner.add_relative_successive_improvement( successiveEps );
 
-      term_inner.add_absolute_gradient_L2_norm( gradNorm );
-      term_inner.add_absolute_vertex_movement(0.0);
-      term_inner.add_iteration_limit( innerIter );
+      //term_inner.add_absolute_gradient_L2_norm( gradNorm );
+      //term_inner.add_absolute_vertex_movement(0.0);
+      term_inner.add_iteration_limit( 1 );
 
-      term_outer.add_absolute_gradient_L2_norm( gradNorm );
-      term_outer.add_absolute_vertex_movement(0.0);
-      term_outer.add_iteration_limit( pmesh ? parallelIterations : 1 );
+      //term_outer.add_absolute_gradient_L2_norm( gradNorm );
+      //term_outer.add_absolute_vertex_movement(0.0);
+      term_outer.add_iteration_limit( 1 );
 
       //term_outer.add_absolute_quality_improvement( 1.e-6 );
       //!term_outer.add_relative_successive_improvement( successiveEps );
@@ -60,10 +58,68 @@ namespace stk {
 
       QualityAssessor qa_check( &inverse_mean_ratio );
 
+      Settings settings;
+
       q2.add_quality_assessor( &qa_check, err ); MSQ_ERRRTN(err);
       q2.set_master_quality_improver( &shape_solver, err ); MSQ_ERRRTN(err);
-      q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
-      q2.run_common( mesh, pmesh, domain, settings, err ); 
+      q2.run_common( mesh, 0, 0, &settings, err ); 
+
+      //if (!get_parallel_rank()) 
+      std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper: running shape improver... done \n" << std::endl;
+
+      MSQ_ERRRTN(err);
+    }
+
+    void PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_wrapper( Mesh* mesh,
+                                                                    ParallelMesh* pmesh,
+                                                                    MeshDomain* domain,
+                                                                    Settings* settings,
+                                                                    QualityAssessor* qa,
+                                                                    MsqError& err )
+    {
+      std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
+
+      //if (!get_parallel_rank()) 
+      std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper: running shape improver... \n" << std::endl;
+
+      PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
+      PerceptMesh *eMesh = pmm->getPerceptMesh();
+      stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
+      stk::mesh::FieldBase *coord_field_current   = coord_field->field_state(stk::mesh::StateNP1);
+      stk::mesh::FieldBase *coord_field_projected = coord_field->field_state(stk::mesh::StateN);
+      stk::mesh::FieldBase *coord_field_original  = coord_field->field_state(stk::mesh::StateNM1);
+
+      double alphas[] = {0.0,0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
+      int nalpha = sizeof(alphas)/sizeof(alphas[0]);
+      
+      for (int outer = 0; outer < nalpha; outer++)
+        {
+          double alpha = alphas[outer];
+
+          // set current state and evaluate mesh validity
+          eMesh->nodal_field_axpbypgz(alpha, coord_field_projected, (1.0-alpha), coord_field_original, 0.0, coord_field_current);
+
+          int num_invalid = count_invalid_elements(*mesh);
+          if (!get_parallel_rank()) 
+            std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid current= " << num_invalid 
+                      << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
+                      << std::endl;
+
+#if 0
+          for (int iter = 0; iter < innerIter; iter++)
+            {
+              //
+              int num_invalid = count_invalid_elements(*mesh);
+              if (!get_parallel_rank()) 
+                std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid current= " << num_invalid 
+                          << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
+                          << std::endl;
+              run_one_iteration(mesh, err);
+              sync_fields();
+              check_convergence();
+            }
+#endif
+        }
 
       //if (!get_parallel_rank()) 
       std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper: running shape improver... done \n" << std::endl;
@@ -72,7 +128,7 @@ namespace stk {
     }
 
 
-    int PMMParallelShapeImprover::count_invalid_elements(Mesh &mesh, ParallelMesh *pmesh, MeshDomain *domain)
+    int PMMParallelShapeImprover::count_invalid_elements(Mesh &mesh)
     {
       MsqError err;
       InstructionQueue q;
@@ -85,7 +141,7 @@ namespace stk {
       //inv_check.disable_printing_results();
       q.add_quality_assessor( &inv_check, err );  MSQ_ERRZERO(err);
       Settings settings;
-      q.run_common( &mesh, 0, domain, &settings, err ); MSQ_ERRZERO(err);
+      q.run_common( &mesh, 0, 0, &settings, err ); MSQ_ERRZERO(err);
       const QualityAssessor::Assessor* inv_b = inv_check.get_results( &metric );
       int num_invalid = inv_b->get_invalid_element_count();
       stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &num_invalid ) );
@@ -110,7 +166,7 @@ namespace stk {
       if (!get_parallel_rank()) std::cout << "tmp srk PMMParallelShapeImprover::run: pmesh= " << pmesh << std::endl;
 
       Mesquite::MsqError mErr;
-      int num_invalid = count_invalid_elements(mesh, 0, 0);
+      int num_invalid = count_invalid_elements(mesh);
       if (!get_parallel_rank()) 
         std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid before= " << num_invalid 
                       << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : 
@@ -131,7 +187,7 @@ namespace stk {
           //if (!get_parallel_rank()) 
           std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
 
-          num_invalid = count_invalid_elements(mesh, 0, 0);
+          num_invalid = count_invalid_elements(mesh);
           //if (!get_parallel_rank()) 
           std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprover num_invalid after= " << num_invalid << " " 
                     << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 

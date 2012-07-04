@@ -66,6 +66,8 @@ namespace stk {
 
       stk::mesh::Selector *getBoundarySelector() { return m_boundarySelector; }
       void setBoundarySelector(stk::mesh::Selector *sel) { m_boundarySelector = sel; }
+
+      PerceptMesh *getPerceptMesh() { return m_eMesh; }
       
       class PMMParallelMesh : public Mesquite::ParallelMeshImpl
       {

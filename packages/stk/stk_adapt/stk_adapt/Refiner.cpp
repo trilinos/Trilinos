@@ -1065,6 +1065,7 @@ namespace stk {
                   mesh_geometry.snap_points_to_geometry(&m_eMesh);
                 }
             }
+            break;
           case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
             {
               VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
@@ -1089,6 +1090,7 @@ namespace stk {
                 }
               
             }
+            break;
           }
 
         }

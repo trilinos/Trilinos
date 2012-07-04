@@ -427,11 +427,23 @@ STKUNIT_UNIT_TEST(norm, string_function)
   std::cout << "sfmax= " << sf1 << " sfx_expect= " << sfx_expect << " sfx_res= " << sfx_res.getValue() << std::endl;
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 
+  /// indirection
+  StringFunction sfmax_1("sfmax", Name("sfmax_1"), Dimensions(3), Dimensions(1) );
+  double sf1_1=eval(.5,.5,.5,0.0, sfmax_1);
+  std::cout << "sfmax_1= " << sf1_1 << " sfx_expect= " << sfx_expect << std::endl;
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sf1_1);
+
   /// the function to be integrated:  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest1.py)
   StringFunction sfxyz("x*y*z", Name("sfxyz"), Dimensions(3), Dimensions(1) );
   l2Norm(sfxyz, sfx_res);
   sfx_expect = 0.0240562612162344;
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
+
+  /// indirection
+  StringFunction sfxyz_2("sfxyz", Name("sfxyz_2"), Dimensions(3), Dimensions(1) );
+  l2Norm(sfxyz_2, sfx_res);
+  sfx_expect = 0.0240562612162344;
+  // FIXME STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 
   /// the function to be integrated (but over a rotated domain):  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py)
   /// now rotate the mesh

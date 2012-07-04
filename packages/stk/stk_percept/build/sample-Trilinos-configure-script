@@ -18,8 +18,8 @@ TRILINOS_CODE=$BASE_PATH
 
 # Location of install
 #INSTALL_PATH=/usr/local/
-INSTALL_PATH=./usr/local
-#INSTALL_PATH=/projects/percept
+#INSTALL_PATH=./usr/local
+INSTALL_PATH=/projects/percept
 
 # Python installation and related shared library dependencies
 PYTHON_EXECUTABLE=/usr/netpub/python-2.7/bin/python

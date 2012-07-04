@@ -81,6 +81,9 @@ namespace stk {
                           Settings* settings,
                           QualityAssessor* qa,
                           MsqError& err );
+
+        void run_one_iteration( Mesh* mesh,
+                                MsqError& err );
       
       private:
 
@@ -106,7 +109,7 @@ namespace stk {
         innerIter(innerIter), gradNorm(gradNorm), parallelIterations(parallelIterations)
       {}
 
-      static int count_invalid_elements(Mesh &mesh, ParallelMesh* pmesh, MeshDomain *domain);
+      static int count_invalid_elements(Mesh &mesh);
 
       void run(Mesquite::Mesh &mesh, Mesquite::MeshDomain *domain, bool always_smooth=true, int debug=0);
 
