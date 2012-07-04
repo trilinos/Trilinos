@@ -1695,6 +1695,16 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
   char* ex_name_of_object(ex_entity_type obj_type);
   ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
 
+  /* Should be internal use only, but was in external include file for
+     nemesis and some codes are using the function
+  */
+  int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
+		 const char *ne_var_name, /* Nemesis index variable name */
+		 int64_t *index,	 /* array of length 2 to hold results */
+		 int      pos		 /* position of this proc/cmap in index */
+		 );
+
+
 #ifdef __cplusplus
 }                               /* close brackets on extern "C" declaration */
 #endif

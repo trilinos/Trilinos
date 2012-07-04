@@ -707,7 +707,7 @@ struct obj_stats *ex_get_stat_ptr  ( int exoid, struct obj_stats** obj_ptr);
 void ex_rm_stat_ptr  (int exoid, struct obj_stats** obj_ptr);
 
 void ex_compress_variable(int exoid, int varid, int type);
-int ex_id_lkup  (int exoid, ex_entity_type id_type, int64_t num);
+int ex_id_lkup  (int exoid, ex_entity_type id_type, ex_entity_id num);
 int ex_check_file_type(const char *path, int *type);
 int ex_get_dimension(int exoid, const char *dimtype, const char *label,
 		     size_t *count, int *dimid, const char *routine);
@@ -741,12 +741,6 @@ int ne_id_lkup(int            neid,		/* NetCDF/Exodus file ID */
 	       const char    *var_name,	/* Nemesis variable name */
 	       int64_t       *idx,		/* index variable for variable, length 2 */
 	       ex_entity_id   ne_var_id	/* NetCDF variable ID */
-	       );
-
-int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
-	       const char *ne_var_name, /* Nemesis index variable name */
-	       int64_t *index,	 /* array of length 2 to hold results */
-	       int      pos		 /* position of this proc/cmap in index */
 	       );
 
   /**

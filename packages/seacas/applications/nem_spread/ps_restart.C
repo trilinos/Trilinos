@@ -948,27 +948,6 @@ int NemSpread<T,INT>::read_elem_vars(int exoid, int index, int blk_cnt, INT *eb_
   /* loop over the number of element blocks */
   INT     eb_offset=0;
   for (int iblk = 0; iblk < globals.Num_Elem_Blk; iblk++) {
-
-    /* calculate the message length for this element block */
-    int     num_mesgs, *mesg_start, max_elem_per_mesg;
-    num_mesgs = break_message_up(io_ws, eb_cnts[iblk], MAX_CHUNK_SIZE/2,
-                                 &mesg_start);
-    max_elem_per_mesg = mesg_start[1] - mesg_start[0];
-
-#ifdef DEBUG
-    if (Debug_Flag >= 2) {
-      printf("\n\nMessage summary for elemental variables:\n");
-      printf("\tTime Index: %d\n", index);
-      printf("\tElemental Block Id: %lld\n", eb_ids[iblk]);
-      printf("\tNumber of elemental variables: %d\n", Restart_Info.NVar_Elem);
-      printf("\tNumber of messages per elemental variable: %lld\n", num_mesgs);
-      printf("\tMax message size per elemental variable: %lld\n",
-             max_elem_per_mesg);
-      printf("\tMin message size per elemental variable: %lld\n",
-             mesg_start[num_mesgs]-mesg_start[num_mesgs-1]);
-    }
-#endif
-
     read_elem_vars_1(exoid, index, blk_cnt, eb_ids,
 		     eb_cnts, eb_map_ptr, eb_cnts_local,
 		     iblk, eb_offset, local_offset);
@@ -979,9 +958,6 @@ int NemSpread<T,INT>::read_elem_vars(int exoid, int index, int blk_cnt, INT *eb_
     /* need to set up local offsets for next block */
     for (int iproc = 0; iproc <Proc_Info[2]; iproc++)
       local_offset[iproc] += eb_cnts_local[iproc][iblk];
-
-    /* free up memory for the next element block */
-    safe_free((void **) &mesg_start);
 
   } /* End "for (iblk = 0; iblk < globals.Num_Elem_Blk; iblk++)" */
 
@@ -1049,20 +1025,9 @@ int NemSpread<T,INT>::read_elem_vars_1(int exoid, int index, int blk_cnt, INT *e
 template <typename T, typename INT>
 int NemSpread<T,INT>::read_sset_vars(int exoid, int index, int blk_cnt, INT *ss_ids, INT *ss_cnts)
 {
-  int num_mesgs, *mesg_start, max_elem_per_mesg;
-
   /* loop over the number of side sets */
   for (int iset = 0; iset < globals.Num_Side_Set; iset++) {
-
-    /* calculate the message length for this sideset */
-    num_mesgs = break_message_up(io_ws, ss_cnts[iset], MAX_CHUNK_SIZE/2,
-                                 &mesg_start);
-    max_elem_per_mesg = mesg_start[1] - mesg_start[0];
-
     read_sset_vars_1(exoid, index, blk_cnt, ss_ids, ss_cnts, iset);
-
-    /* free up memory... */
-    safe_free((void **) &mesg_start);
   }
   return 0;
 }
@@ -1111,19 +1076,9 @@ int NemSpread<T,INT>::read_sset_vars_1(int exoid, int index, int blk_cnt, INT *s
 template <typename T, typename INT>
 int NemSpread<T,INT>::read_nset_vars(int exoid, int index, int blk_cnt, INT *ns_ids, INT *ns_cnts)
 {
-  int num_mesgs, *mesg_start, max_elem_per_mesg;
-
   /* loop over the number of node sets */
   for (int iset = 0; iset < globals.Num_Node_Set; iset++) {
-
-    /* calculate the message length for this nodeset */
-    num_mesgs = break_message_up(io_ws, ns_cnts[iset], MAX_CHUNK_SIZE/2,
-                                 &mesg_start);
-    max_elem_per_mesg = mesg_start[1] - mesg_start[0];
-
     read_nset_vars_1(exoid, index, blk_cnt, ns_ids, ns_cnts, iset);
-    /* free up memory... */
-    safe_free((void **) &mesg_start);
   }
   return 0;
 }

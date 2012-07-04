@@ -555,14 +555,11 @@ char* ex_name_of_map(ex_entity_type map_type, int map_index)
 * exit conditions - 
 *       int     return                  index into table (1-based)
 *
-* revision history - 
-*
-*
 *****************************************************************************/
 
 int ex_id_lkup( int exoid,
                 ex_entity_type id_type,
-                int64_t num)
+                ex_entity_id   num)
 {
 
   char id_table[MAX_VAR_NAME_LENGTH+1];
@@ -844,9 +841,6 @@ int ex_id_lkup( int exoid,
 *
 * ex_get_stat_ptr - returns a pointer to a structure of object ids
 *
-* revision history - 
-*
-*
 *****************************************************************************/
 
 /*! this routine returns a pointer to a structure containing the ids of 
@@ -886,9 +880,6 @@ struct obj_stats *ex_get_stat_ptr (int exoid, struct obj_stats **obj_ptr)
 /******************************************************************************
 *
 * ex_rm_stat_ptr - removes a pointer to a structure of object ids
-*
-* revision history - 
-*
 *
 *****************************************************************************/
 
@@ -1151,13 +1142,6 @@ void ex_rm_file_item( int exoid,                /* file id */
 /*****************************************************************************
 *
 * ex_get_num_props - get number of properties
-*
-* entry conditions -
-*
-* exit conditions -
-*
-* revision history -
-*
 *
 *****************************************************************************/
 int ex_get_num_props (int exoid, ex_entity_type obj_type)
