@@ -362,6 +362,7 @@ static void config_get_from_env(
 //static void print_xfer_buf(void *buf, uint32_t size);
 //static void print_ack_buf(ib_rdma_ack *ack);
 
+static bool ib_initialized=false;
 
 static ib_transport_global transport_global_data;
 static const int MIN_TIMEOUT = 0;  /* in milliseconds */
@@ -464,8 +465,6 @@ NNTI_result_t NNTI_ib_init (
         const char                *my_url,
         NNTI_transport_t          *trans_hdl)
 {
-    static int initialized=0;
-
     int rc=0;
 
     struct ibv_device_attr dev_attr;
@@ -487,11 +486,10 @@ NNTI_result_t NNTI_ib_init (
 
     log_debug(nnti_debug_level, "enter");
 
-    initialized=0;
     log_debug(nnti_debug_level, "my_url=%s", my_url);
-    log_debug(nnti_debug_level, "initialized=%d, FALSE==%d", (int)initialized, (int)FALSE);
+    log_debug(nnti_debug_level, "initialized=%d, FALSE==%d", (int)ib_initialized, (int)FALSE);
 
-    if (!initialized) {
+    if (!ib_initialized) {
 
         nthread_lock_init(&nnti_ib_lock);
 
@@ -525,6 +523,7 @@ NNTI_result_t NNTI_ib_init (
                 gethostname(hostname, NNTI_HOSTNAME_LEN);
             } else {
                 strncpy(hostname, address, sep-address);
+                hostname[sep-address]='\0';
             }
 //            sep++;
 //            port=strtol(sep, &endptr, 0);
@@ -622,7 +621,7 @@ NNTI_result_t NNTI_ib_init (
                 transport_global_data.listen_addr,
                 transport_global_data.listen_port);
 
-        initialized = TRUE;
+        ib_initialized = true;
     }
 
 cleanup:
@@ -2139,6 +2138,11 @@ NNTI_result_t NNTI_ib_fini (
         }
     }
 
+    close(transport_global_data.listen_sock);
+    transport_global_data.listen_name[0]='\0';
+    transport_global_data.listen_addr=0;
+    transport_global_data.listen_port=0;
+
     ibv_destroy_comp_channel(transport_global_data.data_comp_channel);
     ibv_destroy_cq(transport_global_data.data_cq);
     ibv_destroy_srq(transport_global_data.data_srq);
@@ -2158,6 +2162,7 @@ NNTI_result_t NNTI_ib_fini (
     nthread_lock_fini(&nnti_buf_bufhash_lock);
     nthread_lock_fini(&nnti_wr_pool_lock);
 
+    ib_initialized=false;
 
     return(NNTI_OK);
 }
@@ -3310,6 +3315,7 @@ static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
     log_debug(nnti_debug_level, "enter");
 
     strncpy(dest->url, src->url, NNTI_URL_LEN);
+    dest->url[NNTI_URL_LEN]='\0';
 
     src->peer.transport_id                    =NNTI_TRANSPORT_IB;
     dest->peer.NNTI_remote_process_t_u.ib.addr=src->peer.NNTI_remote_process_t_u.ib.addr;

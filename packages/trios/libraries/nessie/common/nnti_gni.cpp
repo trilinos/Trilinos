@@ -553,6 +553,9 @@ static void config_init(
 static void config_get_from_env(
         nnti_gni_config *c);
 
+
+static bool gni_initialized=false;
+
 static gni_transport_global transport_global_data;
 static const int MIN_TIMEOUT = 1;  /* in milliseconds.  must be >0 for GNI_CqVectorWaitEvent(). */
 
@@ -657,8 +660,6 @@ NNTI_result_t NNTI_gni_init (
         const char                *my_url,
         NNTI_transport_t          *trans_hdl)
 {
-    static int initialized=0;
-
     int rc=NNTI_OK;
 
     trios_declare_timer(call_time);
@@ -682,11 +683,10 @@ NNTI_result_t NNTI_gni_init (
 
     log_debug(nnti_ee_debug_level, "enter");
 
-    initialized=0;
     log_debug(nnti_debug_level, "my_url=%s", my_url);
-    log_debug(nnti_debug_level, "initialized=%d, FALSE==%d", (int)initialized, (int)FALSE);
+    log_debug(nnti_debug_level, "initialized=%d, FALSE==%d", (int)gni_initialized, (int)FALSE);
 
-    if (!initialized) {
+    if (!gni_initialized) {
 
         memset(&transport_global_data, 0, sizeof(gni_transport_global));
 
@@ -733,6 +733,7 @@ NNTI_result_t NNTI_gni_init (
                 gethostname(hostname, NNTI_HOSTNAME_LEN);
             } else {
                 strncpy(hostname, address, sep-address);
+                hostname[sep-address]='\0';
             }
             sep++;
             port=strtol(sep, &endptr, 0);
@@ -880,7 +881,7 @@ NNTI_result_t NNTI_gni_init (
                 transport_global_data.instance);
         trios_stop_timer("create_peer", call_time);
 
-        initialized = TRUE;
+        gni_initialized = true;
     }
 
 cleanup:
@@ -2467,6 +2468,11 @@ NNTI_result_t NNTI_gni_fini (
         }
     }
 
+    close(transport_global_data.listen_sock);
+    transport_global_data.listen_name[0]='\0';
+    transport_global_data.listen_addr=0;
+    transport_global_data.listen_port=0;
+
     rc=GNI_CdmDestroy(transport_global_data.cdm_hdl);
     if (rc!=GNI_RC_SUCCESS) {
         log_error(nnti_debug_level, "CdmCreate() failed: %d", rc);
@@ -2479,6 +2485,8 @@ NNTI_result_t NNTI_gni_fini (
     nthread_lock_fini(&nnti_wr_wrhash_lock);
     nthread_lock_fini(&nnti_buf_bufhash_lock);
     nthread_lock_fini(&nnti_wr_pool_lock);
+
+    gni_initialized = false;
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -3928,6 +3936,7 @@ static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
     log_debug(nnti_ee_debug_level, "enter");
 
     strncpy(dest->url, src->url, NNTI_URL_LEN);
+    dest->url[NNTI_URL_LEN]='\0';
 
     dest->peer.transport_id                       =NNTI_TRANSPORT_GEMINI;
     dest->peer.NNTI_remote_process_t_u.gni.addr   =src->peer.NNTI_remote_process_t_u.gni.addr;
