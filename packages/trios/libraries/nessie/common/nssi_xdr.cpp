@@ -114,6 +114,8 @@ struct xdr_encodings {
 static std::map<int, struct xdr_encodings> encodings_map;
 typedef std::map<int, struct xdr_encodings>::iterator encodings_map_iterator_t;
 static nthread_lock_t encodings_map_mutex;
+static bool xdr_initialized = false;
+
 
 
 /* --------------------- Public functions ------------------- */
@@ -123,9 +125,7 @@ static nthread_lock_t encodings_map_mutex;
  */
 int nssi_xdr_init()
 {
-    static bool initialized = FALSE;
-
-    if (initialized) return NSSI_OK;
+    if (xdr_initialized) return NSSI_OK;
 
     /* check to see if logging is enabled */
     if (logger_not_initialized()) {
@@ -134,7 +134,7 @@ int nssi_xdr_init()
 
     nthread_lock_init(&encodings_map_mutex);
 
-    initialized = TRUE;
+    xdr_initialized = true;
 
     return NSSI_OK;
 }
@@ -171,7 +171,11 @@ int nssi_xdr_fini()
 {
     int rc = NSSI_OK;
 
+    nssi_clear_xdr_encodings();
+
     nthread_lock_fini(&encodings_map_mutex);
+
+    xdr_initialized=false;
 
     return rc;
 }
@@ -254,3 +258,25 @@ int nssi_lookup_xdr_encoding(int opcode,
     return rc;
 }
 
+
+/**
+ * @brief Remove all encodings.
+ *
+ * The <tt>\ref nssi_clear_xdr_encodings</tt> function removes
+ * the xdr encodings functions associated with all remote
+ * NSSI operations.
+ *
+ */
+int nssi_clear_xdr_encodings()
+{
+    int rc = NSSI_OK;
+
+    log_debug(rpc_debug_level,"DEREGISTERING ALL OPCODES");
+
+    /* insert structure into map */
+    nthread_lock(&encodings_map_mutex);
+    encodings_map.clear();
+    nthread_unlock(&encodings_map_mutex);
+
+    return rc;
+}
