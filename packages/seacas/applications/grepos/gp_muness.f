@@ -35,7 +35,8 @@ C=======================================================================
       SUBROUTINE MUNESS (NUMESS, ISTAT, LESSEL, LESSDL, 
      &  IDESS, NEESS, NEDSS, IXEESS, IXEDSS,
      &  LTEESS, LTSSS, FACSS, 
-     &  LTEX, LTSX, TDX, IXESS, IXDSS, NEX, NDX, ISCR)
+     &  LTEX, LTSX, TDX, IXESS, IXDSS, NEX, NDX, ISCR,
+     *  NAMSCR, NAME)
 C=======================================================================
 C $Id: muness.f,v 1.2 2005/02/07 17:39:05 gdsjaar Exp $
 C
@@ -70,6 +71,9 @@ C   --   NEX - SCRATCH - size = NUMESS
 C   --   NDX - SCRATCH - size = NUMESS -- dist-face
 C   --   ISCR - SCRATCH - size = NUMESS
 
+      include 'gp_params.blk'
+      include 'gp_namlen.blk'
+
       INTEGER ISTAT(*)
       INTEGER IDESS(*)
       INTEGER NEESS(*), NEDSS(*)
@@ -80,6 +84,9 @@ C   --   ISCR - SCRATCH - size = NUMESS
       INTEGER NEX(*), NDX(*)
       INTEGER ISCR(*)
       REAL    FACSS(*), TDX(*)
+
+      CHARACTER*(MXSTLN) NAMSCR(*)
+      CHARACTER*(maxnam) NAME(*)
 
       IF (NUMESS .LE. 0) RETURN
 
@@ -116,6 +123,7 @@ C   --   ISCR - SCRATCH - size = NUMESS
   110 CONTINUE
 
       CALL ORDIX (JESS, IXESS, NUMESS, IDESS, ISCR, IDESS)
+      CALL ORDSTR(JESS, IXESS, NUMESS, NAME, NAMSCR, NAME)
       CALL MOVINT (JESS, NEX, NEESS)
       CALL MOVINT (JESS, NDX, NEDSS)
       NUMESS = JESS

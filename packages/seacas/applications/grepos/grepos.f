@@ -687,7 +687,8 @@ C     ... NUMEL changed in this block (if elements deleted)
      &        IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &        IA(KLINK), A(KATRIB), IA(KLINKO), A(KATRO),
      &        IA(KIXEL), IA(KIXELB), IA(KJNELB), IA(KISCR),
-     &        c(kbktyp), c(knmsc), LLINK, LATRIB, c(knamatt))
+     &        c(kbktyp), c(knmsc), LLINK, LATRIB, c(knamatt),
+     *        c(knameb))
 
 C     ... Fix up the truth table if the element block count changes... 
          if (exodus .and. nvarel .gt. 0 .and. nelblk .ne. nelblk0) then
@@ -695,8 +696,6 @@ C     ... Fix up the truth table if the element block count changes...
      $           ia(kievok0), ia(kievok), ia(kielbs))
          end if
 
-         call munnam(nelblk0, nelblk, ia(kielbs), c(knameb))
-         
          CALL MDDEL ('LINKO')
          CALL MDDEL ('ATRIBO')
          CALL MDDEL ('IXELB')
@@ -827,6 +826,7 @@ C     --"Munch" the nodal point sets
          CALL MDRSRV ('ISCR',   KISCR,  NUMNPS)
          CALL MDRSRV ('IDNS0',  KIDNS0, NUMNPS0)
          CALL MDRSRV ('NNNPS0', KNNNS0, NUMNPS0)
+         CALL MCRSRV ('NAMSCR', KNMSC, MXSTLN*NUMNPS)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
 
@@ -835,13 +835,15 @@ C     --"Munch" the nodal point sets
 
          CALL MUNNPS (NUMNPS, IA(KINPSS), LNPSNL, LNPSDF,
      &        IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KLTNNS), A(KFACNS),
-     &        IA(KLTNNO), A(KFACNO), IA(KIXNNO), IA(KNNNO), IA(KISCR))
+     &        IA(KLTNNO), A(KFACNO), IA(KIXNNO), IA(KNNNO), IA(KISCR),
+     *        C(KNMSC), C(KNAMNP))
 
          CALL MDDEL ('LTNNPO')
          CALL MDDEL ('FACNPO')
          CALL MDDEL ('IXNNPO')
          CALL MDDEL ('NNNPO')
          CALL MDDEL ('ISCR')
+         CALL MCDEL ('NAMSCR')
 
 C     --Squeeze the nodal point sets
 
@@ -849,8 +851,6 @@ C     --Squeeze the nodal point sets
             CALL ZMNPS (NUMNPS, IA(KINPSS), LNPSNL, LNPSDF,
      *       IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KLTNNS), A(KFACNS))
          END IF
-
-         call munnam(numnps0, numnps, ia(kinpss), c(knamnp))
 
 C     ... Fix up the truth table if the nodeset count changes... 
          if (exodus .and. nvarns .gt. 0 .and. numnps .ne. numnps0) then
@@ -909,6 +909,7 @@ C     --"Munch" the element side sets
          CALL MDRSRV ('ISCR',   KISCR,  NUMESS)
          CALL MDRSRV ('IDSS0',  KIDSS0, NUMESS0)
          CALL MDRSRV ('NEESS0', KNESS0, NUMESS0)
+         CALL MCRSRV ('NAMSCR', KNMSC, MXSTLN*NUMESS)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
 
@@ -919,7 +920,7 @@ C     --"Munch" the element side sets
      &     IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS), IA(KIXDSS),
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS),
      &     IA(KLTESO), IA(KLTSSO), A(KFACS0), IA(KIXESO), IA(KIXDS0),
-     &     IA(KNESO), IA(KNDS0), IA(KISCR))
+     &     IA(KNESO), IA(KNDS0), IA(KISCR), C(KNMSC), C(KNAMSS))
          
 
          CALL MDDEL ('LTEESO')
@@ -930,6 +931,7 @@ C     --"Munch" the element side sets
          CALL MDDEL ('NEESO')
          CALL MDDEL ('NEDS0')
          CALL MDDEL ('ISCR')
+         CALL MCDEL ('NAMSCR')
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
 
@@ -940,8 +942,6 @@ C     --Squeeze the element side sets
      &       IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS),
      *       IA(KIXDSS), IA(KLTESS), IA(KLTSSS), IA(KLTSNC), A(KFACSS))
          END IF
-
-         call munnam(numess0, numess, ia(kiesss), c(knamss))
 
 C     ... Fix up the truth table if the sideset count changes... 
          if (exodus .and. nvarss .gt. 0 .and. numess .ne. numess0) then
@@ -1406,17 +1406,3 @@ C   This is currently used in the sideset mirroring code
       return 
       end
 
-      subroutine munnam(nold, nnew, istat, names)
-      include 'gp_namlen.blk'
-      character*(maxnam) names(*)
-      integer istat(*)
-      
-      i1 = 0
-      do i0=1, nold
-         if (istat(i0) .eq. 0) then
-            i1 = i1 + 1
-            if (i1 .ne. i0) names(i1) = names(i0)
-         end if
-      end do
-      return
-      end
