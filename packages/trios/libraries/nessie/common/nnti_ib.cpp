@@ -125,6 +125,7 @@ typedef struct {
     uint32_t                 peer_qpn;
 } conn_qp;
 typedef struct {
+    NNTI_peer_t       peer;
     char         *peer_name;
     NNTI_ip_addr  peer_addr;
     NNTI_tcp_port peer_port;
@@ -331,6 +332,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, ib_connection *co
 static NNTI_result_t insert_conn_qpn(const NNTI_qp_num qpn, ib_connection *conn);
 static ib_connection *get_conn_peer(const NNTI_peer_t *peer);
 static ib_connection *get_conn_qpn(const NNTI_qp_num qpn);
+static NNTI_peer_t *get_peer_by_url(const char *url);
 static ib_connection *del_conn_peer(const NNTI_peer_t *peer);
 static ib_connection *del_conn_qpn(const NNTI_qp_num qpn);
 
@@ -684,6 +686,8 @@ NNTI_result_t NNTI_ib_connect (
 
     trios_declare_timer(callTime);
 
+    NNTI_peer_t *existing_peer=NULL;
+
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
     char *sep;
@@ -699,6 +703,12 @@ NNTI_result_t NNTI_ib_connect (
 
     assert(trans_hdl);
     assert(peer_hdl);
+
+    existing_peer=get_peer_by_url(url);
+    if (existing_peer!=NULL) {
+        *peer_hdl=*existing_peer;
+        return(NNTI_OK);
+    }
 
     if (url != NULL) {
         if ((rc=nnti_url_get_transport(url, transport, NNTI_URL_LEN)) != NNTI_OK) {
@@ -769,6 +779,8 @@ retry:
             conn->peer_name,
             conn->peer_addr,
             conn->peer_port);
+
+    conn->peer=*peer_hdl;
 
     key=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
     copy_peer(peer_hdl, key);
@@ -1596,6 +1608,7 @@ retry:
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                        logger_set_default_level(old_log_level);
                         log_debug(debug_level, "poll_comp_channel timed out");
                         nnti_rc = NNTI_ETIMEDOUT;
                         break;
@@ -3315,7 +3328,7 @@ static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
     log_debug(nnti_debug_level, "enter");
 
     strncpy(dest->url, src->url, NNTI_URL_LEN);
-    dest->url[NNTI_URL_LEN]='\0';
+    dest->url[NNTI_URL_LEN-1]='\0';
 
     src->peer.transport_id                    =NNTI_TRANSPORT_IB;
     dest->peer.NNTI_remote_process_t_u.ib.addr=src->peer.NNTI_remote_process_t_u.ib.addr;
@@ -3894,6 +3907,33 @@ static ib_connection *get_conn_qpn(const NNTI_qp_num qpn)
 
     return(NULL);
 }
+static NNTI_peer_t *get_peer_by_url(const char *url)
+{
+    ib_connection *conn = NULL;
+
+    log_debug(nnti_debug_level, "looking for url=%s", url);
+
+    conn_by_peer_iter_t i;
+    nthread_lock(&nnti_conn_peer_lock);
+    for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
+        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
+                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
+        if (strcmp(i->second->peer.url, url) == 0) {
+            conn=i->second;
+            break;
+        }
+    }
+    nthread_unlock(&nnti_conn_peer_lock);
+
+    if (conn != NULL) {
+        log_debug(nnti_debug_level, "peer found");
+        NNTI_peer_t *peer=(NNTI_peer_t*)malloc(sizeof(NNTI_peer_t));
+        *peer=conn->peer;
+        return peer;
+    }
+
+    return(NULL);
+}
 static ib_connection *del_conn_peer(const NNTI_peer_t *peer)
 {
     ib_connection  *conn=NULL;
@@ -4331,14 +4371,14 @@ static void close_all_conn(void)
     }
     nthread_unlock(&nnti_conn_qpn_lock);
 
-//    nthread_lock(&nnti_conn_peer_lock);
-//    conn_by_peer_iter_t peer_iter;
-//    for (peer_iter = connections_by_peer.begin(); peer_iter != connections_by_peer.end(); peer_iter++) {
-//        log_debug(debug_level, "close connection (peer.addr=%llu)", peer_iter->first.addr);
+    nthread_lock(&nnti_conn_peer_lock);
+    conn_by_peer_iter_t peer_iter;
+    for (peer_iter = connections_by_peer.begin(); peer_iter != connections_by_peer.end(); peer_iter++) {
+        log_debug(debug_level, "close connection (peer.addr=%llu)", peer_iter->first.addr);
 //        close_connection(peer_iter->second);
-//        connections_by_peer.erase(peer_iter);
-//    }
-//    nthread_unlock(&nnti_conn_peer_lock);
+        connections_by_peer.erase(peer_iter);
+    }
+    nthread_unlock(&nnti_conn_peer_lock);
 
     log_debug(debug_level, "exit (%d qpn connections, %d peer connections)",
             connections_by_qpn.size(), connections_by_peer.size());
@@ -4419,12 +4459,7 @@ static void close_connection(ib_connection *c)
     log_debug(nnti_debug_level, "exit");
 }
 
-/**
- * Check for new connections.  The listening socket is left nonblocking
- * so this test can be quick; but accept is not really that quick compared
- * to polling an IB interface, for instance.  Returns >0 if an accept worked.
- */
-static NNTI_result_t check_listen_socket_for_new_connections()
+static NNTI_result_t check_for_waiting_connection()
 {
     NNTI_result_t rc = NNTI_OK;
 
@@ -4439,7 +4474,7 @@ static NNTI_result_t check_listen_socket_for_new_connections()
     if (s < 0) {
         if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
             log_debug(nnti_debug_level, "no connections waiting to be accepted: %s", strerror(errno));
-            rc = NNTI_OK;
+            rc = NNTI_EWOULDBLOCK;
             goto cleanup;
         } else {
             log_error(nnti_debug_level, "failed to accept tcp socket connection: %s", strerror(errno));
@@ -4492,6 +4527,24 @@ static NNTI_result_t check_listen_socket_for_new_connections()
 cleanup:
     return rc;
 }
+
+/**
+ * Check for new connections.  The listening socket is left nonblocking
+ * so this test can be quick; but accept is not really that quick compared
+ * to polling an IB interface, for instance.  Returns >0 if an accept worked.
+ */
+static NNTI_result_t check_listen_socket_for_new_connections()
+{
+    bool done=false;
+    while(!done) {
+        if (check_for_waiting_connection() != NNTI_OK) {
+            done=true;
+        }
+    }
+
+    return(NNTI_OK);
+}
+
 
 static struct ibv_device *get_ib_device(void)
 {
