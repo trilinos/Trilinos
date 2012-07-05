@@ -1396,20 +1396,22 @@ namespace stk {
                   si.run(pmm, pmd, always_smooth, msq_debug);
                 }
             }
+            break;
           case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
             {
 #if 0
-              // no geometry used in smoothing
-              PerceptMesquiteMesh pmm(&m_eMesh, 0 /* &pmd */);
+              // geometry used for classification of fixed/non-fixed nodes
+              PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
 
               //PMMShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
               PMMParallelShapeImprover si(100, 1.e-8, 20);
               //PMMShapeImprover si(5, 1.e-8, 20);
               //const double max_vertex_movement_term_crit=10;
               //PMMShapeSizeOrientImprover si(10);
-              si.run(pmm, 0, always_smooth, msq_debug);
+              si.run(pmm, &pmd, always_smooth, msq_debug);
 #endif
             }
+            break;
           }
           return;
         }

@@ -485,6 +485,7 @@ namespace stk
         eMesh.open(input_files_loc+"hex_fixture.e");
         eMesh.commit();
         std::cout << "eMesh.get_coordinates_field()->number_of_states() = "  << eMesh.get_coordinates_field()->number_of_states() << std::endl;
+        // field, dst, src
         eMesh.copy_field_state(eMesh.get_coordinates_field(), stk::mesh::StateN, stk::mesh::StateNone);
         Math::Matrix rm = Math::rotationMatrix(0, 30);
         eMesh.transform_mesh(rm);

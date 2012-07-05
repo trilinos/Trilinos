@@ -2,6 +2,7 @@
 #ifdef STK_BUILT_IN_SIERRA
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 
@@ -16,6 +17,8 @@ namespace stk {
   namespace percept {
     using namespace Mesquite;
 
+    // this is a sample (unfinished) implementation of how we might use Mesquite (needs to have global
+    // updates of ConjugateGradient global quantities, etc, to make it produce parallel/serial consistency)
     void PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_one_iteration( Mesh* mesh,
                                                                                           MsqError& err )
     {
@@ -180,7 +183,8 @@ namespace stk {
 
           bool do_untangle_only = false;
           std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
-          PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper siw(innerIter, 0.0, gradNorm, parallelIterations);
+          //PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper siw(innerIter, 0.0, gradNorm, parallelIterations);
+          PMMParallelReferenceMeshSmoother siw(innerIter, 0.0, gradNorm, parallelIterations);
           siw.m_do_untangle_only = do_untangle_only;
           siw.run_instructions(&mesh, 0, mErr);
 

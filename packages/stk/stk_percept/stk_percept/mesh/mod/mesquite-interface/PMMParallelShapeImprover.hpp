@@ -85,7 +85,7 @@ namespace stk {
         void run_one_iteration( Mesh* mesh,
                                 MsqError& err );
       
-      private:
+      protected:
 
         int innerIter;
         double maxTime, gradNorm;
@@ -99,7 +99,7 @@ namespace stk {
 
       };
 
-    private:
+    protected:
       int innerIter;
       double gradNorm;
       int parallelIterations;
