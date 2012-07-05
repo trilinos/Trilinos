@@ -65,6 +65,10 @@
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_ResponseAggregator_Factory.hpp"
 
+#ifdef HAVE_TEKO 
+#include "Teko_RequestHandler.hpp"
+#endif
+
 namespace Thyra {
   template<typename ScalarT> class ModelEvaluator;
   template<typename ScalarT> class LinearOpWithSolveFactoryBase;
@@ -129,6 +133,11 @@ namespace panzer_stk {
     //! Get linear object factory used to build model evaluator
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
     { return m_lin_obj_factory; }
+
+    #ifdef HAVE_TEKO 
+    void setTekoRequestHandler(Teuchos::RCP<Teko::RequestHandler> & reqHandler)
+    { m_req_handler = reqHandler; }
+    #endif     
 
   protected:
     void addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
@@ -204,6 +213,7 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_global_indexer;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
     Teuchos::RCP<panzer::GlobalData> m_global_data;
+    Teuchos::RCP<Teko::RequestHandler> m_req_handler;
   };
 
 }

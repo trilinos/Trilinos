@@ -955,7 +955,12 @@ namespace panzer_stk {
 
        std::string fieldName;
 
-       Teuchos::RCP<Teko::RequestHandler> reqHandler = Teuchos::rcp(new Teko::RequestHandler);
+       // try to set request handler from member variable
+       Teuchos::RCP<Teko::RequestHandler> reqHandler = m_req_handler;
+       if(m_req_handler==Teuchos::null) {
+          reqHandler = Teuchos::rcp(new Teko::RequestHandler);
+       }
+
        Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
           Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(globalIndexer);
 
@@ -1036,7 +1041,13 @@ namespace panzer_stk {
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
     }
     else {
-       Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
+       // try to set request handler from member variable
+       Teuchos::RCP<Teko::RequestHandler> reqHandler = m_req_handler;
+       if(m_req_handler==Teuchos::null) {
+          reqHandler = Teuchos::rcp(new Teko::RequestHandler);
+       }
+
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
 
        bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
        if(writeCoordinates) {

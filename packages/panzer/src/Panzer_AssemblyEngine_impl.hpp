@@ -71,7 +71,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 
   GlobalEvaluationDataContainer gedc;
   in.fillGlobalEvaluationDataContainer(gedc);
-  gedc.globalToGhost();
+  gedc.globalToGhost(LOC::X | LOC::DxDt);
 
   // Push solution, x and dxdt into ghosted domain
   m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
@@ -95,7 +95,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 
   m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
-  gedc.ghostToGlobal();
+  gedc.ghostToGlobal(LOC::F | LOC::Mat);
 
   return;
 }

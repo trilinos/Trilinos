@@ -31,17 +31,17 @@ Teuchos::RCP<GlobalEvaluationData> GlobalEvaluationDataContainer::getDataObject(
 }
 
 //! Call ghost to global on all the containers
-void GlobalEvaluationDataContainer::ghostToGlobal()
+void GlobalEvaluationDataContainer::ghostToGlobal(int p)
 {
    for(iterator itr=begin();itr!=end();++itr)
-     itr->second->ghostToGlobal();
+     itr->second->ghostToGlobal(p);
 }
 
 //! Call global to ghost on all the containers
-void GlobalEvaluationDataContainer::globalToGhost()
+void GlobalEvaluationDataContainer::globalToGhost(int p)
 {
    for(iterator itr=begin();itr!=end();++itr)
-     itr->second->globalToGhost();
+     itr->second->globalToGhost(p);
 }
 
 }

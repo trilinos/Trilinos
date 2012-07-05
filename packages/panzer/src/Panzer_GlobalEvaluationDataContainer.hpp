@@ -28,10 +28,10 @@ public:
    Teuchos::RCP<GlobalEvaluationData> getDataObject(const std::string & key) const;
 
    //! Call ghost to global on all the containers
-   void ghostToGlobal();
+   void ghostToGlobal(int p);
 
    //! Call global to ghost on all the containers
-   void globalToGhost();
+   void globalToGhost(int p);
 
    const_iterator begin() const { return lookupTable_.begin(); }
    const_iterator end() const { return lookupTable_.end(); }
