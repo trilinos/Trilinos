@@ -56,6 +56,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_PtrFromStlVector.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -70,6 +71,7 @@ panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -97,6 +99,9 @@ ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual");
 }
 
@@ -106,8 +111,6 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
-
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
@@ -123,6 +126,21 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  // extract linear object container
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+ 
+  if(epetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
@@ -132,9 +150,9 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
+   // Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
+   //       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
+   Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -176,6 +194,7 @@ panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -203,6 +222,9 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual (Jacobian)");
 }
 
@@ -229,6 +251,21 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  // extract linear object container
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+ 
+  if(epetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
@@ -239,10 +276,10 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
-   Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->get_A();
+   // Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
+   //       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
+   Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
+   Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer_->get_A();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the

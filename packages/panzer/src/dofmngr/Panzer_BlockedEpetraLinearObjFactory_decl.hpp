@@ -239,6 +239,9 @@ public:
    //! how many block columns
    int getBlockColCount() const;
 
+   Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > getGlobalIndexer() const
+   { return blockedDOFManager_; }
+
 protected:
 /*************** Generic methods/members *******************/
 

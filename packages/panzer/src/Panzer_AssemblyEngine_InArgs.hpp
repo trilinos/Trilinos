@@ -97,6 +97,11 @@ namespace panzer {
        ged_map[key] = ged;
     }
 
+    void addGlobalEvaluationData(const GlobalEvaluationDataContainer & gedc)
+    {
+       ged_map.insert(gedc.begin(),gedc.end()); 
+    }
+
     //! Using internal map fill the global evaluation data container object
     void fillGlobalEvaluationDataContainer(GlobalEvaluationDataContainer & gedc) const
     {

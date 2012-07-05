@@ -48,6 +48,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_ParameterLibrary.hpp"
+#include "Panzer_GlobalEvaluationData.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_AbstractFactory.hpp"
@@ -119,6 +120,18 @@ public:
 
   //@}
 
+ 
+  /** Add a global evaluation data object that will be filled as a side
+    * effect when evalModel is called. This is useful for building things
+    * like auxiliary operators used in block preconditioning. This will not
+    * be used as a parameter (or response) to the model evaluator. 
+    *
+    * \param[in] name Name to associate with global evaluation data object
+    * \param[in] ged Pointer to a global evaluation data object
+    */
+  void addNonParameterGlobalEvaluationData(const std::string & name,
+                                           const Teuchos::RCP<GlobalEvaluationData> & ged);
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
@@ -178,6 +191,8 @@ private: // data members
   mutable Teuchos::RCP<panzer::LinearObjContainer> ghostedContainer_;
 
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory_;
+
+  GlobalEvaluationDataContainer nonParamGlobalEvaluationData_;
 };
 
 

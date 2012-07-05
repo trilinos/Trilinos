@@ -119,6 +119,7 @@ namespace panzer {
     virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const;
 
     virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary);
+    Teuchos::RCP<const FieldLayoutLibrary> getFieldLayoutLibrary() const;
 
     const panzer::InputEquationSet& getInputEquationSet() const;
 

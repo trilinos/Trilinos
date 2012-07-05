@@ -251,6 +251,14 @@ get_W_factory() const
 
 template <typename Scalar, typename LO, typename GO, typename NODE>
 void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+addNonParameterGlobalEvaluationData(const std::string & key,
+                                    const Teuchos::RCP<GlobalEvaluationData> & ged)
+{
+   nonParamGlobalEvaluationData_.addDataObject(key,ged);
+}
+
+template <typename Scalar, typename LO, typename GO, typename NODE>
+void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
@@ -323,6 +331,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     ae_inargs.time = inArgs.get_t();
     ae_inargs.evaluate_transient_terms = true;
   }
+  ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
   
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::ThyraObjContainer<double> > thGlobalContainer = 
