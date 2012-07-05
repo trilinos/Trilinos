@@ -170,6 +170,16 @@ create_log_file(
 
   std::ofstream *file_stream = new std::ofstream(path.c_str());
 
+  if(!file_stream->good()) {
+
+    std::ostringstream s;
+    s << "Cannot open output log file '" << path << "' directory does not exist or is write protected.";
+
+    throw std::runtime_error(s.str());
+
+  }
+
+
   file_stream_map[name] = new LogStream(path, file_stream, file_stream);
 }
 
