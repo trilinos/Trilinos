@@ -260,7 +260,7 @@ GatherSolution_BlockedEpetra(
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
   if (p.isType<bool>("Disable Sensitivities"))
-    disableSensitivities_ = p.get<bool>("Use Time Derivative Solution Vector");
+    disableSensitivities_ = p.get<bool>("Disable Sensitivities");
 
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
