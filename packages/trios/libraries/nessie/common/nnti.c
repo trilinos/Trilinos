@@ -557,6 +557,7 @@ NNTI_result_t NNTI_fini (
     } else {
         rc = available_transports[trans_hdl->id].ops.nnti_fini_fn(
                 trans_hdl);
+        memset(&available_transports[trans_hdl->id], 0, sizeof(NNTI_internal_transport_t));
     }
 
     return(rc);
