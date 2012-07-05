@@ -530,10 +530,12 @@ namespace stk
             //Mesquite::MsqDebug::enable(3);
               {
                 PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
-                PerceptMesquiteMeshDomain pmd(&eMesh, 0);
+                //PerceptMesquiteMeshDomain pmd(&eMesh, 0);
+                PlanarDomain planar_domain(PlanarDomain::XY);
                 //PMMParallelShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
-                percept::PMMParallelShapeImprover pmmpsi(1000, 1.e-8, 1);
-                pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
+                percept::PMMParallelShapeImprover pmmpsi(1000, 1.e-4, 1);
+                //pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
+                pmmpsi.run(pmm, &planar_domain, always_smooth, msq_debug);
               }
 
             eMesh.save_as(output_files_loc+"quad_4_si_smooth.1.e");

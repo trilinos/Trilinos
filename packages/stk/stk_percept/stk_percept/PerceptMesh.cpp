@@ -3737,6 +3737,83 @@ namespace stk {
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
     }
 
+#if 0
+    //  jacobians(topo(element)->num_vertices,DIM,DIM)
+    void get_element_jacobians_at_vertices(stk::mesh::Entity& element, MDArray& jacobians, stk::mesh::FieldBase *coord_field=0)
+    {
+      int npts = jacobians.dimension(0);
+
+      const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(element);
+      
+    }
+
+    // pts(npts,DIM); jacobians(npts,DIM,DIM)
+    void get_element_jacobians(stk::mesh::Entity& element, MDArray& pts, MDArray& jacobians, stk::mesh::FieldBase *coord_field=0)
+    {
+        const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(element);
+        switch(topology->key) 
+          {
+          case shards::Triangle<3>::key:
+            topo = TRIANGLE;
+            break;
+          case shards::Quadrilateral<4>::key:
+            topo = QUADRILATERAL;
+            break;
+          case shards::Tetrahedron<4>::key:
+            topo = TETRAHEDRON;
+            break;
+          case shards::Hexahedron<8>::key:
+            topo = HEXAHEDRON;
+            break;
+          case shards::Wedge<6>::key:
+            topo = PRISM;
+            break;
+
+          case shards::Node::key:
+          case shards::Particle::key:
+          case shards::Line<2>::key:
+          case shards::Line<3>::key:
+          case shards::ShellLine<2>::key:
+          case shards::ShellLine<3>::key:
+          case shards::Beam<2>::key:
+          case shards::Beam<3>::key:
+      
+          case shards::Triangle<4>::key:
+          case shards::Triangle<6>::key:
+          case shards::ShellTriangle<3>::key:
+          case shards::ShellTriangle<6>::key:
+      
+          case shards::Quadrilateral<8>::key:
+          case shards::Quadrilateral<9>::key:
+          case shards::ShellQuadrilateral<4>::key:
+          case shards::ShellQuadrilateral<8>::key:
+          case shards::ShellQuadrilateral<9>::key:
+      
+          case shards::Tetrahedron<8>::key:
+          case shards::Tetrahedron<10>::key:
+          case shards::Tetrahedron<11>::key:
+      
+          case shards::Hexahedron<20>::key:
+          case shards::Hexahedron<27>::key:
+      
+          case shards::Pyramid<5>::key:
+          case shards::Pyramid<13>::key:
+          case shards::Pyramid<14>::key:
+      
+          case shards::Wedge<15>::key:
+          case shards::Wedge<18>::key:
+      
+          case shards::Pentagon<5>::key:
+          case shards::Hexagon<6>::key:
+          default:
+            throw std::runtime_error("unknown/unhandled topology in create_mesquite_mesh");
+            break;
+
+          }
+    }
+#endif
+
+    //====================================================================================================================================
     /**
      * A family tree relation holds the parent/child relations for a refined mesh.  
      * 

@@ -44,13 +44,15 @@ namespace stk {
                         QualityAssessor* qa,
                         MsqError& err );
 
-      void run_one_iteration( Mesh* mesh,
+      void run_one_iteration( Mesh* mesh,  MeshDomain *domain,
                               MsqError& err );
       
     private:
       NodeMap m_current_position;
       NodeMap m_delta;
-      double dmax;
+      double m_dmax;
+      double m_alpha;
+      double m_alpha_prev;
 
     public:
 

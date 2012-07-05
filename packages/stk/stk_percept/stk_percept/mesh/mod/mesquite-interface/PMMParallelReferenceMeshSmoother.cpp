@@ -17,7 +17,7 @@ namespace stk {
 
     using namespace Mesquite;
 
-    void PMMParallelReferenceMeshSmoother::run_one_iteration( Mesh* mesh,
+    void PMMParallelReferenceMeshSmoother::run_one_iteration( Mesh* mesh, MeshDomain *domain,
                                                               MsqError& err )
     {
       //std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelReferenceMeshSmoother::run_one_iteration start..." << std::endl;
@@ -26,7 +26,7 @@ namespace stk {
       PerceptMesh *eMesh = pmm->getPerceptMesh();
       stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
       stk::mesh::FieldBase *coord_field_current   = coord_field->field_state(stk::mesh::StateNP1);
-      //stk::mesh::FieldBase *coord_field_projected = coord_field->field_state(stk::mesh::StateN);
+      stk::mesh::FieldBase *coord_field_projected = coord_field->field_state(stk::mesh::StateN);
       stk::mesh::FieldBase *coord_field_original  = coord_field->field_state(stk::mesh::StateNM1);
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
@@ -57,6 +57,7 @@ namespace stk {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
 
         Vector centroid_current(spatialDim, 0.0);
+        Vector centroid_projected(spatialDim, 0.0);
         Vector centroid_original(spatialDim, 0.0);
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -73,16 +74,19 @@ namespace stk {
                     const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
                     unsigned num_node = elem_nodes.size();
                     centroid_current.assign(spatialDim, 0.0);
+                    centroid_projected.assign(spatialDim, 0.0);
                     centroid_original.assign(spatialDim, 0.0);
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
                         mesh::Entity & node = * elem_nodes[ inode ].entity();
                         double *coord_current = PerceptMesh::field_data(coord_field_current, node);
+                        double *coord_projected = PerceptMesh::field_data(coord_field_projected, node);
                         double *coord_original = PerceptMesh::field_data(coord_field_original, node);
 
                         for (int i=0; i < spatialDim; i++)
                           {
                             centroid_current[i] += coord_current[i]/((double)num_node);
+                            centroid_projected[i] += coord_projected[i]/((double)num_node);
                             centroid_original[i] += coord_original[i]/((double)num_node);
                           }
                       }
@@ -90,11 +94,16 @@ namespace stk {
                       {
                         mesh::Entity & node = * elem_nodes[ inode ].entity();
                         double *coord_current = PerceptMesh::field_data(coord_field_current, node);
+                        double *coord_projected = PerceptMesh::field_data(coord_field_projected, node);
                         double *coord_original = PerceptMesh::field_data(coord_field_original, node);
                         Vector& delta = m_delta[&node];
                         for (int i=0; i < spatialDim; i++)
                           {
-                            double new_pos = coord_original[i] + (centroid_current[i] - centroid_original[i]);
+                            double alpha_prev = 0.0;
+                            //double alpha_prev = m_alpha_prev;
+                            double coord_base = coord_original[i]*(1.0-alpha_prev) + alpha_prev*coord_projected[i];
+                            double centroid_base = centroid_original[i]*(1.0-alpha_prev) + alpha_prev*centroid_projected[i];
+                            double new_pos = coord_base + (centroid_current[i] - centroid_base);
                             delta[i] += (new_pos - coord_current[i])/((double)num_node);
                           }
                       }
@@ -103,7 +112,7 @@ namespace stk {
           }
       }
 
-      dmax = 0.0;
+      m_dmax = 0.0;
       {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -128,7 +137,7 @@ namespace stk {
                     Vector& delta = m_delta[&node];
                     for (int i=0; i < spatialDim; i++)
                       {
-                        dmax = std::max(std::abs(delta[i]), dmax);
+                        m_dmax = std::max(std::abs(delta[i]), m_dmax);
                         coord_current[i] += delta[i];  // if not fixed
                       }
                   }
@@ -167,29 +176,34 @@ namespace stk {
       for (int outer = 0; outer < nalpha; outer++)
         {
           double alpha = alphas[outer];
+          m_alpha = alpha;
+          m_alpha_prev = alpha;
+          if (outer > 0) m_alpha_prev = alphas[outer-1];
 
           // set current state and evaluate mesh validity (current = alpha*project + (1-alpha)*original)
           eMesh->nodal_field_axpbypgz(alpha, coord_field_projected, (1.0-alpha), coord_field_original, 0.0, coord_field_current);
 
-          int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh);
+          int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
           
           if (!get_parallel_rank()) 
-            std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid 
-                      << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
+            std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid << " for outer_iter= " << outer
+                      << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " OK")
                       << std::endl;
 
           for (int iter = 0; iter < innerIter; iter++)
             {
               //
-              int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh);
-              if (!get_parallel_rank() && num_invalid) 
-                std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid 
-                          << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
-                          << std::endl;
-              run_one_iteration(mesh, err);
-              std::cout << "tmp srk iter= " << iter << " dmax= " << dmax << std::endl;
+              int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
+//               if (!get_parallel_rank() && num_invalid) 
+//                 std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid 
+//                           << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
+//                           << std::endl;
+              run_one_iteration(mesh, domain, err);
+              std::cout << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid << std::endl;
               //sync_fields();
               //check_convergence();
+              if (m_dmax < gradNorm)
+                break;
             }
         }
 

@@ -6,6 +6,13 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 
+#include "PMeanPTemplate.hpp"
+#include "TQualityMetric.hpp"
+#include "AddQualityMetric.hpp"
+
+#include "TShapeB1.hpp"
+#include "TShapeNB1.hpp"
+
 #include "mpi.h"
 
 namespace MESQUITE_NS {
@@ -19,7 +26,7 @@ namespace stk {
 
     // this is a sample (unfinished) implementation of how we might use Mesquite (needs to have global
     // updates of ConjugateGradient global quantities, etc, to make it produce parallel/serial consistency)
-    void PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_one_iteration( Mesh* mesh,
+    void PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_one_iteration( Mesh* mesh, MeshDomain *domain,
                                                                                           MsqError& err )
     {
       std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper::run_one_iteration start..." << std::endl;
@@ -65,7 +72,7 @@ namespace stk {
 
       q2.add_quality_assessor( &qa_check, err ); MSQ_ERRRTN(err);
       q2.set_master_quality_improver( &shape_solver, err ); MSQ_ERRRTN(err);
-      q2.run_common( mesh, 0, 0, &settings, err ); 
+      q2.run_common( mesh, 0, domain, &settings, err ); 
 
       //if (!get_parallel_rank()) 
       std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper: running shape improver... done \n" << std::endl;
@@ -102,7 +109,7 @@ namespace stk {
           // set current state and evaluate mesh validity
           eMesh->nodal_field_axpbypgz(alpha, coord_field_projected, (1.0-alpha), coord_field_original, 0.0, coord_field_current);
 
-          int num_invalid = count_invalid_elements(*mesh);
+          int num_invalid = count_invalid_elements(*mesh, domain);
           if (!get_parallel_rank()) 
             std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid current= " << num_invalid 
                       << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
@@ -112,7 +119,7 @@ namespace stk {
           for (int iter = 0; iter < innerIter; iter++)
             {
               //
-              int num_invalid = count_invalid_elements(*mesh);
+              int num_invalid = count_invalid_elements(*mesh, domain);
               if (!get_parallel_rank()) 
                 std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid current= " << num_invalid 
                           << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
@@ -131,22 +138,43 @@ namespace stk {
     }
 
 
-    int PMMParallelShapeImprover::count_invalid_elements(Mesh &mesh)
+    int PMMParallelShapeImprover::count_invalid_elements(Mesh &mesh, MeshDomain *domain)
     {
       MsqError err;
       InstructionQueue q;
-  
-      IdealWeightInverseMeanRatio metric;
-      metric.set_averaging_method( QualityMetric::LINEAR );
+      int num_invalid = 0;
 
-      // Check for inverted elements in the mesh
-      QualityAssessor inv_check( &metric );
-      //inv_check.disable_printing_results();
-      q.add_quality_assessor( &inv_check, err );  MSQ_ERRZERO(err);
-      Settings settings;
-      q.run_common( &mesh, 0, 0, &settings, err ); MSQ_ERRZERO(err);
-      const QualityAssessor::Assessor* inv_b = inv_check.get_results( &metric );
-      int num_invalid = inv_b->get_invalid_element_count();
+      if (1)
+        {
+          IdealWeightInverseMeanRatio metric;
+          //metric.set_averaging_method( QualityMetric::LINEAR );
+
+          // Check for inverted elements in the mesh
+          QualityAssessor inv_check( &metric );
+          inv_check.disable_printing_results();
+          q.add_quality_assessor( &inv_check, err );  MSQ_ERRZERO(err);
+          Settings settings;
+          q.run_common( &mesh, 0, domain, &settings, err ); MSQ_ERRZERO(err);
+          const QualityAssessor::Assessor* inv_b = inv_check.get_results( &metric );
+          num_invalid = inv_b->get_invalid_element_count();
+        }
+      else
+        {
+          // Set up barrier metric to see if mesh contains inverted elements
+          TShapeB1 mu_b;
+          IdealShapeTarget w_ideal;
+          TQualityMetric barrier( &w_ideal, &mu_b );
+  
+          // Check for inverted elements in the mesh
+          QualityAssessor inv_check( &barrier );
+          inv_check.disable_printing_results();
+          q.add_quality_assessor( &inv_check, err ); MSQ_ERRZERO(err);
+          Settings settings;
+          q.run_common( &mesh, 0, domain, &settings, err ); MSQ_ERRZERO(err);
+          const QualityAssessor::Assessor* inv_b = inv_check.get_results( &barrier );
+          num_invalid = inv_b->get_invalid_element_count();
+        }
+
       stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &num_invalid ) );
       
       return num_invalid;
@@ -169,13 +197,13 @@ namespace stk {
       if (!get_parallel_rank()) std::cout << "tmp srk PMMParallelShapeImprover::run: pmesh= " << pmesh << std::endl;
 
       Mesquite::MsqError mErr;
-      int num_invalid = count_invalid_elements(mesh);
+      int num_invalid = count_invalid_elements(mesh, domain);
       if (!get_parallel_rank()) 
         std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid before= " << num_invalid 
                       << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : 
                           (!always_smooth ? "WARNING: no smoothing requested since always_smooth=false" : " "))
                       << std::endl;
-      if (num_invalid) throw std::runtime_error("PMMParallelShapeImprover can't start from invalid mesh...");
+      //if (num_invalid) throw std::runtime_error("PMMParallelShapeImprover can't start from invalid mesh...");
 
       if (always_smooth)
         {
@@ -186,12 +214,12 @@ namespace stk {
           //PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper siw(innerIter, 0.0, gradNorm, parallelIterations);
           PMMParallelReferenceMeshSmoother siw(innerIter, 0.0, gradNorm, parallelIterations);
           siw.m_do_untangle_only = do_untangle_only;
-          siw.run_instructions(&mesh, 0, mErr);
+          siw.run_instructions(&mesh, domain, mErr);
 
           //if (!get_parallel_rank()) 
           std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
 
-          num_invalid = count_invalid_elements(mesh);
+          num_invalid = count_invalid_elements(mesh, domain);
           //if (!get_parallel_rank()) 
           std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprover num_invalid after= " << num_invalid << " " 
                     << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
