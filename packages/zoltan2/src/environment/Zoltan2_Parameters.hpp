@@ -201,6 +201,8 @@ enum RangeType {
  *
  *\li IsInRangeList(const Integral val, const Teuchos::ParameterEntry &e)
  *
+ *\li Teuchos::ArrayView<Integral> getList(Teuchos::Array<Integral> &irl)
+ *
  *\li printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl)
  */
 
@@ -228,7 +230,7 @@ private:
 public:
   /*! \brief Constructor: any Integral is valid
    */
-  IntegerRangeListValidator();
+  IntegerRangeListValidator(bool unsorted=false);
 
   /*! \brief Constructor: only Integrals in the specified range are valid.
    *   \param validMin  all values implied by the integer range list
@@ -359,6 +361,17 @@ template <typename Integral>
 template <typename Integral>
   bool IsInRangeList(const Integral val, const Teuchos::Array<Integral> &vals);
 
+/*! \brief  A helper function that returns a view of the list.
+ *
+ *    \param irl The value of an integer range list parameter after it has
+ *                 been validated
+ *    \return If the user's parameter value did not imply "all" or "none",
+ *        then a view of the array of integers implied by the value is
+ *        returned.  Otherwise an empty array is returned.
+ */   
+template <typename Integral>
+  Teuchos::ArrayView<Integral> getList(const Teuchos::Array<Integral> &irl);
+
 /*! \brief  A helper function that prints the meaning of an encoded
  *             integer range list
  *
@@ -431,8 +444,8 @@ template <typename Integral>
 
 
 template <typename Integral>
-  IntegerRangeListValidator<Integral>::IntegerRangeListValidator(): 
-    min_(1), max_(0), unsorted_(false)
+  IntegerRangeListValidator<Integral>::IntegerRangeListValidator(
+    bool unsorted): min_(1), max_(0), unsorted_(unsorted)
 {
 }
 
@@ -703,6 +716,18 @@ template <typename Integral>
 
   return IsInRangeList(val, valList);
 } 
+
+template <typename Integral>
+  Teuchos::ArrayView<Integral> getList(Teuchos::Array<Integral> &irl)
+{
+  Teuchos::ArrayView<Integral> av;  // av.size() == 0
+
+  if (!Zoltan2::allValuesAreInRangeList(irl) &&
+      !Zoltan2::noValuesAreInRangeList(irl))
+    av = irl.view(0, irl.size()-1); // skip last value, it's a flag
+
+  return av;
+}
 
 template <typename Integral>
   void printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl)
