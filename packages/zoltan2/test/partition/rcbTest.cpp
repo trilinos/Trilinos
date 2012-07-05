@@ -32,7 +32,7 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
 
 void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
 {
-  std::string fname("simple");
+  std::string fname("USAir97");
   UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
   RCP<tMVector_t> coords = uinput.getCoordinates();
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
   RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
   int rank = tcomm->getRank();
 
-  meshCoordinatesTest(tcomm);
+  //meshCoordinatesTest(tcomm);
 
   testFromDataFile(tcomm);
 

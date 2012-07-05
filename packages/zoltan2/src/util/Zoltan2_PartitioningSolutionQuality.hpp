@@ -144,8 +144,6 @@ template <typename Adapter>
       mcnorm = normMinimizeMaximumWeight;
   } 
 
-  partId_t dummy;
-
   try{
     objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln,
       numGlobalParts_, numNonEmpty_, metrics_);

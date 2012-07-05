@@ -39,11 +39,6 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::Comm;
 
-// We're testing with user global Ids that don't necessarily
-// define "<<(ostream)", so we do this with traits.
-// TODO: Let's add stringify to InputTraits, to be
-//   used in debugging output.
-
 template <typename T>
 struct UserIdTraits{
   static std::string &stringify(T val) {return std::string("INVALID");}

@@ -93,5 +93,6 @@ typedef double scalar_t;
 
 #include <ErrorHandlingForTests.hpp>  
 #include <UserInputForTests.hpp>
+#include <PrintData.hpp>
 
 #endif

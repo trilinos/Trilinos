@@ -1088,13 +1088,12 @@ template <typename Adapter>
   // respect to a desired solution.  This solution may have more or
   // fewer parts that the desired solution.)
 
-  std::pair<partId_t, partId_t> minMaxLocal =
-    IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len);
-
-  partId_t gMax, gMin;
+  partId_t lMax, lMin, gMax, gMin;
+  
+  IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
 
   IdentifierTraits<partId_t>::globalMinMax(*comm_, 
-    minMaxLocal.first, minMaxLocal.second, gMin, gMax);
+    lMin, lMax, gMin, gMax);
       
   nGlobalPartsSolution_ = gMax - gMin + 1;
 

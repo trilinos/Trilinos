@@ -270,6 +270,8 @@ UserInputForTests::UserInputForTests(int x, int y, int z,
 
 RCP<UserInputForTests::tMVector_t> UserInputForTests::getCoordinates()
 { 
+  if (xyz_.is_null())
+    throw std::runtime_error("could not read coord file");
   return xyz_;
 }
 
@@ -285,11 +287,15 @@ RCP<UserInputForTests::tMVector_t> UserInputForTests::getEdgeWeights()
 
 RCP<UserInputForTests::tcrsMatrix_t> UserInputForTests::getTpetraCrsMatrix() 
 { 
+  if (M_.is_null())
+    throw std::runtime_error("could not read mtx file");
   return M_;
 }
 
 RCP<UserInputForTests::tcrsGraph_t> UserInputForTests::getTpetraCrsGraph() 
 { 
+  if (M_.is_null())
+    throw std::runtime_error("could not read mtx file");
   return rcp_const_cast<tcrsGraph_t>(M_->getCrsGraph());
 }
 
@@ -311,11 +317,15 @@ RCP<UserInputForTests::tMVector_t> UserInputForTests::getTpetraMultiVector(int n
 
 RCP<UserInputForTests::xcrsMatrix_t> UserInputForTests::getXpetraCrsMatrix() 
 { 
+  if (M_.is_null())
+    throw std::runtime_error("could not read mtx file");
   return xM_;
 }
 
 RCP<UserInputForTests::xcrsGraph_t> UserInputForTests::getXpetraCrsGraph() 
 { 
+  if (M_.is_null())
+    throw std::runtime_error("could not read mtx file");
   return rcp_const_cast<xcrsGraph_t>(xM_->getCrsGraph());
 }
 
@@ -338,6 +348,8 @@ RCP<UserInputForTests::xMVector_t> UserInputForTests::getXpetraMultiVector(int n
 #ifdef HAVE_EPETRA_DATA_TYPES
 RCP<Epetra_CrsGraph> UserInputForTests::getEpetraCrsGraph()
 {
+  if (M_.is_null())
+    throw std::runtime_error("could not read mtx file");
   RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
   RCP<const Tpetra::Map<lno_t, gno_t> > trowMap = tgraph->getRowMap();
   RCP<const Tpetra::Map<lno_t, gno_t> > tcolMap = tgraph->getColMap();
@@ -375,6 +387,8 @@ RCP<Epetra_CrsGraph> UserInputForTests::getEpetraCrsGraph()
 
 RCP<Epetra_CrsMatrix> UserInputForTests::getEpetraCrsMatrix()
 {
+  if (M_.is_null())
+    throw std::runtime_error("could not read mtx file");
   RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
   eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
 
@@ -454,25 +468,37 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << 
       shortPathName(fname, "test") << std::endl;
+
+  // This reader has some problems.  Until fixed, don't give
+  // up everything when the Reader fails. (Tpetra bug 5611)
  
+  bool aok = true;
   try{
     M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-      fname.str(), tcomm_, dnode);
+      fname.str(), tcomm_, dnode, true, true);
   }
   catch (std::exception &e) {
-    TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+    //TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+    aok = false;
   }
 
-  RCP<const xcrsMatrix_t> xm = 
-    Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+  if (aok){
+    RCP<const xcrsMatrix_t> xm = 
+      Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
+    xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+  }
+  else{
+    if (tcomm_->getRank() == 0)
+      std::cout << "UserInputForTests unable to read matrix." << std::endl;
+  }
 
   // Open the coordinate file.
 
   fname.str("");
   fname << path << "/" << testData << "_coord.mtx";
 
-  int coordDim = 0;
+  size_t coordDim = 0, numGlobalCoords = 0;
+  size_t msg[2];
   ArrayRCP<ArrayRCP<scalar_t> > xyz;
   std::ifstream coordFile;
 
@@ -495,7 +521,6 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
       // Read past banner to number and dimension of coordinates.
     
       char c[256];
-      gno_t numCoords;
       bool done=false;
     
       while (!done && !fail && coordFile.good()){
@@ -507,8 +532,8 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
         else {
           done=true;
           std::istringstream s(c);
-          s >> numCoords >> coordDim;
-          if (!s.eof() || numCoords < 1 || coordDim < 1)
+          s >> numGlobalCoords >> coordDim;
+          if (!s.eof() || numGlobalCoords < 1 || coordDim < 1)
             fail=1;
         }
       }
@@ -521,19 +546,19 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
       
         for (int dim=0; !fail && dim < coordDim; dim++){
           lno_t idx;
-          scalar_t *tmp = new scalar_t [numCoords];
+          scalar_t *tmp = new scalar_t [numGlobalCoords];
           if (!tmp)
             fail = 1;
           else{
-            xyz[dim] = Teuchos::arcp(tmp, 0, numCoords);
+            xyz[dim] = Teuchos::arcp(tmp, 0, numGlobalCoords);
         
-            for (idx=0; !coordFile.eof() && idx < numCoords; idx++){
+            for (idx=0; !coordFile.eof() && idx < numGlobalCoords; idx++){
               coordFile.getline(c, 256);
               std::istringstream s(c);
               s >> tmp[idx];
             }
       
-            if (idx < numCoords)
+            if (idx < numGlobalCoords)
               fail = 1;
           }
         }
@@ -552,19 +577,33 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
     
       coordFile.close();
     }
+
+    msg[0] = coordDim;
+    msg[1] = numGlobalCoords;
   }
 
   // Broadcast coordinate dimension
 
-  Teuchos::broadcast<int, int>(*tcomm_, 0, 1, &coordDim);
+  Teuchos::broadcast<int, size_t>(*tcomm_, 0, 2, msg);
+
+  coordDim = msg[0];
+  numGlobalCoords= msg[1];
 
   if (coordDim == 0)
     return;
 
-  gno_t globalNrows = M_->getGlobalNumRows();
-  gno_t base = M_->getIndexBase();
-  const RCP<const map_t> &mapM = M_->getRowMap();
-  RCP<const map_t> toMap = mapM;
+  gno_t base;
+  RCP<const map_t> toMap;
+
+  if (!M_.is_null()){
+    base = M_->getIndexBase();
+    const RCP<const map_t> &mapM = M_->getRowMap();
+    toMap = mapM;
+  }
+  else{
+    base = 0;
+    toMap = rcp(new map_t(numGlobalCoords, base, tcomm_));
+  }
 
   // Export coordinates to their owners
 
@@ -575,19 +614,19 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   if (tcomm_->getRank() == 0){
 
     for (int dim=0; dim < coordDim; dim++)
-      coordLists[dim] = xyz[dim].view(0, globalNrows);
+      coordLists[dim] = xyz[dim].view(0, numGlobalCoords);
 
-    gno_t *tmp = new gno_t [globalNrows];
+    gno_t *tmp = new gno_t [numGlobalCoords];
     if (!tmp)
       throw std::bad_alloc();
 
-    ArrayRCP<const gno_t> rowIds = Teuchos::arcp(tmp, 0, globalNrows);
+    ArrayRCP<const gno_t> rowIds = Teuchos::arcp(tmp, 0, numGlobalCoords);
 
-    for (gno_t id=base; id < base+globalNrows; id++)
+    for (gno_t id=base; id < base+numGlobalCoords; id++)
       *tmp++ = id;
 
-    RCP<const map_t> fromMap = rcp(new map_t(globalNrows, 
-      rowIds.view(0, globalNrows), base, tcomm_));
+    RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords, 
+      rowIds.view(0, numGlobalCoords), base, tcomm_));
 
     tMVector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
 
@@ -597,7 +636,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   }
   else{
 
-    RCP<const map_t> fromMap = rcp(new map_t(globalNrows, 
+    RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords, 
       ArrayView<gno_t>(), base, tcomm_));
 
     tMVector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
