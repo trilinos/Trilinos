@@ -59,6 +59,8 @@ class Epetra_CrsMatrix;
 
 namespace panzer {
 
+class EpetraLinearObjContainer;
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer;
 
@@ -133,6 +135,9 @@ private:
   ScatterDirichletResidual_Epetra() {}
 
   Teuchos::RCP<Epetra_Vector> dirichletCounter_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 };
 
 // **************************************************************
@@ -189,6 +194,9 @@ private:
   std::size_t local_side_id_;
 
   Teuchos::RCP<Epetra_Vector> dirichletCounter_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
   ScatterDirichletResidual_Epetra();
 };
