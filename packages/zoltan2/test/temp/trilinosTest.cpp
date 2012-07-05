@@ -31,14 +31,14 @@ int main(int argc, char *argv[])
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   // Error: it's a pattern matrix.  (A graph, there are non non-zeros.)
-  // Can we read this in as a CrsGraph?
+  // packages/tpetra/inout/MatrixMarket_Tpetra.hpp line 1003
   //
   // string fname("commanche_dual.mtx"); 
 
   // Crash: 
-  //string fname("USAir97.mtx");
+  string fname("USAir97.mtx");
 
-  string fname("simple.mtx"); // This file is read without error
+  //string fname("simple.mtx"); // This file is read without error
 
   RCP<tcrsMatrix_t> M;
   RCP<Kokkos::DefaultNode::DefaultNodeType> dnode
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
   try{
     M = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-      fname, comm, dnode);
+      fname, comm, dnode, true, true);
   }
   catch (std::invalid_argument &e){
     cerr << e.what() << endl;

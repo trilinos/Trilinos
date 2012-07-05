@@ -454,18 +454,29 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << 
       shortPathName(fname, "test") << std::endl;
+
+  // This reader has some problems.  Until fixed, don't give
+  // up everything when the Reader fails.
  
+  bool aok = true;
   try{
     M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-      fname.str(), tcomm_, dnode);
+      fname.str(), tcomm_, dnode, true, true);
   }
   catch (std::exception &e) {
-    TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+    //TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+    aok = false;
   }
 
-  RCP<const xcrsMatrix_t> xm = 
-    Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+  if (aok){
+    RCP<const xcrsMatrix_t> xm = 
+      Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
+    xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+  }
+  else{
+    if (tcomm_->getRank() == 0)
+      std::cout << "UserInputForTests unable to read matrix." << std::endl;
+  }
 
   // Open the coordinate file.
 
