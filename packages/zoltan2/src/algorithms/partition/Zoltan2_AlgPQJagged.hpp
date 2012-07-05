@@ -476,7 +476,7 @@ int pqJagged_getNumThreads(){
  * Function to determine the minimum and maximum coordinate
  * in the given set of points.
  */
-template <typename scalar_t>
+template <typename scalar_t, typename lno_t>
 void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinates, scalar_t &minCoordinate, scalar_t &maxCoordinate,
 		const RCP<const Environment> &env, int numThreads,
 		lno_t *partitionedPointCoordinates, lno_t coordinateBegin, lno_t coordinateEnd, scalar_t *max_min_array /*sized nothreads * 2*/){
@@ -571,6 +571,7 @@ void pqJagged_getCutCoord_Weights(
 	}
 }
 
+template <typename scalar_t>
 void getNewCoordinates(const size_t &total_part_count, const scalar_t * totalPartWeights, bool *isDone, const scalar_t *cutPartRatios,
 		const scalar_t &totalWeight, const scalar_t &imbalanceTolerance, size_t &allDone, scalar_t *cutUpperBounds, scalar_t *cutLowerBounds,
 		scalar_t *cutCoordinates, const size_t &noCuts, const scalar_t &maxCoordinate, const scalar_t &minCoordinate){
@@ -808,7 +809,7 @@ void pqJagged_1DPart(scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_weights,
 			//all to all partweight send;
 			//get totalpartweights from different nodes sized total_part_count
 
-getNewCoordinates(total_part_count, totalPartWeights, isDone, cutPartRatios,
+getNewCoordinates<scalar_t>(total_part_count, totalPartWeights, isDone, cutPartRatios,
 					totalWeight, imbalanceTolerance, allDone, cutUpperBounds, cutLowerBounds,
 					cutCoordinates, noCuts,maxCoordinate, minCoordinate);
 		}
@@ -823,6 +824,7 @@ getNewCoordinates(total_part_count, totalPartWeights, isDone, cutPartRatios,
 
 
 
+template <typename scalar_t>
 void getNewCoordinates_simple(
 		const size_t &total_part_count, const scalar_t * totalPartWeights,
 		bool *isDone, const scalar_t *cutPartRatios,
@@ -1308,7 +1310,7 @@ void pqJagged_1DPart_simple(
 #endif
 
 
-			getNewCoordinates_simple(total_part_count, totalPartWeights, isDone, cutPartRatios,
+			getNewCoordinates_simple<scalar_t>(total_part_count, totalPartWeights, isDone, cutPartRatios,
 					globaltotalWeight, imbalanceTolerance, allDone, cutUpperBounds, cutLowerBounds,
 					cutCoordinates_tmp, noCuts,maxCoordinate, minCoordinate, leftClosestDistance[0],
 					rightClosestDistance[0],cutLowerWeight, cutUpperWeight,cutCoordinatesWork);
@@ -1690,7 +1692,7 @@ void AlgPQJagged(
 
 			//cout << "begin:" << coordinateBegin << " end: " << coordinateEnd << endl;
 
-			pqJagged_getMinMaxCoord<scalar_t>(comm, pqJagged_coordinates[i], minCoordinate,maxCoordinate,
+			pqJagged_getMinMaxCoord<scalar_t, lno_t>(comm, pqJagged_coordinates[i], minCoordinate,maxCoordinate,
 					env, numThreads, partitionedPointCoordinates, coordinateBegin, coordinateEnd, max_min_array);
 
 //			cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
