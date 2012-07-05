@@ -251,9 +251,12 @@ typedef struct {
     gni_cq_handle_t  unblock_mem_cq_hdl;  /* CQ to wait for unblock events */
     gni_mem_handle_t unblock_mem_hdl;     /* mem hdl to send to the server.  the server uses this mem hdl as the
                                            * remote hdl when posting (CQ write) the unblock message. */
+
+    uint64_t last_offset;
 } nnti_gni_client_queue;
 
 typedef struct {
+    NNTI_peer_t       peer;
     char             *peer_name;
     NNTI_ip_addr      peer_addr;
     NNTI_tcp_port     peer_port;
@@ -447,6 +450,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, gni_connection *c
 static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, gni_connection *conn);
 static gni_connection *get_conn_peer(const NNTI_peer_t *peer);
 static gni_connection *get_conn_instance(const NNTI_instance_id instance);
+static NNTI_peer_t *get_peer_by_url(const char *url);
 static gni_connection *del_conn_peer(const NNTI_peer_t *peer);
 static gni_connection *del_conn_instance(const NNTI_instance_id instance);
 static void print_peer_map(void);
@@ -953,6 +957,8 @@ NNTI_result_t NNTI_gni_connect (
     char params[NNTI_URL_LEN];
     char *sep;
 
+    NNTI_peer_t *existing_peer=NULL;
+
     char          hostname[NNTI_HOSTNAME_LEN];
     char          port_str[NNTI_HOSTNAME_LEN];
     NNTI_tcp_port port;
@@ -978,6 +984,12 @@ NNTI_result_t NNTI_gni_connect (
     assert(peer_hdl);
 
     log_debug(nnti_ee_debug_level, "enter (url=%s)", url);
+
+    existing_peer=get_peer_by_url(url);
+    if (existing_peer!=NULL) {
+        *peer_hdl=*existing_peer;
+        return(NNTI_OK);
+    }
 
     conn = (gni_connection *)calloc(1, sizeof(gni_connection));
     log_debug(nnti_debug_level, "calloc returned conn=%p.", conn);
@@ -1149,6 +1161,8 @@ NNTI_result_t NNTI_gni_connect (
             conn->peer_ptag,
             conn->peer_cookie,
             conn->peer_instance);
+
+    conn->peer=*peer_hdl;
 
     key=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
     copy_peer(peer_hdl, key);
@@ -3936,7 +3950,7 @@ static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
     log_debug(nnti_ee_debug_level, "enter");
 
     strncpy(dest->url, src->url, NNTI_URL_LEN);
-    dest->url[NNTI_URL_LEN]='\0';
+    dest->url[NNTI_URL_LEN-1]='\0';
 
     dest->peer.transport_id                       =NNTI_TRANSPORT_GEMINI;
     dest->peer.NNTI_remote_process_t_u.gni.addr   =src->peer.NNTI_remote_process_t_u.gni.addr;
@@ -4426,6 +4440,33 @@ static gni_connection *get_conn_instance(const NNTI_instance_id instance)
 
     log_debug(nnti_debug_level, "connection NOT found (instance==%llu)", (uint64_t)instance);
     print_instance_map();
+
+    return(NULL);
+}
+static NNTI_peer_t *get_peer_by_url(const char *url)
+{
+    gni_connection *conn = NULL;
+
+    log_debug(nnti_debug_level, "looking for url=%s", url);
+
+    conn_by_peer_iter_t i;
+    nthread_lock(&nnti_conn_peer_lock);
+    for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
+        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
+                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
+        if (strcmp(i->second->peer.url, url) == 0) {
+            conn=i->second;
+            break;
+        }
+    }
+    nthread_unlock(&nnti_conn_peer_lock);
+
+    if (conn != NULL) {
+        log_debug(nnti_debug_level, "peer found");
+        NNTI_peer_t *peer=(NNTI_peer_t*)malloc(sizeof(NNTI_peer_t));
+        *peer=conn->peer;
+        return peer;
+    }
 
     return(NULL);
 }
@@ -4933,12 +4974,7 @@ static void close_connection(gni_connection *c)
     log_debug(debug_level, "close_connection: exit");
 }
 
-/**
- * Check for new connections.  The listening socket is left nonblocking
- * so this test can be quick; but accept is not really that quick compared
- * to polling an Gemini interface, for instance.  Returns >0 if an accept worked.
- */
-static int check_listen_socket_for_new_connections()
+static int check_for_waiting_connection()
 {
     NNTI_result_t rc = NNTI_OK;
 
@@ -4954,7 +4990,7 @@ static int check_listen_socket_for_new_connections()
     if (s < 0) {
         if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
             log_debug(nnti_debug_level, "no connections waiting to be accepted: %s", strerror(errno));
-            rc = NNTI_OK;
+            rc = NNTI_EWOULDBLOCK;
             goto cleanup;
         } else {
             log_error(nnti_debug_level, "failed to accept tcp socket connection: %s", strerror(errno));
@@ -5019,6 +5055,23 @@ cleanup:
         if (key!=NULL)  free(key);
     }
     return rc;
+}
+
+/**
+ * Check for new connections.  The listening socket is left nonblocking
+ * so this test can be quick; but accept is not really that quick compared
+ * to polling an Gemini interface, for instance.  Returns >0 if an accept worked.
+ */
+static int check_listen_socket_for_new_connections()
+{
+    bool done=false;
+    while(!done) {
+        if (check_for_waiting_connection() != NNTI_OK) {
+            done=true;
+        }
+    }
+
+    return(NNTI_OK);
 }
 
 static uint32_t get_cpunum(void)
@@ -5551,7 +5604,7 @@ static int fetch_add_buffer_offset(
 
     log_level debug_level=nnti_debug_level;
 
-    static uint64_t last_offset=0;
+//    static uint64_t last_offset=0;
 
     log_debug(nnti_ee_debug_level, "enter");
 
@@ -5620,7 +5673,7 @@ static int fetch_add_buffer_offset(
                 if ((rc!=GNI_RC_SUCCESS) && (rc!=GNI_RC_NOT_DONE)) log_error(debug_level, "CqGetEvent(absorb extra unblocks) failed: %d", rc);
                 log_debug(debug_level, "absorbed %d extra unblocks)", extras_absorbed);
             }
-        } else if (*prev_offset < last_offset) {
+        } else if (*prev_offset < local_req_queue_attrs->last_offset) {
             uint64_t  ui64;
             uint32_t *ptr32=NULL;
 
@@ -5638,7 +5691,7 @@ static int fetch_add_buffer_offset(
         }
     } while (*prev_offset >= remote_req_queue_attrs->req_count);
 
-    last_offset=*prev_offset;
+    local_req_queue_attrs->last_offset=*prev_offset;
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -6153,6 +6206,9 @@ static int client_req_queue_init(
     alpsAppGni_t           *server_params  =&c->peer_alps_info;
     uint64_t                server_instance=c->peer_instance;
 
+    log_debug(nnti_debug_level, "enter");
+
+    q->last_offset=0;
 
     q->req_index=0;
     q->req_index_addr=(uint64_t)&q->req_index;
@@ -6229,6 +6285,7 @@ static int client_req_queue_init(
             server_instance);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(req_index_ep_hdl) failed: %d", rc);
 
+    log_debug(nnti_debug_level, "exit");
 }
 
 static int client_req_queue_destroy(
@@ -6237,7 +6294,7 @@ static int client_req_queue_destroy(
     int rc;
     log_level debug_level = nnti_debug_level;  // nnti_debug_level;
 
-    log_debug(debug_level, "client_req_queue_destroy: start");
+    log_debug(debug_level, "enter");
 
     nnti_gni_client_queue     *q=&c->queue_local_attrs;
 
@@ -6264,7 +6321,8 @@ static int client_req_queue_destroy(
     rc=GNI_CqDestroy (q->req_index_cq_hdl);
     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "CqDestroy() failed: %d", rc);
 
-    log_debug(debug_level, "client_req_queue_destroy: exit");
+    log_debug(debug_level, "exit");
+
     return(0);
 }
 
@@ -6277,6 +6335,7 @@ static int server_req_queue_init(
     int rc;
     gni_memory_handle *gni_mem_hdl=(gni_memory_handle *)q->reg_buf->transport_private;
 
+    log_debug(nnti_debug_level, "enter");
 
     q->req_buffer     =buffer;
     q->req_size       =req_size;
@@ -6344,6 +6403,8 @@ static int server_req_queue_init(
             (uint32_t)-1,
             &q->wc_mem_hdl);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemRegister(1) failed: %d", rc);
+
+    log_debug(nnti_debug_level, "exit");
 }
 
 static int server_req_queue_destroy(
@@ -6351,6 +6412,8 @@ static int server_req_queue_destroy(
 {
     int rc;
     gni_memory_handle *gni_mem_hdl=(gni_memory_handle *)q->reg_buf->transport_private;
+
+    log_debug(nnti_debug_level, "enter");
 
     rc=GNI_MemDeregister (
             transport_global_data.nic_hdl,
@@ -6374,6 +6437,8 @@ static int server_req_queue_destroy(
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqDestroy() failed: %d", rc);
 
     free(q->wc_buffer);
+
+    log_debug(nnti_debug_level, "exit");
 }
 
 #define LISTEN_IFACE_BASENAME "ipog"
