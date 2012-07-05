@@ -12,7 +12,6 @@
 #define _ZOLTAN2_COORDINATEINPUT_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 #include <string>
@@ -65,7 +64,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class CoordinateInput : public InputAdapter {
+  class CoordinateInput : public InputAdapter<User> {
 
 public:
 

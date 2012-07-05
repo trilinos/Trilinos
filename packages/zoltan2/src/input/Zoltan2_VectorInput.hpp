@@ -13,7 +13,6 @@
 #define _ZOLTAN2_VECTORINPUT_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 namespace Zoltan2 {
@@ -62,7 +61,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class VectorInput : public InputAdapter {
+  class VectorInput : public InputAdapter<User> {
 private:
 
 public:

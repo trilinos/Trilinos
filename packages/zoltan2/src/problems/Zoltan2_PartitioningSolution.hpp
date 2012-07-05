@@ -16,7 +16,6 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
-#include <Zoltan2_Metric.hpp>
 #include <Zoltan2_GetParameter.hpp>
 
 #include <cmath>
@@ -31,7 +30,9 @@ namespace Zoltan2 {
     written to by an algorithm, and may be read by the user or by
     a data migration routine in an input adapter.
     
-    \todo handle more metrics
+    \todo Problem computes metrics using the Solution.  Should
+  Solution have a pointer to the metrics, since it may persist after
+  the Problem is gone?
     \todo save an RCB tree, so it can be used in repartitioning, and
                 supplied to the caller.
     \todo doxyfy the comments in this file.
@@ -59,8 +60,8 @@ public:
  *    \param comm the communicator for the problem associated with 
  *             this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
- *    \param userWeightDim  the number of weights supplied by the application
- *                         for each object.
+ *    \param userWeightDim  the number of weights supplied by the 
+ *         application for each object.
  *
  *   It is possible that part sizes were supplied on other processes,
  *   so this constructor does do a check to see if part sizes need
@@ -78,10 +79,11 @@ public:
  *   The rest of the Solution methods do not.
  *
  *    \param env the environment for the application
- *    \param comm the communicator for the problem associated with this solution
+ *    \param comm the communicator for the problem associated with 
+ *                        this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
- *    \param userWeightDim  the number of weights supplied by the application
- *                         for each object.
+ *    \param userWeightDim  the number of weights supplied 
+ *                         by the application
  *    \param reqPartIds  reqPartIds[i] is a list of
  *          of part numbers for weight dimension i.
  *    \param reqPartSizes  reqPartSizes[i] is the list
@@ -104,19 +106,31 @@ public:
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
     int userWeightDim, ArrayView<ArrayRCP<partId_t> > reqPartIds,
-    ArrayView<ArrayRCP<scalar_t> > reqPartSizes );
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
   
   ////////////////////////////////////////////////////////////////////
   // Information that the algorithm may wish to query.
   
-/*! \brief Returns the global number of parts.
+/*! \brief Returns the global number of parts desired in the solution.
  */
-  size_t getGlobalNumberOfParts() const { return nGlobalParts_; }
+  size_t getTargetGlobalNumberOfParts() const { return nGlobalParts_; }
   
-/*! \brief Returns the number of parts (or fraction of one part) to 
-            be assigned to this process.
+/*! \brief Returns the actual global number of parts provided in setParts().
  */
-  scalar_t getLocalNumberOfParts() const { return nLocalParts_; }
+  size_t getActualGlobalNumberOfParts() const { return nGlobalPartsSolution_; }
+  
+/*! \brief Returns the number of parts to be assigned to this process.
+ */
+  size_t getLocalNumberOfParts() const { return nLocalParts_; }
+  
+/*! \brief If parts are divided across processes, return the fraction of
+             a part on this process.
+    \return zero if parts are not split across processes, approximate
+                fraction of the part otherwise.
+    \todo More useful to get number of processes owning part?  Or
+              not useful at all - remove this?
+ */
+  scalar_t getLocalFractionOfPart() const { return localFraction_; }
   
 /*! \brief Is the part-to-process distribution is one-to-one.
      \return true if Process p owns part p for all p, and false if the part
@@ -229,8 +243,6 @@ public:
    *      should be in partList[i].  The partList is allocated and written
    *      by the algorithm.
    *
-   *   \param metrics An array of named MetricValues objects.
-   *
    * The global numbers supplied by the algorithm do not need to be
    * those representing the global Ids of that process.  But
    * all global numbers should be assigned a part by exactly one
@@ -239,14 +251,10 @@ public:
    * setParts() must be called by all processes in the problem, as
    * the part for each global identifier supplied by each process
    * in its InputAdapter is found and saved in this PartitioningSolution.
-   *
-   * TODO - metrics are only computed if the user sets a parameter 
-   * indicating that they want metrics.  Metrics will be calculated
-   * in the Solution, not in the algorithm.
    */
   
-  void setParts(ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
-    ArrayRCP<MetricValues<scalar_t> > &metrics);
+  void setParts(ArrayRCP<const gno_t> &gnoList, 
+    ArrayRCP<partId_t> &partList);
   
   ////////////////////////////////////////////////////////////////////
   // Results that may be queried by the user, by migration methods,
@@ -311,40 +319,6 @@ public:
       ArrayRCP<Extra> &xtraInfo,
       ArrayRCP<typename Adapter::gid_t> &imports,
       ArrayRCP<Extra> &newXtraInfo) const;
-
-  /*! \brief Returns the imbalance of the solution.
-   *      \todo add more metrics
-   */
-  const scalar_t getImbalance() const { 
-    size_t len = qualityMetrics_.size();
-    if (len == 1)
-      return qualityMetrics_[0].getMaxImbalance();   // object counts
-    else if (len > 1)
-      return qualityMetrics_[1].getMaxImbalance();   // normed object weights
-    else
-      return 0.0;
-  }
-
-  /*! \brief Get the array of metrics
-   *
-   *   \todo We need a better interface for users to this data.
-   */
-  const ArrayRCP<MetricValues<scalar_t> > &getMetrics() const { 
-    return qualityMetrics_;
-  }
-
-  /*! \brief Print the array of metrics
-   *   \param os the output stream for the report.
-   */
-  void printMetrics(ostream &os) const {
-    size_t len = qualityMetrics_.size();
-    if (len)
-      Zoltan2::printMetrics<scalar_t>(os, 
-        nGlobalParts_, nGlobalParts_, nGlobalParts_ - nEmptyParts_,
-        qualityMetrics_.view(0, len));
-    else
-      os << "No metrics available." << endl;
-  };
 
   /*! \brief Get the parts belonging to a process.
    *  \param procId a process rank
@@ -414,9 +388,10 @@ private:
   RCP<const Comm<int> > comm_;             // the problem communicator
   RCP<const IdentifierMap<user_t> > idMap_;
 
-  gno_t nGlobalParts_; // the global number of parts
-  gno_t nEmptyParts_; // number of parts in solution with no objects
-  scalar_t nLocalParts_; // Fraction of one part, or number of whole parts
+  gno_t nGlobalParts_;// target global number of parts
+  lno_t nLocalParts_; // number of parts to be on this process
+
+  scalar_t localFraction_; // approx fraction of a part on this process
   int weightDim_;      // if user has no weights, this is 1
 
   // If process p is to be assigned part p for all p, then onePartPerProc_ 
@@ -493,8 +468,9 @@ private:
   ArrayRCP<const gid_t>  gids_;   // User's global IDs 
   ArrayRCP<partId_t> parts_;      // part number assigned to gids_[i]
 
-  ArrayRCP<MetricValues<scalar_t> > qualityMetrics_;
   bool haveSolution_;
+
+  gno_t nGlobalPartsSolution_; // global number of parts in solution
 
   ////////////////////////////////////////////////////////////////
   // The solution calculates this from the part assignments,
@@ -513,10 +489,12 @@ template <typename Adapter>
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
+      nGlobalParts_(0), nLocalParts_(0),
+      localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), qualityMetrics_(), haveSolution_(false), procs_()
+      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
+      procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -543,10 +521,12 @@ template <typename Adapter>
     ArrayView<ArrayRCP<partId_t> > reqPartIds, 
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
+      nGlobalParts_(0), nLocalParts_(0), 
+      localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), qualityMetrics_(), haveSolution_(false), procs_()
+      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0), 
+      procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -581,7 +561,7 @@ template <typename Adapter>
   if (isSet){
     haveLocalNumParts = 1;
     numLocal = static_cast<int>(val);
-    nLocalParts_ = gno_t(numLocal);
+    nLocalParts_ = lno_t(numLocal);
   }
 
   try{
@@ -606,7 +586,8 @@ template <typename Adapter>
       int pend = partDist_[i];
       if (rank >= pstart && rank < pend){
         int numOwners = pend - pstart;
-        nLocalParts_ = 1.0 / numOwners;
+        nLocalParts_ = 1;
+        localFraction_ = 1.0 / numOwners;
         break;
       }
       pstart = pend;
@@ -1095,25 +1076,30 @@ template <typename Adapter>
 
 template <typename Adapter>
   void PartitioningSolution<Adapter>::setParts(
-    ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
-    ArrayRCP<MetricValues<scalar_t> > &metrics) 
+    ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList)
 {
   env_->debug(DETAILED_STATUS, "Entering setParts");
-  qualityMetrics_ = metrics;
 
-  // We'll flag parts that are used, for calculation of nEmptyParts_.
-  // TODO: Add a parameter where user indicates they will want
-  //   metrics.   And if that is not specified, we can skip
-  //   counting empty parts.
+  size_t len = partList.size();
 
-  char *inUse = new char [nGlobalParts_];
-  env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalParts_, inUse);
-  memset(inUse, 0, nGlobalParts_);
-  ArrayRCP<char> partFlag(inUse, 0, nGlobalParts_, true);
+  // Find the actual number of parts in the solution, which can
+  // be more or less than the nGlobalParts_ target.
+  // (We may want to compute the imbalance of a given solution with
+  // respect to a desired solution.  This solution may have more or
+  // fewer parts that the desired solution.)
 
-  // Find the owners of the global numbers.
+  std::pair<partId_t, partId_t> minMaxLocal =
+    IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len);
 
-  size_t len = gnoList.size();
+  partId_t gMax, gMin;
+
+  IdentifierTraits<partId_t>::globalMinMax(*comm_, 
+    minMaxLocal.first, minMaxLocal.second, gMin, gMax);
+      
+  nGlobalPartsSolution_ = gMax - gMin + 1;
+
+  // We send part information to the process that "owns" the global number.
+
   ArrayView<gid_t> emptyView;
   ArrayView<int> procList;
 
@@ -1164,7 +1150,6 @@ template <typename Adapter>
     
       for (size_t i=0; i < len; i++){
         countOutBuf[procList[i]]+=2;
-        partFlag[partList[i]] = 1;
       }
     
       offsetBuf[0] = 0;
@@ -1179,7 +1164,6 @@ template <typename Adapter>
         offsetBuf[p]+=2;
       }
   
-      delete [] procList.getRawPtr();
       delete [] tmpOff;
     }
   
@@ -1228,13 +1212,8 @@ template <typename Adapter>
     partList = parts;
     len = newLen;
   }
-  else{
-    if (len){
-      delete [] procList.getRawPtr();
-      for (size_t i=0; i < len; i++)
-        partFlag[partList[i]] = 1;
-    }
-  }
+
+  delete [] procList.getRawPtr();
   
   if (idMap_->gnosAreGids()){
     gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
@@ -1276,8 +1255,8 @@ template <typename Adapter>
     }
     else{  // harder - we need to split the parts across multiple procs
 
-      lno_t *partCounter = new lno_t [nGlobalParts_];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalParts_, 
+      lno_t *partCounter = new lno_t [nGlobalPartsSolution_];
+      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalPartsSolution_, 
         partCounter);
 
       int numProcs = comm_->getSize();
@@ -1312,6 +1291,12 @@ template <typename Adapter>
       delete [] partCounter;
 
       for (lno_t i=0; i < partList.size(); i++){
+        if (partList[i] >= nGlobalParts_){
+          // Solution has more parts that targeted.  These
+          // objects just remain on this process.
+          procs[i] = comm_->getRank();
+          continue;
+        }
         partId_t partNum = parts[i];
         int proc1 = partDist_[partNum];
         int proc2 = partDist_[partNum + 1];
@@ -1331,54 +1316,6 @@ template <typename Adapter>
       delete [] procCounter;
     }
   }
-
-  // Globally, how many empty parts are there.  This is helpful
-  // information when looking at imbalance numbers.
-  // TODO: Add a parameter where user indicates they will want
-  //   metrics.   And if that is not specified, we can skip
-  //   counting non empty parts.
-
-  int *rcounts = new int [nprocs];
-  env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, rcounts);
-  memset(rcounts, 0, sizeof(int) * nprocs);
-  ArrayRCP<int> recvCounts(rcounts, 0, nprocs, true);
-
-  if (onePartPerProc_)
-    for (int i=0; i < nprocs; i++)
-      recvCounts[i] = 1;
-  else if (procDist_.size())
-    for (int i=0; i < nprocs; i++)
-      recvCounts[i] = procDist_[i+1] - procDist_[i];
-  else
-    for (partId_t i=0; i < nGlobalParts_; i++)
-      recvCounts[partDist_[i]] = 1;
-
-  partId_t numMyFlags = recvCounts[rank];
-  ArrayRCP<char> myFlags;
-  char *recvBuf = NULL;
-  if (numMyFlags > 0){
-    recvBuf = new char [numMyFlags];
-    env_->localMemoryAssertion(__FILE__, __LINE__, numMyFlags, recvBuf);
-    myFlags = arcp(recvBuf, 0, numMyFlags, true);
-  }
-
-  try{
-    Teuchos::reduceAllAndScatter<int, char>(*comm_, Teuchos::REDUCE_MAX,
-      nGlobalParts_, partFlag.getRawPtr(), 
-      recvCounts.getRawPtr(), recvBuf);
-  }
-  Z2_THROW_OUTSIDE_ERROR(*env_);
-
-  gno_t myNumEmptyParts = 0;
-  for (int i=0; i < numMyFlags; i++)
-    if (recvBuf[i] == 0)
-      myNumEmptyParts++;
-
-  try{
-    Teuchos::reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 
-      1, &myNumEmptyParts, &nEmptyParts_);
-  }
-  Z2_THROW_OUTSIDE_ERROR(*env_);
 
   haveSolution_ = true;
 
@@ -1493,6 +1430,12 @@ template <typename Adapter>
   void PartitioningSolution<Adapter>::partToProcsMap(partId_t partId, 
     int &procMin, int &procMax) const
 {
+  if (partId >= nGlobalParts_){
+    // setParts() may be given an initial solution which uses a
+    // different number of parts than the desired solution.  It is
+    // still a solution.  We keep it on this process.
+    procMin = procMax = comm_->getRank();
+  }
   if (onePartPerProc_){
     procMin = procMax = int(partId);
   }

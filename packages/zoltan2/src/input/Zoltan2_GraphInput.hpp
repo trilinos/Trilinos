@@ -15,7 +15,6 @@
 #define _ZOLTAN2_GRAPHINPUT_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 namespace Zoltan2 {
@@ -58,7 +57,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class GraphInput : public InputAdapter {
+  class GraphInput : public InputAdapter<User> {
 private:
 
 public:

@@ -1,292 +1,271 @@
 // @HEADER
 // ***********************************************************************
-//                Copyright message goes here.
+//                Copyright message goes here.   TODO
 // ***********************************************************************
+// @HEADER
 //
-// Test for Zoltan2::BasicCoordinateInput
+// Test the following:
+//         PartitioningSolutionQuality class
+//         MetricValues class
+//         Metric related namespace methods
 
-/*! \file Metric.cpp
- *
- *  \brief Tests the Zoltan2_Metric.hpp functions.
- *  \todo test for exceptions
- *  \todo We need to check the correctness of the functions.
- */
 
+#include <Zoltan2_PartitioningSolutionQuality.hpp>
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_Metric.hpp>
+#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <stdlib.h>
+#include <vector>
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_DefaultComm.hpp>
+typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
+typedef Zoltan2::BasicIdentifierInput<user_t> idInput_t;
+typedef Zoltan2::PartitioningSolutionQuality<idInput_t> quality_t;
 
-using Teuchos::Array;
 using Teuchos::ArrayRCP;
+using Teuchos::Array;
 using Teuchos::RCP;
-using Teuchos::ArrayView;
 using Teuchos::rcp;
-
-using Zoltan2::StridedData;
-using Zoltan2::Environment;
-using Zoltan2::MetricValues;
-using Zoltan2::objectMetrics;
-using Zoltan2::printMetrics;
+using Teuchos::arcp;
 
 using namespace std;
+using std::endl;
+using std::cout;
 
-void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
-{
-  int nprocs = comm->getSize();
-  int rank = comm->getRank();
-  RCP<const Environment> env = rcp(new Environment);
-  
-  int numLocalObj = 10;
-  int numGlobalParts = nprocs;
+typedef zoltan2_partId_t partId_t;
 
-  // Create three different weight arrays.
-
-  Array<scalar_t> weights(3*numLocalObj);
-  scalar_t *wgt = weights.getRawPtr();
-
-  for (int i=0; i < numLocalObj; i++)
-    wgt[i] = (i%2) + 1.0;
-
-  ArrayRCP<scalar_t> upDownWeights(wgt, 0, numLocalObj, false);
-
-  wgt += numLocalObj;
-  for (int i=0; i < numLocalObj; i++)
-    wgt[i] = 1.0;
-
-  ArrayRCP<scalar_t> uniformWeights(wgt, 0, numLocalObj, false);
-
-  wgt += numLocalObj;
-  for (int i=0; i < numLocalObj; i++)
-    wgt[i] = (i < numLocalObj/2)? 1.0 : 2.0;
-
-  ArrayRCP<scalar_t> heavyHalfWeights(wgt, 0, numLocalObj, false);
-
-  typedef StridedData<lno_t, scalar_t> strided_t;
-
-  strided_t w1(upDownWeights, 1);
-  strided_t w2(uniformWeights, 1);
-  strided_t w3(heavyHalfWeights, 1);
-
-  // Create three different part size arrays.
-
-  Array<scalar_t> partSizes(3*numGlobalParts);
-  scalar_t *psize = partSizes.getRawPtr();
-  scalar_t psizeTotal = 0;
-
-  for (int i=0; i < numGlobalParts; i++)
-    psize[i] = 1.0 / numGlobalParts;
-
-  scalar_t *uniformParts = psize;
-
-  psize += numGlobalParts;
-  for (int i=0; i < numGlobalParts; i++){
-    psize[i] = (i ? 1.0 : 2.0);
-    psizeTotal += psize[i];
-  }
-
-  for (int i=0; i < numGlobalParts; i++)
-    psize[i] /= psizeTotal;
-
-  scalar_t *oneBigPart = psize;
-
-  psize += numGlobalParts;
-  psizeTotal = 0;
-  for (int i=0; i < numGlobalParts; i++){
-    psize[i] = (i%2 ? 1.0 : 2.0);
-    psizeTotal += psize[i];
-  }
-
-  for (int i=0; i < numGlobalParts; i++)
-    psize[i] /= psizeTotal;
-
-  scalar_t *alternatingSizeParts = psize;
-
-  ArrayView<scalar_t> p1(uniformParts, numGlobalParts);
-  ArrayView<scalar_t> p2(oneBigPart, numGlobalParts);
-  ArrayView<scalar_t> p3(alternatingSizeParts, numGlobalParts);
-
-  // Create a local part assignment array.
-
-  Array<zoltan2_partId_t> parts(numLocalObj);
-  for (int i=0; i < numLocalObj; i++){
-    parts[i] = i % numGlobalParts;
-  }
-
-  // A multicriteria norm:
-  // normMinimizeTotalWeight, normBalanceTotalMaximum or 
-  // normMinimizeMaximumWeight
-
-  Zoltan2::multiCriteriaNorm mcnorm = Zoltan2::normBalanceTotalMaximum;
-
-  /*! \test Multiple non-uniform weights and part sizes
-   */
-
-  Array<strided_t> threeWeights(3);
-  threeWeights[0] = w1;
-  threeWeights[1] = w2;
-  threeWeights[2] = w3;
-
-
-  Array<ArrayView< scalar_t> > threePartSizes(3);
-  threePartSizes[0] = p1;
-  threePartSizes[1] = p2;
-  threePartSizes[2] = p3;
-
-  zoltan2_partId_t numParts, numNonemptyParts;
-  ArrayRCP<MetricValues<scalar_t> > metrics;
-
-  objectMetrics<scalar_t, lno_t>(env, comm, 
-    numGlobalParts, threePartSizes.view(0,3), parts.view(0,numLocalObj),
-    threeWeights.view(0,3), mcnorm,
-    numParts, numNonemptyParts, metrics);
-
-  if (rank == 0)
-    printMetrics(std::cout, 
-      numGlobalParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
-
-  /*! \test Multiple non-uniform weights but uniform part sizes
-   */
-
-  mcnorm = Zoltan2::normMinimizeTotalWeight;
-
-  objectMetrics<scalar_t, lno_t>(env, comm, 
-    numGlobalParts, parts.view(0,numLocalObj),
-    threeWeights.view(0,3), mcnorm,
-    numParts, numNonemptyParts, metrics);
-
-  if (rank == 0)
-    printMetrics(std::cout, 
-      numGlobalParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
-
-  /*! \test One weight with non-uniform part sizes
-   */
-
-  objectMetrics<scalar_t, lno_t>(env, comm, 
-    numGlobalParts, parts.view(0,numLocalObj), w1, 
-    numParts, numNonemptyParts, metrics);
-
-  if (rank==0)
-    printMetrics(std::cout, 
-      numGlobalParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
-
-  /*! \test One weight with uniform part sizes
-   */
-
-  objectMetrics<scalar_t, lno_t>(env, comm, 
-    numGlobalParts, parts.view(0,numLocalObj), w1, 
-    numParts, numNonemptyParts, metrics);
-
-  if (rank==0)
-    printMetrics(std::cout, 
-      numGlobalParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
-
-  /*! \test Weights and part sizes are uniform.
-   */
-
-  objectMetrics<scalar_t, lno_t>(env, comm, numGlobalParts, 
-    parts.view(0,numLocalObj),
-    numParts, numNonemptyParts, metrics);
-
-  if (rank==0)
-    printMetrics(std::cout, 
-      numGlobalParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
-
-
-  /*! \test Target number of parts is greater than current, non-uniform
-   *            weights and part sizes.
-   */
-
-  int targetNumParts = numGlobalParts + 2;
-  ArrayView<scalar_t> newPartSizeList(partSizes.getRawPtr(), targetNumParts);
-  psizeTotal = 0;
-  for (int i=0; i < targetNumParts; i++)
-    psizeTotal += newPartSizeList[i];
-  for (int i=0; i < targetNumParts; i++)
-    newPartSizeList[i] /= psizeTotal;
-
-  objectMetrics<scalar_t, lno_t>(env, comm, 
-    targetNumParts, newPartSizeList, 
-    parts.view(0,numLocalObj), w1, 
-    numParts, numNonemptyParts, metrics);
-
-  if (rank==0)
-    printMetrics(std::cout, 
-      targetNumParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
-
-
-  /*! \test Target number of parts is greater than current, uniform
-   *            weights and part sizes.
-   */
-
-  objectMetrics<scalar_t, lno_t>(env, comm, targetNumParts, 
-    parts.view(0,numLocalObj),
-    numParts, numNonemptyParts, metrics);
-
-  if (rank==0)
-    printMetrics(std::cout, 
-      targetNumParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
-
-  if (nprocs > 2){
-
-    /*! \test Target number of parts is less than current, non-uniform
-     *            weights and part sizes.
-     */
-  
-    int targetNumParts = numGlobalParts - 1;
-    newPartSizeList = ArrayView<scalar_t>(
-      partSizes.getRawPtr(), targetNumParts);
-    psizeTotal = 0;
-    for (int i=0; i < targetNumParts; i++)
-      psizeTotal += newPartSizeList[i];
-    for (int i=0; i < targetNumParts; i++)
-      newPartSizeList[i] /= psizeTotal;
-  
-    objectMetrics<scalar_t, lno_t>(env, comm, targetNumParts, newPartSizeList,
-      parts.view(0,numLocalObj), w1, 
-      numParts, numNonemptyParts, metrics);
-
-    if (rank==0)
-      printMetrics(std::cout, 
-        targetNumParts, numParts, numNonemptyParts, 
-        metrics.view(0,metrics.size()));
-  
-    /*! \test Target number of parts is less than current, uniform
-     *            weights and part sizes.
-     */
-  
-    objectMetrics<scalar_t, lno_t>(env, comm, targetNumParts,
-      parts.view(0,numLocalObj),
-      numParts, numNonemptyParts, metrics);
-
-    if (rank==0)
-      printMetrics(std::cout, 
-        targetNumParts, numParts, numNonemptyParts, 
-        metrics.view(0,metrics.size()));
-  }
-
-  return;
-}
+void doTest(RCP<const Comm<int> > comm, int numLocalObj,
+  int weightDim, int numLocalParts, bool givePartSizes);
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  int rank = comm->getRank();
 
-  MetricTest(comm);
+  doTest(comm, 10, 0, -1, false);
+  doTest(comm, 10, 0, 1, false);
+  doTest(comm, 10, 0, 1, true);
+  doTest(comm, 10, 1, 1, false);
+  doTest(comm, 10, 1, 1, true);
+  doTest(comm, 10, 2, 1, false);
+  doTest(comm, 10, 2, 1, true);
+  doTest(comm, 10, 1, 2, true);
+  doTest(comm, 10, 1, 2, false);
+  doTest(comm, 10, 1, -1, false);
+  doTest(comm, 10, 1, -1, true);
+  doTest(comm, 10, 2, -1, false);
 
-  if (comm->getRank() == 0)
-    std::cout << "PASS" << std::endl;
-
-  return 0;
+  if (rank==0)
+    cout << "PASS" << endl;
 }
 
+// Assumes numLocalObj is the same on every process.
+
+#include <Zoltan2_GetParameter.hpp>
+
+
+void doTest(RCP<const Comm<int> > comm, int numLocalObj,
+  int weightDim, int numLocalParts, bool givePartSizes)
+{
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
+  int fail=0;
+  srand(rank+1);
+  bool testEmptyParts = (numLocalParts < 1);
+  int numGlobalParts = 0;
+
+  if (testEmptyParts){
+    numGlobalParts = nprocs / 2;
+    if (numGlobalParts >= 1)
+      numLocalParts = (rank < numGlobalParts ? 1 : 0);
+    else{
+      numLocalParts = 1;
+      testEmptyParts = false;
+    }
+  }
+  else{
+    numGlobalParts = nprocs * numLocalParts;
+  }
+
+  if (rank == 0){
+    cout << endl;
+    cout << "Test: weight dimension " << weightDim;
+    cout << ", desired number of parts " << numGlobalParts;
+    if (givePartSizes)
+      cout << ", with differing part sizes." << endl;
+    else
+      cout << ", with uniform part sizes." << endl;
+    cout << "Number of procs " << nprocs;
+    cout << ", each with " << numLocalObj << " objects, part = rank." << endl;
+  }
+
+  // An environment.  This is usually created by the problem.
+
+  Teuchos::ParameterList pl("test list");
+  Teuchos::ParameterList &partitioningParams = pl.sublist("partitioning");
+  partitioningParams.set("num_local_parts", double(numLocalParts));
+  
+  RCP<const Zoltan2::Environment> env = 
+    rcp(new Zoltan2::Environment(pl, comm));
+
+  // A simple identifier map.  Usually created by the model.
+
+  gno_t *myGids = new gno_t [numLocalObj];
+  for (int i=0, x=rank*numLocalObj; i < numLocalObj; i++, x++){
+    myGids[i] = x;
+  }
+
+  ArrayRCP<const gno_t> gidArray(myGids, 0, numLocalObj, true);
+
+  RCP<const Zoltan2::IdentifierMap<user_t> > idMap = 
+    rcp(new Zoltan2::IdentifierMap<user_t>(env, comm, gidArray)); 
+
+  // Part sizes.  Usually supplied by the user to the Problem.
+  // Then the problem supplies them to the Solution.
+
+  int partSizeDim = (givePartSizes ? (weightDim ? weightDim : 1) : 0);
+  ArrayRCP<ArrayRCP<partId_t> > ids(partSizeDim);
+  ArrayRCP<ArrayRCP<scalar_t> > sizes(partSizeDim);
+
+  if (givePartSizes && numLocalParts > 0){
+    partId_t *myParts = new partId_t [numLocalParts];
+    myParts[0] = rank * numLocalParts;
+    for (int i=1; i < numLocalParts; i++)
+      myParts[i] = myParts[i-1] + 1;
+    ArrayRCP<partId_t> partNums(myParts, 0, numLocalParts, true);
+
+    scalar_t sizeFactor = nprocs/2 - rank;
+    if (sizeFactor < 0) sizeFactor *= -1;
+    sizeFactor += 1;
+
+    for (int dim=0; dim < partSizeDim; dim++){
+      scalar_t *psizes = new scalar_t [numLocalParts];
+      for (int i=0; i < numLocalParts; i++)
+        psizes[i] = sizeFactor;
+      sizes[dim] = arcp(psizes, 0, numLocalParts, true);
+      
+      ids[dim] = partNums;
+    }
+  }
+
+  // An input adapter with random weights.  Created by the user.
+
+  std::vector<const scalar_t *> weights;
+  std::vector<int> strides;   // default to 1
+
+  int len = numLocalObj*weightDim;
+  ArrayRCP<scalar_t> wgtBuf;
+  scalar_t *wgts = NULL;
+
+  if (len > 0){
+    wgts = new scalar_t [len];
+    wgtBuf = arcp(wgts, 0, len, true);
+    for (int i=0; i < len; i++)
+      wgts[i] = (scalar_t(rand()) / scalar_t(RAND_MAX)) + 1.0;
+  }
+
+  for (int i=0; i < weightDim; i++, wgts+=numLocalObj)
+    weights.push_back(wgts);
+
+  RCP<const idInput_t> ia;
+
+  try{
+    ia = rcp(new idInput_t(numLocalObj, myGids, weights, strides));
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "create adapter", 1);
+
+  // A solution (usually created by a problem)
+
+  RCP<Zoltan2::PartitioningSolution<idInput_t> > solution;
+
+  try{
+    if (givePartSizes)
+      solution = rcp(new Zoltan2::PartitioningSolution<idInput_t>(
+        env, comm, idMap, weightDim,
+        ids.view(0,partSizeDim), sizes.view(0,partSizeDim)));
+    else
+      solution = rcp(new Zoltan2::PartitioningSolution<idInput_t>(
+        env, comm, idMap, weightDim));
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "create solution", 1);
+
+  // Part assignment for my objects: The algorithm usually calls this. 
+
+  partId_t *partNum = new partId_t [numLocalObj];
+  ArrayRCP<partId_t> partAssignment(partNum, 0, numLocalObj, true);
+  for (int i=0; i < numLocalObj; i++)
+    partNum[i] = rank;
+
+  solution->setParts(gidArray, partAssignment);
+  RCP<const Zoltan2::PartitioningSolution<idInput_t> > solutionConst =
+    rcp_const_cast<const Zoltan2::PartitioningSolution<idInput_t> >(solution);
+
+  // create metric object (also usually created by a problem)
+
+  RCP<quality_t> metricObject;
+
+  try{
+    metricObject = rcp(new quality_t(env, comm, ia, solutionConst));
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "compute metrics", 1);
+
+
+  if (rank==0){
+    scalar_t imb;
+    try{
+      metricObject->getObjectCountImbalance(imb); 
+      cout << "Object imbalance: " << imb << endl;
+    }
+    catch (std::exception &e){
+      fail=1;
+    }
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getObjectCountImbalance", 1);
+
+  if (rank==0 && weightDim > 0){
+    scalar_t imb;
+    try{
+      for (int i=0; i < weightDim; i++){
+        metricObject->getWeightImbalance(imb, i);
+        cout << "Weight " << i << " imbalance: " << imb << endl;
+      }
+    }
+    catch (std::exception &e){
+      fail=10;
+    }
+    if (!fail && weightDim > 1){
+      try{
+        metricObject->getNormedImbalance(imb);
+        cout << "Normed weight imbalance: " << imb << endl;
+      }
+      catch (std::exception &e){
+        fail=11;
+      }
+    }
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "get imbalances", 1);
+  
+  if (rank==0){
+    try{
+      metricObject->printMetrics(cout);
+    }
+    catch (std::exception &e){
+      fail=1;
+    }
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "print metrics", 1);
+}

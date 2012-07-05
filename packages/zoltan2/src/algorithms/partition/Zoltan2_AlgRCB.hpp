@@ -13,7 +13,6 @@
 
 #include <Zoltan2_AlgRCB_methods.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
-#include <Zoltan2_Metric.hpp>             // won't need this
 #include <Zoltan2_GetParameter.hpp>
 
 #include <Teuchos_ParameterList.hpp>
@@ -213,7 +212,7 @@ void AlgRCB(
   // If the part sizes for a given criteria are not uniform,
   // then they are values that sum to 1.0.
 
-  size_t numGlobalParts = solution->getGlobalNumberOfParts();
+  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   Array<bool> uniformParts(criteriaDim);
   Array<ArrayRCP<scalar_t> > partSizes(criteriaDim);
@@ -501,35 +500,7 @@ void AlgRCB(
   }
 
   ////////////////////////////////////////////////////////
-  // Done: Compute quality metrics and update the solution
-  // TODO: The algorithm will not compute the metrics.
-  // It provides the solution to the PartitioningSolution.
-  // Metrics can be computed with a method that takes
-  // a model and a solution.
-
-  ArrayRCP<MetricValues<scalar_t> > metrics;
-  partId_t numParts, numNonemptyParts;
-
-  ArrayRCP<input_t> objWgt(new input_t [criteriaDim], 0, criteriaDim, true);
-  Array<ArrayView<scalar_t> > partSizeArrays(criteriaDim);
-
-  for (int wdim = 0, widx=coordDim; wdim < criteriaDim; wdim++){
-    if (!uniformWeights[wdim]){
-      objWgt[wdim] = input_t(mvector->getData(widx++), 1);
-    }
-    if (partSizes[wdim].size() > 0)
-      partSizeArrays[wdim] = 
-        ArrayView<scalar_t>(partSizes[wdim].getRawPtr(), numGlobalParts);
-  }
-
-  // global call
-  objectMetrics<scalar_t, lno_t>(
-    env, problemComm, numGlobalParts,                  // input
-    partSizeArrays.view(0, criteriaDim),               // input
-    partId.view(0, numLocalCoords),                    // input
-    objWgt.view(0, criteriaDim), mcnorm,               // input
-    numParts, numNonemptyParts, metrics);              // output
-
+  // Done: update the solution
 
   ArrayRCP<const gno_t> gnoList = 
     arcpFromArrayView(mvector->getMap()->getNodeElementList());
@@ -544,8 +515,7 @@ void AlgRCB(
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
-
-  solution->setParts(gnoList, partId, metrics);
+  solution->setParts(gnoList, partId);
 }
 
 } // namespace Zoltan2

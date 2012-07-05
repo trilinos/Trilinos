@@ -133,6 +133,11 @@ public:
 
   int getNumberOfWeightsPerObject() const { return numWeights_;}
 
+  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  {
+    return getCoordinateWeights(dim, wgt, stride);
+  }
+
   ////////////////////////////////////////////////////
   // The CoordinateInput interface.
   ////////////////////////////////////////////////////

@@ -15,7 +15,6 @@
 #define _ZOLTAN2_IDENTIFIERINPUT_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 #include <string>
@@ -63,7 +62,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class IdentifierInput : public InputAdapter {
+  class IdentifierInput : public InputAdapter<User> {
 
 public:
 

@@ -45,7 +45,7 @@ public:
   StridedData(ArrayRCP<const scalar_t> x, int stride) :  
     vec_(x), stride_(stride) { }
 
-  /*! \brief Default constructor
+  /*! \brief Default constructor.  A zero-length strided array.
    */
   StridedData(): vec_(), stride_(0) { }
 

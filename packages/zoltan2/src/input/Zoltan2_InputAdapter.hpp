@@ -14,6 +14,7 @@
 #define _ZOLTAN2_INPUTADAPTER_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_InputTraits.hpp>
 
 namespace Zoltan2 {
 
@@ -42,8 +43,13 @@ enum InputAdapterType {
     \todo Add add a MeshInput adapter
  */
 
-class InputAdapter {
+template <typename User>
+  class InputAdapter {
+
 private:
+
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
+
 public:
 
   /*! \brief Returns the type of adapter.
@@ -71,12 +77,24 @@ public:
    */ 
   virtual int getNumberOfWeightsPerObject() const = 0;
 
+  /*! \brief Provide pointer to a weight array with stride.
+   *    \param dim  the weight dimension, zero or greater
+   *    \param wgt on return a pointer to the weights for this dimension
+   *    \param stride on return, the value such that
+   *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
+   *  \return the length of the \c wgt array, which should be at least
+   *   equal to <tt> getLocalNumberOfObjects() * stride </tt>.
+   */ 
+  virtual size_t getObjectWeights(int dim, const scalar_t *&wgt, 
+    int &stride) const = 0;
+
   /*! \brief Returns the name of the input adapter
    */
   static string inputAdapterTypeName(InputAdapterType iaType);
 };
 
-string InputAdapter::inputAdapterTypeName(InputAdapterType iaType)
+template <typename User>
+  string InputAdapter<User>::inputAdapterTypeName(InputAdapterType iaType)
 {
   string typeName;
   switch (iaType){
