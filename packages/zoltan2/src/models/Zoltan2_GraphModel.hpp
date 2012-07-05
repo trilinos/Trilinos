@@ -271,127 +271,16 @@ public:
     return 0;   // TODO
   }
 
-  // TODO - move these out of definition
   size_t getVertexList( ArrayView<const gno_t> &Ids,
-    ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
-  {
-    size_t n = getLocalNumVertices();
-    Ids = ArrayView<const gno_t>(Teuchos::null);
-
-    if (n){
-      if (gidsAreGnos_)
-        Ids = gids_(0, n);
-      else
-        Ids = gnosConst_(0, n);
-    }
-
-    return n;
-    // KDDKDD  Is it dangerous that xyz is ignored here?  Perhaps coordinates
-    // KDDKDD  should be separate.
-    // LRIESEN  Coordinates and weights are not yet implemented.
-  }
+    ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const;
 
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
-    ArrayView<const scalar_t> &wgts) const
-  {
-    edgeIds = ArrayView<const gno_t>(Teuchos::null);
-    procIds = procIdsConst_(0, numLocalEdges_);
-    offsets = offsets_(0, numLocalVtx_+1);
-    wgts = ArrayView<const scalar_t>(Teuchos::null);
-
-    if (numLocalEdges_){
-      if (gidsAreGnos_)
-        edgeIds = edgeGids_(0, numLocalEdges_);
-      else
-        edgeIds = edgeGnosConst_(0, numLocalEdges_);
-    }
-
-    return numLocalEdges_;
-  }
+    ArrayView<const scalar_t> &wgts) const;
 
   size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
     ArrayView<const lno_t> &offsets,
-    ArrayView<const scalar_t> &wgts)
-  {
-    int nvtx = numLocalVtx_;
-    
-    edgeIds = ArrayView<const lno_t>(Teuchos::null);
-    wgts = ArrayView<const scalar_t>(Teuchos::null);
-
-    if (nearEdgeOffsets_.size() > 0){
-      if (numNearLocalEdges_ > 0)  // Teuchos bug: view(0,0) crashes
-        edgeIds = nearEdgeLnos_.view(0, numNearLocalEdges_);
-
-      offsets = nearEdgeOffsets_.view(0, nvtx + 1);
-    }
-    else{
-      lno_t *offs = new lno_t [nvtx + 1];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nvtx+1, offs);
-      numNearLocalEdges_ = 0;
-
-      offs[0] = 0;
-      if (nvtx > 0){
-        for (lno_t i=0; i < nvtx; i++){
-          offs[i+1] = 0;
-          for (lno_t j=offsets_[i]; j < offsets_[i+1]; j++){
-            if (procIds_[j] == env_->myRank_){
-              offs[i+1]++;
-              numNearLocalEdges_++;
-            }
-          }
-        }
-
-        if (numNearLocalEdges_ > 0){
-          gno_t *gnos = new gno_t [numNearLocalEdges_];
-          env_->localMemoryAssertion(__FILE__, __LINE__, numNearLocalEdges_, 
-            gnos);
-          ArrayView<gno_t> gnoList(gnos, numNearLocalEdges_);
-
-          for (lno_t i=2; i < nvtx; i++){
-            offs[i] += offs[i-1];
-          }
-
-          const gno_t *graphGnos = NULL;
-          if (gidsAreGnos_)
-            graphGnos = reinterpret_cast<const gno_t *>(edgeGids_.getRawPtr());
-          else
-            graphGnos = edgeGnosConst_.getRawPtr();
-
-          for (lno_t i=0; i < nvtx; i++){
-            for (lno_t j=offsets_[i]; j < offsets_[i+1]; j++){
-              if (procIds_[j] == env_->myRank_){
-                gnoList[offs[i]] = graphGnos[j];
-                offs[i]++;
-              }
-            }
-          }
-
-          lno_t *lnos = new lno_t [numNearLocalEdges_];
-          env_->localMemoryAssertion(__FILE__, __LINE__, numNearLocalEdges_, 
-            lnos);
-          ArrayRCP<lno_t> lnoList(lnos, 0, numNearLocalEdges_, true);
-          RCP<const idmap_t > idMap = this->getIdentifierMap();
-
-          idMap->lnoTranslate(lnoList.view(0, numNearLocalEdges_), gnoList, 
-             TRANSLATE_LIB_TO_APP);
-
-          delete [] gnos;
-          nearEdgeLnos_ = arcp_const_cast<const lno_t>(lnoList);
-          edgeIds = nearEdgeLnos_.view(0, numNearLocalEdges_);
-          
-          for (lno_t i = nvtx; i > 0; i--){
-            offs[i] = offs[i-1];
-          }
-          offs[0] = 0;
-        }
-      }
-
-      nearEdgeOffsets_ = arcp(offs, 0, nvtx+1);
-      offsets = nearEdgeOffsets_.view(0, nvtx + 1);
-    }
-    return numNearLocalEdges_;
-  }
+    ArrayView<const scalar_t> &wgts);
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -546,8 +435,6 @@ template <typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-return;
-
   numGlobalVertices_ = idMap->getGlobalNumberOfIds();
   gidsAreGnos_ = idMap->gnosAreGids();
 
@@ -673,6 +560,133 @@ return;
   gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
   edgeGnosConst_ = arcp_const_cast<const gno_t>(edgeGnos_);
   procIdsConst_ = arcp_const_cast<const int>(procIds_);
+}
+
+template <typename User>
+  size_t GraphModel<MatrixInput<User> >::getVertexList( 
+    ArrayView<const gno_t> &Ids,
+    ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
+{
+  size_t n = getLocalNumVertices();
+  Ids = ArrayView<const gno_t>(Teuchos::null);
+
+  if (n){
+    if (gidsAreGnos_)
+      Ids = gids_(0, n);
+    else
+      Ids = gnosConst_(0, n);
+  }
+
+  return n;
+  // KDDKDD  Is it dangerous that xyz is ignored here?  Perhaps coordinates
+  // KDDKDD  should be separate.
+  // LRIESEN  Coordinates and weights are not yet implemented.
+}
+
+template <typename User>
+  size_t GraphModel<MatrixInput<User> >::getEdgeList( 
+    ArrayView<const gno_t> &edgeIds,
+    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) const
+{
+  edgeIds = ArrayView<const gno_t>(Teuchos::null);
+  procIds = procIdsConst_(0, numLocalEdges_);
+  offsets = offsets_(0, numLocalVtx_+1);
+  wgts = ArrayView<const scalar_t>(Teuchos::null);
+
+  if (numLocalEdges_){
+    if (gidsAreGnos_)
+      edgeIds = edgeGids_(0, numLocalEdges_);
+    else
+      edgeIds = edgeGnosConst_(0, numLocalEdges_);
+  }
+
+  return numLocalEdges_;
+}
+
+template <typename User>
+  size_t GraphModel<MatrixInput<User> >::getLocalEdgeList( 
+    ArrayView<const lno_t> &edgeIds,
+    ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts)
+{
+  int nvtx = numLocalVtx_;
+  
+  edgeIds = ArrayView<const lno_t>(Teuchos::null);
+  wgts = ArrayView<const scalar_t>(Teuchos::null);
+
+  if (nearEdgeOffsets_.size() > 0){
+    if (numNearLocalEdges_ > 0)  // Teuchos bug: view(0,0) crashes
+      edgeIds = nearEdgeLnos_.view(0, numNearLocalEdges_);
+
+    offsets = nearEdgeOffsets_.view(0, nvtx + 1);
+  }
+  else{
+    lno_t *offs = new lno_t [nvtx + 1];
+    env_->localMemoryAssertion(__FILE__, __LINE__, nvtx+1, offs);
+    numNearLocalEdges_ = 0;
+
+    offs[0] = 0;
+    if (nvtx > 0){
+      for (lno_t i=0; i < nvtx; i++){
+        offs[i+1] = 0;
+        for (lno_t j=offsets_[i]; j < offsets_[i+1]; j++){
+          if (procIds_[j] == env_->myRank_){
+            offs[i+1]++;
+            numNearLocalEdges_++;
+          }
+        }
+      }
+
+      if (numNearLocalEdges_ > 0){
+        gno_t *gnos = new gno_t [numNearLocalEdges_];
+        env_->localMemoryAssertion(__FILE__, __LINE__, numNearLocalEdges_, 
+          gnos);
+        ArrayView<gno_t> gnoList(gnos, numNearLocalEdges_);
+
+        for (lno_t i=2; i < nvtx; i++){
+          offs[i] += offs[i-1];
+        }
+
+        const gno_t *graphGnos = NULL;
+        if (gidsAreGnos_)
+          graphGnos = reinterpret_cast<const gno_t *>(edgeGids_.getRawPtr());
+        else
+          graphGnos = edgeGnosConst_.getRawPtr();
+
+        for (lno_t i=0; i < nvtx; i++){
+          for (lno_t j=offsets_[i]; j < offsets_[i+1]; j++){
+            if (procIds_[j] == env_->myRank_){
+              gnoList[offs[i]] = graphGnos[j];
+              offs[i]++;
+            }
+          }
+        }
+
+        lno_t *lnos = new lno_t [numNearLocalEdges_];
+        env_->localMemoryAssertion(__FILE__, __LINE__, numNearLocalEdges_, 
+          lnos);
+        ArrayRCP<lno_t> lnoList(lnos, 0, numNearLocalEdges_, true);
+        RCP<const idmap_t > idMap = this->getIdentifierMap();
+
+        idMap->lnoTranslate(lnoList.view(0, numNearLocalEdges_), gnoList, 
+           TRANSLATE_LIB_TO_APP);
+
+        delete [] gnos;
+        nearEdgeLnos_ = arcp_const_cast<const lno_t>(lnoList);
+        edgeIds = nearEdgeLnos_.view(0, numNearLocalEdges_);
+        
+        for (lno_t i = nvtx; i > 0; i--){
+          offs[i] = offs[i-1];
+        }
+        offs[0] = 0;
+      }
+    }
+
+    nearEdgeOffsets_ = arcp(offs, 0, nvtx+1);
+    offsets = nearEdgeOffsets_.view(0, nvtx + 1);
+  }
+  return numNearLocalEdges_;
 }
 
 ////////////////////////////////////////////////////////////////
