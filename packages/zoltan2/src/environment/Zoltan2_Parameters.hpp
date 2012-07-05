@@ -370,7 +370,8 @@ template <typename Integral>
  *        returned.  Otherwise an empty array is returned.
  */   
 template <typename Integral>
-  Teuchos::ArrayView<Integral> getList(const Teuchos::Array<Integral> &irl);
+  Teuchos::ArrayView<const Integral> getList(
+    const Teuchos::Array<Integral> &irl);
 
 /*! \brief  A helper function that prints the meaning of an encoded
  *             integer range list
