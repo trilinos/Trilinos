@@ -59,6 +59,8 @@ class Epetra_CrsMatrix;
 
 namespace panzer {
 
+class EpetraLinearObjContainer;
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer;
 
@@ -97,6 +99,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -122,6 +126,10 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 };
 
 // **************************************************************
@@ -143,6 +151,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -169,6 +179,10 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
   ScatterResidual_Epetra();
 };
