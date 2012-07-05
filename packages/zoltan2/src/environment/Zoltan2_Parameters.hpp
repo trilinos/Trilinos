@@ -213,6 +213,7 @@ private:
 
   Integral min_;
   Integral max_;
+  bool unsorted_;
 
   static const std::string listDelim_;
   static const std::string rangeDelim_;
@@ -235,7 +236,8 @@ public:
    *   \param validMax  all values implied by the integer range list
    *                          must be bounded by this maximum.
    */
-  IntegerRangeListValidator(Integral validMin, Integral validMax); 
+  IntegerRangeListValidator(Integral validMin, Integral validMax,
+    bool unsorted=false); 
 
   // Implementation of ParameterEntryValidator interface
 
@@ -430,14 +432,14 @@ template <typename Integral>
 
 template <typename Integral>
   IntegerRangeListValidator<Integral>::IntegerRangeListValidator(): 
-    min_(1), max_(0)
+    min_(1), max_(0), unsorted_(false)
 {
 }
 
 template <typename Integral>
   IntegerRangeListValidator<Integral>::IntegerRangeListValidator(
-    Integral validMin, Integral validMax) :
-      min_(validMin), max_(validMax)
+    Integral validMin, Integral validMax, bool unsorted) :
+      min_(validMin), max_(validMax), unsorted_(unsorted)
 {
   if (min_ < max_) std::swap(min_,max_);
 }
@@ -584,7 +586,7 @@ template <typename Integral>
       else
         rangeBegin = ++rangeEnd;
     }
-    if (valueList.size() > 1){  // sort & remove duplicates
+    if (!unsorted_ && valueList.size() > 1){  // sort & remove duplicates
       std::sort(valueList.begin(), valueList.end());
       arraySize_t listEnd = 0;
       arraySize_t length = valueList.size();
