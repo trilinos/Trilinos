@@ -318,7 +318,21 @@ void SingleBlockDOFManager<LO,GO>::buildUnknownsOrientation(){
   
 }
 
+template <typename LO, typename GO>
+const std::string & SingleBlockDOFManager<LO,GO>::getFieldString(int num) const{
+  //I need the string associated with this int in fieldstringtoid.
+  std::string toRet;
+  for(std::map<std::string,int>::const_iterator itr=fieldStringToID_.begin(); itr!=fieldStringToID_.end();itr++){
+    if(itr->first==num)
+      toRet=itr->second;
+      break;
+  }
+  if(toRet.empty())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"SingleBlockDOFManager::getFieldString: invalid number.");
+  return toRet;
+
+}
+
 
 } /*panzer*/
 
-#endif

@@ -153,8 +153,7 @@ public:
   void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
   { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::method not implemented yet!"); }
 
-  const std::string & getFieldString(int num) const
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::getFieldString not implemented yet!"); }
+  const std::string & getFieldString(int num) const;
 
 protected:
   

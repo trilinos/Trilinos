@@ -549,6 +549,22 @@ bool DOFManager2<LO,GO>::validFieldOrder(const std::vector<std::string> & propos
   return true;
 }
 
+template <typename LO, typename GO>
+const std::string & getFieldString(int num) const{
+  //A reverse lookup through fieldStringOrder_.
+  bool found=false;
+  size_t i=0;
+  while(!found && i<fieldStringOrder_.size()){
+    if(fieldStringOrder_[i]==num)
+      found=true
+    else
+      i++;
+  }
+  if(!found)
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager2::getFieldString: invalid number");
+  return i;
+}
+
 //Everything associated with orientation is not yeat built, but this
 //is the method as found in Panzer_DOFManager_impl.hpp. There are
 //going to need to be some substantial changes to the code as it applies
