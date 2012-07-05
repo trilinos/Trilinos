@@ -110,6 +110,9 @@ public:
   void setOrientationsRequired(bool ro)
   { requireOrientations_ = ro; }
 
+  const std::string & getFieldString(int num) const
+  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"SingleBlockDOFManager::getFieldString not implemented yet!"); }
+
 protected:
   Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
 
