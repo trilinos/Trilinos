@@ -332,13 +332,12 @@ namespace stk {
       /// transform mesh by a given 3x3 matrix
       void transform_mesh(MDArray& matrix);
 
-      /// set number of coordinate field states needed (for example, to use smoothing of geometry-projected refined
-      ///   meshes, set to 3
-      /// NOTE: must set this before reading the mesh
-      void set_num_coordinate_field_states(unsigned ncfs) { m_num_coordinate_field_states = ncfs; }
+      /// add coordinate-like fields needed, for example, to use smoothing of geometry-projected refined meshes
+      /// Must be called before commit()
+      void add_coordinate_state_fields();
 
       /// get number of coordinate field states needed
-      unsigned get_num_coordinate_field_states() { return m_num_coordinate_field_states; }
+      bool has_coordinate_state_fields() { return m_num_coordinate_field_states != 1; }
 
       /// copy field state data from one state (src_state) to another (dest_state)
       void copy_field_state(stk::mesh::FieldBase* field, unsigned dest_state, unsigned src_state);

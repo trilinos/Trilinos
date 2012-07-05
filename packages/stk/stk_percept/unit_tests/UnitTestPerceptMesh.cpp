@@ -481,16 +481,21 @@ namespace stk
       {
         fixture_setup();
         PerceptMesh eMesh(0);
-        eMesh.set_num_coordinate_field_states(3);
         eMesh.open(input_files_loc+"hex_fixture.e");
+        eMesh.add_coordinate_state_fields();
         eMesh.commit();
-        std::cout << "eMesh.get_coordinates_field()->number_of_states() = "  << eMesh.get_coordinates_field()->number_of_states() << std::endl;
+        //std::cout << "eMesh.get_coordinates_field()->number_of_states() = "  << eMesh.get_coordinates_field()->number_of_states() << std::endl;
         // field, dst, src
-        eMesh.copy_field_state(eMesh.get_coordinates_field(), stk::mesh::StateN, stk::mesh::StateNone);
+        stk::mesh::FieldBase * coordinates_N = eMesh.get_field("coordinates_N");
+        //stk::mesh::FieldBase * coordinates_NM1 = eMesh.get_field("coordinates_NM1");
+        stk::mesh::FieldBase * coordinates_None = eMesh.get_coordinates_field();
+
+        // dst,src
+        eMesh.copy_field(coordinates_N, coordinates_None);
         Math::Matrix rm = Math::rotationMatrix(0, 30);
         eMesh.transform_mesh(rm);
         eMesh.save_as(output_files_loc+"hex_copy_fields_rot.e");
-        eMesh.copy_field_state(eMesh.get_coordinates_field(), stk::mesh::StateNone, stk::mesh::StateN);
+        eMesh.copy_field(coordinates_None, coordinates_N);
         eMesh.save_as(output_files_loc+"hex_copy_fields.e");
       }
 

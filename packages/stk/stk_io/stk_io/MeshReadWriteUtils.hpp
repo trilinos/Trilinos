@@ -33,7 +33,7 @@ namespace stk {
       // portions of the mesh generation process for use cases.
     public:
       MeshData() : m_input_region(NULL), m_output_region(NULL),
-                   m_anded_selector(NULL), m_num_coordinate_field_states(1)
+		   m_anded_selector(NULL)
       {}
 
       ~MeshData();
@@ -69,12 +69,6 @@ namespace stk {
        */
       stk::mesh::Selector *m_anded_selector;
 
-      /*!
-       * Optional number of coordinate field states to declare.
-       *  (see stk::mesh::FieldState).  Default = 1
-       */
-      unsigned m_num_coordinate_field_states;
-      
     private:
       MeshData(const MeshData&); // Do not implement
       MeshData& operator=(const MeshData&); // Do not implement

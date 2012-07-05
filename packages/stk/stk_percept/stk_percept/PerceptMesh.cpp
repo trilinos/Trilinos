@@ -1583,7 +1583,6 @@ namespace stk {
       m_iossMeshData = Teuchos::rcp( new stk::io::MeshData() );
       stk::io::MeshData& mesh_data = *m_iossMeshData;
       mesh_data.m_input_region = &(*m_iossRegion);
-      mesh_data.m_num_coordinate_field_states = m_num_coordinate_field_states;
       stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
 
       stk::io::define_input_fields(mesh_data, meta_data);
@@ -3582,6 +3581,14 @@ namespace stk {
               }
             }
         }
+    }
+
+    void PerceptMesh::add_coordinate_state_fields() 
+    {
+      m_num_coordinate_field_states = 3;
+      int scalarDimension = get_spatial_dim(); // a scalar
+      add_field("coordinates_N", node_rank(), scalarDimension);
+      add_field("coordinates_NM1", node_rank(), scalarDimension);
     }
 
     /// copy field state data from one state (src_state) to another (dest_state)

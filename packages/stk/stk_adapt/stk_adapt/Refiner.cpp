@@ -1069,8 +1069,9 @@ namespace stk {
           case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
             {
               VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
-              // make a copy of current non-snapped state
-              m_eMesh.copy_field_state(m_eMesh.get_coordinates_field(), stk::mesh::StateNM1, stk::mesh::StateNone);
+
+              // make a copy of current non-snapped state (dst,src)
+              m_eMesh.copy_field(m_eMesh.get_field("coordinates_NM1"), m_eMesh.get_coordinates_field() );
 
               // do the snap
               mesh_geometry.snap_points_to_geometry(&m_eMesh);
@@ -1078,10 +1079,10 @@ namespace stk {
                 mesh_geometry.print_node_movement_summary();
 
               // make a copy of current snapped state
-              m_eMesh.copy_field_state(m_eMesh.get_coordinates_field(), stk::mesh::StateN, stk::mesh::StateNone);
+              m_eMesh.copy_field(m_eMesh.get_field("coordinates_N"), m_eMesh.get_coordinates_field() );
 
               // reset current state to non-snapped state
-              m_eMesh.copy_field_state(m_eMesh.get_coordinates_field(), stk::mesh::StateNone, stk::mesh::StateNM1);
+              m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
 
               if (1 && m_doSmoothGeometry)
                 {

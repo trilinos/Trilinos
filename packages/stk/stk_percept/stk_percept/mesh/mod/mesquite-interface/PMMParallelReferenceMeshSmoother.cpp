@@ -25,9 +25,9 @@ namespace stk {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
       stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
-      stk::mesh::FieldBase *coord_field_current   = coord_field->field_state(stk::mesh::StateNP1);
-      stk::mesh::FieldBase *coord_field_projected = coord_field->field_state(stk::mesh::StateN);
-      stk::mesh::FieldBase *coord_field_original  = coord_field->field_state(stk::mesh::StateNM1);
+      stk::mesh::FieldBase *coord_field_current   = coord_field;
+      stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
+      stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       int spatialDim = eMesh->get_spatial_dim();
@@ -165,10 +165,11 @@ namespace stk {
 
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
+
       stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
-      stk::mesh::FieldBase *coord_field_current   = coord_field->field_state(stk::mesh::StateNP1);
-      stk::mesh::FieldBase *coord_field_projected = coord_field->field_state(stk::mesh::StateN);
-      stk::mesh::FieldBase *coord_field_original  = coord_field->field_state(stk::mesh::StateNM1);
+      stk::mesh::FieldBase *coord_field_current   = coord_field;
+      stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
+      stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
 
       double alphas[] = {0.0,0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
       int nalpha = sizeof(alphas)/sizeof(alphas[0]);

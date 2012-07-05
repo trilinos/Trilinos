@@ -463,8 +463,8 @@ namespace stk
             eMesh.print_info("quad fixture",  2);
             eMesh.save_as(input_files_loc+"quad_4_smooth.0.e");
 
-            eMesh.set_num_coordinate_field_states(3);
             eMesh.reopen();
+            eMesh.add_coordinate_state_fields();
             //eMesh.addParallelInfoFields(true,true);
             eMesh.commit();
 
@@ -476,13 +476,9 @@ namespace stk
 
             //eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
-            //stk::mesh::FieldBase *coord_field_current   = coord_field->field_state(stk::mesh::StateNP1);
-            //stk::mesh::FieldBase *coord_field_projected = coord_field->field_state(stk::mesh::StateN);
-            //stk::mesh::FieldBase *coord_field_original  = coord_field->field_state(stk::mesh::StateNM1);
-
             // save state of original mesh
             // field, dst, src: 
-            eMesh.copy_field_state(eMesh.get_coordinates_field(), stk::mesh::StateNM1, stk::mesh::StateNone);
+            eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
@@ -508,7 +504,7 @@ namespace stk
               }
             // save state of projected mesh
             // field, dst, src: 
-            eMesh.copy_field_state(eMesh.get_coordinates_field(), stk::mesh::StateN, stk::mesh::StateNone);
+            eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
 
             eMesh.save_as(input_files_loc+"quad_4_smooth.0_perturbed.e");
 
