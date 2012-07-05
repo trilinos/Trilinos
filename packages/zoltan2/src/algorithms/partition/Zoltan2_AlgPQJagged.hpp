@@ -298,7 +298,7 @@ void pqJagged_getInputValues(
 	// If the part sizes for a given criteria are not uniform,
 	// then they are values that sum to 1.0.
 
-	numGlobalParts = solution->getGlobalNumberOfParts();
+	numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
 #ifdef RCBCODE
 	Array<bool> uniformParts(criteriaDim);
@@ -1325,12 +1325,12 @@ void pqJagged_1DPart_simple(
 			}
 
 		}
-/*
+
 #pragma omp single
 		{
 			cout << "Iteration:" << iterationCount << endl;
 		}
-		*/
+
 
 	}
 
@@ -1517,7 +1517,7 @@ void AlgPQJagged(
 	bool ignoreWeights;
 	pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights);
 
-	imbalanceTolerance = 0.003;
+	//imbalanceTolerance = 0.003;
 #ifdef RCBCODE
 	env->debug(DETAILED_STATUS, string("Entering AlgPartRCB"));
 	env->timerStart(BOTH_TIMERS, "RCB set up");
@@ -1584,12 +1584,16 @@ void AlgPQJagged(
 	scalar_t minCoordinate, maxCoordinate;
 
 
-	size_t *partNo = new size_t[coordDim];
+	//size_t *partNo = new size_t[coordDim];
 	size_t totalDimensionCut = 0;
 	size_t totalPartCount = 1;
 	size_t maxPartNo = 0;
+
+	const int *partNo = pl.getPtr<Array <int> >("pqParts")->getRawPtr();
 	for (int i = 0; i < coordDim; ++i){
-		partNo[i] = numGlobalParts; //TODO:PXPXP partition currently. Need to change the parameters.
+		//partNo[i] = numGlobalParts; //TODO:PXPXP partition currently. Need to change the parameters.
+		//partNo[i] = pts[i];
+		//cout << "p:" << pts[i] << endl;
 		totalPartCount *= partNo[i];
 		if(partNo[i] > maxPartNo) maxPartNo = partNo[i];
 	}
@@ -1689,6 +1693,7 @@ void AlgPQJagged(
 			pqJagged_getMinMaxCoord<scalar_t>(comm, pqJagged_coordinates[i], minCoordinate,maxCoordinate,
 					env, numThreads, partitionedPointCoordinates, coordinateBegin, coordinateEnd, max_min_array);
 
+//			cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
 			pqJagged_getCutCoord_Weights<scalar_t>(
 					minCoordinate, maxCoordinate,
 					pqJagged_uniformParts[0], pqJagged_partSizes[0], partNo[i] - 1,
@@ -1796,10 +1801,11 @@ void AlgPQJagged(
 	MPI_Allreduce(inTotalCounts, tot, totalPartCount, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 	inTotalCounts = tot;
 	double maxImbalance = 0;
+
 	for(int i = 0; i < totalPartCount;++i){
 
 		if(comm->getRank() == 0){
-		cout << "me:" << comm->getRank() << " c:" << inTotalCounts[i]  << endl;
+		//cout << "me:" << comm->getRank() << " c:" << inTotalCounts[i]  << endl;
 		}
 		float imbalance = 0;
 		if(i > 0)
@@ -1809,6 +1815,10 @@ void AlgPQJagged(
 		if(imbalance > maxImbalance) maxImbalance = imbalance;
 	}
 	cout << "Max imbalance:" << maxImbalance << endl;
+	cout << "totalPartCount:" << totalPartCount << endl;
+
+
+	//solution
 
 
 
@@ -1818,7 +1828,7 @@ void AlgPQJagged(
 
 
 
-
+#ifdef RCBCODE
 	////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////
 	// The algorithm
@@ -1840,7 +1850,6 @@ void AlgPQJagged(
 	int iteration = 1;
 
 	env->memory("RCB algorithm set up");
-#ifdef RCBCODE
 	env->timerStart(MACRO_TIMERS, "Parallel RCB");
 
 	while (part1 > part0 && groupSize>1 && numGlobalCoords>0 && sanityCheck--){
@@ -2088,7 +2097,7 @@ void AlgPQJagged(
 	//assign the max size to starts, as it will be reused.
 
 
-	delete [] partNo;
+	//delete [] partNo;
 	delete []max_min_array;
 	delete [] inTotalCounts;
 	delete []partitionedPointCoordinates ;

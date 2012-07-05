@@ -371,6 +371,18 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
 
+
+
+  ////////// topLevel/debug_procs
+  parameterName = string("pqParts");
+
+  docString.str("");
+  intRangeValidatorP->printDoc(
+    "list of parts for pqJagged partitioning algorithm. As many as the dimension count.\n",
+     docString);
+
+  pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
+
   ////////// topLevel/memory_procs
   parameterName = string("memory_procs");
 

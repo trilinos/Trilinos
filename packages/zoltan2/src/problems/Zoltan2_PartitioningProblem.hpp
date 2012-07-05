@@ -854,6 +854,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     typedef typename Adapter::base_adapter_t base_adapter_t;
 
+	const Teuchos::ParameterList pl = this->envConst_->getParameters();
+  	bool exceptionThrow = true;
     switch (modelType_) {
 
     case GraphModelType:
@@ -871,6 +873,37 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     case CoordinateModelType:
       this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
+      //if( this->envConst_->getParameters().getPtr < Array < int > > ("pqParts") != NULL){
+      if( pl.getPtr < Array < int > > ("pqParts") != NULL){
+          int coordinateCnt = this->coordinateModel_->getCoordinateDim();
+          cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
+          exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
+          for(int i = 0; i < pl.getPtr<Array <int> >("pqParts")->size(); ++i){
+        	  cout <<  pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i] << " ";
+          }
+          cout << endl;
+          this->envConst_->localInputAssertion(__FILE__, __LINE__, "invalid length of cut lines",
+        		  exceptionThrow, BASIC_ASSERTION);
+
+      }
+      ////////////////////////////////////////////////////////////////////////////
+      // It's possible at this point that the Problem may want to
+      // add problem parameters to the parameter list in the Environment.
+      //
+      // Since the parameters in the Environment have already been
+      // validated in its constructor, a new Environment must be created:
+      ////////////////////////////////////////////////////////////////////////////
+      // Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
+      // const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
+      //
+      // ParameterList newParams = oldParams;
+      // newParams.set("new_parameter", "new_value");
+      //
+      // ParameterList &newPartParams = newParams.sublist("partitioning");
+      // newPartParams.set("new_partitioning_parameter", "its_value");
+      //
+      // this->env_ = rcp(new Environment(newParams, oldComm));
+      ////////////////////////////////////////////////////////////////////////////
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->coordinateModel_);
@@ -891,6 +924,23 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     this->env_->memory("After creating Model");
   }
+
+  /*
+  Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
+  const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
+
+  ParameterList newParams = oldParams;
+  int totalPartCount = 1;
+  const int *partNo = pl.getPtr<Array <int> >("pqParts")->getRawPtr();
+
+  for (int i = 0; i < coordDim; ++i){
+	  totalPartCount *= partNo[i];
+  }
+  newParams.set("num_global_parts", totalPartCount);
+
+
+  this->env_ = rcp(new Environment(newParams, oldComm));
+*/
 }
 
 }  // namespace Zoltan2

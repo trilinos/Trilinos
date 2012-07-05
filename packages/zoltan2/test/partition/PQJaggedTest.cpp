@@ -86,8 +86,8 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution = 
     problem.getSolution();
 
-  if (comm->getRank() == 0)
-    solution.printMetrics(cout);
+  //if (comm->getRank() == 0)
+  //  solution.printMetrics(cout);
 
   cout << "testFromDataFile is done " << endl;
 
@@ -143,7 +143,7 @@ void serialTest(int numParts, int numCoords, float imbalance)
   const Zoltan2::PartitioningSolution<inputAdapter_t> &serialSolution = 
     serialProblem.getSolution();
 
-  serialSolution.printMetrics(cout);
+  //serialSolution.printMetrics(cout);
 
 
 }
@@ -195,13 +195,13 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
     problem.getSolution();
 
-  if (comm->getRank()  == 0)
-    solution.printMetrics(cout);
+  //if (comm->getRank()  == 0)
+  //  solution.printMetrics(cout);
 }
 
 
 
-void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, int numParts, int numCoords, float imbalance)
+void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pqParts, int numCoords, float imbalance)
 {
 
 
@@ -227,12 +227,13 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, int numPa
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("algorithm", "PQJagged");
 
+  params.set("pqParts", pqParts);
   //parParams.set("algorithm", "rcb");
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
   geoParams.set("bisection_num_test_cuts", 7);
   geoParams.set("rectilinear_blocks", "yes");
 
-  parParams.set("num_global_parts", numParts);
+  //parParams.set("num_global_parts", numParts);
   parParams.set("imbalance_tolerance", double(imbalance));
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -249,8 +250,8 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, int numPa
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
     problem.getSolution();
 
-  if (comm->getRank()  == 0)
-    solution.printMetrics(cout);
+  //if (comm->getRank()  == 0)
+  //  solution.printMetrics(cout);
 }
 
 
@@ -282,7 +283,7 @@ int main(int argc, char *argv[])
 
   int numParts = 10; float imbalance = 0.03;
   int numCoords = 1000;
-
+  string pqParts = "";
   int opt = 0;
   std::string fname = "simple";
   for(int i = 0; i < argc; ++i){
@@ -291,13 +292,22 @@ int main(int argc, char *argv[])
 	  int value = -1; float fval = -1;
 	  if(!getArgumentValue(identifier, fval, tmp)) continue;
 	  value = int (fval);
+
 	  if(identifier == "P"){
+		  /*
 		  if(value > 0){
 			  numParts=value;
 		  } else {
 			  cout << "Invalid argument at " << tmp;
 			  exit(1);
 		  }
+		  */
+		  stringstream stream(stringstream::in | stringstream::out);
+
+		  stream << tmp;
+
+		  getline(stream, fname, '=');
+		  stream >> pqParts;
 	  } else if(identifier == "D"){
 		  if(value > 0){
 			  numCoords=value;
@@ -348,7 +358,7 @@ int main(int argc, char *argv[])
 	  testFromDataFile(tcomm,numParts, imbalance,fname);
 	  break;
   case 1:
-	  meshCoordinatesTest2(tcomm,numParts, numCoords, imbalance);
+	  meshCoordinatesTest2(tcomm,pqParts, numCoords, imbalance);
 	  break;
   case 2:
 	  serialTest(numParts, numCoords, imbalance);
