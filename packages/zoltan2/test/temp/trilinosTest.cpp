@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
   try{
     M = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-      fname, comm, dnode, true, true);
+      fname, comm, dnode);
   }
   catch (std::invalid_argument &e){
     cerr << e.what() << endl;
