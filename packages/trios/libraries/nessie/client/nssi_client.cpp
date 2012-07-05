@@ -530,13 +530,12 @@ int nssi_get_service(
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for get service send: %s",
                 nnti_err_str(rc));
-        goto cleanup;
-    }
-    rc=NNTI_wait(short_res_hdl, NNTI_RECV_DST, timeout, &wait_status);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed waiting for short result: %s",
-                nnti_err_str(rc));
-        goto cleanup;
+    } else {
+        rc=NNTI_wait(short_res_hdl, NNTI_RECV_DST, timeout, &wait_status);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed waiting for short result: %s",
+                    nnti_err_str(rc));
+        }
     }
 
     if (rc == NNTI_ETIMEDOUT) {
