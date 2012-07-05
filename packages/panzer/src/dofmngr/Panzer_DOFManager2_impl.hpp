@@ -550,19 +550,22 @@ bool DOFManager2<LO,GO>::validFieldOrder(const std::vector<std::string> & propos
 }
 
 template <typename LO, typename GO>
-const std::string & getFieldString(int num) const{
+const std::string & DOFManager2<LO,GO>::getFieldString(int num) const{
   //A reverse lookup through fieldStringOrder_.
-  bool found=false;
-  size_t i=0;
-  while(!found && i<fieldStringOrder_.size()){
-    if(fieldStringOrder_[i]==num)
-      found=true
-    else
-      i++;
-  }
-  if(!found)
+  if(num>=fieldStringOrder_.size())
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager2::getFieldString: invalid number");
-  return i;
+  return fieldStringOrder_[num];
+//  bool found=false;
+//  size_t i=0;
+//  while(!found && i<fieldStringOrder_.size()){
+//    if(fieldStringOrder_[i]==num)
+//      found=true;
+//    else
+//      i++;
+//  }
+//  if(!found)
+//    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager2::getFieldString: invalid number");
+//  return i;
 }
 
 //Everything associated with orientation is not yeat built, but this

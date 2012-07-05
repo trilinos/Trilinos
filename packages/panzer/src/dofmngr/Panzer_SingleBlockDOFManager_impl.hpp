@@ -323,8 +323,8 @@ const std::string & SingleBlockDOFManager<LO,GO>::getFieldString(int num) const{
   //I need the string associated with this int in fieldstringtoid.
   std::string toRet;
   for(std::map<std::string,int>::const_iterator itr=fieldStringToID_.begin(); itr!=fieldStringToID_.end();itr++){
-    if(itr->first==num)
-      toRet=itr->second;
+    if(itr->second==num)
+      toRet=itr->first;
       break;
   }
   if(toRet.empty())
@@ -336,3 +336,4 @@ const std::string & SingleBlockDOFManager<LO,GO>::getFieldString(int num) const{
 
 } /*panzer*/
 
+#endif
