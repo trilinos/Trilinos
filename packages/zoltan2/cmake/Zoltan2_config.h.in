@@ -1,6 +1,9 @@
 /* define if we have MPI */
 #cmakedefine HAVE_ZOLTAN2_MPI
 
+/* define if we want to use OpenMP */
+#cmakedefine HAVE_ZOLTAN2_OMP
+
 /* define if we have the METIS library*/
 #cmakedefine HAVE_ZOLTAN2_METIS
 

@@ -359,21 +359,23 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // Debug, timing and memory profiling: list of processes that print
   //////////
 
-  intRangeValidatorP = rcp(new IntegerRangeListValidator<int>);
+
+  RCP<const IntegerRangeListValidator<int> > intRangeValidatorUnsertedP = rcp(new IntegerRangeListValidator<int>(true));
 
   ////////// topLevel/debug_procs
   parameterName = string("debug_procs");
 
   docString.str("");
-  intRangeValidatorP->printDoc(
+  intRangeValidatorUnsertedP->printDoc(
     "list of ranks that output debugging/status messages (default \"0\")\n",
      docString);
 
-  pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
+  pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorUnsertedP);
 
 
 
   ////////// topLevel/debug_procs
+  intRangeValidatorP = rcp(new IntegerRangeListValidator<int>(true));
   parameterName = string("pqParts");
 
   docString.str("");

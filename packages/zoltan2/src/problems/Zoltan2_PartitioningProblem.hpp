@@ -873,19 +873,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     case CoordinateModelType:
       this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
-      //if( this->envConst_->getParameters().getPtr < Array < int > > ("pqParts") != NULL){
-      if( pl.getPtr < Array < int > > ("pqParts") != NULL){
-          int coordinateCnt = this->coordinateModel_->getCoordinateDim();
-          cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
-          exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
-          for(int i = 0; i < pl.getPtr<Array <int> >("pqParts")->size(); ++i){
-        	  cout <<  pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i] << " ";
-          }
-          cout << endl;
-          this->envConst_->localInputAssertion(__FILE__, __LINE__, "invalid length of cut lines",
-        		  exceptionThrow, BASIC_ASSERTION);
 
-      }
       ////////////////////////////////////////////////////////////////////////////
       // It's possible at this point that the Problem may want to
       // add problem parameters to the parameter list in the Environment.
@@ -904,6 +892,35 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //
       // this->env_ = rcp(new Environment(newParams, oldComm));
       ////////////////////////////////////////////////////////////////////////////
+
+      if(algorithm == string("PQJagged")){
+          int coordinateCnt = this->coordinateModel_->getCoordinateDim();
+          //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
+          //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
+          int arraySize = pl.getPtr<Array <int> >("pqParts")->size() - 1;
+          exceptionThrow = coordinateCnt == arraySize;
+          this->envConst_->localInputAssertion(__FILE__, __LINE__, "invalid length of cut lines. Size of cut lines should match with dimension of the input.",
+                  		  exceptionThrow, BASIC_ASSERTION);
+
+
+          int totalPartCount = 1;
+          for(int i = 0; i < arraySize; ++i){
+        	  //cout <<  pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i] << " ";
+        	  totalPartCount *= pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i];
+          }
+          Teuchos::ParameterList newParams = pl;
+          Teuchos::ParameterList &parParams = newParams.sublist("partitioning");
+
+          parParams.set("num_global_parts", totalPartCount);
+
+          //cout << endl;
+          Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->envConst_->comm_;
+
+          //this->envConst_ = rcp(new Environment(newParams, oldComm));
+
+
+      }
+
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->coordinateModel_);
