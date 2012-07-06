@@ -1,2 +1,0 @@
-SET(HYBRIDBUILD_INTEL_VERSION "12.0.4")
-SET(HYBRIDBUILD_INTEL_BIN /opt/intel/Compiler/composerxe-2011.4.191/bin/intel64)

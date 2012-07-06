@@ -17,60 +17,33 @@ else()
   set(RUN_REGULAR_TESTS ON)
 endif()
 
-SET_DEFAULT_AND_FROM_ENV(RUN_CI_SERVER FALSE)
-SET_DEFAULT_AND_FROM_ENV(INTEL12_BUILD FALSE)
-
 SET(TIMEOUT_MINUTES 300) # 5 hours
 
 IF (RUN_REGULAR_TESTS)
 
-  IF (INTEL12_BUILD)
-    #
-    # Run the builds of just Trilinos packages with Intel 12.0.4
-    # and send results to main Trilinos CDash server to help
-    # Trilinos developers address issues.
-    #
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_DEBUG_GCC_TRILINOS
+    ctest_linux_nightly_mpi_debug_gcc_4.6.1_trilinos.cmake
+    TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
+    )
 
-    TRILINOS_DRIVER_ADD_DASHBOARD(
-      SERIAL_DEBUG_ICPC_TRILINOS
-      ctest_linux_nightly_serial_debug_icpc_12.0.4_trilinos.cmake
-      TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
-      )
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_RELEASE_GCC_TRILINOS
+    ctest_linux_nightly_mpi_release_gcc_4.6.1_trilinos.cmake
+    TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
+    )
 
-    TRILINOS_DRIVER_ADD_DASHBOARD(
-      SERIAL_RELEASE_ICPC_TRILINOS
-      ctest_linux_nightly_serial_release_icpc_12.0.4_trilinos.cmake
-      TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
-      )
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_RELEASE_GCC_TRILINOS
+    ctest_linux_nightly_serial_release_gcc_4.6.1_trilinos.cmake
+    TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
+    )
 
-  ELSE (INTEL12_BUILD)
-
-    TRILINOS_DRIVER_ADD_DASHBOARD(
-      MPI_DEBUG_GCC_TRILINOS
-      ctest_linux_nightly_mpi_debug_gcc_4.6.1_trilinos.cmake
-      TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
-      )
-  
-    TRILINOS_DRIVER_ADD_DASHBOARD(
-      MPI_RELEASE_GCC_TRILINOS
-      ctest_linux_nightly_mpi_release_gcc_4.6.1_trilinos.cmake
-      TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
-      )
-  
-    TRILINOS_DRIVER_ADD_DASHBOARD(
-      SERIAL_RELEASE_GCC_TRILINOS
-      ctest_linux_nightly_serial_release_gcc_4.6.1_trilinos.cmake
-      TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
-      )
-  
-    TRILINOS_DRIVER_ADD_DASHBOARD(
-      MPI_DEBUG_GCC_TRIKOTA
-      ctest_linux_nightly_mpi_debug_gcc_4.6.1_trikota_trilinos.cmake
-      TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
-      )
-
-  ENDIF (INTEL12_BUILD)
-  
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_DEBUG_GCC_TRIKOTA
+    ctest_linux_nightly_mpi_debug_gcc_4.6.1_trikota_trilinos.cmake
+    TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
+    )
 
 ENDIF (RUN_REGULAR_TESTS)
 
