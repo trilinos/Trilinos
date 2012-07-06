@@ -159,7 +159,7 @@ int DOFManager2<LO,GO>::addField(const std::string & blockID, const std::string 
 template <typename LO, typename GO>
 Teuchos::RCP<const FieldPattern> DOFManager2<LO,GO>::getFieldPattern(const std::string & name)
 {
-  return fieldPatterns_(fieldNameToAID_[name]);
+  return fieldPatterns_[fieldNameToAID_[name]];
 }
 
 template <typename LO, typename GO>
@@ -223,7 +223,9 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
 
   typedef Tpetra::Vector<LO,GO> Vector;
   typedef Tpetra::Export<LO,GO,Node> Export;
-  typedef Tpetra::MultiVector<LO,LO,GO,Node> MultiVector;
+  //For now the GIDs are of type GO. I'm not sure if this is a good idea, but that's
+  //the way it is
+  typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
   
 
   Tpetra::DefaultPlatform::DefaultPlatformType &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
@@ -302,14 +304,14 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
    */
 
 
-  ArrayRCP<ArrayRCP<LO> > edittwoview = overlap_mv->get2dViewNonConst();
+  ArrayRCP<ArrayRCP<GO> > edittwoview = overlap_mv->get2dViewNonConst();
   for (size_t b = 0; b < blockOrder_.size(); ++b) {
-    const std::vector<int> & numFields= fa_fps_[b]->numFieldsPerId();
-    const std::vector<int> & fieldIds= fa_fps_[b]->fieldIds();
-    const std::vector<int> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+    const std::vector<LO> & numFields= fa_fps_[b]->numFieldsPerId();
+    const std::vector<LO> & fieldIds= fa_fps_[b]->fieldIds();
+    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
     for (size_t l = 0; l < myElements.size(); ++l) {
-      int connSize = connMngr_->getConnectivitySize(myElements[l]);
-      const int * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
       int offset=0;
       for (int c = 0; c < connSize; ++c) {
         size_t lid = overlapmap->getLocalElement(elmtConn[c]);
@@ -358,7 +360,7 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
    */
   ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
   int which_id=0;
-  ArrayRCP<ArrayRCP<LO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
+  ArrayRCP<ArrayRCP<GO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
   for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
     for(int j=0; j<numFields_; ++j){
       if(editnonoverlap[j][i]!=0){
@@ -380,20 +382,20 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
    */
   //owned_ is made up of owned_ids.
 
-  Teuchos::ArrayRCP<const LO> nvals = non_overlap_mv->get1dView();
+  Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
   for (int j = 0; j < nvals.size(); ++j) {
     if(nvals[j]!=-1)
       owned_.push_back(nvals[j]);
   }
 
   //owned_and_ghosted_;in post import overlap map.
-  Teuchos::ArrayRCP<const LO> vals = overlap_mv->get1dView();
+  Teuchos::ArrayRCP<const GO> vals = overlap_mv->get1dView();
   for (int j = 0; j < vals.size(); ++j) {
     if(vals[j]!=-1)
       owned_and_ghosted_.push_back(vals[j]);
   }
 
-  ArrayRCP<ArrayRCP<const LO> > twoview = overlap_mv->get2dView();
+  ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv->get2dView();
 
 
   //To generate elementGIDs_ we need to go through all of the local elements.
@@ -407,8 +409,8 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
     //
     //
     for (size_t l = 0; l < myElements.size(); ++l) {
-      int connSize = connMngr_->getConnectivitySize(myElements[l]);
-      const int * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
       std::vector<GO> localOrdering;
       int offset=0;
       for (int c = 0; c < connSize; ++c) {
@@ -552,7 +554,7 @@ bool DOFManager2<LO,GO>::validFieldOrder(const std::vector<std::string> & propos
 template <typename LO, typename GO>
 const std::string & DOFManager2<LO,GO>::getFieldString(int num) const{
   //A reverse lookup through fieldStringOrder_.
-  if(num>=fieldStringOrder_.size())
+  if(num>=(int)fieldStringOrder_.size())
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager2::getFieldString: invalid number");
   return fieldStringOrder_[num];
 //  bool found=false;

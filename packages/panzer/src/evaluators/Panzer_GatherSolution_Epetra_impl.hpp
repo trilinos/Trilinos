@@ -135,13 +135,11 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<panzer::EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> x;
    if (useTimeDerivativeSolutionVector_)
-     x = epetraContainer->get_dxdt();
+     x = epetraContainer_->get_dxdt();
    else
-     x = epetraContainer->get_x(); 
+     x = epetraContainer_->get_x(); 
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -250,6 +248,8 @@ preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
    epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_),true);
+
+   
 }
 
 // **********************************************************************
@@ -264,16 +264,14 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> x;
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x = epetraContainer->get_dxdt();
+     x = epetraContainer_->get_dxdt();
      seed_value = workset.alpha;
    }
    else {
-     x = epetraContainer->get_x();
+     x = epetraContainer_->get_x();
      seed_value = workset.beta;
    }
 

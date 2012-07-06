@@ -72,7 +72,7 @@ int SingleBlockDOFManager<LO,GO>::addField(const std::string & str, const Teucho
 template <typename LO, typename GO>
 Teuchos::RCP<const FieldPattern> SingleBlockDOFManager<LO,GO>::getFieldPattern(const std::string & name)
 {
-  return fieldPatterns_(fieldStringToIndex_[name]);
+  return fieldPatterns_[fieldStringToIndex_[name]];
 }
 
 template <typename LO, typename GO>
@@ -324,13 +324,9 @@ const std::string & SingleBlockDOFManager<LO,GO>::getFieldString(int num) const{
   std::string toRet;
   for(std::map<std::string,int>::const_iterator itr=fieldStringToID_.begin(); itr!=fieldStringToID_.end();itr++){
     if(itr->second==num)
-      toRet=itr->first;
-      break;
+      return itr->first;
   }
-  if(toRet.empty())
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"SingleBlockDOFManager::getFieldString: invalid number.");
-  return toRet;
-
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"SingleBlockDOFManager::getFieldString: invalid number.");
 }
 
 
