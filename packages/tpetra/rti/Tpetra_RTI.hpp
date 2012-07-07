@@ -190,11 +190,25 @@ namespace Tpetra {
       Tpetra::RTI::detail::tertiary_transform(vec_inout, vec_in2, vec_in3, adapter_op);
     }
 
+    //! \brief Reduce values of \c vec_in using the operators instantiated in \c glob.
+    /** For each element <tt>vec_in[i]</tt>, generates reduction elements via <tt>glob.genop( vec_in[i] )</tt> and reduces them via 
+        the <tt>glob.redop</tt> binary functor. 
+
+        Calls Tpetra::RTI::detail::reduce via the Tpetra::RTI::detail::RTIReductionAdapter1.
+      */
+    template <class S, class LO, class GO, class Node, class Glob>
+    typename Glob::RedOP::result_type 
+    reduce( const Vector<S,LO,GO,Node> &vec_in, Glob glob)
+    {
+      Tpetra::RTI::detail::RTIReductionAdapter1<Glob,S> adapter_op(glob);
+      return Tpetra::RTI::detail::reduce(vec_in, adapter_op);
+    }
+
     //! \brief Reduce values of \c vec_in1 and \c vec_in2 using the operators instantiated in \c glob.
     /** For each element pair <tt>vec_in1[i]</tt> and <tt>vec_in2[i]</tt>, generates reduction elements via <tt>glob.genop( vec_in1[i], vec_in2[i] )</tt> and reduces them via 
         the <tt>glob.redop</tt> binary functor. 
 
-        Calls Tpetra::RTI::detail::reduce via the Tpetra::RTI::detail::RTIReductionAdapter.
+        Calls Tpetra::RTI::detail::reduce via the Tpetra::RTI::detail::RTIReductionAdapter2.
       */
     template <class S1, class S2, class LO, class GO, class Node, class Glob>
     typename Glob::RedOP::result_type 
@@ -204,7 +218,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION( vec_in1.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
           "Tpetra::RTI::reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
 #endif
-      Tpetra::RTI::detail::RTIReductionAdapter<Glob,S1,S2> adapter_op(glob);
+      Tpetra::RTI::detail::RTIReductionAdapter2<Glob,S1,S2> adapter_op(glob);
       return Tpetra::RTI::detail::reduce(vec_in1, vec_in2, adapter_op);
     }
 
@@ -213,7 +227,7 @@ namespace Tpetra {
         <tt>glob.genop( vec_in1[i], vec_in2[i], vec_in3[i] )</tt> and reduces them via 
         the <tt>glob.redop</tt> binary functor. 
 
-        Calls Tpetra::RTI::detail::reduce via the Tpetra::RTI::detail::RTIReductionAdapter.
+        Calls Tpetra::RTI::detail::reduce via the Tpetra::RTI::detail::RTIReductionAdapter3.
       */
     template <class S1, class S2, class S3, class LO, class GO, class Node, class Glob>
     typename Glob::RedOP::result_type 
@@ -287,16 +301,22 @@ namespace Tpetra {
                                        {return expr;})
 
 
-#define TPETRA_REDUCE2(out,in, gexp, id, robj ) \
-  Tpetra::RTI::reduce( *out, *in,                                                \
-    Tpetra::RTI::reductionGlob<id>( [=]( decltype((out)->meanValue()) out,       \
-                                         decltype((in)->meanValue()) in )        \
+#define TPETRA_REDUCE1(in, gexp, id, robj ) \
+  Tpetra::RTI::reduce( *in,                                                      \
+    Tpetra::RTI::reductionGlob<id>( [=]( decltype((in)->meanValue()) in )        \
                                        { return gexp; },                         \
                                        robj ) )
 
-#define TPETRA_REDUCE3(out,in2,in3, gexp, id, robj ) \
-  Tpetra::RTI::reduce( *out, *in2, *in3,                  \
-    Tpetra::RTI::reductionGlob<id>( [=]( decltype((out)->meanValue()) out,       \
+#define TPETRA_REDUCE2(in1,in2, gexp, id, robj ) \
+  Tpetra::RTI::reduce( *in1, *in2,                                                \
+    Tpetra::RTI::reductionGlob<id>( [=]( decltype((in1)->meanValue()) in1,       \
+                                         decltype((in2)->meanValue()) in2 )        \
+                                       { return gexp; },                         \
+                                       robj ) )
+
+#define TPETRA_REDUCE3(in1,in2,in3, gexp, id, robj ) \
+  Tpetra::RTI::reduce( *in1, *in2, *in3,                  \
+    Tpetra::RTI::reductionGlob<id>( [=]( decltype((in1)->meanValue()) in1,       \
                                          decltype((in2)->meanValue()) in2,       \
                                          decltype((in3)->meanValue()) in3 )      \
                                        { return gexp; },                         \
@@ -323,6 +343,5 @@ namespace Tpetra {
                                          decltype((in3)->meanValue()) in3 )      \
                                        { return gexp; },                         \
                                        robj ) )
-
 
 #endif // TPETRA_RTI_HPP
