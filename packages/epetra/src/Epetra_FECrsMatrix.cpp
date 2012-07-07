@@ -600,10 +600,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
   //now reset the values in our nonlocal data
   if (!useNonlocalMatrix_) {
     for(size_t i=0; i<nonlocalRows_.size(); ++i) {
-      for(size_t j=0; j<nonlocalCols_[i].size(); ++j) {
-        nonlocalCols_[i][j] = 0;
-        nonlocalCoefs_[i][j] = 0.0;
-      }
+      nonlocalCols_[i].resize(0);
+      nonlocalCoefs_[i].resize(0);
     }
 
     delete tempMat;
