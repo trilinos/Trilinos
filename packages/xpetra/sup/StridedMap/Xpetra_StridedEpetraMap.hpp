@@ -176,6 +176,12 @@ namespace Xpetra {
 
         const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
         const GlobalOrdinal goZeroOffset = (dofGids[0] - nStridedOffset - offset_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize());
+        /*printf("goZeroOffset: %i\n",goZeroOffset);
+        printf("dofGids[0]: %i \n",dofGids[0]);
+        printf("stridedOffset: %i\n",nStridedOffset);
+        printf("offset_: %i\n",offset_);
+        printf("goStridedOffset: %i\n",goStridedOffset);
+        printf("getFixedBlkSize: %i\n",getFixedBlockSize());*/
 
         GlobalOrdinal cnt = 0;
         for(size_t i = 0; i<Teuchos::as<size_t>(dofGids.size())/stridingInfo_[stridedBlockId_]; i+=stridingInfo_[stridedBlockId_]) {
@@ -189,6 +195,7 @@ namespace Xpetra {
           }
           cnt++;
         }
+
       }
       
       return true;

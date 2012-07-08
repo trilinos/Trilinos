@@ -10,6 +10,14 @@
 
 #include "Xpetra_Exceptions.hpp"
 
+// MPI helper
+#define sumAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+#define minAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
+#define maxAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
+
 namespace Xpetra {
 
   /*!
@@ -76,9 +84,36 @@ namespace Xpetra {
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
-      TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
-      TEUCHOS_TEST_FOR_EXCEPTION(elementList.size() % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of elementList.size().");
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId < -1, Exceptions::RuntimeError, "StridedMap::StridedMap: stridedBlockId must not be smaller than -1.");
+
+      // the following tests are not valid if stridedBlockId != 1
+      if(stridedBlockId == -1) {
+        TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
+        TEUCHOS_TEST_FOR_EXCEPTION(elementList.size() % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of elementList.size().");
+      } else {
+        // numGlobalElements can be -1! FIXME
+        //TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % stridingInfo[stridedBlockId] != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingBlockInfo[stridedBlockId] is not an integer multiple of numGlobalElements.");
+        TEUCHOS_TEST_FOR_EXCEPTION(elementList.size() % stridingInfo[stridedBlockId] != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingBlockInfo[stridedBlockId] is not an integer multiple of elementList.size().");
+      }
        
+      // calculate offset_
+
+      // find minimum GID over all procs
+      GlobalOrdinal minGidOnCurProc = 99999;  // TODO use scalar traits for max possible gid.
+      for(Teuchos_Ordinal k=0; k<elementList.size(); ++k) { // TODO fix occurence of Teuchos_Ordinal
+        if(elementList[k] < minGidOnCurProc) minGidOnCurProc = elementList[k];
+      }
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, minGidOnCurProc, Teuchos::outArg(offset_));
+
+      // calculate striding index
+      size_t nStridedOffset = 0;
+      for(int j=0; j<stridedBlockId; j++) {
+        nStridedOffset += stridingInfo[j];
+      }
+      const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
+
+      // adapt offset_
+      offset_ -= goStridedOffset;
     }
      
     //! Destructor.
