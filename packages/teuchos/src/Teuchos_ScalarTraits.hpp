@@ -680,7 +680,7 @@ struct ScalarTraits<dd_real>
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
 #endif      
-      return abs(a);
+      return ::abs(a);
   }
   static inline dd_real zero()  { return dd_real(0.0); }
   static inline dd_real one()   { return dd_real(1.0); }
@@ -706,12 +706,12 @@ struct ScalarTraits<dd_real>
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
 #endif      
-      return sqrt(x);
+      return ::sqrt(x);
   }
-  static inline dd_real pow(dd_real x, dd_real y) { return pow(x,y); }
+  static inline dd_real pow(dd_real x, dd_real y) { return ::pow(x,y); }
   // dd_real puts its transcendental functions in the global namespace.
-  static inline dd_real log(dd_real x) { return log(x); }
-  static inline dd_real log10(dd_real x) { return log10(x); }
+  static inline dd_real log(dd_real x) { return ::log(x); }
+  static inline dd_real log10(dd_real x) { return ::log10(x); }
 };
 
 
@@ -741,7 +741,7 @@ struct ScalarTraits<qd_real>
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
 #endif      
-      return abs(a);
+      return ::abs(a);
   }
   static inline qd_real zero()  { return qd_real(0.0); }
   static inline qd_real one()   { return qd_real(1.0); }
@@ -767,12 +767,12 @@ struct ScalarTraits<qd_real>
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
 #endif      
-      return sqrt(x);
+      return ::sqrt(x);
   }
-  static inline qd_real pow(qd_real x, qd_real y) { return pow(x,y); }
+  static inline qd_real pow(qd_real x, qd_real y) { return ::pow(x,y); }
   // qd_real puts its transcendental functions in the global namespace.
-  static inline qd_real log(qd_real x) { return log(x); }
-  static inline qd_real log10(qd_real x) { return log10(x); }
+  static inline qd_real log(qd_real x) { return ::log(x); }
+  static inline qd_real log10(qd_real x) { return ::log10(x); }
 };
 
 
