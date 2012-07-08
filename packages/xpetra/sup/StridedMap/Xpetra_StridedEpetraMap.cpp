@@ -48,8 +48,8 @@ namespace Xpetra {
     for(int i = 0; i<nodeMap->NumMyElements(); i++) {
       int gid = nodeMap->GID(i);
       for(int dof = 0; dof < nDofsPerNode; ++dof) {
-	// dofs are calculated by
-	// global offset + node_GID * full size of strided map + striding offset of current striding block + dof id of current striding block
+        // dofs are calculated by
+        // global offset + node_GID * full size of strided map + striding offset of current striding block + dof id of current striding block
         dofgids.push_back(offset_ + gid*getFixedBlockSize() + nStridedOffset + dof);
       }
     }
@@ -135,20 +135,25 @@ namespace Xpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");      
   }
     
-#if 0    
+
   StridedEpetraMap::StridedEpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase,
                        std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalOrdinal stridedBlockId, const Teuchos::RCP<Node> &node)
-  : EpetraMap(numGlobalElements, elementList, indexBase, comm, node), StridedMap<int, int>(numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId)
-  {   
+  : EpetraMap(numGlobalElements, elementList, indexBase, comm, node), Xpetra::StridedMap<int,int>(numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId)
+  {
     int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
+    if(stridedBlockId != -1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: stridedBlockId > stridingInfo.size()");
+      nDofsPerNode = Teuchos::as<int>(stridingInfo[stridedBlockId]);
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
-    if(stridedBlockId == -1) {
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: stridedBlockId > stridingInfo.size()");      
-    }   
+
+    // create EpetraMap using the dofs from ElementList
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), &elementList[0], 1, indexBase, *toEpetra(comm))))));
+
+    // set parameters for striding information
+    TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
   }
-#endif
-   
+
 
   std::string StridedEpetraMap::description() const {
     std::ostringstream oss;

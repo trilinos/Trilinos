@@ -11,8 +11,6 @@
 
 #include "Epetra_Import.h"
 
-namespace Teuchos { class ParameterList; }
-
 namespace Xpetra {
 
   // TODO: move that elsewhere

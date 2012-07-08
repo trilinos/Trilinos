@@ -2,6 +2,7 @@
 #define MUELU_UTILITIES_DEF_HPP
 
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -324,7 +325,7 @@ t0 = MPI_Wtime();
 #endif
     }
 
-    RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
+    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
     params->set("Optimize Storage",doOptimizeStorage);
     C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
                     (transposeA) ? A->getDomainMap() : A->getRangeMap(),
@@ -371,7 +372,7 @@ if (mypid == 0)
     // create ML operators from EpetraCrsMatrix
     ML_Operator* ml_As = ML_Operator_Create(comm);
     ML_Operator* ml_Bs = ML_Operator_Create(comm);
-    ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&A),ml_As);
+    ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&A),ml_As); // Should we test if the lightweight wrapper is actually used or if WrapEpetraCrsMatrix fall backs to the heavy one?
     ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&B),ml_Bs);
     ML_Operator* ml_AtimesB = ML_Operator_Create(comm);
     ML_2matmult(ml_As,ml_Bs,ml_AtimesB,ML_CSR_MATRIX); // do NOT use ML_EpetraCRS_MATRIX!!!
@@ -1007,7 +1008,7 @@ if (mypid == 0)
       if (doFillComplete) {
         if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
           throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
-        RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
+        RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
         params->set("Optimize Storage",doOptimizeStorage);
         Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
       }

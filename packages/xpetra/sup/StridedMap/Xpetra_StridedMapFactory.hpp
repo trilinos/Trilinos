@@ -55,12 +55,53 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra) {
-	Teuchos::RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > tmap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-	TEUCHOS_TEST_FOR_EXCEPTION(tmap == Teuchos::null, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: bad cast. map is not a TpetraMap.");
+        Teuchos::RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > tmap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+        TEUCHOS_TEST_FOR_EXCEPTION(tmap == Teuchos::null, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: bad cast. map is not a TpetraMap.");
         return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (tmap->getTpetra_Map(), stridingInfo, stridedBlockId, offset) );
       }
 #endif
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
+      XPETRA_FACTORY_END;
+    }
+
+    // special constructor for generating a given subblock of a strided map
+    static RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(const RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >& map, LocalOrdinal stridedBlockId) {
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId < 0, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: constructor expects stridedBlockId > -1.");
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra) {
+        TEUCHOS_TEST_FOR_EXCEPTION(map->getStridedBlockId() != -1, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: constructor expects a full map (stridedBlockId == -1).");
+        std::vector<size_t> stridingInfo = map->getStridingData();
+
+        /////////////////////////////////////////////
+        Teuchos::ArrayView< const GlobalOrdinal > dofGids = map->getNodeElementList();
+        //std::sort(dofGids.begin(),dofGids.end()); // TODO: do i need this?
+
+        // determine nStridedOffset
+        size_t nStridedOffset = 0;
+        for(int j=0; j<map->getStridedBlockId(); j++) {
+          nStridedOffset += stridingInfo[j];
+        }
+
+        size_t numMyBlockDofs = stridingInfo[stridedBlockId] / map->getFixedBlockSize() * map->getNodeNumElements();
+        std::vector<GlobalOrdinal> subBlockDofGids(numMyBlockDofs);
+
+        // TODO fill vector with dofs
+        typename Teuchos::ArrayView< const GlobalOrdinal >::iterator it;
+        for(it = dofGids.begin(); it!=dofGids.end(); ++it) {
+          if(map->GID2StridingBlockId( *it ) == stridedBlockId) {
+            subBlockDofGids.push_back( *it );
+          }
+        }
+
+        const Teuchos::ArrayView<const LocalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
+
+        // call constructor for TpetraMap
+        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (subBlockDofGids.size(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, map->getNode()) );
+        ////////////////////////////////////////
+
+      }
+#endif
+      XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
       XPETRA_FACTORY_END;
     }
 
@@ -142,6 +183,82 @@ namespace Xpetra {
       }
 #endif
 
+      XPETRA_FACTORY_END;
+    }
+
+    // special constructor for generating a given subblock of a strided map
+    static RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(const RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >& map, LocalOrdinal stridedBlockId) {
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId < 0, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: constructor expects stridedBlockId > -1.");
+      typedef Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> StridedMapClass;
+      //typename Teuchos::ArrayView< const GlobalOrdinal >::iterator it;
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra) {
+        TEUCHOS_TEST_FOR_EXCEPTION(map->getStridedBlockId() != -1, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: constructor expects a full map (stridedBlockId == -1).");
+        std::vector<size_t> stridingInfo = map->getStridingData();
+
+        /////////////////////////////////////////////
+        Teuchos::ArrayView< const GlobalOrdinal > dofGids = map->getNodeElementList();
+        //std::sort(dofGids.begin(),dofGids.end()); // TODO: do i need this?
+
+        // determine nStridedOffset
+        size_t nStridedOffset = 0;
+        for(int j=0; j<map->getStridedBlockId(); j++) {
+          nStridedOffset += stridingInfo[j];
+        }
+
+        size_t numMyBlockDofs = stridingInfo[stridedBlockId] / map->getFixedBlockSize() * map->getNodeNumElements();
+        std::vector<GlobalOrdinal> subBlockDofGids(numMyBlockDofs);
+
+        // TODO fill vector with dofs
+
+        for(Teuchos::ArrayView< const GlobalOrdinal >::iterator it = dofGids.begin(); it!=dofGids.end(); ++it) {
+          if(map->GID2StridingBlockId( *it ) == Teuchos::as<size_t>(stridedBlockId)) {
+            subBlockDofGids.push_back( *it );
+          }
+        }
+
+        const Teuchos::ArrayView<const LocalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
+
+        // call constructor for TpetraMap
+        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (/*subBlockDofGids.size()*/Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, map->getNode()) );
+        ////////////////////////////////////////
+
+      }
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+      if (map->lib() == UseEpetra) {
+        TEUCHOS_TEST_FOR_EXCEPTION(map->getStridedBlockId() != -1, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: constructor expects a full map (stridedBlockId == -1).");
+        std::vector<size_t> stridingInfo = map->getStridingData();
+
+        /////////////////////////////////////////////
+        Teuchos::ArrayView< const GlobalOrdinal > dofGids = map->getNodeElementList();
+        //std::sort(dofGids.begin(),dofGids.end()); // TODO: do i need this?
+
+        // determine nStridedOffset
+        size_t nStridedOffset = 0;
+        for(int j=0; j<map->getStridedBlockId(); j++) {
+          nStridedOffset += stridingInfo[j];
+        }
+
+        size_t numMyBlockDofs = stridingInfo[stridedBlockId] / map->getFixedBlockSize() * map->getNodeNumElements();
+        std::vector<GlobalOrdinal> subBlockDofGids(numMyBlockDofs);
+
+        // TODO fill vector with dofs
+        //Teuchos::ArrayView< const GlobalOrdinal >::iterator it;
+        for(Teuchos::ArrayView< const GlobalOrdinal >::iterator it = dofGids.begin(); it!=dofGids.end(); ++it) {
+          if(map->GID2StridingBlockId( *it ) == Teuchos::as<size_t>(stridedBlockId)) {
+            subBlockDofGids.push_back( *it );
+          }
+        }
+
+        const Teuchos::ArrayView<const LocalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
+
+        // call constructor for TpetraMap
+        return rcp( new StridedEpetraMap(Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, map->getNode()) );
+        ////////////////////////////////////////
+
+      }
+#endif
       XPETRA_FACTORY_END;
     }
 

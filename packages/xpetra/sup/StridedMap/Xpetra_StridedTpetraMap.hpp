@@ -167,27 +167,33 @@ namespace Xpetra {
 
     }
 
-#if 0
     /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
-     *  If numGlobalElements ==
-     *  Teuchos::OrdinalTraits<global_size_t>::invalid(), the number
-     *  of global elements will be computed via a global
-     *  communication.  Otherwise, it must be equal to the sum of the
-     *  local elements across all nodes. This will only be verified if
-     *  Trilinos' Teuchos package was built with debug support (CMake
-     *  Boolean option TEUCHOS_ENABLE_DEBUG=ON).  If verification
-     *  fails, a std::invalid_argument exception will be thrown.
+     *  createse a strided map using the GIDs in elementList and the striding information
+     *  provided by user.
      *
      *  \pre stridingInfo.size() > 0
      *  \pre numGlobalElements % getFixedBlockSize() == 0 
-     *  \pre elementList.size() % getFixedBlockSize() == 0 
+     *  \pre elementList.size() % getFixedBlockSize() == 0
+     *  \post CheckConsistency() == true
      */
     StridedTpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
-    : TpetraMap(numGlobalElements, elementList, indexBase, comm, lg, node), StridedMap(numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId)
+    : Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, comm, node), Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId)
     {
+      typedef Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> StridedMapClass;
+
+        int nDofsPerNode = Teuchos::as<int>(StridedMapClass::getFixedBlockSize());
+        if(stridedBlockId != -1) {
+          TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: stridedBlockId > stridingInfo.size()");
+          nDofsPerNode = Teuchos::as<int>(stridingInfo[stridedBlockId]);
+        }
+
+        // create TpetraMap using the dofs from ElementList
+        TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_ = Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, elementList, indexBase, comm, node));
+
+        // set parameters for striding information
+        TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
     }
-#endif
 
     //! Map destructor.
     ~StridedTpetraMap() { }

@@ -170,7 +170,7 @@ namespace Xpetra {
     //! @name Overridden from Teuchos::Describable
     //@{
 
-    //! Return a simple one-line description of this object.
+    //! A simple one-line description of this object.
     std::string description() const { XPETRA_MONITOR("TpetraCrsMatrix::description"); return mtx_->description(); }
 
     //! Print the object with some verbosity level to an FancyOStream object.

@@ -34,7 +34,7 @@ namespace Xpetra {
     StridedEpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
-    //StridedEpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
+    StridedEpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
 
     //! Map destructor.
     ~StridedEpetraMap() { }
@@ -140,9 +140,9 @@ namespace Xpetra {
     //! EpetraMap constructor to wrap a Epetra_Map object
     StridedEpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0) 
       : EpetraMap(map), StridedMap<int, int>(stridingInfo, stridedBlockId, offset) { 
-	int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
-	TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
-	TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");      
+      int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
+      TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
+      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
     }
 
     //! Get the library used by this object (Epetra or Epetra?)
@@ -176,6 +176,12 @@ namespace Xpetra {
 
         const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
         const GlobalOrdinal goZeroOffset = (dofGids[0] - nStridedOffset - offset_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize());
+        /*printf("goZeroOffset: %i\n",goZeroOffset);
+        printf("dofGids[0]: %i \n",dofGids[0]);
+        printf("stridedOffset: %i\n",nStridedOffset);
+        printf("offset_: %i\n",offset_);
+        printf("goStridedOffset: %i\n",goStridedOffset);
+        printf("getFixedBlkSize: %i\n",getFixedBlockSize());*/
 
         GlobalOrdinal cnt = 0;
         for(size_t i = 0; i<Teuchos::as<size_t>(dofGids.size())/stridingInfo_[stridedBlockId_]; i+=stridingInfo_[stridedBlockId_]) {
@@ -189,6 +195,7 @@ namespace Xpetra {
           }
           cnt++;
         }
+
       }
       
       return true;
