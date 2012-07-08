@@ -28,6 +28,7 @@ namespace stk {
       stk::mesh::FieldBase *coord_field_current   = coord_field;
       stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
       stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
+      stk::mesh::FieldBase *coord_field_lagged  = eMesh->get_field("coordinates_lagged");
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       int spatialDim = eMesh->get_spatial_dim();
@@ -47,7 +48,8 @@ namespace stk {
                     stk::mesh::Entity& node = bucket[i_node];
                     double *coord_current = PerceptMesh::field_data(coord_field_current, node);
                     m_current_position[&node] = Vector(coord_current, coord_current+spatialDim);
-                    m_delta[&node] = Vector(spatialDim,0.0);
+                    m_delta[&node] = Vector(spatialDim, 0.0);
+                    m_weight[&node] = Vector(spatialDim, 0.0);
                   }
               }
           }
@@ -58,6 +60,7 @@ namespace stk {
 
         Vector centroid_current(spatialDim, 0.0);
         Vector centroid_projected(spatialDim, 0.0);
+        Vector centroid_lagged(spatialDim, 0.0);
         Vector centroid_original(spatialDim, 0.0);
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -75,36 +78,78 @@ namespace stk {
                     unsigned num_node = elem_nodes.size();
                     centroid_current.assign(spatialDim, 0.0);
                     centroid_projected.assign(spatialDim, 0.0);
+                    centroid_lagged.assign(spatialDim, 0.0);
                     centroid_original.assign(spatialDim, 0.0);
+
+                    int num_free = 0;
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
                         mesh::Entity & node = * elem_nodes[ inode ].entity();
+                        bool fixed = pmm->get_fixed_flag(&node);
+                        if (!fixed) 
+                          ++num_free;
+                      }
+
+                    int num_fixed = num_node - num_free;
+                    if (0 == num_free)
+                      {
+                        continue;
+                      }
+
+                    //!!!
+                    num_fixed=0;
+                    //!!!
+
+                    int sc = (num_fixed ? num_fixed : num_node);
+                    for (unsigned inode=0; inode < num_node; inode++)
+                      {
+                        mesh::Entity & node = * elem_nodes[ inode ].entity();
+                        bool fixed = pmm->get_fixed_flag(&node);
+                        if (num_fixed && !fixed)
+                          continue;
+
                         double *coord_current = PerceptMesh::field_data(coord_field_current, node);
                         double *coord_projected = PerceptMesh::field_data(coord_field_projected, node);
+                        double *coord_lagged = PerceptMesh::field_data(coord_field_lagged, node);
                         double *coord_original = PerceptMesh::field_data(coord_field_original, node);
 
                         for (int i=0; i < spatialDim; i++)
                           {
-                            centroid_current[i] += coord_current[i]/((double)num_node);
-                            centroid_projected[i] += coord_projected[i]/((double)num_node);
-                            centroid_original[i] += coord_original[i]/((double)num_node);
+                            centroid_current[i] += coord_current[i]/double(sc);
+                            centroid_projected[i] += coord_projected[i]/double(sc);
+                            centroid_lagged[i] += coord_lagged[i]/double(sc);
+                            centroid_original[i] += coord_original[i]/double(sc);
                           }
                       }
+
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
                         mesh::Entity & node = * elem_nodes[ inode ].entity();
+
+                        bool fixed = pmm->get_fixed_flag(&node);
+                        if (fixed)
+                          continue;
+
                         double *coord_current = PerceptMesh::field_data(coord_field_current, node);
-                        double *coord_projected = PerceptMesh::field_data(coord_field_projected, node);
+                        //double *coord_projected = PerceptMesh::field_data(coord_field_projected, node);
+                        double *coord_lagged = PerceptMesh::field_data(coord_field_lagged, node);
                         double *coord_original = PerceptMesh::field_data(coord_field_original, node);
                         Vector& delta = m_delta[&node];
+                        Vector& weight = m_weight[&node];
+                        
                         for (int i=0; i < spatialDim; i++)
                           {
                             double alpha_prev = 0.0;
                             //double alpha_prev = m_alpha_prev;
-                            double coord_base = coord_original[i]*(1.0-alpha_prev) + alpha_prev*coord_projected[i];
-                            double centroid_base = centroid_original[i]*(1.0-alpha_prev) + alpha_prev*centroid_projected[i];
+                            //double coord_base = coord_original[i]*(1.0-alpha_prev) + alpha_prev*coord_projected[i];
+                            //double centroid_base = centroid_original[i]*(1.0-alpha_prev) + alpha_prev*centroid_projected[i];
+                            double coord_base = coord_original[i]*(1.0-alpha_prev) + alpha_prev*coord_lagged[i];
+                            double centroid_base = centroid_original[i]*(1.0-alpha_prev) + alpha_prev*centroid_lagged[i];
                             double new_pos = coord_base + (centroid_current[i] - centroid_base);
-                            delta[i] += (new_pos - coord_current[i])/((double)num_node);
+                            double wgt = ((double)num_node)/((double)num_free);
+                            wgt = 1.0;
+                            delta[i] += wgt*(new_pos - coord_current[i]);
+                            weight[i] += wgt;
                           }
                       }
                   }
@@ -135,10 +180,11 @@ namespace stk {
                     double *coord_current = PerceptMesh::field_data(coord_field_current, node);
                     //m_current_position[&node] = Vector(coord_current, coord_current+spatialDim);
                     Vector& delta = m_delta[&node];
+                    Vector& weight = m_weight[&node];
                     for (int i=0; i < spatialDim; i++)
                       {
                         m_dmax = std::max(std::abs(delta[i]), m_dmax);
-                        coord_current[i] += delta[i];  // if not fixed
+                        coord_current[i] += delta[i] / weight[i];  // if not fixed
                       }
                   }
               }
@@ -170,13 +216,19 @@ namespace stk {
       stk::mesh::FieldBase *coord_field_current   = coord_field;
       stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
       stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
+      stk::mesh::FieldBase *coord_field_lagged  = eMesh->get_field("coordinates_lagged");
 
-      double alphas[] = {0.0,0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
+      eMesh->copy_field(coord_field_lagged, coord_field_original);
+
+      //double alphas[] = {0.0, 0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
+      double alphas[] = {0.0, 1.0};
+      //double alphas[] = {0.0, 0.001, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
+      //double alphas[] = {0.0, 0.001, 0.01, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.4, 0.6, 0.8, 1.0};
       int nalpha = sizeof(alphas)/sizeof(alphas[0]);
       
       for (int outer = 0; outer < nalpha; outer++)
         {
-          double alpha = alphas[outer];
+          double alpha = (outer < nalpha ? alphas[outer] : 1.0);
           m_alpha = alpha;
           m_alpha_prev = alpha;
           if (outer > 0) m_alpha_prev = alphas[outer-1];
@@ -187,7 +239,8 @@ namespace stk {
           int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
           
           if (!get_parallel_rank()) 
-            std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid << " for outer_iter= " << outer
+            std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid << " for outer_iter= " << outer 
+                      << " alpha= " << alpha
                       << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " OK")
                       << std::endl;
 
@@ -206,6 +259,9 @@ namespace stk {
               if (m_dmax < gradNorm)
                 break;
             }
+
+          eMesh->copy_field(coord_field_lagged, coord_field);
+
         }
 
       //if (!get_parallel_rank()) 

@@ -97,7 +97,7 @@ namespace stk
       Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
 
 
-#define DO_TESTS 0
+#define DO_TESTS 1
 #if DO_TESTS
 
 #define EXTRA_PRINT 0
@@ -450,9 +450,9 @@ namespace stk
         //if (p_size == 1 || p_size == 2)
         if (p_size <= par_size_max)
           {
-            const unsigned n = 12;
-            //const unsigned nx = n , ny = n , nz = p_size*n ;
-            const unsigned nx = n , ny = n;
+            const unsigned nele = 12;
+            //const unsigned nx = nele , ny = nele , nz = p_size*nele ;
+            const unsigned nx = nele , ny = nele;
 
             bool sidesets=true;
             percept::QuadFixture<double> fixture( pm , nx , ny, sidesets);
@@ -495,9 +495,10 @@ namespace stk
                         stk::mesh::Entity& entity = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
-                        double ix = data[0]/double(n);
-                        double bump_size=2.8; // 0.8
-                        data[1] += (ix)*(1.0-ix)*bump_size*double(n);
+                        double ix = data[0]/double(nele);
+                        //double bump_size=2.8; // 0.8
+                        double bump_size=0.8; // 0.8
+                        data[1] += (ix)*(1.0-ix)*bump_size*double(nele);
                         //std::cout << "tmp srk surface 1 node = " << data[0] << " " << data[1] << std::endl;
                       }
                   }

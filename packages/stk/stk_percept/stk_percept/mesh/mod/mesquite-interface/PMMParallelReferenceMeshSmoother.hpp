@@ -50,6 +50,7 @@ namespace stk {
     private:
       NodeMap m_current_position;
       NodeMap m_delta;
+      NodeMap m_weight;
       double m_dmax;
       double m_alpha;
       double m_alpha_prev;
