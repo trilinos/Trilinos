@@ -60,8 +60,30 @@
 
 #define XFORM_REDUCE TPETRA_BINARY_PRETRANSFORM_REDUCE
 
+  namespace IRTRdetails {
 
-template <class S>
+    struct trivial_fpu_fix {
+      void fix() {}
+      void unfix() {}
+    };
+#ifdef HAVE_TPETRA_QD
+    struct nontrivial_fpu_fix {
+      unsigned int old_cw;
+      void fix()   {fpu_fix_start(&old_cw);}
+      void unfix() {fpu_fix_end(&old_cw);}
+    };
+#endif
+    // implementations
+    template <class T> struct fpu_fix : trivial_fpu_fix {};
+#ifdef HAVE_TPETRA_QD
+    template <> struct fpu_fix<qd_real> : nontrivial_fpu_fix {};
+    template <> struct fpu_fix<dd_real> : nontrivial_fpu_fix {};
+#endif
+
+  }
+
+
+template <class S, class Sinner = S>
 class IRTR_Driver {
   public:
   // input
@@ -88,13 +110,25 @@ class IRTR_Driver {
     typedef Tpetra::Map<LO,GO,Node>               Map;
     typedef Tpetra::CrsMatrix<S,LO,GO,Node> CrsMatrix;
     typedef Tpetra::Vector<S,LO,GO,Node>       Vector;
+    typedef Teuchos::ScalarTraits<S> ST;
+
+    IRTRdetails::fpu_fix<S> ff; ff.fix();
 
     *out << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << std::endl;
 
     // read the matrix
     RCP<CrsMatrix> A;
-    Tpetra::Utils::readHBMatrix(matrixFile,comm,node,A);
-    RCP<const Map> rowMap = A->getRowMap();
+    RCP<const Map> rowMap = null;
+    RCP<ParameterList> fillParams = parameterList();
+    // must preserve the local graph in order to do convert() calls later
+    if (Teuchos::TypeTraits::is_same<S,Sinner>::value) {
+      fillParams->set("Preserve Local Graph",false);
+    }
+    else {
+      fillParams->set("Preserve Local Graph",true);
+    }
+    Tpetra::Utils::readHBMatrix(matrixFile,comm,node,A,rowMap,fillParams);
+    rowMap = A->getRowMap();
 
     testPassed = true;
 
@@ -103,7 +137,7 @@ class IRTR_Driver {
     x->randomize();
 
     // call the solve
-    S lambda = TpetraExamples::IRTR_singleprec<S,LO,GO,Node>(out,*params,A,x);
+    S lambda = TpetraExamples::IRTR<Sinner,S,LO,GO,Node>(out,*params,A,x);
 
     // check that residual is as requested
     {
@@ -115,10 +149,12 @@ class IRTR_Driver {
                                  r*r, ZeroOp<S>, plus<S>() );   //      : sum r'*r
       const S rnrm = Teuchos::ScalarTraits<S>::squareroot(r_r);
       // check that residual is as requested
-      *out << "|A*x - x*lambda|/|lambda|: " << rnrm / lambda << endl;
+      *out << "|A*x - x*lambda|/|lambda|: " << rnrm / ST::magnitude(lambda) << endl;
       const double tolerance = params->get<double>("tolerance");
       if (rnrm / lambda > tolerance) testPassed = false;
     }
+
+    ff.unfix();
 
     // print timings
     Teuchos::TimeMonitor::summarize( *out );

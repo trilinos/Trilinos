@@ -188,7 +188,7 @@ namespace KokkosExamples {
     template <class T> 
     static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
     { 
-      return Kokkos::details::DefaultCRSAllocator<Node>::allocStorage(node,rowPtrs);
+      return Kokkos::details::DefaultCRSAllocator<Node>::template allocStorage<T>(node,rowPtrs);
     }
 
     //! Finalize a graph

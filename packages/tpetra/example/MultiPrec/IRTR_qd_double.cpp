@@ -55,8 +55,8 @@
 #include <qd/qd_real.h>
 #include <IRTRDriver.hpp>
 
-/** \file IRTR_dd.cpp
-    \brief An example of a high-precision eigensolver using Tpetra::RTI and dd_real.
+/** \file IRTR_qd.cpp
+    \brief An example of a high-precision eigensolver using Tpetra::RTI and qd_real.
  */
 
 int main(int argc, char *argv[])
@@ -112,12 +112,13 @@ int main(int argc, char *argv[])
   // 
   // Define the scalar type
   // 
-  typedef dd_real Scalar;
+  typedef qd_real Scalar;
+  typedef double ScalarInner;
 
   //
   // instantiate a driver on the scalar stack
   //
-  IRTR_Driver<Scalar> driver;
+  IRTR_Driver<Scalar,ScalarInner> driver;
   // hand output stream to driver
   if (verbose) driver.out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
   else         driver.out = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
@@ -131,7 +132,7 @@ int main(int argc, char *argv[])
   // default solver stack parameters
   std::string xmlString(
     " <ParameterList>                                                       \n"
-    "   <Parameter name='tolerance' value='1e-31' type='double'/>           \n"
+    "   <Parameter name='tolerance' value='1e-62' type='double'/>           \n"
     "   <Parameter name='verbose' value='1' type='int'/>                    \n"
     "   <Parameter name='rho_prime' value='.1' type='double'/>              \n"
     "   <Parameter name='kappa' value='.1' type='double'/>                  \n"
@@ -157,6 +158,6 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-/** \example IRTR_dd.cpp 
+/** \example IRTR_qd.cpp 
     Demonstrate using Tpetra::RTI and a high-precision IRTR eigensolve.
   */

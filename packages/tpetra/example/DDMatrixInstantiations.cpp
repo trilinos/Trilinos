@@ -77,12 +77,8 @@
 
 #define INSTANT_ALL( NODE )                                            \
     namespace Utils {                                                  \
-      TPETRA_MATRIXIO_INSTANT(qd_real,int,int,NODE)                    \
-    }                                                                  \
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(dd_real,dd_real,int,int,NODE)  \
-    TPETRA_CRSMATRIX_CONVERT_INSTANT(qd_real,dd_real,int,int,NODE)     \
-    TPETRA_CRSMATRIX_CONVERT_INSTANT(qd_real,double,int,int,NODE)      \
-    TPETRA_CRSMATRIX_CONVERT_INSTANT(qd_real,float,int,int,NODE)     
+      TPETRA_MATRIXIO_INSTANT(dd_real,int,int,NODE)                    \
+    }
 
 namespace Tpetra {
 
