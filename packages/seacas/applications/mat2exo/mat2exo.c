@@ -18,6 +18,8 @@
 
    modified by D. Todd Griffith on 12/16/2005
    * side set distribution factors now written as double (not int)
+
+   modified by Greg Sjaardema, 07/05/2012 to use matio instead of matlab libraries.
 */
 
 #include <stdio.h>
@@ -27,7 +29,7 @@
 #include <time.h>
 #include <assert.h>
 #include <exodusII.h>
-#include "mat.h"
+#include "matio.h"
 #include "add_to_log.h"
 
 /* The maximum buffer size we will need is MAX_LINE_LENGTH (defined in
@@ -35,20 +37,19 @@
 #define MAX_INFO_RECORDS 20
 
 /**********************************************************************/
-MATFile *mat_file=0;  /* file for binary .mat input */
+mat_t *mat_file=0;  /* file for binary .mat input */
 
 /**********************************************************************/
 static char *qainfo[] =
 {
   "mat2exo",
-  "$Date: 2009/03/17 16:54:56 $",
-  "$Revision: 1.6 $",
+  "2012/07/05",
+  "2.0",
 };
 
 /**********************************************************************/
-int matGetStr (char *name,char *str);
-int matGetDbl (char *name,int n1,int n2, double *pd);
-int matGetInt (char *name,int n1,int n2, int *pd);
+int matGetStr  (char *name,char *str);
+int matGetDbl  (char *name,int n1,int n2, double *pd);
 int matArrNRow (char *name);
 int matArrNCol (char *name);
 int *d2i (double *dscr, int n);
@@ -92,9 +93,9 @@ int main (int argc, char *argv[]){
   }
   
   /*open input file*/
-  mat_file = matOpen(argv[1], "r");
+  mat_file = Mat_Open(argv[1], MAT_ACC_RDONLY);
   if (mat_file == NULL) {
-    printf("Error opening file %s\n", argv[1]);
+    printf("Error opening matlab file %s\n", argv[1]);
     return(1);
   }
 
@@ -441,7 +442,7 @@ int main (int argc, char *argv[]){
   ex_close(exo_file);
   
   /* close mat file */
-  matClose(mat_file);
+  Mat_Close(mat_file);
 
   /* */
   fprintf(stderr,"done.\n");
@@ -454,65 +455,58 @@ int main (int argc, char *argv[]){
 }
 
 /**********************************************************************/
-int matGetStr (char *name,char *str)
+int matGetStr (char *name,char *data)
 {
   int strlen;
-  /* this is for Matlab 6.5 */
-    mxArray *pa;
-    if ( !(pa = matGetVariable(mat_file,name)) )
-	return -1;
-    strlen = mxGetN(pa);
-    if(mxGetM(pa)!=1)
-      printf("Error: Multiline string copy attempted\n");
-    mxGetString(pa,str,strlen);
-    mxDestroyArray(pa);
-    return 0;
+
+  matvar_t *matvar;
+  matvar = Mat_VarRead(mat_file, name);
+  if (matvar == NULL)
+    return -1;
+
+  strlen = matvar->nbytes;
+
+  if (matvar->dims[0] != 1)
+    printf("Error: Multiline string copy attempted\n");
+
+  memcpy(data, matvar->data, strlen);
+
+  Mat_VarFree(matvar);
+  return 0;
 }
 
 /**********************************************************************/
-int matGetDbl (char *name,int n1,int n2, double *pd)
+int matGetDbl (char *name,int n1,int n2, double *data)
 {
-    mxArray *pa;
-    if ( !(pa=matGetVariable(mat_file,name)) )
-	return -1;
-    memcpy(pd,mxGetPr(pa),n1*n2*sizeof(double));
-    mxDestroyArray(pa);
-    return 0;
-}
+    matvar_t *matvar;
+    matvar = Mat_VarRead(mat_file, name);
+    if (matvar == NULL)
+      return -1;
 
-/**********************************************************************/
-int matGetInt (char *name,int n1,int n2, int *pd)
-{
-    mxArray *pa;
-    if ( !(pa=matGetVariable(mat_file,name)) )
-	return -1;
-    memcpy(pd,mxGetPr(pa),n1*n2*sizeof(int));
-    mxDestroyArray(pa);
+    memcpy(data, matvar->data, n1*n2*sizeof(double));
+    
+    Mat_VarFree(matvar);
     return 0;
 }
 
 /**********************************************************************/
 int matArrNRow (char *name)
 {
-    mxArray *pa;
-    int len;
-    if ( !(pa=matGetVariable(mat_file,name)) )
-	return -1;
-    len = mxGetM(pa);
-    mxDestroyArray(pa);
-    return len;
+  matvar_t *matvar = Mat_VarRead(mat_file, name);
+  if (matvar == NULL)
+    return -1;
+
+  return matvar->dims[0];
 }
 
 /**********************************************************************/
 int matArrNCol (char *name)
 {
-    mxArray *pa;
-    int len;
-    if ( !(pa=matGetVariable(mat_file,name)) )
-	return -1;
-    len = mxGetN(pa);
-    mxDestroyArray(pa);
-    return len;
+  matvar_t *matvar = Mat_VarRead(mat_file, name);
+  if (matvar == NULL)
+    return -1;
+
+  return matvar->dims[1];
 }
 
 

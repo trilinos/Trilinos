@@ -68,33 +68,19 @@
 #include "exodusII.h"
 
 #include "add_to_log.h"
-/**************** conditional compilation ************************/
-#ifdef HAS_MATLAB
-#include "mat.h"
+#include "matio.h"
+
 #define EXT ".mat"
 int textfile=0;
-#else
 
-
-/* no matlab libraries */
-#define MATFile FILE
-#define matOpen fopen
-#define matClose fclose
-#define matPutStr mPutStr
-#define matPutDbl mPutDbl
-#define EXT ".m"
-int textfile=1;
-#endif
-/************* end conditional compilation ***********************/
-
-FILE* m_file=0;       /* file for m file output */
-MATFile *mat_file=0;  /* file for binary .mat output */
+FILE* m_file=0;     /* file for m file output */
+mat_t *mat_file=0;  /* file for binary .mat output */
 
 static char *qainfo[] =
 {
   "exo2mat",
-  "2010/09/28",
-  "1.11",
+  "2012/07/05",
+  "2.00",
 };
 
 
@@ -136,45 +122,34 @@ void mPutDbl (char *name,int n1,int n2,double *pd)
 }
 
 
-
-
-/*----------------------*/
-#ifdef HAS_MATLAB
-
 /* put string in mat file*/
 void matPutStr (char *name,char *str)
 {
-  mxArray *pa;
-  pa=mxCreateString(str);
+  matvar_t *matvar = NULL;
+  size_t dims[2];
 
-  /* MATLAB 5: 
-   * mxSetName(pa,name);
-   * matPutArray(mat_file,pa);
-   */
+  dims[0] = 1;
+  dims[1] = strlen(str);
 
-  /* MATLAB 6: */
-  matPutVariable(mat_file,name,pa);
-
-  mxDestroyArray(pa);
+  matvar = Mat_VarCreate(name, MAT_C_CHAR, MAT_T_UINT8, 2, dims, str, MAT_F_DONT_COPY_DATA);
+  Mat_VarWrite(mat_file, matvar, MAT_COMPRESSION_NONE);
+  Mat_VarFree(matvar);
 }
 
 /* put double in mat file*/
 void matPutDbl (char *name,int n1,int n2,double *pd)
 {
-  mxArray *pa;
-  pa=mxCreateDoubleMatrix(n1,n2,mxREAL);
-  memcpy(mxGetPr(pa),pd,n1*n2*sizeof(double));
-
-  /* MATLAB 5 */
-  /* mxSetName(pa,name); */
-  /* matPutArray(mat_file,pa); */
+  matvar_t *matvar = NULL;
   
-  /* MATLAB 6: */
-  matPutVariable(mat_file,name,pa);
-
-  mxDestroyArray(pa);
+  size_t dims[2];
+  dims[0] = n1;
+  dims[1] = n2;
+  
+  matvar = Mat_VarCreate(name, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, pd, 0);
+  Mat_VarWrite(mat_file, matvar, MAT_COMPRESSION_ZLIB);
+  Mat_VarFree(matvar);
 }
-#endif
+
 /*----------------------*/
 
 /* wrappers for the two output routine types */
@@ -289,6 +264,7 @@ int main (int argc, char *argv[])
   /* open output file */
   if ( textfile )
     ext=".m";
+
   if ( !oname ){
       filename = (char*)malloc( strlen(argv[1])+10);
       strcpy(filename,argv[1]);
@@ -299,6 +275,7 @@ int main (int argc, char *argv[])
   else {
       filename=oname;
   }
+
   if ( textfile ){
     m_file = fopen(filename,"w");
     if (!m_file ){
@@ -306,14 +283,14 @@ int main (int argc, char *argv[])
       exit(1);
     }
   }
-  else 
-    if ( (mat_file = matOpen(filename, "w"))==0 ){
-      fprintf(stderr,"Unable to open %s\n",filename);
+  else {
+    mat_file = Mat_CreateVer(filename, NULL, MAT_FT_MAT5);
+    if (mat_file == NULL) {
+      fprintf(stderr,"Unable to create matlab file %s\n",filename);
       exit(1);
     }
+  }
 
-
-  
   /* word sizes */
   cpu_word_size=sizeof(double);
   io_word_size=0;
@@ -678,7 +655,7 @@ int main (int argc, char *argv[])
   if ( textfile )
     fclose(m_file);
   else
-    matClose(mat_file);
+    Mat_Close(mat_file);
 
   /* */
   fprintf(stderr,"done.\n");

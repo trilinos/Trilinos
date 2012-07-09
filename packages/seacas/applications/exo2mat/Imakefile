@@ -41,9 +41,7 @@ SRC = exo2mat.c
 
 OBJS = $(SRC:.c=.o)
 
-INCLUDES = MatlabIncludes
-
-LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) $(MATLABLIBRARIES) -lm
+LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) $(MATIO) -lm -lz
 
 NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
 
