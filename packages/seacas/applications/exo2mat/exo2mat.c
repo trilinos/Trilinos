@@ -79,8 +79,8 @@ mat_t *mat_file=0;  /* file for binary .mat output */
 static char *qainfo[] =
 {
   "exo2mat",
-  "2012/07/05",
-  "2.00",
+  "2012/07/09",
+  "2.01",
 };
 
 
@@ -145,7 +145,7 @@ void matPutDbl (char *name,int n1,int n2,double *pd)
   dims[0] = n1;
   dims[1] = n2;
   
-  matvar = Mat_VarCreate(name, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, pd, 0);
+  matvar = Mat_VarCreate(name, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, pd, MAT_F_DONT_COPY_DATA);
   Mat_VarWrite(mat_file, matvar, MAT_COMPRESSION_ZLIB);
   Mat_VarFree(matvar);
 }
