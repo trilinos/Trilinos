@@ -186,6 +186,7 @@ int main(int argc, char **argv) {                                  \
 
 #define STKUNIT_WITH_SIERRA_MAIN(argc,argv,prod)    \
 int main(int argc, char **argv) { \
+  sierra::Env::set_input_file_required(false); \
   testing::InitGoogleTest(&argc, argv); \
   sierra::Env::Startup startup__(&argc, &argv, sierra::prod::get_product_name(), __DATE__ " " __TIME__); \
   int error = RUN_ALL_TESTS();                                          \
