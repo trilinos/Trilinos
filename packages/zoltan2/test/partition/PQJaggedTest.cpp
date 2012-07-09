@@ -34,7 +34,7 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
     \todo check the solution, visualize it somehow
 */
 
-void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts, float imbalance, std::string fname)
+void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts, float imbalance, std::string fname, std::string pqParts)
 {
   //std::string fname("simple");
 	cout << "running " << fname << endl;
@@ -69,10 +69,12 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
    
 
   Teuchos::ParameterList params("test params");
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
 
+  params.set("pqParts", pqParts);
+  Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("num_global_parts", numParts);
   parParams.set("algorithm", "PQJagged");
+  parParams.set("compute_metrics", "true");
   parParams.set("imbalance_tolerance", double(imbalance));
 
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
@@ -90,11 +92,11 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution = 
     problem.getSolution();
 
-  if (comm->getRank() == 0)
+  if (comm->getRank() == 0){
 	  problem.printMetrics(cout);
 
   cout << "testFromDataFile is done " << endl;
-
+  }
 }
 
 void serialTest(int numParts, int numCoords, float imbalance)
@@ -217,12 +219,13 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
 	  ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
 
 	  Array<ArrayRCP<scalar_t> > randomCoords(3);
-	  UserInputForTests::getRandomData(555, numCoords, 0, 10,
+
+	  int np = comm->getSize();
+	  UserInputForTests::getRandomData(555 + comm->getRank(), numCoords/np, 0, 10,
 	    randomCoords.view(0,3));
 
 	  typedef Zoltan2::BasicCoordinateInput<myTypes_t> inputAdapter_t;
 
-	  int np = comm->getSize();
 	  inputAdapter_t ia(numCoords/np, ids,
 	    randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
 	     randomCoords[2].getRawPtr(), 1,1,1);
@@ -259,8 +262,8 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
   //const RCP <const Zoltan2::PartitioningSolution<inputAdapter_t> > rcpsolution = RCP<const Zoltan2::PartitioningSolution<inputAdapter_t> >(&solution,false);
  // Zoltan2::PartitioningSolutionQuality<inputAdapter_t> psq (problem.env_,comm, rcpIa, rcpsolution);
 
-  if (comm->getRank()  == 0)
-	  problem.printMetrics(cout);
+//  if (comm->getRank()  == 0)
+//	  problem.printMetrics(cout);
 }
 
 
@@ -340,7 +343,7 @@ int main(int argc, char *argv[])
 		  stream >> fname;
 	  }
 	  else if(identifier == "O"){
-	  		  if(value > 0 && value < 3){
+	  		  if(value >= 0 && value < 3){
 	  			  opt = value;
 	  		  } else {
 	  			  cout << "Invalid argument at " << tmp;
@@ -364,7 +367,7 @@ int main(int argc, char *argv[])
 
   switch (opt){
   case 0:
-	  testFromDataFile(tcomm,numParts, imbalance,fname);
+	  testFromDataFile(tcomm,numParts, imbalance,fname,pqParts);
 	  break;
   case 1:
 	  meshCoordinatesTest2(tcomm,pqParts, numCoords, imbalance, numParts);
