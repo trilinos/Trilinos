@@ -465,8 +465,10 @@ namespace stk
 
             eMesh.reopen();
             eMesh.add_coordinate_state_fields();
+            stk::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
             //eMesh.addParallelInfoFields(true,true);
             eMesh.commit();
+            eMesh.set_proc_rank_field(proc_rank_field);
 
             stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
             stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
@@ -530,9 +532,19 @@ namespace stk
                 //PerceptMesquiteMeshDomain pmd(&eMesh, 0);
                 PlanarDomain planar_domain(PlanarDomain::XY);
                 //PMMParallelShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
-                percept::PMMParallelShapeImprover pmmpsi(1000, 1.e-4, 1);
-                //pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
-                pmmpsi.run(pmm, &planar_domain, always_smooth, msq_debug);
+                if (1)
+                  {
+                    percept::PMMParallelShapeImprover pmmpsi(1000, 1.e-4, 1);
+                    //pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
+                    pmmpsi.run(pmm, &planar_domain, always_smooth, msq_debug);
+                  }
+                else
+                  {
+                    percept::PMMLaplaceSmoother1 ls;
+                    //if (do_jacobi) 
+                    //  ls.get_smoother().do_jacobi_optimization();
+                    ls.run(pmm, planar_domain);
+                  }
               }
 
             eMesh.save_as(output_files_loc+"quad_4_si_smooth.1.e");

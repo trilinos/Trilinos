@@ -5,6 +5,9 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 
+#include <stk_mesh/base/FieldParallel.hpp>
+#include <stdio.h>
+
 #include "mpi.h"
 
 namespace MESQUITE_NS {
@@ -17,11 +20,27 @@ namespace stk {
 
     using namespace Mesquite;
 
+    void PMMParallelReferenceMeshSmoother::sync_fields(int iter)
+    {
+      std::vector< const stk::mesh::FieldBase *> fields;
+      fields.push_back(m_eMesh->get_coordinates_field());
+
+      // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
+      stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+      // the shared part (just the shared boundary)
+      //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
+    }
+
+
+    bool PMMParallelReferenceMeshSmoother::check_convergence()
+    {
+      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_dmax ) );
+      return (m_dmax < gradNorm);
+    }
+
     void PMMParallelReferenceMeshSmoother::run_one_iteration( Mesh* mesh, MeshDomain *domain,
                                                               MsqError& err )
     {
-      //std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelReferenceMeshSmoother::run_one_iteration start..." << std::endl;
-
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
       stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
@@ -31,14 +50,16 @@ namespace stk {
       stk::mesh::FieldBase *coord_field_lagged  = eMesh->get_field("coordinates_lagged");
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       int spatialDim = eMesh->get_spatial_dim();
 
+      // node loop, initialize delta to 0, etc, for all nodes including non-locally owned
       {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
-            if (on_locally_owned_part(**k))  // this is where we do part selection
+            //if (on_locally_owned_part(**k))  
               {
                 stk::mesh::Bucket & bucket = **k ;
                 const unsigned num_nodes_in_bucket = bucket.size();
@@ -55,6 +76,7 @@ namespace stk {
           }
       }
       
+      // element loop: compute deltas
       {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
 
@@ -65,7 +87,8 @@ namespace stk {
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
-            if (on_locally_owned_part(**k))  // this is where we do part selection
+            //if (on_locally_owned_part(**k))  
+            // loop over all elements
               {
                 stk::mesh::Bucket & bucket = **k ;
                 const unsigned num_elements_in_bucket = bucket.size();
@@ -158,11 +181,13 @@ namespace stk {
       }
 
       m_dmax = 0.0;
+      // node loop: update node positions
       {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
-            if (on_locally_owned_part(**k))  // this is where we do part selection
+            // update local and globally shared 
+            if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
               {
                 stk::mesh::Bucket & bucket = **k ;
                 const unsigned num_nodes_in_bucket = bucket.size();
@@ -173,7 +198,6 @@ namespace stk {
                     bool fixed = pmm->get_fixed_flag(&node);
                     if (fixed)
                       {
-                        //std::cout << "tmp srk found fixed= " << node << std::endl;
                         continue;
                       }
 
@@ -183,18 +207,48 @@ namespace stk {
                     Vector& weight = m_weight[&node];
                     for (int i=0; i < spatialDim; i++)
                       {
-                        m_dmax = std::max(std::abs(delta[i]), m_dmax);
-                        coord_current[i] += delta[i] / weight[i];  // if not fixed
+                        double dt = delta[i] / weight[i];
+                        m_dmax = std::max(std::abs(dt), m_dmax);
+                        coord_current[i] += dt;  
                       }
                   }
               }
           }
       }
 
-      //if (!get_parallel_rank()) 
-      //std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelReferenceMeshSmoother: running shape improver... done \n" << std::endl;
-
       MSQ_ERRRTN(err);
+    }
+
+    static void print_comm_list( const BulkData & mesh , bool doit )
+    {
+      if ( doit ) {
+        std::ostringstream msg ;
+
+        msg << std::endl ;
+
+        for ( std::vector<Entity*>::const_iterator
+                i =  mesh.entity_comm().begin() ;
+              i != mesh.entity_comm().end() ; ++i ) {
+
+          Entity & entity = **i ;
+          msg << "P" << mesh.parallel_rank() << ": " ;
+
+          print_entity_key( msg , MetaData::get(mesh) , entity.key() );
+
+          msg << " owner(" << entity.owner_rank() << ")" ;
+
+          if ( EntityLogModified == entity.log_query() ) { msg << " mod" ; }
+          else if ( EntityLogDeleted == entity.log_query() ) { msg << " del" ; }
+          else { msg << "    " ; }
+
+          for ( PairIterEntityComm ec = mesh.entity_comm(entity.key()); ! ec.empty() ; ++ec ) {
+            msg << " gid, proc (" << ec->ghost_id << "," << ec->proc << ")" ;
+          }
+          msg << std::endl ;
+        }
+
+        std::cout << msg.str();
+      }
     }
 
     void PMMParallelReferenceMeshSmoother::run_wrapper( Mesh* mesh,
@@ -211,6 +265,10 @@ namespace stk {
 
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
+      m_pmm= pmm;
+      m_eMesh = eMesh;
+
+      print_comm_list(*eMesh->get_bulk_data(), false);
 
       stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
       stk::mesh::FieldBase *coord_field_current   = coord_field;
@@ -237,27 +295,28 @@ namespace stk {
           eMesh->nodal_field_axpbypgz(alpha, coord_field_projected, (1.0-alpha), coord_field_original, 0.0, coord_field_current);
 
           int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
-          
+
           if (!get_parallel_rank()) 
             std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid << " for outer_iter= " << outer 
                       << " alpha= " << alpha
                       << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " OK")
                       << std::endl;
 
-          for (int iter = 0; iter < innerIter; iter++)
+            for (int iter = 0; iter < innerIter; iter++)
             {
-              //
               int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
+
 //               if (!get_parallel_rank() && num_invalid) 
 //                 std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid 
 //                           << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
 //                           << std::endl;
+
               run_one_iteration(mesh, domain, err);
-              std::cout << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid << std::endl;
-              //sync_fields();
-              //check_convergence();
-              if (m_dmax < gradNorm)
-                break;
+              sync_fields(iter);
+              bool conv = check_convergence();
+              if (!get_parallel_rank())
+                std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid << std::endl;
+              if (conv) break;
             }
 
           eMesh->copy_field(coord_field_lagged, coord_field);
@@ -265,11 +324,13 @@ namespace stk {
         }
 
       //if (!get_parallel_rank()) 
+
+      MPI_Barrier( MPI_COMM_WORLD );
+
       std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelReferenceMeshSmoother: running shape improver... done \n" << std::endl;
 
       MSQ_ERRRTN(err);
     }
-
 
   }
 }

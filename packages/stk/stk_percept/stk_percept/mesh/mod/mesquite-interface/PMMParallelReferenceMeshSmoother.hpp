@@ -46,6 +46,9 @@ namespace stk {
 
       void run_one_iteration( Mesh* mesh,  MeshDomain *domain,
                               MsqError& err );
+
+      void sync_fields(int iter=0);
+      bool check_convergence();
       
     private:
       NodeMap m_current_position;
@@ -54,6 +57,9 @@ namespace stk {
       double m_dmax;
       double m_alpha;
       double m_alpha_prev;
+
+      PerceptMesquiteMesh *m_pmm;
+      PerceptMesh *m_eMesh;
 
     public:
 

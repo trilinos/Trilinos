@@ -336,6 +336,9 @@ namespace stk {
       /// Must be called before commit()
       void add_coordinate_state_fields();
 
+      /// set proc_rank on each element
+      void set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field=0);
+
       /// get number of coordinate field states needed
       bool has_coordinate_state_fields() { return m_num_coordinate_field_states != 1; }
 

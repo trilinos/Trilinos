@@ -3594,6 +3594,28 @@ namespace stk {
       add_field("coordinates_lagged", node_rank(), scalarDimension);
     }
 
+    void PerceptMesh::set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field)
+    {
+      std::cout << "P["<< get_rank() << "] " <<  " proc_rank_field= " << proc_rank_field << std::endl;
+
+      if (!proc_rank_field) proc_rank_field=get_field("proc_rank");
+      if (!proc_rank_field) return;
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( element_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          {
+            stk::mesh::Bucket & bucket = **k ;
+            const unsigned num_elements_in_bucket = bucket.size();
+            for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+              {
+                stk::mesh::Entity& element = bucket[iElement];
+                double *fdata = field_data(proc_rank_field, element);
+                fdata[0] = double(element.owner_rank());
+              }
+          }
+        }
+    }
+
     /// copy field state data from one state (src_state) to another (dest_state)
     void PerceptMesh::copy_field_state(stk::mesh::FieldBase* field, unsigned dest_state, unsigned src_state)
     {
@@ -3611,7 +3633,7 @@ namespace stk {
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (on_locally_owned_part(**k)) 
+          //if (on_locally_owned_part(**k)) 
             {
               stk::mesh::Bucket & bucket = **k ;
               unsigned fd_size = bucket.field_data_size(*field_dest);
@@ -3636,6 +3658,11 @@ namespace stk {
                 }
             }
         }
+      std::vector< const stk::mesh::FieldBase *> fields;
+      fields.push_back(field_dest);
+
+      stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+
     }
 
     /// axpby calculates: y = alpha*x + beta*y
@@ -3683,7 +3710,7 @@ namespace stk {
             }
         }
       std::vector< const stk::mesh::FieldBase *> fields;
-      fields.push_back(field_x);
+      //fields.push_back(field_x);
       fields.push_back(field_y);
 
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
@@ -3741,8 +3768,8 @@ namespace stk {
             }
         }
       std::vector< const stk::mesh::FieldBase *> fields;
-      fields.push_back(field_x);
-      fields.push_back(field_y);
+      //fields.push_back(field_x);
+      //fields.push_back(field_y);
       fields.push_back(field_z);
 
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
