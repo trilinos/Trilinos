@@ -105,7 +105,8 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
                              const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
                              const Teuchos::RCP<Node> &node,
                              Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
-                             Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap)
+                             Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap, 
+                             const Teuchos::RCP<ParameterList> &params)
 {
   const int myRank = comm->getRank();
   int numRows,numCols,numNZ;
@@ -267,7 +268,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   colinds = Teuchos::null;
   svals   = Teuchos::null;
   rowptrs = Teuchos::null;
-  A->fillComplete(domMap,rowMap);
+  A->fillComplete(domMap,rowMap,params);
 }
 
 
@@ -284,7 +285,8 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   readHBMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultKernels<SCALAR,LO,NODE>::SparseOps>(                                                                    \
           const std::string &, const Teuchos::RCP<const Teuchos::Comm<int> > &, const Teuchos::RCP<NODE > &,                                            \
           Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultKernels<SCALAR,LO,NODE>::SparseOps > > &,                                            \
-          Teuchos::RCP< const Tpetra::Map<LO,GO,NODE> >);                                                                                               \
+          Teuchos::RCP< const Tpetra::Map<LO,GO,NODE> >,                                                                                                \
+          const Teuchos::RCP< Teuchos::ParameterList > & );                                                                                             \
                                                                                                                                                         \
   template                                                                                                                                              \
   void                                                                                                                                                  \

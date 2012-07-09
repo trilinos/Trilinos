@@ -126,8 +126,28 @@ namespace Tpetra {
       };
 
       //! adapter class between kernels for Tpetra::RTI::binary_transform and Tpetra::RTI::detail::binary_transform
+      template <class Glob, class S>
+      class RTIReductionAdapter1 {
+        public:
+          typedef typename Glob::GenOP                GenOP;
+          typedef typename Glob::RedOP                RedOP;
+          typedef typename Glob::IdOP                  IdOP;
+          typedef typename RedOP::result_type ReductionType;
+        protected:
+          GenOP      _genop;
+          RedOP      _redop;
+          const S * _vec_in;
+        public:
+          RTIReductionAdapter1(Glob glob)                               : _genop(glob.genop), _redop(glob.redop)  {}
+          inline void setData(const S *vec_in)                          { _vec_in = vec_in;                        }
+          static inline ReductionType identity()                        { return IdOP::identity();                 }
+          inline ReductionType generate(int i)                          { return _genop(_vec_in[i]);               }
+          inline ReductionType reduce(ReductionType a, ReductionType b) { return _redop(a, b);                     }
+      };
+
+      //! adapter class between kernels for Tpetra::RTI::binary_transform and Tpetra::RTI::detail::binary_transform
       template <class Glob, class S1, class S2>
-      class RTIReductionAdapter {
+      class RTIReductionAdapter2 {
         public:
           typedef typename Glob::GenOP                GenOP;
           typedef typename Glob::RedOP                RedOP;
@@ -139,7 +159,7 @@ namespace Tpetra {
           const S1 * _vec_in1;
           const S2 * _vec_in2;
         public:
-          RTIReductionAdapter(Glob glob)                                : _genop(glob.genop), _redop(glob.redop)  {}
+          RTIReductionAdapter2(Glob glob)                               : _genop(glob.genop), _redop(glob.redop)  {}
           inline void setData(const S1 *vec_in1, const S2 *vec_in2)     { _vec_in1 = vec_in1; _vec_in2 = vec_in2;  }
           static inline ReductionType identity()                        { return IdOP::identity();                 }
           inline ReductionType generate(int i)                          { return _genop(_vec_in1[i], _vec_in2[i]); }
@@ -300,6 +320,30 @@ namespace Tpetra {
             "Tpetra::RTI::detail::tertiary_transform(): multivectors must share the same node.");
 #endif
         node->template parallel_for(0, N, op);
+      }
+
+      //! pass \c vec_in data pointer to \ op, then execute via node parallel_reduce.
+      template <class S, class LO, class GO, class Node, class OP>
+      typename OP::ReductionType 
+      reduce(const Vector<S,LO,GO,Node> &vec_in, OP op) 
+      {
+        const Kokkos::MultiVector<S,Node> &mv_in = vec_in.getLocalMV();
+        const RCP<Node> node = mv_in.getNode();
+        const RCP<const Teuchos::Comm<int> > comm = vec_in.getMap()->getComm();
+        // ready data
+        Kokkos::ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        const S * in_ptr = rbh.addConstBuffer(mv_in.getValues());
+        rbh.end();
+        op.setData( in_ptr );
+        const size_t N = mv_in.getNumRows();
+        // compute local reduction
+        typename OP::ReductionType gbl_res, lcl_res;
+        lcl_res = node->template parallel_reduce(0, N, op);
+        // compute global reduction
+        TeuchosValueTypeReductionOpAdapter<OP> vtrop(op);
+        Teuchos::reduceAll(*comm, vtrop, 1, &lcl_res, &gbl_res);
+        return gbl_res;
       }
 
       //! pass \c vec_in1 and \c vec_in2 data pointers to \ op, then execute via node parallel_reduce.

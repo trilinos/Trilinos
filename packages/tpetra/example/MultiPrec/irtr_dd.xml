@@ -1,0 +1,6 @@
+<ParameterList>                                         
+  <Parameter name='tolerance' value='1e-31' type='double'/>
+  <Parameter name='verbose' value='1' type='int'/>      
+  <Parameter name='kappa' value='.1' type='double'/>      
+  <Parameter name='theta' value='2' type='double'/>      
+</ParameterList>                                        

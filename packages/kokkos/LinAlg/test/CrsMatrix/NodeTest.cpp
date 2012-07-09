@@ -41,29 +41,23 @@
 //@HEADER
 */
 
-#include <Kokkos_TBBNode.hpp>
-#include <NodeTest.hpp>
-#include <TBBNativeTests.hpp>
+#include "NodeTest.hpp"
+
+int NodeTest::N          = 100000;
+int NodeTest::numIters   = 10;
+int NodeTest::numThreads = -1;
+int NodeTest::verbose    = 0;
 
 namespace {
 
-  using Kokkos::TBBNode;
-  RCP<TBBNode> tbbNode_;
-
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    return tbbNode_;
+  TEUCHOS_STATIC_SETUP()
+  {
+    Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+    clp.addOutputSetupOptions(true);
+    clp.setOption("test-size",  &NodeTest::N,         "Vector length for tests, required >= 2.");
+    clp.setOption("num-iters",  &NodeTest::numIters,  "Number of iterations in TimeTest.");
+    clp.setOption("num-threads",&NodeTest::numThreads,"Number of threads. -1 for automatic.");
+    clp.setOption("verbose",    &NodeTest::verbose,   "Node verbosity. Zero is quiet, non-zero is not.");
   }
 
-  template <>
-  void initNode<TBBNode>() {
-    Teuchos::ParameterList plist;
-    if (NodeTest::numThreads != -1) {
-      plist.set<int>("Num Threads",NodeTest::numThreads);
-    }
-    plist.set<int>("Verbose",NodeTest::verbose);
-    tbbNode_ = rcp(new TBBNode(plist));
-  }
-
-  TEST_NODE(TBBNode)
 }

@@ -29,8 +29,7 @@
 #ifndef KOKKOS_FIRSTTOUCHSPARSEOPS_HPP
 #define KOKKOS_FIRSTTOUCHSPARSEOPS_HPP
 
-#include "Kokkos_CrsGraph.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_DefaultSparseOps.hpp"
 
 namespace Kokkos {
 
@@ -40,45 +39,38 @@ namespace Kokkos {
   // 
   //=========================================================================================================================
 
-  /** \brief Sparse matrix-vector multiplication and solve routines with first-touch semantics. 
+  /** \brief Sparse matrix-vector multiplication and solve routines with first-touch allocation of matrix data.
       \ingroup kokkos_crs_ops
 
-      Effectively, this class is trigger so that downstream software will use the FirstTouchHostCrsGraph and FirstTOuchHostCrsMatrix
-      classes. The sparse mat-vec and solve operations are inherited from DefautlHostSparseOps.
+      Effectively, this class is identical to DefaultSparseOps, except for the allocRowPtrs() and allocStorage() methods, which are 
+      modified to use a first-touch allocation. The relationship is done using private inheritence, though this class should never be 
+      accessed via a reference to its parent class. (Tpetra is unaware this relationship, and so will never do that.)
    */
   template <class Scalar, class Ordinal, class Node>
-  class FirstTouchSparseOps {
+  class FirstTouchSparseOps : private DefaultHostSparseOps<Scalar,Ordinal,Node> {
   public:
     //@{ 
     //! @name Typedefs and structs
 
-    //!
-    typedef Scalar  ScalarType;
-    //!
-    typedef Ordinal OrdinalType;
-    //!
-    typedef Node    NodeType;
-
-
-    /** \brief Typedef for local graph class */
-    template <class O, class N>
-    struct graph {
-      typedef FirstTouchHostCrsGraph<O,N> type;
-    };
-
-    /** \brief Typedef for local matrix class */
-    template <class S, class O, class N>
-    struct matrix {
-      typedef FirstTouchHostCrsMatrix<S,O,N> type;
-    };
+    //! The type of the individual entries of the sparse matrix.
+    typedef Scalar  scalar_type;
+    //! The type of the (local) indices describing the structure of the sparse matrix.
+    typedef Ordinal ordinal_type;
+    //! The Kokkos Node type.
+    typedef Node    node_type;
+    //! The type of this object, the sparse operator object
+    typedef FirstTouchSparseOps<Scalar,Ordinal,Node> sparse_ops_type;
+    
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::graph;
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::matrix;
 
     /** \brief Rebind struct, for specifying type information for a different scalar.
           
         This specifies a DefaultHostSparseOps object, regardless of scalar type.
       */
     template <class S2>
-    struct rebind {
-      typedef DefaultHostSparseOps<S2,Ordinal,Node> type;
+    struct bind_scalar {
+      typedef FirstTouchSparseOps<S2,Ordinal,Node> other_type;
     };
 
     //@}
@@ -86,428 +78,109 @@ namespace Kokkos {
     //@{
 
     //! \brief Constructor accepting and retaining a node object.
-    FirstTouchHostSparseOps(const RCP<Node> &node) : DefaultHostSparseOps(node) {}
+    FirstTouchSparseOps(const RCP<Node> &node);
 
-    //! DefaultHostSparseOps Destructor
-    ~FirstTouchHostSparseOps();
+    //! Destructor
+    virtual ~FirstTouchSparseOps();
 
     //@}
-    //! @name Overloaded from DefaultHostSparseOps for first-touch CRS objects.
+    //! @name Overloaded from DefaultHostSparseOps for first-touch allocation.
     //@{
 
-    void initializeStructure(const FirstTouchHostCrsGraph<Ordinal,Node> &graph) {
-      DefaultHostSparseOps<Scalar,Ordinal,Node>::initializeStructure(graph);
-    }
+    //! \brief Allocate and initialize the storage for the matrix values.
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow);
 
-    void initializeValues(const FirstTouchHostCrsMatrix<Scalar,Ordinal,Node> &matrix) {
-      DefaultHostSparseOps<Scalar,Ordinal,Node>::initializeValues(matrix);
-    }
+    //! \brief Allocate and initialize the storage for a sparse graph.
+    template <class T>
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs);
+
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeGraph;
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeMatrix;
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeGraphAndMatrix;
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::setGraphAndMatrix;
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::multiply;
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::solve;
+    using DefaultHostSparseOps<Scalar,Ordinal,Node>::getNode;
 
     //@}
 
   protected:
     //! Copy constructor (protected and unimplemented)
-    FirstTouchHostSparseOps(const DefaultHostSparseOps& source);
+    FirstTouchSparseOps(const DefaultHostSparseOps<Scalar,Ordinal,Node>& source);
   };
 
+  namespace FirstTouchSparseOpsDetails {
 
-  //=========================================================================================================================
-  // 
-  // A first-touch allocation host-resident CrsGraph
-  // 
-  //=========================================================================================================================
+    struct rowPtrsInitKernel {
+      size_t       *rowPtrs;
+      inline KERNEL_PREFIX void execute(int i) const {
+        rowPtrs[i] = 0;
+      }
+    };
 
-  /** \brief A host-compute compressed-row sparse graph with first-touch allocation.
-      \ingroup kokkos_crs_ops
-   */
-  template <class Ordinal, 
-            class Node>
-  class FirstTouchHostCrsGraph : public CrsGraphHostCompute<Ordinal,Node> {
-  public:
+    template <class T>
+    struct valsInitKernel {
+      const size_t *rowPtrs;
+      T * entries;
+      inline KERNEL_PREFIX void execute(int i) const {
+        size_t *beg = entries+rowPtrs[i],
+               *end = entries+rowPtrs[i+1];
+        while (beg != end) {
+          *beg = Teuchos::ScalarTraits<T>::zero();
+        }
+      }
+    };
+  }
 
-    typedef typename CrsGraphHostCompute<Ordinal,Node>::OrdinalType      OrdinalType;
-    typedef typename CrsGraphHostCompute<Ordinal,Node>::NodeType         NodeType;
+  // ======= pointer allocation ===========
+  template <class Scalar, class Ordinal, class Node>
+  ArrayRCP<size_t>
+  FirstTouchSparseOps<Scalar,Ordinal,Node>::allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow)
+  {
+    const size_t numrows = numEntriesPerRow.size();
+    FirstTouchSparseOpsDetails::rowPtrsInitKernel kern;
+    // allocate
+    kern.rowPtrs = new size_t[numrows+1];
+    // parallel first touch
+    node->parallel_for(0,numrows+1,kern);
+    // encapsulate
+    ArrayRCP<size_t> ptrs = arcp<size_t>(kern.rowPtrs,0,numrows+1,true);
+    // compute in serial. parallelize later, perhaps; it's only O(N)
+    ptrs[0] = 0;
+    std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
+    return ptrs;
+  }
 
-    //! @name Constructors/Destructor
-    //@{
-
-    //! Default FirstTouchHostCrsGraph constuctor.
-    FirstTouchHostCrsGraph(size_t numRows, const RCP<Node> &node);
-
-    //! FirstTouchHostCrsGraph Destructor
-    virtual ~FirstTouchHostCrsGraph();
-
-    //@}
-
-    //! @name Data entry and accessor methods.
-    //@{
-
-    //! Instruct the graph to perform any necessary manipulation, including (optionally) optimizing the storage of the graph data.
-    /** 
-          @param[in] OptimizeStorage   Permit the graph to reallocate storage on the host in order to provide optimal storage and/or performance.
-          \post if OptimizeStorage == true, then is2DStructure() == true
-     */
-    void finalize(bool OptimizeStorage);
-
-    /** 
-          @param[in] OptimizeStorage   Permit the graph to reallocate storage on the host in order to provide optimal storage and/or performance.
-          @param[in/out] values2D      2D-structured matrix values. Required to be non-null if is2DStructure() is true. Set to null if OptimizeStorage is true.
-          @param[in/out] values1D      1D-structured matrix values. Required to be non-null if is1DStructure() is true. Allocated if OptimizeStorage is true.
-          \post if OptimizeStorage == true or already is2DStructure(), then is2DStructure() == true.
-     */
-    template <class Scalar>
-    void finalize(bool OptimizeStorage, ArrayRCP<ArrayRCP<Scalar> > &values2D, ArrayRCP<Scalar> &values1D);
-
-    //@}
-
-  protected:
-    //! Copy constructor (protected and not implemented) 
-    FirstTouchHostCrsGraph(const FirstTouchHostCrsGraph& sources);
-  };
-
-#ifndef KERNEL_PREFIX
-#define KERNEL_PREFIX
-#endif
-  /// \class FirstTouchCopyIndicesKernel
-  ///
-  /// Kokkos kernel for copying array indices using a first-touch
-  /// initialization strategy for CPU memory.
-  ///
-  /// \note We have to store member data as raw pointers, rather than
-  /// ArrayRCPs, because ArrayRCP are not thread safe, and the arrays
-  /// get accessed inside a Kokkos kernel.
+  // ======= other allocation ===========
+  template <class Scalar, class Ordinal, class Node>
   template <class T>
-  struct FirstTouchCopyIndicesKernel {
-    const size_t * numEntriesPerRow;
-    const size_t * offsets1D;
-    T * data1D;
-    const ArrayRCP<T> * data2D;
-
-    inline KERNEL_PREFIX void execute(size_t row) {
-      const size_t rowNumInds = numEntriesPerRow[row];
-      const T* const oldinds = data2D[row].getRawPtr();
-      T* const newinds = data1D + offsets1D[row];
-      std::copy(oldinds, oldinds+rowNumInds, newinds);
-    }
-  };
-
-  //==============================================================================
-  template <class Ordinal, class Node>
-  FirstTouchHostCrsGraph<Ordinal,Node>::FirstTouchHostCrsGraph(size_t numRows, const RCP<Node> &node) 
-  : CrsGraphHostCompute<Ordinal,Node>(numRows,node) 
+  ArrayRCP<T>
+  FirstTouchSparseOps<Scalar,Ordinal,Node>::allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
   {
-    Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+    const size_t totalNumEntries = *(rowPtrs.end()-1);
+    const size_t numRows = rowPtrs.size() - 1;
+    FirstTouchSparseOpsDetails::valsInitKernel<T> kern;
+    ArrayRCP<T> vals;
+    if (totalNumEntries > 0) {
+      // allocate
+      kern.entries = new T[totalNumEntries];
+      kern.rowPtrs = rowPtrs.getRawPtr();
+      // first touch
+      node->parallel_for(0,numRows,kern);
+      // encapsulate
+      vals = arcp<T>(kern.entries,0,totalNumEntries,true);
+    }
+    return vals;
   }
 
-  //==============================================================================
-  template <class Ordinal, class Node>
-  FirstTouchHostCrsGraph<Ordinal,Node>::~FirstTouchHostCrsGraph() {}
-
-  // ======= finalize ===========
-  template <class Ordinal, class Node>
-  void FirstTouchHostCrsGraph<Ordinal,Node>::finalize(bool OptimizeStorage)
-  {
-    // allocations not done using the Node. no current need for host-based nodes, and 
-    // this leads to incorrect behavior when we try to reuse this code from child CrsGraphDeviceCompute
-    if (this->isFinalized() && !(OptimizeStorage == true && this->isOptimized() == false)) return;
-    if ((this->indices1D_ == null && this->indices2D_ == null) || (this->getNumEntries() == 0)) {
-      this->isEmpty_ = true;
-    }
-    else {
-      this->isEmpty_ = false;
-      if (OptimizeStorage) {
-        // move into packed 1D storage
-        ArrayRCP<size_t> offsets = arcp<size_t>(this->numRows_+1);
-        if (this->is2DStructure() == true) {
-          // 2D to 1D packed: first-touch allocation
-          // allocate 1D storage
-          this->indices1D_ = arcp<Ordinal>(this->getNumEntries());
-          // compute offset array on host thread
-          {
-            size_t curoffset = 0;
-            for (size_t i=0; i < this->numRows_; ++i) {
-              offsets[i] = curoffset;
-              curoffset += this->numEntriesPerRow_[i];
-            }
-            offsets[this->numRows_] = curoffset;
-            TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
-                Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
-          }
-          FirstTouchCopyIndicesKernel<Ordinal> kern;
-          kern.offsets1D = offsets.getRawPtr();
-          kern.numEntriesPerRow = this->numEntriesPerRow_.getRawPtr();
-          kern.data1D = this->indices1D_.getRawPtr();
-          kern.data2D = this->indices2D_.getRawPtr();
-          this->getNode()->template parallel_for<FirstTouchCopyIndicesKernel<Ordinal> >(0,this->numRows_,kern);
-        }
-        else {
-          // 1D to 1D packed: no first-touch
-          // copy/pack data
-          size_t curoffset = 0;
-          size_t curnuminds;
-          typename ArrayRCP<Ordinal>::iterator oldinds, newinds;
-          newinds = this->indices1D_.begin();
-          for (size_t i=0; i < this->numRows_; ++i) {
-            offsets[i] = curoffset;
-            curnuminds = this->rowEnds_[i] - this->rowBegs_[i];
-            oldinds = this->indices1D_.begin() + this->rowBegs_[i];
-            std::copy(oldinds, oldinds+curnuminds, newinds);
-            newinds += curnuminds;
-            curoffset += curnuminds;
-          }
-          offsets[this->numRows_] = curoffset;
-          TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
-              Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
-        }
-        // done with the original row beg/end offsets, can point to the new overlapping one
-        this->rowBegs_   = offsets;
-        this->rowEnds_   = offsets.persistingView(1,this->numRows_);
-        this->isOpt_     = true;
-        this->is1D_      = true;
-        // delete 2D storage (if any)
-        this->is2D_      = false;
-        this->numEntriesPerRow_ = null;
-        this->indices2D_        = null;
-      }
-    }
-    this->isFinalized_ = true;
-  }
-
-
-  // ======= finalize ===========
-  // finalize() storage for the graph with associated matrix values
-  // this is called from a CrsMatrix, and we're doing the finalize the for the graph and matrix at the same time, so the matrix doesn't have to.
-  template <class Ordinal, class Node>
-  template <class Scalar>
-  void FirstTouchHostCrsGraph<Ordinal,Node>::finalize(bool OptimizeStorage, ArrayRCP<ArrayRCP<Scalar> > &values2D, ArrayRCP<Scalar> &values1D)
-  {
-    if (this->isFinalized() && !(OptimizeStorage == true && this->isOptimized() == false)) return;
-    if ((this->indices1D_ == null && this->indices2D_ == null) || (this->getNumEntries() == 0)) {
-      this->isEmpty_ = true;
-    }
-    else {
-      this->isEmpty_ = false;
-      // move into packed 1D storage
-      if (OptimizeStorage) {
-        ArrayRCP<size_t> offsets = arcp<size_t>(this->numRows_+1);
-        if (this->is2DStructure() == true) {
-          // 2D to 1D packed: first-touch allocation
-          // allocate 1D storage
-          this->indices1D_ = arcp<Ordinal>(this->getNumEntries());
-          values1D         = arcp<Scalar >(this->getNumEntries());
-          // compute offset array on host thread
-          {
-            size_t curoffset = 0;
-            for (size_t i=0; i < this->numRows_; ++i) {
-              offsets[i] = curoffset;
-              curoffset += this->numEntriesPerRow_[i];
-            }
-            offsets[this->numRows_] = curoffset;
-            TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
-                Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
-          }
-          {
-            FirstTouchCopyIndicesKernel<Ordinal> indskern;
-            indskern.offsets1D = offsets.getRawPtr();
-            indskern.numEntriesPerRow = this->numEntriesPerRow_.getRawPtr();
-            indskern.data1D = this->indices1D_.getRawPtr();
-            indskern.data2D = this->indices2D_.getRawPtr();
-            this->getNode()->template parallel_for<FirstTouchCopyIndicesKernel<Ordinal> >(0,this->numRows_,indskern);
-          }
-          {
-            FirstTouchCopyIndicesKernel<Scalar> valskern;
-            valskern.offsets1D = offsets.getRawPtr();
-            valskern.numEntriesPerRow = this->numEntriesPerRow_.getRawPtr();
-            valskern.data1D = values1D.getRawPtr();
-            valskern.data2D = values2D.getRawPtr();
-            this->getNode()->template parallel_for<FirstTouchCopyIndicesKernel<Scalar> >(0,this->numRows_,valskern);
-          }
-        }
-        else {
-          // copy/pack data
-          // 1D to 1D packed: no first-touch
-          size_t curoffset = 0;
-          size_t curnuminds;
-          typename ArrayRCP<Ordinal>::iterator oldinds, newinds;
-          typename ArrayRCP<Scalar >::iterator oldvals, newvals;
-          newinds = this->indices1D_.begin();
-          newvals = values1D.begin();
-          for (size_t i=0; i < this->numRows_; ++i) {
-            offsets[i] = curoffset;
-            curnuminds = this->rowEnds_[i] - this->rowBegs_[i];
-            oldinds = this->indices1D_.begin() + this->rowBegs_[i];
-            oldvals = values1D.begin() + this->rowBegs_[i];
-            std::copy(oldinds, oldinds+curnuminds, newinds);
-            std::copy(oldvals, oldvals+curnuminds, newvals);
-            newinds += curnuminds;
-            newvals += curnuminds;
-            curoffset += curnuminds;
-          }
-          offsets[this->numRows_] = curoffset;
-          TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
-			      Teuchos::typeName(*this) << "::finalize(): "
-			      "Internal logic error: curoffset (= " 
-			      << curoffset << ") != this->getNumEntries() (= "
-			      << this->getNumEntries() 
-			      << ").  Please contact Kokkos team.");
-        }
-        // done with the original row beg/end offsets, can point to the new overlapping one
-        this->rowBegs_   = offsets;
-        this->rowEnds_   = offsets.persistingView(1,this->numRows_);
-        this->is1D_      = true;
-        this->isOpt_     = true;
-        // delete 2D storage (if there was any)
-        this->is2D_      = false;
-        this->numEntriesPerRow_ = null;
-        this->indices2D_        = null;
-        values2D          = null;
-      }
-    }
-    this->isFinalized_ = true;
-  }
-
-
-  //=========================================================================================================================
-  // 
-  // A first-touch allocation host-resident CrsMatrix
-  // 
-  //=========================================================================================================================
-
-  /** \brief A host-compute compressed-row sparse matrix with first-touch allocation.
-      \ingroup kokkos_crs_ops
-   */
-  template <class Scalar, 
-            class Ordinal, 
-            class Node>
-  class FirstTouchHostCrsMatrix : public CrsMatrixHostCompute<Scalar,Ordinal,Node> {
-  public:
-
-    typedef typename CrsMatrixHostCompute<Scalar,Ordinal,Node>::ScalarType   ScalarType;
-    typedef typename CrsMatrixHostCompute<Scalar,Ordinal,Node>::OrdinalType  OrdinalType;
-    typedef typename CrsMatrixHostCompute<Scalar,Ordinal,Node>::NodeType     NodeType;
-
-    //! @name Constructors/Destructor
-    //@{
-
-    //! Default constructor with no graph. (Must be set later.) 
-    FirstTouchHostCrsMatrix();
-
-    //! Constructor with a matrix-owned non-const graph
-    FirstTouchHostCrsMatrix(FirstTouchHostCrsGraph<Ordinal,Node> &graph);
-
-    //! Constructor with a non-owned const graph.
-    FirstTouchHostCrsMatrix(const FirstTouchHostCrsGraph<Ordinal,Node> &graph);
-
-    //! FirstTouchHostCrsMatrix Destructor
-    virtual ~FirstTouchHostCrsMatrix();
-
-    //@}
-
-    //! @name Graph set routines.
-    //@{
-
-    //! Set matrix-owned graph.
-    void setOwnedGraph(FirstTouchHostCrsGraph<Ordinal,Node> &graph);
-
-    //! Set static graph.
-    void setStaticGraph(const FirstTouchHostCrsGraph<Ordinal,Node> &graph);
-    
-    //@}
-
-    //! @name Data entry and accessor methods.
-    //@{
-
-    //! Instruct the matrix to perform any necessary manipulation, including (optionally) optimizing the storage of the matrix data.
-    /** 
-          If the matrix is associated with a matrix-owned graph, then it will be finalized as well. A static graph will not be modified.
-
-          @param[in] OptimizeStorage   Permit the graph to reallocate storage on the host in order to provide optimal storage and/or performance.
-          \post if OptimizeStorage == true, then is2DStructure() == true
-     */
-    void finalize(bool OptimizeStorage);
-
-    //@}
-
-  protected:
-    //! Copy constructor (protected and not implemented) 
-    FirstTouchHostCrsMatrix(const FirstTouchHostCrsMatrix& sources);
-    // pointers to first-touch graphs
-    FirstTouchHostCrsGraph<Ordinal,Node>           *myFTGraph_;
-    const FirstTouchHostCrsGraph<Ordinal,Node> *staticFTGraph_;
-  };
-
-
-  //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  FirstTouchHostCrsMatrix<Scalar,Ordinal,Node>::FirstTouchHostCrsMatrix()
-  : CrsMatrixHostCompute<Scalar,Ordinal,Node>() 
-  , myFTGraph_(NULL)
-  , staticFTGraph_(NULL)
+  FirstTouchSparseOps<Scalar,Ordinal,Node>::FirstTouchSparseOps(const RCP<Node> &node) 
+  : DefaultHostSparseOps<Scalar,Ordinal,Node>(node) 
   {}
 
-  //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  FirstTouchHostCrsMatrix<Scalar,Ordinal,Node>::FirstTouchHostCrsMatrix(const FirstTouchHostCrsGraph<Ordinal,Node> &graph)
-  : CrsMatrixHostCompute<Scalar,Ordinal,Node>(graph) 
-  , myFTGraph_(NULL)
-  , staticFTGraph_(&graph)
+  FirstTouchSparseOps<Scalar,Ordinal,Node>::~FirstTouchSparseOps()
   {}
-
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  FirstTouchHostCrsMatrix<Scalar,Ordinal,Node>::FirstTouchHostCrsMatrix(FirstTouchHostCrsGraph<Ordinal,Node> &graph)
-  : CrsMatrixHostCompute<Scalar,Ordinal,Node>(graph) 
-  , myFTGraph_(&graph)
-  , staticFTGraph_(&graph)
-  {}
-
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  FirstTouchHostCrsMatrix<Scalar,Ordinal,Node>::~FirstTouchHostCrsMatrix() {
-  }
-
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  void FirstTouchHostCrsMatrix<Scalar,Ordinal,Node>::setStaticGraph(const FirstTouchHostCrsGraph<Ordinal,Node> &dgraph)
-  {
-    CrsMatrixHostCompute<Scalar,Ordinal,Node>::setStaticGraph(dgraph);
-    myFTGraph_     = NULL;
-    staticFTGraph_ = &dgraph;
-  }
-
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  void FirstTouchHostCrsMatrix<Scalar,Ordinal,Node>::setOwnedGraph(FirstTouchHostCrsGraph<Ordinal,Node> &dgraph)
-  {
-    CrsMatrixHostCompute<Scalar,Ordinal,Node>::setOwnedGraph(dgraph);
-    myFTGraph_     = &dgraph;
-    staticFTGraph_ = &dgraph;
-  }
-
-  // ======= finalize ===========
-  template <class Scalar, class Ordinal, class Node>
-  void FirstTouchHostCrsMatrix<Scalar,Ordinal,Node>::finalize(bool OptimizeStorage)
-  {
-    if (this->isFinalized_ == false || 
-       (OptimizeStorage == true && staticFTGraph_->isOptimized() == false))
-    {
-      if (this->myFTGraph_ != NULL) {
-        // call graph finalize to finalize/first-touch graph and matrix at the same time
-        myFTGraph_->template finalize<Scalar>(OptimizeStorage, this->values2D_, this->values1D_);
-      }
-      else {
-        TEST_FOR_EXCEPTION(OptimizeStorage == true && staticFTGraph_->isOptimized() == false, std::runtime_error, 
-            Teuchos::typeName(*this) << "::finalize(OptimizeStorage == true): underlying static graph is not already optimized and cannot be optimized.");
-      }
-      this->isFinalized_ = true;
-    }
-#ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION(this->isFinalized_ == false || staticFTGraph_->isFinalized() == false, std::logic_error,
-        Teuchos::typeName(*this) << "::finalize(): logic error. Post-condition violated. Please contact Tpetra team.");
-    TEST_FOR_EXCEPTION(OptimizeStorage == true && (staticFTGraph_->isOptimized() == false && staticFTGraph_->isEmpty() == false), std::logic_error,
-        Teuchos::typeName(*this) << "::finalize(): logic error. Post-condition violated. Please contact Tpetra team.");
-#endif
-  }
 
 } // end namespace Kokkos
 

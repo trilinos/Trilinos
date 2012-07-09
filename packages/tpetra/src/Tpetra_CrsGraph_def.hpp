@@ -537,9 +537,9 @@ namespace Tpetra {
       //
       // have the graph do this for us, with thread appropriate allocation if possible
       // not important for globals, because we never multiply out of them, but we might as well use the code that we have
-      rowPtrs_ = LocalMatOps::allocRowPtrs( numAllocPerRow_() );
-      if (lg == LocalIndices) lclInds1D_ = LocalMatOps::template allocStorage< LocalOrdinal>( rowPtrs_() );
-      else                    gblInds1D_ = LocalMatOps::template allocStorage<GlobalOrdinal>( rowPtrs_() );
+      rowPtrs_ = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numAllocPerRow_() );
+      if (lg == LocalIndices) lclInds1D_ = LocalMatOps::template allocStorage< LocalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
+      else                    gblInds1D_ = LocalMatOps::template allocStorage<GlobalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
       nodeNumAllocated_ = rowPtrs_[numRows];
     }
     else {
@@ -595,7 +595,7 @@ namespace Tpetra {
         std::runtime_error, ": graph indices must be allocated in a static profile."
     );
     ArrayRCP<T> values1D;
-    values1D = LocalMatOps::template allocStorage<T>( rowPtrs_() );
+    values1D = LocalMatOps::template allocStorage<T>( getRowMap()->getNode(), rowPtrs_() );
     return values1D;
   }
 
@@ -2026,8 +2026,8 @@ namespace Tpetra {
     if (params != null && params->get("Optimize Storage",true) == false) requestOptimizedStorage = false;
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = LocalMatOps::allocRowPtrs( numRowEntries_() );
-      inds = LocalMatOps::template allocStorage<LocalOrdinal>( ptrs() );
+      ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
+      inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
         std::copy( lclInds2D_[row].begin(), lclInds2D_[row].begin()+numentrs, inds+ptrs[row] );
@@ -2036,8 +2036,8 @@ namespace Tpetra {
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries_ != nodeNumAllocated_) {
-        ptrs = LocalMatOps::allocRowPtrs( numRowEntries_() );
-        inds = LocalMatOps::template allocStorage<LocalOrdinal>( ptrs() );
+        ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
+        inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
         for (size_t row=0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries_[row];
           std::copy( lclInds1D_+rowPtrs_[row], lclInds1D_+rowPtrs_[row]+numentrs, inds+ptrs[row] );
@@ -2174,7 +2174,7 @@ namespace Tpetra {
           lclInds1D_ = arcp_reinterpret_cast<LocalOrdinal>(gblInds1D_).persistingView(0,nodeNumAllocated_);
         }
         else {
-          lclInds1D_ = LocalMatOps::template allocStorage<LocalOrdinal>( rowPtrs_() );
+          lclInds1D_ = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
         }
         for (size_t r=0; r < getNodeNumRows(); ++r) {
           const size_t offset   = rowPtrs_[r],

@@ -61,10 +61,10 @@ namespace Kokkos {
 
   template <class WDPin>
   struct BlockedRangeWDP {
-    mutable WDPin &wd;
-    inline BlockedRangeWDP(WDPin &in) : wd(in) {}
+    mutable WDPin *wd;
+    inline BlockedRangeWDP(WDPin &in) : wd(&in) {}
     inline void operator()(tbb::blocked_range<int> &rng) const { 
-      for (int i=rng.begin(); i != rng.end(); ++i) wd.execute(i);
+      for (int i=rng.begin(); i != rng.end(); ++i) wd->execute(i);
     }
   };
   

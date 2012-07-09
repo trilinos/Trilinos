@@ -346,6 +346,7 @@ using namespace NOX::Epetra;
 // files do not have a %module directive).  This seems to provide the
 // functionality I need without causing whatever confusion is at risk
 // here.
+%include "Epetra_config.h"
 %include "Epetra_Base.i"
 %teuchos_rcp_epetra_numpy(IntSerialDenseVector)
 %teuchos_rcp_epetra_numpy(SerialDenseVector)

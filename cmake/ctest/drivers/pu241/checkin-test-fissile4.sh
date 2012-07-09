@@ -82,19 +82,19 @@ echo "
 #
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/hybrid-build-11.cmake;$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-debug-ps-options.cmake'
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-debug-ps-options.cmake'
 " > MPI_DEBUG_451_11.config
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/hybrid-build-11.cmake;$DRIVERS_BASE_DIR/gcc-4.5.1-serial-release-ps-options.cmake'
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.5.1-serial-release-ps-options.cmake'
 " > SERIAL_RELEASE_451_11.config
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/hybrid-build-11.cmake;$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-debug-ss-options.cmake'
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-debug-ss-options.cmake'
 " > MPI_DEBUG_SS_451_11.config
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/hybrid-build-11.cmake;$DRIVERS_BASE_DIR/gcc-4.5.1-serial-release-ss-options.cmake'
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.5.1-serial-release-ss-options.cmake'
 " > SERIAL_RELEASE_SS_451_11.config
 
 
@@ -104,16 +104,6 @@ echo "
 # NOTE: Since these are not required for pre-push testing purposes,
 # CASL developers can modify these and push the changes.
 #
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/hybrid-build-12.cmake;$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-debug-ps-options.cmake'
--DTPL_ENABLE_MPI:BOOL=ON
-" > HYBRID12_MPI_DEBUG.config
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/hybrid-build-12.cmake;$DRIVERS_BASE_DIR/gcc-4.5.1-serial-release-ps-options.cmake'
--DTPL_ENABLE_MPI:BOOL=OFF
-" > HYBRID12_SERIAL_RELEASE.config
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/intel-12.0.4-serial-release-ss-options.cmake'

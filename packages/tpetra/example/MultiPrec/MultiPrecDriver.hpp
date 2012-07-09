@@ -75,8 +75,10 @@ class MultiPrecDriver {
     using std::make_pair;
     using std::plus;
     using std::endl;
+    using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::ParameterList;
+    using Teuchos::parameterList;
     using TpetraExamples::make_pair_op;
     using Tpetra::RTI::reductionGlob;
     using Tpetra::RTI::ZeroOp;
@@ -87,6 +89,7 @@ class MultiPrecDriver {
     typedef typename MPStack::type   S;
     typedef int                     LO;
     typedef int                     GO;
+    typedef Tpetra::Map<LO,GO,Node>               Map;
     typedef Tpetra::CrsMatrix<S,LO,GO,Node> CrsMatrix;
     typedef Tpetra::Vector<S,LO,GO,Node>       Vector;
 
@@ -94,7 +97,12 @@ class MultiPrecDriver {
 
     // read the matrix
     RCP<CrsMatrix> A;
-    Tpetra::Utils::readHBMatrix(matrixFile,comm,node,A);
+    RCP<const Map> rowMap = null;
+    RCP<ParameterList> fillParams = parameterList();
+    fillParams->set("Preserve Local Graph",true);
+    // must preserve the local graph in order to do convert() calls later
+    Tpetra::Utils::readHBMatrix(matrixFile,comm,node,A,rowMap,fillParams);
+    rowMap = A->getRowMap();
 
     // init the solver stack
     TpetraExamples::RFPCGInit<S,LO,GO,Node> init(A);
@@ -103,8 +111,8 @@ class MultiPrecDriver {
     testPassed = true;
 
     // choose a solution, compute a right-hand-side
-    auto x = Tpetra::createVector<S>(A->getRowMap()),
-         b = Tpetra::createVector<S>(A->getRowMap());
+    auto x = Tpetra::createVector<S>(rowMap),
+         b = Tpetra::createVector<S>(rowMap);
     x->randomize();
     A->apply(*x,*b);
     {
@@ -119,7 +127,7 @@ class MultiPrecDriver {
     // check that residual is as requested
     {
       auto xhat = db->get<RCP<Vector>>("bx"),
-           bhat = Tpetra::createVector<S>(A->getRowMap());
+           bhat = Tpetra::createVector<S>(rowMap);
       A->apply(*xhat,*bhat);
       // compute bhat-b, while simultaneously computing |bhat-b|^2 and |b|^2
       auto nrms = binary_pre_transform_reduce(*bhat, *b, 
@@ -153,7 +161,7 @@ class MultiPrecDriver {
       //
       // test the result
       auto xhat = db->get<RCP<Vector>>("bx"),
-           bhat = Tpetra::createVector<S>(A->getRowMap());
+           bhat = Tpetra::createVector<S>(rowMap);
       A->apply(*xhat,*bhat);
       // compute bhat-b, while simultaneously computing |bhat-b|^2 and |b|^2
       auto nrms = binary_pre_transform_reduce(*bhat, *b, 

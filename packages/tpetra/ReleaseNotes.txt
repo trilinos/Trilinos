@@ -2,6 +2,21 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Trilinos 10.12:
+--------------
+
+* Major (backwards-compatible, internal) refactor to interaction between Tpetra::CrsGraph/CrsMatrix and their interaction 
+  with their LocalSparseOps template parameter. 
+* Removed generic kernels for GPU nodes; GPU sparse kernel support now provided by CUSPARSE library; requires CUDA 4.1
+* Additional methods in Reduction/Transformation Interface (RTI) interface, examples in tpetra/examples/MultiPrec
+* Fixed major bugs in Tpetra Import/Export
+* Minor bug fixes and documenting tests
+* Numerous improvements to documentation
+* Better MatrixMarket support in tpetra/util
+* Added the ability to construct a Tpetra::Vector/MultiVector using user data (host-based nodes only)
+- Deprecated: fillComplete(OptimizeStorageOption) on Tpetra::CrsGraph and Tpetra::CrsMatrix, in favor of a ParameterList.
+
+
 Trilinos 10.7:
 --------------
 

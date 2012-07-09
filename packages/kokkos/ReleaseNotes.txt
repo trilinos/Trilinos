@@ -2,7 +2,16 @@
 Release Notes for Trilinos Package Kokkos
 -----------------------------------------
 
-dev (move to the next version)
+Trilinos 10.12
+------------------------------
+
+* Major (backwards-compatible, internal) refactor of local sparse operators, esp. DefaultSparseOps
+* Using generic sparse kernels only on host node; CUDA nodes use CUSPARSE. Adaptors for Cusp are work-in-progress.
+* Added first-touch-allocation support for sparse matrices; should improve performance on NUMA nodes.
+* Still lots of work in progress on sparse matrix support, expected for Trilinos 11.0
+
+
+Trilinos 10.10
 ------------------------------
 
 * Added OpenMP node (written by Radu Popescu)

@@ -1,24 +1,8 @@
-
 TPETRA
 
 * Switch default node type to serialnode.
 
 * Check status of host-bound GEMM (it's not parallel; this needs fixing ASAP)
-
-* Add first-touch
-
-* Add new resumeFill()
-  - This should look like the constructors for CrsGraph/CrsMatrix
-    resumeFill(ProfileType, NNZ)
-    resumeFill(ProfileType, NNZPerRow)
-  - Semantically, constructor is just a resume-fill
-  - Need to address efficiency issues here (vis-à-vis memory usage)
-  - Need to figure out what to do with Kokkos::CrsMatrix; probably split into abstract interface with multiple base classes
-    + Kokkos::CrsMatrixPacked
-    + Kokkos::CrsMatrix1D
-    + Kokkos::CrsMatrix2D
-    + No node template. This is a host-only class.
-  - optimizeStorage() or fillComplete(DoOptimizeStorage) means the use can never add new entries to a CrsMatrix. What does this mean in the context of other DistObjects?
 
 * Coalesce LocalMatVec and LocalMatSolvein CrsMatrix
   + Node dependency.
@@ -26,10 +10,6 @@ TPETRA
 * Address REPLACE mode in CrsMatrix/CrsGraph import/export
 
 * Rewrite globalAssemble() in CrsMatrix/CrsGraph to use import/export functionality
-
-* Coalesce fillComplete() code from CrsMatrix into CrsGraph (fill with values)
-  - Do this with other duplicated methods where possible (i.e., insertion methods)
-  - Don't worry about multi-matrix/one-graph yet; prolly wait for varaidic templates
 
 * Determine appropriate impelementation of checkSizes() in CrsGraph/CrsMatrix
 
@@ -43,8 +23,4 @@ KOKKOS
   - may need to address overlapping
     + detection with fall-back to serial is okay for now; identify potential special cases in Tpetra usage
   - Use these in CrsMatrix/CrsGraph/MultiVector/Vector (doImport/doExport)
-
-BUGS
-
-* Possible bug: CrsGraph import/export checks fillComplete() when perhaps it should check indicesAreLocal/indicesAreGlobal. See if this makes a bug.
 

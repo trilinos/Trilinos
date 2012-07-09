@@ -41,29 +41,77 @@
 //@HEADER
 */
 
-#include <Kokkos_TBBNode.hpp>
-#include <NodeTest.hpp>
-#include <TBBNativeTests.hpp>
+#ifndef KOKKOS_NODAPI_SER_NATIVETESTS_HPP_
+#define KOKKOS_NODAPI_SER_NATIVETESTS_HPP_
+
+#include <Teuchos_ScalarTraits.hpp>
 
 namespace {
 
-  using Kokkos::TBBNode;
-  RCP<TBBNode> tbbNode_;
+  using Kokkos::SerialNode;
 
   template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    return tbbNode_;
-  }
-
-  template <>
-  void initNode<TBBNode>() {
-    Teuchos::ParameterList plist;
-    if (NodeTest::numThreads != -1) {
-      plist.set<int>("Num Threads",NodeTest::numThreads);
+  std::pair<double,double> nativeTimings<float,SerialNode>(int N, int numIters, float &result) {
+    std::pair<double,double> ret;
+    Teuchos::Time iTime("float,SerialNode init"), sTime("float,SerialNode sum");
+    Teuchos::ArrayRCP<float> buff = Teuchos::arcp<float>(N);
+    {
+      Teuchos::TimeMonitor localTimer(iTime);
+      float *ptr = buff.getRawPtr();
+      for (int t=0; t < numIters; ++t) {
+        for (int i=0; i < N; ++i) {
+          ptr[i] = 1;
+        }
+      }
     }
-    plist.set<int>("Verbose",NodeTest::verbose);
-    tbbNode_ = rcp(new TBBNode(plist));
+    float sum;
+    {
+      Teuchos::TimeMonitor localTimer(sTime);
+      const float *ptr = buff.getRawPtr();
+      for (int t=0; t < numIters; ++t) {
+        sum = ptr[0];
+        for (int i=1; i < N; ++i) {
+          sum += ptr[i];
+        }
+      }
+    }
+    result = sum;
+    ret.first  = iTime.totalElapsedTime();
+    ret.second = sTime.totalElapsedTime(); 
+    return ret;
   }
 
-  TEST_NODE(TBBNode)
+  template <>
+  std::pair<double,double> nativeTimings<int,SerialNode>(int N, int numIters, int &result) {
+    std::pair<double,double> ret;
+    Teuchos::Time iTime("int,SerialNode init"), sTime("int,SerialNode sum");
+    Teuchos::ArrayRCP<int> buff = Teuchos::arcp<int>(N);
+    {
+      Teuchos::TimeMonitor localTimer(iTime);
+      int *ptr = buff.getRawPtr();
+      for (int t=0; t < numIters; ++t) {
+        for (int i=0; i < N; ++i) {
+          ptr[i] = 1;
+        }
+      }
+    }
+    int sum;
+    {
+      Teuchos::TimeMonitor localTimer(sTime);
+      const int *ptr = buff.getRawPtr();
+      for (int t=0; t < numIters; ++t) {
+        sum = ptr[0];
+        for (int i=1; i < N; ++i) {
+          sum += ptr[i];
+        }
+      }
+    }
+    result = sum;
+    ret.first  = iTime.totalElapsedTime();
+    ret.second = sTime.totalElapsedTime(); 
+    return ret;
+  }
+
 }
+
+#endif // KOKKOS_NODAPI_SER_NATIVETESTS_HPP_
