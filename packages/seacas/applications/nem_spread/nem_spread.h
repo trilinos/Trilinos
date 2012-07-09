@@ -1,11 +1,12 @@
 #ifndef NEM_SPREAD_H
 #define NEM_SPREAD_H
 
+#include <rf_allo.h>
 #include "rf_io_const.h"
 #include "globals.h"
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR   "6.05 (2012/04/04)"
+#define VER_STR   "6.06 (2012/07/09)"
 
 extern void check_exodus_error (int, const char *);
 extern double second               (void);
@@ -177,6 +178,11 @@ template <typename T, typename INT>
       Coord_Name[0] = Coord_Name[1] = Coord_Name[2] = NULL;
       Proc_Info[0] = Proc_Info[1] = Proc_Info[2] = Proc_Info[3] = Proc_Info[4] = Proc_Info[5] = 0;
     }
+
+    ~NemSpread()
+      {
+	safe_free((void**) &GM_Elem_Types);
+      }
 };
 
 #endif

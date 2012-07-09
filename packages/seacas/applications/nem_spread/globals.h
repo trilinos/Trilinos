@@ -35,6 +35,8 @@
  * 
  */
 
+#include <rf_allo.h>
+
 /*---------------------------------------------------------------------------*/
 /*      STRUCTURES FOR COMMUNICATION MAPS                                    */
 /*---------------------------------------------------------------------------*/
@@ -440,6 +442,23 @@ template <typename T, typename INT>
     Coordinate_Frame_Coordinates(NULL),
     Coordinate_Frame_Tags(NULL)
       { }
+    
+    ~Globals() {
+      safe_free((void**) &Proc_Num_Elem_Blk);
+      safe_free((void**) &Proc_Num_Node_Sets);
+      safe_free((void**) &Proc_Num_Side_Sets);
+      safe_free((void**) &Proc_NS_List_Length);
+      safe_free((void**) &Proc_SS_Elem_List_Length);
+
+      safe_free((void**) &Coor);
+      safe_free((void**) &Proc_Elem_Attr);
+      safe_free((void**) &Num_Internal_Nodes);
+
+      safe_free((void**) &Info_Record);
+      safe_free((void**) &GElem_Blks);
+      safe_free((void**) &Elem_Type);
+      safe_free((void**) &Elem_Type);
+    }
 };
 
 
