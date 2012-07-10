@@ -304,10 +304,10 @@ namespace stk {
 
             for (int iter = 0; iter < innerIter; iter++)
             {
-              int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
+              int num_invalid_0 = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
 
-//               if (!get_parallel_rank() && num_invalid) 
-//                 std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid 
+//               if (!get_parallel_rank() && num_invalid_0) 
+//                 std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid_0 
 //                           << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
 //                           << std::endl;
 
@@ -315,7 +315,7 @@ namespace stk {
               sync_fields(iter);
               bool conv = check_convergence();
               if (!get_parallel_rank())
-                std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid << std::endl;
+                std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid_0 << std::endl;
               if (conv) break;
             }
 
