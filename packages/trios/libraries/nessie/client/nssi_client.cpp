@@ -118,6 +118,9 @@ client_init ()
         return rc;
     }
 
+    // Initialize the thread counter
+    nthread_counter_init(&request_count);
+
 //    register_service_encodings();
 
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_GET_SERVICE, void, void, nssi_service);
@@ -627,8 +630,6 @@ int nssi_free_service(
 int nssi_init(const nssi_rpc_transport transport_id)
 {
     int rc = NSSI_OK;
-
-    nthread_counter_init(&request_count);
 
     client_init();
 
@@ -1597,6 +1598,10 @@ int nssi_call_rpc(
 
     /* increment global counter */
     local_count = nthread_counter_increment(&request_count);
+    if (local_count == -1) {
+        log_error(debug_level, "Unable to increment counter");
+        goto cleanup;
+    }
 
     /*------ Initialize variables and buffers ------*/
     memset(request, 0, sizeof(nssi_request));
