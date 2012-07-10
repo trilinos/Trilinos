@@ -76,22 +76,33 @@ int nthread_lock_init(
 
 //    log_debug(thread_debug_level, "nthread_lock_init: initializing lock(%p), lock->lock(%p)", lock, lock->lock);
 
+#if defined(__APPLE__)
     do {
         lock->name=tempnam("/tmp", "trios.");
-        lock->lock=sem_open(lock->name+4, O_CREAT|O_EXCL, 0600, 1);
-        if ((lock->lock == SEM_FAILED) && (errno == EEXIST)) {
+        lock->lock_ptr=sem_open(lock->name+4, O_CREAT|O_EXCL, 0600, 1);
+        if ((lock->lock_ptr == SEM_FAILED) && (errno == EEXIST)) {
             done=false;
         } else {
             done=true;
         }
     } while (!done);
 
-    if (lock->lock == SEM_FAILED) {
+    if (lock->lock_ptr == SEM_FAILED) {
         fprintf(stderr, "nthread_lock_init: sem_open failed: %s\n", strerror(errno));
         fflush(stderr);
-        lock->lock=NULL;
+        lock->lock_ptr=NULL;
         return(-1);
     }
+#else
+    lock->lock_ptr=&lock->lock;
+    rc=sem_init(&lock->lock, 0, 1);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_lock_init: sem_init failed: %s\n", strerror(errno));
+        fflush(stderr);
+        lock->lock_ptr=NULL;
+        return(-1);
+    }
+#endif
 
 //    log_debug(thread_debug_level, "nthread_lock_init: initialized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
 
@@ -104,17 +115,17 @@ int nthread_lock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock: locking lock(%p), lock->lock(%p)\n", lock, lock->lock);
+    fprintf(stderr, "nthread_lock: locking lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
     fflush(stderr);
 #endif
 
-    if (lock->lock == NULL) {
+    if (lock->lock_ptr == NULL) {
         fprintf(stderr, "nthread_lock: lock not initialized\n");
         fflush(stderr);
         return(-1);
     }
 
-    rc=sem_wait(lock->lock);
+    rc=sem_wait(lock->lock_ptr);
     if (rc == -1) {
         fprintf(stderr, "nthread_lock: sem_wait failed: %s\n", strerror(errno));
         fflush(stderr);
@@ -122,7 +133,7 @@ int nthread_lock(
     }
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, lock->lock);
+    fprintf(stderr, "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
     fflush(stderr);
 #endif
 
@@ -135,17 +146,17 @@ int nthread_unlock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", lock, lock->lock);
+    fprintf(stderr, "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
     fflush(stderr);
 #endif
 
-    if (lock->lock == NULL) {
+    if (lock->lock_ptr == NULL) {
         fprintf(stderr, "nthread_unlock: lock not initialized\n");
         fflush(stderr);
         return(-1);
     }
 
-    rc=sem_post(lock->lock);
+    rc=sem_post(lock->lock_ptr);
     if (rc == -1) {
         fprintf(stderr, "nthread_unlock: sem_post failed: %s\n", strerror(errno));
         fflush(stderr);
@@ -153,7 +164,7 @@ int nthread_unlock(
     }
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, lock->lock);
+    fprintf(stderr, "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
     fflush(stderr);
 #endif
 
@@ -168,13 +179,14 @@ int nthread_lock_fini(
 
 //    log_debug(thread_debug_level, "nthread_lock_fini: finalizing lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
 
-    if (lock->lock == NULL) {
+    if (lock->lock_ptr == NULL) {
         fprintf(stderr, "nthread_lock_fini: lock not initialized\n");
         fflush(stderr);
         return(-1);
     }
 
-    rc=sem_close(lock->lock);
+#if defined(__APPLE__)
+    rc=sem_close(lock->lock_ptr);
     if (rc == -1) {
         fprintf(stderr, "nthread_lock_fini: sem_close failed: %s\n", strerror(errno));
         fflush(stderr);
@@ -188,6 +200,14 @@ int nthread_lock_fini(
     }
 
     free(lock->name);
+#else
+    rc=sem_destroy(lock->lock_ptr);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_lock_fini: sem_destroy failed: %s\n", strerror(errno));
+        fflush(stderr);
+        return(-1);
+    }
+#endif
 
 //    log_debug(thread_debug_level, "nthread_lock_fini: finalized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
 

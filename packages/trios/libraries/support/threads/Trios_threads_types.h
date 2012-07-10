@@ -53,7 +53,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 typedef struct {
     char  *name;
-    sem_t *lock;
+    sem_t  lock;
+    sem_t *lock_ptr;
 } nthread_lock_t;
 
 typedef struct {
