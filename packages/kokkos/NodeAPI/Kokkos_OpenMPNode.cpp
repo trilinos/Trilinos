@@ -48,7 +48,7 @@ namespace Kokkos {
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
     verbose_ (false) // Default: No verbose status output
   {
-    init (curNumThreads);
+    init (curNumThreads_);
   }
 
 
