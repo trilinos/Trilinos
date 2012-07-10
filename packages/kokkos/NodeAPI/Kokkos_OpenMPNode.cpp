@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -45,20 +45,36 @@
 namespace Kokkos {
 
   OpenMPNode::OpenMPNode(Teuchos::ParameterList &pl) {
-    curNumThreads_ = pl.get<int>("Num Threads", -1);
-    int verbose = pl.get<int>("Verbose", 0);
-    TEUCHOS_TEST_FOR_EXCEPTION(curNumThreads_ < 0, std::runtime_error,
-        "OpenMPNode::OpenMPNode(): invalid ""Num Threads"" specification.");
+    // Don't set state (in this case, curNumThreads_) until we've read
+    // in all the parameters.
+    //
+    // -1 or 0 mean let OpenMP pick the number of threads.  A positive
+    // value means that we should tell OpenMP how many threads to use.
+    const int curNumThreads = pl.get<int>("Num Threads", -1);
+    // FIXME (mfh 10 Jul 2012) This should be a bool, not an int.
+    // However, I don't want to change the public interface yet.
+    const int verbose = pl.get<int>("Verbose", 0);
+    TEUCHOS_TEST_FOR_EXCEPTION(curNumThreads_ < -1, std::runtime_error,
+      "OpenMPNode::OpenMPNode(): invalid \"Num Threads\" parameter value "
+      << curNumThreads << ".");
     if (verbose) {
-      std::cout << "OpenMPNode initializing with numThreads == " << curNumThreads_ << std::endl;
+      std::cout << "OpenMPNode initializing with \"Num Threads\" = "
+                << curNumThreads_ << std::endl;
     }
-    init(curNumThreads_);
+    init (curNumThreads);
+    curNumThreads_ = curNumThreads; // Now it's safe to set state.
+    verbose_ = (verbose != 0);
   }
 
   OpenMPNode::~OpenMPNode() {}
 
-  void OpenMPNode::init(int numThreads) {
-    omp_set_num_threads(numThreads);
+  void OpenMPNode::init (int numThreads) {
+    // mfh 10 Jul 2012: Don't set the number of threads if it's
+    // negative (the default value of the "Num Threads" parameter is
+    // -1) or 0.
+    if (numThreads > 0) {
+      omp_set_num_threads (numThreads);
+    }
   }
 
 }
