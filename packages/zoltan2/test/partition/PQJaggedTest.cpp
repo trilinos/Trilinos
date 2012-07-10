@@ -19,6 +19,7 @@
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
 
 #include <string>
+#include <omp.h>
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -38,9 +39,9 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
 {
   //std::string fname("simple");
 	cout << "running " << fname << endl;
+
   UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
-  cout << "n" << endl;
   RCP<tMVector_t> coords = uinput.getCoordinates();
 
   RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
