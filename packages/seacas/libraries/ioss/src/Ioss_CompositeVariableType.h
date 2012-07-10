@@ -48,6 +48,9 @@ namespace Ioss {
     CompositeVariableType(const std::string& name, int number_components, bool delete_me);
     CompositeVariableType(const VariableType *base_type, int copies, bool delete_me);
 
+    const VariableType* GetBaseType();
+    int                 GetNumCopies();
+
   private:
     CompositeVariableType(const CompositeVariableType&);
     const VariableType *baseType;
