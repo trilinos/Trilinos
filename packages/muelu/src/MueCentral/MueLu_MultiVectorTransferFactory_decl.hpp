@@ -19,7 +19,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class MultiVectorTransferFactory : public TwoLevelFactoryBase {
-#undef MUELU_MULTIVECTORTRANSFER_FACTORY_SHORT
+#undef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -75,5 +75,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_MULTIVECTORTRANSFER_FACTORY_SHORT
+#define MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 #endif // MUELU_MULTIVECTORTRANSFER_FACTORY_DECL_HPP

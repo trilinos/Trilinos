@@ -26,7 +26,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class PermutedTransferFactory : public TwoLevelFactoryBase {
-#undef MUELU_PERMUTEDTRANSFER_FACTORY_SHORT
+#undef MUELU_PERMUTEDTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -84,5 +84,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_PERMUTEDTRANSFER_FACTORY_SHORT
+#define MUELU_PERMUTEDTRANSFERFACTORY_SHORT
 #endif // MUELU_PERMUTEDTRANSFER_FACTORY_DECL_HPP

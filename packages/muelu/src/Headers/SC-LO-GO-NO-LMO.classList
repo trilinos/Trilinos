@@ -21,6 +21,7 @@ DirectSolver
 TrilinosSmoother
 MergedSmoother
 CoalesceDropFactory
+CoalesceDropFactory2
 PreDropFunctionBaseClass
 PreDropFunctionConstVal
 NullspaceFactory
@@ -35,6 +36,6 @@ BlockedPFactory
 SubBlockAFactory
 BlockedGaussSeidelSmoother
 AggregationExportFactory
-#MultiVectorTransferFactory
-#PermutedTransferFactory
+MultiVectorTransferFactory
+PermutedTransferFactory
 SubBlockAggregationFactory
