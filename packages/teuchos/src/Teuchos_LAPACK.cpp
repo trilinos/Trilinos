@@ -154,6 +154,14 @@ namespace Teuchos
     SLASWP_F77(&N, A, &LDA, &K1, &K2, IPIV, &INCX);
   }
 
+  void LAPACK<int,float>::GBTRF(const int m, const int n, const int kl, const int ku, float* A, const int lda, int* IPIV, int* info) const
+  { SGBTRF_F77(&m, &n, &kl, &ku, A, &lda, IPIV, info); }
+
+
+  void LAPACK<int,float>::GBTRS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const
+  { SGBTRS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, IPIV, B, &ldb, info); }
+
+
   void LAPACK<int,float>::GTTRF(const int n, float* dl, float* d, float* du, float* du2, int* IPIV, int* info) const
   { SGTTRF_F77(&n, dl, d, du, du2, IPIV, info); }
 
@@ -196,6 +204,14 @@ namespace Teuchos
   { SGECON_F77(CHAR_MACRO(NORM), &n, A, &lda, &anorm, rcond, WORK, IWORK, info); }
 
 
+  void LAPACK<int,float>::GBCON(const char NORM, const int n, const int kl, const int ku, const float* A, const int lda, int* IPIV, const float anorm, float* rcond, float* WORK, int* IWORK, int* info) const
+  { SGBCON_F77(CHAR_MACRO(NORM), &n, &kl, &ku, A, &lda, IPIV, &anorm, rcond, WORK, IWORK, info); }
+
+
+  float LAPACK<int,float>::LANGB(const char NORM, const int n, const int kl, const int ku, const float* A, const int lda, float* WORK) const
+  { return( SLANGB_F77(CHAR_MACRO(NORM), &n, &kl, &ku, A, &lda, WORK) ); }
+
+
   void LAPACK<int,float>::GESV(const int n, const int nrhs, float* A, const int lda, int* IPIV, float* B, const int ldb, int* info) const
   { SGESV_F77(&n, &nrhs, A, &lda, IPIV, B, &ldb, info); }
 
@@ -206,6 +222,14 @@ namespace Teuchos
 
   void LAPACK<int,float>::GERFS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const float* AF, const int ldaf, const int* IPIV, const float* B, const int ldb, float* X, const int ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
   { SGERFS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info); }
+
+
+  void LAPACK<int,float>::GBEQU(const int m, const int n, const int kl, const int ku, const float* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const
+  { SGBEQU_F77(&m, &n, &kl, &ku, A, &lda, R, C, rowcond, colcond, amax, info); }
+
+
+  void LAPACK<int,float>::GBRFS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const float* A, const int lda, const float* AF, const int ldaf, const int* IPIV, const float* B, const int ldb, float* X, const int ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
+  { SGBRFS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info); }
 
 
   void LAPACK<int,float>::GESVX(const char FACT, const char TRANS, const int n, const int nrhs, float* A, const int lda, float* AF, const int ldaf, int* IPIV, char EQUED, float* R, float* C, float* B, const int ldb, float* X, const int ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const
@@ -478,6 +502,14 @@ namespace Teuchos
     DLASWP_F77(&N, A, &LDA, &K1, &K2, IPIV, &INCX);
   }
 
+  void LAPACK<int,double>::GBTRF(const int m, const int n, const int kl, const int ku, double* A, const int lda, int* IPIV, int* info) const
+  { DGBTRF_F77(&m, &n, &kl, &ku, A, &lda, IPIV, info); }
+
+
+  void LAPACK<int,double>::GBTRS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const double* A, const int lda, const int* IPIV, double* B, const int ldb, int* info) const
+  { DGBTRS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, IPIV, B, &ldb, info); }
+
+
   void LAPACK<int,double>::GTTRF(const int n, double* dl, double* d, double* du, double* du2, int* IPIV, int* info) const
   { DGTTRF_F77(&n, dl, d, du, du2, IPIV, info); }
 
@@ -519,6 +551,14 @@ namespace Teuchos
   { DGECON_F77(CHAR_MACRO(NORM), &n, A, &lda, &anorm, rcond, WORK, IWORK, info); }
 
 
+  void LAPACK<int,double>::GBCON(const char NORM, const int n, const int kl, const int ku, const double* A, const int lda, int* IPIV, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const
+  { DGBCON_F77(CHAR_MACRO(NORM), &n, &kl, &ku, A, &lda, IPIV, &anorm, rcond, WORK, IWORK, info); }
+
+
+  double LAPACK<int,double>::LANGB(const char NORM, const int n, const int kl, const int ku, const double* A, const int lda, double* WORK) const
+  { return( DLANGB_F77(CHAR_MACRO(NORM), &n, &kl, &ku, A, &lda, WORK) ); }
+
+
   void LAPACK<int,double>::GESV(const int n, const int nrhs, double* A, const int lda, int* IPIV, double* B, const int ldb, int* info) const
   { DGESV_F77(&n, &nrhs, A, &lda, IPIV, B, &ldb, info); }
 
@@ -529,6 +569,14 @@ namespace Teuchos
 
   void LAPACK<int,double>::GERFS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const double* AF, const int ldaf, const int* IPIV, const double* B, const int ldb, double* X, const int ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
   { DGERFS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info); }
+
+
+  void LAPACK<int,double>::GBEQU(const int m, const int n, const int kl, const int ku, const double* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const
+  { DGBEQU_F77(&m, &n, &kl, &ku, A, &lda, R, C, rowcond, colcond, amax, info); }
+
+
+  void LAPACK<int,double>::GBRFS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const double* A, const int lda, const double* AF, const int ldaf, const int* IPIV, const double* B, const int ldb, double* X, const int ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
+  { DGBRFS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info); }
 
 
   void LAPACK<int,double>::GESVX(const char FACT, const char TRANS, const int n, const int nrhs, double* A, const int lda, double* AF, const int ldaf, int* IPIV, char EQUED, double* R, double* C, double* B, const int ldb, double* X, const int ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const
@@ -871,6 +919,18 @@ namespace Teuchos
     CLASWP_F77(&N, A, &LDA, &K1, &K2, IPIV, &INCX);
   }
 
+  void LAPACK<int,std::complex<float> >::GBTRF(const int m, const int n, const int kl, const int ku, std::complex<float>* A, const int lda, int* IPIV, int* info) const
+  {
+    CGBTRF_F77(&m, &kl, &ku, &n, A, &lda, IPIV, info);
+  }
+
+
+  void LAPACK<int,std::complex<float> >::GBTRS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B , const int ldb, int* info) const
+  {
+    CGBTRS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, IPIV, B, &ldb, info);
+  }
+
+
   void LAPACK<int,std::complex<float> >::GTTRF(const int n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, int* IPIV, int* info) const
   {
     CGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
@@ -922,6 +982,18 @@ namespace Teuchos
   }
 
 
+  void LAPACK<int,std::complex<float> >::GBCON(const char NORM, const int n, const int kl, const int ku, const std::complex<float>* A, const int lda, int* IPIV, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, int* info) const
+  {
+    CGBCON_F77(CHAR_MACRO(NORM), &n, &kl, &ku, A, &lda, IPIV, &anorm, rcond, WORK, RWORK, info);
+  }
+
+
+  float LAPACK<int,std::complex<float> >::LANGB(const char NORM, const int n, const int kl, const int ku, const std::complex<float>* A, const int lda, float* WORK) const
+  {
+    return( CLANGB_F77(CHAR_MACRO(NORM), &n, &kl, &ku, A, &lda, WORK) );
+  }
+
+
   void LAPACK<int,std::complex<float> >::GESV(const int n, const int nrhs, std::complex<float>* A, const int lda, int* IPIV, std::complex<float>* B, const int ldb, int* info) const
   {
     CGESV_F77(&n, &nrhs, A, &lda, IPIV, B, &ldb, info);
@@ -937,6 +1009,18 @@ namespace Teuchos
   void LAPACK<int,std::complex<float> >::GERFS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const std::complex<float>* AF, const int ldaf, const int* IPIV, const std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const
   {
     CGERFS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
+  }
+
+
+  void LAPACK<int,std::complex<float> >::GBEQU(const int m, const int n, const int kl, const int ku, const std::complex<float>* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const
+  {
+    CGBEQU_F77(&m, &n, &kl, &ku, A, &lda, R, C, rowcond, colcond, amax, info);
+  }
+
+
+  void LAPACK<int,std::complex<float> >::GBRFS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const std::complex<float>* A, const int lda, const std::complex<float>* AF, const int ldaf, const int* IPIV, const std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const
+  {
+    CGBRFS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
   }
 
 
@@ -1217,6 +1301,18 @@ namespace Teuchos
     ZLASWP_F77(&N, A, &LDA, &K1, &K2, IPIV, &INCX);
   }
 
+  void LAPACK<int,std::complex<double> >::GBTRF(const int m, const int n, const int kl, const int ku, std::complex<double>* A, const int lda, int* IPIV, int* info) const
+  {
+    ZGBTRF_F77(&m, &n, &kl, &ku, A, &lda, IPIV, info);
+  }
+
+
+  void LAPACK<int,std::complex<double> >::GBTRS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const
+  {
+    ZGBTRS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, IPIV, B, &ldb, info);
+  }
+
+
   void LAPACK<int,std::complex<double> >::GTTRF(const int n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, int* IPIV, int* info) const
   {
     ZGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
@@ -1266,6 +1362,18 @@ namespace Teuchos
   }
 
 
+  void LAPACK<int,std::complex<double> >::GBCON(const char NORM, const int n, const int kl, const int ku, const std::complex<double>* A, const int lda, int* IPIV, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const
+  {
+    ZGBCON_F77(CHAR_MACRO(NORM), &n, &kl, &ku, A, &lda, IPIV, &anorm, rcond, WORK, RWORK, info);
+  }
+
+
+  double LAPACK<int,std::complex<double> >::LANGB(const char NORM, const int n, const int kl, const int ku, const std::complex<double>* A, const int lda, double* WORK) const
+  {
+    return( ZLANGB_F77(CHAR_MACRO(NORM), &n, &kl, &ku, A, &lda, WORK) );
+  }
+
+
   void LAPACK<int,std::complex<double> >::GESV(const int n, const int nrhs, std::complex<double>* A, const int lda, int* IPIV, std::complex<double>* B, const int ldb, int* info) const
   {
     ZGESV_F77(&n, &nrhs, A, &lda, IPIV, B, &ldb, info);
@@ -1281,6 +1389,18 @@ namespace Teuchos
   void LAPACK<int,std::complex<double> >::GERFS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const std::complex<double>* AF, const int ldaf, const int* IPIV, const std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const
   {
     ZGERFS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
+  }
+
+
+  void LAPACK<int,std::complex<double> >::GBEQU(const int m, const int n, const int kl, const int ku, const std::complex<double>* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const
+  {
+    ZGBEQU_F77(&m, &n, &kl, &ku, A, &lda, R, C, rowcond, colcond, amax, info);
+  }
+
+
+  void LAPACK<int,std::complex<double> >::GBRFS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const std::complex<double>* A, const int lda, const std::complex<double>* AF, const int ldaf, const int* IPIV, const std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const
+  {
+    ZGBRFS_F77(CHAR_MACRO(TRANS), &n, &kl, &ku, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
   }
 
 
