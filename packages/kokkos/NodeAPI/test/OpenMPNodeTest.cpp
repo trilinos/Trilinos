@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -59,13 +59,16 @@ namespace {
   void initNode<OpenMPNode>() {
     Teuchos::ParameterList plist;
 
-    int useNumThreads = 1;
-    if (NodeTest::numThreads != -1) {
-      useNumThreads = NodeTest::numThreads;
-    }
-    plist.set<int>("Num Threads",useNumThreads);
-    plist.set<int>("Verbose",NodeTest::verbose);
-    ompNode_ = rcp(new OpenMPNode(plist));
+    // mfh 10 Jul 2012: OpenMPNode should now treat "Num Threads" = -1
+    // or 0 as an indication to use the default number of threads.  In
+    // order to test this case, we allow these cases to pass through
+    // to the parameter value, rather than reassigning them here as
+    // before.  The default value of "Num Threads" is -1 (see
+    // NodeTest.cpp), so this case will be tested as long as the test
+    // is run without the --num-threads command-line argument.
+    plist.set<int> ("Num Threads", NodeTest::numThreads);
+    plist.set<int> ("Verbose", NodeTest::verbose);
+    ompNode_ = rcp (new OpenMPNode (plist));
   }
 
   TEST_NODE(OpenMPNode)
