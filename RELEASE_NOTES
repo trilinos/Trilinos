@@ -1,6 +1,149 @@
 ###############################################################################
 #                                                                             #
-# Trilinos Release 10.10 Release Notes                                         #
+# Trilinos Release 10.12 Release Notes                                        #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 10.12 general release contains 51 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards, STK,
+Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra, Tpetra,
+TriKota, TrilinosCouplings, Trios*, Triutils, Zoltan.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+===============================================================================
+
+Package Release Notes:
+
+-------------------------------------------------------------------------------
+
+Kokkos
+
+  - Major (backwards-compatible, internal) refactor of local sparse operators,
+    esp. DefaultSparseOps
+
+  - Using generic sparse kernels only on host node; CUDA nodes use CUSPARSE.
+    Adaptors for Cusp are work-in-progress.
+
+  - Added first-touch-allocation support for sparse matrices; should improve
+    performance on NUMA nodes.
+
+  - Still lots of work in progress on sparse matrix support, expected for
+    Trilinos 11.0
+
+Mesquite
+
+  - Removed Distance From Target (DFT) based metrics and added 
+    Target-Matrix Optimazation Paradigm (TMOP) based metrics.
+
+  - Fix broken patch culling functionality
+
+  - Update for ITAPS 1.3 release candidate APIs
+
+  - Added XYPlanarDomain type
+
+  - Updated Histogram to a more intuitive format.
+
+  - Added Scaled Histograms feature to QualityAssessor Summary code.
+
+  - Significant updates to Users Guide.
+
+  - Fixed QualityMetricTester utility class problem reported by Jason
+
+  - fixed typo in header include guards reported by Jason Kraftcheck.
+
+  - Fixed compiler errors using gcc/g++ 4.6 on Linux, Bug #5294
+
+  - Fixed the errors in the MPI_DEBUG version of the check-in script on Linux.
+
+  - Updated constructors in MsqIMeshP.*pp to match those of parent class
+    MsqIMdesh.
+
+  - Added parallel error handling to parallel Mesquite/VertexMover.
+
+  - Fixed std::vector not being resized after the number of elements in
+    it was reduced.
+
+  - Added Windows code to replace tmp_File() function that does not work in
+    Windows 7.
+
+  - Fixed non-unique cmake global name issue.
+
+  - Added code for Windows using srand().  Fix for bug #5351.
+
+Teuchos
+
+  - The current behavior of the Teuchos::XMLParameterListReader has been
+    modified  to throw an exception (Teuchos::DuplicateParameterSublist) the
+    event that a sublist is duplicated in an XML stream. This change is disabled
+    by default in the  XMLParameterListReader class, and is enabled by calling:
+    XMLParameterListReader::setAllowsDuplicateSublists( false )  This is
+    configured, and thereby constitutes a non-backwards compatible change, 
+    in the following encapsulating helper methods: 
+        Teuchos::updateParametersFromXmlFile(...)
+        Teuchos::updateParametersFromXmlFileAndBroadcast(...)
+        Teuchos::getParametersFromXmlFile(...)
+        Teuchos::updateParametersFromXmlString(...)
+        Teuchos::getParametersFromXmlString(...)
+    This change was requested by Panzer/Drekar developers, to aid in debugging
+    the input of large XML programs specifying a physics application.
+
+Tpetra
+
+  - Major (backwards-compatible, internal) refactor to interaction between
+    Tpetra::CrsGraph/CrsMatrix and their interaction  with their LocalSparseOps
+    template parameter. 
+
+  - Removed generic kernels for GPU nodes; GPU sparse kernel support now
+    provided by CUSPARSE library; requires CUDA 4.1
+
+  - Additional methods in Reduction/Transformation Interface (RTI) interface,
+    examples in tpetra/examples/MultiPrec
+
+  - Fixed major bugs in Tpetra Import/Export
+
+  - Minor bug fixes and documenting tests
+
+  - Numerous improvements to documentation
+
+  - Better MatrixMarket support in tpetra/util
+
+  - Added the ability to construct a Tpetra::Vector/MultiVector using user data
+    (host-based nodes only)
+
+  - Deprecated: fillComplete(OptimizeStorageOption) on Tpetra::CrsGraph and
+    Tpetra::CrsMatrix, in favor of a ParameterList.
+
+Trios
+
+  - Significant changes to thread support for nessie.  
+    - Implemented thread-safe version of nessie client/server... not fully
+      tested.
+    - Removed thread pool and threaded support from server. Assume service
+      developer has their own thread pool.
+
+  - Valgrind-detected bug fixes for IB port of NNTI. 
+
+  - Modified xfer-service (example) to use multiple servers. 
+    - Implemented two different client/partitioning schemes: round robin, block
+      partition. 
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 10.10 Release Notes                                        #
 #                                                                             #
 ###############################################################################
 
