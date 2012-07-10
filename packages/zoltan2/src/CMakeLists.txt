@@ -4,9 +4,9 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 SET(HAVE_ZOLTAN2_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
+
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
    
 #
 # B) Define the header files, the source files, and the include directories
