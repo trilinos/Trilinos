@@ -97,11 +97,11 @@ std::string CompositeVariableType::label(int which, const char suffix_sep) const
   return my_label;
 }
 
-const VariableType* CompositeVariableType::GetBaseType() {
+const VariableType* CompositeVariableType::GetBaseType() const{
   return baseType;
 }
 
-int CompositeVariableType::GetNumCopies() {
+int CompositeVariableType::GetNumCopies() const{
   return copies_;
 }
 
