@@ -44,7 +44,10 @@
 
 namespace Kokkos {
 
-  OpenMPNode::OpenMPNode(Teuchos::ParameterList &pl) {
+  OpenMPNode::OpenMPNode (Teuchos::ParameterList &pl) :
+    curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
+    verbose_ (0) // Default: No verbose status output
+  {
     // Don't set state (in this case, curNumThreads_) until we've read
     // in all the parameters.
     //
@@ -54,7 +57,7 @@ namespace Kokkos {
     // FIXME (mfh 10 Jul 2012) This should be a bool, not an int.
     // However, I don't want to change the public interface yet.
     const int verbose = pl.get<int>("Verbose", 0);
-    TEUCHOS_TEST_FOR_EXCEPTION(curNumThreads_ < -1, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(curNumThreads < -1, std::runtime_error,
       "OpenMPNode::OpenMPNode(): invalid \"Num Threads\" parameter value "
       << curNumThreads << ".");
     if (verbose) {
