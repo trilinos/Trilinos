@@ -1,6 +1,9 @@
 INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
+                    ${PACKAGE_SOURCE_DIR}/LinAlg/test/CrsMatrix)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultMultiply  
   SOURCES 
     CrsMatrix_DefaultMultiply.cpp  
