@@ -47,8 +47,11 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#ifdef HAVE_TRIOS_MALLOC_H
 #include <malloc.h>
+#endif
 
+#include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
 
