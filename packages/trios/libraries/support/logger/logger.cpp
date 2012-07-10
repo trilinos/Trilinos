@@ -60,11 +60,16 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 
-static bool           mutex_initialized = false;
+static volatile bool  mutex_initialized = false;
 static nthread_lock_t logger_mutex;
 
 void logger_mutex_lock()
 {
+    if (!mutex_initialized) {
+        mutex_initialized = true;
+        nthread_lock_init(&logger_mutex);
+    }
+
     nthread_lock(&logger_mutex);
 }
 void logger_mutex_unlock()
@@ -87,11 +92,6 @@ static FILE *log_file = NULL;
 int logger_init(const log_level debug_level,  const char *logfile)
 {
     int rc = 0;
-
-    if (!mutex_initialized) {
-        mutex_initialized = true;
-        nthread_lock_init(&logger_mutex);
-    }
 
     /* initialize the default debug level */
     if (debug_level == 0)

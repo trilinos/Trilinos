@@ -246,6 +246,7 @@ int64_t nthread_counter_increment(
     if (nthread_lock(&c->lock) != 0) {
         fprintf(stderr, "nthread_counter_increment: failed to lock the counter lock: %s\n", strerror(errno));
         fflush(stderr);
+        t = -1;
         goto cleanup;
     }
 
