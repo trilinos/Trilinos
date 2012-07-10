@@ -302,7 +302,7 @@ void pqJagged_getInputValues(
 	pqJagged_gnos = gnos;
 
 
-	std::cout << std::endl;
+	//std::cout << std::endl;
 
 	for (int dim=0; dim < coordDim; dim++){
 		ArrayRCP<const scalar_t> ar;
@@ -612,7 +612,9 @@ void getNewCoordinates_simple(
 		scalar_t *&cutCoordinates, const size_t &noCuts,
 		const scalar_t &maxCoordinate, const scalar_t &minCoordinate,
 		scalar_t *leftClosestDistance, scalar_t *rightClosestDistance,
-		scalar_t * cutLowerWeight,scalar_t * cutUpperWeight, scalar_t *&cutCoordinatesWork){
+		scalar_t * cutLowerWeight,scalar_t * cutUpperWeight, scalar_t *&cutCoordinatesWork,
+		float *nonRectelinearPart,
+		bool allowNonRectelinearPart){
 
 	scalar_t seenW = 0;
 	float expected = 0;
@@ -631,13 +633,19 @@ void getNewCoordinates_simple(
 		//current weight of the part at the left of the cut line.
 		seenW = totalPartWeights[i * 2];
 
+
 		//if already determined at previous iterations, do nothing.
 		if(isDone[i]) {
 			cutCoordinatesWork[i] = cutCoordinates[i];
 			continue;
 		}
 		expected = cutPartRatios[i];
-
+		/*
+		if(seenW == 230){
+			cout << "seen: " << seenW << " expected:" << totalWeight * expected << " cutLine:" << totalPartWeights[i * 2 + 1] << endl;
+			cout << "upper:" << cutUpperBounds[i] << " lower:" <<  cutLowerBounds[i] << endl;
+		}
+		*/
 		leftImbalance = imbalanceOf(seenW, totalWeight, expected);
 		rightImbalance = imbalanceOf(totalWeight - seenW, totalWeight, 1 - expected);
 
@@ -652,16 +660,28 @@ void getNewCoordinates_simple(
 		}
 		//if upper bound and lower bound reaches to the same point.
 		//the imbalance cannot be satisfied. Accept as it is.
-		else if(cutUpperBounds[i] != -1 && (cutUpperBounds[i] - cutLowerBounds[i]) < _EPSILON ){
+		/*else if(cutUpperBounds[i] != -1 && (cutUpperBounds[i] - cutLowerBounds[i]) < _EPSILON ){
 			isDone[i] = true;
 			__sync_fetch_and_sub(&allDone, 1);
 			cutCoordinatesWork [ i] = cutCoordinates[i];
 		}
+		*/
 		//if left imbalance is lower than 0, then cut line should be moved to right.
 		else if(leftImbalance < 0){
 
 			scalar_t ew = totalWeight * expected;
 
+			if(allowNonRectelinearPart){
+				if (totalPartWeights[i * 2 + 1] >= ew){
+					isDone[i] = true;
+					__sync_fetch_and_sub(&allDone, 1);
+					cutCoordinatesWork [ i] = cutCoordinates[i];
+					//cout << "left:" << totalPartWeights[i * 2] << " with line:" << totalPartWeights[i * 2 + 1 ]<< " expected:" << ew << endl;
+					nonRectelinearPart[i] = 1 - (totalPartWeights[i * 2 + 1] - ew) / (totalPartWeights[i * 2 + 1] - totalPartWeights[i * 2]);
+					//cout << "nonRectelinearPart[i]:" << nonRectelinearPart[i] << endl;
+					continue;
+				}
+			}
 			//TODO if boundary is enough binary search on processors -- only if different part assignment in the same line is allowed.
 
 			//TODO for now cutUpperBounds and cutLowerBounds are initialized with -1, which is not okay. Think about a way without using another assignment array.
@@ -932,7 +952,9 @@ void pqJagged_1DPart_simple(
 		scalar_t **leftClosestDistance,
 		scalar_t **rightClosestDistance,
 		scalar_t *totalPartWeights,
-		scalar_t &globaltotalWeight
+		scalar_t &globaltotalWeight,
+		float *nonRectelinearPart,
+		bool allowNonRectelinearPart
 		){
 
 
@@ -991,6 +1013,7 @@ void pqJagged_1DPart_simple(
 			isDone[i] = false;
 			cutLowerBounds[i] = -1;
 			cutUpperBounds[i] = -1;
+			nonRectelinearPart[i] = 0;
 		}
 
 
@@ -998,6 +1021,13 @@ void pqJagged_1DPart_simple(
 
 			//iterationCount++;
 
+
+			{
+				for (size_t i = 0; i < noCuts; ++i){
+					if(isDone[i] == false)
+					cout << "i:" << i <<  " c:" << cutCoordinates[i] << " u:" << cutUpperBounds[i] << " l:" << cutLowerBounds[i] << endl;
+				}
+			}
 			for (size_t i = 0; i < total_part_count; ++i){
 				if(i/2 < noCuts && isDone[i/2]) continue;
 				myPartWeights[i] = 0;
@@ -1134,7 +1164,10 @@ void pqJagged_1DPart_simple(
 			getNewCoordinates_simple<scalar_t>(total_part_count, totalPartWeights, isDone, cutPartRatios,
 					globaltotalWeight, imbalanceTolerance, allDone, cutUpperBounds, cutLowerBounds,
 					cutCoordinates_tmp, noCuts,maxCoordinate, minCoordinate, leftClosestDistance[0],
-					rightClosestDistance[0],cutLowerWeight, cutUpperWeight,cutCoordinatesWork);
+					rightClosestDistance[0],cutLowerWeight, cutUpperWeight,cutCoordinatesWork,
+
+					nonRectelinearPart,
+					allowNonRectelinearPart);
 		}
 
 
@@ -1182,12 +1215,14 @@ void getChunksFromCoordinates(size_t partNo, size_t numCoordsInPart, int noThrea
 		scalar_t *pqJagged_coordinates, scalar_t *cutCoordinates, lno_t *totalCounts,
 		lno_t *partitionedPointPermutations,
 		lno_t *newpartitionedPointPermutations, lno_t coordinateBegin, lno_t coordinateEnd,
-		lno_t *coordinate_linked_list, lno_t **coordinate_starts, lno_t **coordinate_ends, size_t numLocalCoord){
+		lno_t *coordinate_linked_list, lno_t **coordinate_starts, lno_t **coordinate_ends, size_t numLocalCoord, float *nonRectelinearPart,
+		scalar_t *totalPartWeights, scalar_t *coordWeights, bool pqJagged_uniformWeights){
 
 	//TODO: move this allocation to outside. Do not free at each dimension.
 	lno_t **partPointCounts = new lno_t *[noThreads];
 	size_t noCuts = partNo - 1;
 
+	scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 	for(int i = 0; i < noThreads; ++i){
 		if(i == 0){
 			partPointCounts[i] = totalCounts;
@@ -1234,7 +1269,18 @@ void getChunksFromCoordinates(size_t partNo, size_t numCoordsInPart, int noThrea
 					pqPV.inserToPart(j, i);
 					inserted = true;
 					break;
-				} else {
+				} else if (nonRectelinearPart[j] > 0 && fabs(pqJagged_coordinates[i] - cutCoordinates[j]) < _EPSILON ){
+					pqPV.inserToPart(j, i);
+					inserted = true;
+
+					scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+					//cout << "was:" << nonRectelinearPart[j] << " ";
+					nonRectelinearPart[j] -= w / (totalPartWeights[j * 2 + 1] - totalPartWeights[j * 2]) ;
+					//cout << "now:" << nonRectelinearPart[j] << endl;
+					//cout << "putting i:" << i << " to part:" << j << " w:" << w << endl;
+					break;
+				}
+				else {
 					myPartPointCounts[j] -=	 1;
 				}
 			}
@@ -1329,6 +1375,7 @@ void AlgPQJagged(
   RCP<PartitioningSolution<Adapter> > &solution
 )
 {
+	//cout << "start" << endl;
 	typedef typename Adapter::scalar_t scalar_t;
 	typedef typename Adapter::gno_t gno_t;
 
@@ -1408,6 +1455,7 @@ void AlgPQJagged(
 	lno_t *newpartitionedPointCoordinates = new lno_t [numLocalCoords];
 	scalar_t *max_min_array = new scalar_t[numThreads * 2];
 
+
 	//initial configuration
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
@@ -1445,6 +1493,14 @@ void AlgPQJagged(
 	}
 
 	size_t maxCutNo = maxPartNo - 1;
+
+	bool allowNonRectelinearPart = true;
+	float *nonRectelinearPart = NULL;
+
+	if(allowNonRectelinearPart){
+		nonRectelinearPart = new float[maxCutNo];
+	}
+
 	scalar_t *cutCoordinatesWork = new scalar_t [maxCutNo]; // work array to manipulate coordinate of cutlines in different iterations.
 	scalar_t *cutPartRatios = new scalar_t[maxPartNo]; // the weight ratios at left side of the cuts. First is 0, last is 1.
 
@@ -1535,13 +1591,20 @@ void AlgPQJagged(
 					leftClosestDistance,
 					rightClosestDistance,
 					totalPartWeights,
-					globalTotalWeight);
-
+					globalTotalWeight,
+					nonRectelinearPart,
+					allowNonRectelinearPart);
+/*
+			for (size_t ii = 0;ii < partNo[i] - 1; ++ii){
+				cout << "nN: " << nonRectelinearPart[ii]<< endl;
+			}
+			*/
 			//cout << cutCoordinates[0] << endl;
 			getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], coordinateEnd - coordinateBegin, numThreads,
 					pqJagged_coordinates[i], cutCoordinates, outTotalCounts + currentOut,
 					partitionedPointCoordinates, newpartitionedPointCoordinates, coordinateBegin, coordinateEnd,
-					coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords);
+					coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords,
+					nonRectelinearPart, totalPartWeights, pqJagged_weights[0], pqJagged_uniformWeights);
 
 			cutCoordinates += partNo[i] - 1;
 			partitionCoordinateBegin += coordinateBegin - coordinateEnd;
@@ -1600,6 +1663,7 @@ void AlgPQJagged(
 		//if(i < totalPartCount - 1)
 		//cout << "part:" << i << " cut:" << allCutCoordinates[i] << endl;
 
+		//cout << "part:i - " << end - begin << endl;
 		for (lno_t ii = begin; ii < end; ++ii){
 
 			lno_t k = partitionedPointCoordinates[ii];
@@ -1623,12 +1687,16 @@ void AlgPQJagged(
 	if(comm->getRank() == 0){
 		cout << "Max imbalance:" << maxImbalance << endl;
 		cout << "totalPartCount:" << totalPartCount << endl;
+		cout << numeric_limits<scalar_t>::min() << " " <<
+				numeric_limits<scalar_t>::max() << endl;
+
 	}
 
 	ArrayRCP<const gno_t> gnoList = arcpFromArrayView(pqJagged_gnos);
 
 
-	used_imbalance_tolerances[readImbalanceIndex] = imbalance_tolerances[readImbalanceIndex];	solution->setParts(gnoList, partId);
+
+	solution->setParts(gnoList, partId);
 
 
 
@@ -1653,7 +1721,9 @@ void AlgPQJagged(
 	delete []coordinate_ends;
 
 	//assign the max size to starts, as it will be reused.
-
+	if(allowNonRectelinearPart){
+		delete []nonRectelinearPart;
+	}
 
 	//delete [] partNo;
 	delete []max_min_array;
