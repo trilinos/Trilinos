@@ -73,6 +73,14 @@ namespace Kokkos {
     ///   OpenMPNode instances will use, not just this one.
     OpenMPNode(Teuchos::ParameterList &pl);
 
+    /// \brief Default constructor (sets default parameter values).
+    ///
+    /// For parameters and their default values, see the documentation
+    /// of the constructor that accepts a ParameterList input / output
+    /// argument.
+    OpenMPNode();
+
+    //! Destructor.
     ~OpenMPNode();
 
     /// \brief Set the number of threads that OpenMP should use.

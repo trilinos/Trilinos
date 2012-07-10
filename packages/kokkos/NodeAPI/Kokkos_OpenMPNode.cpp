@@ -44,9 +44,17 @@
 
 namespace Kokkos {
 
+  OpenMPNode::OpenMPNode () :
+    curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
+    verbose_ (false) // Default: No verbose status output
+  {
+    init (curNumThreads);
+  }
+
+
   OpenMPNode::OpenMPNode (Teuchos::ParameterList &pl) :
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
-    verbose_ (0) // Default: No verbose status output
+    verbose_ (false) // Default: No verbose status output
   {
     // Don't set state (in this case, curNumThreads_) until we've read
     // in all the parameters.
@@ -62,7 +70,7 @@ namespace Kokkos {
       << curNumThreads << ".");
     if (verbose) {
       std::cout << "OpenMPNode initializing with \"Num Threads\" = "
-                << curNumThreads_ << std::endl;
+                << curNumThreads << std::endl;
     }
     init (curNumThreads);
     curNumThreads_ = curNumThreads; // Now it's safe to set state.
