@@ -98,8 +98,12 @@ int main(int argc, char *argv[]) {
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;           // relative residual tolerance
 
+  // Specify whether to use RHS as initial guess. If false, use zero.
+  bool useRHSAsInitialGuess = false; 
+
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("use-rhs","use-zero",&useRHSAsInitialGuess,"Use RHS as initial guess.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
@@ -138,6 +142,13 @@ int main(int argc, char *argv[]) {
     X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
     B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
   }
+
+  // If requested, use a copy of B as initial guess
+  if (useRHSAsInitialGuess)
+  {
+    X->Update(1.0, *B, 0.0);
+  }
+
   //
   // ************Construct preconditioner*************
   //
@@ -217,7 +228,7 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
-  
+
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<double,MV,OP> > solver
     = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(problem, rcp(&belosList,false)));
@@ -267,15 +278,14 @@ int main(int argc, char *argv[]) {
 
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
+      std::cout << "End Result: TEST FAILED" << std::endl;
     return -1;
   }
   //
   // Default return value
   //
   if (proc_verbose)
-    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
-
   //
 } 

@@ -1184,7 +1184,9 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
         // Update the solution manually, since the preconditioning doesn't need to be undone.
         Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
         Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();
-        MVT::MvAddMv( 1.0, *curX, 1.0, *update, *curX );
+        // Update the solution only if there is a valid update from the iteration
+        if (update != Teuchos::null) 
+          MVT::MvAddMv( 1.0, *curX, 1.0, *update, *curX );
       }
       else {
         // Attempt to get the current solution from the residual status test, if it has one.

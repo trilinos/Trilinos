@@ -1,5 +1,5 @@
 
-INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
@@ -20,7 +20,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleBlockGmresFiles
     SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
-    SOURCE_FILES orsirr1.hb
+    SOURCE_FILES orsirr1.hb identity.mtx
     EXEDEPS BlockGmres_Epetra_File_Ex
     )
 
@@ -39,10 +39,13 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
       COMM serial mpi
       )
 
-    TRIBITS_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       BlockFlexPrecGmres_Epetra_File_Ex
       SOURCES BlockFlexGmresEpetraExFile.cpp
       COMM serial mpi
+      ARGS "--verbose --filename=orsirr1.hb"
+           "--verbose --filename=identity.mtx --use-rhs=true"
+      STANDARD_PASS_OUTPUT
       )
 
     TRIBITS_ADD_EXECUTABLE(
