@@ -16,13 +16,13 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid) const {
-    globalamalblockid2globalrowid_ = globalamalblockid2globalrowid;
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids) const {
+    nodegid2dofgids_ = nodegid2dofgids;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetGlobalAmalgamationParams() const {
-    return globalamalblockid2globalrowid_;
+    return nodegid2dofgids_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

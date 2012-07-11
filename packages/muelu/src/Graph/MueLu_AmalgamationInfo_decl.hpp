@@ -23,11 +23,11 @@ namespace MueLu {
   @class AmalgamationInfo
   @brief minimal container class for storing amalgamation information
 
-  stores maps
-   globalamalblockid2myrowid_
-   globalamalblockid2globalrowid_
 
-  that are used for unamalgamation
+  stores map of global node id on current processor to global DOFs ids on current processor
+  nodegid2dofgids_
+
+  that is used for unamalgamation
 */
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
@@ -39,8 +39,7 @@ namespace MueLu {
   public:
 
     AmalgamationInfo() {
-      //setObjectLabel(objectLabel);
-      globalamalblockid2globalrowid_ = Teuchos::null;
+      nodegid2dofgids_ = Teuchos::null;
     }
 
     virtual ~AmalgamationInfo() {}
@@ -53,7 +52,7 @@ namespace MueLu {
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
-    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid) const;
+    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids) const;
 
     RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > GetGlobalAmalgamationParams() const;
 
@@ -62,8 +61,8 @@ namespace MueLu {
     //! @name amalgamation information variables
     //@{
 
-    /// map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
-    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid_; //< used for building overlapping ImportDofMap
+    // map of global node id on current processor to global DOFs ids on current processor
+    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_; //< used for building overlapping ImportDofMap
 
     //@}
 
