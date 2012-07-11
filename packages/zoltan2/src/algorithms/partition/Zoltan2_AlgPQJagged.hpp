@@ -643,6 +643,11 @@ void getNewCoordinates_simple(
 	scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 	scalar_t _EPSILON_T = _EPSILON ;
 
+/*
+	for (size_t i = 0; i < noCuts; i++){
+		cout << "i:" << i << " pw:" << totalPartWeights[i * 2] << endl;
+	}
+	*/
 #pragma omp for
 	for (size_t i = 0; i < noCuts; i++){
 
@@ -663,17 +668,21 @@ void getNewCoordinates_simple(
 			continue;
 		}
 		expected = cutPartRatios[i];
-
-		//cout << "seen: " << seenW << " expected:" << totalWeight * expected << " cutLine:" << totalPartWeights[i * 2 + 1] << endl;
-		//cout << "upper:" << cutUpperBounds[i] << " lower:" <<  cutLowerBounds[i] << endl;
-
-
+		/*
+		if(i == 2){
+		cout << "seen: " << seenW << " expected:" << totalWeight * expected << " cutLine:" << totalPartWeights[i * 2 + 1] << endl;
+		cout << "upper:" << cutUpperBounds[i] << " lower:" <<  cutLowerBounds[i] << endl;
+		}
+		 */
 		leftImbalance = imbalanceOf(seenW, totalWeight, expected);
 		rightImbalance = imbalanceOf(totalWeight - seenW, totalWeight, 1 - expected);
 
 		bool isLeftValid = leftImbalance <= imbalanceTolerance && leftImbalance >= -imbalanceTolerance;
 		bool isRightValid = rightImbalance <= imbalanceTolerance && rightImbalance >= -imbalanceTolerance;
 
+
+		//cout << "leftImbalance: " << leftImbalance << imbalanceTolerance << endl;
+		//cout << "rightImbalance:" << rightImbalance << imbalanceTolerance <<  endl;
 		//if the cut line reaches to desired imbalance.
 		if(isLeftValid && isRightValid){
 			isDone[i] = true;
@@ -689,10 +698,12 @@ void getNewCoordinates_simple(
 		}
 		 */
 		//if left imbalance is lower than 0, then cut line should be moved to right.
+
 		else if(leftImbalance < 0){
 
 			scalar_t ew = totalWeight * expected;
 
+			//cout << "allow:" << allowNonRectelinearPart << " " << totalPartWeights[i * 2 + 1] << " " << ew << endl;
 			if(allowNonRectelinearPart){
 				if (totalPartWeights[i * 2 + 1] >= ew){
 					isDone[i] = true;
@@ -727,11 +738,13 @@ void getNewCoordinates_simple(
 							//if the part weight at the left of a cut line is bigger than the expected weight,
 							//choose it as the upper bound.
 							cutUpperBounds[i] = cutCoordinates[ii] - leftClosestDistance[ii] + _EPSILON_T; //epsilon to shift the cut line. currently no shift.
-							cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
+							//cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
+							cutUpperWeight[i] = totalPartWeights [2 * ii];
 
 							//lower bound becomes the line before the upper bound.
 							cutLowerBounds[i] = cutCoordinates [ ii -1] + rightClosestDistance[ii - 1] - _EPSILON_T;
-							cutLowerWeight[i] = totalPartWeights [2 * ii - 1];
+							//cutLowerWeight[i] = totalPartWeights [2 * ii - 1];
+							cutLowerWeight[i] = totalPartWeights [2 * ii - 2];
 
 
 							//calculate new position.
@@ -758,7 +771,8 @@ void getNewCoordinates_simple(
 					cutUpperWeight[i] = totalWeight;
 
 					cutLowerBounds[i] = cutCoordinates [ noCuts -1] + rightClosestDistance[noCuts - 1] - _EPSILON_T;
-					cutLowerWeight[i] = totalPartWeights [2 * noCuts - 1];
+					//cutLowerWeight[i] = totalPartWeights [2 * noCuts - 1];
+					cutLowerWeight[i] = totalPartWeights [2 * noCuts - 2];
 
 					scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
 					if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * 5){
@@ -790,7 +804,8 @@ void getNewCoordinates_simple(
 							//if a cut line is more strict than the current upper bound,
 							//update the upper bound.
 							cutUpperBounds[i] = cutCoordinates[ii] - leftClosestDistance[ii] + _EPSILON_T;
-							cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
+							//cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
+							cutUpperWeight[i] = totalPartWeights [2 * ii ];
 						}
 						break;
 					}
@@ -832,13 +847,22 @@ void getNewCoordinates_simple(
 							__sync_fetch_and_sub(&allDone, 1);
 						} else {
 							cutUpperBounds[i] = cutCoordinates[ii + 1] - leftClosestDistance[ii + 1] + _EPSILON_T;
-							cutUpperWeight[i] = totalPartWeights [2 * ii + 3];
+							//cutUpperWeight[i] = totalPartWeights [2 * ii + 3];
+							cutUpperWeight[i] = totalPartWeights [2 * ii + 2];
 
 
 							cutLowerBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii] - _EPSILON_T;
-							cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
+							//cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
+							cutLowerWeight[i] = totalPartWeights [2 * ii];
 
 							scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
+							if(i == 2) {
+								cout << "pw:" << pw << " ew:" << ew << endl;
+								cout << "new:" << newPivot << " old:" << cutCoordinates[i] << endl;
+								cout <<"((" << cutUpperBounds[i] << "-" <<  cutLowerBounds[i] << " ) /" <<
+													"(" << cutUpperWeight[i] << " -" <<  cutLowerWeight[i] << " ))  * ( " << ew << "-" << cutLowerWeight[i] << ") + " << cutLowerBounds[i] << endl;
+
+							}
 							if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * 5){
 								isDone[i] = true;
 								__sync_fetch_and_sub(&allDone, 1);
@@ -891,7 +915,8 @@ void getNewCoordinates_simple(
 							__sync_fetch_and_sub(&allDone, 1);
 						} else if (pw > cutLowerWeight[i]){
 							cutLowerBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii] - _EPSILON_T;
-							cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
+							//cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
+							cutLowerWeight[i] = totalPartWeights [2 * ii ];
 						}
 						break;
 					}
@@ -1031,6 +1056,10 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
 #endif
 
+		if(noCuts == 0){
+			totalPartWeights[0] = globaltotalWeight;
+			return;
+		}
 
 
 		int me = 0;
@@ -1058,9 +1087,12 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
 /*
 			{
+				cout << endl << endl << "allDone:" << allDone << endl;
 				for (size_t i = 0; i < noCuts; ++i){
 					if(isDone[i] == false)
-					cout << "i:" << i <<  " c:" << cutCoordinates[i] << " u:" << cutUpperBounds[i] << " l:" << cutLowerBounds[i] << endl;
+					cout << "i:" << i <<  " c:" << cutCoordinates[i] << " u:" << cutUpperBounds[i] << " l:" << cutLowerBounds[i] << " not done" << endl;
+					else
+					cout << "i:" << i <<  " c:" << cutCoordinates[i] <<  " done" << endl;
 				}
 			}
 */
@@ -1142,7 +1174,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 #pragma omp for
 #endif
 			for(size_t j = 0; j < total_part_count; ++j){
-				if(j/2 < noCuts && isDone[j/2]) continue;
+				if(noCuts != 0 && j/2 < noCuts && isDone[j/2]) continue;
 				scalar_t pwj = 0;
 				for (int i = 0; i < noThreads; ++i){
 					pwj += partWeights[i][j];
@@ -1594,8 +1626,8 @@ void AlgPQJagged(
 	scalar_t *cutLowerWeight = new scalar_t [maxCutNo];  //to determine the next cut line with binary search
 	scalar_t *cutUpperWeight = new scalar_t [maxCutNo];  //to determine the next cut line with binary search
 
-	double *imbalance_tolerances = new double [totalPartCount];
-	double *used_imbalance_tolerances = new double [totalPartCount];
+	scalar_t *imbalance_tolerances = new scalar_t [maxPartNo];
+	scalar_t *used_imbalance_tolerances = new scalar_t [maxPartNo];
 	imbalance_tolerances[0] = imbalanceTolerance;
 
 	bool *isDone = new bool [maxCutNo];
@@ -1614,8 +1646,6 @@ void AlgPQJagged(
 	scalar_t *totalPartWeights = new scalar_t[maxTotalPartCount];
 	scalar_t *cutCoordinates =  allCutCoordinates;
 
-	int readImbalanceIndex = 0;
-	int writeImbalanceIndex = 1;
 
 	size_t leftPartitions = totalPartCount;
 	for (int i = 0; i < coordDim; ++i){
@@ -1630,6 +1660,9 @@ void AlgPQJagged(
 		//cout << "i:" << i << endl;
 
 		leftPartitions /= partNo[i];
+
+		int readImbalanceIndex = 0;
+		int writeImbalanceIndex = 0;
 		for (int j = 0; j < currentPartitionCount; ++j, ++currentIn){
 			//depending on wheter it is a leaf or intermediate node, used imbalance is adapted.
 			/*
@@ -1640,15 +1673,17 @@ void AlgPQJagged(
 			}
 			 */
 
+//			cout << "imbalance_tolerances[readImbalanceIndex]:" << imbalance_tolerances[readImbalanceIndex] << endl;
 			used_imbalance_tolerances[readImbalanceIndex] = imbalance_tolerances[readImbalanceIndex] * (LEAF_IMBALANCE_FACTOR   / leftPartitions)/* + LEAF_IMBALANCE_FACTOR*/ ;
 
-			double used_imbalance = used_imbalance_tolerances[readImbalanceIndex++];
+			scalar_t used_imbalance = used_imbalance_tolerances[readImbalanceIndex++];
 			//cout << "used:" << used_imbalance << " real was:" << imbalance_tolerances[readImbalanceIndex - 1]<< endl;
 
 			coordinateEnd= inTotalCounts[currentIn];
 			coordinateBegin = currentIn==0 ? 0: inTotalCounts[currentIn -1];
 
 
+//			cout << "beg:" << coordinateBegin << " end:" << coordinateEnd << endl;
 			pqJagged_getMinMaxCoord<scalar_t, lno_t>(comm, pqJagged_coordinates[i], minCoordinate,maxCoordinate,
 					env, numThreads, partitionedPointCoordinates, coordinateBegin, coordinateEnd, max_min_array);
 
@@ -1658,6 +1693,12 @@ void AlgPQJagged(
 					pqJagged_uniformParts[0], pqJagged_partSizes[0], partNo[i] - 1,
 					cutCoordinates, cutPartRatios
 			);
+
+/*
+			for (size_t ii = 0;ii < partNo[i] - 1; ++ii){
+				cout << "i:"<< i<<" initial: " << cutCoordinates[ii]<< endl;
+			}
+*/
 
 			scalar_t globalTotalWeight = 0;
 			pqJagged_1DPart_simple<scalar_t, lno_t>(env,comm,pqJagged_coordinates[i], pqJagged_weights[0], pqJagged_uniformWeights[0],
@@ -1679,17 +1720,21 @@ void AlgPQJagged(
 					globalTotalWeight,
 					nonRectelinearPart,
 					allowNonRectelinearPart);
-			/*
+/*
+			cout << "total:" << totalPartWeights[0] << endl;
+
 			for (size_t ii = 0;ii < partNo[i] - 1; ++ii){
 				cout << "nN: " << nonRectelinearPart[ii]<< endl;
 			}
-			 */
+*/
 			//cout << cutCoordinates[0] << endl;
 			getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], coordinateEnd - coordinateBegin, numThreads,
 					pqJagged_coordinates[i], cutCoordinates, outTotalCounts + currentOut,
 					partitionedPointCoordinates, newpartitionedPointCoordinates, coordinateBegin, coordinateEnd,
 					coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords,
 					nonRectelinearPart, totalPartWeights, pqJagged_weights[0], pqJagged_uniformWeights);
+
+
 
 			cutCoordinates += partNo[i] - 1;
 			partitionCoordinateBegin += coordinateBegin - coordinateEnd;
@@ -1713,7 +1758,7 @@ void AlgPQJagged(
 						achievedW =  totalPartWeights[iii * 2] -  totalPartWeights[iii * 2  - 2];
 					}
 					//scalar_t expectedW = globalTotalWeight * expectedR;
-					double futureImbalance = 0;
+					scalar_t futureImbalance = 0;
 
 					futureImbalance = used_imbalance * (expectedR * globalTotalWeight) / achievedW;
 					imbalance_tolerances[writeImbalanceIndex++] = futureImbalance;
@@ -1724,6 +1769,10 @@ void AlgPQJagged(
 			currentOut += partNo[i];
 
 		}
+
+		scalar_t *t_imb = imbalance_tolerances;
+		imbalance_tolerances = used_imbalance_tolerances;
+		used_imbalance_tolerances = t_imb;
 		lno_t * tmp = newpartitionedPointCoordinates;
 		newpartitionedPointCoordinates = partitionedPointCoordinates;
 		partitionedPointCoordinates = tmp;
