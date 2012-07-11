@@ -529,7 +529,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	int NumMyRows() const {return(CrsGraphData_->NumMyRows_);}
 	
 	//! Returns the number of matrix rows in global matrix.
-	EPETRA_DEPRECATED int NumGlobalRows() const {return(CrsGraphData_->NumGlobalRows_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+	EPETRA_DEPRECATED int
+#endif
+    NumGlobalRows() const {return(CrsGraphData_->NumGlobalRows_);}
 	
 	//! Returns the number of entries in the set of column-indices that appear on this processor.
 	/*! The set of column-indices that appear on this processor is the union of column-indices that
@@ -542,7 +547,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	/*!
 	  \pre Filled()==true
 	*/
-	EPETRA_DEPRECATED int NumGlobalCols() const {return(CrsGraphData_->NumGlobalCols_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	NumGlobalCols() const {return(CrsGraphData_->NumGlobalCols_);}
 	
 	//! Returns the number of indices in the global graph.
 	/*! Note that if the graph's maps are defined such that some nonzeros
@@ -551,13 +561,23 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
             overlapping data, they can use Epetra_FECrsGraph.
 	  \pre Filled()==true
 	*/
-	EPETRA_DEPRECATED int NumGlobalNonzeros() const {return(CrsGraphData_->NumGlobalNonzeros_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	NumGlobalNonzeros() const {return(CrsGraphData_->NumGlobalNonzeros_);}
 	
 	//! Returns the number of diagonal entries in the global graph, based on global row/column index comparisons.
 	/*!
 	  \pre Filled()==true
 	*/
-	EPETRA_DEPRECATED int NumGlobalDiagonals() const {return(CrsGraphData_->NumGlobalDiagonals_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	NumGlobalDiagonals() const {return(CrsGraphData_->NumGlobalDiagonals_);}
 	
 	//! Returns the number of diagonal entries in the local graph, based on global row/column index comparisons.
 	/*!
@@ -566,10 +586,20 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	int NumMyDiagonals() const {return(CrsGraphData_->NumMyDiagonals_);}
 	
 	//! Returns the number of block matrix rows on this processor.
-	EPETRA_DEPRECATED int NumMyBlockRows() const {return(CrsGraphData_->NumMyBlockRows_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	NumMyBlockRows() const {return(CrsGraphData_->NumMyBlockRows_);}
 	
 	//! Returns the number of Block matrix rows in global matrix.
-	EPETRA_DEPRECATED int NumGlobalBlockRows() const {return(CrsGraphData_->NumGlobalBlockRows_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	NumGlobalBlockRows() const {return(CrsGraphData_->NumGlobalBlockRows_);}
 	
 	//! Returns the number of Block matrix columns on this processor.
 	/*!
@@ -593,13 +623,23 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	/*!
 	  \pre Filled()==true
 	*/
-	EPETRA_DEPRECATED int NumGlobalBlockDiagonals() const {return(CrsGraphData_->NumGlobalBlockDiagonals_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	NumGlobalBlockDiagonals() const {return(CrsGraphData_->NumGlobalBlockDiagonals_);}
 	
 	//! Returns the number of entries in the global graph.
 	/*!
 	  \pre Filled()==true
 	*/
-	EPETRA_DEPRECATED int NumGlobalEntries() const {return(CrsGraphData_->NumGlobalEntries_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	NumGlobalEntries() const {return(CrsGraphData_->NumGlobalEntries_);}
 	
 	//! Returns the number of entries on this processor.
 	/*!
@@ -742,7 +782,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	int LRID(int GRID_in) const {return(RowMap().LID(GRID_in));}
 	
 	//! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-	EPETRA_DEPRECATED int GRID(int LRID_in) const {return(RowMap().GID(LRID_in));}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	GRID(int LRID_in) const {return(RowMap().GID(LRID_in));}
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
 	/*!
@@ -757,7 +802,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	EPETRA_DEPRECATED int GCID(int LCID_in) const
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	GCID(int LCID_in) const
 	  {
 	    return( CrsGraphData_->HaveColMap_ ? ColMap().GID(LCID_in) : -1 );
 	  }

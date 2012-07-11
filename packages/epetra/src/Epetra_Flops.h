@@ -100,6 +100,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Flops {
   //! Increment Flop count for \e this object from a float
   void UpdateFlops(float Flops_in) const {Flops_ +=(double) Flops_in;};
   
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+  // Need the long long function to avoid
+  // error: call of overloaded UpdateFlops(long long int) is ambiguous
+
+  //! Increment Flop count for \e this object from a long long
+  void UpdateFlops(long long Flops_in) const {Flops_ +=(double) Flops_in;};
+#endif
+
 
  private:
   

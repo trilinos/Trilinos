@@ -768,7 +768,12 @@ int Epetra_BlockMap::LID(int gid) const
 }
 
 //==============================================================================
-int Epetra_BlockMap::GID(int lid) const
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+  long long
+#else
+  EPETRA_DEPRECATED int
+#endif
+  Epetra_BlockMap::GID(int lid) const
 {
   if ((BlockMapData_->NumMyElements_==0) ||
       (lid < BlockMapData_->MinLID_) || 

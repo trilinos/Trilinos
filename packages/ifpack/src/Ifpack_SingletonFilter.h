@@ -115,22 +115,42 @@ public:
     return(-1.0);
   }
 
-  virtual int NumGlobalNonzeros() const
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+  virtual long long
+#else
+  virtual int
+#endif
+  NumGlobalNonzeros() const
   {
     return(NumNonzeros_);
   }
 
-  virtual int NumGlobalRows() const
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+  virtual long long
+#else
+  virtual int
+#endif
+  NumGlobalRows() const
   {
     return(NumRows_);
   }
 
-  virtual int NumGlobalCols() const
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+  virtual long long
+#else
+  virtual int
+#endif
+  NumGlobalCols() const
   {
     return(NumRows_);
   }
 
-  virtual int NumGlobalDiagonals() const
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+  virtual long long
+#else
+  virtual int
+#endif
+  NumGlobalDiagonals() const
   {
     return(NumRows_);
   }

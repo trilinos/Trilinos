@@ -136,4 +136,10 @@
 
 #cmakedefine Epetra_ENABLE_CASK
 
+/* Define to 1 if you want to have long long return types for certain
+ * functions that return a global id based value.  This is useful for
+ * checking if caller's code is compatible with long long return type.
+ */
+#cmakedefine EPETRA_ENABLE_REPLACEMENT_API
+
 @EPETRA_DEPRECATED_DECLARATIONS@
