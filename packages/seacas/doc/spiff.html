@@ -1,0 +1,392 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+</SCRIPT><TITLE>spiff-1.0(1)</TITLE><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"></HEAD>
+<PRE>
+            NAME
+                 spiff - make controlled approximate comparisons between files
+
+            SYNOPSIS
+                 spiff [ -s script ] [ -f sfile ] [ -bteviqcdwm ] [ -a | -r value ]
+                 -value file1 file2
+
+            DESCRIPTION
+                 Spiff compares the contents of file1 and file2 and prints a
+                 description of the important differences between the files.  White
+                 space is ignored except to separate other objects.  Spiff maintains
+                 tolerances below which differences between two floating point numbers
+                 are ignored. Differences in floating point notation (such as 3.4 3.40
+                 and 3.4e01) are treated as unimportant.  User specified delimited
+                 strings (i.e. comments) can also be ignored.  Inside other user
+                 specified delimited strings (i.e. quoted strings) whitespace can be
+                 significant.
+
+                 Spiff's operation can be altered via command line options, a command
+                 script, and with commands that are embedded in the input files.
+
+                 The following options affect spiff's overall operation.
+
+                 -q   suppresses warning messages.
+
+                 -v   use a visually oriented display.  Works only in MGR windows.
+
+                 Spiff has several flags to aid differencing of various programming
+                 languages.  See EXAMPLES for a detailed description of the effects of
+                 these flags.
+
+                 -C   treat the input files as C program source code.
+
+                 -S   treat the input files as Bourne shell program source code.
+
+                 -F   treat the input files as Fortran program source code.
+
+                 -M   treat the input files as Modula-2 program source code.
+
+                 -L   treat the input files as Lisp program source code.
+
+                 By default, the output looks somewhat similar in appearance to the
+                 output of diff(1).  Lines with differences are printed with the
+                 differences highlighted.  If stdout is a terminal, as determined by
+                 isatty(), then highlighting uses standout mode as determined by
+                 termcap.  If stdout is not a tty, then the underlining (via
+                 underscore/backspace/char) is used to highlight differences.  The
+                 following option can control the format of the ouput.
+
+                 -t   produce output in terms of individual tokens.  This option is
+                      most useful for debugging as the output produced is verbose to
+                      the point of being unreadable.
+
+                 The following option controls the differencing algorithm.
+
+                 -e   compare each token in the files with the object in the same
+                      ordinal position in the other file.  If the files have a
+                      different number of objects, a warning message is printed and the
+                      objects at the end of the longer file are ignored.  By default,
+                      spiff uses a Miller/Myers algorithm to find a minimal edit
+                      sequence that will convert the contents of the first file into
+                      the second.
+
+                 -&lt;decimal-value&gt;
+                      sets a limit on the total number of insertions and deletions that
+                      will be considered.  If the files differ by more than the stated
+                      amount, the program will give up, print a warning message, and
+                      exit.
+
+                 The following options control the command script.  More than one of
+                 each may appear at at time. The commands accumulate.
+
+                 -f sfile
+                      a command script to be taken from file sfile
+
+                 -s command-script
+                      causes the following argument to be taken as a command script.
+
+                 The following options control how individual objects are compared.
+
+                 -b   treat all objects (including floating point numbers) as literals.
+
+                 -c   ignore differences between upper and lower case.
+
+                 The following commands will control how the files are parsed.
+
+                 -w   treat white space as objects.  Each white space character will be
+                      treated as a separate object when the program is comparing the
+                      files.
+
+                 -m   treat leading sign characters ( + and - ) as separate even if
+                      they are followed by floating point numbers.
+
+                 -d   treat integer decimal numbers (such as 1987) as real numbers
+                      (subject to tolerances) rather than as literal strings.
+
+                 The following three flags are used to set the default tolerances.  The
+                 floating-point-numbers may be given in the formats accepted by
+                 atof(3).
+
+                 -a floating-point-number
+                      specifies an absolute value for the tolerance in floating point
+                      numbers.  The flag -a1e-2 will cause all differences greater than
+                      0.01 to be reported.
+
+                 -r floating-point-number
+                      specifies a relative tolerance. The value given is interpreted as
+                      a fraction of the larger (in absolute terms) of the two floating
+                      point numbers being compared.  Thus, the flag -r0.1 will cause
+                      the two floating point numbers 1.0 and 0.9 to be deemed within
+                      tolerance. The numbers 1.0 and 0.89 will be outside the
+                      tolerance.
+
+                 -i   causes differences between floating point numbers to be ignored.
+
+                 If more than one -a, -r, or -i flag appear on the command line, the
+                 tolerances will be OR'd together (i.e. any difference that is within
+                 any of the tolerances will be ignored).
+
+                 If no default tolerances is set on the command line, the program will
+                 use a default tolerance of '-a 1e-10 -r 1e-10'.
+
+            SCRIPT COMMANDS
+                 A script consists of commands, one per line.  Each command consists of
+                 a keyword possibly followed by arguments.  Arguments are separated by
+                 one or more tabs or spaces.  The commands are:
+
+                 literal BEGIN-STRING [END-STRING [ESCAPE-STRING]]
+                      Specifies the delimiters surrounding text that is to be treated
+                      as a single literal object. If only one argument is present, then
+                      only that string itself is treated as a literal. If only two
+                      arguments are present, they are taking as the starting and ending
+                      delimiters respectively.  If three arguments are present, they
+                      are treated as the start delimiter, end delimiter, and a string
+                      that may be used to escape an instance of the end delimiter.
+
+                 beginchar BEGINNING-OF-LINE-CHARACTER
+                      Set the the beginning of line character for BEGIN-STRING's in
+                      comments.  The default is '^'.
+
+                 endchar END-OF-LINE-CHARACTER
+                      Set the end of line character for END-STRING's in comments.  The
+                      default is '$'.
+
+                 addalpha NEW-ALPHA-CHARACTER
+                      Add NEW-ALPHA-CHARACTER to the set of characters allowed in
+                      literal strings.  By default, spiff parses sequences of
+                      characters that begin with a letter and followed by zero or more
+                      letters or numbers as a single literal token.  This definition is
+                      overly restrictive when dealing with programming languages.  For
+                      example, in the C programming language, the underscore character
+                      is allowed in identifiers.
+
+                 comment BEGIN-STRING [END-STRING [ESCAPE-STRING]]
+                      Specifies the delimiters surrounding text that is to be be
+                      ignored entirely (i.e. viewed as comments).  The operation of the
+                      comment command is very similar to the literal command.  In
+                      addition, if the END-STRING consists of only the end of line
+                      character, the end of line will delimit the end of the comment.
+                      Also, if the BEGIN-STRING starts with the beginning of line
+                      character, only lines that begin with the BEGIN-STRING will be
+                      ignored.
+
+                 More than one comment specification and more than one literal string
+                 specification may be specified at a time.
+
+                 nestcom BEGIN-STRING [END-STRING [ESCAPE-STRING]]
+                      Similar to the comment command, but allows comments to be nested.
+                      Note, due to the design of the parser nested comments can not
+                      have a BEGIN-STRING that starts with the beginning of line
+                      character.
+
+                 resetcomments
+                      Clears the list of comment specifications.
+
+                 resetliterals
+                      Clears the list of literal specifications.
+
+                 tol [aVALUE|rVALUE|i|d . . . [ ; aVALUE|rVALUE|i|d . . . ] . . . ]
+                      set the tolerance for floating point comparisons. The arguments
+                      to the tol command are a set of tolerance specifications
+                      separated by semicolons.  If more than one a,r,d, or i appears
+                      within a specification, then the tolerances are OR'd together
+                      (i.e. any difference that is within any tolerance will be
+                      ignored).  The semantics of a,r, and i are identical to the -a,
+                      -r, and -i flags. The d means that the default tolerance (as
+                      specified by the invocation options) should be used.  If more
+                      than one specification appears on the line, the first
+                      specification is applied to the first floating point number on
+                      each line, the second specification to the second floating point
+                      number one each line of the input files, and so on.  If there are
+                      more floating point numbers on a given line of input than
+                      tolerance specifications, the last specification is used
+                      repeatedly for all remaining floating point numbers on that line.
+
+                 command STRING
+                      lines in the input file that start with STRING will be
+                      interpreted as command lines. If no "command" is given as part of
+                      a -s or -f then it will be impossible to embed commands in the
+                      input files.
+
+                 rem
+                 #    used to places human readable remarks into a commands script.
+                      Note that the use of the '#' character differs from other command
+                      languages (for instance the Bourne shell).  Spiff will only
+                      recognize the '#' as beginning a comment when it is the first
+                      non-blank character on the command line.  A '#' character
+                      appearing elsewhere will be treated as part of the command.
+                      Cautious users should use 'rem'.  Those hopelessly addicted to
+                      '#' as a comment character can have command scripts with a
+                      familiar format.
+
+                 Tolerances specified in the command scripts have precedence over the
+                 tolerance specified on the invocation command line. The tolerance
+                 specified in file1 has precedence over the tolerance specified in
+                 file2.
+
+            VISUAL MODE
+                 If spiff is invoked with the -v option, it will enter an interactive
+                 mode rather than produce an edit sequence.  Three windows will be put
+                 on the screen.  Two windows will contain corresponding segments of the
+                 input files.  Objects that appear in both segments will be examined
+                 for differences and if any difference is found, the objects will be
+                 highlighted in reverse video on the screen.  Objects that appear in
+                 only one window will have a line drawn through them to indicate that
+                 they aren't being compared with anything in the other text window. The
+                 third window is a command window.  The command window will accept a
+                 single tolerance specification (followed by a newline) in a form
+                 suitable to the tol command.  The tolerance specified will then be
+                 used as the default tolerance and the display will be updated to
+                 highlight only those objects that exceed the new default tolerance.
+                 Typing m (followed by a newline) will display the next screenfull of
+                 text. Typing q (followed by a newline)  will cause the program to
+                 exit.
+
+            LIMITS
+                 Each input files can be no longer that 10,000 line long or contain
+                 more than 50,000 tokens. Longer files will be truncated.  No line can
+                 be longer than 1024 characters.  Newlines will be inserted every 1024
+                 character.
+
+            EXAMPLES
+                 spiff -e -d foo bar
+                      this invocation (using exact match algorithm and treating integer
+                      numbers as if they were floats) is very useful for examining
+                      large tables of numbers.
+
+                 spiff -0 foo bar
+                      compare the two files, quitting after the first difference is
+                      found.  This makes the program operate roughly like cmp(1).
+
+                 spiff -0 -q foo bar
+                      same as the above, but no output is produced.  The return code is
+                      still useful.
+
+                 spiff -w -b foo bar
+                      will make the program operate much like diff(1).
+
+                 spiff -a1e-5 -r0.001 foo bar
+                      compare the contents of the files foo and bar and ignore all
+                      differences between floating point numbers that are less than or
+                      equal to 0.00001 or 0.1% of the number of larger magnitude.
+
+                 tol a.01 r.01
+                      will cause all differences between floating point numbers that
+                      are less than or equal to 0.01 or 1% of the number of larger
+                      magnitude to be ignored.
+
+                 tol a.01 r.01 ; i
+                      will cause the tolerance in the previous example to be applied to
+                      the first floating point number on each line.  All differences
+                      between the second and subsequent floating point numbers on each
+                      line will be ignored.
+
+                 tol a.01 r.01 ; i ; a.0001
+                      like the above except that only differences between the second
+                      floating point number on each line will be ignored. The
+                      differences between third and subsequent floating point numbers
+                      on each number will be ignored if they are less than or equal to
+                      0.0001.
+
+                      A useful script for examing C code is:
+                      literal  "    "    \
+                      comment  /*  */
+                      literal  &amp;&amp;
+                      literal  ||
+                      literal  &lt;=
+                      literal  &gt;=
+                      literal  !=
+                      literal  ==
+                      literal  --
+                      literal  ++
+                      literal  &lt;&lt;
+                      literal  &gt;&gt;
+                      literal  -&gt;
+                      addalpha _
+                      tol      a0
+
+                      A useful script for shell programs is:
+                      literal  '    '    \
+                      comment  #    $
+                      tol      a0
+
+                      A useful script for Fortran programs is:
+                      literal ' ' '
+                      comment ^C $
+                      tol     a0
+
+                      A useful script for Modula 2 programs is:
+                      literal ' '
+                      literal " "
+                      nestcom (* *)
+                      literal :=
+                      literal &lt;&gt;
+                      literal &lt;=
+                      literal &gt;=
+                      tol     a0
+
+                      A useful script for Lisp programs is:
+                      literal " "
+                      comment ; $
+                      tol     a0
+
+            DIAGNOSTICS
+                 Spiff's exit status is 0 if no differences are found, 1 if differences
+                 are found, and 2 upon error.
+
+            BUGS
+                 In C code, escaped newlines will appear as differences.
+
+                 Comments are treated as token delimiters.
+
+                 Comments in Basic don't work right.  The line number is not ignored.
+
+                 Continuation lines in Fortran comments don't work.
+
+                 There is no way to represent strings specified using a Hollerith
+                 notation in Fortran.
+
+                 In formated English text, hyphenated words, movements in pictures,
+                 footnotes, etc.  will be reported as differences.
+
+                 STRING's in script commands can not include whitespace.
+
+                 Visual mode does not handle tabs properly.  Files containing tabs
+                 should be run through expand(1) before trying to display them with
+                 visual mode.
+
+                 In visual mode, the text windows appear in a fixed size and font.
+                 Lines longer than the window size will not be handled properly.
+
+                 Objects (literal strings) that contain newlines cause trouble in
+                 several places in visual mode.
+
+                 Visual mode should accept more than one tolerance specification.
+
+                 When using visual mode or the exact match comparison algorithm, the
+                 program should do the parsing on the fly rather than truncating long
+                 files.
+
+            AUTHOR
+                 Daniel Nachbar
+
+            COPYRIGHT
+                                  Copyright (c) 1988 Bellcore
+                                      All Rights Reserved
+                 Permission is granted to copy or use this program,
+                 EXCEPT that it may not be sold for profit, the copyright
+                 notice must be reproduced on copies, and credit should
+                 be given to Bellcore where it is due.
+                          BELLCORE MAKES NO WARRANTY AND ACCEPTS
+                             NO LIABILITY FOR THIS PROGRAM.
+
+
+            SEE ALSO
+                 atof(3) isatty(2) diff(1) cmp(1) expand(1) mgr(1L)
+
+                 "Spiff -- A Program for Making Controlled Approximate Comparisons of
+                 Files", by Daniel Nachbar.
+
+                 "A File Comparison Program" by Webb Miller and Eugene W. Myers in
+                 Software - Practice and Experience, Volume 15(11), pp.1025-1040,
+                 (November 1985).
+
+
+</PRE>
+</body></html>

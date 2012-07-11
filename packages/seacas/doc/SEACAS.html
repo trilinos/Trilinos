@@ -1,0 +1,637 @@
+<HTML>
+  <HEAD>
+    <TITLE>SEACAS: Sandia Engineering Analysis Code Access System</TITLE>
+    <script>
+      function init () {
+	var tables = document.getElementsByTagName("table");
+	for (var i = 0; i < tables.length; i++) {
+	  if (tables[i].className.match(/zebra/)) {
+	    zebra(tables[i]);
+	  }
+	  if (tables[i].className.match(/zebra2/)) {
+	    zebra2(tables[i]);
+	  }
+	}
+      }
+
+      function zebra (table) {
+	var current = "oddRow";
+	var trs = table.getElementsByTagName("tr");
+	for (var i = 0; i < trs.length; i++) {
+	  trs[i].className += " " + current;
+	  current = current == "evenRow" ? "oddRow" : "evenRow";
+	}
+      }
+    </script>
+    <style>
+        tr.oddRow { background-color: #eef; }
+        tr.evenRow { background-color: #fff; }
+    </style>
+  </HEAD>
+  <body onload="init()" TEXT="#000000">
+      <CENTER>
+	<H2>
+	SEACAS: Sandia Engineering Analysis Code Access System<br>SEAMS: Sandia Engineering Analysis Mesh System
+	</h2>
+      </CENTER>
+      
+    <CENTER>
+      <p>Jump to <a href="#general">general information</a>, <a
+      href="#support">preprocessing, postprocessing, and manipulation
+      codes</a>, and <a href="#libraries">libraries</a>.</p>
+      
+      <p>NOTE: The SEACAS system uses script files and
+	executables. Your shell path should have $ACCESS/etc and
+	$ACCESS/bin (in that order);<br>where $ACCESS points to the root
+	of your installed SEACAS system.</p>
+    </CENTER>
+
+      <table class="zebra" WIDTH=90% align=center  BGCOLOR=WHITE CELLPADDING=10>
+	<TR VALIGN=TOP>
+	  <th colspan="2" bgcolor=#ffaaaa>
+	  <a name="general">General Information</a>
+	    </th>
+        </tr>
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A NAME="overview" HREF="SEACAS_Overview.pdf">Overview</a></TH>
+
+	  <TD>The Sandia National Laboratories (SNL) Engineering
+	  Analysis Code Access System (SEACAS) is a collection of
+	  structural and thermal codes and utilities used by analysts
+	  at SNL. The system includes pre- and post-processing codes,
+	  analysis codes, database translation codes, support
+	  libraries, UNIX shell scripts, and an installation
+	  system.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A NAME="parallel" HREF="Parallel_Instruction.pdf">Using SEACAS on<br>Parallel Computers</a></TH>
+
+	  <TD><B>Out-of-date, but some information is still useful.</b> Instructions to run the SEACAS/ACCESS system on
+	    Parallel computers. Currently specific to Sandia National
+	    Laboratories systems.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <th colspan="2" bgcolor=#ffaaaa>
+	  <a name="support">Support (Preprocessing, Postprocessing,
+	  Manipulation) Codes</a>
+	    </th>
+        </tr>
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="algebra" HREF="Algebra.pdf">Algebra</a></TH>
+
+	  <TD>The ALGEBRA program allows the user to manipulate data
+	  from a finite element analysis before it is plotted. The
+	  finite element output data is in the form of variable values
+	  (e.g., stress, strain, and velocity components) in an EXODUS
+	  database. The ALGEBRA program evaluates user-supplied
+	  functions of the data and writes the results to an output
+	  EXODUS database which can be read by plot programs.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="aprepro"
+	  HREF="Aprepro.pdf">Aprepro</a></TH>
+
+	  <TD>Aprepro is an algebraic preprocessor that reads a file
+	  containing both general text and algebraic, string, or
+	  conditional expressions. It interprets the expressions and
+	  outputs them to the output file along with the general
+	  text. Aprepro contains several mathematical functions,
+	  string functions, and flow control constructs. In addition,
+	  functions are included that, with some additional files,
+	  implement a units conversion system and a material database
+	  lookup system.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="blot" HREF="Blot.pdf">Blot</a></TH>
+
+	  <TD>BLOT is a graphics program for post-processing of finite
+	  element analyses output in the EXODUS database format. BLOT
+	  produces mesh plots with various representations of the
+	  analysis output variables. The major mesh plot capabilities
+	  are deformed mesh plots, line contours, filled (painted)
+	  contours, vector plots of two/three variables (e.g.,
+	  velocity vectors), and symbol plots of scalar variables
+	  (e.g., discrete cracks). Pathlines of analysis variables can
+	  also be drawn on the mesh. BLOT's features include element
+	  selection by material, element birth and death, multiple
+	  views for combining several displays on each plot, symmetry
+	  mirroring, and node and element numbering.  BLOT can also
+	  produce X-Y curve plots of the analysis variables. BLOT
+	  generates time-versus-variable plots or
+	  variable-versus-variable plots. It also generates
+	  distance-versus-variable plots at selected time steps where
+	  the distance is the accumulated distance between pairs of
+	  nodes or element centers.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="conjoin"
+	    HREF="exo_util.pdf">conjoin</a></TH>
+
+	  <TD>Conjoin joins two or more Exodus databases into a single
+	  database. The input databases should represent the same
+	  model geometry with similar variables. The output database
+	  will contain the model geometry and all of the
+	  non-temporally-overlapping results data. If two databases
+	  have overlapping timestep ranges, the timesteps from the
+	  later database will be used. For example, if the first
+	  database contains time data from 0 to 5 seconds, and the
+	  second database contains time data from 4 to 10 seconds; the
+	  output database will contain time data from 0 to 4 seconds
+	  from the first database and time data from 4 to 10 seconds
+	  from the second database. If two nodes have the same global
+	  id and are also colocated, then they are combined to a
+	  single node in the output. Similarly, elements with the same
+	  global id and the same nodal connectivity are combined into
+	  a single element in the output file.<p>
+
+	  The output database will contain the union of the meta and
+	  bulk data entities (i.e., nodes, elements, element blocks,
+	  sidesets, and nodesets) from each input database. The
+	  existence of an entity at a particular timestep is indicated
+	  via a status variable. Replaces conex</td>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="ejoin"
+	    HREF="exo_util.pdf">ejoin</a></TH>
+
+	  <TD>EJoin is used to join two or more Exodus databases into
+	  a single Exodus database. The input databases must have
+	  disjoint meta and bulk data. That is:
+	  <ul>
+	    <li>element blocks are not combined in the output
+	    model. Each element block in each input file will produce
+	    an element block in the output file. Similarly for
+	    nodesets and sidesets.</li>
+
+	    <li> Each node in each input file will produce a node in
+	    the output file unless one of the node matching options
+	    (-match node ids or -match node coordinates) is
+	    specified.</li>
+
+	    <li>Each element in each input file will produce an
+	    element in the output file. Elements are never combined
+	    even if all of the nodes on two elements are combined, the
+	    output file would have two elements with identical
+	    connectivity which is usually not desired.</li>
+	    </ul>
+
+	  If any of the input databases have timesteps, then the
+	  timestep values and counts must match on all databases with
+	  timesteps.
+	  </td>
+	</TR>
+
+      <TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="epu"
+	    HREF="exo_util.pdf">epu</a></TH>
+
+	  <TD>Combines multiple Exodus databases produced by a
+	  parallel application into a single Exodus database. Replaces
+	  nem_join.<P>
+
+	  One of the typical processes for performing parallel
+	  analyses with Exodus databases is to decompose the finite
+	  element model into multiple pieces such that each processor
+	  can read and write its own portion of the finite element
+	  model and results data. For example, if a parallel analysis
+	  is to be run on the mesh file mesh.g using 8 processors,
+	  then mesh.g will be decomposed into 8 pieces or submeshes:
+	  mesh.g.8.0, mesh.g.8.1, . . ., mesh.g.8.7. Each submesh will
+	  contain a subset of the nodes and elements of the entire
+	  mesh and some communication data indicating which nodes and
+	  elements are on the boundary of this submesh and the submesh
+	  of one or more other processors.<p>
+
+	  The analysis code is then executed in parallel and each
+	  processor reads its portion of the mesh from its respective
+	  submesh; when it outputs results and/or restart data, it
+	  creates a new file containing its portion of the submesh and
+	  the results that are calculated on that submesh. An "N"
+	  processor run will create "N" separate files for each
+	  results and/or restart "dataset" that it creates.  <P>
+
+	  The analyst may want to visualize or postprocess the data in
+	  the submeshes as a single mesh, so each submesh needs to be
+	  joined together to create a single "global" file containing
+	  all of the data.1 <P>
+
+	  This joining together of parallel submeshes is the purpose
+	  of EPU. It will read the data from each submesh and map it
+	  into the correct location in the "global" file; discarding
+	  duplicate data as required.</td>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="exo2mat"
+	    HREF="#mat2exo">Exo2Mat</a></TH>
+
+	  <TD>See mat2exo documentation.</td>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="exodiff"
+	    HREF="exo_util.pdf">exodiff</a></TH>
+
+	  <TD>Exodiff compares the results data from two Exodus
+	  databases. The databases should represent the same model,
+	  that is, the Exodus meta data should be identical as should
+	  be the genesis portion of the bulk data. The only
+	  differences should be in the values of the transient bulk
+	  data. Exodiffs main purpose is to detect and report these
+	  differences. Exodiff will compare global, nodal, element,
+	  nodeset, and sideset transient variables at each selected
+	  timestep; it will also compare element attribute variables
+	  on each element block containing attributes.</td>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="exomatlab"
+	    HREF="#exomatlab">exomatlab</a></TH>
+
+	  <TD>Outputs selected global data to a text matlab file. Exomatlab2 is a newer version.</td>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="exosym"
+	  HREF="exosym.memo.pdf">ExoSym</a></TH>
+
+	  <TD>EXOSYM helps analysts produce more realistic looking
+	  visualizations of analysis results and models. EXOSYM reads
+	  as input a three-dimensional finite element mesh or results
+	  file in EXODUS format and will mirror the geometry and
+	  results about the specified coordinate planes.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="exotxt"
+	    HREF="#exotxt">exotxt</a></TH>
+
+	  <TD>Convert an exodus file into a text file which can be
+	  editted or used as input to other processing codes that need
+	  a text format. Can be converted back to exodus using <a
+	  href="#txtexo">txtexo.</a> (The netcdf utilities
+	  ncdump/ncgen can also be used to convert an exodus files
+	  to/from text.)</td>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="fastq" HREF="FASTQ.pdf">Fastq</a></TH>
+
+	  <TD><p>The FASTQ code is an interactive two-dimensional finite
+	  element mesh generation program, It is designed to provide a
+	  powerful and efficient tool to both reduce the time required
+	  of an analyst to generate a mesh, and to improve the
+	  capacity to generate good meshes in arbitrary geometries. It
+	  is based on a mapping technique and employs a set of
+	  "higher-order" primitives which have been developed for
+	  automatic meshing of commonly encountered shapes (i.e. the
+	  triangle, semi-circle, etc.) and conditions (i.e. mesh
+	  transitioning from coarse to fine mesh size. ) FASTQ has
+	  been designed to allow user flexibility and control. The
+	  user interface is built on a layered .  command level
+	  structure. Multiple utilities rue provided for input,
+	  manipulation, and display of the geometric information, as
+	  well as for direct control, adjustment, and display of the
+	  generated mesh. Enhanced boundary flagging has been
+	  incorporated and multiple element types and output formats
+	  are supported.</p><p>Memos documenting features (such as paving)
+	  not discussed in the sand report are available <a
+	    HREF="FASTQ-memo.pdf">here</a></p></TD>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="gen3d" HREF="Gen3d.pdf">Gen3D</a></TH>
+
+	  <TD><p>GEN3D is a three-dimensional mesh generation
+	  program. The three-dimensional mesh is generated by mapping
+	  a two-dimensional mesh into three-dimensions according to
+	  one of four types of transformations: translating, rotating,
+	  mapping onto a spherical surface, and mapping onto a
+	  cylindrical surface.  The generated three-dimensional mesh
+	  can then be reoriented by offsetting, reflecting about an
+	  axis, and revolving about an axis. GEN3D can be used to mesh
+	  geometries that are axisymmetric or planar, but, due to
+	  three-dimensional loading or boundary conditions, require a
+	  three-dimensional finite element mesh and analysis. More
+	  importantly, it can be used to mesh complex
+	  three-dimensional geometries composed of several sections
+	  when the sections can be defined in terms of transformations
+	  of two-dimensional geometries.</p>
+	  <p>Additional commands not documented in the main report are
+	available <a href="gen3d-updates.pdf">here</a></p></TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="genshell"
+	  HREF="GenShell.pdf">GenShell</a></TH>
+
+	  <TD>GENSHELLis a three-dimensional shell mesh generation
+	  program. The three-dimensional shell mesh is generated by
+	  mapping a two-dimensional quadrilateral mesh into three
+	  dimensions according to one of several types of
+	  transformations: translation, mapping onto a spherical,
+	  ellipsoidal, or cylindrical surface, and mapping onto a
+	  user-defined spline surface. The generated three-dimensional
+	  mesh can then be reoriented by offsetting, reflecting about
+	  an axis, revolving about an axis, and scaling the
+	  coordinates. GENSHELL can be used to mesh complex
+	  three-dimensional geometries composed of several sections
+	  when the sections can be defined in terms of transformations
+	  of two-dimensional geometries.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="gjoin" HREF="gjoin.pdf">GJoin</a></TH>
+
+	  <TD>GJOIN is a two- or three-dimensional mesh combination
+	  program. GJOIN combines two or more meshes written in the
+	  GENESIS mesh database format into a single GENESIS
+	  mesh. Selected nodes in the two meshes that are closer than
+	  a specified distance can be combined The geometry of the
+	  mesh databases can be modified by scaling, offsetting,
+	  revolving, and mirroring. The combined meshes can be further
+	  modified by deleting, renaming, or combining material
+	  blocks, sideset identifications, or nodeset
+	  identifications.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="grepos" HREF="grepos.pdf">Grepos</a></TH>
+
+	  <TD>GREPOS is a mesh utility program that repositions or
+	  modifies the configuration of a two-dimensional or
+	  three-dimensional mesh. GREPOS can be used to change the
+	  orientation and size of a two-dimensional or
+	  three-dimensional mesh; change the material block, nodeset,
+	  and sideset IDs; or "explode" the mesh to facilitate viewing
+	  of the various parts of the model.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="grope" HREF="grope.pdf">Grope</a></TH>
+
+	  <TD>GROPE is a program that examines the input to a finite
+	  element analysis (which is in the GENESIS database format)
+	  or the output from an analysis (in the EXODUS database
+	  format). GROPE allows the user to examine any value in the
+	  database. The display can be directed to the user's terminal
+	  or to a print file.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="mapvar" HREF="mapvar.pdf">Mapvar</a></TH>
+
+	  <TD>MAPVAR is designed to transfer solution results from one
+	  finite element mesh to another. MAPVAR draws heavily from
+	  the structure and coding of MERLIN II, but it employs a new
+	  finite element data base, EXODUS II [3], and offers enhanced
+	  speed and new capabilities not available in MERLIN II. In
+	  keeping with the MERLIN II documentation, the computational
+	  algorithms used in MAPVAR are described. User instructions
+	  are presented. Example problems are included to demonstrate
+	  the operation of the code and the effects of various input
+	  options.</TD>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="mapvar-kd" HREF="mapvar.pdf">Mapvar-kd</a></TH>
+
+	  <TD>mapvar-kd is almost exactly the same as mapvar except that it uses
+	  a KD algorithm for the internal search.  It is much faster than mapvar in certain
+	  situations, and should never be slower.</TD>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="mat2exo" HREF="mat2exo.pdf">Mat2Exo</a></TH>
+
+	  <TD>MAT2EXO is a program which translates mesh data from
+	  Matlab mat-file format to Exodus II format. This tool is the
+	  inverse of the commonly used tool exo2mat which translates
+	  Exodus II data to the Matlab mat-file format. These tools
+	  provide a means for preprocessing an Exodus II model file or
+	  post-processing an Exodus II results file using Matlab.</TD>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="nem_join"
+	  HREF="nem_join.pdf">nem_join</a></TH>
+	  <TD>
+	    <b>Deprecated.  Use epu instead.</b>
+	    nem_join reads it's input command file (default name
+	    nem_join.inp), takes the parallel file description and the
+	    named ExodusII, combines the results (located in the
+	    paral- lel files) and writes them to the ExodusII file.
+	    Here is an example <a href="nem_join.inp.pdf">nem_join
+	    input file</a>.
+	  </TD>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="nem_slice"
+	  HREF="nem_slice.pdf">nem_slice</a></TH>
+
+	  <TD><p>nem_slice reads in a FEM description of the geometry of
+	  a problem from an ExodusII file, exoIIfile , generates
+	  either a nodal or elemental graph of the problem, calls
+	  Chaco to load balance the graph, and outputs a NemesisI
+	  load-balance file.</p>
+	  <p>The script <b>loadbal</b> is used as a front-end to nem_slice
+	    and nem_spread. Enter "loadbal -h" for more information.</p>
+	  </TD>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="nem_spread"
+	  HREF="nem_spread.pdf">nem_spread</a></TH>
+
+	  <TD>nem_spread reads it's input command file (default name
+	  nem_spread.inp), takes the named ExodusII and spreads out
+	  the geometry (and optionally results) contained in that file
+	  out to a parallel disk system. The decomposition is taken
+	  from a scalar Nemesis load balance file generated by the
+	  companion utility nem_slice. Here is an example <a
+	  href="nem_spread.inp.pdf">nem_spread input file</a>.</TD>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="numbers" HREF="numbers.pdf">Numbers</a></TH>
+
+	  <TD>NUMBERS is a program which reads and stores data
+	  from a finite element model described in the EXODUS database
+	  format. Within this program are several utility
+	  routines which calculate information about the finite
+	  element model.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="txtexo"
+	    HREF="#txtexo">txtexo</a></TH>
+
+	  <TD>Convert a text file written by <a href="#exotxt">exotxt</a> back to an exodus file.
+	  (The netcdf utilities ncdump/ncgen can
+	  also be used to convert an exodus files to/from text.)</td>
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <th colspan="2" bgcolor=#ffaaaa>
+	  <a name="libraries">Libraries</a>
+	    </th>
+        </tr>
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A NAME="exodusII" HREF="exodusII-new.pdf">ExodusII</a><br><br>
+	<a href="exodusII.pdf">Original Doc (not current)</a></TH>
+
+	  <TD>EXODUS II is a model developed to store and retrieve
+	  data for finite element analyses. It is used for
+	  preprocessing (problem definition), postprocessing (results
+	  visualization), as well as code to code data transfer. An
+	  EXODUS II data file is a random access, machine independent,
+	  binary file that is written and read via C, C++, or Fortran
+	  library routines which comprise the Application Programming
+	  Interface. (exodusII is based on netcdf)<p>
+	    
+          <b>Draft documentation of the "new" API is found <a
+          href="exodusII-new.pdf">here.</a> The new version includes
+          support for names, nodeset variables, sideset variables,
+          named attributes, coordinate frames, concatenated element
+          block definition, optional multiple named node and element
+          maps, and other cleanups.</b><p>
+
+          Documentation of the modifications needed to use the
+          <b>"large-file"</b> modifications which permit storage of
+          models with more than ~30 million elements is found <a
+          href="ExodusLargeModel.html">here</a>.<p>
+
+	  In addition to the above API extensions, the API has also
+	      been modified to store the full model topology
+	      nodes->edges->faces->elements including blocks and sets
+	      of all entities. The API extensions are documented in
+	    Chapter 4 of SAND2007-0525, <a
+		href="ExodusII-Addendum.pdf">A data storage model for novel partial differential equation descretizations.</a> <p>
+
+	    The API was modified in 2012 to permit the storage of more
+	    than 2.1 Billion nodes and/or elements. The changes are
+	    documented in <a href="64-bit-integer.txt">64-bit integers</a>
+
+	</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A NAME="chaco" HREF="chaco.pdf">Chaco</a></TH>
+
+	  <TD>Graph partitioning is a fundamental problem in many
+	  scientific contexts This document describes the capabilities
+	  and operation of Chaco 2.0, a software package designed to
+	  partition graphs. Chaco 2.0 allows for recursive application
+	  of several methods for finding small edge separators in
+	  weighted graphs These methods include inertial, spectral,
+	  Kernighan-Lin, and multilevel methods in addition to several
+	  simpler strategies Each of these approaches can be used to
+	  partition the graph into two, four, or eight pieces at each
+	  level of recursion In addition, the Kernighan-Lin method can
+	  be used to improve partitions generated by any of the other
+	  algorithms. Brief descriptions of these methods are provided
+	  along with references to relevant literature. Chaco 2.0 can
+	  also be used to address various graph sequencing problems,
+	  and this capability is briefly described. The user interface
+	  input/output formats and appropriate settings for a variety
+	  of code parameters are discussed in detail and some
+	  suggestions on algorithm selection are offered.
+	</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP>Netcdf</TH>
+
+	  <TD>The netCDF software functions as an I/O library,
+	  callable from C or FORTRAN, which stores and retrieves data
+	  in self-describing, machine-independent files. Each netCDF
+	  file can contain an unlimited number of multi-dimensional,
+	  named variables (with differing types that include integers,
+	  reals, characters, bytes, etc.), and each variable may be
+	  accompanied by ancillary data, such as units of measure or
+	  descriptive text. The interface includes a method for
+	  appending data to existing netCDF files in prescribed ways,
+	  functionality that is not unlike a (fixed length) record
+	  structure. However, the netCDF library also allows
+	  direct-access storage and retrieval of data by variable name
+	  and index and therefore is useful only for disk-resident (or
+	  memory-resident) files.<p> 
+
+	  Netcdf information is available from <a
+	  href="http://www.unidata.ucar.edu/packages/netcdf/index.html">Unidata</a>
+	  (http://www.unidata.ucar.edu/packages/netcdf/index.html).<p>
+	  Man pages for the ncgen and ncdump utilities are also
+	  available. (These can be used to convert an exodusII file
+	  from/to a text representation.)</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="nemesis"
+	  HREF="Nemesis_Users_Guide.pdf">Nemesis</a></TH>
+
+	  <TD>NEMESIS I is an enhancement to the EXODUS II finite
+	  element database model used to store and retrieve data for
+	  unstructured parallel finite element analyses. NEMESIS I
+	  adds data structures which facilitate the partitioning of a
+	  scalar (standard serial) EXODUS II file onto parallel disk
+	  systems found on many parallel computers. Since the NEMESIS
+	  I application programming interface (API) can be used to
+	  append information to an existing EXODUS II database, any
+	  existing software that reads EXODUS II files can be used on
+	  files which contain NEMESIS I information. The NEMESIS I
+	  information is written and read via C or C++ callable
+	  functions which compromise the NEMESIS I API.<br><a HREF="nemesis-fortran-api.html">Fortran to C Function Mapping</a></TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="supes"
+	  HREF="supes.pdf">SUPES</a></TH>
+
+	  <TD>SUPES is a collection of subprograms which perform
+	  frequently used non-numerical services for the engineering
+	  applications programmer. The three functional categories of
+	  SUPES are: (1) input command parsing, (2) dynamic memory
+	  management, and (3) system dependent utilities. The
+	  subprograms in categories one and two are written in
+	  standard FORTRAN-77, while the subprograms in category three
+	  are written to provide a standardized FORTRAN interface to
+	  several system dependent features.</TD>
+
+	</TR>
+      </TABLE>
+
+      <HR>
+
+      <ADDRESS>
+	<A HREF="mailto:gdsjaar@sandia.gov">Greg Sjaardema</A></ADDRESS>
+
+      <BR>
+      <!-- Created: Thu Sep  5 11:47:06 MDT 1996 -->
+      <!-- hhmts start -->
+Last modified: Mon Apr 16 09:30:09 MDT 2012
+<!-- hhmts end -->
+  </BODY>
+</HTML>

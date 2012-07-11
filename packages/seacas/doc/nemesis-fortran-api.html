@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Nemesis Fortran to C function mapping</title>
+    <script>
+      function init () {
+	var tables = document.getElementsByTagName("table");
+	for (var i = 0; i < tables.length; i++) {
+	  if (tables[i].className.match(/zebra/)) {
+	    zebra(tables[i]);
+	  }
+	  if (tables[i].className.match(/zebra2/)) {
+	    zebra2(tables[i]);
+	  }
+	}
+      }
+
+      function zebra (table) {
+	var current = "oddRow";
+	var trs = table.getElementsByTagName("tr");
+	for (var i = 0; i < trs.length; i++) {
+	  trs[i].className += " " + current;
+	  current = current == "evenRow" ? "oddRow" : "evenRow";
+	}
+      }
+      function zebra2 (table) {
+	var current = "oddRowp";
+	var trs = table.getElementsByTagName("tr");
+	for (var i = 0; i < trs.length; i++) {
+	  trs[i].className += " " + current;
+	  current = current == "evenRowp" ? "oddRowp" : "evenRowp";
+	}
+      }
+    </script>
+    <style>
+        tr.oddRow { background-color: #eef; }
+        tr.evenRow { background-color: #fff; }
+    </style>
+  </head>
+
+  <body onload="init()">
+    <h1>Nemesis Fortran to C function mapping</h1>
+      <table class="zebra"  BGCOLOR=WHITE CELLPADDING=10>
+<tr><th>Fortran</th><th>C Function</th></tr>
+<tr><td>negii</td><td>ne_get_init_info</td></tr>
+<tr><td>nepii</td><td>ne_put_init_info</td></tr>
+<tr><td>negig</td><td>ne_get_init_global</td></tr>
+<tr><td>nepig</td><td>ne_put_init_global</td></tr>
+<tr><td>neglbp</td><td>ne_get_loadbal_param</td></tr>
+<tr><td>neplbp</td><td>ne_put_loadbal_param</td></tr>
+<tr><td>neplbpc</td><td>ne_put_loadbal_param_cc</td></tr>
+<tr><td>negnspg</td><td>ne_get_ns_param_global</td></tr>
+<tr><td>nepnspg</td><td>ne_put_ns_param_global</td></tr>
+<tr><td>negsspg</td><td>ne_get_ss_param_global</td></tr>
+<tr><td>nepsspg</td><td>ne_put_ss_param_global</td></tr>
+<tr><td>negebig</td><td>ne_get_eb_info_global</td></tr>
+<tr><td>nepebig</td><td>ne_put_eb_info_global</td></tr>
+<tr><td>negnss</td><td>ne_get_n_side_set</td></tr>
+<tr><td>nepnss</td><td>ne_put_n_side_set</td></tr>
+<tr><td>negnssd</td><td>ne_get_n_side_set_df</td></tr>
+<tr><td>nepnssd</td><td>ne_put_n_side_set_df</td></tr>
+<tr><td>negnns</td><td>ne_get_n_node_set</td></tr>
+<tr><td>nepnns</td><td>ne_put_n_node_set</td></tr>
+<tr><td>negnnsd</td><td>ne_get_n_node_set_df</td></tr>
+<tr><td>nepnnsd</td><td>ne_put_n_node_set_df</td></tr>
+<tr><td>negcor</td><td>ne_get_n_coord</td></tr>
+<tr><td>nepcor</td><td>ne_put_n_coord</td></tr>
+<tr><td>negnec</td><td>ne_get_n_elem_conn</td></tr>
+<tr><td>nepnec</td><td>ne_put_n_elem_conn</td></tr>
+<tr><td>negneat</td><td>ne_get_n_elem_attr</td></tr>
+<tr><td>nepneat</td><td>ne_put_n_elem_attr</td></tr>
+<tr><td>negelt</td><td>ne_get_elem_type</td></tr>
+<tr><td>negnev</td><td>ne_get_n_elem_var</td></tr>
+<tr><td>nepevs</td><td>ne_put_elem_var_slab</td></tr>
+<tr><td>negnnv</td><td>ne_get_n_nodal_var</td></tr>
+<tr><td>nepnvs</td><td>ne_put_nodal_var_slab</td></tr>
+<tr><td>negnenm</td><td>ne_get_n_elem_num_map</td></tr>
+<tr><td>nepnenm</td><td>ne_put_n_elem_num_map</td></tr>
+<tr><td>negnnnm</td><td>ne_get_n_node_num_map</td></tr>
+<tr><td>nepnnnm</td><td>ne_put_n_node_num_map</td></tr>
+<tr><td>negnm</td><td>ne_get_node_map</td></tr>
+<tr><td>nepnm</td><td>ne_put_node_map</td></tr>
+<tr><td>negem</td><td>ne_get_elem_map</td></tr>
+<tr><td>nepem</td><td>ne_put_elem_map</td></tr>
+<tr><td>negcmp</td><td>ne_get_cmap_params</td></tr>
+<tr><td>nepcmp</td><td>ne_put_cmap_params</td></tr>
+<tr><td>nepcmpc</td><td>ne_put_cmap_params_cc</td></tr>
+<tr><td>negncm</td><td>ne_get_node_cmap</td></tr>
+<tr><td>nepncm</td><td>ne_put_node_cmap</td></tr>
+<tr><td>negecm</td><td>ne_get_elem_cmap</td></tr>
+<tr><td>nepecm</td><td>ne_put_elem_cmap</td></tr>
+</table>
+</body>
+</html>

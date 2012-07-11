@@ -1,0 +1,104 @@
+========================================================================	
+*** Permit 0 as valid entity (block, set, map) id
+
+* Version 5.09 -- Modifications to let zero be a valid entity (element
+	block, nodeset, sideset, map, other sets and blocks).  There is a
+	new define EX_INVALID_ID (-1) which now indicates that the id for
+	an entity has not yet been set.  All positive integers are now
+	valid id values.
+
+========================================================================	
+*** Long Name support.
+
+   Exodus from version 5.08 and later can support names of length up
+   to NC_MAXNAME which is currently 256.  The internals of the exodus
+database have changed with the addition of a new 'dimension' and a new
+database attribute.
+
+This has the following implications:
+*. The old library can read a new database if the new database does
+   not use names longer than 32 characters.
+
+*. If the new database uses longer names, the old library will crash.
+
+*. New library with old database will work fine.
+
+*. New library with new database, no code changes.  If the database
+   uses long names, they will be truncated (with message to stderr) at
+   32 characters.  An output database will limit names to 32
+   characters by default.
+
+The following code changes are used to work with long names:
+
+========================================
+Reading a database:
+
+* Query a database for the maximum length of a name stored on the
+  database.  This does not include the space for the trailing null.
+
+     int max_name_length = ex_inquire_int(exoid,
+		    EX_INQ_DB_MAX_USED_NAME_LENGTH);
+
+* Tell the exodus API the maximum name length that your client code
+  can handle.  This is the size of the character strings that are
+  passed to the ex_get_names() and similar calls.  Note that the
+  maximum_length does not include the trailing null.  That means that
+  if you tell the library to give you 32-character names, the memory
+  buffer you pass to the library must be 33 characters.
+
+    int status = ex_set_max_name_length(exoid, maximum_length);
+
+  If this size is less than the length of a name on the database, the
+  name will be truncated and a message printed to stderr.
+
+* Inquire the size set for the max_name_length. Will return 32 by
+  default, or if ex_set_max_name_length was called, it will return the
+  size set in that call.
+
+     int max_name_length = ex_inquire_int(exoid,
+		    EX_INQ_CUR_MAX_ALLOWED_NAME_LENGTH);
+    
+* Inquire the size that the database used at creation time for the
+  maximum name size.  This is the value used for
+  ex_set_max_name_length() when the database was created. This isn't
+  really needed unless you are appending to an existing database and
+  want to know how long of names it will support.
+
+========================================
+Writing a database:
+
+* After the ex_create() call and before the call to ex_put_init() or
+  ex_put_init_ext(), call ex_set_max_name_length(exoid, max_length); to
+  tell the database the maximum size names that you will be
+  outputting. If this isn't called, then it will default to 32
+  character names.
+
+* The code will keep track of the maximum length that was written and
+  will update an attribute on the database with that length.  This is
+  queryable via the following function:
+
+     int max_name_length = ex_inquire_int(exoid,
+		    EX_INQ_DB_MAX_USED_NAME_LENGTH);
+
+
+========================================
+Names that are included:
+
+* Entity names (element block, nodeset, sideset, faceblock, ...)
+* Attribute names
+* Map names
+* Results variable names
+
+Still 32 characters:
+* QA strings
+* element type in ex_get_block, ex_put_block calls.
+
+Still 80 characters:
+* info records
+* title.
+
+========================================
+Questions / Concerns / Problems:
+
+Greg Sjaardema.
+gdsjaar@sandia.gov or gsjaardema@gmail.com
