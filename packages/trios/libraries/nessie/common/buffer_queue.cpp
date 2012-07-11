@@ -119,7 +119,7 @@ int trios_buffer_queue_init(
 
     nthread_lock_init(&bq->mutex);
 
-    nthread_lock(&bq->mutex);
+    if (nthread_lock(&bq->mutex)) log_warn(bq_debug_level, "failed to get thread lock");
 
     bq->current_size=0;
     bq->initial_size=initial_size;
@@ -160,7 +160,7 @@ NNTI_buffer_t *trios_buffer_queue_pop(
 
     log_debug(bq_debug_level, "enter");
 
-    nthread_lock(&bq->mutex);
+    if (nthread_lock(&bq->mutex)) log_warn(bq_debug_level, "failed to get thread lock");
     if (!bq->queue.empty()) {
         log_debug(bq_debug_level, "getting buffer from queue");
         buffer=bq->queue.front();
@@ -207,7 +207,7 @@ void trios_buffer_queue_push(
 
     log_debug(bq_debug_level, "enter");
 
-    nthread_lock(&bq->mutex);
+    if (nthread_lock(&bq->mutex)) log_warn(bq_debug_level, "failed to get lock");
     if (bq->queue.size() < bq->max_size) {
         log_debug(bq_debug_level, "returning buffer to queue");
         bq->queue.push_front(buffer);
@@ -232,7 +232,7 @@ int trios_buffer_queue_fini(
 
     log_debug(bq_debug_level, "enter");
 
-    nthread_lock(&bq->mutex);
+    if (nthread_lock(&bq->mutex)) log_warn(bq_debug_level, "failed to get lock");
     if (bq->queue.size() != bq->current_size) {
         log_warn(bq_debug_level, "buffer queue (%p) has missing entries (bq->queue.size(%llu) != bq->current_size(%llu))",
                 bq, (uint64_t)bq->queue.size(), (uint64_t)bq->current_size);

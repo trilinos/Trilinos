@@ -1,0 +1,13 @@
+-----------------------------------------
+Release Notes for Trilinos Package Trios
+-----------------------------------------
+
+Trilinos 10.12
+------------------------------
+
+* Significant changes to thread support for nessie.  
+  * Implemented thread-safe version of nessie client/server... not fully tested.
+  * Removed thread pool and threaded support from server. Assume service developer has their own thread pool.
+* Valgrind-detected bug fixes for IB port of NNTI. 
+* Modified xfer-service (example) to use multiple servers. 
+  * Implemented two different client/partitioning schemes: round robin, block partition. 

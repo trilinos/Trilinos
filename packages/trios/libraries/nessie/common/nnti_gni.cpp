@@ -4364,7 +4364,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, gni_connection *c
                 "insert_conn_peer", peer);
     }
 
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
         print_peer_map();
         assert(connections_by_peer.find(key) == connections_by_peer.end());
@@ -4380,7 +4380,7 @@ static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, gni_c
 {
     NNTI_result_t  rc=NNTI_OK;
 
-    nthread_lock(&nnti_conn_instance_lock);
+    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_instance.find(instance) != connections_by_instance.end()) {
         print_instance_map();
         assert(connections_by_instance.find(instance) == connections_by_instance.end());
@@ -4406,7 +4406,7 @@ static gni_connection *get_conn_peer(const NNTI_peer_t *peer)
     key.addr=peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.gni.port;
 
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
         conn = connections_by_peer[key];
     }
@@ -4427,7 +4427,7 @@ static gni_connection *get_conn_instance(const NNTI_instance_id instance)
     gni_connection *conn=NULL;
 
     log_debug(nnti_debug_level, "looking for instance=%llu", (unsigned long long)instance);
-    nthread_lock(&nnti_conn_instance_lock);
+    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");;
     if (connections_by_instance.find(instance) != connections_by_instance.end()) {
         conn = connections_by_instance[instance];
     }
@@ -4450,7 +4450,7 @@ static NNTI_peer_t *get_peer_by_url(const char *url)
     log_debug(nnti_debug_level, "looking for url=%s", url);
 
     conn_by_peer_iter_t i;
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
         log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
                 (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
@@ -4484,7 +4484,7 @@ static gni_connection *del_conn_peer(const NNTI_peer_t *peer)
     key.addr=peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.gni.port;
 
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
         conn = connections_by_peer[key];
     }
@@ -4505,7 +4505,7 @@ static gni_connection *del_conn_instance(const NNTI_instance_id instance)
     gni_connection *conn=NULL;
     log_level debug_level = nnti_debug_level;
 
-    nthread_lock(&nnti_conn_instance_lock);
+    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_instance.find(instance) != connections_by_instance.end()) {
         conn = connections_by_instance[instance];
     }
@@ -4550,7 +4550,7 @@ static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
 
-    nthread_lock(&nnti_buf_bufhash_lock);
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");;
     assert(buffers_by_bufhash.find(h) == buffers_by_bufhash.end());
     buffers_by_bufhash[h] = buf;
     nthread_unlock(&nnti_buf_bufhash_lock);
@@ -4564,7 +4564,7 @@ static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
     NNTI_buffer_t *buf=NULL;
 
     log_debug(nnti_debug_level, "looking for bufhash=%llu", (uint64_t)bufhash);
-    nthread_lock(&nnti_buf_bufhash_lock);
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");;
     if (buffers_by_bufhash.find(bufhash) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[bufhash];
     }
@@ -4585,7 +4585,7 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
     uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
     log_level debug_level = nnti_debug_level;
 
-    nthread_lock(&nnti_buf_bufhash_lock);
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[h];
     }
@@ -4617,7 +4617,7 @@ static NNTI_result_t insert_wr_wrhash(gni_work_request *wr)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)wr);
 
-    nthread_lock(&nnti_wr_wrhash_lock);
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
     wr_by_wrhash[h] = wr;
     nthread_unlock(&nnti_wr_wrhash_lock);
@@ -4631,7 +4631,7 @@ static gni_work_request *get_wr_wrhash(const uint32_t wrhash)
     gni_work_request *wr=NULL;
 
     log_debug(nnti_debug_level, "looking for wrhash=%llu", (uint64_t)wrhash);
-    nthread_lock(&nnti_wr_wrhash_lock);
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (wr_by_wrhash.find(wrhash) != wr_by_wrhash.end()) {
         wr = wr_by_wrhash[wrhash];
     }
@@ -4652,7 +4652,7 @@ static gni_work_request *del_wr_wrhash(gni_work_request *wr)
     uint32_t h=hash6432shift((uint64_t)wr);
     log_level debug_level = nnti_debug_level;
 
-    nthread_lock(&nnti_wr_wrhash_lock);
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (wr_by_wrhash.find(h) != wr_by_wrhash.end()) {
         wr = wr_by_wrhash[h];
     }
@@ -4772,7 +4772,7 @@ static gni_work_request *wr_pool_target_pop(void)
 
     log_debug(nnti_debug_level, "enter");
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (!target_wr_pool.empty()) {
         wr=target_wr_pool.front();
         target_wr_pool.pop_front();
@@ -4791,7 +4791,7 @@ static gni_work_request *wr_pool_initiator_pop(void)
 
     log_debug(nnti_debug_level, "enter");
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (!initiator_wr_pool.empty()) {
         wr=initiator_wr_pool.front();
         initiator_wr_pool.pop_front();
@@ -4814,7 +4814,7 @@ static void wr_pool_target_push(gni_work_request *wr)
     wr->is_op_complete=FALSE;
     wr->op_state      =BUFFER_INIT;
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     target_wr_pool.push_front(wr);
     nthread_unlock(&nnti_wr_pool_lock);
 
@@ -4834,7 +4834,7 @@ static void wr_pool_initiator_push(gni_work_request *wr)
     wr->is_op_complete=FALSE;
     wr->op_state      =BUFFER_INIT;
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     initiator_wr_pool.push_front(wr);
     nthread_unlock(&nnti_wr_pool_lock);
 
@@ -4850,7 +4850,7 @@ static NNTI_result_t wr_pool_fini(void)
 
     log_debug(nnti_debug_level, "enter");
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     while (!target_wr_pool.empty()) {
         wr=target_wr_pool.front();
         target_wr_pool.pop_front();
@@ -4889,7 +4889,7 @@ static void close_all_conn(void)
     log_debug(debug_level, "enter (%d instance connections, %d peer connections)",
             connections_by_instance.size(), connections_by_peer.size());
 
-    nthread_lock(&nnti_conn_instance_lock);
+    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     conn_by_inst_iter_t inst_iter;
     for (inst_iter = connections_by_instance.begin(); inst_iter != connections_by_instance.end(); inst_iter++) {
         log_debug(debug_level, "close connection (instance=%llu)", inst_iter->first);
@@ -4898,7 +4898,7 @@ static void close_all_conn(void)
     }
     nthread_unlock(&nnti_conn_instance_lock);
 
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     conn_by_peer_iter_t peer_iter;
     for (peer_iter = connections_by_peer.begin(); peer_iter != connections_by_peer.end(); peer_iter++) {
         log_debug(debug_level, "close connection (peer.addr=%llu)", peer_iter->first.addr);
