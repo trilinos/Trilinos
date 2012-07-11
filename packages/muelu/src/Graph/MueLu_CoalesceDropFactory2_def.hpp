@@ -22,6 +22,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_Monitor.hpp"
+#include <MueLu_AmalgamationInfo.hpp>
 
 namespace MueLu {
 
@@ -158,7 +159,13 @@ void CoalesceDropFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps
   RCP<Graph> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
   // store information in Graph object for unamalgamation of vectors
+  // TODO remove this
   graph->SetAmalgamationParams(nodegid2dofgids_);
+
+  // store (un)amalgamation information on current level
+  RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo());
+  amalgamationData->SetAmalgamationParams(nodegid2dofgids_);
+  currentLevel.Set("UnAmalgamationInfo", amalgamationData, this);
 
   // 7) store results in Level
   currentLevel.Set("DofsPerNode", blockdim, this);

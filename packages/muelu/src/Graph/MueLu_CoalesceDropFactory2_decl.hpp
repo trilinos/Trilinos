@@ -23,6 +23,7 @@
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
 
 namespace MueLu {

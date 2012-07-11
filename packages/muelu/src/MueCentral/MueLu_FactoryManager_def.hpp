@@ -18,6 +18,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_CoalesceDropFactory2.hpp" // FIXME and default factories
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -81,12 +82,13 @@ namespace MueLu {
         return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory(Teuchos::null, GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
       }
 
-      if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
-      if (varName == "Aggregates")    return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+      if (varName == "Graph")               return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+      if (varName == "UnAmalgamationInfo")  return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory2()));
+      if (varName == "Aggregates")          return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
-      if (varName == "PreSmoother")   return GetFactory("Smoother");
-      if (varName == "PostSmoother")  return GetFactory("Smoother");
+      if (varName == "PreSmoother")         return GetFactory("Smoother");
+      if (varName == "PostSmoother")        return GetFactory("Smoother");
       
       //if (varName == "Smoother")    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
       if (varName == "Smoother") {
