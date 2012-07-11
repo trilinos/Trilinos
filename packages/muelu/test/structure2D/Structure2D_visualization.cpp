@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   // register aggregation export factory in RAPFactory
-  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", UCAggFact.get(), dropFact.get(), NULL));
+  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", UCAggFact.get(), dropFact.get()));
   Acfact->AddTransferFactory(aggExpFact);
 
   // build level smoothers

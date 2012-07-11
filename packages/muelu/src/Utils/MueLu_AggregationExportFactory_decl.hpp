@@ -36,7 +36,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out", const FactoryBase* AggFact = NULL, const FactoryBase* CoalesceDropFact = NULL, const FactoryBase* AFact = NULL);
+    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out", const FactoryBase* AggFact = NULL, const FactoryBase* CoalesceDropFact = NULL);
 
     //! Destructor.
     virtual ~AggregationExportFactory();
@@ -61,13 +61,12 @@ namespace MueLu {
 
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
 
-    void ExportAggregates(const Teuchos::RCP<Level>& level, const Teuchos::RCP<Aggregates>& aggregates, const Teuchos::RCP<Operator>& Op, LocalOrdinal DofsPerNode) const;
+    void ExportAggregates(const Teuchos::RCP<Level>& level, const Teuchos::RCP<Aggregates>& aggregates, LocalOrdinal DofsPerNode) const;
 
   private:
     std::string outputFileName_;            ///< filename template for output
     const FactoryBase* AggFact_;            ///< factory which created aggregates
     const FactoryBase* CoalesceDropFact_;   ///< CoalesceAndDropFactory (needed for DofsPerNode variable)
-    const FactoryBase* AFact_;              ///< A factory
 
 
   }; // class AggregationExportFactory
