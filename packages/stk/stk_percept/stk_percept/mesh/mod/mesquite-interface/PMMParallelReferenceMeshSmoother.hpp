@@ -44,13 +44,13 @@ namespace stk {
                         QualityAssessor* qa,
                         MsqError& err );
 
-      void run_one_iteration( Mesh* mesh,  MeshDomain *domain,
-                              MsqError& err );
+      virtual void run_one_iteration( Mesh* mesh,  MeshDomain *domain,
+                                      MsqError& err );
 
       void sync_fields(int iter=0);
       bool check_convergence();
       
-    private:
+    protected:
       NodeMap m_current_position;
       NodeMap m_delta;
       NodeMap m_weight;
@@ -60,9 +60,6 @@ namespace stk {
 
       PerceptMesquiteMesh *m_pmm;
       PerceptMesh *m_eMesh;
-
-    public:
-
 
     };
 
