@@ -46,16 +46,19 @@ IF (Kokkos_ENABLE_CUSPARSE)
   ) 
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST( DefaultSparseOps_TestSparseOps 
-  SOURCES   
-    DefaultSparseOps_TestSparseOps.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
-) 
-
+#disabling for PGI due to this being a known issue with the PGI compiler.
+#see bug 4989 for a similar issue.
+IF(NOT __LINUX_COMPILER_PGI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST( DefaultSparseOps_TestSparseOps 
+    SOURCES   
+      DefaultSparseOps_TestSparseOps.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+  ) 
+ENDIF()
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
