@@ -46,7 +46,9 @@ TIPS:
  - By default, egdist will use 'eg' in the environment.  If it can't find 'eg'
    in the environment, it will try to use 'eg' in the same directroy as
    'egdist' (which is the case in the home tribits directory).  If it can't
-   find
+   find this 'eg' it will look for 'git' in the environment.  If it can't find 'git'
+   it will require that the user specify the eg/git command to run with
+   --with-eg-git=<the command>.
 
 """
 
