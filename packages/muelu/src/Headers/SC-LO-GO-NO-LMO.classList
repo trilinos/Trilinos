@@ -21,6 +21,7 @@ DirectSolver
 TrilinosSmoother
 MergedSmoother
 CoalesceDropFactory
+CoalesceDropFactory2
 PreDropFunctionBaseClass
 PreDropFunctionConstVal
 NullspaceFactory
