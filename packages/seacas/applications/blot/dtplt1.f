@@ -267,7 +267,7 @@ C         --Use the standard color table
       ELSE IF (MODDET .EQ. 'SYMBOL') THEN
          CALL EVAROK (1, IDTVAR, NELBLK, IELBST, ISEVOK, ISVOK)
          IF (MODTYP .NE. 'STATE') THEN
-            CALL SYMBOL (MODTYP, VARFAC, LENF, NLNKF, HIDEF,
+            CALL SYMBOL_BL (MODTYP, VARFAC, LENF, NLNKF, HIDEF,
      &         XF, YF, ZF, ISVOK, BLKCOL, IDELB, *100)
          ELSE
             CALL ELESTA (MODTYP, VARFAC, LENF, NLNKF, LINKF, HIDEF,
@@ -277,7 +277,7 @@ C         --Use the standard color table
       ELSE IF (MODDET .EQ. 'GAUSS') THEN
          CALL EVAROK (4, IDTVAR, NELBLK, IELBST, ISEVOK, ISVOK)
          LVARF = LENF(NELBLK)
-         CALL GAUSS (MODTYP, VARFAC, LENF, NLNKF, LINKF, HIDEF,
+         CALL GAUSS_BL (MODTYP, VARFAC, LENF, NLNKF, LINKF, HIDEF,
      &      XN, YN, ZN, ISVOK, LVARF, *100)
       END IF
 

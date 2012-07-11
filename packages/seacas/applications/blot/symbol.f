@@ -31,7 +31,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 c
 C=======================================================================
-      SUBROUTINE SYMBOL (ISYTYP, VARFAC, LENF, NLNKF, HIDEF,
+      SUBROUTINE SYMBOL_BL (ISYTYP, VARFAC, LENF, NLNKF, HIDEF,
      &   XF, YF, ZF, ISVOK, BLKCOL, IDELB, *)
 C=======================================================================
 

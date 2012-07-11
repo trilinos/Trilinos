@@ -61,7 +61,7 @@ geti12.f  geti1r.f  getime.f  getkxn.f  getlxn.f  getm1.f  \
 getm3.f   getm5.f   getnxn.f  getplp.f  getr12.f  getrow.f \
 getsbc.f  getsiz.f  gettrn.f  getwt.f   gkxn.f    gmesh.f  \
 gnlist.f  gnxka.f   gtxdum.f  help.f    inattr.f  inbody.f \
-inboun.f  inbrst.f  indexi.f  indexr.f  indx.f    infact.f \
+inboun.f  inbrst.f  indexi.f  indx.f    infact.f \
 ingrid.f  ingrpn.f  inhole.f  inintr.f  initdg.f  inline.f \
 innerh.f  inpoin.f  inqstr.f  inqtru.f  inregn.f  inrenm.f \
 inschm.f  inside.f  intrup.f  intsct.f  invert.f  invmap.f \

@@ -58,7 +58,7 @@ C
          DO 110 I = 1, NUML
             INDX(I) = I
   110    CONTINUE
-         CALL INDEXI (NUML, LISTL, NUML, INDX)
+         CALL INDEXI_FQ (NUML, LISTL, NUML, INDX)
       ELSE
          RETURN
       END IF
@@ -109,7 +109,7 @@ C
          END IF
   160 CONTINUE
       NUMN = N1
-      IF (NUMN .GT. 1) CALL INDEXI (NNN, NUID, NUMN, INDX)
+      IF (NUMN .GT. 1) CALL INDEXI_FQ (NNN, NUID, NUMN, INDX)
 C
 C  LOOP FOR INTERIOR LINES
 C

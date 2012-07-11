@@ -60,7 +60,7 @@ C   --   Uses ICURDV, SOFTCH of /GRPCOM/
 
 C   --Routines Called:
 C   --   PLTXSL - (PLTLIB) Find the software string length
-C   --   PLTXTC - (PLTLIB) Display a centered software string
+C   --   PLTXTC1 - (PLTLIB) Display a centered software string
 C   --   PLTXTH - (PLTLIB) Display a hardware string
 C   --   PLTXTL - (PLTLIB) Find the hardware string length
 C   --   LENSTR - (STRLIB) Find string length
@@ -83,7 +83,7 @@ C   --   LENSTR - (STRLIB) Find string length
          CALL PLTXSL (STRING(:LSTR), SLEN)
          XLEFT = DX
          IF (XLEFT*2 .LT. SLEN) XLEFT = 0.5*SLEN
-         CALL PLTXTC (XLEFT, DY, STRING(:LSTR))
+         CALL PLTXTC1 (XLEFT, DY, STRING(:LSTR))
       ELSE
          CALL PLTXHL (STRING(:LSTR), SLEN)
          XLEFT = DX - .5*SLEN

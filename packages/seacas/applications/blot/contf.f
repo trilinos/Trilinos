@@ -75,7 +75,7 @@ C   --   Uses IS3DIM of /D3NUMS/
       INTEGER LINKF1(NLNKF)
       REAL XN(*), YN(*), ZN(*)
 
-      LOGICAL INTERP
+      LOGICAL INTERP_BL
       LOGICAL CROSSL, CROSSN
 
 C   --Compute the minimum and maximum values for the face
@@ -145,7 +145,7 @@ C         --Compute center function value and coordinates
          END IF
 
          N = LINKF1(NNPF)
-         CROSSN = (INTERP (CNTR, FM, VARNP(N), PSI))
+         CROSSN = (INTERP_BL (CNTR, FM, VARNP(N), PSI))
          IF (CROSSN) THEN
             XCN = XM * (1.-PSI) + XN(N) * PSI
             YCN = YM * (1.-PSI) + YN(N) * PSI
@@ -159,14 +159,14 @@ C         --Compute center function value and coordinates
                XCL = XCN
                YCL = YCN
             END IF
-            CROSSN = (INTERP (CNTR, FM, VARNP(N), PSI))
+            CROSSN = (INTERP_BL (CNTR, FM, VARNP(N), PSI))
             IF (CROSSN) THEN
                XCN = XM * (1.-PSI) + XN(N) * PSI
                YCN = YM * (1.-PSI) + YN(N) * PSI
             END IF
 
             IF (CROSSL .OR. CROSSN) THEN
-               IF (INTERP (CNTR, VARNP(N), VARNP(L), PSI)) THEN
+               IF (INTERP_BL (CNTR, VARNP(N), VARNP(L), PSI)) THEN
                   XC0 = XN(N) * (1.-PSI) + XN(L) * PSI
                   YC0 = YN(N) * (1.-PSI) + YN(L) * PSI
                   IF (CROSSL .AND. CROSSN) THEN

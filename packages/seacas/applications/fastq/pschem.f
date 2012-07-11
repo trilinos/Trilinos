@@ -238,7 +238,7 @@ C  H - INDICATES A HELP MESSAGE RESPONSE IF STEPPING
 C
       ELSE IF ((SCHSTR(J:J) .EQ. 'H') .OR.
      &   (SCHSTR(J:J) .EQ. 'h')) THEN
-         IF (STEP) CALL HELP (3)
+         IF (STEP) CALL HELP_FQ (3)
 C
 C  I - CHANGE MAX SMOOTHING ITERATIONS
 C
@@ -537,7 +537,7 @@ C
                IF ((SCHOLE(1:1) .EQ. 'H') .OR.
      &            (SCHOLE(1:1) .EQ. 'h')) THEN
                   CALL MESAGE (' ')
-                  CALL HELP (13)
+                  CALL HELP_FQ (13)
                   CALL MESAGE (' ')
                   GO TO 110
                END IF

@@ -61,7 +61,7 @@ C
 C  FIND THE BEST CORNER NODES IN THE LIST
 C
       CALL PICKM3 (NPER, X, Y, ANGLE, M1, M2, IFIRST)
-      IF (IFIRST .NE. 1) CALL ROTATE (NPER, X, Y, NID, IFIRST)
+      IF (IFIRST .NE. 1) CALL FQ_ROTATE (NPER, X, Y, NID, IFIRST)
 C
 C  NOW SORT THE LIST SO THE LONGEST SIDE IS FIRST
 C
@@ -70,13 +70,13 @@ C
       IF (M1 .EQ. MMAX)THEN
          CONTINUE
       ELSEIF (M2 .EQ. MMAX) THEN
-         CALL ROTATE (NPER, X, Y, NID, M1 + 1)
+         CALL FQ_ROTATE (NPER, X, Y, NID, M1 + 1)
          MHOLD = M1
          M1 = M2
          M2 = M3
          M3 = MHOLD
       ELSEIF (M3 .EQ. MMAX) THEN
-         CALL ROTATE (NPER, X, Y, NID, M1 + M2 + 1)
+         CALL FQ_ROTATE (NPER, X, Y, NID, M1 + M2 + 1)
          MHOLD = M1
          M1 = M3
          M3 = M2

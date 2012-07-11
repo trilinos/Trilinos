@@ -83,7 +83,7 @@ C   --   Uses NDIM of /DBNUMS/
          IVIEW = IXVW (.FALSE., IVW)
          IF (MODDET(IVIEW) .EQ. 'CONTOUR') THEN
             NNDVAR = MAX (NNDVAR, 1)
-            CALL DBVTYP (IDTVAR(1), TYP, IDUM)
+            CALL DBVTYP_BL (IDTVAR(1), TYP, IDUM)
             IF (TYP .EQ. 'E') NEDVAR = MAX (NEDVAR, 1)
          ELSE IF (MODDET(IVIEW) .EQ. 'ELEMCONT') THEN
             NEDVAR = MAX (NEDVAR, 1)

@@ -97,7 +97,7 @@ C
 C
 C  FIND THE BODY MIN AND MAX
 C
-      CALL MINMAX (NPNODE, NNN, XN, YN, XMIN, XMAX, YMIN, YMAX)
+      CALL MINMAX_FQ (NPNODE, NNN, XN, YN, XMIN, XMAX, YMIN, YMAX)
       XMIN1 = XMIN
       XMAX1 = XMAX
       YMIN1 = YMIN
@@ -530,7 +530,7 @@ C
          CALL STRLNG (CIN(ICOM), LEN)
          IF (((LEN .GT. 1) .AND. (CIN(ICOM)(2:2) .NE. 'X')) .OR.
      &      ((LEN .GT. 1) .AND. (CIN(ICOM)(2:2) .NE. 'x'))) THEN
-            CALL HELP (11)
+            CALL HELP_FQ (11)
          ELSE
             CALL FEXIT (WROTE, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN,
      &         TIME1, BATCH, VERSN)
@@ -550,7 +550,7 @@ C  GET HELP MESSAGE
 C
       ELSE
          ICOM = ICOM + 1
-         CALL HELP (11)
+         CALL HELP_FQ (11)
       END IF
       GO TO 110
 C

@@ -82,7 +82,7 @@ C   --   * - return statement if no nodes within window; message is printed
       DO 100 IX = 1, NNPSUR
          INP = NPSURF(IX)
          IF (ROTMSH) THEN
-            CALL ROTATE (1, 1, ROTMAT, ROTCEN,
+            CALL BL_ROTATE (1, 1, ROTMAT, ROTCEN,
      &         XN(INP), YN(INP), ZN(INP), X, Y, Z)
          ELSE
             X = XN(INP)

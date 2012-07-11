@@ -79,7 +79,7 @@ C   --   Uses IS3DIM of /D3NUMS/
       REAL XN(*), YN(*), ZN(*)
       INTEGER IN2ELB(*)
 
-      LOGICAL INTERP
+      LOGICAL INTERP_BL
       LOGICAL GRABRT
       LOGICAL EXISTS
 
@@ -94,7 +94,7 @@ C      --Skip invisible line
       N2 = LINSET(2)
       IF ((IN2ELB(N1) .GE. 0) .AND. (IN2ELB(N2) .GE. 0)) THEN
 
-         IF (INTERP (CNTR, VARNP(N1), VARNP(N2), PSI)) THEN
+         IF (INTERP_BL (CNTR, VARNP(N1), VARNP(N2), PSI)) THEN
             NHIT = NHIT + 1
             IF (NHIT .GE. LABINC) THEN
                IF (GRABRT ()) RETURN 1

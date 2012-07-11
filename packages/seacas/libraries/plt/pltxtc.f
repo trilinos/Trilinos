@@ -31,13 +31,8 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C $Id: pltxtc.f,v 1.1 1993/07/16 16:49:59 gdsjaar Exp $ 
-C $Log: pltxtc.f,v $
-C Revision 1.1  1993/07/16 16:49:59  gdsjaar
-C Changed plt to library rather than single source file.
-C 
 C=======================================================================
-      SUBROUTINE PLTXTC(X,Y,LINE)
+      SUBROUTINE PLTXTC1(X,Y,LINE)
       CHARACTER*(*) LINE
 
       CALL PLTRIM(LINE,L)

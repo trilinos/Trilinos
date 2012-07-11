@@ -86,10 +86,10 @@ C   --   Uses NTPCRV, NTPVAR, TIMPLT of /TPVARS/
       DO 100 NP = 1, NTPCRV
          IF (.NOT. TIMPLT) THEN
             N = N + 1
-            CALL DBVTYP (ITVID(N), TYPX, IDUM)
+            CALL DBVTYP_BL (ITVID(N), TYPX, IDUM)
          END IF
          N = N + 1
-         CALL DBVTYP (ITVID(N), TYPY, IDUM)
+         CALL DBVTYP_BL (ITVID(N), TYPY, IDUM)
          IF ((NPTIMS .NE. NPTIMW) .AND.
      &      ((TYPX .NE. 'H') .OR. (TYPY .NE. 'H'))) THEN
             NSQZ = NSQZ + 1

@@ -263,7 +263,7 @@ C *** EXODUS Print Commands ***
          CALL CKEXOD (EXODUS, *220)
          CALL CKNONE (NVARHI, .FALSE., 'history variables', *220)
 
-         CALL DBVIX ('H', 1, IXHV)
+         CALL DBVIX_BL ('H', 1, IXHV)
 
          CALL RIXWRD (INLINE(1), IFLD, INTYP, CFIELD,
      &      'history variable name', NVARHI, NAMES(IXHV),
@@ -278,7 +278,7 @@ C *** EXODUS Print Commands ***
          CALL CKEXOD (EXODUS, *220)
          CALL CKNONE (NVARGL, .FALSE., 'global variables', *220)
 
-         CALL DBVIX ('G', 1, IXGV)
+         CALL DBVIX_BL ('G', 1, IXGV)
 
          CALL RIXWRD (INLINE(1), IFLD, INTYP, CFIELD,
      &      'global variable name', NVARGL, NAMES(IXGV),
@@ -293,7 +293,7 @@ C *** EXODUS Print Commands ***
          CALL CKEXOD (EXODUS, *220)
          CALL CKNONE (NVARNP, .FALSE., 'nodal variables', *220)
 
-         CALL DBVIX ('N', 1, IXNV)
+         CALL DBVIX_BL ('N', 1, IXNV)
 
          CALL RIXWRD (INLINE(1), IFLD, INTYP, CFIELD,
      &      'nodal variable name', NVARNP, NAMES(IXNV),
@@ -308,7 +308,7 @@ C *** EXODUS Print Commands ***
          CALL CKEXOD (EXODUS, *220)
          CALL CKNONE (NVAREL, .FALSE., 'element variables', *220)
 
-         CALL DBVIX ('E', 1, IXEV)
+         CALL DBVIX_BL ('E', 1, IXEV)
 
          CALL RIXWRD (INLINE(1), IFLD, INTYP, CFIELD,
      &      'element variable name', NVAREL, NAMES(IXEV),

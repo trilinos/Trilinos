@@ -29,35 +29,6 @@ C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-C $Log: mslab.F,v $
-C Revision 1.3  2009/03/25 12:36:46  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.2  2001/01/11 14:20:34  gdsjaar
-C Increased print format for element blocks to handle more than 100 blocks.
-C
-C Revision 1.1  1997/11/24 22:23:37  gdsjaar
-C The tplot and splot label files needed the ifdef doubleescape, so they
-C needed to be moved to .F files.
-C
-C Revision 1.2  1995/11/02 16:59:13  caforsy
-C Changes compute and io word size defaults.  Changed node set
-C markings to "O"'s. Node set markings will scale depending upon the
-C number of nodes.
-C
-C Revision 1.1  1994/04/07 20:05:40  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-CRevision 1.4  1993/10/14  22:02:42  gdsjaar
-CAdded outline off for 2D models.
-C
-CRevision 1.3  1993/09/24  17:32:40  gdsjaar
-CAdded an outline off/on command to toggle drawing of the view window outline
-C
-CRevision 1.2  1990/12/14  08:53:52  gdsjaar
-CAdded RCS Id and Log to all files
-C
 C=======================================================================
       SUBROUTINE MSLAB (A, NEWSET, NVWTIM, IPTIMS, TIMES,
      &   NAMECO, NAMES, IELBST,
@@ -485,13 +456,13 @@ C   --Orientation indicator
 
   180 CONTINUE
       IF (IS3DIM) THEN
-         CALL ROTATE (1, 1, ROTMAT, ZERO3,
+         CALL BL_ROTATE (1, 1, ROTMAT, ZERO3,
      &      0.0, 0.0, 0.0, XPT(0), YPT(0), ZPT(0))
-         CALL ROTATE (1, 1, ROTMAT, ZERO3,
+         CALL BL_ROTATE (1, 1, ROTMAT, ZERO3,
      &      1.0, 0.0, 0.0, XPT(1), YPT(1), ZPT(1))
-         CALL ROTATE (1, 1, ROTMAT, ZERO3,
+         CALL BL_ROTATE (1, 1, ROTMAT, ZERO3,
      &      0.0, 1.0, 0.0, XPT(2), YPT(2), ZPT(2))
-         CALL ROTATE (1, 1, ROTMAT, ZERO3,
+         CALL BL_ROTATE (1, 1, ROTMAT, ZERO3,
      &      0.0, 0.0, 1.0, XPT(3), YPT(3), ZPT(3))
          X(KLFT) = MIN (XPT(0), XPT(1), XPT(2), XPT(3))
          X(KRGT) = MAX (XPT(0), XPT(1), XPT(2), XPT(3))
@@ -510,7 +481,7 @@ C   --Orientation indicator
             X(2) = 0
             X(3) = 0
             X(I) = .9
-            CALL ROTATE (1, 1, ROTMAT, ZERO3,
+            CALL BL_ROTATE (1, 1, ROTMAT, ZERO3,
      &         X(1), X(2), X(3), XPT(I), YPT(I), ZPT(I))
             CALL MP2PT (1, XPT(I), YPT(I), XPT(I), YPT(I), IDUM)
             CALL PLTARR (XPT(0), YPT(0), XPT(I), YPT(I), 0.5, .01)

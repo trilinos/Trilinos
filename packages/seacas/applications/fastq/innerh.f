@@ -1,18 +1,3 @@
-C $Id: innerh.f,v 1.2 1998/07/14 18:19:13 gdsjaar Exp $
-C $Log: innerh.f,v $
-C Revision 1.2  1998/07/14 18:19:13  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:09:56  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:09:54  gdsjaar
-c Initial revision
-c 
-C
 CC* FILE: [.QMESH]INNERH.FOR
 CC* MODIFIED BY: TED BLACKER
 CC* MODIFICATION DATE: 7/6/90
@@ -130,7 +115,7 @@ C
       I2 = I1 + 1
       IF (I2 .GT. NH) I2 = 1
       DO 190 I = 1, NH - 1
-         CALL FNDLIN (MXND, LXN, NXH(I1), NXH(I2), LINE, ERR)
+         CALL FNDLIN_FQ (MXND, LXN, NXH(I1), NXH(I2), LINE, ERR)
          IF (ERR) GO TO 200
          KKK = KKK + 1
          LXK(1, KKK) = LINE
@@ -153,7 +138,7 @@ C
          KXL(1, LLLOLD + I + 1) = KKK
          KXL(1, LLLOLD + I + NH) = KKK
   190 CONTINUE
-      CALL FNDLIN (MXND, LXN, NXH(I1), NXH(I2), LINE, ERR)
+      CALL FNDLIN_FQ (MXND, LXN, NXH(I1), NXH(I2), LINE, ERR)
       IF (ERR) GO TO 200
       KKK = KKK + 1
       LXK(1, KKK) = LINE

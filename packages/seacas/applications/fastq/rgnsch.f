@@ -78,7 +78,7 @@ C
             IF ((SCHSTR(1:1) .EQ. 'H') .OR.
      &         (SCHSTR(1:1) .EQ. 'h')) THEN
                CALL MESAGE (' ')
-               CALL HELP (13)
+               CALL HELP_FQ (13)
                CALL MESAGE (' ')
                GO TO 100
             END IF

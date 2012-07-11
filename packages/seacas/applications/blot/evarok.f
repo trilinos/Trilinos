@@ -73,7 +73,7 @@ C   --      of block j exist and are selected
   100 CONTINUE
 
       DO 120 IVAR = 1, NVARS
-         CALL DBVTYP (NVAR(IVAR), TYP, ID)
+         CALL DBVTYP_BL (NVAR(IVAR), TYP, ID)
          IF (TYP .EQ. 'E') THEN
             DO 110 IELB = 1, NELBLK
                IF (.NOT. ISEVOK(IELB,ID)) THEN

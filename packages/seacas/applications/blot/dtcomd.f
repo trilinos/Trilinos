@@ -242,8 +242,8 @@ C   --Find the command verb, which may be a variable name
       IF (VERB .NE. ' ') THEN
          VWCMD = (LOCSTR (VERB, NVWTBL, CMDTBL(IVWTBL)) .GT. 0)
       ELSE
-         CALL DBVIX ('N', 1, INV)
-         CALL DBVIX ('E', 1, IEV)
+         CALL DBVIX_BL ('N', 1, INV)
+         CALL DBVIX_BL ('E', 1, IEV)
          if (inv .gt. 0) then
            inl = LOCSTR (WORD, NVARNP, NAMES(INV)) .GT. 0
          else
@@ -452,12 +452,12 @@ C      --Set up the view number
 
 C      --Force all element variables to be re-scaled
          DO 120 I = 1, 4
-            CALL DBVTYP (IDTVAR(I), TYP, IDUM)
+            CALL DBVTYP_BL (IDTVAR(I), TYP, IDUM)
             IF (TYP .EQ. 'E') NVOLD(I) = 0
   120    CONTINUE
 
 C      --Force the contour range to be re-calculated (if element variable)
-         CALL DBVTYP (IDTVAR(1), TYP, IDUM)
+         CALL DBVTYP_BL (IDTVAR(1), TYP, IDUM)
          IF ((.NOT. FIXCON) .AND. (TYP .EQ. 'E')) NCOLD = 0
 
 C *** Contour control ***

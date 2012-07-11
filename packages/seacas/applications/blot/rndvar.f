@@ -91,7 +91,7 @@ C      --   variable truth table; variable i of block j exists iff ISEVOK(j,i)
       IF (IVAR   .EQ. 0) return
       if (instep .le. 0) return
 
-      CALL DBVTYP (IVAR, TYP, IDVAR)
+      CALL DBVTYP_BL (IVAR, TYP, IDVAR)
 
       if (typ .eq. 'G') then
         if (lenvar .lt. nvargl) then

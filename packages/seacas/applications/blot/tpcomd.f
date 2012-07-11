@@ -399,7 +399,7 @@ C         --Get the variable name
 
 C         --Get the variable type
 
-            CALL DBVTYP (IID(IXY), TYP(IXY), ID)
+            CALL DBVTYP_BL (IID(IXY), TYP(IXY), ID)
 
             IF ((NSTEPW .LE. 0) .AND. (TYP(IXY) .NE. 'H')) THEN
                CALL PRTERR ('CMDERR',
@@ -472,7 +472,7 @@ C         --Check that element variable exists for element block
                IF (TYP(IXY) .EQ. 'E') THEN
                   IEL = NENUM(IENT,IXY)
                   IELB = IE2ELB(IEL)
-                  CALL DBVTYP (IID(IXY), CDUM, ID)
+                  CALL DBVTYP_BL (IID(IXY), CDUM, ID)
                   IF (.NOT. ISEVOK (IELB, ID)) THEN
                      NAME = NAMES(IID(IXY))
                      CALL INTSTR (1, 0, IEL, STRA, LSTRA)
@@ -558,10 +558,10 @@ C      --variables
             DO 200 NP = 1, NTPCRV
                IF (.NOT. TIMPLT) THEN
                   N = N + 1
-                  CALL DBVTYP (ITVID(N), TYPX, IDUM)
+                  CALL DBVTYP_BL (ITVID(N), TYPX, IDUM)
                END IF
                N = N + 1
-               CALL DBVTYP (ITVID(N), TYPY, IDUM)
+               CALL DBVTYP_BL (ITVID(N), TYPY, IDUM)
                IF ((TYPX .NE. 'H') .OR. (TYPY .NE. 'H')) THEN
                   NBAD = NBAD + 1
                END IF

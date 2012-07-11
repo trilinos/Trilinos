@@ -95,9 +95,9 @@ C        variables and TIME.
      $           'Too many names; increase TNAME size')
          end if
          TNAME(1) = 'TIME'
-         CALL DBVIX ('H', 1, IXHV)
+         CALL DBVIX_BL ('H', 1, IXHV)
          CALL CPYSTR (NVARHI, NAMES(IXHV), TNAME(2))
-         CALL DBVIX ('G', 1, IXGL)
+         CALL DBVIX_BL ('G', 1, IXGL)
          CALL CPYSTR (NVARGL, NAMES(IXGL), TNAME(NVARHI+2))
          LLIST = 1 + NVARHI + NVARGL
          FIRST = .FALSE.

@@ -91,8 +91,8 @@ C   --   Uses NLNCRV, ILVNE, ILVID of /LNVARS/
       LOGICAL NEED
       CHARACTER T
 
-      CALL DBVIX (TYP, 1, ISID)
-      CALL DBVIX (TYP, NVAR, IEID)
+      CALL DBVIX_BL (TYP, 1, ISID)
+      CALL DBVIX_BL (TYP, NVAR, IEID)
 
       IF ((TYP .EQ. 'H') .OR. (TYP .EQ. 'G')) THEN
 
@@ -104,14 +104,14 @@ C      --Scan plot variable information and store if a history or global
 C      --point from this data is to be plotted
 
          DO 100 NP = 1, NLNCRV
-            CALL DBVTYP (ILVID(1,NP), T, IDUM)
+            CALL DBVTYP_BL (ILVID(1,NP), T, IDUM)
             IF ((T .EQ. 'H') .OR. (T .EQ. 'G')) THEN
-               CALL DBVTYP (ILVID(1,NP), T, NE)
+               CALL DBVTYP_BL (ILVID(1,NP), T, NE)
                XLN(NPT,NP) = DATA(NE)
-               CALL DBVTYP (ILVID(2,NP), T, NE)
+               CALL DBVTYP_BL (ILVID(2,NP), T, NE)
                YLN(NPT,NP) = DATA(NE)
                IF (NDIM .GE. 3) THEN
-                  CALL DBVTYP (ILVID(3,NP), T, NE)
+                  CALL DBVTYP_BL (ILVID(3,NP), T, NE)
                   ZLN(NPT,NP) = DATA(NE)
                END IF
             END IF

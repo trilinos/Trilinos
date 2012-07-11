@@ -70,7 +70,7 @@ C
 C -- FOR X,Y,Z MODE, ROTATE XZM,YZM,ZZM COORDS
       ELSE
          IF(IS3DIM) THEN
-           CALL ROTATE(1, 1, ROTMAT, ROTCEN, XZM, YZM, ZZM,
+           CALL BL_ROTATE(1, 1, ROTMAT, ROTCEN, XZM, YZM, ZZM,
      &       XCEN, YCEN, ZCEN)
          ELSE
            XCEN = XZM

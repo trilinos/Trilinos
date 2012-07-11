@@ -160,8 +160,8 @@ C   --   Uses NDIM, NVARNP, NVAREL, NSTEPW of /DBNUMS/
          SHRTHD = .FALSE.
          IF (NMIN .GT. NMAX) NMIN = NMAX
 
-         CALL DBVTYP (NMIN, TYP1, IDUM)
-         CALL DBVTYP (NMAX, TYP2, IDUM)
+         CALL DBVTYP_BL (NMIN, TYP1, IDUM)
+         CALL DBVTYP_BL (NMAX, TYP2, IDUM)
 
          IF (MODDET .EQ. 'CONTOUR') THEN
             IF ((TYP1 .NE. 'N') .AND. (TYP1 .NE. 'E')) THEN
@@ -177,7 +177,7 @@ C   --   Uses NDIM, NVARNP, NVAREL, NSTEPW of /DBNUMS/
             END IF
          ELSE IF (MODDET .EQ. 'VECTOR') THEN
             IF (MODTYP .EQ. ' ') THEN
-               CALL DBVTYP (NMIN, TYP1, IDUM)
+               CALL DBVTYP_BL (NMIN, TYP1, IDUM)
                IF ((TYP1 .EQ. 'N') .OR. (TYP1 .EQ. ' ')) THEN
                   MODTYP = 'NODE'
                ELSE

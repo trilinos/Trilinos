@@ -115,7 +115,7 @@ C      --Get times storage
         IF (NERR .GT. 0) GOTO 100
       END IF
 
-      CALL DBVTYP (IVAR, TYP, ID)
+      CALL DBVTYP_BL (IVAR, TYP, ID)
 
       IF (TYP .EQ. 'H') THEN
 

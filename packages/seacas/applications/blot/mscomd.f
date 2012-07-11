@@ -623,7 +623,7 @@ C *** Active element control ***
      &            'Command not allowed in this subprogram')
                GOTO 140
             END IF
-            CALL DBVIX ('E', 1, IEV)
+            CALL DBVIX_BL ('E', 1, IEV)
             CALL CMDDEA (VERB, INLINE(1), IFLD, INTYP, CFIELD,
      &         RFIELD, NAMES(IEV), NALVAR, ALIVAL, *140)
 

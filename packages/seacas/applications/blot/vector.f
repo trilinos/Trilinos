@@ -163,7 +163,7 @@ C               --Call vector routine
                      XVAR = VAR(INP,1)
                      YVAR = VAR(INP,2)
                      ZVAR = VAR(INP,3)
-                     CALL ROTATE (1, 1, ROTMAT, ZERO3,
+                     CALL BL_ROTATE (1, 1, ROTMAT, ZERO3,
      &                  XVAR, YVAR, ZVAR, XVAR, YVAR, ZVAR)
                      CALL VEC (IS3DIM, XNE(INP), YNE(INP), ZNE(INP),
      &                  XVAR, YVAR, ZVAR, VSCL, ASCL)
@@ -200,7 +200,7 @@ C               --Call vector routine
                      XVAR = VAR(IFAC,1)
                      YVAR = VAR(IFAC,2)
                      ZVAR = VAR(IFAC,3)
-                     CALL ROTATE (1, 1, ROTMAT, ZERO3,
+                     CALL BL_ROTATE (1, 1, ROTMAT, ZERO3,
      &                  XVAR, YVAR, ZVAR, XVAR, YVAR, ZVAR)
                      CALL VEC (IS3DIM, XNE(IFAC), YNE(IFAC), ZNE(IFAC),
      &                  XVAR, YVAR, ZVAR, VSCL, ASCL)
@@ -256,7 +256,7 @@ C               --Call vector routine
      &                  XSIG, YSIG, 0.0, VSCL, ASCL)
                   ELSE
                      ZSIG = 0.0
-                     CALL ROTATE (1, 1, ROTMAT, ZERO3,
+                     CALL BL_ROTATE (1, 1, ROTMAT, ZERO3,
      &                  XSIG, YSIG, ZSIG, XSIG, YSIG, ZSIG)
                      CALL VEC (IS3DIM, XNE(IFAC), YNE(IFAC), ZNE(IFAC),
      &                  XSIG, YSIG, ZNE(IFAC), VSCL, ASCL)

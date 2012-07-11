@@ -276,7 +276,7 @@ C   --Put rotated undeformed coordinates in undeformed arrays, if needed
         END IF
 
         IF (IS3DIM) THEN
-          CALL ROTATE (NNPSUR, A(KNPSUR), ROTMAT, ROTCEN,
+          CALL BL_ROTATE (NNPSUR, A(KNPSUR), ROTMAT, ROTCEN,
      &      A(KXN), A(KYN), A(KZN), A(KHZ), A(KVT), A(KPD))
 
 C         --Force the re-calculation of undeformed face coordinates
@@ -298,7 +298,7 @@ C   --Compute deformed nodal coordinates, if needed
      &    A(KXN), A(KYN), A(KZN), A(KDHZ), A(KDVT), A(KDPD))
 
         IF (IS3DIM) THEN
-          CALL ROTATE (NNPSUR, A(KNPSUR), ROTMAT, ROTCEN,
+          CALL BL_ROTATE (NNPSUR, A(KNPSUR), ROTMAT, ROTCEN,
      &      A(KDHZ), A(KDVT), A(KDPD), A(KDHZ), A(KDVT), A(KDPD))
         END IF
 

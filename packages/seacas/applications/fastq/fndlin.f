@@ -1,15 +1,9 @@
-C $Id: fndlin.f,v 1.1 1990/11/30 11:07:41 gdsjaar Exp $
-C $Log: fndlin.f,v $
-C Revision 1.1  1990/11/30 11:07:41  gdsjaar
-C Initial revision
-C
-C
 CC* FILE: [.QMESH]FNDLIN.FOR
 CC* MODIFIED BY: TED BLACKER
 CC* MODIFICATION DATE: 7/6/90
 CC* MODIFICATION: COMPLETED HEADER INFORMATION
 C
-      SUBROUTINE FNDLIN (MXND, LXN, NODE1, NODE2, LINE, ERR)
+      SUBROUTINE FNDLIN_FQ (MXND, LXN, NODE1, NODE2, LINE, ERR)
 C
 C***********************************************************************
 C

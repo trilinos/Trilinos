@@ -782,7 +782,7 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP SUB-REGION
 C
                      RECT = .NOT.(PENTAG .OR. TRIANG .OR.
      &                  TRNSIT .OR. FILL)
-                     IF (STEP) CALL MINMAX (MXNPER, NPER, A(K(1)),
+                     IF (STEP) CALL MINMAX_FQ (MXNPER, NPER, A(K(1)),
      &                  A(K(2)), XMIN, XMAX, YMIN, YMAX)
 CC* MODIFIED BY: TED BLACKER
 CC* MODIFICATION DATE: 7/31/90
@@ -973,7 +973,7 @@ C
                   GO TO 300
                END IF
 C
-               IF (STEP) CALL MINMAX (MXND, NNN, A(K(7)), A(K(8)),
+               IF (STEP) CALL MINMAX_FQ (MXND, NNN, A(K(7)), A(K(8)),
      &            XMIN, XMAX, YMIN, YMAX)
 C
                CALL PSCHEM (MP, ML, MS, MR, N, IPOINT, COOR, IPBOUN,
@@ -1306,8 +1306,8 @@ C
 C  BEGIN FULL SCHEME CONTROL
 C
             RECT = .NOT.(PENTAG .OR. TRIANG .OR. TRNSIT .OR. FILL)
-            IF (STEP) CALL MINMAX (MXNPER, NPER, A(K(1)), A(K(2)), XMIN,
-     &         XMAX, YMIN, YMAX)
+            IF (STEP) CALL MINMAX_FQ (MXNPER, NPER, A(K(1)), A(K(2)),
+     *        XMIN, XMAX, YMIN, YMAX)
             NNNOLD = 0
             KKKOLD = 0
 C

@@ -73,7 +73,7 @@ C   --   Uses NDIM of /DBNUMS/
      &      ' does not vary - all values = ', SVAL(1)(:LVAL)
 
       ELSE
-         CALL DBVTYP (IVAR, TYP, IDUM)
+         CALL DBVTYP_BL (IVAR, TYP, IDUM)
 
          RVAL(1) = VALMIN
          RVAL(2) = VALMAX

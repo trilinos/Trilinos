@@ -4,15 +4,15 @@ C Revision 1.1  1990/11/30 11:12:11  gdsjaar
 C Initial revision
 C
 C
-CC* FILE: [.QMESH]MINMAX.FOR
+CC* FILE: [.QMESH]MINMAX_FQ.FOR
 CC* MODIFIED BY: TED BLACKER
 CC* MODIFICATION DATE: 7/6/90
 CC* MODIFICATION: COMPLETED HEADER INFORMATION
 C
-      SUBROUTINE MINMAX (NDIM, N, X, Y, XMIN, XMAX, YMIN, YMAX)
+      SUBROUTINE MINMAX_FQ (NDIM, N, X, Y, XMIN, XMAX, YMIN, YMAX)
 C***********************************************************************
 C
-C  SUBROUTINE MINMAX = COMPARES AND RECORDS X AND Y EXTREMES
+C  SUBROUTINE MINMAX_FQ = COMPARES AND RECORDS X AND Y EXTREMES
 C
 C***********************************************************************
 C

@@ -77,9 +77,9 @@ C   --   D2MESH - OUT - the 2D rotated mesh limits
          D2MESH(KTOP) = + RAD
 
       ELSE
-         CALL ROTATE (1, 1, ROTMAT, ROTCEN,
+         CALL BL_ROTATE (1, 1, ROTMAT, ROTCEN,
      &      ALMESH(KLFT), ALMESH(KBOT), ALMESH(KNEA), X1, Y1, RDUM)
-         CALL ROTATE (1, 1, ROTMAT, ROTCEN,
+         CALL BL_ROTATE (1, 1, ROTMAT, ROTCEN,
      &      ALMESH(KRGT), ALMESH(KTOP), ALMESH(KFAR), X2, Y2, RDUM)
          D2MESH(KLFT) = MIN (X1, X2)
          D2MESH(KRGT) = MAX (X1, X2)
