@@ -1467,6 +1467,8 @@ int nssi_service_fini(const nssi_service *service)
     nthread_lock_fini(&supported_ops_mutex);
     nthread_lock_fini(&request_args_map_mutex);
 
+    time_to_die=false;
+
     return NSSI_OK;
 }
 
