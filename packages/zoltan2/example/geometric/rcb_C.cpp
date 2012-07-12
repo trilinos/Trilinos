@@ -27,7 +27,7 @@ using std::vector;
 // for global ids?
 //
 // If Zoltan2 was compiled with explicit instantiation, we will
-// use the the library's data types.  These macros are defined
+// use the library's data types.  These macros are defined
 // in Zoltan2_config.h.
 
 #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
