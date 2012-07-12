@@ -440,10 +440,11 @@ STKUNIT_UNIT_TEST(norm, string_function)
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 
   /// indirection
+  std::cout << "tmp srk start..." << std::endl;
   StringFunction sfxyz_2("sfxyz", Name("sfxyz_2"), Dimensions(3), Dimensions(1) );
   l2Norm(sfxyz_2, sfx_res);
   sfx_expect = 0.0240562612162344;
-  // FIXME STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 
   /// the function to be integrated (but over a rotated domain):  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py)
   /// now rotate the mesh
@@ -461,6 +462,40 @@ STKUNIT_UNIT_TEST(norm, string_function)
     STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
     STKUNIT_EXPECT_TRUE(false);
   }
+}
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
+STKUNIT_UNIT_TEST(norm, string_function_1)
+{
+  EXCEPTWATCH;
+  LocalFixture     fix(4);
+  mesh::fem::FEMMetaData&        metaData     = fix.metaData;
+  mesh::BulkData&        bulkData     = fix.bulkData;
+  //PerceptMesh&        eMesh     = fix.eMesh;
+  //mesh::FieldBase*       coords_field = fix.coords_field;
+  StringFunction   sfx          = fix.sfx;
+  ConstantFunction sfx_res      = fix.sfx_res;
+
+  /// Create the operator that will do the work
+  /// get the l2 norm
+  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  if (0) l2Norm(sfx, sfx_res);
+
+  /// the function to be integrated:  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest1.py)
+  StringFunction sfxyz("x*y*z", Name("sfxyz"), Dimensions(3), Dimensions(1) );
+  //l2Norm(sfxyz, sfx_res);
+  //sfx_expect = 0.0240562612162344;
+  //STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
+
+  /// indirection
+  std::cout << "tmp srk start..." << std::endl;
+  StringFunction sfxyz_first("sfxyz", Name("sfxyz_first"), Dimensions(3), Dimensions(1) );
+  l2Norm(sfxyz_first, sfx_res);
+  double sfx_expect = 0.0240562612162344;
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 }
 
 //=============================================================================

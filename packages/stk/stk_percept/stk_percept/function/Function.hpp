@@ -196,6 +196,10 @@ namespace stk
       static const Function& Identity;
       //static Function Zero;
 
+      /// Verify that the last dimensions of @param in and @param out are the same; this allows Functions
+      ///   to be invoked at multiple points where the first M indices represent an M-d array of points
+      ///   to evaluate the function, while the last N indices should match the Functions domain and
+      ///   codomain dimensions.
       bool argsAreValid(const MDArray& in, const MDArray& out);
 
     protected:

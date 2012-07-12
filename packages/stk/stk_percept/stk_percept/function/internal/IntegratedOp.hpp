@@ -205,8 +205,6 @@ namespace stk
         /// it currently.
 
         // create an array that stk::percept::Function will like to hold the results
-
-
         ivDims[ivDims.size()-1] = m_nDOFs;
 
         MDArray iv_mda ( Teuchos::Array<int>(ivDims.begin(), ivDims.end()));
@@ -230,7 +228,9 @@ namespace stk
 
             // get the integral
             if (m_accumulation_type == ACCUMULATE_SUM)
-              Io(iv, wXdJ, COMP_BLAS);
+              {
+                Io(iv, wXdJ, COMP_BLAS);
+              }
 
             //optional design:
             //

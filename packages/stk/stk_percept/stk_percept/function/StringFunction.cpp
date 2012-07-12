@@ -1,3 +1,13 @@
+#define DOPRINT 0
+
+#if DOPRINT
+#define PRINTQ(a) do { std::cout << QUOTE(a) << a << std::endl; } while(0)
+#define PRINT(a) do { std::cout << a << std::endl; } while(0)
+#else
+#define PRINTQ(a) do { } while(0)
+#define PRINT(a) do {  } while(0)
+#endif
+
 #include <string>
 #include <sstream>
 #include <stdexcept>
@@ -108,14 +118,15 @@ namespace stk
     void StringFunction::evalFunctions(MDArray& inp, double time_value_optional)
     {
       EXCEPTWATCH;
-      //static MDArray out(3); // FIXME
       std::map<Function *, std::vector<double> >::iterator it = m_func_to_value.begin();
       const std::map<Function *, std::vector<double> >::iterator it_end = m_func_to_value.end();
 
-      //Evaluate the function and store the answer in it's bound location
+      //Evaluate the function and store the answer in its bound location
       for(; it != it_end; ++it)
         {
           Function& func = *it->first;
+
+          PRINTQ(func.getName());
 
           // check to avoid infinite recursion
           if (&func == this)
@@ -128,7 +139,6 @@ namespace stk
           VERIFY_OP(func.getNewDomain().rank(), ==, 1, "StringFunction::evalFunctions: functions must be defined with domain/codomain of rank 1 for now");
           VERIFY_OP(func.getNewCodomain().rank(), ==, 1, "StringFunction::evalFunctions: functions must be defined with domain/codomain of rank 1 for now");
           int numCells = 1;
-          //                  double max_val = std::numeric_limits<double>::max();
 
           MDArray f_inp = MDArray(numCells, func.getNewDomain().dimension(0));
           MDArray f_out = MDArray(numCells, func.getNewCodomain().dimension(0));
@@ -140,15 +150,10 @@ namespace stk
               f_inp(0, iDim) = inp( iDim);
             }
 
-          //VERIFY_OP(!m_have_element, || , !m_have_bucket, "StringFunction::evalFunctions: can't have both element and bucket");
           if (m_have_element)
             {
               func(f_inp, f_out, *m_element, m_parametric_coordinates, time_value_optional); 
             }
-          //           else if (m_have_bucket)
-          //             {
-          //               func(f_inp, f_out, *m_bucket, m_parametric_coordinates, time_value_optional); 
-          //             }
           else
             {
               func(f_inp, f_out); 
@@ -180,18 +185,6 @@ namespace stk
 
     Teuchos::RCP<Function > StringFunction::derivative_test(MDArrayString& deriv_spec)
     {
-#if 1
-      {
-        std::string str1="x+y+x";
-        std::string eps_string = boost::lexical_cast<std::string>(1.e-10);
-
-        //replace(str1, "x", "(x+1.e-10)");
-        Util::replace(str1, "x", "(x+"+eps_string+")");
-        std::cout << "str1= " << str1 << std::endl;
-        //Util::pause(true,"tmp str1");
-      }
-#endif      
-
       bool debug=true;
       std::string fstr = m_func_string;
       // FIXME this is just for a simple test and only works for linear functions
@@ -230,7 +223,6 @@ namespace stk
       //Util::pause(true, "tmp:: StringFunction::derivative");
       return Teuchos::rcp(new StringFunction(out_str.c_str(), Name(new_name), Dimensions(3), Dimensions(outputDim) ));
     }
-
 
 
     Teuchos::RCP<Function > StringFunction::derivative_test_fd(MDArrayString& deriv_spec, double eps)
@@ -284,7 +276,7 @@ namespace stk
       std::string new_name = "deriv_"+fname;
       //std::cout << "fname= " << fname << " new_name= " << new_name << std::endl;
       //Util::pause(true, "tmp:: StringFunction::derivative");
-      // FIXME
+
       return Teuchos::rcp(new StringFunction(m_gradient_string.c_str(), Name(new_name), Dimensions(3), Dimensions(3) ));
     }
 
@@ -308,6 +300,7 @@ namespace stk
     {
       EXCEPTWATCH;
       argsAreValid(inp, out);
+      PRINT("tmp srk StringFunction::operator() getName()= " << getName() << " inp= " << inp << " out= " << out);
 
       int domain_rank   = m_domain_dimensions.size();
       int codomain_rank = m_codomain_dimensions.size();
@@ -322,8 +315,8 @@ namespace stk
       int out_offset    = out_rank - codomain_rank;
 
       // returns 1,1,1,... etc. if that dimension doesn't exist
-      static int n_inp_points[3] = {1,1,1};
-      static int n_out_points[3] = {1,1,1};
+      int n_inp_points[3] = {1,1,1};
+      int n_out_points[3] = {1,1,1};
       first_dimensions(inp, inp_offset, n_inp_points);  
       first_dimensions(out, out_offset, n_out_points);  
 
@@ -332,15 +325,17 @@ namespace stk
       int nInDim  = m_domain_dimensions[0];
       int nOutDim = m_codomain_dimensions[0];
 
-      static MDArray inp_loc(3);
-      static MDArray out_loc(3);
-      if (inp_loc.dimension(0) != nInDim)
-        inp_loc.resize( nInDim);
-      if (out_loc.dimension(0) != nOutDim)
-        out_loc.resize( nOutDim);
+      MDArray inp_loc(nInDim);
+      MDArray out_loc(nOutDim);
+//       if (inp_loc.dimension(0) != nInDim)
+//         inp_loc.resize( nInDim);
+//       if (out_loc.dimension(0) != nOutDim)
+//         out_loc.resize( nOutDim);
 
       enum { maxRank = 3};
       int iDim[maxRank-1] = {0,0};
+
+      PRINT("getName()= " << getName() << " n_inp_points= " << n_inp_points[0] << " " << n_inp_points[1] << " " << n_inp_points[2] << " nInDim= " << nInDim);
 
       for (iDim[0] = 0; iDim[0] < n_inp_points[0]; iDim[0]++)
         {
@@ -459,9 +454,7 @@ namespace stk
                       }
                       break;
                     }
-
                 }
-
 
               if (m_func_to_value.size())
                 {
@@ -473,18 +466,18 @@ namespace stk
                 {
                   m_v.resize(nOutDim);
                 }
-//               if ((int)m_g.size() != nOutDim)
-//                 {
-//                   m_g.resize(nOutDim);
-//                 }
 
+              PRINT("getName()= " << getName() << " about to evaluate m_functionExpr... iDim[0] = " << iDim[0] << " iDim[1]= " << iDim[1]);
               if(nOutDim == 1)
                 m_v[0] = m_functionExpr.evaluate();
               else
                 m_functionExpr.evaluate();
+              PRINT("getName()= " << getName() << " done to evaluate m_functionExpr... iDim[0] = " << iDim[0] << " iDim[1]= " << iDim[1]);
 
               for (int iOutDim = 0; iOutDim < nOutDim; iOutDim++)
                 {
+                  //PRINTQ(m_v[iOutDim]);
+
                   if (out_rank == 1)
                     out(iOutDim) = m_v[iOutDim];
                   else if (out_rank == 2)
@@ -498,6 +491,9 @@ namespace stk
                 }
             }
         }
+      PRINT("getName()= " << getName() << " done in operator()");
+      //if (getName() == "sfxyz_first") exit(123);
+
     }
 
     ///  Dimensions of parametric_coordinates and input_phy_points are required to be ([P],[D])
@@ -505,6 +501,8 @@ namespace stk
     void StringFunction::operator()(MDArray& input_phy_points, MDArray& output_values,
                                     const stk::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional) 
     {
+      PRINT("tmp srk StringFunction::operator(element) getName()= " << getName() << " input_phy_points= " << input_phy_points << " output_values= " << output_values);
+
       argsAreValid(input_phy_points, output_values);
       argsAreValid(parametric_coordinates, output_values);
 
@@ -533,6 +531,8 @@ namespace stk
     void StringFunction::operator()(MDArray& input_phy_points, MDArray& output_values,
                                     const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional) 
     {
+      PRINT("tmp srk StringFunction::operator(bucket) getName()= " << getName() << " input_phy_points= " << input_phy_points << " output_values= " << output_values);
+
       VERIFY_OP(input_phy_points.rank(), ==, 3, "StringFunction::operator() must pass in input_phy_points(numCells, numPointsPerCell, spaceDim)");
       int nPoints = input_phy_points.dimension(1);
       int nSpaceDim = input_phy_points.dimension(2);
@@ -572,7 +572,6 @@ namespace stk
 
       bool use_funcs = true;
       //Not a parameter... so see if it matches the normal stuff
-#define DOPRINT 0
       if (DOPRINT) std::cout << " resolve: name= " << name << " " ;
       if (!(name).compare("x"))
         {
@@ -601,59 +600,17 @@ namespace stk
           if (DOPRINT) std::cout << "bind to v = " <<  name << std::endl;
           (*var_it).second->bind(m_v[0]);
         }
-//       else if (!(name).compare("g"))
-//         {
-//           if (DOPRINT) std::cout << "bind to g = " << name << std::endl;
-//           (*var_it).second->bind(m_g[0]);
-//         }
-      //   else if (!(name).compare("g"))
-      //     (*var_it).second->bind(g[0]);
-      /*
-        else if (parameters->exists(name))
-        {
-        const Real &const_param = parameters->get(name)->value();
-        Real &param = const_cast<Real &>(const_param);
-
-        (*var_it).second->bind(param);
-        }
-        else if(global_params)
-        {
-        if (global_params->exists(name))
-        {
-        const Real &const_param = global_params->get(name)->value();
-        Real &param = const_cast<Real &>(const_param);
-
-        (*var_it).second->bind(param);
-        }
-        }
-        else if(use_funcs)
-        {
-        if (use_funcs->exists(name))
-        {
-        const String & func_name = use_funcs->get(name)->value();
-
-        Function * func = FunctionFactory::instance()->getFunction(region, func_name);
-        func_to_value[func] = std::vector<double>(func->getDimension(),0.0);
-
-        //Bind that solution in
-        (*var_it).second->bind(func_to_value[func][0]);
-        }
-        }
-      */
-
       else if(use_funcs)
         {
           if (DOPRINT) std::cout << "bind to function= " << name << std::endl;
           Function * func = Function::getNameToFunctionMap()[name];
           if (DOPRINT) std::cout << "bind to function= " << func << std::endl;
-          //const String & func_name = use_funcs->get(name)->value();
           int func_rank = func->getCodomainDimensions().size();
           int func_dim = func->getCodomainDimensions()[func_rank-1];
           if (func)
             {
               //m_func_to_value[func] = std::vector<double>(func->getDomainDimensions()[0], 0.0); // FIXME for multi points
               m_func_to_value[func] = std::vector<double>(func_dim, 0.0); // FIXME for multi points
-
             }
           else
             {

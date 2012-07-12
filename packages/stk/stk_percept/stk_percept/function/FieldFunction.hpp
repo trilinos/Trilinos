@@ -192,8 +192,6 @@ namespace stk
       const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(bucket_or_element);
 
       unsigned stride = 0;
-      //double * fdata_bucket = PerceptMesh::field_data( m_my_field , bucket, &stride);
-      // intentionally ignoring return value to get around compiler warning
       PerceptMesh::field_data( m_my_field , bucket_or_element, &stride);
 
       unsigned nDOF = stride;
@@ -210,12 +208,7 @@ namespace stk
 
       shards::CellTopology topo(cell_topo_data);
       int numNodes = topo.getNodeCount();
-      int cellDim  = topo.getDimension();
-      if (0)
-        {
-          MDArray cellWorkset(numCells, numNodes, cellDim);
-          if (0) cellWorkset(0,0,0) = 0.0;
-        }
+      //int cellDim  = topo.getDimension();
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 2" << std::endl;
 
       // map cell topology to a basis
@@ -234,7 +227,6 @@ namespace stk
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 3" << std::endl;
       VERIFY_OP(basis.get(), != , 0, "FieldFunction::operator() basis is null");
       
-
       int numBases = basis->getCardinality();
       if (numBases != numNodes)
         {
@@ -249,7 +241,6 @@ namespace stk
       // ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
       MDArray transformed_basis_values(numCells, numBases, numInterpPoints); 
 
-
       MDArray Jac;
       MDArray JacInverse;
       if (m_get_derivative)
@@ -258,7 +249,6 @@ namespace stk
           transformed_basis_values.resize(numCells, numBases, numInterpPoints, spatialDim);
           MDArray cellWorkset(numCells, numNodes, spatialDim);
           PerceptMesh::fillCellNodes(bucket_or_element,  m_coordinatesField, cellWorkset, spatialDim);
-          //im.m_cub->getCubature(xi, wt);
           Jac.resize(numCells, numInterpPoints, spatialDim, spatialDim);
           JacInverse.resize(numCells, numInterpPoints, spatialDim, spatialDim);
           CellTools<double>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
@@ -273,12 +263,9 @@ namespace stk
       MDArray field_data_values(numCells, numBases);
       MDArray field_data_values_dof(numCells, numBases, nDOF);
 
-      //const mesh::PairIterRelation elem_nodes = bucket_or_element.relations( mesh::Node );
-
       // ([P],[D])  [P] points in [D] dimensions
-      if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 4a, par= \n" << parametric_coordinates << std::endl;
-
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) parametric_coordinates = \n " << parametric_coordinates << std::endl;
+
       {
         EXCEPTWATCH;
         basis->getValues(basis_values, parametric_coordinates, m_get_derivative ?  Intrepid::OPERATOR_GRAD : Intrepid::OPERATOR_VALUE );
@@ -315,12 +302,6 @@ namespace stk
                 {
                   field_data_values(iCell, iNode) = field_data_values_dof(iCell, iNode, iDOF);
                   if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iNode= " << iNode << "iDOF= " << iDOF << " fd= " << field_data_values(iCell, iNode) << std::endl;
-                  if (0 && iDOF==0 && iNode < 4)
-                    std::cout << "tmp iNode= " << iNode << " coord= " 
-                              << field_data_values_dof(iCell, iNode, 0) << " "
-                              << field_data_values_dof(iCell, iNode, 1) << " "
-                      //<< field_data_values_dof(iCell, iNode, 2) << " "
-                              << std::endl;
                 }
             }
 
@@ -334,8 +315,6 @@ namespace stk
 
           if (m_get_derivative)
             {
-              //std::cout << "tmp srk num_grad= " << num_grad << std::endl;
-
               for (int iDim = 0; iDim < num_grad; iDim++)
                 {
                   int jDim = -1;
@@ -362,8 +341,6 @@ namespace stk
                 {
                   for (int iPoint = 0; iPoint < numInterpPoints; iPoint++)
                     {
-                      //output_field_values(iCell, iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
-                      //output_field_values(0, iDOF) = loc_output_field_values(iCell, iPoint);
                       output_field_values(iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
                       if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " ofd= " << output_field_values(iPoint, iDOF) << std::endl;
                     }

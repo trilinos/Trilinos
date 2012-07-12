@@ -116,6 +116,7 @@ namespace stk
       (*this)(input_phy_points, output_field_values, time);
       m_parallelEval = true;
     }
+
     void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values, double time)
     {
       EXCEPTWATCH;
@@ -132,8 +133,6 @@ namespace stk
 
       MDArray output_field_values_local = output_field_values;
 
-      //FIXME
-#if 1
       if (!m_searcher)
         {
           switch (m_searchType)
@@ -161,7 +160,6 @@ namespace stk
           m_searcher->setupSearch();
           //std::cout << "setupSearch...done" << std::endl;
         }
-#endif
 
       int numInputPoints = 1;
       int rankInput = input_phy_points.rank();
@@ -274,25 +272,7 @@ namespace stk
                       throw std::runtime_error("FieldFunction::operator() in local eval mode and didn't find element - logic error");
                     }
                   double max_val = std::numeric_limits<double>::max();
-#if 0
-                  for (int iDOF = 0; iDOF < nDOF; iDOF++)
-                    {
-                      if (output_field_values_local.rank() == 1)
-                        {
-                          output_field_values_local( iDOF) = max_val;
-                        }
-                      else if (output_field_values_local.rank() == 2)
-                        {
-                          output_field_values_local(iPoint, iDOF) = max_val;
-                        }
-                      else if (output_field_values_local.rank() == 3)
-                        {
-                          output_field_values_local(iCell, iPoint, iDOF) = max_val;
-                        }
-                    }
-#else
                   output_field_values_local.initialize(max_val);
-#endif
                 }
 
               // make sure it is found somewhere
@@ -310,22 +290,7 @@ namespace stk
 
               if (m_parallelEval)
                 {
-                  //void stk_percept_global_lex_min(stk::ParallelMachine comm,  int n , T local_min[] , T global_min[] );
-
                   stk_percept_global_lex_min( m_bulkData->parallel(), output_field_values.size(), &output_field_values_local[0], &output_field_values[0]);
-#if 0
-                  if (Util::getFlag(9828)) std::cout <<  "P[" << Util::get_rank() << "] ofv.size= " << output_field_values.size() << std::endl;
-                  if (Util::getFlag(9828)) std::cout <<  "P[" << Util::get_rank() << "] ofv_l.size= " << output_field_values_local.size() << std::endl;
-                  if (1 && Util::getFlag(9828)) std::cout <<  "P[" << Util::get_rank() << "] ofv= "
-                                                     << output_field_values[0] << " "
-                                                     << output_field_values[1] << " "
-                                                     << output_field_values[2] << " "
-                                                     << " ofv_local= "
-                                                     << output_field_values_local[0] << " "
-                                                     << output_field_values_local[1] << " "
-                                                     << output_field_values_local[2] << " "
-                                                     << std::endl;
-#endif
                 }
               else
                 {
