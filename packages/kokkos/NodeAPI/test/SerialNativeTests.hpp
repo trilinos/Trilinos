@@ -51,7 +51,7 @@ namespace {
   using Kokkos::SerialNode;
 
   template <>
-  std::pair<double,double> nativeTimings<float,SerialNode>(int N, int numIters, float &result) {
+  std::pair<double,double> nativeTimings<float,SerialNode>(int N, int numIters, float &result, const RCP<SerialNode> &node) {
     std::pair<double,double> ret;
     Teuchos::Time iTime("float,SerialNode init"), sTime("float,SerialNode sum");
     Teuchos::ArrayRCP<float> buff = Teuchos::arcp<float>(N);
@@ -82,7 +82,7 @@ namespace {
   }
 
   template <>
-  std::pair<double,double> nativeTimings<int,SerialNode>(int N, int numIters, int &result) {
+  std::pair<double,double> nativeTimings<int,SerialNode>(int N, int numIters, int &result, const RCP<SerialNode> &node) {
     std::pair<double,double> ret;
     Teuchos::Time iTime("int,SerialNode init"), sTime("int,SerialNode sum");
     Teuchos::ArrayRCP<int> buff = Teuchos::arcp<int>(N);

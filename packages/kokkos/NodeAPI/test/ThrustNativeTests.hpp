@@ -56,7 +56,7 @@ namespace {
   using Kokkos::ThrustGPUNode;
 
   template <>
-  std::pair<double,double> nativeTimings<float,ThrustGPUNode>(int N, int numIters, float &result) {
+  std::pair<double,double> nativeTimings<float,ThrustGPUNode>(int N, int numIters, float &result, const RCP<ThrustGPUNode> &node) {
     std::pair<double,double> ret;
     Teuchos::Time iTime("float,ThrustGPUNode init"), sTime("float,ThrustGPUNode sum");
     thrust::device_vector<float> buff;
@@ -66,7 +66,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         thrust_float_init(buff);
       }
-      thrustNode_->sync();
+      node->sync();
     }
     float sum;
     {
@@ -74,7 +74,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         sum = thrust_float_sum(buff);
       }
-      thrustNode_->sync();
+      node->sync();
     }
     result = sum;
     ret.first  = iTime.totalElapsedTime();
@@ -83,7 +83,7 @@ namespace {
   }
 
   template <>
-  std::pair<double,double> nativeTimings<int,ThrustGPUNode>(int N, int numIters, int &result) {
+  std::pair<double,double> nativeTimings<int,ThrustGPUNode>(int N, int numIters, int &result, const RCP<ThrustGPUNode> &node) {
     std::pair<double,double> ret;
     Teuchos::Time iTime("int,ThrustGPUNode init"), sTime("int,ThrustGPUNode sum");
     thrust::device_vector<int> buff;
@@ -93,7 +93,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         thrust_int_init(buff);
       }
-      thrustNode_->sync();
+      node->sync();
     }
     int sum;
     {
@@ -101,7 +101,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         sum = thrust_int_sum(buff);
       }
-      thrustNode_->sync();
+      node->sync();
     }
     result = sum;
     ret.first  = iTime.totalElapsedTime();

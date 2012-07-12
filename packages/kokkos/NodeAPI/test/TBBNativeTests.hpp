@@ -84,7 +84,7 @@ namespace {
   };
 
   template <>
-  std::pair<double,double> nativeTimings<float,TBBNode>(int N, int numIters, float &result) {
+  std::pair<double,double> nativeTimings<float,TBBNode>(int N, int numIters, float &result, const RCP<TBBNode> &node) {
     std::pair<double,double> ret;
     Teuchos::Time iTime("float,TBBNode init"), sTime("float,TBBNode sum");
     Teuchos::ArrayRCP<float> buff = Teuchos::arcp<float>(N);
@@ -110,7 +110,7 @@ namespace {
   }
 
   template <>
-  std::pair<double,double> nativeTimings<int,TBBNode>(int N, int numIters, int &result) {
+  std::pair<double,double> nativeTimings<int,TBBNode>(int N, int numIters, int &result, const RCP<TBBNode> &node) {
     std::pair<double,double> ret;
     Teuchos::Time iTime("int,TBBNode init"), sTime("int,TBBNode sum");
     Teuchos::ArrayRCP<int> buff = Teuchos::arcp<int>(N);

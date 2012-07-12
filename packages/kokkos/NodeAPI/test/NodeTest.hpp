@@ -90,7 +90,7 @@ namespace {
   }
 
   template <class SCALAR, class NODE>
-  std::pair<double,double> nativeTimings(int N, int numIters, SCALAR &result) {
+  std::pair<double,double> nativeTimings(int N, int numIters, SCALAR &result, const RCP<NODE> &node) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
     return std::pair<double,double>(0.0,0.0);
   }
@@ -242,7 +242,7 @@ namespace {
     ////////////////////////////////////////////////////////
     // get native times
     SCALAR nativeResult;
-    std::pair<double,double> ntimes = nativeTimings<SCALAR,NODE>(N, numIters, nativeResult);
+    std::pair<double,double> ntimes = nativeTimings<SCALAR,NODE>(N, numIters, nativeResult, node);
     TEST_EQUALITY(nativeResult, expectedResult);
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////

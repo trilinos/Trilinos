@@ -52,7 +52,7 @@ namespace {
   using Kokkos::OpenMPNode;
 
   template <>
-  std::pair<double,double> nativeTimings<float,OpenMPNode>(int N, int numIters, float &result) {
+  std::pair<double,double> nativeTimings<float,OpenMPNode>(int N, int numIters, float &result, const RCP<OpenMPNode> &node) {
     std::pair<double,double> ret;
     Teuchos::Time iTime("float,OpenMPNode init"), sTime("float,OpenMPNode sum");
     Teuchos::ArrayRCP<float> buff = Teuchos::arcp<float>(N);
@@ -85,7 +85,7 @@ namespace {
   }
 
   template <>
-  std::pair<double,double> nativeTimings<int,OpenMPNode>(int N, int numIters, int &result) {
+  std::pair<double,double> nativeTimings<int,OpenMPNode>(int N, int numIters, int &result, const RCP<OpenMPNode> &node) {
     std::pair<double,double> ret;
     Teuchos::Time iTime("int,OpenMPNode init"), sTime("int,OpenMPNode sum");
     Teuchos::ArrayRCP<int> buff = Teuchos::arcp<int>(N);
