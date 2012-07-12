@@ -348,7 +348,10 @@ int nem_spread(NemSpread<T,INT> &spreader, const char *salsa_cmd_file, int subcy
   
   for (size_t i=0; i < spreader.Proc_Info[0]; i++) {
     safe_free((void**) &spreader.globals.GNodes[i]);
-    safe_free((void**) &spreader.globals.Elem_Type[i]);
+    if (spreader.globals.Elem_Type != NULL)
+      safe_free((void**) &spreader.globals.Elem_Type[i]);
+    if (spreader.globals.Proc_Global_Node_Id_Map != NULL)
+      safe_free((void**) &spreader.globals.Proc_Global_Node_Id_Map[i]);
     safe_free((void**) &spreader.globals.Proc_SS_Ids[i]);
     safe_free((void**) &spreader.globals.Proc_SS_GEMap_List[i]);
     safe_free((void**) &spreader.globals.Proc_NS_Ids[i]);
