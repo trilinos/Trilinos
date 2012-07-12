@@ -29,6 +29,63 @@ Package Release Notes:
 
 -------------------------------------------------------------------------------
 
+Epetra
+
+  - The current plan is for Epetra to support 64-bit global indices beginning
+    with Trilinos Release 11.0.  In preparation, certain Epetra member functions
+    that return "int" have been deprecated.  Existing user code should continue
+    to compile and run without any changes.  However, there will be warnings
+    when compiling.  These warnings were added to help users update their code
+    to be compatible with future releases. 
+
+    Beginning with 11.0, the deprecated functions will no longer exist, and it
+    will be necessary to use equivalent functions that return "long long". 
+    While support for 64-bit ordinal types will not be added until 11.0, the
+    interface to the new functions can be used starting with Trilinos 10.12 by
+    reconfiguring and recompiling Trilinos using the CMake option:
+
+    -DTrilinos_ENABLE_REPLACEMENT_API:BOOL=ON
+
+    To turn off all deprecation warnings in Epetra and delay making the updates
+    that will be necessary prior to using Trilinos 11.0, use the CMake option 
+
+    -DEpetra_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
+
+    Building with deprecation warnings on and fixing the warnings is recommended
+    prior to attempting to upgrade to Trilinos 11.0.
+
+ForTrilinos
+
+  - This package builds with three compilers: the IBM XL Fortran (xlf) compiler
+    versions 13.1 and higher, the Numerical Algorithms Group Fortran (nagfor)
+    compiler version 5.3 and higher, and the GNU Fortran (gfortran) compiler
+    version 4.7.0 and higher.
+
+  - The ForTrilinos interfaces have been simplified relative to their C++
+    counterparts: whereas the lack of array programming support in C++
+    necessitates passing array size as a separate argument, Fortran arrays carry
+    such information in internal descriptors so there is no need to pass array
+    sizes.
+
+  - Sample scripts for building ForTrilinos are provided in
+    Trilinos/sampleScripts.
+
+  - Building with gfortran versions before 4.8 requires setting flags that work
+    around two missing compiler features: support for final subroutines and
+    support for deferred-length character components. A sample script that sets
+    the aforementioned flags is in :
+    Trilinos/sampleScripts/mac-fortrilinos-gcc47-openmpi-debug and
+    Trilinos/sampleScripts/mac-fortrilinos-gcc47-serial for mpi and serial
+    builds respectively.  Users who build with gfortran should adopt two
+    practices to prevent memory leaks:
+      1. Construct ForTrilinos objects using the ForTrilinos constructor
+         subroutines (do not use ForTrilinos constructor functions).
+      2. Manually destroy all constructed ForTrilinos objects using by
+         invoking the object's "force_finalize" type-bound procedure.
+
+  - The project is primarily user-driven; new interfaces are developed at the
+    request of Trilinos users.
+
 Kokkos
 
   - Major (backwards-compatible, internal) refactor of local sparse operators,
