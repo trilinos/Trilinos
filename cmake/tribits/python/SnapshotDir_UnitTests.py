@@ -84,8 +84,8 @@ class WriteToString:
 
 def getDummyDefaultOptions():
   dummyDefaultOptions = DefaultOptions()
-  dummyDefaultOptions.setDefaultOrigDir("dummy/orig/dir")
-  dummyDefaultOptions.setDefaultDestDir("dummy/dest/dir")
+  dummyDefaultOptions.setDefaultOrigDir("dummy/orig/dir/")
+  dummyDefaultOptions.setDefaultDestDir("dummy/dest/dir/")
   return dummyDefaultOptions
 
 
@@ -126,7 +126,7 @@ g_gitRemote = "IT: git remote -v; 0; 'origin\tsome-url-location (fetch)'\n"
 
 g_gitLog = "IT: git log  --pretty=.*; 0; 'one commit msg'\n"
 
-g_rsync = "IT: rsync -av --delete dummy/orig/dir dummy/dest/dir; 0; 'sync passed'\n"
+g_rsync = "IT: rsync -av --delete --exclude=.* dummy/orig/dir/ dummy/dest/dir/; 0; 'sync passed'\n"
 
 g_gitAdd = "IT: git add \.; 0; 'added some files'\n"
 
@@ -147,8 +147,8 @@ class test_snapshot_dir(unittest.TestCase):
       [],
       [
         "Script: snapshot-dir\.py",
-        "--orig-dir='dummy/orig/dir'",
-        "--dest-dir='dummy/dest/dir'"
+        "--orig-dir='dummy/orig/dir/'",
+        "--dest-dir='dummy/dest/dir/'"
         ]
       )
 
@@ -181,8 +181,8 @@ class test_snapshot_dir(unittest.TestCase):
         ],
       [
         "Script: snapshot-dir\.py",
-        "--orig-dir='dummy/orig/dir'",
-        "--dest-dir='dummy/dest/dir'"
+        "--orig-dir='dummy/orig/dir/'",
+        "--dest-dir='dummy/dest/dir/'"
         ]
      )
 
