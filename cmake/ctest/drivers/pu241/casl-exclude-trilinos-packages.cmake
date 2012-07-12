@@ -25,4 +25,5 @@ SET(${PROJECT_NAME}_EXCLUDE_PACKAGES
   Optika
   Mesquite
   FEApp
+  Zoltan2
   )
