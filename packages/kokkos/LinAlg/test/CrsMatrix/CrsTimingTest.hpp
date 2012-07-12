@@ -55,7 +55,6 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
-#include "Kokkos_FirstTouchSparseOps.hpp"
 
 namespace NodeTest {
   extern int N;
@@ -101,7 +100,7 @@ namespace {
   /////////////////////////////////
   /////////////////////////////////
   //  tests
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, TimingTest, BaseOPS )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, TimingTest, Allocator )
   {
     typedef double                             Scalar;
     typedef typename BaseOPS::ordinal_type     Ordinal;
@@ -190,8 +189,8 @@ namespace {
 
   #define TEST_NODE( NODE ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( AAAAA_Is_First, InitNode, NODE ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, DefaultHostSparseOps<void,int,NODE> ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, FirstTouchSparseOps<void,int,NODE> )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, DefaultHostSparseOps<void,int,NODE,DefaultCRSAllocator<NODE> > ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, DefaultHostSparseOps<void,int,NODE,FirstTouchCRSAllocator<NODE> > )
 
 }
 

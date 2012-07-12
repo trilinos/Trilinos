@@ -5,4 +5,5 @@ NodeAPI:
 
 LinAlg:
 * add CUSP sparse mat-vec implementations for CUDA nodes
+* remove "size_t" from rowPtrs, switch to "int"
 * add CUBLAS GEMM for CUDA nodes

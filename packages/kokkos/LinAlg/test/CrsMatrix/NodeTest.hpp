@@ -55,7 +55,6 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
-#include "Kokkos_FirstTouchSparseOps.hpp"
 
 namespace NodeTest {
   extern int N;
@@ -77,7 +76,6 @@ namespace {
   using Kokkos::MultiVector;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultHostSparseOps;
-  using Kokkos::FirstTouchSparseOps;
 
   template <class NODE>
   RCP<NODE> getNode() {
@@ -189,8 +187,8 @@ namespace {
 
   #define TEST_NODE( NODE ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( AAAAA_Is_First, InitNode, NODE ) \
-    typedef DefaultHostSparseOps<void,int,NODE> NoFirstTouch; \
-    typedef FirstTouchSparseOps<void,int,NODE>  YesFirstTouch; \
+    typedef DefaultHostSparseOps<void,int,NODE,Kokkos::details::DefaultCRSAllocator   <NODE> >   NoFirstTouch; \
+    typedef DefaultHostSparseOps<void,int,NODE,Kokkos::details::FirstTouchCRSAllocator<NODE> >  YesFirstTouch; \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, NoFirstTouch) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, YesFirstTouch)
 

@@ -60,27 +60,27 @@ namespace Kokkos {
    */
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {
-    typedef DefaultHostSparseOps <void  ,Ordinal,Node>  SparseOps;
+    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::DefaultCRSAllocator<Node> >  SparseOps;
     typedef DefaultBlockSparseOps<Scalar,Ordinal,Node>  BlockSparseOps;
     typedef DefaultRelaxation    <Scalar,Ordinal,Node>  Relaxations;
   };
 
-// #ifndef HAVE_KOKKOS_NO_FIRST_TOUCH_MATVEC_ALLOCATION
-//   class TBBNode;
-//   template <class Scalar, class Ordinal>
-//   struct DefaultKernels<Scalar,Ordinal,TBBNode> {
-//     typedef FirstTouchSparseOps  <void  ,Ordinal,TBBNode>  SparseOps;
-//     typedef DefaultBlockSparseOps<Scalar,Ordinal,TBBNode>  BlockSparseOps;
-//     typedef DefaultRelaxation    <Scalar,Ordinal,TBBNode>  Relaxations;
-//   };
-//   class TPINode;
-//   template <class Scalar, class Ordinal>
-//   struct DefaultKernels<Scalar,Ordinal,TPINode> {
-//     typedef FirstTouchSparseOps  <void  ,Ordinal,TPINode>  SparseOps;
-//     typedef DefaultBlockSparseOps<Scalar,Ordinal,TPINode>  BlockSparseOps;
-//     typedef DefaultRelaxation    <Scalar,Ordinal,TPINode>  Relaxations;
-//   };
-// #endif
+#ifdef HAVE_KOKKOS_FIRST_TOUCH_MATVEC_ALLOCATION
+  class TBBNode;
+  template <class Scalar, class Ordinal>
+  struct DefaultKernels<Scalar,Ordinal,TBBNode,details::FirstTouchCRSAllocator<TBBNode> > {
+    typedef FirstTouchSparseOps  <void  ,Ordinal,TBBNode>  SparseOps;
+    typedef DefaultBlockSparseOps<Scalar,Ordinal,TBBNode>  BlockSparseOps;
+    typedef DefaultRelaxation    <Scalar,Ordinal,TBBNode>  Relaxations;
+  };
+  class TPINode;
+  template <class Scalar, class Ordinal>
+  struct DefaultKernels<Scalar,Ordinal,TPINode,details::FirstTouchCRSAllocator<TPINode> > {
+    typedef FirstTouchSparseOps  <void  ,Ordinal,TPINode>  SparseOps;
+    typedef DefaultBlockSparseOps<Scalar,Ordinal,TPINode>  BlockSparseOps;
+    typedef DefaultRelaxation    <Scalar,Ordinal,TPINode>  Relaxations;
+  };
+#endif
 
   /** \brief Traits class providing default kernel types for CRS, block CRS and relaxation kernels.
       \ingroup kokkos_crs_ops

@@ -49,6 +49,7 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_BLAS_types.hpp>
+#include <Kokkos_DefaultSparseOps.hpp>
 
 /// \file Kokkos_EmptySparseKernelClass.hpp
 /// \brief A file containing a stub for a new sparse kernel provider,
@@ -178,24 +179,16 @@ namespace KokkosExamples {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow)
     {
-      ArrayRCP<size_t> ptrs = arcp<size_t>( numEntriesPerRow.size() + 1 );
-      ptrs[0] = 0;
-      std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
-      return ptrs;
+      return Kokkos::details::DefaultCRSAllocator<Node>::allocRowPtrs(node,numEntriesPerRow);
     }
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T> 
-    static ArrayRCP<T> allocStorage(const RCP<Node> &/*node*/, const ArrayView<const size_t> &rowPtrs)
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
     { 
-      const size_t totalNumEntries = *(rowPtrs.end()-1);
-      // alloc data
-      ArrayRCP<T> vals;
-      if (totalNumEntries > 0) vals = arcp<T>(totalNumEntries);
-      std::fill( vals.begin(), vals.end(), Teuchos::ScalarTraits<T>::zero() );
-      return vals;
+      return Kokkos::details::DefaultCRSAllocator<Node>::allocStorage(node,rowPtrs);
     }
 
     //! Finalize a graph
