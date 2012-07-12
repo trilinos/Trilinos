@@ -37,7 +37,7 @@
 #cmakedefine HAVE_MPI
 
 /* define if we want to use Boost  */
-#cmakedefine HAVE_FEI_BOOST
+/* #cmakedefine HAVE_FEI_BOOST */
 
 @FEI_DEPRECATED_DECLARATIONS@
 
