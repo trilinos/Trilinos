@@ -65,5 +65,3 @@ namespace {
 
   TEST_NODE(ThrustGPUNode)
 }
-
-#endif
