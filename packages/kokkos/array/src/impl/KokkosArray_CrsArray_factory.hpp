@@ -195,15 +195,14 @@ struct Factory< CrsArray< ValueType , DeviceOutput , MapSizeType > ,
     typedef typename row_map_type::view_type     row_map_data_type ;
     typedef typename output_type::entries_type   entries_type ;
 
-    typedef Factory< row_map_data_type , unsigned_<1> > row_map_data_factory ;
-
     // Create the row map:
 
     const size_t length = input.size();
 
     output_type output ;
 
-    output.row_map.m_data = row_map_data_factory::create( label , length + 1 );
+    output.row_map.m_data =
+      KokkosArray::create< row_map_data_type >( label , length + 1 );
 
     typename row_map_data_type::HostMirror tmp =
       create_mirror( output.row_map.m_data );

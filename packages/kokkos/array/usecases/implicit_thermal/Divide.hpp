@@ -54,7 +54,7 @@ struct Divide<Scalar , KOKKOS_MACRO_DEVICE>
 {
   typedef KOKKOS_MACRO_DEVICE                   device_type;
   typedef device_type::size_type                  size_type;
-  typedef KokkosArray::Value<Scalar , device_type>          value;
+  typedef KokkosArray::View<Scalar , device_type>          value;
 
   value den;
   value val;

@@ -57,6 +57,59 @@ namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
+
+template< class T , unsigned J = 0 >
+struct replace_type_with_size
+  : public unsigned_< sizeof(T) > {};
+
+template< class T , unsigned J >
+struct replace_type_with_size< const T , J >
+  : public unsigned_< sizeof(T) > {};
+
+template< class T >
+struct replace_type_with_size< T[] , 0 >
+{
+  typedef typename replace_type_with_size<T,1>::type type [0] ;
+  static const unsigned value = replace_type_with_size<T,1>::value ;
+};
+
+template< class T >
+struct replace_type_with_size< const T[] , 0 >
+{
+  typedef typename replace_type_with_size<T,1>::type type [0] ;
+  static const unsigned value = replace_type_with_size<T,1>::value ;
+};
+
+template< class T , unsigned J >
+struct replace_type_with_size< T[0] , J >
+{
+  typedef typename replace_type_with_size<T,J+1>::type type [0] ;
+  static const unsigned value = replace_type_with_size<T,J+1>::value ;
+};
+
+template< class T , unsigned J >
+struct replace_type_with_size< const T[0] , J >
+{
+  typedef typename replace_type_with_size<T,J+1>::type type [0] ;
+  static const unsigned value = replace_type_with_size<T,J+1>::value ;
+};
+
+
+template< class T , unsigned N , unsigned J >
+struct replace_type_with_size< T[N] , J >
+{
+  typedef typename replace_type_with_size<T,J+1>::type type [N] ;
+  static const unsigned value = replace_type_with_size<T,J+1>::value ;
+};
+
+template< class T , unsigned N , unsigned J >
+struct replace_type_with_size< const T[N] , J >
+{
+  typedef typename replace_type_with_size<T,J+1>::type type [N] ;
+  static const unsigned value = replace_type_with_size<T,J+1>::value ;
+};
+
+//----------------------------------------------------------------------------
 /** \brief  A Kokkos Array has dynamic dimensions followed by static dimensions.
  *          rank<Type>::value provides the total rank.
  *          rank_dynamic<Type>::value provides the dynamic sub-rank.
@@ -68,45 +121,20 @@ namespace Impl {
  *    rank<Type>::value == 4
  *    rank_dynamic<Type>::value == 2
  */
-template < class X ,
-           class T = typename change_empty_extent_to_zero_extent<X>::type >
-struct rank_dynamic : public unsigned_<0> {};
+template < class T , unsigned J = 0 >
+struct rank_dynamic : public unsigned_< J > {};
 
-template < class X , class T >
-struct rank_dynamic< X , T[0] >
-  : public unsigned_< rank_dynamic<T>::value + 1 > {};
+template < class T >
+struct rank_dynamic< T[] , 0 >
+  : public unsigned_< rank_dynamic<T,1>::value > {};
 
-template< class X , class T , unsigned N >
-struct rank_dynamic< X , T[N] >
-  : public unsigned_< rank_dynamic<T>::value > {};
+template < class T , unsigned J >
+struct rank_dynamic< T[0] , J >
+  : public unsigned_< rank_dynamic<T,J+1>::value > {};
 
-//----------------------------------------------------------------------------
-/** \brief  Remove the Ith extent */
-template < class X , unsigned I ,
-           class T = typename change_empty_extent_to_zero_extent<X>::type >
-struct remove_extent {
-  typedef X type ;
-};
-
-template < class X , class T , unsigned N >
-struct remove_extent<X,0,T[N]> {
-  typedef T type ;
-};
-
-template < class X , class T >
-struct remove_extent<X,0,T[0]> {
-  typedef T type ;
-};
-
-template < class X , unsigned I , class T , unsigned N >
-struct remove_extent<X,I,T[N]> {
-  typedef typename remove_extent<T,I-1>::type type[N] ;
-};
-
-template < class X , unsigned I , class T >
-struct remove_extent<X,I,T[0]> {
-  typedef typename remove_extent<T,I-1>::type type[0] ;
-};
+template< class T , unsigned N , unsigned J >
+struct rank_dynamic< T[N] , J >
+  : public unsigned_< J > {};
 
 //----------------------------------------------------------------------------
 /** \brief  The shape of a Kokkos Array with dynamic and static dimensions.
@@ -118,11 +146,17 @@ struct remove_extent<X,I,T[0]> {
  *
  *  The upper bound on the array rank is eight.
  */
-template< class Layout ,
-          class Type ,
-          unsigned RankDynamic = rank_dynamic<Type>::value ,
-          unsigned Rank        = rank<Type>::value >
+template< class Layout , class Type , unsigned RankDynamic , unsigned Rank >
 struct Shape ;
+
+template< class Layout , class Type >
+struct DefineShape {
+  typedef Shape< Layout ,
+                 typename replace_type_with_size<Type>::type ,
+                 rank_dynamic< Type >::value ,
+                 rank<         Type >::value > type ;
+};
+
 
 /** \brief  Map multi-indices.  Callable from host or device code.
  */
@@ -142,9 +176,7 @@ bool operator == ( const Shape<xLayout,xDataType,xRankDynamic,xRank> & x ,
   typedef Shape<xLayout,xDataType,xRankDynamic,xRank> x_type ;
   typedef Shape<yLayout,yDataType,yRankDynamic,yRank> y_type ;
 
-  enum { same_type = is_same< typename x_type::value_type ,
-                              typename y_type::value_type >::value };
-
+  enum { same_size = x_type::value_size == y_type::value_size };
   enum { same_rank = xRank == yRank };
 
   // the array layout only matters for 1 < rank
@@ -152,7 +184,7 @@ bool operator == ( const Shape<xLayout,xDataType,xRankDynamic,xRank> & x ,
                        is_same< typename x_type::array_layout ,
                                 typename y_type::array_layout >::value };
 
-  return same_type && same_layout && same_rank &&
+  return same_size && same_layout && same_rank &&
          x.N0 == y.N0 && x.N1 == y.N1 && x.N2 == y.N2 && x.N3 == y.N3 &&
          x.N4 == y.N4 && x.N5 == y.N5 && x.N6 == y.N6 && x.N7 == y.N7 &&
          x.Stride == y.Stride ;
@@ -169,7 +201,7 @@ bool operator != ( const Shape<xLayout,xDataType,xRankDynamic,xRank> & x ,
 
 void assert_shapes_are_equal_throw(
   const std::type_info & x_layout ,
-  const std::type_info & x_value_type ,
+  const unsigned x_value_size ,
   const unsigned x_rank , const unsigned x_stride ,
   const unsigned x_N0 , const unsigned x_N1 ,
   const unsigned x_N2 , const unsigned x_N3 ,
@@ -177,7 +209,7 @@ void assert_shapes_are_equal_throw(
   const unsigned x_N6 , const unsigned x_N7 ,
 
   const std::type_info & y_layout ,
-  const std::type_info & y_value_type ,
+  const unsigned y_value_size ,
   const unsigned y_rank , const unsigned y_stride ,
   const unsigned y_N0 , const unsigned y_N1 ,
   const unsigned y_N2 , const unsigned y_N3 ,
@@ -197,10 +229,10 @@ void assert_shapes_are_equal(
   if ( x != y ) {
     assert_shapes_are_equal_throw(
       typeid(typename x_type::array_layout),
-      typeid(typename x_type::value_type),
+      x_type::value_size ,
       x_type::rank, x.Stride, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
       typeid(typename y_type::array_layout),
-      typeid(typename y_type::value_type),
+      y_type::value_size ,
       y_type::rank, y.Stride, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
   }
 }
@@ -284,13 +316,11 @@ void assert_shape_bounds( const ShapeType & shape ,
 template < class Layout , class Type >
 struct Shape< Layout , Type , 0 , 0 >
 {
-  typedef Layout array_layout ;
-  typedef Type   data_type ;
-  typedef Type   value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 0 ;
   static const unsigned rank         = 0 ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = Type::value ;
   static const unsigned Stride       = 0 ;
 
   static const unsigned N0 = 0 ;
@@ -303,19 +333,17 @@ struct Shape< Layout , Type , 0 , 0 >
   static const unsigned N7 = 0 ;
 };
 
-template < class Layout , class Type , unsigned N >
-struct Shape< Layout , Type[N] , 0 , 1 >
+template < class Layout , class Type >
+struct Shape< Layout , Type , 0 , 1 >
 {
   typedef Layout  array_layout ;
-  typedef Type    data_type[N] ;
-  typedef Type    value_type ;
 
   static const unsigned rank_dynamic = 0 ;
   static const unsigned rank         = 1 ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
   static const unsigned Stride       = 0 ;
 
-  static const unsigned N0 = N ;
+  static const unsigned N0 = extent<Type,0>::value ;
   static const unsigned N1 = 0 ;
   static const unsigned N2 = 0 ;
   static const unsigned N3 = 0 ;
@@ -326,15 +354,13 @@ struct Shape< Layout , Type[N] , 0 , 1 >
 };
 
 template < class Layout , class Type >
-struct Shape< Layout , Type[0] , 1 , 1 >
+struct Shape< Layout , Type , 1 , 1 >
 {
   typedef Layout  array_layout ;
-  typedef Type    data_type[0] ;
-  typedef Type    value_type ;
 
   static const unsigned rank_dynamic = 1 ;
   static const unsigned rank         = 1 ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
   static const unsigned Stride       = 0 ;
 
   unsigned N0 ;
@@ -353,13 +379,11 @@ struct Shape< Layout , Type[0] , 1 , 1 >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 0 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 0 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
 
@@ -376,13 +400,11 @@ struct Shape< Layout , Type , 0 , Rank >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 1 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 1 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
   unsigned N0 ;
@@ -399,13 +421,11 @@ struct Shape< Layout , Type , 1 , Rank >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 2 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 2 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
   unsigned N0 ;
@@ -422,13 +442,11 @@ struct Shape< Layout , Type , 2 , Rank >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 3 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 3 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
   unsigned N0 ;
@@ -445,13 +463,11 @@ struct Shape< Layout , Type , 3 , Rank >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 4 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 4 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
   unsigned N0 ;
@@ -468,13 +484,11 @@ struct Shape< Layout , Type , 4 , Rank >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 5 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 5 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
   unsigned N0 ;
@@ -491,13 +505,11 @@ struct Shape< Layout , Type , 5 , Rank >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 6 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 6 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
   unsigned N0 ;
@@ -514,13 +526,11 @@ struct Shape< Layout , Type , 6 , Rank >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 7 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 7 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
   unsigned N0 ;
@@ -537,13 +547,11 @@ struct Shape< Layout , Type , 7 , Rank >
 template< class Layout , class Type , unsigned Rank >
 struct Shape< Layout , Type , 8 , Rank >
 {
-  typedef Layout                                   array_layout ;
-  typedef Type                                     data_type ;
-  typedef typename remove_all_extents<Type>::type  value_type ;
+  typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 8 ;
   static const unsigned rank         = Rank ;
-  static const unsigned value_size   = sizeof(value_type);
+  static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
   unsigned N0 ;

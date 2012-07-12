@@ -43,14 +43,15 @@
 
 #include <gtest/gtest.h>
 
-#include <KokkosArray_MDArray.hpp>
-#include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_Value.hpp>
+#include <KokkosArray_View.hpp>
+
+#include <impl/KokkosArray_Timer.hpp>
 
 #include <KokkosArray_Host.hpp>
 
 #include <KokkosArray_Host_macros.hpp>
 #include <PerfTestHexGrad.hpp>
+#include <PerfTestBlasKernels.hpp>
 #include <PerfTestGramSchmidt.hpp>
 #include <PerfTestDriver.hpp>
 #include <KokkosArray_Clear_macros.hpp>

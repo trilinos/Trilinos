@@ -148,7 +148,8 @@ void cuda_reduce_shared( const Cuda::size_type used_warp_count )
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class ReduceTraits , class FinalizeType >
-class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Cuda > {
+class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Cuda >
+{
 public:
   typedef ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Cuda > this_type ;
   typedef          Cuda               device_type ;
@@ -491,29 +492,83 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class ReduceTraits >
-class ParallelReduce< FunctorType , ReduceTraits , void , Cuda > 
+template< typename ValueType >
+class FunctorAssignment< ValueType , Cuda >
 {
-public:
-  typedef typename ReduceTraits::value_type     value_type ;
-  typedef Value< value_type , Cuda >  view_type ;
+public :
+  typedef ValueType value_type ;
 
-  static
-  void execute( const size_t        work_count ,
-                const FunctorType & work_functor ,
-                      value_type  & result )
+  value_type * m_host ;
+  value_type * m_dev ;
+
+  FunctorAssignment( value_type & value )
+    : m_host( & value )
+    , m_dev( (value_type *) cuda_internal_reduce_multiblock_scratch_space() )
+    {}
+
+  template< typename ValueTypeDev >
+  __device__
+  void operator()( const ValueTypeDev & value ) const
+  { *m_dev = value ; }
+
+  ~FunctorAssignment()
   {
-    view_type tmp =
-      create_value< view_type >(
-        std::string("parallel_reduce_temporary_result") );
-
-    ParallelReduce< FunctorType , ReduceTraits , view_type , Cuda >
-      ::execute( work_count , work_functor , tmp );
-
-    deep_copy( result , tmp );
+    CudaMemorySpace
+      ::copy_to_host_from_device( m_host , m_dev , sizeof(value_type) );
   }
 };
 
+template< typename ValueType >
+class FunctorAssignment< View< ValueType , Cuda , Cuda > , Cuda >
+{
+public :
+
+  typedef ValueType value_type ;
+  typedef View< value_type , Cuda , Cuda > view_type ;
+
+  view_type m_view ;
+
+  FunctorAssignment( const view_type & view )
+    : m_view( view )
+    {}
+
+  template< typename ValueTypeDev >
+  __device__
+  void operator()( const ValueTypeDev & value ) const
+  { *m_view = value ; }
+};
+
+#if 1
+template< class FunctorType , class ReduceTraits , typename ValueType >
+class ParallelReduce< FunctorType , ReduceTraits ,
+                      View< ValueType , Cuda , Cuda > , Cuda >
+{
+public:
+
+  typedef View< ValueType , Cuda , Cuda >  view_type ;
+
+  struct FunctorAssignment
+  {
+    view_type m_view ;
+
+    FunctorAssignment( const view_type & view ) : m_view( view ) {}
+
+    template< typename ValueTypeDev >
+    __device__
+    void operator()( const ValueTypeDev & value ) const
+      { *m_view = value ; }
+  };
+
+  static
+  void execute( const size_t         work_count ,
+                const FunctorType  & functor ,
+                const view_type    & view )
+  {
+    ParallelReduce< FunctorType , ReduceTraits, FunctorAssignment , Cuda >
+      ::execute( work_count , functor , FunctorAssignment( view ) );
+  }
+};
+#endif
 
 } // namespace Impl
 } // namespace KokkosArray

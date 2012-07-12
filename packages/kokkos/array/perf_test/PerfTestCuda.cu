@@ -44,15 +44,16 @@
 #include <iostream>
 #include <iomanip>
 
-#include <KokkosArray_MDArray.hpp>
-#include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_Value.hpp>
+#include <KokkosArray_View.hpp>
+
+#include <impl/KokkosArray_Timer.hpp>
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
 
 #include <KokkosArray_Cuda_macros.hpp>
 #include <PerfTestHexGrad.hpp>
+#include <PerfTestBlasKernels.hpp>
 #include <PerfTestGramSchmidt.hpp>
 #include <PerfTestDriver.hpp>
 #include <KokkosArray_Clear_macros.hpp>
@@ -65,12 +66,12 @@ void test_device_cuda_init() {
 
 void test_cuda_hexgrad(int exp_beg, int exp_end)
 {
-  run_test_hexgrad< KokkosArray::Cuda>( exp_beg , exp_end );
+  Test::run_test_hexgrad< KokkosArray::Cuda>( exp_beg , exp_end );
 }
 
 void test_cuda_gramschmidt(int exp_beg, int exp_end)
 {
-  Test::run_test_gramschmidt< KokkosArray::Cuda>( exp_beg , exp_end );
+   Test::run_test_gramschmidt< KokkosArray::Cuda>( exp_beg , exp_end );
 }
 
 } // namespace Test

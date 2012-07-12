@@ -44,7 +44,7 @@
 #include <iostream>
 #include <math.h>
 
-#include <KokkosArray_Value.hpp>
+#include <KokkosArray_View.hpp>
 #include <KokkosArray_MultiVector.hpp>
 #include <KokkosArray_MDArray.hpp>
 

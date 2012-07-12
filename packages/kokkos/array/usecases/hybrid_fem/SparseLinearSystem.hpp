@@ -111,51 +111,11 @@ void fill( const double alpha ,
 template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
             const MultiVector< Scalar , Device > & x ,
-            const MultiVector< Scalar , Device > & y ,
-            const Value< double , Device > & temp_result )
-{
-  typedef Impl::Dot< Scalar , Device , Impl::unsigned_<2> > op_type ;
-
-  Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
-      ::apply( data_map.count_owned , x , y , temp_result );
-
-  double global_result = 0 ;
-
-  deep_copy( global_result , temp_result );
-
-#if defined( HAVE_MPI )
-
-  double local_result = global_result ;
-
-  MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
-                 data_map.machine.mpi_comm );
-
-#endif
-
-  return global_result ;
-}
-
-template< typename Scalar , class Device >
-double dot( const ParallelDataMap & data_map ,
-            const MultiVector< Scalar , Device > & x ,
             const MultiVector< Scalar , Device > & y )
 {
-  typedef Value< double , Device > value_type ;
-  value_type temp_result = create_value< value_type >();
-  return dot( data_map , x , y , temp_result );
-}
-
-template< typename Scalar , class Device >
-double dot( const ParallelDataMap & data_map ,
-            const MultiVector< Scalar , Device > & x ,
-            const Value< double , Device > & temp_result )
-{
-  Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
-      ::apply( data_map.count_owned , x , temp_result );
-
-  double global_result = 0 ;
-
-  deep_copy( global_result , temp_result );
+  double global_result =
+    Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
+        ::apply( data_map.count_owned , x , y );
 
 #if defined( HAVE_MPI )
 
@@ -173,9 +133,20 @@ template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
             const MultiVector< Scalar , Device > & x )
 {
-  typedef Value< double , Device > value_type ;
-  value_type temp_result = create_value< value_type >();
-  return dot( data_map , x , temp_result );
+  double global_result = 
+    Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
+        ::apply( data_map.count_owned , x );
+
+#if defined( HAVE_MPI )
+
+  double local_result = global_result ;
+
+  MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
+                 data_map.machine.mpi_comm );
+
+#endif
+
+  return global_result ;
 }
 
 //----------------------------------------------------------------------------
@@ -274,14 +245,13 @@ void cgsolve(
   vector_type r  = create_multivector< vector_type >( "cg::r" , count_owned );
   vector_type p  = create_multivector< vector_type >( "cg::p" , count_total );
   vector_type Ap = create_multivector< vector_type >( "cg::Ap", count_owned );
-  value_type dot_temp = create_value< value_type >( "cg::dot_temp" );
 
   /* p  = x      */ deep_copy( p , x , count_owned );
   /* Ap = A * p  */ matrix_operator.apply( p , Ap );
   /* r  = b - Ap */ waxpby( data_map , 1.0 , b , -1.0 , Ap , r );
   /* p  = r      */ deep_copy( p , r , count_owned );
 
-  double old_rdot = dot( data_map , r , dot_temp );
+  double old_rdot = dot( data_map , r );
 
   normr     = sqrt( old_rdot );
   iteration = 0 ;
@@ -292,13 +262,13 @@ void cgsolve(
 
     /* Ap = A * p  */ matrix_operator.apply( p , Ap );
 
-    const double pAp_dot = dot( data_map , p , Ap , dot_temp );
+    const double pAp_dot = dot( data_map , p , Ap );
     const double alpha   = old_rdot / pAp_dot ;
 
     /* x += alpha * p ;  */ waxpby( data_map,  alpha, p , 1.0 , x , x );
     /* r -= alpha * Ap ; */ waxpby( data_map, -alpha, Ap, 1.0 , r , r );
 
-    const double r_dot = dot( data_map , r , dot_temp );
+    const double r_dot = dot( data_map , r );
     const double beta  = r_dot / old_rdot ;
 
     /* p = r + beta * p ; */ waxpby( data_map , 1.0 , r , beta , p , p );

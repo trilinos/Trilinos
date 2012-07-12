@@ -52,6 +52,7 @@
 namespace KokkosArray {
 
 //----------------------------------------------------------------------------
+
 template< typename ValueType >
 class MultiVector< ValueType , KOKKOS_MACRO_DEVICE > {
 public:
@@ -60,8 +61,6 @@ public:
   typedef device_type::size_type     size_type ;
 
   typedef MultiVector< value_type , Host > HostMirror ;
-
-public:
 
   /*------------------------------------------------------------------*/
   /** \brief  Query length of vectors */

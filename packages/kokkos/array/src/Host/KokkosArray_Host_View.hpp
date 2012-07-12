@@ -57,308 +57,76 @@ namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
+/** \brief  Primary creation / allocation factory based upon shape */
 
 template< typename DataType , class LayoutType >
 struct Factory< View< DataType , LayoutType , Host > , void >
 {
   typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
+  typedef typename output_type::memory_space    memory_space ;
+  typedef typename output_type::value_type      value_type ;
 
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 0 > >::type ok_rank ;
-
-  static output_type create( const std::string & label )
+  inline static
+  output_type create( const std::string & label , const shape_type & shape )
   {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
+    const size_t count = allocation_count( shape );
 
     output_type output ;
 
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) , 1 );
-
-    return output ;
-  }
-};
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , unsigned_<1> >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 1 > >::type ok_rank ;
-
-  static output_type create( const std::string & label , size_t n0 )
-  {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
-
-    output_type output ;
-
-    output.m_shape = Factory< shape_type , memory_space >::create(n0);
+    output.m_shape = shape ;
     output.m_ptr_on_device = (value_type *)
       memory_space::allocate( label ,
                               typeid(value_type) ,
                               sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
+                              count );
 
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 ,
-                                  allocation_count( output.m_shape ) );
-
-    return output ;
-  }
-};
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , unsigned_<2> >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 2 > >::type ok_rank ;
-
-  static output_type create( const std::string & label ,
-                             size_t n0 , size_t n1 )
-  {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
-
-    output_type output ;
-
-    output.m_shape = Factory< shape_type , memory_space >::create(n0,n1);
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 ,
-                                  allocation_count( output.m_shape ) );
-
-    return output ;
-  }
-};
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , unsigned_<3> >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 3 > >::type ok_rank ;
-
-  static output_type create( const std::string & label ,
-                             size_t n0 , size_t n1 , size_t n2 )
-  {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
-
-    output_type output ;
-
-    output.m_shape = Factory< shape_type , memory_space >::create(n0,n1,n2);
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 ,
-                                  allocation_count( output.m_shape ) );
-
-    return output ;
-  }
-};
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , unsigned_<4> >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 4 > >::type ok_rank ;
-
-  static output_type create( const std::string & label ,
-                             size_t n0 , size_t n1 , size_t n2 , size_t n3 )
-  {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
-
-    output_type output ;
-
-    output.m_shape = Factory< shape_type , memory_space >::create(n0,n1,n2,n3);
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 ,
-                                  allocation_count( output.m_shape ) );
-
-    return output ;
-  }
-};
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , unsigned_<5> >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 5 > >::type ok_rank ;
-
-  static output_type create( const std::string & label ,
-                             size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-                             size_t n4 )
-  {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
-
-    output_type output ;
-
-    output.m_shape = Factory< shape_type , memory_space >
-                       ::create(n0,n1,n2,n3,n4);
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 ,
-                                  allocation_count( output.m_shape ) );
-
-    return output ;
-  }
-};
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , unsigned_<6> >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 6 > >::type ok_rank ;
-
-  static output_type create( const std::string & label ,
-                             size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-                             size_t n4 , size_t n5 )
-  {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
-
-    output_type output ;
-
-    output.m_shape = Factory< shape_type , memory_space >
-                       ::create(n0,n1,n2,n3,n4,n5);
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 ,
-                                  allocation_count( output.m_shape ) );
-
-    return output ;
-  }
-};
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , unsigned_<7> >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 7 > >::type ok_rank ;
-
-  static output_type create( const std::string & label ,
-                             size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-                             size_t n4 , size_t n5 , size_t n6 )
-  {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
-
-    output_type output ;
-
-    output.m_shape = Factory< shape_type , memory_space >
-                       ::create(n0,n1,n2,n3,n4,n5,n6);
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 ,
-                                  allocation_count( output.m_shape ) );
-
-    return output ;
-  }
-};
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , unsigned_<8> >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-
-  typedef typename StaticAssertSame<
-                      unsigned_< shape_type::rank_dynamic > ,
-                      unsigned_< 8 > >::type ok_rank ;
-
-  static output_type create( const std::string & label ,
-                             size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-                             size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-  {
-    typedef Host::memory_space  memory_space ;
-    typedef typename output_type::value_type value_type ;
-    typedef typename output_type::shape_type shape_type ;
-
-    output_type output ;
-
-    output.m_shape = Factory< shape_type , memory_space >
-                       ::create(n0,n1,n2,n3,n4,n5,n6,n7);
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 ,
-                                  allocation_count( output.m_shape ) );
+    HostParallelFill<value_type>( output.m_ptr_on_device , 0 , count );
 
     return output ;
   }
 };
 
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
+/** \brief  Deep copy a single value */
+template< typename DataType , class LayoutType >
+struct Factory< View< DataType , LayoutType , Host > , DataType >
+{
+  typedef View< DataType , LayoutType , Host >  output_type ;
+  typedef DataType                              input_type ;
+  typedef typename output_type::shape_type      shape_type ;
+  typedef typename output_type::value_type      value_type ;
+
+  typedef typename assert_shape_is_rank< shape_type , 0 >::type ok_rank ;
+
+  typedef typename StaticAssertAssignable< value_type , DataType >::type ok_assign ;
+
+  static inline
+  void deep_copy( const output_type & output , const input_type & input )
+    { *output = input ; }
+};
+
+/** \brief  Deep copy a single value */
+template< typename DataType , class LayoutType >
+struct Factory< DataType , View< DataType , LayoutType , Host > >
+{
+  typedef DataType                              output_type ;
+  typedef View< DataType , LayoutType , Host >  input_type ;
+  typedef typename input_type::shape_type       shape_type ;
+  typedef typename output_type::value_type      value_type ;
+
+  typedef typename assert_shape_is_rank< shape_type , 0 >::type ok_rank ;
+
+  typedef typename StaticAssertAssignable< DataType , value_type >::type ok_assign ;
+
+  static inline
+  void deep_copy( output_type & output , const input_type & input )
+    { output = *input ; }
+};
+
+//----------------------------------------------------------------------------
+/** \brief  Identical arrays */
 template< class DataType , class LayoutType >
 struct Factory< View< DataType , LayoutType , Host > ,
                 View< DataType , LayoutType , Host > >
@@ -421,6 +189,7 @@ public:
   }
 };
 
+/** \brief  Deep different but compatible arrays */
 template< class OutDataType , class OutLayoutType ,
           class InDataType ,  class InLayoutType >
 struct Factory< View< OutDataType , OutLayoutType , Host > ,

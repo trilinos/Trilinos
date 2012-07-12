@@ -166,26 +166,30 @@ public:
   void run_test( const size_type nwork ,
                        const size_type nfunctor )
   {
-    typedef KokkosArray::Value< value_type , device_type > result_type ;
-
     value_type result ;
 
-    result_type result_view = KokkosArray::create_value< result_type >();
+    { // Destruction of the 'result_functor_type' copies result
+      // data from the device to the host, as necessary.
 
-    KokkosArray::MultiFunctorParallelReduce< reduce_traits , result_type , device_type >
-      reduce_op( result_view );
+      typedef KokkosArray::Impl
+                ::FunctorAssignment< value_type , device_type >
+                  result_functor_type ;
 
-    for ( size_type j = 0 ; j < nfunctor ; ) {
-      const size_type work_beg = (size_t(nwork) * size_t(j) ) / nfunctor ;
-      const size_type work_end = (size_t(nwork) * size_t(++j) ) / nfunctor ;
-      const size_type work_count = work_end - work_beg ;
+      result_functor_type result_functor( result );
 
-      reduce_op.push_back( work_count , functor_type( nwork , work_beg ) );
+      KokkosArray::MultiFunctorParallelReduce< reduce_traits , result_functor_type , device_type >
+        reduce_op( result_functor );
+
+      for ( size_type j = 0 ; j < nfunctor ; ) {
+        const size_type work_beg = (size_t(nwork) * size_t(j) ) / nfunctor ;
+        const size_type work_end = (size_t(nwork) * size_t(++j) ) / nfunctor ;
+        const size_type work_count = work_end - work_beg ;
+
+        reduce_op.push_back( work_count , functor_type( nwork , work_beg ) );
+      }
+
+      reduce_op.execute();
     }
-
-    reduce_op.execute();
-
-    KokkosArray::deep_copy( result , result_view );
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )

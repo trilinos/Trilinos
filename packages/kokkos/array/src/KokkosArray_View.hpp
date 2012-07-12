@@ -71,11 +71,8 @@ public:
 
 private:
 
-  typedef typename Impl::change_empty_extent_to_zero_extent< 
-          typename Impl::remove_const< data_type >::type >::type
-    clean_data_type ;
-
-  typedef Impl::Shape< array_layout , clean_data_type > shape_type ;
+  typedef typename
+    Impl::DefineShape< array_layout , data_type >::type shape_type ;
 
 public:
 
@@ -260,6 +257,14 @@ template< class DataTypeDst , class LayoutDst , class DeviceDst ,
           class DataTypeSrc , class LayoutSrc , class DeviceSrc >
 void deep_copy( const View<DataTypeDst,LayoutDst,DeviceDst> & dst ,
                 const View<DataTypeSrc,LayoutSrc,DeviceSrc> & src );
+
+template< class DataType , class LayoutDst , class DeviceDst >
+void deep_copy( const View<DataType,LayoutDst,DeviceDst> & dst ,
+                const DataType & src );
+
+template< class DataType , class LayoutSrc , class DeviceSrc >
+void deep_copy( DataType & dst ,
+                const View<DataType,LayoutSrc,DeviceSrc> & src );
 
 //----------------------------------------------------------------------------
 

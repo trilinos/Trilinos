@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include <iostream>
+
 #if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
@@ -55,25 +57,26 @@ template< class DataType , class LayoutType >
 class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >  type ;
-  typedef View< DataType , LayoutType , Host >  HostMirror ;
-
   typedef DataType             data_type ;
   typedef LayoutType           layout_type ;
   typedef KOKKOS_MACRO_DEVICE  device_type ;
+
+  typedef View< data_type , layout_type , device_type >  type ;
+
+  typedef View< typename Impl::add_const< data_type >::type ,
+                layout_type , device_type > const_type ;
+
+  typedef View< data_type , layout_type , Host >  HostMirror ;
 
   typedef typename Impl::remove_all_extents<data_type>::type  value_type ;
   typedef typename LayoutType::array_layout                   array_layout ;
   typedef typename device_type::memory_space                  memory_space ;
   typedef typename device_type::size_type                     size_type ;
 
+  typedef typename
+    Impl::DefineShape< array_layout , data_type >::type  shape_type ;
+
 private:
-
-  typedef typename Impl::change_empty_extent_to_zero_extent< 
-          typename Impl::remove_const< data_type >::type >::type
-    clean_data_type ;
-
-  typedef Impl::Shape< array_layout , clean_data_type > shape_type ;
 
   typedef Impl::ShapeMap< shape_type , memory_space > shape_map ;
 
@@ -299,148 +302,6 @@ public:
 
   /*------------------------------------------------------------------*/
   /*------------------------------------------------------------------*/
-
-  template< typename iType0 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View<value_type,device_type>
-    view( const iType0 & i0 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 1 >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0 ) );
-
-      return View<value_type,device_type>(
-             m_ptr_on_device + shape_map::offset(m_shape,i0) );
-    }
-
-  template< typename iType0 , typename iType1 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View<value_type,device_type>
-    view( const iType0 & i0 , const iType1 & i1 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 2 >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1 ) );
-
-      return View<value_type,device_type>(
-             m_ptr_on_device + shape_map::offset(m_shape,i0,i1) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View<value_type,device_type>
-    view( const iType0 & i0 , const iType1 & i1 ,
-          const iType2 & i2 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 3 >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2 ) );
-
-      return View<value_type,device_type>(
-             m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View<value_type,device_type>
-    view( const iType0 & i0 , const iType1 & i1 ,
-          const iType2 & i2 , const iType3 & i3 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 4 >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3 ) );
-
-      return View<value_type,device_type>(
-             m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 , typename iType4 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View<value_type,device_type>
-    view( const iType0 & i0 , const iType1 & i1 ,
-          const iType2 & i2 , const iType3 & i3 ,
-          const iType4 & i4 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 5 >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4 ) );
-
-      return View<value_type,device_type>(
-             m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3,i4) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 , typename iType4 , typename iType5 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View<value_type,device_type>
-    view( const iType0 & i0 , const iType1 & i1 ,
-          const iType2 & i2 , const iType3 & i3 ,
-          const iType4 & i4 , const iType5 & i5 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 6 >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5 ) );
-
-      return View<value_type,device_type>(
-             m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3,i4,i5) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 , typename iType4 , typename iType5 ,
-            typename iType6 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View<value_type,device_type>
-    view( const iType0 & i0 , const iType1 & i1 ,
-          const iType2 & i2 , const iType3 & i3 ,
-          const iType4 & i4 , const iType5 & i5 ,
-          const iType6 & i6 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 7 >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
-
-      return View<value_type,device_type>(
-             m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3,i4,i5,i6) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 , typename iType4 , typename iType5 ,
-            typename iType6 , typename iType7 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View<value_type,device_type>
-    view( const iType0 & i0 , const iType1 & i1 ,
-          const iType2 & i2 , const iType3 & i3 ,
-          const iType4 & i4 , const iType5 & i5 ,
-          const iType6 & i6 , const iType7 & i7 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 8 >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
-
-      return View<value_type,device_type>(
-             m_ptr_on_device + shape_map::offset(m_shape,i0,i1,i2,i3,i4,i5,i6,i7) );
-    }
-
-  /*------------------------------------------------------------------*/
-  /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   View()
@@ -479,7 +340,7 @@ public:
   /** \brief  Construct a compatible view */
 
   template< class rhsType , class rhsMapSpec , class rhsMemory >
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+//  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   View( const View< rhsType , rhsMapSpec , rhsMemory > & rhs )
     : m_shape(         rhs.m_shape ) // Must be same type
     , m_ptr_on_device( rhs.m_ptr_on_device ) // preserves 'const' requirement
@@ -497,7 +358,7 @@ public:
     }
 
   template< class rhsType , class rhsMapSpec , class rhsMemory >
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+//  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   View & operator = ( const View< rhsType , rhsMapSpec , rhsMemory > & rhs )
     {
       typedef View< rhsType , rhsMapSpec , rhsMemory > rhs_type ;

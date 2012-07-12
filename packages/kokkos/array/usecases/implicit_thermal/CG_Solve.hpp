@@ -57,14 +57,13 @@ struct CG_Solve;
 template<class Scalar>
 struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 {
-
   typedef KOKKOS_MACRO_DEVICE    device_type;
   typedef device_type::size_type index_type ;
   typedef KokkosArray::MultiVector<Scalar , device_type>  scalar_vector;
   typedef KokkosArray::MultiVector<index_type , device_type>    index_vector;
 
-  typedef KokkosArray::Value<Scalar , device_type>     value;
-  typedef typename KokkosArray::Value<Scalar , device_type>::HostMirror host_val;
+  typedef KokkosArray::View<Scalar , device_type>     value;
+  typedef typename KokkosArray::View<Scalar , device_type>::HostMirror host_val;
 
 
   // Return megaflops / second for iterations
@@ -79,8 +78,8 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     const int maximum_iteration = 200 ;
     const size_t rows = A_row.length()-1;
 
-    value one  = KokkosArray::create_value<value>();
-    value zero = KokkosArray::create_value<value>();
+    value one  = KokkosArray::create<value>( "one" );
+    value zero = KokkosArray::create<value>( "zero" );
 
     KokkosArray::deep_copy( one,  Scalar( 1 ) );
     KokkosArray::deep_copy( zero, Scalar( 0 ) );
@@ -91,11 +90,11 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     scalar_vector p = KokkosArray::create_multivector<scalar_vector>("p",rows);
     scalar_vector Ap = KokkosArray::create_multivector<scalar_vector>("Ap",rows);
 
-    value rtrans    = KokkosArray::create_value<value>();
-    value ptrans    = KokkosArray::create_value<value>();
-    value oldrtrans = KokkosArray::create_value<value>();
-    value alpha     = KokkosArray::create_value<value>();
-    value beta      = KokkosArray::create_value<value>();
+    value rtrans    = KokkosArray::create<value>("rtrans");
+    value ptrans    = KokkosArray::create<value>("ptrans");
+    value oldrtrans = KokkosArray::create<value>("oldrtrans");
+    value alpha     = KokkosArray::create<value>("alpha");
+    value beta      = KokkosArray::create<value>("beta");
 
     double normr = 1000;
 

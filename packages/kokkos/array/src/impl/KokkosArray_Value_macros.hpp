@@ -71,6 +71,7 @@ public:
   value_type & operator* () const
   { return * m_memory.ptr_on_device(); }
 
+#if 0
   /** \brief  Allow the Value to be a parallel reduce
    *          'finalize functor' that assigns the reduced value
    *          on the device.
@@ -79,6 +80,7 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( const value_type & rhs ) const
     { * m_memory.ptr_on_device() = rhs ; }
+#endif
 
   /** \brief  Access value */
   inline
