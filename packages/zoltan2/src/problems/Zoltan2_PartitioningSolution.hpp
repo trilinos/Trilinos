@@ -1134,7 +1134,7 @@ template <typename Adapter>
     lno_t *tmpCount = new lno_t [nprocs];
     memset(tmpCount, 0, sizeof(lno_t) * nprocs);
     env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, tmpCount);
-    ArrayView<lno_t> countOutBuf(tmpCount, nprocs);
+    ArrayView<int> countOutBuf(tmpCount, nprocs);
 
     ArrayView<gno_t> outBuf;
 
@@ -1167,10 +1167,10 @@ template <typename Adapter>
     }
   
     ArrayRCP<gno_t> inBuf;
-    ArrayRCP<lno_t> countInBuf;
+    ArrayRCP<int> countInBuf;
   
     try{
-      AlltoAllv<gno_t, lno_t>(*comm_, *env_,
+      AlltoAllv<gno_t>(*comm_, *env_,
         outBuf, countOutBuf, inBuf, countInBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
@@ -1180,7 +1180,7 @@ template <typename Adapter>
 
     delete [] countOutBuf.getRawPtr();
 
-    lno_t newLen = 0;
+    gno_t newLen = 0;
     for (int i=0; i < nprocs; i++)
       newLen += countInBuf[i];
 
@@ -1337,7 +1337,7 @@ template <typename Adapter>
   size_t localNumIds          = gids_.size();
 
   // How many to each process?
-  Array<lno_t> counts(numProcs, 0);
+  Array<int> counts(numProcs, 0);
   if (onePartPerProc_)
     for (size_t i=0; i < localNumIds; i++)
       counts[parts_[i]]++;
@@ -1345,7 +1345,7 @@ template <typename Adapter>
     for (size_t i=0; i < localNumIds; i++)
       counts[procs_[i]]++;
 
-  Array<lno_t> offsets(numProcs+1, 0);
+  Array<gno_t> offsets(numProcs+1, 0);
   for (int i=1; i <= numProcs; i++){
     offsets[i] = offsets[i-1] + counts[i-1];
   }
@@ -1375,11 +1375,11 @@ template <typename Adapter>
     }
   }
 
-  ArrayRCP<lno_t> recvCounts;
+  ArrayRCP<int> recvCounts;
   RCP<const Environment> env = rcp(new Environment);
 
   try{
-    AlltoAllv<gid_t, lno_t>(*comm_, *env_, gidList.view(0,localNumIds),
+    AlltoAllv<gid_t>(*comm_, *env_, gidList.view(0,localNumIds),
       counts.view(0, numProcs), imports, recvCounts);
   }
   catch (std::exception &e){
@@ -1388,7 +1388,7 @@ template <typename Adapter>
 
   if (numExtra > 0){
     try{
-      AlltoAllv<Extra, lno_t>(*comm_, *env_, xtraInfo.view(0, localNumIds),
+      AlltoAllv<Extra>(*comm_, *env_, xtraInfo.view(0, localNumIds),
         counts.view(0, numProcs), newXtraInfo, recvCounts);
     }
     catch (std::exception &e){

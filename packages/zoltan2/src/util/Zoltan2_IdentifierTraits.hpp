@@ -198,8 +198,12 @@ static inline T invalid() {
   \todo write an example where user's global ID is a C-struct containing
         \c i and \c j indices.
 
+  \todo fix this note regarding gid_t
   Developer note: By convention we use \c gid_t as the users global ID
   data type and \c gno_t as the data type used internally by Zoltan2.
+
+  Each data type which is not defined in Teuchos::DirectSerializationTraits
+  must have a Zoltan2::AlltoAllv specialization in Zoltan2_AlltoAll.hpp.
 */
 
 template<typename T>
@@ -748,7 +752,7 @@ template <typename T>
       sendBuf[i] = Teuchos::as<size_t>(v0);
 
     try{
-      AlltoAll<size_t, int>(comm, env, sendBuf, 1, recvBuf);
+      AlltoAll<size_t>(comm, env, sendBuf, 1, recvBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
 
