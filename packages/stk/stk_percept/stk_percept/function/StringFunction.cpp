@@ -169,9 +169,9 @@ namespace stk
         }
     }
 
-    static void first_dimensions(MDArray& arr, int arr_offset, int *n_points)
+    static inline void first_dimensions(MDArray& arr, int arr_offset, int *n_points, int max_rank=3)
     {
-      for (int ii = 0; ii < 3; ii++)
+      for (int ii = 0; ii < max_rank; ii++)
         {
           n_points[ii] = 1;
         }
@@ -315,28 +315,26 @@ namespace stk
       int out_offset    = out_rank - codomain_rank;
 
       // returns 1,1,1,... etc. if that dimension doesn't exist
-      int n_inp_points[3] = {1,1,1};
-      int n_out_points[3] = {1,1,1};
-      first_dimensions(inp, inp_offset, n_inp_points);  
-      first_dimensions(out, out_offset, n_out_points);  
-
-      // FIXME check n_out_points, n_inp_points consistency
+      enum { maxRank = 3};
+      VERIFY_OP_ON(inp_rank, <=,  maxRank, "StringFunction::operator() input array rank too large");
+      VERIFY_OP_ON(out_rank, <=,  maxRank, "StringFunction::operator() output array rank too large");
+      int n_inp_points[maxRank] = {1,1,1};
+      int n_out_points[maxRank] = {1,1,1};
+      first_dimensions(inp, inp_offset, n_inp_points, maxRank);  
+      first_dimensions(out, out_offset, n_out_points, maxRank);  
 
       int nInDim  = m_domain_dimensions[0];
       int nOutDim = m_codomain_dimensions[0];
 
       MDArray inp_loc(nInDim);
       MDArray out_loc(nOutDim);
-//       if (inp_loc.dimension(0) != nInDim)
-//         inp_loc.resize( nInDim);
-//       if (out_loc.dimension(0) != nOutDim)
-//         out_loc.resize( nOutDim);
 
-      enum { maxRank = 3};
       int iDim[maxRank-1] = {0,0};
+      double *xyzt[] = {&m_x, &m_y, &m_z, &m_t};
 
       PRINT("getName()= " << getName() << " n_inp_points= " << n_inp_points[0] << " " << n_inp_points[1] << " " << n_inp_points[2] << " nInDim= " << nInDim);
 
+      m_t = time_value_optional;
       for (iDim[0] = 0; iDim[0] < n_inp_points[0]; iDim[0]++)
         {
           for (iDim[1] = 0; iDim[1] < n_inp_points[1]; iDim[1]++)
@@ -347,111 +345,15 @@ namespace stk
                     {
                     case 3:
                       inp_loc(id) = inp(iDim[0], iDim[1], id);
+                      *xyzt[id] = inp(iDim[0], iDim[1], id);
                       break;
                     case 2:
                       inp_loc(id) = inp(iDim[0], id);
+                      *xyzt[id] = inp(iDim[0], id);
                       break;
                     case 1:
                       inp_loc(id) = inp( id);
-                      break;
-                    }
-                }
-
-              if (inp_rank == 3)
-                {
-                  switch (nInDim)
-                    {
-                    case 3:
-                      m_x = inp(iDim[0], iDim[1], 0);
-                      m_y = inp(iDim[0], iDim[1], 1);
-                      m_z = inp(iDim[0], iDim[1], 2);
-                      m_t = time_value_optional;
-                      break;
-                    case 2:
-                      m_x = inp(iDim[0], iDim[1], 0);
-                      m_y = inp(iDim[0], iDim[1], 1);
-                      m_t = time_value_optional;
-                      m_z = 0.0;
-                      break;
-                    case 1:
-                      m_x = inp(iDim[0], iDim[1], 0);
-                      m_t = time_value_optional;
-                      break;
-                    case 0:  // does this make sense?
-                      m_t = time_value_optional;
-                      break;
-                    default:
-                      {
-                        std::ostringstream msg;
-                        msg << "StringFunction::operator() wrong number of dimensions = " << inp.dimension(0);
-                        throw std::runtime_error(msg.str());
-                      }
-                      break;
-                    }
-
-                }
-              else if (inp_rank == 2)
-                {
-                  switch (nInDim)
-                    {
-                    case 3:
-                      m_x = inp(iDim[0], 0);
-                      m_y = inp(iDim[0], 1);
-                      m_z = inp(iDim[0], 2);
-                      m_t = time_value_optional;
-                      break;
-                    case 2:
-                      m_x = inp(iDim[0], 0);
-                      m_y = inp(iDim[0], 1);
-                      m_t = time_value_optional;
-                      m_z = 0.0;
-                      break;
-                    case 1:
-                      m_x = inp(iDim[0], 0);
-                      m_t = time_value_optional;
-                      break;
-                    case 0:  // does this make sense?
-                      m_t = time_value_optional;
-                      break;
-                    default:
-                      {
-                        std::ostringstream msg;
-                        msg << "StringFunction::operator() wrong number of dimensions = " << inp.dimension(0);
-                        throw std::runtime_error(msg.str());
-                      }
-                      break;
-                    }
-
-                }
-              else if (inp_rank == 1)
-                {
-                  switch (nInDim)
-                    {
-                    case 3:
-                      m_x = inp(0);
-                      m_y = inp(1);
-                      m_z = inp(2);
-                      m_t = time_value_optional;
-                      break;
-                    case 2:
-                      m_x = inp(0);
-                      m_y = inp(1);
-                      m_t = time_value_optional;
-                      m_z = 0.0;
-                      break;
-                    case 1:
-                      m_x = inp(0);
-                      m_t = time_value_optional;
-                      break;
-                    case 0:  // does this make sense?
-                      m_t = time_value_optional;
-                      break;
-                    default:
-                      {
-                        std::ostringstream msg;
-                        msg << "StringFunction::operator() wrong number of dimensions = " << inp.dimension(0);
-                        throw std::runtime_error(msg.str());
-                      }
+                      *xyzt[id] = inp( id);
                       break;
                     }
                 }
@@ -476,24 +378,18 @@ namespace stk
 
               for (int iOutDim = 0; iOutDim < nOutDim; iOutDim++)
                 {
-                  //PRINTQ(m_v[iOutDim]);
-
-                  if (out_rank == 1)
-                    out(iOutDim) = m_v[iOutDim];
-                  else if (out_rank == 2)
-                    out(iDim[0], iOutDim) = m_v[iOutDim];
-                  else if (out_rank == 3)
-                    out(iDim[0], iDim[1], iOutDim) = m_v[iOutDim];
-                  else
+                  switch (out_rank)
                     {
+                    case 1: out(iOutDim)                   = m_v[iOutDim]; break;
+                    case 2: out(iDim[0], iOutDim)          = m_v[iOutDim]; break;
+                    case 3: out(iDim[0], iDim[1], iOutDim) = m_v[iOutDim]; break;
+                    default:
                       VERIFY_1("StringFunction::operator() bad output rank");
                     }
                 }
             }
         }
       PRINT("getName()= " << getName() << " done in operator()");
-      //if (getName() == "sfxyz_first") exit(123);
-
     }
 
     ///  Dimensions of parametric_coordinates and input_phy_points are required to be ([P],[D])
