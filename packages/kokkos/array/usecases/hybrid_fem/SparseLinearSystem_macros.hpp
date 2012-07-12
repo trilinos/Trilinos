@@ -49,10 +49,10 @@ namespace Impl {
 template< typename Scalar >
 struct Dot< Scalar , KOKKOS_MACRO_DEVICE , Impl::unsigned_<2> >
 {
-  typedef KOKKOS_MACRO_DEVICE              device_type;
-  typedef device_type::size_type           size_type;
-  typedef MultiVector<Scalar, device_type> scalar_vector;  
-  typedef double                           value_type;
+  typedef KOKKOS_MACRO_DEVICE          device_type;
+  typedef device_type::size_type       size_type;
+  typedef View<Scalar[], device_type>  scalar_vector;  
+  typedef double                       value_type;
 
 private:
 
@@ -89,11 +89,11 @@ public:
 template< typename Scalar >
 struct Dot< Scalar , KOKKOS_MACRO_DEVICE , Impl::unsigned_<1> >
 {
-  typedef KOKKOS_MACRO_DEVICE              device_type;
-  typedef device_type::size_type           size_type;
-  typedef MultiVector<Scalar, device_type> scalar_vector;  
-  typedef Value < double , device_type >   result_type ;  
-  typedef double                           value_type;
+  typedef KOKKOS_MACRO_DEVICE          device_type;
+  typedef device_type::size_type       size_type;
+  typedef View<Scalar[], device_type>  scalar_vector;  
+  typedef View < double, device_type>  result_type ;  
+  typedef double                       value_type;
 
 private:
 
@@ -130,9 +130,9 @@ public:
 template < typename Scalar >
 struct FILL<Scalar , KOKKOS_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE               device_type ;
-  typedef device_type::size_type            size_type ;
-  typedef MultiVector<Scalar, device_type>  scalar_vector ;
+  typedef KOKKOS_MACRO_DEVICE          device_type ;
+  typedef device_type::size_type       size_type ;
+  typedef View<Scalar[], device_type>  scalar_vector ;
 
 private:
 
@@ -162,9 +162,9 @@ public:
 template < typename Scalar >
 struct WAXPBY<Scalar , KOKKOS_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE               device_type ;
-  typedef device_type::size_type            size_type ;
-  typedef MultiVector<Scalar, device_type>  scalar_vector ;
+  typedef KOKKOS_MACRO_DEVICE          device_type ;
+  typedef device_type::size_type       size_type ;
+  typedef View<Scalar[], device_type>  scalar_vector ;
 
 private:
 
@@ -204,9 +204,9 @@ public:
 template < typename Scalar >
 struct AXPBY<Scalar , KOKKOS_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE               device_type ;
-  typedef device_type::size_type            size_type ;
-  typedef MultiVector<Scalar, device_type>  scalar_vector ;
+  typedef KOKKOS_MACRO_DEVICE          device_type ;
+  typedef device_type::size_type       size_type ;
+  typedef View<Scalar[], device_type>  scalar_vector ;
 
 private:
 

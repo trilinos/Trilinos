@@ -51,7 +51,7 @@ extern void test_device_cuda_init();
 class cuda : public ::testing::Test {
   protected:
     static void SetUpTestCase() {
-      KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(2) );
+      KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
     }
     static void TearDownTestCase() {
       KokkosArray::Cuda::finalize();

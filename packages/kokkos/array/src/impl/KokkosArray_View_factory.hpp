@@ -354,6 +354,18 @@ void deep_copy( const View<DataTypeDst,LayoutDst,DeviceDst> & dst ,
   Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
 }
 
+template< class ScalarType , class LayoutDst , class DeviceDst ,
+                             class LayoutSrc , class DeviceSrc >
+void deep_copy( const View<ScalarType[],LayoutDst,DeviceDst> & dst ,
+                const View<ScalarType[],LayoutSrc,DeviceSrc> & src ,
+                const size_t n )
+{
+  typedef View<ScalarType[],LayoutDst,DeviceDst> dst_type ;
+  typedef View<ScalarType[],LayoutSrc,DeviceSrc> src_type ;
+
+  Impl::Factory< dst_type , src_type >::deep_copy( dst , src , n );
+}
+
 //----------------------------------------------------------------------------
 /** \brief  Deep copy a single value */
 

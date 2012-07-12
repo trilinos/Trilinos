@@ -49,7 +49,6 @@
 #include <iomanip>
 
 #include <KokkosArray_View.hpp>
-#include <KokkosArray_MultiVector.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
 #include <FEMesh.hpp>
@@ -127,7 +126,7 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef KokkosArray::MultiVector< Scalar , Device >   vector_type ;
+  typedef KokkosArray::View< Scalar[] , Device >   vector_type ;
   typedef KokkosArray::CrsMatrix< Scalar , Device >     matrix_type ;
   typedef typename matrix_type::graph_type         matrix_graph_type ;
   typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;
@@ -184,12 +183,12 @@ PerformanceData run( comm::Machine machine ,
   const size_t local_owned_length = linsys_matrix.graph.row_map.length();
 
   linsys_matrix.coefficients =
-    KokkosArray::create_multivector< matrix_coefficients_type >( linsys_matrix.graph.entries.dimension(0) );
+    KokkosArray::create< matrix_coefficients_type >( "coeff" , linsys_matrix.graph.entries.dimension(0) );
 
   linsys_rhs =
-    KokkosArray::create_multivector< vector_type >( local_owned_length );
+    KokkosArray::create< vector_type >( "rhs" , local_owned_length );
   linsys_solution =
-    KokkosArray::create_multivector< vector_type >( local_owned_length );
+    KokkosArray::create< vector_type >( "solution" , local_owned_length );
 
   //------------------------------------
   // Fill linear system

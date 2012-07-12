@@ -258,13 +258,19 @@ template< class DataTypeDst , class LayoutDst , class DeviceDst ,
 void deep_copy( const View<DataTypeDst,LayoutDst,DeviceDst> & dst ,
                 const View<DataTypeSrc,LayoutSrc,DeviceSrc> & src );
 
-template< class DataType , class LayoutDst , class DeviceDst >
-void deep_copy( const View<DataType,LayoutDst,DeviceDst> & dst ,
-                const DataType & src );
+template< class ScalarType , class LayoutDst , class DeviceDst ,
+                             class LayoutSrc , class DeviceSrc >
+void deep_copy( const View<ScalarType[],LayoutDst,DeviceDst> & dst ,
+                const View<ScalarType[],LayoutSrc,DeviceSrc> & src ,
+                const size_t );
 
-template< class DataType , class LayoutSrc , class DeviceSrc >
-void deep_copy( DataType & dst ,
-                const View<DataType,LayoutSrc,DeviceSrc> & src );
+template< class ScalarType , class LayoutDst , class DeviceDst >
+void deep_copy( const View<ScalarType,LayoutDst,DeviceDst> & dst ,
+                const ScalarType & src );
+
+template< class ScalarType , class LayoutSrc , class DeviceSrc >
+void deep_copy( ScalarType & dst ,
+                const View<ScalarType,LayoutSrc,DeviceSrc> & src );
 
 //----------------------------------------------------------------------------
 

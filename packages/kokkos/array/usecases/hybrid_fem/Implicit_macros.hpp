@@ -490,7 +490,7 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
   static const size_type ElementNodeCount = 8 ;
 
   typedef KokkosArray::CrsMatrix< ScalarType , device_type >    matrix_type ;
-  typedef KokkosArray::MultiVector< ScalarType , device_type >  vector_type ;
+  typedef KokkosArray::View< ScalarType[] , device_type >  vector_type ;
 
   typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
 

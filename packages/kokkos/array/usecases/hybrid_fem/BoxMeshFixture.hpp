@@ -51,7 +51,6 @@
 
 #include <KokkosArray_View.hpp>
 #include <KokkosArray_CrsArray.hpp>
-#include <KokkosArray_MultiVector.hpp>
 
 #include <BoxMeshPartition.hpp>
 #include <FEMesh.hpp>

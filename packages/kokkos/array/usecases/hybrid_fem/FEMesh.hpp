@@ -52,7 +52,6 @@
 
 #include <KokkosArray_View.hpp>
 #include <KokkosArray_CrsArray.hpp>
-#include <KokkosArray_MultiVector.hpp>
 
 #include <ParallelComm.hpp>
 #include <ParallelDataMap.hpp>

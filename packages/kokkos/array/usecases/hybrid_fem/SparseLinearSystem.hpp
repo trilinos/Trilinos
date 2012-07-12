@@ -46,8 +46,6 @@
 
 #include <cmath>
 #include <impl/KokkosArray_Timer.hpp>
-#include <KokkosArray_Value.hpp>
-#include <KokkosArray_MultiVector.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
 namespace KokkosArray {
@@ -74,8 +72,8 @@ struct CrsMatrix {
   typedef Device      device_type ;
   typedef ScalarType  value_type ;
 
-  typedef CrsArray< int , device_type , int >     graph_type ;
-  typedef MultiVector< value_type , device_type > coefficients_type ;
+  typedef CrsArray< int , device_type , int >  graph_type ;
+  typedef View< value_type[] , device_type >   coefficients_type ;
 
   graph_type         graph ;
   coefficients_type  coefficients ;
@@ -86,10 +84,10 @@ struct CrsMatrix {
 template< typename Scalar , class Device >
 void waxpby( const ParallelDataMap & data_map ,
              const double alpha ,
-             const MultiVector< Scalar , Device > & x ,
+             const View< Scalar[] , Device > & x ,
              const double beta ,
-             const MultiVector< Scalar , Device > & y ,
-             const MultiVector< Scalar , Device > & w )
+             const View< Scalar[] , Device > & y ,
+             const View< Scalar[] , Device > & w )
 {
   if ( y == w ) {
     Impl::AXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y );
@@ -101,17 +99,17 @@ void waxpby( const ParallelDataMap & data_map ,
 
 template< typename Scalar , class Device >
 void fill( const double alpha ,
-           const MultiVector< Scalar , Device > & w )
+           const View< Scalar[] , Device > & w )
 {
-  Impl::FILL<Scalar,Device>::apply( w.length() , alpha , w );
+  Impl::FILL<Scalar,Device>::apply( w.dimension_0() , alpha , w );
 }
 
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
-            const MultiVector< Scalar , Device > & x ,
-            const MultiVector< Scalar , Device > & y )
+            const View< Scalar[] , Device > & x ,
+            const View< Scalar[] , Device > & y )
 {
   double global_result =
     Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
@@ -131,7 +129,7 @@ double dot( const ParallelDataMap & data_map ,
 
 template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
-            const MultiVector< Scalar , Device > & x )
+            const View< Scalar[] , Device > & x )
 {
   double global_result = 
     Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
@@ -155,8 +153,8 @@ template< typename AScalarType ,
           typename VScalarType ,
           class Device >
 class Operator {
-  typedef CrsMatrix<AScalarType,Device>    matrix_type ;
-  typedef MultiVector<VScalarType,Device>  vector_type ;
+  typedef CrsMatrix<AScalarType,Device>  matrix_type ;
+  typedef View<VScalarType[],Device>     vector_type ;
 
 private:
   const CrsMatrix<AScalarType,Device> A ;
@@ -185,8 +183,8 @@ public:
 
 #endif
 
-  void apply( const MultiVector<VScalarType,Device>  & x ,
-              const MultiVector<VScalarType,Device>  & y )
+  void apply( const View<VScalarType[],Device>  & x ,
+              const View<VScalarType[],Device>  & y )
   {
 #if defined( HAVE_MPI )
     // Gather off-processor data for 'x'
@@ -226,25 +224,25 @@ template< typename AScalarType , typename VScalarType , class Device >
 void cgsolve(
   const ParallelDataMap                 data_map ,
   const CrsMatrix<AScalarType,Device>   A ,
-  const MultiVector<VScalarType,Device> b ,
-  const MultiVector<VScalarType,Device> x ,
+  const View<VScalarType[],Device> b ,
+  const View<VScalarType[],Device> x ,
   size_t & iteration ,
   double & normr ,
   double & iter_time ,
   const size_t maximum_iteration = 200 ,
   const double tolerance = std::numeric_limits<VScalarType>::epsilon() )
 {
-  typedef MultiVector<VScalarType,Device> vector_type ;
-  typedef Value      <VScalarType,Device> value_type ;
+  typedef View<VScalarType[],Device> vector_type ;
+  typedef View<VScalarType,  Device> value_type ;
 
   const size_t count_owned = data_map.count_owned ;
   const size_t count_total = data_map.count_owned + data_map.count_receive ;
 
   Operator<AScalarType,VScalarType,Device> matrix_operator( data_map , A );
 
-  vector_type r  = create_multivector< vector_type >( "cg::r" , count_owned );
-  vector_type p  = create_multivector< vector_type >( "cg::p" , count_total );
-  vector_type Ap = create_multivector< vector_type >( "cg::Ap", count_owned );
+  vector_type r  = create< vector_type >( "cg::r" , count_owned );
+  vector_type p  = create< vector_type >( "cg::p" , count_total );
+  vector_type Ap = create< vector_type >( "cg::Ap", count_owned );
 
   /* p  = x      */ deep_copy( p , x , count_owned );
   /* Ap = A * p  */ matrix_operator.apply( p , Ap );
