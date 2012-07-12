@@ -23,7 +23,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkosnodeapi
-  XHOSTTYPE Windows
   )
 SET(TIMING_INSTALLS Kokkos_SerialNodeTestAndTiming)
 
@@ -68,7 +67,6 @@ IF (Kokkos_ENABLE_ThreadPool)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkosnodeapi
-    XHOSTTYPE Windows
     )
   APPEND_SET(TIMING_INSTALLS Kokkos_TPINodeTestAndTiming)
 ENDIF()
