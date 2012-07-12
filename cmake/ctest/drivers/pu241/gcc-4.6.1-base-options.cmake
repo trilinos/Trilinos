@@ -45,6 +45,18 @@ SET(MOOSE_HYPRE_LIBRARY_DIRS  /opt/gcc-4.6.1/tpls/hypre-2.8.0b/lib      CACHE FI
 # SET(QT_LIBRARY_DIR /opt/gcc-4.6.1/tpls/qt-4.7.1/lib     CACHE FILEPATH "")
 # SET(QT_INCLUDE_DIR /opt/gcc-4.6.1/tpls/qt-4.7.1/include CACHE FILEPATH "")
 
+# Used only when TriKota/Dakota are enabled with CMake
+SET(TriKota_ENABLE_DakotaCMake ON CACHE BOOL "")
+SET(DAKOTA_ENABLE_TESTS OFF CACHE BOOL "")
+SET(PECOS_ENABLE_TESTS OFF CACHE BOOL "")
+SET(LHS_ENABLE_TESTS OFF CACHE BOOL "")
+SET(HOPSPACK_ENABLE_TESTS OFF CACHE BOOL "")
+SET(OPTPP_ENABLE_TESTS OFF CACHE BOOL "")
+SET(HAVE_ACRO OFF CACHE BOOL "")
+SET(HAVE_AMPL OFF CACHE BOOL "")
+SET(HAVE_X_GRAPHICS OFF CACHE BOOL "")
+SET(HAVE_HOPSPACK OFF CACHE BOOL "")
+
 # Include last so that above override these cache variables
 INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-vri-tpls.cmake)
 INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-core-enables-disables.cmake)
