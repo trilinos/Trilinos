@@ -585,22 +585,6 @@ template< typename User>
     Z2_FORWARD_EXCEPTIONS;
   }
 
-for (int p=0; p < numProcs_; p++){
-if (p == myRank_){
-cout << "Rank " << myRank_ << " got:\n";
-for (int i=0, next=0; i < numProcs_; i++){
-  cout << "  From " << i << ": ";
-  for (int j=0; j < countInBuf[i]; j++, next++)
-    cout << gidInBuf[next] << " / " << gnoInBuf[next] << " ";
-  cout << endl;
-}
-cout.flush();
-}
-comm_->barrier();
-}
-
-
-
   gnoOutBuf.clear();
   countOutBuf.clear();
 
