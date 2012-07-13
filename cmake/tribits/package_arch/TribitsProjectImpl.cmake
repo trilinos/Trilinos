@@ -146,6 +146,10 @@ MACRO(TRIBITS_PROJECT_IMPL)
 
   TRIBITS_PROJECT_READ_VERSION_FILE(${PROJECT_SOURCE_DIR})
   
+  # Since the version header file is now configured the root build
+  # dir needs to be on the include path
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+  
   #
   # B) Set up user options and global variables that will be used throughout
   #
