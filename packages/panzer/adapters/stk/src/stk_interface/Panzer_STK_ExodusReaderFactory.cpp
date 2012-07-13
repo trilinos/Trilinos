@@ -41,6 +41,9 @@
 // @HEADER
 
 
+#include <Teuchos_TimeMonitor.hpp>
+#include <Panzer_config.hpp>
+
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_Interface.hpp"
 
@@ -66,6 +69,8 @@ STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,in
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::STK_ExodusReaderFactory::buildMesh()");
+
    using Teuchos::RCP;
    using Teuchos::rcp;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
@@ -89,6 +94,8 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
   */
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const 
 { 
+   PANZER_FUNC_TIME_MONITOR("panzer::STK_ExodusReaderFactory::buildUncomittedMesh()");
+
    using Teuchos::RCP;
    using Teuchos::rcp;
 
@@ -120,6 +127,8 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
 
 void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::STK_ExodusReaderFactory::completeMeshConstruction()");
+
    using Teuchos::RCP;
    using Teuchos::rcp;
 

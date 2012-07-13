@@ -41,6 +41,8 @@
 // @HEADER
 
 #include <Panzer_STK_SquareQuadMeshFactory.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Panzer_config.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -60,6 +62,8 @@ SquareQuadMeshFactory::~SquareQuadMeshFactory()
 //! Build the mesh object
 Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::SquareQuadMeshFactory::buildMesh()");
+
    // build all meta data
    RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
 
@@ -74,6 +78,8 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk::ParallelMachin
 
 Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::SquareQuadMeshFactory::buildUncomittedMesh()");
+
    RCP<STK_Interface> mesh = rcp(new STK_Interface(2));
 
    machRank_ = stk::parallel_machine_rank(parallelMach);
@@ -99,6 +105,8 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
 
 void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::SquareQuadMeshFactory::completeMeshConstruction()");
+
    if(not mesh.isInitialized())
       mesh.initialize(parallelMach);
 

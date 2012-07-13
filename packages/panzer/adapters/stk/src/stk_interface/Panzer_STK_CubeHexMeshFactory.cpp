@@ -41,6 +41,8 @@
 // @HEADER
 
 #include <Panzer_STK_CubeHexMeshFactory.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Panzer_config.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -60,6 +62,8 @@ CubeHexMeshFactory::~CubeHexMeshFactory()
 //! Build the mesh object
 Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::CubeHexMeshFactory::buildMesh()");
+
    // build all meta data
    RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
 
@@ -74,6 +78,8 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildMesh(stk::ParallelMachine p
 
 Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::CubeHexMeshFactory::buildUncomittedMesh()");
+
    RCP<STK_Interface> mesh = rcp(new STK_Interface(3));
 
    machRank_ = stk::parallel_machine_rank(parallelMach);
@@ -100,6 +106,8 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
 
 void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::CubeHexMeshFactory::completeMeshConstruction()");
+
    if(not mesh.isInitialized())
       mesh.initialize(parallelMach);
 

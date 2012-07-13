@@ -41,6 +41,8 @@
 // @HEADER
 
 #include <Panzer_STK_LineMeshFactory.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Panzer_config.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -60,6 +62,8 @@ LineMeshFactory::~LineMeshFactory()
 //! Build the mesh object
 Teuchos::RCP<STK_Interface> LineMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::LineMeshFactory::buildMesh()");
+
    // build all meta data
    RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
 
@@ -74,6 +78,8 @@ Teuchos::RCP<STK_Interface> LineMeshFactory::buildMesh(stk::ParallelMachine para
 
 Teuchos::RCP<STK_Interface> LineMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::LineMeshFactory::buildUncomittedMesh()");
+
    RCP<STK_Interface> mesh = rcp(new STK_Interface(1));
 
    machRank_ = stk::parallel_machine_rank(parallelMach);
@@ -91,6 +97,8 @@ Teuchos::RCP<STK_Interface> LineMeshFactory::buildUncommitedMesh(stk::ParallelMa
 
 void LineMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::LineMeshFactory::completeMeshConstruction()");
+
    if(not mesh.isInitialized())
       mesh.initialize(parallelMach);
 
