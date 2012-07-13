@@ -71,7 +71,7 @@ namespace Kokkos {
     typedef Ordinal ordinal_type;
     typedef Node node_type;
 
-    SeqCrsGraph (size_t numRows,
+    SeqCrsGraph (Ordinal numRows,
                  const Teuchos::RCP<Node>& node,
                  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -79,11 +79,11 @@ namespace Kokkos {
       return node_;
     }
 
-    size_t getNumRows () const {
+    Ordinal getNumRows () const {
       return numRows_;
     }
 
-    Teuchos::ArrayRCP<const size_t> getPointers() const {
+    Teuchos::ArrayRCP<const Ordinal> getPointers() const {
       return ptr_;
     }
 
@@ -103,21 +103,21 @@ namespace Kokkos {
       return isEmpty_;
     }
 
-    void setStructure (const Teuchos::ArrayRCP<const size_t>& ptr,
+    void setStructure (const Teuchos::ArrayRCP<const Ordinal>& ptr,
                        const Teuchos::ArrayRCP<const Ordinal>& ind);
     void setMatDesc (Teuchos::EUplo uplo, Teuchos::EDiag diag);
     void getMatDesc (Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const;
 
   private:
     Teuchos::RCP<Node> node_;
-    size_t numRows_;
+    Ordinal numRows_;
     //Teuchos::RCP<ParameterList> params_;
     bool isInitialized_;
     bool isEmpty_;
     Teuchos::EUplo tri_uplo_;
     Teuchos::EDiag unit_diag_;
 
-    Teuchos::ArrayRCP<const size_t> ptr_;
+    Teuchos::ArrayRCP<const Ordinal> ptr_;
     Teuchos::ArrayRCP<const Ordinal> ind_;
   };
 
@@ -159,7 +159,7 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   SeqCrsGraph<Ordinal,Node>::
-  SeqCrsGraph (size_t numRows,
+  SeqCrsGraph (Ordinal numRows,
                const Teuchos::RCP<Node> &node,
                const Teuchos::RCP<Teuchos::ParameterList> &params) :
     node_ (node),
@@ -181,11 +181,11 @@ namespace Kokkos {
   template <class Ordinal, class Node>
   void
   SeqCrsGraph<Ordinal,Node>::
-  setStructure (const Teuchos::ArrayRCP<const size_t> &ptr,
+  setStructure (const Teuchos::ArrayRCP<const Ordinal> &ptr,
                 const Teuchos::ArrayRCP<const Ordinal> &ind)
   {
     std::string tfecfFuncName("setStructure(ptr,ind)");
-    const size_t numRows = this->getNumRows();
+    const Ordinal numRows = this->getNumRows();
 
     // mfh 19 June 2012: The tests expect std::runtime_error rather
     // than the arguably more appropriate std::invalid_argument, so
@@ -198,7 +198,7 @@ namespace Kokkos {
       "rows.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      (size_t) ptr.size() != numRows+1,
+      (size_t) ptr.size() != (size_t) numRows+1,
       std::runtime_error,
       ": Graph input data are not coherent:\n"
       "-- ptr.size() = " << ptr.size() << " != numRows+1 = "
@@ -211,7 +211,7 @@ namespace Kokkos {
       "-- ptr[0] = " << ptr[0] << " != 0.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      (size_t) ind.size() != ptr[numRows],
+      (size_t) ind.size() != (size_t) ptr[numRows],
       std::runtime_error,
       ": Graph input data are not coherent:\n"
       "-- ind.size() = " << ind.size() << " != ptr[numRows="
@@ -223,7 +223,7 @@ namespace Kokkos {
       ": Graph has already been initialized."
     )
 
-    const size_t numEntries = ptr[numRows];
+    const Ordinal numEntries = ptr[numRows];
     if (numRows == 0 || numEntries == 0) {
       isEmpty_ = true;
     }
@@ -369,13 +369,13 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the row pointers.
-    static Teuchos::ArrayRCP<size_t>
-    allocRowPtrs (const ArrayView<const size_t>& numEntriesPerRow);
+    static Teuchos::ArrayRCP<Ordinal>
+    allocRowPtrs (const ArrayView<const Ordinal>& numEntriesPerRow);
 
     //! Allocate and initialize the storage for a sparse graph or matrix.
     template <class T>
     static Teuchos::ArrayRCP<T>
-    allocStorage (const Teuchos::ArrayView<const size_t>& rowPtrs);
+    allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs);
 
     //! Finalize a graph
     static void
@@ -521,7 +521,7 @@ namespace Kokkos {
     Teuchos::EUplo  tri_uplo_;
     Teuchos::EDiag unit_diag_;
 
-    size_t numRows_;
+    Ordinal numRows_;
     bool isInitialized_;
     bool isEmpty_;
   };
@@ -619,10 +619,10 @@ namespace Kokkos {
       isInitialized_, std::runtime_error, " operators already initialized."
     );
 
-    ArrayRCP<const size_t> ptr = opgraph->getPointers ();
+    ArrayRCP<const Ordinal> ptr = opgraph->getPointers ();
     ArrayRCP<const Ordinal> ind = opgraph->getIndices ();
     ArrayRCP<const Scalar> val = opmatrix->getValues ();
-    const size_t numRows = opgraph->getNumRows ();
+    const Ordinal numRows = opgraph->getNumRows ();
 
     // cerr << "SeqSparseOps::setGraphAndMatrix: on entry to routine:" << endl
     //      << "ptr = ";
@@ -635,7 +635,7 @@ namespace Kokkos {
 
     // Verify the input data before setting internal state.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      (size_t) ptr.size() != numRows + 1,
+      (size_t) ptr.size() != (size_t) numRows + 1,
       std::invalid_argument,
       ": ptr.size() = " << ptr.size() << " != numRows+1 = " << (numRows + 1) << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -644,7 +644,7 @@ namespace Kokkos {
       ": ind.size() = " << ind.size() << " != val.size() = " << val.size()
       << ", for ptr = opgraph->getPointers() and ind = opgraph->getIndices().");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ptr[numRows] != (size_t) ind.size(),
+      (size_t) ptr[numRows] != (size_t) ind.size(),
       std::invalid_argument,
       ": ptr[numRows = " << numRows << "] = " << ptr[numRows]
       << " != ind.size() = " << ind.size() << ", for ptr = "
@@ -667,22 +667,9 @@ namespace Kokkos {
     }
     else {
       isEmpty_ = false;
-      // ptr is an array of size_t, ptr_ is an array of Ordinal.  We
-      // compute with an array of Ordinal because Ordinal is generally
-      // a 32-bit integer type, so it uses less bandwidth and storage.
-      // We have to go through a little trouble because ptr_ is an
-      // array of const Ordinal, but we need to set its entries here.
-      //
-      // FIXME (mfh 25 Jun 2012) In debug mode, we should check the
-      // conversions from size_t to Ordinal for possible overflow.
-      ArrayRCP<Ordinal> myPtr = arcp<Ordinal> (ptr.size ());
-      std::copy (ptr.getRawPtr (),
-                 ptr.getRawPtr () + ptr.size (),
-                 myPtr.getRawPtr ());
-      ptr_ = arcp_const_cast<const Ordinal> (myPtr);
-      myPtr = null;
 
       // We can just use these arrays directly.
+      ptr_ = ptr;
       ind_ = ind;
       val_ = val;
     }
@@ -1081,11 +1068,11 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::ArrayRCP<size_t>
+  Teuchos::ArrayRCP<Ordinal>
   SeqSparseOps<Scalar, Ordinal, Node>::
-  allocRowPtrs (const Teuchos::ArrayView<const size_t>& numEntriesPerRow)
+  allocRowPtrs (const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
   {
-    Teuchos::ArrayRCP<size_t> ptr (numEntriesPerRow.size() + 1);
+    Teuchos::ArrayRCP<Ordinal> ptr (numEntriesPerRow.size() + 1);
     ptr[0] = 0;
     std::partial_sum (numEntriesPerRow.getRawPtr (),
                       numEntriesPerRow.getRawPtr () + numEntriesPerRow.size (),
@@ -1097,13 +1084,13 @@ namespace Kokkos {
   template <class T>
   Teuchos::ArrayRCP<T>
   SeqSparseOps<Scalar, Ordinal, Node>::
-  allocStorage (const Teuchos::ArrayView<const size_t>& rowPtrs)
+  allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
       "SeqSparseOps::allocStorage: The input rowPtrs array must have length at "
       "least one, but rowPtrs.size() = " << rowPtrs.size() << ".");
 
-    const size_t totalNumEntries = rowPtrs[rowPtrs.size() - 1];
+    const Ordinal totalNumEntries = rowPtrs[rowPtrs.size() - 1];
     Teuchos::ArrayRCP<T> val (totalNumEntries);
     std::fill (val.getRawPtr (),
                val.getRawPtr () + totalNumEntries,

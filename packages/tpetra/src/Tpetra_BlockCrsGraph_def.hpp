@@ -143,7 +143,18 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::ArrayRCP<const size_t>
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeRowOffsets() const
 {
-  return ptGraph_->getNodeRowPtrs();
+  ArrayRCP<const size_t> ret;
+  if (Teuchos::TypeTraits::is_same<size_t,LocalOrdinal>::value) {
+    // can't do a straight assignment, because this code needs to compile (though not run) even if they aren't the same type.
+    ret = arcp_reinterpret_cast<const size_t>( ptGraph_->getNodeRowPtrs() );
+  }
+  else {
+    ArrayRCP<const LocalOrdinal> ptrs = ptGraph_->getNodeRowPtrs();
+    ArrayRCP<size_t> ncret = arcp<size_t>(ptrs.size());
+    std::copy(ptrs.begin(), ptrs.end(), ncret.begin());
+    ret = ncret;
+  }
+  return ret;
 }
 
 //-------------------------------------------------------------------
@@ -201,7 +212,9 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::optimizeStorage()
   if (ptGraph_->isFillComplete()) {
     ptGraph_->resumeFill();
   }
-  ptGraph_->fillComplete(DoOptimizeStorage);
+  RCP<ParameterList> params = parameterList();
+  params->set("Optimize Storage",true);
+  ptGraph_->fillComplete(params);
 }
 
 //-------------------------------------------------------------------

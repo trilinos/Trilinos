@@ -179,7 +179,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-              const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
+              const ArrayRCP<const LocalOrdinal>& NumEntriesPerRowToAlloc, 
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
@@ -235,7 +235,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
-              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
+              const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc, 
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
@@ -595,7 +595,7 @@ namespace Tpetra {
       //! Get an ArrayRCP of the row-offsets.
       /*!  The returned buffer exists in host-memory.
        */
-      ArrayRCP<const size_t> getNodeRowPtrs() const;
+      ArrayRCP<const LocalOrdinal> getNodeRowPtrs() const;
 
       //! Get an ArrayRCP of the packed column-indices.
       /*!  The returned buffer exists in host-memory.
@@ -745,7 +745,7 @@ namespace Tpetra {
       ProfileType pftype_;
       // requested allocation sizes; we have to preserve these, because we perform late-allocation
       // number of non-zeros to allocate per row; set to null after they are allocated.
-      ArrayRCP<const size_t> numAllocPerRow_;
+      ArrayRCP<const LocalOrdinal> numAllocPerRow_;
       // number of non-zeros to allocate for all row; either this or numAllocPerRow_ is used, but not both.
       size_t numAllocForAllRows_;
 
@@ -768,8 +768,7 @@ namespace Tpetra {
       // only the first numRowEntries_[R] of these are valid
       // both of these are null for 2D (Dynamic) allocations
       // rowPtrs_ has length N+1, while numRowEntries_ has length N
-      // TODO: it is possible that making these size_t is overkill; revisit
-      ArrayRCP<size_t> rowPtrs_;
+      ArrayRCP<LocalOrdinal> rowPtrs_;
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //
       // 2D/Dynamic structures. 
@@ -781,7 +780,7 @@ namespace Tpetra {
       ArrayRCP<ArrayRCP<GlobalOrdinal> > gblInds2D_;
 
       //! The number valid entries in the row.
-      ArrayRCP<size_t>       numRowEntries_;
+      ArrayRCP<LocalOrdinal>       numRowEntries_;
 
       // TODO: these might be useful in the future
       // ArrayRCP< typedef ArrayRCP<const GlobalOrdinal>::iterator > gRowPtrs_;

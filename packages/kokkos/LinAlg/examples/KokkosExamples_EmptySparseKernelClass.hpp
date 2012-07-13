@@ -69,9 +69,9 @@ namespace KokkosExamples {
   template <class Node>
   class EmptyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
   public:
-    EmptyCrsGraph(size_t numrows, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,node,params) {}
+    EmptyCrsGraph(int numrows, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,node,params) {}
     ~EmptyCrsGraph() {}
-    void setStructure(const ArrayRCP<const size_t>&, const ArrayRCP<const int>&) {}
+    void setStructure(const ArrayRCP<const int>&, const ArrayRCP<const int>&) {}
   };
 
   //! \class EmptyCrsMatrix 
@@ -179,16 +179,16 @@ namespace KokkosExamples {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow)
+    static ArrayRCP<int> allocRowPtrs(const RCP<Node> &node, const ArrayView<const int> &numEntriesPerRow)
     {
-      return Kokkos::details::DefaultCRSAllocator<Node>::allocRowPtrs(node,numEntriesPerRow);
+      return Kokkos::details::DefaultCRSAllocator<int,Node>::allocRowPtrs(node,numEntriesPerRow);
     }
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T> 
-    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const int> &rowPtrs)
     { 
-      return Kokkos::details::DefaultCRSAllocator<Node>::template allocStorage<T>(node,rowPtrs);
+      return Kokkos::details::DefaultCRSAllocator<int,Node>::template allocStorage<T>(node,rowPtrs);
     }
 
     //! Finalize a graph

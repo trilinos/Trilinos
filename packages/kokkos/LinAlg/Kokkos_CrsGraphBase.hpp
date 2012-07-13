@@ -75,7 +75,7 @@ namespace Kokkos {
     //@{
 
     //! Default constuctor.
-    CrsGraphBase(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
+    CrsGraphBase(Ordinal numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
 
     //! Destructor.
     virtual ~CrsGraphBase();
@@ -88,7 +88,7 @@ namespace Kokkos {
     RCP<Node> getNode() const;
 
     //! Return the number of rows in the graph.
-    size_t getNumRows() const;
+    Ordinal getNumRows() const;
 
     /// \brief Submit the indices and offset for the graph.
     /**
@@ -97,21 +97,21 @@ namespace Kokkos {
           \pre ptrs[0] == 0
           \pre ptrs[getNumRows()] == inds.size()
      */
-    virtual void setStructure(const ArrayRCP<const size_t>  &ptrs,
+    virtual void setStructure(const ArrayRCP<const Ordinal> &ptrs,
                               const ArrayRCP<const Ordinal> &inds) = 0;
 
     //@}
 
   private:
     RCP<Node> node_;
-    size_t numRows_;
+    Ordinal numRows_;
     RCP<ParameterList> params_;
   };
 
 
   //==============================================================================
   template <class Ordinal, class Node>
-  CrsGraphBase<Ordinal,Node>::CrsGraphBase(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params) 
+  CrsGraphBase<Ordinal,Node>::CrsGraphBase(Ordinal numRows, const RCP<Node> &node, const RCP<ParameterList> &params) 
   : node_(node)
   , numRows_(numRows)
   , params_(params)
@@ -124,7 +124,7 @@ namespace Kokkos {
 
   // ======= numrows ===========
   template <class Ordinal, class Node>
-  size_t CrsGraphBase<Ordinal,Node>::getNumRows() const {
+  Ordinal CrsGraphBase<Ordinal,Node>::getNumRows() const {
     return numRows_;
   }
 

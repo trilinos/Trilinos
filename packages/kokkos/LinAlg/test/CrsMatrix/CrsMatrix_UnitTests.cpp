@@ -77,18 +77,18 @@ namespace {
   {
     typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps SparseOps;
     typedef SparseOps::graph<int,Node>::graph_type             Graph;
-    const size_t N = 10;
+    const int N = 10;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     RCP<Graph> G = rcp(new Graph(N,node,parameterList()));
     {
-      ArrayRCP<size_t>  ptrs_tooSmall(N), ptrs_tooBig(N+2);
-      ArrayRCP<int>     inds;
+      ArrayRCP<int>  ptrs_tooSmall(N), ptrs_tooBig(N+2);
+      ArrayRCP<int>  inds;
       TEST_THROW( G->setStructure(ptrs_tooSmall, inds), std::runtime_error );
       TEST_THROW( G->setStructure(ptrs_tooBig,   inds), std::runtime_error );
     }
     {
-      ArrayRCP<size_t> ptrs(N+1);
-      for (size_t i=0; i<=N; ++i) ptrs[i] = i;
+      ArrayRCP<int> ptrs(N+1);
+      for (int i=0; i<=N; ++i) ptrs[i] = i;
       ArrayRCP<int> tooFewInds(N-1);
       TEST_THROW( G->setStructure(ptrs, tooFewInds), std::runtime_error );
     }
@@ -98,8 +98,8 @@ namespace {
   {
     typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps SparseOps;
     typedef SparseOps::graph<int,Node>::graph_type             Graph;
-    const size_t N = 10;
-    ArrayRCP<size_t> ptrs = arcp<size_t>(N+1);
+    const int N = 10;
+    ArrayRCP<int> ptrs = arcp<int>(N+1);
     std::fill(ptrs.begin(), ptrs.end(), 0);
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     RCP<Graph> G = rcp(new Graph(N,node,parameterList()));
@@ -115,18 +115,18 @@ namespace {
     typedef typename BaseSparseOps::template bind_scalar<Scalar>::other_type        SparseOps;
     typedef typename SparseOps::template graph<Ordinal,Node>::graph_type                Graph;
     typedef typename SparseOps::template matrix<Scalar,Ordinal,Node>::matrix_type      Matrix;
-    const size_t N = 10;
+    const Ordinal N = 10;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     // build a non-empty graph, tridiagonal
-    const size_t testNumEntries = 3*N-2;
+    const Ordinal testNumEntries = 3*N-2;
     ArrayRCP<Ordinal> inds(testNumEntries);
     ArrayRCP<Scalar > vals(testNumEntries);
-    ArrayRCP<size_t> ptrs(N+1);
+    ArrayRCP<Ordinal> ptrs(N+1);
     {
       std::fill( inds.begin(), inds.end(), 0 );
       std::fill( vals.begin(), vals.end(), 0 );
-      size_t curoffset = 0;
-      for (size_t r=0; r < N; ++r) {
+      Ordinal curoffset = 0;
+      for (Ordinal r=0; r < N; ++r) {
         ptrs[r] = curoffset;
         if (r > 0 && r < N-1) curoffset += 3;
         else                  curoffset += 2;
@@ -138,7 +138,7 @@ namespace {
     G->setStructure(ptrs, inds);
     SparseOps::finalizeGraph(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,null);
     ArrayRCP<const Ordinal> chkInds;
-    ArrayRCP<const size_t> chkPtrs;
+    ArrayRCP<const Ordinal> chkPtrs;
     chkInds = G->getIndices();
     chkPtrs = G->getPointers();
     TEST_EQUALITY( inds, chkInds );
@@ -158,19 +158,19 @@ namespace {
     typedef typename BaseSparseOps::template bind_scalar<Scalar>::other_type        SparseOps;
     typedef typename SparseOps::template graph<Ordinal,Node>::graph_type                Graph;
     typedef typename SparseOps::template matrix<Scalar,Ordinal,Node>::matrix_type      Matrix;
-    const size_t N = 10;
+    const Ordinal N = 10;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     // build a non-empty graph, tridiagonal
-    const size_t testNumEntries = 3*N-2;
+    const Ordinal testNumEntries = 3*N-2;
     ArrayRCP<Ordinal> inds(testNumEntries);
     ArrayRCP<Scalar > vals(testNumEntries);
-    ArrayRCP<size_t> ptrs(N+1);
+    ArrayRCP<Ordinal> ptrs(N+1);
     {
       std::fill( inds.begin(), inds.end(), 0 );
       std::fill( vals.begin(), vals.end(), 0 );
-      size_t curoffset = 0;
-      for (size_t r=0; r < N; ++r) {
-        size_t numper;
+      Ordinal curoffset = 0;
+      for (Ordinal r=0; r < N; ++r) {
+        Ordinal numper;
         if (r > 0 && r < N-1) numper = 3;
         else numper = 2;
         ptrs[r] = curoffset;
@@ -183,7 +183,7 @@ namespace {
     G->setStructure(ptrs,inds);
     M.setValues(vals);
     ArrayRCP<const Ordinal> chkInds;
-    ArrayRCP<const size_t> chkPtrs;
+    ArrayRCP<const Ordinal> chkPtrs;
     ArrayRCP<const Scalar> chkVals;
     chkPtrs = G->getPointers();
     chkInds = G->getIndices();
@@ -200,24 +200,24 @@ namespace {
   {
     typedef typename Kokkos::DefaultKernels<void  ,Ordinal,Node>::SparseOps     BaseSparseOps;
     typedef typename BaseSparseOps::template graph<Ordinal,Node>::graph_type            Graph;
-    const size_t N = 0;
+    const Ordinal N = 0;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
 
     // build a null-size graph
     Graph G(N,node,null);
     {
-      ArrayRCP<size_t> ptrs;
+      ArrayRCP<Ordinal> ptrs;
       ArrayRCP<Ordinal> inds;
       ptrs = null;
       inds = null;
       // ptrs is null; not allowed
       TEST_THROW( G.setStructure(ptrs, inds), std::runtime_error );
-      ptrs = arcp<size_t>(1);
+      ptrs = arcp<Ordinal>(1);
       ptrs[0] = 0;
       G.setStructure(ptrs, inds);
       ptrs = null;
       inds = null;
-      ArrayRCP<const size_t> getptrs;
+      ArrayRCP<const Ordinal> getptrs;
       ArrayRCP<const Ordinal> getinds;
       getptrs = G.getPointers();
       getinds = G.getIndices();

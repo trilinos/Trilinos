@@ -186,11 +186,11 @@
     RCP<MAT>  A= rcp(new MAT(G,null));
     // allocate buffers for offsets, indices and values
     totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> offsets(N+1);
-    ArrayRCP<int>       inds(totalNNZ);
-    ArrayRCP<float>     vals(totalNNZ);
+    ArrayRCP<int>   offsets(N+1);
+    ArrayRCP<int>   inds(totalNNZ);
+    ArrayRCP<float> vals(totalNNZ);
     {
-      size_t NNZsofar = 0;
+      int NNZsofar = 0;
       offsets[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
@@ -206,7 +206,7 @@
       vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
       offsets[N]   = NNZsofar;
-      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != (size_t)totalNNZ);
+      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
     }
     G->setStructure(offsets, inds);
     offsets = Teuchos::null;
@@ -358,10 +358,10 @@
   /////////////////////////////////////////////////////////
   template <class Node>
   void printVec(const Kokkos::MultiVector<float,Node> &vec) {
-    const size_t n = vec.getNumRows();
+    const int n = vec.getNumRows();
     ArrayRCP<const float> vals = vec.getValues(0);
     ArrayRCP<const float> vals_h = vec.getNode()->viewBuffer(n,vals);
-    for (size_t i=0; i<n; ++i) {
+    for (int i=0; i<n; ++i) {
       cout << "   " << vals_h[i];
     }
     cout << endl;

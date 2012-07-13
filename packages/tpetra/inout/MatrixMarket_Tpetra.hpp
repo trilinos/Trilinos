@@ -403,12 +403,12 @@ namespace Tpetra {
       ///   implementation of \c readSparse() may become a lot shorter
       ///   in the future.
       static void
-      distribute (ArrayRCP<size_t>& myNumEntriesPerRow,
+      distribute (ArrayRCP<local_ordinal_type>& myNumEntriesPerRow,
                   ArrayRCP<size_type>& myRowPtr,
                   ArrayRCP<global_ordinal_type>& myColInd,
                   ArrayRCP<scalar_type>& myValues,
                   const RCP<const map_type>& pRowMap,
-                  ArrayRCP<size_t>& numEntriesPerRow,
+                  ArrayRCP<local_ordinal_type>& numEntriesPerRow,
                   ArrayRCP<size_type>& rowPtr,
                   ArrayRCP<global_ordinal_type>& colInd,
                   ArrayRCP<scalar_type>& values,
@@ -452,7 +452,7 @@ namespace Tpetra {
 
          // Space for my proc's number of entries per row.
          // Will be filled in below.
-         myNumEntriesPerRow = arcp<size_t> (myNumRows);
+         myNumEntriesPerRow = arcp<local_ordinal_type> (myNumRows);
 
          // Teuchos::receive() returns an int; here is space for it.
          int recvResult = 0;
@@ -487,10 +487,10 @@ namespace Tpetra {
                  // Use the resulting array to figure out how many column
                  // indices and values for which I should ask from the root
                  // processor.
-                 const size_t myNumEntries =
+                 const local_ordinal_type myNumEntries =
                    std::accumulate (myNumEntriesPerRow.begin(),
                                     myNumEntriesPerRow.end(),
-                                    static_cast<size_t> (0));
+                                    0);
 
                  // Make space for my entries of the sparse matrix.
                  // Note that they don't have to be sorted by row
@@ -521,7 +521,7 @@ namespace Tpetra {
              for (size_type k = 0; k < myNumRows; ++k)
                {
                  const GO myCurRow = myRows[k];
-                 const size_t numEntriesInThisRow = numEntriesPerRow[myCurRow];
+                 const local_ordinal_type numEntriesInThisRow = numEntriesPerRow[myCurRow];
                  //myNumEntriesPerRow[k] = numEntriesPerRow[myCurRow];
                  myNumEntriesPerRow[k] = numEntriesInThisRow;
                }
@@ -538,10 +538,10 @@ namespace Tpetra {
                  cerr << "]" << endl;
                }
              // The total number of matrix entries that my proc owns.
-             const size_t myNumEntries =
+             const local_ordinal_type myNumEntries =
                std::accumulate (myNumEntriesPerRow.begin(),
                                 myNumEntriesPerRow.end(),
-                                static_cast<size_t> (0));
+                                0);
              if (debug)
                cerr << "-- Proc 0: I own " << myNumRows << " rows and "
                     << myNumEntries << " entries" << endl;
@@ -558,9 +558,9 @@ namespace Tpetra {
              for (size_type k = 0; k < myNumRows;
                   myCurPos += myNumEntriesPerRow[k], ++k)
                {
-                 const size_t curNumEntries = myNumEntriesPerRow[k];
+                 const local_ordinal_type curNumEntries = myNumEntriesPerRow[k];
                  const GO myRow = myRows[k];
-                 const size_t curPos = rowPtr[myRow];
+                 const local_ordinal_type curPos = rowPtr[myRow];
                  if (extraDebug && debug)
                    {
                      cerr << "k = " << k << ", myRow = " << myRow << ": colInd("
@@ -664,8 +664,8 @@ namespace Tpetra {
                      // p's rows.  (Proc p will compute its row
                      // pointer array on its own, after it gets the
                      // data from Proc 0.)
-                     ArrayRCP<size_t> theirNumEntriesPerRow;
-                     theirNumEntriesPerRow = arcp<size_t> (theirNumRows);
+                     ArrayRCP<local_ordinal_type> theirNumEntriesPerRow;
+                     theirNumEntriesPerRow = arcp<local_ordinal_type> (theirNumRows);
                      for (size_type k = 0; k < theirNumRows; ++k)
                        theirNumEntriesPerRow[k] =
                          numEntriesPerRow[theirRows[k]];
@@ -679,10 +679,10 @@ namespace Tpetra {
                            theirNumEntriesPerRow.getRawPtr(), p);
 
                      // Figure out how many entries Proc p owns.
-                     const size_t theirNumEntries =
+                     const local_ordinal_type theirNumEntries =
                        std::accumulate (theirNumEntriesPerRow.begin(),
                                         theirNumEntriesPerRow.end(),
-                                        static_cast<size_t> (0));
+                                        0);
 
                      if (debug)
                        cerr << "-- Proc 0: Proc " << p << " owns "
@@ -713,9 +713,9 @@ namespace Tpetra {
                      for (size_type k = 0; k < theirNumRows;
                           theirCurPos += theirNumEntriesPerRow[k], k++)
                        {
-                         const size_t curNumEntries = theirNumEntriesPerRow[k];
+                         const local_ordinal_type curNumEntries = theirNumEntriesPerRow[k];
                          const GO theirRow = theirRows[k];
-                         const size_t curPos = rowPtr[theirRow];
+                         const local_ordinal_type curPos = rowPtr[theirRow];
 
                          // Only copy if there are entries to copy, in
                          // order not to construct empty ranges for
@@ -799,7 +799,7 @@ namespace Tpetra {
       /// graph of the matrix, so that you can't add new entries.)
       ///
       static sparse_matrix_ptr
-      makeMatrix (ArrayRCP<size_t>& myNumEntriesPerRow,
+      makeMatrix (ArrayRCP<local_ordinal_type>& myNumEntriesPerRow,
                   ArrayRCP<size_type>& myRowPtr,
                   ArrayRCP<global_ordinal_type>& myColInd,
                   ArrayRCP<scalar_type>& myValues,
@@ -897,7 +897,7 @@ namespace Tpetra {
         for (size_type k = 0; k < myNumRows; ++k)
           {
             const size_type myCurPos = myRowPtr[k];
-            const size_t curNumEntries = myNumEntriesPerRow[k];
+            const local_ordinal_type curNumEntries = myNumEntriesPerRow[k];
 
             if (extraDebug && debug)
               {
@@ -1460,7 +1460,7 @@ namespace Tpetra {
         // matrix (with numEntriesPerRow as redundant but convenient
         // metadata, since it's computable from rowPtr and vice
         // versa).  They are valid only on Rank 0.
-        ArrayRCP<size_t> numEntriesPerRow;
+        ArrayRCP<local_ordinal_type> numEntriesPerRow;
         ArrayRCP<size_type> rowPtr;
         ArrayRCP<global_ordinal_type> colInd;
         ArrayRCP<scalar_type> values;
@@ -1499,12 +1499,10 @@ namespace Tpetra {
             // Make space for the CSR matrix data.  The conversion to
             // CSR algorithm is easier if we fill numEntriesPerRow
             // with zeros at first.
-            numEntriesPerRow = arcp<size_t> (numRows);
-            std::fill (numEntriesPerRow.begin(), numEntriesPerRow.end(),
-                       static_cast<size_t>(0));
+            numEntriesPerRow = arcp<local_ordinal_type> (numRows);
+            std::fill (numEntriesPerRow.begin(), numEntriesPerRow.end(), 0);
             rowPtr = arcp<size_type> (numRows+1);
-            std::fill (rowPtr.begin(), rowPtr.end(),
-                       static_cast<size_type>(0));
+            std::fill (rowPtr.begin(), rowPtr.end(), 0);
             colInd = arcp<global_ordinal_type> (numEntries);
             values = arcp<scalar_type> (numEntries);
 
@@ -1618,7 +1616,7 @@ namespace Tpetra {
         // These arrays represent each processor's part of the matrix
         // data, in "CSR" format (sort of, since the row indices might
         // not be contiguous).
-        ArrayRCP<size_t> myNumEntriesPerRow;
+        ArrayRCP<local_ordinal_type> myNumEntriesPerRow;
         ArrayRCP<size_type> myRowPtr;
         ArrayRCP<global_ordinal_type> myColInd;
         ArrayRCP<scalar_type> myValues;

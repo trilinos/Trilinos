@@ -125,13 +125,13 @@ namespace {
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate data for ptrs, indices and values
-    const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> ptrs(N+1);
+    const Ordinal totalNNZ = 3*N - 2;
+    ArrayRCP<Ordinal> ptrs(N+1);
     ArrayRCP<Ordinal>   inds(totalNNZ);
     ArrayRCP<Scalar>    vals(totalNNZ);
     // fill the data
     {
-      size_t NNZsofar = 0;
+      Ordinal NNZsofar = 0;
       ptrs[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
@@ -187,8 +187,8 @@ namespace {
 
   #define TEST_NODE( NODE ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( AAAAA_Is_First, InitNode, NODE ) \
-    typedef DefaultHostSparseOps<void,int,NODE,Kokkos::details::DefaultCRSAllocator   <NODE> >   NoFirstTouch; \
-    typedef DefaultHostSparseOps<void,int,NODE,Kokkos::details::FirstTouchCRSAllocator<NODE> >  YesFirstTouch; \
+    typedef DefaultHostSparseOps<void,int,NODE,Kokkos::details::DefaultCRSAllocator   <int,NODE> >   NoFirstTouch; \
+    typedef DefaultHostSparseOps<void,int,NODE,Kokkos::details::FirstTouchCRSAllocator<int,NODE> >  YesFirstTouch; \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, NoFirstTouch) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, YesFirstTouch)
 

@@ -1,9 +1,12 @@
+Ready for development:
+* remove "size_t" from rowPtrs, switch to "int"
+
 NodeAPI:
 * modify getDefaultNode() to take a parameter list
   this list should be search for a sublist matching the name of the node; if found, sublist goes to the new node. otherwise, whole list goes to the new node.
 * add node method to query data type support: bool Node::has_support<T>()
 
 LinAlg:
+* put num columns in CRS interface 
 * add CUSP sparse mat-vec implementations for CUDA nodes
-* remove "size_t" from rowPtrs, switch to "int"
 * add CUBLAS GEMM for CUDA nodes
