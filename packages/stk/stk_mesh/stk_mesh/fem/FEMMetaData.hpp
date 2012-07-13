@@ -59,9 +59,9 @@ class FEMMetaData {
   /// PartCellTopologyVector is a fast-lookup vector of size equal to the number of parts
   typedef std::vector<fem::CellTopology> PartCellTopologyVector;
 
-  
+
 #ifdef SWIG   //SRK from NLM, this is to avoid pulling in a bunch more headers just to define EntityRank
-	enum 
+	enum
 	{
     INVALID_RANK = stk::mesh::InvalidEntityRank,
     NODE_RANK = 0u,

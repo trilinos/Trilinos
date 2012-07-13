@@ -1338,4 +1338,103 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
 #endif
 }
 
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
+{
+  //
+  // This unit-test is designed to test what happens when a shared entity
+  // is moved on one processor during the same modification cycle in which
+  // it was declared.
+  //
+  // 1---3---5
+  // | 1 | 2 |
+  // 2---4---6
+  //
+  // To test this, we use the mesh above, with each elem going on a separate
+  // proc, one elem per proc. Node 3 is the node we'll be testing.
+  //
 
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  FEMMetaData meta_data(spatial_dim);
+  const EntityRank node_rank = meta_data.node_rank();
+  const EntityRank elem_rank = meta_data.element_rank();
+
+  stk::mesh::Part& extra_node_part = meta_data.declare_part("extra_node_part", node_rank);
+  meta_data.commit();
+
+  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+  unsigned p_rank = mesh.parallel_rank();
+  unsigned p_size = mesh.parallel_size();
+
+  // Bail unless in parallel
+  if (p_size == 1) {
+    return;
+  }
+
+  // Begin modification cycle so we can create the entities and relations
+  if (p_rank < 2) {
+    mesh.modification_begin();
+
+    const unsigned nodes_per_elem = 4, nodes_per_side = 2;
+    EntityKey node_key_to_move(node_rank, 3 /*id*/);
+
+    // We're just going to add everything to the universal part
+    stk::mesh::PartVector empty_parts;
+
+    // Create element
+    Entity & elem = mesh.declare_entity(elem_rank,
+                                        p_rank+1, //elem_id
+                                        empty_parts);
+
+    // Create nodes
+    EntityVector nodes;
+    const unsigned starting_node_id = p_rank * nodes_per_side + 1;
+    for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
+      nodes.push_back(&mesh.declare_entity(NODE_RANK,
+                                           id,
+                                           empty_parts));
+    }
+
+    // Add relations to nodes
+    unsigned rel_id = 0;
+    for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
+      mesh.declare_relation( elem, **itr, rel_id );
+    }
+
+    // On the processor that does *not* end up as the owner of the node, change its parts
+    Entity& changing_node = *mesh.get_entity(node_key_to_move);
+    if (p_rank == 0) {
+      PartVector add_parts(1, &extra_node_part);
+      mesh.change_entity_parts(changing_node, add_parts);
+    }
+
+    mesh.modification_end();
+
+    // Expect that this is a shared node
+    STKUNIT_EXPECT_FALSE(changing_node.sharing().empty());
+
+    // Expect that part change had no impact since it was on the proc that did not end
+    // up as the owner
+    STKUNIT_EXPECT_FALSE(changing_node.bucket().member(extra_node_part));
+
+    mesh.modification_begin();
+
+    // On the processor that owns the node, change its parts
+    if (p_rank == 1) {
+      PartVector add_parts(1, &extra_node_part);
+      mesh.change_entity_parts(changing_node, add_parts);
+    }
+
+    mesh.modification_end();
+
+    // Expect that the part change *did* have an impact
+    STKUNIT_EXPECT_TRUE(changing_node.bucket().member(extra_node_part));
+  }
+  else {
+    // On extra procs, do bare minimum
+    mesh.modification_begin();
+    mesh.modification_end();
+  }
+}
