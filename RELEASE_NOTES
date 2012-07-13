@@ -103,7 +103,7 @@ Kokkos
 Mesquite
 
   - Removed Distance From Target (DFT) based metrics and added 
-    Target-Matrix Optimazation Paradigm (TMOP) based metrics.
+    Target-Matrix Optimization Paradigm (TMOP) based metrics.
 
   - Fix broken patch culling functionality
 
@@ -356,7 +356,7 @@ Kokkos
 PyTrilinos
   - Improved the MPI initialization logic in Teuchos and Epetra modules.
     Previously, both modules would call MPI_Init() when they were imported
-    into the python interpretter and register MPI_Finalize() with the
+    into the python interpreter and register MPI_Finalize() with the
     atexit module (each module did perform checks before executing the
     calls in case the other module beat it to the punch).  Now, each
     module checks to see if MPI_Init() has already been called, and if so,
@@ -441,7 +441,7 @@ SEACAS
 Teuchos
   - Added automatic stack tracing info for exception messages, segfaults, and
     aborts.  Thanks to the work of Ondrej Certik we now have built-in support
-    for generating strack traces when using g++ when uncaught exceptions are
+    for generating stack traces when using g++ when uncaught exceptions are
     encountered or when a segfault or about occurs.  See the Doxygen
     documentation for more details for how your project can take advantage of
     this feature.
@@ -582,7 +582,7 @@ Kokkos
 
   - Minor bug fixes, warnings addressed.
 
-  Changes breaking backwards compatbility:
+  Changes breaking backwards compatibility:
   - Kokkos CRS classes (i.e., CrsGraph and CrsMatrix) are now templated on the 
     sparse kernel operator, allowing specialization of the class data 
     according to the implementation of the kernel.
@@ -683,9 +683,9 @@ Tpetra
 
   - Minor bug fixes, warnings addressed.
 
-  Changes breaking backwards compatbility:
+  Changes breaking backwards compatibility:
   - Tpetra CRS objects (i.e., CrsGraph and CrsMatrix) are required to be
-    "fill-active" in order to be modified. Furthermore, they are requried to be
+    "fill-active" in order to be modified. Furthermore, they are required to be
     "fill-complete" in order to call multiply/solve. The transition between
     these states is mediated by the methods fillComplete() and resumeFill(). 
     This will only effect users that modify a matrix after calling
@@ -725,11 +725,11 @@ Framework Release Notes:
 
 - Reduction of user CMake cache variables with CMake GUI 2.8.2 and newer
 
-  Release 2.8.2 of the CMake QT-based GUI now has seprate check boxes for
+  Release 2.8.2 of the CMake QT-based GUI now has separate check boxes for
   "Grouped" and "Advanced" CMake cache variables.  This, together with changes
   in the Trilinos CMake files to only set defaults for cache variables for
   Trilinos packages that are actually enabled, has made the manipulation of
-  CMake varibles much more manageable for Trilinos users.
+  CMake variables much more manageable for Trilinos users.
 
 - Export Makefile support added
   
@@ -836,10 +836,10 @@ Known breaks in backward compatibility:
   means that the size will actually become one less with the upperOffset
   becoming one less.  This will therefore not result in memory access errors but
   will result in exceptions being thrown when accessing the real last element.
-  Given the confusion that having diffrent arguments caused (that I got caught
-  with too) and the inherent safety inthe change, I think this break with strict
-  backward compatibiity is well worth the (minor) problems it might cause to
-  users.
+  Given the confusion that having different arguments caused (that I got caught
+  with too) and the inherent safety in the change, I think this break with
+  strict backward compatibility is well worth the (minor) problems it might
+  cause to users.
 
 - Removed define of TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED for _AIX.  The macro
   TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED was designed to be used only internally
@@ -956,7 +956,7 @@ capability has two variants, one for a build tree (the actual directory where
 Trilinos was built) and one for an installation tree.  It works by enabling the
 CMake function "FIND_PACKAGE(Trilinos PATHS <paths to search>)" to find a copy
 of Trilinos.  Many useful variables are available that can be used in your
-CMake files.  For example, the fully constucted link line for linking against
+CMake files.  For example, the fully constructed link line for linking against
 Trilinos libraries is available, as well as the path(s) to Trilinos header
 files, and the set of compilers and compiler flags used to build Trilinos. This
 capability can also be used to find individual Trilinos packages. For more
@@ -1144,15 +1144,15 @@ from a RCP<T> to a Ptr<T> use the function RCP<T>::ptr().
 
 (*) Refactored the Thyra::LinearOp[WithSolve]Base interfaces:
 
-- LinearOpBase: Removed double templating.  Now requires overridding
-opSupportedImpl(...) and applyImpl(...).  This is a break in strict bacward
+- LinearOpBase: Removed double templating.  Now requires overriding
+opSupportedImpl(...) and applyImpl(...).  This is a break in strict backward
 compatibility but making these functions pure virtual was needed to make sure
 the interface is implemented correctly.  Interface should be 100% backward
-compatible for external clients through depreicated functions.
+compatible for external clients through deprecated functions.
 
-- LinearOpWithSolve: Removed double templating.  Now requires overridding
+- LinearOpWithSolve: Removed double templating.  Now requires overriding
 solveImpl(...).  Interface should be 100% backward compatible for external
-clients through depreicated functions.  Also, the new solve[Impl](...) 
+clients through deprecated functions.  Also, the new solve[Impl](...) 
 function only takes a single SolveCriteria object and only returns a single
 SolveStatus object to simplify usage.
 
@@ -1160,7 +1160,7 @@ SolveStatus object to simplify usage.
 now that double templating is gone.
 
 - Removed SingleRhsXXX node subclasses.  These classes just make the
-intheritance hierarchy deeper without providing a lot of value.
+inheritance hierarchy deeper without providing a lot of value.
 
 - ExampleTridiag[Serial,Spmd]LinearOp subdclasses refactored to directly
 inherit from LinearOpDefaultBase and use the Detached[Spmd]VectorView classes
@@ -1352,7 +1352,7 @@ uncertainty quantification methods to nonlinear dynamical systems, primarily
 stochastic partial differential equations.
 
 Stokhos supports generating stochastic residual coefficients using automatic
-differentiation with Sacado and forming and solving stochatic Galerkin linear
+differentiation with Sacado and forming and solving stochastic Galerkin linear
 systems and nonlinear systems using Epetra and the EpetraExt::ModelEvaluator.
 
 Stokhos can make use of the Fortran UQ Toolkit of Debusschere et al for
@@ -1594,7 +1594,7 @@ ML
 (*) New restart capability to ensure behavior can be reproduced exactly from
     solve to solve.
 
-(*) New interfaces to Zoltan's hypergraph repartioning algorithms.
+(*) New interfaces to Zoltan's hypergraph repartitioning algorithms.
 
 -------------------------------------------------------------------------------
 
@@ -2300,7 +2300,7 @@ EpetraExt 3.5
   each processor is part of the global communicator and a sum-domain
   communicator.
 
-- EpetraExt_MatrixMatrix performance improvements:  Substantial improvments to
+- EpetraExt_MatrixMatrix performance improvements:  Substantial improvements to
   sparse matrix time sparse matrix multiplication for most cases.
 
 - InOut facilities: Substantial improvement to input and output functions that
@@ -2539,7 +2539,7 @@ NOX
   changes to the syntax of method calls.
 
 - NOX now has a non-optional dependency on the Teuchos package (also part of
-  Trilinos). While it can be built stand-alone, we recomend building NOX as
+  Trilinos). While it can be built stand-alone, we recommend building NOX as
   part of Trilinos with the teuchos library enabled to simplify dependencies.
 
 - NOX and LOCA now generate Makefiles that users can include in their own
@@ -2581,7 +2581,7 @@ NOX
   The new "Linear Solver" sublist key is "Preconditioner Reuse Policy" with the
   possible values "Rebuild", "Reuse", and "Recompute". If you choose "Rebuild",
   this is what nox has done in previous releases - destroy, reallocate and
-  recompute the preconditioner for each linear solve. "Reuse" wil use the same
+  recompute the preconditioner for each linear solve. "Reuse" will use the same
   preconditioner for every linear solve. "Recompute" will recompute the
   preconditioner, but will try to efficiently reuse any objects that don't need
   to be destroyed. How efficient the "Recompute" option is depends on the type
@@ -2830,7 +2830,7 @@ functionality available to Trilinos developers and users:
 - Complex scalar-type support is built by default for scalar-type templated
   utilities like the ScalarTraits, BLAS, LAPACK, and SerialDenseMatrix.
 
-- A reference-counted class similiar to RefCountPtr designed to manage an
+- A reference-counted class similar to RefCountPtr designed to manage an
   array of objects is available, called ArrayRefCountPtr.
 
 -------------------------------------------------------------------------------
@@ -3022,7 +3022,7 @@ contains interfaces for basic linear algebra objects, a first linear solver
 interface, and supporting software.  Furthermore, adapters for Amesos, AztecOO, 
 Epetra, Ifpack, ML, NOX and Teuchos provide a broad set of functionality to 
 users of Thyra.  Finally, since Thyra is fundamentally an interface, users can 
-write code based on Thyra without commiting to any particular concrete linear 
+write code based on Thyra without committing to any particular concrete linear 
 algebra package, but instead have access to a growing collection of supported 
 concrete libraries.
 
@@ -3033,9 +3033,9 @@ PyTrilinos package), so that Epetra, EpetraExt, Triutils, AztecOO, Amesos,
 Ifpack, ML, LOCA, NOX and New_Package are accessible to Python applications.  
 PyTrilinos also supports parallel MPI execution without additional Python 
 modules, and parallel performance for large-grain computations matches native 
-Trilinos peformance.  Finally, Python users are able to define their own matrix 
-modules in Python, satisfying Trilinos abstract interface, that can be used by 
-Trilinos solvers.
+Trilinos performance.  Finally, Python users are able to define their own
+matrix modules in Python, satisfying Trilinos abstract interface, that can be
+used by Trilinos solvers.
 
 Other package-specific features are listed below.
 
@@ -3062,7 +3062,7 @@ Amesos
   numerical algorithms written using the Thyra operator/vector abstractions.
 - Makefile.export support 
 - Eliminated dependence on triutils 
-- Improved robustness through enhanced nighty testing
+- Improved robustness through enhanced nightly testing
 
 Known bugs:
 
@@ -3355,7 +3355,7 @@ Testing
 >From the top build directory, or from a package top build directory, you can 
 invoke "make run-pyexamples" or "make run-pytests" to execute all the scripts 
 in the example or test directories, respectively. This will give concise output 
-regarding failure or success for each script.  Detailed results of thes tests 
+regarding failure or success for each script.  Detailed results of the tests 
 that have been run can be found in the
 
 packages/PACKAGE_NAME/test/runtests-results/
