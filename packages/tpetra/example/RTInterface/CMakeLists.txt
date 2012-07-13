@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-IF (${PROJECT_NAME}_ENABLE_CXX11)
+IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RTIExample
@@ -28,6 +28,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
     ARGS 
     COMM serial mpi
     STANDARD_PASS_OUTPUT
+    DEPLIBS tpetrartitestlib
   )
 
   IF (Tpetra_ENABLE_QD)
@@ -40,19 +41,5 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
       DEPLIBS tpetrartitestlib
     )
   ENDIF()
-
-# ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
-# IF (Kokkos_ENABLE_Thrust)
-#   # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
-#   include_directories(${Kokkos_INCLUDE_DIRS})
-#   CUDA_ADD_EXECUTABLE(Tpetra_RTIExampleThrust RTIExampleThrust.cu)
-#   TRIBITS_ADD_TEST(
-#     Tpetra_RTIExampleThrust 
-#     ARGS
-#     COMM serial mpi
-#     NUM_MPI_PROCS 1
-#     STANDARD_PASS_OUTPUT
-#   )
-# ENDIF()
 
 ENDIF()
