@@ -492,7 +492,10 @@ template <typename User>
   // we are subsetting a graph that is not an error, otherwise
   // it is an error.
 
-  int *nborProc = procIds_.getRawPtr();
+  int *nborProc = NULL;
+  if (numLocalEdges_)
+    nborProc = procIds_.getRawPtr();
+
   size_t numRemoteEdges = 0;
   for (size_t i=0; i < numLocalEdges_; i++){
     if (nborProc[i] < 0)
