@@ -11,7 +11,6 @@ SET(${PROJECT_NAME}_EXCLUDE_PACKAGES
   Pamgen
   Komplex
   RBGen
-  TriKota
   Phdmesh
   Moertel
   TrilinosCouplings
