@@ -1,4 +1,3 @@
-/*
 //@HEADER
 // ************************************************************************
 // 
@@ -39,7 +38,6 @@
 // 
 // ************************************************************************
 //@HEADER
-*/
 
 #ifndef KOKKOS_DEFAULT_KERNELS_
 #define KOKKOS_DEFAULT_KERNELS_
@@ -51,7 +49,6 @@
 #ifdef HAVE_KOKKOS_CUSPARSE
 #include "Kokkos_CUSPARSEOps.hpp"
 #endif
-// #include "Kokkos_FirstTouchSparseOps.hpp"
 
 namespace Kokkos {
 
@@ -60,7 +57,7 @@ namespace Kokkos {
    */
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {
-    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::DefaultCRSAllocator<Node> >  SparseOps;
+    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::DefaultCRSAllocator<Ordinal,Node> >  SparseOps;
     typedef DefaultBlockSparseOps<Scalar,Ordinal,Node>  BlockSparseOps;
     typedef DefaultRelaxation    <Scalar,Ordinal,Node>  Relaxations;
   };
@@ -68,14 +65,15 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOS_FIRST_TOUCH_MATVEC_ALLOCATION
   class TBBNode;
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar,Ordinal,TBBNode,details::FirstTouchCRSAllocator<TBBNode> > {
-    typedef FirstTouchSparseOps  <void  ,Ordinal,TBBNode>  SparseOps;
+  struct DefaultKernels<Scalar,Ordinal,TBBNode> {
+    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::FirstTouchCRSAllocator<Ordinal,TBBNode> >  SparseOps;
     typedef DefaultBlockSparseOps<Scalar,Ordinal,TBBNode>  BlockSparseOps;
     typedef DefaultRelaxation    <Scalar,Ordinal,TBBNode>  Relaxations;
   };
   class TPINode;
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar,Ordinal,TPINode,details::FirstTouchCRSAllocator<TPINode> > {
+  struct DefaultKernels<Scalar,Ordinal,TPINode> {
+    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::FirstTouchCRSAllocator<Ordinal,TPINode> >  SparseOps;
     typedef FirstTouchSparseOps  <void  ,Ordinal,TPINode>  SparseOps;
     typedef DefaultBlockSparseOps<Scalar,Ordinal,TPINode>  BlockSparseOps;
     typedef DefaultRelaxation    <Scalar,Ordinal,TPINode>  Relaxations;

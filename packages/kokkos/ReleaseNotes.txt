@@ -2,6 +2,11 @@
 Release Notes for Trilinos Package Kokkos
 -----------------------------------------
 
+Trilinos 11.0
+------------------------------
+* Non-backwards compatible change: row pointers for CRS objects are not longer size_t; instead, they are the same Ordinal type as the columns indices
+
+
 Trilinos 10.12
 ------------------------------
 

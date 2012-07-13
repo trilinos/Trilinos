@@ -166,7 +166,7 @@ namespace Kokkos {
     // we do this one of two ways: 
     // packed: array of offsets, ordinals, values. obviously the smallest footprint.
     ArrayRCP<const Ordinal> inds_;
-    ArrayRCP<const size_t>  ptrs_;
+    ArrayRCP<const Ordinal>  ptrs_;
     ArrayRCP<const Scalar>  vals_;
 
     //! Array containing matrix diagonal for easy access
@@ -186,7 +186,7 @@ namespace Kokkos {
     // Constants for Chebyshev
     mutable Scalar lmin_,lmax_,delta_,s1_,oneOverTheta_,rho_,rho_new_,dtemp1_,dtemp2_;
 
-    size_t numRows_;
+    Ordinal numRows_;
     bool isInit_, isEmpty_;
   }; //class DefaultRelaxation declaration
 
@@ -300,7 +300,7 @@ namespace Kokkos {
     Op wdp;
     rbh.begin();
     wdp.numRows = numRows_;
-    wdp.ptrs    = rbh.template addConstBuffer<size_t>(ptrs_);
+    wdp.ptrs    = rbh.template addConstBuffer<Ordinal>(ptrs_);
     wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds_);
     wdp.vals    = rbh.template addConstBuffer<Scalar>(vals_);
     wdp.diag    = rbh.template addNonConstBuffer<Scalar>(diagonal_);
@@ -356,7 +356,7 @@ namespace Kokkos {
       Op wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.ptrs    = rbh.template addConstBuffer<size_t>(ptrs_);
+      wdp.ptrs    = rbh.template addConstBuffer<Ordinal>(ptrs_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(vals_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
@@ -435,7 +435,7 @@ namespace Kokkos {
       Op wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.ptrs    = rbh.template addConstBuffer<size_t>(ptrs_);
+      wdp.ptrs    = rbh.template addConstBuffer<Ordinal>(ptrs_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(vals_);
       wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
@@ -510,7 +510,7 @@ namespace Kokkos {
       Op wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.ptrs    = rbh.template addConstBuffer<size_t>(ptrs_);
+      wdp.ptrs    = rbh.template addConstBuffer<Ordinal>(ptrs_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(vals_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());

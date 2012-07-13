@@ -1,3 +1,6 @@
+Ready for development:
+* put num columns in CRS interface 
+
 NodeAPI:
 * modify getDefaultNode() to take a parameter list
   this list should be search for a sublist matching the name of the node; if found, sublist goes to the new node. otherwise, whole list goes to the new node.
@@ -5,5 +8,4 @@ NodeAPI:
 
 LinAlg:
 * add CUSP sparse mat-vec implementations for CUDA nodes
-* remove "size_t" from rowPtrs, switch to "int"
 * add CUBLAS GEMM for CUDA nodes

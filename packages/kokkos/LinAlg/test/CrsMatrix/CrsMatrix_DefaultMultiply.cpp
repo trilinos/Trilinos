@@ -211,13 +211,13 @@ namespace {
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
-    const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> ptrs(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    const Ordinal totalNNZ = 3*N - 2;
+    ArrayRCP<Ordinal> ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host
     {
-      size_t NNZsofar = 0;
+      Ordinal NNZsofar = 0;
       ptrs[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;

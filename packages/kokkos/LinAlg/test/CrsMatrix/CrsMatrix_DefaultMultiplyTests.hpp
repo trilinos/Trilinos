@@ -67,8 +67,8 @@
     typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
     typedef MultiVector<Scalar,Node>                                          MV;
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
-    const size_t numRows = 0;
-    Teuchos::ArrayRCP<size_t> ptrs(1); ptrs[0] = 0;
+    const Ordinal numRows = 0;
+    Teuchos::ArrayRCP<Ordinal> ptrs(1); ptrs[0] = 0;
     RCP<GRPH> G = rcp( new GRPH(numRows,node,null) );
     RCP<MAT>  A = rcp( new MAT(G,null) );
     G->setStructure(ptrs,null);

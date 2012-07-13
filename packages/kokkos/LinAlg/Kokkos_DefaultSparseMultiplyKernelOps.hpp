@@ -57,26 +57,26 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
   struct DefaultSparseMultiplyOp {
     // mat data
-    const size_t  *ptrs;
+    const Ordinal *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     // matvec params
     RangeScalar        alpha, beta;
-    size_t numRows;
+    Ordinal numRows;
     // mv data
     const DomainScalar  *x;
     RangeScalar         *y;
-    size_t numRHS, xstride, ystride;
+    Ordinal numRHS, xstride, ystride;
 
     inline KERNEL_PREFIX void execute(size_t row) {
       const Scalar  *v = vals + ptrs[row];
       const Ordinal *i = inds + ptrs[row],
                    *ie = inds + ptrs[row+1];
       if (NO_BETA_AND_OVERWRITE) {
-        for (size_t j=0; j<numRHS; ++j) y[j*ystride+row] = Teuchos::ScalarTraits<RangeScalar>::zero();
+        for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] = Teuchos::ScalarTraits<RangeScalar>::zero();
       }
       else {
-        for (size_t j=0; j<numRHS; ++j) y[j*ystride+row] *= beta;
+        for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] *= beta;
       }
       // save the extra multiplication if possible
       if (alpha == Teuchos::ScalarTraits<RangeScalar>::one()) {
@@ -84,7 +84,7 @@ namespace Kokkos {
         {
           const  Scalar val = *v++;
           const Ordinal ind = *i++;
-          for (size_t j=0; j<numRHS; ++j) y[j*ystride+row] += (RangeScalar)val * (RangeScalar)x[j*xstride+ind];
+          for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] += (RangeScalar)val * (RangeScalar)x[j*xstride+ind];
         }
       }
       else { // alpha != one
@@ -92,7 +92,7 @@ namespace Kokkos {
         {
           const  Scalar val = *v++;
           const Ordinal ind = *i++;
-          for (size_t j=0; j<numRHS; ++j) y[j*ystride+row] += alpha * (RangeScalar)val * (RangeScalar)x[j*xstride+ind];
+          for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] += alpha * (RangeScalar)val * (RangeScalar)x[j*xstride+ind];
         }
       }
     }
@@ -127,39 +127,39 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
   struct DefaultSparseTransposeMultiplyOp<Scalar, Ordinal, DomainScalar, RangeScalar, NO_BETA_AND_OVERWRITE, false> {
     // mat data
-    const size_t  *ptrs;
+    const Ordinal *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     // matvec params
     RangeScalar        alpha, beta;
-    size_t numRows, numCols;
+    Ordinal numRows, numCols;
     // mv data
     const DomainScalar  *x;
     RangeScalar         *y;
-    size_t numRHS, xstride, ystride;
+    Ordinal numRHS, xstride, ystride;
 
     inline void execute() {
       using Teuchos::ScalarTraits;
 
       if (NO_BETA_AND_OVERWRITE) {
-        for (size_t j=0; j<numRHS; ++j) {
+        for (Ordinal j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
-          for (size_t row=0; row<numCols; ++row) {
+          for (Ordinal row=0; row<numCols; ++row) {
             yp[row] = ScalarTraits<RangeScalar>::zero();
           }
         }
       }
       else {
-        for (size_t j=0; j<numRHS; ++j) {
+        for (Ordinal j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
-          for (size_t row=0; row<numCols; ++row) {
+          for (Ordinal row=0; row<numCols; ++row) {
             yp[row] *= beta;
           }
         }
       }
       // save the extra multiplication if possible
       if (alpha == ScalarTraits<RangeScalar>::one()) {
-        for (size_t colAt=0; colAt < numRows; ++colAt) {
+        for (Ordinal colAt=0; colAt < numRows; ++colAt) {
           const Scalar  *v  = vals + ptrs[colAt];
           const Ordinal *i  = inds + ptrs[colAt];
           const Ordinal *ie = inds + ptrs[colAt+1];
@@ -167,7 +167,7 @@ namespace Kokkos {
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
             const Ordinal ind = *i++;
-            for (size_t j = 0; j < numRHS; ++j) {
+            for (Ordinal j = 0; j < numRHS; ++j) {
               // mfh 15 June 2012: Casting Scalar to RangeScalar may produce a
               // build warning, e.g., if Scalar is int and RangeScalar is
               // double.  The way to get it to work is not to rely on casting
@@ -181,7 +181,7 @@ namespace Kokkos {
         }
       }
       else { // alpha != one
-        for (size_t colAt=0; colAt < numRows; ++colAt) {
+        for (Ordinal colAt=0; colAt < numRows; ++colAt) {
           const Scalar  *v  = vals + ptrs[colAt];
           const Ordinal *i  = inds + ptrs[colAt];
           const Ordinal *ie = inds + ptrs[colAt+1];
@@ -189,7 +189,7 @@ namespace Kokkos {
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
             const Ordinal ind = *i++;
-            for (size_t j=0; j<numRHS; ++j) {
+            for (Ordinal j=0; j<numRHS; ++j) {
               // mfh 15 June 2012: See notes above about build warnings when
               // casting val from Scalar to RangeScalar.
               y[j*ystride+ind] += alpha * val * RangeScalar (x[j*xstride+colAt]);
@@ -210,40 +210,40 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
   struct DefaultSparseTransposeMultiplyOp<Scalar, Ordinal, DomainScalar, RangeScalar, NO_BETA_AND_OVERWRITE, true> {
     // mat data
-    const size_t  *ptrs;
+    const Ordinal *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     // matvec params
     RangeScalar        alpha, beta;
-    size_t numRows, numCols;
+    Ordinal numRows, numCols;
     // mv data
     const DomainScalar  *x;
     RangeScalar         *y;
-    size_t numRHS, xstride, ystride;
+    Ordinal numRHS, xstride, ystride;
 
     inline void execute() {
       using Teuchos::ScalarTraits;
       typedef typename ScalarTraits<RangeScalar>::magnitudeType RSMT;
 
       if (NO_BETA_AND_OVERWRITE) {
-        for (size_t j=0; j<numRHS; ++j) {
+        for (Ordinal j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
-          for (size_t row=0; row<numCols; ++row) {
+          for (Ordinal row=0; row<numCols; ++row) {
             yp[row] = ScalarTraits<RangeScalar>::zero();
           }
         }
       }
       else {
-        for (size_t j=0; j<numRHS; ++j) {
+        for (Ordinal j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
-          for (size_t row=0; row<numCols; ++row) {
+          for (Ordinal row=0; row<numCols; ++row) {
             yp[row] *= beta;
           }
         }
       }
       // save the extra multiplication if possible
       if (alpha == ScalarTraits<RangeScalar>::one()) {
-        for (size_t colAt=0; colAt < numRows; ++colAt) {
+        for (Ordinal colAt=0; colAt < numRows; ++colAt) {
           const Scalar  *v  = vals + ptrs[colAt];
           const Ordinal *i  = inds + ptrs[colAt];
           const Ordinal *ie = inds + ptrs[colAt+1];
@@ -251,7 +251,7 @@ namespace Kokkos {
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
             const Ordinal ind = *i++;
-            for (size_t j = 0; j < numRHS; ++j) {
+            for (Ordinal j = 0; j < numRHS; ++j) {
               // mfh 15 June 2012: Casting Scalar to RangeScalar via a
               // static_cast won't work if Scalar is int and RangeScalar is
               // std::complex<double>.  (This is valid code.)  This is because
@@ -277,7 +277,7 @@ namespace Kokkos {
         }
       }
       else { // alpha != one
-        for (size_t colAt=0; colAt < numRows; ++colAt) {
+        for (Ordinal colAt=0; colAt < numRows; ++colAt) {
           const Scalar  *v  = vals + ptrs[colAt];
           const Ordinal *i  = inds + ptrs[colAt];
           const Ordinal *ie = inds + ptrs[colAt+1];
@@ -285,7 +285,7 @@ namespace Kokkos {
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
             const Ordinal ind = *i++;
-            for (size_t j=0; j<numRHS; ++j) {
+            for (Ordinal j=0; j<numRHS; ++j) {
               // mfh 15 June 2012: See notes above about it sometimes being
               // invalid to cast val from Scalar to RangeScalar.
               y[j*ystride+ind] += alpha *

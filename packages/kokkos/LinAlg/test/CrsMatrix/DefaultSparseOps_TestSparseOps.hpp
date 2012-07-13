@@ -415,9 +415,9 @@ public:
   ///   the matrix.
   /// \param filename [in] The name of the Matrix Market - format file to read.
   void
-  readFile (size_t& numRows,
-            size_t& numCols,
-            Teuchos::ArrayRCP<const size_t>& rowptr,
+  readFile (ordinal_type& numRows,
+            ordinal_type& numCols,
+            Teuchos::ArrayRCP<const ordinal_type>& rowptr,
             Teuchos::ArrayRCP<const ordinal_type>& colind,
             Teuchos::ArrayRCP<const scalar_type>& values,
             const std::string& filename) const
@@ -445,18 +445,17 @@ public:
     // a syntax error in the file.
     (void) reader.readFile (ptr, ind, val, nrows, ncols, filename);
 
-    typedef ArrayRCP<size_t>::size_type size_type;
-    ArrayRCP<size_t> ptrout (static_cast<size_type> (nrows + 1));
-    for (size_type k = 0; k <= nrows; ++k) {
-      ptrout[k] = as<size_t> (ptr[k]);
+    ArrayRCP<ordinal_type> ptrout ( nrows + 1 );
+    for (ordinal_type k = 0; k <= nrows; ++k) {
+      ptrout[k] = as<ordinal_type> (ptr[k]);
     }
     // Now we're done with ptr.
     ptr = null;
 
     // Assign the output arguments.
-    numRows = as<size_t> (nrows);
-    numCols = as<size_t> (ncols);
-    rowptr = arcp_const_cast<const size_t> (ptrout);
+    numRows = as<ordinal_type> (nrows);
+    numCols = as<ordinal_type> (ncols);
+    rowptr = arcp_const_cast<const ordinal_type> (ptrout);
     colind = arcp_const_cast<const ordinal_type> (ind);
     values = arcp_const_cast<const scalar_type> (val);
   }
@@ -499,8 +498,8 @@ public:
     using Teuchos::arcp_const_cast;
     using Teuchos::as;
 
-    size_t theNumRows = 0, theNumCols = 0;
-    ArrayRCP<const size_t> ptr;
+    ordinal_type theNumRows = 0, theNumCols = 0;
+    ArrayRCP<const ordinal_type> ptr;
     ArrayRCP<const ordinal_type> ind;
     ArrayRCP<const scalar_type> val;
     readFile (theNumRows, theNumCols, ptr, ind, val, filename);
@@ -540,7 +539,7 @@ public:
   /// own internal format instead of just using the original arrays.
   Teuchos::RCP<SparseOpsType>
   makeSparseOps (const Teuchos::RCP<node_type>& node,
-                 const Teuchos::ArrayRCP<const size_t>& ptr,
+                 const Teuchos::ArrayRCP<const ordinal_type>& ptr,
                  const Teuchos::ArrayRCP<const ordinal_type>& ind,
                  const Teuchos::ArrayRCP<const scalar_type>& val,
                  const Teuchos::EUplo uplo = Teuchos::UNDEF_TRI,
@@ -553,7 +552,7 @@ public:
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    const size_t numRows = static_cast<size_t> (ptr.size() == 0 ? 0 : ptr.size() - 1);
+    const ordinal_type numRows = static_cast<ordinal_type> (ptr.size() == 0 ? 0 : ptr.size() - 1);
     RCP<ParameterList> graphParams = parameterList ("Graph");
     RCP<graph_type> graph = rcp (new graph_type (numRows, node, graphParams));
 
@@ -600,7 +599,7 @@ public:
       (N*(N-1)) / 2 : // UNIT_DIAG
       (N*(N+1)) / 2;  // NON_UNIT_DIAG
 
-    ArrayRCP<size_t> ptr (N+1);
+    ArrayRCP<ordinal_type> ptr (N+1);
     ArrayRCP<ordinal_type> ind (NNZ);
     ArrayRCP<scalar_type> val (NNZ);
 
@@ -632,8 +631,8 @@ public:
       "this bug (in tests) to the Kokkos developers.");
 
     RCP<graph_type> graph =
-      rcp (new graph_type (as<size_t> (N), node, null));
-    graph->setStructure (arcp_const_cast<const size_t> (ptr),
+      rcp (new graph_type ( N, node, null));
+    graph->setStructure (arcp_const_cast<const ordinal_type> (ptr),
                          arcp_const_cast<const ordinal_type> (ind));
     RCP<matrix_type> matrix =
       rcp (new matrix_type (rcp_const_cast<const graph_type> (graph), null));
@@ -666,7 +665,7 @@ public:
     const ordinal_type N = A.numRows ();
     const ordinal_type NNZ = N*N;
 
-    ArrayRCP<size_t> ptr (N+1);
+    ArrayRCP<ordinal_type> ptr (N+1);
     ArrayRCP<ordinal_type> ind (NNZ);
     ArrayRCP<scalar_type> val (NNZ);
 
@@ -687,8 +686,8 @@ public:
       "this bug (in tests) to the Kokkos developers.");
 
     RCP<graph_type> graph =
-      rcp (new graph_type (as<size_t> (N), node, null));
-    graph->setStructure (arcp_const_cast<const size_t> (ptr),
+      rcp (new graph_type (  N, node, null));
+    graph->setStructure (arcp_const_cast<const ordinal_type> (ptr),
                          arcp_const_cast<const ordinal_type> (ind));
     RCP<matrix_type> matrix =
       rcp (new matrix_type (rcp_const_cast<const graph_type> (graph), null));
@@ -722,10 +721,9 @@ public:
     typedef Kokkos::DefaultArithmetic<MV> MVT;
 
     RCP<MV> X = rcp (new MV (node));
-    X->initializeValues (as<size_t> (numRows),
-                         as<size_t> (numCols),
-                         arcp<scalar_type> (numRows*numCols),
-                         as<size_t> (numRows));
+    X->initializeValues ( numRows, numCols,
+                          arcp<scalar_type> (numRows*numCols),
+                          numRows);
     MVT::Init (*X, STS::zero ());
     return X;
   }
@@ -749,7 +747,6 @@ public:
   {
     using Teuchos::Array;
     using Teuchos::as;
-    typedef typename Array<magnitude_type>::size_type size_type;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
@@ -765,7 +762,7 @@ public:
     MVT::NormInf ((const MV) *X, denomNorms ());
 
     magnitude_type maxRelNorm = STM::zero();
-    for (size_type k = 0; k < numCols; ++k) {
+    for (ordinal_type k = 0; k < numCols; ++k) {
       // If the norm of the current column of X is zero, use the absolute error.
       const magnitude_type relNorm = (denomNorms[k] == STM::zero ()) ?
         numerNorms[k] :
@@ -840,7 +837,6 @@ public:
     using Teuchos::CONJ_TRANS;
     using Teuchos::NON_UNIT_DIAG;
     using Teuchos::UNIT_DIAG;
-    typedef Array<size_t>::size_type size_type;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
@@ -1048,7 +1044,6 @@ public:
     using Teuchos::UPPER_TRI;
     using Teuchos::NON_UNIT_DIAG;
     using Teuchos::UNIT_DIAG;
-    typedef Array<size_t>::size_type size_type;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;

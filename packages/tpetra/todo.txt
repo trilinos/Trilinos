@@ -1,0 +1,2 @@
+Ready-for-dev:
+* try to use C++11 const exprs to compile-time disable nodes in HybridPlatform

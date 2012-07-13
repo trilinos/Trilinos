@@ -219,9 +219,9 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     TEUCHOS_TEST_FOR_EXCEPTION( rowMap->isDistributed() == false && comm->getSize() > 1, std::runtime_error,
         "Tpetra::Utils::readHBMatrix(): specified map is not distributed.");
   }
-  Teuchos::ArrayRCP<size_t> myNNZ;
+  Teuchos::ArrayRCP<LocalOrdinal> myNNZ;
   if (rowMap->getNodeNumElements()) {
-    myNNZ = Teuchos::arcp<size_t>(rowMap->getNodeNumElements());
+    myNNZ = Teuchos::arcp<LocalOrdinal>(rowMap->getNodeNumElements());
   }
   if (myRank == 0) {
     size_t numRowsAlreadyDistributed = rowMap->getNodeNumElements();
@@ -239,7 +239,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     const size_t numMyRows = rowMap->getNodeNumElements();
     Teuchos::send(*comm,numMyRows,0);
     if (numMyRows) {
-      Teuchos::receive<int,size_t>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
+      Teuchos::receive<int,LocalOrdinal>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
     }
   }
   nnzPerRow = Teuchos::null;

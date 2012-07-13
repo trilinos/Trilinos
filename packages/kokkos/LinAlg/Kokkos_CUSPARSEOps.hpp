@@ -321,15 +321,15 @@ namespace Kokkos {
   class CUSPARSECrsGraph : public CrsGraphBase<int,Node>
   {
     public:
-      CUSPARSECrsGraph(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
+      CUSPARSECrsGraph(int numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
       bool isEmpty() const;
-      void setStructure(const ArrayRCP<const size_t>  &ptrs,
+      void setStructure(const ArrayRCP<const int>  &ptrs,
                         const ArrayRCP<const int> &inds);
       void setDeviceData(const ArrayRCP<const int> &devptrs, const ArrayRCP<const int> &devinds);
-      inline ArrayRCP<const size_t> getPointers() const;
-      inline ArrayRCP<const int>    getIndices() const;
-      inline ArrayRCP<const int>    getDevPointers() const;
-      inline ArrayRCP<const int>    getDevIndices() const;
+      inline ArrayRCP<const int> getPointers() const;
+      inline ArrayRCP<const int> getIndices() const;
+      inline ArrayRCP<const int> getDevPointers() const;
+      inline ArrayRCP<const int> getDevIndices() const;
       inline bool isInitialized() const;
       void setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag);
       void getMatDesc(Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const;
@@ -342,9 +342,9 @@ namespace Kokkos {
       Teuchos::EUplo uplo_;
       Teuchos::EDiag diag_;
       // graph data
-      ArrayRCP<const size_t>  host_rowptrs_;
-      ArrayRCP<const int>     dev_rowptrs_;
-      ArrayRCP<const int>     host_colinds_, dev_colinds_;
+      ArrayRCP<const int>  host_rowptrs_;
+      ArrayRCP<const int>  dev_rowptrs_;
+      ArrayRCP<const int>  host_colinds_, dev_colinds_;
       // TODO: add CSC data, for efficient tranpose multiply
   };
 
@@ -378,7 +378,7 @@ namespace Kokkos {
   };
 
   template <class Node>
-  CUSPARSECrsGraph<Node>::CUSPARSECrsGraph(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params)
+  CUSPARSECrsGraph<Node>::CUSPARSECrsGraph(int numRows, const RCP<Node> &node, const RCP<ParameterList> &params)
   : CrsGraphBase<int,Node>(numRows,node,params)
   , isInitialized_(false)
   , isEmpty_(false)
@@ -394,18 +394,18 @@ namespace Kokkos {
 
   template <class Node>
   void CUSPARSECrsGraph<Node>::setStructure(
-                      const ArrayRCP<const size_t>  &ptrs,
+                      const ArrayRCP<const int> &ptrs,
                       const ArrayRCP<const int> &inds)
   {
     std::string tfecfFuncName("setStructure(ptrs,inds)");
-    const size_t numrows = this->getNumRows();
+    const int numrows = this->getNumRows();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)ptrs.size() != numrows+1
+        (size_t)ptrs.size() != (size_t)numrows+1
         || ptrs[0] != 0
-        || (size_t)inds.size() != ptrs[numrows],
+        || (size_t)inds.size() != (size_t)ptrs[numrows],
         std::runtime_error, " graph data not coherent."
     )
-    const size_t numEntries = ptrs[numrows];
+    const int numEntries = ptrs[numrows];
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == true,
         std::runtime_error, " matrix has already been initialized"
@@ -417,7 +417,7 @@ namespace Kokkos {
   }
 
   template <class Node>
-  ArrayRCP<const size_t> CUSPARSECrsGraph<Node>::getPointers() const
+  ArrayRCP<const int> CUSPARSECrsGraph<Node>::getPointers() const
   { return host_rowptrs_; }
 
   template <class Node>
@@ -623,11 +623,11 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs);
+    static ArrayRCP<int> allocRowPtrs(const RCP<Node> &node, const ArrayView<const int> &rowPtrs);
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T>
-    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &ptrs);
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const int> &ptrs);
 
     //! Finalize a graph is null for CUSPARSE.
     static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params);
@@ -773,9 +773,9 @@ namespace Kokkos {
     )
     // diag: have to allocate and indicate
     ArrayRCP<int>    devinds, devptrs;
-    ArrayRCP<const int>    hostinds = graph.getIndices();
-    ArrayRCP<const size_t> hostptrs = graph.getPointers();
-    const size_t numRows = graph.getNumRows();
+    ArrayRCP<const int> hostinds = graph.getIndices();
+    ArrayRCP<const int> hostptrs = graph.getPointers();
+    const int numRows = graph.getNumRows();
     // set description
     graph.setMatDesc(uplo,diag);
     // allocate and initialize data
@@ -788,12 +788,12 @@ namespace Kokkos {
       // neglected instead).  Therefore, because our API doesn't give
       // us explicit diagonal entries if diag == Teuchos::UNIT_DIAG,
       // we must allocate space for them.
-      const size_t numnz = hostinds.size() + numRows;
+      const int numnz = hostinds.size() + numRows;
       devptrs = node->template allocBuffer<int>( numRows+1 );
       if (numnz) devinds = node->template allocBuffer<int>( numnz );
       ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
       ArrayRCP<int> h_devinds = node->viewBufferNonConst(WriteOnly, numnz,     devinds);
-      for (size_t r=0; r < numRows; ++r) {
+      for (int r=0; r < numRows; ++r) {
         h_devptrs[r] = (int)(hostptrs[r]+r);
         if (uplo == Teuchos::LOWER_TRI) {
           // leave one space at the end
@@ -815,12 +815,9 @@ namespace Kokkos {
     }
     else {
       // our format == their format; just allocate and copy
-      const size_t numnz = hostinds.size();
       devptrs = node->template allocBuffer<int>( numRows+1 );
-      ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
-      // have to copy on host because of the cast from size_t to int
-      std::copy(hostptrs.begin(), hostptrs.end(), h_devptrs.begin());
-      h_devptrs = null;
+      node->copyToBuffer( numRows+1,  hostptrs(),  devptrs );
+      const int numnz = hostinds.size();
       if (numnz) {
         devinds = node->template allocBuffer<int>( numnz );
         node->copyToBuffer( numnz,     hostinds(), devinds );
@@ -848,9 +845,9 @@ namespace Kokkos {
     Teuchos::EDiag diag;
     graph.getMatDesc(uplo,diag);
     ArrayRCP<Scalar>       devvals;
-    ArrayRCP<const size_t> hostptrs = graph.getPointers();
+    ArrayRCP<const int>    hostptrs = graph.getPointers();
     ArrayRCP<const Scalar> hostvals = matrix.getValues();
-    const size_t numRows = graph.getNumRows();
+    const int numRows = graph.getNumRows();
     if (diag == Teuchos::UNIT_DIAG) {
       // cuSPARSE, unfortunately, always assumes that the diagonal
       // entries are present in the storage.  Therefore, this flag
@@ -860,10 +857,10 @@ namespace Kokkos {
       // neglected instead).  Therefore, because our API doesn't give
       // us diagonal entries if diag == Teuchos::UNIT_DIAG, we must
       // allocate space for them.
-      const size_t numnz = hostptrs[numRows] + numRows;
+      const int numnz = hostptrs[numRows] + numRows;
       devvals = node->template allocBuffer<Scalar>( numnz );
       ArrayRCP<Scalar> h_devvals = node->viewBufferNonConst(WriteOnly, numnz, devvals);
-      for (size_t r=0; r < numRows; ++r) {
+      for (int r=0; r < numRows; ++r) {
         if (uplo == Teuchos::LOWER_TRI) {
           // leave one space at the end
           std::copy( hostvals.begin()+hostptrs[r], hostvals.begin()+hostptrs[r+1], h_devvals.begin()+hostptrs[r]+r );
@@ -877,7 +874,7 @@ namespace Kokkos {
       h_devvals = null;
     }
     else {
-      const size_t numnz = hostptrs[numRows];
+      const int numnz = hostptrs[numRows];
       if (numnz) {
         devvals = node->template allocBuffer<Scalar>( numnz );
         node->copyToBuffer( numnz,     hostvals(), devvals );
@@ -951,12 +948,12 @@ namespace Kokkos {
 
   // ======= pointer allocation ===========
   template <class Scalar, class Node>
-  ArrayRCP<size_t>
-  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
+  ArrayRCP<int>
+  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const int> &numEntriesPerRow)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
-    CUDANodeHostPinnedDeallocator<size_t> dealloc;
-    ArrayRCP<size_t> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
+    CUDANodeHostPinnedDeallocator<int> dealloc;
+    ArrayRCP<int> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
     ptrs[0] = 0;
     std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
     return ptrs;
@@ -966,10 +963,10 @@ namespace Kokkos {
   template <class Scalar, class Node>
   template <class T>
   ArrayRCP<T>
-  CUSPARSEOps<Scalar,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const size_t> &rowPtrs)
+  CUSPARSEOps<Scalar,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const int> &rowPtrs)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
-    const size_t totalNumEntries = *(rowPtrs.end()-1);
+    const int totalNumEntries = *(rowPtrs.end()-1);
     CUDANodeHostPinnedDeallocator<T> dealloc;
     ArrayRCP<T> buf = dealloc.alloc(totalNumEntries);
     std::fill(buf.begin(), buf.end(), Teuchos::ScalarTraits<T>::zero() );
@@ -1106,13 +1103,13 @@ namespace Kokkos {
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        Y.getNumRows() != (size_t)numRows_,
+        (size_t)Y.getNumRows() != (size_t)numRows_,
         std::runtime_error, "Y does not have the same number of rows as does the matrix.")
     // call mat-vec
     cusparseOperation_t op;
-    if      (trans == Teuchos::NO_TRANS)   op = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    else if (trans == Teuchos::TRANS)      op = CUSPARSE_OPERATION_TRANSPOSE;
-    else if (trans == Teuchos::CONJ_TRANS) op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+    if      (trans == Teuchos::NO_TRANS)     op = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    else if (trans == Teuchos::TRANS)        op = CUSPARSE_OPERATION_TRANSPOSE;
+    else /* (trans == Teuchos::CONJ_TRANS)*/ op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
     RCP<const cusparseHandle_t> sess = CUSPARSEdetails::Session::getHandle();
     const Scalar s_alpha = (Scalar)alpha,
                  s_beta  = Teuchos::ScalarTraits<Scalar>::zero();
@@ -1174,14 +1171,14 @@ namespace Kokkos {
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        Y.getNumRows() != (size_t)numRows_,
+        (size_t)Y.getNumRows() != (size_t)numRows_,
         std::runtime_error, "Y does not have the same number of rows as does the matrix.")
     // call mat-vec
     cusparseOperation_t op;
     RCP<const cusparseHandle_t> hndl = CUSPARSEdetails::Session::getHandle();
-    if      (trans == Teuchos::NO_TRANS)   op = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    else if (trans == Teuchos::TRANS)      op = CUSPARSE_OPERATION_TRANSPOSE;
-    else if (trans == Teuchos::CONJ_TRANS) op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+    if      (trans == Teuchos::NO_TRANS)     op = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    else if (trans == Teuchos::TRANS)        op = CUSPARSE_OPERATION_TRANSPOSE;
+    else /* (trans == Teuchos::CONJ_TRANS)*/ op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
     const Scalar s_alpha = (Scalar)alpha,
                  s_beta  = (Scalar)beta;
     cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(

@@ -131,7 +131,7 @@ namespace Tpetra {
             class LocalMatOps>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
-             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
+             const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) 
   : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
@@ -187,7 +187,7 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
+             const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) 
   : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
@@ -497,13 +497,13 @@ namespace Tpetra {
     const size_t numRows = getNodeNumRows();
     // here's what we want...
     ArrayRCP<LocalOrdinal> inds;
-    ArrayRCP<size_t>       ptrs;
+    ArrayRCP<LocalOrdinal> ptrs;
     ArrayRCP<Scalar>       vals;
     // get refs to data in myGraph_, so we can modify it as well
     ArrayRCP<LocalOrdinal>            &lclInds1D_     = myGraph_->lclInds1D_;
     ArrayRCP<ArrayRCP<LocalOrdinal> > &lclInds2D_     = myGraph_->lclInds2D_;
-    ArrayRCP<size_t>                  &rowPtrs_       = myGraph_->rowPtrs_;
-    ArrayRCP<size_t>                  &numRowEntries_ = myGraph_->numRowEntries_;
+    ArrayRCP<LocalOrdinal>            &rowPtrs_       = myGraph_->rowPtrs_;
+    ArrayRCP<LocalOrdinal>            &numRowEntries_ = myGraph_->numRowEntries_;
     size_t & nodeNumEntries_   = myGraph_->nodeNumEntries_;
     size_t & nodeNumAllocated_ = myGraph_->nodeNumAllocated_;
     // 
@@ -586,13 +586,13 @@ namespace Tpetra {
   {
     const size_t numRows = getNodeNumRows();
     // here's what we want...
-    ArrayRCP<size_t>       ptrs;
+    ArrayRCP<LocalOrdinal> ptrs;
     ArrayRCP<Scalar>       vals;
     // get data from staticGraph_
     ArrayRCP<LocalOrdinal>            lclInds1D     = staticGraph_->lclInds1D_;
     ArrayRCP<ArrayRCP<LocalOrdinal> > lclInds2D     = staticGraph_->lclInds2D_;
-    ArrayRCP<size_t>                  rowPtrs       = staticGraph_->rowPtrs_;
-    ArrayRCP<size_t>                  numRowEntries = staticGraph_->numRowEntries_;
+    ArrayRCP<LocalOrdinal>            rowPtrs       = staticGraph_->rowPtrs_;
+    ArrayRCP<LocalOrdinal>            numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
     size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
 

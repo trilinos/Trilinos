@@ -118,7 +118,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
-            const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
+            const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc,
             ProfileType pftype,
             const RCP<ParameterList>& params)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
@@ -157,7 +157,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
-            const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
+            const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc,
             ProfileType pftype,
             const RCP<ParameterList>& params)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
@@ -527,7 +527,7 @@ namespace Tpetra {
     if (numAllocPerRow_ == null && getNodeNumRows() > 0) {
       // this wastes memory, temporarily, but it simplifies the code and interfaces to follow
       // TODO: it is a candidate for change
-      ArrayRCP<size_t> tmpnumallocperrow = arcp<size_t>(numRows);
+      ArrayRCP<LocalOrdinal> tmpnumallocperrow = arcp<LocalOrdinal>(numRows);
       std::fill(tmpnumallocperrow.begin(), tmpnumallocperrow.end(), numAllocForAllRows_);
       numAllocPerRow_ = tmpnumallocperrow;
     }
@@ -546,7 +546,7 @@ namespace Tpetra {
       //
       //  DYNAMIC ALLOCATION PROFILE
       //
-      ArrayRCP<const size_t>::iterator numalloc = numAllocPerRow_.begin();
+      typename ArrayRCP<const LocalOrdinal>::iterator numalloc = numAllocPerRow_.begin();
       size_t howmany = numAllocForAllRows_;
       if (lg == LocalIndices) {
         lclInds2D_ = arcp< ArrayRCP<LocalOrdinal> >(numRows);
@@ -568,8 +568,8 @@ namespace Tpetra {
       }
     }
     if (numRows > 0) {
-      numRowEntries_ = arcp<size_t>(numRows);
-      std::fill( numRowEntries_.begin(), numRowEntries_.end(), (size_t)0 );
+      numRowEntries_ = arcp<LocalOrdinal>(numRows);
+      std::fill( numRowEntries_.begin(), numRowEntries_.end(), 0 );
     }
     // done with these
     numAllocForAllRows_ = 0;
@@ -1410,7 +1410,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeRowPtrs() const
+  ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeRowPtrs() const
   {
     return rowPtrs_;
   }
@@ -2020,8 +2020,7 @@ namespace Tpetra {
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalGraph(const RCP<ParameterList> &params)
   {
     const size_t numRows = getNodeNumRows();
-    ArrayRCP<LocalOrdinal> inds;
-    ArrayRCP<size_t>       ptrs;
+    ArrayRCP<LocalOrdinal> inds, ptrs;
     bool requestOptimizedStorage = true;
     if (params != null && params->get("Optimize Storage",true) == false) requestOptimizedStorage = false;
     if (getProfileType() == DynamicProfile) {
