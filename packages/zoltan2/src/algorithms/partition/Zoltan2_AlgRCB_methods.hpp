@@ -345,10 +345,10 @@ template <typename mvector_t>
   ///////////////////////////////////////////////////////
   // Get a list of my new global numbers.
 
-  lno_t *sendCount = new lno_t [nprocs];
+  int *sendCount = new int [nprocs];
   env->localMemoryAssertion(__FILE__, __LINE__, nprocs, sendCount) ;
   memset(sendCount, 0, sizeof(int) * nprocs);
-  ArrayView<lno_t> sendCountView(sendCount, nprocs);
+  ArrayView<int> sendCountView(sendCount, nprocs);
   ArrayView<gno_t> sendBufView;
 
   if (nobj > 0){
@@ -378,7 +378,7 @@ template <typename mvector_t>
       }
     }
   
-    lno_t *sendOffset = new lno_t [nprocs];
+    gno_t *sendOffset = new gno_t [nprocs];
     env->localMemoryAssertion(__FILE__, __LINE__, nprocs, sendOffset) ;
     sendOffset[0] = 0;
     for (int i=0; i < nprocs-1; i++)
@@ -402,10 +402,10 @@ template <typename mvector_t>
   }
 
   ArrayRCP<gno_t> recvBuf;
-  ArrayRCP<lno_t> recvCount;
+  ArrayRCP<int> recvCount;
 
   try{
-    AlltoAllv<gno_t, lno_t>(*comm, *env,
+    AlltoAllv<gno_t>(*comm, *env,
       sendBufView, sendCountView,
       recvBuf, recvCount);
   }
@@ -419,7 +419,7 @@ template <typename mvector_t>
   ///////////////////////////////////////////////////////
   // Migrate the multivector of data.
 
-  lno_t numMyNewGnos = 0;
+  gno_t numMyNewGnos = 0;
   for (int i=0; i < nprocs; i++)
     numMyNewGnos += recvCount[i];
 
