@@ -19,11 +19,12 @@ CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
 SET(HEADERS "")
 SET(SOURCES "")
 
+# Set the base Trilinos directory in order to find Trilinos_version.h
 ASSERT_DEFINED(Trilinos_BINARY_DIR)
+INCLUDE_DIRECTORIES(${Trilinos_BINARY_DIR})
 APPEND_SET(HEADERS
   ${Trilinos_BINARY_DIR}/Trilinos_version.h
   )
-# NOTE: TriBITS automatically sets the include directory for this file for the repo
 
 # Set headers (for IDEs and installing)
 
