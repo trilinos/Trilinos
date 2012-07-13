@@ -19,6 +19,7 @@ namespace stk {
 
     using namespace Mesquite;
 
+    /// A weighted Laplace smother - tries to make the new mesh the same local size as original
     class PMMParallelReferenceMeshSmoother : public PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper {
      
     public:  
@@ -54,12 +55,18 @@ namespace stk {
       NodeMap m_current_position;
       NodeMap m_delta;
       NodeMap m_weight;
+      NodeMap m_nweight;
       double m_dmax;
       double m_alpha;
       double m_alpha_prev;
 
       PerceptMesquiteMesh *m_pmm;
       PerceptMesh *m_eMesh;
+
+      stk::mesh::FieldBase *m_coord_field_original;
+      stk::mesh::FieldBase *m_coord_field_projected;
+      stk::mesh::FieldBase *m_coord_field_current;
+      stk::mesh::FieldBase *m_coord_field_lagged;
 
     };
 

@@ -37,8 +37,9 @@ namespace stk {
       Vector3D mCoords[4];
 
     public:
-      double   mMetrics[8];
-      MsqMatrix<3,3> mJ[8];
+      double   mMetrics[8];  // detJ
+      MsqMatrix<3,3> mJ[8];  // J
+      int m_num_nodes;
 
       JacobianUtil() : 
         AveragingQM( QualityMetric::LINEAR ),
@@ -48,11 +49,11 @@ namespace stk {
         c2Con(1.0),
         a3Con(1.0),
         b3Con(0.0),
-        c3Con(1.0)
+        c3Con(1.0), m_num_nodes(0)
       {
       }
 
-      bool operator()(double& averageJ, PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field=0);
+      bool operator()(double& averageJ, PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field);
 
     };
   }

@@ -18,28 +18,30 @@ namespace stk {
 
     using namespace Mesquite;
 
+    /// A Jacobian based optimization smoother - 1/A - 1/W (A = local current Jacobian, W is for original mesh)
     class PMMParallelReferenceMeshSmoother1 : public PMMParallelReferenceMeshSmoother {
      
     public:  
         
-      PMMParallelReferenceMeshSmoother1(int inner_iterations = 100,
-                                       double cpu_time = 0.0, 
-                                       double grad_norm =1.e-8,
-                                       int parallel_iterations = 20)
-        : PMMParallelReferenceMeshSmoother(inner_iterations, cpu_time, grad_norm, parallel_iterations)
+      PMMParallelReferenceMeshSmoother1(double max_edge_length_factor=0.05,
+                                        int inner_iterations = 100,
+                                        double cpu_time = 0.0, 
+                                        double grad_norm =1.e-8,
+                                        int parallel_iterations = 20)
+        : PMMParallelReferenceMeshSmoother(inner_iterations, cpu_time, grad_norm, parallel_iterations),
+          m_max_edge_length_factor(max_edge_length_factor)
       {}
 
 
     protected:
+      double m_max_edge_length_factor;
 
       virtual void run_one_iteration( Mesh* mesh,  MeshDomain *domain,
                                       MsqError& err );
 
-      virtual double total_metric(Mesh *mesh, double alpha, double edge_scaling);
+      virtual double total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling=1.0);
       virtual double metric(stk::mesh::Entity& entity);
       
-
-
 
     };
 

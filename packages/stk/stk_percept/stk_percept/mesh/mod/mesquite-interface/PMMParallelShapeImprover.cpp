@@ -3,6 +3,7 @@
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 
@@ -87,6 +88,7 @@ namespace stk {
                                                                     QualityAssessor* qa,
                                                                     MsqError& err )
     {
+#if 0
       std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
 
       //if (!get_parallel_rank()) 
@@ -99,7 +101,9 @@ namespace stk {
       stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
       stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
 
-      double alphas[] = {0.0,0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
+      //double alphas[] = {0.0,0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
+      //double alphas[] = {0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
+      double alphas[] = {1.0};
       int nalpha = sizeof(alphas)/sizeof(alphas[0]);
       
       for (int outer = 0; outer < nalpha; outer++)
@@ -135,6 +139,7 @@ namespace stk {
       std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper: running shape improver... done \n" << std::endl;
 
       MSQ_ERRRTN(err);
+#endif
     }
 
 
@@ -212,7 +217,8 @@ namespace stk {
           bool do_untangle_only = false;
           std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
           //PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper siw(innerIter, 0.0, gradNorm, parallelIterations);
-          PMMParallelReferenceMeshSmoother siw(innerIter, 0.0, gradNorm, parallelIterations);
+          //PMMParallelReferenceMeshSmoother siw(innerIter, 0.0, gradNorm, parallelIterations);
+          PMMParallelReferenceMeshSmoother1 siw(1.0, innerIter, 0.0, gradNorm, parallelIterations);
           siw.m_do_untangle_only = do_untangle_only;
           siw.run_instructions(&mesh, domain, mErr);
 

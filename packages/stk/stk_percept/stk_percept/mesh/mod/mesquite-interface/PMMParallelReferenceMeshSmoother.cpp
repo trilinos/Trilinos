@@ -48,7 +48,6 @@ namespace stk {
       stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
       stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
       stk::mesh::FieldBase *coord_field_lagged  = eMesh->get_field("coordinates_lagged");
-
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       int spatialDim = eMesh->get_spatial_dim();
@@ -270,16 +269,21 @@ namespace stk {
 
       print_comm_list(*eMesh->get_bulk_data(), false);
 
-      stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
+      stk::mesh::FieldBase *coord_field           = eMesh->get_coordinates_field();
       stk::mesh::FieldBase *coord_field_current   = coord_field;
       stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
       stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
-      stk::mesh::FieldBase *coord_field_lagged  = eMesh->get_field("coordinates_lagged");
+      stk::mesh::FieldBase *coord_field_lagged    = eMesh->get_field("coordinates_lagged");
+
+      m_coord_field_original  = coord_field_original;
+      m_coord_field_projected = coord_field_projected;
+      m_coord_field_lagged    = coord_field_lagged;
+      m_coord_field_current   = coord_field_current;
 
       eMesh->copy_field(coord_field_lagged, coord_field_original);
 
       //double alphas[] = {0.0, 0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
-      double alphas[] = {0.0, 1.0};
+      double alphas[] = {0.001, 1.0};
       //double alphas[] = {0.0, 0.001, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
       //double alphas[] = {0.0, 0.001, 0.01, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.4, 0.6, 0.8, 1.0};
       int nalpha = sizeof(alphas)/sizeof(alphas[0]);

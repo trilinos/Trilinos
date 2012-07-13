@@ -64,7 +64,6 @@ namespace stk {
     /// modeled after code from Mesquite::IdealWeightMeanRatio::evaluate()
     bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field)
     {
-      if (!coord_field) coord_field = eMesh.get_coordinates_field();
       MsqError err;
       MsqMatrix<3,3> J;
 
@@ -87,6 +86,7 @@ namespace stk {
       shards::CellTopology topology(topology_data);
 
       stk::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
+      m_num_nodes = v_i.size();
 
 #define VERTEX_2D(vi) vector_2D( eMesh.field_data(coord_field, *vi.entity() ) )
 #define VERTEX_3D(vi) vector_3D( eMesh.field_data(coord_field, *vi.entity() ) )
@@ -99,7 +99,7 @@ namespace stk {
           mCoords[1] = VERTEX_2D(v_i[1]);
           mCoords[2] = VERTEX_2D(v_i[2]);
           metric_valid = jacobian_matrix_2D(m, J, mCoords, n, d_con);
-          for (i = 0; i < 3; i++) { mMetrics[i] = m; mJ[i] = J; }
+          for (i = 0; i < 4; i++) { mMetrics[i] = m; mJ[i] = J; }
           break;
     
         case shards::Quadrilateral<4>::key:
@@ -108,7 +108,7 @@ namespace stk {
             mCoords[0] = VERTEX_2D(v_i[locs_hex[i][0]]);
             mCoords[1] = VERTEX_2D(v_i[locs_hex[i][1]]);
             mCoords[2] = VERTEX_2D(v_i[locs_hex[i][2]]);
-            metric_valid = jacobian_matrix_2D(m, mJ[i], mCoords, n, d_con);
+            metric_valid = jacobian_matrix_2D(mMetrics[i], mJ[i], mCoords, n, d_con);
           }
           m = average_metrics(mMetrics, 4, err); MSQ_ERRZERO(err);
           break;
@@ -128,13 +128,13 @@ namespace stk {
             mCoords[1] = VERTEX_3D(v_i[(i+1)%4]);
             mCoords[2] = VERTEX_3D(v_i[(i+3)%4]);
             mCoords[3] = VERTEX_3D(v_i[ 4     ]);
-            metric_valid = jacobian_matrix_3D(m, mJ[i], mCoords, n, d_con);
+            metric_valid = jacobian_matrix_3D(mMetrics[i], mJ[i], mCoords, n, d_con);
           }
-          m = average_metrics(mMetrics, 4, err); MSQ_ERRZERO(err);
           // FIXME
           mJ[4] = (mJ[0]+mJ[1]+mJ[2]+mJ[3]);
           mJ[4] *= 0.25;
           mMetrics[4] = det(mJ[4]);
+          m = average_metrics(mMetrics, 5, err); MSQ_ERRZERO(err);
           break;
 
         case shards::Wedge<6>::key:
@@ -143,7 +143,7 @@ namespace stk {
             mCoords[1] = VERTEX_3D(v_i[locs_prism[i][1]]);
             mCoords[2] = VERTEX_3D(v_i[locs_prism[i][2]]);
             mCoords[3] = VERTEX_3D(v_i[locs_prism[i][3]]);
-            metric_valid = jacobian_matrix_3D(m, mJ[i], mCoords, n, d_con);
+            metric_valid = jacobian_matrix_3D(mMetrics[i], mJ[i], mCoords, n, d_con);
           }
           m = average_metrics(mMetrics, 6, err); MSQ_ERRZERO(err);
           break;
@@ -154,7 +154,7 @@ namespace stk {
             mCoords[1] = VERTEX_3D(v_i[locs_hex[i][1]]);
             mCoords[2] = VERTEX_3D(v_i[locs_hex[i][2]]);
             mCoords[3] = VERTEX_3D(v_i[locs_hex[i][3]]);
-            metric_valid = jacobian_matrix_3D(m, mJ[i], mCoords, n, d_con);
+            metric_valid = jacobian_matrix_3D(mMetrics[i], mJ[i], mCoords, n, d_con);
           }
           m = average_metrics(mMetrics, 8, err); MSQ_ERRZERO(err);
           break;
