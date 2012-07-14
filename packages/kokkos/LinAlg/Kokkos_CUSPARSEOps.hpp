@@ -45,16 +45,15 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_TypeTraits.hpp>
-#include <stdexcept>
+#include <Teuchos_BLAS_types.hpp>
 
-#include "Kokkos_ConfigDefs.hpp"
+#include <Kokkos_ConfigDefs.hpp>
+#include <Kokkos_CUDANodeUtils.hpp>
+
 #include "Kokkos_CrsMatrixBase.hpp"
 #include "Kokkos_CrsGraphBase.hpp"
-#include "Kokkos_CUDANodeUtils.hpp"
-
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
-#include "Kokkos_DefaultArithmetic.hpp"
 
 #include <cusparse_v2.h>
 
@@ -571,15 +570,27 @@ namespace Kokkos {
     //! The type of this object, the sparse operator object
     typedef CUSPARSEOps<Scalar,Node> sparse_ops_type;
 
-    /** \brief Typedef for local graph class */
+    /** \brief Typedef for local graph class; empty */
     template <class O, class N>
     struct graph {
+      typedef typename O::this_ordinal_not_supported_by_cusparse graph_type;
+    };
+
+    /** \brief Typedef for local graph class */
+    template <class N>
+    struct graph<int,N> {
       typedef CUSPARSECrsGraph<N> graph_type;
     };
 
-    /** \brief Typedef for local matrix class */
+    /** \brief Typedef for local matrix class; empty */
     template <class S, class O, class N>
     struct matrix {
+      typedef typename O::this_ordinal_not_supported_by_cusparse matrix_type;
+    };
+
+    /** \brief Int-specialization of typedef for local matrix class */
+    template <class S, class N>
+    struct matrix<S,int,N> {
       typedef CUSPARSECrsMatrix<S,N> matrix_type;
     };
 
