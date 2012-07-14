@@ -178,7 +178,7 @@ namespace {
     // [        0 1  ]
     // [          0 1]
     if (N<2) return;
-    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<GRPH> G = rcp(new GRPH (N,N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = 2*N-1;
@@ -252,7 +252,7 @@ namespace {
     // [          0 1]
     // but don't store the diagonal
     if (N<2) return;
-    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<GRPH> G = rcp(new GRPH (N,N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = N-1;
@@ -322,7 +322,7 @@ namespace {
     // [            1 0]
     // [              1]
     if (N<2) return;
-    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<GRPH> G = rcp(new GRPH (N,N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = 2*N-1;
@@ -396,7 +396,7 @@ namespace {
     // [              1]
     // but don't store the diagonal
     if (N<2) return;
-    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<GRPH> G = rcp(new GRPH (N,N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = N-1;

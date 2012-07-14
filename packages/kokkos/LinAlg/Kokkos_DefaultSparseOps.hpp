@@ -157,7 +157,7 @@ namespace Kokkos {
   class DefaultCrsGraph : public CrsGraphBase<Ordinal,Node>
   {
     public:
-      DefaultCrsGraph(Ordinal numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
+      DefaultCrsGraph(Ordinal numRows, Ordinal numCols, const RCP<Node> &node, const RCP<ParameterList> &params);
       bool isEmpty() const;
       void setStructure(const ArrayRCP<const Ordinal> &ptrs,
                         const ArrayRCP<const Ordinal> &inds);
@@ -194,8 +194,8 @@ namespace Kokkos {
   };
 
   template <class Ordinal, class Node>
-  DefaultCrsGraph<Ordinal,Node>::DefaultCrsGraph(Ordinal numRows, const RCP<Node> &node, const RCP<ParameterList> &params)
-  : CrsGraphBase<Ordinal,Node>(numRows,node,params)
+  DefaultCrsGraph<Ordinal,Node>::DefaultCrsGraph(Ordinal numRows, Ordinal numCols, const RCP<Node> &node, const RCP<ParameterList> &params)
+  : CrsGraphBase<Ordinal,Node>(numRows,numCols,node,params)
   , isInitialized_(false)
   , isEmpty_(false)
   {

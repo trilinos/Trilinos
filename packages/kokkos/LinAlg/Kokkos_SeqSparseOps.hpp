@@ -71,7 +71,7 @@ namespace Kokkos {
     typedef Ordinal ordinal_type;
     typedef Node node_type;
 
-    SeqCrsGraph (Ordinal numRows,
+    SeqCrsGraph (Ordinal numRows, Ordinal numCols, 
                  const Teuchos::RCP<Node>& node,
                  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -81,6 +81,10 @@ namespace Kokkos {
 
     Ordinal getNumRows () const {
       return numRows_;
+    }
+
+    Ordinal getNumCols () const {
+      return numCols_;
     }
 
     Teuchos::ArrayRCP<const Ordinal> getPointers() const {
@@ -110,7 +114,7 @@ namespace Kokkos {
 
   private:
     Teuchos::RCP<Node> node_;
-    Ordinal numRows_;
+    Ordinal numRows_, numCols_;
     //Teuchos::RCP<ParameterList> params_;
     bool isInitialized_;
     bool isEmpty_;
@@ -159,11 +163,12 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   SeqCrsGraph<Ordinal,Node>::
-  SeqCrsGraph (Ordinal numRows,
+  SeqCrsGraph (Ordinal numRows, Ordinal numCols,
                const Teuchos::RCP<Node> &node,
                const Teuchos::RCP<Teuchos::ParameterList> &params) :
     node_ (node),
     numRows_ (numRows),
+    numCols_ (numCols),
     isInitialized_ (false),
     isEmpty_ (numRows == 0), // provisional; a matrix with numRows > 0
                              // may still have zero entries.

@@ -555,7 +555,7 @@ namespace Tpetra {
     else                lclparams = sublist(params,"Local Graph");
     // should be null, but delete it first so that any memory can be freed
     myGraph_->lclGraph_ = null;
-    myGraph_->lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
+    myGraph_->lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getColMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
     myGraph_->lclGraph_->setStructure(ptrs,inds);
     ptrs = null;
     inds = null;

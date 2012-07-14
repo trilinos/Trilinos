@@ -208,7 +208,7 @@ namespace {
     // [                -1  3 -1]
     // [                   -1  2]
     if (N<2) return;
-    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<GRPH> G = rcp(new GRPH (N,N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = 3*N - 2;

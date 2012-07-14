@@ -79,7 +79,7 @@ namespace {
     typedef SparseOps::graph<int,Node>::graph_type             Graph;
     const int N = 10;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
-    RCP<Graph> G = rcp(new Graph(N,node,parameterList()));
+    RCP<Graph> G = rcp(new Graph(N,N,node,parameterList()));
     {
       ArrayRCP<int>  ptrs_tooSmall(N), ptrs_tooBig(N+2);
       ArrayRCP<int>  inds;
@@ -102,7 +102,7 @@ namespace {
     ArrayRCP<int> ptrs = arcp<int>(N+1);
     std::fill(ptrs.begin(), ptrs.end(), 0);
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
-    RCP<Graph> G = rcp(new Graph(N,node,parameterList()));
+    RCP<Graph> G = rcp(new Graph(N,N,node,parameterList()));
     G->setStructure(ptrs,null);
     RCP<ParameterList> params = parameterList();
     SparseOps::finalizeGraph(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,params);
@@ -133,8 +133,9 @@ namespace {
       }
       ptrs[N] = curoffset;
     }
-    RCP<Graph> G = rcp(new Graph(N,node,parameterList()));
+    RCP<Graph> G = rcp(new Graph(N,N,node,parameterList()));
     TEST_EQUALITY( G->getNumRows(), N );
+    TEST_EQUALITY( G->getNumCols(), N );
     G->setStructure(ptrs, inds);
     SparseOps::finalizeGraph(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,null);
     ArrayRCP<const Ordinal> chkInds;
@@ -145,6 +146,7 @@ namespace {
     TEST_EQUALITY( ptrs, chkPtrs );
     TEST_EQUALITY_CONST( G->isEmpty(), false );
     TEST_EQUALITY( G->getNumRows(), N );
+    TEST_EQUALITY( G->getNumCols(), N );
     Matrix M(G,null);
     M.setValues(vals);
     SparseOps::finalizeMatrix(*G,M,null);
@@ -178,7 +180,7 @@ namespace {
       }
       ptrs[N] = curoffset;
     }
-    RCP<Graph> G = rcp(new Graph(N,node,null) );
+    RCP<Graph> G = rcp(new Graph(N,N,node,null) );
     Matrix M(G,null);
     G->setStructure(ptrs,inds);
     M.setValues(vals);
@@ -204,7 +206,7 @@ namespace {
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
 
     // build a null-size graph
-    Graph G(N,node,null);
+    Graph G(N,N,node,null);
     {
       ArrayRCP<Ordinal> ptrs;
       ArrayRCP<Ordinal> inds;

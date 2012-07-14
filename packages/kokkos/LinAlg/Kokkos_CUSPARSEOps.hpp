@@ -321,7 +321,7 @@ namespace Kokkos {
   class CUSPARSECrsGraph : public CrsGraphBase<int,Node>
   {
     public:
-      CUSPARSECrsGraph(int numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
+      CUSPARSECrsGraph(int numRows, int numCols, const RCP<Node> &node, const RCP<ParameterList> &params);
       bool isEmpty() const;
       void setStructure(const ArrayRCP<const int>  &ptrs,
                         const ArrayRCP<const int> &inds);
@@ -378,8 +378,8 @@ namespace Kokkos {
   };
 
   template <class Node>
-  CUSPARSECrsGraph<Node>::CUSPARSECrsGraph(int numRows, const RCP<Node> &node, const RCP<ParameterList> &params)
-  : CrsGraphBase<int,Node>(numRows,node,params)
+  CUSPARSECrsGraph<Node>::CUSPARSECrsGraph(int numRows, int numCols, const RCP<Node> &node, const RCP<ParameterList> &params)
+  : CrsGraphBase<int,Node>(numRows,numCols,node,params)
   , isInitialized_(false)
   , isEmpty_(false)
   {
@@ -750,7 +750,7 @@ namespace Kokkos {
     //! The Kokkos Node instance given to this object's constructor.
     RCP<Node> node_;
 
-    int numRows_, numNZ_;
+    int numRows_, numCols_, numNZ_;
     bool isInitialized_;
 
     ArrayRCP<const int> rowPtrs_, colInds_;
@@ -976,6 +976,7 @@ namespace Kokkos {
   CUSPARSEOps<Scalar,Node>::CUSPARSEOps(const RCP<Node> &node)
   : node_(node)
   , numRows_(0)
+  , numCols_(0)
   , numNZ_(0)
   , isInitialized_(false)
   {
@@ -1002,6 +1003,7 @@ namespace Kokkos {
         std::runtime_error, " operators already initialized.");
     // get cusparse data from the matrix
     numRows_ = graph->getNumRows();
+    numRows_ = graph->getNumCols();
     matdescr_ = graph->getMatDesc();
     rowPtrs_ = graph->getDevPointers();
     colInds_ = graph->getDevIndices();

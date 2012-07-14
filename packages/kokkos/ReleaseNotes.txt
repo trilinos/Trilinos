@@ -5,6 +5,7 @@ Release Notes for Trilinos Package Kokkos
 Trilinos 11.0
 ------------------------------
 * Non-backwards compatible change: row pointers for CRS objects are not longer size_t; instead, they are the same Ordinal type as the columns indices
+* Non-backwards compatible change: construction of Kokkos local graph objects requires specifying number of columns
 
 
 Trilinos 10.12
