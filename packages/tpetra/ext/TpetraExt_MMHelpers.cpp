@@ -50,6 +50,9 @@
 #include "TpetraExt_MMHelpers_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
+#if defined(HAVE_KOKKOS_OPENMP)
+#  include <Kokkos_OpenMPNode.hpp>
+#endif
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif
@@ -67,6 +70,12 @@ namespace Tpetra {
   TPETRA_CRSWRAPPER_INSTANT(double,int,int,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(double,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_CRSMATRIXSTRUCT_INSTANT(double,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_INSTANT(double,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(double,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(double,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIXSTRUCT_INSTANT(double,int,int,Kokkos::TBBNode)
   TPETRA_CRSWRAPPER_INSTANT(double,int,int,Kokkos::TBBNode)
@@ -91,6 +100,12 @@ namespace Tpetra {
   TPETRA_CRSWRAPPER_INSTANT(float,int,int,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(float,int,int,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(float,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_CRSMATRIXSTRUCT_INSTANT(float,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_INSTANT(float,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(float,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(float,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIXSTRUCT_INSTANT(float,int,int,Kokkos::TBBNode)
   TPETRA_CRSWRAPPER_INSTANT(float,int,int,Kokkos::TBBNode)
@@ -115,6 +130,12 @@ namespace Tpetra {
   TPETRA_CRSWRAPPER_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_CRSMATRIXSTRUCT_INSTANT(std::complex<double>,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_INSTANT(std::complex<double>,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(std::complex<double>,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIXSTRUCT_INSTANT(std::complex<double>,int,int,Kokkos::TBBNode)
   TPETRA_CRSWRAPPER_INSTANT(std::complex<double>,int,int,Kokkos::TBBNode)
@@ -140,6 +161,12 @@ namespace Tpetra {
   TPETRA_CRSWRAPPER_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_CRSMATRIXSTRUCT_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIXSTRUCT_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
   TPETRA_CRSWRAPPER_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
@@ -168,6 +195,12 @@ namespace Tpetra {
   TPETRA_CRSWRAPPER_INSTANT(double,int,long,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(double,int,long,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(double,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_CRSMATRIXSTRUCT_INSTANT(double,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_INSTANT(double,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(double,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(double,int,long,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIXSTRUCT_INSTANT(double,int,long,Kokkos::TBBNode)
   TPETRA_CRSWRAPPER_INSTANT(double,int,long,Kokkos::TBBNode)
@@ -192,6 +225,12 @@ namespace Tpetra {
   TPETRA_CRSWRAPPER_INSTANT(float,int,long,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(float,int,long,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(float,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_CRSMATRIXSTRUCT_INSTANT(float,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_INSTANT(float,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(float,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(float,int,long,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIXSTRUCT_INSTANT(float,int,long,Kokkos::TBBNode)
   TPETRA_CRSWRAPPER_INSTANT(float,int,long,Kokkos::TBBNode)
@@ -216,6 +255,12 @@ namespace Tpetra {
   TPETRA_CRSWRAPPER_INSTANT(std::complex<double>,int,long,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(std::complex<double>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_CRSMATRIXSTRUCT_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIXSTRUCT_INSTANT(std::complex<double>,int,long,Kokkos::TBBNode)
   TPETRA_CRSWRAPPER_INSTANT(std::complex<double>,int,long,Kokkos::TBBNode)
@@ -241,6 +286,12 @@ namespace Tpetra {
   TPETRA_CRSWRAPPER_INSTANT(std::complex<float>,int,long,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::SerialNode)
   TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(std::complex<float>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_CRSMATRIXSTRUCT_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_CRSMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
+  TPETRA_CRSWRAPPER_GRAPHBUILDER_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIXSTRUCT_INSTANT(std::complex<float>,int,long,Kokkos::TBBNode)
   TPETRA_CRSWRAPPER_INSTANT(std::complex<float>,int,long,Kokkos::TBBNode)
