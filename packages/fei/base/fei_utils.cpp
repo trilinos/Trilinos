@@ -151,7 +151,7 @@ void fei::utils::getConnectivityArrays(fei::MatrixGraph& matrixGraph,
     //if not symmetric, then assume it's not an element-block.
     if (!cblk->isSymmetric()) continue;
 
-    num_elems += cblk->getNativeConnectivityIDs().size();
+    num_elems += cblk->getConnectivityIDs().size();
 
     fei::Pattern* pattern = cblk->getRowPattern();
     num_nodes += num_elems*pattern->getNumIDs();
@@ -179,7 +179,7 @@ void fei::utils::getConnectivityArrays(fei::MatrixGraph& matrixGraph,
 
     fei::Pattern* pattern = cblk->getRowPattern();
 
-    int ne = cblk->getNativeConnectivityIDs().size();
+    int ne = cblk->getConnectivityIDs().size();
     int nn = pattern->getNumIDs();
     std::vector<int>& cblk_nodes = cblk->getRowConnectivities();
     for(unsigned i=0; i<cblk_nodes.size(); ++i) {
