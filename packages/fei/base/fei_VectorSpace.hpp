@@ -745,6 +745,8 @@ namespace fei {
 
     void getSendProcs(std::vector<int>& sendProcs) const;
 
+    fei::SharedIDs<int>& getSharedIDs(int idType);
+
   private:
     friend class fei::Lookup_Impl;
 
@@ -772,8 +774,6 @@ namespace fei {
                           fei::comm_map* sharerPattern,
                           snl_fei::RecordCollection* recordCollection,
                           std::vector<fei::FieldMask*>& fieldMasks);
-
-    fei::SharedIDs<int>& getSharedIDs_private(int idType);
 
     void setName(const char* name);
 

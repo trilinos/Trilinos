@@ -499,7 +499,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
   int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
 
-  fei::SharedIDs<int>& shIDs = getSharedIDs_private(idType);
+  fei::SharedIDs<int>& shIDs = getSharedIDs(idType);
 
   int offset = 0;
   for(int i=0; i<numShared; ++i) {
@@ -541,7 +541,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
 
   if (numShared == 0) return(0);
 
-  fei::SharedIDs<int>& shIDs = getSharedIDs_private(idType);
+  fei::SharedIDs<int>& shIDs = getSharedIDs(idType);
 
   int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
@@ -620,7 +620,7 @@ void fei::VectorSpace::getSendProcs(std::vector<int>& sendProcs) const
 }
 
 //----------------------------------------------------------------------------
-fei::SharedIDs<int>& fei::VectorSpace::getSharedIDs_private(int idType)
+fei::SharedIDs<int>& fei::VectorSpace::getSharedIDs(int idType)
 {
   std::map<int,fei::SharedIDs<int> >::iterator
     iter = sharedIDTables_.find(idType);
@@ -641,7 +641,7 @@ void fei::VectorSpace::compute_shared_ids()
   //on multiple processors.
   for(size_t i=0; i<idTypes_.size(); ++i) {
     snl_fei::RecordCollection* records = recordCollections_[i];
-    fei::SharedIDs<int>& shIDs = getSharedIDs_private(idTypes_[i]);
+    fei::SharedIDs<int>& shIDs = getSharedIDs(idTypes_[i]);
 
     fei::set_shared_ids(comm_, *records, shIDs);
   }
@@ -1811,7 +1811,7 @@ int fei::VectorSpace::synchronizeSharedRecords()
 
   for(size_t i=0; i<idTypes_.size(); ++i) {
 
-    fei::SharedIDs<int>& shared = getSharedIDs_private(idTypes_[i]);
+    fei::SharedIDs<int>& shared = getSharedIDs(idTypes_[i]);
     
     //now create/initialize ownerPatterns which map owning processors to lists
     //of ids that are shared locally, and sharerPatterns which map sharing

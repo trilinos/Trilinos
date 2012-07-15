@@ -488,6 +488,17 @@ fei::Matrix_Impl<T>::Matrix_Impl(fei::SharedPtr<T> matrix,
   else {
     setBlockMatrix(false);
   }
+
+  std::vector<double> zeros;
+  fei::SharedPtr<fei::SparseRowGraph> srg = matrixGraph->getRemotelyOwnedGraphRows();
+  for(size_t row=0; row<srg->rowNumbers.size(); ++row) {
+    int rowLength = srg->rowOffsets[row+1] - srg->rowOffsets[row];
+    if (rowLength == 0) continue;
+    zeros.resize(rowLength, 0.0);
+    const double* zerosPtr = &zeros[0];
+    const int* cols = &srg->packedColumnIndices[srg->rowOffsets[row]];
+    sumIn(1, &srg->rowNumbers[row], rowLength, cols, &zerosPtr);
+  }
 }
 
 //----------------------------------------------------------------------------
