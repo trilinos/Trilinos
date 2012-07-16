@@ -122,6 +122,22 @@ void mPutDbl (char *name,int n1,int n2,double *pd)
 }
 
 
+/* put integer array in m file */
+void mPutInt (char *name,int n1,int n2, int *pd)
+{
+  int i,j;
+  assert(m_file!=0);
+  if ( n1==1 && n2 ==1 ){
+    fprintf(m_file,"%s=%d;\n",name,*pd);
+    return;
+  }
+  fprintf(m_file,"%s=zeros(%d,%d);\n",name,n1,n2);
+  for (i=0;i<n1;i++)
+    for (j=0;j<n2;j++)
+      fprintf(m_file,"%s(%d,%d)=%d;\n",name,i+1,j+1,pd[i*n2+j]);
+}
+
+
 /* put string in mat file*/
 void matPutStr (char *name,char *str)
 {
@@ -150,9 +166,23 @@ void matPutDbl (char *name,int n1,int n2,double *pd)
   Mat_VarFree(matvar);
 }
 
+/* put integer in mat file*/
+void matPutInt (char *name,int n1,int n2, int *pd)
+{
+  matvar_t *matvar = NULL;
+  
+  size_t dims[2];
+  dims[0] = n1;
+  dims[1] = n2;
+  
+  matvar = Mat_VarCreate(name, MAT_C_INT32, MAT_T_INT32, 2, dims, pd, MAT_F_DONT_COPY_DATA);
+  Mat_VarWrite(mat_file, matvar, MAT_COMPRESSION_ZLIB);
+  Mat_VarFree(matvar);
+}
+
 /*----------------------*/
 
-/* wrappers for the two output routine types */
+/* wrappers for the output routine types */
 void PutStr (char *name,char *str)
 {
   if ( textfile )
@@ -160,6 +190,7 @@ void PutStr (char *name,char *str)
   else
     matPutStr(name,str);
 }
+
 void PutDbl (char *name,int n1,int n2,double *pd)
 {
   if ( textfile )
@@ -168,18 +199,14 @@ void PutDbl (char *name,int n1,int n2,double *pd)
     matPutDbl(name,n1,n2,pd);
 }
     
-
-
-/* int-to-double copy (since MATLAB needs double)*/
-double *i2d (int *iscr, int n)
+void PutInt (char *name,int n1,int n2,int *pd)
 {
-  int i;
-  double *scr;
-  scr = (double *) calloc(n,sizeof(double));
-  for (i=0;i<n;i++)
-    scr[i]=iscr[i];
-  return scr;
+  if ( textfile )
+    mPutInt(name,n1,n2,pd);
+  else
+    matPutInt(name,n1,n2,pd);
 }
+    
 
 /**********************************************************************/
 /* remove an argument from the list */
@@ -205,7 +232,8 @@ int main (int argc, char *argv[])
     num_axes,num_nodes,num_elements,num_blocks,
     num_side_sets,num_node_sets,num_time_steps,
     num_qa_lines,num_info_lines,num_global_vars,
-    num_nodal_vars,num_element_vars,*ids,*iscr,*num_elem_in_block,*junk,
+    num_nodal_vars,num_element_vars,num_nodeset_vars, num_sideset_vars,
+    *ids,*iscr,*num_elem_in_block,*junk,
     *elem_list,*side_list,
     *nsssides,*nssdfac,
     *nnsnodes,*nnsdfac,
@@ -313,22 +341,26 @@ int main (int argc, char *argv[])
   num_qa_lines   = ex_inquire_int(exo_file,EX_INQ_QA);
   num_info_lines = ex_inquire_int(exo_file,EX_INQ_INFO);
   num_time_steps = ex_inquire_int(exo_file,EX_INQ_TIME);
-  err=ex_get_var_param(exo_file,"g",&num_global_vars);
-  err=ex_get_var_param(exo_file,"n",&num_nodal_vars);
-  err=ex_get_var_param(exo_file,"e",&num_element_vars);
+  err=ex_get_variable_param(exo_file,EX_GLOBAL,&num_global_vars);
+  err=ex_get_variable_param(exo_file,EX_NODAL,&num_nodal_vars);
+  err=ex_get_variable_param(exo_file,EX_ELEM_BLOCK,&num_element_vars);
+  err=ex_get_variable_param(exo_file,EX_NODE_SET,&num_nodeset_vars);
+  err=ex_get_variable_param(exo_file,EX_SIDE_SET,&num_sideset_vars);
 
 
   /* export paramters */
-  f=num_axes         ;PutDbl("naxes",  1, 1,&f);
-  f=num_nodes        ;PutDbl("nnodes", 1, 1,&f);
-  f=num_elements     ;PutDbl("nelems", 1, 1,&f);
-  f=num_blocks       ;PutDbl("nblks",  1, 1,&f);
-  f=num_node_sets    ;PutDbl("nnsets", 1, 1,&f);
-  f=num_side_sets    ;PutDbl("nssets", 1, 1,&f);
-  f=num_time_steps   ;PutDbl("nsteps", 1, 1,&f);
-  f=num_global_vars  ;PutDbl("ngvars", 1, 1,&f);
-  f=num_nodal_vars   ;PutDbl("nnvars", 1, 1,&f);
-  f=num_element_vars ;PutDbl("nevars", 1, 1,&f);
+  PutInt("naxes",  1, 1,&num_axes);
+  PutInt("nnodes", 1, 1,&num_nodes);
+  PutInt("nelems", 1, 1,&num_elements);
+  PutInt("nblks",  1, 1,&num_blocks);
+  PutInt("nnsets", 1, 1,&num_node_sets);
+  PutInt("nssets", 1, 1,&num_side_sets);
+  PutInt("nsteps", 1, 1,&num_time_steps);
+  PutInt("ngvars", 1, 1,&num_global_vars);
+  PutInt("nnvars", 1, 1,&num_nodal_vars);
+  PutInt("nevars", 1, 1,&num_element_vars);
+  PutInt("nnsvars", 1, 1,&num_nodeset_vars);
+  PutInt("nssvars", 1, 1,&num_sideset_vars);
 
   /* allocate -char- scratch space*/
   n =                              num_info_lines;
@@ -399,14 +431,12 @@ int main (int argc, char *argv[])
    /* side sets */
   if(num_side_sets > 0){
     ids=(int *) calloc(num_side_sets,sizeof(int));
-    err = ex_get_side_set_ids(exo_file,ids);
-    scr = i2d(ids,num_side_sets);
-    PutDbl( "ssids",num_side_sets, 1,scr);
-    free(scr);
+    err = ex_get_ids(exo_file,EX_SIDE_SET,ids);
+    PutInt( "ssids",num_side_sets, 1,ids);
     nsssides = (int *) calloc(num_side_sets,sizeof(int)); /*dgriffi */
     nssdfac  = (int *) calloc(num_side_sets,sizeof(int)); /*dgriffi */
     for (i=0;i<num_side_sets;i++){
-      err = ex_get_side_set_param(exo_file,ids[i],&n1,&n2);
+      err = ex_get_set_param(exo_file,EX_SIDE_SET, ids[i],&n1,&n2);
       nsssides[i]=n1; /* dgriffi */
       nssdfac[i]=n2;  /* dgriffi */
       /*
@@ -419,7 +449,6 @@ int main (int argc, char *argv[])
 	printf(" WARNING: Exodus II file does not contain distribution factors.\n");
 	
 	/* n1=number of faces, n2=number of df */
-	err = ex_get_side_set_param(exo_file,ids[i],&n1,&n2);
 	/* using distribution factors to determine number of nodes in the sideset
          causes a lot grief since some codes do not output distribution factors
          if they are all equal to 1. mkbhard: I am using the function call below
@@ -438,14 +467,10 @@ int main (int argc, char *argv[])
       err = ex_get_side_set_node_list(exo_file,ids[i],iscr,iscr+n1);
       /* number-of-nodes-per-side list */
       sprintf(str,"ssnum%02d",i+1);
-      scr = i2d(iscr,n1);
-      PutDbl(str,n1,1,scr); 
-      free(scr);
+      PutInt(str,n1,1,iscr); 
       /* nodes list */
       sprintf(str,"ssnod%02d",i+1);
-      scr = i2d(iscr+n1,n2);
-      PutDbl(str,n2,1,scr);
-      free(scr);
+      PutInt(str,n2,1,iscr+n1);
       free(iscr);
       /* distribution-factors list */
       scr = (double *) calloc (n2,sizeof(double));
@@ -462,26 +487,18 @@ int main (int argc, char *argv[])
       /* element and side list for side sets (dgriffi) */
       elem_list = (int *) calloc(n1, sizeof(int));
       side_list = (int *) calloc(n1, sizeof(int));
-      err = ex_get_side_set(exo_file,ids[i],elem_list,side_list);
+      err = ex_get_set(exo_file,EX_SIDE_SET,ids[i],elem_list,side_list);
       sprintf(str,"ssside%02d",i+1);
-      scr =i2d(side_list,n1);
-      PutDbl(str,n1,1,scr);
-      free(scr);
+      PutInt(str,n1,1,side_list);
       sprintf(str,"sselem%02d",i+1);
-      scr =i2d(elem_list,n1);
-      PutDbl(str,n1,1,scr);
-      free(scr);
+      PutInt(str,n1,1,elem_list);
       free(elem_list);
       free(side_list);
 
     }
     /* Store # sides and # dis. factors per side set (dgriffi) */
-    scr = i2d(nsssides,num_side_sets);
-    PutDbl("nsssides",num_side_sets,1,scr);
-    free(scr);
-    scr = i2d(nssdfac,num_side_sets);
-    PutDbl("nssdfac",num_side_sets,1,scr);
-    free(scr);
+    PutInt("nsssides",num_side_sets,1,nsssides);
+    PutInt("nssdfac",num_side_sets,1,nssdfac);
     free(ids);
     free(nsssides);
     free(nssdfac);
@@ -490,21 +507,17 @@ int main (int argc, char *argv[])
   /* node sets (section by dgriffi) */
   if(num_node_sets > 0){
     ids=(int *) calloc(num_node_sets,sizeof(int));
-    err = ex_get_node_set_ids(exo_file,ids);
-    scr = i2d(ids,num_node_sets);
-    PutDbl( "nsids",num_node_sets, 1,scr);
-    free(scr);
+    err = ex_get_ids(exo_file,EX_NODE_SET, ids);
+    PutInt( "nsids",num_node_sets, 1,ids);
     nnsnodes = (int *) calloc(num_node_sets,sizeof(int)); 
     nnsdfac  = (int *) calloc(num_node_sets,sizeof(int));
     for (i=0;i<num_node_sets;i++){
-      err = ex_get_node_set_param(exo_file,ids[i],&n1,&n2);
+      err = ex_get_set_param(exo_file,EX_NODE_SET,ids[i],&n1,&n2);
       iscr = (int *) calloc(n1,sizeof(int));
       err = ex_get_node_set(exo_file,ids[i],iscr);
       /* nodes list */
       sprintf(str,"nsnod%02d",i+1);
-      scr = i2d(iscr,n1);
-      PutDbl(str,n1,1,scr);
-      free(scr);
+      PutInt(str,n1,1,iscr);
       free(iscr);
       /* distribution-factors list */
       scr = (double *) calloc (n2,sizeof(double));
@@ -519,12 +532,8 @@ int main (int argc, char *argv[])
     }
 
       /* Store # nodes and # dis. factors per node set */
-      scr = i2d(nnsnodes,num_node_sets);
-      PutDbl("nnsnodes",num_node_sets,1,scr);
-      free(scr);
-      scr = i2d(nnsdfac,num_node_sets);
-      PutDbl("nnsdfac",num_node_sets,1,scr);
-      free(scr);
+      PutInt("nnsnodes",num_node_sets,1,nnsnodes);
+      PutInt("nnsdfac",num_node_sets,1,nnsdfac);
       free(ids);
    
     free(nnsdfac);
@@ -535,20 +544,16 @@ int main (int argc, char *argv[])
   /* element blocks */
   ids=(int *) calloc(num_blocks,sizeof(int));
   num_elem_in_block=(int *) calloc(num_blocks,sizeof(int));
-  err = ex_get_elem_blk_ids(exo_file,ids);
-  scr = i2d(ids,num_blocks);
-  PutDbl( "blkids",num_blocks, 1,scr);
-  free(scr);
+  err = ex_get_ids(exo_file,EX_ELEM_BLOCK,ids);
+  PutInt( "blkids",num_blocks, 1,ids);
   for (i=0;i<num_blocks;i++) {
     err = ex_get_elem_block(exo_file,ids[i],str2[i],&n,&n1,&n2);
     num_elem_in_block[i]=n;
     iscr = (int *) calloc(n*n1,sizeof(int));
-    err = ex_get_elem_conn(exo_file,ids[i],iscr);
+    err = ex_get_conn(exo_file,EX_ELEM_BLOCK,ids[i],iscr, NULL, NULL);
     sprintf(str,"blk%02d",i+1);
-    scr = i2d(iscr,n*n1);
-    PutDbl(str,n1,n,scr);
+    PutInt(str,n1,n,iscr);
     free(iscr);
-    free(scr);
   }
   str[0]='\0';
   for (i=0;i<num_blocks;i++)
@@ -565,7 +570,7 @@ int main (int argc, char *argv[])
 
   /* global variables */
   if (num_global_vars > 0 ) {
-    err = ex_get_var_names(exo_file,"g",num_global_vars,str2);
+    err = ex_get_variable_names(exo_file,EX_GLOBAL,num_global_vars,str2);
     str[0]='\0';
     for (i=0;i<num_global_vars;i++)
       sprintf(str+strlen(str),"%s\n",str2[i]);
@@ -581,7 +586,7 @@ int main (int argc, char *argv[])
 
   /* nodal variables */
   if (num_nodal_vars > 0 ) {
-    err = ex_get_var_names(exo_file,"n",num_nodal_vars,str2);
+    err = ex_get_variable_names(exo_file,EX_NODAL,num_nodal_vars,str2);
     str[0]='\0';
     for (i=0;i<num_nodal_vars;i++)
       sprintf(str+strlen(str),"%s\n",str2[i]);
@@ -599,7 +604,7 @@ int main (int argc, char *argv[])
 
   /* element variables */
   if (num_element_vars > 0 ) {
-    err = ex_get_var_names(exo_file,"e",num_element_vars,str2);
+    err = ex_get_variable_names(exo_file,EX_ELEM_BLOCK,num_element_vars,str2);
     str[0]='\0';
     for (i=0;i<num_element_vars;i++)
       sprintf(str+strlen(str),"%s\n",str2[i]);
@@ -632,18 +637,14 @@ int main (int argc, char *argv[])
   ids = (int *)malloc(num_nodes*sizeof(int));
   err = ex_get_node_num_map(exo_file,ids);
   if ( err==0 ){
-    scr = i2d( ids, num_nodes );
-    PutDbl("node_num_map",num_nodes,1,scr);
-    free(scr);
+    PutInt("node_num_map",num_nodes,1,ids);
   }
   free(ids);
 
   ids = (int *)malloc(num_elements*sizeof(int));
   err = ex_get_elem_num_map(exo_file,ids);
   if ( err==0 ){
-    scr = i2d( ids, num_elements );
-    PutDbl("elem_num_map",num_elements,1,scr);
-    free(scr);
+    PutInt("elem_num_map",num_elements,1,ids);
   }
   free(ids);
 
