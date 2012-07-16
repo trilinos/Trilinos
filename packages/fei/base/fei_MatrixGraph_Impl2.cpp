@@ -562,10 +562,10 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
 
   if (rowSpace_.get() == NULL) ERReturn(-1);
 
-  IndexType<int,int>& connectivityIDs = connblk->getNativeConnectivityIDs();
+  MapIntInt& connectivityIDs = connblk->getConnectivityIDs();
 
   int idOffset = -1;
-  IndexType<int,int>::iterator
+  MapIntInt::iterator
    iter = connectivityIDs.find(connectivityID);
   if (iter == connectivityIDs.end()) {
     idOffset = connectivityIDs.size();
@@ -814,10 +814,10 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
     ERReturn(-1);
   }
 
-  IndexType<int,int>& connectivityIDs = connblk->getNativeConnectivityIDs();
+  MapIntInt& connectivityIDs = connblk->getConnectivityIDs();
 
   int i, idOffset = -1;
-  IndexType<int,int>::iterator
+  MapIntInt::iterator
     iter = connectivityIDs.find(connectivityID);
   if (iter == connectivityIDs.end()) {
     idOffset = connectivityIDs.size();
@@ -1788,8 +1788,8 @@ int fei::MatrixGraph_Impl2::compareStructure(const fei::MatrixGraph& matrixGraph
       const fei::ConnectivityBlock* mycblock = getConnectivityBlock(myBlockIDs[i]);
       const fei::ConnectivityBlock* cblock = matrixGraph.getConnectivityBlock(blockIDs[i]);
 
-      int myNumLists = mycblock->getNativeConnectivityIDs().size();
-      int numLists = cblock->getNativeConnectivityIDs().size();
+      int myNumLists = mycblock->getConnectivityIDs().size();
+      int numLists = cblock->getConnectivityIDs().size();
 
       if (myNumLists != numLists ||
           mycblock->isSymmetric() != cblock->isSymmetric()) {
@@ -2120,16 +2120,10 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_multiField_symmetric(fei::Graph* gra
                                           colSpace_.get());
   }
 
-  IndexType<int,int>& connIDs = cblock->getNativeConnectivityIDs();
   std::vector<int>& values = cblock->getRowConnectivities();
 
-  IndexType<int,int>::iterator
-    c_iter = connIDs.begin(),
-    c_end  = connIDs.end();
-
-  for(; c_iter != c_end; ++c_iter) {
-    int offset = c_iter->second;
-    int* records = &values[offset*numIDs];
+  for(size_t offset = 0; offset < values.size(); offset += numIDs) {
+    int* records = &values[offset];
 
     CHK_ERR( getConnectivityIndices_multiField(pattern->getRecordCollections(),
                                                 records, numIDs,
@@ -2230,16 +2224,11 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_multiField_nonsymmetric(fei::Graph* 
                                            colSpace_.get());
   }
 
-  IndexType<int,int>& connIDs = cblock->getNativeConnectivityIDs();
+  size_t numRows = cblock->getConnectivityIDs().size();
   std::vector<int>& rowrecords = cblock->getRowConnectivities();
   std::vector<int>& colrecords = cblock->getColConnectivities();
 
-  IndexType<int,int>::iterator
-   c_iter = connIDs.begin(),
-   c_end  = connIDs.end();
-
-  for(; c_iter != c_end; ++c_iter) {
-    int offset = c_iter->second;
+  for(size_t offset=0; offset<numRows; ++offset) {
     int* records = &rowrecords[offset*numIDs];
 
     int* colRecords = &colrecords[offset*numColIDs];
@@ -2341,16 +2330,10 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_singleField_symmetric(fei::Graph* gr
   unsigned fieldSize = snl_fei::getFieldSize(fieldID, rowSpace_.get(),
                                              colSpace_.get());
 
-  IndexType<int,int>& connIDs = cblock->getNativeConnectivityIDs();
   std::vector<int>& rowrecords = cblock->getRowConnectivities();
 
-  IndexType<int,int>::iterator
-    c_iter = connIDs.begin(),
-    c_end  = connIDs.end();
-
-  for(; c_iter != c_end; ++c_iter) {
-    int offset = c_iter->second;
-    int* records = &rowrecords[offset*numIDs];
+  for(size_t offset = 0; offset<rowrecords.size(); offset += numIDs) {
+    int* records = &rowrecords[offset];
 
     CHK_ERR( getConnectivityIndices_singleField(pattern->getRecordCollections(),
                                                 records, numIDs,
@@ -2420,7 +2403,7 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_singleField_nonsymmetric(fei::Graph*
   int rowFieldSize = snl_fei::getFieldSize(rowFieldID, rowSpace_.get(),
                                            colSpace_.get());
 
-  IndexType<int,int>& connIDs = cblock->getNativeConnectivityIDs();
+  size_t numRows = cblock->getConnectivityIDs().size();
   std::vector<int>& rowrecords = cblock->getRowConnectivities();
   std::vector<int>& colrecords = cblock->getColConnectivities();
 
@@ -2428,12 +2411,7 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_singleField_nonsymmetric(fei::Graph*
   int colFieldSize = snl_fei::getFieldSize(colFieldID, rowSpace_.get(),
                                            colSpace_.get());
 
-  IndexType<int,int>::iterator
-    c_iter = connIDs.begin(),
-    c_end  = connIDs.end();
-
-  for(; c_iter != c_end; ++c_iter) {
-    int offset = c_iter->second;
+  for(size_t offset=0; offset<numRows; ++offset) {
     int* records = &rowrecords[offset*numIDs];
 
     int* colRecords = &colrecords[offset*numColIDs];
@@ -2548,15 +2526,9 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_noField_symmetric(fei::Graph* graph,
   std::vector<int> indices(numIndices);
   int* indicesPtr = &indices[0];
 
-  IndexType<int,int>& connIDs = cblock->getNativeConnectivityIDs();
   std::vector<int>& rowrecords = cblock->getRowConnectivities();
 
-  IndexType<int,int>::iterator
-    c_iter = connIDs.begin(),
-    c_end  = connIDs.end();
-
-  for(; c_iter != c_end; ++c_iter) {
-    int offset = c_iter->second;
+  for(size_t offset=0; offset<rowrecords.size(); offset+=numIDs) {
     int* records = &rowrecords[offset*numIDs];
 
     int checkNumIndices;
@@ -2599,7 +2571,7 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_sparse(fei::Graph* graph,
   fei::Pattern* pattern = cblock->getRowPattern();
   const snl_fei::RecordCollection*const* recordCollections = pattern->getRecordCollections();
 
-  IndexType<int,int>& connIDs = cblock->getNativeConnectivityIDs();
+  size_t numRows = cblock->getConnectivityIDs().size();
   std::vector<int>& connOffsets = cblock->getConnectivityOffsets();
   int* rowrecords = &(cblock->getRowConnectivities()[0]);
   int* colrecords = &(cblock->getColConnectivities()[0]);
@@ -2612,12 +2584,7 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_sparse(fei::Graph* graph,
                                       colSpace_.get());
   }
 
-  IndexType<int,int>::iterator
-    c_iter = connIDs.begin(),
-    c_end  = connIDs.end();
-
-  for(; c_iter != c_end; ++c_iter) {
-    int offset = c_iter->second;
+  for(size_t offset=0; offset<numRows; ++offset) {
     int rowlen = connOffsets[offset+1] - offset;
 
     int* records = &(rowrecords[offset]);

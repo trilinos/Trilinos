@@ -172,7 +172,7 @@ namespace snl_fei {
         const fei::ConnectivityBlock* cblock =
           matrixGraph_->getConnectivityBlock(elemBlockIDs[i]);
         if (cblock==NULL) return(-1);
-        numElemsPerBlock[i] = cblock->getNativeConnectivityIDs().size();
+        numElemsPerBlock[i] = cblock->getConnectivityIDs().size();
         numNodesPerElem[i] = cblock->getRowPattern()->getNumIDs();
         elemMatrixSizePerBlock[i] = cblock->getRowPattern()->getNumIndices();
       }
@@ -227,8 +227,7 @@ namespace snl_fei {
         //Next we'll loop over the connectivity-lists in this block,
         //making a call to FiniteElementData::setConnectivity for each one.
 
-        const fei::IndexType<int,int>& elemIDs = cblock->getNativeConnectivityIDs();
-        int numElems = elemIDs.size();
+        int numElems = cblock->getConnectivityIDs().size();
         int* nodes = &(cblock->getRowConnectivities()[0]);
 
         int offset = 0;
