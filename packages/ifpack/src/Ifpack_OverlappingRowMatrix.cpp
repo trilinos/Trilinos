@@ -116,7 +116,9 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
       } 
     } 
 
-    TmpMap = rcp( new Epetra_Map(-1,count, &list[0],0,Comm()) ); 
+    const int *listptr = NULL;
+    if ( ! list.empty() ) listptr = &list[0];
+    TmpMap = rcp( new Epetra_Map(-1,count, listptr,0,Comm()) ); 
 
     TmpMatrix = rcp( new Epetra_CrsMatrix(Copy,*TmpMap,0) ); 
 
@@ -135,8 +137,12 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   for (int i = 0 ; i < (int)ExtElements.size() ; ++i)
     list[i + NumMyRowsA_] = ExtElements[i];
 
-  Map_ = rcp( new Epetra_Map(-1, NumMyRowsA_ + ExtElements.size(),
-	  			      &list[0], 0, Comm()) );
+  const int *listptr = NULL;
+  if ( ! list.empty() ) listptr = &list[0];
+  {
+    Map_ = rcp( new Epetra_Map(-1, NumMyRowsA_ + ExtElements.size(),
+                               listptr, 0, Comm()) );
+  }
 #ifdef IFPACK_SUBCOMM_CODE
   colMap_ = &*Map_;
 #else
@@ -146,8 +152,12 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 #endif
   // now build the map corresponding to all the external nodes
   // (with respect to A().RowMatrixRowMap().
-  ExtMap_ = rcp( new Epetra_Map(-1,ExtElements.size(),
-					 &ExtElements[0],0,A().Comm()) );
+  {
+    const int * extelsptr = NULL;
+    if ( ! ExtElements.empty() ) extelsptr = &ExtElements[0];
+    ExtMap_ = rcp( new Epetra_Map(-1,ExtElements.size(),
+                                  extelsptr,0,A().Comm()) );
+  }
   ExtMatrix_ = rcp( new Epetra_CrsMatrix(Copy,*ExtMap_,*Map_,0) ); 
 
   ExtImporter_ = rcp( new Epetra_Import(*ExtMap_,A().RowMatrixRowMap()) ); 
