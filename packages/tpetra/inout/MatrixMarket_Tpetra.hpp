@@ -1490,13 +1490,6 @@ namespace Tpetra {
                 global_ordinal_type> element_type;
               typedef typename std::vector<element_type>::const_iterator iter_type;
 
-              // Additively merge duplicate matrix entries.
-              pAdder->getAdder()->merge ();
-
-              // Get a temporary const view of the merged matrix entries.
-              const std::vector<element_type>& entries =
-                pAdder->getAdder()->getEntries();
-
               // Number of rows in the matrix.  If we are in tolerant
               // mode, we've already synchronized dims with the actual
               // matrix data.  If in strict mode, we should use dims
@@ -1505,6 +1498,13 @@ namespace Tpetra {
               // data will claim fewer rows than the metadata, if one
               // or more rows have no entries stored in the file.)
               const size_type numRows = dims[0];
+
+              // Additively merge duplicate matrix entries.
+              pAdder->getAdder()->merge ();
+
+              // Get a temporary const view of the merged matrix entries.
+              const std::vector<element_type>& entries =
+                pAdder->getAdder()->getEntries();
 
               // Number of matrix entries (after merging).
               const size_type numEntries = entries.size();
@@ -1563,6 +1563,8 @@ namespace Tpetra {
             }
 
             if (debug && mergeAndConvertSucceeded) {
+              // Number of rows in the matrix.
+              const size_type numRows = dims[0];
               const size_type maxToDisplay = 100;
 
               cerr << "----- Proc 0: numEntriesPerRow[0.."
