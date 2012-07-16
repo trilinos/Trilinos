@@ -98,7 +98,7 @@ INCLUDE(GlobalSet)
 FUNCTION(UNITEST_PACKAGE_ARCH_MISC)
 
   MESSAGE("\n***")
-  MESSAGE("*** Testing miscellaneous PackageArch functionality")
+  MESSAGE("*** Testing miscellaneous TriBITS macro functionality")
   MESSAGE("***\n")
 
   MESSAGE("Testing MESSAGE_WRAPPER(...) without capture")
@@ -340,6 +340,14 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
   UNITTEST_COMPARE_CONST(
     PACKAGE_ADD_TEST_ADD_TEST_INPUT
     "${PACKEXEN}_somePostfix;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1"
+    )
+
+  MESSAGE("Add a test with the directory overridden")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  TRIBITS_ADD_TEST( ${EXEN} DIRECTORY "../somedir" ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/../somedir/${PACKEXEN}.exe;arg1"
     )
 
 ENDFUNCTION()
@@ -1247,4 +1255,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(136)
+UNITTEST_FINAL_RESULT(137)
