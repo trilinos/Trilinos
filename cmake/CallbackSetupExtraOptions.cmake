@@ -15,11 +15,17 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
     MESSAGE(
       "\n***"
-      "\n*** Warning: Setting Trilinos_ENABLE_ForTrilinos=OFF"
-      " because Trilinos_ENABLE_Fortran=OFF!"
+      "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_ForTrilinos=OFF"
+      " because ${PROJECT_NAME}_ENABLE_Fortran=OFF!"
       "\n***\n"
       )
-    SET(Trilinos_ENABLE_ForTrilinos OFF)
+    SET(${PROJECT_NAME}_ENABLE_ForTrilinos OFF)
+  ENDIF()
+
+  IF (NOT EXISTS "${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota")
+    MESSAGE("-- " "  Setting ${PROJECT_NAME}_ENABLE_TriKota=OFF"
+      " because '${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota' does not exit!")
+    SET(${PROJECT_NAME}_ENABLE_TriKota OFF)
   ENDIF()
     
   # ToDo: What is this and why is it needed?
