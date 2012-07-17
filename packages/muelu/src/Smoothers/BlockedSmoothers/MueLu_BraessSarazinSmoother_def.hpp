@@ -34,7 +34,7 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega, RCP<FactoryBase> AFact)
+  BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega, RCP<const FactoryBase> AFact)
     : type_("Braess Sarazin"), nSweeps_(sweeps), omega_(omega), AFact_(AFact), A_(Teuchos::null)
   {
     RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory(AFact_,omega));
