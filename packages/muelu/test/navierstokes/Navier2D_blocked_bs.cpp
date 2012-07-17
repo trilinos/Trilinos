@@ -16,6 +16,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 // Epetra
 #include <EpetraExt_CrsMatrixIn.h>
@@ -64,8 +65,12 @@
 #include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
+#include "MueLu_SchurComplementFactory.hpp"
+#include "MueLu_BraessSarazinSmoother.hpp"
+#include "MueLu_SubBlockAggregationFactory.hpp"
 
 #include "MueLu_SubBlockUnAmalgamationFactory.hpp"
+#include "MueLu_AggregationExportFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -342,7 +347,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-
+  //
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
@@ -362,28 +367,28 @@ int main(int argc, char *argv[]) {
   GO maxCoarseSize=1; //FIXME clp doesn't like long long int
 
   int globalNumDofs = 8898;  // used for the maps
-  int nDofsPerNode = 3;	     // used for generating the fine level null-space
+  int nDofsPerNode = 3;      // used for generating the fine level null-space
 
   // build strided maps
   // striding information: 2 velocity dofs and 1 pressure dof = 3 dofs per node
   std::vector<size_t> stridingInfo;
   stridingInfo.push_back(2);
   stridingInfo.push_back(1);
-  
+
   /////////////////////////////////////// build strided maps
   // build strided maps:
   // xstridedfullmap: full map (velocity and pressure dof gids), continous
   // xstridedvelmap: only velocity dof gid maps (i.e. 0,1,3,4,6,7...)
   // xstridedpremap: only pressure dof gid maps (i.e. 2,5,8,...)
   Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedfullmap = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,8898,0,stridingInfo,comm,-1));
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedvelmap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(Xpetra::StridedMapFactory<int,int>::Build(xstridedfullmap,0));
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedpremap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(Xpetra::StridedMapFactory<int,int>::Build(xstridedfullmap,1));
+  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedvelmap = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(Xpetra::StridedMapFactory<int,int>::Build(xstridedfullmap,0));
+  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedpremap = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(Xpetra::StridedMapFactory<int,int>::Build(xstridedfullmap,1));
 
   /////////////////////////////////////// transform Xpetra::Map objects to Epetra
   // this is needed for AztecOO
   const Teuchos::RCP<const Epetra_Map> fullmap = Teuchos::rcpFromRef(xstridedfullmap->getEpetra_Map());
   Teuchos::RCP<const Epetra_Map> velmap = Teuchos::rcpFromRef(xstridedvelmap->getEpetra_Map());
-  Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcpFromRef(xstridedpremap->getEpetra_Map()); 
+  Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcpFromRef(xstridedpremap->getEpetra_Map());
 
   /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
@@ -393,13 +398,13 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector* ptrNS = 0;
 
   *out << "Reading matrix market file" << std::endl;
+
   EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
   EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",*fullmap,ptrf);
-  //EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q22012/preCopyrightTrilinos/muelu/test/navierstokes/A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
-  //EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q22012/preCopyrightTrilinos/muelu/test/navierstokes/b5932_re1000.txt",*fullmap,ptrf);
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
+
 
   /////////////////////////////////////// split system into 2x2 block system
 
@@ -415,7 +420,7 @@ int main(int argc, char *argv[]) {
     *out << "Problem with splitting matrix"<< std::endl;
 
   /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
-    
+
   // build Xpetra objects from Epetra_CrsMatrix objects
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
@@ -423,7 +428,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
 
   /////////////////////////////////////// generate MapExtractor object
-  
+
   std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > > xmaps;
   xmaps.push_back(xstridedvelmap);
   xmaps.push_back(xstridedpremap);
@@ -443,6 +448,7 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////////////////////// create Hierarchy
   RCP<Hierarchy> H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  //H->setDefaultVerbLevel(Teuchos::VERB_NONE);
   H->SetMaxCoarseSize(maxCoarseSize);
 
   //////////////////////////////////////////////////////// finest Level
@@ -455,17 +461,6 @@ int main(int argc, char *argv[]) {
   // by A11Fact and A22Fact
   RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
   RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
- 
-  ///////////////////////////////////////////// define smoother for A11
-  // define block smoother for the first block matrix row in BlockGaussSeidel Smoother
-  std::string ifpack11Type;
-  Teuchos::ParameterList ifpack11List;
-  ifpack11List.set("relaxation: sweeps", (LO) 1);
-  ifpack11List.set("relaxation: damping factor", (SC) 0.3);
-  ifpack11Type = "RELAXATION";
-  ifpack11List.set("relaxation: type", "Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpack11Type, ifpack11List, 0, A11Fact) );
-  RCP<SmootherFactory> Smoo11Fact = rcp( new SmootherFactory(smoProto11) );
 
   ////////////////////////////////////////// prepare null space for A11
   RCP<MultiVector> nullspace11 = MultiVectorFactory::Build(xstridedvelmap, 2);  // this is a 2D standard null space
@@ -484,13 +479,13 @@ int main(int argc, char *argv[]) {
   // set up amalgamation for A11. Note: we're using a default null space factory (Teuchos::null)
   RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory(A11Fact));
   RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory(dropFact11));
-  UCAggFact11->SetMinNodesPerAggregate(3);
-  UCAggFact11->SetMaxNeighAlreadySelected(1);
+  UCAggFact11->SetMinNodesPerAggregate(9);
+  UCAggFact11->SetMaxNeighAlreadySelected(2);
   UCAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact11->SetPhase3AggCreation(0.5);
 
   ///////////////////////////////////////// define transfer ops for A11
-#if 1
+#if 0
   // use PG-AMG
   RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory(UCAggFact11,dropFact11)); // check me
   P11tentFact->setStridingData(stridingInfo);
@@ -510,7 +505,6 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("R", R11Fact);
   M11->SetFactory("Nullspace", nspFact11);
   M11->SetFactory("Ptent", P11tentFact);
-  M11->SetFactory("Smoother", Smoo11Fact);
 
 #else
   RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory(UCAggFact11,dropFact11)); // check me
@@ -528,19 +522,8 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("R", R11Fact);
   M11->SetFactory("Nullspace", nspFact11);
   M11->SetFactory("Ptent", P11Fact);
-  M11->SetFactory("Smoother", Smoo11Fact);
 #endif
   M11->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-
-  ///////////////////////////////////////////// define smoother for A22
-  std::string ifpack22Type;
-  Teuchos::ParameterList ifpack22List;
-  ifpack22List.set("relaxation: sweeps", (LO) 1);
-  ifpack22List.set("relaxation: damping factor", (SC) 0.3);
-  ifpack22Type = "RELAXATION";
-  ifpack22List.set("relaxation: type", "Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpack22Type, ifpack22List, 0, A22Fact) );
-  RCP<SmootherFactory> Smoo22Fact = rcp( new SmootherFactory(smoProto22) );
 
   ////////////////////////////////////////// prepare null space for A22
   RCP<MultiVector> nullspace22 = MultiVectorFactory::Build(xstridedpremap, 1);  // this is a 2D standard null space
@@ -555,7 +538,7 @@ int main(int argc, char *argv[]) {
 #if 0
   // use PGAMG
   RCP<SubBlockUnAmalgamationFactory> dropFact22 = rcp(new SubBlockUnAmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(UCAggFact11, dropFact22)); // check me (fed with A22) wrong column GIDS!!!
+  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(UCAggFact11, dropFact22));
   P22tentFact->setStridingData(stridingInfo);
   P22tentFact->setStridedBlockId(1);
 
@@ -574,13 +557,12 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("Aggregates", AggFact22);
   M22->SetFactory("Nullspace", nspFact22);
   M22->SetFactory("Ptent", P22tentFact);
-  M22->SetFactory("Smoother", Smoo22Fact);
   M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 
 #else
   // use TentativePFactory
   RCP<SubBlockUnAmalgamationFactory> dropFact22 = rcp(new SubBlockUnAmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, dropFact22 )); // check me (fed with A22) wrong column GIDS!!!
+  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, dropFact22)); // check me (fed with A22) wrong column GIDS!!!
   P22Fact->setStridingData(stridingInfo);
   P22Fact->setStridedBlockId(1); // declare this P22Fact to be the transfer operator for the pressure dofs
 
@@ -596,7 +578,6 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("Aggregates", UCAggFact11);
   M22->SetFactory("Nullspace", nspFact22);
   M22->SetFactory("Ptent", P22Fact);
-  M22->SetFactory("Smoother", Smoo22Fact);
   M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 #endif
 
@@ -609,18 +590,45 @@ int main(int argc, char *argv[]) {
 
   RCP<RAPFactory> AcFact = rcp(new RAPFactory(PFact, RFact));
 
+  // register aggregation export factory in RAPFactory
+  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", UCAggFact11.get(), dropFact11.get()));
+  AcFact->AddTransferFactory(aggExpFact);
+
+  *out << "Creating Braess-Sarazin Smoother" << std::endl;
+
   //////////////////////////////////////////////////////////////////////
   // Smoothers
-  RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother(3,0.5) );
-  smootherPrototype->AddFactoryManager(M11);
-  smootherPrototype->AddFactoryManager(M22);
+
+  //Another factory manager for braes sarazin smoother
+  //Schur Complement Factory, using the factory to generate AcFact
+  SC omega = 1.3;
+    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory(MueLu::NoFactory::getRCP(),omega));
+    //Smoother Factory, using SFact as a factory for A
+    std::string ifpackSCType;
+    Teuchos::ParameterList ifpackSCList;
+    ifpackSCList.set("relaxation: sweeps", (LO) 3);
+    ifpackSCList.set("relaxation: damping factor", (SC) 1.0);
+    ifpackSCType = "RELAXATION";
+    ifpackSCList.set("relaxation: type", "Gauss-Seidel");
+    RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
+    RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
+
+    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega/*,MueLu::NoFactory::getRCP()*//*,SmooSCFact*/) );
+
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
-  // Coarse grid correction
-  RCP<BlockedGaussSeidelSmoother> coarseSolverPrototype = rcp( new BlockedGaussSeidelSmoother(3,0.5) );
-  coarseSolverPrototype->AddFactoryManager(M11);
-  coarseSolverPrototype->AddFactoryManager(M22);
+  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega/*,MueLu::NoFactory::getRCP()*//*,SmooSCFact*/) );
+
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
+
+  RCP<FactoryManager> MB = rcp(new FactoryManager());
+  MB->SetFactory("A",     SFact);
+  MB->SetFactory("Smoother",    SmooSCFact);
+  MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
+  smootherPrototype->SetFactoryManager(MB);
+  coarseSolverPrototype->SetFactoryManager(MB);
+
+
 
   // main factory manager
   FactoryManager M;
@@ -628,16 +636,26 @@ int main(int argc, char *argv[]) {
   M.SetFactory("P",            PFact);
   M.SetFactory("R",            RFact);
   M.SetFactory("Smoother",     smootherFact); // TODO fix me
+  M.SetFactory("PreSmoother",     smootherFact); // TODO fix me
+  M.SetFactory("PostSmoother",     smootherFact); // TODO fix me
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
   //////////////////////////////////// setup multigrid
 
   H->Setup(M,0,maxLevels);
 
-  
+  Finest->print(*out);
+
+  RCP<Level> coarseLevel = H->GetLevel(1);
+  coarseLevel->print(*out);
+
+  RCP<Level> coarseLevel2 = H->GetLevel(2);
+  coarseLevel2->print(*out);
+
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 
   // Use AMG directly as an iterative method
+#if 0
   {
     xLsg->putScalar( (SC) 0.0);
 
@@ -652,14 +670,15 @@ int main(int argc, char *argv[]) {
     // apply ten multigrid iterations
     H->Iterate(*xRhs,100,*xLsg);
 
+
     // calculate and print residual
     RCP<MultiVector> xTmp = MultiVectorFactory::Build(xstridedfullmap,1);
     bOp->apply(*xLsg,*xTmp,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     xRhs->update((SC)-1.0,*xTmp,(SC)1.0);
     xRhs->norm2(norms);
     *out << "||x|| = " << norms[0] << std::endl;
-
   }
+#endif
 
   // TODO: don't forget to add Aztec as prerequisite in CMakeLists.txt!
   //
