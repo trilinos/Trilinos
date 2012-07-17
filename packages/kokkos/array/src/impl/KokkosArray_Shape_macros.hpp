@@ -66,7 +66,7 @@ struct ShapeMap< Shape<LayoutLeft,T,RankDynamic,Rank> ,
   template < typename iType0 , typename iType1 >
   inline static KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const shape_type & shape ,
-                    const iType0 & i0 , const iType1 & i1 )
+                    const iType0 i0 , const iType1 i1 )
   {
     return i0 + shape.Stride * ( i1 );
   }
@@ -75,8 +75,8 @@ struct ShapeMap< Shape<LayoutLeft,T,RankDynamic,Rank> ,
              typename iType2 >
   inline static KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const shape_type & shape ,
-                    const iType0 & i0 , const iType1 & i1 ,
-                    const iType2 & i2 )
+                    const iType0 i0 , const iType1 i1 ,
+                    const iType2 i2 )
   {
     return i0 + shape.Stride * (
            i1 + shape.N1 * i2 );
@@ -177,7 +177,7 @@ struct ShapeMap< Shape<LayoutRight,T,RankDynamic,Rank> ,
   template < typename iType0 , typename iType1 >
   inline static KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const shape_type & shape ,
-                    const iType0 & i0 , const iType1 & i1 )
+                    const iType0 i0 , const iType1 i1 )
   {
     return i0 * shape.Stride + i1 ;
   }
@@ -186,8 +186,8 @@ struct ShapeMap< Shape<LayoutRight,T,RankDynamic,Rank> ,
              typename iType2 >
   inline static KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const shape_type & shape ,
-                    const iType0 & i0 , const iType1 & i1 ,
-                    const iType2 & i2 )
+                    const iType0 i0 , const iType1 i1 ,
+                    const iType2 i2 )
   {
     return i0 * shape.Stride +
            i2 + shape.N2 * (

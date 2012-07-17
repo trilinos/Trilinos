@@ -58,6 +58,44 @@
 namespace {
 
 template< typename T, class > class TestViewAPI ;
+template< typename T, class > class TestViewOperator ;
+
+template< typename T >
+struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
+{
+  typedef KOKKOS_MACRO_DEVICE  device_type ;
+
+  static const unsigned N = 100 ;
+  static const unsigned D = 3 ;
+
+
+  typedef KokkosArray::View< T[][D] , device_type > view_type ;
+
+  const view_type v1 ;
+  const view_type v2 ;
+
+  TestViewOperator()
+    : v1( KokkosArray::create<view_type>( "v1" , N ) )
+    , v2( KokkosArray::create<view_type>( "v1" , N ) )
+    {}
+
+  static void apply()
+  {
+    KokkosArray::parallel_for( N , TestViewOperator() );
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const unsigned i ) const
+  {
+    const unsigned X = 0 ;
+    const unsigned Y = 1 ;
+    const unsigned Z = 2 ;
+
+    v2(i,X) = v1(i,X);
+    v2(i,Y) = v1(i,Y);
+    v2(i,Z) = v1(i,Z);
+  }
+};
 
 
 template<typename T>
@@ -72,6 +110,7 @@ public:
     run_test();
     run_test_const();
     run_test_vector();
+    TestViewOperator< T , device >::apply();
   }
 
   enum { NP = 1000 ,

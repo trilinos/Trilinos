@@ -624,6 +624,17 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
         hg_resist_total[HG_Z3] * hgop(ielem, i + 16, 0) +
         hg_resist_total[HG_Z4] * hgop(ielem, i + 24, 0));
 
+if ( 0 < std::fabs( hg_force_0[i] ) ||
+     0 < std::fabs( hg_force_1[i] ) ||
+     0 < std::fabs( hg_force_2[i] ) ) {
+std::cout
+    << "hg_force @ (" << ielem << "," << i << ") ="
+    << " " << hg_force_0[i]
+    << " " << hg_force_1[i]
+    << " " << hg_force_2[i]
+    << std::endl ;
+}
+
     }
 
     for(int inode = 0; inode < 8; ++inode) {

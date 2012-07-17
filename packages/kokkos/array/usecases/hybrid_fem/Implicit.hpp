@@ -312,8 +312,6 @@ void driver( const char * label ,
      }
    }
 
-   /// TODO: reduction across processors
-
   if ( comm::rank( machine ) == 0 ) {
 
      std::cout << std::setw(8) << n << " , "

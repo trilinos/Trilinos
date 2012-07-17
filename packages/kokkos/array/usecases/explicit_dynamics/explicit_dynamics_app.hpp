@@ -50,6 +50,8 @@
 #include <cstdlib>
 #include <cmath>
 
+#include <impl/KokkosArray_Timer.hpp>
+
 #include <ExplicitBoxMeshFixture.hpp>
 #include <region.hpp>
 #include <initialize_element.hpp>
