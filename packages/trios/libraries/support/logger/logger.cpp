@@ -60,20 +60,31 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 
-static volatile bool  mutex_initialized = false;
+static bool mutex_initialized = false;
 static nthread_lock_t logger_mutex;
 
 void logger_mutex_lock()
 {
     if (!mutex_initialized) {
+        if (nthread_lock_init(&logger_mutex) == -1) {
+            fprintf(stderr, "nthread_lock_init failed.\n");
+            fflush(stderr);
+            return;
+        }
+
         mutex_initialized = true;
-        nthread_lock_init(&logger_mutex);
     }
 
     nthread_lock(&logger_mutex);
 }
 void logger_mutex_unlock()
 {
+    if (!mutex_initialized) {
+        fprintf(stderr, "logger_mutex_unlock: mutex not intialized.\n");
+        fflush(stderr);
+        return;
+    }
+
     nthread_unlock(&logger_mutex);
 }
 
@@ -92,6 +103,16 @@ static FILE *log_file = NULL;
 int logger_init(const log_level debug_level,  const char *logfile)
 {
     int rc = 0;
+
+    if (!mutex_initialized) {
+        if (nthread_lock_init(&logger_mutex) == -1) {
+            fprintf(stderr, "nthread_lock_init failed.\n");
+            fflush(stderr);
+            return;
+        }
+
+        mutex_initialized = true;
+    }
 
     /* initialize the default debug level */
     if (debug_level == 0)
@@ -225,8 +246,8 @@ int logger_fini(void)
     }
 
     if (mutex_initialized) {
-        mutex_initialized = false;
         nthread_lock_fini(&logger_mutex);
+        mutex_initialized = false;
     }
 
     return rc;
