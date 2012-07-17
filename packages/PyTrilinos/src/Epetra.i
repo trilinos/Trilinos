@@ -230,6 +230,7 @@ char* strtok;
 }
 
 %rename(FormatStdout) Epetra_FormatStdout;
+%include "Epetra_config.h"
 %include "Epetra_ConfigDefs.h"
 %include "Epetra_DLLExportMacro.h"
 

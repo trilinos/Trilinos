@@ -135,6 +135,15 @@ int nssi_lookup_xdr_encoding(int opcode,
     xdrproc_t *encode_result);
 
 
+/**
+ * @brief Remove all encodings.
+ *
+ * The <tt>\ref nssi_clear_xdr_encodings</tt> function removes
+ * the xdr encodings functions associated with all remote
+ * NSSI operations.
+ *
+ */
+int nssi_clear_xdr_encodings();
 
 #else /* K&R C */
 #endif

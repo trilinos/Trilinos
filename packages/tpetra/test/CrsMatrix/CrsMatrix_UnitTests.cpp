@@ -682,7 +682,7 @@ namespace {
       }
     }
     {
-      ArrayRCP<size_t> nnzperrow = arcp<size_t>(numLocal);
+      ArrayRCP<LO> nnzperrow = arcp<LO>(numLocal);
       std::fill(nnzperrow.begin(), nnzperrow.end(), 3);
       MAT bdmat(rmap,cmap,nnzperrow,StaticProfile);
       TEST_EQUALITY(bdmat.getRowMap(), rmap);
@@ -1654,6 +1654,59 @@ namespace {
       B.norm2(normsB());
       Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
       TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+    }
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST( CrsMatrix, Convert )
+  {
+    typedef SerialNode Node;
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<double> ST;
+    typedef OrdinalTraits<int> LOT;
+    typedef CrsMatrix<double,int,int,Node> DMat;
+    typedef CrsMatrix<   int,int,int,Node> IMat;
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numProcs = comm->getSize();
+
+    global_size_t numGlobal = 2*numProcs;
+    RCP<const Map<int,int,Node> > map = createUniformContigMapWithNode<int,int>(numGlobal,comm,node);
+   
+    RCP<DMat> dmatrix = createCrsMatrix<double>(map, 3);
+
+    const int maxglobalrow = map->getMaxAllGlobalIndex();
+    for(int r = map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r)
+    {
+      if (r==0) {
+        dmatrix->insertGlobalValues( r, tuple<int>(0,1), tuple<double>(1,1) );
+      }
+      else if( r == maxglobalrow ) {
+        dmatrix->insertGlobalValues( r, tuple<int>(maxglobalrow-1,maxglobalrow), tuple<double>(1,1) );
+      }
+      else{
+        dmatrix->insertGlobalValues( r, tuple<int>(r-1,r,r+1), tuple<double>(1,1,1) );
+      }
+    }
+
+    RCP<ParameterList> params = parameterList();
+    params->set("Preserve Local Graph",true);
+    dmatrix->fillComplete(params);
+
+    RCP<IMat> imatrix = dmatrix->convert<int>();
+
+    // check graphs
+    TEST_EQUALITY( dmatrix->getGraph(), imatrix->getGraph() );
+    TEST_EQUALITY( dmatrix->getCrsGraph(), imatrix->getCrsGraph() );
+    // check entries
+    for (int i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
+      ArrayView<const int> indsd, indsi, valsi;
+      ArrayView<const double> valsd;
+      dmatrix->getLocalRowView(i, indsd, valsd);
+      imatrix->getLocalRowView(i, indsi, valsi);
+      TEST_COMPARE_ARRAYS(indsd,indsi);
+      TEST_COMPARE_ARRAYS(valsd,valsi);
     }
   }
 

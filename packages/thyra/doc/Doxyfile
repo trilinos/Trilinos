@@ -54,6 +54,7 @@ IMAGE_PATH             = ./images \
                          ../core/src/support/operator_vector/doc/images \
                          ../core/src/interfaces/operator_vector/fundamental/doc/images
 EXAMPLE_PATH           = ../core/example/operator_vector \
+                         ../core/example/operator_solve \
                          ../core/test/operator_vector \
                          ../core/test/operator_solve
 EXCLUDE                = 

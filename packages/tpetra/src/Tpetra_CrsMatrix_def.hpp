@@ -131,7 +131,7 @@ namespace Tpetra {
             class LocalMatOps>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
-             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
+             const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) 
   : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
@@ -187,7 +187,7 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
+             const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) 
   : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
@@ -497,21 +497,21 @@ namespace Tpetra {
     const size_t numRows = getNodeNumRows();
     // here's what we want...
     ArrayRCP<LocalOrdinal> inds;
-    ArrayRCP<size_t>       ptrs;
+    ArrayRCP<LocalOrdinal> ptrs;
     ArrayRCP<Scalar>       vals;
     // get refs to data in myGraph_, so we can modify it as well
     ArrayRCP<LocalOrdinal>            &lclInds1D_     = myGraph_->lclInds1D_;
     ArrayRCP<ArrayRCP<LocalOrdinal> > &lclInds2D_     = myGraph_->lclInds2D_;
-    ArrayRCP<size_t>                  &rowPtrs_       = myGraph_->rowPtrs_;
-    ArrayRCP<size_t>                  &numRowEntries_ = myGraph_->numRowEntries_;
+    ArrayRCP<LocalOrdinal>            &rowPtrs_       = myGraph_->rowPtrs_;
+    ArrayRCP<LocalOrdinal>            &numRowEntries_ = myGraph_->numRowEntries_;
     size_t & nodeNumEntries_   = myGraph_->nodeNumEntries_;
     size_t & nodeNumAllocated_ = myGraph_->nodeNumAllocated_;
     // 
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = sparse_ops_type::allocRowPtrs( numRowEntries_() );
-      inds = sparse_ops_type::template allocStorage<LocalOrdinal>( ptrs() );
-      vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+      ptrs = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
+      inds = sparse_ops_type::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
+      vals = sparse_ops_type::template allocStorage<Scalar      >( getRowMap()->getNode(), ptrs() );
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
         std::copy( lclInds2D_[row].begin(), lclInds2D_[row].begin() + numentrs, inds+ptrs[row] );
@@ -521,9 +521,9 @@ namespace Tpetra {
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries_ != nodeNumAllocated_) {
-        ptrs = sparse_ops_type::allocRowPtrs( numRowEntries_() );
-        inds = sparse_ops_type::template allocStorage<LocalOrdinal>( ptrs() );
-        vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+        ptrs = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
+        inds = sparse_ops_type::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
+        vals = sparse_ops_type::template allocStorage<Scalar      >( getRowMap()->getNode(), ptrs() );
         for (size_t row=0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries_[row];
           std::copy( lclInds1D_.begin()+rowPtrs_[row], lclInds1D_.begin()+rowPtrs_[row]+numentrs, inds+ptrs[row] );
@@ -586,13 +586,13 @@ namespace Tpetra {
   {
     const size_t numRows = getNodeNumRows();
     // here's what we want...
-    ArrayRCP<size_t>       ptrs;
+    ArrayRCP<LocalOrdinal> ptrs;
     ArrayRCP<Scalar>       vals;
     // get data from staticGraph_
     ArrayRCP<LocalOrdinal>            lclInds1D     = staticGraph_->lclInds1D_;
     ArrayRCP<ArrayRCP<LocalOrdinal> > lclInds2D     = staticGraph_->lclInds2D_;
-    ArrayRCP<size_t>                  rowPtrs       = staticGraph_->rowPtrs_;
-    ArrayRCP<size_t>                  numRowEntries = staticGraph_->numRowEntries_;
+    ArrayRCP<LocalOrdinal>            rowPtrs       = staticGraph_->rowPtrs_;
+    ArrayRCP<LocalOrdinal>            numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
     size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
 
@@ -615,8 +615,8 @@ namespace Tpetra {
 
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = sparse_ops_type::allocRowPtrs( numRowEntries() );
-      vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+      ptrs = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numRowEntries() );
+      vals = sparse_ops_type::template allocStorage<Scalar      >( getRowMap()->getNode(), ptrs() );
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries[row];
         std::copy( values2D_[row].begin(), values2D_[row].begin()+numentrs, vals+ptrs[row] );
@@ -625,8 +625,8 @@ namespace Tpetra {
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries != nodeNumAllocated) {
-        ptrs = sparse_ops_type::allocRowPtrs( numRowEntries() );
-        vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+        ptrs = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numRowEntries() );
+        vals = sparse_ops_type::template allocStorage<Scalar      >( getRowMap()->getNode(), ptrs() );
         for (size_t row=0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries[row];
           std::copy( values1D_.begin()+rowPtrs[row], values1D_.begin()+rowPtrs[row]+numentrs, vals+ptrs[row] );
@@ -1712,19 +1712,13 @@ namespace Tpetra {
     // allocate if unallocated
     if (! getCrsGraph()->indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
-      //
-      // mfh 03 May 2012: This calls CrsGraph::allocateValues(), which
-      // in turn only calls arcp() to allocate values1D_ or values2D_;
-      // it doesn't call the Kokkos Node's allocBuffer() method to
-      // allocate compute buffers.
       allocateValues( GlobalIndices, GraphNotYetAllocated );
     }
     // Global assemble, if we need to (we certainly don't need to if
     // there's only one process).  This call only costs a single
     // all-reduce if we don't need global assembly.
     if (getComm()->getSize() > 1) {
-      // mfh 03 May 2012: This calls insertGlobalValues(), one entry
-      // at a time.  No allocation of compute buffers here.
+      // mfh 03 May 2012: This calls insertGlobalValues(), one entry at a time.
       globalAssemble();
     }
     else {
@@ -1924,6 +1918,10 @@ namespace Tpetra {
   {
     const std::string tfecfFuncName("convert()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, ": fill must be complete.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getCrsGraph()->getLocalGraph() == null, std::runtime_error, 
+        ": local graph data was deleted during fillComplete().\n"
+        "To allow convert(), set the following to fillComplete():\n"
+        "   \"Preserve Local Graph\" == true ");
     RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > newmat;
     newmat = rcp(new CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(getCrsGraph()));
     const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *getRowMap();

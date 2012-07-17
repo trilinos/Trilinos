@@ -736,8 +736,8 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 
   if (haveFEMatrix() || haveBlockMatrix()) {
     FieldDofMap<int>& fdofmap = rspace->getFieldDofMap();
-    const IndexType<int,int>& connIDs = cblock->getNativeConnectivityIDs();
-    IndexType<int,int>::const_iterator
+    const MapIntInt& connIDs = cblock->getConnectivityIDs();
+    MapIntInt::const_iterator
       iter = connIDs.find(connectivityID);
     if (iter == connIDs.end()) ERReturn(-1);
     int connOffset = iter->second;

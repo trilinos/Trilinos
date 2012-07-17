@@ -76,7 +76,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/include"
   "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/lib"
-  "-DHDf5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/include"
+  "-DHDF5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/include"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   )
 

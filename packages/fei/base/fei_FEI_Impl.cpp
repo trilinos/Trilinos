@@ -1369,7 +1369,7 @@ int fei::FEI_Impl::getBlockElemIDList(GlobalID elemBlockID,
     throw std::runtime_error(osstr.str());
   }
 
-  const IndexType<int,int>& elemIDSet = block->getNativeConnectivityIDs();
+  const MapIntInt& elemIDSet = block->getConnectivityIDs();
 
   fei::copyKeysToArray(elemIDSet, numElems, elemIDs);
 
@@ -1421,7 +1421,7 @@ int fei::FEI_Impl::getNumBlockElements(GlobalID blockID, int& numElems) const
   const fei::ConnectivityBlock* cblock =
     matGraph_->getConnectivityBlock(blockID);
   if (cblock != NULL) {
-    numElems = cblock->getNativeConnectivityIDs().size();
+    numElems = cblock->getConnectivityIDs().size();
   }
   else {
     numElems = 0;

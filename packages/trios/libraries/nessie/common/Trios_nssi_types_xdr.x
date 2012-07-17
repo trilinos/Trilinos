@@ -78,7 +78,14 @@ enum nssi_return_codes {
     NSSI_EDECODE,
 
     /** @brief Error encoding an RPC request. */
-    NSSI_EENCODE
+    NSSI_EENCODE,
+
+    /** @brief An operation would have blocked. */
+    NSSI_EWOULDBLOCK,
+
+    /** @brief Operation was interupted, but possibly recoverable. */
+    NSSI_EAGAIN
+
 };
 
 /*

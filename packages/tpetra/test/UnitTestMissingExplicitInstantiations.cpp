@@ -84,6 +84,7 @@
 
 namespace Tpetra {
 
+  TPETRA_CRSMATRIX_CONVERT_INSTANT(double,int,int,int,Kokkos::SerialNode)
   // int matrix support for CrsMatrix unit test
 #if defined(HAVE_TPETRA_INST_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
   TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::SerialNode)

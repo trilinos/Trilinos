@@ -121,15 +121,6 @@ namespace {
     clp.setOption("test-size",&N,"Vector length for tests.");
   }
 
-  // The default version of getNode() throws an exception.  You may
-  // invoke getNode() for one of the supported Node types below, or
-  // specialize getNode() if you wish to invoke it for a different
-  // Node type.
-  //
-  // mfh 18 June 2012: This should help us diagnose the assert(false)
-  // reported in the failed test below:
-  //
-  // http://testing.sandia.gov/cdash/testDetails.php?test=7210650&build=544260
   template <class Node>
   RCP<Node> getNode() {
     using Teuchos::TypeNameTraits;
@@ -220,13 +211,13 @@ namespace {
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
-    const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> ptrs(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    const Ordinal totalNNZ = 3*N - 2;
+    ArrayRCP<Ordinal> ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host
     {
-      size_t NNZsofar = 0;
+      Ordinal NNZsofar = 0;
       ptrs[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;

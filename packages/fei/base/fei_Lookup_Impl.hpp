@@ -121,15 +121,15 @@ namespace fei {
                          int& interleaveStrategy, int& lumpingStrategy,
                          int& numElemDOF, int& numElements,
                          int& numNodesPerElem, int& numEqnsPerElem)
-      {
-	interleaveStrategy = 0; lumpingStrategy = 0;
-	numElemDOF = 0;
-	const fei::ConnectivityBlock* cblock =
-	  matGraph_->getConnectivityBlock(blockID);
-	numElements = cblock->getNativeConnectivityIDs().size();
-	numNodesPerElem = cblock->getRowPattern()->getNumIDs();
-	numEqnsPerElem = cblock->getRowPattern()->getNumIndices();
-      }
+    {
+      interleaveStrategy = 0; lumpingStrategy = 0;
+      numElemDOF = 0;
+      const fei::ConnectivityBlock* cblock =
+        matGraph_->getConnectivityBlock(blockID);
+      numElements = cblock->getConnectivityIDs().size();
+      numNodesPerElem = cblock->getRowPattern()->getNumIDs();
+      numEqnsPerElem = cblock->getRowPattern()->getNumIndices();
+    }
 
     /** Implementation of Lookup:: method */
     const int* getNumFieldsPerNode(GlobalID blockID)

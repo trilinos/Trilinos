@@ -251,9 +251,12 @@ typedef struct {
     gni_cq_handle_t  unblock_mem_cq_hdl;  /* CQ to wait for unblock events */
     gni_mem_handle_t unblock_mem_hdl;     /* mem hdl to send to the server.  the server uses this mem hdl as the
                                            * remote hdl when posting (CQ write) the unblock message. */
+
+    uint64_t last_offset;
 } nnti_gni_client_queue;
 
 typedef struct {
+    NNTI_peer_t       peer;
     char             *peer_name;
     NNTI_ip_addr      peer_addr;
     NNTI_tcp_port     peer_port;
@@ -447,6 +450,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, gni_connection *c
 static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, gni_connection *conn);
 static gni_connection *get_conn_peer(const NNTI_peer_t *peer);
 static gni_connection *get_conn_instance(const NNTI_instance_id instance);
+static NNTI_peer_t *get_peer_by_url(const char *url);
 static gni_connection *del_conn_peer(const NNTI_peer_t *peer);
 static gni_connection *del_conn_instance(const NNTI_instance_id instance);
 static void print_peer_map(void);
@@ -553,6 +557,9 @@ static void config_init(
 static void config_get_from_env(
         nnti_gni_config *c);
 
+
+static bool gni_initialized=false;
+
 static gni_transport_global transport_global_data;
 static const int MIN_TIMEOUT = 1;  /* in milliseconds.  must be >0 for GNI_CqVectorWaitEvent(). */
 
@@ -657,8 +664,6 @@ NNTI_result_t NNTI_gni_init (
         const char                *my_url,
         NNTI_transport_t          *trans_hdl)
 {
-    static int initialized=0;
-
     int rc=NNTI_OK;
 
     trios_declare_timer(call_time);
@@ -682,11 +687,10 @@ NNTI_result_t NNTI_gni_init (
 
     log_debug(nnti_ee_debug_level, "enter");
 
-    initialized=0;
     log_debug(nnti_debug_level, "my_url=%s", my_url);
-    log_debug(nnti_debug_level, "initialized=%d, FALSE==%d", (int)initialized, (int)FALSE);
+    log_debug(nnti_debug_level, "initialized=%d, FALSE==%d", (int)gni_initialized, (int)FALSE);
 
-    if (!initialized) {
+    if (!gni_initialized) {
 
         memset(&transport_global_data, 0, sizeof(gni_transport_global));
 
@@ -733,6 +737,7 @@ NNTI_result_t NNTI_gni_init (
                 gethostname(hostname, NNTI_HOSTNAME_LEN);
             } else {
                 strncpy(hostname, address, sep-address);
+                hostname[sep-address]='\0';
             }
             sep++;
             port=strtol(sep, &endptr, 0);
@@ -880,7 +885,7 @@ NNTI_result_t NNTI_gni_init (
                 transport_global_data.instance);
         trios_stop_timer("create_peer", call_time);
 
-        initialized = TRUE;
+        gni_initialized = true;
     }
 
 cleanup:
@@ -952,6 +957,8 @@ NNTI_result_t NNTI_gni_connect (
     char params[NNTI_URL_LEN];
     char *sep;
 
+    NNTI_peer_t *existing_peer=NULL;
+
     char          hostname[NNTI_HOSTNAME_LEN];
     char          port_str[NNTI_HOSTNAME_LEN];
     NNTI_tcp_port port;
@@ -977,6 +984,12 @@ NNTI_result_t NNTI_gni_connect (
     assert(peer_hdl);
 
     log_debug(nnti_ee_debug_level, "enter (url=%s)", url);
+
+    existing_peer=get_peer_by_url(url);
+    if (existing_peer!=NULL) {
+        *peer_hdl=*existing_peer;
+        return(NNTI_OK);
+    }
 
     conn = (gni_connection *)calloc(1, sizeof(gni_connection));
     log_debug(nnti_debug_level, "calloc returned conn=%p.", conn);
@@ -1148,6 +1161,8 @@ NNTI_result_t NNTI_gni_connect (
             conn->peer_ptag,
             conn->peer_cookie,
             conn->peer_instance);
+
+    conn->peer=*peer_hdl;
 
     key=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
     copy_peer(peer_hdl, key);
@@ -2467,11 +2482,25 @@ NNTI_result_t NNTI_gni_fini (
         }
     }
 
+    close(transport_global_data.listen_sock);
+    transport_global_data.listen_name[0]='\0';
+    transport_global_data.listen_addr=0;
+    transport_global_data.listen_port=0;
+
     rc=GNI_CdmDestroy(transport_global_data.cdm_hdl);
     if (rc!=GNI_RC_SUCCESS) {
         log_error(nnti_debug_level, "CdmCreate() failed: %d", rc);
         rc=NNTI_EINVAL;
     }
+
+    nthread_lock_fini(&nnti_gni_lock);
+    nthread_lock_fini(&nnti_conn_peer_lock);
+    nthread_lock_fini(&nnti_conn_instance_lock);
+    nthread_lock_fini(&nnti_wr_wrhash_lock);
+    nthread_lock_fini(&nnti_buf_bufhash_lock);
+    nthread_lock_fini(&nnti_wr_pool_lock);
+
+    gni_initialized = false;
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -3921,6 +3950,7 @@ static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
     log_debug(nnti_ee_debug_level, "enter");
 
     strncpy(dest->url, src->url, NNTI_URL_LEN);
+    dest->url[NNTI_URL_LEN-1]='\0';
 
     dest->peer.transport_id                       =NNTI_TRANSPORT_GEMINI;
     dest->peer.NNTI_remote_process_t_u.gni.addr   =src->peer.NNTI_remote_process_t_u.gni.addr;
@@ -4334,7 +4364,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, gni_connection *c
                 "insert_conn_peer", peer);
     }
 
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
         print_peer_map();
         assert(connections_by_peer.find(key) == connections_by_peer.end());
@@ -4350,7 +4380,7 @@ static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, gni_c
 {
     NNTI_result_t  rc=NNTI_OK;
 
-    nthread_lock(&nnti_conn_instance_lock);
+    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_instance.find(instance) != connections_by_instance.end()) {
         print_instance_map();
         assert(connections_by_instance.find(instance) == connections_by_instance.end());
@@ -4376,7 +4406,7 @@ static gni_connection *get_conn_peer(const NNTI_peer_t *peer)
     key.addr=peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.gni.port;
 
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
         conn = connections_by_peer[key];
     }
@@ -4397,7 +4427,7 @@ static gni_connection *get_conn_instance(const NNTI_instance_id instance)
     gni_connection *conn=NULL;
 
     log_debug(nnti_debug_level, "looking for instance=%llu", (unsigned long long)instance);
-    nthread_lock(&nnti_conn_instance_lock);
+    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");;
     if (connections_by_instance.find(instance) != connections_by_instance.end()) {
         conn = connections_by_instance[instance];
     }
@@ -4410,6 +4440,33 @@ static gni_connection *get_conn_instance(const NNTI_instance_id instance)
 
     log_debug(nnti_debug_level, "connection NOT found (instance==%llu)", (uint64_t)instance);
     print_instance_map();
+
+    return(NULL);
+}
+static NNTI_peer_t *get_peer_by_url(const char *url)
+{
+    gni_connection *conn = NULL;
+
+    log_debug(nnti_debug_level, "looking for url=%s", url);
+
+    conn_by_peer_iter_t i;
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+    for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
+        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
+                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
+        if (strcmp(i->second->peer.url, url) == 0) {
+            conn=i->second;
+            break;
+        }
+    }
+    nthread_unlock(&nnti_conn_peer_lock);
+
+    if (conn != NULL) {
+        log_debug(nnti_debug_level, "peer found");
+        NNTI_peer_t *peer=(NNTI_peer_t*)malloc(sizeof(NNTI_peer_t));
+        *peer=conn->peer;
+        return peer;
+    }
 
     return(NULL);
 }
@@ -4427,7 +4484,7 @@ static gni_connection *del_conn_peer(const NNTI_peer_t *peer)
     key.addr=peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.gni.port;
 
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
         conn = connections_by_peer[key];
     }
@@ -4448,7 +4505,7 @@ static gni_connection *del_conn_instance(const NNTI_instance_id instance)
     gni_connection *conn=NULL;
     log_level debug_level = nnti_debug_level;
 
-    nthread_lock(&nnti_conn_instance_lock);
+    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_instance.find(instance) != connections_by_instance.end()) {
         conn = connections_by_instance[instance];
     }
@@ -4493,7 +4550,7 @@ static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
 
-    nthread_lock(&nnti_buf_bufhash_lock);
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");;
     assert(buffers_by_bufhash.find(h) == buffers_by_bufhash.end());
     buffers_by_bufhash[h] = buf;
     nthread_unlock(&nnti_buf_bufhash_lock);
@@ -4507,7 +4564,7 @@ static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
     NNTI_buffer_t *buf=NULL;
 
     log_debug(nnti_debug_level, "looking for bufhash=%llu", (uint64_t)bufhash);
-    nthread_lock(&nnti_buf_bufhash_lock);
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");;
     if (buffers_by_bufhash.find(bufhash) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[bufhash];
     }
@@ -4528,7 +4585,7 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
     uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
     log_level debug_level = nnti_debug_level;
 
-    nthread_lock(&nnti_buf_bufhash_lock);
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[h];
     }
@@ -4560,7 +4617,7 @@ static NNTI_result_t insert_wr_wrhash(gni_work_request *wr)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)wr);
 
-    nthread_lock(&nnti_wr_wrhash_lock);
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
     wr_by_wrhash[h] = wr;
     nthread_unlock(&nnti_wr_wrhash_lock);
@@ -4574,7 +4631,7 @@ static gni_work_request *get_wr_wrhash(const uint32_t wrhash)
     gni_work_request *wr=NULL;
 
     log_debug(nnti_debug_level, "looking for wrhash=%llu", (uint64_t)wrhash);
-    nthread_lock(&nnti_wr_wrhash_lock);
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (wr_by_wrhash.find(wrhash) != wr_by_wrhash.end()) {
         wr = wr_by_wrhash[wrhash];
     }
@@ -4595,7 +4652,7 @@ static gni_work_request *del_wr_wrhash(gni_work_request *wr)
     uint32_t h=hash6432shift((uint64_t)wr);
     log_level debug_level = nnti_debug_level;
 
-    nthread_lock(&nnti_wr_wrhash_lock);
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (wr_by_wrhash.find(h) != wr_by_wrhash.end()) {
         wr = wr_by_wrhash[h];
     }
@@ -4715,7 +4772,7 @@ static gni_work_request *wr_pool_target_pop(void)
 
     log_debug(nnti_debug_level, "enter");
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (!target_wr_pool.empty()) {
         wr=target_wr_pool.front();
         target_wr_pool.pop_front();
@@ -4734,7 +4791,7 @@ static gni_work_request *wr_pool_initiator_pop(void)
 
     log_debug(nnti_debug_level, "enter");
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (!initiator_wr_pool.empty()) {
         wr=initiator_wr_pool.front();
         initiator_wr_pool.pop_front();
@@ -4757,7 +4814,7 @@ static void wr_pool_target_push(gni_work_request *wr)
     wr->is_op_complete=FALSE;
     wr->op_state      =BUFFER_INIT;
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     target_wr_pool.push_front(wr);
     nthread_unlock(&nnti_wr_pool_lock);
 
@@ -4777,7 +4834,7 @@ static void wr_pool_initiator_push(gni_work_request *wr)
     wr->is_op_complete=FALSE;
     wr->op_state      =BUFFER_INIT;
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     initiator_wr_pool.push_front(wr);
     nthread_unlock(&nnti_wr_pool_lock);
 
@@ -4793,7 +4850,7 @@ static NNTI_result_t wr_pool_fini(void)
 
     log_debug(nnti_debug_level, "enter");
 
-    nthread_lock(&nnti_wr_pool_lock);
+    if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     while (!target_wr_pool.empty()) {
         wr=target_wr_pool.front();
         target_wr_pool.pop_front();
@@ -4832,7 +4889,7 @@ static void close_all_conn(void)
     log_debug(debug_level, "enter (%d instance connections, %d peer connections)",
             connections_by_instance.size(), connections_by_peer.size());
 
-    nthread_lock(&nnti_conn_instance_lock);
+    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     conn_by_inst_iter_t inst_iter;
     for (inst_iter = connections_by_instance.begin(); inst_iter != connections_by_instance.end(); inst_iter++) {
         log_debug(debug_level, "close connection (instance=%llu)", inst_iter->first);
@@ -4841,7 +4898,7 @@ static void close_all_conn(void)
     }
     nthread_unlock(&nnti_conn_instance_lock);
 
-    nthread_lock(&nnti_conn_peer_lock);
+    if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     conn_by_peer_iter_t peer_iter;
     for (peer_iter = connections_by_peer.begin(); peer_iter != connections_by_peer.end(); peer_iter++) {
         log_debug(debug_level, "close connection (peer.addr=%llu)", peer_iter->first.addr);
@@ -4917,12 +4974,7 @@ static void close_connection(gni_connection *c)
     log_debug(debug_level, "close_connection: exit");
 }
 
-/**
- * Check for new connections.  The listening socket is left nonblocking
- * so this test can be quick; but accept is not really that quick compared
- * to polling an Gemini interface, for instance.  Returns >0 if an accept worked.
- */
-static int check_listen_socket_for_new_connections()
+static int check_for_waiting_connection()
 {
     NNTI_result_t rc = NNTI_OK;
 
@@ -4938,7 +4990,7 @@ static int check_listen_socket_for_new_connections()
     if (s < 0) {
         if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
             log_debug(nnti_debug_level, "no connections waiting to be accepted: %s", strerror(errno));
-            rc = NNTI_OK;
+            rc = NNTI_EWOULDBLOCK;
             goto cleanup;
         } else {
             log_error(nnti_debug_level, "failed to accept tcp socket connection: %s", strerror(errno));
@@ -5003,6 +5055,23 @@ cleanup:
         if (key!=NULL)  free(key);
     }
     return rc;
+}
+
+/**
+ * Check for new connections.  The listening socket is left nonblocking
+ * so this test can be quick; but accept is not really that quick compared
+ * to polling an Gemini interface, for instance.  Returns >0 if an accept worked.
+ */
+static int check_listen_socket_for_new_connections()
+{
+    bool done=false;
+    while(!done) {
+        if (check_for_waiting_connection() != NNTI_OK) {
+            done=true;
+        }
+    }
+
+    return(NNTI_OK);
 }
 
 static uint32_t get_cpunum(void)
@@ -5535,7 +5604,7 @@ static int fetch_add_buffer_offset(
 
     log_level debug_level=nnti_debug_level;
 
-    static uint64_t last_offset=0;
+//    static uint64_t last_offset=0;
 
     log_debug(nnti_ee_debug_level, "enter");
 
@@ -5604,7 +5673,7 @@ static int fetch_add_buffer_offset(
                 if ((rc!=GNI_RC_SUCCESS) && (rc!=GNI_RC_NOT_DONE)) log_error(debug_level, "CqGetEvent(absorb extra unblocks) failed: %d", rc);
                 log_debug(debug_level, "absorbed %d extra unblocks)", extras_absorbed);
             }
-        } else if (*prev_offset < last_offset) {
+        } else if (*prev_offset < local_req_queue_attrs->last_offset) {
             uint64_t  ui64;
             uint32_t *ptr32=NULL;
 
@@ -5622,7 +5691,7 @@ static int fetch_add_buffer_offset(
         }
     } while (*prev_offset >= remote_req_queue_attrs->req_count);
 
-    last_offset=*prev_offset;
+    local_req_queue_attrs->last_offset=*prev_offset;
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -6137,6 +6206,9 @@ static int client_req_queue_init(
     alpsAppGni_t           *server_params  =&c->peer_alps_info;
     uint64_t                server_instance=c->peer_instance;
 
+    log_debug(nnti_debug_level, "enter");
+
+    q->last_offset=0;
 
     q->req_index=0;
     q->req_index_addr=(uint64_t)&q->req_index;
@@ -6213,6 +6285,7 @@ static int client_req_queue_init(
             server_instance);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(req_index_ep_hdl) failed: %d", rc);
 
+    log_debug(nnti_debug_level, "exit");
 }
 
 static int client_req_queue_destroy(
@@ -6221,7 +6294,7 @@ static int client_req_queue_destroy(
     int rc;
     log_level debug_level = nnti_debug_level;  // nnti_debug_level;
 
-    log_debug(debug_level, "client_req_queue_destroy: start");
+    log_debug(debug_level, "enter");
 
     nnti_gni_client_queue     *q=&c->queue_local_attrs;
 
@@ -6248,7 +6321,8 @@ static int client_req_queue_destroy(
     rc=GNI_CqDestroy (q->req_index_cq_hdl);
     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "CqDestroy() failed: %d", rc);
 
-    log_debug(debug_level, "client_req_queue_destroy: exit");
+    log_debug(debug_level, "exit");
+
     return(0);
 }
 
@@ -6261,6 +6335,7 @@ static int server_req_queue_init(
     int rc;
     gni_memory_handle *gni_mem_hdl=(gni_memory_handle *)q->reg_buf->transport_private;
 
+    log_debug(nnti_debug_level, "enter");
 
     q->req_buffer     =buffer;
     q->req_size       =req_size;
@@ -6328,6 +6403,8 @@ static int server_req_queue_init(
             (uint32_t)-1,
             &q->wc_mem_hdl);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemRegister(1) failed: %d", rc);
+
+    log_debug(nnti_debug_level, "exit");
 }
 
 static int server_req_queue_destroy(
@@ -6335,6 +6412,8 @@ static int server_req_queue_destroy(
 {
     int rc;
     gni_memory_handle *gni_mem_hdl=(gni_memory_handle *)q->reg_buf->transport_private;
+
+    log_debug(nnti_debug_level, "enter");
 
     rc=GNI_MemDeregister (
             transport_global_data.nic_hdl,
@@ -6358,6 +6437,8 @@ static int server_req_queue_destroy(
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqDestroy() failed: %d", rc);
 
     free(q->wc_buffer);
+
+    log_debug(nnti_debug_level, "exit");
 }
 
 #define LISTEN_IFACE_BASENAME "ipog"

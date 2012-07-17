@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -58,10 +58,42 @@ namespace Kokkos {
   class OpenMPNode : public StandardNodeMemoryModel {
   public:
 
+    /// \brief Constructor.
+    ///
+    /// The constructor currently accepts the following (optional)
+    /// parameters:
+    /// - "Num Threads" (int): The number of threads that OpenMP
+    ///   should use.  If not provided, or if -1 or 0, OpenMP will
+    ///   pick the number of threads in the usual way.
+    /// - "Verbose" (int): If nonzero, the Kokkos Node will print
+    ///    status output to std::cout.
+    ///
+    /// \warning If you set the "Num Threads" parameter to a positive
+    ///   value, this will set the number of threads that _all_
+    ///   OpenMPNode instances will use, not just this one.
     OpenMPNode(Teuchos::ParameterList &pl);
 
+    /// \brief Default constructor (sets default parameter values).
+    ///
+    /// For parameters and their default values, see the documentation
+    /// of the constructor that accepts a ParameterList input / output
+    /// argument.
+    OpenMPNode();
+
+    //! Destructor.
     ~OpenMPNode();
 
+    /// \brief Set the number of threads that OpenMP should use.
+    ///
+    /// It's not necessary to call this method unless you want to
+    /// change the number of threads that OpenMP should use, after
+    /// constructing the Kokkos Node instance.
+    ///
+    /// \warning This method will affect the number of threads used by
+    ///   all OpenMPNode instances.
+    ///
+    /// \param numThreads [in] The number of threads that OpenMP
+    ///   should use.  Ignored if -1 or 0.
     void init(int numThreads);
 
     template <class WDP>
@@ -92,9 +124,12 @@ namespace Kokkos {
 
     //! \begin No-op for OpenMPNode.
     inline void sync() const {};
-  
+
   private:
+    //! "Num Threads" parameter value.  If <= 0, this is ignored.
     int curNumThreads_;
+    //! Whether to print status output to std::cout.
+    bool verbose_;
   };
 
   template <> class ArrayOfViewsHelper<OpenMPNode> : public ArrayOfViewsHelperTrivialImpl<OpenMPNode> {};

@@ -518,6 +518,8 @@ int main(int argc, char *argv[])
         // get rank within the client communicator
         MPI_Comm_rank(comm, &client_rank);
 
+        nssi_init((nssi_rpc_transport)args.transport);
+
         // Only one process needs to connect to the service
         // TODO: Make get_service a collective call (some transports do not need a connection)
         //if (client_rank == 0) {
@@ -572,6 +574,7 @@ int main(int argc, char *argv[])
             //MPI_Abort(MPI_COMM_WORLD, -1);
         }
 
+        nssi_fini((nssi_rpc_transport)args.transport);
 
     }
 
@@ -586,6 +589,7 @@ int main(int argc, char *argv[])
     log_debug(debug_level, "%d: MPI_Finalize()", rank);
     MPI_Finalize();
 
+    logger_fini();
 
     if(success && (rc == NSSI_OK))
       out << "\nEnd Result: TEST PASSED" << std::endl;

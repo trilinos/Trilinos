@@ -60,19 +60,20 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 
+static volatile bool  mutex_initialized = false;
 static nthread_lock_t logger_mutex;
 
-void logger_mutex_lock() {
-
-    static bool mutex_initialized = false;
-
+void logger_mutex_lock()
+{
     if (!mutex_initialized) {
         mutex_initialized = true;
         nthread_lock_init(&logger_mutex);
     }
+
     nthread_lock(&logger_mutex);
 }
-void logger_mutex_unlock() {
+void logger_mutex_unlock()
+{
     nthread_unlock(&logger_mutex);
 }
 
@@ -84,12 +85,12 @@ static FILE *log_file = NULL;
 /**
  * @brief Initialize the logging capabilities.
  *
- * @param fp    File pointer of the logging output.
- * @param level Log level (LOG_ALL, LOG_DEBUG, LOG_INFO,
- * LOG_WARN, LOG_ERROR, LOG_FATAL, or LOG_OFF)
+ * @param level   Log level (LOG_ALL, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL, or LOG_OFF)
+ * @param logfile File name of the logging output.
  *
  */
-int logger_init(const log_level debug_level,  const char *logfile)  {
+int logger_init(const log_level debug_level,  const char *logfile)
+{
     int rc = 0;
 
     /* initialize the default debug level */
@@ -128,18 +129,21 @@ int logger_init(const log_level debug_level,  const char *logfile)  {
     return rc;
 }
 
-int logger_not_initialized() {
+int logger_not_initialized()
+{
     return log_file == NULL;
 }
 
 /**
  * @brief Set the file for the log information.
  */
-void logger_set_file(FILE *newfile) {
+void logger_set_file(FILE *newfile)
+{
     log_file = newfile;
 }
 
-FILE *logger_get_file() {
+FILE *logger_get_file()
+{
     if (!log_file)
         return stdout;
     else
@@ -153,7 +157,8 @@ FILE *logger_get_file() {
  * The different log levels are LOG_ALL, LOG_DEBUG, LOG_INFO, LOG_WARN,
  * LOG_ERROR, LOG_FATAL, and LOG_OFF.
  */
-void logger_set_default_level(const log_level newlevel) {
+void logger_set_default_level(const log_level newlevel)
+{
     default_log_level = newlevel;
 }
 
@@ -205,4 +210,24 @@ void log_output(const char *prefix,
     logger_mutex_unlock();
     va_end(ap);
     fflush(log_file);
+}
+
+/**
+ * @brief Finalize the logging capabilities.
+ *
+ */
+int logger_fini(void)
+{
+    int rc = 0;
+
+    if (log_file) {
+        fclose(log_file);
+    }
+
+    if (mutex_initialized) {
+        mutex_initialized = false;
+        nthread_lock_fini(&logger_mutex);
+    }
+
+    return rc;
 }

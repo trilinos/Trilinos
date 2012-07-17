@@ -382,8 +382,8 @@
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Netcdf,HDF5"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
+    <LIB_OPTIONAL_DEP_TPLS value="HDF5"/>
     <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -982,8 +982,8 @@
   <Package name="STK" dir="packages/stk" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="SEACASIoss,FEI,AztecOO,ThreadPool,Zoltan,Intrepid,Sacado"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="SEACASExodus,SEACASNemesis"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
     <LIB_OPTIONAL_DEP_TPLS value="BoostLib,OpenNURBS"/>
     <TEST_REQUIRED_DEP_TPLS/>

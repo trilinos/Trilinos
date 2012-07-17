@@ -105,14 +105,15 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
                              const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
                              const Teuchos::RCP<Node> &node,
                              Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
-                             Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap)
+                             Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap, 
+                             const Teuchos::RCP<ParameterList> &params)
 {
   const int myRank = comm->getRank();
   int numRows,numCols,numNZ;
   Teuchos::ArrayRCP<Scalar> svals;
   Teuchos::ArrayRCP<GlobalOrdinal> colinds;
   Teuchos::ArrayRCP<int>           rowptrs;
-  Teuchos::ArrayRCP<size_t>        nnzPerRow;
+  Teuchos::ArrayRCP<LocalOrdinal>  nnzPerRow;
   //Teuchos::ArrayRCP<char>          type;
   int fail = 0;
   if (myRank == 0) {
@@ -136,7 +137,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     }
     if (fail == 0 && numNZ > 0) {
       // find num non-zero per row
-      nnzPerRow = Teuchos::arcp<size_t>(numRows);
+      nnzPerRow = Teuchos::arcp<LocalOrdinal>(numRows);
       std::fill(nnzPerRow.begin(), nnzPerRow.end(), 0);
       for (Teuchos::ArrayRCP<int>::const_iterator ri=rowinds.begin(); ri != rowinds.end(); ++ri) {
         // count each row index towards its row
@@ -160,7 +161,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
       rowptrs = Teuchos::arcp<int>(numRows+1);
       rowptrs[0] = 0;
 #ifdef HAVE_TPETRA_DEBUG
-      Teuchos::ArrayRCP<size_t> nnzPerRow_debug(nnzPerRow.size());
+      Teuchos::ArrayRCP<LocalOrdinal> nnzPerRow_debug(nnzPerRow.size());
       std::copy(nnzPerRow.begin(), nnzPerRow.end(), nnzPerRow_debug.begin());
 #endif
       for (int j=1; j <= numRows; ++j) {
@@ -172,13 +173,13 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
         for (int i=colptrs[col]-1; i != colptrs[col+1]-1; ++i) {
           const int row = rowinds[i]-1;
           // add entry to (row,col), with value dvals[i]
-          const size_t entry = rowptrs[row] + nnzPerRow[row];
+          const LocalOrdinal entry = rowptrs[row] + nnzPerRow[row];
           svals[entry] = Teuchos::as<Scalar>(dvals[i]);
           colinds[entry] = Teuchos::as<GlobalOrdinal>(col);
           ++nnzPerRow[row];
           if (isSymmetric && row != col) {
             // add entry to (col,row), with value dvals[i]
-            const size_t symentry = rowptrs[col] + nnzPerRow[col];
+            const LocalOrdinal symentry = rowptrs[col] + nnzPerRow[col];
             svals[symentry] = Teuchos::as<Scalar>(dvals[i]);
             colinds[symentry] = Teuchos::as<GlobalOrdinal>(row);
             ++nnzPerRow[col];
@@ -188,7 +189,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
 #ifdef HAVE_TPETRA_DEBUG
       {
         bool isequal = true;
-        Teuchos::ArrayRCP<size_t>::const_iterator it1, it2;
+        typename Teuchos::ArrayRCP<LocalOrdinal>::const_iterator it1, it2;
         for (it1 = nnzPerRow.begin(), it2 = nnzPerRow_debug.begin(); it1 != nnzPerRow.end(); ++it1, ++it2) {
           if (*it1 != *it2) {
             isequal = false; 
@@ -218,27 +219,27 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     TEUCHOS_TEST_FOR_EXCEPTION( rowMap->isDistributed() == false && comm->getSize() > 1, std::runtime_error,
         "Tpetra::Utils::readHBMatrix(): specified map is not distributed.");
   }
-  Teuchos::ArrayRCP<size_t> myNNZ;
+  Teuchos::ArrayRCP<LocalOrdinal> myNNZ;
   if (rowMap->getNodeNumElements()) {
-    myNNZ = Teuchos::arcp<size_t>(rowMap->getNodeNumElements());
+    myNNZ = Teuchos::arcp<LocalOrdinal>(rowMap->getNodeNumElements());
   }
   if (myRank == 0) {
-    size_t numRowsAlreadyDistributed = rowMap->getNodeNumElements();
+    LocalOrdinal numRowsAlreadyDistributed = rowMap->getNodeNumElements();
     std::copy(nnzPerRow.begin(), nnzPerRow.begin()+numRowsAlreadyDistributed,myNNZ);
     for (int p=1; p < Teuchos::size(*comm); ++p) {
-      size_t numRowsForP;
+      LocalOrdinal numRowsForP;
       Teuchos::receive(*comm,p,&numRowsForP);
       if (numRowsForP) {
-        Teuchos::send<int,size_t>(*comm,numRowsForP,nnzPerRow(numRowsAlreadyDistributed,numRowsForP).getRawPtr(),p);
+        Teuchos::send<int,LocalOrdinal>(*comm,numRowsForP,nnzPerRow(numRowsAlreadyDistributed,numRowsForP).getRawPtr(),p);
         numRowsAlreadyDistributed += numRowsForP;
       }
     }
   }
   else {
-    const size_t numMyRows = rowMap->getNodeNumElements();
+    const LocalOrdinal numMyRows = rowMap->getNodeNumElements();
     Teuchos::send(*comm,numMyRows,0);
     if (numMyRows) {
-      Teuchos::receive<int,size_t>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
+      Teuchos::receive<int,LocalOrdinal>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
     }
   }
   nnzPerRow = Teuchos::null;
@@ -255,7 +256,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   myNNZ = Teuchos::null;
   if (myRank == 0 && numNZ > 0) {
     for (int r=0; r < numRows; ++r) {
-      const size_t nnz = rowptrs[r+1] - rowptrs[r];
+      const LocalOrdinal nnz = rowptrs[r+1] - rowptrs[r];
       if (nnz > 0) {
         Teuchos::ArrayView<const GlobalOrdinal> inds = colinds(rowptrs[r],nnz);
         Teuchos::ArrayView<const        Scalar> vals = svals(  rowptrs[r],nnz);
@@ -267,7 +268,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   colinds = Teuchos::null;
   svals   = Teuchos::null;
   rowptrs = Teuchos::null;
-  A->fillComplete(domMap,rowMap);
+  A->fillComplete(domMap,rowMap,params);
 }
 
 
@@ -284,7 +285,8 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   readHBMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultKernels<SCALAR,LO,NODE>::SparseOps>(                                                                    \
           const std::string &, const Teuchos::RCP<const Teuchos::Comm<int> > &, const Teuchos::RCP<NODE > &,                                            \
           Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultKernels<SCALAR,LO,NODE>::SparseOps > > &,                                            \
-          Teuchos::RCP< const Tpetra::Map<LO,GO,NODE> >);                                                                                               \
+          Teuchos::RCP< const Tpetra::Map<LO,GO,NODE> >,                                                                                                \
+          const Teuchos::RCP< Teuchos::ParameterList > & );                                                                                             \
                                                                                                                                                         \
   template                                                                                                                                              \
   void                                                                                                                                                  \

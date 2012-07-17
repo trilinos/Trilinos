@@ -897,6 +897,7 @@ int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix
     /* Sanity Check */
     if(!epetra_csr->rowptr || !epetra_csr->columns || !epetra_csr->values) {
       if(verbose && !A->Comm().MyPID()) printf("WARNING: ExtractDataPointers failed [%s], reverting to heavyweight wrap.\n",A->Label());
+      free(epetra_csr);
       return ML_Operator_WrapEpetraMatrix(A,newMatrix);
     }/*end if*/
     

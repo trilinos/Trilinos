@@ -331,16 +331,36 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
        appear on multiple processors, then those nonzeros will be counted
        multiple times.
     */
-    virtual int NumGlobalNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumGlobalNonzeros_);}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    virtual long long
+#else
+    EPETRA_DEPRECATED virtual int
+#endif
+    NumGlobalNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumGlobalNonzeros_);}
 
     //! Returns the number of global matrix rows.
-    virtual int NumGlobalRows() const {return(OperatorRangeMap().NumGlobalPoints());}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    virtual long long
+#else
+    EPETRA_DEPRECATED virtual int
+#endif
+    NumGlobalRows() const {return(OperatorRangeMap().NumGlobalPoints());}
 
     //! Returns the number of global matrix columns.
-    virtual int NumGlobalCols() const {return(OperatorDomainMap().NumGlobalPoints());}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    virtual long long
+#else
+    EPETRA_DEPRECATED virtual int
+#endif
+    NumGlobalCols() const {return(OperatorDomainMap().NumGlobalPoints());}
 
     //! Returns the number of global nonzero diagonal entries.
-    virtual int NumGlobalDiagonals() const{return(OperatorDomainMap().NumGlobalPoints());}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    virtual long long
+#else
+    EPETRA_DEPRECATED virtual int
+#endif
+    NumGlobalDiagonals() const{return(OperatorDomainMap().NumGlobalPoints());}
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     virtual int NumMyNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumMyNonzeros_);}

@@ -87,6 +87,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
 extern nssi_config_t nssi_config;
 
+static bool client_initialized = false;
+
 static nthread_counter_t request_count;
 
 extern trios_buffer_queue_t send_bq;
@@ -111,21 +113,21 @@ client_init ()
 #endif
 {
     int rc = NSSI_OK;
-    static bool init_flag = FALSE;
 
-    if (init_flag) {
+    if (client_initialized) {
         return rc;
     }
 
-//    register_service_encodings();
-
+    // Initialize the thread counter
     nthread_counter_init(&request_count);
+
+//    register_service_encodings();
 
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_GET_SERVICE, void, void, nssi_service);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_KILL_SERVICE, nssi_kill_service_args, void, void);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_TRACE_RESET, nssi_trace_reset_args, void, void);
 
-    init_flag = TRUE;
+    client_initialized = true;
 
     return rc;
 }
@@ -360,6 +362,12 @@ int nssi_rpc_clnt_init(
         return rc;
     }
 
+    nssi_init(rpc_transport);
+    if (rc != NSSI_OK) {
+        log_error(rpc_debug_level, "could not initialize nssi client");
+        return rc;
+    }
+
     /* ping the server */
     return nssi_get_service(rpc_transport, svc_url, default_timeout, result);
 }
@@ -525,13 +533,12 @@ int nssi_get_service(
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for get service send: %s",
                 nnti_err_str(rc));
-        goto cleanup;
-    }
-    rc=NNTI_wait(short_res_hdl, NNTI_RECV_DST, timeout, &wait_status);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed waiting for short result: %s",
-                nnti_err_str(rc));
-        goto cleanup;
+    } else {
+        rc=NNTI_wait(short_res_hdl, NNTI_RECV_DST, timeout, &wait_status);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed waiting for short result: %s",
+                    nnti_err_str(rc));
+        }
     }
 
     if (rc == NNTI_ETIMEDOUT) {
@@ -624,7 +631,9 @@ int nssi_init(const nssi_rpc_transport transport_id)
 {
     int rc = NSSI_OK;
 
-    nssi_rpc_init(transport_id, NSSI_DEFAULT_ENCODE, NULL);
+    client_init();
+
+    client_initialized=true;
 
     return rc;
 }
@@ -634,7 +643,13 @@ int nssi_init(const nssi_rpc_transport transport_id)
  */
 int nssi_fini(const nssi_rpc_transport transport_id)
 {
-    return nssi_rpc_fini(transport_id);
+    int rc = NSSI_OK;
+
+    nthread_counter_fini(&request_count);
+
+    client_initialized=false;
+
+    return(rc);
 }
 
 /**
@@ -1583,6 +1598,10 @@ int nssi_call_rpc(
 
     /* increment global counter */
     local_count = nthread_counter_increment(&request_count);
+    if (local_count == -1) {
+        log_error(debug_level, "Unable to increment counter");
+        goto cleanup;
+    }
 
     /*------ Initialize variables and buffers ------*/
     memset(request, 0, sizeof(nssi_request));

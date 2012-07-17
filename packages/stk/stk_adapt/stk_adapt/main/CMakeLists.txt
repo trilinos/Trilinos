@@ -21,9 +21,11 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES( .. )
 
-TRIBITS_ADD_EXECUTABLE(
+IF( STK_ENABLE_BoostLib )
+  TRIBITS_ADD_EXECUTABLE(
 	adapt_exe_1
 	HEADERS	${HEADERS}
 	SOURCES AdaptMain.cpp
-  COMM serial mpi
-)
+        COMM serial mpi
+  )
+ENDIF()

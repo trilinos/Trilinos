@@ -213,7 +213,13 @@ namespace Teuchos
            const OrdinalType IPIV[],
            const OrdinalType INCX) const;
 
-    //! Computes an LU factorization of a \c n by \c n matrix tridiagonal matrix \c A using partial pivoting with row interchanges.
+    //! Computes an LU factorization of a general banded \c m by \c n matrix \c A using partial pivoting with row interchanges.
+    void GBTRF(const OrdinalType m, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
+  
+    //! Solves a system of linear equations \c A*X=B or \c A'*X=B with a general banded \c n by \c n matrix \c A using the LU factorization computed by GBTRF.
+    void GBTRS(const char TRANS, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
+
+    //! Computes an LU factorization of a \c n by \c n tridiagonal matrix \c A using partial pivoting with row interchanges.
     void GTTRF(const OrdinalType n, ScalarType* dl, ScalarType* d, ScalarType* du, ScalarType* du2, OrdinalType* IPIV, OrdinalType* info) const;
 
     //! Solves a system of linear equations \c A*X=B or \c A'*X=B or \c A^H*X=B with a tridiagonal matrix \c A using the LU factorization computed by GTTRF.
@@ -242,6 +248,12 @@ namespace Teuchos
     //! Estimates the reciprocal of the condition number of a general real matrix \c A, in either the 1-norm or the infinity-norm, using the LU factorization computed by GETRF.
     void GECON(const char NORM, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
 
+    //! Estimates the reciprocal of the condition number of a general banded real matrix \c A, in either the 1-norm or the infinity-norm, using the LU factorization computed by GETRF.
+    void GBCON(const char NORM, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
+
+    //! Returns the value of the one norm, or the Frobenius norm, or the infinity norm, or the element of largest absolute value of an \c n by \c n band matrix \c A, with \c kl sub-diagonals and \c ku super-diagonals.
+    typename ScalarTraits<ScalarType>::magnitudeType LANGB(const char NORM, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const ScalarType* A, const OrdinalType lda, MagnitudeType* WORK) const;
+
     //! Computes the solution to a real system of linear equations \c A*X=B, where \c A is factored through GETRF and the \c nrhs solutions are computed through GETRS.
     void GESV(const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
 
@@ -250,6 +262,12 @@ namespace Teuchos
 
     //! Improves the computed solution to a system of linear equations and provides error bounds and backward error estimates for the solution.  Use after GETRF/GETRS.
     void GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
+
+    //! Computes row and column scalings intended to equilibrate an \c m by \c n banded matrix \c A and reduce its condition number.
+    void GBEQU(const OrdinalType m, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const ScalarType* A, const OrdinalType lda, MagnitudeType* R, MagnitudeType* C, MagnitudeType* rowcond, MagnitudeType* colcond, MagnitudeType* amax, OrdinalType* info) const;
+
+    //! Improves the computed solution to a banded system of linear equations and provides error bounds and backward error estimates for the solution.  Use after GBTRF/GBTRS.
+    void GBRFS(const char TRANS, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
 
     //! Uses the LU factorization to compute the solution to a real system of linear equations \c A*X=B, returning error bounds on the solution and a condition estimate.
     void GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, ScalarType* R, ScalarType* C, ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
@@ -592,6 +610,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GBTRF(const OrdinalType m, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GBTRS(const char TRANS, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GTTRF(const OrdinalType n, ScalarType* dl, ScalarType* d, ScalarType* du, ScalarType* du2, OrdinalType* IPIV, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -634,6 +664,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GBCON(const char NORM, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  typename ScalarTraits<ScalarType>::magnitudeType LAPACK<OrdinalType,ScalarType>::LANGB(const char NORM, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const ScalarType* A, const OrdinalType lda, MagnitudeType* WORK) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GESV(const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -647,6 +689,18 @@ namespace Teuchos
 
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GBEQU(const OrdinalType m, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const ScalarType* A, const OrdinalType lda, MagnitudeType* R, MagnitudeType* C, MagnitudeType* rowcond, MagnitudeType* colcond, MagnitudeType* amax, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GBRFS(const char TRANS, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -909,6 +963,7 @@ namespace Teuchos
     void GETRF(const int m, const int n, float* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const;
 
+
     void LASWP (const int N,
                 float A[],
                 const int LDA,
@@ -917,6 +972,8 @@ namespace Teuchos
                 const int IPIV[],
                 const int INCX) const;
 
+    void GBTRF(const int m, const int n, const int kl, const int ku, float* A, const int lda, int* IPIV, int* info) const;
+    void GBTRS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const;
     void GTTRF(const int n, float* dl, float* d, float* du, float* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const float* dl, const float* d, const float* du, const float* du2, const int* IPIV, float* B, const int ldb, int* info) const;
 
@@ -924,9 +981,13 @@ namespace Teuchos
     void GETRI(const int n, float* A, const int lda, const int* IPIV, float* WORK, const int lwork, int* info) const;
     void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, float* A, const int LDA, float* X, float* SCALE, float* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const float* A, const int lda, const float anorm, float* rcond, float* WORK, int* IWORK, int* info) const;
+    void GBCON(const char NORM, const int n, const int kl, const int ku, const float* A, const int lda, int* IPIV, const float anorm, float* rcond, float* WORK, int* IWORK, int* info) const;
+    float LANGB(const char NORM, const int n, const int kl, const int ku, const float* A, const int lda, float* WORK) const;
     void GESV(const int n, const int nrhs, float* A, const int lda, int* IPIV, float* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const float* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
     void GERFS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const float* AF, const int ldaf, const int* IPIV, const float* B, const int ldb, float* X, const int ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
+    void GBEQU(const int m, const int n, const int kl, const int ku, const float* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
+    void GBRFS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const float* A, const int lda, const float* AF, const int ldaf, const int* IPIV, const float* B, const int ldb, float* X, const int ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
     void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, float* A, const int lda, float* AF, const int ldaf, int* IPIV, char EQUED, float* R, float* C, float* B, const int ldb, float* X, const int ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
     void SYTRD(const char UPLO, const int n, float* A, const int lda, float* D, float* E, float* TAU, float* WORK, const int lwork, int* info) const;
     void GEHRD(const int n, const int ilo, const int ihi, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
@@ -1028,14 +1089,20 @@ namespace Teuchos
                 const int IPIV[],
                 const int INCX) const;
 
+    void GBTRF(const int m, const int n, const int kl, const int ku, double* A, const int lda, int* IPIV, int* info) const;
+    void GBTRS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const double* A, const int lda, const int* IPIV, double* B, const int ldb, int* info) const;
     void GTTRF(const int n, double* dl, double* d, double* du, double* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const double* dl, const double* d, const double* du, const double* du2, const int* IPIV, double* B, const int ldb, int* info) const;
     void GETRI(const int n, double* A, const int lda, const int* IPIV, double* WORK, const int lwork, int* info) const;
     void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, double* A, const int LDA, double* X, double* SCALE, double* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const double* A, const int lda, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const;
+    void GBCON(const char NORM, const int n, const int kl, const int ku, const double* A, const int lda, int* IPIV, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const;
+    double LANGB(const char NORM, const int n, const int kl, const int ku, const double* A, const int lda, double* WORK) const;
     void GESV(const int n, const int nrhs, double* A, const int lda, int* IPIV, double* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const double* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
     void GERFS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const double* AF, const int ldaf, const int* IPIV, const double* B, const int ldb, double* X, const int ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
+    void GBEQU(const int m, const int n, const int kl, const int ku, const double* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
+    void GBRFS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const double* A, const int lda, const double* AF, const int ldaf, const int* IPIV, const double* B, const int ldb, double* X, const int ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
     void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, double* A, const int lda, double* AF, const int ldaf, int* IPIV, char EQUED, double* R, double* C, double* B, const int ldb, double* X, const int ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
     void SYTRD(const char UPLO, const int n, double* A, const int lda, double* D, double* E, double* TAU, double* WORK, const int lwork, int* info) const;
     void GEHRD(const int n, const int ilo, const int ihi, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
@@ -1139,14 +1206,20 @@ namespace Teuchos
                 const int IPIV[],
                 const int INCX) const;
 
+    void GBTRF(const int m, const int n, const int kl, const int ku, std::complex<float>* A, const int lda, int* IPIV, int* info) const;
+    void GBTRS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GTTRF(const int n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* dl, const std::complex<float>* d, const std::complex<float>* du, const std::complex<float>* du2, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GETRI(const int n, std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* WORK, const int lwork, int* info) const;
     void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, std::complex<float>* A, const int LDA, std::complex<float>* X, float* SCALE, float* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const std::complex<float>* A, const int lda, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, int* info) const;
+    void GBCON(const char NORM, const int n, const int kl, const int ku, const std::complex<float>* A, const int lda, int* IPIV, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, int* info) const;
+    float LANGB(const char NORM, const int n, const int kl, const int ku, const std::complex<float>* A, const int lda, float* WORK) const;
     void GESV(const int n, const int nrhs, std::complex<float>* A, const int lda, int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const std::complex<float>* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
     void GERFS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const std::complex<float>* AF, const int ldaf, const int* IPIV, const std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
+    void GBEQU(const int m, const int n, const int kl, const int ku, const std::complex<float>* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
+    void GBRFS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const std::complex<float>* A, const int lda, const std::complex<float>* AF, const int ldaf, const int* IPIV, const std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
     void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* AF, const int ldaf, int* IPIV, char EQUED, float* R, float* C, std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
     void GEHRD(const int n, const int ilo, const int ihi, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
     void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, int* info) const;
@@ -1230,14 +1303,20 @@ namespace Teuchos
                 const int IPIV[],
                 const int INCX) const;
 
+    void GBTRF(const int m, const int n, const int kl, const int ku, std::complex<double>* A, const int lda, int* IPIV, int* info) const;
+    void GBTRS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GTTRF(const int n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* dl, const std::complex<double>* d, const std::complex<double>* du, const std::complex<double>* du2, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GETRI(const int n, std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* WORK, const int lwork, int* info) const;
     void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, std::complex<double>* A, const int LDA, std::complex<double>* X, double* SCALE, double* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const std::complex<double>* A, const int lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void GBCON(const char NORM, const int n, const int kl, const int ku, const std::complex<double>* A, const int lda, int* IPIV, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const;
+    double LANGB(const char NORM, const int n, const int kl, const int ku, const std::complex<double>* A, const int lda, double* WORK) const;
     void GESV(const int n, const int nrhs, std::complex<double>* A, const int lda, int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const std::complex<double>* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
     void GERFS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const std::complex<double>* AF, const int ldaf, const int* IPIV, const std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void GBEQU(const int m, const int n, const int kl, const int ku, const std::complex<double>* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
+    void GBRFS(const char TRANS, const int n, const int kl, const int ku, const int nrhs, const std::complex<double>* A, const int lda, const std::complex<double>* AF, const int ldaf, const int* IPIV, const std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
     void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* AF, const int ldaf, int* IPIV, char EQUED, double* R, double* C, std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
     void GEHRD(const int n, const int ilo, const int ihi, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
     void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, int* info) const;

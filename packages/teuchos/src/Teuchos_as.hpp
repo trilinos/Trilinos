@@ -276,6 +276,26 @@ public:
     { return to_int(t); }
 };
 
+/** \brief Convert long unsigned int to qd_real. */
+template <>
+class ValueTypeConversionTraits<qd_real, long unsigned int> {
+public:
+  inline static qd_real convert( const long unsigned int t )
+    { return ValueTypeConversionTraits<qd_real,int>::convert(ValueTypeConversionTraits<int,long unsigned int>::convert(t)); }
+  inline static qd_real safeConvert( const long unsigned int t )
+    { return ValueTypeConversionTraits<qd_real,int>::safeConvert(ValueTypeConversionTraits<int,long unsigned int>::safeConvert(t)); }
+};
+
+/** \brief Convert long unsigned int to dd_real. */
+template <>
+class ValueTypeConversionTraits<dd_real, long unsigned int> {
+public:
+  inline static dd_real convert( const long unsigned int t )
+    { return ValueTypeConversionTraits<dd_real,int>::convert(ValueTypeConversionTraits<int,long unsigned int>::convert(t)); }
+  inline static dd_real safeConvert( const long unsigned int t )
+    { return ValueTypeConversionTraits<dd_real,int>::safeConvert(ValueTypeConversionTraits<int,long unsigned int>::safeConvert(t)); }
+};
+
 #endif
 
 // ToDo: Add more specializations as needed!

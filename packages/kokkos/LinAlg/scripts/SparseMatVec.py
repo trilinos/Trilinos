@@ -240,15 +240,37 @@ Many functions in this module take a dictionary 'defDict' as input.
 The dictionary defines which variant of sparse triangular solve to
 generate.  It must have the following fields:
 
-sparseFormat: 'CSR' for compressed sparse row, 'CSC' for
-  compressed sparse column.
+sparseFormat: Sparse matrix storage format.  Currently supported
+  formats: 'CSR' for compressed sparse row, 'CSC' for compressed
+  sparse column.
 
-dataLayout: This describes how the multivectors' data are arranged
-  in memory.  Currently we only accept 'column major' or 'row
-  major'.
+dataLayout: Layout of the dense multivectors which are the input and
+  output arguments of the sparse matrix-vector multiply routines.  The
+  current values we accept are 'column major' or 'row major'.
 
-conjugateMatrixEntries: Whether to use the conjugate of each
-  matrix element.
+conjugateMatrixEntries: Whether to compute with the (complex)
+  conjugate of the matrix entries before using them.  We use this
+  option to implement sparse matrix-vector multiply with the conjugate
+  transpose of the matrix.  If the MatrixScalar type (the type of
+  entries in the sparse matrix) is real, then the option does nothing.
+
+It may also have the following fields:
+
+hardCodeNumVecs (Boolean): Whether to hard-code the number of columns
+  in the input and output multivectors to numVecs (see below).
+  Default is False.
+
+numVecs (nonnegative integer): If 'hardCodeNumVecs' (see above) is
+  True, hard-code the number of columns in the input and output
+  multivectors to this value.  Ignored if hardCodeNumVecs=False.
+
+unrollLength (positive integer): For hardCodeNumVecs==False, this
+  specifies the strip-mine length for unrolling updates over the input
+  and output multivectors.  (This is ignored if hardCodeNumVecs==True,
+  since in that case, we simply unroll over all columns.)  We've
+  written the strip-mined loops so that they are correct for any
+  nonnegative number of columns (numVecs) in the input and output
+  multivectors.
 
 Related work
 ============
@@ -272,55 +294,64 @@ Python.'''
 from string import Template
 from os.path import basename
 from kokkos import makeCopyrightNotice
+from SparseCodeGen import emitDenseAref, emitDenseArefFixedCol
 
 
-def makeDefDict (sparseFormat, dataLayout, conjugateMatrixEntries):
+def makeDefDict (sparseFormat, dataLayout, conjugateMatrixEntries, hardCodeNumVecs=False, numVecs=1, unrollLength=4):
     '''Make a suitable input dictionary for any function here that takes one.
 
-    This function is mainly useful for interactive debugging.
-
-    sparseFormat: Sparse matrix storage format.  'CSC' for compressed
-      sparse row, or 'CSR' for compressed sparse column.
-
-    dataLayout: Layout of the dense (multi)vectors which are the input
-      and output of the sparse matrix-vector multiply routines.  The
-      current valid values are 'column major' or 'row major'.
-
-    conjugateMatrixEntries: Whether to compute with the (complex)
-      conjugate of the matrix entries before using them.  We use this
-      option to implement sparse matrix-vector multiply with the
-      conjugate transpose of the matrix.  If the MatrixScalar type
-      (the type of entries in the sparse matrix) is real, then the
-      option does nothing.'''
+    This function is mainly useful for interactive debugging.  See the
+    "Parameters used to generate routines" section in this module's
+    documentation for an explanation of this function's arguments.'''
     return {'sparseFormat': sparseFormat,
             'dataLayout': dataLayout,
-            'conjugateMatrixEntries': conjugateMatrixEntries}
+            'conjugateMatrixEntries': conjugateMatrixEntries,
+            'hardCodeNumVecs': hardCodeNumVecs,
+            'numVecs': numVecs,
+            'unrollLength': unrollLength}
 
 def emitFuncDeclVariants (indent):
-    '''Generate declarations of all sensible sparse matrix-vector multiply variants.'''
+    '''Generate declarations of all sparse matrix-vector multiply variants.'''
     return emitFuncVariants (emitFuncDecl, indent)
 
 def emitFuncDefVariants (indent):
-    '''Generate definitions of all sensible sparse matrix-vector multiply variants.'''
+    '''Generate definitions of all sparse matrix-vector multiply variants.'''
     return emitFuncVariants (emitFuncDef, indent)
 
 def makesSense (defDict):
-    '''Whether the sparse matrix-vector multiply variant specified by defDict makes sense.'''
+    '''Whether the sparse matrix-vector multiply variant specified by defDict makes sense.
+
+    "Makes sense" means that the combination of parameters specified
+    by the input dictionary results in a valid variant.  We don't
+    generate variants for which this function returns False.'''
     return True
 
 def emitFuncVariants (f, indent):
-    '''String sum over all sensible sparse matrix-vector multiply variants.
+    '''Return a string with all sparse matrix-vector multiply variants.
 
     f: a function that takes (defDict, indent) and returns a string.
-    indent: nonnegative integer indent level.
-    '''
+    
+    indent: nonnegative integer indent level.  All lines of code
+      emitted by this function are indented by this many spaces.'''
+
+    maxHardCodedNumVecs = 4
     s = ''
     for conjugateMatrixEntries in [False, True]:
         for dataLayout in ['column major', 'row major']:
             for sparseFormat in ['CSC', 'CSR']:
-                d = makeDefDict (sparseFormat, dataLayout, conjugateMatrixEntries)
-                if makesSense (d):
-                    s = s + f(d, indent) + '\n'
+                for hardCodeNumVecs in [False, True]:
+                    if hardCodeNumVecs:
+                        unrollLength = 4 # ignored in this case
+                        for numVecs in xrange (1, maxHardCodedNumVecs+1):
+                            d = makeDefDict (sparseFormat, dataLayout, conjugateMatrixEntries, hardCodeNumVecs, numVecs, unrollLength)
+                            if makesSense (d):
+                                s = s + f(d, indent) + '\n'
+                    else:
+                        numVecs = 1 # ignored in this case
+                        for unrollLength in [1, 4]: # unrollLength==1 means don't unroll loops.
+                            d = makeDefDict (sparseFormat, dataLayout, conjugateMatrixEntries, hardCodeNumVecs, numVecs, unrollLength)
+                            if makesSense (d):
+                                s = s + f(d, indent) + '\n'
     return s
     
 def emitFuncName (defDict):
@@ -347,6 +378,10 @@ def emitFuncName (defDict):
     # Various Boolean options
     if defDict['conjugateMatrixEntries']:
         name = name + 'Conj'
+    if defDict['hardCodeNumVecs']:
+        name = name + str (defDict['numVecs']) + 'Vec'
+    elif defDict['unrollLength'] > 1: # unrollLength == 1 means we don't unroll loops
+        name = name + str (defDict['unrollLength']) + 'Unrolled'
     return name
 
 def emitFuncDecl (defDict, indent=0):
@@ -369,8 +404,10 @@ def emitFuncSig (defDict, indent=0):
         ind + 'void\n' + \
         ind + emitFuncName(defDict) + ' (\n' + \
         ind + '  const Ordinal numRows,\n' + \
-        ind + '  const Ordinal numCols,\n' + \
-        ind + '  const Ordinal numVecs,\n' + \
+        ind + '  const Ordinal numCols,\n'
+    if not defDict['hardCodeNumVecs']:
+        sig = sig + ind + '  const Ordinal numVecs,\n'
+    sig = sig + \
         ind + '  const RangeScalar& beta,\n' + \
         ind + '  RangeScalar Y[],\n' + \
         ind + '  const Ordinal ${denseRowCol}StrideY,\n' + \
@@ -389,17 +426,15 @@ def emitFuncSig (defDict, indent=0):
         raise ValueError('Invalid dataLayout "' + defDict['dataLayout'] + '"')
     return Template(sig).substitute(denseRowCol=denseRowCol)
 
-
-# Includes the curly braces.
 def emitFuncBody (defDict, indent=0):
     '''Generate the sparse matrix-vector multiply function body, including { ... }.'''
-
     ind = ' '*indent
-
     body = ''
     body = body + \
         ind + '{\n' + \
         ind + '  ' + 'typedef Teuchos::ScalarTraits<RangeScalar> STS;\n\n'
+    if defDict['hardCodeNumVecs']:
+        body = body + ind + '  ' + 'const Ordinal numVecs = ' + str (defDict['numVecs']) +';\n'
     if defDict['sparseFormat'] == 'CSC':
         # CSC requires prescaling the output vector(s) Y.
         body = body + emitPreScaleLoop (defDict, indent+2)
@@ -515,8 +550,15 @@ def emitForLoopPreface (defDict, loopIndex, indent=0):
             ind + '}\n'
     return s
 
-def emitForLoop (defDict, indent=0):
-    '''Generate the 'for' loop in sparse matrix-vector multiply.'''
+def emitForLoopImpl (defDict, alphaIsOne, indent=0):
+    '''Generate the sparse mat-vec 'for' loop, for a specific alpha case (alpha == 1 or alpha != 1).
+
+    defDict: The usual dictionary.
+    alphaIsOne (Boolean): True if alpha == 1, False if alpha != 1.
+    indent (integer): How many spaces to indent each line of emitted code.'''
+
+    if not defDict['hardCodeNumVecs']:
+        unrollLength = defDict['unrollLength']
 
     X_jc = emitDenseAref (defDict, 'X', 'j', 'c')
     Y_ic = emitDenseAref (defDict, 'Y', 'i', 'c')
@@ -530,73 +572,90 @@ def emitForLoop (defDict, indent=0):
         otherIndex = 'j'
         RowCol = 'Row'
 
+    if defDict['conjugateMatrixEntries']:
+        getMatVal = 'Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k])'
+    else:
+        getMatVal = 'val[k]'
+
     ind = ' '*indent
     s = ''
     s = s + \
-        ind + 'const Ordinal nnz = ptr[num${RowCol}s];\n' + \
-        ind + 'if (alpha == STS::one()) {\n' + \
-        ind + ' '*2 + 'for (Ordinal k = 0; k < nnz; ++k) {\n'
-    if defDict['conjugateMatrixEntries']:
-        s = s + \
-            ind + ' '*4 + 'const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);\n'
-    else:
-        s = s + \
-            ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n'
+        ind + 'for (Ordinal k = 0; k < nnz; ++k) {\n' + \
+        ind + ' '*2 + 'const MatrixScalar A_ij = ${getMatVal};\n' + \
+        ind + ' '*2 + 'const Ordinal ${otherIndex} = ind[k];\n'
+    # Here comes the 'while' loop for updating the row index (for CSR,
+    # or column index for CSC).  This is where the one-for-loop
+    # variant differs from the two-for-loop variant.
     s = s + \
-        ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
-        ind + ' '*4 + 'while (k >= ptr[${loopIndex}+1]) {\n' + \
-        ind + ' '*6 + '++${loopIndex};\n'
+        ind + ' '*2 + 'while (k >= ptr[${loopIndex}+1]) {\n' + \
+        ind + ' '*4 + '++${loopIndex};\n'
     if defDict['sparseFormat'] == 'CSR':
+        # CSR mat-vec can merge scaling Y by beta into the iteration
+        # over rows.  CSC mat-vec can't do that; it has to prescale.
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
-        if defDict['dataLayout'] == 'column major':
-            Y_ic = 'Y_i[c*colStrideY]' # A hack, but we make do
-        elif defDict['dataLayout'] == 'row major':
-            Y_ic = 'Y_i[c*rowStrideY]' # A hack, but we make do
-        else:
-            raise ValueError('Invalid dataLayout "' + defDict['dataLayout'] + '"')
         s = s + \
-            ind + ' '*6 + '// We haven\'t seen row i before; prescale Y(i,:).\n' + \
-            ind + ' '*6 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
-            ind + ' '*6 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
-            ind + ' '*8 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
-            ind + ' '*6 + '}\n'
-    s = s + ind + ' '*4 + '}\n' + \
-        emitUpdateLoop (defDict, True, indent+2) + \
-        ind + ' '*2 + '}\n' + \
-        ind + '}\n' + \
-        ind + 'else { // alpha != STS::one()\n' + \
-        ind + ' '*2 + 'for (Ordinal k = 0; k < nnz; ++k) {\n'
-    if defDict['conjugateMatrixEntries']:
-        s = s + \
-            ind + ' '*4 + 'const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);\n'
-    else:
-        s = s + \
-            ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n'
+            ind + ' '*4 + '// We haven\'t seen row i before; scale Y(i,:) by beta.\n'
+        if defDict['hardCodeNumVecs']:
+            if defDict['numVecs'] > 1:
+                s = s + ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+                for c in xrange (0, defDict['numVecs']):
+                    Y_ic = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+                    s = s + ind + ' '*4 + Y_ic + ' *= beta;\n'
+            else:
+                Y_ic = emitDenseArefFixedCol (defDict, 'Y', 'i', 0, strideName='Y')
+                s = s + ind + ' '*4 + Y_ic + ' *= beta;\n'
+        elif unrollLength > 1:
+            s = s + \
+                ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
+                ind + ' '*4 + 'Ordinal c = 0;\n' + \
+                ind + ' '*4 + '// Extra +1 in loop bound ensures first ' + str(unrollLength) + ' iterations get\n' + \
+                ind + ' '*4 + '// strip-mined, but requires that Ordinal be a signed type.\n' + \
+                ind + ' '*4 + 'for ( ; c < numVecs - ' + str(unrollLength-1) + '; c += ' + str(unrollLength) + ') {\n'
+                # Unrolled part of the loop.
+            for c in xrange (0, unrollLength):
+                Y_ic_fixed = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+                s = s + ind + ' '*6 + Y_ic_fixed + ' *= beta;\n'
+            Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')
+            # "Leftover" part of the loop.
+            s = s + ind + ' '*4 + '}\n' + \
+                ind + ' '*4 + 'for ( ; c < numVecs; ++c) {\n' + \
+                ind + ' '*6 + Y_ic + ' *= beta;\n' + \
+                ind + ' '*4 + '}\n'
+        else: # unrollLength == 1, which means don't unroll loops at all.
+            s = s + ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+            Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')            
+            s = s + \
+                ind + ' '*4 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
+                ind + ' '*6 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
+                ind + ' '*4 + '}\n'
+    s = s + ind + ' '*2 + '}\n' # End of the 'while' loop for advancing the row/column index.
     s = s + \
-        ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
-        ind + ' '*4 + 'while (k >= ptr[${loopIndex}+1]) {\n' + \
-        ind + ' '*6 + '++${loopIndex};\n'
-    if defDict['sparseFormat'] == 'CSR':
-        Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
-        if defDict['dataLayout'] == 'column major':
-            Y_ic = 'Y_i[c*colStrideY]' # A hack, but we make do
-        elif defDict['dataLayout'] == 'row major':
-            Y_ic = 'Y_i[c*rowStrideY]' # A hack, but we make do
-        else:
-            raise ValueError('Invalid dataLayout "' + defDict['dataLayout'] + '"')
-        s = s + \
-            ind + ' '*6 + '// We haven\'t seen row i before; prescale Y(i,:).\n' + \
-            ind + ' '*6 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
-            ind + ' '*6 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
-            ind + ' '*8 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
-            ind + ' '*6 + '}\n'
-    s = s + ind + ' '*4 + '}\n' + \
-        emitUpdateLoop (defDict, False, indent+2) + \
-        ind + ' '*2 + '}\n' + \
+        emitUpdateLoop (defDict, alphaIsOne, indent+2) + \
         ind + '}\n'
     return Template(s).substitute (loopIndex=loopIndex, \
                                        otherIndex=otherIndex, \
-                                       RowCol=RowCol)
+                                       RowCol=RowCol, \
+                                       getMatVal=getMatVal)
+
+def emitForLoop (defDict, indent=0):
+    '''Generate both branches of the sparse mat-vec 'for' loop, for each alpha case (alpha == 1 or alpha != 1).
+
+    defDict: The usual dictionary.
+    indent: The number of spaces to indent each line of emitted code; a nonnegative integer.'''
+
+    if defDict['sparseFormat'] == 'CSC':
+        RowCol = 'Col'
+    else:
+        RowCol = 'Row'
+
+    ind = ' '*indent
+    return ind + 'const Ordinal nnz = ptr[num' + RowCol + 's];\n' + \
+        ind + 'if (alpha == STS::one()) {\n' + \
+        emitForLoopImpl (defDict, True, indent+2) + \
+        ind + '}\n' + \
+        ind + 'else { // alpha != STS::one()\n' + \
+        emitForLoopImpl (defDict, False, indent+2) + \
+        ind + '}\n'
 
 def emitUpdateLoop (defDict, alphaIsOne, indent=0):
     '''Return the update loop code for Y(i,:) = Y(i,:) + alpha*A_ij*X(j,:).
@@ -604,57 +663,98 @@ def emitUpdateLoop (defDict, alphaIsOne, indent=0):
     alphaIsOne (Boolean): if True, then we know that alpha is one and
       don't have to multiply by alpha.  If False, we must multiply by
       alpha.
-    '''
-    X_jc = emitDenseAref (defDict, 'X', 'j', 'c')
-    Y_ic = emitDenseAref (defDict, 'Y', 'i', 'c')
+    indent: The number of spaces to indent each line of emitted code; a nonnegative integer.'''
+
+    if not defDict['hardCodeNumVecs']:
+        unrollLength = defDict['unrollLength']
+    Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
+    X_j = emitDenseAref (defDict, 'X', 'j', '0')
 
     ind = ' '*indent
     s = ''
-    s = s + \
-        ind + ' '*2 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n'
-    if alphaIsOne:
+    if defDict['hardCodeNumVecs']:
+        s = s + emitUpdateLoopFixedNumVecs (defDict, alphaIsOne, indent)
+    elif unrollLength > 1:
+        s = s + ind + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+        s = s + ind + 'const DomainScalar* const X_j = &' + X_j + ';\n'
         s = s + \
-            ind + ' '*4 + Y_ic + ' = ' + Y_ic + ' + A_ij * ' + X_jc + ';\n'
-    else:
-        s = s + \
-            ind + ' '*4 + Y_ic + ' = ' + Y_ic + ' + alpha * A_ij * ' + X_jc + ';\n'
-    s = s + \
-        ind + ' '*2 + '}\n'
+            ind + 'Ordinal c = 0;\n' + \
+            ind + '// Extra +1 in loop bound ensures first ' + str(unrollLength) + ' iterations get\n' + \
+            ind + '// strip-mined, but requires that Ordinal be a signed type.\n' + \
+            ind + 'for ( ; c < numVecs - ' + str(unrollLength-1) + '; c += ' + str(unrollLength) + ') {\n'            
+        # Unrolled part of the loop.
+        for c in xrange (0, unrollLength):
+            X_jc = emitDenseArefFixedCol (defDict, 'X_j', '0', c, strideName='X')
+            Y_ic = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+            if alphaIsOne:
+                s = s + ind + ' '*2 + Y_ic + ' += A_ij * ' + X_jc + ';\n'
+            else:
+                s = s + ind + ' '*2 + Y_ic + ' += alpha * A_ij * ' + X_jc + ';\n'
+        s = s + ind + '}\n'
+        # "Leftover" part of the loop.
+        X_jc = emitDenseAref (defDict, 'X_j', '0', 'c', strideName='X')
+        Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')
+        s = s + ind + 'for ( ; c < numVecs; ++c) {\n'
+        if alphaIsOne:
+            s = s + ind + ' '*2 + Y_ic + ' += A_ij * ' + X_jc + ';\n'
+        else:
+            s = s + ind + ' '*2 + Y_ic + ' += alpha * A_ij * ' + X_jc + ';\n'
+        s = s + ind + '}\n'
+    else: # unrollLength == 1
+        s = s + ind + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+        s = s + ind + 'const DomainScalar* const X_j = &' + X_j + ';\n'
+        X_jc = emitDenseAref (defDict, 'X_j', '0', 'c', strideName='X')
+        Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')
+        s = s + ind + 'for (Ordinal c = 0; c < numVecs; ++c) {\n'
+        if alphaIsOne:
+            s = s + ind + ' '*2 + Y_ic + ' += A_ij * ' + X_jc + ';\n'
+        else:
+            s = s + ind + ' '*2 + Y_ic + ' += alpha * A_ij * ' + X_jc + ';\n'
+        s = s + ind + '}\n'
     return s
 
-def emitDenseStrides (defDict, name):
-    layout = defDict['dataLayout']
-    if layout == 'column major':
-        # Row stride, column stride
-        return '1', 'colStride' + name
-    elif layout == 'row major':
-        return 'rowStride' + name, '1'
-    else:
-        raise ValueError ('Invalid dataLayout "' + layout + '"')
+def emitUpdateLoopFixedNumVecs (defDict, alphaIsOne, indent=0):
+    '''Return fixed-numVecs update loop code for Y(i,:) += alpha * A_ij * X(j,:).
 
-def emitDenseAref (defDict, varName, rowIndex, colIndex):
-    rowStride, colStride = emitDenseStrides (defDict, varName)
-    s = varName + '['
+    The returned code completely unrolls the loop over all columns of Y.
+    This is probably only a good idea for a small number of columns.
 
-    rowIndexTrivial = (rowIndex == '' or rowIndex == '0')
-    colIndexTrivial = (colIndex == '' or colIndex == '0')
+    defDict: The usual dictionary.
+    alphaIsOne (Boolean): if True, then we know that alpha is one and
+      don't have to multiply by alpha.  If False, we must multiply by
+      alpha.
+    indent: The number of spaces to indent; a nonnegative integer.'''
+    if not defDict['hardCodeNumVecs']:
+        raise ValueError('Only call this if defDict[\'hardCodeNumVecs\']==True.')
+    numVecs = defDict['numVecs']
+    X_j = emitDenseAref (defDict, 'X', 'j', '0', strideName='X')
+    Y_i = emitDenseAref (defDict, 'Y', 'i', '0', strideName='Y')
 
-    if rowIndexTrivial and colIndexTrivial:
-        s = s + '0'
-    else:
-        if not rowIndexTrivial:
-            s = s + rowIndex
-            if rowStride != '1':
-                s = s + '*' + rowStride
-            # Look ahead to see whether there is a nontrival column index.
-            if not colIndexTrivial:
-                s = s + ' + '
-        if not colIndexTrivial:
-            s = s + colIndex
-            if colStride != '1':
-                s = s + '*' + colStride
-    s = s + ']'
+    ind = ' '*indent
+    s = ''
+
+    if numVecs > 1:
+        # Only make X_j and Y_i pointers if numVecs > 1.
+        s = s + ind + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+        s = s + ind + 'const DomainScalar* const X_j = &' + X_j + ';\n'
+        for c in xrange(0, numVecs):
+            X_jc = emitDenseArefFixedCol (defDict, 'X_j', '0', c, strideName='X')
+            Y_ic = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+            if alphaIsOne:
+                line = ind + Y_ic + ' += A_ij * ' + X_jc + ';\n'
+            else:
+                line = ind + Y_ic + ' += alpha * A_ij * ' + X_jc + ';\n'
+            s = s + line
+    else: # numVecs == 1
+        X_jc = emitDenseArefFixedCol (defDict, 'X', 'j', 0, strideName='X')
+        Y_ic = emitDenseArefFixedCol (defDict, 'Y', 'i', 0, strideName='Y')
+        if alphaIsOne:
+            line = ind + Y_ic + ' += A_ij * ' + X_jc + ';\n'
+        else:
+            line = ind + Y_ic + ' += alpha * A_ij * ' + X_jc + ';\n'
+        s = s + line
     return s
+
 
 def emitFuncDoc (defDict, indent=0):
     '''Emit the sparse matrix-vector multiply routine's documentation.
@@ -716,17 +816,14 @@ def emitFuncDoc (defDict, indent=0):
 ///   This may differ from the type of entries in the output multivector X.
 /// \\tparam RangeScalar The type of entries in the output multivector X.
 ///
-/// \param ${startIndex} [in] The least (zero-based) ${fmtRowCol} index of 
-///   the sparse matrix matrix over which to iterate.  For iterating over 
-///   the whole sparse matrix, this should be 0.
-/// \param ${endIndex} [in] The largest (zero-based) ${fmtRowCol} index of 
-///   the sparse matrix over which to iterate, plus one.  Adding one means 
-///   that ${startIndex}, ${endIndex} makes an exclusive index range.  For 
-///   iterating over the whole sparse matrix, this should be the total
-///   number of ${fmtRowCol}s in the sparse matrix (on the calling process).
-/// \param numVecs [in] Number of columns in X or Y 
-///   (must be the same for both).
-/// \param X [out] Output dense multivector, stored in ${colRow}-major order.
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+'''
+    if not defDict['hardCodeNumVecs']:
+        body = body + '''/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+'''
+    body = body + '''/// \param X [out] Output multivector, stored in ${colRow}-major order.
 /// \param LDX [in] Stride between ${colRow}s of X.  We assume unit
 ///   stride between ${rowCol}s of X.
 /// \param ptr [in] Length (${numIndices}+1) array of index offsets 
@@ -737,7 +834,7 @@ def emitFuncDoc (defDict, indent=0):
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of ${fmtRowCol} i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in ${colRow}-major order.
+/// \param Y [in] Input multivector, stored in ${colRow}-major order.
 /// \param LDY [in] Stride between ${colRow}s of Y.  We assume unit
 ///   stride between ${rowCol}s of Y.'''
 

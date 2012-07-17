@@ -214,7 +214,7 @@ void request_args_add(const NNTI_peer_t *caller, const unsigned long reqid, requ
     log_debug(rpc_debug_level, "enter - adding caller(%s) reqid(%lu)",
             caller->url, reqid);
 
-    nthread_lock(&request_args_map_mutex);
+    if (nthread_lock(&request_args_map_mutex)) log_warn(rpc_debug_level, "failed to get thread lock");
     request_args_map[cr] = request_args;
     log_debug(rpc_debug_level, "request_args_map.size() == %lu", request_args_map.size());
     nthread_unlock(&request_args_map_mutex);
@@ -228,7 +228,7 @@ request_args_t *request_args_get(const NNTI_peer_t *caller, const unsigned long 
     log_debug(rpc_debug_level, "enter - looking for caller(%s) reqid(%lu)",
             caller->url, reqid);
 
-    nthread_lock(&request_args_map_mutex);
+    if (nthread_lock(&request_args_map_mutex)) log_warn(rpc_debug_level, "failed to get thread lock");
     request_args_map_iterator_t iter=request_args_map.find(cr);
     request_args_t *request_args=iter->second;
     log_debug(rpc_debug_level, "request_args_map.size() == %lu", request_args_map.size());
@@ -246,7 +246,7 @@ void request_args_del(const NNTI_peer_t *caller, const unsigned long reqid)
     log_debug(rpc_debug_level, "enter - deleting caller(%s) reqid(%lu)",
             caller->url, reqid);
 
-    nthread_lock(&request_args_map_mutex);
+    if (nthread_lock(&request_args_map_mutex)) log_warn(rpc_debug_level, "failed to get thread lock");
     request_args_map_iterator_t iter=request_args_map.find(cr);
     request_args_t *request_args=iter->second;
 
@@ -851,7 +851,7 @@ static int lookup_service_op(
     log_debug(rpc_debug_level, "enter (opcode=%d)", opcode);
 
     log_debug(rpc_debug_level, "locking ops mutex");
-    nthread_lock(&supported_ops_mutex);
+    if (nthread_lock(&supported_ops_mutex)) log_warn(rpc_debug_level, "failed to get thread lock");
     log_debug(rpc_debug_level, "locked ops mutex");
     if (supported_ops.find(opcode) == supported_ops.end()) {
         rc = NSSI_ENOENT;
@@ -1435,7 +1435,7 @@ int nssi_service_add_op(
 
         assert(op);
 
-        nthread_lock(&supported_ops_mutex);
+        if (nthread_lock(&supported_ops_mutex)) log_warn(rpc_debug_level, "failed to get thread lock");
 
         if (supported_ops.find((int)op->opcode) == supported_ops.end()) {
             supported_ops[(int)op->opcode] = *op;
@@ -1463,6 +1463,12 @@ int nssi_service_add_op(
  */
 int nssi_service_fini(const nssi_service *service)
 {
+//	nthread_lock_fini(&meminfo_mutex);
+    nthread_lock_fini(&supported_ops_mutex);
+    nthread_lock_fini(&request_args_map_mutex);
+
+    time_to_die=false;
+
     return NSSI_OK;
 }
 

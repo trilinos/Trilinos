@@ -37,7 +37,7 @@
 #include <limits.h>
 
 template <typename T>
-inline void swap(T &r, T &s)
+inline void my_swap(T &r, T &s)
 {
   T tmp = r;
   r = s;
@@ -55,8 +55,8 @@ void siftDown( T *a, U *b, int64_t start, int64_t end)
       child += 1;
     }
     if (a[root] < a[child]) {
-      swap(a[child], a[root] );
-      swap(b[child], b[root] );
+      my_swap(a[child], a[root] );
+      my_swap(b[child], b[root] );
       root = child;
     }
     else
@@ -75,8 +75,8 @@ void my_sort(int64_t count, T ra[], U rb[])
   }
  
   for (end=count-1; end > 0; end--) {
-    swap(ra[end],ra[0]);
-    swap(rb[end],rb[0]);
+    my_swap(ra[end],ra[0]);
+    my_swap(rb[end],rb[0]);
     siftDown(ra, rb, 0, end);
   }
 }

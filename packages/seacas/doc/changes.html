@@ -1,0 +1,412 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>SEACAS Changes</title>
+    <script>
+      function init () {
+	var tables = document.getElementsByTagName("table");
+	for (var i = 0; i < tables.length; i++) {
+	  if (tables[i].className.match(/zebra/)) {
+	    zebra(tables[i]);
+	  }
+	  if (tables[i].className.match(/zebra2/)) {
+	    zebra2(tables[i]);
+	  }
+	}
+      }
+
+      function zebra (table) {
+	var current = "oddRow";
+	var trs = table.getElementsByTagName("tr");
+	for (var i = 0; i < trs.length; i++) {
+	  trs[i].className += " " + current;
+	  current = current == "evenRow" ? "oddRow" : "evenRow";
+	}
+      }
+      function zebra2 (table) {
+	var current = "oddRowp";
+	var trs = table.getElementsByTagName("tr");
+	for (var i = 0; i < trs.length; i++) {
+	  trs[i].className += " " + current;
+	  current = current == "evenRowp" ? "oddRowp" : "evenRowp";
+	}
+      }
+    </script>
+    <style>
+        tr.oddRow { background-color: #eef; }
+        tr.evenRow { background-color: #fff; }
+    </style>
+  </head>
+
+  <body onload="init()">
+    <h1>SEACAS FAQ</h1>
+      <table class="zebra" WIDTH=90% align=center  BGCOLOR=WHITE CELLPADDING=10>
+	<tr align=left><th>Question</th><th>Answer</th></tr>
+	  <tr><td>How do I link exodusII for the new netcdf4?</td>
+	  <td>The new netcdf-4 is hdf5-based and requires linking with
+	    hdf5.  The link line should be: <tt>-L${ACCESS}/lib -lexoIIv2c
+	    -lnetcdf -lhdf5_hl -lhdf5 -lz -lm</tt><br>You can also use
+	    the output from <tt>`${ACCESS}/bin/nc-config --libs`</tt> 
+	  </td>
+	  </tr>
+	</table>
+    
+
+    <h1>SEACAS Changes</h1>
+
+      <table class="zebra" WIDTH=90% align=center  BGCOLOR=WHITE CELLPADDING=10>
+	  <tr align=left><th>Date</th><th>Code</th><th>Version</th><th>Change</tr>
+
+	  <tr><td>2012-04-14</td>
+	  <td>nemesis</td><td></td>
+
+	  <td>The nemesis library is now included in the exodus
+	    library.  All api functions have been renamed from ne_* to
+	    ex_*.  The nemesis library still exists with a wrapper
+	    routine which forwards all calls to the exodus library for
+	    backward-compatability.
+	    </td>
+	  </tr>
+
+	  <tr><td>2012-04-04</td>
+	  <td>blot</td><td>3.00</td>
+
+	  <td>Blot now uses and displays global node and element ids.
+	    Start blot with "-nomap node|elemen|all" to get old local
+	    id display.</td>
+	  </tr>
+
+	  <tr><td>2011-11-17</td>
+	  <td>aprepro</td><td>2.24</td>
+
+	  <td>Added command line editing and recall.</td>
+	  </tr>
+
+	  <tr><td>2011-10-10</td>
+	  <td>nem_spread (decomp/loadbal)</td><td>5.17</td>
+
+	  <td>Allow subset of files to be written
+	    Added -s &lt;start_proc&gt; and -n &lt;num_proc&gt; options to allow processing
+	    only the files for processors &lt;start_proc&gt; to
+            &lt;start_proc&gt;+&lt;num_proc&gt;-1.  For example, -s 3 -n 2 would output files
+            for processors 3 and 4.
+    
+	    This can then be used with gnu parallel or some other method to run
+	    multiple nem_spread jobs simultaneously and speed up the spread
+            process.
+	  </td>
+	  </tr>
+
+	  <tr><td>2011-09-14</td>
+	  <td>ejoin</td><td>1.2.8</td>
+
+	  <td>Added "-info_records p#,p#,..." option which will transfer
+	      information records from the specified part(s) or "all"
+	      to the output mesh.  
+	  </td>
+	  </tr>
+
+	  <tr><td>2011-08-25</td>
+	  <td>epu</td><td>3.35</td>
+
+	  <td>Added "-sum_shared_nodes" flag which will sum the nodal results values
+	    of all nodes on processor boundaries instead of assuming that the values
+	    are equal.
+	  </td>
+	  </tr>
+
+	  <tr><td>2011-07-28</td>
+	  <td>grepos</td><td>1.60</td>
+
+	  <td>Add "-name_length {len}" command line option to specify the size of names on the output file.</td>
+	  </tr>
+
+	  <tr><td>2011-07-27</td>
+	  <td>grepos</td><td>1.59</td>
+
+	  <td>Add range to entity deletion/undeletion. Can now do "delete block {n1} to {n2} by {n3}" in addition to listing ids. For example, "delete block 1 to 10 by 2 13 17 21 to 40 by 3"
+	  </td>
+	  </tr>
+
+	  <tr><td>2011-04-05</td>
+	  <td>aprepro</td><td>3.06</td>
+
+	  <td>Added "srand(integer)" function for seeding the random
+	    number generator.  Also added an automatic call to
+	    srand(time) so you won't get the same random numbers for
+	    each run of aprepro.
+	  </td>
+	  </tr>
+
+	  <tr><td>2011-03-18</td>
+	  <td>grope</td><td>1.56</td>
+
+	  <td>Add printing of coordinate frames via the "print frames"
+	    or "list frames" command.
+	  </td>
+	  </tr>
+
+	  <tr><td>2011-02-14</td>
+	  <td>exodiff</td><td>2.41</td>
+
+	  <td>Added "eigen_relative", "eigen_absolute", and
+	  "eigen_combined" diff options which are meant to be used for
+	  diffing varibles that are typically eigenvectors or related
+	  quantities where the vector 'V' should be considered equal
+	  to the vector '-V'.<p>
+    
+	  The eigen_ forms of the tolerances simply diff the absolute
+	  values of the varible values instead of diffing the values.
+	  Eventually there should be some code to determine whether
+	  V_0 == -V_1 or V_0 == V_1 and not simply that V_0 == |V_1|
+	  </td>
+	  </tr>
+	  <tr><td>2011-01-26</td>
+	  <td>algebra</td><td>1.37</td>
+	  <td>Implement 'removal' of elements by global id. The syntax is:<p>
+    
+	    <tt>REMOVE ELEMENT {id1} {id2} ... {idn}</tt><p>
+    
+	      A maximum of 1024 ids may be specified.
+	      It is currently not very efficient, but should work.
+	  </td>
+
+	  <tr><td>2011-01-06</td>
+	  <td>ejoin</td><td>1.2.4</td>
+	  <td>Several changes to improve functionality and robustness:
+	    <ul>
+	      <li> New omit options -- omit_blocks, omit_nodesets, and
+		omit_sidesets.  Can specify which entities should be
+		omitted. See -h output for details.</li>
+	      <li> Add case insensitive matching during parsing.</li>
+	      <li> Fixed sideset output in cases where blocks are
+		omitted.</li>
+	      <li> Maintain element order maps if possible</li>
+	    </ul>
+	  </td>
+
+	  <tr><td>2010-12-16</td>
+	  <td>algebra</td><td>1.33</td>
+	  <td>Implement 'filtering' of elements which is the capabilty
+	  to remove elements based on the value of a specified element
+	  variable.  The syntax is:<p>
+    
+	    <tt>FILTER ELEMENT {variable} {lt|le|ge|ne|gt|ge} {value} TIME {db_time}</tt><p>
+    
+	      <ul>
+		<li><em>'variable'</em> is the name of an element variable on the
+	    database.</li>
+	      <li><em>'value'</em> is the value that this variable will be
+		compared against</li>
+	      <li><em>'lt|le|ge|ne|gt|ge'</em> is the type of comparison
+		corresponding to: lt -- less than, le == less than or
+		equal, ...</li> 
+	      <li><em>'db_time'</em> is the time on the database where the
+		variable will be read. If db_time is < the minimum db
+		time, then the minimum time will be used; if greater than
+		the maximum db time, then the maximum time will be
+		used.</li>
+	    </ul>
+    
+	    If the variable doesn't exist on an element block, then
+	    all of the elements in that element block will be
+	    retained.
+	  </td>
+	  </tr>
+	  <tr><td>2010-12-15</td>
+	  <td>algebra</td><td>1.32</td>
+	  <td>Added inverse zoom capability -- delete all nodes and
+	    elements inside the specified zoom box unless the element
+	    contains nodes that are outside the zoom box. This is
+	    specified by adding <em>OUTSIDE</em> to the end of the
+	    zoom command line.
+	  </td>
+	  <tr><td>2010-09-29</td>
+	  <td>ioss</td><td>1.01</td>
+	  <td>The io_shell and io_info executables are now installed. io_shell can be used with
+	    the generated mesh option to create rectangular meshes for testing.
+	  </td>
+	  <tr><td>2010-09-16</td>
+	  <td>ejoin</td><td>1.1.3</td>
+	  <td><ul>
+	      <li>Added a new option "-convert_nodal_to_nodesets {list_of_parts|ALL}".
+    
+	    For each part listed (or ALL parts), create a nodeset in the output
+	    mesh containing the nodes of the part and output the nodal fields from
+	    the part as nodeset fields instead of nodal fields.<br>
+
+	    The name of the nodeset will be "p" + part_ordinal + "_nodes".  For
+	    example, p1_nodes, p2_nodes.</li>
+	    
+	      <li>Add subsetting of output steps; use LAST to specify last step only</li>
+	      </ul>
+	  </td>
+	  </tr>
+	  <tr><td>2010-09-16</td>
+	  <td>aprepro</td><td>2.20</td>
+	  <td>Added ":" as valid character in a variable name.
+	  </td>
+	  <tr><td>2010-09-10</td>
+	  <td>grepos</td><td>1.51</td>
+	  <td>
+	    <ul>
+	      <li>Added capability to rotate a selected subset of attributes.  The syntax is:
+		<ul>
+		  <li> REVOLVE ATTRIBUTE {which} BLOCK {id|ALL}  {x|y|z} {angle} </li>
+		  <li> REVOLVE ATTRIBUTE {which} TYPE {blk_type} </li>
+		  <li> REVOLVE ATTRIBUTE RESET</li>
+		</ul>
+		The "which" argument specifies the index (1-based) of the
+		first of {spatial_dimension} attributes which will be
+		rotated by the specified angles.  </li>
+	      <li> ROTATE is now a synonym for REVOLVE</li>
+	      <li> The "list block" command will list the names of the
+	  element attributes defined on the block if the names are
+	  defined in the exodus file.</li>
+	    </ul>
+	  </td>
+	  </tr>
+	  <tr><td>2010-09-10</td>
+	  <td>grope</td><td>1.53</td>
+	  <td>The "list block" command will list the names of the
+	  element attributes defined on the block if the names are
+	  defined in the exodus file.
+	  </td>
+	  </tr>
+	  <tr><td>2010-09-10</td>
+	  <td>ejoin</td><td>1.1.0</td>
+	  <td>The variable subsetting now works to select all/none or selected node, element, nodeset, or sideset variables.
+	  </td>
+	  </tr>
+	  <tr><td>2010-06-04</td>
+	  <td>exomatlab2</td><td>1.0.0</td>
+	  <td>Created C++ version.  Will eventually replace the
+	    fortran version and add new capability.
+	  </td>
+	  </tr>
+	  <tr><td>2010-05-06</td>
+	  <td>exodus<br>nemesis</td><td></td>
+	  <td>The exodusII library name was changed from libexoIIv2c.a
+	    to libexodus.a and libnemIc.a to libnemesis.a.  There is a
+	    link to the old names, but hopefully the new names are
+	    easier to remember and use.  No functionality changes;
+	    simply the name.
+	  </td>
+	  </tr>
+	  <tr><td>2010-05-26</td>
+	  <td>ejoin</td><td>1.0.0</td>
+	  <td>Added ejoin which is a gjoin-like tool for merging 2 or
+	    more exodus meshes into a single mesh. If one or more of
+	    the meshes have compatible results data, the data will be
+	    copied to the merged file.  Initial functionality is working.
+	  </td>
+	  </tr>
+	  <tr><td>2010-05-06</td>
+	  <td>ioss</td><td>1.00</td>
+	  <td>Added the IO Subsystem (ioss) as a library. Will be used
+	    as basis for some future seacas tools.
+	  </td>
+	  </tr>
+	  <tr><td>2010-04-25</td>
+	  <td>exodiff</td><td>2.36</td>
+	  <td>Add support for differencing element attributes. Use
+	    option <tt>-ignore_attributes</tt> to turn this off.
+	  </td>
+	  </tr>
+	  <tr><td>2010-03-19</td>
+	  <td>epu</td><td>3.28</td>
+	  <td>Add -append option which will append to an existing
+	    output file instead of overwriting. Assumes that the input
+	    and output meshes match.  Will skip steps on input files
+	    until the time is larger than the maximum time on the
+	    output file.
+	  </td>
+	  </tr>
+	  <tr><td>2010-03-16</td>
+	  <td>aprepro</td><td>2.14</td>
+	  <td>Add distinction between predefined and user-defined variables. <tt>DUMP()</tt> outputs user-defined <tt>DUMP_PREVAR()</tt> outputs predefined
+	  </td>
+	  </tr>
+	  <tr><td>2010-03-14</td>
+              <td>grepos</td><td>1.49</td>
+              <td>Added "elementize {nodal_variable}" command which
+	    will create an element variable named "n_{nodal_variable}"
+	    which is the average of the nodal variable values for each
+	    element. Do "list names" to see the valid nodal variable
+	    names.
+	    </td>
+	  </tr>
+	  <tr><td>2010-03-12</td>
+	      <td>exodiff</td><td>2.34</td>
+	      <td>Added "-show_all_diffs" option which will output
+	      each entity that fails the tolerance test instead of
+	      just the entity with the maximum diff.</td>
+	  </tr>
+	  <tr><td>2010-03-01</td>
+	     <td>aprepro</td><td>2.11</td>
+	     <td><ul>
+	      <li>Added <tt>output_append(filename)</tt> function which redirects output to specified file.  If file exists, it is appended to; if it doesn't exist, then it is created.</li>
+	      <li>If <tt>output("stdout")</tt> is specified, then the currently open output file is closed and output again is directed to stdout which is the default aprepro output.</li>
+	      <li>Added <tt>file_to_string(filename)</tt> function which creates an aprepro string containing the contents of the specified file.</li>
+	      <li>Added <tt>rand_normal(mean,stddev)</tt>, <tt>rand_lognormal(mean,stddev)</tt>, <tt>rand_weibull(alpha, beta) functions.</tt></li>
+	      <li>Typing <tt>{DUMP_FUNC()}</tt> gives list of all functions with their syntax and description.</li>
+	      </ul>
+	  </td>
+	  </tr>
+	  <tr><td>2010-02-23</td>
+	    <td>blot fastq</td><td></td>
+	    <td>Modified the default geometry of the svdi window to be based on the desktop height only. Previously it was 65% of desktop width and 65% of desktop height which gave a stretched out window on dual-monitor systems. Now height is 65% of desktop height and width is 1.63 * height.  It can be overridden by adding <tt>"svdi.Geometry: widthxheight+xoff+yoff"</tt> to your .Xresources or .Xdefaults file.</td>
+	  </tr>
+	  <tr><td></td>
+	    <td>exodusII</td><td></td>
+	    <td>The hdf5-based netcdf4 is being used on several
+	    systems.  If linking with that version, need to use the
+	    link line: <tt>"-lnetcdf -lhdf5_hl -lhdf5 -lz -lm"</tt></td>
+	  </tr>
+	  <tr><td>2010-02-05</td>
+	    <td>blot</td><td>1.77</td>
+	    <td>When specifying the death variable, the summary now shows what value signifies an alive element.</td>
+	  </tr>
+	  <tr><td>2010-01-28</td>
+	    <td>blot</td><td>1.76</td>
+	    <td>When plotting a mesh with lots of shell elements, blot will automatically set "hidden 2" mode which plots much (orders of magnitude) quicker for large shell meshes.  User can switch back to hidden 3 or higher when zoomed in.</td>
+	  </tr>
+	  <tr><td>2010-01-21</td>
+	    <td>grepos</td><td>1.47</td>
+	    <td>Added a command for setting block, nodeset, sideset names. Command is "Name BLOCK|NSET|NODESET|SSET|SSIDESET {id} {the_name}"</td>
+	  </tr>
+	  <tr><td>2010-01-21</td>
+	    <td>grope</td><td>1.48</td>
+	    <td>Added detection of repeated element face in a sideset to the "check" command.</td>
+	  </tr>
+	  <tr><td>2009-11-17</td>
+	    <td>conjoin</td><td>0.9.06</td>
+	    <td>Handles id reuse now</td>
+	  </tr>
+	  <tr><td>2009-11-17</td>
+	    <td>gjoin</td><td></td>
+	    <td>gjoin and gjoin2 both refer to the same exodusII version; gjoin1 is the exodus-1 version</td>
+	  </tr>
+	  <tr><td>2009-11-12</td>
+	    <td>blot</td><td>1.71</td>
+	    <td>Added capability to go to previous plot using 'P' key in multiple plot mode</td>
+	  </tr>
+	  <tr><td>2009-11-11</td>
+	    <td>exodiff</td><td>2.31</td>
+	    <td>Change default matching to use file ids; add -match_file_order to get old default. Make -nsmap and -ssmap the default.  Add -no_nsmap and -no_ssmap options; reorder file metadata before mapping code</td>
+	  </tr>
+	  <tr><td>2009-10-19</td>
+	    <td>aprepro</td><td>2.08</td>
+	    <td>Fix so ifdef, loop, endif, else, endloop can have whitespace at beginning of line</td>
+	  </tr>
+      </table>
+    <hr>
+
+    <hr>
+    <address><a href="mailto:gdsjaar@sandia.gov">Gregory D Sjaardema</a></address>
+<!-- Created: Tue Nov 17 07:07:27 MST 2009 -->
+<!-- hhmts start -->
+Last modified: Mon Apr 16 09:33:52 MDT 2012
+<!-- hhmts end -->
+  </body>
+</html>

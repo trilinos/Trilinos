@@ -1098,7 +1098,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
       // Compute Number of Nonzero entries (Done in FillComplete, but we may not have been there yet.)
       int numMyNonzeros = Graph_.NumMyNonzeros();
     
-    // Allocate one big array for all values
+      // Allocate one big array for all values
       All_Values_ = new double[numMyNonzeros];
       if(All_Values_ == 0) throw ReportError("Error with All_Values_ allocation.", -99);
 
@@ -1128,14 +1128,11 @@ int Epetra_CrsMatrix::OptimizeStorage() {
       }
     }
 
-    // Do not delete values if there is a static profile --- in this case the Values_
-    // array just points to All_Values_, not unique memory.
-    if(!Graph().StaticProfile()){
-      for (int i=0;i<NumMyRows_; ++i) {
-	if (Values_[i]!=0) delete [] Values_[i];
-      }
+    // Free Values_ arrays
+    for (int i=0;i<NumMyRows_; ++i) {
+      if (Values_alloc_lengths_[i] != 0) delete [] Values_[i];
     }
-
+    
     delete [] Values_alloc_lengths_; Values_alloc_lengths_ = 0;
   } // End of !Contiguous section
   else {

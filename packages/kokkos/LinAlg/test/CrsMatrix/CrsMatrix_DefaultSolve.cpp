@@ -134,6 +134,18 @@ namespace {
   }
 #endif
 
+#ifdef HAVE_KOKKOS_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      ompnode = rcp(new OpenMPNode(pl));
+    }
+    return ompnode;
+  }
+#endif
+
   //
   // UNIT TESTS
   //
@@ -169,13 +181,13 @@ namespace {
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
-    const size_t totalNNZ = 2*N-1;
-    ArrayRCP<size_t>    ptrs(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    const Ordinal totalNNZ = 2*N-1;
+    ArrayRCP<Ordinal>  ptrs(N+1);
+    ArrayRCP<Ordinal>  inds(totalNNZ);
+    ArrayRCP<Scalar>   vals(totalNNZ);
     // fill the buffers on the host
     {
-      size_t num = 0;
+      Ordinal num = 0;
       ptrs[0] = num;
       inds[num] = 0;
       vals[num] = 1;
@@ -243,13 +255,13 @@ namespace {
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
-    const size_t totalNNZ = N-1;
-    ArrayRCP<size_t> ptrs(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    const Ordinal totalNNZ = N-1;
+    ArrayRCP<Ordinal>  ptrs(N+1);
+    ArrayRCP<Ordinal>  inds(totalNNZ);
+    ArrayRCP<Scalar>   vals(totalNNZ);
     // fill the buffers on the host
     {
-      size_t num = 0;
+      Ordinal num = 0;
       ptrs[0] = num;
       for (int i=1; i < N; ++i) {
         ptrs[i] = num;
@@ -313,13 +325,13 @@ namespace {
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
-    const size_t totalNNZ = 2*N-1;
-    ArrayRCP<size_t> ptrs(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    const Ordinal totalNNZ = 2*N-1;
+    ArrayRCP<Ordinal> ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host
     {
-      size_t num = 0;
+      Ordinal num = 0;
       for (int i=0; i < N-1; ++i) {
         ptrs[i] = num;
         inds[num] = i; inds[num+1] = i+1;
@@ -387,13 +399,13 @@ namespace {
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
-    const size_t totalNNZ = N-1;
-    ArrayRCP<size_t> ptrs(N+1);
-    ArrayRCP<Ordinal>   inds(totalNNZ);
-    ArrayRCP<Scalar>    vals(totalNNZ);
+    const Ordinal totalNNZ = N-1;
+    ArrayRCP<Ordinal> ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host
     {
-      size_t num = 0;
+      Ordinal num = 0;
       for (int i=0; i < N-1; ++i) {
         ptrs[i] = num;
         inds[i] = i+1;

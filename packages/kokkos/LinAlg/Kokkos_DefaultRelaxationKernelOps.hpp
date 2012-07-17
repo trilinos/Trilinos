@@ -59,14 +59,14 @@ namespace Kokkos {
   struct ExtractDiagonalOp {
 
     // mat data
-    size_t numRows;
-    const size_t  * ptrs;
+    Ordinal numRows;
+    const Ordinal  * ptrs;
     const Ordinal * inds;
     const Scalar  * vals;
     Scalar * diag;
 
     inline KERNEL_PREFIX void execute(size_t row) {
-      for (size_t c=ptrs[row]; c != ptrs[row+1]; ++c) {
+      for (Ordinal c=ptrs[row]; c != ptrs[row+1]; ++c) {
         if (row==(size_t)inds[c]) {
           diag[row]=vals[c];
           break;
@@ -81,8 +81,8 @@ namespace Kokkos {
   /************************************************************************************/
   template <class Scalar, class Ordinal>
   struct DefaultJacobiOp {
-    size_t numRows;
-    const size_t  *ptrs;
+    Ordinal numRows;
+    const Ordinal  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -101,7 +101,7 @@ namespace Kokkos {
       const Scalar *bj  = b + rhs * bstride;
 
       Scalar tmp = bj[row];
-      for (size_t c=ptrs[row]; c<ptrs[row+1]; ++c) {
+      for (Ordinal c=ptrs[row]; c<ptrs[row+1]; ++c) {
         tmp -= vals[c] * x0j[inds[c]];
       }
       xj[row]=x0j[row]+damping_factor*tmp/diag[row];
@@ -116,11 +116,11 @@ namespace Kokkos {
   // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
   template <class Scalar, class Ordinal>
   struct DefaultFineGrainHybridGaussSeidelOp {
-    const size_t  *ptrs;
+    const Ordinal  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
-    size_t numRows;
+    Ordinal numRows;
     // vector data (including multiple rhs)
     Scalar       *x;
     const Scalar *b;
@@ -133,7 +133,7 @@ namespace Kokkos {
       Scalar       *xj = x + rhs * xstride;
       const Scalar *bj = b + rhs * bstride;
       Scalar tmp = bj[row];
-      for (size_t c=ptrs[row];c<ptrs[row+1];c++) {
+      for (Ordinal c=ptrs[row];c<ptrs[row+1];c++) {
         tmp -= vals[c] * xj[inds[c]];
       }
       xj[row]+=damping_factor*tmp/diag[row];
@@ -149,11 +149,11 @@ namespace Kokkos {
   // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
   template <class Scalar, class Ordinal>
   struct DefaultCoarseGrainHybridGaussSeidelOp1 {
-    const size_t  *ptrs;
+    const Ordinal  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
-    size_t numRows;
+    Ordinal numRows;
     size_t numChunks;
     // vector data (including multiple rhs)
     Scalar       *x;
@@ -170,7 +170,7 @@ namespace Kokkos {
       const Scalar *bj = b + rhs * bstride;
       for (size_t row=start_r;row<stop_r;row++){
         Scalar tmp = bj[row];
-        for (size_t c=ptrs[row];c<ptrs[row+1];c++) {
+        for (Ordinal c=ptrs[row];c<ptrs[row+1];c++) {
           tmp -= vals[c] * xj[inds[c]];
         }
         xj[row]+=damping_factor*tmp/diag[row];
@@ -184,11 +184,11 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal>
   struct DefaultChebyshevOp {
-    const size_t  *ptrs;
+    const Ordinal  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
-    size_t numRows;
+    Ordinal numRows;
     // vector data (including multiple rhs)
     Scalar       *x,*w;
     const Scalar *x0,*b;
@@ -213,7 +213,7 @@ namespace Kokkos {
         } else {
           // v=Ax
           vj=Teuchos::ScalarTraits<Scalar>::zero();
-          for (size_t c=ptrs[row]; c<ptrs[row+1]; ++c) {
+          for (Ordinal c=ptrs[row]; c<ptrs[row+1]; ++c) {
             vj += vals[c] * x0j[inds[c]];
           }
           // w=theta^{-1} D^{-1} (b -Ax)
@@ -224,7 +224,7 @@ namespace Kokkos {
       } else {
         //v=Ax
         vj=Teuchos::ScalarTraits<Scalar>::zero();
-        for (size_t c=ptrs[row]; c<ptrs[row+1]; ++c) {
+        for (Ordinal c=ptrs[row]; c<ptrs[row+1]; ++c) {
           vj += vals[c] * x0j[inds[c]];
         }
         // w=dtemp1*w +  D^{-1}*dtemp2*(b-Ax)

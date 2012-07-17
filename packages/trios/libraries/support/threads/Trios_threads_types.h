@@ -52,7 +52,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <semaphore.h>
 
 typedef struct {
-    sem_t lock;
+    char  *name;
+    sem_t  lock;
+    sem_t *lock_ptr;
 } nthread_lock_t;
 
 typedef struct {

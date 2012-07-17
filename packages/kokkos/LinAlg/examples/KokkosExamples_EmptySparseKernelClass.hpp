@@ -49,6 +49,7 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_BLAS_types.hpp>
+#include <Kokkos_DefaultSparseOps.hpp>
 
 /// \file Kokkos_EmptySparseKernelClass.hpp
 /// \brief A file containing a stub for a new sparse kernel provider,
@@ -68,9 +69,9 @@ namespace KokkosExamples {
   template <class Node>
   class EmptyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
   public:
-    EmptyCrsGraph(size_t numrows, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,node,params) {}
+    EmptyCrsGraph(int numrows, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,node,params) {}
     ~EmptyCrsGraph() {}
-    void setStructure(const ArrayRCP<const size_t>&, const ArrayRCP<const int>&) {}
+    void setStructure(const ArrayRCP<const int>&, const ArrayRCP<const int>&) {}
   };
 
   //! \class EmptyCrsMatrix 
@@ -178,24 +179,16 @@ namespace KokkosExamples {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t> allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow)
+    static ArrayRCP<int> allocRowPtrs(const RCP<Node> &node, const ArrayView<const int> &numEntriesPerRow)
     {
-      ArrayRCP<size_t> ptrs = arcp<size_t>( numEntriesPerRow.size() + 1 );
-      ptrs[0] = 0;
-      std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
-      return ptrs;
+      return Kokkos::details::DefaultCRSAllocator<int,Node>::allocRowPtrs(node,numEntriesPerRow);
     }
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T> 
-    static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &rowPtrs)
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const int> &rowPtrs)
     { 
-      const size_t totalNumEntries = *(rowPtrs.end()-1);
-      // alloc data
-      ArrayRCP<T> vals;
-      if (totalNumEntries > 0) vals = arcp<T>(totalNumEntries);
-      std::fill( vals.begin(), vals.end(), Teuchos::ScalarTraits<T>::zero() );
-      return vals;
+      return Kokkos::details::DefaultCRSAllocator<int,Node>::template allocStorage<T>(node,rowPtrs);
     }
 
     //! Finalize a graph

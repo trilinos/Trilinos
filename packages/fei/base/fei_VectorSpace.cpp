@@ -1419,18 +1419,11 @@ int fei::VectorSpace::getOwnedAndSharedIDs(int idType,
   if (idx < 0) return(-1);
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
-  IndexType<int,int>& global_to_local = records->getNativeGlobalToLocalMap();
-  IndexType<int,int>::iterator
-    it = global_to_local.begin(),
-    end = global_to_local.end();
-  numLocalIDs = records->getNumRecords();
-  int len = numLocalIDs;
+  const std::vector<fei::Record<int> >& rvec = records->getRecords();
+  int len = rvec.size();
   if (lenList < len) len = lenList;
-  int i=0;
-  for(; it!=end; ++it) {
-    int local_id = it->second;
-    IDs[i++] = records->getRecordWithLocalID(local_id)->getID();
-    if (i >= len) break;
+  for(int i=0; i<len; ++i) {
+    IDs[i] = rvec[i].getID();
   }
 
   return(0);
@@ -1446,26 +1439,19 @@ int fei::VectorSpace::getOwnedIDs(int idType,
   if (idx < 0) return(-1);
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
-
-  IndexType<int,int>& global_to_local = records->getNativeGlobalToLocalMap();
-  IndexType<int,int>::iterator
-    it = global_to_local.begin(),
-    end = global_to_local.end();
-
-  numLocalIDs = 0;
-
-  for(; it!=end; ++it) {
-    fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
+  std::vector<fei::Record<int> >& rvec = records->getRecords();
+  int len = rvec.size();
+  int numOwned = 0;
+  for(int i=0; i<len; ++i) {
+    fei::Record<int>& thisrecord = rvec[i];
 
     if (thisrecord.getOwnerProc() == fei::localProc(comm_)) {
-      if (numLocalIDs < lenList) {
-        IDs[numLocalIDs] = thisrecord.getID();
-      }
-      ++numLocalIDs;
+      IDs[numOwned++] = thisrecord.getID();
     }
+    if (numOwned == lenList) break;
   }
 
-  return(0);
+  return 0;
 }
 
 //----------------------------------------------------------------------------
@@ -1983,13 +1969,9 @@ void fei::VectorSpace::runRecords(fei::Record_Operator<int>& record_op)
 {
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
-    IndexType<int,int>& g2l = records->getNativeGlobalToLocalMap();
-    IndexType<int,int>::iterator
-      it = g2l.begin(),
-      end= g2l.end();
-
-    for(; it!=end; ++it) {
-      fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
+    std::vector<fei::Record<int> >& rvec = records->getRecords();
+    for(size_t i=0; i<rvec.size(); ++i) {
+      fei::Record<int>& thisrecord = rvec[i];
 
       record_op(thisrecord);
     }
@@ -2042,14 +2024,12 @@ int fei::VectorSpace::setLocalEqnNumbers()
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
 
-    const IndexType<int,int>& rmap = records->getNativeGlobalToLocalMap();
-    IndexType<int,int>::const_iterator
-      it = rmap.begin(), it_end = rmap.end();
+    std::vector<fei::Record<int> >& rvec = records->getRecords();
 
     int* eqnNumPtr = &eqnNumbers_[0];
 
-    for(; it!=it_end; ++it) {
-      fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
+    for(size_t i=0; i<rvec.size(); ++i) {
+      fei::Record<int>& thisrecord = rvec[i];
 
       fei::FieldMask* mask = thisrecord.getFieldMask();
 

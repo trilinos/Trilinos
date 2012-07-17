@@ -92,11 +92,13 @@ namespace TpetraExamples {
     void fix() {}
     void unfix() {}
   };
+#ifdef HAVE_TPETRA_QD
   struct nontrivial_fpu_fix {
     unsigned int old_cw;
     void fix()   {fpu_fix_start(&old_cw);}
     void unfix() {fpu_fix_end(&old_cw);}
   };
+#endif
   // implementations
   template <class T> struct fpu_fix : trivial_fpu_fix {};
 #ifdef HAVE_TPETRA_QD

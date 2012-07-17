@@ -83,6 +83,7 @@ cmake \
 -DTrilinos_ENABLE_Tpetra=ON \
 -DTrilinos_ENABLE_TriKota=ON \
 -DTrilinos_ENABLE_TrilinosCouplings=ON \
+-DTrilinos_ENABLE_Trios=ON \
 -DTrilinos_ENABLE_Triutils=ON \
 -DTrilinos_ENABLE_Zoltan=ON \
  \

@@ -186,11 +186,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "[%s]: ERROR, unable to create test file \"%s\"!\n",
 	      yo, file_name);
       exit(-1);
-    } else {
-      printf(" (netcdf3 format) ");
     }
-  } else {
-    printf(" (netcdf4 format) ");
   }
   printf("successful\n"); fflush(stdout);
   t_pass++;

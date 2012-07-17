@@ -49,6 +49,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_DISABLE_READY_SEND_IN_DO_POSTS
   "Replace (barrier+MPI_Rsend) with MPI_Send in Epetra_MpiDistributor::DoPosts (EXPERIMENTAL)."
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_REPLACEMENT_API
+  EPETRA_ENABLE_REPLACEMENT_API 
+  "Use long long return types for functions that return global index based values."
+  OFF )
+
 ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

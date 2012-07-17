@@ -251,6 +251,7 @@ typedef std::pair<uint32_t, portals_work_request *> wr_by_wrhash_t;
 static nthread_lock_t nnti_wr_wrhash_lock;
 
 
+static bool ptl_initialized=false;
 
 
 static portals_transport_global transport_global_data;
@@ -274,7 +275,6 @@ int NNTI_ptl_init (
 {
     int rc=NNTI_OK;
 
-    static uint8_t initialized=FALSE;
     int max_interfaces;
     ptl_ni_limits_t actual;
 
@@ -292,7 +292,7 @@ int NNTI_ptl_init (
     assert(trans_hdl);
 
 
-    if (!initialized) {
+    if (!ptl_initialized) {
 
         nthread_lock_init(&nnti_ptl_lock);
         nthread_lock_init(&nnti_buf_bufhash_lock);
@@ -394,7 +394,7 @@ int NNTI_ptl_init (
 
         create_peer(&trans_hdl->me, transport_global_data.me.nid, transport_global_data.me.pid);
 
-        initialized = TRUE;
+        ptl_initialized = true;
     }
 
 
@@ -1783,6 +1783,11 @@ int NNTI_ptl_fini (
         const NNTI_transport_t *trans_hdl)
 {
 //    PtlFini();
+    nthread_lock_fini(&nnti_ptl_lock);
+    nthread_lock_fini(&nnti_buf_bufhash_lock);
+    nthread_lock_fini(&nnti_wr_wrhash_lock);
+
+    ptl_initialized=false;
 
     return(NNTI_OK);
 }

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,12 +34,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
-// TODO: make sure that Ordinal values in constructors aren't invalid()
+/// \file Tpetra_Map_def.hpp
+///
+/// Implementation of the methods of Tpetra::Map, and of related
+/// nonmember constructors for Tpetra::Map.
 
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
@@ -50,20 +53,20 @@
 #include <stdexcept>
 
 #ifdef DOXYGEN_USE_ONLY
-  #includee "Tpetra_Map_decl.hpp"
+  #include "Tpetra_Map_decl.hpp"
 #endif
 
 namespace {
 
-  //! True if localValue is true on all processes in the communicator, else false.
-  bool 
+  //! Whether localValue is true on all processes in the communicator.
+  bool
   allProcsTrue (const Teuchos::Comm<int>& comm,
                 const bool localValue)
   {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    
+
     // reduceAll not yet implemented for bool, so we convert to char.
     char localChar = localValue ? 1 : 0;
     char globalChar = 1;
@@ -71,9 +74,9 @@ namespace {
     return (globalChar == 1);
   }
 
-  //! Whether [prevGid, curGid] are contiguous (repeats allowed).
+  //! Whether the pair of integers (prevGid, curGid) is contiguous (repeats allowed).
   template<class GO>
-  bool 
+  bool
   contiguous (const GO prevGid, const GO curGid) {
     return curGid == prevGid || curGid == prevGid + Teuchos::as<GO>(1);
   }
@@ -125,9 +128,9 @@ namespace {
     // We're not using the Kokkos Node for now, but it wouldn't be
     // hard to write a parallel kernel to compute all the things we
     // want to compute.  (Checking contiguity is a scan, for example.)
-    (void) node; 
+    (void) node;
 
-    bool locallyContiguous = true; 
+    bool locallyContiguous = true;
     GO minGid = as<GO> (0); // not meaningful if there are no GIDs
     GO maxGid = as<GO> (0); // ditto
     size_type lastContigInd = as<size_type> (0); // ditto
@@ -145,7 +148,7 @@ namespace {
         // contiguous).
         if (! contiguous (prevGid, curGid)) {
           locallyContiguous = false;
-        } 
+        }
         else {
           lastContigInd = k;
         }
@@ -172,11 +175,18 @@ namespace {
   // Contiguous Maps are much faster and take much less memory than
   // noncontiguous Maps, so it's worthwhile to check for contiguity,
   // even when using the most general Map constructor (that accepts a
-  // list on each process of the GIDs that process owns).  One way to
-  // check global contiguity is to compute each process' minimum GID.
-  // If the GIDs do turn out to be contiguous, the list of min GIDs on
-  // each process is useful for constructing the Map's Directory, so
-  // we return that so the Directory doesn't need to compute it again.
+  // list on each process of the GIDs that process owns).
+  //
+  // Global contiguity requires all of the following properties:
+  // 1. The GIDs on each process are locally contiguous.
+  // 2. For all process ranks p in the communicator with p > 0,
+  //    process p's minimum GID is one plus process p-1's maximum GID.
+  //
+  // We can check #2 by computing an array containing the minimum GID
+  // of all processes, replicated on all processes.  This array
+  // minimum GIDs on each process is useful anyway for constructing
+  // the Map's Directory, so we return the array so the Directory
+  // doesn't need to compute it again.
   //
   // This function is a collective over the given communicator.
   //
@@ -249,8 +259,8 @@ namespace {
     allMaxGids = null;
 
     // Are my GIDs (locally) contiguous?  Also, get other info.
-    const bool locallyContiguous = 
-      areMyGidsLocallyContiguous (myMinGid, myMaxGid, 
+    const bool locallyContiguous =
+      areMyGidsLocallyContiguous (myMinGid, myMaxGid,
                                   myLastInitContigArrayIndex, myGids, node);
 
     // Are all processes' GIDs locally contiguous?  That is a
@@ -309,32 +319,27 @@ namespace {
   }
 } // namespace (anonymous)
 
-/** \file Tpetra_Map_def.hpp 
-
-    The implementations for the members of Tpetra::Map and related non-member constructors.
- */
-
 //
 // compute isDistributed. it will be global.
 // min/max GID are always computed (from indexBase and numGlobal), and are therefore globally coherent as long as deps are.
 // indexBase and numGlobal must always be verified.
 // isContiguous is true for the "easy" constructors, assume false for the expert constructor
-// 
+//
 // so we explicitly check    : isCont, numGlobal, indexBase
 // then we explicitly compute: MinAllGID, MaxAllGID
 // Data explicitly checks    : isDistributed
 
 namespace Tpetra {
-  
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (global_size_t numGlobalElements_in, 
-       GlobalOrdinal indexBase_in, 
+  Map (global_size_t numGlobalElements_in,
+       GlobalOrdinal indexBase_in,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
-       LocalGlobal lOrG, 
+       LocalGlobal lOrG,
        const Teuchos::RCP<Node> &node_in)
   : comm_(comm_in)
-  , node_(node_in) 
+  , node_(node_in)
   {
     using Teuchos::as;
     using Teuchos::broadcast;
@@ -357,7 +362,7 @@ namespace Tpetra {
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     const GO G1 = OrdinalTraits<GO>::one();
 
-    std::string errPrefix = typeName (*this) + 
+    std::string errPrefix = typeName (*this) +
       " constructor (numGlobalElements, indexBase, comm, lOrG, node): ";
 
     if (lOrG == GloballyDistributed) {
@@ -425,15 +430,15 @@ namespace Tpetra {
          [ B+1    iff myImageID <  remainder
          numLocalElements = [
          [ B      iff myImageID >= remainder
-         In the case that remainder == 0, then all images fall into the 
+         In the case that remainder == 0, then all images fall into the
          latter case: numLocalElements == B == numGlobalElements / numImages
-         It can then be shown that 
+         It can then be shown that
          numImages
          \Sum      numLocalElements_i  == numGlobalElements
          i=0
          This strategy is simple, requires no communication, and is optimal vis-a-vis
          uniform distribution of elements.
-         This strategy is valid for any value of numGlobalElements and numImages, 
+         This strategy is valid for any value of numGlobalElements and numImages,
          including the following border cases:
          - numImages == 1         -> remainder == 0 && numGlobalElements == numLocalElements
          - numelements < numImages -> remainder == numGlobalElements && numLocalElements \in [0,1]
@@ -449,7 +454,7 @@ namespace Tpetra {
       GlobalOrdinal start_index;
       if (myImageID < remainder) {
         ++numLocalElements_;
-        /* the myImageID images before were each allocated 
+        /* the myImageID images before were each allocated
            numGlobalElements/numImages+1
            ergo, my offset is:
            myImageID * (numGlobalElements/numImages+1)
@@ -459,10 +464,10 @@ namespace Tpetra {
       }
       else {
         /* a quantity (equal to remainder) of the images before me
-           were each allocated 
+           were each allocated
            numGlobalElements/numImages+1
-           elements. a quantity (equal to myImageID-remainder) of the remaining 
-           images before me were each allocated 
+           elements. a quantity (equal to myImageID-remainder) of the remaining
+           images before me were each allocated
            numGlobalElements/numImages
            elements. ergo, my offset is:
            remainder*(numGlobalElements/numImages+1) + (myImageID-remainder)*numGlobalElements/numImages
@@ -497,13 +502,13 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (global_size_t numGlobalElements_in, 
-       size_t numLocalElements_in, 
-       GlobalOrdinal indexBase_in, 
+  Map (global_size_t numGlobalElements_in,
+       size_t numLocalElements_in,
+       GlobalOrdinal indexBase_in,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
-       const Teuchos::RCP<Node> &node_in) 
+       const Teuchos::RCP<Node> &node_in)
   : comm_(comm_in)
-  , node_(node_in) 
+  , node_(node_in)
   {
     using Teuchos::as;
     using Teuchos::outArg;
@@ -512,7 +517,7 @@ namespace Tpetra {
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
 
-    // Distribute the elements across the nodes so that they are 
+    // Distribute the elements across the nodes so that they are
     // - non-overlapping
     // - contiguous
     // This differs from Map(Ord,Ord,Plat) in that the user has
@@ -532,19 +537,19 @@ namespace Tpetra {
     const int myImageID = comm_->getRank();
 
     { // begin scoping block
-      // for communicating failures 
+      // for communicating failures
       int localChecks[2], globalChecks[2];
-      /* compute the global size 
+      /* compute the global size
          we are computing the number of global elements because exactly ONE of the following is true:
          - the user didn't specify it, and we need it
-         - the user did specify it, but we need to 
+         - the user did specify it, but we need to
            + validate it against the sum of the local sizes, and
            + ensure that it is the same on all nodes
        */
       global_size_t global_sum;
-      reduceAll<int,global_size_t> (*comm_, 
-                                    REDUCE_SUM, 
-                                    as<global_size_t> (numLocalElements_in), 
+      reduceAll<int,global_size_t> (*comm_,
+                                    REDUCE_SUM,
+                                    as<global_size_t> (numLocalElements_in),
                                     outArg (global_sum));
       /* there are three errors we should be detecting:
          - numGlobalElements != invalid() and it is incorrect/invalid
@@ -580,29 +585,29 @@ namespace Tpetra {
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-            errPrefix << "numLocal is not valid on at least one node (possibly node " 
+            errPrefix << "numLocal is not valid on at least one node (possibly node "
             << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 2) {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "numGlobal is not valid on at least one node (possibly node " 
+            errPrefix << "numGlobal is not valid on at least one node (possibly node "
             << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 3) {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "Input global number of elements = " << numGlobalElements_in 
+            errPrefix << "Input global number of elements = " << numGlobalElements_in
             << " doesn't match sum of numLocal (== " << global_sum << ") on at least "
             "one node (possibly node " << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 4) {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "indexBase is not the same on all nodes (examine node " 
+            errPrefix << "indexBase is not the same on all nodes (examine node "
             << globalChecks[0] << ").");
         }
         else {
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, errPrefix 
-            << "Should never get here!  localChecks = " << localChecks[0] << "," 
-            << localChecks[1] << " and globalChecks = " << globalChecks[0] 
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, errPrefix
+            << "Should never get here!  localChecks = " << localChecks[0] << ","
+            << localChecks[1] << " and globalChecks = " << globalChecks[0]
             << "," << globalChecks[1] << ".  Please report this bug to the "
             "Tpetra developers.");
         }
@@ -634,13 +639,13 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (global_size_t numGlobalElements_in, 
-       const Teuchos::ArrayView<const GlobalOrdinal> &entryList, 
-       GlobalOrdinal indexBase_in, 
+  Map (global_size_t numGlobalElements_in,
+       const Teuchos::ArrayView<const GlobalOrdinal> &entryList,
+       GlobalOrdinal indexBase_in,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
        const Teuchos::RCP<Node> &node_in)
   : comm_(comm_in)
-  , node_(node_in) 
+  , node_(node_in)
   {
     using Teuchos::as;
     using Teuchos::broadcast;
@@ -650,6 +655,7 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
+    using Teuchos::typeName;
 
     // The user has specified the distribution of elements over the
     // nodes, via entryList.  The distribution is not necessarily
@@ -664,44 +670,56 @@ namespace Tpetra {
     // elements (on this node), even though entryList contains global
     // indices.  We assume that the number of local elements can be
     // stored in a LocalOrdinal.
-    LocalOrdinal numLocalElements_in = Teuchos::as<LocalOrdinal>(entryList.size());
+    LocalOrdinal numLocalElements_in = as<LocalOrdinal> (entryList.size ());
 
-    const std::string errPrefix = Teuchos::typeName (*this) + 
+    const std::string errPrefix = typeName (*this) +
       "::Map(numGlobal,entryList,indexBase,comm,node): ";
 
     const int myImageID = comm_->getRank();
     { // Begin scoping block for communicating failures.
       int localChecks[2], globalChecks[2];
 
-      /* Compute the global number of elements.
-         We are doing this because exactly ONE of the following is true:
-         * the user didn't specify it, and we need it
-         * the user _did_ specify it, but we need to 
-         ** validate it against the sum of the local sizes, and
-         ** ensure that it is the same on all nodes
-       */
+      // Compute the global number of elements.
+      //
+      // We are doing this because exactly ONE of the following is true:
+      // * the user didn't specify it, and we need it
+      // * the user _did_ specify it, but we need to
+      // ** validate it against the sum of the local sizes, and
+      // ** ensure that it is the same on all nodes
+      //
       global_size_t global_sum; // Global number of elements
-      reduceAll (*comm_, REDUCE_SUM, as<global_size_t>(numLocalElements_in), outArg (global_sum));
-      // localChecks[0] == -1 means "no error detected."  If it's not
-      // -1, then it's the rank of an offending process.
-      localChecks[0] = -1; 
+      reduceAll (*comm_, REDUCE_SUM, as<global_size_t> (numLocalElements_in),
+                 outArg (global_sum));
+      // localChecks[0] == -1 means that the calling process did not
+      // detect an error.  If the calling process did detect an error,
+      // it sets localChecks[0] to its rank, and localChecks[1] to the
+      // type of error.  Later, we will do a max reduce-all over both
+      // elements of localChecks, to find out if at least one process
+      // reported an error.
+      localChecks[0] = -1;
       localChecks[1] = 0;
       // If the user supplied the number of global elements (i.e., if
       // it's not invalid (== GSTI)), then make sure that there is at
       // least one global element.  The first two clauses of the test
       // are apparently redundant, but help avoid compiler warnings
       // about comparing signed and unsigned integers.
-      if (numGlobalElements_in < GST1 && numGlobalElements_in != GST0 && numGlobalElements_in != GSTI) {
-        // Number of global elements is not the "invalid" value, and
-        // is nonpositive.
+      if (numGlobalElements_in < GST1 &&
+          numGlobalElements_in != GST0 &&
+          numGlobalElements_in != GSTI) {
+        // Number of global elements is not the "invalid" value
+        // (meaning "let the constructor compute it"), and is
+        // negative.  That's not a valid input.
         localChecks[0] = myImageID;
-        localChecks[1] = 1;
+        localChecks[1] = 1; // "Negative number of global elements given"
       }
       else if (numGlobalElements_in != GSTI && numGlobalElements_in != global_sum) {
-        // Number of global elements is not the "invalid" value, and
-        // is not equal to the global sum.
+        // If the user specifies a number of global elements not equal
+        // to the "invalid" value, then we assume that this equals the
+        // sum of all the local counts of elements (including overlap)
+        // on all processes in the communicator.  If not, then we
+        // report an error.
         localChecks[0] = myImageID;
-        localChecks[1] = 2;
+        localChecks[1] = 2; // "Incorrect number of global elements given"
       }
       // Check that all nodes have the same indexBase value.  We do so
       // by broadcasting the indexBase value from Proc 0 to all the
@@ -710,37 +728,50 @@ namespace Tpetra {
       // communication as an all-reduce.)
       GlobalOrdinal rootIndexBase = indexBase_in;
       const int rootRank = 0;
-      broadcast (*comm_, rootRank, ptr (&rootIndexBase));  
+      broadcast (*comm_, rootRank, ptr (&rootIndexBase));
 
       if (indexBase_in != rootIndexBase) {
         localChecks[0] = myImageID;
-        localChecks[1] = 3;
+        localChecks[1] = 3; // "indexBase values not the same on all processes"
       }
-      // REDUCE_MAX will give us the rank ("image ID") of the
-      // highest-rank process that DID NOT pass.  This will be -1 if
-      // all processes passed.
+      // After the reduceAll below, globalChecks[0] will be -1 if all
+      // processes passed their tests, else it will be the rank
+      // ("image ID") of the highest-rank process that did NOT pass.
+      // In the latter case, globalChecks[1] will be the error code.
       reduceAll (*comm_, REDUCE_MAX, 2, localChecks, globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-            errPrefix << "numGlobal is not valid on at least one process "
-            "(including process " << globalChecks[0] << ").");
+            errPrefix << "You specified a negative number of global elements "
+            "(numGlobalElements_in argument to the Map constructor) on at least "
+            "one of the processes in the input communicator (including process "
+            << globalChecks[0] << ").  If you want Map's constructor to "
+            "compute the global number of elements, you must set the "
+            "numGlobaElements_in argument to Teuchos::Ordinal_Traits"
+            "<global_size_t>::invalid() on all processes in the communicator.");
         }
         else if (globalChecks[1] == 2) {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-            errPrefix << "numGlobal doesn't match sum of numLocal (" 
-            << global_sum << ") on at least one process (including process "
-            << globalChecks[0] << ").");
+            errPrefix << "On at least one process in the input communicator "
+            "(including process " << globalChecks[0] << ", the given number of "
+            "global elements (numGlobalElements_in argument to the Map "
+            "constructor) does not match the sum " << global_sum << " of the "
+            "number of elements on each process.  The latter is the sum of "
+            "entryList.size() over all processes in the communicator; elements "
+            "that overlap over multiple processes or that are duplicated on "
+            "the same process are counted multiple times.");
         }
         else if (globalChecks[1] == 3) {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-              errPrefix << "indexBase is not the same on all processes "
-              "(including process " << globalChecks[0] << ").");
+            errPrefix << "The given values for the index base (indexBase_in "
+            "argument to the Map constructor) do not match on all the processes."
+            "  This includes process " << globalChecks[0] << ".");
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-            errPrefix << "Should never get here!  Please report this bug to the "
-            "Tpetra developers.");
+            errPrefix << "Should never get here!  globalChecks[0] == "
+            << globalChecks[0] << " and globalChecks[1] == " << globalChecks[1]
+            << ".  Please report this bug to the Tpetra developers.");
         }
       }
       //
@@ -801,11 +832,11 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::~Map () 
+  Map<LocalOrdinal,GlobalOrdinal,Node>::~Map ()
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalElement(GlobalOrdinal globalIndex) const 
+  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalElement(GlobalOrdinal globalIndex) const
   {
     if (isContiguous()) {
       if (globalIndex < getMinGlobalIndex() || globalIndex > getMaxGlobalIndex()) {
@@ -884,9 +915,9 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool 
+  bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const 
+  isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const
   {
     using Teuchos::outArg;
     if (this == &map) {
@@ -896,17 +927,17 @@ namespace Tpetra {
     }
 
     // check all other globally coherent properties
-    // if they do not share each of these properties, then they cannot be 
+    // if they do not share each of these properties, then they cannot be
     // equivalent maps
     if ( (getMinAllGlobalIndex()   != map.getMinAllGlobalIndex())   ||
          (getMaxAllGlobalIndex()   != map.getMaxAllGlobalIndex())   ||
          (getGlobalNumElements() != map.getGlobalNumElements()) ||
-         (isDistributed()       != map.isDistributed())       || 
+         (isDistributed()       != map.isDistributed())       ||
          (getIndexBase()        != map.getIndexBase())         )  {
       return false;
     }
 
-    // If we get this far, we need to check local properties and the 
+    // If we get this far, we need to check local properties and the
     // communicate same-ness across all nodes
     // we prefer local work over communication, ergo, we will perform all
     // comparisons and conduct a single communication
@@ -931,8 +962,8 @@ namespace Tpetra {
       }
       else {
         /* Note: std::equal requires that the latter range is as large as the former.
-         * We know the ranges have equal length, because they have the same number of 
-         * local entries. 
+         * We know the ranges have equal length, because they have the same number of
+         * local entries.
          * However, we only know that lgMap_ has been filled for the Map that is not
          * contiguous (one is potentially contiguous.) Calling getNodeElementList()
          * will create it. */
@@ -1029,7 +1060,7 @@ namespace Tpetra {
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (myImageID == 0) { // this is the root node (only output this info once)
-            out << endl 
+            out << endl
                 << "Number of Global Entries = " << getGlobalNumElements()  << endl
                 << "Maximum of all GIDs      = " << getMaxAllGlobalIndex() << endl
                 << "Minimum of all GIDs      = " << getMinAllGlobalIndex() << endl
@@ -1048,7 +1079,7 @@ namespace Tpetra {
                 << std::setw(width) << "Global Index"
                 << endl;
             for (size_t i=0; i < nME; i++) {
-              out << std::setw(width) << myImageID 
+              out << std::setw(width) << myImageID
                   << std::setw(width) << i
                   << std::setw(width) << myEntries[i]
                   << endl;
@@ -1073,8 +1104,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
-                    const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                    const Teuchos::ArrayView<int> & imageIDList, 
+                    const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
+                    const Teuchos::ArrayView<int> & imageIDList,
                     const Teuchos::ArrayView<LocalOrdinal> & LIDList) const {
     TEUCHOS_TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
         Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
@@ -1083,7 +1114,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
-                    const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
+                    const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
                     const Teuchos::ArrayView<int> & imageIDList) const {
     TEUCHOS_TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
         Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
@@ -1171,7 +1202,7 @@ Tpetra::createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teu
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createContigMapWithNode(Tpetra::global_size_t numElements, size_t localNumElements, 
+Tpetra::createContigMapWithNode(Tpetra::global_size_t numElements, size_t localNumElements,
                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
   Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
   map = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numElements,localNumElements,
@@ -1199,25 +1230,25 @@ Tpetra::createNonContigMap(const Teuchos::ArrayView<const GlobalOrdinal> &elemen
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createNonContigMapWithNode(const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
-                                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+                                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                                    const Teuchos::RCP<Node> &node)
 {
   Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
   map = rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(
-                      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), 
+                      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
                       elementList,
-                      Teuchos::OrdinalTraits<Tpetra::global_size_t>::zero(), 
+                      Teuchos::OrdinalTraits<Tpetra::global_size_t>::zero(),
                       comm, node ) );
   return map;
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numElements, 
+Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numElements,
                                         const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
   Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
   int sumOfWeights, elemsLeft, localNumElements;
-  const int numImages = comm->getSize(), 
+  const int numImages = comm->getSize(),
             myImageID = comm->getRank();
   Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM,myWeight,Teuchos::outArg(sumOfWeights));
   const double myShare = ((double)myWeight) / ((double)sumOfWeights);
@@ -1242,7 +1273,7 @@ Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numE
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &M)
 {
   using Teuchos::Array;
@@ -1281,8 +1312,8 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
   }
   myOwned_vec.resize (numMyOwnedElems);
 
-  RCP< const Tpetra::Map<LO,GO,Node> > one_to_one_map = 
-    rcp (new map_type (Teuchos::OrdinalTraits<GO>::invalid (), myOwned_vec (), 
+  RCP< const Tpetra::Map<LO,GO,Node> > one_to_one_map =
+    rcp (new map_type (Teuchos::OrdinalTraits<GO>::invalid (), myOwned_vec (),
                        M->getIndexBase (), M->getComm (), M->getNode()));
 
   return(one_to_one_map);

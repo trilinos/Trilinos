@@ -852,16 +852,36 @@ or if the number of entries in this row exceed the Length parameter.
     If the user wishes to assemble a matrix from overlapping submatrices,
     they can use Epetra_FECrsMatrix.
   */
-  int NumGlobalNonzeros() const {return(Graph_.NumGlobalNonzeros());}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+  NumGlobalNonzeros() const {return(Graph_.NumGlobalNonzeros());}
 	
   //! Returns the number of global matrix rows.
-  int NumGlobalRows() const {return(Graph_.NumGlobalRows());}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+  NumGlobalRows() const {return(Graph_.NumGlobalRows());}
 	
   //! Returns the number of global matrix columns.
-  int NumGlobalCols() const {return(Graph_.NumGlobalCols());}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+  NumGlobalCols() const {return(Graph_.NumGlobalCols());}
 	
   //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-  int NumGlobalDiagonals() const {return(Graph_.NumGlobalDiagonals());}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+  NumGlobalDiagonals() const {return(Graph_.NumGlobalDiagonals());}
 	
   //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
   int NumMyNonzeros() const {return(Graph_.NumMyNonzeros());}
@@ -985,7 +1005,12 @@ or if the number of entries in this row exceed the Length parameter.
 	int LRID( int GRID_in) const {return(Graph_.LRID(GRID_in));}
 	
 	//! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-	int GRID( int LRID_in) const {return(Graph_.GRID(LRID_in));}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	GRID( int LRID_in) const {return(Graph_.GRID(LRID_in));}
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
 	/*!
@@ -997,7 +1022,12 @@ or if the number of entries in this row exceed the Length parameter.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int GCID( int LCID_in) const {return(Graph_.GCID(LCID_in));}
+#ifdef EPETRA_ENABLE_REPLACEMENT_API
+    long long
+#else
+    EPETRA_DEPRECATED int
+#endif
+	GCID( int LCID_in) const {return(Graph_.GCID(LCID_in));}
 	
 	//! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
 	bool MyGRID(int GRID_in) const {return(Graph_.MyGRID(GRID_in));}

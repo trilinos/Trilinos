@@ -56,8 +56,8 @@
 snl_fei::RecordCollection::RecordCollection(int localProc)
   : m_records(),
     m_global_to_local(),
-    m_global_to_local_map_(),
-    doesSomeoneHaveMyMap(false),
+    m_minID(std::numeric_limits<int>::max()),
+    m_maxID(0),
     localProc_(localProc),
     debugOutput_(false),
     dbgOut_(NULL)
@@ -69,8 +69,8 @@ snl_fei::RecordCollection::RecordCollection(int localProc)
 snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
   : m_records(src.m_records),
     m_global_to_local(src.m_global_to_local),
-    m_global_to_local_map_(),
-    doesSomeoneHaveMyMap(false),
+    m_minID(src.m_minID),
+    m_maxID(src.m_maxID),
     localProc_(src.localProc_),
     debugOutput_(src.debugOutput_),
     dbgOut_(src.dbgOut_)
@@ -101,15 +101,15 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
     fieldMasks.push_back(mask);
   }
 
-  
-  syncFrom();
   for(int i=0; i<numIDs; ++i) {
     int local_id;
-    fei::IndexType<int,int>::iterator iter = m_global_to_local.find(IDs[i]);
+    fei::MapIntInt::iterator iter = m_global_to_local.find(IDs[i]);
     if (iter == m_global_to_local.end() ) {
       //record doesn't exist, so we'll add a new one.
       local_id = m_records.size();
       m_global_to_local.insert(iter, std::make_pair(IDs[i], local_id));
+      if (m_minID > IDs[i]) m_minID = IDs[i];
+      if (m_maxID < IDs[i]) m_maxID = IDs[i];
       fei::Record<int> record;
       record.setID(IDs[i]);
       record.setFieldMask(mask);
@@ -122,7 +122,6 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
 
     if (recordLocalIDs != NULL) recordLocalIDs[i] = local_id;
   }
-  syncTo();
 }
 
 //----------------------------------------------------------------------------
@@ -148,14 +147,15 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
   int lastMaskID = maskID;
   fei::FieldMask* lastMask = mask;
 
-  syncFrom();
   for(int i=0; i<numIDs; ++i) {
     int local_id;
-    fei::IndexType<int,int>::iterator iter = m_global_to_local.find(IDs[i]);
+    fei::MapIntInt::iterator iter = m_global_to_local.find(IDs[i]);
     if (iter == m_global_to_local.end() ) {
       //record doesn't exist, so we'll add a new one.
       local_id = m_records.size();
-      m_global_to_local.insert(iter, std::make_pair(IDs[i], local_id));
+      m_global_to_local.insert(std::make_pair(IDs[i], local_id));
+      if (m_minID > IDs[i]) m_minID = IDs[i];
+      if (m_maxID < IDs[i]) m_maxID = IDs[i];
       fei::Record<int> record;
       record.setID(IDs[i]);
       record.setFieldMask(mask);
@@ -213,7 +213,6 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
       }
     }
   }
-  syncTo();
 }
 
 //----------------------------------------------------------------------------
@@ -246,8 +245,7 @@ setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs)
 
 fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID)
 {
-  syncFrom();
-  fei::IndexType<int,int>::iterator iter = m_global_to_local.find(ID);
+  fei::MapIntInt::iterator iter = m_global_to_local.find(ID);
 
   if (iter == m_global_to_local.end()) {
     return( NULL );
@@ -258,8 +256,7 @@ fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID)
 
 const fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID) const
 {
-  syncFrom();
-  fei::IndexType<int,int>::const_iterator iter = m_global_to_local.find(ID);
+  fei::MapIntInt::const_iterator iter = m_global_to_local.find(ID);
 
   if (iter == m_global_to_local.end()) {
     return( NULL );
@@ -327,25 +324,3 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
   return(globalIndex);
 }
 
-
-//----------------------------------------------------------------------------
-std::map<int,int>& snl_fei::RecordCollection::getGlobalToLocalMap() const 
-{       
-  if (m_global_to_local.isStdMap()) 
-    return(m_global_to_local.asMap(m_global_to_local_map_));
-  m_global_to_local.resyncToMap(m_global_to_local_map_);
-  return(m_global_to_local_map_ );
-}
-
-//----------------------------------------------------------------------------
-const std::map<int,int>& snl_fei::RecordCollection::getGlobalToLocalMap() 
-{
-  if (m_global_to_local.isStdMap()) 
-    return(m_global_to_local.asMap(m_global_to_local_map_));
-      
-  // This will cause a lot of work once this is set
-  doesSomeoneHaveMyMap=true;
-
-  m_global_to_local.resyncToMap(m_global_to_local_map_);
-  return(m_global_to_local_map_ );
-}

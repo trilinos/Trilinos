@@ -82,7 +82,7 @@ namespace Raw {
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -93,7 +93,7 @@ namespace Raw {
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -129,7 +129,7 @@ lowerTriSolveCscColMajor (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -140,7 +140,7 @@ lowerTriSolveCscColMajor (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -176,7 +176,7 @@ lowerTriSolveCsrColMajor (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -187,7 +187,7 @@ lowerTriSolveCsrColMajor (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -223,7 +223,7 @@ lowerTriSolveCscRowMajor (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -234,7 +234,7 @@ lowerTriSolveCscRowMajor (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -271,7 +271,7 @@ lowerTriSolveCsrRowMajor (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -282,7 +282,7 @@ lowerTriSolveCsrRowMajor (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -319,7 +319,7 @@ lowerTriSolveCscColMajorUnitDiag (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -330,7 +330,7 @@ lowerTriSolveCscColMajorUnitDiag (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -367,7 +367,7 @@ lowerTriSolveCsrColMajorUnitDiag (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -378,7 +378,7 @@ lowerTriSolveCsrColMajorUnitDiag (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -415,7 +415,7 @@ lowerTriSolveCscRowMajorUnitDiag (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -426,7 +426,7 @@ lowerTriSolveCscRowMajorUnitDiag (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -462,7 +462,7 @@ lowerTriSolveCsrRowMajorUnitDiag (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -473,7 +473,7 @@ lowerTriSolveCsrRowMajorUnitDiag (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -509,7 +509,7 @@ upperTriSolveCscColMajor (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -520,7 +520,7 @@ upperTriSolveCscColMajor (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -556,7 +556,7 @@ upperTriSolveCsrColMajor (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -567,7 +567,7 @@ upperTriSolveCsrColMajor (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -603,7 +603,7 @@ upperTriSolveCscRowMajor (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -614,7 +614,7 @@ upperTriSolveCscRowMajor (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -651,7 +651,7 @@ upperTriSolveCsrRowMajor (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -662,7 +662,7 @@ upperTriSolveCsrRowMajor (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -699,7 +699,7 @@ upperTriSolveCscColMajorUnitDiag (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -710,7 +710,7 @@ upperTriSolveCscColMajorUnitDiag (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -747,7 +747,7 @@ upperTriSolveCsrColMajorUnitDiag (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -758,7 +758,7 @@ upperTriSolveCsrColMajorUnitDiag (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -795,7 +795,7 @@ upperTriSolveCscRowMajorUnitDiag (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -806,7 +806,7 @@ upperTriSolveCscRowMajorUnitDiag (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -841,7 +841,7 @@ upperTriSolveCsrRowMajorUnitDiag (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in column-major order.
+/// \param X [in/out] Input/output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -881,7 +881,7 @@ lowerTriSolveCscColMajorInPlace (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in row-major order.
+/// \param X [in/out] Input/output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -922,7 +922,7 @@ lowerTriSolveCscRowMajorInPlace (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in column-major order.
+/// \param X [in/out] Input/output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -963,7 +963,7 @@ lowerTriSolveCscColMajorUnitDiagInPlace (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in row-major order.
+/// \param X [in/out] Input/output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1003,7 +1003,7 @@ lowerTriSolveCscRowMajorUnitDiagInPlace (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in column-major order.
+/// \param X [in/out] Input/output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1043,7 +1043,7 @@ upperTriSolveCscColMajorInPlace (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in row-major order.
+/// \param X [in/out] Input/output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1084,7 +1084,7 @@ upperTriSolveCscRowMajorInPlace (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in column-major order.
+/// \param X [in/out] Input/output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1125,7 +1125,7 @@ upperTriSolveCscColMajorUnitDiagInPlace (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in row-major order.
+/// \param X [in/out] Input/output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1167,7 +1167,7 @@ upperTriSolveCscRowMajorUnitDiagInPlace (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1178,7 +1178,7 @@ upperTriSolveCscRowMajorUnitDiagInPlace (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -1215,7 +1215,7 @@ lowerTriSolveCscColMajorConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -1226,7 +1226,7 @@ lowerTriSolveCscColMajorConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -1263,7 +1263,7 @@ lowerTriSolveCsrColMajorConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1274,7 +1274,7 @@ lowerTriSolveCsrColMajorConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -1311,7 +1311,7 @@ lowerTriSolveCscRowMajorConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -1322,7 +1322,7 @@ lowerTriSolveCscRowMajorConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -1360,7 +1360,7 @@ lowerTriSolveCsrRowMajorConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1371,7 +1371,7 @@ lowerTriSolveCsrRowMajorConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -1409,7 +1409,7 @@ lowerTriSolveCscColMajorUnitDiagConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -1420,7 +1420,7 @@ lowerTriSolveCscColMajorUnitDiagConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -1458,7 +1458,7 @@ lowerTriSolveCsrColMajorUnitDiagConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1469,7 +1469,7 @@ lowerTriSolveCsrColMajorUnitDiagConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -1507,7 +1507,7 @@ lowerTriSolveCscRowMajorUnitDiagConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -1518,7 +1518,7 @@ lowerTriSolveCscRowMajorUnitDiagConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -1555,7 +1555,7 @@ lowerTriSolveCsrRowMajorUnitDiagConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1566,7 +1566,7 @@ lowerTriSolveCsrRowMajorUnitDiagConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -1603,7 +1603,7 @@ upperTriSolveCscColMajorConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -1614,7 +1614,7 @@ upperTriSolveCscColMajorConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -1651,7 +1651,7 @@ upperTriSolveCsrColMajorConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1662,7 +1662,7 @@ upperTriSolveCsrColMajorConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -1699,7 +1699,7 @@ upperTriSolveCscRowMajorConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -1710,7 +1710,7 @@ upperTriSolveCscRowMajorConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -1748,7 +1748,7 @@ upperTriSolveCsrRowMajorConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1759,7 +1759,7 @@ upperTriSolveCsrRowMajorConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -1797,7 +1797,7 @@ upperTriSolveCscColMajorUnitDiagConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in column-major order.
+/// \param X [out] Output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -1808,7 +1808,7 @@ upperTriSolveCscColMajorUnitDiagConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in column-major order.
+/// \param Y [in] Input multivector, stored in column-major order.
 /// \param LDY [in] Stride between columns of Y.  We assume unit
 ///   stride between rows of Y.
 
@@ -1846,7 +1846,7 @@ upperTriSolveCsrColMajorUnitDiagConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1857,7 +1857,7 @@ upperTriSolveCsrColMajorUnitDiagConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -1895,7 +1895,7 @@ upperTriSolveCscRowMajorUnitDiagConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [out] Output dense matrix, stored in row-major order.
+/// \param X [out] Output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numRows+1) array of index offsets 
@@ -1906,7 +1906,7 @@ upperTriSolveCscRowMajorUnitDiagConj (
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
 ///   (zero-based) of the sparse matrix.
-/// \param Y [in] Input dense matrix, stored in row-major order.
+/// \param Y [in] Input multivector, stored in row-major order.
 /// \param LDY [in] Stride between rows of Y.  We assume unit
 ///   stride between columns of Y.
 
@@ -1942,7 +1942,7 @@ upperTriSolveCsrRowMajorUnitDiagConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in column-major order.
+/// \param X [in/out] Input/output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -1983,7 +1983,7 @@ lowerTriSolveCscColMajorInPlaceConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in row-major order.
+/// \param X [in/out] Input/output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -2025,7 +2025,7 @@ lowerTriSolveCscRowMajorInPlaceConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in column-major order.
+/// \param X [in/out] Input/output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -2067,7 +2067,7 @@ lowerTriSolveCscColMajorUnitDiagInPlaceConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in row-major order.
+/// \param X [in/out] Input/output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -2108,7 +2108,7 @@ lowerTriSolveCscRowMajorUnitDiagInPlaceConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in column-major order.
+/// \param X [in/out] Input/output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -2149,7 +2149,7 @@ upperTriSolveCscColMajorInPlaceConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in row-major order.
+/// \param X [in/out] Input/output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -2191,7 +2191,7 @@ upperTriSolveCscRowMajorInPlaceConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in column-major order.
+/// \param X [in/out] Input/output multivector, stored in column-major order.
 /// \param LDX [in] Stride between columns of X.  We assume unit
 ///   stride between rows of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 
@@ -2233,7 +2233,7 @@ upperTriSolveCscColMajorUnitDiagInPlaceConj (
 /// \param numRows [in] Number of rows in the sparse matrix.
 /// \param numCols [in] Number of columns in the sparse matrix.
 /// \param numVecs [in] Number of columns in X.
-/// \param X [in/out] Input/output dense matrix, stored in row-major order.
+/// \param X [in/out] Input/output multivector, stored in row-major order.
 /// \param LDX [in] Stride between rows of X.  We assume unit
 ///   stride between columns of X.
 /// \param ptr [in] Length (numCols+1) array of index offsets 

@@ -79,8 +79,8 @@ class DefaultOptions:
     self.destDir = ""
 
   def setDefaultDefaults(self):
-    self.origDir = os.path.abspath(os.path.dirname(sys.argv[0]))
-    self.destDir = os.getcwd()
+    self.origDir = os.path.abspath(os.path.dirname(sys.argv[0])) + "/"
+    self.destDir = os.getcwd() + "/"
 
   def setDefaultOrigDir(self, origDirIn):
     self.origDir = origDirIn
@@ -101,33 +101,42 @@ class DefaultOptions:
 
 usageHelp = r"""snapshot-dir.py [OPTIONS]
 
-This tool snapshots the contents of an origin directory (origDir) to destination
-directory (destDir) and creates linkages between the git repos in the commit
-messages.
+This tool snapshots the contents of an origin directory (origDir) to
+destination directory (destDir) and creates linkages between the two git repos
+in the commit messages.
 
 To demonstrate how this script is used, consider the desire to snapshot from:
 
-  orig-dir:
-    some-orig-base-dir/some-dir
+  orig-dir/
 
-  dest-dir:
-    some-dest-base-dir/some-dir
+to    
 
-Here, the final subdirectory 'some-dir' must be identically named.
+  dest-dir/
 
-The typical case is to have snapshot-dir.py soft linked into
-some-orig-base-dir/some-dir.  This will be the assumption in the short text
-below.  This gives the default orig-dir (but can be overridden with --orig-dir
-option).
+Here, the directories can be any two directories with any names as long as
+they are given a final '/' at the end.  Otherwise, if you are missing the
+final '/', then rsync will copy the contents from orig-dir into a subdir of
+dest-dir which is usually not what you want.
+
+The typical case is to have snapshot-dir.py soft linked into orig-dir/ to
+allow a simple sync prodess.  This will be the assumption in the short text
+below.  The linked-in location of snapshot-dir.py gives the default orig-dir
+(but can be overridden with --orig-dir option).
 
 The way to run this script would be:
 
-  $ cd some-dest-base-dir
-  $ some-orig-base-dir/some-dir/snapshot-dir.py
+  $ cd dest-dir
+  $ orig-dir/snapshot-dir.py
 
 By default, this assumes that git repos are used on for both the orig-dir and
 dest-dir locations.  The info about the origin of the snapshot is recorded to
 provide tracability for the versions.
+
+NOTES:
+
+* This script allows the syncing between base git repos or subdirs within git
+  repos.  This is allows as the rsync command is told to ignore the .git/
+  directory.
 """
 
 
@@ -169,13 +178,18 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
       "--orig-dir", dest="origDir", type="string",
       default=defaultOptions.getDefaultOrigDir(),
       help="Original directory that is the source for the snapshoted directory." \
-      +"  The default is the directory where this script lives (or is softlinked).")
+      +"  Note that it is important to add a final /' to the directory name." \
+      +"  The default is the directory where this script lives (or is softlinked)." \
+      +"  [default: '"+defaultOptions.getDefaultOrigDir()+"']")
 
     clp.add_option(
       "--dest-dir", dest="destDir", type="string",
       default=defaultOptions.getDefaultDestDir(),
       help="Destination directory that is the target for the snapshoted directory." \
-      +"  The default is current working directory.")
+      +"  Note that a final '/' just be added or the origin will be added as subdir." \
+      +"  The default dest-dir is current working directory." \
+      +"  [default: '"+defaultOptions.getDefaultDestDir()+"']" \
+      )
 
     clp.add_option(
       "--assert-clean-orig-dir", dest="assertCleanOrigDir", action="store_true",
@@ -271,8 +285,15 @@ def snapshotDir(inOptions):
   print "\nD) Run rsync to add and remove files and dirs between two directories\n"
   #
 
+  excludes = r"""--exclude=\.git"""
+  # Note that when syncing one git repo to another, we want to sync the
+  # .gitingore and other hidden files as well.
+
+  # When we support syncing from hg repos, add these excludes as well:
+  #    --exclude=\.hg --exclude=.hgignore --exclude=.hgtags
+
   rtn = echoRunSysCmnd(
-    "rsync -av --delete "+inOptions.origDir+" "+inOptions.destDir,
+    r"rsync -av --delete "+excludes+" "+inOptions.origDir+" "+inOptions.destDir,
     throwExcept=False,
     timeCmnd=True
     )

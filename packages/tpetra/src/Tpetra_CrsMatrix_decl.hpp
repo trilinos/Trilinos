@@ -216,7 +216,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
+               const ArrayRCP<const LocalOrdinal>& NumEntriesPerRowToAlloc,
                ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -272,7 +272,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
                const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
+               const ArrayRCP<const LocalOrdinal>& NumEntriesPerRowToAlloc,
                ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
