@@ -694,6 +694,9 @@ template <typename T>
     const T* val, size_t len,
     ArrayRCP<T> &dist, size_t &globalLen)
 {
+  if (len <= 1)
+    return true;
+
   try{
     reduceAll<int, size_t>(comm, Teuchos::REDUCE_SUM, 1, &len, &globalLen);
   }
