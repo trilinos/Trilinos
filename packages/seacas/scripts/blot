@@ -49,6 +49,9 @@ ACCESSBIN="`dirname \"$0\"`"
 ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
 
 # Text color variables
+if test "${TERM}set" == set ; then
+    export TERM=dumb
+fi
 txtund=$(tput sgr 0 1)    # Underline
 txtbld=$(tput bold)       # Bold
 txtred=$(tput setaf 1)    # Red
