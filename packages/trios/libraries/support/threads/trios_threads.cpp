@@ -97,7 +97,6 @@ int nthread_lock_init(
         return(-1);
     }
 #else
-    lock->lock_ptr=&lock->lock;
     rc=sem_init(&lock->lock, 0, 1);
     if (rc == -1) {
         fprintf(stderr, "nthread_lock_init: sem_init failed: %s\n", strerror(errno));
@@ -105,6 +104,7 @@ int nthread_lock_init(
         lock->lock_ptr=NULL;
         return(-1);
     }
+    lock->lock_ptr=&lock->lock;
 #endif
 
 //    log_debug(thread_debug_level, "nthread_lock_init: initialized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
