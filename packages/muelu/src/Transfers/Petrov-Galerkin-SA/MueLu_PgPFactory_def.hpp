@@ -19,7 +19,7 @@
 namespace MueLu {
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PgPFactory(RCP<PFactory> InitialPFact, RCP<SingleLevelFactoryBase> AFact)
+PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PgPFactory(RCP</*PFactory*/const FactoryBase> InitialPFact, RCP< const FactoryBase /* SingleLevelFactoryBase*/> AFact)
 : initialPFact_(InitialPFact), AFact_(AFact),
   diagonalView_("current") {
  
