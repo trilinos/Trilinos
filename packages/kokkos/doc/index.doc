@@ -8,7 +8,7 @@ programming interface (API) for handling memory and specifying work for
 shared-memory parallel nodes (the \ref kokkos_node_api "Kokkos Node API"). The second is a collection
 of local (i.e., not distributed) linear algebra classes and the kernels
 needed to realized their functionality in parallel (the %Kokkos Linear Algebra kernels library). In addition to providing 
-basic data structures and kernels, %Kokkos also specifies APIs for extension via user-provided kernels (see, e.g., the \ref kokkos_crs_ops "Kokkos Compressed-Row Sparse API").
+basic linear algebra kernels, %Kokkos also specifies APIs for extension via user-provided kernels (see, e.g., the \ref kokkos_crs_ops "Kokkos Compressed-Row Sparse API").
 
 %Kokkos is typically not used directly in applications, but instead as a significant
 component in higher-level Trilinos packages, such as Tpetra. The functionality
@@ -30,8 +30,8 @@ code re-use between Trilinos packages and to ease experimentation for kernel res
      - Kokkos::TPINode: provides support for multi-core CPUs using Pthreads, via the ThreadPool package (requires ThreadPool package and Pthreads TPL).
 - %Kokkos Linear Algebra Kernels Library
   - Data structures:
-    - Kokkos::CrsMatrix, Kokkos::CrsGraph classes:  Classes providing the
-    storage structure for a row-oriented sparse matrix.
+    - Kokkos::CrsMatrixBase, Kokkos::CrsGraphBase classes:  Classes providing an example of CRS loading structures, useful as an example or base class for implementing 
+      support for a new sparse kernels TPL.
     - Kokkos::MultiVector class: A class providing the structure of a dense
     multivector. Here, as throughout most of Trilinos, a "multivector" refers to a
     collection of vectors.

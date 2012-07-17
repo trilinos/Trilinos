@@ -62,6 +62,9 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
+#endif
 #ifdef HAVE_KOKKOS_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
@@ -120,6 +123,10 @@ namespace {
 #ifdef HAVE_KOKKOS_THREADPOOL
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
+#endif
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
 #endif
 #ifdef HAVE_KOKKOS_THRUST
   using Kokkos::ThrustGPUNode;
@@ -192,6 +199,18 @@ namespace {
       tpinode = rcp(new TPINode(pl));
     }
     return tpinode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      ompnode = rcp(new OpenMPNode(pl));
+    }
+    return ompnode;
   }
 #endif
 

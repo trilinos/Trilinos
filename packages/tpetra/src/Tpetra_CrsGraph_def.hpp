@@ -2061,7 +2061,7 @@ namespace Tpetra {
     RCP<ParameterList> lclparams;
     if (params == null) lclparams = parameterList();
     else                lclparams = sublist(params,"Local Graph");
-    lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
+    lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getColMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
     lclGraph_->setStructure(ptrs,inds);
     ptrs = null;
     inds = null;

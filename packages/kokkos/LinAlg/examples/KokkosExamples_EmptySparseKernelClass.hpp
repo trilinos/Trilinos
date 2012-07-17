@@ -51,7 +51,7 @@
 #include <Teuchos_BLAS_types.hpp>
 #include <Kokkos_DefaultSparseOps.hpp>
 
-/// \file Kokkos_EmptySparseKernelClass.hpp
+/// \file KokkosExamples_EmptySparseKernelClass.hpp
 /// \brief A file containing a stub for a new sparse kernel provider,
 ///   as outlined in the \ref kokkos_crs_ops "Kokkos CRS API".
 
@@ -69,7 +69,7 @@ namespace KokkosExamples {
   template <class Node>
   class EmptyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
   public:
-    EmptyCrsGraph(int numrows, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,node,params) {}
+    EmptyCrsGraph(int numrows, int numcols, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,numcols,node,params) {}
     ~EmptyCrsGraph() {}
     void setStructure(const ArrayRCP<const int>&, const ArrayRCP<const int>&) {}
   };

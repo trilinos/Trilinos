@@ -105,6 +105,10 @@ namespace {
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
+#endif
   bool testMpi = true;
 
   TEUCHOS_STATIC_SETUP()
@@ -152,6 +156,18 @@ namespace {
       tbbnode = rcp(new TBBNode(pl));
     }
     return tbbnode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      ompnode = rcp(new OpenMPNode(pl));
+    }
+    return ompnode;
   }
 #endif
 

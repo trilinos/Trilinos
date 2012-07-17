@@ -67,8 +67,9 @@ int main() {
   Teuchos::RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
 
   // create the graph G
-  const size_t numRows = 5;
-  Teuchos::RCP<Graph> G = Teuchos::rcp(new Graph(numRows,node,Teuchos::null));
+  const int numRows = 5,
+            numCols = 5;
+  Teuchos::RCP<Graph> G = Teuchos::rcp(new Graph(numRows,numCols,node,Teuchos::null));
 
   // create a double-valued matrix dM using the graph G
   Teuchos::RCP<DMatrix> dM = Teuchos::rcp(new DMatrix(G,Teuchos::null));

@@ -50,13 +50,11 @@ WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc groups.doc ../src ../LinAlg ../NodeAPI ../LinAlg/examples ../LinAlg/test/CrsMatrix ../NodeAPI/examples ../NodeTSQR ../DistTSQR
 FILE_PATTERNS          = *.hpp *.cpp *.cuh
 RECURSIVE              = NO
-EXCLUDE                = ../NodeAPI/Kokkos_CUDA_util_inline_runtime.h \
-                         ../NodeAPI/Kokkos_CUDA_util_sharedmem.cuh \
-                         ../NodeAPI/Kokkos_CUDANode.cpp ../NodeAPI/Kokkos_CUDANode.hpp ../NodeAPI/Kokoks_CUDANode.cuh
+EXCLUDE                = ../LinAlg/Kokkos_PackedCRSOperatorAdaptor.hpp
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           = ../NodeAPI/examples/SimpleNodeExample.cpp \
                          ../NodeAPI/examples/Kokkos_NodeExampleKernels.hpp \
-                         ../LinAlg/examples/DummySparseKernelDriver.cpp \
+                         ../LinAlg/examples/EmptySparseKernelDriver.cpp \
                          ../LinAlg/test/CrsMatrix/CrsMatrix_DefaultMultiplyTests.hpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
@@ -86,8 +84,9 @@ EXPAND_AS_DEFINED      =
 #
 # Links to other packages
 #
-TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/tpetra.tag=../../../tpetra/doc/html \
-                         ../../common/tag_files/ifpack2.tag=../../../ifpack2/doc/html
+TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html 
+#                        ../../common/tag_files/tpetra.tag=../../../tpetra/doc/html \
+#                        ../../common/tag_files/ifpack2.tag=../../../ifpack2/doc/html
 GENERATE_TAGFILE       = ../../common/tag_files/kokkos.tag
 
 GENERATE_HTML          = YES

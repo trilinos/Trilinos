@@ -189,7 +189,7 @@ namespace {
     // [                -1  2 -1]
     // [                   -1  2]
     if (N<2) return;
-    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,node,null) );
+    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,N,node,null) );
     RCP<MAT > A = Teuchos::rcp( new MAT(G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = 3*N - 2;
@@ -268,7 +268,7 @@ namespace {
     // [                -1  2 -1]
     // [                   -1  2]
     if (N<2) return;
-    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,node,null) );
+    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,N,node,null) );
     RCP<MAT > A = Teuchos::rcp( new MAT(G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = 3*N - 2;
@@ -358,7 +358,7 @@ namespace {
     // [                -1  2 -1]
     // [                   -1  2]
     if (N<2) return;
-    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,node,null) );
+    RCP<GRPH> G = Teuchos::rcp( new GRPH(N,N,node,null) );
     RCP<MAT > A = Teuchos::rcp( new MAT(G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = 3*N - 2;

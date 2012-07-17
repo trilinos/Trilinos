@@ -53,7 +53,7 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultArithmetic.hpp>
 
-/// \file CrsMatrix_TestSparseOps.hpp
+/// \file DefaultSparseOps_TestSparseOps.hpp
 /// \brief Header file with helper functions for testing Kokkos sparse kernels.
 ///
 
@@ -554,7 +554,7 @@ public:
 
     const ordinal_type numRows = static_cast<ordinal_type> (ptr.size() == 0 ? 0 : ptr.size() - 1);
     RCP<ParameterList> graphParams = parameterList ("Graph");
-    RCP<graph_type> graph = rcp (new graph_type (numRows, node, graphParams));
+    RCP<graph_type> graph = rcp (new graph_type (numRows, numRows, node, graphParams));
 
     graph->setStructure (ptr, ind);
     RCP<ParameterList> matParams = parameterList ("Matrix");
@@ -631,7 +631,7 @@ public:
       "this bug (in tests) to the Kokkos developers.");
 
     RCP<graph_type> graph =
-      rcp (new graph_type ( N, node, null));
+      rcp (new graph_type ( N, N, node, null));
     graph->setStructure (arcp_const_cast<const ordinal_type> (ptr),
                          arcp_const_cast<const ordinal_type> (ind));
     RCP<matrix_type> matrix =
@@ -686,7 +686,7 @@ public:
       "this bug (in tests) to the Kokkos developers.");
 
     RCP<graph_type> graph =
-      rcp (new graph_type (  N, node, null));
+      rcp (new graph_type (  N, N, node, null));
     graph->setStructure (arcp_const_cast<const ordinal_type> (ptr),
                          arcp_const_cast<const ordinal_type> (ind));
     RCP<matrix_type> matrix =

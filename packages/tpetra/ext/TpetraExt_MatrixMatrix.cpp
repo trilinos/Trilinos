@@ -50,6 +50,9 @@
 #include "TpetraExt_MatrixMatrix_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
+#if defined(HAVE_KOKKOS_OPENMP)
+#  include <Kokkos_OpenMPNode.hpp>
+#endif
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif
@@ -64,6 +67,9 @@ namespace Tpetra {
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TBBNode)
 #endif
@@ -76,6 +82,9 @@ namespace Tpetra {
 #endif // double
 #if defined(HAVE_TPETRA_INST_FLOAT)
   TPETRA_MATRIXMATRIX_INSTANT(float,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MATRIXMATRIX_INSTANT(float,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(float,int,int,Kokkos::TBBNode)
 #endif
@@ -88,6 +97,9 @@ namespace Tpetra {
 #endif // float
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MATRIXMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::TBBNode)
 #endif
@@ -101,6 +113,9 @@ namespace Tpetra {
 #endif // complex double
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MATRIXMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
 #endif
@@ -117,6 +132,9 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_INST_INT_LONG
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   TPETRA_MATRIXMATRIX_INSTANT(double,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,long,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(double,int,long,Kokkos::TBBNode)
 #endif
@@ -129,6 +147,9 @@ namespace Tpetra {
 #endif // double
 #if defined(HAVE_TPETRA_INST_FLOAT)
   TPETRA_MATRIXMATRIX_INSTANT(float,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MATRIXMATRIX_INSTANT(float,int,long,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(float,int,long,Kokkos::TBBNode)
 #endif
@@ -141,6 +162,9 @@ namespace Tpetra {
 #endif // float
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MATRIXMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::TBBNode)
 #endif
@@ -154,6 +178,9 @@ namespace Tpetra {
 #endif // complex double
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MATRIXMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::TBBNode)
 #endif
