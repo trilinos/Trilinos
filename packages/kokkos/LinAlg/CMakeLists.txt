@@ -69,11 +69,18 @@ IF (Kokkos_ENABLE_CUSPARSE)
   APPEND_SET(HEADERS Kokkos_CUSPARSEOps.hpp)
 ENDIF()
 
+IF (Kokkos_ENABLE_Cusp)
+  APPEND_SET(HEADERS Kokkos_CuspOps.hpp)
+ENDIF()
+
 SET(CUDA_SOURCES Kokkos_DefaultArithmetic.cu 
 #                Kokkos_DefaultBlockSparseOps.cu 
 #                Kokkos_DefaultSparseOps.cu 
 #                Kokkos_DefaultRelaxation.cu
    )
+IF (Kokkos_ENABLE_Cusp) 
+  APPEND_SET(CUDA_SOURCES Kokkos_CuspOps.cu)
+ENDIF()
 
 ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
 IF (Kokkos_ENABLE_Thrust)

@@ -49,6 +49,9 @@
 #ifdef HAVE_KOKKOS_CUSPARSE
 #include "Kokkos_CUSPARSEOps.hpp"
 #endif
+#ifdef HAVE_KOKKOS_CUSP
+#include "Kokkos_CuspOps.hpp"
+#endif
 
 namespace Kokkos {
 
@@ -86,14 +89,25 @@ namespace Kokkos {
       For ThrustGPUNode, defaults are the same as in general, except that the default sparse ops should be provided by 
       DefaultDeviceSparseOps.
    */
+#if defined(HAVE_KOKKOS_CUSP)
+   template <class Scalar, class Ordinal>
+   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
+     typedef CuspOps<void,Ordinal,ThrustGPUNode> SparseOps;
+   };
+#else 
    class ThrustGPUNode;
    template <class Scalar, class Ordinal>
    struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
      // empty == fail
    };
-#ifdef HAVE_KOKKOS_CUSPARSE
-   template <class Scalar>
-   struct DefaultKernels<Scalar,int,ThrustGPUNode> {
+#endif
+#if defined(HAVE_KOKKOS_CUSPARSE)
+   template <>
+   struct DefaultKernels<float,int,ThrustGPUNode> {
+     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
+   };
+   template <>
+   struct DefaultKernels<double,int,ThrustGPUNode> {
      typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
    };
 #endif

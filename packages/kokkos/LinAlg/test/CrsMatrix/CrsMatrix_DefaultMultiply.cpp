@@ -61,25 +61,27 @@
 #include "Kokkos_OpenMPNode.hpp"
 #endif
 
-#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_THRUST)
-#define TEST_CUSPARSE
-#ifdef HAVE_KOKKOS_CUDA_FLOAT
-#define TEST_CUSPARSE_FLOAT
-#endif
-#ifdef HAVE_KOKKOS_CUDA_DOUBLE
-#define TEST_CUSPARSE_DOUBLE
-#endif
-#ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
-#define TEST_CUSPARSE_COMPLEX_FLOAT
-#endif
-#ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
-#define TEST_CUSPARSE_COMPLEX_DOUBLE
-#endif
-#endif
-
-#ifdef TEST_CUSPARSE
-#include "Kokkos_ThrustGPUNode.hpp"
-#include "Kokkos_CUSPARSEOps.hpp"
+#if (defined(HAVE_KOKKOS_CUSPARSE) || defined(HAVE_KOKKOS_CUSP)) && defined(HAVE_KOKKOS_THRUST)
+  #include "Kokkos_ThrustGPUNode.hpp"
+  #ifdef HAVE_KOKKOS_CUSPARSE
+    #include "Kokkos_CUSPARSEOps.hpp"
+  #endif
+  #ifdef HAVE_KOKKOS_CUSP
+    #include "Kokkos_CuspOps.hpp"
+  #endif
+  #define TEST_CUDA
+  #ifdef HAVE_KOKKOS_CUDA_FLOAT
+    #define TEST_CUDA_FLOAT
+  #endif
+  #ifdef HAVE_KOKKOS_CUDA_DOUBLE
+    #define TEST_CUDA_DOUBLE
+  #endif
+  #ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+    #define TEST_CUDA_COMPLEX_FLOAT
+  #endif
+  #ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+    #define TEST_CUDA_COMPLEX_DOUBLE
+  #endif
 #endif
 
 namespace {
@@ -107,7 +109,7 @@ namespace {
   using Kokkos::OpenMPNode;
   RCP<OpenMPNode> ompnode;
 #endif
-#ifdef TEST_CUSPARSE
+#ifdef TEST_CUDA
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> gpunode;
 #endif
@@ -173,7 +175,7 @@ namespace {
   }
 #endif
 
-#ifdef TEST_CUSPARSE
+#ifdef TEST_CUDA
   template <>
   RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
     if (gpunode == null) {
@@ -200,6 +202,7 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
                 ZERO = ST::zero();
+    out << "Testing sparse ops " << Teuchos::TypeNameTraits<DSM>::name() << std::endl;
     // generate tridiagonal matrix:
     // [ 2 -1                   ]
     // [-1  3  -1               ]
@@ -336,21 +339,24 @@ namespace {
 
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
-#ifdef TEST_CUSPARSE_FLOAT
+#ifdef TEST_CUDA_FLOAT
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, float, ThrustGPUNode )
 #endif
-#ifdef TEST_CUSPARSE_DOUBLE
+#ifdef TEST_CUDA_DOUBLE
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, double, ThrustGPUNode )
 #endif
-#ifdef TEST_CUSPARSE_COMPLEX_FLOAT
+#ifdef TEST_CUDA_COMPLEX_FLOAT
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexFloat, ThrustGPUNode )
 #endif
-#ifdef TEST_CUSPARSE_COMPLEX_DOUBLE
+#ifdef TEST_CUDA_COMPLEX_DOUBLE
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, ThrustGPUNode )
+#endif
+
+#ifdef HAVE_KOKKOS_CUSP 
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( short, float, ThrustGPUNode )
 #endif
 
      UNIT_TEST_GROUP_ORDINAL(int)
      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
-
 }
 
