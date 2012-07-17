@@ -98,27 +98,15 @@ namespace MueLu {
     GO numAggs = aggregates.GetNumAggregates();
 
     // Compute array of aggregate sizes (in dofs).
-#ifdef OLDCODE
-    ArrayRCP<LO> aggSizes  = aggregates.ComputeAggregateSizes();
-#else
     ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
     ComputeAggregateSizes(aggregates, amalgInfo, aggSizes);
-#endif
 
     // find size of the largest aggregate.
     LO maxAggSize=0;
     for (typename Teuchos::ArrayRCP<LO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
       if (*i > maxAggSize) maxAggSize = *i;
     }
-#ifdef OLDCODE
-    // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
-    // aggToRowMap[i][j] is the jth DOF in aggregate i
-    // TODO: aggToRowMap lives in the column map of A (with overlapping). Note: ComputeAggregateToRowMap
-    // returns the local DOFs, that are transformed to global Dofs using the col map later. Wouldn't it be
-    // smarter to compute the global dofs in ComputeAggregateToRowMap?
-    ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-    aggregates.ComputeAggregateToRowMap(aggToRowMap);
-#else
+
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggToRowMap[i][j] is the jth DOF in aggregate i
     // TODO: aggToRowMap lives in the column map of A (with overlapping). Note: ComputeAggregateToRowMap
@@ -126,7 +114,6 @@ namespace MueLu {
     // smarter to compute the global dofs in ComputeAggregateToRowMap?
     ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
     ComputeAggregateToRowMap(aggregates, amalgInfo, aggSizes, aggToRowMap);
-#endif
 
     // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
@@ -167,13 +154,8 @@ namespace MueLu {
 						  stridedBlockId_,
 						  domainGidOffset_
 						  );
-#ifdef OLDCODE
-    // Builds overlapped nullspace.
-    const RCP<const Map> nonUniqueMap = aggregates.GetDofMap(); // fetch overlapping Dofmap from Aggregates structure
-#else
-    const RCP<const Map> nonUniqueMap = ComputeImportDofMap(aggregates, amalgInfo, aggSizes);
-#endif
 
+    const RCP<const Map> nonUniqueMap = ComputeImportDofMap(aggregates, amalgInfo, aggSizes);
     const RCP<const Map> uniqueMap    = fineA.getDomainMap();
     RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
     RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);

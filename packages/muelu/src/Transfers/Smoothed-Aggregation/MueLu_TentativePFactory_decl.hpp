@@ -139,8 +139,14 @@ namespace MueLu {
      */
     void ComputeAggregateSizes(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const;
 
+    /*! @brief ComputeAggregateToRowMap
+     * puts all dofs for aggregate \c i in aggToRowMap[\c i]
+     */
     void ComputeAggregateToRowMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap) const;
 
+    /*! @brief ComputeImportDofMap
+     * build overlapping dof row map from aggregates needed for overlapping null space
+     */
     RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const;
     //@}
   private:
