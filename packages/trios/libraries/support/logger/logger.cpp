@@ -108,7 +108,7 @@ int logger_init(const log_level debug_level,  const char *logfile)
         if (nthread_lock_init(&logger_mutex) == -1) {
             fprintf(stderr, "nthread_lock_init failed.\n");
             fflush(stderr);
-            return;
+            return(-1);
         }
 
         mutex_initialized = true;
@@ -140,14 +140,14 @@ int logger_init(const log_level debug_level,  const char *logfile)
         FILE *fp = fopen(logfile, "w+");
         if (fp == NULL) {
             fprintf(stderr, "could not create log file \"%s\"\n",logfile);
-            return -1;
+            return(-1);
         }
         else {
             logger_set_file(fp);
         }
     }
 
-    return rc;
+    return(rc);
 }
 
 int logger_not_initialized()
