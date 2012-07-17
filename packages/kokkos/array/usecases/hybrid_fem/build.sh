@@ -4,7 +4,7 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
-EXECUTABLE="testit.exe"
+EXECUTABLE="proxyapp.exe"
 
 INC_PATH="-I. -I../../src"
 CXX="g++"
