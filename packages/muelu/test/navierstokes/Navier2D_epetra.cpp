@@ -54,11 +54,13 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_EpetraOperator.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-
+#include <Epetra_LinearProblem.h>
+#include <AztecOO.h>
 
 /*!
  *  2d Navier Stokes example (for Epetra)
@@ -151,7 +153,7 @@ int main(int argc, char *argv[]) {
 
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
-  //dropFact->SetFixedBlockSize(nDofsPerNode);
+
 
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);
@@ -212,6 +214,7 @@ int main(int argc, char *argv[]) {
   RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
 
   FactoryManager M;
+  M.SetFactory("Graph", dropFact);
   M.SetFactory("Aggregates", UCAggFact);
   M.SetFactory("P", Pfact);
   M.SetFactory("R", Rfact);
@@ -256,7 +259,7 @@ int main(int argc, char *argv[]) {
   //
   // Solve Ax = b using AMG as a preconditioner in AztecOO
   //
-  /*{
+  {
     RCP<Epetra_Vector> X = rcp(new Epetra_Vector(epv->Map()));
     X->PutScalar(0.0);
     Epetra_LinearProblem epetraProblem(epA.get(), X.get(), epv.get());
@@ -271,7 +274,7 @@ int main(int argc, char *argv[]) {
     double tol = 1e-8;
 
     aztecSolver.Iterate(maxIts, tol);
-  }*/
+  }
 
   return EXIT_SUCCESS;
 }

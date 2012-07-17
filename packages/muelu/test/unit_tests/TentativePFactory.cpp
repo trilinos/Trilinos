@@ -75,7 +75,7 @@ namespace MueLuTests {
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact));
 
       coarseLevel.Request("P",TentativePFact.get());         // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get()); // request coarse nullspace
@@ -140,7 +140,7 @@ namespace MueLuTests {
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact));
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get());

@@ -149,7 +149,11 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("A", AFact);
       MUELU_FACTORY_PARAM("Nullspace", NullspaceFact);
 
+#if OLD
       return rcp(new CoalesceDropFactory(AFact, NullspaceFact));
+#else
+      return rcp(new CoalesceDropFactory(AFact/*, NullspaceFact*/));
+#endif
     }
 
     //! TentativePFactory
@@ -157,8 +161,12 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("Aggregates", AggFact);
       MUELU_FACTORY_PARAM("Nullspace",  NullspaceFact);
       MUELU_FACTORY_PARAM("A", AFact);
-
+#if OLD
       return rcp(new TentativePFactory(AggFact, NullspaceFact, AFact));
+#else
+      MUELU_FACTORY_PARAM("UnAmalgamationInfo", GraphFact);
+      return rcp(new TentativePFactory(AggFact, GraphFact, NullspaceFact, AFact));
+#endif
     }
     
     //! SaPFactory

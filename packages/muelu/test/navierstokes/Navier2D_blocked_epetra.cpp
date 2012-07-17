@@ -65,7 +65,8 @@
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 
-#include "MueLu_SubBlockAggregationFactory.hpp"
+//#include "MueLu_SubBlockAggregationFactory.hpp"
+#include "MueLu_SubBlockUnAmalgamationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -376,8 +377,8 @@ int main(int argc, char *argv[]) {
   // xstridedvelmap: only velocity dof gid maps (i.e. 0,1,3,4,6,7...)
   // xstridedpremap: only pressure dof gid maps (i.e. 2,5,8,...)
   Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedfullmap = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,8898,0,stridingInfo,comm,-1));
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedvelmap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,8898,0,stridingInfo,comm,0));
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedpremap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,8898,0,stridingInfo,comm,1));
+  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedvelmap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(Xpetra::StridedMapFactory<int,int>::Build(xstridedfullmap,0));
+  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedpremap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(Xpetra::StridedMapFactory<int,int>::Build(xstridedfullmap,1));
 
   /////////////////////////////////////// transform Xpetra::Map objects to Epetra
   // this is needed for AztecOO
@@ -482,7 +483,7 @@ int main(int argc, char *argv[]) {
 
   ///////////////////////////////////////// define CoalesceDropFactory and Aggregation for A11
   // set up amalgamation for A11. Note: we're using a default null space factory (Teuchos::null)
-  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory(A11Fact,/*nspFact11*/ Teuchos::null));
+  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory(A11Fact));
   RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory(dropFact11));
   UCAggFact11->SetMinNodesPerAggregate(3);
   UCAggFact11->SetMaxNeighAlreadySelected(1);
@@ -492,7 +493,7 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////// define transfer ops for A11
 #if 1
   // use PG-AMG
-  RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory(UCAggFact11,Teuchos::null /*default nullspace*/)); // check me
+  RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory(UCAggFact11,dropFact11)); // check me
   P11tentFact->setStridingData(stridingInfo);
   P11tentFact->setStridedBlockId(0); // declare this P11Fact to be the transfer operator for the velocity dofs
 
@@ -552,7 +553,7 @@ int main(int argc, char *argv[]) {
   Finest->Set("Nullspace2",nullspace22);
 
   ///////////////////////////////////////// define transfer ops for A22
-  RCP<MueLu::SubBlockAggregationFactory<SC,LO,GO> > AggFact22 = rcp(new MueLu::SubBlockAggregationFactory<SC,LO,GO>(UCAggFact11));
+  //RCP<MueLu::SubBlockAggregationFactory<SC,LO,GO> > AggFact22 = rcp(new MueLu::SubBlockAggregationFactory<SC,LO,GO>(UCAggFact11));
 
 #if 0
   // use PGAMG
@@ -580,7 +581,8 @@ int main(int argc, char *argv[]) {
 
 #else
   // use TentativePFactory
-  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(AggFact22, Teuchos::null /*default nullspace*/)); // check me (fed with A22) wrong column GIDS!!!
+  RCP<SubBlockUnAmalgamationFactory> dropFact22 = rcp(new SubBlockUnAmalgamationFactory(A22Fact));
+  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, dropFact22 )); // check me (fed with A22) wrong column GIDS!!!
   P22Fact->setStridingData(stridingInfo);
   P22Fact->setStridedBlockId(1); // declare this P22Fact to be the transfer operator for the pressure dofs
 
@@ -593,7 +595,7 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("A", A22Fact);
   M22->SetFactory("P", P22Fact);
   M22->SetFactory("R", R22Fact);
-  M22->SetFactory("Aggregates", AggFact22);
+  M22->SetFactory("Aggregates", UCAggFact11);
   M22->SetFactory("Nullspace", nspFact22);
   M22->SetFactory("Ptent", P22Fact);
   M22->SetFactory("Smoother", Smoo22Fact);

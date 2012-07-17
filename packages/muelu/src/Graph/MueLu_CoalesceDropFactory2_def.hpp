@@ -160,7 +160,7 @@ void CoalesceDropFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps
 
   // store information in Graph object for unamalgamation of vectors
   // TODO remove this
-  graph->SetAmalgamationParams(nodegid2dofgids_);
+  //graph->SetAmalgamationParams(nodegid2dofgids_);
 
   // store (un)amalgamation information on current level
   RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo());

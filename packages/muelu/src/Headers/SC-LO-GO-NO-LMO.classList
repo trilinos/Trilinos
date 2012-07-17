@@ -41,3 +41,4 @@ AggregationExportFactory
 MultiVectorTransferFactory
 PermutedTransferFactory
 SubBlockAggregationFactory
+SubBlockUnAmalgamationFactory

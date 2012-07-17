@@ -15,6 +15,7 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
 
 namespace MueLu {
 
@@ -56,12 +57,22 @@ namespace MueLu {
     void Build(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
+   
 
   private:
 
-    std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
+    /*! @brief ComputeAggregateSizes
+     * computes the size of the aggregates (in DOFs). This routine should be the same as in TentativePFactory
+     */
+    void ComputeAggregateSizes(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const;
 
-    void ExportAggregates(const Teuchos::RCP<Level>& level, const Teuchos::RCP<Aggregates>& aggregates, LocalOrdinal DofsPerNode) const;
+    /*! @brief ComputeAggregateToRowMap
+     * computes the map: aggregate id -> row map. This routine should be the same as in TentativePFactory
+     */
+    void ComputeAggregateToRowMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap) const;
+
+    
+    std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
 
   private:
     std::string outputFileName_;            ///< filename template for output

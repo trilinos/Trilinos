@@ -1,0 +1,77 @@
+#ifndef MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_DECL_HPP
+#define MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_DECL_HPP
+
+#include <Xpetra_Operator_fwd.hpp>
+
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_Exceptions.hpp"  
+
+namespace MueLu {
+  
+  /*!
+    @class SubBlockUnAmalgamationFactory
+    @brief UnAmalgamationFactory for subblocks of strided map based amalgamation data
+    
+    Class generates unamalgamation information using matrix A with strided maps.
+    It stores the output information within an AmalgamationInfo object as "UnAmalgamationInfo".
+    This object contains 
+     
+    \li \c nodegid2dofgids_ a map of all node ids of which the current proc has corresponding DOF gids (used by \c TentativePFactory).
+    \li \c gNodeIds vector of all node ids on the current proc (may be less than nodegid2dofgids_.size()). These nodes are stored on the current proc.
+
+  */
+
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> 
+  class SubBlockUnAmalgamationFactory : public SingleLevelFactoryBase {
+#undef MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  public:
+
+    //! @name Constructors/Destructors.
+    //@{
+
+    //! Constructor
+    SubBlockUnAmalgamationFactory(RCP<const FactoryBase> AFact = Teuchos::null);
+
+    //! Destructor
+    virtual ~SubBlockUnAmalgamationFactory() { }
+
+    //@}
+
+    //! Input
+    //@{
+
+    void DeclareInput(Level &currentLevel) const;
+    
+    //@}
+
+    void Build(Level &currentLevel) const; // Build
+
+    //! translate global (row/column) id to global amalgamation block id
+    // @param gid (GlobalOrdinal): input global id (row gid or column gid)
+    // @param A: input operator (just used to check the maps for validity)
+    // @param blockSize (LocalOrdinal): block size (needed for constant block size)
+    // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
+    static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, const RCP<Operator>& A, LocalOrdinal blockSize, const GlobalOrdinal offset = 0); 
+
+  private:
+  
+    //! A Factory (e.g. subblock A Factory)
+    // should have strided map information
+    RCP<const FactoryBase> AFact_;
+    
+    /// amalgamation information
+    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_;
+    
+  }; //class SubBlockUnAmalgamationFactory
+
+} //namespace MueLu
+
+#define MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_SHORT
+#endif // MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_DECL_HPP

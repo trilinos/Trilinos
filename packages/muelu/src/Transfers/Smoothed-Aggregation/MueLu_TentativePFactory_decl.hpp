@@ -6,6 +6,7 @@
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
@@ -18,6 +19,7 @@
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
 
 namespace MueLu {
 
@@ -43,10 +45,11 @@ namespace MueLu {
     
     /*! @brief Constructor.
       \param aggregatesFact -- (optional) factory that creates aggregates.
+      \param graphFact -- (optional) factory creates graph of A
       \param nullspaceFact -- (optional) factory that creates (fine level) null space approximation
       \param AFact -- (optional) factory that creates level matrix A
     */
-    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
+    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> graphFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
     
     //! Destructor.
     virtual ~TentativePFactory();
@@ -131,6 +134,14 @@ namespace MueLu {
       stridedBlockId_ = stridedBlockId;
     }
 
+    /*! @brief ComputeAggregateSizes
+     * computes the size of the aggregates (in DOFs)
+     */
+    void ComputeAggregateSizes(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const;
+
+    void ComputeAggregateToRowMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap) const;
+
+    RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const;
     //@}
   private:
     //! @name Static methods.
@@ -175,11 +186,12 @@ namespace MueLu {
 
     - FIXME There is no attempt to detect if the aggregate is too small to support the NS.
     */
-    void MakeTentative(const Operator& fineA, const Aggregates& aggregates, const MultiVector & fineNullspace, //-> INPUT
+    void MakeTentative(const Operator& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, //-> INPUT
                        RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const;                  //-> OUTPUT
 
   private:
     RCP<const FactoryBase> aggregatesFact_; //! Factory that creates aggregates
+    RCP<const FactoryBase> graphFact_;      //! Factory that creates graph of A
     RCP<const FactoryBase> nullspaceFact_;  //! Factory creating the nullspace
     RCP<const FactoryBase> AFact_;          //! Define which matrix A is used in this factory
 

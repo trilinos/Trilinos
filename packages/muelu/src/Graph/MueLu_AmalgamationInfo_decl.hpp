@@ -56,6 +56,13 @@ namespace MueLu {
 
     RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > GetGlobalAmalgamationParams() const;
 
+    void SetNodeGIDVector(RCP<std::vector<GlobalOrdinal> > nodegids) const;
+
+    RCP<std::vector<GlobalOrdinal> > GetNodeGIDVector() const;
+    
+    void SetNumberOfNodes(GlobalOrdinal cntNodes) const { cntNodes_ = cntNodes; }
+    GlobalOrdinal GetNumberOfNodes() const { return cntNodes_; }
+    
   private:
 
     //! @name amalgamation information variables
@@ -64,6 +71,12 @@ namespace MueLu {
     // map of global node id on current processor to global DOFs ids on current processor
     mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_; //< used for building overlapping ImportDofMap
 
+    // contains global node ids on current proc (used by CoalesceDropFactory to build nodeMap)
+    mutable RCP<std::vector<GlobalOrdinal> > gNodeIds_;
+
+    /// number of nodes on current proc
+    mutable GlobalOrdinal cntNodes_;
+    
     //@}
 
   };

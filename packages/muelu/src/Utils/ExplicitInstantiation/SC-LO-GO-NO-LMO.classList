@@ -37,3 +37,4 @@ PermutedTransferFactory
 MultiVectorTransferFactory
 SubBlockAggregationFactory
 SchurComplementFactory
+SubBlockUnAmalgamationFactory

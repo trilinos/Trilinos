@@ -131,6 +131,7 @@ int main(int argc, char *argv[]) {
   RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
   RCP<CrsOperator> crsOp = Teuchos::rcp(new CrsOperator(exA));
   RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(crsOp);
+  Op->SetFixedBlockSize(nDofsPerNode);
 
   // Epetra_Vector -> Xpetra::Vector
   RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
@@ -153,17 +154,17 @@ int main(int argc, char *argv[]) {
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
   //dropFact->SetFixedBlockSize(nDofsPerNode);
-  dropFact->SetVariableBlockSize();
+  //dropFact->SetVariableBlockSize();
 
   // setup "variable" block size information
-  RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());
+  /*RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());
   Teuchos::ArrayRCP< GlobalOrdinal > vectordata = globalrowid2globalamalblockid_vector->getDataNonConst(0);
   for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(Op->getRowMap()->getNodeNumElements());i++) {
     GlobalOrdinal gDofId = Op->getColMap()->getGlobalElement(i);
     GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nDofsPerNode;
     (vectordata)[i] = globalblockid;
   }
-  Finest->Set("VariableBlockSizeInfo", globalrowid2globalamalblockid_vector);
+  Finest->Set("VariableBlockSizeInfo", globalrowid2globalamalblockid_vector);*/
 
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);

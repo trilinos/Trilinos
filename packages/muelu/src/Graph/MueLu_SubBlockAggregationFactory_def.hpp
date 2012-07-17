@@ -43,7 +43,7 @@ namespace MueLu {
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorClass;
     typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass;
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
-
+#if 0
       FactoryMonitor m(*this, "SubBlock Aggregation", currentLevel);
 
       // Level Get
@@ -132,7 +132,7 @@ namespace MueLu {
 
       // Level Set
       currentLevel.Set("Aggregates", aggregates, this);
-
+#endif
   }
 
 } //namespace MueLu

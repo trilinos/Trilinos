@@ -17,37 +17,25 @@
 #include "MueLu_PreDropFunctionBaseClass.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_SubBlockUnAmalgamationFactory.hpp"
 
 namespace MueLu {
 
-static const std::string color_esc = "\x1b[";
-static const std::string color_std = "39;49;00m";
-static const std::string color_purple = "35m";
+
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> nullspaceFact)
-: AFact_(AFact), nullspaceFact_(nullspaceFact), fixedBlkSize_(true), blkSizeInfo_(Teuchos::null)
+CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact)
+: AFact_(AFact)
   {
-  predrop_ = Teuchos::null;  // no pre-dropping filter
+    predrop_ = Teuchos::null;
+    UnAmalgamationFact_ = rcp(new SubBlockUnAmalgamationFactory(AFact));
   }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
   currentLevel.DeclareInput("A", AFact_.get(), this);
-
-  if ((currentLevel.GetLevelID() == 0) && currentLevel.IsAvailable("Nullspace", NoFactory::get())) // always use user-defined nullspace by default and ignore nullspaceFact //FIXME
-    currentLevel.DeclareInput("Nullspace", NoFactory::get(), this);                                // (same mecanism as in Level::GetFactory, but for explicitly defined generating factory)
-  else 
-    currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this);
-
-  if(fixedBlkSize_ == false && currentLevel.GetLevelID() == 0)
-    currentLevel.DeclareInput("VariableBlockSizeInfo", MueLu::NoFactory::get(), this);
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetVariableBlockSize() {
-  fixedBlkSize_ = false;
-  GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::SetVariableBlockSize()" << color_esc << color_std << std::endl;
+  currentLevel.DeclareInput("UnAmalgamationInfo", UnAmalgamationFact_.get(), this);
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -55,251 +43,115 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
-  FactoryMonitor m(*this, "CoalesceDropFactory", currentLevel);
-
-  //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-
-  RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
-
-  RCP<MultiVector> nullspace;
-  if ((currentLevel.GetLevelID() == 0) && currentLevel.IsAvailable("Nullspace", NoFactory::get())) // always use user-defined nullspace by default and ignore nullspaceFact //FIXME         
-    nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", NoFactory::get());              // (same mecanism as in Level::GetFactory, but for explicitly defined generating factory)
-  else
-    nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
-
-  LocalOrdinal blockdim = 1; // block dim for fixed size blocks
-  GlobalOrdinal offset = 0;  // global offset of dof gids
-
-  if(currentLevel.GetLevelID() == 0) {
-    // switch between constant and variable block size on finest level
-    if(fixedBlkSize_ == false) {
-      // variable block size
-      // TODO remove this???
-      blockdim = -1; // no constant block size
-      // read in and transform variable block size information
-      RCP<GOVector> blkSizeInfo = currentLevel.Get<RCP<GOVector> >("VariableBlockSizeInfo", MueLu::NoFactory::get());
-      TEUCHOS_TEST_FOR_EXCEPTION(blkSizeInfo->getMap()->isSameAs(*(A->getRowMap()))==false, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Build: map of blkSizeInfo does not match the row map of A. Error.");
-      RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),A->getColMap());
-      blkSizeInfo_ = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap());
-      blkSizeInfo_->doImport(*blkSizeInfo,*importer,Xpetra::INSERT);
-      TEUCHOS_TEST_FOR_EXCEPTION(blkSizeInfo_->getMap()->isSameAs(*(A->getColMap()))==false, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Build: map of blkSizeInfo does not match the column map of A. Error.");
-    } else {
-      // check for strided map information
-      if(A->IsView("stridedMaps")) {
-        Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-        TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
-        blockdim = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
-        offset   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
-        oldView = A->SwitchToView(oldView);
-        blkSizeInfo_ = Teuchos::null; // TODO: remove this
-      } else {
-        // TODO remove this: support for old method
-        blockdim = A->GetFixedBlockSize();
-        //TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: A->GetFixedBlockSize() is outdated");
-        blkSizeInfo_ = Teuchos::null; // TODO:remove this
-      }
-    }
-  } else {
-    // currentLevel.GetLevelID() > 0
-    // check for strided map information
-    if(A->IsView("stridedMaps") &&
-      Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
-      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
-      blockdim = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
-      offset   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
-      oldView = A->SwitchToView(oldView);
-      GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::Build():" << color_esc << color_std << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
-    } else {
-      // TODO remove this: support for old method
-      // this is still used for ScalingTest with PermutedTransferFactory.
-      blockdim = Teuchos::as<LocalOrdinal>(nullspace->getNumVectors());
-      GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::Build():" << color_esc << color_std << " found blockdim=" << blockdim << " from nullspace dimension. offset=0."<< std::endl;
-    }
-
-    blkSizeInfo_ = Teuchos::null; // TODO: remove this
-    fixedBlkSize_ = true;
-  }
-
-  // pre-dropping
-  RCP<Graph> graph;
-
-  bool bDoAmalgamation = false;
-  if(predrop_ != Teuchos::null)                               bDoAmalgamation = true; // if predropping
-  if(fixedBlkSize_ == false && blkSizeInfo_ != Teuchos::null) bDoAmalgamation = true; // if variable block size
-  if(fixedBlkSize_ == true  && blockdim > 1)                  bDoAmalgamation = true; // constant block size > 1
-
-  if (bDoAmalgamation) {
-    SubFactoryMonitor m2(*this, "Amalgamate", currentLevel);
-    Amalgamate(A, blockdim, offset, graph);
-  } else {
-    graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
-  }
-
-  if(fixedBlkSize_ == false)  currentLevel.Set("DofsPerNode", -1, this); // no constant block size -> store -1
-  else currentLevel.Set("DofsPerNode", blockdim, this);
-  currentLevel.Set("Graph", graph, this);
-
-  // post-dropping?
-
-} // Build
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-GlobalOrdinal CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize, const GlobalOrdinal offset) const {
-
-  if(fixedBlkSize_ == true) {
-    //GetOStream(Runtime0, 0) << "fixed block size..." << std::endl;
-    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize;
-    return globalblockid;
-  } else {
-    //GetOStream(Runtime0, 0) << "variable block size..." << std::endl;
-    Teuchos::ArrayRCP< GlobalOrdinal > ovamalblockid_data = globalgid2globalamalblockid_vector->getDataNonConst(0);
-
-    Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > overlappingMap = globalgid2globalamalblockid_vector->getMap();
-
-    // check if map of globalgid2globalamalblockid_vector is same as overlapping column map of A
-    TEUCHOS_TEST_FOR_EXCEPTION(overlappingMap->isSameAs(*(A->getColMap()))==false, Exceptions::RuntimeError, "MueLu::CoalesceFactory::GlobalId2GlobalAmalBlockId: map of globalgid2globalamalblockid_vector in GlobalId2GlobalAmalBlockId must be same as column map of A. Error.");
-
-    LocalOrdinal lid = overlappingMap->getLocalElement(gid);
-    GlobalOrdinal amalgid = ovamalblockid_data[lid];
-    return amalgid;
-  }
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-const Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > CoalesceDropFactory<Scalar, LocalOrdinal,
-GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A, const RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize, const GlobalOrdinal offset) const {
-
-  globalamalblockid2globalrowid_ = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);
-
-  RCP<std::vector<GlobalOrdinal> > globalamalblockids;
-  globalamalblockids = Teuchos::rcp(new std::vector<GlobalOrdinal>); // vector of global amal block ids on current processor
-  globalamalblockids->empty();
-
-  // extract information from overlapping column map of A
-  GlobalOrdinal cnt_amalRows = 0;
-  for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(A->getColMap()->getNodeNumElements());i++) {
-    // get global DOF id
-    GlobalOrdinal gDofId = A->getColMap()->getGlobalElement(i);
-
-    // translate gDofId to global amal block id
-    GlobalOrdinal globalblockid = GlobalId2GlobalAmalBlockId(gDofId, A, globalgid2globalamalblockid_vector, blockSize, offset);
-
-    // gblockid -> gDofId/lDofId
-    if(globalamalblockid2globalrowid_->count(globalblockid) > 0) {
-      globalamalblockid2globalrowid_->find(globalblockid)->second.push_back(gDofId);
-    } else {
-      (*globalamalblockid2globalrowid_)[globalblockid] = std::vector<GlobalOrdinal>(1,gDofId);
-      if(A->getRowMap()->isNodeGlobalElement(gDofId)) {
-        globalamalblockids->push_back(globalblockid);
-        cnt_amalRows++; // new local block row in amalgamated matrix graph
-      }
-    }
-  }
-
-  // clean up DofVectors (remove duplicate entries)
-  typename std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >::iterator git;
-
-  for (git=globalamalblockid2globalrowid_->begin(); git!=globalamalblockid2globalrowid_->end(); ++git) {
-    std::vector<GlobalOrdinal> growids = git->second;
-    sort(growids.begin(), growids.end());
-    typename std::vector<GlobalOrdinal>::iterator gendLocation;
-    gendLocation = std::unique(growids.begin(), growids.end());
-    growids.erase(gendLocation,growids.end());
-  }
-
-  // debug output
-//  for (git=globalamalblockid2globalrowid_->begin(); git!=globalamalblockid2globalrowid_->end(); git++) {
-//    std::vector<GlobalOrdinal> growids = git->second;
-//    std::cout << git->first << ": ";
-//    for(size_t i=0; i<growids.size(); ++i) {
-//      std::cout << growids[i] << " ";
-//    }
-//    std::cout << std::endl;
-//  }
-
-  // inter processor communication: sum up number of block ids
-  GlobalOrdinal num_blockids = 0;
-  Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, Teuchos::ptr(&num_blockids) );
-  // TODO: check me: is num_blockids = map->getGlobalNumElements()/nUnamalgamatedBlockSize???
-  // for constant block size we can avoid the communication and just use above formula!
-  // for variable block size, this information has to be provided
-
-  GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::SetupAmalgamationData()" << color_esc << color_std << " # of amalgamated blocks=" << num_blockids << std::endl;
-
-  // generate row map for amalgamated matrix with same distribution over all procs as row map of A
-
-  Teuchos::ArrayRCP<GlobalOrdinal> arr_amalGIDs = Teuchos::arcp( globalamalblockids );
-  Teuchos::RCP<Map> amal_map = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_amalGIDs(), A->getRowMap()->getIndexBase(), A->getRowMap()->getComm());
-  GetOStream(Debug, 0) << "CoalesceDropFactory: amal_map " << amal_map->getNodeNumElements() << "/" << amal_map->getGlobalNumElements() << " elements" << std::endl;
-
-  return amal_map;
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amalgamate(const RCP<Operator>& A, const LocalOrdinal blockSize, const GlobalOrdinal offset, RCP<Graph>& graph) const {
-  if(fixedBlkSize_==true) {
-    GetOStream(Runtime0, 0) << color_esc << color_purple << "CoalesceDropFactory::Amalgamate()" << color_esc << color_std << " constant blocksize=" << blockSize << " offset=" << offset << std::endl;
-  } else {
-    GetOStream(Runtime0, 0) << color_esc << color_purple << "CoalesceDropFactory::Amalgamate()" << color_esc << color_std << " variable blocksize, offset=" << offset << std::endl;
-  }
+  FactoryMonitor m(*this, "CoalesceDropFactory2", currentLevel);
   if(predrop_ != Teuchos::null) {
     GetOStream(Parameters0, 0) << predrop_->description();
   }
 
-  // do amalgamation
+  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
-  // setup amalgamation information (will be stored in Graph in the end of the routine)
-  RCP<Map> amal_map = SetupAmalgamationData(A, blkSizeInfo_, blockSize, offset);
+  RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
-  // create new CrsGraph for amalgamated matrix (TODO: no shortcut for CrsGraphFactory?)
-  RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(amal_map, 10, Xpetra::DynamicProfile);
 
-  for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements());i++) {
+  LocalOrdinal blockdim = 1;         // block dim for fixed size blocks
+  GlobalOrdinal offset = 0;          // global offset of dof gids
+
+  // 1) check for blocking/striding information
+  if(A->IsView("stridedMaps") &&
+      Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
+    Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+    RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
+    TEUCHOS_TEST_FOR_EXCEPTION(strMap == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+    blockdim = strMap->getFixedBlockSize(); // TODO shorten code
+    offset   = strMap->getOffset();
+    oldView = A->SwitchToView(oldView);
+    GetOStream(Debug, 0) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
+  } else GetOStream(Debug, 0) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+  
+  // 2) build (un)amalgamation information 
+  //    prepare generation of nodeRowMap (of amalgamated matrix)
+  // TODO: special handling for blockdim=1
+  RCP<AmalgamationInfo> amalInfo = currentLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", UnAmalgamationFact_.get());
+  RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids = amalInfo->GetGlobalAmalgamationParams();
+  RCP<std::vector<GlobalOrdinal> > gNodeIds = amalInfo->GetNodeGIDVector();
+  GlobalOrdinal cnt_amalRows = amalInfo->GetNumberOfNodes();
+  
+  // inter processor communication: sum up number of block ids
+  GlobalOrdinal num_blockids = 0;
+  Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, Teuchos::ptr(&num_blockids) );
+  GetOStream(Debug, 0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # of amalgamated blocks=" << num_blockids << std::endl;
+
+  // 3) generate row map for amalgamated matrix (graph of A)
+  //    with same distribution over all procs as row map of A
+  Teuchos::ArrayRCP<GlobalOrdinal> arr_gNodeIds = Teuchos::arcp( gNodeIds );
+  Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), A->getRowMap()->getIndexBase(), A->getRowMap()->getComm());
+  GetOStream(Debug, 0) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
+
+  // 4) create graph of amalgamated matrix
+  RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);
+
+  // 5) do amalgamation. generate graph of amalgamated matrix
+  for(LocalOrdinal row=0; row<Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); row++) {
     // get global DOF id
-    GlobalOrdinal gDofId = A->getRowMap()->getGlobalElement(i);
+    GlobalOrdinal grid = A->getRowMap()->getGlobalElement(row);
 
-    // translate to global block id
-    GlobalOrdinal globalblockid = GlobalId2GlobalAmalBlockId(gDofId, A, blkSizeInfo_, blockSize, offset);
+    // translate grid to nodeid
+    GlobalOrdinal nodeId = SubBlockUnAmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset);
 
-    size_t nnz = A->getNumEntriesInLocalRow(i);
+    size_t nnz = A->getNumEntriesInLocalRow(row);
     Teuchos::ArrayView<const LocalOrdinal> indices;
     Teuchos::ArrayView<const Scalar> vals;
-    A->getLocalRowView(i, indices, vals);
+    A->getLocalRowView(row, indices, vals);
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: number of nonzeros not equal to number of indices? Error.");
 
-    RCP<std::vector<GlobalOrdinal> > colblocks = Teuchos::rcp(new std::vector<GlobalOrdinal>);  // global column block ids
+    RCP<std::vector<GlobalOrdinal> > cnodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);  // global column block ids
     LocalOrdinal realnnz = 0;
-    for(LocalOrdinal k=0; k<Teuchos::as<LocalOrdinal>(nnz); k++) {
-      TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[k])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
-      GlobalOrdinal gcid = A->getColMap()->getGlobalElement(indices[k]); // global column id
-      // TODO: decide whether to add or skip a matrix entry in resulting graph
-      //if(vals[k]!=0.0) {  // avoid zeros
-      if((predrop_ == Teuchos::null && vals[k]!=0.0) ||
-          (predrop_ != Teuchos::null && predrop_->Drop(i,gDofId, k,indices[k],gcid,indices,vals) == false)) {
-        //colblocks->push_back(globalrowid2globalamalblockid->find(gcid)->second); // add column block id to column ids of amalgamated matrix
-        GlobalOrdinal globalcolblockid = GlobalId2GlobalAmalBlockId(gcid, A, blkSizeInfo_, blockSize, offset);
-        colblocks->push_back(globalcolblockid);
+    for(LocalOrdinal col=0; col<Teuchos::as<LocalOrdinal>(nnz); col++) {
+      TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[col])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
+      GlobalOrdinal gcid = A->getColMap()->getGlobalElement(indices[col]); // global column id
+
+      //if(vals[col]!=0.0) {
+      if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
+         (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
+        GlobalOrdinal cnodeId = SubBlockUnAmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset);
+        cnodeIds->push_back(cnodeId);
         realnnz++; // increment number of nnz in matrix row
       }
     }
 
-    Teuchos::ArrayRCP<GlobalOrdinal> arr_colblocks = Teuchos::arcp( colblocks );
+    Teuchos::ArrayRCP<GlobalOrdinal> arr_cnodeIds = Teuchos::arcp( cnodeIds );
 
-    // fill matrix graph
-    TEUCHOS_TEST_FOR_EXCEPTION(crsGraph->getRowMap()->isNodeGlobalElement(globalblockid)==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: global row id does not belong to current proc. Error.");
-    crsGraph->insertGlobalIndices(globalblockid, arr_colblocks());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(crsGraph->getRowMap()->isNodeGlobalElement(nodeId)==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: global row id does not belong to current proc. Error.");
+    crsGraph->insertGlobalIndices(nodeId, arr_cnodeIds());
   }
+  // fill matrix graph
+  crsGraph->fillComplete(nodeMap,nodeMap);
 
-  crsGraph->fillComplete(amal_map,amal_map);
-
-  // create MueLu::Graph object
-  graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
+  // 6) create MueLu Graph object
+  RCP<Graph> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
   // store information in Graph object for unamalgamation of vectors
-  graph->SetAmalgamationParams(globalamalblockid2globalrowid_);
+  // TODO remove this
+  //graph->SetAmalgamationParams(nodegid2dofgids);
 
+  // store (un)amalgamation information on current level
+  // i.e. redeclare UnAmalgamationInfo generated by CoalesceDropFactory
+  RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo());
+  amalgamationData->SetAmalgamationParams(nodegid2dofgids);
+  currentLevel.Set("UnAmalgamationInfo", amalgamationData, this);
+
+  // 7) store results in Level
+  currentLevel.Set("DofsPerNode", blockdim, this);
+  currentLevel.Set("Graph", graph, this);
 }
+
+/*template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+GlobalOrdinal CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Operator>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) const {
+  //GetOStream(Runtime0, 0) << "fixed block size..." << std::endl;
+  GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize;
+  return globalblockid;
+}*/
 
 } //namespace MueLu
 

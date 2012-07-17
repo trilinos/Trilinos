@@ -170,6 +170,10 @@ typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,Lo
 typedef MueLu::SubBlockAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SubBlockAggregationFactory;
 #endif
 
+#ifdef MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_SHORT
+typedef MueLu::SubBlockUnAmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SubBlockUnAmalgamationFactory;
+#endif
+
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
