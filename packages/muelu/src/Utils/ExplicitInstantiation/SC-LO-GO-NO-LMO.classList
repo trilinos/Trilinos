@@ -1,6 +1,5 @@
 #Amesos2Smoother
 CoalesceDropFactory
-CoalesceDropFactory2
 DirectSolver
 FactoryManager
 GaussSeidelSmoother
@@ -35,6 +34,5 @@ AggregationExportFactory
 VariableInformationFactory
 PermutedTransferFactory
 MultiVectorTransferFactory
-SubBlockAggregationFactory
 SchurComplementFactory
 SubBlockUnAmalgamationFactory

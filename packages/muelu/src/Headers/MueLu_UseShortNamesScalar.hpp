@@ -94,10 +94,6 @@ typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 typedef MueLu::CoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoalesceDropFactory;
 #endif
 
-#ifdef MUELU_COALESCEDROPFACTORY2_SHORT
-typedef MueLu::CoalesceDropFactory2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoalesceDropFactory2;
-#endif
-
 #ifdef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
 typedef MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PreDropFunctionBaseClass;
 #endif
@@ -164,10 +160,6 @@ typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
 #ifdef MUELU_PERMUTEDTRANSFERFACTORY_SHORT
 typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutedTransferFactory;
-#endif
-
-#ifdef MUELU_SUBBLOCKAGGREGATIONFACTORY_SHORT
-typedef MueLu::SubBlockAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SubBlockAggregationFactory;
 #endif
 
 #ifdef MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_SHORT

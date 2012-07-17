@@ -66,7 +66,6 @@
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 #include "MueLu_BraessSarazinSmoother.hpp"
 #include "MueLu_SchurComplementFactory.hpp"
-#include "MueLu_SubBlockAggregationFactory.hpp"
 
 //TODO is it really needed?
 #include "MueLu_HierarchyHelpers.hpp"

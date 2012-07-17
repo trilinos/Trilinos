@@ -67,7 +67,6 @@
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 #include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_BraessSarazinSmoother.hpp"
-#include "MueLu_SubBlockAggregationFactory.hpp"
 
 #include "MueLu_SubBlockUnAmalgamationFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
