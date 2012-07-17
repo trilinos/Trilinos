@@ -75,8 +75,6 @@ namespace MueLu {
     /// SubBlockUnAmalgamationFactory (for generating the UnAmalgamation information)
     RCP<const FactoryBase> UnAmalgamationFact_;
 
-
-
   }; //class CoalesceDropFactory
 
 } //namespace MueLu

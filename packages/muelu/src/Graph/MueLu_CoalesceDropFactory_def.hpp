@@ -43,7 +43,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
-  FactoryMonitor m(*this, "CoalesceDropFactory2", currentLevel);
+  FactoryMonitor m(*this, "CoalesceDropFactory", currentLevel);
   if(predrop_ != Teuchos::null) {
     GetOStream(Parameters0, 0) << predrop_->description();
   }
@@ -87,6 +87,11 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), A->getRowMap()->getIndexBase(), A->getRowMap()->getComm());
   GetOStream(Debug, 0) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
+  /////////////////////// experimental
+  // vector of boundary node GIDs on current proc
+  RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes = Teuchos::rcp(new std::map<GlobalOrdinal,bool>);
+  ////////////////////////////////////
+
   // 4) create graph of amalgamated matrix
   RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);
 
@@ -118,14 +123,32 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       }
     }
 
-    Teuchos::ArrayRCP<GlobalOrdinal> arr_cnodeIds = Teuchos::arcp( cnodeIds );
+    ////////////////// experimental
+    if(gBoundaryNodes->count(nodeId) == 0)
+      (*gBoundaryNodes)[nodeId] = false;  // new node GID (probably no Dirichlet bdry node)
+    if(realnnz == 1)
+      (*gBoundaryNodes)[nodeId] = true; // if there's only one nnz entry the node has some Dirichlet bdry dofs
+    ///////////////////////////////
 
+    Teuchos::ArrayRCP<GlobalOrdinal> arr_cnodeIds = Teuchos::arcp( cnodeIds );
 
     TEUCHOS_TEST_FOR_EXCEPTION(crsGraph->getRowMap()->isNodeGlobalElement(nodeId)==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: global row id does not belong to current proc. Error.");
     crsGraph->insertGlobalIndices(nodeId, arr_cnodeIds());
   }
   // fill matrix graph
   crsGraph->fillComplete(nodeMap,nodeMap);
+
+  ///////////////// experimental
+  LocalOrdinal nLocalBdryNodes = 0;
+  GlobalOrdinal nGlobalBdryNodes = 0;
+  for(typename std::map<GlobalOrdinal,bool>::iterator it = gBoundaryNodes->begin(); it!=gBoundaryNodes->end(); it++) {
+    if ((*it).second == true) {
+      nLocalBdryNodes++;
+    }
+  }
+  Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, nLocalBdryNodes, Teuchos::ptr(&nGlobalBdryNodes) );
+  GetOStream(Debug, 0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # detected Dirichlet boundary nodes = " << nGlobalBdryNodes << std::endl;
+  //////////////////////////////
 
   // 6) create MueLu Graph object
   RCP<Graph> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));

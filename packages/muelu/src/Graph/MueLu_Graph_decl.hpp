@@ -60,6 +60,9 @@ namespace MueLu {
 
     RCP<const CrsGraph> graph_;
 
+    // vector of boundary node GIDs on current proc
+    //RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes_;
+
   };
 
 } // namespace MueLu
