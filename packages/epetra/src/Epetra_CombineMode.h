@@ -74,10 +74,10 @@ enum Epetra_CombineMode {Add,    /*!< Components on the receiving processor
                         Average,/*!< Off-processor components will be
                                      averaged with existing components 
                                      on the receiving processor. (V) */
-                        Max,    /*!< Off-processor components will be
+                        Epetra_Max,    /*!< Off-processor components will be
                                      maxed with existing components 
                                      on the receiving processor. (V) */
-                        Min,    /*!< Off-processor components will be
+                        Epetra_Min,    /*!< Off-processor components will be
                                      min'ed with existing components 
                                      on the receiving processor. (V) */
                         AbsMax, /*!< Magnitudes of Off-processor components will be
