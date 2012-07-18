@@ -73,10 +73,12 @@
 // Epetra includes
 #include "Epetra_Operator.h"
 #include "Epetra_CrsGraph.h"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
 #include "EpetraExt_Transpose_RowMatrix.h"
+#include "EpetraExt_MatrixMatrix.h"
 
 // Anasazi includes
 #include "AnasaziBasicEigenproblem.hpp"
@@ -975,6 +977,31 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
    return explicitOp;
 }
 
+/** \brief Sum an operator
+  *
+  * \returns Matrix sum with a Epetra_CrsMatrix implementation
+  */
+const ModifiableLinearOp explicitSum(const LinearOp & op,
+                                     const ModifiableLinearOp & destOp)
+{
+   // convert operators to Epetra_CrsMatrix
+   const RCP<const Epetra_CrsMatrix> epetraOp =
+         rcp_dynamic_cast<const Epetra_CrsMatrix>(get_Epetra_Operator(*op), true);
+
+   if(destOp==Teuchos::null) {
+      Teuchos::RCP<Epetra_Operator> epetraDest = Teuchos::rcp(new Epetra_CrsMatrix(*epetraOp));
+
+      return Thyra::nonconstEpetraLinearOp(epetraDest);
+   }
+
+   const RCP<Epetra_CrsMatrix> epetraDest =
+         rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*destOp), true);
+
+   EpetraExt::MatrixMatrix::Add(*epetraOp,false,1.0,*epetraDest,1.0);
+
+   return destOp;
+}
+
 const LinearOp explicitTranspose(const LinearOp & op)
 {
    RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
@@ -1356,6 +1383,33 @@ double norm_2(const MultiVector & v,std::size_t col)
    Thyra::norms_2<double>(*v,n);
 
    return n[col];
+}
+
+void putScalar(const ModifiableLinearOp & op,double scalar) 
+{
+   try {
+      // get Epetra_Operator
+      RCP<Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+
+      // cast it to a CrsMatrix
+      RCP<Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<Epetra_CrsMatrix>(eOp,true);
+
+     eCrsOp->PutScalar(scalar);
+   }
+   catch (std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "Teko: putScalar requires an Epetra_CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "           OR\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
 }
 
 }
