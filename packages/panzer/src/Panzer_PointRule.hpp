@@ -67,6 +67,9 @@ namespace panzer {
       */
     PointRule(const std::string & ptName,int np, const panzer::CellData& cell_data);
 
+    //! Destructor (Satisfying the compiler)
+    virtual ~PointRule() {}
+
     void setup(const std::string & ptName,int np, const panzer::CellData& cell_data);
   
     // Returns true if this point rule is for a sideset

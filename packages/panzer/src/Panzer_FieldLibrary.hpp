@@ -57,6 +57,8 @@ namespace panzer {
 
 class FieldLibraryBase {
 public:
+   virtual ~FieldLibraryBase() = 0;
+
    //! Get the basis associated with a particular field.
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const = 0;
 
@@ -66,6 +68,8 @@ public:
    //! Get vector of unique bases contained in this field library
    virtual void basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const = 0;
 };
+
+inline FieldLibraryBase::~FieldLibraryBase() {}
 
 /** There is one of these objects per equation set.
   */

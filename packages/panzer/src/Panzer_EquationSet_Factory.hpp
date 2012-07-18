@@ -62,6 +62,7 @@ namespace panzer {
      Returns an RCP to a newly allocated EquationSet_TemplateManager.  
   */
   struct EquationSetFactory {
+    virtual ~EquationSetFactory() = 0;
 
     virtual Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
     buildEquationSet(const panzer::InputEquationSet& ies,
@@ -70,6 +71,8 @@ namespace panzer {
 		     bool build_transient_support) const = 0;
 
   };
+
+  inline EquationSetFactory::~EquationSetFactory() {}
   
 }
 
