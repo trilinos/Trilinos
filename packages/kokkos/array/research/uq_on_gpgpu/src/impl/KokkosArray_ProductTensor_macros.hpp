@@ -285,8 +285,8 @@ public:
 
 private:
 
-  typedef KokkosArray::MDArray<     size_type, device_type>  map_type ;
-  typedef KokkosArray::MultiVector< value_type,device_type>  vec_type ;
+  typedef KokkosArray::View< size_type[][3] , device_type >  map_type ;
+  typedef KokkosArray::View< value_type[] ,   device_type >  vec_type ;
 
 public:
 
@@ -316,7 +316,7 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type entry_count() const
-  { return m_value.length(); }
+  { return m_value.dimension_0(); }
 
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -330,9 +330,9 @@ public:
 
 private:
 
-  KokkosArray::MDArray< size_type , device_type >       m_coord ;
-  KokkosArray::MultiVector< value_type , device_type >  m_value ;
-  size_type                                        m_dimen ;
+  map_type   m_coord ;
+  vec_type   m_value ;
+  size_type  m_dimen ;
 
   template< class T , class I >
   friend class Impl::CreateSparseProductTensor ;
@@ -350,7 +350,7 @@ public:
 
 private:
 
-  typedef KokkosArray::MultiVector< value_type,device_type>  vec_type ;
+  typedef KokkosArray::View< value_type[] , device_type >  vec_type ;
 
 public:
 
@@ -410,7 +410,7 @@ public:
 private:
 
   KokkosArray::CrsArray< size_type[2] , device_type >   m_coord ;
-  KokkosArray::MultiVector< value_type , device_type >  m_value ;
+  KokkosArray::View< value_type[] , device_type >  m_value ;
   size_type                                        m_entry_max ;
 
   template< class T , class I >

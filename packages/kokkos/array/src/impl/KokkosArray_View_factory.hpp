@@ -293,6 +293,21 @@ create( const std::string & label ,
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+/** \brief  Span of a vector */
+template< typename ValueType , class LayoutSpec , class DeviceType >
+inline
+View< ValueType[] , LayoutSpec , DeviceType >
+view( const View< ValueType[] , LayoutSpec , DeviceType > & input ,
+      const size_t iBeg , const size_t iEnd )
+{
+  typedef typename
+    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
+  
+  typedef View< ValueType[] , LayoutSpec , DeviceType > input_type ;
+
+  return Impl::Factory< void , input_type >::view( input , iBeg , iEnd );
+}
+
 /** \brief  Vector of a multivector */
 template< typename ValueType , class DeviceType >
 inline
@@ -483,27 +498,40 @@ struct Factory< void , View< ValueType[][0] , LayoutLeft , Device > >
 };
 
 /** \brief  Create subview of vectors */
-template< typename ValueType , class Device >
-struct Factory< void , View< ValueType[] , LayoutLeft , Device > >
+template< typename ValueType , class LayoutSpec , class Device >
+struct Factory< void , View< ValueType[] , LayoutSpec , Device > >
 {
   typedef typename StaticAssert< rank<ValueType>::value == 0 >::type ok_rank ;
 
   // The multivector type:
-  typedef View< ValueType[] , LayoutLeft , Device > input_type ;
+  typedef View< ValueType[] , LayoutSpec , Device > input_type ;
 
   typedef typename Device::memory_space memory_space ;
   typedef typename input_type::shape_map shape_map ;
 
   inline static
-  View< ValueType , LayoutLeft , Device >
+  View< ValueType , LayoutSpec , Device >
   view( const input_type & input , const size_t I )
   {
-    View< ValueType , LayoutLeft , Device > output ;
+    View< ValueType , LayoutSpec , Device > output ;
 
     if ( input ) {
-      output.m_ptr_on_device = input.m_ptr_on_device +
-                               shape_map::offset( input.m_shape , I );
+      output.m_ptr_on_device = input.m_ptr_on_device + I ;
+      memory_space::increment( output.m_ptr_on_device );
+    }
 
+    return output ;
+  }
+
+  inline static
+  View< ValueType[] , LayoutSpec , Device >
+  view( const input_type & input , const size_t iBeg , const size_t iEnd )
+  {
+    View< ValueType[] , LayoutSpec , Device > output ;
+
+    if ( input ) {
+      output.m_shape.N0 = iEnd - iBeg ;
+      output.m_ptr_on_device = input.m_ptr_on_device + iBeg ;
       memory_space::increment( output.m_ptr_on_device );
     }
 

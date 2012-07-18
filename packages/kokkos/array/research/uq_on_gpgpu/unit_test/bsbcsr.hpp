@@ -44,8 +44,6 @@
 #ifndef KOKKOS_BSBCSR_HPP
 #define KOKKOS_BSBCSR_HPP
 
-#include <KokkosArray_Cuda_MultiVector.hpp>
-
 namespace KokkosArray {
 
 //----------------------------------------------------------------------------
@@ -171,7 +169,7 @@ public:
   typedef Device                     device_type ;
   typedef typename Device::size_type index_type ;
 
-  typedef MultiVector< index_type , device_type > vector_type ;
+  typedef View< index_type[] , device_type > vector_type ;
 
   index_type  block_system_size ;
   index_type  block_length ;
@@ -188,9 +186,9 @@ class BigSymmetricBlockCSRMultiply ;
 
 template< class Device , typename MatrixScalar , typename VectorScalar >
 void multiply( const BigSymmetricBlockCSRGraph<Device> & A_graph ,
-               const MultiVector<MatrixScalar,Device> & A_coeff ,
-               const MultiVector<VectorScalar,Device> & input ,
-               const MultiVector<VectorScalar,Device> & output )
+               const View<MatrixScalar[],Device> & A_coeff ,
+               const View<VectorScalar[],Device> & input ,
+               const View<VectorScalar[],Device> & output )
 {
   BigSymmetricBlockCSRMultiply< Device , MatrixScalar , VectorScalar >
     ( A_graph , A_coeff , input , output );
@@ -203,8 +201,8 @@ class BigSymmetricBlockCSRMultiply< Cuda , MatrixScalar , VectorScalar > {
 public:
   typedef Cuda::size_type                        index_type ;
   typedef BigSymmetricBlockCSRGraph< Cuda >      graph_type ;
-  typedef MultiVector< MatrixScalar , Cuda > matrix_type ;
-  typedef MultiVector< VectorScalar , Cuda > vector_type ;
+  typedef View< MatrixScalar[] , Cuda > matrix_type ;
+  typedef View< VectorScalar[] , Cuda > vector_type ;
 
   const graph_type  m_graph ;
   const matrix_type m_matrix ;

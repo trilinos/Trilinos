@@ -45,7 +45,6 @@
 #define KOKKOS_BLOCKCRSMATRIX_HPP
 
 #include <KokkosArray_CrsArray.hpp>
-#include <KokkosArray_MultiVector.hpp>
 #include <impl/KokkosArray_Multiply.hpp>
 
 namespace KokkosArray {
@@ -56,7 +55,7 @@ namespace KokkosArray {
  *    m_values( block.size() , m_graph.entry_count() )
  *
  *  Vectors are conformally stored as
- *    MultiVector( block.dimension() , m_graph.row_map.length() )
+ *    View( block.dimension() , m_graph.row_map.length() )
  */
 template< class BlockSpec , typename ValueType , class Device >
 class BlockCrsMatrix {
@@ -66,10 +65,11 @@ public:
   typedef ValueType                           value_type ;
   typedef BlockSpec                           block_spec ;
   typedef CrsArray< size_type , device_type > graph_type ;
+  typedef View< value_type[0][0], LayoutLeft, device_type >  block_vector_type ;
 
-  MultiVector< value_type, device_type >  values ;
-  graph_type                              graph ;
-  block_spec                              block ;
+  block_vector_type  values ;
+  graph_type         graph ;
+  block_spec         block ;
 };
 
 template< class BlockSpec ,
@@ -77,13 +77,13 @@ template< class BlockSpec ,
           typename VectorValueType ,
           class Device >
 void multiply( const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-               const MultiVector<VectorValueType,Device>              & x ,
-               const MultiVector<VectorValueType,Device>              & y )
+               const View<VectorValueType[0][0],LayoutLeft,Device> & x ,
+               const View<VectorValueType[0][0],LayoutLeft,Device> & y )
 {
-  typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device> matrix_type ;
-  typedef MultiVector<VectorValueType,Device>              vector_type ;
+  typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
+  typedef View<VectorValueType[0][0],LayoutLeft,Device>     block_vector_type ;
 
-  Impl::Multiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
+  Impl::Multiply<matrix_type,block_vector_type,block_vector_type>::apply( A , x , y );
 }
 
 //----------------------------------------------------------------------------

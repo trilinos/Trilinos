@@ -48,7 +48,6 @@
 #include <stdexcept>
 #include <string>
 
-#include <KokkosArray_MultiVector.hpp>
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_Host.hpp>
 
@@ -57,9 +56,9 @@
 #include <bbcsr.hpp>
 #include <bsbcsr.hpp>
 
-typedef KokkosArray::BigBlockCRSGraph<KokkosArray::Cuda>       graph_type ;
-typedef KokkosArray::MultiVector< float , KokkosArray::Cuda >  matrix_type ;
-typedef KokkosArray::MultiVector< double , KokkosArray::Cuda > vector_type ;
+typedef KokkosArray::BigBlockCRSGraph<KokkosArray::Cuda>  graph_type ;
+typedef KokkosArray::View< float[] , KokkosArray::Cuda >  matrix_type ;
+typedef KokkosArray::View< double[] , KokkosArray::Cuda > vector_type ;
 
 template< class VectorView >
 void print_vector( const VectorView v )
@@ -121,15 +120,15 @@ void run( int block_count , int block_size )
   graph.block_stride = block_size ; // No alignment consideration
   graph.block_maximum_columns = 1 ;
 
-  graph.block_column_offset = KokkosArray::create_multivector< graph_type::vector_type >( block_count + 1 );
-  graph.block_column_index  = KokkosArray::create_multivector< graph_type::vector_type >( block_count );
+  graph.block_column_offset = KokkosArray::create< graph_type::vector_type >( block_count + 1 );
+  graph.block_column_index  = KokkosArray::create< graph_type::vector_type >( block_count );
 
   const int vector_size = block_count * block_size ;
   const int matrix_size = block_count * block_size * block_size ;
 
-  matrix = KokkosArray::create_multivector< matrix_type >( matrix_size );
-  input  = KokkosArray::create_multivector< vector_type >( vector_size );
-  output = KokkosArray::create_multivector< vector_type >( vector_size );
+  matrix = KokkosArray::create< matrix_type >( matrix_size );
+  input  = KokkosArray::create< vector_type >( vector_size );
+  output = KokkosArray::create< vector_type >( vector_size );
 
   dim3 grid_dim( block_count , 1 , 1 );
   dim3 block_dim( block_size , 1 , 1 );
@@ -229,9 +228,9 @@ void run( const int block_count ,
   const int matrix_size = count * graph.block_stride * graph.block_size ;
 
   graph.block_column_offset =
-    KokkosArray::create_multivector< graph_type::vector_type >( block_count + 1 );
+    KokkosArray::create< graph_type::vector_type >( block_count + 1 );
   graph.block_column_index  =
-    KokkosArray::create_multivector< graph_type::vector_type >( count );
+    KokkosArray::create< graph_type::vector_type >( count );
 
   graph_type::vector_type::HostMirror h_column_offset =
     KokkosArray::mirror_create( graph.block_column_offset );
@@ -251,9 +250,9 @@ void run( const int block_count ,
   KokkosArray::mirror_update( graph.block_column_offset , h_column_offset );
   KokkosArray::mirror_update( graph.block_column_index  , h_column_index );
 
-  matrix = KokkosArray::create_multivector< matrix_type >( matrix_size );
-  input  = KokkosArray::create_multivector< vector_type >( vector_size );
-  output = KokkosArray::create_multivector< vector_type >( vector_size );
+  matrix = KokkosArray::create< matrix_type >( matrix_size );
+  input  = KokkosArray::create< vector_type >( vector_size );
+  output = KokkosArray::create< vector_type >( vector_size );
 
   dim3 grid_dim( block_count , 1 , 1 );
   dim3 block_dim( block_size , 1 , 1 );
@@ -396,9 +395,9 @@ void run( const int block_count ,
   const int matrix_size = count * graph.diag_stride * graph.diag_count ;
 
   graph.block_column_offset =
-    KokkosArray::create_multivector< graph_type::vector_type >( block_count + 1 );
+    KokkosArray::create< graph_type::vector_type >( block_count + 1 );
   graph.block_column_index  =
-    KokkosArray::create_multivector< graph_type::vector_type >( count );
+    KokkosArray::create< graph_type::vector_type >( count );
 
   graph_type::vector_type::HostMirror h_column_offset =
     KokkosArray::mirror_create( graph.block_column_offset );
@@ -418,9 +417,9 @@ void run( const int block_count ,
   KokkosArray::mirror_update( graph.block_column_offset , h_column_offset );
   KokkosArray::mirror_update( graph.block_column_index  , h_column_index );
 
-  matrix = KokkosArray::create_multivector< matrix_type >( matrix_size );
-  input  = KokkosArray::create_multivector< vector_type >( vector_size );
-  output = KokkosArray::create_multivector< vector_type >( vector_size );
+  matrix = KokkosArray::create< matrix_type >( matrix_size );
+  input  = KokkosArray::create< vector_type >( vector_size );
+  output = KokkosArray::create< vector_type >( vector_size );
 
   dim3 grid_dim( block_count , 1 , 1 );
   dim3 block_dim( block_size , 1 , 1 );

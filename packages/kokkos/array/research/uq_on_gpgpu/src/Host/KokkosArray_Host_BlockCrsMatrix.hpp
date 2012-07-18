@@ -50,22 +50,22 @@ namespace Impl {
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
   BlockCrsMatrix< BlockSpec , MatrixValue , Host > ,
-  KokkosArray::MultiVector< VectorValue , Host > ,
-  KokkosArray::MultiVector< VectorValue , Host > >
+  KokkosArray::View< VectorValue[0][0] , LayoutLeft , Host > ,
+  KokkosArray::View< VectorValue[0][0] , LayoutLeft , Host > >
 {
 public:
   typedef Host                                      device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef MultiVector< VectorValue , device_type >  vector_type ;
+  typedef View< VectorValue[0][0] , LayoutLeft , Host > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
 
   const matrix_type  m_A ;
-  const vector_type  m_x ;
-  const vector_type  m_y ;
+  const block_vector_type  m_x ;
+  const block_vector_type  m_y ;
 
   Multiply( const matrix_type & A ,
-            const vector_type & x ,
-            const vector_type & y )
+            const block_vector_type & x ,
+            const block_vector_type & y )
   : m_A( A )
   , m_x( x )
   , m_y( y )
@@ -87,7 +87,7 @@ public:
     const size_type iEntryBegin = m_A.graph.row_map[ iBlockRow ];
     const size_type iEntryEnd   = m_A.graph.row_map[ iBlockRow + 1 ];
 
-    // Leading dimension guaranteed contiguous for MultiVector
+    // Leading dimension guaranteed contiguous for LayoutLeft
     for ( size_type j = 0 ; j < m_A.block.dimension() ; ++j ) { y[j] = 0 ; }
 
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
@@ -99,8 +99,8 @@ public:
   }
 
   static void apply( const matrix_type & A ,
-                     const vector_type & x ,
-                     const vector_type & y )
+                     const block_vector_type & x ,
+                     const block_vector_type & y )
   {
     parallel_for( A.graph.row_map.length() , Multiply(A,x,y) );
   }
