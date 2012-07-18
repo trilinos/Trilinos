@@ -52,7 +52,7 @@ namespace Xpetra {
       : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), maxNumEntriesPerRow, toTpetra(pftype), params))) {  }
 
     //! Constructor specifying (possibly different) number of entries in each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const LocalOrdinal > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
       : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
@@ -60,7 +60,7 @@ namespace Xpetra {
       : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), maxNumEntriesPerRow, toTpetra(pftype), params))) {  }
 
     //! Constructor specifying column Map and number of entries in each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const LocalOrdinal > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
       : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
 
     //! Destructor.
@@ -203,7 +203,7 @@ namespace Xpetra {
     //@{
 
     //! Get an ArrayRCP of the row-offsets.
-    ArrayRCP< const size_t > getNodeRowPtrs() const { XPETRA_MONITOR("TpetraCrsGraph::getNodeRowPtrs"); return graph_->getNodeRowPtrs(); }
+    ArrayRCP< const LocalOrdinal > getNodeRowPtrs() const { XPETRA_MONITOR("TpetraCrsGraph::getNodeRowPtrs"); return graph_->getNodeRowPtrs(); }
 
     //@}
 
