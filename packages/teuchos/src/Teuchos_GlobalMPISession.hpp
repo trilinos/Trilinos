@@ -44,7 +44,7 @@
 
 /*! \file Teuchos_GlobalMPISession.hpp
     \brief A MPI utilities class, providing methods for initializing,
-	finalizing, and querying the global MPI session
+        finalizing, and querying the global MPI session
 */
 #include "Teuchos_ConfigDefs.hpp"
 
@@ -54,29 +54,63 @@
 
 namespace Teuchos {
 
-/** \brief This class provides methods for initializing, finalizing, and
- * querying the global MPI session.
- *
- * This class is primarilly designed to insulate basic <tt>main()</tt>
- * program type of code from having to know if MPI is enabled or not.
- *
- * ToDo: Give examples!
- */
+/// \class GlobalMPISession
+/// \brief Initialize, finalize, and query the global MPI session.
+///
+/// This class insulates basic <tt>main()</tt> program type of code
+/// from having to know if MPI is enabled or not.  The typical use
+/// case is to replace an explicit call to MPI_Init() in your main()
+/// routine with creation of a GlobalMPISession instance.  The
+/// instance's destructor (which in this case will be called at the
+/// end of main()) then calls MPI_Finalize().  So, instead of writing:
+/// \code
+/// int main () {
+///   (void) MPI_Init (&argc, &argv);
+///   // Your code goes here ...
+///   (void) MPI_Finalize ();
+///   return 0;
+/// }
+/// \endcode
+/// you would write:
+/// \code
+/// #include <Teuchos_GlobalMPISession.hpp>
+///
+/// int main () {
+///   Teuchos::GlobalMPISession (&argc, &argv, NULL);
+///   // Your code goes here ...
+///   return 0;
+/// }
+/// \endcode
+/// This saves you from needing to remember to call MPI_Init() or
+/// MPI_Finalize().  GlobalMPISession cleverly checks whether MPI has
+/// been initialized already before calling MPI_Init(), so you can use
+/// it in your libraries without needing to know whether users have
+/// called MPI_Init() yet.
+///
+/// This class even works if you have not built Trilinos with MPI
+/// support.  In that case, it behaves as if MPI_COMM_WORLD had one
+/// process, which is always the calling process.  Thus, you can use
+/// this class to insulate your code from needing to know about MPI.
+/// You don't even have to include mpi.h, as long as your code doesn't
+/// directly use MPI routines or types.  Teuchos implements wrappers
+/// for MPI communicators (see Comm and its subclasses) which allow
+/// you to use a subset of MPI functionality without needing to
+/// include mpi.h or depend on MPI in any way.
 class TEUCHOS_LIB_DLL_EXPORT GlobalMPISession
 {
 public:
-  
-  //! @name Public constructor and destructor 
+
+  //! @name Public constructor and destructor
   //@{
-  
+
   /** \brief Calls <tt>MPI_Init()</tt> if MPI is enabled.
    *
    * \param argc  [in] Argment passed into <tt>main(argc,argv)</tt>
    * \param argv  [in] Argment passed into <tt>main(argc,argv)</tt>
    * \param out   [in] If <tt>out!=NULL</tt>, then a small message on each
-   *              processor will be printed to this stream.  The default is 
+   *              processor will be printed to this stream.  The default is
    *              <tt>&std::cout</tt>.
-   * 
+   *
    * If the option <tt>--teuchos-suppress-startup-banner</tt> is found, the
    * this option will be removed from <tt>argv[]</tt> before being passed to
    * <tt>MPI_Init(...)</tt> and the startup output message to <tt>*out</tt>
@@ -86,19 +120,19 @@ public:
    * just prints a startup banner (unless the banner was suppressed --
    * see previous paragraph).  You can always use this class, whether
    * or not Teuchos was built with MPI.
-   * 
+   *
    * \warning This constructor can only be called once per executable.
    *   Otherwise, an error is printed to <tt>*out</tt> and an
    *   std::exception will be thrown!
    */
   GlobalMPISession( int* argc, char*** argv, std::ostream *out = &std::cout );
-  
+
   //! Call <tt>MPI_Finalize()</tt> if MPI is enabled.
   ~GlobalMPISession();
-    
+
   //@}
-    
-  //! @name Static functions 
+
+  //! @name Static functions
   //@{
 
   //! Return whether MPI was initialized.
@@ -106,7 +140,7 @@ public:
 
   //! Return whether MPI was already finalized.
   static bool mpiIsFinalized();
-  
+
   /** \brief Returns the process rank relative to <tt>MPI_COMM_WORLD</tt>
    *
    * Returns <tt>0</tt> if MPI is not enabled.
@@ -127,11 +161,11 @@ public:
    * (but it must have been called somewhere).
    */
   static int getNProc();
-  
+
   //@}
-  
+
 private:
-  
+
   static bool haveMPIState_;
   static bool mpiIsFinalized_;
   static int rank_;
