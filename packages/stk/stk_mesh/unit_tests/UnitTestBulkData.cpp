@@ -1436,5 +1436,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     // On extra procs, do bare minimum
     mesh.modification_begin();
     mesh.modification_end();
+    mesh.modification_begin();
+    mesh.modification_end();
   }
 }
