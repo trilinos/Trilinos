@@ -135,11 +135,13 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     numNew.doImport(numOld, importer, Tpetra::INSERT);
 
     // TODO Could skip this copy if could declare vector with scalar = size_t.
-    ArrayRCP<size_t> nnz(newNumElts);
+    // ArrayRCP<size_t> nnz(newNumElts);   FIX_LATER
+    ArrayRCP<lno_t> nnz(newNumElts);
     if (newNumElts > 0){
       ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
       for (int lid=0; lid < newNumElts; lid++){
-        nnz[lid] = static_cast<size_t>(ptr[lid]);
+        // nnz[lid] = static_cast<size_t>(ptr[lid]);   FIX_LATER
+        nnz[lid] = static_cast<lno_t>(ptr[lid]);
       }
     }
 

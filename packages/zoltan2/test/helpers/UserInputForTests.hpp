@@ -814,10 +814,12 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
   int vwgt_dim=0, ewgt_dim=0;
   int *start = NULL, *adj = NULL;
   float *ewgts = NULL, *vwgts = NULL;
-  size_t *nzPerRow = NULL;
+  // size_t *nzPerRow = NULL;  FIX_LATER
+  lno_t *nzPerRow = NULL;
   int maxRowLen = 0;
   gno_t base = 0;
-  ArrayRCP<const size_t> rowSizes;
+  // ArrayRCP<const size_t> rowSizes;   FIX_LATER
+  ArrayRCP<const lno_t> rowSizes;
   int fail = 0;
   bool haveEdges = true;
 
@@ -861,7 +863,8 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
     if (haveEdges)
       nedges = start[nvtxs];
 
-    nzPerRow = new size_t [nvtxs];
+    // nzPerRow = new size_t [nvtxs];   FIX_LATER
+    nzPerRow = new lno_t [nvtxs];
     if (!nzPerRow)
       throw std::bad_alloc();
     rowSizes = arcp(nzPerRow, 0, nvtxs, true);
@@ -874,7 +877,8 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
       }
     }
     else{
-      memset(nzPerRow, 0, sizeof(size_t) * nvtxs);
+      // memset(nzPerRow, 0, sizeof(size_t) * nvtxs);   FIX_LATER
+      memset(nzPerRow, 0, sizeof(lno_t) * nvtxs); 
     }
 
     if (haveEdges){
