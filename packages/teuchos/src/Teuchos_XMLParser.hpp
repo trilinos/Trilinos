@@ -140,6 +140,10 @@ namespace Teuchos
        */
       void getReference(std::string &refstr);
 
+      /** \brief Ignore the rest of an XML declaration tag. 
+       */
+      void ignoreXMLDeclaration();
+
       /** \brief Determines if the next character on the stream 
        *
        *  @param cexp
