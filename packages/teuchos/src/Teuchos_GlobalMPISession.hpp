@@ -105,11 +105,17 @@ public:
 
   /** \brief Calls <tt>MPI_Init()</tt> if MPI is enabled.
    *
-   * \param argc  [in] Argment passed into <tt>main(argc,argv)</tt>
-   * \param argv  [in] Argment passed into <tt>main(argc,argv)</tt>
-   * \param out   [in] If <tt>out!=NULL</tt>, then a small message on each
-   *              processor will be printed to this stream.  The default is
-   *              <tt>&std::cout</tt>.
+   * \param argc [in] Address of the argument passed into
+   *   <tt>main(argc,argv)</tt>.  Same as the first argument of
+   *   MPI_Init().
+   *
+   * \param argv [in] Address of the argument passed into
+   *   <tt>main(argc,argv)</tt>.  Same as the second argument of
+   *   MPI_Init().
+   *
+   * \param out [in] If <tt>out!=NULL</tt>, then a small message on each
+   *            processor will be printed to this stream.  The default is
+   *            <tt>&std::cout</tt>.
    *
    * If the option <tt>--teuchos-suppress-startup-banner</tt> is found, the
    * this option will be removed from <tt>argv[]</tt> before being passed to
