@@ -21,7 +21,6 @@ DirectSolver
 TrilinosSmoother
 MergedSmoother
 CoalesceDropFactory
-CoalesceDropFactory2
 PreDropFunctionBaseClass
 PreDropFunctionConstVal
 NullspaceFactory
@@ -40,4 +39,4 @@ BraessSarazinSmoother
 AggregationExportFactory
 MultiVectorTransferFactory
 PermutedTransferFactory
-SubBlockAggregationFactory
+SubBlockUnAmalgamationFactory

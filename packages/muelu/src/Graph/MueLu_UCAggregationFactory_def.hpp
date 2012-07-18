@@ -22,6 +22,7 @@ namespace MueLu {
     //if(currentLevel.IsAvailable("Aggregates",this)) return; //TODO: Why??????
 
     currentLevel.DeclareInput("Graph", graphFact_.get(), this); // we should request data...
+    //currentLevel.DeclareInput("UnAmalgamationInfo", graphFact_.get(), this); // TODO, only provided by CoalesceDropFactory2
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
@@ -40,6 +41,10 @@ namespace MueLu {
       // Level Get
       RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
       
+      //if(currentLevel.IsAvailable("UnAmalgamationInfo", graphFact_.get())) {
+      //  RCP<const AmalgamationInfo> graph = currentLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", graphFact_.get());
+      //}
+
       // Build
       aggregates = rcp(new Aggregates(*graph)); 
       aggregates->setObjectLabel("UC");

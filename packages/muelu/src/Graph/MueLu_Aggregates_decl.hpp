@@ -8,7 +8,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
 
 #include "MueLu_Graph_fwd.hpp"
 
@@ -53,54 +52,22 @@ namespace MueLu {
      
     LO GetNumAggregates() const           { return nAggregates_;        } // rename GetNumLocal ?
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
-    RCP<LOVector> & GetVertex2AggId()     { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
-    RCP<LOVector> & GetProcWinner()       { return procWinner_;         }
+    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
+    RCP<LOVector> & GetProcWinnerNonConst()       { return procWinner_;         }
+    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
+    const RCP<LOVector> & GetProcWinner() const   { return procWinner_;         }
+
     bool IsRoot(LO i) const               { return isRoot_[i];          } // Local
     void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } // Local
     
     const RCP<const Map> GetMap() const { return vertex2AggId_->getMap(); }
 
-    const RCP<const Map> GetDofMap()  const { return importDofMap_; }
-
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const; //ComputeAggSizesNodes
-
-    /*! @brief Compute sizes of all the aggregates.
-
-      returns the number of nodes in each aggregate in an array.
-
-    - FIXME Is this dangerous, i.e., could the user change this?
-    */
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizesNodes() const; //ComputeAggSizesNodes
-
-    /*! @brief Compute sizes of all the aggregates.
-
-      returns the number of DOFs in each aggregate in an array.
-
-    - FIXME Is this dangerous, i.e., could the user change this?
-    */
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizesDofs() const; //ComputeAggSizesDofs
-
-    /*! @brief Compute lookup table that provides DOFs belonging to a given table */
-    void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GO> > &aggToRowMap) const; //AggregateToRowMap
-
-    /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
-
-    @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
-
-    This routine only works for DOF = NODE (i.e. 1 DOF per node)
-
-    */
-    void ComputeAggregateToRowMapNodes(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GO> > &aggToRowMap) const; //AggregateToRowMapNodes
-
-    /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
-
-    @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
-
-    This routine makes use of the amalgamation routine and should be able to handle #DOFs per node > 1
-    Prerequisite is that globalamalblockid2myrowid_ in amalgamationData_ is set by the amalgamation method.
-    */
-    void ComputeAggregateToRowMapDofs(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GO> > &aggToRowMap) const;
-
+    /*! @brief Compute sizes of aggregates
+     * 
+     * returns the number of nodes in each aggregate in an array.
+     * 
+     */
+    Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const;
 
     //! @name Overridden from Teuchos::Describable 
     //@{
@@ -111,16 +78,6 @@ namespace MueLu {
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
-
-    // gives access to amalgamation information container
-    // TODO: we probably do not need this (can go away or set to private)
-    const RCP<AmalgamationInfo> & GetAmalgamationInfo() const {
-      return amalgamationData_;
-    }
-
-    //! generate overlapping import map (DOFs)
-    // TODO: make this private
-    void GenerateImportDofMap() const;
 
   private:
     LO   nAggregates_;              /* Number of aggregates on this processor  */
@@ -143,10 +100,6 @@ namespace MueLu {
     //! Get global number of aggregates
     // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
     GO GetNumGlobalAggregates() const;
-
-    mutable RCP<const Map> importDofMap_; // dof map for overlapping nullspace (needed by TentativePFactory)
-
-    RCP<AmalgamationInfo> amalgamationData_; // struct for amalgamation information
   };
 
 } //namespace MueLu

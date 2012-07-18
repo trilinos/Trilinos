@@ -8,6 +8,7 @@
 #include "MueLu_LocalAggregationAlgorithm.hpp"
 #include "MueLu_LeftoverAggregationAlgorithm.hpp"
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 
 namespace MueLu {

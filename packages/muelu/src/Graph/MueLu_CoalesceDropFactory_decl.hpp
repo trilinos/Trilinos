@@ -16,6 +16,8 @@
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_SubBlockUnAmalgamationFactory_fwd.hpp"
 #include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
 
 namespace MueLu {
@@ -41,7 +43,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
+    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
     virtual ~CoalesceDropFactory() { }
@@ -53,58 +55,25 @@ namespace MueLu {
 
     void DeclareInput(Level &currentLevel) const;
 
-    /// set variable block size
-    void SetVariableBlockSize();
-
     /// set predrop function
     void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop);
-
-    // todo: method that takes a block map...
 
     //@}
 
     void Build(Level &currentLevel) const; // Build
 
-    void Amalgamate(const RCP<Operator>& A, const LocalOrdinal blocksize, const GlobalOrdinal offset, RCP<Graph>& graph) const; // Amalgamate
+
 
   private:
-
-    //! translate global (row/column) id to global amalgamation block id
-    // @param gid (GlobalOrdinal): input global id (row gid or column gid)
-    // @param A: input operator (just used to check the maps for validity)
-    // @param globalgid2globalamalblockid_vector: Xpetra vector which holds block amalgamation gids for all column gids (vector lives on overlapping column map of A! needed for variable block size)
-    // @param blockSize (LocalOrdinal): block size (needed for constant block size)
-    // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
-    GlobalOrdinal GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<GOVector>& globalgid2globalamalblockid_vector, LocalOrdinal blockSize, const GlobalOrdinal offset = 0) const;
-
-    //! setup amalgamation data
-    // This routine fills the private members lobalamalblockid2myrowid_ and lobalamalblockid2globalrowid_
-    // These are then used in Graph and Aggregates for unamalgamation
-    // @param A: input operator (just used to check the maps for validity)
-    // @param globalgid2globalamalblockid_vector: Xpetra vector which holds block amalgamation gids for all column gids (vector lives on overlapping column map of A! needed for variable block size)
-    // @param blockSize (LocalOrdinal): block size (needed for constant block size)
-    // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
-    // returns amalgamated map
-    const Teuchos::RCP<Map> SetupAmalgamationData(const RCP<Operator>& A, const RCP<GOVector>& globalgid2globalamalblockid_vector, LocalOrdinal blockSize, const GlobalOrdinal offset = 0) const;
 
     //! A Factory
     RCP<const FactoryBase> AFact_;
 
-    //! nullspace factory
-    //! The nullspace dimension is necessary for setting the block size in amalgamation routine
-    RCP<const FactoryBase> nullspaceFact_;
-
-    /// are we doing fixed or variable blocks
-    mutable bool fixedBlkSize_;
-
-    /// blocksize vector for variable blocksize setup
-    mutable RCP<GOVector> blkSizeInfo_; // lives on overlapping column map of A
-
     /// pre-drop function
     RCP<PreDropFunctionBaseClass> predrop_;
 
-    /// amalgamation information
-    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid_;
+    /// SubBlockUnAmalgamationFactory (for generating the UnAmalgamation information)
+    RCP<const FactoryBase> UnAmalgamationFact_;
 
   }; //class CoalesceDropFactory
 

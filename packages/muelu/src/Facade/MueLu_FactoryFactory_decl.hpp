@@ -21,7 +21,9 @@
 #include "MueLu_CoalesceDropFactory.hpp" //TMP
 #include "MueLu_RAPFactory.hpp" //TMP
 #include "MueLu_TransPFactory.hpp" //TMP
+#include "MueLu_GenericRFactory.hpp" //TMP
 #include "MueLu_SaPFactory.hpp" //TMP
+#include "MueLu_PgPFactory.hpp" //TMP
 #include "MueLu_TrilinosSmoother.hpp" //TMP
 #include "MueLu_SmootherFactory.hpp" //TMP
 #include "MueLu_TentativePFactory.hpp" //TMP
@@ -149,7 +151,7 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("A", AFact);
       MUELU_FACTORY_PARAM("Nullspace", NullspaceFact);
 
-      return rcp(new CoalesceDropFactory(AFact, NullspaceFact));
+      return rcp(new CoalesceDropFactory(AFact/*, NullspaceFact*/));
     }
 
     //! TentativePFactory
@@ -157,8 +159,8 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("Aggregates", AggFact);
       MUELU_FACTORY_PARAM("Nullspace",  NullspaceFact);
       MUELU_FACTORY_PARAM("A", AFact);
-
-      return rcp(new TentativePFactory(AggFact, NullspaceFact, AFact));
+      MUELU_FACTORY_PARAM("UnAmalgamationInfo", GraphFact);
+      return rcp(new TentativePFactory(AggFact, GraphFact, NullspaceFact, AFact));
     }
     
     //! SaPFactory
@@ -176,6 +178,20 @@ namespace MueLu {
       return f;
     }
 
+    //! PgPFactory
+    RCP<FactoryBase> BuildPgPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
+        return rcp(new PgPFactory());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "PgPFactory", Exceptions::RuntimeError, "");
+      MUELU_FACTORY_PARAM("InitialP", InitialPFact);
+      MUELU_FACTORY_PARAM("A", AFact);
+
+      RCP<PgPFactory> f = rcp(new PgPFactory(InitialPFact, AFact));
+
+      return f;
+    }
+
     //! TransPFactory
     RCP<FactoryBase> BuildTransPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
 //       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
@@ -185,6 +201,16 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("P", PFact);
 
       return rcp(new TransPFactory(PFact));
+    }
+
+    //! GenericRFactory
+    RCP<FactoryBase> BuildGenericRFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "GenericRFactory", Exceptions::RuntimeError, "");
+      MUELU_FACTORY_PARAM("P", PPFact);
+      Teuchos::RCP<PFactory> PFact = PFact = Teuchos::rcp_const_cast<PFactory>(Teuchos::rcp_dynamic_cast<const PFactory>(PPFact));
+
+      return rcp(new GenericRFactory(PFact));
     }
 
     //! RaPFactory

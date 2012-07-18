@@ -25,19 +25,39 @@
 #include "MueLu_HierarchyHelpers.hpp"
 #include "MueLu_SmootherBase.hpp"
 
+// include files for default FactoryManager
+#include "MueLu_SchurComplementFactory.hpp"
+#include "MueLu_DirectSolver.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_FactoryManager.hpp"
+
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega, RCP<FactoryBase> AFact)
+  BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega, RCP<const FactoryBase> AFact)
     : type_("Braess Sarazin"), nSweeps_(sweeps), omega_(omega), AFact_(AFact), A_(Teuchos::null)
   {
+    RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory(AFact_,omega));
+
+    // define smoother/solver for BraessSarazin
+    Teuchos::ParameterList SCparams;
+    std::string SCtype;
+    RCP<SmootherPrototype> smoProtoSC     = rcp( new DirectSolver(SCtype,SCparams,SchurFact) );
+
+    RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
+
+    FactManager_ = rcp(new FactoryManager());
+    FactManager_->SetFactory("A", SchurFact);
+    FactManager_->SetFactory("Smoother", SmooSCFact);
+    FactManager_->SetIgnoreUserData(true);
+
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~BraessSarazinSmoother() {}
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager) {
+  void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactoryManager(RCP<FactoryManager> FactManager) {
     FactManager_ = FactManager;
   }
 
@@ -46,6 +66,8 @@ namespace MueLu {
     //Global A operator for getting the blocks.
     currentLevel.DeclareInput("A", AFact_.get());
     //Smoother for the Schur complement.
+    // TODO check if FactManger_ is not Teuchos::null
+    TEUCHOS_TEST_FOR_EXCEPTION(FactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::DeclareInput: FactManager_ must not be Teuchos::null! error.");
     currentLevel.DeclareInput("PreSmoother",FactManager_->GetFactory("PreSmoother").get());
   }
 
@@ -61,13 +83,13 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup blocked Braess-Sarazin Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called";
+            this->GetOStream(Warnings0, 0) << "Warning: MueLu::BreaessSarazinSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = currentLevel.Get<RCP<Operator> > ("A", AFact_.get());
 
     RCP<BlockedCrsOperator> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperator>(A_);
-    TEUCHOS_TEST_FOR_EXCEPTION(bA == Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: input matrix A is not of type BlockedCrsOperator! error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bA == Teuchos::null, Exceptions::BadCast, "MueLu::BraessSarazinSmoother::Setup: input matrix A is not of type BlockedCrsOperator! error.");
 
     // store map extractors
     rangeMapExtractor_ = bA->getRangeMapExtractor();
@@ -94,7 +116,7 @@ namespace MueLu {
     //******************************************************************
     // Create the inverse of the diagonal of F
 
-    // DA: it is better if diagFinv_ is a vector, so as to be used in apply, eq 8.13
+    // it is better if diagFinv_ is a vector, so as to be used in apply, eq 8.13
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());
     F_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
     diagFVector->reciprocal(*diagFVector);    // build reciprocal
@@ -120,7 +142,7 @@ namespace MueLu {
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
 
-#define PRINT_RESIDUAL 1
+#define PRINT_RESIDUAL 0
 #if PRINT_RESIDUAL
      //This is necessary to print out the residual
      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> normsvel(1);
@@ -150,11 +172,10 @@ namespace MueLu {
       //print the norm
       rvel->norm2(normsvel);
       rpre->norm2(normspre);
-      //This format is in such a way it can be used for plotting.
+      // This format is in such a way it can be used for plotting.
       this->GetOStream(Runtime0, 0) << run << "\t" << normsvel[0] << "\t" << normspre[0] << std::endl;
 #endif
 
-      //DA: What does this do?
       Teuchos::RCP<MultiVector> tXvel = domainMapExtractor_->ExtractVector(rcpX, 0);
       Teuchos::RCP<MultiVector> tXpre = domainMapExtractor_->ExtractVector(rcpX, 1);
 

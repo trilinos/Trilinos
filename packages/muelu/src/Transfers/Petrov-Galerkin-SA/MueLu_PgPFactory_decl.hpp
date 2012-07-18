@@ -43,7 +43,7 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    PgPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null);
+    PgPFactory(RCP</*PFactory*/const FactoryBase> InitialPFact = Teuchos::null, RCP< const FactoryBase /* SingleLevelFactoryBase*/> AFact = Teuchos::null);
 
     //! Destructor.
     virtual ~PgPFactory();
@@ -104,8 +104,10 @@ namespace MueLu {
   private:
 
     //! Input factories
-    RCP<PFactory> initialPFact_;        //! Ptentative Factory
-    RCP<SingleLevelFactoryBase> AFact_; //! A Factory
+    //RCP<PFactory> initialPFact_;        //! Ptentative Factory
+    RCP<const FactoryBase> initialPFact_;        //! Ptentative Factory
+    //RCP<SingleLevelFactoryBase> AFact_; //! A Factory
+    RCP<const FactoryBase> AFact_; //! A Factory
 
     //! Factory parameters
     std::string diagonalView_;

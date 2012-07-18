@@ -79,7 +79,6 @@ namespace MueLu {
 
 
   private:
-    //RCP<const FactoryManagerBase>       FactManager_;           //!< Factory manager for setting the schur complement
     Teuchos::RCP<const FactoryBase>     AFact_;                 ///< generating factory of input variable (blocked A operator)
 
     Scalar                              omega_;         ///< damping parameter
