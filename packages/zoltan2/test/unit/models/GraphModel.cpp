@@ -123,7 +123,6 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     fail = 1;
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "Creating xpetra graph model", 1)
-return;
 
   // Test the GraphModel interface
 
@@ -237,7 +236,6 @@ return;
 
   // Get graph restricted to this process
 
-
   delete model;
 
   if (rank==0) std::cout << "    OK" << std::endl;
@@ -293,8 +291,8 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     "Graph with non-consecutive IDs");
 
   checkModel(Mnonconsec, comm, consecutiveIds, noSelfEdges);
-//  checkModel(Mnonconsec, comm, !consecutiveIds, !noSelfEdges);
-//  checkModel(Mnonconsec, comm, !consecutiveIds, noSelfEdges);
+  checkModel(Mnonconsec, comm, !consecutiveIds, !noSelfEdges);
+  checkModel(Mnonconsec, comm, !consecutiveIds, noSelfEdges);
 
   delete input;
 }

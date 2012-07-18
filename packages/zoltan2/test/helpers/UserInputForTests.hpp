@@ -469,13 +469,15 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
     std::cout << "UserInputForTests, Read: " << 
       shortPathName(fname, "test") << std::endl;
 
-  // This reader has some problems.  Until fixed, don't give
-  // up everything when the Reader fails. (Tpetra bug 5611)
+  // This reader has some problems.  "Pattern" matrices
+  // cannot be read.  Until the
+  // reader is fixed, we'll have to get inputs that are consistent with
+  // the reader. (Tpetra bug 5611 and 5624)
  
   bool aok = true;
   try{
     M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-      fname.str(), tcomm_, dnode, true, true);
+      fname.str(), tcomm_, dnode, true, true, true);
   }
   catch (std::exception &e) {
     //TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
@@ -498,7 +500,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   fname << path << "/" << testData << "_coord.mtx";
 
   size_t coordDim = 0, numGlobalCoords = 0;
-  size_t msg[2];
+  size_t msg[2]={0,0};
   ArrayRCP<ArrayRCP<scalar_t> > xyz;
   std::ifstream coordFile;
 
@@ -583,7 +585,6 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   }
 
   // Broadcast coordinate dimension
-
   Teuchos::broadcast<int, size_t>(*tcomm_, 0, 2, msg);
 
   coordDim = msg[0];

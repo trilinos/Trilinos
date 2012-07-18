@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test/helpers)
 
 
-#ADD_SUBDIRECTORIES(
-  #block
-  #geometric
-#)
+ADD_SUBDIRECTORIES(
+  block
+  geometric
+)

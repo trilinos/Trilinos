@@ -37,10 +37,7 @@
  */
 #cmakedefine SHOW_ZOLTAN2_SCOTCH_MEMORY
 
-/* Define if this platform has data type "long long"
- *  and Teuchos was compiled to support "long long".
- *  Because of our heavy dependence on Teuchos, we
- *  can't use LONG_LONG unless Teuchos is using it.
+/* Define if Teuchos was compiled to support "long long".
  */
 #cmakedefine HAVE_ZOLTAN2_LONG_LONG
 
