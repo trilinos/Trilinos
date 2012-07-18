@@ -335,7 +335,7 @@ PerformanceData run( comm::Machine machine ,
   {
     const unsigned X = 0;
     for (int inode = 0; inode< mesh_fields.num_nodes; ++inode) {
-      if ( mesh.node_coords(inode,X) == 0) {
+      if ( model_coords_h(inode,X) == 0) {
         velocity_h(inode,X,0) = 1.0e3;
         velocity_h(inode,X,1) = 1.0e3;
       }

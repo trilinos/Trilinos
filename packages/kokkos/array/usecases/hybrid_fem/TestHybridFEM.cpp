@@ -184,9 +184,10 @@ void run( const std::string & argline , comm::Machine machine )
               << "    host NumNumaNode NumThreadPerNode <test>" << std::endl
               << "    cuda <test>" << std::endl
               << "where <test> is" << std::endl
-              << "    fixture  NumX NumY NumZ" << std::endl
-              << "    implicit NumNodeBegin NumNodeEnd NumRun" << std::endl 
-              << "    nonlinear NumNodeBegin NumNodeEnd NumRun" << std::endl ;
+              << "    fixture   NumX NumY NumZ" << std::endl
+              << "    implicit  NumNodeBegin NumNodeEnd NumRun" << std::endl 
+              << "    nonlinear NumNodeBegin NumNodeEnd NumRun" << std::endl 
+              << "    explicit  NumNodeBegin NumNodeEnd NumRun" << std::endl ;
 
   }
 }

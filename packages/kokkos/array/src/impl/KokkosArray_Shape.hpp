@@ -899,8 +899,7 @@ struct Factory<Shape<LayoutRight,T,0,0>,MemorySpace> {
   inline static
   output_type create()
   {
-    output_type shape ;
-    return shape ;
+    return output_type();
   }
 };
 
@@ -912,8 +911,7 @@ struct Factory<Shape<LayoutRight,T,0,1>,MemorySpace> {
   inline static
   output_type create()
   {
-    output_type shape ;
-    return shape ;
+    return output_type();
   }
 };
 
