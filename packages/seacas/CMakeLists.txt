@@ -32,6 +32,10 @@ IF (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}Nemspread AND ${PROJECT_NAME}_ENABLE_$
   ADD_SUBDIRECTORY(scripts)
 ENDIF()
 
+TRIBITS_EXCLUDE_FILES(
+  doc
+  )
+  
 #
 # D) Do standard postprocessing
 #
