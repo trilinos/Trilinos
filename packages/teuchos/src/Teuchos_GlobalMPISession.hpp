@@ -48,9 +48,6 @@
 */
 #include "Teuchos_ConfigDefs.hpp"
 
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
 
 namespace Teuchos {
 
