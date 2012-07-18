@@ -368,6 +368,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
     if (numElts > 0)
       nnz = numNew.getData(0);    // hangs if vector len == 0
 
+#ifdef FIX_LATER
     ArrayRCP<const size_t> nnz_size_t;
 
     if (numElts && sizeof(gno_t) != sizeof(size_t)){
@@ -383,6 +384,24 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
 
     // target graph
     RCP<tgraph_t> G = rcp(new tgraph_t(tmap, nnz_size_t, Tpetra::StaticProfile));
+#else
+    ArrayRCP<const lno_t> nnz_lno_t;
+
+    if (numElts && sizeof(gno_t) != sizeof(lno_t)){
+      lno_t *vals = new lno_t [numElts];
+      nnz_lno_t = arcp(vals, 0, numElts, true);
+      for (lno_t i=0; i < numElts; i++){
+        vals[i] = static_cast<lno_t>(nnz[i]);
+      }
+    }
+    else{
+      nnz_lno_t = arcp_reinterpret_cast<const lno_t>(nnz);
+    }
+
+    // target graph
+    RCP<tgraph_t> G = rcp(new tgraph_t(tmap, nnz_lno_t, Tpetra::StaticProfile));
+#endif
+
     G->doImport(*from, importer, Tpetra::INSERT);
     G->fillComplete();
 
