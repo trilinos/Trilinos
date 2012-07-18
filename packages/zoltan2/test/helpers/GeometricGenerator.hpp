@@ -13,6 +13,7 @@
 #include <Tpetra_MultiVector_decl.hpp>
 #include <Zoltan2_XpetraMultiVectorInput.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Teuchos_ArrayViewDecl.hpp>
 
 enum shape {SQUARE, RECTANGLE, CIRCLE, CUBE, RECTANGULAR_PRISM, SPHERE};
 const std::string shapes[] = {"SQUARE", "RECTANGLE", "CIRCLE", "CUBE", "RECTANGULAR_PRISM", "SPHERE"};
@@ -28,6 +29,9 @@ const std::string distribution[] = {"distribution", "uniform"};
 
 #define INVALID_SHAPE_ARG(SHAPE, REQUIRED) "Invalid argument count for shape " + SHAPE + ". Requires " + REQUIRED + " argument(s)."
 #define MAX_ITER_ALLOWED 500
+
+const std::string equation_with_step_function = "STEPPEDEQUATION";
+const std::string equation_with_step_function_parameters = equation_with_step_function + "-";
 template <typename T>
 struct CoordinatePoint {
 	T x;
@@ -133,6 +137,146 @@ public:
 	}
 };
 
+template <typename T, typename weighttype>
+class WeightDistribution{
+public:
+	virtual weighttype getWeight(CoordinatePoint<T> P)=0;
+	virtual weighttype get1DWeight(T x)=0;
+	virtual weighttype get2DWeight(T x, T y)=0;
+	virtual weighttype get3DWeight(T x, T y, T z)=0;
+	WeightDistribution(){};
+	virtual ~WeightDistribution(){};
+};
+
+/**
+ * Expression is a generic following method.
+ * a1 (x - x1)^b1 + a2 (y - y1)^b2 + a3 (z - z1)^b3 + c = expression_result
+ * if step values are given expression result is applied to a step function as following.
+ * expression_result	< step1		value1
+ * 						< step2		value2
+ * 						< step3		value3
+ * 						< step4		value4
+ *
+ * 						Default values,
+ * 							c=1
+ * 							a1=a2=a3=0
+ * 							x'=y'=z'=0
+ * 							b1=b2=b3=0
+ * 							steps = NULL
+ * 							vals = NULL
+ *
+ */
+template <typename T, typename weighttype>
+class SteppedEquation:public WeightDistribution<T, weighttype>{
+	T a1,a2,a3;
+	T b1,b2,b3;
+	T c;
+	T x1,y1,z1;
+
+	T *steps;
+	weighttype *values;
+	int stepCount;
+public:
+	SteppedEquation(T a1_, T a2_, T a3_, T b1_, T b2_, T b3_, T c_, T x1_, T y1_, T z1_, T *steps_, T *values_, int stepCount_):WeightDistribution<T,weighttype>(){
+		this->a1 = a1_;
+		this->a2 = a2_;
+		this->a3 = a3_;
+		this->b1 = b1_;
+		this->b2 = b2_;
+		this->b3 = b3_;
+		this->c = c_;
+		this->x1 = x1_;
+		this->y1 = y1_;
+		this->z1 = z1_;
+
+		this->stepCount = stepCount_;
+		if(this->stepCount > 0){
+			this->steps = new T[this->stepCount];
+			this->values = new T[this->stepCount + 1];
+
+			for (int i = 0; i < this->stepCount; ++i){
+				this->steps[i] = steps_[i];
+				this->values[i] = values_[i];
+			}
+			this->values[this->stepCount] = values_[this->stepCount];
+		}
+
+	}
+
+	virtual ~SteppedEquation(){
+		if(this->stepCount > 0){
+			delete [] this->steps;
+			delete [] this->values;
+		}
+	}
+
+
+	virtual weighttype get1DWeight(T x){
+		T expressionRes = this->a1 * pow( (x - this->x1), b1);
+		if(this->stepCount > 0){
+			for (int i = 0; i < this->stepCount; ++i){
+				if (expressionRes < this->steps[i]) return this->values[i];
+			}
+			return this->values[this->stepCount];
+		}
+		else {
+			return weighttype(expressionRes);
+		}
+	}
+
+	virtual weighttype get2DWeight(T x, T y){
+		T expressionRes = this->a1 * pow( (x - this->x1), b1) + this->a2 * pow( (y - this->y1), b2);
+		if(this->stepCount > 0){
+			for (int i = 0; i < this->stepCount; ++i){
+				if (expressionRes < this->steps[i]) return this->values[i];
+			}
+			return this->values[this->stepCount];
+		}
+		else {
+			return weighttype(expressionRes);
+		}
+	}
+
+	void print (T x, T y, T z){
+		cout << this->a1 << "*" <<  "math.pow( (" << x  << "- " <<  this->x1 << " ), " << b1 <<")" << "+" <<  this->a2<< "*"<<  "math.pow( (" << y << "-" <<  this->y1 << "), " <<
+				b2 << " ) + " << this->a3 << " * math.pow( (" << z << "-" <<  this->z1 << "), " << b3 << ")+ " << c << " == " <<
+				this->a1 * pow( (x - this->x1), b1) + this->a2 * pow( (y - this->y1), b2) + this->a3 * pow( (z - this->z1), b3) + c << endl;
+
+	}
+
+	virtual weighttype get3DWeight(T x, T y, T z){
+		T expressionRes = this->a1 * pow( (x - this->x1), b1) + this->a2 * pow( (y - this->y1), b2) + this->a3 * pow( (z - this->z1), b3) + this->c;
+
+		//this->print(x,y,z);
+		if(this->stepCount > 0){
+			for (int i = 0; i < this->stepCount; ++i){
+				if (expressionRes < this->steps[i]) {
+					cout << "0exp:" << expressionRes << " step:" << steps[i] << " value:" << values[i] << endl;
+					return this->values[i];
+				}
+			}
+
+			cout << "1exp:" << expressionRes << " step:" << steps[stepCount] << " value:" << values[stepCount] << endl;
+			return this->values[this->stepCount];
+		}
+		else {
+			return weighttype(expressionRes);
+		}
+	}
+
+	virtual weighttype getWeight(CoordinatePoint<T> p){
+		T expressionRes = this->a1 * pow( (p.x - this->x1), b1) + this->a2 * pow( (p.y - this->y1), b2) + this->a3 * pow( (p.z - this->z1), b3);
+		if(this->stepCount > 0){
+			for (int i = 0; i < this->stepCount; ++i){
+				if (expressionRes < this->steps[i]) return this->values[i];
+			}
+			return this->values[this->stepCount];
+		}
+		else {
+			return weighttype(expressionRes);
+		}
+	}
+};
 
 template <typename T, typename lno_t>
 class CoordinateDistribution{
@@ -437,6 +581,8 @@ private:
 	int distributionCount;
 	CoordinatePoint<T> *points;
 
+	WeightDistribution<T,T> *wd;
+
 	RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector;
 	int worldSize;
 	int myRank;
@@ -502,7 +648,7 @@ private:
 		int cnt = 0;
         while (!ss.eof()){
     			std::string tmp = "";
-    			std::getline(ss, tmp ,',');
+    			std::getline(ss, tmp ,splitChar);
                 outSplittedStr[cnt++] = tmp;
         }
 	}
@@ -768,6 +914,144 @@ private:
 		delete [] splittedStr;
 	}
 
+	void getWeightDistribution(std::string weight_distribution){
+		if(weight_distribution == ""){
+			return;
+		}
+		int count = this->countChar(weight_distribution, ' ');
+		std::string *splittedStr = new string[count + 1];
+		this->splitString(weight_distribution, ' ', splittedStr);
+		cout << count << endl;
+		if(splittedStr[0] == "STEPPEDEQUATION"){
+			 T c=1;
+			 T a1=0,a2=0,a3=0;
+			 T x1=0,y1=0,z1=0;
+			 T b1=1,b2=1,b3=1;
+			 T *steps = NULL;
+			 T *values= NULL;
+			 int stepCount = 0;
+			 int valueCount = 1;
+
+			for (int i = 1; i < count + 1; ++i){
+				int assignmentCount = this->countChar(splittedStr[i], '=');
+				if (assignmentCount != 1){
+					throw "Error at the argument " + splittedStr[i];
+				}
+				std::string parameter_vs_val[2];
+				this->splitString(splittedStr[i], '=', parameter_vs_val);
+				std::string parameter = parameter_vs_val[0];
+				std::string value = parameter_vs_val[1];
+				cout << "parameter:" << parameter << " value:" << value << endl;
+
+				if (parameter == "a1"){
+					a1 = this->fromString<T>(value);
+				}
+				else if (parameter == "a2"){
+					if(this->dimension > 1){
+						a2 = this->fromString<T>(value);
+					}
+					else {
+						throw  parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+					}
+
+				}
+				else if (parameter == "a3"){
+					if(this->dimension > 2){
+						a3 = this->fromString<T>(value);
+					}
+					else {
+						throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+					}
+				}
+				else if (parameter == "b1"){
+					b1 = this->fromString<T>(value);
+				}
+				else if (parameter == "b2"){
+					if(this->dimension > 1){
+						b2 = this->fromString<T>(value);
+					}
+					else {
+						throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+					}
+				}
+				else if (parameter == "b3"){
+
+					if(this->dimension > 2){
+						b3 = this->fromString<T>(value);
+					}
+					else {
+						throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+					}
+				}
+				else if (parameter == "c"){
+					c = this->fromString<T>(value);
+				}
+				else if (parameter == "x1"){
+					x1 = this->fromString<T>(value);
+				}
+				else if (parameter == "y1"){
+					if(this->dimension > 1){
+						y1 = this->fromString<T>(value);
+					}
+					else {
+						throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+					}
+				}
+				else if (parameter == "z1"){
+					if(this->dimension > 2){
+						z1 = this->fromString<T>(value);
+					}
+					else {
+						throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+					}
+				}
+				else if (parameter == "steps"){
+					stepCount = this->countChar(value, ',') + 1;
+					std::string *stepstr = new std::string[stepCount];
+					this->splitString(value, ',', stepstr);
+					steps = new T[stepCount];
+					for (int i = 0; i < stepCount; ++i){
+						steps[i] = this->fromString<T>(stepstr[i]);
+					}
+					delete [] stepstr;
+				}
+				else if (parameter == "values"){
+					valueCount = this->countChar(value, ',') + 1;
+					std::string *stepstr = new std::string[valueCount];
+					this->splitString(value, ',', stepstr);
+					values = new T[valueCount];
+					for (int i = 0; i < valueCount; ++i){
+						values[i] = this->fromString<T>(stepstr[i]);
+					}
+					delete [] stepstr;
+				}
+				else {
+					throw "Invalid parameter name at " + splittedStr[i];
+				}
+			}
+
+			delete []splittedStr;
+			if(stepCount + 1!= valueCount){
+				throw "Step count: " + this->toString<int>(stepCount) + " must be 1 less than value count: " + this->toString<int>(valueCount);
+			}
+
+
+			this->wd =  new SteppedEquation<T,T>(a1, a2,  a3,  b1,  b2,  b3,  c,  x1,  y1,  z1, steps, values, stepCount);
+
+			if(stepCount > 0){
+				delete [] steps;
+				delete [] values;
+			}
+		}
+		else if (splittedStr[0] == "ANOTHERWEIGHTCLASS"){
+
+		}
+		else {
+			throw "Unknown weight distribution name " + splittedStr[0];
+		}
+
+	}
+
 	void parseParams(Teuchos::ParameterList params){
 		try {
 			std::string holeDescription  = "";
@@ -775,17 +1059,40 @@ private:
 			std::string distinctDescription = "";
 			std::string coordinate_distributions = "";
 			std::string outfile = "";
+			std::string weight_distribution = "";
+			std::string stepped_equation_parameters = "";
+
 			for (Teuchos::ParameterList::ConstIterator pit = params.begin(); pit != params.end(); ++pit ){
 				const std::string &paramName = params.name(pit);
 
 				const Teuchos::ParameterEntry &pe = params.entry(pit);
 
-				if(paramName == "holes"){
-					holeDescription = getParamVal<std::string>(pe, paramName);
+				if(paramName.find("hole-") == 0){
+					if(holeDescription == ""){
+						holeDescription = getParamVal<std::string>(pe, paramName);
+					}
+					else {
+						holeDescription +=","+getParamVal<std::string>(pe, paramName);
+					}
+				}
+				else if(paramName.find("distribution-") == 0){
+					if(coordinate_distributions == "")
+						coordinate_distributions = getParamVal<std::string>(pe, paramName);
+					else
+						coordinate_distributions +=  ","+getParamVal<std::string>(pe, paramName);
+					cout << coordinate_distributions << endl;
+					//TODO coordinate distribution description
 				}
 
+				else if(paramName == "WeightDistribution"){
+						weight_distribution = getParamVal<std::string>(pe, paramName);
+					//TODO coordinate distribution description
+				} else if (paramName.find(equation_with_step_function_parameters) == 0){
+
+					stepped_equation_parameters +=  " " + paramName.substr(equation_with_step_function_parameters.size())+ "="+ getParamVal<std::string>(pe, paramName);
+				}
 				else if(paramName == "dim"){
-					int dim = getParamVal<int>(pe, paramName);
+					int dim = fromString<int>(getParamVal<std::string>(pe, paramName));
 					if(dim < 2 && dim > 3){
 						throw INVALID(paramName);
 					} else {
@@ -819,14 +1126,7 @@ private:
 					}
 				}
 
-				else if(paramName.find("distribution-") == 0){
-					if(coordinate_distributions == "")
-						coordinate_distributions = getParamVal<std::string>(pe, paramName);
-					else
-						coordinate_distributions +=  ","+getParamVal<std::string>(pe, paramName);
-					cout << coordinate_distributions << endl;
-					//TODO coordinate distribution description
-				}
+
 
 				else if(paramName == "out_file"){
 					this->outfile = getParamVal<std::string>(pe, paramName);
@@ -884,10 +1184,15 @@ private:
 			//this->getDistinctCoordinateDescription(distinctDescription);
 			this->getProcLoadDistributions(proc_load_distributions);
 			this->getCoordinateDistributions(coordinate_distributions);
-
+			if(weight_distribution != equation_with_step_function && stepped_equation_parameters != ""){
+				throw "STEPPEDEQUATION parameters are provided without weight distribution is selected.";
+			}
+			this->getWeightDistribution(weight_distribution+stepped_equation_parameters);
+/*
 			if(this->numGlobalCoords <= 0){
 				throw "Must have at least 1 point";
 			}
+			*/
 		}
 		catch(std::string s){
 			std::cout << "Error: " << s << std::endl;
@@ -928,12 +1233,15 @@ public:
 			}
 			free (this->coordinateDistributions);
 		}
+		if (this->wd){
+			delete this->wd;
+		}
 
 		delete []this->points;
 	}
 
 	GeometricGenerator(Teuchos::ParameterList &params, const RCP<const Teuchos::Comm<int> > & comm_){
-
+		this->wd = NULL;
 		this->holes = NULL; //to represent if there is any hole in the input
 		this->dimension = 0;  //dimension of the geometry
 		this->worldSize = comm_->getSize(); //comminication world object.
@@ -1013,14 +1321,14 @@ public:
 		}
 
 	    // target map
-		ArrayView<const gno_t> eltList;
+		Teuchos::ArrayView<const gno_t> eltList;
 
 		if(this->numLocalCoords > 0){
 			gno_t *gnos = new gno_t [this->numLocalCoords];
 			for (lno_t i = 0; i < this->numLocalCoords; ++i){
 				gnos[i] = i + prefixSum;
 			}
-			eltList = ArrayView<const gno_t> (gnos, this->numLocalCoords);
+			eltList = Teuchos::ArrayView<const gno_t> (gnos, this->numLocalCoords);
 		}
 
 	    RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
@@ -1043,13 +1351,13 @@ public:
 			}
 		}
 
-		Array<ArrayView<const T> > coordView(this->dimension);
+		Teuchos::Array<Teuchos::ArrayView<const T> > coordView(this->dimension);
 		for (int i=0; i < this->dimension; i++){
 			if(this->numLocalCoords > 0){
-				ArrayView<const T> a(coords[i], this->numLocalCoords);
+				Teuchos::ArrayView<const T> a(coords[i], this->numLocalCoords);
 				coordView[i] = a;
 			} else{
-				ArrayView<const T> a;
+				Teuchos::ArrayView<const T> a;
 				coordView[i] = a;
 			}
 		}
@@ -1066,6 +1374,28 @@ public:
 		Zoltan2::PartitioningSolution< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > solution;
 		xmv.applyPartitioningSolution<Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(this->tmVector, &tmVector2, solution);
 */
+		switch(this->dimension){
+		case 1:
+			for (lno_t i = 0; i < this->numLocalCoords; ++i){
+				cout << this->wd->get1DWeight(coords[0][i]) << " " ;
+			}
+			break;
+		case 2:
+			for (lno_t i = 0; i < this->numLocalCoords; ++i){
+				cout << this->wd->get2DWeight(coords[0][i], coords[1][i]) << " " ;
+			}
+			break;
+		case 3:
+			for (lno_t i = 0; i < this->numLocalCoords; ++i){
+				cout << this->wd->get3DWeight(coords[0][i], coords[1][i], coords[2][i]) << " " ;
+			}
+			break;
+		default:
+			cerr <<"error in dimension." << endl;
+			exit(1);
+		}
+
+		for(int i = 0; i < this->dimension; ++i) delete [] coords[i]; delete []coords;
 	}
 
 	RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > getCoordinates(){

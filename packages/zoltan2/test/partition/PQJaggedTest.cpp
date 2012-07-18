@@ -21,7 +21,7 @@
 
 
 #include <Teuchos_LAPACK.hpp>
-
+#include <fstream>
 #include <string>
 #include <omp.h>
 using namespace std;
@@ -39,12 +39,81 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
     \todo check the solution, visualize it somehow
 */
 
-void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, float imbalance, std::string fname, std::string pqParts){
+
+const char param_comment = '#';
+
+string trim_right_copy(
+  const string& s,
+  const string& delimiters = " \f\n\r\t\v" )
+{
+  return s.substr( 0, s.find_last_not_of( delimiters ) + 1 );
+}
+
+string trim_left_copy(
+  const string& s,
+  const string& delimiters = " \f\n\r\t\v" )
+{
+  return s.substr( s.find_first_not_of( delimiters ) );
+}
+
+string trim_copy(
+  const string& s,
+  const string& delimiters = " \f\n\r\t\v" )
+{
+  return trim_left_copy( trim_right_copy( s, delimiters ), delimiters );
+}
+
+void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, const RCP<const Teuchos::Comm<int> > & comm){
+	std::string input = "";
+	char inp[25000];
+	if(comm->getRank() == 0){
+		fstream inParam(paramFileName.c_str());
+
+		std::string tmp = "";
+		getline (inParam,tmp);
+		while (!inParam.eof()){
+			tmp = trim_copy(tmp);
+			if(tmp != ""){
+				input += tmp + "\n";
+			}
+			getline (inParam,tmp);
+		}
+		inParam.close();
+		for (int i = 0; i < input.size(); ++i){
+			inp[i] = input[i];
+		}
+	}
+
+
+
+	//Teuchos::broadcast<int,string>(comm,0, &input);
+	cout << "inp:" << inp << endl;
+	istringstream inParam(inp);
+	string str;
+	getline (inParam,str);
+	while (!inParam.eof()){
+		if(str[0] != param_comment){
+			size_t pos = str.find('=');
+			if(pos == string::npos){
+				cerr << "Invalid Line:" << str;
+				exit(1);
+			}
+			string paramname = trim_copy(str.substr(0,pos));
+			string paramvalue = trim_copy(str.substr(pos + 1));
+			cout << "me:" << comm->getRank() << " " << paramname << " " << paramvalue << endl;
+			geoparams.set(paramname, paramvalue);
+		}
+		getline (inParam,str);
+	}
+}
+
+void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, float imbalance, std::string fname, std::string pqParts, std::string paramFile){
 
 	Teuchos::ParameterList geoparams("geo params");
-	//geoparams.set("holes", "a");
 
+	readGeoGenParams(paramFile, geoparams, comm);
 
+/*
 	//geoparams.set("dim", 2);
 	//geoparams.set("holes", "CIRCLE,-10,-10,15,CIRCLE,200,200,150");
 	//geoparams.set("out_file", fname);
@@ -53,35 +122,42 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
 	//geoparams.set("distribution-2", "NORMAL,1000,100,0,5,5");
 
 	//geoparams.set("proc_load_distributions", "0.7,0.0,0.1,0.2");
-
-
 	geoparams.set("dim", 3);
 	//geoparams.set("distribution-0", "GRID,5,5,5,-10, 100, -10, 100, -10,100");
-	geoparams.set("distribution-1", "NORMAL,1250,-20,-20,-20,5,5,5");
+	geoparams.set("distribution-1", "NORMAL,1000,-20,-20,-20,55,45,5");
 	//geoparams.set("distribution-2", "NORMAL,1000,100,100,0,5,5,5");
 	//geoparams.set("distribution-3", "NORMAL,1000,100,0,0,5,5,5");
 	//geoparams.set("distribution-4", "NORMAL,1000,0,100,0,5,5,5");
 
 	//geoparams.set("distribution-5", "UNIFORM,4000,0,100,0,100,0,100");
-	//geoparams.set("holes", "CUBE,10,10,10,50,SPHERE,60,60,60,50,SPHERE,300,300,300,20");
-	//geoparams.set("holes", "SPHERE,100,100,100,80");
+	//geoparams.set("hole-0", "CUBE,-20,-20,-20,10");
+	geoparams.set("hole-1", "SPHERE,-20,-20,-20,20");
+	geoparams.set("WeightDistribution", "STEPPEDEQUATION");
+	geoparams.set("STEPPEDEQUATION-a1", "1");
+	geoparams.set("STEPPEDEQUATION-a1", "1");
+	geoparams.set("STEPPEDEQUATION-steps", "0");
+	geoparams.set("STEPPEDEQUATION-values", "1,2");
+	// a2=2 a3=3 b1=2 b2=2 b3=2 c=7.2 x1=8.2 y1=9.2 z1=9.3");
+
+	geoparams.set("hole-2", "SPHERE,0,0,-20,20");
+	geoparams.set("hole-3", "SPHERE,40,-20,0,20");
+	geoparams.set("hole-4", "SPHERE,-20,-40,-20,20");
+	geoparams.set("hole-5", "SPHERE,-20,-20,-0,20");
+	geoparams.set("hole-6", "SPHERE,-20,0,-20,20");
+	geoparams.set("hole-7", "SPHERE,-80,-20,-20,20");
 	geoparams.set("out_file", fname);
-	//geoparams.set("proc_load_distributions", "0.5,0.498,0.001,0.001");
+	//geoparams.set("proc_load_distributions", "0.5,0.5,0.000,0.000");
 	//GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+	*/
 
 	GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
-	MPI_Barrier(MPI_COMM_WORLD);
-
-
-	//params.set("out_file", "a");
-
 
 //	UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
 //	RCP<tMVector_t> coords = uinput.getCoordinates();
 	RCP<tMVector_t> coords = gg->getCoordinates();
 
-	RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
+	RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(coords);
 
 
 	size_t localCount = coords->getLocalLength();
@@ -126,8 +202,10 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
 	Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
 
+	cout << "basl1" << endl;
 	problem.solve();
 
+	cout << "basla" << endl;
 	const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
 			problem.getSolution();
 
@@ -370,7 +448,6 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
 //	  problem.printMetrics(cout);
 }
 
-
 string convert_to_string(char *args){
     string tmp = "";
     for(int i = 0; args[i] != 0; i++)
@@ -398,11 +475,12 @@ int main(int argc, char *argv[])
   int rank = tcomm->getRank();
 
 
-  int numParts = 10; float imbalance = 0.03;
+  int numParts = 10; float imbalance = 1.03;
   int numCoords = 1000;
   string pqParts = "";
-  int opt = 0;
+  int opt = 3;
   std::string fname = "simple";
+  std::string paramFile = "";
   for(int i = 0; i < argc; ++i){
 	  string tmp = convert_to_string(argv[i]);
 	  string identifier = "";
@@ -446,6 +524,13 @@ int main(int argc, char *argv[])
 
 		  stream >> fname;
 	  }
+
+	  else if(identifier == "PF"){
+		  stringstream stream(stringstream::in | stringstream::out);
+		  stream << tmp;
+		  getline(stream, paramFile, '=');
+		  stream >> paramFile;
+	  }
 	  else if(identifier == "O"){
 	  		  if(value >= 0 && value <= 3){
 	  			  opt = value;
@@ -480,7 +565,7 @@ int main(int argc, char *argv[])
 	  serialTest(numParts, numCoords, imbalance);
 	  break;
   case 3:
-	  GeometricGen(tcomm, numParts, imbalance, fname, pqParts);
+	  GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile);
 	  break;
   }
   //if (rank == 0)

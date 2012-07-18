@@ -509,7 +509,10 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
 			size_t j = partitionedPointPermutations[coordinateBegin];
 			myMin = myMax = pqJagged_coordinates[j];
 			//cout << "coordinateBegin:" << coordinateBegin << " end:" << coordinateEnd << endl;
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
+#endif
 			for(lno_t j = coordinateBegin + 1; j < coordinateEnd; ++j){
 				//int i = firstIteration ? j:partitionedPointCoordinates[coordinateBegin];
 				int i = partitionedPointPermutations[j];
@@ -520,18 +523,25 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
 			max_min_array[myId] = myMin;
 			max_min_array[myId + numThreads] = myMax;
 			//cout << "myMin:" << myMin << " myMax:" << myMax << endl;
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp barrier
+#endif
 
 
 
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single nowait
+#endif
 			{
 				minCoordinate = max_min_array[0];
 				for(int i = 1; i < numThreads; ++i){
 					if(max_min_array[i] < minCoordinate) minCoordinate = max_min_array[i];
 				}
 			}
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single nowait
+#endif
 			{
 				maxCoordinate = max_min_array[numThreads];
 				for(int i = numThreads + 1; i < numThreads * 2; ++i){
@@ -545,7 +555,10 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
 
 #ifdef mpi
 	scalar_t minm = 0;scalar_t maxm = 0;
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
+#endif
 	{
 
 		//TODO:Merge these communications.
@@ -651,7 +664,10 @@ void getNewCoordinates_simple(
 		cout << "i:" << i << " pw:" << totalPartWeights[i * 2] << endl;
 	}
 	*/
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
+#endif
 	for (size_t i = 0; i < noCuts; i++){
 
 
@@ -689,7 +705,15 @@ void getNewCoordinates_simple(
 		//if the cut line reaches to desired imbalance.
 		if(isLeftValid && isRightValid){
 			isDone[i] = true;
+
+#ifdef HAVE_ZOLTAN2_OMP
 			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
+
+
 			cutCoordinatesWork [ i] = cutCoordinates[i];
 		}
 		//if upper bound and lower bound reaches to the same point.
@@ -946,8 +970,11 @@ void getNewCoordinates_simple(
 	}
 
 	//swap the work with cut coordinates.
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp barrier
 #pragma omp single
+#endif
 	{
 		scalar_t *t = cutCoordinatesWork;
 		cutCoordinatesWork = cutCoordinates;
@@ -1041,8 +1068,11 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
 		globaltotalWeight = totalWeight;
 #ifdef mpi
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp barrier
 #pragma omp single
+#endif
 		{
 			scalar_t tw = 0;
 			//TODO: data type.
@@ -1374,7 +1404,9 @@ void getChunksFromCoordinates(size_t partNo, size_t numCoordsInPart, int noThrea
 		pqPV.set(coordinate_linked_list, myStarts, myEnds);
 		memset(myPartPointCounts, 0, sizeof(lno_t) * partNo);
 
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
+#endif
 		for (size_t i = 0; i < numLocalCoord; ++i){
 			coordinate_linked_list[i] = -1;
 		}
@@ -1391,7 +1423,10 @@ void getChunksFromCoordinates(size_t partNo, size_t numCoordsInPart, int noThrea
 		*/
 
 		//determine part of each point
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
+#endif
 		for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 			lno_t i = partitionedPointPermutations[ii];
 			bool inserted = false;
@@ -1422,7 +1457,10 @@ void getChunksFromCoordinates(size_t partNo, size_t numCoordsInPart, int noThrea
 		}
 
 		//accumulate the starts of each thread.
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
+#endif
 		for(size_t i = 0; i < partNo; ++i){
 			int head = 0, tail = 0;
 			while(head < noThreads && coordinate_ends[head][i] == -1){
@@ -1452,7 +1490,10 @@ void getChunksFromCoordinates(size_t partNo, size_t numCoordsInPart, int noThrea
 		}
 
 		//accumulate the count.
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
+#endif
 		for(size_t j = 0; j < partNo; ++j){
 			scalar_t pwj = 0;
 			for (int i = 0; i < noThreads; ++i){
@@ -1463,7 +1504,10 @@ void getChunksFromCoordinates(size_t partNo, size_t numCoordsInPart, int noThrea
 
 
 		//write new indices
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
+#endif
 		for(size_t i = 0; i < partNo; ++i){
 			lno_t nextPoint = coordinate_starts[0][i];
 			lno_t pcnt = 0;
