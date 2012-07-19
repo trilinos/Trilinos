@@ -347,46 +347,26 @@ double ML_Epetra::RowMatrix::NormInf() const
 
 
 //==============================================================================
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  int
-#endif
-ML_Epetra::RowMatrix::NumGlobalNonzeros() const
+int ML_Epetra::RowMatrix::NumGlobalNonzeros() const
 {
   return(NumGlobalNonzeros_);
 }
 
 //==============================================================================
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  int
-#endif
-ML_Epetra::RowMatrix::NumGlobalRows() const
+int ML_Epetra::RowMatrix::NumGlobalRows() const
 {
   return(NumGlobalRows_);
 }
 
 
 //==============================================================================
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  int
-#endif
-ML_Epetra::RowMatrix::NumGlobalCols() const
+int ML_Epetra::RowMatrix::NumGlobalCols() const
 {
   return(NumGlobalCols_);
 }
 
 //==============================================================================
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  int
-#endif
-ML_Epetra::RowMatrix::NumGlobalDiagonals() const
+int ML_Epetra::RowMatrix::NumGlobalDiagonals() const
 {
   return(NumGlobalDiagonals_);
 }

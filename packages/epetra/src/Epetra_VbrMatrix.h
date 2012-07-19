@@ -921,20 +921,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int NumMyNonzeros() const {return(Graph_->NumMyNonzeros());};
 
     //! Returns the number of global matrix rows.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalRows() const {return(Graph_->NumGlobalRows());}
+    EPETRA_DEPRECATED int NumGlobalRows() const {return(Graph_->NumGlobalRows());};
 
     //! Returns the number of global matrix columns.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalCols() const {return(Graph_->NumGlobalCols());}
+    EPETRA_DEPRECATED int NumGlobalCols() const {return(Graph_->NumGlobalCols());};
 
     //! Returns the number of nonzero entries in the global matrix.
     /*
@@ -943,12 +933,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
      times. If the user wishes to assemble a matrix from overlapping
      submatrices, they can use Epetra_FEVbrMatrix.
     */
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalNonzeros() const {return(Graph_->NumGlobalNonzeros());}
+    EPETRA_DEPRECATED int NumGlobalNonzeros() const {return(Graph_->NumGlobalNonzeros());};
 
     //! Returns the number of Block matrix rows owned by the calling processor.
     int NumMyBlockRows() const {return(Graph_->NumMyBlockRows());};
@@ -966,44 +951,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int NumMyDiagonals() const {return(Graph_->NumMyDiagonals());};
     
     //! Returns the number of global Block matrix rows.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalBlockRows() const {return(Graph_->NumGlobalBlockRows());}
+    EPETRA_DEPRECATED int NumGlobalBlockRows() const {return(Graph_->NumGlobalBlockRows());};
     
     //! Returns the number of global Block matrix columns.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalBlockCols() const {return(Graph_->NumGlobalBlockCols());}
+    EPETRA_DEPRECATED int NumGlobalBlockCols() const {return(Graph_->NumGlobalBlockCols());};
     
     //! Returns the number of nonzero block entries in the global matrix.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalBlockEntries() const {return(Graph_->NumGlobalEntries());}
+    EPETRA_DEPRECATED int NumGlobalBlockEntries() const {return(Graph_->NumGlobalEntries());};
     
     //! Returns the number of global nonzero block diagonal entries, based on global row/column index comparisions.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalBlockDiagonals() const {return(Graph_->NumGlobalBlockDiagonals());}
+    EPETRA_DEPRECATED int NumGlobalBlockDiagonals() const {return(Graph_->NumGlobalBlockDiagonals());};
     
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisions.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalDiagonals() const {return(Graph_->NumGlobalDiagonals());}
+    EPETRA_DEPRECATED int NumGlobalDiagonals() const {return(Graph_->NumGlobalDiagonals());};
 
     //! Returns the current number of nonzero Block entries in specified global row on this processor.
     int NumGlobalBlockEntries(int Row) const {return(Graph_->NumGlobalIndices(Row));};
@@ -1072,23 +1032,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int LRID( int GRID_in) const {return(Graph_->LRID(GRID_in));};
 
     //! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  GRID( int LRID_in) const {return(Graph_->GRID(LRID_in));}
+    EPETRA_DEPRECATED int GRID( int LRID_in) const {return(Graph_->GRID(LRID_in));};
 
     //! Returns the local column index for given global column index, returns -1 if no local column for this global column.
     int LCID( int GCID_in) const {return(Graph_->LCID(GCID_in));};
 
     //! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  GCID( int LCID_in) const {return(Graph_->GCID(LCID_in));}
+    EPETRA_DEPRECATED int GCID( int LCID_in) const {return(Graph_->GCID(LCID_in));};
  
     //! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
     bool  MyGRID(int GRID_in) const {return(Graph_->MyGRID(GRID_in));};
