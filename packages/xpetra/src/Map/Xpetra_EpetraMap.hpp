@@ -47,7 +47,7 @@ namespace Xpetra {
     EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
 
     //! Destructor.
-    ~EpetraMap() { }
+    virtual ~EpetraMap() { } // virtual because EpetraMap used as a base class of EpetraStridedMap
 
     //@}
 
