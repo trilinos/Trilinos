@@ -48,7 +48,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     GetOStream(Parameters0, 0) << predrop_->description();
   }
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
@@ -107,12 +107,12 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     Teuchos::ArrayView<const LocalOrdinal> indices;
     Teuchos::ArrayView<const Scalar> vals;
     A->getLocalRowView(row, indices, vals);
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: number of nonzeros not equal to number of indices? Error.");
+    //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: number of nonzeros not equal to number of indices? Error.");
 
     RCP<std::vector<GlobalOrdinal> > cnodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);  // global column block ids
     LocalOrdinal realnnz = 0;
     for(LocalOrdinal col=0; col<Teuchos::as<LocalOrdinal>(nnz); col++) {
-      TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[col])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
+      //TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[col])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
       GlobalOrdinal gcid = A->getColMap()->getGlobalElement(indices[col]); // global column id
 
       if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
@@ -123,6 +123,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       }
     }
 
+    // todo avoid duplicate entries in cnodeIds
+
     ////////////////// experimental
     if(gBoundaryNodes->count(nodeId) == 0)
       (*gBoundaryNodes)[nodeId] = false;  // new node GID (probably no Dirichlet bdry node)
@@ -132,7 +134,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
     Teuchos::ArrayRCP<GlobalOrdinal> arr_cnodeIds = Teuchos::arcp( cnodeIds );
 
-    TEUCHOS_TEST_FOR_EXCEPTION(crsGraph->getRowMap()->isNodeGlobalElement(nodeId)==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: global row id does not belong to current proc. Error.");
+    //TEUCHOS_TEST_FOR_EXCEPTION(crsGraph->getRowMap()->isNodeGlobalElement(nodeId)==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: global row id does not belong to current proc. Error.");
     crsGraph->insertGlobalIndices(nodeId, arr_cnodeIds());
   }
   // fill matrix graph
@@ -163,13 +165,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   currentLevel.Set("DofsPerNode", blockdim, this);
   currentLevel.Set("Graph", graph, this);
 }
-
-/*template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-GlobalOrdinal CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Operator>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) const {
-  //GetOStream(Runtime0, 0) << "fixed block size..." << std::endl;
-  GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize;
-  return globalblockid;
-}*/
 
 } //namespace MueLu
 
