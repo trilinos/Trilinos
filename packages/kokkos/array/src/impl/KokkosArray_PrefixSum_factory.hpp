@@ -54,12 +54,13 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< typename IntType , class DeviceDst , class DeviceSrc >
-struct Factory< PrefixSum< IntType , DeviceDst > ,
-                PrefixSum< IntType , DeviceSrc > >
+template< typename IntType , class LayoutDst , class DeviceDst ,
+                             class LayoutSrc , class DeviceSrc >
+struct Factory< PrefixSum< IntType , LayoutDst , DeviceDst > ,
+                PrefixSum< IntType , LayoutSrc , DeviceSrc > >
 {
-  typedef PrefixSum< IntType, DeviceDst > output_type ;
-  typedef PrefixSum< IntType, DeviceSrc > input_type ;
+  typedef PrefixSum< IntType, LayoutDst , DeviceDst > output_type ;
+  typedef PrefixSum< IntType, LayoutSrc , DeviceSrc > input_type ;
 
   static inline
   void deep_copy( output_type & output , const input_type & input )
@@ -87,31 +88,33 @@ struct Factory< PrefixSum< IntType , DeviceDst > ,
 
 //----------------------------------------------------------------------------
 
-template< typename IntType , class DeviceOutput >
-struct Factory< PrefixSum< IntType , DeviceOutput > , MirrorUseView >
+template< typename IntType , class LayoutOutput , class DeviceOutput >
+struct Factory< PrefixSum< IntType , LayoutOutput , DeviceOutput > ,
+                MirrorUseView >
 {
-  typedef PrefixSum< IntType , DeviceOutput > output_type ;
+  typedef PrefixSum< IntType , LayoutOutput , DeviceOutput > output_type ;
 
   static inline
   const output_type & create( const output_type & input ) { return input ; }
 
   template< class DeviceInput >
   static inline
-  output_type create( const PrefixSum< IntType , DeviceInput > & input )
+  output_type create(
+    const PrefixSum< IntType , LayoutOutput , DeviceInput > & input )
   {
-    typedef PrefixSum< IntType , DeviceInput > input_type ;
+    typedef PrefixSum< IntType , LayoutOutput , DeviceInput > input_type ;
     return Factory< output_type , input_type >::create( input );
   }
 };
 
 //----------------------------------------------------------------------------
 
-template< typename IntTypeOutput , class DeviceOutput ,
+template< typename IntTypeOutput , class LayoutOutput , class DeviceOutput ,
           typename IntTypeInput >
-struct Factory< PrefixSum< IntTypeOutput , DeviceOutput > ,
+struct Factory< PrefixSum< IntTypeOutput , LayoutOutput , DeviceOutput > ,
                 std::vector< IntTypeInput > >
 {
-  typedef PrefixSum< IntTypeOutput , DeviceOutput > output_type ;
+  typedef PrefixSum< IntTypeOutput , LayoutOutput , DeviceOutput > output_type ;
   typedef std::vector< IntTypeInput > input_type ;
 
   static

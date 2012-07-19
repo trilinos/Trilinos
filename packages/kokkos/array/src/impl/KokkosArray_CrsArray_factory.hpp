@@ -54,11 +54,11 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class DataType , class Device , typename SizeType >
-struct Factory< CrsArray< DataType , Device , SizeType > ,
-                CrsArray< DataType , Device , SizeType > >
+template< class DataType , class Layout , class Device , typename SizeType >
+struct Factory< CrsArray< DataType , Layout , Device , SizeType > ,
+                CrsArray< DataType , Layout , Device , SizeType > >
 {
-  typedef CrsArray< DataType, Device, SizeType > output_type ;
+  typedef CrsArray< DataType, Layout , Device, SizeType > output_type ;
 
   static inline
   output_type create( const output_type & input )
@@ -84,12 +84,13 @@ struct Factory< CrsArray< DataType , Device , SizeType > ,
 //----------------------------------------------------------------------------
 
 template< class DataType ,
-          class DeviceDst , class DeviceSrc , typename SizeType >
-struct Factory< CrsArray< DataType , DeviceDst , SizeType > ,
-                CrsArray< DataType , DeviceSrc , SizeType > >
+          class LayoutDst , class DeviceDst ,
+          class LayoutSrc , class DeviceSrc , typename SizeType >
+struct Factory< CrsArray< DataType , LayoutDst , DeviceDst , SizeType > ,
+                CrsArray< DataType , LayoutSrc , DeviceSrc , SizeType > >
 {
-  typedef CrsArray< DataType, DeviceDst, SizeType > output_type ;
-  typedef CrsArray< DataType, DeviceSrc, SizeType > input_type ;
+  typedef CrsArray< DataType, LayoutDst , DeviceDst, SizeType > output_type ;
+  typedef CrsArray< DataType, LayoutSrc , DeviceSrc, SizeType > input_type ;
 
   static inline
   output_type create( const input_type & input )
@@ -116,11 +117,11 @@ struct Factory< CrsArray< DataType , DeviceDst , SizeType > ,
 
 //----------------------------------------------------------------------------
 
-template< class DataType , class DeviceOutput , typename SizeType >
-struct Factory< CrsArray< DataType , DeviceOutput , SizeType > ,
+template< class DataType , class Layout , class DeviceOutput , typename SizeType >
+struct Factory< CrsArray< DataType , Layout , DeviceOutput , SizeType > ,
                 MirrorUseView >
 {
-  typedef CrsArray< DataType , DeviceOutput , SizeType > output_type ;
+  typedef CrsArray< DataType , Layout , DeviceOutput , SizeType > output_type ;
 
   static inline
   const output_type & create( const output_type & input ) { return input ; }
@@ -128,7 +129,7 @@ struct Factory< CrsArray< DataType , DeviceOutput , SizeType > ,
   template< class DeviceInput >
   static inline
   output_type create(
-    const CrsArray< DataType , DeviceInput , SizeType > & input )
+    const CrsArray< DataType , Layout , DeviceInput , SizeType > & input )
   {
     typedef typename output_type::row_map_type row_map_type ;
     typedef typename output_type::entries_type entries_type ;
@@ -146,13 +147,14 @@ struct Factory< CrsArray< DataType , DeviceOutput , SizeType > ,
 //----------------------------------------------------------------------------
 
 template< class DataType ,
+          class LayoutOutput ,
           class DeviceOutput ,
           typename MapSizeType ,
           typename InputSizeType >
-struct Factory< CrsArray< DataType , DeviceOutput , MapSizeType > ,
+struct Factory< CrsArray< DataType , LayoutOutput , DeviceOutput , MapSizeType > ,
                 std::vector< InputSizeType > >
 {
-  typedef CrsArray< DataType , DeviceOutput, MapSizeType > output_type ;
+  typedef CrsArray< DataType , LayoutOutput , DeviceOutput, MapSizeType > output_type ;
   typedef std::vector< InputSizeType > input_type ;
 
   static
@@ -176,13 +178,14 @@ struct Factory< CrsArray< DataType , DeviceOutput , MapSizeType > ,
 //----------------------------------------------------------------------------
 
 template< typename ValueType ,
+          class LayoutOutput ,
           class DeviceOutput ,
           typename MapSizeType ,
           typename InputType >
-struct Factory< CrsArray< ValueType , DeviceOutput , MapSizeType > ,
+struct Factory< CrsArray< ValueType , LayoutOutput , DeviceOutput , MapSizeType > ,
                 std::vector< std::vector< InputType > > >
 {
-  typedef CrsArray< ValueType , DeviceOutput , MapSizeType > output_type ;
+  typedef CrsArray< ValueType , LayoutOutput , DeviceOutput , MapSizeType > output_type ;
   typedef std::vector< std::vector< InputType > > input_type ;
 
   static const bool OK =

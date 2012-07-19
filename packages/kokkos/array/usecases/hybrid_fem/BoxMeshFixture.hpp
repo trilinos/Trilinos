@@ -50,8 +50,6 @@
 #include <sstream>
 
 #include <KokkosArray_View.hpp>
-#include <KokkosArray_CrsArray.hpp>
-
 #include <BoxMeshPartition.hpp>
 #include <FEMesh.hpp>
 

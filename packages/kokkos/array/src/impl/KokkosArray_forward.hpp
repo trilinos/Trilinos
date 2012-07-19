@@ -50,8 +50,6 @@ namespace KokkosArray {
 
 class Host ;
 
-template < class Device > struct HostMapped ;
-
 } // namespace KokkosArray
 
 //----------------------------------------------------------------------------
