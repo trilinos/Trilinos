@@ -908,7 +908,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   int MyLength() const {return(MyLength_);};
 
   //! Returns the global vector length of vectors in the multi-vector.
-  EPETRA_DEPRECATED int GlobalLength() const {return(GlobalLength_);};
+  int GlobalLength() const {return(GlobalLength_);};
 
   //! Returns the stride between  vectors in the multi-vector (only meaningful if ConstantStride() is true).
   int Stride() const {return(Stride_);};
