@@ -30,7 +30,6 @@ INCLUDE_DIRECTORIES(${DIR}/Graph)
 INCLUDE_DIRECTORIES(${DIR}/Facade)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
-INCLUDE_DIRECTORIES(${DIR}/../utils) # how to add this one automatically?
 
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
@@ -91,7 +90,7 @@ TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu-utils muelu-xpetra muelu-xpetra-sup
+  DEPLIBS muelu-xpetra muelu-xpetra-sup
   )
  
 # for debugging
