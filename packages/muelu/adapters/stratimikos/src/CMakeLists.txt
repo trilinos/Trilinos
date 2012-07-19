@@ -15,4 +15,5 @@ TRIBITS_ADD_LIBRARY(
   stratimikosmuelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS muelu
   )

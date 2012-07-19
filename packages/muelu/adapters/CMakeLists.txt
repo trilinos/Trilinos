@@ -67,4 +67,5 @@ TRIBITS_ADD_LIBRARY(
   muelu-adapters
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS muelu
   )
