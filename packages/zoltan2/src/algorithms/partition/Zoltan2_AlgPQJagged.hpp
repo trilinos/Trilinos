@@ -734,7 +734,12 @@ void getNewCoordinates_simple(
 			if(allowNonRectelinearPart){
 				if (totalPartWeights[i * 2 + 1] >= ew){
 					isDone[i] = true;
-					__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 					cutCoordinatesWork [ i] = cutCoordinates[i];
 					//cout << "left:" << totalPartWeights[i * 2] << " with line:" << totalPartWeights[i * 2 + 1 ]<< " expected:" << ew << endl;
 					nonRectelinearPart[i] = 1 - (totalPartWeights[i * 2 + 1] - ew) / (totalPartWeights[i * 2 + 1] - totalPartWeights[i * 2]);
@@ -757,7 +762,12 @@ void getNewCoordinates_simple(
 						//if pw are equal, that coordinate is the desired solution.
 						if(pw == ew){
 							isDone[i] = true;
-							__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 							cutCoordinatesWork [i] = cutCoordinates[ii];
 						}
 						else {
@@ -781,7 +791,12 @@ void getNewCoordinates_simple(
 							//choose the coordinate.
 							if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
 								isDone[i] = true;
-								__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 								cutCoordinatesWork [i] = cutCoordinates[i];
 							} else {
 								cutCoordinatesWork [i] = newPivot;
@@ -804,7 +819,12 @@ void getNewCoordinates_simple(
 					scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
 					if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
 						isDone[i] = true;
-						__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 						cutCoordinatesWork [ i] = cutCoordinates[i];
 					} else {
 						cutCoordinatesWork [ i] = newPivot;
@@ -826,7 +846,12 @@ void getNewCoordinates_simple(
 						if(pw == ew){
 							cutCoordinatesWork[i] = cutCoordinates[ii];
 							isDone[i] = true;
-							__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 						} else if (pw < cutUpperWeight[i]){
 							//if a cut line is more strict than the current upper bound,
 							//update the upper bound.
@@ -848,7 +873,12 @@ void getNewCoordinates_simple(
 				scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
 				if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
 					isDone[i] = true;
-					__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 					cutCoordinatesWork [ i] = cutCoordinates[i];
 				} else {
 					cutCoordinatesWork [ i] = newPivot;
@@ -871,7 +901,12 @@ void getNewCoordinates_simple(
 						if(pw == ew){
 							cutCoordinatesWork[i] = cutCoordinates[ii];
 							isDone[i] = true;
-							__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 						} else {
 							cutUpperBounds[i] = cutCoordinates[ii + 1] - leftClosestDistance[ii + 1] + _EPSILON_T;
 							//cutUpperWeight[i] = totalPartWeights [2 * ii + 3];
@@ -894,7 +929,12 @@ void getNewCoordinates_simple(
 							*/
 							if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
 								isDone[i] = true;
-								__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 								cutCoordinatesWork [ i] = cutCoordinates[i];
 							} else {
 								cutCoordinatesWork [ i] = newPivot;
@@ -920,7 +960,12 @@ void getNewCoordinates_simple(
 					scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
 					if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
 						isDone[i] = true;
-						__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 						cutCoordinatesWork [ i] = cutCoordinates[i];
 					} else {
 						cutCoordinatesWork [ i] = newPivot;
@@ -941,7 +986,12 @@ void getNewCoordinates_simple(
 						if(pw == ew){
 							cutCoordinatesWork[i] = cutCoordinates[ii];
 							isDone[i] = true;
-							__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 						} else if (pw > cutLowerWeight[i]){
 							cutLowerBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii] - _EPSILON_T;
 							//cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
@@ -959,7 +1009,12 @@ void getNewCoordinates_simple(
 				scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
 				if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
 					isDone[i] = true;
-					__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 					cutCoordinatesWork [ i] = cutCoordinates[i];
 				} else {
 					cutCoordinatesWork [ i] = newPivot;
@@ -2029,11 +2084,21 @@ void getNewCoordinates(const size_t &total_part_count, const scalar_t * totalPar
 
 		if(isLeftValid && isRightValid){
 			isDone[currentLine] = true;
+#ifdef HAVE_ZOLTAN2_OMP
 			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 			//cout << "\tboth valid" << endl;
 		} else if(cutUpperBounds[currentLine] != -1 && cutUpperBounds[currentLine] == cutLowerBounds[currentLine]){
 			isDone[currentLine] = true;
+#ifdef HAVE_ZOLTAN2_OMP
 			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 			//cout << "\tconverged upper:" <<  cutUpperBounds[currentLine] << " loweR:" << cutLowerBounds[currentLine] << endl;
 
 		} else if(leftImbalance < 0){
@@ -2049,7 +2114,12 @@ void getNewCoordinates(const size_t &total_part_count, const scalar_t * totalPar
 						if(pw == ew){
 							cutCoordinates[currentLine] = cutCoordinates[ii];
 							isDone[currentLine] = true;
-							__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 						} else {
 							cutUpperBounds[currentLine] = cutCoordinates[ii];
 							cutLowerBounds[currentLine] = cutCoordinates [ ii -1];
@@ -2083,7 +2153,12 @@ void getNewCoordinates(const size_t &total_part_count, const scalar_t * totalPar
 						if(pw == ew){
 							cutCoordinates[currentLine] = cutCoordinates[ii];
 							isDone[currentLine] = true;
-							__sync_fetch_and_sub(&allDone, 1);
+#ifdef HAVE_ZOLTAN2_OMP
+			__sync_fetch_and_sub(&allDone, 1);
+#endif
+#ifndef HAVE_ZOLTAN2_OMP
+			allDone -=1;
+#endif
 						} else {
 							cutLowerBounds[currentLine] = cutCoordinates[ii];
 							cutUpperBounds[currentLine] = cutCoordinates[ii + 1];
