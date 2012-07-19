@@ -100,6 +100,9 @@ public:
   /*! \brief Return the number of weights supplied for each object.
    *   If the user supplied no weights, dimension one is returned, because
    *   one dimension of uniform weights is implied.
+   *
+   *   The concrete subclasses, however, return the number of weights
+   *   supplied by the user.
    */
   int getNumWeights() const { return weightDim_;}
 
