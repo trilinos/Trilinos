@@ -82,6 +82,7 @@ namespace Teuchos {
     ///     typedef ... value_type; // Ellipsis represents the actual type
     ///     void operator() (const index_type, const index_type, const value_type&);
     ///   };
+    ///   \endcode
     template<class AdderType>
     class SymmetrizingAdder {
     public:
@@ -118,7 +119,15 @@ namespace Teuchos {
           const value_type Aji = skew_ ?
             -(conjugate_ ? STS::conjugate(Aij) : Aij) :
             (conjugate_ ? STS::conjugate(Aij) : Aij);
-          theAdder (j, i, Aji);
+          // The optional fourth argument (which defaults to true)
+          // specifies whether or not to count the entry against the
+          // total expected number of entries.  We don't want to count
+          // this entry because it wasn't part of the original data;
+          // we inserted it because the caller doesn't want symmetric
+          // storage.  The original data's total expected number of
+          // entries only counts the entries that are in the original
+          // data, not those that we insert.
+          theAdder (j, i, Aji, false);
         }
       }
 

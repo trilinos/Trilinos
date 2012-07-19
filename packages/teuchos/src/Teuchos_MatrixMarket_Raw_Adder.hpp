@@ -127,28 +127,40 @@ namespace Teuchos {
         /// two Scalar arguments and returns a Scalar.
         template<class BinaryFunction>
         void merge (const Element& rhs, const BinaryFunction& f) {
-          if (rowIndex() != rhs.rowIndex() || colIndex() != rhs.colIndex()) {
-            throw std::invalid_argument ("Can only merge elements at the same "
-                                         "location in the sparse matrix");
-          }
-          else {
-            value_ = f (rhs.value_, value_);
-          }
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            rowIndex() != rhs.rowIndex() || colIndex() != rhs.colIndex(),
+            std::invalid_argument,
+            "Attempt to merge elements at different locations in the sparse "
+            "matrix.  The current element is at (" << rowIndex() << ", "
+            << colIndex() << ") and the element you asked me to merge with it "
+            "is at (" << rhs.rowIndex() << ", " << rhs.colIndex() << ").  This "
+            "probably indicates a bug in the sparse matrix reader.");
+
+          value_ = f (rhs.value_, value_);
         }
 
-        /// \brief Merge rhs into this Element.
+        /// \brief Merge rhs into this Element, either by addition or replacement.
         ///
-        /// "Replace" means replace this Element's value with that of
-        /// rhs.  Otherwise, this Element's value is added to rhs's
-        /// value.
+        /// \param rhs [in] Element to merge in.
+        /// \param replace [in] If true, replace this Element's value
+        ///   with that of rhs.  If false, add rhs to this Element's
+        ///   value.
         void merge (const Element& rhs, const bool replace=false) {
-          if (rowIndex() != rhs.rowIndex() || colIndex() != rhs.colIndex())
-            throw std::logic_error("Can only merge elements at the same "
-                                   "location in the sparse matrix");
-          else if (replace)
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            rowIndex() != rhs.rowIndex() || colIndex() != rhs.colIndex(),
+            std::invalid_argument,
+            "Attempt to merge elements at different locations in the sparse "
+            "matrix.  The current element is at (" << rowIndex() << ", "
+            << colIndex() << ") and the element you asked me to merge with it "
+            "is at (" << rhs.rowIndex() << ", " << rhs.colIndex() << ").  This "
+            "probably indicates a bug in the sparse matrix reader.");
+
+          if (replace) {
             value_ = rhs.value_;
-          else
+          }
+          else {
             value_ += rhs.value_;
+          }
         }
 
         //! Row index (zero-based) of this Element.
@@ -236,12 +248,36 @@ namespace Teuchos {
       /// \tparam Scalar The type of entries in the sparse matrix.
       /// \tparam Ordinal The type of indices in the sparse matrix.
       ///
-      /// This class implements the interface required by the Callback
-      /// template parameter of
-      /// Teuchos::MatrixMarket::CoordDataReader.  It provides a
-      /// simple implementation of this interface which is useful for
-      /// things like printing out a sparse matrix's entries, or
-      /// converting between storage formats.
+      /// This class implements the following interface, which is
+      /// required by the Callback template parameter of
+      /// Teuchos::MatrixMarket::CoordDataReader:
+      /// \code
+      /// class AdderType {
+      /// public:
+      ///   typedef ... index_type; // Ellipsis represents the actual type
+      ///   typedef ... value_type; // Ellipsis represents the actual type
+      ///   void operator() (const index_type, const index_type, const value_type&);
+      /// };
+      /// \endcode
+      /// For Adder, the Scalar template parameter is value_type, and
+      /// the Ordinal template parameter is index_type.  Adder
+      /// provides a simple implementation of the above interface
+      /// which is useful for things like printing out a sparse
+      /// matrix's entries, or converting between storage formats.
+      ///
+      /// It is possible to nest classes that implement the above
+      /// interface, in order to modify the definition of inserting
+      /// values into a sparse matrix.  (If you are familiar with
+      /// Emacs Lisp, this is called "advising" (the insertion
+      /// function, in this case).  See the
+      /// <a href="http://www.gnu.org/software/emacs/manual/html_node/elisp/Advising-Functions.html">Emacs Lisp Manual</a>
+      /// for details.)  If you are building a chain of classes, each
+      /// of which implements the above interface by calling the next
+      /// lower class' operator() beneath it, this class is a good
+      /// start, since it implements insertion of values directly.
+      /// SymmetrizingAdder is an example; it "advises" Adder by
+      /// inserting an entry at (j,i) whenever Adder inserts an entry
+      /// at (i,j) with i != j.
       template<class Scalar, class Ordinal>
       class Adder {
       public:
@@ -308,15 +344,26 @@ namespace Teuchos {
         /// If tolerant==false, this method will perform error
         /// checking to ensure that the matrix data matches the
         /// metadata.  For example, it will check that i and j are in
-        /// bounds, and that we haven't added more than the expected
+        /// bounds.  If countAgainstTotal is true, it will also check
+        /// to make sure you haven't added more than the expected
         /// number of matrix entries.  Regardless, this method will
         /// update the "actual" metadata.
         ///
         /// \param i [in] (1-based) row index
         /// \param j [in] (1-based) column index
         /// \param Aij [in] Value of the entry A(i,j)
+        /// \param countAgainstTotal [in] Whether to count the entry
+        ///   to insert against the total expected number of entries.
+        ///   The default is true.  Make this false if you are
+        ///   inserting an entry that wasn't stored in the original
+        ///   Matrix Market file, which you're adding in order to
+        ///   preserve symmetry or some other related structural
+        ///   property of the matrix.
         void
-        operator() (const Ordinal i, const Ordinal j, const Scalar& Aij)
+        operator() (const Ordinal i,
+                    const Ordinal j,
+                    const Scalar& Aij,
+                    const bool countAgainstTotal=true)
         {
           if (! tolerant_) {
             const bool indexPairOutOfRange = i < 1 || j < 1 ||
@@ -341,7 +388,9 @@ namespace Teuchos {
           // matrix in the Matrix Market file.
           seenNumRows_ = std::max (seenNumRows_, i);
           seenNumCols_ = std::max (seenNumCols_, j);
-          seenNumEntries_++;
+          if (countAgainstTotal) {
+            ++seenNumEntries_;
+          }
         }
 
         /// \brief Print the sparse matrix data.
@@ -558,10 +607,14 @@ namespace Teuchos {
           elts_.resize (0);
         }
 
-        //! Computed number of rows.
+        /// \brief Computed number of rows.
+        ///
+        /// "Computed" means "as seen from the matrix data."
         const Ordinal numRows() const { return seenNumRows_; }
 
-        //! Computed number of columns.
+        /// \brief Computed number of columns.
+        ///
+        /// "Computed" means "as seen from the matrix data."
         const Ordinal numCols() const { return seenNumCols_; }
 
       private:
@@ -569,6 +622,8 @@ namespace Teuchos {
         Ordinal seenNumRows_, seenNumCols_, seenNumEntries_;
         bool tolerant_;
         bool debug_;
+
+        //! The actual matrix entries, stored as an array of structs.
         std::vector<element_type> elts_;
       };
     } // namespace Raw
