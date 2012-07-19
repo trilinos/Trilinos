@@ -116,42 +116,22 @@ public:
     return(Matrix_->NormOne());
   }
 
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalNonzeros() const
+  virtual int NumGlobalNonzeros() const
   {
     return(Matrix_->NumGlobalNonzeros());
   }
 
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalRows() const
+  virtual int NumGlobalRows() const
   {
     return(Matrix_->NumGlobalRows());
   }
 
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalCols() const
+  virtual int NumGlobalCols() const
   {
     return(Matrix_->NumGlobalCols());
   }
 
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalDiagonals() const
+  virtual int NumGlobalDiagonals() const
   {
     return(Matrix_->NumGlobalDiagonals());
   }

@@ -373,12 +373,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   int  LID(int GID) const;
   
   //! Returns global ID of local ID, return IndexBase-1 if not found on this processor.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  GID(int LID) const; 
+  EPETRA_DEPRECATED int  GID(int LID) const; 
   
   //! Returns the LID of the element that contains the given local PointID, and the Offset of the point in that element.
   int FindLocalElementID(int PointID, int & ElementID, int & ElementOffset)  const;
@@ -390,36 +385,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   bool  MyLID(int LID_in) const {return(GID(LID_in)!=BlockMapData_->IndexBase_-1);};
   
   //!Returns the minimum global ID across the entire map.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  MinAllGID() const {return(BlockMapData_->MinAllGID_);}
+  EPETRA_DEPRECATED int  MinAllGID() const {return(BlockMapData_->MinAllGID_);};
   
   //! Returns the maximum global ID across the entire map.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  MaxAllGID() const {return(BlockMapData_->MaxAllGID_);}
+  EPETRA_DEPRECATED int  MaxAllGID() const {return(BlockMapData_->MaxAllGID_);};
   
   //! Returns the maximum global ID owned by this processor.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  MinMyGID() const {return(BlockMapData_->MinMyGID_);}
+  EPETRA_DEPRECATED int  MinMyGID() const {return(BlockMapData_->MinMyGID_);};
   
   //! Returns the maximum global ID owned by this processor.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  MaxMyGID() const {return(BlockMapData_->MaxMyGID_);}
+  EPETRA_DEPRECATED int  MaxMyGID() const {return(BlockMapData_->MaxMyGID_);};
   
   //!  The minimum local index value on the calling processor.
   int  MinLID() const {return(BlockMapData_->MinLID_);};
@@ -455,12 +430,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   int  IndexBase() const {return(BlockMapData_->IndexBase_);};
   
   //! Number of global points for this map; equals the sum of all element sizes across all processors.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  long long
-#else
-  EPETRA_DEPRECATED int
-#endif
-  NumGlobalPoints() const {return(BlockMapData_->NumGlobalPoints_);}
+  EPETRA_DEPRECATED int  NumGlobalPoints() const {return(BlockMapData_->NumGlobalPoints_);};
   
   //! Number of local points for this map; equals the sum of all element sizes on the calling processor.
   int  NumMyPoints() const {return(BlockMapData_->NumMyPoints_);};
