@@ -47,7 +47,6 @@
 #include <string>
 #include <KokkosArray_View.hpp>
 #include <impl/KokkosArray_forward.hpp>
-#include <impl/KokkosArray_ArrayBounds.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
 
 namespace KokkosArray {
@@ -137,12 +136,7 @@ void deep_copy(       PrefixSum<IntType,DeviceDst> & dst ,
   typedef PrefixSum<IntType,DeviceDst> dst_type ;
   typedef PrefixSum<IntType,DeviceSrc> src_type ;
 
-  if ( dst.operator!=(src) ) {
-
-    Impl::prefixsum_require_equal_dimension( dst.length() , src.length() );
-
-    Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
-  }
+  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
 }
 
 } // namespace KokkosArray

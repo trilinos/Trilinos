@@ -48,8 +48,6 @@
 #include <KokkosArray_Layout.hpp>
 #include <Host/KokkosArray_Host_MemorySpace.hpp>
 
-#include <impl/KokkosArray_IndexMap.hpp>
-
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
@@ -70,18 +68,6 @@ public:
 
   typedef Impl::HostMemorySpace  memory_space ;
   typedef LayoutRight            array_layout ;
-
-  //! The preferred multi-index map of this device.
-  template< unsigned Rank = 0 ,
-            unsigned N1 = 0 , unsigned N2 = 0 , unsigned N3 = 0 ,
-            unsigned N4 = 0 , unsigned N5 = 0 , unsigned N6 = 0 ,
-            unsigned N7 = 0 >
-  struct IndexMap {
-    typedef Impl::IndexMapRight<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
-  };
-
-
-
 
   //@}
   //! \name Functions that all KokkosArray devices must implement.
@@ -210,21 +196,6 @@ template<> struct HostMapped<Host>
 
 //----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
-
-#if   defined( KOKKOS_VALUE_HPP ) && \
-    ! defined( KOKKOS_HOST_VALUE_HPP )
-#include <Host/KokkosArray_Host_Value.hpp>
-#endif
-
-#if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
-    ! defined( KOKKOS_HOST_MULTIVECTOR_HPP )
-#include <Host/KokkosArray_Host_MultiVector.hpp>
-#endif
-
-#if   defined( KOKKOS_MDARRAY_HPP ) && \
-    ! defined( KOKKOS_HOST_MDARRAY_HPP )
-#include <Host/KokkosArray_Host_MDArray.hpp>
-#endif
 
 #if   defined( KOKKOS_PREFIXSUM_HPP ) && \
     ! defined( KOKKOS_HOST_PREFIXSUM_HPP )
