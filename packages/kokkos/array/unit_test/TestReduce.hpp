@@ -51,7 +51,6 @@
 #include <sstream>
 #include <iostream>
 
-#include <KokkosArray_Value.hpp>
 #include <KokkosArray_ParallelReduce.hpp>
 
 #include <impl/KokkosArray_Preprocessing_macros.hpp>

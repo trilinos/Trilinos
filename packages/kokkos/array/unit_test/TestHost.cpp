@@ -45,19 +45,10 @@
 
 #include <KokkosArray_View.hpp>
 
-#include <KokkosArray_Value.hpp>
-#include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_MDArray.hpp>
 #include <KokkosArray_PrefixSum.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
 #include <KokkosArray_Host.hpp>
-
-//----------------------------------------------------------------------------
-
-#include <KokkosArray_Host_macros.hpp>
-#include <impl/KokkosArray_IndexMapLeft_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -67,10 +58,6 @@
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
 
-#include <TestValue.hpp>
-#include <TestMultiVector.hpp>
-#include <TestMDArray.hpp>
-#include <TestMDArrayIndexMap.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
@@ -112,36 +99,8 @@ TEST_F( host, view_api) {
 }
 
 
-TEST_F( host, value_view_double) {
-  TestValue< double, KokkosArray::Host >();
-}
-
-TEST_F( host, value_view_int) {
-  TestValue< int, KokkosArray::Host >();
-}
-
-TEST_F( host, multivector_double) {
-  TestMultiVector< double, KokkosArray::Host >();
-}
-
-TEST_F( host, multivector_int) {
-  TestMultiVector< int, KokkosArray::Host >();
-}
-
 TEST_F( host, crsarray) {
   TestCrsArray< KokkosArray::Host >();
-}
-
-TEST_F( host, mdarray_view_double) {
-  TestMDArray< double, KokkosArray::Host >();
-}
-
-TEST_F( host, mdarray_view_int) {
-  TestMDArray< int, KokkosArray::Host >();
-}
-
-TEST_F( host, mdarray_index_map) {
-  TestMDArrayIndexMap< KokkosArray::Host >();
 }
 
 TEST_F( host, long_reduce) {
@@ -154,6 +113,47 @@ TEST_F( host, double_reduce) {
 
 TEST_F( host, long_multi_reduce) {
   TestReduceMulti< long , KokkosArray::Host >( 1000000 , 7 );
+}
+
+TEST_F( host , view_remap )
+{
+  enum { N0 = 3 , N1 = 2 , N2 = 8 , N3 = 9 };
+
+  typedef KokkosArray::View< double[0][N1][N2][N3] ,
+                             KokkosArray::LayoutRight ,
+                             KokkosArray::Host > output_type ;
+
+  typedef KokkosArray::View< int[0][0][N2][N3] ,
+                             KokkosArray::LayoutLeft ,
+                             KokkosArray::Host > input_type ;
+
+  typedef KokkosArray::View< int[0][N0][N2][N3] ,
+                             KokkosArray::LayoutLeft ,
+                             KokkosArray::Host > diff_type ;
+
+  output_type output = KokkosArray::create< output_type >( "output" , N0 );
+  input_type  input  = KokkosArray::create< input_type  >( "input" , N0 , N1 );
+  diff_type   diff   = KokkosArray::create< diff_type   >( "diff" , N0 );
+
+  int value = 0 ;
+  for ( size_t i3 = 0 ; i3 < N3 ; ++i3 ) {
+  for ( size_t i2 = 0 ; i2 < N2 ; ++i2 ) {
+  for ( size_t i1 = 0 ; i1 < N1 ; ++i1 ) {
+  for ( size_t i0 = 0 ; i0 < N0 ; ++i0 ) {
+    input(i0,i1,i2,i3) = ++value ;
+  }}}}
+
+  // KokkosArray::deep_copy( diff , input ); // throw with incompatible shape
+  KokkosArray::deep_copy( output , input );
+
+  value = 0 ;
+  for ( size_t i3 = 0 ; i3 < N3 ; ++i3 ) {
+  for ( size_t i2 = 0 ; i2 < N2 ; ++i2 ) {
+  for ( size_t i1 = 0 ; i1 < N1 ; ++i1 ) {
+  for ( size_t i0 = 0 ; i0 < N0 ; ++i0 ) {
+    ++value ;
+    ASSERT_EQ( value , ((int) output(i0,i1,i2,i3) ) );
+  }}}}
 }
 
 

@@ -99,9 +99,9 @@ static void apply( const ShapeType & shape )
   for ( unsigned i6 = 0 ; i6 < shape.N6 ; ++i6 )
   for ( unsigned i7 = 0 ; i7 < shape.N7 ; ++i7 )
   {
-    const size_t j = shape_map::offset( shape, i0, i1, i2, i3, i4, i5, i6, i7 );
-    ASSERT_TRUE( j < alloc );
-    ASSERT_TRUE( offset < (long) j );
+    const long j = shape_map::offset( shape, i0, i1, i2, i3, i4, i5, i6, i7 );
+    ASSERT_TRUE( j < (long) alloc );
+    ASSERT_TRUE( offset < j );
     offset = j ;
   }
 }

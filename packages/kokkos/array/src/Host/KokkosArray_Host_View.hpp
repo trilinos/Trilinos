@@ -60,7 +60,8 @@ namespace Impl {
 /** \brief  Primary creation / allocation factory based upon shape */
 
 template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , void >
+struct Factory< View< DataType , LayoutType , Host > , 
+                typename View< DataType , LayoutType , Host >::shape_type >
 {
   typedef View< DataType , LayoutType , Host >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
@@ -98,9 +99,11 @@ struct Factory< View< DataType , LayoutType , Host > , DataType >
   typedef typename output_type::shape_type      shape_type ;
   typedef typename output_type::value_type      value_type ;
 
-  typedef typename assert_shape_is_rank< shape_type , 0 >::type ok_rank ;
+  typedef typename
+    assert_shape_is_rank_zero< shape_type >::type ok_rank ;
 
-  typedef typename StaticAssertAssignable< value_type , DataType >::type ok_assign ;
+  typedef typename
+    StaticAssertAssignable< value_type , DataType >::type ok_assign ;
 
   static inline
   void deep_copy( const output_type & output , const input_type & input )
@@ -116,9 +119,11 @@ struct Factory< DataType , View< DataType , LayoutType , Host > >
   typedef typename input_type::shape_type       shape_type ;
   typedef typename output_type::value_type      value_type ;
 
-  typedef typename assert_shape_is_rank< shape_type , 0 >::type ok_rank ;
+  typedef typename
+    assert_shape_is_rank_zero< shape_type >::type ok_rank ;
 
-  typedef typename StaticAssertAssignable< DataType , value_type >::type ok_assign ;
+  typedef typename
+    StaticAssertAssignable< DataType , value_type >::type ok_assign ;
 
   static inline
   void deep_copy( output_type & output , const input_type & input )
@@ -189,60 +194,279 @@ public:
   }
 };
 
-/** \brief  Deep different but compatible arrays */
-template< class OutDataType , class OutLayoutType ,
-          class InDataType ,  class InLayoutType >
-struct Factory< View< OutDataType , OutLayoutType , Host > ,
-                View< InDataType ,  InLayoutType ,  Host > >
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+template< class OutputView , unsigned OutputRank ,
+          class InputView  , unsigned InputRank >
+struct HostViewRemap ;
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 8 , InputView , 8 >
+  : public HostThreadWorker<void>
 {
-public:
-  typedef View< OutDataType , OutLayoutType , Host > output_type ;
-  typedef View< InDataType ,  InLayoutType ,  Host > input_type ;
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { HostThreadWorker<void>::execute( *this ); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( Host::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+    for ( Host::size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+    for ( Host::size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7);
+    }}}}}}}}
+
+    this_thread.barrier();
+  }
+};
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 7 , InputView , 7 >
+  : public HostThreadWorker<void>
+{
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { HostThreadWorker<void>::execute( *this ); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( Host::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+    for ( Host::size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+      output(i0,i1,i2,i3,i4,i5,i6) = input(i0,i1,i2,i3,i4,i5,i6);
+    }}}}}}}
+
+    this_thread.barrier();
+  }
+};
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 6 , InputView , 6 >
+  : public HostThreadWorker<void>
+{
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { HostThreadWorker<void>::execute( *this ); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( Host::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+      output(i0,i1,i2,i3,i4,i5) = input(i0,i1,i2,i3,i4,i5);
+    }}}}}}
+
+    this_thread.barrier();
+  }
+};
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 5 , InputView , 5 >
+  : public HostThreadWorker<void>
+{
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { HostThreadWorker<void>::execute( *this ); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+      output(i0,i1,i2,i3,i4) = input(i0,i1,i2,i3,i4);
+    }}}}}
+
+    this_thread.barrier();
+  }
+};
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 4 , InputView , 4 >
+  : public HostThreadWorker<void>
+{
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { HostThreadWorker<void>::execute( *this ); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+      output(i0,i1,i2,i3) = input(i0,i1,i2,i3);
+    }}}}
+
+    this_thread.barrier();
+  }
+};
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 3 , InputView , 3 >
+  : public HostThreadWorker<void>
+{
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { HostThreadWorker<void>::execute( *this ); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+      output(i0,i1,i2) = input(i0,i1,i2);
+    }}}
+
+    this_thread.barrier();
+  }
+};
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 2 , InputView , 2 >
+  : public HostThreadWorker<void>
+{
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { HostThreadWorker<void>::execute( *this ); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+      output(i0,i1) = input(i0,i1);
+    }}
+
+    this_thread.barrier();
+  }
+};
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 1 , InputView , 1 >
+  : public HostThreadWorker<void>
+{
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { HostThreadWorker<void>::execute( *this ); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+      output(i0) = input(i0);
+    }
+
+    this_thread.barrier();
+  }
+};
+
+template< class OutputView , class InputView >
+struct HostViewRemap< OutputView , 0 , InputView , 0 >
+  : public HostThreadWorker<void>
+{
+  const OutputView output ;
+  const InputView  input ;
+
+  HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    { *arg_out = *arg_in ; }
+};
+
+//----------------------------------------------------------------------------
+
+template< class DataTypeOutput , class LayoutOutput ,
+          class DataTypeInput ,  class LayoutInput >
+struct Factory< View< DataTypeOutput , LayoutOutput , Host > ,
+                View< DataTypeInput ,  LayoutInput ,  Host > >
+{
+  typedef View< DataTypeOutput , LayoutOutput , Host > output_type ;
+  typedef View< DataTypeInput ,  LayoutInput ,  Host > input_type ;
 
   static inline
   void deep_copy( const output_type & output ,
                   const input_type  & input )
   {
-    typedef typename output_type::value_type value_type ;
+    typedef typename output_type::value_type output_value_type ;
+    typedef typename input_type ::value_type input_value_type ;
 
-    if ( output != input ) {
-      assert_shapes_are_equal( output.m_shape , input.m_shape );
+    typedef typename output_type::shape_type output_shape ;
+    typedef typename input_type ::shape_type input_shape ;
 
-      const size_t count = allocation_count( output.m_shape );
+    assert_shapes_equal_dimension( output.m_shape , input.m_shape );
 
-      HostParallelCopy<value_type,value_type>( output.ptr_on_device() ,
-                                               input. ptr_on_device() ,
-                                               count );
+    if ( output.m_shape == input.m_shape ) {
+      HostParallelCopy<output_value_type,input_value_type>(
+        output.ptr_on_device() ,
+        input. ptr_on_device() ,
+        allocation_count( output.m_shape ) );
+    }
+    else {
+      HostViewRemap< output_type , output_shape::rank ,
+                     input_type  , input_shape::rank >( output , input );
     }
   }
 };
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-#if 0
-
-template< typename DataType , class LayoutOutput , class LayoutInput >
-struct Factory< View< DataType , LayoutOutput , Host > ,
-                View< DataType , LayoutInput , Host > >
-{
-  typedef View< DataType , LayoutOutput , Host >   output_type ;
-  typedef View< DataType , LayoutInput , Host > input_type ;
-
-  inline static
-  void deep_copy( const output_type & output , const input_type & input )
-  {
-    typedef typename output_type::value_type value_type ;
-
-    HostIndexMapDeepCopy< value_type,
-                          typename output_type::index_map ,
-                          typename input_type ::index_map >
-      ::deep_copy( output.m_data , output.m_index_map ,
-                   input .m_data , input .m_index_map );
-  }
-};
-
-#endif
 
 //----------------------------------------------------------------------------
 
@@ -250,4 +474,5 @@ struct Factory< View< DataType , LayoutOutput , Host > ,
 } // namespace KokkosArray
 
 #endif /* #ifndef KOKKOS_HOST_VIEW_HPP */
+
 

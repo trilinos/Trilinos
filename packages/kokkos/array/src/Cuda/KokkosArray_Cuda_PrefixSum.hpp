@@ -46,8 +46,6 @@
 
 #include <string>
 
-#include <Cuda/KokkosArray_Cuda_IndexMap.hpp>
-
 #include <KokkosArray_Cuda_macros.hpp>
 #include <impl/KokkosArray_PrefixSum_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
