@@ -61,15 +61,10 @@ struct Factory< PrefixSum< IntType , DeviceDst > ,
   typedef PrefixSum< IntType, DeviceDst > output_type ;
   typedef PrefixSum< IntType, DeviceSrc > input_type ;
 
-  typedef typename output_type::view_type output_view_type ;
-  typedef typename input_type::view_type  input_view_type ;
-
-  typedef Factory< output_view_type , input_view_type > view_factory ;
-
   static inline
   void deep_copy( output_type & output , const input_type & input )
   {
-    view_factory::deep_copy( output.m_data , input.m_data );
+    KokkosArray::deep_copy( output.m_data , input.m_data );
     output.m_sum = input.m_sum ;
   }
 
@@ -78,9 +73,11 @@ struct Factory< PrefixSum< IntType , DeviceDst > ,
   {
     output_type output ;
 
-    output.m_data = view_factory::create( input.m_data );
+    output.m_data = Factory< typename output_type::view_type ,
+                             typename input_type::view_type >
+                      ::create( input.m_data );
 
-    view_factory::deep_copy( output.m_data , input.m_data );
+    KokkosArray::deep_copy( output.m_data , input.m_data );
 
     output.m_sum = input.m_sum ;
 
@@ -139,7 +136,7 @@ struct Factory< PrefixSum< IntTypeOutput , DeviceOutput > ,
       tmp[i+1] = output.m_sum += input[i] ;
     }
 
-    deep_copy( output.m_data , tmp );
+    KokkosArray::deep_copy( output.m_data , tmp );
 
     return output ;
   }

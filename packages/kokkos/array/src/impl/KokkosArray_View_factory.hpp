@@ -69,14 +69,9 @@ create( const std::string & label )
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<0> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create();
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 template< class ViewType >
@@ -95,14 +90,9 @@ create( const std::string & label ,
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<1> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create(n0);
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 template< class ViewType >
@@ -121,14 +111,9 @@ create( const std::string & label ,
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<2> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create(n0,n1);
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 template< class ViewType >
@@ -147,14 +132,9 @@ create( const std::string & label ,
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<3> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create(n0,n1,n2);
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 template< class ViewType >
@@ -173,14 +153,9 @@ create( const std::string & label ,
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<4> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create(n0,n1,n2,n3);
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 template< class ViewType >
@@ -200,14 +175,9 @@ create( const std::string & label ,
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<5> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4);
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 template< class ViewType >
@@ -227,14 +197,9 @@ create( const std::string & label ,
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<6> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5);
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 template< class ViewType >
@@ -254,14 +219,9 @@ create( const std::string & label ,
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<7> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5,n6);
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 template< class ViewType >
@@ -281,14 +241,9 @@ create( const std::string & label ,
   typedef typename view_type::memory_space  memory_space ;
   typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
 
-  typedef typename
-    Impl::StaticAssertSame< Impl::unsigned_<8> ,
-                            Impl::unsigned_< shape_type::rank_dynamic >
-                          >::type ok_rank ;
-
   const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5,n6,n7);
 
-  return Impl::Factory< view_type , void >::create( label , shape );
+  return Impl::Factory< view_type , shape_type >::create( label , shape );
 }
 
 //----------------------------------------------------------------------------
@@ -395,9 +350,6 @@ void deep_copy( const View<DataType,LayoutType,DeviceType> & dst ,
   typedef typename dst_type::value_type               value_type ;
 
   typedef typename
-    Impl::assert_shape_is_rank< shape_type , 0 >::type ok_rank ;
-
-  typedef typename
     Impl::StaticAssertAssignable< value_type , DataType >::type ok_assign ;
 
   Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
@@ -415,7 +367,7 @@ void deep_copy( DataType & dst ,
   typedef typename src_type::value_type               value_type ;
 
   typedef typename
-    Impl::assert_shape_is_rank< shape_type , 0 >::type ok_rank ;
+    Impl::assert_shape_is_rank_zero< shape_type >::type ok_rank ;
 
   typedef typename
     Impl::StaticAssertAssignable< DataType , value_type >::type ok_assign ;

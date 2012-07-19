@@ -69,12 +69,6 @@ struct MirrorUseView {};
 
 template< class DstType , class SrcType >  struct Factory ;
 
-template< class MatrixType ,
-          class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType > class MMultiply ;
-template < class ValueType, class Device > class MatrixMarketWriter ;
-template < class MultiVectorType > class Update ;
-
 }
 }
 
