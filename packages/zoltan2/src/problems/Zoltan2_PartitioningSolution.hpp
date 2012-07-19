@@ -1090,9 +1090,10 @@ template <typename Adapter>
 
   partId_t lMax, lMin, gMax, gMin;
   
-  IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
+  if (len > 0)
+    IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
 
-  IdentifierTraits<partId_t>::globalMinMax(*comm_, 
+  IdentifierTraits<partId_t>::globalMinMax(*comm_, len == 0,
     lMin, lMax, gMin, gMax);
       
   nGlobalPartsSolution_ = gMax - gMin + 1;
