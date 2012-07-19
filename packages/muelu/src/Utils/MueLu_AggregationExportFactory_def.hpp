@@ -64,7 +64,7 @@ namespace MueLu {
     }
 
     GO numAggs = aggregates->GetNumAggregates();
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
+    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);
     ComputeAggregateSizes(*aggregates, *amalgInfo, aggSizes);
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > aggToRowMap(aggSizes.size());
     ComputeAggregateToRowMap(*aggregates, *amalgInfo, aggSizes, aggToRowMap);

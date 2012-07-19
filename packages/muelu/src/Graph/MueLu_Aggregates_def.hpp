@@ -46,13 +46,13 @@ namespace MueLu {
   Teuchos::ArrayRCP<LocalOrdinal>  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateSizes() const {
     if (aggregateSizes_ == Teuchos::null)
       {
-        aggregateSizes_ = Teuchos::ArrayRCP<LO>(nAggregates_);
+        aggregateSizes_ = Teuchos::ArrayRCP<LO>(nAggregates_,0);
         int myPid = vertex2AggId_->getMap()->getComm()->getRank();
         Teuchos::ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
         Teuchos::ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
         LO size = procWinner.size();
 
-        for (LO i = 0; i < nAggregates_; ++i) aggregateSizes_[i] = 0;
+        //for (LO i = 0; i < nAggregates_; ++i) aggregateSizes_[i] = 0;
         for (LO k = 0; k < size; ++k ) {
           if (procWinner[k] == myPid) aggregateSizes_[vertex2AggId[k]]++;
         }

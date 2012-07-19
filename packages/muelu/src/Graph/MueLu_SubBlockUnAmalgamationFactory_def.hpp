@@ -80,10 +80,12 @@ void SubBlockUnAmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, Lo
   nodegid2dofgids_ = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);
 
   // extract information from overlapping column map of A
+  Teuchos::RCP<const Map> colMap = A->getColMap();
   GlobalOrdinal cnt_amalRows = 0; // counts number of nodes (rows in amalgamated matrix) on current proc
-  for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(A->getColMap()->getNodeNumElements());i++) {
+  LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(A->getColMap()->getNodeNumElements());
+  for(LocalOrdinal i=0; i<nColEle;i++) {
     // get global DOF id
-    GlobalOrdinal gDofId = A->getColMap()->getGlobalElement(i);
+    GlobalOrdinal gDofId = colMap->getGlobalElement(i);
 
     // translate DOFGid to node id
     GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, A, fullblocksize, offset);

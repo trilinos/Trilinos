@@ -98,7 +98,7 @@ namespace MueLu {
     GO numAggs = aggregates.GetNumAggregates();
 
     // Compute array of aggregate sizes (in dofs).
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
+    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);
     ComputeAggregateSizes(aggregates, amalgInfo, aggSizes);
 
     // find size of the largest aggregate.
@@ -414,7 +414,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateSizes(const Aggregates & aggregates, const AmalgamationInfo & amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const {
     // we expect the aggSizes array to be initialized as follows
-    // aggSizes = Teuchos::ArrayRCP<LO>(nAggregates_);
+    // aggSizes = Teuchos::ArrayRCP<LO>(nAggregates_,0);
     // furthermore we suppose the (un)amalgamation info to be set (even for 1 dof per node examples)
 
     int myPid = aggregates.GetMap()->getComm()->getRank();
@@ -422,7 +422,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
     LO size = procWinner.size();
 
-    for (LO i = 0; i< aggregates.GetNumAggregates(); ++i) aggSizes[i] = 0;
+    //for (LO i = 0; i< aggregates.GetNumAggregates(); ++i) aggSizes[i] = 0;
     for (LO lnode = 0; lnode < size; ++lnode) {
       LO myAgg = vertex2AggId[lnode];
       if (procWinner[lnode] == myPid) {
@@ -455,7 +455,8 @@ namespace MueLu {
       if (procWinner[lnode] == myPid) {
         GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
         std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-        for (LO gDofId=0; gDofId < Teuchos::as<LO>(gDofIds.size()); gDofId++) {
+        LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
+        for (LO gDofId=0; gDofId < gDofIds_size; gDofId++) {
           aggToRowMap[ myAgg ][ numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
           ++(numDofs[myAgg]);
         }
@@ -470,11 +471,11 @@ namespace MueLu {
     Teuchos::RCP<const Map> nodeMap = aggregates.GetMap(); //aggregates.GetVertex2AggId();
 
     Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
-    for(LO n = 0; n<Teuchos::as<LO>(nodeMap->getNodeNumElements()); n++) {
+    LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
+    for(LO n = 0; n<nodeElements; n++) {
       GO gnodeid = (GO) nodeMap->getGlobalElement(n);
       std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-      typename std::vector<GO>::iterator gDofIdsIt;
-      for(gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
+      for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
         myDofGids->push_back(*gDofIdsIt);
       }
     }
