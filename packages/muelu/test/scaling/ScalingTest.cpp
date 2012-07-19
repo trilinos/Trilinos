@@ -215,6 +215,8 @@ int main(int argc, char *argv[]) {
     Finest->Set("Nullspace",nullSpace);
     Finest->Set("Coordinates",Coordinates); //FIXME: XCoordinates, YCoordinates, ..
 
+    RCP<CoalesceDropFactory> GraphFact = rcp(new CoalesceDropFactory()); /* do not use the permuted nullspace (otherwise, circular dependencies) */
+
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     *out << "========================= Aggregate option summary  =========================" << std::endl;
     *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
@@ -319,12 +321,6 @@ int main(int argc, char *argv[]) {
 
     M.SetFactory("A",AcfactFinal);
     M.SetFactory("Smoother",SmooFact);
-
-#if OLD
-    RCP<CoalesceDropFactory> GraphFact = rcp(new CoalesceDropFactory(Teuchos::null, PtentFact)); /* do not use the permuted nullspace (otherwise, circular dependencies) */
-#else
-    RCP<CoalesceDropFactory> GraphFact = rcp(new CoalesceDropFactory(Teuchos::null/*, PtentFact*/)); /* do not use the permuted nullspace (otherwise, circular dependencies) */
-#endif
     M.SetFactory("Graph", GraphFact);
 
     if (useExplicitR) {

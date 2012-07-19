@@ -185,7 +185,7 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact,dropFact));
 
   TentPFact->setStridingData(stridingInfo);
   TentPFact->setStridedBlockId(stridedBlockId);
@@ -234,7 +234,10 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   //H->SetCoarsestSolver(*SmooFact);
 
   FactoryManager M;
+  //M.SetFactory("Graph", dropFact);
+  //M.SetFactory("UnAmalgamationInfo", dropFact);
   M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Ptent", TentPFact);
   M.SetFactory("P", Pfact);
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);

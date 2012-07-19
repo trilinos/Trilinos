@@ -153,19 +153,6 @@ int main(int argc, char *argv[]) {
 
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
-  //dropFact->SetFixedBlockSize(nDofsPerNode);
-  //dropFact->SetVariableBlockSize();
-
-  // setup "variable" block size information
-  /*RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());
-  Teuchos::ArrayRCP< GlobalOrdinal > vectordata = globalrowid2globalamalblockid_vector->getDataNonConst(0);
-  for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(Op->getRowMap()->getNodeNumElements());i++) {
-    GlobalOrdinal gDofId = Op->getColMap()->getGlobalElement(i);
-    GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nDofsPerNode;
-    (vectordata)[i] = globalblockid;
-  }
-  Finest->Set("VariableBlockSizeInfo", globalrowid2globalamalblockid_vector);*/
-
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
@@ -225,6 +212,7 @@ int main(int argc, char *argv[]) {
   RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
 
   FactoryManager M;
+  M.SetFactory("Graph", dropFact);
   M.SetFactory("Aggregates", UCAggFact);
   M.SetFactory("P", Pfact);
   M.SetFactory("R", Rfact);
