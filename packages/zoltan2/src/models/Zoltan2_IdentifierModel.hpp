@@ -145,7 +145,7 @@ public:
 
   /*! Returns the dimension (0 or greater) of identifier weights.
    */
-  int getIdentifierWeightDim() const { return weights_.size(); }
+  int getIdentifierWeightDim() const { return this->getNumWeights(); }
 
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
@@ -221,6 +221,8 @@ template <typename User>
 {
   int weightDim = ia->getNumberOfWeights();
   size_t nLocalIds = ia->getLocalNumberOfIdentifiers();
+
+  Model<IdentifierInput<User> >::maxCount(*comm, weightDim);
 
   Array<const scalar_t *> wgts(weightDim, NULL);
   Array<int> wgtStrides(weightDim, 0);
@@ -324,7 +326,7 @@ public:
 
   /*! Returns the dimension (0 or greater) of identifier weights.
    */
-  int getIdentifierWeightDim() const { return weights_.size(); }
+  int getIdentifierWeightDim() const { return this->getNumWeights();}
 
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
@@ -435,6 +437,8 @@ template <typename User>
 
   int weightDim = ia->getNumberOfWeights();
   Array<lno_t> weightListSizes(weightDim, 0);
+
+  Model<CoordinateInput<User> >::maxCount(*comm, weightDim);
 
   if (weightDim > 0){
     input_t *weightObj = new input_t [weightDim];

@@ -145,7 +145,7 @@ public:
 
   global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
 
-  int getCoordinateWeightDim() const { return weightDim_; }
+  int getCoordinateWeightDim() const { return this->getNumWeights(); }
 
   size_t getCoordinates(ArrayView<const gno_t>  &Ids,
     ArrayView<input_t> &xyz,
@@ -166,8 +166,9 @@ public:
 
       xyz =  xyz_.view(0, coordinateDim_);
 
-      if (weightDim_)
-	wgts = weights_.view(0, weightDim_);
+      int wdim = this->getNumWeights();
+      if (wdim > 0)
+	wgts = weights_.view(0, wdim);
     }
     
     return n;
@@ -203,7 +204,6 @@ private:
   int coordinateDim_;
   ArrayRCP<const gid_t> gids_;
   ArrayRCP<input_t> xyz_;
-  int weightDim_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
@@ -216,7 +216,7 @@ template <typename User>
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
-      coordinateDim_(), gids_(), xyz_(), weightDim_(), weights_(), 
+      coordinateDim_(), gids_(), xyz_(), weights_(), 
       gnos_(), gnosConst_()
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
@@ -226,20 +226,22 @@ template <typename User>
   // Get coordinates and weights (if any)
 
   coordinateDim_ = ia->getCoordinateDimension();
-  weightDim_ = ia->getNumberOfWeights();
+  int wdim = ia->getNumberOfWeights();
+
+  Model<CoordinateInput<User> >::maxCount(*comm, coordinateDim_, wdim);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
 
   input_t *coordArray = new input_t [coordinateDim_];
   input_t *weightArray = NULL;
-  if (weightDim_)
-    weightArray = new input_t [weightDim_];
+  if (wdim)
+    weightArray = new input_t [wdim];
 
-  env_->localMemoryAssertion(__FILE__, __LINE__, weightDim_+coordinateDim_,
-    coordArray && (!weightDim_ || weightArray));
+  env_->localMemoryAssertion(__FILE__, __LINE__, wdim+coordinateDim_,
+    coordArray && (!wdim || weightArray));
 
-  Array<lno_t> arrayLengths(weightDim_, 0);
+  Array<lno_t> arrayLengths(wdim, 0);
 
   if (nLocalIds){
     for (int dim=0; dim < coordinateDim_; dim++){
@@ -258,27 +260,28 @@ template <typename User>
         gids_ = arcp(gids, 0, nLocalIds, false);
     }
 
-    for (int wdim=0; wdim < weightDim_; wdim++){
+    for (int dim=0; dim < wdim; dim++){
       int stride;
       const scalar_t *weights;
       try{
-        ia->getCoordinateWeights(wdim, weights, stride);
+        ia->getCoordinateWeights(dim, weights, stride);
       }
       Z2_FORWARD_EXCEPTIONS;
 
       if (weights){
         ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[wdim] = input_t(wArray, stride);
-        arrayLengths[wdim] = nLocalIds;
+        weightArray[dim] = input_t(wArray, stride);
+        arrayLengths[dim] = nLocalIds;
       }
     }
   }
 
   xyz_ = arcp(coordArray, 0, coordinateDim_);
 
-  if (weightDim_)
-    weights_ = arcp(weightArray, 0, weightDim_);
+  if (wdim)
+    weights_ = arcp(weightArray, 0, wdim);
 
+  // Sets this->weightDim_, this->uniform_
   this->setWeightArrayLengths(arrayLengths, *comm_);
 
   // Create identifier map.
@@ -374,8 +377,9 @@ public:
 
       xyz =  xyz_.view(0, coordinateDim_);
 
-      if (weightDim_)
-	wgts = weights_.view(0, weightDim_);
+      int wdim = this->getNumWeights();
+      if (wdim)
+	wgts = weights_.view(0, wdim);
     }
     
     return n;
@@ -411,7 +415,6 @@ private:
   int coordinateDim_;
   ArrayRCP<const gid_t> gids_;
   ArrayRCP<input_t> xyz_;
-  int weightDim_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
@@ -423,14 +426,16 @@ template <typename User>
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
-      coordinateDim_(), gids_(), xyz_(), weightDim_(), weights_(), 
+      coordinateDim_(), gids_(), xyz_(), weights_(), 
       gnos_(), gnosConst_()
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
-  weightDim_ = 0;  // at the present time, matrix input does not have weights
+  int wdim = 0;  // at the present time, matrix input does not have weights
 
   coordinateDim_ = ia->getCoordinateDimension();
+
+  Model<MatrixInput<User> >::maxCount(*comm, coordinateDim_, wdim);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
@@ -526,7 +531,7 @@ public:
 
   global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
 
-  int getCoordinateWeightDim() const { return weightDim_;}
+  int getCoordinateWeightDim() const { return this->getNumWeights();}
 
   size_t getCoordinates(ArrayView<const gno_t>  &Ids,
     ArrayView<input_t> &xyz,
@@ -547,8 +552,9 @@ public:
 
       xyz =  xyz_.view(0, coordinateDim_);
 
-      if (weightDim_)
-        wgts = weights_.view(0, weightDim_);
+      int wdim = this->getNumWeights();
+      if (wdim > 0)
+        wgts = weights_.view(0, wdim);
     }
 
     return n;
@@ -577,7 +583,6 @@ private:
   int coordinateDim_;
   ArrayRCP<const gid_t> gids_;
   ArrayRCP<input_t> xyz_;
-  int weightDim_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
@@ -589,7 +594,7 @@ CoordinateModel<VectorInput<User> >::CoordinateModel(
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
-      coordinateDim_(), gids_(), xyz_(), weightDim_(), weights_(), 
+      coordinateDim_(), gids_(), xyz_(), weights_(), 
       gnos_(), gnosConst_()
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
@@ -599,20 +604,22 @@ CoordinateModel<VectorInput<User> >::CoordinateModel(
   // Get coordinates and weights (if any)
 
   coordinateDim_ = ia->getNumberOfVectors();
-  weightDim_ = ia->getNumberOfWeights();
+  int wdim = ia->getNumberOfWeights();
+
+  Model<VectorInput<User> >::maxCount(*comm, coordinateDim_, wdim);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
 
   input_t *coordArray = new input_t [coordinateDim_];
   input_t *weightArray = NULL;
-  if (weightDim_)
-    weightArray = new input_t [weightDim_];
+  if (wdim)
+    weightArray = new input_t [wdim];
 
-  env_->localMemoryAssertion(__FILE__, __LINE__, weightDim_+coordinateDim_,
-    coordArray && (!weightDim_ || weightArray));
+  env_->localMemoryAssertion(__FILE__, __LINE__, wdim+coordinateDim_,
+    coordArray && (!wdim|| weightArray));
 
-  Array<lno_t> arrayLengths(weightDim_, 0);
+  Array<lno_t> arrayLengths(wdim, 0);
 
   if (nLocalIds){
     for (int dim=0; dim < coordinateDim_; dim++){
@@ -631,27 +638,28 @@ CoordinateModel<VectorInput<User> >::CoordinateModel(
         gids_ = arcp(gids, 0, nLocalIds, false);
     }
 
-    for (int wdim=0; wdim < weightDim_; wdim++){
+    for (int dim=0; dim < wdim; dim++){
       int stride;
       const scalar_t *weights;
       try{
-        ia->getVectorWeights(wdim, weights, stride);
+        ia->getVectorWeights(dim, weights, stride);
       }
       Z2_FORWARD_EXCEPTIONS;
 
       if (weights){
         ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[wdim] = input_t(wArray, stride);
-        arrayLengths[wdim] = nLocalIds;
+        weightArray[dim] = input_t(wArray, stride);
+        arrayLengths[dim] = nLocalIds;
       }
     }
   }
 
   xyz_ = arcp(coordArray, 0, coordinateDim_);
 
-  if (weightDim_)
-    weights_ = arcp(weightArray, 0, weightDim_);
+  if (wdim)
+    weights_ = arcp(weightArray, 0, wdim);
 
+  // Sets this->weightDim_ and this->uniform_
   this->setWeightArrayLengths(arrayLengths, *comm_);
 
   // Create identifier map.
