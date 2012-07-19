@@ -346,11 +346,6 @@ void deep_copy( const View<DataType,LayoutType,DeviceType> & dst ,
 {
   typedef View< DataType , LayoutType , DeviceType >  dst_type ;
   typedef DataType                                    src_type ;
-  typedef typename dst_type::shape_type               shape_type ;
-  typedef typename dst_type::value_type               value_type ;
-
-  typedef typename
-    Impl::StaticAssertAssignable< value_type , DataType >::type ok_assign ;
 
   Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
 }
@@ -363,14 +358,6 @@ void deep_copy( DataType & dst ,
 {
   typedef DataType                                    dst_type ;
   typedef View< DataType , LayoutType , DeviceType >  src_type ;
-  typedef typename src_type::shape_type               shape_type ;
-  typedef typename src_type::value_type               value_type ;
-
-  typedef typename
-    Impl::assert_shape_is_rank_zero< shape_type >::type ok_rank ;
-
-  typedef typename
-    Impl::StaticAssertAssignable< DataType , value_type >::type ok_assign ;
 
   Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
 }

@@ -72,7 +72,7 @@ struct CrsMatrix {
   typedef Device      device_type ;
   typedef ScalarType  value_type ;
 
-  typedef CrsArray< int , device_type , int >  graph_type ;
+  typedef CrsArray< int , device_type , device_type , int >  graph_type ;
   typedef View< value_type[] , device_type >   coefficients_type ;
 
   graph_type         graph ;

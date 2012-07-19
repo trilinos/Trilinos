@@ -51,14 +51,14 @@
 
 namespace KokkosArray {
 
-template< typename IntType >
-class PrefixSum< IntType , KOKKOS_MACRO_DEVICE >
+template< typename IntType , class LayoutType >
+class PrefixSum< IntType , LayoutType , KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE    device_type ;
   typedef IntType                size_type ;
 
-  typedef PrefixSum< size_type , HostMapped< device_type >::type > HostMirror ;
+  typedef PrefixSum< size_type , LayoutType , Host > HostMirror ;
 
   /*------------------------------------------------------------------*/
 
@@ -138,13 +138,12 @@ public:
 
 private:
 
-  typedef View< size_type[] , typename device_type::array_layout ,
-                              typename device_type::device_type > view_type ;
+  typedef View< size_type[] , LayoutType , device_type > view_type ;
 
   view_type  m_data ;
   size_type  m_sum ;
 
-  template< typename , class > friend class PrefixSum ;
+  template< typename , class , class > friend class PrefixSum ;
   template< class Dst , class Src >  friend class Impl::Factory ;
 };
 
