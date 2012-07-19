@@ -33,63 +33,107 @@ module dr_sort
 use zoltan
 implicit none
 public :: dr_sort_index
+public :: dr_sort2_index
 
 contains
 
-subroutine dr_sort_index(n, ra, indx)
+subroutine dr_sort_index_sub(sorted, val1, starti, endi, equal, larger)
 use zoltan
-integer(Zoltan_INT) :: n
+integer(Zoltan_INT) :: starti, endi, equal, larger
+integer(Zoltan_INT) :: sorted(0:)
+integer(Zoltan_INT) :: val1(0:)
+integer(Zoltan_INT) :: i, key, next, key_next
+
+  i = (endi + starti) / 2
+  key = val1(sorted(i))
+
+  equal = starti
+  larger = starti
+  do i = starti, endi
+     next = sorted(i)
+     key_next = val1(next)
+     if (key_next < key) then
+        sorted(i) = sorted(larger)
+        sorted(larger) = sorted(equal)
+        larger = larger + 1
+        sorted(equal)  = next
+        equal = equal + 1
+     else 
+       if (key_next == key) then
+        sorted(i) = sorted(larger)
+        sorted(larger) = next
+        larger = larger + 1
+       endif
+     endif
+  end do
+end subroutine dr_sort_index_sub
+
+recursive subroutine dr_sort_index(starti, endi, ra, indx)
+use zoltan
+integer(Zoltan_INT) :: starti, endi
 integer(Zoltan_INT) :: ra(0:)
 integer(Zoltan_INT) :: indx(0:)
 
-!/*
-!*       Numerical Recipies in C source code
-!*       modified to have first argument an integer array
-!*
-!*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
-!*       heapsort algorithm.
-!*
-!*/
+integer(Zoltan_INT) :: equal, larger
 
-  integer(Zoltan_INT) :: l, j, ir, i
-  integer(Zoltan_INT) :: rra, irra
-!  /*
-!   *  No need to sort if one or fewer items.
-!   */
-  if (n <= 1) return
+  if (starti < endi) then
+     call dr_sort_index_sub(indx,ra,starti,endi,equal,larger)
+     call dr_sort_index(starti, equal-1, ra, indx)
+     call dr_sort_index(larger, endi, ra, indx)
+  endif
 
-  l=n/2
-  ir=n-1
-  do
-    if (l > 0) then
-      l = l-1
-      rra=ra(indx(l))
-      irra=indx(l)
-    else
-      rra=ra(indx(ir))
-      irra=indx(ir)
-
-      indx(ir)=indx(0)
-      ir = ir-1
-      if (ir == 0) then
-        indx(0)=irra
-        return
-      endif
-    endif
-    i=l
-    j=2*l+1
-    do while (j <= ir)
-      if (j < ir .and. ra(indx(j)) < ra(indx(j+1))) j = j+1
-      if (rra < ra(indx(j))) then
-        indx(i)=indx(j)
-        i = j
-        j = j+i+1
-      else
-        j=ir+1
-      endif
-    end do
-    indx(i)=irra
-  end do
 end subroutine dr_sort_index
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine dr_sort2_index_sub(sorted, val1, val2, starti, endi, equal, larger)
+use zoltan
+integer(Zoltan_INT) :: starti, endi, equal, larger
+integer(Zoltan_INT) :: sorted(0:)
+integer(Zoltan_INT) :: val1(0:)
+integer(Zoltan_INT) :: val2(0:)
+integer(Zoltan_INT) :: i, key1, next, key1_next, key2, key2_next
+
+  i = (endi + starti) / 2
+  key1 = val1(sorted(i))
+  key2 = val2(sorted(i))
+
+  equal = starti
+  larger = starti
+  do i = starti, endi
+     next = sorted(i)
+     key1_next = val1(next)
+     key2_next = val2(next)
+     if ((key1_next < key1) .or. ((key1_next == key1) .and. (key2_next < key2))) then
+        sorted(i) = sorted(larger)
+        sorted(larger) = sorted(equal)
+        larger = larger + 1
+        sorted(equal)  = next
+        equal = equal + 1
+     else 
+       if ((key1_next == key1) .and. (key2_next == key2)) then
+        sorted(i) = sorted(larger)
+        sorted(larger) = next
+        larger = larger + 1
+       endif
+     endif
+  end do
+end subroutine dr_sort2_index_sub
+
+recursive subroutine dr_sort2_index(starti, endi, val1, val2, indx)
+use zoltan
+integer(Zoltan_INT) :: starti, endi
+integer(Zoltan_INT) :: val1(0:)
+integer(Zoltan_INT) :: val2(0:)
+integer(Zoltan_INT) :: indx(0:)
+
+integer(Zoltan_INT) :: equal, larger
+
+  if (starti < endi) then
+     call dr_sort2_index_sub(indx,val1,val2,starti,endi,equal,larger)
+     call dr_sort2_index(starti, equal-1, val1, val2, indx)
+     call dr_sort2_index(larger, endi, val1, val2, indx)
+  endif
+
+end subroutine dr_sort2_index
 
 end module dr_sort

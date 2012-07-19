@@ -356,12 +356,6 @@ type(ELEM_INFO), pointer :: elements(:)
    integer :: fp
    end subroutine echo_cmd_file
 
-!   subroutine sort_index(n, ra, indx)
-!   use zoltan
-!   integer(Zoltan_INT) :: n
-!   integer(Zoltan_INT) :: ra(0:)
-!   integer(Zoltan_INT) :: indx(0:)
-!   end subroutine sort_index
   end interface
 
 !/***************************** BEGIN EXECUTION ******************************/
@@ -409,7 +403,7 @@ type(ELEM_INFO), pointer :: elements(:)
     endif
   end do
 
-  call dr_sort_index(Mesh%num_elems, global_ids, index)
+  call dr_sort_index(0, Mesh%num_elems-1, global_ids, index)
 
 !  /* generate the parallel filename for this processor */
   ctemp = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".out"

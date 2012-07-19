@@ -147,7 +147,7 @@ type(PARIO_INFO) :: pio_info
       enddo
       !print *, 'Before sort (i):', mm_iidx(0), mm_iidx(1), mm_iidx(2)
       !print *, 'Before sort (j):', mm_jidx(0), mm_jidx(1), mm_jidx(2)
-      call dr_sort_index(mm_nnz, tmp, idx) ! TEST
+      call dr_sort_index(0, mm_nnz-1, tmp, idx) ! TEST
       ! Permute mm_iidx and mm_jidx
       do i = 0, mm_nnz-1
         tmp(i) = mm_iidx(idx(i))

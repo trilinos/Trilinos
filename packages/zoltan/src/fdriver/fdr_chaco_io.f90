@@ -1163,6 +1163,7 @@ end subroutine free_element_arrays
 !/*****************************************************************************/
 
 logical function build_elem_comm_maps(proc, elements)
+use dr_sort
 integer(Zoltan_INT) :: proc
 type(ELEM_INFO), target :: elements(0:)
 
@@ -1344,9 +1345,9 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
 !     */
 
     if (proc < Mesh%ecmap_id(i)) then
-      call sort2_index(Mesh%ecmap_cnt(i), map%glob_id, map%neigh_id, sindex)
+      call dr_sort2_index(0, Mesh%ecmap_cnt(i)-1, map%glob_id, map%neigh_id, sindex)
     else
-      call sort2_index(Mesh%ecmap_cnt(i), map%neigh_id, map%glob_id, sindex)
+      call dr_sort2_index(0, Mesh%ecmap_cnt(i)-1, map%neigh_id, map%glob_id, sindex)
     endif
 
 !    /*
@@ -1405,72 +1406,6 @@ end function in_list
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-
-subroutine sort2_index(n, ra, sa, indx)
-integer(Zoltan_INT) :: n, ra(0:), sa(0:), indx(0:)
-
-!/*
-!*       Numerical Recipies in C source code
-!*       modified to have first argument an integer array
-!*
-!*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
-!*       heapsort algorithm.  Use array sa as secondary sort key; that is,
-!*       if (ra[i] == ra[j]), then compare sa[i], sa[j] to determine order.
-!*       Array ra is not reorganized.  An index array indx is built that
-!*       gives the new order.
-!*
-!*/
-
-  integer(Zoltan_INT) ::   l, j, ir, i
-  integer(Zoltan_INT) ::   rra, irra
-  integer(Zoltan_INT) ::   ssa
-
-!  /*
-!   *  No need to sort if one or fewer items.
-!   */
-  if (n <= 1) return
-
-  l=n/2
-  ir=n-1
-  do
-    if (l > 0) then
-      l = l-1
-      rra=ra(indx(l))
-      ssa=sa(indx(l))
-      irra = indx(l)
-    else
-      rra=ra(indx(ir))
-      ssa=sa(indx(ir))
-      irra=indx(ir)
-
-      indx(ir)=indx(0)
-      ir = ir - 1
-      if (ir == 0) then
-        indx(0)=irra
-        return
-      endif
-    endif
-    i=l
-    j=(l*2)+1
-    do while (j <= ir)
-      if (j < ir .and. &
-          ((ra(indx(j)) <  ra(indx(j+1))) .or. &
-           (ra(indx(j)) == ra(indx(j+1)) .and. sa(indx(j)) < sa(indx(j+1))))) &
-        j = j+1
-      if ((rra <  ra(indx(j))) .or. &
-          (rra == ra(indx(j)) .and. ssa < sa(indx(j)))) then
-        indx(i) = indx(j)
-        i=j
-        j = j + i+1
-      else
-        j=ir+1
-      endif
-    end do
-    indx(i)=irra
-  end do
-end subroutine sort2_index
-
-!******************************************************************
 
 subroutine realloc(array,n,stat)
 integer(Zoltan_INT), pointer :: array(:)
