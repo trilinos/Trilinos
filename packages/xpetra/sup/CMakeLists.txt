@@ -55,4 +55,5 @@ TRIBITS_ADD_LIBRARY(
   muelu-xpetra-sup
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS muelu-xpetra
   )
