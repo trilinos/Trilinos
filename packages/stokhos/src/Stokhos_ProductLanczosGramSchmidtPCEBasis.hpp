@@ -26,62 +26,55 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_COMPLETEPOLYNOMIALBASIS_HPP
-#define STOKHOS_COMPLETEPOLYNOMIALBASIS_HPP
+#ifndef STOKHOS_PRODUCT_LANCZOS_GRAM_SCHMIDT_PCE_BASIS_HPP
+#define STOKHOS_PRODUCT_LANCZOS_GRAM_SCHMIDT_PCE_BASIS_HPP
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
-#include "Stokhos_DerivBasis.hpp"
-#include "Stokhos_OneDOrthogPolyBasis.hpp"
-#include "Stokhos_ProductBasisUtils.hpp"
+#include "Stokhos_ReducedPCEBasis.hpp"
+#include "Stokhos_OrthogPolyApprox.hpp"
+#include "Stokhos_Quadrature.hpp"
+#include "Stokhos_Sparse3Tensor.hpp"
+#include "Stokhos_CompletePolynomialBasis.hpp"
 
 namespace Stokhos {
 
-  /*!
-   * \brief Multivariate orthogonal polynomial basis generated from a
-   * total-order complete-polynomial tensor product of univariate 
-   * polynomials.
+  /*! 
+   * \brief Generate a basis from a given set of PCE expansions that is 
+   * orthogonal with respect to the product measure induced by these expansions.
    */
   /*!
-   * The multivariate polynomials are given by 
-   * \f[
-   *     \Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)
-   * \f]
-   * where \f$d\f$ is the dimension of the basis and \f$i_1+\dots+ i_d\leq p\f$,
-   * where \f$p\f$ is the order of the basis.  The size of the basis is given
-   * by \f$(d+p)!/(d!p!)\f$.
-   *
-   * NOTE:  Currently all coordinate bases must be of the samer order \f$p\f$.
+   * Given the PCE expansions, first build a an orthogonal basis for each
+   * compnent, then form the multivariate basis by a total-order tensor 
+   * product.  The resulting basis is not necessarily orthogonal with respect
+   * to the full measure.
    */
   template <typename ordinal_type, typename value_type>
-  class CompletePolynomialBasis : 
+  class ProductLanczosGramSchmidtPCEBasis : 
     public ProductBasis<ordinal_type,value_type>,
-    public DerivBasis<ordinal_type, value_type> {
+    public ReducedPCEBasis<ordinal_type,value_type> {
   public:
 
     //! Constructor
     /*!
-     * \param bases array of 1-D coordinate bases
-     * \param sparse_tol tolerance used to drop terms in sparse triple-product
-     *                   tensors
-     * \param use_old_cijk_alg use old algorithm for computing the sparse
-     *                         triple product tensor  (significantly slower,
-     *                         but simpler)
-     * \param deriv_coeffs direction used to define derivatives for
-     *                     derivative product tensors.  Defaults to
-     *                     all one's if not supplied.
+     * \param p order of the basis
+     * \param pce polynomial chaos expansions defining new measure
+     * \param Cijk sparse triple product tensor for basis defining pce
      */
-    CompletePolynomialBasis(
-      const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,
- value_type> > >& bases,
-      const value_type& sparse_tol = 1.0e-15,
-      bool use_old_cijk_alg = false,
-      const Teuchos::RCP< Teuchos::Array<value_type> >& deriv_coeffs = Teuchos::null);
+    ProductLanczosGramSchmidtPCEBasis(
+     ordinal_type p,
+     const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
+     const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
+     const Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
+     const Teuchos::ParameterList& params = Teuchos::ParameterList());
 
     //! Destructor
-    virtual ~CompletePolynomialBasis();
+    virtual ~ProductLanczosGramSchmidtPCEBasis();
 
     //! \name Implementation of Stokhos::OrthogPolyBasis methods
     //@{
@@ -165,68 +158,64 @@ namespace Stokhos {
 
     //@}
 
-    //! \name Implementation of Stokhos::DerivBasis methods
+    //! \name Implementation of Stokhos::ReducedPCEBasis methods
     //@{
 
-    /*! 
-     * \brief Compute triple product tensor 
-     * \f$D_{ijk} = \langle\Psi_i\Psi_j D_v\Psi_k\rangle\f$ where 
-     * \f$D_v\Psi_k\f$ represents the derivative of \f$\Psi_k\f$ in the 
-     * direction \f$v\f$.
-     */
-    /*!
-     * The definition of \f$v\f$ is defined by the \c deriv_coeffs 
-     * constructor argument.
-     */
-    virtual 
-    Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > 
-    computeDerivTripleProductTensor(
-      const Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >& Bij,
-      const Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk
-      ) const;
+    //! Transform coefficients to original basis from this basis
+    virtual void 
+    transformToOriginalBasis(const value_type *in, 
+			     value_type *out,
+			     ordinal_type ncol = 1, 
+			     bool transpose = false) const;
 
-    /*! 
-     * \brief Compute double product tensor 
-     * \f$B_{ij} = \langle \Psi_i D_v\Psi_j\rangle\f$ where \f$D_v\Psi_j\f$
-     * represents the derivative of \f$\Psi_j\f$ in the direction \f$v\f$.
-     */
-    /*!
-     * The definition of \f$v\f$ is defined by  the \c deriv_coeffs 
-     * constructor argument.
-     */
-    virtual 
-    Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
-    computeDerivDoubleProductTensor() const;
+    //! Transform coefficients from original basis to this basis
+    virtual void 
+    transformFromOriginalBasis(const value_type *in, 
+			       value_type *out,
+			       ordinal_type ncol = 1, 
+			       bool transpose = false) const;
+
+    //! Get reduced quadrature object
+    virtual Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >
+    getReducedQuadrature() const;
+
+    //! Get reduced basis evaluated at original quadrature points
+    virtual void getBasisAtOriginalQuadraturePoints(
+      Teuchos::Array< Teuchos::Array<double> >& red_basis_vals) const;
 
     //@}
 
   protected:
 
-    //! Compute triple product tensor using old algorithm
-    virtual 
-    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    computeTripleProductTensorOld(ordinal_type order) const;
-
-    //! Compute triple product tensor using new algorithm
-    virtual 
-    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    computeTripleProductTensorNew(ordinal_type order) const;
+    // Determine if a pce is linear, in that it has a total degree of at
+    // most 1.  If the pce is nonlinear, return -2, or if it is constant, 
+    // return -1, otherwise return the index of the variable the pce is
+    // linear in, ie, if return value is i, the pce = a_{i+1}*\xi_i
+    ordinal_type
+    isInvariant(const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce) const;
 
   private:
 
     // Prohibit copying
-    CompletePolynomialBasis(const CompletePolynomialBasis&);
+    ProductLanczosGramSchmidtPCEBasis(const ProductLanczosGramSchmidtPCEBasis&);
 
     // Prohibit Assignment
-    CompletePolynomialBasis& operator=(const CompletePolynomialBasis& b);
+    ProductLanczosGramSchmidtPCEBasis& operator=(const ProductLanczosGramSchmidtPCEBasis&);
     
   protected:
 
-    typedef Stokhos::CompletePolynomialBasisUtils<ordinal_type,value_type> CPBUtils;
+    typedef Teuchos::SerialDenseVector<ordinal_type,value_type> SDV;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type,value_type> SDM;
 
     //! Name of basis
     std::string name;
 
+    //! Algorithm parameters
+    Teuchos::ParameterList params;
+
+    //! Size of original pce basis
+    ordinal_type pce_sz;
+    
     //! Total order of basis
     ordinal_type p;
 
@@ -236,41 +225,29 @@ namespace Stokhos {
     //! Total size of basis
     ordinal_type sz;
 
-    //! Array of bases
-    Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > > bases;
-
-    //! Array storing order of each basis
-    Teuchos::Array<ordinal_type> basis_orders;
-
-    //! Tolerance for computing sparse Cijk
-    value_type sparse_tol;
-
-    //! Use old algorithm for computing Cijk
-    bool use_old_cijk_alg;
-
-    //! Coefficients for derivative
-    Teuchos::RCP< Teuchos::Array<value_type> > deriv_coeffs;
+    //! Product Lanczos basis
+    Teuchos::RCP< Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > tensor_lanczos_basis;
 
     //! Norms
     Teuchos::Array<value_type> norms;
 
-    //! 2-D array of basis terms
-    Teuchos::Array< Teuchos::Array<ordinal_type> > terms;
+    //! Values of transformed basis at quadrature points
+    SDM Q;
 
-    //! Number of terms up to each order
-    Teuchos::Array<ordinal_type> num_terms;
+    //! Coefficients of transformed basis in original basis
+    SDM Qp;
 
-    //! Temporary array used in basis evaluation
-    mutable Teuchos::Array< Teuchos::Array<value_type> > basis_eval_tmp;
+    //! Reduced quadrature object
+    Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> > reduced_quad;
 
-    //! Short-hand for Cijk
-    typedef Stokhos::Sparse3Tensor<ordinal_type, value_type> Cijk_type;
+    //! Temporary pce used in invariant subspace calculations
+    mutable Stokhos::OrthogPolyApprox<ordinal_type, value_type> tmp_pce;
 
-  }; // class CompletePolynomialBasis
+  }; // class ProductLanczosGramSchmidtPCEBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_CompletePolynomialBasisImp.hpp"
+#include "Stokhos_ProductLanczosGramSchmidtPCEBasisImp.hpp"
 
 #endif

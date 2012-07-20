@@ -34,6 +34,7 @@
 #include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include <ostream>
 
 #define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
 #define DGEQP3_F77  F77_BLAS_MANGLE(dgeqp3,DGEQP3)
@@ -759,6 +760,10 @@ namespace Stokhos {
     ordinal_type k = std::min(m,n);
     ordinal_type lda = A.stride();
 
+    // Copy A since GESVD overwrites it (always)
+    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type> AA(
+      Teuchos::Copy, A, m, n);
+
     // Resize appropriately
     if (U.numRows() != m || U.numCols() != m)
       U.shape(m,m);
@@ -773,7 +778,7 @@ namespace Stokhos {
     Teuchos::Array<scalar_type> work(1);
     ordinal_type lwork = -1;
     ordinal_type info;
-    lapack.GESVD('A', 'A', m, n, A.values(), lda, &s[0], U.values(), ldu, 
+    lapack.GESVD('A', 'A', m, n, AA.values(), lda, &s[0], U.values(), ldu, 
 		 Vt.values(), ldv, &work[0], lwork, NULL, &info);
     TEUCHOS_TEST_FOR_EXCEPTION(
       info < 0, std::logic_error, "dgesvd returned info = " << info);
@@ -781,7 +786,7 @@ namespace Stokhos {
     // Do SVD
     lwork = work[0];
     work.resize(lwork);
-    lapack.GESVD('A', 'A', m, n, A.values(), lda, &s[0], U.values(), ldu, 
+    lapack.GESVD('A', 'A', m, n, AA.values(), lda, &s[0], U.values(), ldu, 
 		 Vt.values(), ldv, &work[0], lwork, NULL, &info);
     TEUCHOS_TEST_FOR_EXCEPTION(
       info < 0, std::logic_error, "dgesvd returned info = " << info);
@@ -811,6 +816,22 @@ namespace Stokhos {
     Vt.reshape(rank, Vt.numCols());
 
     return rank;
+  }
+
+  // Print a matrix in matlab-esque format
+  template <typename ordinal_type, typename scalar_type>
+  void
+  print_matlab(std::ostream& os, 
+	       const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& A)
+  {
+    os << "[ ";
+    for (ordinal_type i=0; i<A.numRows(); i++) {
+      for (ordinal_type j=0; j<A.numCols(); j++)
+	os << A(i,j) << " ";
+      if (i < A.numRows()-1)
+	os << ";" << std::endl << "  ";
+    }
+    os << "]" << std::endl;  
   }
 
 }

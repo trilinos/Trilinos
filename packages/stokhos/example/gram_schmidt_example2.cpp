@@ -33,9 +33,7 @@
 #include <iomanip>
 
 #include "Stokhos.hpp"
-#include "Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp"
-#include "Stokhos_MonomialGramSchmidtSimplexPCEBasis2.hpp"
-#include "Stokhos_MonomialProjGramSchmidtSimplexPCEBasis.hpp"
+#include "Stokhos_ReducedBasisFactory.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -100,24 +98,16 @@ int main(int argc, char **argv)
     pces[0] = u;
     pces[1] = v;
     Teuchos::ParameterList params;
-    params.set("Verbose", true);
-    params.set("Reduced Quadrature Method", "None");
-    //params.set("Reduced Quadrature Method", "L1 Minimization");
-    //params.set("Reduced Quadrature Method", "Column-Pivoted QR");
-    params.set("Orthogonalization Method", "Classical Gram-Schmidt");
-    //params.set("Orthogonalization Method", "Modified Gram-Schmidt");
-    Teuchos::RCP< Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> > gs_basis = 
-      Teuchos::rcp(new Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double>(
-    		     p, pces, quad, params));
-    // Teuchos::RCP< Stokhos::MonomialGramSchmidtSimplexPCEBasis2<int,double> > gs_basis = 
-    //   Teuchos::rcp(new Stokhos::MonomialGramSchmidtSimplexPCEBasis2<int,double>(
-    // 		     p, pces, quad, params));
+    params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt");
+    Stokhos::ReducedBasisFactory<int,double> factory(params);
+    Teuchos::RCP< Stokhos::ReducedPCEBasis<int,double> > gs_basis = 
+      factory.createReducedBasis(p, pces, quad, Cijk);
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > gs_quad =
       gs_basis->getReducedQuadrature();
     Stokhos::OrthogPolyApprox<int,double>  u_gs(gs_basis), v_gs(gs_basis), 
       w_gs(gs_basis);
-    gs_basis->computeTransformedPCE(0, u_gs);
-    gs_basis->computeTransformedPCE(1, v_gs);
+    gs_basis->transformFromOriginalBasis(u.coeff(), u_gs.coeff());
+    gs_basis->transformFromOriginalBasis(v.coeff(), v_gs.coeff());
 
     std::cout << "reduced basis size = " << gs_basis->size() << std::endl;
     std::cout << "reduced quadrature size = " << gs_quad->size() << std::endl;

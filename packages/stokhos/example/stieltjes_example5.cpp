@@ -35,12 +35,8 @@
 #include "Stokhos.hpp"
 #include "Stokhos_Sacado.hpp"
 
-#include "Stokhos_StieltjesPCEBasis.hpp"
-#include "Stokhos_LanczosProjPCEBasis.hpp"
-#include "Stokhos_LanczosPCEBasis.hpp"
-#include "Stokhos_UserDefinedQuadrature.hpp"
+#include "Stokhos_ReducedBasisFactory.hpp"
 #include "Stokhos_SDMUtils.hpp"
-#include "Stokhos_MonomialProjGramSchmidtSimplexPCEBasis.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -150,7 +146,6 @@ int main(int argc, char **argv)
 	      << "\treduction_tolerance = " << reduction_tolerance << std::endl;
 
     int np = pmax-pmin+1;
-    bool use_pce_quad_points = false;
     
     Teuchos::Array<double> mean(np), mean_st(np), std_dev(np), std_dev_st(np);
     Teuchos::Array<double> pt(np), pt_st(np);
@@ -232,118 +227,51 @@ int main(int argc, char **argv)
       f_func(A0, x0, 1.0, f0);
       pt_true = g_func(f0);
 	
-      // Compute tensor-product Lanczos/Stieltjes basis
-      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(m);
-      Teuchos::RCP< Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double> > gs_basis;
-      Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<int,double> > st_quad_exp;
-      if (mt_method == MT_LANCZOS || mt_method == MT_STIELTJES) {
-	for (int i=0; i<m; i++) {
-	  Teuchos::RCP< Stokhos::OrthogPolyApprox<int,double> > fi =
-	    Teuchos::rcp(&(f[i].getOrthogPolyApprox()),false);
-	  if (mt_method == MT_LANCZOS) {
-	    if (project_integrals) {
-	      st_bases[i] = 
-		Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
-			       p, fi, Cijk, normalize, true));
-	    }
-	    else {
-	      st_bases[i] = 
-		Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
-			       p, fi, quad, normalize, true));
-	    }
-	  }
-	  else if (mt_method == MT_STIELTJES) {
-	    st_bases[i] =
-	      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-			     p, fi, quad, use_pce_quad_points,
-			     normalize, project_integrals, Cijk));
-	  }
-	}
-      
-	Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > st_basis = 
-	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(
-			 st_bases));
-	std::cout << ", red. basis sz = " << st_basis->size();
-
-	// Triple product tensor
-	Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > st_Cijk =
-	  st_basis->computeTripleProductTensor(st_basis->size());
-	
-	// Tensor product quadrature
-	Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
-#ifdef HAVE_STOKHOS_DAKOTA
-	if (sparse_grid)
-	  st_quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(st_basis, p));
-#endif
-	if (!sparse_grid)
-	  st_quad = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
-	std::cout << ", red. quad sz = " << st_quad->size();
-	
-	// Quadrature expansion
-	st_quad_exp=
-	  Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(
-			 st_basis, 
-			 st_Cijk,
-			 st_quad));
+      // Compute reduced basis
+      Teuchos::ParameterList params;
+      params.set("Verbose", verbose);
+      if (mt_method == MT_GRAM_SCHMIDT)
+	params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt");
+      else if (mt_method == MT_LANCZOS)
+	params.set("Reduced Basis Method", "Product Lanczos");
+      else if (mt_method == MT_STIELTJES) {
+	params.set("Reduced Basis Method", "Product Lanczos");
+	params.set("Use Old Stieltjes Method", true);
       }
-      else if (mt_method == MT_GRAM_SCHMIDT) {
-	Teuchos::ParameterList params;
-	params.set("Verbose", verbose);
-	//params.set("Reduced Quadrature Method", "None");
-	//params.set("Reduced Quadrature Method", "L1 Minimization");
-	params.set("Reduced Quadrature Method", "Column-Pivoted QR");
-	//params.set("Orthogonalization Method", "Classical Gram-Schmidt");
-	//params.set("Orthogonalization Method", "Modified Gram-Schmidt");
-	params.set("Rank Threshold", rank_threshold);
-	params.set("Reduction Tolerance", reduction_tolerance);
-	Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > pces(m);
-	for (int i=0; i<m; i++)
-	  pces[i] = f[i].getOrthogPolyApprox();
-	gs_basis = 
-	  Teuchos::rcp(new Stokhos::MonomialProjGramSchmidtSimplexPCEBasis<int,double>(p, pces, quad, params));
-	Teuchos::RCP<const Stokhos::Quadrature<int,double> > gs_quad =
-	  gs_basis->getReducedQuadrature();
-	Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > gs_Cijk =
-	  Teuchos::null;
-	Teuchos::RCP< Teuchos::ParameterList > gs_exp_params = 
-	  Teuchos::rcp(new Teuchos::ParameterList);
-	gs_exp_params->set("Use Quadrature for Times", true);
-	st_quad_exp = 
-	  Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(
-			 gs_basis, 
-			 gs_Cijk,
-			 gs_quad,
-			 gs_exp_params));
-
-	std::cout << ", red. basis sz = " <<gs_basis->size();
-	std::cout << ", red. quad sz = " << gs_quad->size();
-      }
+      params.set("Project", project_integrals);
+      params.set("Normalize", normalize);
+      params.set("Rank Threshold", rank_threshold);
+      Teuchos::ParameterList& red_quad_params = 
+	params.sublist("Reduced Quadrature");
+      red_quad_params.set("Reduction Tolerance", reduction_tolerance);
+      red_quad_params.set("Verbose", verbose);
+      Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > pces(m);
+      for (int i=0; i<m; i++)
+	pces[i] = f[i].getOrthogPolyApprox();
+      Stokhos::ReducedBasisFactory<int,double> factory(params);
+      Teuchos::RCP< Stokhos::ReducedPCEBasis<int,double> > gs_basis = 
+	factory.createReducedBasis(p, pces, quad, Cijk);
+      Teuchos::RCP<const Stokhos::Quadrature<int,double> > gs_quad =
+	gs_basis->getReducedQuadrature();
+      Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > gs_Cijk =
+	Teuchos::null;
+      Teuchos::RCP< Teuchos::ParameterList > gs_exp_params = 
+	Teuchos::rcp(new Teuchos::ParameterList);
+      gs_exp_params->set("Use Quadrature for Times", true);
+      Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<int,double> > st_quad_exp =
+	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(
+		       gs_basis, 
+		       gs_Cijk,
+		       gs_quad,
+		       gs_exp_params));
+      std::cout << ", red. basis sz = " <<gs_basis->size();
+      std::cout << ", red. quad sz = " << gs_quad->size();
 
       SDV f_st(m);
       for (int i=0; i<m; i++) {
 	f_st(i).copyForWrite();
 	f_st(i).reset(st_quad_exp);
-	if (mt_method == MT_LANCZOS) {
-	  if (project_integrals) {
-	    Teuchos::RCP< const Stokhos::LanczosProjPCEBasis<int,double> > stp_basis_s
-	      = Teuchos::rcp_dynamic_cast< const Stokhos::LanczosProjPCEBasis<int,double> >(st_bases[i]);
-	    f_st(i).term(i, 0) = stp_basis_s->getNewCoeffs(0);
-	    f_st(i).term(i, 1) = stp_basis_s->getNewCoeffs(1);
-	  }
-	  else {
-	    Teuchos::RCP< const Stokhos::LanczosPCEBasis<int,double> > st_basis_s =
-	      Teuchos::rcp_dynamic_cast< const Stokhos::LanczosPCEBasis<int,double> >(st_bases[i]);
-	    f_st(i).term(i, 0) = st_basis_s->getNewCoeffs(0);
-	    f_st(i).term(i, 1) = st_basis_s->getNewCoeffs(1);
-	  }
-	}
-	else if (mt_method == MT_STIELTJES) {
-	  f_st(i).term(i, 0) = f(i).mean();
-	  f_st(i).term(i, 1) = 1.0;
-	}
-	else if (mt_method == MT_GRAM_SCHMIDT) {
-	  gs_basis->computeTransformedPCE(i, f_st(i).getOrthogPolyApprox());
-	}
+	gs_basis->transformFromOriginalBasis(f(i).coeff(), f_st(i).coeff());
       }
 
       // Compute g_st = exp(-f_st^T*f_st)
@@ -351,25 +279,7 @@ int main(int argc, char **argv)
       
       // Project g_st back to original basis
       pce_type g2(quad_exp);
-      if (mt_method == MT_LANCZOS || mt_method == MT_STIELTJES) {
-	const Teuchos::Array<double>& weights = quad->getQuadWeights();
-	const Teuchos::Array< Teuchos::Array<double> >& points = quad->getQuadPoints();
-	const Teuchos::Array< Teuchos::Array<double> >& values = quad->getBasisAtQuadPoints();
-	int nqp = weights.size();
-	Teuchos::Array<double> ff(m);
-	g2.init(0.0);
-	for (int qp=0; qp<nqp; qp++) {
-	  for (int i=0; i<m; i++) {
-	    ff[i] = f(i).evaluate(points[qp], values[qp]);
-	  }
-	  double gg = g_st.evaluate(ff);
-	  for (int i=0; i<basis->size(); i++)
-	    g2.fastAccessCoeff(i) += weights[qp]*values[qp][i]*gg / basis->norm_squared(i);
-	}
-      }
-      else if (mt_method == MT_GRAM_SCHMIDT) {
-	gs_basis->transformToOriginalBasis(g_st.coeff(), g2.coeff());
-      }
+      gs_basis->transformToOriginalBasis(g_st.coeff(), g2.coeff());
 
       // std::cout.precision(12);
       // std::cout << g;
