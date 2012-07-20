@@ -215,11 +215,11 @@ int Zoltan_Hier_Set_Param(
 
 /*****************************************************************************/
 /* static helper function for Zoltan_Hier */
-/* compute partition sizes for the current level and set them in hierzz */
+/* compute part sizes for the current level and set them in hierzz */
 /* part_sizes: input array of size
    hpp->origzz->Num_Global_Parts * hpp->origzz->Obj_Weight_Dim
    containing the percentage of work to be
-   assigned to each final global partition.               */
+   assigned to each final global part.               */
 /* returns error condition */
 static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
   int ierr = ZOLTAN_OK;
@@ -230,21 +230,21 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
   int part_weight_dim = hpp->origzz->Obj_Weight_Dim;
 
   /* when this is called, hpp->num_parts contains the number of
-     partitions to be computed at this level, and hpp->part_to_compute
-     contains the partition id to be computed by this process at this
+     parts to be computed at this level, and hpp->part_to_compute
+     contains the part id to be computed by this process at this
      level, hpp->hier_comm is a communicator for all procs participating
      at this level. */
 
   if (hpp->output_level >= HIER_DEBUG_ALL) {
-    printf("[%d] set_hier_part_sizes at level %d, computing %d partitions\n",
+    printf("[%d] set_hier_part_sizes at level %d, computing %d parts\n",
 	   hpp->origzz->Proc, hpp->level, hpp->num_parts);
   }
 
-  /* careful of part_weight_dim of 0 for variable partition sizes */
+  /* careful of part_weight_dim of 0 for variable part sizes */
   if (part_weight_dim == 0) part_weight_dim = 1;
 
   /* allocate an array for input to reduction to compute
-     partition sizes for this level */
+     part sizes for this level */
   my_level_part_sizes = (float *)ZOLTAN_MALLOC(hpp->num_parts *
 					       part_weight_dim * 
 					       sizeof(float));
@@ -259,14 +259,14 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
     my_level_part_sizes[i] = 0;
   }
 
-  /* put in my part_sizes for the partition I'll be computing */
+  /* put in my part_sizes for the part I'll be computing */
   for (i=0; i<part_weight_dim; i++) {
     my_level_part_sizes[hpp->part_to_compute*part_weight_dim+i] =
       part_sizes[hpp->origzz->Proc*part_weight_dim+i];
   }
 
   /* allocate an array for result of reduction of
-     partition sizes for this level */
+     part sizes for this level */
   level_part_sizes = (float *)ZOLTAN_MALLOC(hpp->num_parts *
 					    part_weight_dim *
 					    sizeof(float));
@@ -307,7 +307,7 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
     }
   }
 
-  /* set the partition sizes in hpp->hierzz */
+  /* set the part sizes in hpp->hierzz */
   Zoltan_LB_Set_Part_Sizes(hpp->hierzz, 1, 
 			   hpp->num_parts * part_weight_dim,
 			   part_ids, wgt_idx, level_part_sizes);
@@ -808,18 +808,18 @@ int Zoltan_Hier(
   float *part_sizes,    /* Input:  Array of size
 			   zz->LB.Num_Global_Parts * zz->Obj_Weight_Dim
                            containing the percentage of work to be
-                           assigned to each partition.               */
+                           assigned to each part.               */
   int *num_imp,         /* number of objects to be imported */
   ZOLTAN_ID_TYPE **imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_TYPE **imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs,      /* list of processors to import from */
-  int **imp_to_part,    /* list of partitions to which imported objects are 
+  int **imp_to_part,    /* list of parts to which imported objects are 
                            assigned.  */
   int *num_exp,         /* number of objects to be exported */
   ZOLTAN_ID_TYPE **exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_TYPE **exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
-  int **exp_to_part     /* list of partitions to which exported objects are
+  int **exp_to_part     /* list of parts to which exported objects are
                            assigned. */
 ) 
 {
@@ -840,7 +840,8 @@ int Zoltan_Hier(
   int *input_parts=NULL;
   int *hier_import_procs=NULL, *hier_import_to_part=NULL;
   int *hier_export_procs=NULL, *hier_export_to_part=NULL;
-  int *fromProc = NULL, *toPart = NULL;
+  int *fromProc = NULL, *toPart = NULL, *fProc = NULL;
+  int nImport;
   ZOLTAN_ID_TYPE *global_ids=NULL, *local_ids=NULL;
   ZOLTAN_ID_TYPE *inGids=NULL, *inLids=NULL, *appids=NULL;
   ZOLTAN_ID_TYPE *hier_import_gids=NULL, *hier_import_lids=NULL;
@@ -888,7 +889,7 @@ int Zoltan_Hier(
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||
       (!zz->LB.Single_Proc_Per_Part)) {
-    ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "number_partitions != number_processes not yet supported by LB_METHOD HIER");
+    ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "number_parts != number_processes not yet supported by LB_METHOD HIER");
   }
 
   /* Initialize hierarchical partitioning parameters. */
@@ -959,8 +960,9 @@ int Zoltan_Hier(
   else{
     MPI_Datatype MPI_GNOTYPE = Zoltan_mpi_gno_type();
     ZOLTAN_GNO_TYPE localCount = hpp.num_obj, scanCount=0;
+    ZOLTAN_GNO_TYPE totalCount;
     MPI_Scan(&localCount, &scanCount, 1, MPI_GNOTYPE, MPI_SUM, zz->Communicator);
-    ZOLTAN_GNO_TYPE totalCount = scanCount;
+    totalCount = scanCount;
     MPI_Bcast(&totalCount, 1, MPI_GNOTYPE, zz->Num_Proc-1, zz->Communicator);
 
     hpp.invalid_gno = totalCount;
@@ -1027,10 +1029,10 @@ int Zoltan_Hier(
   /* loop over levels of hierarchical balancing to be done */
   for (hpp.level = 0; hpp.level < hpp.num_levels; hpp.level++) {
 
-    /* determine partitions to compute at this level */
+    /* determine parts to compute at this level */
     hpp.part_to_compute = 
       zz->Get_Hier_Part(zz->Get_Hier_Part_Data, hpp.level, &ierr);
-    /* number of partitions is one more than the highest partition id
+    /* number of parts is one more than the highest part id
        specified on procs in the current hier_comm */
     MPI_Allreduce(&hpp.part_to_compute, &hpp.num_parts, 1, MPI_INT,
 		  MPI_MAX, hpp.hier_comm);
@@ -1052,7 +1054,7 @@ int Zoltan_Hier(
 	     zz->Proc, hpp.part_to_compute, hpp.num_parts, hpp.level);
     }
 
-    /* should make sure we have reasonable partitions to compute */
+    /* should make sure we have reasonable parts to compute */
 
     hpp.hierzz = NULL;
 
@@ -1083,7 +1085,7 @@ int Zoltan_Hier(
         ZOLTAN_HIER_ERROR(ierr, "Get_Hier_Method callback returned error.");
       }
   
-      /* set the numbers of partitions */
+      /* set the numbers of parts */
       sprintf(msg, "%d", hpp.num_parts);
       Zoltan_Set_Param(hpp.hierzz, "NUM_GLOBAL_PARTS", msg);
 
@@ -1137,9 +1139,9 @@ int Zoltan_Hier(
   
       Zoltan_Set_Param(hpp.hierzz, "RETURN_LISTS", "EXPORT");
   
-      /* deal with partition sizes, etc */
+      /* deal with part sizes, etc */
       /* we have the assumption here that the final result is one
-         partition per process */
+         part per process */
 
       ierr = set_hier_part_sizes(&hpp, part_sizes);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -1154,7 +1156,7 @@ int Zoltan_Hier(
         }
       }
 
-      /* call partitioning method to compute the partitions at this level */
+      /* call partitioning method to compute the part at this level */
       ierr = Zoltan_LB_Partition(hpp.hierzz, &hier_changes, 
   			       &hier_num_gid_entries, &hier_num_lid_entries, 
   			       &hier_num_import_objs,
@@ -1194,7 +1196,7 @@ int Zoltan_Hier(
     }
     else{
       /*
-       * Migrate objects (without weights or adjacencies) their new owners.  Now 
+       * Migrate objects (without weights or adjacencies) their new owners.  Now
        * each process has a list representing the objects to be imported to it.
        */
       ierr = final_migrate(&hpp, hier_num_export_objs, hier_export_gids, hier_export_lids, hier_export_procs);
@@ -1234,7 +1236,6 @@ int Zoltan_Hier(
    *    num_obj     - the number of objects I had before partitioning
    */
 
-  *num_imp = hpp.num_obj;
   userDataLen = sizeof(ZOLTAN_ID_TYPE) * (zz->Num_GID + zz->Num_LID);
   gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
 
@@ -1306,41 +1307,57 @@ int Zoltan_Hier(
   ZOLTAN_FREE(&hpp.gno);
   Zoltan_DD_Destroy(&dd);
 
-  if (hpp.num_obj > 0){
-    toPart = (int *)ZOLTAN_MALLOC(sizeof(int) * hpp.num_obj);
-    inGids = (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC_GID_ARRAY(zz, hpp.num_obj);
-    if (zz->Num_LID){
-      inLids = (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC_LID_ARRAY(zz, hpp.num_obj);
-    }
+  nImport = 0;
+  for (i = 0; i < hpp.num_obj; i++)
+    if (fromProc[i] != zz->Proc) /* Importing object; assume #parts == #procs */
+      nImport++;
 
-    if (!toPart || !inGids || (zz->Num_LID && !inLids)){
+  *num_imp = nImport;
+
+  if (nImport > 0){
+    if (!Zoltan_Special_Malloc(zz, (void **)imp_gids, nImport,
+                               ZOLTAN_SPECIAL_MALLOC_GID)
+     || !Zoltan_Special_Malloc(zz, (void **)imp_lids, nImport,
+                               ZOLTAN_SPECIAL_MALLOC_LID)
+     || !Zoltan_Special_Malloc(zz, (void **)imp_procs, nImport,
+                               ZOLTAN_SPECIAL_MALLOC_INT)
+     || !Zoltan_Special_Malloc(zz, (void **)imp_to_part, nImport,
+                               ZOLTAN_SPECIAL_MALLOC_INT)) {
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
+    toPart = *imp_to_part;
+    inGids = *imp_gids;
+    inLids = *imp_lids;
+    fProc = *imp_procs;
   }
 
   gid = inGids;
   lid = inLids;
   id_list = appids;
 
+  nImport = 0;
   for (i=0; i < hpp.num_obj; i++){
-    toPart[i] = zz->Proc;
+    if (fromProc[i] != zz->Proc) { /* Importing obj; assume #parts==#procs */
+      toPart[nImport] = zz->Proc;
 
-    ZOLTAN_SET_GID(zz, gid, id_list);
-    id_list+= zz->Num_GID;
-    gid+= zz->Num_GID;
+      ZOLTAN_SET_GID(zz, gid, id_list);
+      id_list += zz->Num_GID;
+      gid += zz->Num_GID;
 
-    ZOLTAN_SET_LID(zz, lid, id_list);
-    id_list+= zz->Num_LID;
-    lid+= zz->Num_LID;
+      ZOLTAN_SET_LID(zz, lid, id_list);
+      id_list += zz->Num_LID;
+      lid += zz->Num_LID;
+
+      fProc[nImport] = fromProc[i];
+      nImport++;
+    }
+    else {
+      id_list += zz->Num_GID + zz->Num_LID;
+    }
   }
 
   ZOLTAN_FREE(&appids);
-
-  *imp_gids = inGids;
-  *imp_lids = inLids;
-  *imp_procs = fromProc;
-  *imp_to_part = toPart;
 
 End:
   ZOLTAN_FREE(&vtxdist);
@@ -1348,6 +1365,7 @@ End:
   ZOLTAN_FREE(&local_ids);
   ZOLTAN_FREE(&input_parts);
   ZOLTAN_FREE(&gnoList);
+  ZOLTAN_FREE(&fromProc);
   ZOLTAN_FREE(&appids);
   ZOLTAN_FREE(&hpp.gno);
   ZOLTAN_FREE(&hpp.vwgt);
