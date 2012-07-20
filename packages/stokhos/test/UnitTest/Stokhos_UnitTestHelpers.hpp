@@ -33,7 +33,7 @@
 
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_FancyOstream.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 namespace Stokhos {
 
