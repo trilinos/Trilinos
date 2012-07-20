@@ -1513,7 +1513,8 @@ size_t ex_header_size(int exoid)
 /* type = 1 for integer, 2 for real, 3 for character */
 void ex_compress_variable(int exoid, int varid, int type)
 {
-#if defined(NC_INT64)
+#if !defined(NOT_NETCDF4)
+
   struct file_item* file = ex_find_file_item(exoid);
 
   if (!file ) {
@@ -1530,11 +1531,9 @@ void ex_compress_variable(int exoid, int varid, int type)
     if (type == 2)
       shuffle = 0;
 #endif
-#if !defined(NOT_NETCDF4)
     if (deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
       nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
     }
-#endif
   }
 #endif
 }

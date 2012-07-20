@@ -1326,7 +1326,7 @@ F2C(expp) (int *idexo,
            int *obj_type,
            entity_id *obj_id,
            char *prop_name,
-           ex_entity_id *value,
+           entity_id *value,
            int *ierr,
            int prop_namelen)
 {

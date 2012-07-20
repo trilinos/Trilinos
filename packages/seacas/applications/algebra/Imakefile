@@ -2,21 +2,14 @@
 CODE = algebra
 
 SRCS = \
-addvar.f algebra.f alicmd.f aparse.f caltim.f chkdis.f \
-chkerr.f chkfnc.f   chkpar.f chksyn.f cmdtim.f cnvnum.f \
-comand.f cpyvar.f   ag_dbicon.f ag_dbielb.f ag_dbinam.f \
-ag_dbiqa.f  ag_dbivtt.f   ag_dblist.f ag_dboqa.f  ag_dbpelb.f ag_dbpini.f \
-ag_dbpnam.f ag_dbptim.f ag_dbvini.f delcmd.f dofnc1.f \
-dofnc2.f dofncg.f   doif.f   dooper.f eval.f   fixone.f \
-initim.f   isize.f  lnkfnc.f lnksto.f lnkvar.f \
-loceqv.f locnam.f   locrl.f  makevo.f mlist.f  \
-myamod.f mymax.f    mymin.f  mysign.f mysum.f  nwhsel.f \
-nxttim.f opnlog.f   postfx.f princ3.f prtdeb.f pxn.f    \
-pxn2.f   rdeqns.f   rdstep.f rweval.f rwmap.f  rwnmap.f rwxyz.f  \
-savcmd.f shotsp.f   show.f   shptim.f sordel.f sortid.f \
-store.f  svcord.f   tmag.f   uelem.f  uglob.f  uhist.f  \
-unode.f  wconat.f   welb.f   wnam.f   wrstep.f zmess.f  \
-zmfixd.f zmnps.f    filtel.f remel.f
+ag_addvar.f ag_chksyn.f ag_dbiqa.f  ag_dbvini.f ag_filtel.f ag_locnam.f ag_mysum.f  ag_pxn2.f   ag_savcmd.f ag_tmag.f   ag_wrstep.f \
+ag_alicmd.f ag_cmdtim.f ag_dbivtt.f ag_delcmd.f ag_fixone.f ag_locrl.f  ag_nwhsel.f ag_rdeqns.f ag_shotsp.f ag_uelem.f  ag_zmess.f  \
+ag_aparse.f ag_cnvnum.f ag_dblist.f ag_dofnc1.f ag_initim.f ag_makevo.f ag_nxttim.f ag_rdstep.f ag_show.f   ag_uglob.f  ag_zmfixd.f \
+ag_caltim.f ag_comand.f ag_dboqa.f  ag_dofnc2.f ag_isize.f  ag_mlist.f  ag_opnlog.f ag_remel.f  ag_shptim.f ag_uhist.f  ag_zmnps.f  \
+ag_chkdis.f ag_cpyvar.f ag_dbpelb.f ag_dofncg.f ag_lnkfnc.f ag_myamod.f ag_postfx.f ag_rweval.f ag_sordel.f ag_unode.f  algebra.f   \
+ag_chkerr.f ag_dbicon.f ag_dbpini.f ag_doif.f   ag_lnksto.f ag_mymax.f  ag_princ3.f ag_rwmap.f  ag_sortid.f ag_wconat.f             \
+ag_chkfnc.f ag_dbielb.f ag_dbpnam.f ag_dooper.f ag_lnkvar.f ag_mymin.f  ag_prtdeb.f ag_rwnmap.f ag_store.f  ag_welb.f               \
+ag_chkpar.f ag_dbinam.f ag_dbptim.f ag_eval.f   ag_loceqv.f ag_mysign.f ag_pxn.f    ag_rwxyz.f  ag_svcord.f ag_wnam.f
 
 OBJS = $(SRCS:.f=.o)
 
