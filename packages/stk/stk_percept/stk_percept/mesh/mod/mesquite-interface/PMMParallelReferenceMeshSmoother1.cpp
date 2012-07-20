@@ -23,8 +23,9 @@ namespace stk {
     const bool do_tot_test = false;
     bool do_print_elem_val = false;
 
-    double PMMParallelReferenceMeshSmoother1::metric(stk::mesh::Entity& element)
+    double PMMParallelReferenceMeshSmoother1::metric(stk::mesh::Entity& element, bool& valid)
     {
+      valid = true;
       JacobianUtil jacA, jacW;
       //jacA.m_scale_to_unit = true;
 
@@ -42,6 +43,7 @@ namespace stk {
           double Wi = jacW.mMetrics[i];
           if (Ai < 0)
             {
+              valid = false;
               //std::cout << "Ai= " << Ai << std::endl;
             }
           //VERIFY_OP_ON(Ai, >, 0, "Ai < 0");
@@ -114,6 +116,7 @@ namespace stk {
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       int spatialDim = eMesh->get_spatial_dim();
+      bool valid=true, total_valid=true;
 
       // node loop, initialize delta to 0, etc, for all nodes including non-locally owned
       {
@@ -166,7 +169,7 @@ namespace stk {
 
                     double edge_length_ave = m_eMesh->edge_length_ave(element);
 
-                    double metric_0 = metric(element);
+                    double metric_0 = metric(element, valid);
 
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
@@ -189,9 +192,9 @@ namespace stk {
                         for (int idim=0; idim < spatialDim; idim++)
                           {
                             coord_current[idim] += eps1;
-                            double mp = metric(element);
+                            double mp = metric(element, valid);
                             coord_current[idim] -= 2.0*eps1;
-                            double mm = metric(element);
+                            double mm = metric(element, valid);
                             coord_current[idim] += eps1;
                             double dd = (mp - mm)/(2*eps1);
                             delta[idim] += dd;
@@ -202,7 +205,7 @@ namespace stk {
                             if (0)
                             {
                               coord_current[idim] -= dd*eps;
-                              double m1=metric(element);
+                              double m1=metric(element, valid);
                               coord_current[idim] += dd*eps;
                               if (metric_0 > 1.e-6)
                                 {
@@ -259,6 +262,9 @@ namespace stk {
               m_scale = 1.0;
           }
 
+        // FIXME
+        m_scale = 0.1;
+
         std::cout << "iter= " << m_iter << " scale2= " << m_scale << std::endl;
 
         m_dmax = 0.0;
@@ -291,17 +297,17 @@ namespace stk {
         {
           std::cout << "tmp srk already converged m_dmax= " << m_dmax << " m_scale= " << m_scale << " gradNorm= " << gradNorm << " norm_gradient= " << norm_gradient << std::endl;
           //update_node_positions
-          return total_metric(mesh,0.0,1.0);
+          return total_metric(mesh,0.0,1.0, total_valid);
         }
 
       /// line search
       double alpha = 1.0;
       {
-        double metric_1 = total_metric(mesh, 1.e-6, 1.0);
-        double metric_0 = total_metric(mesh, 0.0, 1.0);
+        double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
+        double metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
         std::cout << "tmp srk dmax before line search= " << m_dmax << " norm_gradient= " << norm_gradient << std::endl;
         std::cout << "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 << std::endl;
-        metric_1 = total_metric(mesh, -1.e-6, 1.0);
+        metric_1 = total_metric(mesh, -1.e-6, 1.0, total_valid);
         std::cout << "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 << std::endl;
         double metric=0.0;
         //double sigma=0.95;
@@ -311,11 +317,12 @@ namespace stk {
         bool converged = false;
         while (!converged)
           {
-            metric = total_metric(mesh, alpha, 1.0);
+            metric = total_metric(mesh, alpha, 1.0, total_valid);
             //converged = (metric > sigma*metric_0) && (alpha > 1.e-16);
             double mfac = alpha*armijo_offset_factor;
             converged = (metric < metric_0 + mfac);
-            std::cout << "tmp srk alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) << std::endl;
+            //if (m_untangled) converged = converged && total_valid;
+            std::cout << "tmp srk alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) << " total_valid= " << total_valid << std::endl;
             if (!converged)
               alpha = alpha * tau;
             if (alpha < 1.e-6)
@@ -326,11 +333,11 @@ namespace stk {
           {
             std::cout << "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor <<  std::endl;
             do_print_elem_val = true;
-            metric_1 = total_metric(mesh, 1.e-6, 1.0);
-            metric_0 = total_metric(mesh, 0.0, 1.0);
+            metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
+            metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
             do_print_elem_val = false;
             std::cout << "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 << std::endl;
-            metric_1 = total_metric(mesh, -1.e-6, 1.0);
+            metric_1 = total_metric(mesh, -1.e-6, 1.0, total_valid);
             std::cout << "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 << std::endl;
 
             throw std::runtime_error("can't reduce metric");
@@ -339,7 +346,7 @@ namespace stk {
           {
             double a1 = alpha/2.;
             double a2 = alpha;
-            double f0 = metric_0, f1 = total_metric(mesh, a1, 1.0), f2 = total_metric(mesh, a2, 1.0);
+            double f0 = metric_0, f1 = total_metric(mesh, a1, 1.0, total_valid), f2 = total_metric(mesh, a2, 1.0, total_valid);
             double den = 2.*(a2*(-f0 + f1) + a1*(f0 - f2));
             double num = a2*a2*(f1-f0)+a1*a1*(f0-f2);
             if (std::fabs(den) > 1.e-10)
@@ -347,7 +354,8 @@ namespace stk {
                 double alpha_quadratic = num/den;
                 if (alpha_quadratic < 2*alpha)
                   {
-                    double fm=total_metric(mesh, alpha_quadratic, 1.0);
+                    double fm=total_metric(mesh, alpha_quadratic, 1.0, total_valid);
+                    //if (fm < f2 && (!m_untangled || total_valid))
                     if (fm < f2)
                       {
                         alpha = alpha_quadratic;
@@ -361,7 +369,7 @@ namespace stk {
       update_node_positions(mesh, alpha);
 
       //MSQ_ERRRTN(err);
-      return total_metric(mesh,0.0,1.0);
+      return total_metric(mesh,0.0,1.0, total_valid);
       
     }
     
@@ -409,7 +417,7 @@ namespace stk {
       }
     }
 
-    double PMMParallelReferenceMeshSmoother1::total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling)
+    double PMMParallelReferenceMeshSmoother1::total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid)
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       stk::mesh::FieldBase *coord_field = m_eMesh->get_coordinates_field();
@@ -457,6 +465,7 @@ namespace stk {
           }
       }
 
+      valid = true;
       // element loop
       {
         const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
@@ -471,7 +480,9 @@ namespace stk {
                 for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                   {
                     stk::mesh::Entity& element = bucket[i_element];
-                    double mm = metric(element);
+                    bool local_valid=true;
+                    double mm = metric(element, local_valid);
+                    valid = valid && local_valid;
                     if (do_print_elem_val) std::cout << "element= " << element.identifier() << " metric= " << mm << std::endl;
                     mtot += mm;
                   }
@@ -483,6 +494,7 @@ namespace stk {
       m_eMesh->copy_field(coord_field_current, coord_field_lagged);
 
       stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( & mtot ) );
+      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & valid ) );
 
       return mtot;
       
