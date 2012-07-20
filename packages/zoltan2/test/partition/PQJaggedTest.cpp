@@ -7,7 +7,7 @@
 /*! \file PQJagged.cpp
     \brief An example of partitioning coordinates with PQJagged.
     \todo add more cases to this test.
-*/
+ */
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_BasicCoordinateInput.hpp>
@@ -37,83 +37,89 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
     \todo error handling
     \todo write some examples that don't use teuchos
     \todo check the solution, visualize it somehow
-*/
+ */
 
 
 const char param_comment = '#';
 
 string trim_right_copy(
-  const string& s,
-  const string& delimiters = " \f\n\r\t\v" )
+    const string& s,
+    const string& delimiters = " \f\n\r\t\v" )
 {
   return s.substr( 0, s.find_last_not_of( delimiters ) + 1 );
 }
 
 string trim_left_copy(
-  const string& s,
-  const string& delimiters = " \f\n\r\t\v" )
+    const string& s,
+    const string& delimiters = " \f\n\r\t\v" )
 {
   return s.substr( s.find_first_not_of( delimiters ) );
 }
 
 string trim_copy(
-  const string& s,
-  const string& delimiters = " \f\n\r\t\v" )
+    const string& s,
+    const string& delimiters = " \f\n\r\t\v" )
 {
   return trim_left_copy( trim_right_copy( s, delimiters ), delimiters );
 }
 
 void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, const RCP<const Teuchos::Comm<int> > & comm){
-	std::string input = "";
-	char inp[25000];
-	if(comm->getRank() == 0){
-		fstream inParam(paramFileName.c_str());
+  std::string input = "";
+  char inp[25000];
+  if(comm->getRank() == 0){
+    fstream inParam(paramFileName.c_str());
 
-		std::string tmp = "";
-		getline (inParam,tmp);
-		while (!inParam.eof()){
-			tmp = trim_copy(tmp);
-			if(tmp != ""){
-				input += tmp + "\n";
-			}
-			getline (inParam,tmp);
-		}
-		inParam.close();
-		for (int i = 0; i < input.size(); ++i){
-			inp[i] = input[i];
-		}
-	}
+    std::string tmp = "";
+    getline (inParam,tmp);
+    while (!inParam.eof()){
+      tmp = trim_copy(tmp);
+      if(tmp != ""){
+        input += tmp + "\n";
+      }
+      getline (inParam,tmp);
+    }
+    inParam.close();
+    for (int i = 0; i < input.size(); ++i){
+      inp[i] = input[i];
+    }
+  }
 
 
+  int size = input.size();
 
-	//Teuchos::broadcast<int,string>(comm,0, &input);
-	cout << "inp:" << inp << endl;
-	istringstream inParam(inp);
-	string str;
-	getline (inParam,str);
-	while (!inParam.eof()){
-		if(str[0] != param_comment){
-			size_t pos = str.find('=');
-			if(pos == string::npos){
-				cerr << "Invalid Line:" << str;
-				exit(1);
-			}
-			string paramname = trim_copy(str.substr(0,pos));
-			string paramvalue = trim_copy(str.substr(pos + 1));
-			cout << "me:" << comm->getRank() << " " << paramname << " " << paramvalue << endl;
-			geoparams.set(paramname, paramvalue);
-		}
-		getline (inParam,str);
-	}
+  //MPI_Bcast(&size,1,MPI_INT, 0, MPI_COMM_WORLD);
+  //MPI_Bcast(inp,size,MPI_CHAR, 0, MPI_COMM_WORLD);
+  //Teuchos::broadcast<int, char>(comm, 0,inp);
+
+  comm->broadcast(0, sizeof(int), (char*) &size);
+  comm->broadcast(0, size, inp);
+  //Teuchos::broadcast<int,string>(comm,0, &input);
+  istringstream inParam(inp);
+  string str;
+  getline (inParam,str);
+  while (!inParam.eof()){
+    if(str[0] != param_comment){
+      size_t pos = str.find('=');
+      if(pos == string::npos){
+        cerr << "Invalid Line:" << str;
+        exit(1);
+      }
+      string paramname = trim_copy(str.substr(0,pos));
+      string paramvalue = trim_copy(str.substr(pos + 1));
+      cout << "me:" << comm->getRank() << " " << paramname << " " << paramvalue << endl;
+      geoparams.set(paramname, paramvalue);
+    }
+    getline (inParam,str);
+  }
 }
 
 void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, float imbalance, std::string fname, std::string pqParts, std::string paramFile){
 
-	Teuchos::ParameterList geoparams("geo params");
+  Teuchos::ParameterList geoparams("geo params");
 
-	readGeoGenParams(paramFile, geoparams, comm);
+  readGeoGenParams(paramFile, geoparams, comm);
 
-/*
+  /*
 	//geoparams.set("dim", 2);
 	//geoparams.set("holes", "CIRCLE,-10,-10,15,CIRCLE,200,200,150");
 	//geoparams.set("out_file", fname);
@@ -148,78 +154,78 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
 	geoparams.set("out_file", fname);
 	//geoparams.set("proc_load_distributions", "0.5,0.5,0.000,0.000");
 	//GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
-	*/
+   */
 
-	GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+  GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
 
-//	UserInputForTests uinput(testDataFilePath, fname, comm, true);
+  //	UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
-//	RCP<tMVector_t> coords = uinput.getCoordinates();
-	RCP<tMVector_t> coords = gg->getCoordinates();
+  //	RCP<tMVector_t> coords = uinput.getCoordinates();
+  RCP<tMVector_t> coords = gg->getCoordinates();
 
-	RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(coords);
+  RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(coords);
 
 
-	size_t localCount = coords->getLocalLength();
-	int dim = coords->getNumVectors();
+  size_t localCount = coords->getLocalLength();
+  int dim = coords->getNumVectors();
 
-	scalar_t *x=NULL, *y=NULL, *z=NULL;
-	x = coords->getDataNonConst(0).getRawPtr();
+  scalar_t *x=NULL, *y=NULL, *z=NULL;
+  x = coords->getDataNonConst(0).getRawPtr();
 
-	if (dim > 1){
-		y = coords->getDataNonConst(1).getRawPtr();
-		if (dim > 2)
-			z = coords->getDataNonConst(2).getRawPtr();
-	}
+  if (dim > 1){
+    y = coords->getDataNonConst(1).getRawPtr();
+    if (dim > 2)
+      z = coords->getDataNonConst(2).getRawPtr();
+  }
 
-	const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
+  const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
 
 #if 0
-	typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
-	inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
+  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+  inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 #else
-	typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
-	inputAdapter_t ia(coordsConst);
+  typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+  inputAdapter_t ia(coordsConst);
 #endif
 
 
-	Teuchos::ParameterList params("test params");
+  Teuchos::ParameterList params("test params");
 
-	params.set("pqParts", pqParts);
-	Teuchos::ParameterList &parParams = params.sublist("partitioning");
-	parParams.set("num_global_parts", numParts);
-	parParams.set("algorithm", "PQJagged");
-	parParams.set("compute_metrics", "true");
-	parParams.set("imbalance_tolerance", double(imbalance));
+  params.set("pqParts", pqParts);
+  Teuchos::ParameterList &parParams = params.sublist("partitioning");
+  parParams.set("num_global_parts", numParts);
+  parParams.set("algorithm", "PQJagged");
+  parParams.set("compute_metrics", "true");
+  parParams.set("imbalance_tolerance", double(imbalance));
 
-	Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-	geoParams.set("bisection_num_test_cuts", 7);
+  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
+  geoParams.set("bisection_num_test_cuts", 7);
 
 #ifdef HAVE_ZOLTAN2_MPI                   
-	Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-			MPI_COMM_WORLD);
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
+      MPI_COMM_WORLD);
 #else
-	Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
 
-	cout << "basl1" << endl;
-	problem.solve();
+  //cout << "basl1" << endl;
+  problem.solve();
 
-	cout << "basla" << endl;
-	const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-			problem.getSolution();
+  //cout << "basla" << endl;
+  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+      problem.getSolution();
 
-	if (comm->getRank() == 0){
-		problem.printMetrics(cout);
+  if (comm->getRank() == 0){
+    problem.printMetrics(cout);
 
-		cout << "testFromDataFile is done " << endl;
-	}
+    cout << "testFromDataFile is done " << endl;
+  }
 }
 
 void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts, float imbalance, std::string fname, std::string pqParts)
 {
   //std::string fname("simple");
-	cout << "running " << fname << endl;
+  cout << "running " << fname << endl;
 
   UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
@@ -264,7 +270,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
 
 #ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-    MPI_COMM_WORLD);
+      MPI_COMM_WORLD);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
@@ -272,12 +278,12 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
   problem.solve();
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-    problem.getSolution();
+      problem.getSolution();
 
   if (comm->getRank() == 0){
-	  problem.printMetrics(cout);
+    problem.printMetrics(cout);
 
-  cout << "testFromDataFile is done " << endl;
+    cout << "testFromDataFile is done " << endl;
   }
 }
 
@@ -295,13 +301,13 @@ void serialTest(int numParts, int numCoords, float imbalance)
 
   Array<ArrayRCP<scalar_t> > randomCoords(3);
   UserInputForTests::getRandomData(555, numCoords, 0, 10, 
-    randomCoords.view(0,3));
+      randomCoords.view(0,3));
 
   typedef Zoltan2::BasicCoordinateInput<myTypes_t> inputAdapter_t;
 
   inputAdapter_t ia(numCoords, ids, 
-    randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
-     randomCoords[2].getRawPtr(), 1,1,1);
+      randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
+      randomCoords[2].getRawPtr(), 1,1,1);
 
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
@@ -321,15 +327,15 @@ void serialTest(int numParts, int numCoords, float imbalance)
 
 #ifdef HAVE_ZOLTAN2_MPI                   
   Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(
-    &ia, &params, MPI_COMM_SELF);
+      &ia, &params, MPI_COMM_SELF);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(&ia, &params);
 #endif
- 
+
   serialProblem.solve();
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &serialSolution = 
-    serialProblem.getSolution();
+      serialProblem.getSolution();
 
   serialProblem.printMetrics(cout);
 
@@ -372,7 +378,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
 #ifdef HAVE_ZOLTAN2_MPI
 
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-    MPI_COMM_WORLD);
+      MPI_COMM_WORLD);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
@@ -381,10 +387,10 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
 
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-    problem.getSolution();
+      problem.getSolution();
 
   if (comm->getRank()  == 0)
-	  problem.printMetrics(cout);
+    problem.printMetrics(cout);
 }
 
 
@@ -393,24 +399,24 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
 {
 
 
-	  gno_t *ids = new gno_t [numCoords];
-	  if (!ids)
-	    throw std::bad_alloc();
-	  for (lno_t i=0; i < numCoords; i++)
-	    ids[i] = i;
-	  ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
+  gno_t *ids = new gno_t [numCoords];
+  if (!ids)
+    throw std::bad_alloc();
+  for (lno_t i=0; i < numCoords; i++)
+    ids[i] = i;
+  ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
 
-	  Array<ArrayRCP<scalar_t> > randomCoords(3);
+  Array<ArrayRCP<scalar_t> > randomCoords(3);
 
-	  int np = comm->getSize();
-	  UserInputForTests::getRandomData(555 + comm->getRank(), numCoords/np, 0, 10,
-	    randomCoords.view(0,3));
+  int np = comm->getSize();
+  UserInputForTests::getRandomData(555 + comm->getRank(), numCoords/np, 0, 10,
+      randomCoords.view(0,3));
 
-	  typedef Zoltan2::BasicCoordinateInput<myTypes_t> inputAdapter_t;
+  typedef Zoltan2::BasicCoordinateInput<myTypes_t> inputAdapter_t;
 
-	  inputAdapter_t ia(numCoords/np, ids,
-	    randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
-	     randomCoords[2].getRawPtr(), 1,1,1);
+  inputAdapter_t ia(numCoords/np, ids,
+      randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
+      randomCoords[2].getRawPtr(), 1,1,1);
 
   Teuchos::ParameterList params("test params");
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
@@ -429,7 +435,7 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
 #ifdef HAVE_ZOLTAN2_MPI
 
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-    MPI_COMM_WORLD);
+      MPI_COMM_WORLD);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
@@ -438,31 +444,31 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
 
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-    problem.getSolution();
+      problem.getSolution();
 
   //const RCP<inputAdapter_t> rcpIa = RCP<inputAdapter_t>(&ia);
   //const RCP <const Zoltan2::PartitioningSolution<inputAdapter_t> > rcpsolution = RCP<const Zoltan2::PartitioningSolution<inputAdapter_t> >(&solution,false);
- // Zoltan2::PartitioningSolutionQuality<inputAdapter_t> psq (problem.env_,comm, rcpIa, rcpsolution);
+  // Zoltan2::PartitioningSolutionQuality<inputAdapter_t> psq (problem.env_,comm, rcpIa, rcpsolution);
 
-//  if (comm->getRank()  == 0)
-//	  problem.printMetrics(cout);
+  //  if (comm->getRank()  == 0)
+  //	  problem.printMetrics(cout);
 }
 
 string convert_to_string(char *args){
-    string tmp = "";
-    for(int i = 0; args[i] != 0; i++)
-        tmp += args[i];
-    return tmp;
+  string tmp = "";
+  for(int i = 0; args[i] != 0; i++)
+    tmp += args[i];
+  return tmp;
 }
 bool getArgumentValue(string &argumentid, float &argumentValue, string argumentline){
-    stringstream stream(stringstream::in | stringstream::out);
-    stream << argumentline;
-    getline(stream, argumentid, '=');
-    if (stream.eof()){
-        return false;
-    }
-    stream >> argumentValue;
-    return true;
+  stringstream stream(stringstream::in | stringstream::out);
+  stream << argumentline;
+  getline(stream, argumentid, '=');
+  if (stream.eof()){
+    return false;
+  }
+  stream >> argumentValue;
+  return true;
 }
 
 
@@ -482,68 +488,68 @@ int main(int argc, char *argv[])
   std::string fname = "simple";
   std::string paramFile = "";
   for(int i = 0; i < argc; ++i){
-	  string tmp = convert_to_string(argv[i]);
-	  string identifier = "";
-	  int value = -1; float fval = -1;
-	  if(!getArgumentValue(identifier, fval, tmp)) continue;
-	  value = int (fval);
-	  if(identifier == "C"){
+    string tmp = convert_to_string(argv[i]);
+    string identifier = "";
+    int value = -1; float fval = -1;
+    if(!getArgumentValue(identifier, fval, tmp)) continue;
+    value = int (fval);
+    if(identifier == "C"){
 
-	  		  if(value > 0){
-	  			  numParts=value;
-	  		  } else {
-	  			  cout << "Invalid argument at " << tmp;
-	  			  exit(1);
-	  		  }	  	  } else
-	  if(identifier == "P"){
+      if(value > 0){
+        numParts=value;
+      } else {
+        cout << "Invalid argument at " << tmp;
+        exit(1);
+      }	  	  } else
+        if(identifier == "P"){
 
-		  stringstream stream(stringstream::in | stringstream::out);
+          stringstream stream(stringstream::in | stringstream::out);
 
-		  stream << tmp;
+          stream << tmp;
 
-		  getline(stream, fname, '=');
-		  stream >> pqParts;
-	  } else if(identifier == "D"){
-		  if(value > 0){
-			  numCoords=value;
-		  } else {
-			  cout << "Invalid argument at " << tmp;
-			  exit(1);
-		  }
-	  }else if(identifier == "I"){
-		  if(fval > 0){
-			  imbalance=fval;
-		  } else {
-			  cout << "Invalid argument at " << tmp;
-			  exit(1);
-		  }
-	  } else if(identifier == "F"){
-		  stringstream stream(stringstream::in | stringstream::out);
-		  stream << tmp;
-		  getline(stream, fname, '=');
+          getline(stream, fname, '=');
+          stream >> pqParts;
+        } else if(identifier == "D"){
+          if(value > 0){
+            numCoords=value;
+          } else {
+            cout << "Invalid argument at " << tmp;
+            exit(1);
+          }
+        }else if(identifier == "I"){
+          if(fval > 0){
+            imbalance=fval;
+          } else {
+            cout << "Invalid argument at " << tmp;
+            exit(1);
+          }
+        } else if(identifier == "F"){
+          stringstream stream(stringstream::in | stringstream::out);
+          stream << tmp;
+          getline(stream, fname, '=');
 
-		  stream >> fname;
-	  }
+          stream >> fname;
+        }
 
-	  else if(identifier == "PF"){
-		  stringstream stream(stringstream::in | stringstream::out);
-		  stream << tmp;
-		  getline(stream, paramFile, '=');
-		  stream >> paramFile;
-	  }
-	  else if(identifier == "O"){
-	  		  if(value >= 0 && value <= 3){
-	  			  opt = value;
-	  		  } else {
-	  			  cout << "Invalid argument at " << tmp;
-	  			  exit(1);
-	  		  }
-	  	  }
-	  else {
-		  cout << "Invalid argument at " << tmp;
-		  exit(1);
+        else if(identifier == "PF"){
+          stringstream stream(stringstream::in | stringstream::out);
+          stream << tmp;
+          getline(stream, paramFile, '=');
+          stream >> paramFile;
+        }
+        else if(identifier == "O"){
+          if(value >= 0 && value <= 3){
+            opt = value;
+          } else {
+            cout << "Invalid argument at " << tmp;
+            exit(1);
+          }
+        }
+        else {
+          cout << "Invalid argument at " << tmp;
+          exit(1);
 
-	  }
+        }
 
   }
 
@@ -556,17 +562,17 @@ int main(int argc, char *argv[])
 
   switch (opt){
   case 0:
-	  testFromDataFile(tcomm,numParts, imbalance,fname,pqParts);
-	  break;
+    testFromDataFile(tcomm,numParts, imbalance,fname,pqParts);
+    break;
   case 1:
-	  meshCoordinatesTest2(tcomm,pqParts, numCoords, imbalance, numParts);
-	  break;
+    meshCoordinatesTest2(tcomm,pqParts, numCoords, imbalance, numParts);
+    break;
   case 2:
-	  serialTest(numParts, numCoords, imbalance);
-	  break;
+    serialTest(numParts, numCoords, imbalance);
+    break;
   case 3:
-	  GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile);
-	  break;
+    GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile);
+    break;
   }
   //if (rank == 0)
   //  serialTest(numParts, numCoords, imbalance);
