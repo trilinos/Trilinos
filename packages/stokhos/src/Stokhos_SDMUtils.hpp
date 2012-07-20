@@ -448,8 +448,8 @@ namespace Stokhos {
     // Make sure Q is the right size
     if (Q.numRows() != m || Q.numCols() != k)
       Q.shape(m,k);
-    if (R.numRows() != k || R.numCols() != k)
-      R.shape(k,k);
+    if (R.numRows() != m || R.numCols() != n)
+      R.shape(m,n);
     if (piv.size() != n)
       piv.resize(n);
 
