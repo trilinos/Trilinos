@@ -77,7 +77,7 @@ CXX_SOURCES="main.cpp TestHost.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${WORK_PATH}/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_Impl.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_MemoryManager.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_MemorySpace.cpp"
 
 #-----------------------------------------------------------------------------
 

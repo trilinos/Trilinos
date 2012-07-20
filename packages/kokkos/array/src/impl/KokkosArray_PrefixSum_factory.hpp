@@ -45,7 +45,6 @@
 #define KOKKOS_IMPL_PREFIXSUM_FACTORY_HPP
 
 #include <vector>
-#include <impl/KokkosArray_MemoryView.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -55,33 +54,33 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< typename IntType , class Device >
-struct Factory< PrefixSum< IntType , Device > ,
-                PrefixSum< IntType , Device > >
+template< typename IntType , class LayoutDst , class DeviceDst ,
+                             class LayoutSrc , class DeviceSrc >
+struct Factory< PrefixSum< IntType , LayoutDst , DeviceDst > ,
+                PrefixSum< IntType , LayoutSrc , DeviceSrc > >
 {
-  typedef PrefixSum< IntType, Device > output_type ;
+  typedef PrefixSum< IntType, LayoutDst , DeviceDst > output_type ;
+  typedef PrefixSum< IntType, LayoutSrc , DeviceSrc > input_type ;
 
   static inline
-  void deep_copy( output_type & output , const output_type & input )
+  void deep_copy( output_type & output , const input_type & input )
   {
-    typedef MemoryView< typename output_type::size_type ,
-                        typename Device::memory_space > data_type ;
-
-    Factory< data_type , data_type >
-      ::deep_copy( output.m_data, input.m_data , output.m_length + 1 );
-
+    KokkosArray::deep_copy( output.m_data , input.m_data );
     output.m_sum = input.m_sum ;
   }
 
   static inline
-  output_type create( const output_type & input )
+  output_type create( const input_type & input )
   {
     output_type output ;
-    output.m_length = input.m_length ;
-    output.m_sum    = input.m_sum ;
-    output.m_data.allocate( input.m_length + 1 , std::string() );
 
-    deep_copy( output , input );
+    output.m_data = Factory< typename output_type::view_type ,
+                             typename input_type::view_type >
+                      ::create( input.m_data );
+
+    KokkosArray::deep_copy( output.m_data , input.m_data );
+
+    output.m_sum = input.m_sum ;
 
     return output ;
   }
@@ -89,51 +88,50 @@ struct Factory< PrefixSum< IntType , Device > ,
 
 //----------------------------------------------------------------------------
 
-template< typename IntType , class DeviceOutput >
-struct Factory< PrefixSum< IntType , DeviceOutput > , MirrorUseView >
+template< typename IntType , class LayoutOutput , class DeviceOutput >
+struct Factory< PrefixSum< IntType , LayoutOutput , DeviceOutput > ,
+                MirrorUseView >
 {
-  typedef PrefixSum< IntType , DeviceOutput > output_type ;
+  typedef PrefixSum< IntType , LayoutOutput , DeviceOutput > output_type ;
 
   static inline
   const output_type & create( const output_type & input ) { return input ; }
 
   template< class DeviceInput >
   static inline
-  output_type create( const PrefixSum< IntType , DeviceInput > & input )
+  output_type create(
+    const PrefixSum< IntType , LayoutOutput , DeviceInput > & input )
   {
-    typedef PrefixSum< IntType , DeviceInput > input_type ;
+    typedef PrefixSum< IntType , LayoutOutput , DeviceInput > input_type ;
     return Factory< output_type , input_type >::create( input );
   }
 };
 
 //----------------------------------------------------------------------------
 
-template< typename IntTypeOutput , class DeviceOutput ,
+template< typename IntTypeOutput , class LayoutOutput , class DeviceOutput ,
           typename IntTypeInput >
-struct Factory< PrefixSum< IntTypeOutput , DeviceOutput > ,
+struct Factory< PrefixSum< IntTypeOutput , LayoutOutput , DeviceOutput > ,
                 std::vector< IntTypeInput > >
 {
-  typedef PrefixSum< IntTypeOutput , DeviceOutput > output_type ;
+  typedef PrefixSum< IntTypeOutput , LayoutOutput , DeviceOutput > output_type ;
   typedef std::vector< IntTypeInput > input_type ;
 
   static
   output_type create( const std::string & label , const input_type & input )
   {
-    typedef MemoryView< IntTypeOutput ,
-                        typename DeviceOutput::memory_space > memory_output ;
-
-    typedef typename memory_output::HostMirror  memory_mirror ;
+    typedef typename output_type::view_type output_view_type ;
 
     const size_t count = input.size();
 
     output_type output ;
 
-    output.m_length = count ;
-    output.m_data.allocate( count + 1 , label );
+    output.m_data =
+      KokkosArray::create< output_view_type >( label , count + 1 );
 
     // If same memory space then a view:
-    memory_mirror tmp = Factory< memory_mirror , MirrorUseView >
-                          ::create( output.m_data , count + 1 );
+    typename output_view_type::HostMirror tmp =
+      create_mirror( output.m_data , MirrorUseView() );
 
     // Could be made parallel
     output.m_sum = tmp[0] = 0 ;
@@ -141,8 +139,7 @@ struct Factory< PrefixSum< IntTypeOutput , DeviceOutput > ,
       tmp[i+1] = output.m_sum += input[i] ;
     }
 
-    Factory< memory_output , memory_mirror >
-      ::deep_copy( output.m_data , tmp , count + 1 );
+    KokkosArray::deep_copy( output.m_data , tmp );
 
     return output ;
   }

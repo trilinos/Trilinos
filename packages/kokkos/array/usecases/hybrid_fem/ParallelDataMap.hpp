@@ -50,7 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <KokkosArray_Array.hpp>
+#include <KokkosArray_View.hpp>
 #include <KokkosArray_Host.hpp>
 #include <ParallelComm.hpp>
 
@@ -70,14 +70,37 @@ namespace KokkosArray {
  *  send_item { send item offsets within 'send' range }
  */
 struct ParallelDataMap {
-  comm::Machine               machine ;
-  Array< unsigned[2], Host >  host_recv ;
-  Array< unsigned[2], Host >  host_send ;
-  Array< unsigned ,   Host >  host_send_item ;
-  unsigned                    count_interior ;
-  unsigned                    count_send ;
-  unsigned                    count_owned ; // = count_interior + count_send
-  unsigned                    count_receive ;
+  typedef View< unsigned[][2], Host >  host_recv_type ;
+  typedef View< unsigned[][2], Host >  host_send_type ;
+  typedef View< unsigned[] ,   Host >  host_send_item_type ;
+
+  comm::Machine        machine ;
+  host_recv_type       host_recv ;
+  host_send_type       host_send ;
+  host_send_item_type  host_send_item ;
+  unsigned             count_interior ;
+  unsigned             count_send ;
+  unsigned             count_owned ; // = count_interior + count_send
+  unsigned             count_receive ;
+
+  void assign( const unsigned arg_count_interior ,
+               const unsigned arg_count_owned ,
+               const unsigned arg_count_total ,
+               const unsigned arg_recv_msg ,
+               const unsigned arg_send_msg ,
+               const unsigned arg_send_count )
+  {
+    const std::string label("KokkosArray::ParallelDataMap buffer");
+
+    count_interior = arg_count_interior ;
+    count_owned    = arg_count_owned ;
+    count_send     = arg_count_owned - arg_count_interior ;
+    count_receive  = arg_count_total - arg_count_owned ;
+
+    host_recv = KokkosArray::create< host_recv_type >( label , arg_recv_msg );
+    host_send = KokkosArray::create< host_send_type >( label , arg_send_msg );
+    host_send_item = KokkosArray::create< host_send_item_type >( label , arg_send_count );
+  }
 };
 
 template< class ArrayType , class Rank = void > struct PackArray ;
@@ -109,10 +132,10 @@ template< class ValueType , class Device >
 class AsyncExchange< ValueType, Device , KokkosArray::ParallelDataMap > {
 public:
 
-  typedef Device                                              device_type ;
-  typedef KokkosArray::ParallelDataMap                             data_map_type ;
-  typedef KokkosArray::Impl::MemoryView< ValueType , device_type > buffer_dev_type ;
-  typedef KokkosArray::Impl::MemoryView< ValueType , Host >        buffer_host_type ;
+  typedef Device                                          device_type ;
+  typedef KokkosArray::ParallelDataMap                    data_map_type ;
+  typedef KokkosArray::View< ValueType[] , device_type >  buffer_dev_type ;
+  typedef KokkosArray::View< ValueType[] , Host >         buffer_host_type ;
 
 private:
 
@@ -150,18 +173,22 @@ public:
                                  (unsigned) arg_data_map.host_send(i,1) );
     }
 
-    dev_buffer.allocate( arg_chunk * std::max( arg_data_map.count_send ,
-                                               arg_data_map.count_receive ),
-                         std::string("AsyncExchange dev_buffer") );
+    dev_buffer = KokkosArray::create< buffer_dev_type >
+                   ( std::string("AsyncExchange dev_buffer") ,
+                     arg_chunk * std::max( arg_data_map.count_send ,
+                                           arg_data_map.count_receive ) );
 
-    host_recv_buffer.allocate( arg_chunk * arg_data_map.count_receive ,
-                               std::string("AsyncExchange host_recv_buffer") );
+    host_recv_buffer = KokkosArray::create< buffer_host_type >
+                         ( std::string("AsyncExchange host_recv_buffer") ,
+                           arg_chunk * arg_data_map.count_receive );
 
-    host_send_buffer.allocate( arg_chunk * arg_data_map.count_send ,
-                               std::string("AsyncExchange host_send_buffer") );
+    host_send_buffer = KokkosArray::create< buffer_host_type >
+                         ( std::string("AsyncExchange host_send_buffer") ,
+                           arg_chunk * arg_data_map.count_send );
 
-    send_msg_buffer.allocate( arg_chunk * send_count_max ,
-                              std::string("AsyncExchange send_msg_buffer") );
+    send_msg_buffer = KokkosArray::create< buffer_host_type >
+                        ( std::string("AsyncExchange send_msg_buffer") ,
+                          arg_chunk * send_count_max );
 
     recv_request.assign( recv_msg_count , MPI_REQUEST_NULL );
   }

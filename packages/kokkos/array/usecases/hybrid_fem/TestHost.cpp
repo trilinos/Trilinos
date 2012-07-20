@@ -10,16 +10,19 @@
 #include <TestBoxMeshFixture.hpp>
 #include <Implicit.hpp>
 #include <NonLinear.hpp>
+#include <Explicit.hpp>
 
 #include <KokkosArray_Host.hpp>
 
 #include <KokkosArray_Host_macros.hpp>
 #include <ParallelDataMap_macros.hpp>
 #include <TestBoxMeshFixture_macros.hpp>
-#include <Implicit_macros.hpp>
-#include <NonLinear_macros.hpp>
 #include <SparseLinearSystem_macros.hpp>
 #include <SparseLinearSystemFill_macros.hpp>
+
+#include <Implicit_macros.hpp>
+#include <NonLinear_macros.hpp>
+#include <Explicit_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 
 #include <SparseLinearSystem_Host.hpp>
@@ -65,6 +68,21 @@ void test_host_implicit( comm::Machine machine ,
   KokkosArray::Host::finalize();
 }
 
+//----------------------------------------------------------------------------
+
+void test_host_explicit( comm::Machine machine , 
+                         size_t numa_node_count ,
+                         size_t numa_node_thread_count ,
+                         size_t node_count_begin ,
+                         size_t node_count_end ,
+                         size_t count_run )
+{
+  KokkosArray::Host::initialize( numa_node_count , numa_node_thread_count );
+  Explicit::driver<double,KokkosArray::Host>( "Host" , machine , node_count_begin , node_count_end , count_run );
+  KokkosArray::Host::finalize();
+}
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 void test_host_nonlinear( comm::Machine machine , 

@@ -54,23 +54,27 @@ namespace Impl {
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
   BlockCrsMatrix< BlockSpec , MatrixValue , KokkosArray::Cuda > ,
-  KokkosArray::MultiVector< VectorValue , KokkosArray::Cuda > ,
-  KokkosArray::MultiVector< VectorValue , KokkosArray::Cuda > >
+  KokkosArray::View< VectorValue[0][0] ,
+                     KokkosArray::LayoutLeft ,
+                     KokkosArray::Cuda > ,
+  KokkosArray::View< VectorValue[0][0] ,
+                     KokkosArray::LayoutLeft ,
+                     KokkosArray::Cuda > >
 {
 public:
   typedef KokkosArray::Cuda                              device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef MultiVector< VectorValue , device_type >  vector_type ;
+  typedef View< VectorValue[0][0] , LayoutLeft , Cuda > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
   typedef Impl::Multiply< BlockSpec , void , void > block_matrix_type ;
 
   const matrix_type  m_A ;
-  const vector_type  m_x ;
-  const vector_type  m_y ;
+  const block_vector_type  m_x ;
+  const block_vector_type  m_y ;
 
   Multiply( const matrix_type & A ,
-            const vector_type & x ,
-            const vector_type & y )
+            const block_vector_type & x ,
+            const block_vector_type & y )
   : m_A( A )
   , m_x( x )
   , m_y( y )
@@ -108,8 +112,8 @@ public:
   }
 
   static void apply( const matrix_type & A ,
-                     const vector_type & x ,
-                     const vector_type & y )
+                     const block_vector_type & x ,
+                     const block_vector_type & y )
   {
     const size_type thread_max =
       cuda_internal_maximum_warp_count() * Impl::CudaTraits::WarpSize ;
@@ -118,7 +122,8 @@ public:
       std::min( A.graph.row_map.length() , cuda_internal_maximum_grid_count() ) , 1 , 1 );
     const dim3 block = Multiply<BlockSpec>::thread_block( A.block );
 
-    const size_type shmem       = Multiply<BlockSpec>::template shmem_size<vector_type>( A.block );
+    const size_type shmem =
+      Multiply<BlockSpec>::template shmem_size<block_vector_type>( A.block );
 
     if ( thread_max < block.x * block.y ) {
       std::ostringstream msg ;

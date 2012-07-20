@@ -60,10 +60,10 @@ struct GatherFill<
 
   typedef KokkosArray::CrsMatrix< ScalarType , device_type >    matrix_type ;
   typedef typename matrix_type::coefficients_type   coefficients_type ;
-  typedef KokkosArray::MultiVector< ScalarType , device_type >  vector_type ;
-  typedef KokkosArray::Array< ScalarType[ElemNodeCount][ElemNodeCount] , device_type >      elem_matrices_type ;
-  typedef KokkosArray::Array< ScalarType[ElemNodeCount] , device_type >      elem_vectors_type ;
-  typedef KokkosArray::Array< size_type[ElemNodeCount][ElemNodeCount] , device_type >       elem_graph_type ;
+  typedef KokkosArray::View< ScalarType[] , device_type >  vector_type ;
+  typedef KokkosArray::View< ScalarType[][ElemNodeCount][ElemNodeCount] , device_type >      elem_matrices_type ;
+  typedef KokkosArray::View< ScalarType[][ElemNodeCount] , device_type >      elem_vectors_type ;
+  typedef KokkosArray::View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >       elem_graph_type ;
 
   typedef FEMesh< CoordScalarType , ElemNodeCount , device_type > mesh_type ;
   typedef typename mesh_type::node_elem_ids_type node_elem_ids_type ;

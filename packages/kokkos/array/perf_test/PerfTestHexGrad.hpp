@@ -53,11 +53,15 @@ struct HexSimpleFill< KOKKOS_MACRO_DEVICE >
   typedef device_type::size_type  size_type ;
 
   // 3D array : ( ParallelWork , Space , Node )
-  typedef KokkosArray::MDArray<double,device_type> d_array ;
 
-  KokkosArray::MDArray<double,device_type> coords ;
+  enum { NSpace = 3 , NNode = 8 };
 
-  HexSimpleFill( const KokkosArray::MDArray<double,device_type> & arg_coords )
+  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
+    elem_coord_type ;
+
+  elem_coord_type coords ;
+
+  HexSimpleFill( const elem_coord_type & arg_coords )
     : coords( arg_coords ) {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -110,15 +114,21 @@ struct HexGrad< KOKKOS_MACRO_DEVICE >
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
-  enum { N_Space = 3 , N_Node = 8 };
-
   // 3D array : ( ParallelWork , Space , Node )
 
-  KokkosArray::MDArray<double,device_type> coords ;
-  KokkosArray::MDArray<float,device_type>  grad_op ;
+  enum { NSpace = 3 , NNode = 8 };
 
-  HexGrad( const KokkosArray::MDArray<double,device_type> & arg_coords ,
-           const KokkosArray::MDArray<float,device_type>  & arg_grad_op )
+  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
+    elem_coord_type ;
+
+  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
+    elem_grad_type ;
+
+  elem_coord_type  coords ;
+  elem_grad_type   grad_op ;
+
+  HexGrad( const elem_coord_type  & arg_coords ,
+           const elem_grad_type   & arg_grad_op )
     : coords( arg_coords )
     , grad_op( arg_grad_op )
     {}
@@ -129,7 +139,7 @@ struct HexGrad< KOKKOS_MACRO_DEVICE >
     // Repeated re-use of nodal coordinates,
     // copy them into local storage.
         
-    double a[N_Node];
+    double a[NNode];
     
     //Z
     a[0] = coords(ielem,2,0);
@@ -282,20 +292,22 @@ struct HexGrad< KOKKOS_MACRO_DEVICE >
 
   static double test( int count )
   {
-    typedef KokkosArray::MDArray<double,device_type> darray ;
-    typedef KokkosArray::MDArray<float,device_type>  farray ;
-    darray coord = KokkosArray::create_mdarray< darray >( count , 3 , 8 );
-    farray grad  = KokkosArray::create_mdarray< farray >( count , 3 , 8 );
+    elem_coord_type coord = KokkosArray::create< elem_coord_type >( "coord" , count );
+    elem_grad_type  grad  = KokkosArray::create< elem_grad_type >( "grad" , count );
 
     // Execute the parallel kernels on the arrays:
 
-    double seconds = 0.0;
-    
-    KokkosArray::parallel_for( count , HexSimpleFill<device_type>( coord ) , seconds );
+    KokkosArray::parallel_for( count , HexSimpleFill<device_type>( coord ) );
 
-    KokkosArray::parallel_for( count , HexGrad<device_type>( coord , grad ) , seconds );
+    device_type::fence();
 
-    return seconds ;
+    KokkosArray::Impl::Timer timer ;
+
+    KokkosArray::parallel_for( count , HexGrad<device_type>( coord , grad ) );
+
+    device_type::fence();
+
+    return timer.seconds() ;
   }
 };
 

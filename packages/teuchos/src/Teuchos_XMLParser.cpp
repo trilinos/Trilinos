@@ -55,12 +55,13 @@
 using namespace Teuchos;
 
 // this parser currently does not support:
-// * XML declaration
 // * processing instructions
 // * XML schemas
 // * CDATA sections...see http://www.w3.org/TR/2004/REC-xml-20040204/#dt-cdsection
 // * full Unicode support (we read unsigned bytes, so we get only 0x00 through 0xFF)
-
+// 
+// it tolerates (read: ignores) xml declarations, at any point in the file where a tag would be valid
+//
 // it currently does support:
 // * comments
 // * empty element tags, e.g.   <hello />
@@ -116,10 +117,17 @@ using namespace Teuchos;
      CData     ::= (Char* - (Char* ']]>' Char*))
      CDEnd     ::= ']]>'
      
-     document  ::=   prolog element Misc*
-     prolog    ::=   XMLDecl? Misc*
-     XMLDecl   ::=   '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
-     Misc      ::=   Comment | S
+     document     ::=   prolog element Misc*
+     prolog       ::=   XMLDecl? Misc*
+     XMLDecl      ::=   '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
+     Misc         ::=   Comment | S
+
+     VersionInfo  ::=     S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
+     Eq           ::=     S? '=' S?
+     VersionNum   ::=    '1.' [0-9]+
+     Misc         ::=     Comment | S
+
+
         
 */
 
@@ -205,6 +213,13 @@ XMLObject XMLParser::parse()
           tagLineStarts.pop();
           tags.pop();
         }
+      }
+      else if (c2 == '?') {
+        // it is starting to look like an xml declaration
+        XMLPARSER_TFE( assertChar('x') != 0 , "was expecting an XML declaration; element not well-formed or exploits unsupported feature" );
+        XMLPARSER_TFE( assertChar('m') != 0 , "was expecting an XML declaration; element not well-formed or exploits unsupported feature" );
+        XMLPARSER_TFE( assertChar('l') != 0 , "was expecting an XML declaration; element not well-formed or exploits unsupported feature" );
+        ignoreXMLDeclaration();
       }
       else if (c2 == '!') {
         // it is starting to look like a comment; we need '--'
@@ -591,3 +606,20 @@ int XMLParser::assertChar(unsigned char cexp)
   return 0; 
 }
 
+void XMLParser::ignoreXMLDeclaration() 
+{
+  /* Be a little lax on the spec here; read until we get to '?', then assert '>'
+     We have already consumed: <xml
+  */
+  unsigned char c;
+  while (1) {
+    XMLPARSER_TFE(_is->readBytes(&c,1) < 1,  "EOF before terminating XML declaration begun at line " << _lineNo );
+    if (c == '\n') ++_lineNo;
+    // if we have a -
+    if (c=='?') {
+      // this had better be leading to the end of the declaration
+      XMLPARSER_TFE( assertChar('>')!=0, "XML declaration not well-formed: missing expected '>' at line " << _lineNo );
+      break;
+    }
+  } 
+}

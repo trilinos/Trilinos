@@ -30,10 +30,8 @@
 
 #include "Teuchos_SerialDenseHelpers.hpp"
 
-#define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
 #define DGEQP3_F77  F77_BLAS_MANGLE(dgeqp3,DGEQP3)
 extern "C" {
-void DGEQPF_F77(int*, int*, double*, int*, int*, double*, double*, int*, int*);
 void DGEQP3_F77(int*, int*, double*, int*, int*, double*, double*, int*, int*);
 }
 
@@ -149,9 +147,6 @@ MonomialGramSchmidtSimplexPCEBasis(
     if (solver == "GLPK")
        reducedQuadrature_GLPK(B2, Q, F, weights, 
 			      reduced_weights, reduced_points, reduced_values);
-    else if (solver == "Clp")
-      reducedQuadrature_CLP(B2, Q, F, weights, 
-			    reduced_weights, reduced_points, reduced_values);
     else
       TEUCHOS_TEST_FOR_EXCEPTION(
 	true, std::logic_error, "Invalid LP solver method " << solver);
@@ -565,6 +560,17 @@ computeQR_CGS(
     Qj.scale(1.0/R(j,j));
   }
 
+  value_type r_max = std::abs(R(0,0));
+  value_type r_min = std::abs(R(0,0));
+  for (ordinal_type i=1; i<k; i++) {
+    if (std::abs(R(i,i)) > r_max)
+      r_max = R(i,i);
+    if (std::abs(R(i,i)) < r_min)
+      r_min = R(i,i);
+  }
+  value_type cond_r = r_max / r_min;
+  std::cout << "Condition number of R = " << cond_r << std::endl;
+
   // Check Q^T*W*Q = I
   if (verbose) {
     ordinal_type m = Q.numRows();
@@ -637,6 +643,17 @@ computeQR_MGS(
     R(j,j) = std::sqrt(weighted_inner_product(Qj, Qj, w));
     Qj.scale(1.0/R(j,j));
   }
+
+  value_type r_max = std::abs(R(0,0));
+  value_type r_min = std::abs(R(0,0));
+  for (ordinal_type i=1; i<k; i++) {
+    if (std::abs(R(i,i)) > r_max)
+      r_max = R(i,i);
+    if (std::abs(R(i,i)) < r_min)
+      r_min = R(i,i);
+  }
+  value_type cond_r = r_max / r_min;
+  std::cout << "Condition number of R = " << cond_r << std::endl;
 
   // Check Q^T*W*Q = I
   if (verbose) {
@@ -751,9 +768,11 @@ reducedQuadrature_QRCP(
 
   // Apply b = Q^T*B2^T*w
   Teuchos::SerialDenseVector<ordinal_type,value_type> b(sz2);
-  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  b.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, B2, w, 1.0);
+  // Teuchos::SerialDenseVector<ordinal_type,value_type> w(
+  //   Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
+  // b.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, B2, w, 1.0);
+  b.putScalar(0.0);
+  b[0] = 1.0;
 
   //std::cout << "B2^T*w = " << b << std::endl;
 
@@ -803,96 +822,6 @@ reducedQuadrature_QRCP(
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
-reducedQuadrature_CLP(
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-  const Teuchos::Array<value_type>& weights,
-  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values)
-{
-#ifdef HAVE_STOKHOS_CLP
-  //
-  // Find reduced quadrature weights by solving linear program
-  // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2 = Q2*R2
-  //
-  ordinal_type nqp = B2.numRows();
-  ordinal_type sz2 = B2.numCols();
-
-  // Compute QR factorization of B2 using Gram-Schmidt
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> R2(sz2, sz2);
-  if (orthogonalization_method == "Classical Gram-Schmidt")
-    computeQR_CGS(sz2, B2, weights, Q2, R2);
-  else if (orthogonalization_method == "Modified Gram-Schmidt")
-    computeQR_MGS(sz2, B2, weights, Q2, R2);
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid orthogonalization method " << orthogonalization_method);
-
-  // Setup linear program
-  ClpSimplex model;
-  model.resize(sz2, nqp);
-
-  // Compute e_1 = Q2^T*w which is our constraint
-  Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz2);
-  // e1.putScalar(0.0);
-  // e1[0] = 1.0;
-  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
-  Teuchos::Array<int> cols(nqp);
-  for (ordinal_type i=0; i<nqp; i++) {
-    cols[i] = i;
-    model.setObjectiveCoefficient(i, 1.0);
-    model.setColLower(i, -DBL_MAX);
-    model.setColUpper(i, DBL_MAX);
-  }
-  for (ordinal_type i=0; i<sz2; i++) 
-    model.addRow(nqp, &cols[0], Q2[i], -DBL_MAX, DBL_MAX);
-
-  // Solve linear program
-  model.primal();
-  double *solution = model.primalColumnSolution();
-  Teuchos::SerialDenseVector<ordinal_type,value_type> u(
-      Teuchos::Copy, solution, nqp);
-  
-  ordinal_type rank = 0;
-  for (ordinal_type i=0; i<nqp; i++)
-    if (std::abs(u[i]) > reduction_tol) ++rank;
-
-  // Get reduced weights, points and values
-  reduced_weights =
-    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
-  reduced_points =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  reduced_values =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  ordinal_type idx = 0;
-  for (ordinal_type i=0; i<nqp; i++) {
-    if (std::abs(u[i]) > reduction_tol) {
-      (*reduced_weights)[idx] = u[i];
-      (*reduced_points)[idx].resize(d);
-      for (ordinal_type j=0; j<d; j++)
-	(*reduced_points)[idx][j] = F(i,j);
-      (*reduced_values)[idx].resize(sz);
-      for (ordinal_type j=0; j<sz; j++)
-	(*reduced_values)[idx][j] = Q(i,j);
-      idx++;
-    }
-  }
-  TEUCHOS_ASSERT(idx == rank);
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     "Clp solver called but not enabled!");
-#endif
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::MonomialGramSchmidtSimplexPCEBasis<ordinal_type, value_type>::
 reducedQuadrature_GLPK(
   Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
@@ -931,8 +860,8 @@ reducedQuadrature_GLPK(
 
   // Compute e_1 = Q2^T*w which is our constraint
   Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz2);
-  //e1.putScalar(0.0);
-  //e1[0] = 1.0;
+  // e1.putScalar(0.0);
+  // e1[0] = 1.0;
   Teuchos::SerialDenseVector<ordinal_type,value_type> w(
     Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
   e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);

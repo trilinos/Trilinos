@@ -226,15 +226,6 @@ namespace Stokhos {
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values);
 
-    void reducedQuadrature_CLP(
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values);
-
     void reducedQuadrature_GLPK(
       Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,

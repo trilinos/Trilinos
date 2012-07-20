@@ -66,14 +66,14 @@ namespace Impl {
 
 template< typename IndexType , typename CoordScalar ,
           unsigned ElemNodeCount ,
-          class Device >
-struct Factory< KokkosArray::CrsArray< IndexType , Device , IndexType > ,
+          class Layout , class Device >
+struct Factory< KokkosArray::CrsArray< IndexType , Layout , Device , IndexType > ,
                 HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > >
 {
   typedef Device                                     device_type ;
   typedef typename device_type::size_type            size_type  ;
-  typedef KokkosArray::CrsArray< IndexType , Device , IndexType > graph_type ;
-  typedef Array< size_type[ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
+  typedef KokkosArray::CrsArray< IndexType , Layout , Device , IndexType > graph_type ;
+  typedef View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
 
   typedef HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > mesh_type ;
 
@@ -99,7 +99,7 @@ struct Factory< KokkosArray::CrsArray< IndexType , Device , IndexType > ,
     const size_t total_elem = mesh.elem_node_ids.dimension(0);
 
     if ( total_elem ) {
-      elem_map = create_array< element_map_type >( total_elem );
+      elem_map = KokkosArray::create< element_map_type >( std::string("element_map"), total_elem );
     }
 
     element_map_host_type elem_map_host = create_mirror( elem_map );

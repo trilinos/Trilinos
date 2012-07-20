@@ -47,8 +47,6 @@
 #include <iostream>
 
 #include <map>
-#include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_MDArray.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
 namespace KokkosArray {
@@ -77,17 +75,19 @@ public:
     typedef ValueType                   value_type ;
     typedef Device                      device_type ;
     typedef typename Device::size_type  size_type ;
+    typedef typename type::map_type     map_type ;
 
-    typedef MDArray< size_type, device_type>      coord_array_type ;
-    typedef MultiVector< value_type, device_type> value_array_type ;
+    typedef View< value_type[], device_type> value_array_type ;
 
     type tensor ;
 
-    tensor.m_coord = create_mdarray< coord_array_type >( input.size(), 3 );
-    tensor.m_value = create_multivector< value_array_type >( input.size() );
+    tensor.m_coord =
+      KokkosArray::create< map_type >( "sparse_tensor_coord" , input.size() );
+    tensor.m_value =
+      KokkosArray::create< value_array_type >( "sparse_tensor_value" , input.size() );
 
     // Try to create as a view, not a copy
-    typename coord_array_type::HostMirror
+    typename map_type::HostMirror
       host_coord = create_mirror( tensor.m_coord , Impl::MirrorUseView() );
 
     // Try to create as a view, not a copy
@@ -149,7 +149,7 @@ public:
     typedef typename Device::size_type  size_type ;
 
     typedef CrsArray< size_type[2] , device_type > coord_array_type ;
-    typedef MultiVector< value_type, device_type > value_array_type ;
+    typedef View< value_type[], device_type > value_array_type ;
 
     const size_type dimension =
       input.empty() ? 0 : 1 + (*input.rbegin()).first.coord(0);
@@ -174,7 +174,7 @@ public:
     type tensor ;
 
     tensor.m_coord = create_crsarray< coord_array_type >( coord_work );
-    tensor.m_value = create_multivector< value_array_type >( entry_count );
+    tensor.m_value = KokkosArray::create< value_array_type >( "tensor_value" , entry_count );
     tensor.m_entry_max = 0 ;
 
     for ( size_type i = 0 ; i < dimension ; ++i ) {

@@ -301,16 +301,13 @@ public:
     //   scaling( bases-index )
     // };
 
-    typedef MDArray< size_type , device_type > int_array_type ;
-    typedef Impl::MemoryView< ValueType , device_type > value_array_type ;
-
+    typedef View< size_type[][0] , device_type > int_array_type ;
     typedef typename int_array_type  ::HostMirror host_int_array_type ;
-    typedef typename value_array_type::HostMirror host_value_array_type ;
-    typedef typename value_array_type::HostMirror host_value_array_type ;
 
     tmp.m_degree_map =
-      create_mdarray< int_array_type >( work.m_bases_count + 1 ,
-                                        work.m_variable_count );
+      KokkosArray::create< int_array_type >( "stochastic_tensor_degree_map" ,
+                                             work.m_bases_count + 1 ,
+                                             work.m_variable_count );
 
     tmp.m_variable  = work.m_variable_count ;
 

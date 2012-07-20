@@ -293,7 +293,7 @@ void CudaInternal::initialize( int cuda_device_id )
      ( cudaProp.sharedMemPerBlock + WordSize - 1 ) / WordSize ;
 
     m_reduceScratchSpace = (size_type *)
-      MemoryManager< Cuda >::allocate(
+      CudaMemorySpace::allocate(
         std::string("MultiblockReduceScratchSpace") ,
         typeid( size_type ),
         sizeof( size_type ),
@@ -334,7 +334,7 @@ void CudaInternal::finalize()
     CUDA_SAFE_CALL( cudaStreamDestroy( m_streams[i] ) );
   }
 
-  MemoryManager< Cuda >::deallocate( m_reduceScratchSpace );
+  CudaMemorySpace::decrement( m_reduceScratchSpace );
 
   m_streams.clear();
   m_cudaDev            = -1 ;

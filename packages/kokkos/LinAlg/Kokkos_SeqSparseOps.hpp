@@ -71,7 +71,7 @@ namespace Kokkos {
     typedef Ordinal ordinal_type;
     typedef Node node_type;
 
-    SeqCrsGraph (Ordinal numRows, Ordinal numCols, 
+    SeqCrsGraph (Ordinal numRows, Ordinal numCols,
                  const Teuchos::RCP<Node>& node,
                  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -732,7 +732,7 @@ namespace Kokkos {
       ": Input and output multivectors have different numbers of vectors (columns)."
     );
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      X.getNumRows() < numRows_,
+      static_cast<Ordinal> (X.getNumRows()) < numRows_,
       std::runtime_error,
       ": Output multivector X does not have enough rows.  X.getNumRows() == "
       << X.getNumRows() << ", but the matrix has " << numRows_ << " rows."

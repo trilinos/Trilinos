@@ -47,9 +47,29 @@
 namespace KokkosArray {
 namespace Impl {
 
-template < bool > struct StaticAssert ;
+template < bool , class T = void >
+struct StaticAssert ;
 
-template<> struct StaticAssert< true > { enum { value = true }; };
+template< class T >
+struct StaticAssert< true , T > {
+  typedef T type ;
+  static const bool value = true ;
+};
+
+template < class A , class B >
+struct StaticAssertSame ;
+
+template < class A >
+struct StaticAssertSame<A,A> { typedef A type ; };
+
+template < class A , class B >
+struct StaticAssertAssignable ;
+
+template < class A >
+struct StaticAssertAssignable<A,A> { typedef A type ; };
+
+template < class A >
+struct StaticAssertAssignable< const A , A > { typedef const A type ; };
 
 } // namespace Impl
 } // namespace KokkosArray

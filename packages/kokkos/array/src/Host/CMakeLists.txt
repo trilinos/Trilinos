@@ -12,7 +12,7 @@ FILE(GLOB HEADERS *.hpp)
 #-----------------------------------------------------------------------------
 # Sources always included
 
-LIST(APPEND SOURCES KokkosArray_Host_Impl.cpp KokkosArray_Host_MemoryManager.cpp)
+LIST(APPEND SOURCES KokkosArray_Host_Impl.cpp KokkosArray_Host_MemorySpace.cpp)
 
 #-----------------------------------------------------------------------------
 # Hardware locality detection functionality depends upon TPL availability

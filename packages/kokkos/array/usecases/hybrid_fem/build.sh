@@ -4,7 +4,7 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
-EXECUTABLE="testit.exe"
+EXECUTABLE="proxyapp.exe"
 
 INC_PATH="-I. -I../../src"
 CXX="g++"
@@ -12,7 +12,7 @@ CXX="g++"
 CXX_SOURCES="./*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_Impl.cpp"
-CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_MemoryManager.cpp"
+CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_MemorySpace.cpp"
 
 #-----------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ case ${ARG} in
 #-------------------------------
 #----------- OPTIONS -----------
 OPT | opt | O3 | -O3 ) OPTFLAGS="${OPTFLAGS} -O3" ;;
-DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g" ;;
+DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g -DKOKKOS_ARRAY_BOUNDS_CHECK" ;;
 HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
 MPI | mpi )
   HAVE_MPI=${1} ; shift 1

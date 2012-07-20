@@ -84,16 +84,14 @@ protected:
 
   enum { THREAD_COUNT_MAX = 1023 };
 
-  typedef Host::size_type size_type ;
-
   HostWorkerBlock  m_worker_block ;
-  size_type        m_node_rank ;     // Rank of the process' NUMA node
-  size_type        m_node_count ;    // Count of NUMA nodes
-  size_type        m_node_pu_count ; // Assuming all nodes are equivalent
-  size_type        m_page_size ;     //
-  size_type        m_thread_count ;  // Number of threads
-  size_type        m_gang_count ;    // Number of NUMA nodes used
-  size_type        m_worker_count ;  // Number of threads per NUMA node
+  int              m_node_rank ;     // Rank of the process' NUMA node, if set
+  unsigned         m_node_count ;    // Count of NUMA nodes
+  unsigned         m_node_pu_count ; // Assuming all nodes are equivalent
+  unsigned         m_page_size ;     //
+  unsigned         m_thread_count ;  // Number of threads
+  unsigned         m_gang_count ;    // Number of NUMA nodes used
+  unsigned         m_worker_count ;  // Number of threads per NUMA node
   HostThread       m_master_thread ;
   //! Array of all worker threads (including master); accessible to the threads.
   HostThread     * m_thread[ HostThread::max_thread_count ];
@@ -102,7 +100,7 @@ protected:
 
   virtual ~HostInternal();
 
-  virtual bool bind_thread( const size_type thread_rank ) const ;
+  virtual bool bind_thread( const unsigned thread_rank ) const ;
 
   HostInternal();
 
@@ -119,16 +117,14 @@ private:
   /// The calling thread also gets bound as a worker thread.  This has
   /// implications for parallel kernels: in particular, they are not
   /// asynchronous.
-  bool spawn_threads( const size_type use_node_count ,
-                      const size_type use_node_thread_count );
+  bool spawn_threads( const unsigned use_node_count ,
+                      const unsigned use_node_thread_count );
 
   void activate();
 
   bool spawn( const size_t );
 
-  bool initialize_thread( const size_type thread_rank, HostThread & thread );
-
-  void clear_thread( const size_type thread_rank );
+  bool initialize_thread( const unsigned thread_rank, HostThread & thread );
 
 public:
   /// \brief Assert at run time that the calling worker thread is inactive.
@@ -151,14 +147,16 @@ public:
   /// as a worker thread.  This has implications for parallel kernels:
   /// in particular, they are not asynchronous.  Tasks get assigned to
   /// the master thread as well as to the other worker threads.
-  void initialize( const size_type use_node_count ,
-                   const size_type use_node_thread_count );
+  void initialize( const unsigned use_node_count ,
+                   const unsigned use_node_thread_count );
 
   void finalize();
 
   inline void execute( const HostThreadWorker<void> & worker );
 
   void driver( const size_t );
+
+  bool is_master_thread() const ;
 
   //! Access the one HostInternal instance.
   static HostInternal & singleton();

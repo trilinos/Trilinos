@@ -44,91 +44,9 @@
 #ifndef KOKKOS_CUDA_PREFIXSUM_HPP
 #define KOKKOS_CUDA_PREFIXSUM_HPP
 
-#include <string>
-
-#include <Cuda/KokkosArray_Cuda_IndexMap.hpp>
-
 #include <KokkosArray_Cuda_macros.hpp>
 #include <impl/KokkosArray_PrefixSum_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
-
-// For the host mirror:
-
-#include <KokkosArray_Host_macros.hpp>
-#undef KOKKOS_MACRO_DEVICE
-#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
-#include <impl/KokkosArray_PrefixSum_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
-namespace Impl {
-
-//----------------------------------------------------------------------------
-
-/** \brief  The hostview is identically mapped */
-
-template< typename IntType >
-struct Factory< PrefixSum< IntType , Cuda > ,
-                PrefixSum< IntType , HostMapped< Cuda > > >
-{
-  typedef PrefixSum< IntType, Cuda >              output_type ;
-  typedef PrefixSum< IntType, HostMapped<Cuda> >  input_type ;
-
-  static inline
-  void deep_copy( output_type & output , const input_type & input )
-  {
-    const size_t size_data = sizeof(IntType)*(output.m_length + 1 );
-
-    MemoryManager< Cuda >::
-      copy_to_device_from_host( output.m_data.ptr_on_device(),
-                                input.m_data.ptr_on_device(),
-                                size_data );
-    output.m_sum = input.m_sum ;
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< typename IntType >
-struct Factory< PrefixSum< IntType , HostMapped< Cuda > > ,
-                PrefixSum< IntType , Cuda > >
-{
-  typedef PrefixSum< IntType, HostMapped<Cuda> > output_type ;
-  typedef PrefixSum< IntType, Cuda >             input_type ;
-
-  static void deep_copy( output_type & output , const input_type & input )
-  {
-    const size_t size_data = sizeof(IntType)*(output.m_length + 1 );
-
-    MemoryManager< Cuda >::
-      copy_to_host_from_device( output.m_data.ptr_on_device(),
-                                input.m_data.ptr_on_device(),
-                                size_data );
-    output.m_sum = input.m_sum ;
-  }
-
-  static inline
-  output_type create( const input_type & input )
-  {
-    output_type output ;
-
-    output.m_length = input.m_length ;
-    output.m_sum    = input.m_sum ;
-    output.m_data.allocate( output.m_length + 1 , std::string() );
-
-    deep_copy( output , input );
-
-    return output ;
-  }
-};
-
-//----------------------------------------------------------------------------
-
-} // namespace Impl
-} // namespace KokkosArray
 
 #endif /* #ifndef KOKKOS_CUDA_PREFIXSUM_HPP */
 

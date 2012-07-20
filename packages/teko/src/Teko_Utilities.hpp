@@ -312,6 +312,9 @@ typedef Teuchos::RCP<Thyra::LinearOpBase<double> > ModifiableLinearOp;
 inline LinearOp zero(const VectorSpace & vs)
 { return Thyra::zero<double>(vs,vs); }
 
+//! Replace nonzeros with a scalar value, used to zero out an operator
+void putScalar(const ModifiableLinearOp & op,double scalar);
+
 //! Get the range space of a linear operator
 inline VectorSpace rangeSpace(const LinearOp & lo)
 { return lo->range(); }
@@ -665,6 +668,11 @@ const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr);
   * \returns Matrix sum with a Epetra_CrsMatrix implementation
   */
 const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
+                                     const ModifiableLinearOp & destOp);
+
+/** Sum into the modifiable linear op.
+  */
+const ModifiableLinearOp explicitSum(const LinearOp & opl,
                                      const ModifiableLinearOp & destOp);
 
 /** Build an explicit transpose of a linear operator. (Concrete data

@@ -300,7 +300,8 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 
   // Print status
   if (status == NOX::StatusTest::Converged) 
-    utils.out() << "Step Converged" << endl;
+    //utils.out() << "Step Converged" << endl;
+    ;
   else {
     utils.out() << "Nonlinear solver failed to converge!" << endl;
     outArgs.setFailed();

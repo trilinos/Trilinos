@@ -46,8 +46,6 @@
 
 #include <cstddef>
 
-#include <impl/KokkosArray_Timer.hpp>
-
 namespace KokkosArray {
 
 //----------------------------------------------------------------------------
@@ -71,6 +69,9 @@ public:
                        typename FunctorType::value_type & result );
 };
 
+template< typename ValueType , class DeviceType >
+class FunctorAssignment ;
+
 } // namespace Impl
 
 //----------------------------------------------------------------------------
@@ -85,8 +86,14 @@ parallel_reduce( const size_t work_count ,
 
   value_type result ;
 
-  Impl::ParallelReduce< FunctorType , FunctorType , void , device_type >
-    ::execute( work_count , functor , result );
+  { // Destruction of 'tmp' guarantees data is assigned to 'result'
+    typedef Impl::FunctorAssignment< value_type , device_type > Finalize ;
+
+    Finalize tmp( result );
+
+    Impl::ParallelReduce< FunctorType, FunctorType, Finalize, device_type >
+      ::execute( work_count , functor , tmp );
+  }
 
   return result ;
 }
@@ -97,9 +104,35 @@ void parallel_reduce( const size_t work_count ,
                       typename FunctorType::value_type & result )
 {
   typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
 
-  Impl::ParallelReduce< FunctorType , FunctorType , void , device_type >
-    ::execute( work_count , functor , result );
+  { // Destruction of 'tmp' guarantees data is assigned to 'result'
+    typedef Impl::FunctorAssignment< value_type , device_type > Finalize ;
+
+    Finalize tmp( result );
+
+    Impl::ParallelReduce< FunctorType, FunctorType, Finalize, device_type >
+      ::execute( work_count , functor , tmp );
+  }
+}
+
+template< class FunctorType >
+void parallel_reduce(
+  const size_t work_count ,
+  const FunctorType & functor ,
+  const View< typename FunctorType::value_type ,
+              typename FunctorType::device_type ,
+              typename FunctorType::device_type > & result )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef View< value_type , device_type , device_type > view_type ;
+
+  typedef Impl::FunctorAssignment< view_type , device_type > FinalizeType ;
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
+    ::execute( work_count , functor , FinalizeType( result ) );
 }
 
 template< class FunctorType , class FinalizeType >
@@ -111,42 +144,6 @@ void parallel_reduce( const size_t work_count ,
 
   Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
     ::execute( work_count , functor , finalize );
-}
-
-template< class FunctorType >
-void parallel_reduce( const size_t work_count ,
-                      const FunctorType & functor ,
-                      typename FunctorType::value_type & result ,
-                      double & seconds )
-{
-  typedef typename FunctorType::device_type device_type ;
-
-  const Impl::Timer timer ;
-
-  Impl::ParallelReduce< FunctorType , FunctorType , void , device_type >
-    ::execute( work_count , functor , result );
-
-  device_type::wait_functor_completion();
-
-  seconds = timer.seconds() ;
-}
-
-template< class FunctorType , class FinalizeType >
-void parallel_reduce( const size_t work_count ,
-                      const FunctorType & functor ,
-                      const FinalizeType & finalize ,
-                      double & seconds )
-{
-  typedef typename FunctorType::device_type device_type ;
-
-  const Impl::Timer timer ;
-
-  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
-    ::execute( work_count , functor , finalize );
-
-  device_type::wait_functor_completion();
-
-  seconds = timer.seconds() ;
 }
 
 //----------------------------------------------------------------------------

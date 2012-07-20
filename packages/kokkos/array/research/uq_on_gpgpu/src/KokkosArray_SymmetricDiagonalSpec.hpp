@@ -45,7 +45,6 @@
 #define KOKKOS_SYMMETRICDIAGONALSPEC_HPP
 
 #include <KokkosArray_CrsArray.hpp>
-#include <KokkosArray_MultiVector.hpp>
 
 namespace KokkosArray {
 

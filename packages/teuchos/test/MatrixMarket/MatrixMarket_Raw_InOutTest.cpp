@@ -70,6 +70,23 @@ namespace {
     "1 2 12.0\n"
     "1 5 15.0\n";
 
+  // Sample Matrix Market sparse matrix file for testing symmetric
+  // storage.  Matrix Market format for symmetric, skew-symemtric,
+  // etc. specifies that only the lower triangle should be stored.
+  const char symmetricMatrixMarketFile[] =
+    "%%MatrixMarket matrix coordinate real symmetric\n"
+    "5 5 10\n"
+    "5 5 55.0\n"
+    "4 4 44.0\n"
+    "3 3 33.0\n"
+    "2 2 22.0\n"
+    "1 1 11.0\n"
+    "5 4 54.0\n"
+    "4 3 43.0\n"
+    "3 2 32.0\n"
+    "2 1 21.0\n"
+    "5 1 51.0\n";
+
   // Given the three arrays of a CSR data structure, along with the
   // numbers of rows and columns, print the result to the given output
   // stream as a MatrixMarket file.
@@ -215,11 +232,11 @@ main (int argc, char *argv[])
     }
     else {
       if (verbose) {
-        cout << "Checking syntax of the Matrix Market string example" << endl
+        cout << "Checking syntax of the first built-in Matrix Market example" << endl
              << std::flush;// for debug output next
       }
       if (debug) {
-        cerr << "Matrix Market string example: " << endl
+        cerr << "First built-in Matrix Market example: " << endl
              << sampleMatrixMarketFile << endl;
       }
       std::istringstream in (sampleMatrixMarketFile);
@@ -241,6 +258,10 @@ main (int argc, char *argv[])
     ArrayRCP<ordinal_type> ptr, ind;
     ArrayRCP<scalar_type> val;
     ordinal_type numRows, numCols;
+    //
+    // Read the Matrix Market data, either from a file or from a
+    // built-in string.
+    //
     if (filename != "") {
       if (verbose) {
         cout << "Reading the Matrix Market file \"" << filename << "\"" << endl;
@@ -250,10 +271,10 @@ main (int argc, char *argv[])
     }
     else {
       if (verbose) {
-        cout << "Reading the Matrix Market string example" << endl;
+        cout << "Reading the first built-in Matrix Market example" << endl;
       }
       if (debug) {
-        cerr << "Matrix Market string example:" << endl
+        cerr << "First built-in Matrix Market example:" << endl
              << sampleMatrixMarketFile << endl;
       }
       std::istringstream inStr (sampleMatrixMarketFile);
@@ -262,7 +283,7 @@ main (int argc, char *argv[])
     TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, "Matrix Market "
       "reader failed to read the given file or input stream.");
     if (success && verbose) {
-      cout << "Successfully read the Matrix Market string example" << endl
+      cout << "Returned from reading the Matrix Market data" << endl
            << std::flush; // for following debug output
     }
     if (debug) {
@@ -319,15 +340,17 @@ main (int argc, char *argv[])
       cerr << endl;
     }
 
-    std::istringstream inStr (outStr.str ());
     ArrayRCP<ordinal_type> newptr, newind;
     ArrayRCP<scalar_type> newval;
     ordinal_type newNumRows, newNumCols;
     if (success && verbose) {
       cout << "Reading the Matrix Market output back into CSR arrays" << endl;
     }
-    success = success && reader.read (newptr, newind, newval,
-                                      newNumRows, newNumCols, inStr);
+    {
+      std::istringstream inStr (outStr.str ());
+      success = success && reader.read (newptr, newind, newval,
+                                        newNumRows, newNumCols, inStr);
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(! success, std::logic_error, "Matrix Market "
       "reader failed to read the output back into CSR arrays.");
     if (success && verbose) {
@@ -380,7 +403,39 @@ main (int argc, char *argv[])
           << val[k] << " != newval[k] = " << newval[k] << ".");
       }
     }
-  }
+
+    // Now test reading symmetric data, if no filename was specified.
+    if (filename == "") {
+      std::istringstream inStr (symmetricMatrixMarketFile);
+      success = success && reader.read (ptr, ind, val, numRows, numCols, inStr);
+      TEUCHOS_TEST_FOR_EXCEPTION(! success, std::logic_error,
+        "Matrix Market reader failed to read the given example string.");
+      if (success && verbose) {
+        cout << "Returned from reading the Matrix Market data" << endl
+             << std::flush; // for following debug output
+      }
+      if (debug) {
+        cerr << "CSR output info:" << endl
+             << "  ptr.size() = " << ptr.size()
+             << ", ind.size() = " << ind.size()
+             << ", val.size() = " << val.size()
+             << ", numRows = " << numRows
+             << ", numCols = " << numCols
+             << endl;
+      }
+
+      // This is a bit of a hack, since we know the contents of the
+      // example.  Since we "symmetrize" when reading in symmetric
+      // data, there should be 15 entries in the resulting matrix.
+      const ordinal_type correctNumEntries = 15;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        val.size() != correctNumEntries,
+        std::logic_error,
+        "Incorrect number of entries after symmetrization: There should be "
+        << correctNumEntries << ", but there are " << val.size() << " entries "
+        "instead.");
+    }
+  } // end of the file / string Reader tests
 
   if (success) {
     std::cout << "End Result: TEST PASSED" << endl;

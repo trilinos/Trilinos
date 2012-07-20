@@ -45,7 +45,6 @@
 #define KOKKOS_CRSMATRIX_HPP
 
 #include <KokkosArray_CrsArray.hpp>
-#include <KokkosArray_MultiVector.hpp>
 #include <impl/KokkosArray_Multiply.hpp>
 
 namespace KokkosArray {
@@ -58,19 +57,19 @@ public:
   typedef Device     device_type ;
   typedef ValueType  value_type ;
 
-  MultiVector< value_type, device_type >  values ;
-  CrsArray< int , device_type , int >     graph ;
+  View< value_type[] , device_type >   values ;
+  CrsArray< int , device_type , device_type , int >  graph ;
 };
 
 template< typename MatrixValueType ,
           typename VectorValueType ,
           class Device >
 void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
-               const MultiVector<VectorValueType,Device>         & x ,
-               const MultiVector<VectorValueType,Device>         & y )
+               const View<VectorValueType[],Device>         & x ,
+               const View<VectorValueType[],Device>         & y )
 {
-  typedef CrsMatrix<MatrixValueType,Device>    matrix_type ;
-  typedef MultiVector<VectorValueType,Device>  vector_type ;
+  typedef CrsMatrix<MatrixValueType,Device>  matrix_type ;
+  typedef View<VectorValueType[],Device>     vector_type ;
 
   Impl::Multiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
 }
@@ -79,11 +78,11 @@ template< typename MatrixValueType ,
           typename VectorValueType ,
           class Device >
 void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
-               const std::vector< MultiVector<VectorValueType,Device> >   & x ,
-               const std::vector< MultiVector<VectorValueType,Device> >   & y )
+               const std::vector< View<VectorValueType[],Device> >   & x ,
+               const std::vector< View<VectorValueType[],Device> >   & y )
 {
-  typedef CrsMatrix<MatrixValueType,Device>    matrix_type ;
-  typedef MultiVector<VectorValueType,Device>  vector_type ;
+  typedef CrsMatrix<MatrixValueType,Device>  matrix_type ;
+  typedef View<VectorValueType[],Device>     vector_type ;
 
   Impl::MMultiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
 }

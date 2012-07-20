@@ -51,7 +51,6 @@
 #include <sstream>
 #include <iostream>
 
-#include <KokkosArray_Value.hpp>
 #include <KokkosArray_ParallelReduce.hpp>
 
 #include <impl/KokkosArray_Preprocessing_macros.hpp>
@@ -141,13 +140,7 @@ public:
   {
     value_type result ;
 
-    typedef KokkosArray::Value< value_type , device_type > result_type ;
-
-    result_type device_result = KokkosArray::create_value< result_type >();
-
-    KokkosArray::parallel_reduce( nwork , functor_type( nwork ) , device_result );
-
-    KokkosArray::deep_copy( result , device_result );
+    KokkosArray::parallel_reduce( nwork , functor_type( nwork ) , result );
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
@@ -156,7 +149,6 @@ public:
     ASSERT_EQ( result.value[0], (ScalarType) nw);
     ASSERT_EQ( result.value[1], (ScalarType) nsum);
     ASSERT_EQ( result.value[2], (ScalarType) nsum);
-
   }
 };
 

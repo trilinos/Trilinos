@@ -53,13 +53,13 @@ namespace Impl {
 template< typename MatrixValue , typename VectorValue >
 class Multiply<
   CrsMatrix< MatrixValue , Host > ,
-  KokkosArray::MultiVector< VectorValue , Host > ,
-  KokkosArray::MultiVector< VectorValue , Host > >
+  KokkosArray::View< VectorValue[] , Host > ,
+  KokkosArray::View< VectorValue[] , Host > >
 {
 public:
   typedef Host                                      device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef MultiVector< VectorValue , device_type >  vector_type ;
+  typedef View< VectorValue[] , device_type >  vector_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 
   const matrix_type  m_A ;
@@ -102,13 +102,13 @@ public:
 template< typename MatrixValue , typename VectorValue >
 class MMultiply<
   CrsMatrix< MatrixValue , Host > ,
-  KokkosArray::MultiVector< VectorValue , Host > ,
-  KokkosArray::MultiVector< VectorValue , Host > >
+  KokkosArray::View< VectorValue[] , Host > ,
+  KokkosArray::View< VectorValue[] , Host > >
 {
 public:
   typedef Host                                      device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef MultiVector< VectorValue , device_type >  vector_type ;
+  typedef View< VectorValue[] , device_type >       vector_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
   typedef VectorValue                               value_type ;
 

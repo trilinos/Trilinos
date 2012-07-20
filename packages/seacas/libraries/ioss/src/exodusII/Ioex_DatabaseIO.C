@@ -4370,6 +4370,9 @@ namespace Ioex {
 
 	  } else if (role == Ioss::Field::REDUCTION) {
 	    store_reduction_field(EX_NODE_BLOCK, field, nb, data);
+
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = write_attribute_field(EX_NODE_BLOCK, field, nb, data);
 	  }
 	}
 	return num_to_get;

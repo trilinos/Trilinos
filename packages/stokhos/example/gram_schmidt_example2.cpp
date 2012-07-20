@@ -33,20 +33,32 @@
 #include <iomanip>
 
 #include "Stokhos.hpp"
-#include "Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp"
+#include "Stokhos_ReducedBasisFactory.hpp"
+
+#include "Teuchos_CommandLineProcessor.hpp"
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
 
 int main(int argc, char **argv)
 {
   try {
+
+    // Setup command line options
+    Teuchos::CommandLineProcessor CLP;
+    CLP.setDocString(
+      "This example runs a Gram-Schmidt-based dimension reduction example.\n");
  
-    const unsigned int d = 2;
-    const unsigned int p = 5;
+    int d = 2;
+    CLP.setOption("d", &d, "Stochastic dimension");
+
+    int p = 5;
+    CLP.setOption("p", &p, "Polynomial order");
+
+    CLP.parse( argc, argv );
 
     // Create product basis
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
-    for (unsigned int i=0; i<d; i++)
+    for (int i=0; i<d; i++)
       bases[i] = Teuchos::rcp(new basis_type(p, true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
@@ -56,7 +68,7 @@ int main(int argc, char **argv)
     // Create approximation
     Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis), v(basis), 
       w(basis), w2(basis);
-    for (unsigned int i=0; i<d; i++) {
+    for (int i=0; i<d; i++) {
       x.term(i, 1) = 1.0;
     }
 
@@ -86,20 +98,16 @@ int main(int argc, char **argv)
     pces[0] = u;
     pces[1] = v;
     Teuchos::ParameterList params;
-    //params.set("Verbose", true);
-    //params.set("Reduced Quadrature Method", "L1 Minimization");
-    params.set("Reduced Quadrature Method", "Column-Pivoted QR");
-    //params.set("Orthogonalization Method", "Classical Gram-Schmidt");
-    params.set("Orthogonalization Method", "Modified Gram-Schmidt");
-    Teuchos::RCP< Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double> > gs_basis = 
-      Teuchos::rcp(new Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double>(
-		     p, pces, quad, params));
+    params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt");
+    Stokhos::ReducedBasisFactory<int,double> factory(params);
+    Teuchos::RCP< Stokhos::ReducedPCEBasis<int,double> > gs_basis = 
+      factory.createReducedBasis(p, pces, quad, Cijk);
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > gs_quad =
       gs_basis->getReducedQuadrature();
     Stokhos::OrthogPolyApprox<int,double>  u_gs(gs_basis), v_gs(gs_basis), 
       w_gs(gs_basis);
-    gs_basis->computeTransformedPCE(0, u_gs);
-    gs_basis->computeTransformedPCE(1, v_gs);
+    gs_basis->transformFromOriginalBasis(u.coeff(), u_gs.coeff());
+    gs_basis->transformFromOriginalBasis(v.coeff(), v_gs.coeff());
 
     std::cout << "reduced basis size = " << gs_basis->size() << std::endl;
     std::cout << "reduced quadrature size = " << gs_quad->size() << std::endl;
@@ -138,9 +146,9 @@ int main(int argc, char **argv)
     gs_basis->transformToOriginalBasis(w_gs.coeff(), w2.coeff());
 
     std::cout.precision(12);
-    // std::cout << "w = " << std::endl << w;
-    // std::cout << "w2 = " << std::endl << w2;
-    // std::cout << "w_gs = " << std::endl << w_gs;
+    std::cout << "w = " << std::endl << w;
+    std::cout << "w2 = " << std::endl << w2;
+    std::cout << "w_gs = " << std::endl << w_gs;
 
     double err_w = 0.0;
     for (int i=0; i<basis->size(); i++) {

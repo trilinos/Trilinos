@@ -109,39 +109,6 @@ void box_partition( size_t ip , size_t up ,
   }
 }
 
-void use_boxes( const BoxType & box_global ,
-                const size_t    ghost ,
-                const BoxType & box_part ,
-                      BoxType & box_interior ,
-                      BoxType & box_use )
-{
-  if ( 0 == count( box_part ) ) {
-    box_interior = box_part ;
-    box_use      = box_part ;
-  }
-  else {
-    for ( size_t i = 0 ; i < 3 ; ++i ) {
-
-      box_interior[i][0] =
-        ( box_part[i][0] == box_global[i][0] )      ? box_part[i][0] : (
-        ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][0] + ghost : 
-                                                      box_part[i][1] );
-
-      box_interior[i][1] =
-        ( box_part[i][1] == box_global[i][1] )      ? box_part[i][1] : (
-        ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][1] - ghost :
-                                                      box_part[i][0] );
-
-      box_use[i][0] = 
-        ( box_part[i][0] > ghost + box_global[i][0] ) ? box_part[i][0] - ghost :
-                                                        box_global[i][0] ;
-      box_use[i][1] = 
-        ( box_part[i][1] + ghost < box_global[i][1] ) ? box_part[i][1] + ghost :
-                                                        box_global[i][1] ;
-    }
-  }
-}
-
 size_t box_map_offset( const BoxType & local_use ,
                        const size_t global_i ,
                        const size_t global_j ,
@@ -178,6 +145,77 @@ size_t box_map_offset( const BoxType & local_use ,
   return offset ;
 }
 
+} // namespace
+
+//----------------------------------------------------------------------------
+
+void BoxBounds::apply(  const BoxType & box_global ,
+                        const BoxType & box_part ,
+                              BoxType & box_interior ,
+                              BoxType & box_use ) const
+{
+  const unsigned ghost = 1 ;
+
+  if ( 0 == count( box_part ) ) {
+    box_interior = box_part ;
+    box_use      = box_part ;
+  }
+  else {
+    for ( size_t i = 0 ; i < 3 ; ++i ) {
+
+      box_interior[i][0] =
+        ( box_part[i][0] == box_global[i][0] )      ? box_part[i][0] : (
+        ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][0] + ghost : 
+                                                      box_part[i][1] );
+
+      box_interior[i][1] =
+        ( box_part[i][1] == box_global[i][1] )      ? box_part[i][1] : (
+        ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][1] - ghost :
+                                                      box_part[i][0] );
+
+      box_use[i][0] = 
+        ( box_part[i][0] > ghost + box_global[i][0] ) ? box_part[i][0] - ghost :
+                                                        box_global[i][0] ;
+      box_use[i][1] = 
+        ( box_part[i][1] + ghost < box_global[i][1] ) ? box_part[i][1] + ghost :
+                                                        box_global[i][1] ;
+    }
+  }
+}
+
+void BoxBoundsQuadratic::apply( const BoxType & box_global ,
+                                const BoxType & box_part ,
+                                      BoxType & box_interior ,
+                                      BoxType & box_use ) const
+{
+  if ( 0 == count( box_part ) ) {
+    box_interior = box_part ;
+    box_use      = box_part ;
+  }
+  else {
+    for ( size_t i = 0 ; i < 3 ; ++i ) {
+      const bool odd = ( box_part[i][0] - box_global[i][0] ) & 01 ;
+
+      const unsigned ghost = odd ? 1 : 2 ;
+
+      box_interior[i][0] =
+        ( box_part[i][0] == box_global[i][0] )      ? box_part[i][0] : (
+        ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][0] + ghost : 
+                                                      box_part[i][1] );
+
+      box_interior[i][1] =
+        ( box_part[i][1] == box_global[i][1] )      ? box_part[i][1] : (
+        ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][1] - ghost :
+                                                      box_part[i][0] );
+
+      box_use[i][0] = 
+        ( box_part[i][0] > ghost + box_global[i][0] ) ? box_part[i][0] - ghost :
+                                                        box_global[i][0] ;
+      box_use[i][1] = 
+        ( box_part[i][1] + ghost < box_global[i][1] ) ? box_part[i][1] + ghost :
+                                                        box_global[i][1] ;
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -185,6 +223,8 @@ size_t box_map_offset( const BoxType & local_use ,
 void box_partition_rcb( const BoxType        & root_box ,
                         std::vector<BoxType> & part_boxes )
 {
+  const BoxBounds use_boxes ;
+
   const size_t part_count = part_boxes.size();
 
   box_partition( 0 , part_count , root_box , & part_boxes[0] );
@@ -199,7 +239,7 @@ void box_partition_rcb( const BoxType        & root_box ,
 
     BoxType box_interior , box_use ;
 
-    use_boxes( root_box , 1 , part_boxes[i] , box_interior , box_use );
+    use_boxes.apply( root_box , part_boxes[i] , box_interior , box_use );
 
     if ( count( box_use ) < count( part_boxes[i] ) ||
          count( part_boxes[i] ) < count( box_interior ) ||
@@ -250,10 +290,10 @@ size_t box_map_id( const BoxType & local_use ,
          
 //----------------------------------------------------------------------------
 
-void box_partition_maps( const BoxType & root_box ,
+void box_partition_maps( const BoxType              & root_box ,
                          const std::vector<BoxType> & part_boxes ,
-                         const size_t ghost_layer ,
-                         const size_t my_part ,
+                         const BoxBounds            & use_boxes ,
+                         const size_t          my_part ,
                          BoxType             & my_use_box ,
                          std::vector<size_t> & my_use_id_map ,
                          size_t              & my_count_interior ,
@@ -275,7 +315,7 @@ void box_partition_maps( const BoxType & root_box ,
   BoxType my_interior_box ;
 
 
-  use_boxes( root_box, ghost_layer, my_owned_box, my_interior_box, my_use_box );
+  use_boxes.apply( root_box, my_owned_box, my_interior_box, my_use_box );
 
   my_count_interior = count( my_interior_box );
   my_count_owned    = count( my_owned_box );
@@ -312,7 +352,7 @@ void box_partition_maps( const BoxType & root_box ,
 
     const BoxType p_owned_box = part_boxes[ip];
     BoxType p_use_box , p_interior_box ;
-    use_boxes( root_box, ghost_layer, p_owned_box, p_interior_box, p_use_box );
+    use_boxes.apply( root_box, p_owned_box, p_interior_box, p_use_box );
 
     const BoxType recv_box = intersect( my_use_box , p_owned_box );
     const BoxType send_box = intersect( my_owned_box , p_use_box );

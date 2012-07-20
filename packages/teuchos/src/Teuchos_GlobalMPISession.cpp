@@ -42,6 +42,14 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Assert.hpp"
 
+// The header file does not at all depend on MPI routines or types,
+// so we can defer inclusion of mpi.h to here.  This also fixes Bug
+// 5631:  https://software.sandia.gov/bugzilla/show_bug.cgi?id=5631
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
+
 namespace Teuchos {
 
 bool GlobalMPISession::haveMPIState_ = false;
@@ -58,9 +66,9 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 
 #ifdef HAVE_MPI
   // initialize MPI
-	int mpiHasBeenStarted = 0, mpierr = 0;
-	MPI_Initialized(&mpiHasBeenStarted);
-	TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
+        int mpiHasBeenStarted = 0, mpierr = 0;
+        MPI_Initialized(&mpiHasBeenStarted);
+        TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
     mpiHasBeenStarted, std::runtime_error
     ,"Error, you can only call this constructor once!"
     ,out
@@ -74,9 +82,9 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
     );
 
   initialize(out); // Get NProc_ and rank_
-  
+
   int nameLen;
-	char procName[MPI_MAX_PROCESSOR_NAME];
+        char procName[MPI_MAX_PROCESSOR_NAME];
   mpierr = ::MPI_Get_processor_name(procName,&nameLen);
   TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, std::runtime_error
@@ -94,7 +102,7 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   // See if we should suppress the startup banner
   bool printStartupBanner = true;
   const std::string suppress_option("--teuchos-suppress-startup-banner");
-  for( int opt_i = 0; opt_i < *argc; ++opt_i ) { 
+  for( int opt_i = 0; opt_i < *argc; ++opt_i ) {
     if( suppress_option == (*argv)[opt_i] ) {
       // We are suppressing the output!
       printStartupBanner = false;
@@ -134,7 +142,7 @@ bool GlobalMPISession::mpiIsFinalized()
 {
   return mpiIsFinalized_;
 }
-  
+
 int GlobalMPISession::getRank()
 {
   if(!haveMPIState_)
@@ -170,19 +178,19 @@ void GlobalMPISession::initialize( std::ostream *out )
 
   int mpiHasBeenStarted = 0, mpierr = 0;
   MPI_Initialized(&mpiHasBeenStarted);
-  
+
   if(!mpiHasBeenStarted)
     return;  // We have to give up and just leave NProc_ and rank_ at the default values.
-  
+
   // Get the state of MPI
-	
+
   mpierr = ::MPI_Comm_rank( MPI_COMM_WORLD, &rank_ );
   TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, std::runtime_error
     ,"Error code=" << mpierr << " detected in MPI_Comm_rank()"
     ,out
     );
-  
+
   mpierr = ::MPI_Comm_size( MPI_COMM_WORLD, &nProc_ );
   TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, std::runtime_error
@@ -194,7 +202,7 @@ void GlobalMPISession::initialize( std::ostream *out )
   mpiIsFinalized_ = false;
 
 #endif // HAVE_MPI
-  
+
 }
 
 } // namespace Teuchos

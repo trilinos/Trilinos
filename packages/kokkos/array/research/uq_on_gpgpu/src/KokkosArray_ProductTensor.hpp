@@ -45,8 +45,6 @@
 #define KOKKOS_PRODUCTTENSOR_HPP
 
 #include <map>
-#include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_MDArray.hpp>
 #include <KokkosArray_CrsArray.hpp>
 #include <impl/KokkosArray_Multiply.hpp>
 

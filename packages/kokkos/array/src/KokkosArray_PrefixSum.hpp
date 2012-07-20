@@ -45,8 +45,8 @@
 #define KOKKOS_PREFIXSUM_HPP
 
 #include <string>
+#include <KokkosArray_View.hpp>
 #include <impl/KokkosArray_forward.hpp>
-#include <impl/KokkosArray_ArrayBounds.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
 
 namespace KokkosArray {
@@ -54,14 +54,13 @@ namespace KokkosArray {
 //----------------------------------------------------------------------------
 /** \brief  Prefix sum of integer values.  */
 
-template< typename IntType , class DeviceType >
+template< typename IntType , class LayoutType , class DeviceType = LayoutType >
 class PrefixSum {
 public:
   typedef DeviceType  device_type ;
   typedef IntType     size_type ;
 
-  typedef PrefixSum< size_type , typename HostMapped< device_type >::type >
-          HostMirror ;
+  typedef PrefixSum< size_type , LayoutType , Host > HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Number of values  */
@@ -127,21 +126,16 @@ create_prefixsum( const InputType & input )
 //----------------------------------------------------------------------------
 
 template< typename IntType ,
-          class DeviceDst ,
-          class DeviceSrc >
+          class LayoutDst , class DeviceDst ,
+          class LayoutSrc , class DeviceSrc >
 inline
-void deep_copy(       PrefixSum<IntType,DeviceDst> & dst ,
-                const PrefixSum<IntType,DeviceSrc> & src )
+void deep_copy(       PrefixSum<IntType,LayoutDst,DeviceDst> & dst ,
+                const PrefixSum<IntType,LayoutSrc,DeviceSrc> & src )
 {
-  typedef PrefixSum<IntType,DeviceDst> dst_type ;
-  typedef PrefixSum<IntType,DeviceSrc> src_type ;
+  typedef PrefixSum<IntType,LayoutDst,DeviceDst> dst_type ;
+  typedef PrefixSum<IntType,LayoutSrc,DeviceSrc> src_type ;
 
-  if ( dst.operator!=(src) ) {
-
-    Impl::prefixsum_require_equal_dimension( dst.length() , src.length() );
-
-    Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
-  }
+  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
 }
 
 } // namespace KokkosArray

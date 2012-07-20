@@ -213,45 +213,25 @@ public:
   }
 
   //! Returns the number of nonzero entries in the global matrix.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalNonzeros() const
+  virtual int NumGlobalNonzeros() const
   {
     return(NumGlobalNonzeros_);
   }
 
   //! Returns the number of global matrix rows.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalRows() const
+  virtual int NumGlobalRows() const
   {
     return(A().NumGlobalRows());
   }
 
   //! Returns the number of global matrix columns.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalCols() const
+  virtual int NumGlobalCols() const
   {
     return(A().NumGlobalCols());
   }
 
   //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalDiagonals() const
+  virtual int NumGlobalDiagonals() const
   {
     return(A().NumGlobalDiagonals());
   }

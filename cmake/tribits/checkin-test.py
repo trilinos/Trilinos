@@ -971,7 +971,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     print "  --no-eg-git-version-check \\"
   print "  --src-dir='" + options.srcDir+"' \\"
-  print "  --default-builds'" + options.defaultBuilds + "' \\"
+  print "  --default-builds='" + options.defaultBuilds + "' \\"
   print "  --extra-repos='"+options.extraRepos+"' \\"
   if options.skipDepsUpdate:
     print "  --skip-deps-update \\"

@@ -117,9 +117,9 @@ public:
 
 private:
 
-  tensor_type                                 m_tensor ;
-  KokkosArray::MDArray< size_type , device_type >  m_degree_map ;
-  size_type                                   m_variable ;
+  tensor_type                                        m_tensor ;
+  KokkosArray::View< size_type[][0] , device_type >  m_degree_map ;
+  size_type                                          m_variable ;
 
   template< class T , class I >
   friend class Impl::CreateSparseProductTensor ;

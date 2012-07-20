@@ -48,8 +48,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <KokkosArray_Array.hpp>
-#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_View.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
 #include <FEMesh.hpp>
@@ -218,7 +217,7 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef KokkosArray::MultiVector< Scalar , Device >   vector_type ;
+  typedef KokkosArray::View< Scalar[] , Device >   vector_type ;
   typedef KokkosArray::CrsMatrix< Scalar , Device >     matrix_type ;
   typedef typename matrix_type::graph_type         matrix_graph_type ;
   typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;
@@ -275,35 +274,32 @@ PerformanceData run( comm::Machine machine ,
   const size_t local_total_length = mesh.node_coords.dimension(0);
 
   jacobian.coefficients =
-    KokkosArray::create_multivector< matrix_coefficients_type >( jacobian.graph.entries.dimension(0) );
+    KokkosArray::create< matrix_coefficients_type >( "jacobian_coeff" , jacobian.graph.entries.dimension(0) );
 
   // Nonlinear residual for owned nodes:
   residual =
-    KokkosArray::create_multivector< vector_type >( local_owned_length );
+    KokkosArray::create< vector_type >( "residual" , local_owned_length );
 
   // Nonlinear solution for owned and ghosted nodes:
   nodal_solution = 
-    KokkosArray::create_multivector< vector_type >( local_total_length );
+    KokkosArray::create< vector_type >( "solution" , local_total_length );
 
   // Nonlinear solution update for owned nodes:
   delta =
-    KokkosArray::create_multivector< vector_type >( local_owned_length );
+    KokkosArray::create< vector_type >( "delta" , local_owned_length );
 
   //------------------------------------
   // Allocation of arrays to fill the linear system
 
-  typedef KokkosArray::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
-  typedef KokkosArray::Array< scalar_type[ElementNodeCount]                   , device_type >  elem_vectors_type ;
+  typedef KokkosArray::View< scalar_type[][ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
+  typedef KokkosArray::View< scalar_type[][ElementNodeCount]                   , device_type >  elem_vectors_type ;
 
   elem_matrices_type elem_matrices ; // Jacobian matrices
   elem_vectors_type  elem_vectors ;  // Residual vectors
 
   if ( element_count ) {
-    elem_matrices =
-      KokkosArray::create_array< elem_matrices_type >( element_count );
-
-    elem_vectors =
-      KokkosArray::create_array< elem_vectors_type >( element_count );
+    elem_matrices = KokkosArray::create< elem_matrices_type >( std::string("elem_matrices"), element_count );
+    elem_vectors = KokkosArray::create< elem_vectors_type >( std::string("elem_vectors"), element_count );
   }
 
   //------------------------------------

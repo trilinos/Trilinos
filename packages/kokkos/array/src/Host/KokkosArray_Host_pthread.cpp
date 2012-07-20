@@ -77,6 +77,15 @@ pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 }
 
 //----------------------------------------------------------------------------
+
+bool HostInternal::is_master_thread() const
+{
+  static const pthread_t master_pid = pthread_self();
+
+  return pthread_equal( master_pid , pthread_self() );
+}
+
+//----------------------------------------------------------------------------
 // Spawn this thread
 
 bool HostInternal::spawn( const size_t thread_rank )

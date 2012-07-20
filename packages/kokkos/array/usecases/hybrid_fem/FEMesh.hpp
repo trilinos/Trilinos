@@ -50,9 +50,8 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <KokkosArray_Array.hpp>
+#include <KokkosArray_View.hpp>
 #include <KokkosArray_CrsArray.hpp>
-#include <KokkosArray_MultiVector.hpp>
 
 #include <ParallelComm.hpp>
 #include <ParallelDataMap.hpp>
@@ -69,8 +68,8 @@ struct FEMesh {
 
   static const size_type element_node_count = ElemNodeCount ;
 
-  typedef KokkosArray::Array< CoordScalarType[3] , Device >  node_coords_type ;
-  typedef KokkosArray::Array< size_type[ElemNodeCount], Device >  elem_node_ids_type ;
+  typedef KokkosArray::View< CoordScalarType[][3] , Device >  node_coords_type ;
+  typedef KokkosArray::View< size_type[][ElemNodeCount], Device >  elem_node_ids_type ;
   typedef KokkosArray::CrsArray< size_type[2] ,  Device >  node_elem_ids_type ;
 
   node_coords_type         node_coords ;

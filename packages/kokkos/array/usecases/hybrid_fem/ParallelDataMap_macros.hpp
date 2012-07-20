@@ -46,12 +46,12 @@ namespace KokkosArray {
 //----------------------------------------------------------------------------
 
 template< typename ValueType , unsigned N1 >
-struct PackArray< Array< ValueType[N1] , KOKKOS_MACRO_DEVICE > , void >
+struct PackArray< View< ValueType[][N1] , KOKKOS_MACRO_DEVICE > , void >
 {
   typedef KOKKOS_MACRO_DEVICE                         device_type ;
   typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
-  typedef Array< ValueType[N1] , device_type >        array_type ;
-  typedef Impl::MemoryView< ValueType , device_type > buffer_type ;
+  typedef View< ValueType[][N1] , device_type >       array_type ;
+  typedef View< ValueType[] , device_type >           buffer_type ;
 
 private:
 
@@ -85,12 +85,12 @@ public:
 };
 
 template< typename ValueType , unsigned N1 >
-struct UnpackArray< Array< ValueType[N1] , KOKKOS_MACRO_DEVICE > , void >
+struct UnpackArray< View< ValueType[][N1] , KOKKOS_MACRO_DEVICE > , void >
 {
   typedef KOKKOS_MACRO_DEVICE                         device_type ;
   typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
-  typedef Array< ValueType , device_type >            array_type ;
-  typedef Impl::MemoryView< ValueType[N1] , device_type > buffer_type ;
+  typedef View< ValueType[] , device_type >           buffer_type ;
+  typedef View< ValueType[][N1] , device_type >       array_type ;
 
 private:
 
@@ -127,12 +127,12 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-struct PackArray< MultiVector< ValueType , KOKKOS_MACRO_DEVICE > , void >
+struct PackArray< View< ValueType[] , KOKKOS_MACRO_DEVICE > , void >
 {
-  typedef KOKKOS_MACRO_DEVICE                         device_type ;
-  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
-  typedef MultiVector< ValueType , device_type >      array_type ;
-  typedef Impl::MemoryView< ValueType , device_type > buffer_type ;
+  typedef KOKKOS_MACRO_DEVICE                device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type     size_type ;
+  typedef View< ValueType[] , device_type >  array_type ;
+  typedef View< ValueType[] , device_type >  buffer_type ;
 
 private:
 
@@ -163,12 +163,12 @@ public:
 };
 
 template< typename ValueType >
-struct UnpackArray< MultiVector< ValueType , KOKKOS_MACRO_DEVICE > , void >
+struct UnpackArray< View< ValueType[] , KOKKOS_MACRO_DEVICE > , void >
 {
-  typedef KOKKOS_MACRO_DEVICE                         device_type ;
-  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
-  typedef MultiVector< ValueType , device_type >      array_type ;
-  typedef Impl::MemoryView< ValueType , device_type > buffer_type ;
+  typedef KOKKOS_MACRO_DEVICE                device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type     size_type ;
+  typedef View< ValueType[] , device_type >  array_type ;
+  typedef View< ValueType[] , device_type >  buffer_type ;
 
 private:
 

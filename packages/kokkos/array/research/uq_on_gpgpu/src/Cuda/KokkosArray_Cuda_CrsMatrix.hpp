@@ -96,13 +96,13 @@ CudaSparseSingleton & CudaSparseSingleton::singleton()
 template<>
 class Multiply<
   CrsMatrix< float , KokkosArray::Cuda > ,
-  KokkosArray::MultiVector< float , KokkosArray::Cuda > ,
-  KokkosArray::MultiVector< float , KokkosArray::Cuda > >
+  KokkosArray::View< float[] , KokkosArray::Cuda > ,
+  KokkosArray::View< float[] , KokkosArray::Cuda > >
 {
 public:
   typedef KokkosArray::Cuda                        device_type ;
   typedef device_type::size_type              size_type ;
-  typedef MultiVector< float , device_type >  vector_type ;
+  typedef View< float[] , device_type >  vector_type ;
   typedef CrsMatrix< float , device_type >    matrix_type ;
 
   //--------------------------------------------------------------------------
@@ -138,13 +138,13 @@ public:
 template<>
 class Multiply<
   CrsMatrix< double , KokkosArray::Cuda > ,
-  KokkosArray::MultiVector< double , KokkosArray::Cuda > ,
-  KokkosArray::MultiVector< double , KokkosArray::Cuda > >
+  KokkosArray::View< double[] , KokkosArray::Cuda > ,
+  KokkosArray::View< double[] , KokkosArray::Cuda > >
 {
 public:
   typedef KokkosArray::Cuda                         device_type ;
   typedef device_type::size_type               size_type ;
-  typedef MultiVector< double , device_type >  vector_type ;
+  typedef View< double[] , device_type >  vector_type ;
   typedef CrsMatrix< double , device_type >    matrix_type ;
 
   //--------------------------------------------------------------------------
@@ -180,13 +180,13 @@ public:
 template<>
 class MMultiply<
   CrsMatrix< double , KokkosArray::Cuda > ,
-  KokkosArray::MultiVector< double , KokkosArray::Cuda > ,
-  KokkosArray::MultiVector< double , KokkosArray::Cuda > >
+  KokkosArray::View< double[] , KokkosArray::Cuda > ,
+  KokkosArray::View< double[] , KokkosArray::Cuda > >
 {
 public:
   typedef KokkosArray::Cuda                         device_type ;
   typedef device_type::size_type               size_type ;
-  typedef MultiVector< double , device_type >  vector_type ;
+  typedef View< double[] , device_type >  vector_type ;
   typedef CrsMatrix< double , device_type >    matrix_type ;
 
   //--------------------------------------------------------------------------
@@ -201,11 +201,12 @@ public:
     // const int nz = A.graph.entry_count();
     const size_t ncol = x.size();
 
-    // Copy columns of x into a contiguous multivector
-    vector_type xx = KokkosArray::create_multivector<vector_type>(n, ncol);
-    vector_type yy = KokkosArray::create_multivector<vector_type>(n, ncol);
+    // Copy columns of x into a contiguous vector
+    vector_type xx = KokkosArray::create<vector_type>( "xx" , n * ncol );
+    vector_type yy = KokkosArray::create<vector_type>( "yy" , n * ncol );
+
     for (size_t col=0; col<ncol; col++) {
-      vector_type xx_view(xx, col);
+      vector_type xx_view = KokkosArray::view( xx , n * col , n * ( col + 1 ) );
       KokkosArray::deep_copy(xx_view, x[col]);
     }
 
@@ -231,8 +232,8 @@ public:
     
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
-      vector_type yy_view(yy, col);
-      KokkosArray::deep_copy(y[col], yy_view);
+      vector_type yy_view = KokkosArray::view( yy , n * col , n * ( col + 1 ) );
+      KokkosArray::deep_copy(y[col], yy_view );
     }
   }
 };

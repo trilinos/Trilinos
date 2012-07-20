@@ -101,7 +101,7 @@ HostInternal::~HostInternal()
 
 HostInternal::HostInternal()
   : m_worker_block()
-  , m_node_rank( 0 )
+  , m_node_rank( -1 )
   , m_node_count( 1 )
   , m_node_pu_count( 0 )
   , m_page_size( 16 /* default alignment */ )
@@ -110,6 +110,10 @@ HostInternal::HostInternal()
   , m_worker_count( 1 )
 {
   m_worker = NULL ;
+
+  if ( ! is_master_thread() ) {
+    throw std::runtime_error( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread"));
+  }
 
   // Master thread:
   m_thread[0] = & m_master_thread ;
@@ -130,7 +134,7 @@ HostInternal::HostInternal()
 //----------------------------------------------------------------------------
 
 bool HostInternal::initialize_thread(
-  const HostInternal::size_type thread_rank ,
+  const unsigned thread_rank ,
   HostThread & thread )
 {
   const unsigned gang_rank   = thread_rank / m_worker_count ;
@@ -144,10 +148,10 @@ bool HostInternal::initialize_thread(
   thread.m_gang_count   = m_gang_count ;
 
   {
-    size_type fan_count = 0 ;
+    unsigned fan_count = 0 ;
 
     // Intranode reduction:
-    for ( size_type n = 1 ; worker_rank + n < m_worker_count ; n <<= 1 ) {
+    for ( unsigned n = 1 ; worker_rank + n < m_worker_count ; n <<= 1 ) {
 
       if ( n & worker_rank ) break ;
 
@@ -161,7 +165,7 @@ bool HostInternal::initialize_thread(
     if ( worker_rank == 0 ) {
 
       // Internode reduction:
-      for ( size_type n = 1 ; gang_rank + n < m_gang_count ; n <<= 1 ) {
+      for ( unsigned n = 1 ; gang_rank + n < m_gang_count ; n <<= 1 ) {
 
         if ( n & gang_rank ) break ;
 
@@ -176,24 +180,13 @@ bool HostInternal::initialize_thread(
     thread.m_fan_count = fan_count ;
   }
 
-  m_thread[ thread_rank ] = & thread ;
-
   return true ;
 }
 
-bool HostInternal::bind_thread(
-  const HostInternal::size_type thread_rank ) const
+bool HostInternal::bind_thread( const unsigned thread_rank ) const
 {
   (void) thread_rank; // Prevent compiler warning for unused argument
   return true ;
-}
-
-void HostInternal::clear_thread( const HostThread::size_type thread_rank )
-{
-  m_thread[ thread_rank ] = 0 ;
-
-  // Inform master thread:
-  m_master_thread.set( HostThread::ThreadTerminating );
 }
 
 //----------------------------------------------------------------------------
@@ -244,6 +237,8 @@ void HostInternal::driver( const size_t thread_rank )
 
     HostThread this_thread ;
 
+    m_thread[ thread_rank ] = & this_thread ;
+
     // Initialize thread ranks and fan-in relationships:
 
     if ( initialize_thread( thread_rank , this_thread ) ) {
@@ -282,9 +277,11 @@ void HostInternal::driver( const size_t thread_rank )
     }
   }
 
-  // Notify master process that thread has terminated:
+  // Notify master thread that this thread has terminated.
 
-  clear_thread( thread_rank );
+  m_thread[ thread_rank ] = 0 ;
+
+  m_master_thread.set( HostThread::ThreadTerminating );
 }
 
 //----------------------------------------------------------------------------
@@ -308,8 +305,8 @@ void HostInternal::verify_inactive( const char * const method ) const
 
 //----------------------------------------------------------------------------
 
-bool HostInternal::spawn_threads( const size_type gang_count ,
-                                  const size_type worker_count )
+bool HostInternal::spawn_threads( const unsigned gang_count ,
+                                  const unsigned worker_count )
 {
   // If the process is bound to a particular node
   // then only use cores belonging to that node.
@@ -326,7 +323,7 @@ bool HostInternal::spawn_threads( const size_type gang_count ,
   // Spawn threads from last-to-first so that the
   // fan-in barrier thread relationships can be established.
 
-  for ( size_type rank = m_thread_count ; ok_spawn_threads && 0 < --rank ; ) {
+  for ( unsigned rank = m_thread_count ; ok_spawn_threads && 0 < --rank ; ) {
 
     m_master_thread.set( HostThread::ThreadInactive );
 
@@ -342,7 +339,9 @@ bool HostInternal::spawn_threads( const size_type gang_count ,
       ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
 
       if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
-        m_thread[ rank ]->wait( HostThread::ThreadActive );
+        HostThread * volatile * const threads = m_thread ;
+        threads[ rank ]->wait( HostThread::ThreadActive );
+        // m_thread[ rank ]->wait( HostThread::ThreadActive );
       }
     }
   }
@@ -360,8 +359,8 @@ bool HostInternal::spawn_threads( const size_type gang_count ,
   return ok_spawn_threads ;
 }
 
-void HostInternal::initialize( const size_type gang_count ,
-                               const size_type worker_count )
+void HostInternal::initialize( const unsigned gang_count ,
+                               const unsigned worker_count )
 {
   const bool ok_inactive     = 1 == m_thread_count ;
   const bool ok_gang_count   = gang_count <= m_node_count ;
@@ -411,7 +410,7 @@ void HostInternal::initialize( const size_type gang_count ,
 
 void HostInternal::activate()
 {
-  for ( size_type i = m_thread_count ; 1 < i ; ) {
+  for ( unsigned i = m_thread_count ; 1 < i ; ) {
     m_thread[--i]->set( HostThread::ThreadActive );
   }
 }
@@ -447,8 +446,8 @@ namespace KokkosArray {
 void Host::finalize()
 { Impl::HostInternal::singleton().finalize(); }
 
-void Host::initialize( const size_type gang_count ,
-                       const size_type worker_count )
+void Host::initialize( const Host::size_type gang_count ,
+                       const Host::size_type worker_count )
 {
   Impl::HostInternal::singleton().initialize( gang_count , worker_count );
 }

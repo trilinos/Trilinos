@@ -44,7 +44,8 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
-#include <impl/KokkosArray_IndexMap.hpp>
+#include <KokkosArray_Layout.hpp>
+#include <Cuda/KokkosArray_Cuda_MemorySpace.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -57,22 +58,15 @@ public:
   //! \name Type declarations that all KokkosArray devices must provide.
   //@{
 
-  typedef Cuda          memory_space ;
+  typedef Cuda          type ;
+  typedef Cuda          layout_type ;
+  typedef Cuda          device_type ;
   typedef unsigned int  size_type ;
 
-  /** \brief  The preferred multi-index map of this device.
-   *
-   *  If the rank is zero the map has a runtime-defined index space.
-   *  If the rank is non-zero then the 'N0' dimension is runtime-defined
-   *  and all other dimensions are compile-time defined.
-   */
-  template< unsigned Rank = 0 ,
-            unsigned N1 = 0 , unsigned N2 = 0 , unsigned N3 = 0 ,
-            unsigned N4 = 0 , unsigned N5 = 0 , unsigned N6 = 0 ,
-            unsigned N7 = 0 >
-  struct IndexMap {
-    typedef Impl::IndexMapLeft<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
-  };
+  typedef Impl::CudaMemorySpace  memory_space ;
+  typedef LayoutLeft             array_layout ;
+
+  //--------------------------------------------------------------------------
 
   struct SelectDevice {
     int cuda_device_id ;
@@ -131,8 +125,8 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
-#include <Cuda/KokkosArray_Cuda_MemoryManager.hpp>
-#include <Cuda/KokkosArray_Cuda_Value.hpp>
+#include <Cuda/KokkosArray_Cuda_View.hpp>
+
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
 #include <Cuda/KokkosArray_Cuda_ParallelFor.hpp>
 #include <Cuda/KokkosArray_Cuda_ParallelReduce.hpp>
@@ -142,24 +136,9 @@ public:
 //----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
 
-#if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
-    ! defined( KOKKOS_CUDA_MULTIVECTOR_HPP )
-#include <Cuda/KokkosArray_Cuda_MultiVector.hpp>
-#endif
-
-#if   defined( KOKKOS_ARRAY_HPP ) && \
-    ! defined( KOKKOS_CUDA_ARRAY_HPP )
-#include <Cuda/KokkosArray_Cuda_Array.hpp>
-#endif
-
 #if   defined( KOKKOS_PREFIXSUM_HPP ) && \
     ! defined( KOKKOS_CUDA_PREFIXSUM_HPP )
 #include <Cuda/KokkosArray_Cuda_PrefixSum.hpp>
-#endif
-
-#if   defined( KOKKOS_MDARRAY_HPP ) && \
-    ! defined( KOKKOS_CUDA_MDARRAY_HPP )
-#include <Cuda/KokkosArray_Cuda_MDArray.hpp>
 #endif
 
 //----------------------------------------------------------------------------

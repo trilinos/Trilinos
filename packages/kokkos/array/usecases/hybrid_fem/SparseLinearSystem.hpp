@@ -46,8 +46,6 @@
 
 #include <cmath>
 #include <impl/KokkosArray_Timer.hpp>
-#include <KokkosArray_Value.hpp>
-#include <KokkosArray_MultiVector.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
 namespace KokkosArray {
@@ -74,8 +72,8 @@ struct CrsMatrix {
   typedef Device      device_type ;
   typedef ScalarType  value_type ;
 
-  typedef CrsArray< int , device_type , int >     graph_type ;
-  typedef MultiVector< value_type , device_type > coefficients_type ;
+  typedef CrsArray< int , device_type , device_type , int >  graph_type ;
+  typedef View< value_type[] , device_type >   coefficients_type ;
 
   graph_type         graph ;
   coefficients_type  coefficients ;
@@ -86,10 +84,10 @@ struct CrsMatrix {
 template< typename Scalar , class Device >
 void waxpby( const ParallelDataMap & data_map ,
              const double alpha ,
-             const MultiVector< Scalar , Device > & x ,
+             const View< Scalar[] , Device > & x ,
              const double beta ,
-             const MultiVector< Scalar , Device > & y ,
-             const MultiVector< Scalar , Device > & w )
+             const View< Scalar[] , Device > & y ,
+             const View< Scalar[] , Device > & w )
 {
   if ( y == w ) {
     Impl::AXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y );
@@ -101,27 +99,21 @@ void waxpby( const ParallelDataMap & data_map ,
 
 template< typename Scalar , class Device >
 void fill( const double alpha ,
-           const MultiVector< Scalar , Device > & w )
+           const View< Scalar[] , Device > & w )
 {
-  Impl::FILL<Scalar,Device>::apply( w.length() , alpha , w );
+  Impl::FILL<Scalar,Device>::apply( w.dimension_0() , alpha , w );
 }
 
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
-            const MultiVector< Scalar , Device > & x ,
-            const MultiVector< Scalar , Device > & y ,
-            const Value< double , Device > & temp_result )
+            const View< Scalar[] , Device > & x ,
+            const View< Scalar[] , Device > & y )
 {
-  typedef Impl::Dot< Scalar , Device , Impl::unsigned_<2> > op_type ;
-
-  Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
-      ::apply( data_map.count_owned , x , y , temp_result );
-
-  double global_result = 0 ;
-
-  deep_copy( global_result , temp_result );
+  double global_result =
+    Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
+        ::apply( data_map.count_owned , x , y );
 
 #if defined( HAVE_MPI )
 
@@ -137,25 +129,11 @@ double dot( const ParallelDataMap & data_map ,
 
 template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
-            const MultiVector< Scalar , Device > & x ,
-            const MultiVector< Scalar , Device > & y )
+            const View< Scalar[] , Device > & x )
 {
-  typedef Value< double , Device > value_type ;
-  value_type temp_result = create_value< value_type >();
-  return dot( data_map , x , y , temp_result );
-}
-
-template< typename Scalar , class Device >
-double dot( const ParallelDataMap & data_map ,
-            const MultiVector< Scalar , Device > & x ,
-            const Value< double , Device > & temp_result )
-{
-  Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
-      ::apply( data_map.count_owned , x , temp_result );
-
-  double global_result = 0 ;
-
-  deep_copy( global_result , temp_result );
+  double global_result = 
+    Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
+        ::apply( data_map.count_owned , x );
 
 #if defined( HAVE_MPI )
 
@@ -167,15 +145,6 @@ double dot( const ParallelDataMap & data_map ,
 #endif
 
   return global_result ;
-}
-
-template< typename Scalar , class Device >
-double dot( const ParallelDataMap & data_map ,
-            const MultiVector< Scalar , Device > & x )
-{
-  typedef Value< double , Device > value_type ;
-  value_type temp_result = create_value< value_type >();
-  return dot( data_map , x , temp_result );
 }
 
 //----------------------------------------------------------------------------
@@ -184,8 +153,8 @@ template< typename AScalarType ,
           typename VScalarType ,
           class Device >
 class Operator {
-  typedef CrsMatrix<AScalarType,Device>    matrix_type ;
-  typedef MultiVector<VScalarType,Device>  vector_type ;
+  typedef CrsMatrix<AScalarType,Device>  matrix_type ;
+  typedef View<VScalarType[],Device>     vector_type ;
 
 private:
   const CrsMatrix<AScalarType,Device> A ;
@@ -214,8 +183,8 @@ public:
 
 #endif
 
-  void apply( const MultiVector<VScalarType,Device>  & x ,
-              const MultiVector<VScalarType,Device>  & y )
+  void apply( const View<VScalarType[],Device>  & x ,
+              const View<VScalarType[],Device>  & y )
   {
 #if defined( HAVE_MPI )
     // Gather off-processor data for 'x'
@@ -255,33 +224,32 @@ template< typename AScalarType , typename VScalarType , class Device >
 void cgsolve(
   const ParallelDataMap                 data_map ,
   const CrsMatrix<AScalarType,Device>   A ,
-  const MultiVector<VScalarType,Device> b ,
-  const MultiVector<VScalarType,Device> x ,
+  const View<VScalarType[],Device> b ,
+  const View<VScalarType[],Device> x ,
   size_t & iteration ,
   double & normr ,
   double & iter_time ,
   const size_t maximum_iteration = 200 ,
   const double tolerance = std::numeric_limits<VScalarType>::epsilon() )
 {
-  typedef MultiVector<VScalarType,Device> vector_type ;
-  typedef Value      <VScalarType,Device> value_type ;
+  typedef View<VScalarType[],Device> vector_type ;
+  typedef View<VScalarType,  Device> value_type ;
 
   const size_t count_owned = data_map.count_owned ;
   const size_t count_total = data_map.count_owned + data_map.count_receive ;
 
   Operator<AScalarType,VScalarType,Device> matrix_operator( data_map , A );
 
-  vector_type r  = create_multivector< vector_type >( "cg::r" , count_owned );
-  vector_type p  = create_multivector< vector_type >( "cg::p" , count_total );
-  vector_type Ap = create_multivector< vector_type >( "cg::Ap", count_owned );
-  value_type dot_temp = create_value< value_type >( "cg::dot_temp" );
+  vector_type r  = create< vector_type >( "cg::r" , count_owned );
+  vector_type p  = create< vector_type >( "cg::p" , count_total );
+  vector_type Ap = create< vector_type >( "cg::Ap", count_owned );
 
   /* p  = x      */ deep_copy( p , x , count_owned );
   /* Ap = A * p  */ matrix_operator.apply( p , Ap );
   /* r  = b - Ap */ waxpby( data_map , 1.0 , b , -1.0 , Ap , r );
   /* p  = r      */ deep_copy( p , r , count_owned );
 
-  double old_rdot = dot( data_map , r , dot_temp );
+  double old_rdot = dot( data_map , r );
 
   normr     = sqrt( old_rdot );
   iteration = 0 ;
@@ -292,13 +260,13 @@ void cgsolve(
 
     /* Ap = A * p  */ matrix_operator.apply( p , Ap );
 
-    const double pAp_dot = dot( data_map , p , Ap , dot_temp );
+    const double pAp_dot = dot( data_map , p , Ap );
     const double alpha   = old_rdot / pAp_dot ;
 
     /* x += alpha * p ;  */ waxpby( data_map,  alpha, p , 1.0 , x , x );
     /* r -= alpha * Ap ; */ waxpby( data_map, -alpha, Ap, 1.0 , r , r );
 
-    const double r_dot = dot( data_map , r , dot_temp );
+    const double r_dot = dot( data_map , r );
     const double beta  = r_dot / old_rdot ;
 
     /* p = r + beta * p ; */ waxpby( data_map , 1.0 , r , beta , p , p );
