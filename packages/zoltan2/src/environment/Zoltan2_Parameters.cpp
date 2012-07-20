@@ -375,17 +375,21 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
 
   ////////// topLevel/debug_procs
-  intRangeValidatorP = rcp(new IntegerRangeListValidator<int>(true));
+
+
+
+  RCP<const IntegerRangeListValidator<partId_t> > pqRangeRangeValidatorP = rcp(new IntegerRangeListValidator<partId_t>(true));
   parameterName = string("pqParts");
 
   docString.str("");
-  intRangeValidatorP->printDoc(
+  pqRangeRangeValidatorP->printDoc(
     "list of parts for pqJagged partitioning algorithm. As many as the dimension count.\n",
      docString);
 
-  pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
+  pList.set<string>(parameterName, "0", docString.str(), pqRangeRangeValidatorP);
 
   ////////// topLevel/memory_procs
+  intRangeValidatorP = rcp(new IntegerRangeListValidator<int>(true));
   parameterName = string("memory_procs");
 
   docString.str("");

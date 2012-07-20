@@ -106,7 +106,6 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
       }
       string paramname = trim_copy(str.substr(0,pos));
       string paramvalue = trim_copy(str.substr(pos + 1));
-      cout << "me:" << comm->getRank() << " " << paramname << " " << paramvalue << endl;
       geoparams.set(paramname, paramvalue);
     }
     getline (inParam,str);
@@ -201,9 +200,13 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
   geoParams.set("bisection_num_test_cuts", 7);
 
-#ifdef HAVE_ZOLTAN2_MPI                   
+#ifdef HAVE_ZOLTAN2_MPI
+
+
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
       MPI_COMM_WORLD);
+
+
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
@@ -212,10 +215,14 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   problem.solve();
 
   //cout << "basla" << endl;
+
+
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
       problem.getSolution();
 
+
   if (comm->getRank() == 0){
+
     problem.printMetrics(cout);
 
     cout << "testFromDataFile is done " << endl;
