@@ -102,6 +102,11 @@
 
 
 
+enum nnti_gni_pi_ordering {
+    PI_ORDERING_DEFAULT,
+    PI_ORDERING_STRICT,
+    PI_ORDERING_RELAXED
+};
 enum nnti_gni_rdma_mode {
     RDMA_FMA,
     RDMA_BTE,
@@ -118,7 +123,8 @@ typedef struct {
     bool use_rdma_events;
     bool use_rdma_fence;
 
-    enum nnti_gni_rdma_mode rdma_mode;  /* FMA, BTE, MIXED, CROSSOVER */
+    enum nnti_gni_pi_ordering pi_ordering; /* DEFAULT, STRICT, RELAXED */
+    enum nnti_gni_rdma_mode   rdma_mode;   /* FMA, BTE, MIXED, CROSSOVER */
 
     uint32_t fma_bte_crossover_size;
 
@@ -2574,6 +2580,8 @@ static NNTI_result_t register_memory(gni_memory_handle *hdl, void *buf, uint64_t
 
     int cq_cnt=1;
 
+    uint32_t flags=GNI_MEM_READWRITE;
+
     trios_declare_timer(call_time);
 
     gni_connection *conn=NULL;
@@ -2588,6 +2596,17 @@ static NNTI_result_t register_memory(gni_memory_handle *hdl, void *buf, uint64_t
 
     log_debug(nnti_debug_level, "enter hdl(%p) buffer(%p) len(%d)", hdl, buf, len);
 
+    if (config.pi_ordering==PI_ORDERING_STRICT) {
+        log_debug(nnti_debug_level, "using STRICT ordering");
+        flags = GNI_MEM_READWRITE|GNI_MEM_STRICT_PI_ORDERING;
+    } else if (config.pi_ordering==PI_ORDERING_RELAXED) {
+        log_debug(nnti_debug_level, "using RELAXED ordering");
+        flags = GNI_MEM_READWRITE|GNI_MEM_RELAXED_PI_ORDERING;
+    } else if (config.pi_ordering==PI_ORDERING_DEFAULT) {
+        log_debug(nnti_debug_level, "using DEFAULT ordering");
+        flags = GNI_MEM_READWRITE;
+    }
+
     if (need_mem_cq(hdl) == 1) {
         mem_cq_hdl=transport_global_data.mem_cq_hdl;
     }
@@ -2597,7 +2616,7 @@ static NNTI_result_t register_memory(gni_memory_handle *hdl, void *buf, uint64_t
             (uint64_t)buf,
             len,
             mem_cq_hdl,
-            GNI_MEM_READWRITE,
+            flags,
             (uint32_t)-1,
             &hdl->mem_hdl);
     if (rc!=GNI_RC_SUCCESS) {
@@ -6492,7 +6511,8 @@ static void config_init(nnti_gni_config *c)
     c->use_rdma_target_ack              =true;
     c->use_rdma_events                  =true;
     c->use_rdma_fence                   =false;
-    c->rdma_mode                        =RDMA_MIXED;  /* FMA, BTE, MIXED, CROSSOVER */
+    c->pi_ordering                      =PI_ORDERING_DEFAULT; /* DEFAULT, STRICT, RELAXED */
+    c->rdma_mode                        =RDMA_MIXED;          /* FMA, BTE, MIXED, CROSSOVER */
     c->fma_bte_crossover_size           =4096;
 }
 
@@ -6559,6 +6579,20 @@ static void config_get_from_env(nnti_gni_config *c)
         }
     } else {
         log_debug(nnti_debug_level, "TRIOS_NNTI_USE_RDMA_FENCE is undefined.  using c->use_rdma_fence default");
+    }
+    if ((env_str=getenv("TRIOS_NNTI_PI_ORDERING")) != NULL) {
+        if (!strcasecmp(env_str, "PI_ORDERING_DEFAULT")) {
+            log_debug(nnti_debug_level, "setting c->pi_ordering to PI_ORDERING_DEFAULT");
+            c->pi_ordering=PI_ORDERING_DEFAULT;
+        } else if (!strcasecmp(env_str, "PI_ORDERING_STRICT")) {
+            log_debug(nnti_debug_level, "setting c->pi_ordering to PI_ORDERING_STRICT");
+            c->pi_ordering=PI_ORDERING_STRICT;
+        } else if (!strcasecmp(env_str, "PI_ORDERING_RELAXED")) {
+            log_debug(nnti_debug_level, "setting c->pi_ordering to PI_ORDERING_RELAXED");
+            c->pi_ordering=PI_ORDERING_RELAXED;
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_PI_ORDERING is undefined.  using c->pi_ordering default");
     }
     if ((env_str=getenv("TRIOS_NNTI_RDMA_MODE")) != NULL) {
         if (!strcasecmp(env_str, "RDMA_FMA")) {
