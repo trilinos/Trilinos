@@ -32,13 +32,14 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
 
 Other options:
 --help             Print this message (-h)
+--spheres_linear   Decompose sphere elements using linear method (matches old behavior)
 --processors #p    Specify number of processors (-p, -j)
 --root root_dir    Root directory to begin the path to on the separate disks (-R)
 --subdir sub_dir   Continuation of the path on the separate disks to the files (-S)
 
    help-email: seacas-users@software.sandia.gov (code, script)
   Information: www.jal.sandia.gov/SEACAS/SEACAS.html (IRN)
-               endo.sandia.gov/SEACAS/SEACAS.html    (EON)
+
 DECOMP_USAGE_EOF
 exit 1
 }
@@ -84,15 +85,15 @@ function execute_loadbalance {
     
     echo ${txtblu}
     echo "Executing:"
-    echo "   $NEM_SLICE -e $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+    echo "   $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
     echo "   ...see $output for nem_slice status"
     echo ${txtrst}
     if [ -e $input ]
     then
-	($NEM_SLICE -e $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
+	($NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
 	load_rc=$?
     else
-	($NEM_SLICE -e $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis >> $output)
+	($NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis >> $output)
 	load_rc=$?
     fi
     return $load_rc
@@ -177,7 +178,7 @@ txtrst=$(tput sgr0)       # Text reset
 
 echo "==========================================================="
 echo "| Sandia Engineering Analysis Access procedure for: decomp "
-echo "| Version: 2012/06/05                                      "
+echo "| Version: 2012/07/20                                      "
 echo "==========================================================="
 
 
@@ -187,7 +188,7 @@ decomp_method="-l inertial"
 nem_slice_flag="-c"
 rootdir="`pwd`/"
 subdir="."
-
+spheres="-S"
 curdir=`pwd`
 
 ACCESSBIN="`dirname \"$0\"`"
@@ -209,8 +210,8 @@ fi
 ########################################################################
 # decomp options:
 TEMP=`getopt -o hno:p:j:r:R:S: -a \
-    --long help,nem_slice_flag,processors:,rootdir:,subdir: \
-    --long multikl,rcb,rib,sfc,spectral,inertial,linear,random,scattered,brick,zpinch \
+    --long help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear \
+    --long multikl,rcb,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
     -n 'decomp' -- "$@"`
 
 if [ $? != 0 ] ; then usage ; exit 1 ; fi
@@ -229,6 +230,8 @@ while true ; do
 	      rootdir=$2 ; shift 2 ;;
 	    -S|--subdir)
 	      subdir=$2 ; shift 2 ;;
+
+	    --spheres_linear) spheres="" ; shift ;;
 
 # Decomposition Method options...
 	    --multikl)   decomp_method="-l multikl" ; shift ;;
