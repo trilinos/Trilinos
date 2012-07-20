@@ -701,128 +701,153 @@ template <typename T>
     const T* val, size_t len,
     ArrayRCP<T> &dist, size_t &globalLen)
 {
-  try{
-    reduceAll<int, size_t>(comm, Teuchos::REDUCE_SUM, 1, &len, &globalLen);
-  }
-  Z2_THROW_OUTSIDE_ERROR(env);
-
   // Non-ordinals can not be consecutive.
 
   if (!IdentifierTraits<T>::isGlobalOrdinal())
     return false;
 
+  // return values
+
+  T *distBuf= NULL;
+  T *minMaxBuf= NULL;
+  globalLen = 0;
+
   // Locally consecutive?
 
   int nprocs = comm.getSize();
   bool locallyConsecutive = IdentifierTraits<T>::areConsecutive(val, len);
-
-  if (nprocs == 1){
-    if (!locallyConsecutive)
-      return false;
-
-    if (len > 0){
-      T *buf= new T [2];
-      buf[0] = val[0];
-      buf[1] = val[len-1] + 1;
-      dist = arcp<T>(buf, 0, 2, true);
-    }
-    return true;
-  }
-
-  int lFlag = (locallyConsecutive ? 1 : 0);
-  int gFlag = 0;
-
-  try{
-    reduceAll<int, int>(comm, Teuchos::REDUCE_MIN, 1, &lFlag, &gFlag);
-  }
-  Z2_THROW_OUTSIDE_ERROR(env);
-
-  if (gFlag == 0)  // not all processes have consecutive values
-    return false;
-
-  // Get global minimum and maximum
-
-  T v0, v1, gMin, gMax;
-
-  if (len > 0){
-    v0 = val[0];
-    v1 = val[len-1];
-  }
-
-  try{
-    IdentifierTraits<T>::globalMinMax(comm, len==0, v0, v1, gMin, gMax);
-  }
-  Z2_FORWARD_EXCEPTIONS; 
-
-  size_t g0 = Teuchos::as<size_t>(gMin);
-  size_t g1 = Teuchos::as<size_t>(gMax);
   bool globallyConsecutive = false;
 
-  if (g1 - g0 + 1 == globalLen){
-    size_t sentinel = g1 + 1;   // invalid id
-    size_t sendVal = sentinel;
-    if (len > 0)
-      sendVal = Teuchos::as<size_t>(v0);
-
-    Array<size_t> sendBuf(nprocs, sendVal);
-    ArrayRCP<size_t> recvBuf;
-
-    try{
-      AlltoAll<size_t>(comm, env, sendBuf, 1, recvBuf);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    int numNoIds = 0;  // number of procs with no ids
-    for (int i=0; i < nprocs; i++)
-      if (recvBuf[i] == sentinel)
-        numNoIds++;
-
-    globallyConsecutive = true;
-
-    if (numNoIds == 0){
-      for (int i=1; globallyConsecutive && i < nprocs; i++)
-        if (recvBuf[i] < recvBuf[i-1])
-          globallyConsecutive = false;
-
-      if (globallyConsecutive){
-        T *idDist = new T [nprocs+1];
-        for (int i=0; i < nprocs; i++)
-          idDist[i] = Teuchos::as<T>(recvBuf[i]);
-        idDist[nprocs] = Teuchos::as<T>(sentinel);
-        dist = arcp(idDist, 0, nprocs+1);
+  if (nprocs == 1){
+    if (locallyConsecutive){
+      distBuf = new T [2];
+      if (len > 0){
+        distBuf[0] = val[0];
+        distBuf[1] = val[len-1] + 1;
+      }
+      else{
+        distBuf[0] = 0;
+        distBuf[1] = 0;
       }
     }
     else{
-      Array<int> index;
-      for (int i=0; i < nprocs; i++)
-        if (recvBuf[i] != sentinel)
-          index.push_back(i);
-
-      for (int i=1; i < index.size(); i++){
-        if (recvBuf[index[i]] < recvBuf[index[i-1]])
-          globallyConsecutive = false;
-      }
-
-      if (globallyConsecutive){
-        T *idDist = new T [nprocs+1];
-        for (int i=0; i < nprocs+1; i++)
-          idDist[i] = Teuchos::as<T>(sentinel);
-
-        for (int i=0; i < index.size(); i++)
-          idDist[index[i]] = Teuchos::as<T>(recvBuf[index[i]]);
-
-        T useValue = Teuchos::as<T>(sentinel);
-        for (int i = nprocs-1; i >= 0; i--){
-          if (idDist[i] == Teuchos::as<T>(sentinel))
-            idDist[i] = useValue;
-          else
-            useValue = idDist[i];
-        }
-
-        dist = arcp(idDist, 0, nprocs+1);
-      }
+      std::pair<T, T> extrema = z2LocalMinMax(val, len);
+      minMaxBuf = new T [2];
+      minMaxBuf[0] = extrema.first;
+      minMaxBuf[1] = extrema.second;
     }
+
+    globalLen = len;
+    globallyConsecutive = locallyConsecutive;
   }
+  else{   // nprocs > 1
+    try{
+      reduceAll<int, size_t>(comm, Teuchos::REDUCE_SUM, 1, &len, &globalLen);
+    }
+    Z2_THROW_OUTSIDE_ERROR(env);
+  
+    T v0, v1, gMin, gMax;
+  
+    if (len > 0){
+      v0 = val[0];
+      v1 = val[len-1];
+    }
+  
+    try{
+      IdentifierTraits<T>::globalMinMax(comm, len==0, v0, v1, gMin, gMax);
+    }
+    Z2_FORWARD_EXCEPTIONS; 
+  
+    int lFlag = (locallyConsecutive ? 1 : 0);
+    int gFlag = 0;
+  
+    try{
+      reduceAll<int, int>(comm, Teuchos::REDUCE_MIN, 1, &lFlag, &gFlag);
+    }
+    Z2_THROW_OUTSIDE_ERROR(env);
+  
+    if (gFlag == 1){  // all processes have consecutive values
+  
+      size_t g0 = Teuchos::as<size_t>(gMin);
+      size_t g1 = Teuchos::as<size_t>(gMax);
+    
+      if (g1 - g0 + 1 == globalLen){
+        size_t sentinel = g1 + 1;   // invalid id
+        size_t sendVal = sentinel;
+        if (len > 0)
+          sendVal = Teuchos::as<size_t>(v0);
+    
+        Array<size_t> sendBuf(nprocs, sendVal);
+        ArrayRCP<size_t> recvBuf;
+    
+        try{
+          AlltoAll<size_t>(comm, env, sendBuf, 1, recvBuf);
+        }
+        Z2_FORWARD_EXCEPTIONS;
+    
+        int numNoIds = 0;  // number of procs with no ids
+        for (int i=0; i < nprocs; i++)
+          if (recvBuf[i] == sentinel)
+            numNoIds++;
+    
+        globallyConsecutive = true;
+    
+        if (numNoIds == 0){
+          for (int i=1; globallyConsecutive && i < nprocs; i++)
+            if (recvBuf[i] < recvBuf[i-1])
+              globallyConsecutive = false;
+    
+          if (globallyConsecutive){
+            distBuf = new T [nprocs+1];
+            for (int i=0; i < nprocs; i++)
+              distBuf[i] = Teuchos::as<T>(recvBuf[i]);
+            distBuf[nprocs] = Teuchos::as<T>(sentinel);
+          }
+        }
+        else{
+          Array<int> index;
+          for (int i=0; i < nprocs; i++)
+            if (recvBuf[i] != sentinel)
+              index.push_back(i);
+    
+          for (int i=1; i < index.size(); i++){
+            if (recvBuf[index[i]] < recvBuf[index[i-1]])
+              globallyConsecutive = false;
+          }
+    
+          if (globallyConsecutive){
+            distBuf = new T [nprocs+1];
+            for (int i=0; i < nprocs+1; i++)
+              distBuf[i] = Teuchos::as<T>(sentinel);
+    
+            for (int i=0; i < index.size(); i++)
+              distBuf[index[i]] = Teuchos::as<T>(recvBuf[index[i]]);
+    
+            T useValue = Teuchos::as<T>(sentinel);
+            for (int i = nprocs-1; i >= 0; i--){
+              if (distBuf[i] == Teuchos::as<T>(sentinel))
+                distBuf[i] = useValue;
+              else
+                useValue = distBuf[i];
+            }
+          }
+        }
+      }
+    }  // all processes have locally consecutive values
+
+    if (!globallyConsecutive){
+      minMaxBuf = new T [2];
+      minMaxBuf[0] = gMin;
+      minMaxBuf[1] = gMax;
+    }
+  }    // nprocs > 1
+
+  if (minMaxBuf)
+    dist = arcp(minMaxBuf, 0, 2, true);
+  else if (distBuf)
+    dist = arcp(distBuf, 0, nprocs+1, true);
+  else
+     throw std::logic_error("no buffer");  // should never get here
 
   return globallyConsecutive;
 }

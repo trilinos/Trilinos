@@ -983,7 +983,7 @@ template< typename User>
   localNumberOfIds_ = myGids_.size();
   const gid_t *gidPtr = myGids_.get();
   ArrayRCP<gid_t> tmpDist;
-  gid_t mingid_t=0, maxgid_t=0;
+  gid_t mingid=0, maxgid=0;
 
   userGidsAreConsecutive_ = globallyConsecutiveOrdinals<gid_t>(
     *comm_, *env_, gidPtr, localNumberOfIds_,      // input
@@ -993,8 +993,8 @@ template< typename User>
 
   if (userGidsAreTeuchosOrdinal_){
     if (!userGidsAreConsecutive_){
-      mingid_t = tmpDist[0];
-      maxgid_t = tmpDist[1];
+      mingid = tmpDist[0];
+      maxgid = tmpDist[1];
     }
     else{
       // A gno_t is large enough to hold gid_ts, but may be a different type.
@@ -1042,8 +1042,8 @@ template< typename User>
       maxGlobalGno_ = gnoDist_[numProcs_]-1;
     }
     else{
-      minGlobalGno_ = static_cast<gno_t>(mingid_t);
-      maxGlobalGno_ = static_cast<gno_t>(maxgid_t);
+      minGlobalGno_ = static_cast<gno_t>(mingid);
+      maxGlobalGno_ = static_cast<gno_t>(maxgid);
     }
   } else{
     // We map application gids to consecutive global numbers starting with 0.
