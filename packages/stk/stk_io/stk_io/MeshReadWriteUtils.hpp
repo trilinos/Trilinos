@@ -141,6 +141,21 @@ namespace stk {
     void populate_bulk_data(stk::mesh::BulkData &bulk_data, stk::io::MeshData &mesh_data);
 
     /**
+     * Read/Generate the bulk data for the mesh.  The bulk_data must
+     * have been constructed using the meta_data passed to the
+     * create_input_mesh() function and the mesh_data must also be the
+     * same. This function will create all stk mesh entities (nodes,
+     * elements) with the correct nodal coordinates, element
+     * connectivity, element attribute data, and nodeset and sideset
+     * membership.  Note that meta_data.commit() followed by 
+     * bulk_data.modification_begin() needs to be called
+     * prior to calling this function. Further, bulk_data.modification_end()
+     * must be called upon return from this function. The above populate_bulk_data call
+     * is a wrapper for this function.
+     */
+    void process_mesh_bulk_data(Ioss::Region *region, stk::mesh::BulkData &bulk_data);
+
+    /**
      * Iterate over all Ioss entities in the input mesh database and
      * define a stk field for each transient field found.  The stk
      * field will have the same name as the field on the database.
@@ -172,6 +187,18 @@ namespace stk {
      * to the specified time will be used with no interpolation (yet).
      */
     void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, double time);
+
+    /**
+     * For all transient input fields defined either manually or via
+     * the define_input_fields() function, read the data at the
+     * specified database step 'step' (1-based) and populate the stk
+     * data structures with those values. Note that 
+     * bulk_data.modification_begin() needs to be called prior to 
+     * calling this function. Further, bulk_data.modification_end()
+     * must be called upon return from this function. Also note 
+     * that the two above functions are wrappers for this one.
+     */
+    void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk_data, int step);
 
     /**
      * Create an exodus mesh database with the specified

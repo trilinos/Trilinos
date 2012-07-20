@@ -680,9 +680,22 @@ void populate_bulk_data(stk::mesh::BulkData &bulk_data,
                         MeshData &mesh_data)
 {
   Ioss::Region *region = mesh_data.m_input_region;
-  if (region) {
-	bulk_data.modification_begin();
 
+  if (region) {
+
+    bulk_data.modification_begin();
+    process_mesh_bulk_data(region, bulk_data);
+    bulk_data.modification_end();
+
+  } else {
+	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_bulk_data.\n";
+	std::exit(EXIT_FAILURE);
+  }
+}
+
+// ========================================================================
+void process_mesh_bulk_data(Ioss::Region *region, stk::mesh::BulkData &bulk_data)
+{
     bool ints64bit = db_api_int_size(region) == 8;
     if (ints64bit) {
       int64_t zero = 0;
@@ -697,12 +710,6 @@ void populate_bulk_data(stk::mesh::BulkData &bulk_data,
       process_nodesets(*region,      bulk_data, zero);
       process_sidesets(*region,      bulk_data);
     }
-
-	bulk_data.modification_end();
-  } else {
-	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_bulk_data.\n";
-	std::exit(EXIT_FAILURE);
-  }
 }
 
 namespace {
@@ -947,6 +954,19 @@ void process_input_request(MeshData &mesh_data,
   if (region) {
 	bulk.modification_begin();
 
+  input_mesh_fields(region, bulk, step);
+
+	bulk.modification_end();
+
+  } else {
+	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
+	std::exit(EXIT_FAILURE);
+  }
+}
+
+void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk,
+                           int step)
+{
 	// Pick which time index to read into solution field.
 	region->begin_state(step);
 
@@ -956,14 +976,8 @@ void process_input_request(MeshData &mesh_data,
 	input_sideset_fields(*region, bulk);
 
 	region->end_state(step);
-
-	bulk.modification_end();
-
-  } else {
-	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
-	std::exit(EXIT_FAILURE);
-  }
 }
+
 // ========================================================================
 template <typename INT>
 void get_element_block_sizes(MeshData &mesh_data,
