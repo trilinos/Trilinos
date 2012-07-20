@@ -82,7 +82,7 @@ namespace stk {
                           QualityAssessor* qa,
                           MsqError& err );
 
-        virtual void run_one_iteration( Mesh* mesh, MeshDomain *domain,
+        virtual double run_one_iteration( Mesh* mesh, MeshDomain *domain,
                                         MsqError& err );
       
       protected:

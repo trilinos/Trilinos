@@ -25,7 +25,27 @@ namespace stk {
       return Vector3D(x[0], x[1], 0.0);
     }
 
-    bool jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d)
+    void scale_to_unit(MsqMatrix<3,3>& A)
+    {
+      for (int jvert=0; jvert < 3; jvert++)
+        {
+          double sum=0.0;
+          for (int ixyz=0; ixyz < 3; ixyz++)
+            {
+              sum += A(ixyz, jvert)*A(ixyz, jvert);
+            }
+          sum = std::sqrt(sum);
+          if (sum != 0.0)
+            {
+              for (int ixyz=0; ixyz < 3; ixyz++)
+                {
+                  A(ixyz, jvert) /= sum;
+                }
+            }
+        }
+    }
+
+    bool JacobianUtil::jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d)
     {
       /* Calculate A */
       A(0,0) = d[0]*(x[1][0] - x[0][0]);  
@@ -39,11 +59,13 @@ namespace stk {
       A(2,0) = d[0]*(x[1][2] - x[0][2]);
       A(2,1) = d[1]*(x[2][2] - x[0][2]);
       A(2,2) = n[2];
+      if (m_scale_to_unit) scale_to_unit(A);
+
       detJ = det(A);
       return detJ < MSQ_MIN;
     }
 
-    bool jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d)
+    bool JacobianUtil::jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d)
     {
       A(0,0) = d[0]*(x[1][0] - x[0][0]);  
       A(0,1) = d[1]*(x[2][0] - x[0][0]);
@@ -56,6 +78,7 @@ namespace stk {
       A(2,0) = d[0]*(x[1][2] - x[0][2]);
       A(2,1) = d[1]*(x[2][2] - x[0][2]);
       A(2,2) = d[2]*(x[3][2] - x[0][2]);
+      if (m_scale_to_unit) scale_to_unit(A);
 
       detJ = det(A);
       return detJ < MSQ_MIN;

@@ -27,7 +27,7 @@ namespace stk {
 
     // this is a sample (unfinished) implementation of how we might use Mesquite (needs to have global
     // updates of ConjugateGradient global quantities, etc, to make it produce parallel/serial consistency)
-    void PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_one_iteration( Mesh* mesh, MeshDomain *domain,
+    double PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_one_iteration( Mesh* mesh, MeshDomain *domain,
                                                                                           MsqError& err )
     {
       std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper::run_one_iteration start..." << std::endl;
@@ -71,14 +71,14 @@ namespace stk {
 
       Settings settings;
 
-      q2.add_quality_assessor( &qa_check, err ); MSQ_ERRRTN(err);
-      q2.set_master_quality_improver( &shape_solver, err ); MSQ_ERRRTN(err);
+      q2.add_quality_assessor( &qa_check, err ); 
+      q2.set_master_quality_improver( &shape_solver, err );
       q2.run_common( mesh, 0, domain, &settings, err ); 
 
       //if (!get_parallel_rank()) 
       std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprovementWrapper: running shape improver... done \n" << std::endl;
 
-      MSQ_ERRRTN(err);
+      return 0;
     }
 
     void PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper::run_wrapper( Mesh* mesh,
@@ -103,7 +103,7 @@ namespace stk {
 
       //double alphas[] = {0.0,0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
       //double alphas[] = {0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
-      double alphas[] = {1.0};
+      double alphas[] = {0.001};
       int nalpha = sizeof(alphas)/sizeof(alphas[0]);
       
       for (int outer = 0; outer < nalpha; outer++)
@@ -218,7 +218,7 @@ namespace stk {
           std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
           //PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper siw(innerIter, 0.0, gradNorm, parallelIterations);
           //PMMParallelReferenceMeshSmoother siw(innerIter, 0.0, gradNorm, parallelIterations);
-          PMMParallelReferenceMeshSmoother1 siw(1.0, innerIter, 0.0, gradNorm, parallelIterations);
+          PMMParallelReferenceMeshSmoother1 siw(0.05, innerIter, 0.0, gradNorm, parallelIterations);
           siw.m_do_untangle_only = do_untangle_only;
           siw.run_instructions(&mesh, domain, mErr);
 

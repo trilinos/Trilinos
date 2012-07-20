@@ -195,6 +195,12 @@ class FieldFunctionUnitTests(unittest.TestCase):
        ff_coords.add_alias("mc")
        
        sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", 3, 1)
+       vv = eval_func(0.1,0.1,0.1,0.0, sfcm)
+       print "expected = ", sqrt(3*0.1*0.1), " actual= " , vv
+
+       sfcm = StringFunction("sqrt(ff_coords[0]*ff_coords[0]+ff_coords[1]*ff_coords[1]+ff_coords[2]*ff_coords[2])", "sfcm", 3, 1)
+       vv = eval_func(0.1,0.1,0.1,0.0, sfcm)
+       print "expected = ", sqrt(3*0.1*0.1), " actual= " , vv
 
     def test_fieldFunction_readMesh_createField_interpolateFrom(self):
        num_x = 3

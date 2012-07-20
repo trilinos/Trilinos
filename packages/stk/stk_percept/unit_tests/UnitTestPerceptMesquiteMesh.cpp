@@ -97,7 +97,7 @@ namespace stk
       Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
 
 
-#define DO_TESTS 0
+#define DO_TESTS 1
 #if DO_TESTS
 
 #define EXTRA_PRINT 0
@@ -478,11 +478,30 @@ namespace stk
 
             //eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& node = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+                        double iy = data[1]/double(nele);
+                        iy = iy*iy;
+                        data[1] = iy*double(nele);
+                      }
+                  }
+              }
+
             // save state of original mesh
             // field, dst, src: 
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
-
-            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
             for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
@@ -494,17 +513,18 @@ namespace stk
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk::mesh::Entity& node = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double ix = data[0]/double(nele);
                         //double bump_size=2.8; // 0.8
                         double bump_size=0.8; // 0.8
-                        data[1] += (ix)*(1.0-ix)*bump_size*double(nele);
+                          data[1] += (ix)*(1.0-ix)*bump_size*double(nele);
                         //std::cout << "tmp srk surface 1 node = " << data[0] << " " << data[1] << std::endl;
                       }
                   }
               }
+
             // save state of projected mesh
             // field, dst, src: 
             eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
@@ -534,7 +554,7 @@ namespace stk
                 //PMMParallelShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
                 if (1)
                   {
-                    percept::PMMParallelShapeImprover pmmpsi(1000, 1.e-4, 1);
+                    percept::PMMParallelShapeImprover pmmpsi(1001, 1.e-4, 1);
                     //pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
                     pmmpsi.run(pmm, &planar_domain, always_smooth, msq_debug);
                   }

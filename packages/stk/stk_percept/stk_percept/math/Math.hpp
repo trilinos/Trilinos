@@ -64,6 +64,11 @@ namespace stk {
 
       };
 
+      static double my_abs_hi(double x, double eps=1.e-6) { return std::sqrt(x*x + eps*eps); }
+      static double my_min_hi(double x, double y, double eps=1.e-6) { return 0.5*(x+y - my_abs_hi(x-y,eps)); }
+      static double my_max_hi(double x, double y, double eps=1.e-6) { return 0.5*(x+y + my_abs_hi(x-y,eps)); }
+      // heavyside
+      static double heavy_smooth(double x, double x0, double eps=1.e-6) { return 1./(1.+std::exp(-2.0*(x-x0)/eps)); }
 
       static double random01()
       {

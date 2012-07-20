@@ -32,7 +32,8 @@ namespace stk {
                                        double cpu_time = 0.0, 
                                        double grad_norm =1.e-8,
                                        int parallel_iterations = 20)
-        : PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper(inner_iterations, cpu_time, grad_norm, parallel_iterations)
+        : PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper(inner_iterations, cpu_time, grad_norm, parallel_iterations),
+          m_num_invalid(0), m_global_metric(std::numeric_limits<double>::max()), m_untangled(false)
       {}
 
 
@@ -45,7 +46,7 @@ namespace stk {
                         QualityAssessor* qa,
                         MsqError& err );
 
-      virtual void run_one_iteration( Mesh* mesh,  MeshDomain *domain,
+      virtual double run_one_iteration( Mesh* mesh,  MeshDomain *domain,
                                       MsqError& err );
 
       void sync_fields(int iter=0);
@@ -57,8 +58,12 @@ namespace stk {
       NodeMap m_weight;
       NodeMap m_nweight;
       double m_dmax;
-      double m_alpha;
-      double m_alpha_prev;
+      double m_omega;
+      double m_omega_prev;
+      int m_iter;
+      int m_num_invalid;
+      double m_global_metric;
+      bool m_untangled;
 
       PerceptMesquiteMesh *m_pmm;
       PerceptMesh *m_eMesh;

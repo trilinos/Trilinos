@@ -40,6 +40,10 @@ namespace stk {
       double   mMetrics[8];  // detJ
       MsqMatrix<3,3> mJ[8];  // J
       int m_num_nodes;
+      bool m_scale_to_unit;
+
+      bool jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d);
+      bool jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d);
 
       JacobianUtil() : 
         AveragingQM( QualityMetric::LINEAR ),
@@ -49,7 +53,8 @@ namespace stk {
         c2Con(1.0),
         a3Con(1.0),
         b3Con(0.0),
-        c3Con(1.0), m_num_nodes(0)
+        c3Con(1.0), m_num_nodes(0),
+        m_scale_to_unit(false)
       {
       }
 
