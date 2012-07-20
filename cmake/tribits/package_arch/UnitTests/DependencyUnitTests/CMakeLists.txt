@@ -385,6 +385,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
     -DTrilinos_ENABLE_Teko=ON
   PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_PACKAGES='25'"
     "Trilinos_NUM_TPLS='20'"
     "Explicitly enabled packages on input .* Teko 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
@@ -394,6 +395,21 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos Teko 16"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid Belos RBGen Phalanx Stalix 9"
     "Final set of enabled TPLs:  BLAS LAPACK TekoDepTPL 3"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  preCopyrightTrilinos_EnableTeko_InconsistentExtraReposFile
+  ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
+    -DTrilinos_EXTRAREPOS_FILE=${CMAKE_CURRENT_SOURCE_DIR}/NoPackagesExtraReposFile.cmake
+    -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
+    #-DTrilinos_VERBOSE_CONFIGURE=ON
+    #-DTRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG=ON
+    -DTrilinos_ENABLE_Teko=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_PACKAGES='25'"
+    "Trilinos_NUM_TPLS='20'"
+    "Explicitly enabled packages on input .* Teko 1"
   )
 
 
