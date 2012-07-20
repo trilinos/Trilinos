@@ -44,8 +44,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
 
   RCP<tMVector_t> coords = uinput.getCoordinates();
 
-  RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
-
+#if 0
   size_t localCount = coords->getLocalLength();
   int dim = coords->getNumVectors();
 
@@ -60,10 +59,11 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
 
   const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
    
-#if 0
   typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 #else
+  RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
+
   typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(coordsConst);
 #endif
