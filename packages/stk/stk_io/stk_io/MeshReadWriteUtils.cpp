@@ -141,6 +141,19 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       if (df_field != NULL) {
         stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
       }
+
+      // Add all attributes as fields.
+      // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
+      // named components of the 'attribute' field, so add them instead.
+      Ioss::NameList names;
+      block->field_describe(Ioss::Field::ATTRIBUTE, &names);
+      for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+        if(*I == "attribute" && names.size() > 1)
+          continue;
+        stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
+        if (field)
+          stk::io::field_data_from_ioss(field, sides, block, *I);
+      }
     }
   }
 }
@@ -168,6 +181,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_m
     fem_meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
   stk::mesh::put_field( coord_field, fem_meta.node_rank(), fem_meta.universal_part(), spatial_dim);
+  stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, fem_meta.universal_part(), 0);
 }
 
 void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -191,6 +205,19 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
     fem_meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
   stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+
+  // Add all attributes as fields.
+  // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
+  // named components of the 'attribute' field, so add them instead.
+  Ioss::NameList names;
+  nb->field_describe(Ioss::Field::ATTRIBUTE, &names);
+  for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+    if(*I == "attribute" && names.size() > 1)
+      continue;
+    stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
+    if (field)
+      stk::io::field_data_from_ioss(field, nodes, nb, *I);
+  }
 }
 
 // ========================================================================
@@ -338,6 +365,19 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
 
       if (df_field != NULL) {
         stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
+      }
+
+      // Add all attributes as fields.
+      // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
+      // named components of the 'attribute' field, so add them instead.
+      Ioss::NameList names;
+      entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
+      for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+        if(*I == "attribute" && names.size() > 1)
+          continue;
+        stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
+        if (field)
+          stk::io::field_data_from_ioss(field, nodes, entity, *I);
       }
     }
   }

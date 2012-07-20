@@ -149,6 +149,12 @@ namespace Stokhos {
     //! Compute standard deviation of expansion
     value_type standard_deviation() const;
 
+    //! Compute the two-norm of expansion
+    value_type two_norm() const;
+
+    //! Compute the squared two-norm of expansion
+    value_type two_norm_squared() const;
+
     //! Print approximation in basis
     std::ostream& print(std::ostream& os) const;
 

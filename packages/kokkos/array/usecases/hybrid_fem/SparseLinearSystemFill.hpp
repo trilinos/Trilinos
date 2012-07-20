@@ -66,13 +66,13 @@ namespace Impl {
 
 template< typename IndexType , typename CoordScalar ,
           unsigned ElemNodeCount ,
-          class Device >
-struct Factory< KokkosArray::CrsArray< IndexType , Device , IndexType > ,
+          class Layout , class Device >
+struct Factory< KokkosArray::CrsArray< IndexType , Layout , Device , IndexType > ,
                 HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > >
 {
   typedef Device                                     device_type ;
   typedef typename device_type::size_type            size_type  ;
-  typedef KokkosArray::CrsArray< IndexType , Device , IndexType > graph_type ;
+  typedef KokkosArray::CrsArray< IndexType , Layout , Device , IndexType > graph_type ;
   typedef View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
 
   typedef HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > mesh_type ;

@@ -52,13 +52,6 @@
 #include <impl/KokkosArray_View_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
-#undef KOKKOS_MACRO_DEVICE
-#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
-#include <impl/KokkosArray_View_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
-
-
 namespace KokkosArray {
 namespace Impl {
 
