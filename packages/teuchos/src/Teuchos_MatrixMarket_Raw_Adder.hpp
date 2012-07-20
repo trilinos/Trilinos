@@ -373,10 +373,12 @@ namespace Teuchos {
               std::invalid_argument, "Matrix is " << expectedNumRows_ << " x "
               << expectedNumCols_ << ", so entry A(" << i << "," << j << ") = "
               << Aij << " is out of range.");
-            TEUCHOS_TEST_FOR_EXCEPTION(seenNumEntries_ >= expectedNumEntries_,
-              std::invalid_argument, "Cannot add entry A(" << i << "," << j
-              << ") = " << Aij << " to matrix; already have expected number "
-              "of entries " << expectedNumEntries_ << ".");
+            if (countAgainstTotal) {
+              TEUCHOS_TEST_FOR_EXCEPTION(seenNumEntries_ >= expectedNumEntries_,
+                std::invalid_argument, "Cannot add entry A(" << i << "," << j
+                << ") = " << Aij << " to matrix; already have expected number "
+                "of entries " << expectedNumEntries_ << ".");
+            }
           }
           // i and j are 1-based indices, but we store them as 0-based.
           elts_.push_back (element_type (i-1, j-1, Aij));

@@ -340,15 +340,17 @@ main (int argc, char *argv[])
       cerr << endl;
     }
 
-    std::istringstream inStr (outStr.str ());
     ArrayRCP<ordinal_type> newptr, newind;
     ArrayRCP<scalar_type> newval;
     ordinal_type newNumRows, newNumCols;
     if (success && verbose) {
       cout << "Reading the Matrix Market output back into CSR arrays" << endl;
     }
-    success = success && reader.read (newptr, newind, newval,
-                                      newNumRows, newNumCols, inStr);
+    {
+      std::istringstream inStr (outStr.str ());
+      success = success && reader.read (newptr, newind, newval,
+                                        newNumRows, newNumCols, inStr);
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(! success, std::logic_error, "Matrix Market "
       "reader failed to read the output back into CSR arrays.");
     if (success && verbose) {
@@ -425,7 +427,7 @@ main (int argc, char *argv[])
       // This is a bit of a hack, since we know the contents of the
       // example.  Since we "symmetrize" when reading in symmetric
       // data, there should be 15 entries in the resulting matrix.
-      const OrdinalType correctNumEntries = 15;
+      const ordinal_type correctNumEntries = 15;
       TEUCHOS_TEST_FOR_EXCEPTION(
         val.size() != correctNumEntries,
         std::logic_error,
