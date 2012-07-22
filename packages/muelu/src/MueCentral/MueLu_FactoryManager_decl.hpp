@@ -18,6 +18,7 @@
 #include "MueLu_CoalesceDropFactory2_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
+#include "MueLu_AmalgamationFactory_fwd.hpp"
 
 namespace MueLu {
 

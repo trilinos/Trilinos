@@ -37,7 +37,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out", const FactoryBase* AggFact = NULL, const FactoryBase* CoalesceDropFact = NULL);
+    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out", const FactoryBase* AggFact = NULL, const FactoryBase* CoalesceDropFact = NULL, const FactoryBase* AmalgFact = NULL);
 
     //! Destructor.
     virtual ~AggregationExportFactory();
@@ -78,7 +78,7 @@ namespace MueLu {
     std::string outputFileName_;            ///< filename template for output
     const FactoryBase* AggFact_;            ///< factory which created aggregates
     const FactoryBase* CoalesceDropFact_;   ///< CoalesceAndDropFactory (needed for DofsPerNode variable)
-
+    const FactoryBase* AmalgFact_;          ///< AmalgamationFactory (needed for UnAmalgamationInfo variable)
 
   }; // class AggregationExportFactory
 

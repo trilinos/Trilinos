@@ -482,7 +482,8 @@ int main(int argc, char *argv[]) {
 
   ///////////////////////////////////////// define CoalesceDropFactory and Aggregation for A11
   // set up amalgamation for A11. Note: we're using a default null space factory (Teuchos::null)
-  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory(A11Fact));
+  RCP<AmalgamationFactory> amalgFact11 = rcp(new AmalgamationFactory(A11Fact));
+  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory(A11Fact,amalgFact11));
   RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory(dropFact11));
   UCAggFact11->SetMinNodesPerAggregate(3);
   UCAggFact11->SetMaxNeighAlreadySelected(1);
@@ -492,7 +493,7 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////// define transfer ops for A11
 #if 1
   // use PG-AMG
-  RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory(UCAggFact11,dropFact11)); // check me
+  RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory(UCAggFact11,amalgFact11)); // check me
   P11tentFact->setStridingData(stridingInfo);
   P11tentFact->setStridedBlockId(0); // declare this P11Fact to be the transfer operator for the velocity dofs
 
@@ -513,7 +514,7 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("Smoother", Smoo11Fact);
 
 #else
-  RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory(UCAggFact11,dropFact11)); // check me
+  RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory(UCAggFact11,amalgFact11)); // check me
   P11Fact->setStridingData(stridingInfo);
   P11Fact->setStridedBlockId(0); // declare this P11Fact to be the transfer operator for the velocity dofs
 
@@ -554,8 +555,8 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////// define transfer ops for A22
 #if 0
   // use PGAMG
-  RCP<AmalgamationFactory> dropFact22 = rcp(new AmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(UCAggFact11, dropFact22)); // check me (fed with A22) wrong column GIDS!!!
+  RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
+  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(UCAggFact11, amalgFact22)); // check me (fed with A22) wrong column GIDS!!!
   P22tentFact->setStridingData(stridingInfo);
   P22tentFact->setStridedBlockId(1);
 
@@ -579,8 +580,8 @@ int main(int argc, char *argv[]) {
 
 #else
   // use TentativePFactory
-  RCP<AmalgamationFactory> dropFact22 = rcp(new AmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, dropFact22 )); // check me (fed with A22) wrong column GIDS!!!
+  RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
+  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, amalgFact22 )); // check me (fed with A22) wrong column GIDS!!!
   P22Fact->setStridingData(stridingInfo);
   P22Fact->setStridedBlockId(1); // declare this P22Fact to be the transfer operator for the pressure dofs
 

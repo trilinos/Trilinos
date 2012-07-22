@@ -18,6 +18,7 @@
 #include "MueLu_FactoryManager_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 
+#include "MueLu_AmalgamationFactory.hpp" //TMP
 #include "MueLu_CoalesceDropFactory.hpp" //TMP
 #include "MueLu_RAPFactory.hpp" //TMP
 #include "MueLu_TransPFactory.hpp" //TMP
@@ -72,6 +73,9 @@ namespace MueLu {
       } 
 
       // TODO: see how Teko handles this.
+      if (factoryName == "AmalgamationFactory") {
+        return BuildAmalgamationFactory(paramList, factoryMapIn);
+      }
       if (factoryName == "CoalesceDropFactory") {
         return BuildCoalesceDropFactory(paramList, factoryMapIn);
       }
@@ -146,12 +150,19 @@ namespace MueLu {
 #define MUELU_FACTORY_PARAM(name, var)                                  \
     RCP<const FactoryBase> var; if (paramList.isParameter(name)) { var = BuildFactory(paramList.getEntry(name), factoryMapIn); }
     
+    //! AmalgamationFactory
+    RCP<FactoryBase> BuildAmalgamationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      MUELU_FACTORY_PARAM("A", AFact);
+
+      return rcp(new AmalgamationFactory(AFact));
+    }
+
     //! CoalesceDropFactory
     RCP<FactoryBase> BuildCoalesceDropFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       MUELU_FACTORY_PARAM("A", AFact);
-      MUELU_FACTORY_PARAM("Nullspace", NullspaceFact);
+      MUELU_FACTORY_PARAM("UnAmalgamationInfo", AmalgFact);
 
-      return rcp(new CoalesceDropFactory(AFact/*, NullspaceFact*/));
+      return rcp(new CoalesceDropFactory(AFact, AmalgFact));
     }
 
     //! TentativePFactory
@@ -159,8 +170,8 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("Aggregates", AggFact);
       MUELU_FACTORY_PARAM("Nullspace",  NullspaceFact);
       MUELU_FACTORY_PARAM("A", AFact);
-      MUELU_FACTORY_PARAM("UnAmalgamationInfo", GraphFact);
-      return rcp(new TentativePFactory(AggFact, GraphFact, NullspaceFact, AFact));
+      MUELU_FACTORY_PARAM("UnAmalgamationInfo", AmalgFact);
+      return rcp(new TentativePFactory(AggFact, AmalgFact, NullspaceFact, AFact));
     }
     
     //! SaPFactory

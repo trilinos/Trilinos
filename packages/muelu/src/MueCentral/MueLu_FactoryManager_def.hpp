@@ -18,10 +18,10 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-//#include "MueLu_CoalesceDropFactory2.hpp" // FIXME and default factories
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
  
 namespace MueLu {
 
@@ -83,7 +83,7 @@ namespace MueLu {
       }
 
       if (varName == "Graph")               return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
-      if (varName == "UnAmalgamationInfo")  return SetAndReturnDefaultFactory(varName, GetFactory("Graph"));
+      if (varName == "UnAmalgamationInfo")  return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
       if (varName == "Aggregates")          return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.

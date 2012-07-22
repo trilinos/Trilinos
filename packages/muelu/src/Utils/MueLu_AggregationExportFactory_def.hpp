@@ -21,8 +21,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregationExportFactory(const std::string outputFileName, const FactoryBase* AggFact, const FactoryBase* CoalesceDropFact)
-    : outputFileName_(outputFileName), AggFact_(AggFact), CoalesceDropFact_(CoalesceDropFact)
+  AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregationExportFactory(const std::string outputFileName, const FactoryBase* AggFact, const FactoryBase* CoalesceDropFact, const FactoryBase* AmalgFact)
+    : outputFileName_(outputFileName), AggFact_(AggFact), CoalesceDropFact_(CoalesceDropFact), AmalgFact_(AmalgFact)
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -32,7 +32,7 @@ namespace MueLu {
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     fineLevel.DeclareInput("Aggregates",AggFact_,this);
     fineLevel.DeclareInput("DofsPerNode",CoalesceDropFact_,this);
-    fineLevel.DeclareInput("UnAmalgamationInfo", CoalesceDropFact_, this);
+    fineLevel.DeclareInput("UnAmalgamationInfo", AmalgFact_, this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -41,7 +41,7 @@ namespace MueLu {
 
     Teuchos::RCP<Aggregates> aggregates = fineLevel.Get< Teuchos::RCP<Aggregates> >("Aggregates",AggFact_);
     LocalOrdinal DofsPerNode =                 fineLevel.Get< LocalOrdinal > ("DofsPerNode", CoalesceDropFact_);
-    Teuchos::RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", CoalesceDropFact_);
+    Teuchos::RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", AmalgFact_);
     
     GetOStream(Runtime0, 0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
 

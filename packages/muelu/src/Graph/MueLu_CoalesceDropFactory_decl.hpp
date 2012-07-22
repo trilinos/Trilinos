@@ -43,7 +43,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null);
+    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> AmalgFact = Teuchos::null);
 
     //! Destructor
     virtual ~CoalesceDropFactory() { }
@@ -73,7 +73,7 @@ namespace MueLu {
     RCP<PreDropFunctionBaseClass> predrop_;
 
     /// SubBlockUnAmalgamationFactory (for generating the UnAmalgamation information)
-    RCP<const FactoryBase> UnAmalgamationFact_;
+    RCP<const FactoryBase> AmalgFact_;
 
   }; //class CoalesceDropFactory
 

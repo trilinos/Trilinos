@@ -10,6 +10,7 @@
 
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
@@ -67,9 +68,9 @@ namespace MueLuTests {
       nullSpace->randomize();
       fineLevel.Set("Nullspace",nullSpace);
 
-      RCP<CoalesceDropFactory> amalgFact = rcp(new CoalesceDropFactory());
-
-      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(amalgFact));
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(Teuchos::null, amalgFact));
+      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
@@ -133,8 +134,9 @@ namespace MueLuTests {
       nullSpace->randomize();
       fineLevel.Set("Nullspace",nullSpace);
 
-      RCP<CoalesceDropFactory> amalgFact = rcp(new CoalesceDropFactory());
-      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(amalgFact));
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(Teuchos::null, amalgFact));
+      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);

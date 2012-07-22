@@ -5,6 +5,7 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Aggregates.hpp"
 
@@ -20,7 +21,8 @@ namespace MueLuTests {
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    CoalesceDropFactory dropFact;
+    AmalgamationFactory amalgFact;
+    CoalesceDropFactory dropFact(Teuchos::null, Teuchos::rcpFromRef(amalgFact));
     
     // Setup aggregation factory (use default factory for graph)
     UCAggregationFactory aggFact(Teuchos::rcpFromRef(dropFact));
@@ -30,13 +32,13 @@ namespace MueLuTests {
     aggFact.SetPhase3AggCreation(0.5);
 
     level.Request("Aggregates", &aggFact);
-    level.Request("UnAmalgamationInfo", &dropFact);
+    level.Request("UnAmalgamationInfo", &amalgFact);
 
     level.Request(aggFact);
     aggFact.Build(level);
     RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",&aggFact); // fix me
-    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",&dropFact); // fix me
-    level.Release("UnAmalgamationInfo", &dropFact);
+    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",&amalgFact); // fix me
+    level.Release("UnAmalgamationInfo", &amalgFact);
     level.Release("Aggregates", &aggFact);
     return aggregates;
   }  // gimmeAggregates

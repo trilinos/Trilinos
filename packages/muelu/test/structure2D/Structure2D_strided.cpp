@@ -185,7 +185,7 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact,dropFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   TentPFact->setStridingData(stridingInfo);
   TentPFact->setStridedBlockId(stridedBlockId);
