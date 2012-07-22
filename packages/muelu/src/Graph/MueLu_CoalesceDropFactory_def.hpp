@@ -18,7 +18,7 @@
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_SubBlockUnAmalgamationFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 
 namespace MueLu {
 
@@ -29,7 +29,7 @@ CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Coa
 : AFact_(AFact)
   {
     predrop_ = Teuchos::null;
-    UnAmalgamationFact_ = rcp(new SubBlockUnAmalgamationFactory(AFact));
+    UnAmalgamationFact_ = rcp(new AmalgamationFactory(AFact));
   }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -101,7 +101,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     GlobalOrdinal grid = A->getRowMap()->getGlobalElement(row);
 
     // translate grid to nodeid
-    GlobalOrdinal nodeId = SubBlockUnAmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset);
+    GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset);
 
     size_t nnz = A->getNumEntriesInLocalRow(row);
     Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -117,7 +117,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
       if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
          (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
-        GlobalOrdinal cnodeId = SubBlockUnAmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset);
+        GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset);
         cnodeIds->push_back(cnodeId);
         realnnz++; // increment number of nnz in matrix row
       }

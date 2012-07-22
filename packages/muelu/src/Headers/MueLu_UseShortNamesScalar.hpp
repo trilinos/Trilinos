@@ -162,8 +162,8 @@ typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutedTransferFactory;
 #endif
 
-#ifdef MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_SHORT
-typedef MueLu::SubBlockUnAmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SubBlockUnAmalgamationFactory;
+#ifdef MUELU_AMALGAMATIONFACTORY_SHORT
+typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AmalgamationFactory;
 #endif
 
 #ifdef MUELU_UTILITIES_SHORT

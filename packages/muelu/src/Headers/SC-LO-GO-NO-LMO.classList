@@ -39,4 +39,4 @@ BraessSarazinSmoother
 AggregationExportFactory
 MultiVectorTransferFactory
 PermutedTransferFactory
-SubBlockUnAmalgamationFactory
+AmalgamationFactory

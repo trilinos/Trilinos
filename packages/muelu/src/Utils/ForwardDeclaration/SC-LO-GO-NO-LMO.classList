@@ -36,4 +36,4 @@ VariableInformationFactory
 PermutedTransferFactory
 MultiVectorTransferFactory
 SchurComplementFactory
-SubBlockUnAmalgamationFactory
+AmalgamationFactory

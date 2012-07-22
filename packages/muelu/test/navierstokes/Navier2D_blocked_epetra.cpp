@@ -65,7 +65,7 @@
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 
-#include "MueLu_SubBlockUnAmalgamationFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -554,7 +554,7 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////// define transfer ops for A22
 #if 0
   // use PGAMG
-  RCP<SubBlockUnAmalgamationFactory> dropFact22 = rcp(new SubBlockUnAmalgamationFactory(A22Fact));
+  RCP<AmalgamationFactory> dropFact22 = rcp(new AmalgamationFactory(A22Fact));
   RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(UCAggFact11, dropFact22)); // check me (fed with A22) wrong column GIDS!!!
   P22tentFact->setStridingData(stridingInfo);
   P22tentFact->setStridedBlockId(1);
@@ -579,7 +579,7 @@ int main(int argc, char *argv[]) {
 
 #else
   // use TentativePFactory
-  RCP<SubBlockUnAmalgamationFactory> dropFact22 = rcp(new SubBlockUnAmalgamationFactory(A22Fact));
+  RCP<AmalgamationFactory> dropFact22 = rcp(new AmalgamationFactory(A22Fact));
   RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, dropFact22 )); // check me (fed with A22) wrong column GIDS!!!
   P22Fact->setStridingData(stridingInfo);
   P22Fact->setStridedBlockId(1); // declare this P22Fact to be the transfer operator for the pressure dofs

@@ -1,10 +1,10 @@
-#ifndef MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_DEF_HPP
-#define MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_DEF_HPP
+#ifndef MUELU_AMALGAMATIONFACTORY_DEF_HPP
+#define MUELU_AMALGAMATIONFACTORY_DEF_HPP
 
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_BlockedCrsOperator.hpp>
 
-#include "MueLu_SubBlockUnAmalgamationFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"
@@ -14,22 +14,22 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-SubBlockUnAmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SubBlockUnAmalgamationFactory(RCP<const FactoryBase> AFact)
+AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AmalgamationFactory(RCP<const FactoryBase> AFact)
 : AFact_(AFact)
   {
   }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void SubBlockUnAmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
 
   currentLevel.DeclareInput("A", AFact_.get(),    this); // sub-block from blocked A
 
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void SubBlockUnAmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
+void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
 {
-  FactoryMonitor m(*this, "SubBlockUnAmalgamationFactory", currentLevel);
+  FactoryMonitor m(*this, "AmalgamationFactory", currentLevel);
 
   RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
@@ -57,13 +57,13 @@ void SubBlockUnAmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, Lo
       stridedblocksize = fullblocksize;
     }
     oldView = A->SwitchToView(oldView);
-    GetOStream(Debug, 0) << "SubBlockUnAmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " from strided maps. offset=" << offset << std::endl;
+    GetOStream(Debug, 0) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " from strided maps. offset=" << offset << std::endl;
     /*std::cout << "fullblocksize: " << fullblocksize << std::endl;
       std::cout << "offset: " << offset << std::endl;
       std::cout << "blockid: " << blockid << std::endl;
       std::cout << "nStridedOffset: " << nStridedOffset << std::endl;
       std::cout << "stridedblocksize: " << stridedblocksize << std::endl;*/
-  } else GetOStream(Debug, 0) << "SubBlockUnAmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+  } else GetOStream(Debug, 0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
   // TODO: maybe no striding information on coarser levels -> misuse nullspace vector?
 
   // 2) prepare maps for amalgamated graph of A and
@@ -122,7 +122,7 @@ void SubBlockUnAmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, Lo
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-const GlobalOrdinal SubBlockUnAmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Operator>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) {
+const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Operator>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) {
   GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize;
   return globalblockid;
 }

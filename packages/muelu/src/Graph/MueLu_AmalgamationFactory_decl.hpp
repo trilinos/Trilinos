@@ -1,5 +1,5 @@
-#ifndef MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_DECL_HPP
-#define MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_DECL_HPP
+#ifndef MUELU_AMALGAMATIONFACTORY_DECL_HPP
+#define MUELU_AMALGAMATIONFACTORY_DECL_HPP
 
 #include <Xpetra_Operator_fwd.hpp>
 
@@ -14,8 +14,8 @@
 namespace MueLu {
   
   /*!
-    @class SubBlockUnAmalgamationFactory
-    @brief UnAmalgamationFactory for subblocks of strided map based amalgamation data
+    @class AmalgamationFactory
+    @brief AmalgamationFactory for subblocks of strided map based amalgamation data
     
     Class generates unamalgamation information using matrix A with strided maps.
     It stores the output information within an AmalgamationInfo object as "UnAmalgamationInfo".
@@ -27,8 +27,8 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> 
-  class SubBlockUnAmalgamationFactory : public SingleLevelFactoryBase {
-#undef MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_SHORT
+  class AmalgamationFactory : public SingleLevelFactoryBase {
+#undef MUELU_AMALGAMATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -37,10 +37,10 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    SubBlockUnAmalgamationFactory(RCP<const FactoryBase> AFact = Teuchos::null);
+    AmalgamationFactory(RCP<const FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
-    virtual ~SubBlockUnAmalgamationFactory() { }
+    virtual ~AmalgamationFactory() { }
 
     //@}
 
@@ -73,5 +73,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_SHORT
-#endif // MUELU_SUBBLOCKUNAMALGAMATIONFACTORY_DECL_HPP
+#define MUELU_AMALGAMATIONFACTORY_SHORT
+#endif // MUELU_AMALGAMATIONFACTORY_DECL_HPP
