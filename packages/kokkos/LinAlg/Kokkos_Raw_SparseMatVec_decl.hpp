@@ -194,6 +194,7 @@ void
 matVecCscColMajorForfor1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -243,6 +244,7 @@ void
 matVecCscColMajorForfor2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -292,6 +294,7 @@ void
 matVecCscColMajorForfor3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -341,6 +344,7 @@ void
 matVecCscColMajorForfor4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -494,6 +498,7 @@ void
 matVecCscColMajorForwhile1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -543,6 +548,7 @@ void
 matVecCscColMajorForwhile2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -592,6 +598,7 @@ void
 matVecCscColMajorForwhile3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -641,6 +648,7 @@ void
 matVecCscColMajorForwhile4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -794,6 +802,7 @@ void
 matVecCscColMajorForif1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -843,6 +852,7 @@ void
 matVecCscColMajorForif2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -892,6 +902,7 @@ void
 matVecCscColMajorForif3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -941,6 +952,7 @@ void
 matVecCscColMajorForif4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1094,6 +1106,7 @@ void
 matVecCsrColMajorForfor1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1143,6 +1156,7 @@ void
 matVecCsrColMajorForfor2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1192,6 +1206,7 @@ void
 matVecCsrColMajorForfor3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1241,6 +1256,7 @@ void
 matVecCsrColMajorForfor4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1394,6 +1410,7 @@ void
 matVecCsrColMajorForwhile1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1443,6 +1460,7 @@ void
 matVecCsrColMajorForwhile2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1492,6 +1510,7 @@ void
 matVecCsrColMajorForwhile3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1541,6 +1560,7 @@ void
 matVecCsrColMajorForwhile4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1694,6 +1714,7 @@ void
 matVecCsrColMajorForif1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1743,6 +1764,7 @@ void
 matVecCsrColMajorForif2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1792,6 +1814,7 @@ void
 matVecCsrColMajorForif3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1841,6 +1864,7 @@ void
 matVecCsrColMajorForif4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -1994,6 +2018,7 @@ void
 matVecCscRowMajorForfor1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2043,6 +2068,7 @@ void
 matVecCscRowMajorForfor2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2092,6 +2118,7 @@ void
 matVecCscRowMajorForfor3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2141,6 +2168,7 @@ void
 matVecCscRowMajorForfor4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2294,6 +2322,7 @@ void
 matVecCscRowMajorForwhile1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2343,6 +2372,7 @@ void
 matVecCscRowMajorForwhile2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2392,6 +2422,7 @@ void
 matVecCscRowMajorForwhile3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2441,6 +2472,7 @@ void
 matVecCscRowMajorForwhile4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2594,6 +2626,7 @@ void
 matVecCscRowMajorForif1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2643,6 +2676,7 @@ void
 matVecCscRowMajorForif2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2692,6 +2726,7 @@ void
 matVecCscRowMajorForif3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2741,6 +2776,7 @@ void
 matVecCscRowMajorForif4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2894,6 +2930,7 @@ void
 matVecCsrRowMajorForfor1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2943,6 +2980,7 @@ void
 matVecCsrRowMajorForfor2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -2992,6 +3030,7 @@ void
 matVecCsrRowMajorForfor3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3041,6 +3080,7 @@ void
 matVecCsrRowMajorForfor4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3194,6 +3234,7 @@ void
 matVecCsrRowMajorForwhile1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3243,6 +3284,7 @@ void
 matVecCsrRowMajorForwhile2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3292,6 +3334,7 @@ void
 matVecCsrRowMajorForwhile3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3341,6 +3384,7 @@ void
 matVecCsrRowMajorForwhile4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3494,6 +3538,7 @@ void
 matVecCsrRowMajorForif1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3543,6 +3588,7 @@ void
 matVecCsrRowMajorForif2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3592,6 +3638,7 @@ void
 matVecCsrRowMajorForif3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3641,6 +3688,7 @@ void
 matVecCsrRowMajorForif4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -3797,6 +3845,7 @@ void
 matVecCscColMajorForforConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -3847,6 +3896,7 @@ void
 matVecCscColMajorForforConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -3897,6 +3947,7 @@ void
 matVecCscColMajorForforConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -3947,6 +3998,7 @@ void
 matVecCscColMajorForforConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4103,6 +4155,7 @@ void
 matVecCscColMajorForwhileConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4153,6 +4206,7 @@ void
 matVecCscColMajorForwhileConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4203,6 +4257,7 @@ void
 matVecCscColMajorForwhileConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4253,6 +4308,7 @@ void
 matVecCscColMajorForwhileConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4409,6 +4465,7 @@ void
 matVecCscColMajorForifConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4459,6 +4516,7 @@ void
 matVecCscColMajorForifConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4509,6 +4567,7 @@ void
 matVecCscColMajorForifConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4559,6 +4618,7 @@ void
 matVecCscColMajorForifConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4715,6 +4775,7 @@ void
 matVecCsrColMajorForforConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4765,6 +4826,7 @@ void
 matVecCsrColMajorForforConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4815,6 +4877,7 @@ void
 matVecCsrColMajorForforConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -4865,6 +4928,7 @@ void
 matVecCsrColMajorForforConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5021,6 +5085,7 @@ void
 matVecCsrColMajorForwhileConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5071,6 +5136,7 @@ void
 matVecCsrColMajorForwhileConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5121,6 +5187,7 @@ void
 matVecCsrColMajorForwhileConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5171,6 +5238,7 @@ void
 matVecCsrColMajorForwhileConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5327,6 +5395,7 @@ void
 matVecCsrColMajorForifConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5377,6 +5446,7 @@ void
 matVecCsrColMajorForifConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5427,6 +5497,7 @@ void
 matVecCsrColMajorForifConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5477,6 +5548,7 @@ void
 matVecCsrColMajorForifConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
@@ -5633,6 +5705,7 @@ void
 matVecCscRowMajorForforConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -5683,6 +5756,7 @@ void
 matVecCscRowMajorForforConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -5733,6 +5807,7 @@ void
 matVecCscRowMajorForforConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -5783,6 +5858,7 @@ void
 matVecCscRowMajorForforConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -5939,6 +6015,7 @@ void
 matVecCscRowMajorForwhileConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -5989,6 +6066,7 @@ void
 matVecCscRowMajorForwhileConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6039,6 +6117,7 @@ void
 matVecCscRowMajorForwhileConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6089,6 +6168,7 @@ void
 matVecCscRowMajorForwhileConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6245,6 +6325,7 @@ void
 matVecCscRowMajorForifConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6295,6 +6376,7 @@ void
 matVecCscRowMajorForifConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6345,6 +6427,7 @@ void
 matVecCscRowMajorForifConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6395,6 +6478,7 @@ void
 matVecCscRowMajorForifConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6551,6 +6635,7 @@ void
 matVecCsrRowMajorForforConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6601,6 +6686,7 @@ void
 matVecCsrRowMajorForforConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6651,6 +6737,7 @@ void
 matVecCsrRowMajorForforConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6701,6 +6788,7 @@ void
 matVecCsrRowMajorForforConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6857,6 +6945,7 @@ void
 matVecCsrRowMajorForwhileConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6907,6 +6996,7 @@ void
 matVecCsrRowMajorForwhileConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -6957,6 +7047,7 @@ void
 matVecCsrRowMajorForwhileConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -7007,6 +7098,7 @@ void
 matVecCsrRowMajorForwhileConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -7163,6 +7255,7 @@ void
 matVecCsrRowMajorForifConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -7213,6 +7306,7 @@ void
 matVecCsrRowMajorForifConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -7263,6 +7357,7 @@ void
 matVecCsrRowMajorForifConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
@@ -7313,6 +7408,7 @@ void
 matVecCsrRowMajorForifConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,

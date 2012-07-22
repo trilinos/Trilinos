@@ -446,9 +446,16 @@ def emitFuncDef (defDict, indent=0):
 
 def emitFuncSig (defDict, indent=0):
     '''Emit the function's signature (without terminal end-of-line).'''
+
+    # Note that numVecs is always an argument of the generated
+    # function signature, even if the number of columns in the input
+    # and output multivectors is fixed.  This lets us refer to all of
+    # the sparse mat-vec variants with a function pointer of a single
+    # type.
     sig = ''
     ind = ' '*indent
-    sig = sig + ind + 'template<class Ordinal,\n' + \
+    sig = sig + \
+        ind + 'template<class Ordinal,\n' + \
         ind + '         class MatrixScalar,\n' + \
         ind + '         class DomainScalar,\n' + \
         ind + '         class RangeScalar>\n' + \
@@ -456,7 +463,9 @@ def emitFuncSig (defDict, indent=0):
         ind + emitFuncName(defDict) + ' (\n' + \
         ind + '  const Ordinal numRows,\n' + \
         ind + '  const Ordinal numCols,\n'
-    if not defDict['hardCodeNumVecs']:
+    if defDict['hardCodeNumVecs']:
+        sig = sig + ind + '  const Ordinal,\n' # numVecs is hard-coded
+    else:
         sig = sig + ind + '  const Ordinal numVecs,\n'
     sig = sig + \
         ind + '  const RangeScalar& beta,\n' + \
@@ -484,8 +493,15 @@ def emitFuncBody (defDict, indent=0):
     body = body + \
         ind + '{\n' + \
         ind + '  ' + 'typedef Teuchos::ScalarTraits<RangeScalar> STS;\n\n'
-    if defDict['hardCodeNumVecs']:
-        body = body + ind + '  ' + 'const Ordinal numVecs = ' + str (defDict['numVecs']) +';\n'
+
+    # We only use the internal declaration of numVecs in certain situations.
+    # Don't emit it otherwise in order to avoid unused variable warnings.
+    mustEmitInternalNumVecsDecl = defDict['hardCodeNumVecs'] and \
+        (defDict['sparseFormat'] == 'CSC' or defDict['variant'] != 'for-for')
+    if mustEmitInternalNumVecsDecl:
+        body = body + ind + '  ' + 'const Ordinal numVecs = ' + \
+            str (defDict['numVecs']) +';\n'
+
     if defDict['sparseFormat'] == 'CSC':
         # CSC requires prescaling the output vector(s) Y.
         body = body + emitPreScaleLoop (defDict, indent+2)
@@ -585,7 +601,7 @@ def emitForLoopPreface (defDict, loopIndex, indent=0):
             s = s + \
                 ind + '// No preface needed for \'for-for\' algorithm variant.\n'
         else: # variant != 'for-for':
-            s = s + ind + 'Ordinal ' + loopIndex + ' = 0;\n'
+            #s = s + ind + 'Ordinal ' + loopIndex + ' = 0;\n'
             Y_0c = emitDenseAref (defDict, 'Y', '0', 'c')
             # No real need to unroll this loop, since it's only for
             # the first entry of Y.  We have to treat beta==0
@@ -648,6 +664,7 @@ def emitForLoopOneFor (defDict, alphaIsOne, indent=0):
     ind = ' '*indent
     s = ''
     s = s + \
+        ind + 'Ordinal ${loopIndex} = 0;\n' + \
         ind + 'for (Ordinal k = 0; k < nnz; ++k) {\n' + \
         ind + ' '*2 + 'const MatrixScalar A_ij = ${getMatVal};\n' + \
         ind + ' '*2 + 'const Ordinal ${otherIndex} = ind[k];\n'
