@@ -45,11 +45,11 @@ namespace MueLu {
     
     /*! @brief Constructor.
       \param aggregatesFact -- (optional) factory that creates aggregates.
-      \param graphFact -- (optional) factory creates graph of A
+      \param amalgFact -- (optional) factory creates (Un)Amalgamation information from matrix A
       \param nullspaceFact -- (optional) factory that creates (fine level) null space approximation
       \param AFact -- (optional) factory that creates level matrix A
     */
-    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> graphFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
+    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> amalgFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
     
     //! Destructor.
     virtual ~TentativePFactory();
@@ -197,7 +197,7 @@ namespace MueLu {
 
   private:
     RCP<const FactoryBase> aggregatesFact_; //! Factory that creates aggregates
-    RCP<const FactoryBase> graphFact_;      //! Factory that creates graph of A
+    RCP<const FactoryBase> amalgFact_;      //! Factory that (Un)Amalgamation info from A
     RCP<const FactoryBase> nullspaceFact_;  //! Factory creating the nullspace
     RCP<const FactoryBase> AFact_;          //! Define which matrix A is used in this factory
 

@@ -24,8 +24,8 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> graphFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact)
-    : aggregatesFact_(aggregatesFact), graphFact_(graphFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
+  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> amalgFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact)
+    : aggregatesFact_(aggregatesFact), amalgFact_(amalgFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
       QR_(false),
       domainGidOffset_(0) {
 
@@ -41,7 +41,7 @@ namespace MueLu {
     fineLevel.DeclareInput("A", AFact_.get(), this);
     fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
     fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
-    fineLevel.DeclareInput("UnAmalgamationInfo", graphFact_.get(), this);
+    fineLevel.DeclareInput("UnAmalgamationInfo", amalgFact_.get(), this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -63,7 +63,7 @@ namespace MueLu {
     RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
 
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
-    RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", graphFact_.get());
+    RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", amalgFact_.get());
     RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
     // Build
