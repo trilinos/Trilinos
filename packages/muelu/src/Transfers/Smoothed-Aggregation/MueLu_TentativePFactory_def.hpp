@@ -17,6 +17,7 @@
 #include "MueLu_TentativePFactory_decl.hpp"
 #include "MueLu_QR_Interface.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_NullspaceFactory.hpp" //FIXME
 #include "MueLu_Monitor.hpp"
@@ -99,7 +100,7 @@ namespace MueLu {
 
     // Compute array of aggregate sizes (in dofs).
     ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);
-    ComputeAggregateSizes(aggregates, amalgInfo, aggSizes);
+    AmalgamationFactory::ComputeUnamalgamatedAggregateSizes(aggregates, amalgInfo, aggSizes);
 
     // find size of the largest aggregate.
     LO maxAggSize=0;
@@ -113,7 +114,7 @@ namespace MueLu {
     // returns the local DOFs, that are transformed to global Dofs using the col map later. Wouldn't it be
     // smarter to compute the global dofs in ComputeAggregateToRowMap?
     ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-    ComputeAggregateToRowMap(aggregates, amalgInfo, aggSizes, aggToRowMap);
+    AmalgamationFactory::UnamalgamateAggregates(aggregates, amalgInfo, aggSizes, aggToRowMap);
 
     // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
@@ -155,7 +156,7 @@ namespace MueLu {
 						  domainGidOffset_
 						  );
 
-    const RCP<const Map> nonUniqueMap = ComputeImportDofMap(aggregates, amalgInfo, aggSizes);
+    const RCP<const Map> nonUniqueMap = AmalgamationFactory::ComputeUnamalgamatedImportDofMap(aggregates, amalgInfo, aggSizes);
     const RCP<const Map> uniqueMap    = fineA.getDomainMap();
     RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
     RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);
@@ -410,83 +411,6 @@ namespace MueLu {
     } else Ptentative->CreateView("stridedMaps", Ptentative->getRangeMap(), coarseMap);
 
   } //MakeTentative()
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateSizes(const Aggregates & aggregates, const AmalgamationInfo & amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const {
-    // we expect the aggSizes array to be initialized as follows
-    // aggSizes = Teuchos::ArrayRCP<LO>(nAggregates_,0);
-    // furthermore we suppose the (un)amalgamation info to be set (even for 1 dof per node examples)
-
-    int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    LO size = procWinner.size();
-
-    //for (LO i = 0; i< aggregates.GetNumAggregates(); ++i) aggSizes[i] = 0;
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-      if (procWinner[lnode] == myPid) {
-        GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
-
-        std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-        aggSizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
-      }
-    }
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateToRowMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap) const {
-    int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    LO size = procWinner.size();
-
-    // initialize array aggToRowMap with empty arrays for each aggregate (with correct aggSize)
-    LO t = 0;
-    for (typename ArrayRCP<ArrayRCP<GO> >::iterator a2r = aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r) {
-      *a2r = ArrayRCP<GO>(aggSizes[t++]);
-    }
-
-    // count, how many dofs have been recorded for each aggregate
-    ArrayRCP<LO> numDofs(aggregates.GetNumAggregates(),0); // empty array with number of Dofs for each aggregate
-
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-      if (procWinner[lnode] == myPid) {
-        GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
-        std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-        LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
-        for (LO gDofId=0; gDofId < gDofIds_size; gDofId++) {
-          aggToRowMap[ myAgg ][ numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
-          ++(numDofs[myAgg]);
-        }
-      }
-    }
-    // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
-
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const {
-    Teuchos::RCP<const Map> nodeMap = aggregates.GetMap(); //aggregates.GetVertex2AggId();
-
-    Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
-    LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
-    for(LO n = 0; n<nodeElements; n++) {
-      GO gnodeid = (GO) nodeMap->getGlobalElement(n);
-      std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-      for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
-        myDofGids->push_back(*gDofIdsIt);
-      }
-    }
-
-    Teuchos::ArrayRCP<GO> arr_myDofGids = Teuchos::arcp( myDofGids );
-    Teuchos::RCP<Map> importDofMap = MapFactory::Build(aggregates.GetMap()->lib(),
-        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGids(),
-        aggregates.GetMap()->getIndexBase(), aggregates.GetMap()->getComm());
-    return importDofMap;
-  }
-
 
 } //namespace MueLu
 

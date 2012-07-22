@@ -19,6 +19,7 @@
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 
 namespace MueLu {
@@ -134,20 +135,6 @@ namespace MueLu {
       stridedBlockId_ = stridedBlockId;
     }
 
-    /*! @brief ComputeAggregateSizes
-     * computes the size of the aggregates (in DOFs)
-     */
-    void ComputeAggregateSizes(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const;
-
-    /*! @brief ComputeAggregateToRowMap
-     * puts all dofs for aggregate \c i in aggToRowMap[\c i]
-     */
-    void ComputeAggregateToRowMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap) const;
-
-    /*! @brief ComputeImportDofMap
-     * build overlapping dof row map from aggregates needed for overlapping null space
-     */
-    RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) const;
     //@}
   private:
     //! @name Static methods.

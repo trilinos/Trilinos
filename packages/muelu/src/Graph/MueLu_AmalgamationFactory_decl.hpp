@@ -2,6 +2,7 @@
 #define MUELU_AMALGAMATIONFACTORY_DECL_HPP
 
 #include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -59,6 +60,22 @@ namespace MueLu {
     // @param blockSize (LocalOrdinal): block size (needed for constant block size)
     // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
     static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, const RCP<Operator>& A, LocalOrdinal blockSize, const GlobalOrdinal offset = 0); 
+
+    /*! @brief ComputeUnamalgamatedAggregateSizes
+     * computes the size of the aggregates (in DOFs)
+     */
+    static void ComputeUnamalgamatedAggregateSizes(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes);
+
+    /*! @brief UnamalgamateAggregates
+     * puts all dofs for aggregate \c i in aggToRowMap[\c i]
+     */
+    static void UnamalgamateAggregates(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap);
+
+    /*! @brief ComputeUnamalgamatedImportDofMap
+     * build overlapping dof row map from aggregates needed for overlapping null space
+     */
+    static Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes);
+
 
   private:
   
