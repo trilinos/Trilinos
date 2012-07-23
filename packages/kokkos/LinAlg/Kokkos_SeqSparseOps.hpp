@@ -44,6 +44,7 @@
 
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_DataAccess.hpp>
+#include <Teuchos_Describable.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <iterator>
 #include <stdexcept>
@@ -328,10 +329,10 @@ namespace Kokkos {
   /// \tparam Ordinal The type of (local) indices of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
   template <class Scalar, class Ordinal, class Node>
-  class SeqSparseOps {
+  class SeqSparseOps : public Teuchos::Describable {
   public:
+    //! \name Typedefs and structs
     //@{
-    //! @name Typedefs and structs
 
     //! The type of the individual entries of the sparse matrix.
     typedef Scalar  scalar_type;
@@ -373,7 +374,7 @@ namespace Kokkos {
     };
 
     //@}
-    //! @name Constructors/Destructor
+    //! \name Constructors and destructor
     //@{
 
     /// \brief Constructor, with default parameters.
@@ -429,7 +430,72 @@ namespace Kokkos {
     }
 
     //@}
-    //! @name Accessor routines.
+    //! \name Implementation of Teuchos::Describable
+    //@{
+
+    //! One-line description of this instance.
+    std::string description () const {
+      using Teuchos::TypeNameTraits;
+      std::ostringstream os;
+      os <<  "Kokkos::SeqSparseOps<"
+         << "Scalar=" << TypeNameTraits<Scalar>::name()
+         << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
+         << ", Node=" << TypeNameTraits<Node>::name()
+         << ">";
+      return os.str();
+    }
+
+    //! Write a possibly more verbose description of this instance to out.
+    void
+    describe (Teuchos::FancyOStream& out,
+              const EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+    {
+      using Teuchos::includesVerbLevel;
+      using Teuchos::OSTab;
+      using Teuchos::rcpFromRef;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+      using std::endl;
+
+      // Interpret the default verbosity level as VERB_LOW.
+      const EVerbosityLevel vl =
+        (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+      if (vl == VERB_NONE) {
+        return;
+      }
+      else if (includesVerbLevel (VERB_LOW, vl)) { // VERB_LOW >= vl
+        out << this->description();
+
+        if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
+          out << ":" << endl;
+          OSTab tab1 (rcpFromRef (out));
+
+          out << "matVecVariant_ = " << matVecVariant_ << endl
+              << "unroll_ = " << unroll_ << endl
+              << "isInitialized_ = " << isInitialized_ << endl;
+          if (isInitialized_) {
+            out << "numRows_ = " << numRows_ << endl
+                << "isEmpty_ = " << isEmpty_ << endl
+                << "hasEmptyRows_ = " << hasEmptyRows_ << endl;
+            if (ptr_.size() > 0) {
+              out << "numEntries = " << ptr_[ptr_.size()-1] << endl;
+            }
+            else {
+              out << "numEntries = 0" << endl;
+            }
+          }
+        }
+      }
+
+    }
+
+    //@}
+    //! \name Accessor routines
     //@{
 
     //! The Kokkos Node with which this object was instantiated.
@@ -791,8 +857,8 @@ namespace Kokkos {
 
     Array<EMatVecVariant> vals (3);
     vals[0] = FOR_FOR;
-    vals[0] = FOR_WHILE;
-    vals[0] = FOR_IF;
+    vals[1] = FOR_WHILE;
+    vals[2] = FOR_IF;
 
     const std::string paramName ("Sparse matrix-vector multiply variant");
     const std::string paramDoc ("Which algorithm variant to use for sparse matrix-vector multiply");
