@@ -52,13 +52,6 @@
 #include <impl/KokkosArray_View_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
-#undef KOKKOS_MACRO_DEVICE
-#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
-#include <impl/KokkosArray_View_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
-
-
 namespace KokkosArray {
 namespace Impl {
 
@@ -66,7 +59,8 @@ namespace Impl {
 /** \brief  Primary creation / allocation factory based upon shape */
 
 template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Cuda > , void >
+struct Factory< View< DataType , LayoutType , Cuda > , 
+                typename View< DataType , LayoutType , Cuda >::shape_type >
 {
   typedef View< DataType , LayoutType , Cuda >  output_type ;
   typedef typename output_type::shape_type      shape_type ;
@@ -102,6 +96,14 @@ struct Factory< View< DataType , LayoutType , Cuda > , DataType >
   static inline
   void deep_copy( const output_type & output , const input_type & input )
   {
+    typedef typename output_type::shape_type shape_type ;
+
+    typedef typename
+      assert_shape_is_rank_zero< shape_type >::type ok_rank ;
+
+    typedef typename
+      StaticAssertAssignable< value_type , DataType >::type ok_assign ;
+
     typedef Cuda::memory_space  memory_space ;
 
     memory_space::copy_to_device_from_device( output.ptr_on_device() ,
@@ -120,6 +122,14 @@ struct Factory< DataType , View< DataType , LayoutType , Cuda > >
   static inline
   void deep_copy( output_type & output , const input_type & input )
   {
+    typedef typename output_type::shape_type shape_type ;
+
+    typedef typename
+      assert_shape_is_rank_zero< shape_type >::type ok ;
+
+    typedef typename
+      StaticAssertAssignable< DataType , value_type >::type ok_assign ;
+
     typedef Cuda::memory_space  memory_space ;
 
     memory_space::copy_to_device_from_device( & output ,

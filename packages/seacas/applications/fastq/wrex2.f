@@ -254,8 +254,9 @@ C ... Title is char*72, dbpini and exodusII expect char*80
          lssdf = 0
          lssnl = 0
       end if
-      CALL DBPINI ('NTIS', HOLD, ijk, nnn, kkk, nummat, nbcnod, nnlist,
-     &     nnlist, nbcsid, lssel, lssnl, lssdf, 0, 0, 0, filename)
+      CALL FQDBPINI ('NTIS', HOLD, ijk, nnn, kkk, nummat, nbcnod,
+     *  nnlist, nnlist, nbcsid, lssel, lssnl, lssdf, 0, 0, 0,
+     *  filename)
       ERR = .FALSE.
       RETURN
 

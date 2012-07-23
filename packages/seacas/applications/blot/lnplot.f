@@ -80,17 +80,17 @@ C   --   Uses ROTMAT, ROTCEN of /ROTOPT/
          CALL GRCOLR (NP)
          CALL GRSYMB (LINTYP, ISYTYP, NP)
 
-         CALL DBVTYP (ILVID(1,NP), TYP, IDUM)
+         CALL DBVTYP_BL (ILVID(1,NP), TYP, IDUM)
          IF (TYP .EQ. 'H') THEN
             NPTS = NPTIMS
          ELSE
             NPTS = NPTIMW
          END IF
 
-C      --Rotate the 3D pathline
+C      --Bl_Rotate the 3D pathline
 
          IF (IS3DIM) THEN
-            CALL ROTATE (NPTS, IXNODE, ROTMAT, ROTCEN,
+            CALL BL_ROTATE (NPTS, IXNODE, ROTMAT, ROTCEN,
      &         XLN, YLN, ZLN, XLN, YLN, ZLN)
          END IF
 

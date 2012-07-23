@@ -34,10 +34,14 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
+#include <stk_mesh/base/FieldParallel.hpp>
+
 // FIXME
 
 #include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
 #include <stk_percept/Intrepid_HGRAD_QUAD_C2_Serendipity_FEM.hpp>
+#include <stk_percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
+
 #include <stk_percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
 
 namespace stk {
@@ -95,6 +99,7 @@ namespace stk {
       m_comm(comm),
       m_streaming_size(0),
       m_searcher(0)
+      ,m_num_coordinate_field_states(1)
     {
       init( m_comm);
     }
@@ -855,6 +860,7 @@ namespace stk {
         m_comm(),
         m_streaming_size(0),
         m_searcher(0)
+      ,m_num_coordinate_field_states(1)
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1645,7 +1651,7 @@ namespace stk {
       stk::io::populate_bulk_data(bulk_data, mesh_data);
 
       int timestep_count = in_region.get_property("state_count").get_int();
-      std::cout << "tmp timestep_count= " << timestep_count << std::endl;
+      //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
       // FIXME
@@ -1757,6 +1763,28 @@ namespace stk {
 
       // Exodus steps are 1-based;
       read_database_at_step(step);
+    }
+
+    /// transform mesh by a given 3x3 matrix
+    void PerceptMesh::transform_mesh(MDArray& matrix)
+    {
+      if (matrix.rank() != 2) throw std::runtime_error("pass in a 3x3 matrix");
+      if (matrix.dimension(0) != 3 || matrix.dimension(1) != 3) throw std::runtime_error("pass in a 3x3 matrix");
+      Math::Matrix mat;
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+          {
+            mat(i,j) = matrix(i,j);
+          }
+      transform_mesh(mat);
+    }
+
+      //========================================================================================================================
+    /// transform mesh by a given 3x3 matrix
+    void PerceptMesh::transform_mesh(Math::Matrix& matrix)
+    {
+      MeshTransformer xform(matrix);
+      nodalOpLoop(xform, get_coordinates_field());
     }
 
     /// Convenience method to read a model's meta data, create some new fields, commit meta data then read the bulk data
@@ -2213,25 +2241,36 @@ namespace stk {
     void PerceptMesh::bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Part *part)
     {
       EXCEPTWATCH;
+      
+      if (part)
+        {
+          stk::mesh::Selector selector(*part);
+          bucketOpLoop(bucketOp, field, &selector);
+        }
+      else
+        {
+          bucketOpLoop(bucketOp, field, (stk::mesh::Selector *)0);
+        }
+    }
+
+    void PerceptMesh::bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Selector *selector, bool is_surface_norm)
+    {
+      EXCEPTWATCH;
       //checkState("bucketOpLoop");
 
       //mesh::fem::FEMMetaData& metaData = *m_metaData;
       stk::mesh::BulkData& bulkData = *m_bulkData;
 
-      stk::mesh::Selector selector;
-      if (part)
-        {
-          selector = stk::mesh::Selector(*part);
-        }
-
       // FIXME consider caching the coords_field in FieldFunction
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
-      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::get(bulkData).element_rank() );
+      stk::mesh::EntityRank rank= element_rank();
+      if (is_surface_norm) rank = rank - 1;
+      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( rank );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (!part || selector(**k))  // this is where we do part selection
+          if (!selector || (*selector)(**k))  // this is where we do part selection
             {
               const stk::mesh::Bucket & bucket = **k ;
               bool breakLoop = bucketOp(bucket, field, bulkData);
@@ -2248,33 +2287,40 @@ namespace stk {
     void PerceptMesh::elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field, stk::mesh::Part *part)
     {
       EXCEPTWATCH;
+      
+      if (part)
+        {
+          stk::mesh::Selector selector(*part);
+          elementOpLoop(elementOp, field, &selector);
+        }
+      else
+        {
+          elementOpLoop(elementOp, field, (stk::mesh::Selector *)0);
+        }
+    }
+
+    /** \brief Loop over all elements and apply \param elementOp passing in the argument \param field to \param elementOp */
+    void PerceptMesh::elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field, stk::mesh::Selector *selector, bool is_surface_norm)
+    {
+      EXCEPTWATCH;
       //checkState("elementOpLoop");
       elementOp.init_elementOp();
 
       //mesh::fem::FEMMetaData& metaData = *m_metaData;
       stk::mesh::BulkData& bulkData = *m_bulkData;
 
-      stk::mesh::Selector selector;
-      if (part)
-        {
-          selector = stk::mesh::Selector(*part);
-        }
-
       // FIXME consider caching the coords_field in FieldFunction
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
-      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( element_rank() );
+      stk::mesh::EntityRank rank = element_rank();
+      if (is_surface_norm) rank = rank - 1;
+
+      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( rank );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (!part || selector(**k))  // this is where we do part selection
+          if (!selector || (*selector)(**k))  // this is where we do part selection
             {
               stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket   = bucket.size();
-
-              //!double * coord = stk::mesh::field_data( *coords_field , bucket.begin() );
-              //double * output_nodal_field = stk::mesh::field_data( *m_my_field , bucket.begin() );
-              //!            unsigned stride = 0;
-              //!            double * output_nodal_field = PerceptMesh::field_data( field , bucket,  &stride);
-
 
               // FIXME for multiple points
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
@@ -2296,7 +2342,7 @@ namespace stk {
       elementOp.fini_elementOp();
     }
 
-    void PerceptMesh::nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field)
+    void PerceptMesh::nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector)
     {
       EXCEPTWATCH;
       //checkState("nodalOpLoop");
@@ -2313,7 +2359,7 @@ namespace stk {
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          //if (select_owned(**k))  // this is where we do part selection
+          if (!selector || (*selector)(**k))  // this is where we do part selection
           {
             stk::mesh::Bucket & bucket = **k ;
             const unsigned num_nodes_in_bucket   = bucket.size();
@@ -3539,6 +3585,197 @@ namespace stk {
         }
     }
 
+    void PerceptMesh::add_coordinate_state_fields() 
+    {
+      m_num_coordinate_field_states = 3;
+      int scalarDimension = get_spatial_dim(); // a scalar
+      add_field("coordinates_N", node_rank(), scalarDimension);
+      add_field("coordinates_NM1", node_rank(), scalarDimension);
+      add_field("coordinates_lagged", node_rank(), scalarDimension);
+    }
+
+    void PerceptMesh::set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field)
+    {
+      std::cout << "P["<< get_rank() << "] " <<  " proc_rank_field= " << proc_rank_field << std::endl;
+
+      if (!proc_rank_field) proc_rank_field=get_field("proc_rank");
+      if (!proc_rank_field) return;
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( element_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          {
+            stk::mesh::Bucket & bucket = **k ;
+            const unsigned num_elements_in_bucket = bucket.size();
+            for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+              {
+                stk::mesh::Entity& element = bucket[iElement];
+                double *fdata = field_data(proc_rank_field, element);
+                fdata[0] = double(element.owner_rank());
+              }
+          }
+        }
+    }
+
+    /// copy field state data from one state (src_state) to another (dest_state)
+    void PerceptMesh::copy_field_state(stk::mesh::FieldBase* field, unsigned dest_state, unsigned src_state)
+    {
+      stk::mesh::FieldBase* field_dest = field->field_state((stk::mesh::FieldState)dest_state);
+      VERIFY_OP_ON(field_dest, !=, 0, "copy_field_state dest null");
+      stk::mesh::FieldBase* field_src = field->field_state((stk::mesh::FieldState)src_state);
+      VERIFY_OP_ON(field_src, !=, 0, "copy_field_state src null");
+      copy_field(field_dest, field_src);
+    }
+
+    /// copy field state data from one state (src_state) to another (dest_state)
+    void PerceptMesh::copy_field(stk::mesh::FieldBase* field_dest, stk::mesh::FieldBase* field_src)
+    {
+      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          //if (on_locally_owned_part(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              unsigned fd_size = bucket.field_data_size(*field_dest);
+              unsigned stride = fd_size/sizeof(double);
+              // FIXME
+              //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
+              const unsigned num_nodes_in_bucket = bucket.size();
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  unsigned stride0=0;
+                  double *fdata_dest = PerceptMesh::field_data( field_dest , node, &stride0 );
+                  VERIFY_OP_ON(stride, ==, stride0,"strides...");
+                  double *fdata_src = PerceptMesh::field_data( field_src , node );
+                  if (fdata_dest && fdata_src)
+                    {
+                      for (unsigned istride = 0; istride < stride; istride++)
+                        {
+                          fdata_dest[istride] = fdata_src[istride];
+                        }
+                    }
+                }
+            }
+        }
+      std::vector< const stk::mesh::FieldBase *> fields;
+      fields.push_back(field_dest);
+
+      stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+
+    }
+
+    /// axpby calculates: y = alpha*x + beta*y
+    void PerceptMesh::nodal_field_state_axpby(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state)
+    {
+      stk::mesh::FieldBase* field_x = field->field_state((stk::mesh::FieldState)x_state);
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpby x null");
+      stk::mesh::FieldBase* field_y = field->field_state((stk::mesh::FieldState)y_state);
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpby y null");
+      nodal_field_axpby(alpha, field_x, beta, field_y);
+    }
+
+    /// axpby calculates: y = alpha*x + beta*y
+    void PerceptMesh::nodal_field_axpby(double alpha, stk::mesh::FieldBase* field_x, double beta, stk::mesh::FieldBase* field_y)
+    {
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpby x null");
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpby y null");
+      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              unsigned fd_size = bucket.field_data_size(*field_y);
+              unsigned stride = fd_size/sizeof(double);
+              // FIXME
+              //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
+              const unsigned num_nodes_in_bucket = bucket.size();
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  unsigned stride0=0;
+                  double *fdata_y = PerceptMesh::field_data( field_y , node, &stride0 );
+                  VERIFY_OP_ON(stride, ==, stride0,"strides...");
+                  double *fdata_x = PerceptMesh::field_data( field_x , node );
+                  if (fdata_y && fdata_x)
+                    {
+                      for (unsigned istride = 0; istride < stride; istride++)
+                        {
+                          fdata_y[istride] = alpha*fdata_x[istride] + beta*fdata_y[istride];
+                        }
+                    }
+                }
+            }
+        }
+      std::vector< const stk::mesh::FieldBase *> fields;
+      //fields.push_back(field_x);
+      fields.push_back(field_y);
+
+      stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+    }
+
+    /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
+    void PerceptMesh::nodal_field_state_axpbypgz(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state, double gamma, unsigned z_state)
+    {
+      stk::mesh::FieldBase* field_x = field->field_state((stk::mesh::FieldState)x_state);
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpbypgz x null");
+      stk::mesh::FieldBase* field_y = field->field_state((stk::mesh::FieldState)y_state);
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpbypgz y null");
+      stk::mesh::FieldBase* field_z = field->field_state((stk::mesh::FieldState)z_state);
+      VERIFY_OP_ON(field_z, !=, 0, "nodal_field_axpbypgz z null");
+      nodal_field_axpbypgz(alpha, field_x, beta, field_y, gamma, field_z);
+    }
+
+    /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
+    void PerceptMesh::nodal_field_axpbypgz(double alpha, stk::mesh::FieldBase* field_x, 
+                                           double beta, stk::mesh::FieldBase* field_y,
+                                           double gamma, stk::mesh::FieldBase* field_z)
+    {
+      EXCEPTWATCH;
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpbypgz x null");
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpbypgz y null");
+      VERIFY_OP_ON(field_z, !=, 0, "nodal_field_axpbypgz z null");
+      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              unsigned fd_size = bucket.field_data_size(*field_y);
+              unsigned stride = fd_size/sizeof(double);
+              // FIXME
+              //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
+              const unsigned num_nodes_in_bucket = bucket.size();
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  unsigned stride0=0;
+                  double *fdata_y = PerceptMesh::field_data( field_y , node, &stride0 );
+                  double *fdata_z = PerceptMesh::field_data( field_z , node, &stride0 );
+                  VERIFY_OP_ON(stride, ==, stride0,"strides...");
+                  double *fdata_x = PerceptMesh::field_data( field_x , node );
+                  if (fdata_y && fdata_x && fdata_z)
+                    {
+                      for (unsigned istride = 0; istride < stride; istride++)
+                        {
+                          fdata_z[istride] = alpha*fdata_x[istride] + beta*fdata_y[istride] + gamma*fdata_z[istride];
+                        }
+                    }
+                }
+            }
+        }
+      std::vector< const stk::mesh::FieldBase *> fields;
+      //fields.push_back(field_x);
+      //fields.push_back(field_y);
+      fields.push_back(field_z);
+
+      stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+    }
+
+    //====================================================================================================================================
     /**
      * A family tree relation holds the parent/child relations for a refined mesh.  
      * 

@@ -58,7 +58,7 @@ mp3pg.f  mp3pt.f  mp3vc.f  mpclp2.f mpclp3.f mpd2pg.f \
 mpd2pt.f mpd2sy.f mpd2vc.f mpd3pg.f mpd3pt.f mpd3vc.f \
 mpgetm.f mpinit.f mplook.f mpmul2.f mpmul3.f mpmul4.f \
 mport2.f mport3.f mppers.f mppola.f mppopm.f mppshm.f \
-mpputm.f mprese.f mprloc.f mprota.f mpscal.f mptran.f \
+mpputm.f mprese.f mprloc.f mprota.f mpscal.f \
 mpview.f mpwind.f mxcopy.f mxiden.f mxmult.f mxvect.f \
 mxzero.f pltarr.f pltav2.f pltav3.f pltbel.f \
 pltbgn.f pltblk.f pltcg2.f pltcnm.f pltcol.f pltcp2.f \

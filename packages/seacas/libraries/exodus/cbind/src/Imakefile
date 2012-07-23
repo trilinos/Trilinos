@@ -52,7 +52,7 @@ SOREV = 5
 
 DEFINES = $(PICFLAGS) $(NET_DEF)
 
-SRCS = 	ex_close.c \
+SRCS =	ex_close.c \
 	ex_conv.c \
 	ex_copy.c \
 	ex_create.c \
@@ -276,6 +276,7 @@ OBJS   = ${SRCS:.c=.o}
 #include <Library.tmpl> 
 
 LibraryTargetSubdirsCopy(libexodus.a,$(OBJS),../../) 
+
 
 $(OBJS): ../include/exodusII.h ../include/exodusII_int.h
 

@@ -182,7 +182,7 @@
     typedef typename fDSM::template graph<int,Node>::graph_type                  GRPH;
     typedef typename fDSM::template matrix<float,int,Node>::matrix_type           MAT;
     // generate symmetric tridiagonal matrix
-    RCP<GRPH> G = rcp(new GRPH(N,node,null));
+    RCP<GRPH> G = rcp(new GRPH(N,N,node,null));
     RCP<MAT>  A= rcp(new MAT(G,null));
     // allocate buffers for offsets, indices and values
     totalNNZ = 3*N - 2;

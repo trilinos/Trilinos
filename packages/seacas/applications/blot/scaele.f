@@ -111,7 +111,7 @@ C   --Transfer birth/death variable to random file (for efficiency)
          CALL GETVAR (A, NALIVR, -1, -MXSTEP, NUMEL, VAR)
       END IF
 
-      CALL DBVTYP (IVAR, CDUM, IXVAR)
+      CALL DBVTYP_BL (IVAR, CDUM, IXVAR)
 
 C   --Initialize the birth/death settings
 

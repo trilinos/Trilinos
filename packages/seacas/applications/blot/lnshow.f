@@ -95,7 +95,7 @@ C   --   Uses NLNCRV, ILVNE, ILVID of /LNVARS/
             DO 100 IXY = 1, NDIM
                NAM(IXY) = NAMES(ILVID(IXY,NP))
   100       CONTINUE
-            CALL DBVTYP (ILVID(1,NP), TYP, IDUM)
+            CALL DBVTYP_BL (ILVID(1,NP), TYP, IDUM)
             WRITE (STR2, '(I2)', IOSTAT=IDUM) NP
             WRITE (STRING, '(10A)') 'Pathline ', STR2, ' : ',
      &         (' ', NAM(I), I=1,NDIM), '^'

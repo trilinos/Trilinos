@@ -103,7 +103,7 @@ C   --Determine which types of variables are needed
       LDATA = 0
 
       DO 100 NP = 1, NLNCRV
-         CALL DBVTYP (ILVID(1,NP), TYP, IDUM)
+         CALL DBVTYP_BL (ILVID(1,NP), TYP, IDUM)
          IF (TYP .EQ. 'H') THEN
             NEEDHV = .TRUE.
             LDATA = MAX (LDATA, NVARHI)

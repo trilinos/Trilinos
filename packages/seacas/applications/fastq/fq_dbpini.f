@@ -1,6 +1,6 @@
 C$Id: dbpini.f,v 1.1 1999/01/27 15:17:47 gdsjaar Exp $
 C=======================================================================
-      SUBROUTINE DBPINI (OPTION, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
+      SUBROUTINE FQDBPINI (OPTION, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &                   NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL,
      &                   LESSDF, NVARGL, NVARNP, NVAREL, FILNAM)
 C=======================================================================

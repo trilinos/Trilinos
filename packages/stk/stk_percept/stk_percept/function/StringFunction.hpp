@@ -42,6 +42,8 @@ namespace stk
       virtual Teuchos::RCP<Function > 
       derivative(MDArrayString& deriv_spec);
 
+      Teuchos::RCP<Function > gradient(int spatialDim=3);
+
       //========================================================================================================================
       // low-level interface
       StringFunction(const char *function_string, 
@@ -83,6 +85,8 @@ namespace stk
       MDArray m_parametric_coordinates;
       bool m_have_element;
       bool m_have_bucket;
+
+      int m_spatialDim;
 
       void init();
 

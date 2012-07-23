@@ -78,7 +78,7 @@ C   --Reserve memory for data record
 C   --Transfer element variables onto random file (for efficiency)
 
       do 140 n = 1, ntpvar
-        call dbvtyp (itvid(n), typ, inum)
+        call dbvtyp_bl (itvid(n), typ, inum)
          IF (TYP .EQ. 'H') THEN
            call prterr ('PROGRAM',
      *       'History variables should not exist')

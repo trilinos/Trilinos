@@ -2158,6 +2158,39 @@ namespace stk {
         static int num_times_called = 0;
         ++num_times_called;
 
+        stk::mesh::Part* new_nodes_part = m_eMesh.get_non_const_part("refine_new_nodes_part");
+        if (new_nodes_part)
+          {
+            // first remove any existing nodes
+            //unsigned proc_rank = m_eMesh.get_rank();
+            //std::cout << "P[" << proc_rank << "] remove existing nodes... " <<  std::endl;
+            std::vector<stk::mesh::Part*> remove_parts(1, new_nodes_part);
+            std::vector<stk::mesh::Part*> add_parts;
+            std::vector<stk::mesh::Entity *> node_vec;
+
+            stk::mesh::Selector removePartSelector(*new_nodes_part & m_eMesh.get_fem_meta_data()->locally_owned_part() );
+            const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.node_rank() );
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                if (removePartSelector(bucket))
+                  {
+                    const unsigned num_entity_in_bucket = bucket.size();
+                    for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+                      {
+                        stk::mesh::Entity& node = bucket[ientity];
+                        node_vec.push_back(&node);
+                      }
+                  }
+              }
+            for (unsigned ii=0; ii < node_vec.size(); ii++)
+              {
+                m_eMesh.get_bulk_data()->change_entity_parts( *node_vec[ii], add_parts, remove_parts );
+              }
+
+            //std::cout << "P[" << proc_rank << "] remove existing nodes...done " <<  std::endl;
+          }
+
         unsigned num_nodes_needed = local_size();
 
         // FIXME
@@ -2201,15 +2234,19 @@ namespace stk {
               }
           }
         
-        stk::mesh::Part* new_nodes_part = m_eMesh.get_non_const_part("refine_new_nodes_part");
         if (new_nodes_part)
           {
+            //unsigned proc_rank = m_eMesh.get_rank();
+            //std::cout << "P[" << proc_rank << "] add new nodes... " <<  std::endl;
+            stk::mesh::Selector selector(m_eMesh.get_fem_meta_data()->locally_owned_part() );
             std::vector<stk::mesh::Part*> add_parts(1, new_nodes_part);
             std::vector<stk::mesh::Part*> remove_parts;
             for (unsigned ind = 0; ind < new_nodes.size(); ind++)
               {
+                  
                 m_eMesh.get_bulk_data()->change_entity_parts( *new_nodes[ind], add_parts, remove_parts );
               }
+            //std::cout << "P[" << proc_rank << "] add new nodes...done " <<  std::endl;
           }
 
         // set map values to new node id's

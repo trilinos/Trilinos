@@ -75,8 +75,8 @@ C   --   Uses NSPVAR, ISVID of /SPVARS/
 
       LOGICAL NEED
 
-      CALL DBVIX (TYP, 1, ISID)
-      CALL DBVIX (TYP, NVAR, IEID)
+      CALL DBVIX_BL (TYP, 1, ISID)
+      CALL DBVIX_BL (TYP, NVAR, IEID)
 
       DO 100 ID = ISID, IEID
 

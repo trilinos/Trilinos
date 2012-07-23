@@ -28,21 +28,22 @@ namespace stk {
 
       typedef ublas::c_matrix<double,3,3> Matrix;
 
+      typedef ublas::c_vector<double,3> Vector;
+
       typedef ublas::c_vector<double,3> ubvec;
 
-      class Vector : public ubvec
+      class MyVector : public ubvec
       {
       public:
-        //VectorHelper(Vector& vin) : v(vin) {}
 
-        Vector(double x=0.0) : ubvec()
+        MyVector(double x=0.0) : ubvec()
         {
           (*this)(0) = x;
           (*this)(1) = x;
           (*this)(2) = x;
         }
 
-        Vector(double *x) : ubvec()
+        MyVector(double *x) : ubvec()
         {
           (*this)(0) = x[0];
           (*this)(1) = x[1];
@@ -50,7 +51,7 @@ namespace stk {
         }
         //Vector(const ubvec& v) : ubvec(v) {}
 
-        Vector& operator=(const ubvec& v) 
+        MyVector& operator=(const ubvec& v) 
         { 
           //ubvec& v0 = ubvec::operator=(v); 
           (*this)(0) = v(0);
@@ -120,6 +121,9 @@ namespace stk {
       }
       
     };
+
+    inline Math::Vector operator*(Math::Matrix& mat, Math::Vector& vec) { return ublas::prod(mat, vec); }
+    inline Math::Matrix operator*(Math::Matrix& mat, Math::Matrix& mat2) { return ublas::prod(mat, mat2); }
 
   }
 }

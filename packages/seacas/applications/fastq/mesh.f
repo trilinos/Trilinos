@@ -269,7 +269,7 @@ C
      &            TIME1, BATCH, VERSN)
             ELSE
                ICOM = ICOM + 1
-               CALL HELP(12)
+               CALL HELP_FQ(12)
             ENDIF
          ELSE
             ICOM = ICOM + 1
@@ -1366,7 +1366,7 @@ C
          END IF
       ELSE
          ICOM = ICOM + 1
-         CALL HELP (12)
+         CALL HELP_FQ (12)
       END IF
       GOTO 100
   280 CONTINUE

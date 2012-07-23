@@ -830,6 +830,8 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
 				     &EB_Nattr[0], 1);
     check_exodus_error(error, "ex_put_concat_elem_block");
 
+    safe_free((void **) &EB_Types);
+
     /* Output attribute names for each element block */
     for(int i1=0; i1 < globals.Num_Elem_Blk; i1++) {
 

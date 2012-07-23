@@ -50,7 +50,7 @@ int NemSpread<T,INT>::check_inp(void)
   const char  *yo = "check_inp";
 
   int   exid, icpu_ws=0, iio_ws=0;
-  float vers;
+  float vers = 0.0;
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /*                 Check the input and output files                          */

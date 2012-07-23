@@ -6,13 +6,9 @@
   <Parameter name="Stochastic" type="bool" value="1"/>
   <ParameterList name="Dimension Reduction">
     <Parameter name="Reduce Dimension" type="bool" value="0"/>
-    <Parameter name="Dimension Reduction Method" type="string" value="Tensor Product Stieltjes"/>
-    <!--Parameter name="Dimension Reduction Method" type="string" value="Gram-Schmidt QR"/-->
-    <Parameter name="Reduced Quadrature Method" type="string" value="L1 Minimization"/>
-    <!--Parameter name="Reduced Quadrature Method" type="string" value="Column-Pivoted QR"/-->
-    <Parameter name="Orthogonalization Method" type="string" value="Modified Gram-Schmidt"/>
+    <Parameter name="Reduced Basis Method" type="string"
+	       value="Product Lanczos"/>
     <Parameter name="Reduced Order" type="int" value="-1"/>
-    <Parameter name="Verbose" type="bool" value="0"/>
   </ParameterList>
   <Parameter name="Piro Solver" type="string" value="NOX"/>
   <Parameter name="Compute Sensitivities" type="bool" value="0"/>

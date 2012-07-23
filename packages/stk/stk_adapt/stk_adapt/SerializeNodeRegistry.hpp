@@ -135,6 +135,10 @@ namespace stk {
         m_spatialDim = eMesh.get_spatial_dim();
       }
 
+      ~SerializeNodeRegistry() {
+        if (m_partMap) delete m_partMap;
+        if (m_nodeMap) delete m_nodeMap;
+      }
       void pass(int streaming_pass)
       {
         std::cout << "\n\nM[" << m_iM << ", " << m_M << "] W[" << m_iW << ", " << m_W << "] ------ SerializeNodeRegistry ----- pass number " << streaming_pass << "\n\n" << std::endl;
@@ -544,6 +548,7 @@ namespace stk {
 
       void initializeGlobalPartMap()
       {
+        if (m_partMap) delete m_partMap;
         m_partMap = new PartMap;
         setGlobalPartMap();
       }
@@ -635,6 +640,7 @@ namespace stk {
       // open each global nodes file and add to the global node map
       void createGlobalNodeMap()
       {
+        if (m_nodeMap) delete m_nodeMap;
         m_nodeMap = new NodeMap;
         for (m_iM = m_M_0; m_iM <= m_M_1; m_iM++)
           {
@@ -781,6 +787,7 @@ namespace stk {
             writeGlobalPartsFile(globalPartMapFile, partMap);
           }
 
+        if (m_nodeMap) delete m_nodeMap;
         m_nodeMap = new NodeMap;
         for (int jW = 0; jW < m_W; jW++)
           {
@@ -877,6 +884,7 @@ namespace stk {
         setCurrentGlobalMaxId();
         printCurrentGlobalMaxId("pass1");
 
+        if (m_nodeMap) delete m_nodeMap;
         m_nodeMap = new NodeMap;
         readLocalNodeMapFile(*m_nodeMap);
         writeNodeRegistry(nodeRegistry, m_localNodeRegistryFile);
@@ -935,6 +943,7 @@ namespace stk {
         PerceptMesh eMeshLocal(m_spatialDim);
         eMeshLocal.openEmpty();
 
+        if (m_nodeMap) delete m_nodeMap;
         m_nodeMap = new NodeMap;
 
         int iWSave = m_iW;

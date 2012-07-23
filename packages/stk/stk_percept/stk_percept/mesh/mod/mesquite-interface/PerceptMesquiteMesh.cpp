@@ -269,6 +269,60 @@ namespace stk {
       if (DEBUG_PRINT) std::cout << "tmp srk get_all_elements num_elem= " << elements.size() << std::endl;
     }
 
+    bool PerceptMesquiteMesh::get_fixed_flag(stk::mesh::Entity* node_ptr)
+    {
+      int dof = -1;
+      bool fixed=true;
+      //if the owner is something other than the top-level owner, the node
+      // is on the boundary; otherwise, it isn't.
+      if (m_boundarySelector)
+        {
+          if ((*m_boundarySelector)(*node_ptr))
+            fixed=true;
+          else
+            fixed=false;
+        }
+      else
+        {
+          if (m_meshDomain)
+            {
+              size_t curveOrSurfaceEvaluator;
+              dof = m_meshDomain->classify_node(*node_ptr, curveOrSurfaceEvaluator);
+              //std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << std::endl;
+              // vertex
+              if (dof == 0)
+                {
+                  fixed=true;
+                }
+              // curve (for now we hold these fixed)
+              else if (dof == 1)
+                {
+                  fixed=true;
+                  //fixed=false;   // FIXME 
+                }
+              // surface - also fixed
+              else if (dof == 2)
+                {
+                  //fixed=false;
+                  fixed=true;
+                  if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr->identifier() << std::endl;
+                }
+              // interior/volume - free to move
+              else
+                {
+                  fixed=false;
+                }
+            }
+          else
+            {
+              fixed=false;
+            }
+        }
+      if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << " fixed= " << fixed << std::endl;
+
+      return fixed;
+    }
+
     //============================================================================
     // Description: Returns true or false, indicating whether the vertex
     //! is allowed to moved.
@@ -308,56 +362,8 @@ namespace stk {
               return;
             }
     
-          int dof = -1;
-          bool fixed=true;
-          //if the owner is something other than the top-level owner, the node
-          // is on the boundary; otherwise, it isn't.
-          if (m_boundarySelector)
-            {
-              if ((*m_boundarySelector)(*node_ptr))
-                fixed=true;
-              else
-                fixed=false;
-            }
-          else
-            {
-              if (m_meshDomain)
-                {
-                  size_t curveOrSurfaceEvaluator;
-                  dof = m_meshDomain->classify_node(*node_ptr, curveOrSurfaceEvaluator);
-                  //std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << std::endl;
-                  // vertex
-                  if (dof == 0)
-                    {
-                      fixed=true;
-                    }
-                  // curve (for now we hold these fixed)
-                  else if (dof == 1)
-                    {
-                      fixed=true;
-                      //fixed=false;   // FIXME 
-                    }
-                  // surface - free to move
-                  else if (dof == 2)
-                    {
-                      //fixed=false;
-                      fixed=true;
-                      if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr->identifier() << std::endl;
-                    }
-                  // interior/volume
-                  else
-                    {
-                      fixed=false;
-                    }
-                }
-              else
-                {
-                  fixed=false;
-                }
-            }
 
-          if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << " fixed= " << fixed << std::endl;
-
+          bool fixed = get_fixed_flag(node_ptr);
           fixed_flag_array.push_back(fixed);
         }
    

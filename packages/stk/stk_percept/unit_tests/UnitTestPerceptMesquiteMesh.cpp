@@ -46,6 +46,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <MsqDebug.hpp>
 
 #include "MeshImpl.hpp"
@@ -425,6 +426,135 @@ namespace stk
               Mesquite::MeshImpl *msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
               std::ostringstream vtk_file;
               vtk_file << "par_smoothed_quad_mesh." << p_size << "." << p_rank << ".vtk";
+              msqMesh->write_vtk(vtk_file.str().c_str(), err); 
+              if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
+            }
+
+          }
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      // run PMMParallelShapeImprover on a domain with one side perturbed
+      STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_4)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+        unsigned par_size_max = s_par_size_max;
+        
+        const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 2)
+        if (p_size <= par_size_max)
+          {
+            const unsigned nele = 12;
+            //const unsigned nx = nele , ny = nele , nz = p_size*nele ;
+            const unsigned nx = nele , ny = nele;
+
+            bool sidesets=true;
+            percept::QuadFixture<double> fixture( pm , nx , ny, sidesets);
+            fixture.meta_data.commit();
+            fixture.generate_mesh();
+
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
+            eMesh.print_info("quad fixture",  2);
+            eMesh.save_as(input_files_loc+"quad_4_smooth.0.e");
+
+            eMesh.reopen();
+            eMesh.add_coordinate_state_fields();
+            stk::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
+            //eMesh.addParallelInfoFields(true,true);
+            eMesh.commit();
+            eMesh.set_proc_rank_field(proc_rank_field);
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+
+            //eMesh.populateParallelInfoFields(true,true,&boundarySelector);
+
+            // save state of original mesh
+            // field, dst, src: 
+            eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
+
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                if (boundarySelector_1(**k)) 
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& entity = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double ix = data[0]/double(nele);
+                        //double bump_size=2.8; // 0.8
+                        double bump_size=0.8; // 0.8
+                        data[1] += (ix)*(1.0-ix)*bump_size*double(nele);
+                        //std::cout << "tmp srk surface 1 node = " << data[0] << " " << data[1] << std::endl;
+                      }
+                  }
+              }
+            // save state of projected mesh
+            // field, dst, src: 
+            eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
+
+            eMesh.save_as(input_files_loc+"quad_4_smooth.0_perturbed.e");
+
+            if (0)
+            {
+              Mesquite::MsqError err;
+              Mesquite::MeshImpl *msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
+              std::ostringstream vtk_file;
+              vtk_file << "par_original_quad_4_mesh." << p_size << "." << p_rank << ".vtk";
+              msqMesh->write_vtk(vtk_file.str().c_str(), err); 
+              if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
+            }
+
+            int  msq_debug             = 0; // 1,2,3 for more debug info
+            bool always_smooth         = true;
+            //bool do_jacobi = true;
+            Mesquite::MsqDebug::disable(1);
+            //Mesquite::MsqDebug::enable(2);
+            //Mesquite::MsqDebug::enable(3);
+              {
+                PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
+                //PerceptMesquiteMeshDomain pmd(&eMesh, 0);
+                PlanarDomain planar_domain(PlanarDomain::XY);
+                //PMMParallelShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
+                if (1)
+                  {
+                    percept::PMMParallelShapeImprover pmmpsi(1000, 1.e-4, 1);
+                    //pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
+                    pmmpsi.run(pmm, &planar_domain, always_smooth, msq_debug);
+                  }
+                else
+                  {
+                    percept::PMMLaplaceSmoother1 ls;
+                    //if (do_jacobi) 
+                    //  ls.get_smoother().do_jacobi_optimization();
+                    ls.run(pmm, planar_domain);
+                  }
+              }
+
+            eMesh.save_as(output_files_loc+"quad_4_si_smooth.1.e");
+
+            if (0)
+            {
+              Mesquite::MsqError err;
+              Mesquite::MeshImpl *msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
+              std::ostringstream vtk_file;
+              vtk_file << "par_smoothed_quad_4_mesh." << p_size << "." << p_rank << ".vtk";
               msqMesh->write_vtk(vtk_file.str().c_str(), err); 
               if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
             }

@@ -149,7 +149,7 @@ C   --Set up labeling
 C      --Get the number of lines needed
          NCRVLN = 0
          DO 100 NP = 1, NLNCRV
-            CALL DBVTYP (ILVID(1,NP), TYP, IDUM)
+            CALL DBVTYP_BL (ILVID(1,NP), TYP, IDUM)
             IF (TYP .EQ. 'H') THEN
                NCRVLN = NCRVLN + 1
             ELSE
@@ -175,7 +175,7 @@ C   --Display plot item(s) (variable names and number) for each pathline
 
       DY = DYCRV
       DO 110 NP = 1, NLNCRV
-         CALL DBVTYP (ILVID(1,NP), TYP, IDUM)
+         CALL DBVTYP_BL (ILVID(1,NP), TYP, IDUM)
          WRITE (STRING, '(4 (A, 1X))')
      &      (NAMES(ILVID(I,NP)), I=1,NDIM)
          CALL SQZSTR (STRING, LSTR)

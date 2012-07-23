@@ -101,7 +101,7 @@ C   --   Uses NUMNP, NUMEL, NELBLK of /DBNUMS/
 
 C      --Get the variable type
 
-         CALL DBVTYP (IDTVAR(IVAR), TYP, ID)
+         CALL DBVTYP_BL (IDTVAR(IVAR), TYP, ID)
 
 C      --Read in variable
 

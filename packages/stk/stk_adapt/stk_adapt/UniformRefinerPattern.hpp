@@ -30,6 +30,7 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_adapt/NodeRegistry.hpp>
 #include <stk_percept/function/FieldFunction.hpp>
+#include <stk_percept/math/Math.hpp>
 
 #include <stk_percept/math/Math.hpp>
 
@@ -449,12 +450,12 @@ namespace stk {
           std::cout << "tmp n_face= " << n_face << " n_side= " << n_side << std::endl;
 
 
-        Math::Vector delta;
+        Math::MyVector delta;
         double len_max = 0.0;
         for (unsigned i_edge = 0; i_edge < n_edge; i_edge++)
           {
-            Math::Vector pc0( ref_topo_x[ cell_topo_data->edge[i_edge].node[0] ].parametric_coordinates );
-            Math::Vector pc1( ref_topo_x[ cell_topo_data->edge[i_edge].node[1] ].parametric_coordinates );
+            Math::MyVector pc0( ref_topo_x[ cell_topo_data->edge[i_edge].node[0] ].parametric_coordinates );
+            Math::MyVector pc1( ref_topo_x[ cell_topo_data->edge[i_edge].node[1] ].parametric_coordinates );
             pc0 -= pc1;
             double len = norm_2(pc0);
             len_max = std::max(len_max, len);
@@ -464,10 +465,10 @@ namespace stk {
         Math::Matrix scm = Math::scalingMatrix(scv / len_max);
         Math::Matrix rm = scm;
 
-        Math::Vector centroid;
+        Math::MyVector centroid;
         for (unsigned i_node = 0; i_node < n_node; i_node++)
           {
-            Math::Vector pc( ref_topo_x[i_node].parametric_coordinates );
+            Math::MyVector pc( ref_topo_x[i_node].parametric_coordinates );
             centroid += pc/(double(n_node));
           }
         if (0) std::cout << "len_max= " << len_max << " centroid= " << centroid << std::endl;
@@ -491,7 +492,7 @@ namespace stk {
         for (unsigned i_node = 0; i_node < n_node; i_node++)
           {
             double *pc = ref_topo_x[i_node].parametric_coordinates;
-            Math::Vector v(pc);
+            Math::MyVector v(pc);
             v -= centroid;
             v =  ublas::prod(rm, v);
 
@@ -541,7 +542,7 @@ namespace stk {
 #endif
 
                     double *pc = ref_topo_x[childNodeIdx].parametric_coordinates;
-                    Math::Vector v(pc);
+                    Math::MyVector v(pc);
                     v -= centroid;
                     v =  ublas::prod(rm, v);
 
@@ -2468,7 +2469,7 @@ namespace stk {
         EXCEPTWATCH;
 
         // a part to hold new nodes
-        if (0)  // FIXME - this is causing an exception in parallel runs, why?
+        if (1)  // FIXME - this is causing an exception in parallel runs, why?
           {
             stk::mesh::Part* new_nodes_part = eMesh.get_non_const_part("refine_new_nodes_part");
             if (!new_nodes_part)

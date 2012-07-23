@@ -47,7 +47,7 @@ C   --The element block variable truth table is also read.
 C   --
 C   --Note that the numbers of variables are read in this routine.
 C   --
-C   --This routine calls DBVINI and uses DBVIX to get the variable name
+C   --This routine calls DBVINI and uses DBVIX_BL to get the variable name
 C   --indices.
 C   --
 C   --Dynamic memory is reserved in this routine.  If there is a problem,
@@ -144,9 +144,9 @@ C   --Read the number of variables
       call exgvp(ndb, 'M', nvarns, ierr)
       call exgvp(ndb, 'S', nvarss, ierr)
 
-C   --Initialize for DBVTYP and DBVIX
+C   --Initialize for DBVTYP_BL and DBVIX_BL
 
-      CALL DBVINI (NVARGL, NVARNP, NVAREL, NVARNS, NVARSS)
+      CALL DBVINI_BL (NVARGL, NVARNP, NVAREL, NVARNS, NVARSS)
 
       if ((nvarhi + nvargl + nvarnp + nvarel + nvarns + nvarss) .eq. 0)
      *  go to 160
@@ -160,23 +160,23 @@ C      --Get the name indices
      *    NAMLEN*(NVARHI+NVARGL+NVARNP+NVAREL+NVARNS+NVARSS))
          CALL MCSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 180
-         CALL DBVIX ('H', 1, IXHV)
-         CALL DBVIX ('H', NVARHI, IXHVE)
+         CALL DBVIX_BL ('H', 1, IXHV)
+         CALL DBVIX_BL ('H', NVARHI, IXHVE)
 
-         CALL DBVIX ('G', 1, IXGV)
-         CALL DBVIX ('G', NVARGL, IXGVE)
+         CALL DBVIX_BL ('G', 1, IXGV)
+         CALL DBVIX_BL ('G', NVARGL, IXGVE)
 
-         CALL DBVIX ('N', 1, IXNV)
-         CALL DBVIX ('N', NVARNP, IXNVE)
+         CALL DBVIX_BL ('N', 1, IXNV)
+         CALL DBVIX_BL ('N', NVARNP, IXNVE)
 
-         CALL DBVIX ('E', 1, IXEV)
-         CALL DBVIX ('E', NVAREL, IXEVE)
+         CALL DBVIX_BL ('E', 1, IXEV)
+         CALL DBVIX_BL ('E', NVAREL, IXEVE)
 
-         CALL DBVIX ('M', 1, IXNS)
-         CALL DBVIX ('M', NVARNS, IXNSE)
+         CALL DBVIX_BL ('M', 1, IXNS)
+         CALL DBVIX_BL ('M', NVARNS, IXNSE)
 
-         CALL DBVIX ('S', 1, IXSS)
-         CALL DBVIX ('S', NVARSS, IXSSE)
+         CALL DBVIX_BL ('S', 1, IXSS)
+         CALL DBVIX_BL ('S', NVARSS, IXSSE)
 
 C      --Read and pack variable names
 

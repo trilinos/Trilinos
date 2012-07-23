@@ -30,13 +30,13 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C=======================================================================
-      SUBROUTINE DBVINI (NVARGL, NVARNP, NVAREL, NVARNS, NVARSS)
+      SUBROUTINE DBVINI_BL (NVARGL, NVARNP, NVAREL, NVARNS, NVARSS)
 C=======================================================================
 
-C   --*** DBVINI *** (EXOLIB) Initialize for DBVTYP and DBVIX
+C   --*** DBVINI *** (EXOLIB) Initialize for DBVTYP_BL and DBVIX_BL
 C   --   Written by Amy Gilkey - revised 10/14/87
 C   --
-C   --DBVINI initializes the indices for DBVTYP and DBVID.  It must be
+C   --DBVINI initializes the indices for DBVTYP_BL and DBVID.  It must be
 C   --called before either of the other two routines are called.
 C   --
 C   --Note that the indices are shared because the other two routines
@@ -77,12 +77,12 @@ C   --Definition for the ENTRY routine parameters
       RETURN
 
 C=======================================================================
-      ENTRY DBVTYP (IIX, TYP, ID)
+      ENTRY DBVTYP_BL (IIX, TYP, ID)
 C=======================================================================
-C   --*** DBVTYP *** (EXOLIB) Return the variable type and number
+C   --*** DBVTYP_BL *** (EXOLIB) Return the variable type and number
 C   --   Written by Amy Gilkey - revised 03/18/88
 C   --
-C   --DBVTYP is passed a variable index.  It returns the variable type
+C   --DBVTYP_BL is passed a variable index.  It returns the variable type
 C   --and variable number.
 C   --
 C   --Note that DBVINI must be called before this routine to initialize
@@ -122,12 +122,12 @@ C   --   ID - OUT - the variable number within the type
       RETURN
 
 C=======================================================================
-      ENTRY DBVIX (ITYP, IID, IX)
+      ENTRY DBVIX_BL (ITYP, IID, IX)
 C=======================================================================
-C   --*** DBVIX *** (EXOLIB) Return the variable index
+C   --*** DBVIX_BL *** (EXOLIB) Return the variable index
 C   --   Written by Amy Gilkey - revised 10/14/87
 C   --
-C   --DBVIX is passed a variable type and number.  It returns the variable
+C   --DBVIX_BL is passed a variable type and number.  It returns the variable
 C   --index.
 C   --
 C   --Note that DBVINI must be called before this routine to initialize

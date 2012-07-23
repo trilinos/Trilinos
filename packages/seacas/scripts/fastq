@@ -1,0 +1,194 @@
+#!/bin/bash -f
+
+function usage {
+USAGE="Usage: fastq [-help] [-options option] [--] filename [device]"
+   echo ""
+   echo "${USAGE}"
+   echo "    Other options:  Argument:       Default:"
+   echo "    -device         dev_code        x11"
+   echo "    -input          cmd_file        -none-"
+   echo "    -mesh           mesh-file       -none-"
+   echo "    -exodus         1/2 or I/II     1 or I (exodusI)"
+   echo "    -hardcopy       met_filename    *.met"
+   echo "    -help           (Prints this message)"
+   echo "    "
+   echo "  Contact: gdsjaar@sandia.gov"
+   echo "  "
+    show_device
+exit 1
+}
+
+function show_device {
+ echo " "
+ tempA=`find ${ACCESSBIN} -name ${codename}_\* |sed -e s:${ACCESSBIN}/${codename}_::`
+ echo "Standard options for 'device':" 
+ echo "${txtgrn}" $tempA "${txtrst}"
+ echo " "
+}
+
+function show_ps_option {
+echo ""
+echo "The PostScript drivers have seven options."
+echo "     1. black & white, no polygon fill"
+echo "     3. black & white, polygon fill"
+echo "     5. color,"
+echo "     7. color, black-white interchange"
+echo "     8. gray-scale, black-white interchange"
+echo "     9. color, black background"
+echo "    10. gray-scale, black background"
+echo " "
+echo "Enter -ps_option <num> to select one."
+echo "Default is '7'"
+echo ""
+}
+
+codename=fastq
+ACCESSBIN="`dirname \"$0\"`"
+ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
+
+# Text color variables
+if test "${TERM}set" == set ; then
+    export TERM=dumb
+fi
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+echo " "
+echo "=============================================================="
+echo "| Sandia Engineering Analysis Access procedure for: ${codename}"
+echo "| Send email to gdsjaar@sandia.gov for help"
+echo "=============================================================="
+
+aprepro="false"
+makexoI="false"
+device="x11"
+filename="${codename}"
+makexoII="true"
+batch="false"
+
+export EXTO3=INT
+
+TEMP=`getopt -o m:hi:p:d:e:a -a --long ps_option:,mesh:,device:,input:,exodus:,hardcopy:,aprepro,help -n 'fastq' -- "$@"`
+
+if [ $? != 0 ] ; then usage ; exit 1 ; fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+while true ; do
+    case "$1" in
+      -m|--mesh)
+        export FOR009="$2" ; shift 2
+        export EXT03="BAT"
+	if [ -e ${FOR009} ] ; then
+	   echo "${FOR009} will be overwritten"
+	   rm ${FOR009}
+	fi
+	batch="true"
+	;;
+      -h|--help)
+	usage ; shift ;;
+      -i|--input)
+        export FOR001="$2" ; shift 2
+        export EXT04="YES"
+        if [ ! -e ${FOR001} ] ; then
+	   echo "${txtred}ERROR: Input file '$FOR001' does not exist.${txtrst}"
+           goto usage
+        fi
+        ;;
+      -p|--ps_option)
+	ps_option="$2" ; shift 2
+        if [ "${ps_option}" == "list" ] || [ "${ps_option}" == "help" ] ; then
+           show_ps_option
+	   exit 0
+        fi
+	;;
+      -d|--device)
+        device="$2" ; shift 2
+        if [ "${device}" == "list" ] || [ "${device}" == "help" ] ; then
+           show_device
+	   exit 0
+        fi
+	;;
+      --hardcopy)
+        filename="$2" ; shift 2 ;;
+      -e|--exodus)
+        if [ "$2" == "1" ] || [ "$2" == "i" ] || [ "$2" == "I" ] ; then
+	   export EXT04="GENESIS"
+	elif [ "$2" == "2" ] || [ "$2" == "ii" ] || [ "$2" == "II" ] ; then
+	   export EXT04="EXODUSII"
+        fi
+	shift 2 ;;
+      -a|--aprepro)
+        aprepro="true" ; shift ;;
+      --) shift ; break ;;
+       *) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
+   esac
+done
+
+if [ $# -gt 0 ] ; then
+    if [ -e "$1" ] ; then
+	export FOR001=$1
+    else
+        echo "${txtred}ERROR: File  '$1' does not exist.${txtrst}"
+	usage
+    fi
+    shift
+fi
+
+# Check for device specified, use ${device} if none specified
+if [ $# -gt 0 ] ; then
+  device="$1"
+fi
+
+if [ ${aprepro} == "true" ] && [ ! -z "$FOR001" ] ; then
+    aprepro="file"
+    tmp=$FOR001
+    export FOR001="./fastq.$$"
+    ${ACCESSBIN}/aprepro "$tmp" "${FOR001}"
+fi    
+
+if [ "${device}" == "dual" ] ; then
+    export DUAL_FILENAME="${filename}.met"
+    export EXT01="x11"
+    export EXT02="met"
+elif [ "${device}" == "xcps" ] ; then
+    export DUAL_FILENAME="${filename}.cps"
+    export EXT01="x11"
+    export EXT02="cps"
+else
+    export EXT01=${device}
+fi
+
+if [ ! -x "${ACCESSBIN}/${codename}_${device}" ]
+then
+   echo "${txtred}ERROR: ${ACCESSBIN}/${codename}_${device} does not exist.${txtrst}"
+   echo "    Contact gdsjaar@sandia.gov if you need this device;"
+   echo "    otherwise use one of the supported devices:"
+   show_device
+   exit 1
+fi
+
+# Run the code, --
+${ACCESSBIN}/${codename}_${device} -basename ${filename} 
+
+if [ ! -z ${filename} ] && [ "${device}" != "dual" ] && [ "${device}" != "xcps" ]
+then
+  if [ ${device} == "met" ] ; then mv cgimet1     ${filename}.met ; fi
+  if [ ${device} == "cps" ] ; then mv vdicps.ps   ${filename}.ps  ; fi
+  if [ ${device} == "eps" ] ; then mv cgiout.epsi ${filename}.eps ; fi
+  if [ ${device} == "pst" ] ; then mv cgiout1     ${filename}.ps  ; fi
+fi
+
+if [ "${aprepro}" == "file" ] ; then 
+    rm -f ${FOR001}
+fi
+
+echo "${txtgrn}FASTQ Successful Execution${txtrst}"

@@ -91,7 +91,7 @@ C   --   Uses NELBLK, NVARNP, NVAREL of /DBNUMS/
 
 C   --Get variable type
 
-      CALL DBVTYP (IVAR, TYP, IDUM)
+      CALL DBVTYP_BL (IVAR, TYP, IDUM)
 
       IF ((TYP .EQ. 'H') .OR. (TYP .EQ. 'G')
      &   .OR. (TYP .EQ. 'N')) THEN

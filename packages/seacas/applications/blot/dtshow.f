@@ -331,10 +331,10 @@ C *** Display options ***
                IF (LIDSP(NID) .EQ. 0) THEN
                   TNAME(I) = 'TIME'
                ELSE IF (LIDSP(NID) .GT. 0) THEN
-                  CALL DBVIX ('H', LIDSP(NID), IDVAR)
+                  CALL DBVIX_BL ('H', LIDSP(NID), IDVAR)
                   TNAME(I) = NAMES(IDVAR)
                ELSE IF (LIDSP(NID) .LT. 0) THEN
-                  CALL DBVIX ('G', -LIDSP(NID), IDVAR)
+                  CALL DBVIX_BL ('G', -LIDSP(NID), IDVAR)
                   TNAME(I) = NAMES(IDVAR)
                ENDIF
                NID = NID + 1

@@ -98,7 +98,7 @@ C      --NALOLD - the last birth/death variable (element variable index)
      &        'alive value', 0.0, ALIVAL, *100)
             CALL FFADDR (ALIVAL, INLINE)
 
-            CALL DBVIX ('E', IVAR, NALVAR)
+            CALL DBVIX_BL ('E', IVAR, NALVAR)
             NALOLD = IVAR
          ELSE
             NALVAR = 0

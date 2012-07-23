@@ -58,7 +58,7 @@ OBJS =	blot.o
 SRCS1 = \
 blot.f \
 adjcon.f  adjlim.f  allal2.f  allal3.f  allcut.f  bcolor.f \
-biomod.f  blkdat.f  caldis.f  calmag.f  caltim.f  dbvini.f \
+biomod.f  blkdat.f  caldis.f  calmag.f  caltim.f \
 cenlab.f  cfmax.f   cfv2nv.f  cfvmax.f  chkerr.f \
 chkvar.f  ckcntr.f  ckcros.f  claspt.f  cmdcon.f \
 cmdcut.f  cmddea.f  cmddev.f  cmdelb.f  cmdleg.f  cmdmod.f \
@@ -100,7 +100,7 @@ qpaint.f  qsolid.f  rainbow.f prochs.f
 
 SRCS3 = \
 rixid.f   rmixint.f rixint.f  rixwrd.f \
-rndvar.f  rotate.f  roteye.f  rotxyz.f  rotzm.f  \
+rndvar.f  rotxyz.f  rotzm.f   roteye.f \
 rxinta.f  scacal.f  scaelb.f  scaele.f  scaglo.f  scahis.f \
 scaini.f  scal3d.f  scalax.f  scaler.f  scanod.f  scaprt.f \
 scolor.f  setbck.f  setcol.f  setfor.f  setmod.f  setmsh.f \
@@ -112,9 +112,9 @@ sptrnd.f  sqrlim.f  sqzixv.f  sqzlgv.f  sqztpv.f  ssmemy.f \
 stclst.f  surf2d.f  surf3d.f  symbol.f  textur.f  tnodes.f \
 tpchk.f   tpcomd.f  tplab.f   tplabn.f  tplabv.f  tpmain.f \
 tpplot.f  tpread.f  tpshow.f  ugrcol.f  unrot.f   upcase.f \
-vec.f     vector.f  version.f wrtneu.f  wrtray.f  xyaxis.f \
+vec.f     vector.f  wrtneu.f  wrtray.f  xyaxis.f \
 xycomd.f  xyshow.f  zaway.f   zmedge.f  zmset.f   zoomnd.f \
-wrtcsv.f  getssn.f
+wrtcsv.f  getssn.f  bl_rotate.f bl_version.f   dbvini_bl.f
 
 SRCSF = \
 deadup.F  dtlab.F   mrkess.F  mrkfac.F  mrknod.F  mrknps.F  usrsym.F \

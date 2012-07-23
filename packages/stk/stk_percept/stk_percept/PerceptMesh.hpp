@@ -15,6 +15,7 @@
 #include <stk_util/util/string_case_compare.hpp>
 
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldState.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
@@ -40,6 +41,8 @@
 //#include "PerceptMeshReadWrite.hpp"
 #include <stk_percept/function/ElementOp.hpp>
 #include <stk_percept/function/BucketOp.hpp>
+
+#include <stk_percept/math/Math.hpp>
 
 #include <stk_percept/SameRankRelation.hpp>
 
@@ -326,9 +329,45 @@ namespace stk {
       /// return the number of steps in the database
       int get_database_time_step_count();
       
-      //========================================================================================================================
-      /// low-level interfaces
+      /// transform mesh by a given 3x3 matrix
+      void transform_mesh(MDArray& matrix);
+
+      /// add coordinate-like fields needed, for example, to use smoothing of geometry-projected refined meshes
+      /// Must be called before commit()
+      void add_coordinate_state_fields();
+
+      /// set proc_rank on each element
+      void set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field=0);
+
+      /// get number of coordinate field states needed
+      bool has_coordinate_state_fields() { return m_num_coordinate_field_states != 1; }
+
+      /// copy field state data from one state (src_state) to another (dest_state)
+      void copy_field_state(stk::mesh::FieldBase* field, unsigned dest_state, unsigned src_state);
+
+      /// copy field data from one field (field_src) to another (field_dest)
+      void copy_field(stk::mesh::FieldBase* field_dest, stk::mesh::FieldBase* field_src);
+
+      /// axpby calculates: y = alpha*x + beta*y 
+      void nodal_field_state_axpby(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state);
+
+      /// axpby calculates: y = alpha*x + beta*y
+      void nodal_field_axpby(double alpha, stk::mesh::FieldBase* field_x, double beta, stk::mesh::FieldBase* field_y);
+
+      /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
+      void nodal_field_state_axpbypgz(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state, double gamma, unsigned z_state);
+
+      /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
+      void nodal_field_axpbypgz(double alpha, stk::mesh::FieldBase* field_x, 
+                                double beta, stk::mesh::FieldBase* field_y,
+                                double gamma, stk::mesh::FieldBase* field_z);
+
 #ifndef SWIG
+      //========================================================================================================================
+      // low-level interfaces
+
+      /// transform mesh by a given 3x3 matrix
+      void transform_mesh(Math::Matrix& matrix);
 
       /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
       static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
@@ -485,9 +524,11 @@ namespace stk {
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
 
-      void nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field=0);
+      void nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field=0, stk::mesh::Selector* selector=0);
       void elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
       void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
+      void elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector, bool is_surface_norm=false );
+      void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector, bool is_surface_norm=false );
 
       static unsigned size1(const stk::mesh::Bucket& bucket) { return bucket.size(); }
       static unsigned size1(const stk::mesh::Entity& element) { return 1; }
@@ -626,6 +667,10 @@ namespace stk {
       int                                   m_exodusStep;
       double                                m_exodusTime;
 
+      // state manipulation - set to 3 to enable smoothing for example
+      unsigned                              m_num_coordinate_field_states;
+
+    private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 
       void checkState(const std::string& function) {
@@ -634,6 +679,31 @@ namespace stk {
 
     }; // class PerceptMesh
 
+
+
+    class MeshTransformer : public GenericFunction
+    {
+      Math::Matrix m_rotMat;
+    public:
+
+      MeshTransformer(){}
+      MeshTransformer(Math::Matrix& m) : m_rotMat(m) {}
+      virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
+      {
+        double x = domain(0);
+        double y = domain(1);
+        double z = domain(2);
+        Math::Vector v;
+        v(0)=x;
+        v(1)=y;
+        v(2)=z;
+        v = m_rotMat * v;
+        codomain(0)=v(0);
+        codomain(1)=v(1);
+        codomain(2)=v(2);
+      }
+
+    };
 
     template<>
     const CellTopologyData *

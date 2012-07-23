@@ -119,6 +119,7 @@ class BucketRepository;
  */
 class Entity {
 public:
+  ~Entity() {}
 
   /** \brief  Query the current state of the entity log */
   EntityModificationLog log_query() const { return m_entityImpl.log_query(); }

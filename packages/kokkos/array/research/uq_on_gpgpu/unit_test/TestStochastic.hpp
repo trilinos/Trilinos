@@ -385,7 +385,7 @@ test_product_flat_commuted_matrix(
   //------------------------------
 
   typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -546,7 +546,7 @@ test_product_flat_original_matrix(
   //------------------------------
 
   typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -720,7 +720,7 @@ test_original_matrix_free_block(
   //------------------------------
 
   typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -859,7 +859,7 @@ test_flat_matrix(
   //------------------------------
 
   typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:

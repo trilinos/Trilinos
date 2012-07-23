@@ -475,6 +475,16 @@ ne_put_elem_cmap(int  neid,	/* NetCDF/Exodus file ID */
                  int  processor	/* This processor ID */
                  );
 
+  /* Should be internal use only, but was in external include file for
+     nemesis and some codes are using the function
+  */
+  int ne_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
+		 const char *ne_var_name, /* Nemesis index variable name */
+		 int64_t *index,	 /* array of length 2 to hold results */
+		 int      pos		 /* position of this proc/cmap in index */
+		 );
+
+
 #ifdef __cplusplus
 }
 #endif

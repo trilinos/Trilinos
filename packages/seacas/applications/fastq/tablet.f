@@ -205,7 +205,7 @@ C
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'B') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'b')) THEN
          ICOM = ICOM + 1
-         CALL HELP (2)
+         CALL HELP_FQ (2)
 C
 C  ADD UNIFORM Y SNAP GRID SPACINGS
 C
@@ -518,7 +518,7 @@ C
          CALL STRLNG (CIN(ICOM), LEN)
          IF (((LEN .GT. 1) .AND. (CIN(ICOM)(2:2) .NE. 'X')) .OR.
      &      ((LEN .GT. 1) .AND. (CIN(ICOM)(2:2) .NE. 'x'))) THEN
-            CALL HELP (14)
+            CALL HELP_FQ (14)
          ELSE
             CALL FEXIT (WROTE, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN,
      &         TIME1, BATCH, VERSN)
@@ -528,7 +528,7 @@ C  WRITE OUT THE HELP MESSAGE
 C
       ELSE
          ICOM = ICOM + 1
-         CALL HELP (14)
+         CALL HELP_FQ (14)
       ENDIF
       GO TO 100
 C

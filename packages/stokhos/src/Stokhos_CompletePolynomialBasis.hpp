@@ -35,6 +35,7 @@
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_DerivBasis.hpp"
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
+#include "Stokhos_ProductBasisUtils.hpp"
 
 namespace Stokhos {
 
@@ -211,18 +212,6 @@ namespace Stokhos {
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
     computeTripleProductTensorNew(ordinal_type order) const;
 
-    /*!
-     * \brief Compute the 2-D array of basis terms which maps a basis index
-     * into the orders for each basis dimension
-     */
-    void compute_terms();
-
-    /*!
-     * \brief Compute basis index given the orders for each basis
-     * dimension.
-     */
-    ordinal_type compute_index(const Teuchos::Array<ordinal_type>& terms) const;
-
   private:
 
     // Prohibit copying
@@ -232,6 +221,8 @@ namespace Stokhos {
     CompletePolynomialBasis& operator=(const CompletePolynomialBasis& b);
     
   protected:
+
+    typedef Stokhos::CompletePolynomialBasisUtils<ordinal_type,value_type> CPBUtils;
 
     //! Name of basis
     std::string name;

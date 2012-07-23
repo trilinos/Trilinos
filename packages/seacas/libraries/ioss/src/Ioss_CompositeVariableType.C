@@ -96,4 +96,14 @@ std::string CompositeVariableType::label(int which, const char suffix_sep) const
   my_label += VariableType::numeric_label(which_instance+1, copies_, name());
   return my_label;
 }
+
+const VariableType* CompositeVariableType::GetBaseType() const{
+  return baseType;
+}
+
+int CompositeVariableType::GetNumCopies() const{
+  return copies_;
+}
+
+
 }

@@ -239,36 +239,16 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     }
 
     //! Returns the number of nonzero entries in the global matrix.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-    virtual long long
-#else
-    virtual int
-#endif
-    NumGlobalNonzeros() const;
+    virtual int NumGlobalNonzeros() const;
 
     //! Returns the number of global matrix rows.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-    virtual long long
-#else
-    virtual int
-#endif
-    NumGlobalRows() const;
+    virtual int NumGlobalRows() const;
 
     //! Returns the number of global matrix columns.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-    virtual long long
-#else
-    virtual int
-#endif
-    NumGlobalCols() const;
+    virtual int NumGlobalCols() const;
 
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-    virtual long long
-#else
-    virtual int
-#endif
-    NumGlobalDiagonals() const;
+    virtual int NumGlobalDiagonals() const;
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     virtual int NumMyNonzeros() const;

@@ -16,6 +16,8 @@
 #include <stk_percept/function/ConstantFunction.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/norm/Norm.hpp>
+#include <stk_percept/norm/H1Norm.hpp>
+#include <stk_percept/math/Math.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
 
@@ -25,10 +27,6 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/io.hpp>
 
 #include <stdexcept>
 #include <sstream>
@@ -72,7 +70,7 @@ struct LocalFixture
   StringFunction sfx;
   ConstantFunction sfx_res;
 
-  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z)),
+  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0, bool sidesets=false, bool commit=true) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z, sidesets, commit)),
                                                                      metaData(*eMesh.get_fem_meta_data()), bulkData(*eMesh.get_bulk_data()),
                                                                      coords_field( metaData.get_field<mesh::FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
@@ -82,7 +80,7 @@ struct LocalFixture
 
   }
 
-  int init(size_t num_xyz, size_t num_y_arg, size_t num_z_arg)
+  int init(size_t num_xyz, size_t num_y_arg, size_t num_z_arg, bool sidesets=false, bool commit=true)
   {
     // Need a symmetric mesh around the origin for some of the tests below to work correctly (i.e. have analytic solutions)
     const size_t num_x = num_xyz;
@@ -92,9 +90,10 @@ struct LocalFixture
       Ioss::Utils::to_string(num_x) + "x" +
       Ioss::Utils::to_string(num_y) + "x" +
       Ioss::Utils::to_string(num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5";
+    if (sidesets) config_mesh += "|sideset:xXyYzZ";
 	
     eMesh.new_mesh(GMeshSpec(config_mesh));
-    eMesh.commit();
+    if (commit) eMesh.commit();
     return 1;
   }
 
@@ -103,91 +102,6 @@ struct LocalFixture
 //=============================================================================
 //=============================================================================
 //=============================================================================
-
-//using namespace boost::numeric::ublas;
-namespace ublas =  boost::numeric::ublas;
-
-typedef ublas::c_matrix<double,3,3> TransformationMatrix;
-
-static TransformationMatrix rotationMatrix(int axis, double angle_degrees)
-{
-  TransformationMatrix rm;
-  rm.clear();
-  double theta = M_PI * angle_degrees / 180.0;
-  double cost = std::cos(theta);
-  double sint = std::sin(theta);
-  if (axis == 2)
-  {
-    rm(0,0) = cost; rm(0,1) = -sint;
-    rm(1,0) = sint; rm(1,1) = cost;
-    rm(2,2) = 1.0;
-  }
-  else if (axis == 1)
-  {
-    rm(0,0) = cost; rm(0,2) = -sint;
-    rm(2,0) = sint; rm(2,2) = cost;
-    rm(1,1) = 1.0;
-  }
-  else if (axis == 0)
-  {
-    rm(1,1) = cost; rm(1,2) = -sint;
-    rm(2,1) = sint; rm(2,2) = cost;
-    rm(0,0) = 1.0;
-  }
-  return rm;
-}
-
-static TransformationMatrix scalingMatrix(int axis, double scale)
-{
-  TransformationMatrix sm;
-  sm.clear();
-  sm(0,0)=1.0;
-  sm(1,1)=1.0;
-  sm(2,2)=1.0;
-  sm(axis,axis)=scale;
-  return sm;
-}
-
-class MeshTransformer : public GenericFunction
-{
-  TransformationMatrix m_rotMat;
-public:
-
-  MeshTransformer(){}
-  MeshTransformer(TransformationMatrix& m) : m_rotMat(m) {}
-  virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
-  {
-    double x = domain(0);
-    double y = domain(1);
-    double z = domain(2);
-    ublas::c_vector<double,3> v;
-    v(0)=x;
-    v(1)=y;
-    v(2)=z;
-    v = ublas::prod(m_rotMat, v);
-    //           x=v(0);
-    //           y=v(1);
-    //           z=v(2);
-    codomain(0)=v(0);
-    codomain(1)=v(1);
-    codomain(2)=v(2);
-
-    //std::cout << "input pt=\n " << domain << "\n output pt= \n" << codomain << std::endl;
-    //           std::cout << "m_rotMat= \n" << m_rotMat << std::endl;
-    //           setDoPause(true);
-    //           pause(true);
-    //double v = EXPR_COORD_MAG;
-    //double cmag_field_node = codomain(0);
-
-  }
-
-};
-
-static double random01()
-{
-  double rnd = Teuchos::ScalarTraits<double>::random();
-  return (rnd+1.0)/2.0;
-}
 
 //stk::diag::WriterThrowSafe _write_throw_safe(dw());
 //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
@@ -219,6 +133,18 @@ STKUNIT_UNIT_TEST(norm, volume)
   /// since we interpolate values to them from other functions).
   ConstantFunction sqrt_volume(0.0, "sqrt_volume");
 
+  { 
+    bool expected_1 = false;
+    bool expected_2 = false;
+    Norm<2> l2Norm_test(bulkData, &metaData.universal_part(), TURBO_NONE, true); 
+    expected_1 = !l2Norm_test.get_is_surface_norm();
+    Norm<2> l2Norm_test1(bulkData, &metaData.universal_part(), TURBO_NONE, false); 
+    expected_2 = !l2Norm_test1.get_is_surface_norm();
+    STKUNIT_EXPECT_TRUE(expected_1);
+    STKUNIT_EXPECT_TRUE(expected_2);
+  }
+
+
   /// Create the operator that will do the work
   Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
   /// get the l2 norm of identity
@@ -230,7 +156,7 @@ STKUNIT_UNIT_TEST(norm, volume)
   int niter=1;
   for (int iter=0; iter < niter; iter++)
   {
-    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, eval(random01(), random01(), random01(), 0.0, sqrt_volume));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, eval(Math::random01(), Math::random01(), Math::random01(), 0.0, sqrt_volume));
   }
 
   //// rotate the mesh
@@ -245,15 +171,13 @@ STKUNIT_UNIT_TEST(norm, volume)
 
   if (1)
   {
-    TransformationMatrix rmx = rotationMatrix(0, 30);
-    TransformationMatrix rmy = rotationMatrix(1, -45);
-    TransformationMatrix rmz = rotationMatrix(2, 30);
-    TransformationMatrix rm;
-    //rm = ublas::prod(rmx, ublas::prod(rmy,rmz));
-    rm =  ublas::prod(rmy, rmz);
-    rm =  ublas::prod(rmx, rm);
-    MeshTransformer meshRotate(rm);
-    eMesh.nodalOpLoop(meshRotate, coords_field);
+    Math::Matrix rmx = Math::rotationMatrix(0, 30);
+    Math::Matrix rmy = Math::rotationMatrix(1, -45);
+    Math::Matrix rmz = Math::rotationMatrix(2, 30);
+    Math::Matrix rm;
+    rm =  rmy * rmz;
+    rm =  rmx * rm;
+    eMesh.transform_mesh(rm);
 
     // for testing
 #if DO_IO_TESTING
@@ -275,15 +199,14 @@ STKUNIT_UNIT_TEST(norm, volume)
     double scy = M_E;
     double scz = std::sqrt(3.0);
     double sc=scx*scy*scz;
-    TransformationMatrix smx = scalingMatrix(0, scx);
-    TransformationMatrix smy = scalingMatrix(1, scy);
-    TransformationMatrix smz = scalingMatrix(2, scz);
-    TransformationMatrix sm;
-    sm =  ublas::prod(smy, smz);
-    sm =  ublas::prod(smx, sm);
+    Math::Matrix smx = Math::scalingMatrix(0, scx);
+    Math::Matrix smy = Math::scalingMatrix(1, scy);
+    Math::Matrix smz = Math::scalingMatrix(2, scz);
+    Math::Matrix sm;
+    sm =  smy * smz;
+    sm =  smx * sm;
     //std::cout << "sm= " << sm << std::endl;
-    MeshTransformer meshScale(sm);
-    eMesh.nodalOpLoop(meshScale, coords_field);
+    eMesh.transform_mesh(sm);
 
     // for testing
 #if DO_IO_TESTING
@@ -324,6 +247,137 @@ STKUNIT_UNIT_TEST(norm, volume)
 //=============================================================================
 //=============================================================================
 
+STKUNIT_UNIT_TEST(norm, surface_area)
+{
+  EXCEPTWATCH;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  bool sidesets=true;
+  LocalFixture fix(3,3,12,sidesets);
+  //mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
+  PerceptMesh& eMesh = fix.eMesh;
+  //eMesh.save_as("junk.123.e");
+
+  mesh::FieldBase *coords_field = fix.coords_field;
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// the function to be integrated - here it is just the identity, and when integrated should produce the area of faces
+  ConstantFunction identity(1.0, "identity");
+
+  /// A place to hold the result.
+  /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
+  /// since we interpolate values to them from other functions).
+  ConstantFunction sqrt_area(0.0, "sqrt_area");
+  ConstantFunction sqrt_area1(0.0, "sqrt_area1");
+
+  /// Create the operator that will do the work
+  stk::mesh::Part *surface_part = eMesh.get_part("surface_1");
+  stk::mesh::Part *block_part = eMesh.get_part("block_1");
+  stk::mesh::Selector selector(*surface_part);
+  stk::mesh::Selector selector_test(*block_part);
+  selector_test = selector_test | selector;
+  bool is_surface_norm = true;
+
+  { 
+    bool expected_1 = false;
+    bool expected_2 = false;
+    bool expected_3 = false;
+    Norm<2> l2Norm_test(bulkData, &selector, TURBO_NONE, true); 
+    expected_1 = l2Norm_test.get_is_surface_norm();
+    Norm<2> l2Norm_test1(bulkData, &selector, TURBO_NONE, false); 
+    expected_2 = l2Norm_test1.get_is_surface_norm();
+    STKUNIT_EXPECT_TRUE(expected_1);
+    STKUNIT_EXPECT_TRUE(expected_2);
+    try { Norm<2> l2Norm_test2(bulkData, &selector_test, TURBO_NONE, true); } 
+    catch ( const std::exception & X ) {
+      std::cout << "expected exception: " << X.what() << std::endl;
+      expected_3 = true; 
+    }
+    STKUNIT_EXPECT_TRUE(expected_3);
+  }
+
+  Norm<2> l2Norm(bulkData, &selector, TURBO_NONE, is_surface_norm);
+  Norm<2> l2Norm1(bulkData, "surface_1");
+  l2Norm1.set_is_surface_norm(true);
+
+  /// get the l2 norm of identity
+  l2Norm(identity, sqrt_area);
+  l2Norm1(identity, sqrt_area1);
+
+  Teuchos::ScalarTraits<double>::seedrandom(12345);
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_area.getValue());
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_area1.getValue());
+
+  int niter=1;
+  for (int iter=0; iter < niter; iter++)
+  {
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, eval(Math::random01(), Math::random01(), Math::random01(), 0.0, sqrt_area));
+  }
+
+  //// rotate the mesh
+
+#if DO_IO_TESTING
+  eMesh.save_as("./gmesh_hex8_area_original_out.e");
+#endif
+
+  if (1)
+  {
+    Math::Matrix rmx = Math::rotationMatrix(0, 30);
+    Math::Matrix rmy = Math::rotationMatrix(1, -45);
+    Math::Matrix rmz = Math::rotationMatrix(2, 30);
+    Math::Matrix rm;
+    rm =  rmy * rmz;
+    rm =  rmx * rm;
+    eMesh.transform_mesh(rm);
+
+    // for testing
+#if DO_IO_TESTING
+    eMesh.save_as("./gmesh_hex8_area_rotated_out.e");
+#endif
+
+    l2Norm(identity, sqrt_area);
+
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_area.getValue());
+  }
+
+  //// scale the mesh
+  if (1)
+  {
+
+    double scx = M_PI;
+    double scy = M_PI;
+    double scz = M_PI;
+    double sc=scx*scy;
+    Math::Matrix smx = Math::scalingMatrix(0, scx);
+    Math::Matrix smy = Math::scalingMatrix(1, scy);
+    Math::Matrix smz = Math::scalingMatrix(2, scz);
+    Math::Matrix sm;
+    sm =  smy * smz;
+    sm =  smx * sm;
+    //std::cout << "sm= " << sm << std::endl;
+    eMesh.transform_mesh(sm);
+
+    // for testing
+#if DO_IO_TESTING
+    eMesh.save_as("./gmesh_hex8_area_scaled_out.e");
+#endif
+
+    l2Norm(identity, sqrt_area);
+    
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(std::sqrt(sc), sqrt_area.getValue());
+  }
+  //Function coords_l2_norm = ff_coords.norm_l2();
+
+}
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
 STKUNIT_UNIT_TEST(norm, string_function)
 {
   EXCEPTWATCH;
@@ -337,7 +391,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
   mesh::fem::FEMMetaData&        metaData     = fix.metaData;
   mesh::BulkData&        bulkData     = fix.bulkData;
   PerceptMesh&        eMesh     = fix.eMesh;
-  mesh::FieldBase*       coords_field = fix.coords_field;
+  //mesh::FieldBase*       coords_field = fix.coords_field;
   StringFunction   sfx          = fix.sfx;
   ConstantFunction sfx_res      = fix.sfx_res;
 
@@ -353,7 +407,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
   int niter=1;
   for (int iter=0; iter < niter; iter++)
   {
-    STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, eval(random01(), random01(), random01(), 0.0, sfx_res));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, eval(Math::random01(), Math::random01(), Math::random01(), 0.0, sfx_res));
   }
 
   /// the function to be integrated:  (Integral[ abs(x), dxdydz]) =?= (2 * |x|^2/2 @ [0, 0.5]) ==> .25)
@@ -373,18 +427,30 @@ STKUNIT_UNIT_TEST(norm, string_function)
   std::cout << "sfmax= " << sf1 << " sfx_expect= " << sfx_expect << " sfx_res= " << sfx_res.getValue() << std::endl;
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 
+  /// indirection
+  StringFunction sfmax_1("sfmax", Name("sfmax_1"), Dimensions(3), Dimensions(1) );
+  double sf1_1=eval(.5,.5,.5,0.0, sfmax_1);
+  std::cout << "sfmax_1= " << sf1_1 << " sfx_expect= " << sfx_expect << std::endl;
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sf1_1);
+
   /// the function to be integrated:  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest1.py)
   StringFunction sfxyz("x*y*z", Name("sfxyz"), Dimensions(3), Dimensions(1) );
   l2Norm(sfxyz, sfx_res);
   sfx_expect = 0.0240562612162344;
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 
+  /// indirection
+  std::cout << "tmp srk start..." << std::endl;
+  StringFunction sfxyz_2("sfxyz", Name("sfxyz_2"), Dimensions(3), Dimensions(1) );
+  l2Norm(sfxyz_2, sfx_res);
+  sfx_expect = 0.0240562612162344;
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
+
   /// the function to be integrated (but over a rotated domain):  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py)
   /// now rotate the mesh
-  TransformationMatrix rmz = rotationMatrix(2, 30);
-  TransformationMatrix rm = rmz;
-  MeshTransformer meshRotate(rm);
-  eMesh.nodalOpLoop(meshRotate, coords_field);
+  Math::Matrix rmz = Math::rotationMatrix(2, 30);
+  Math::Matrix rm = rmz;
+  eMesh.transform_mesh(rm);
 
   l2Norm(sfxyz, sfx_res);
   sfx_expect = 0.0178406008037016;
@@ -402,6 +468,40 @@ STKUNIT_UNIT_TEST(norm, string_function)
 //=============================================================================
 //=============================================================================
 
+STKUNIT_UNIT_TEST(norm, string_function_1)
+{
+  EXCEPTWATCH;
+  LocalFixture     fix(4);
+  mesh::fem::FEMMetaData&        metaData     = fix.metaData;
+  mesh::BulkData&        bulkData     = fix.bulkData;
+  //PerceptMesh&        eMesh     = fix.eMesh;
+  //mesh::FieldBase*       coords_field = fix.coords_field;
+  StringFunction   sfx          = fix.sfx;
+  ConstantFunction sfx_res      = fix.sfx_res;
+
+  /// Create the operator that will do the work
+  /// get the l2 norm
+  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  if (0) l2Norm(sfx, sfx_res);
+
+  /// the function to be integrated:  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest1.py)
+  StringFunction sfxyz("x*y*z", Name("sfxyz"), Dimensions(3), Dimensions(1) );
+  //l2Norm(sfxyz, sfx_res);
+  //sfx_expect = 0.0240562612162344;
+  //STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
+
+  /// indirection
+  std::cout << "tmp srk start..." << std::endl;
+  StringFunction sfxyz_first("sfxyz", Name("sfxyz_first"), Dimensions(3), Dimensions(1) );
+  l2Norm(sfxyz_first, sfx_res);
+  double sfx_expect = 0.0240562612162344;
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
+}
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
 /// This test uses a back door to the function that passes in the element to avoid the lookup of the element when the
 ///  StringFunction contains references to FieldFunctions
 void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
@@ -410,9 +510,6 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   //stk::diag::WriterThrowSafe _write_throw_safe(dw());
   //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
   //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
-
-  // not ready yet, just return
-  //if(1) return;
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
@@ -440,9 +537,9 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   {
 
 
-    double x = -0.49+0.98*random01();
-    double y = -0.49+0.98*random01();
-    double z = -0.49+0.98*random01();
+    double x = -0.49+0.98*Math::random01();
+    double y = -0.49+0.98*Math::random01();
+    double z = -0.49+0.98*Math::random01();
 
     STKUNIT_EXPECT_DOUBLE_EQ_APPROX(eval(x,y,z,0.0, sfx), eval(x,y,z,0.0, sfx_mc));
     STKUNIT_EXPECT_DOUBLE_EQ_APPROX(eval(.034,0,0,0.0, sfx), eval(.034,0,0,0.0, sfx_mc));
@@ -519,10 +616,9 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
 
   /// the function to be integrated (but over a rotated domain):  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py)
   /// now rotate the mesh
-  TransformationMatrix rmz = rotationMatrix(2, 30);
-  TransformationMatrix rm = rmz;
-  MeshTransformer meshRotate(rm);
-  eMesh.nodalOpLoop(meshRotate, coords_field);
+  Math::Matrix rmz = Math::rotationMatrix(2, 30);
+  Math::Matrix rm = rmz;
+  eMesh.transform_mesh(rm);
 
   l2Norm(sfxyz, sfx_res);
   l2Norm_turbo(sfxyz, sfx_res_turbo);
@@ -568,9 +664,6 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
   //stk::diag::WriterThrowSafe _write_throw_safe(dw());
   //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
   //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
-
-  // not ready yet, just return
-  //if(1) return;
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
@@ -676,10 +769,9 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
 
     /// the function to be integrated (but over a rotated domain):  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py)
     /// now rotate the mesh
-    TransformationMatrix rmz = rotationMatrix(2, 30);
-    TransformationMatrix rm = rmz;
-    MeshTransformer meshRotate(rm);
-    eMesh.nodalOpLoop(meshRotate, coords_field);
+    Math::Matrix rmz = Math::rotationMatrix(2, 30);
+    Math::Matrix rm = rmz;
+    eMesh.transform_mesh(rm);
 
     TIME_IT2( l2Norm(sfxyz, sfx_res); , l2Norm_turbo(sfxyz, sfx_res_turbo); , "should be the same", turboOpt );
 
@@ -760,6 +852,186 @@ STKUNIT_UNIT_TEST(norm, field_function)
 
   Util::setFlag(0, false);
 }
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
+STKUNIT_UNIT_TEST(norm, h1_volume)
+{
+  EXCEPTWATCH;
+  bool ret=false;
+  if (ret) return;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  LocalFixture fix(3,3,12);
+  mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
+  //PerceptMesh& eMesh = fix.eMesh;
+
+  mesh::FieldBase *coords_field = fix.coords_field;
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
+  StringFunction identity("1.0", Name("identity"));
+  std::string grad[] = {"0", "0", "0"};
+  identity.set_gradient_strings(grad, 3);
+
+  /// A place to hold the result.
+  /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
+  /// since we interpolate values to them from other functions).
+  ConstantFunction sqrt_volume(0.0, "sqrt_volume");
+
+  /// Create the operator that will do the work
+  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  /// get the l2 norm of identity
+  h1Norm(identity, sqrt_volume);
+
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_volume.getValue());
+}
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
+STKUNIT_UNIT_TEST(norm, h1_volume_1)
+{
+  EXCEPTWATCH;
+  bool ret=false;
+  if (ret) return;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  LocalFixture fix(3,3,12);
+  mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
+  PerceptMesh& eMesh = fix.eMesh;
+
+  mesh::FieldBase *coords_field = fix.coords_field;
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
+  StringFunction plane("x+2.0*y+3.0*z", Name("plane"));
+  std::string grad[] = {"1", "2", "3"};
+  plane.set_gradient_strings(grad, 3);
+
+  /// A place to hold the result.
+  /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
+  /// since we interpolate values to them from other functions).
+  ConstantFunction result1(0.0, "result1");
+
+  /// Create the operator that will do the work
+  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  /// get the l2 norm of plane
+  h1Norm(plane, result1);
+
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
+
+  //// rotate the mesh (result should be the same)
+
+  if (1)
+  {
+    Math::Matrix rm = Math::rotationMatrix(0, 30);
+    eMesh.transform_mesh(rm);
+    eMesh.save_as("h1Norm_rotate.e");
+    h1Norm(plane, result1);
+
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
+  }
+
+}
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
+STKUNIT_UNIT_TEST(norm, h1_volume_2)
+{
+  EXCEPTWATCH;
+  bool ret=false;
+  if (ret) return;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  LocalFixture fix(3,3,12, false, false);
+  PerceptMesh& eMesh = fix.eMesh;
+
+  int vectorDimension = 0;  // signifies a scalar field
+  stk::mesh::FieldBase *f_test = eMesh.add_field("test", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+  eMesh.commit();
+  mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
+
+  mesh::FieldBase *coords_field = fix.coords_field;
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
+  StringFunction plane("x+2.0*y+3.0*z", Name("plane"));
+  std::string grad_str[] = {"1", "2", "3"};
+  plane.set_gradient_strings(grad_str, 3);
+
+  FieldFunction ff_plane("ff_plane", f_test, eMesh, 3, 1);
+  ff_plane.interpolateFrom(plane);
+
+  {
+    MDArray in(3), out(1), grad(3);
+    double x=0.21, y=0.32, z=0.43;
+    in(0) = x; in(1) = y; in(2) = z;
+    //ff_plane.gradient()
+    ff_plane(in, out);
+    std::cout << "in= " << in << std::endl;
+    std::cout << "out= " << out << std::endl;
+    (*(ff_plane.gradient()))(in, grad);
+    std::cout << "grad= " << grad << std::endl;
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(x+2*y+3*z, out(0));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, grad(0));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(2.0, grad(1));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.0, grad(2));
+  }
+
+  /// A place to hold the result.
+  /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
+  /// since we interpolate values to them from other functions).
+  ConstantFunction result1(0.0, "result1");
+  ConstantFunction result2(0.0, "result2");
+  ConstantFunction result3(0.0, "result3");
+
+  /// Create the operator that will do the work
+
+  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE); 
+  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  /// get the l2 norm of plane
+  h1Norm(plane, result2);
+  h1Norm(ff_plane, result1);
+
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(result1.getValue(), result2.getValue());
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
+
+  //// rotate the mesh (result should be the same)
+
+  if (1)
+  {
+    Math::Matrix rm = Math::rotationMatrix(0, 30);
+    eMesh.transform_mesh(rm);
+    ff_plane.interpolateFrom(plane);
+    eMesh.save_as("h1Norm_rotate.e");
+    h1Norm(ff_plane, result1);
+    l2Norm(plane, result3);
+
+    //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result3.getValue());
+
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
+  }
+
+}
+
+
 
 }
 }

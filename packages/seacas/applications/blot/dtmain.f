@@ -408,7 +408,7 @@ C            --If contour mode, convert element variable to nodal variable,
 C            --if needed, and count min/max
 
                IF (NUMMOD (MODDET, ' ', 'CONTOUR', ' ') .GE. 1) THEN
-                  CALL DBVTYP (IDTVAR(1), TYP, ID)
+                  CALL DBVTYP_BL (IDTVAR(1), TYP, ID)
                   IF (TYP .EQ. 'E') THEN
                      IF (DOVN2B) THEN
                         CALL MDLONG ('IVN2B', KIVN2B, 0)

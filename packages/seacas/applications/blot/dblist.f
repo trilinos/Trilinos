@@ -442,7 +442,7 @@ C *** GENESIS Print Commands ***
             END IF
          END IF
 
-         CALL DBVIX ('E', 1, IXEV)
+         CALL DBVIX_BL ('E', 1, IXEV)
          IF ((OPT .EQ. '*') .OR. (INDEX (OPT, 'V') .GT. 0)) THEN
             CALL MDRSRV ('XLISEV', KXLSEV, NVAREL)
             CALL MDSTAT (NERR, MEM)
@@ -538,12 +538,12 @@ C *** EXODUS Print Commands ***
          CALL FFADDC (LISTYP, INLINE(1))
          CALL CKEXOD (EXODUS, *150)
 
-         CALL DBVIX ('H', 1, IXHV)
-         CALL DBVIX ('G', 1, IXGV)
-         CALL DBVIX ('N', 1, IXNV)
-         CALL DBVIX ('E', 1, IXEV)
-         CALL DBVIX ('M', 1, IXNS)
-         CALL DBVIX ('S', 1, IXSS)
+         CALL DBVIX_BL ('H', 1, IXHV)
+         CALL DBVIX_BL ('G', 1, IXGV)
+         CALL DBVIX_BL ('N', 1, IXNV)
+         CALL DBVIX_BL ('E', 1, IXEV)
+         CALL DBVIX_BL ('M', 1, IXNS)
+         CALL DBVIX_BL ('S', 1, IXSS)
          CALL PRNAME ('GNEMS', NOUT, NAMLEN, 
      *     NVARHI, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
      &     NAMES(IXHV), NAMES(IXGV), NAMES(IXNV), NAMES(IXEV),
@@ -555,7 +555,7 @@ C *** EXODUS Print Commands ***
          CALL CKNONE (NVARHI, .FALSE., 'history variables', *150)
          CALL CKNONE (LISHV(0), .TRUE., 'history variables', *150)
 
-         CALL DBVIX ('H', 1, IXHV)
+         CALL DBVIX_BL ('H', 1, IXHV)
 
          CALL MDRSRV ('SCRVAR', KVAR, NVARHI)
          CALL MDSTAT (NERR, MEM)
@@ -577,7 +577,7 @@ C *** EXODUS Print Commands ***
          CALL CKWHOL (WHOTIM(NCSTEP), *150)
          CALL CKNONE (LISGV(0), .TRUE., 'global variables', *150)
 
-         CALL DBVIX ('G', 1, IXGV)
+         CALL DBVIX_BL ('G', 1, IXGV)
 
          CALL MDRSRV ('SCRVAR', KVAR, NVARGL)
          CALL MDSTAT (NERR, MEM)
@@ -601,7 +601,7 @@ C *** EXODUS Print Commands ***
          CALL CKNONE (LISNP(0), .TRUE., 'nodes', *150)
          CALL CKNONE (LISNV(0), .TRUE., 'nodal variables', *150)
 
-         CALL DBVIX ('N', 1, IXNV)
+         CALL DBVIX_BL ('N', 1, IXNV)
 
          CALL MDRSRV ('SCRVAR', KVAR, NUMNP * LISNV(0))
          CALL MDSTAT (NERR, MEM)
@@ -633,7 +633,7 @@ C *** EXODUS Print Commands ***
          CALL CKNONE (LISEL(0), .TRUE., 'elements', *150)
          CALL CKNONE (LISEV(0), .TRUE., 'element variables', *150)
 
-         CALL DBVIX ('E', 1, IXEV)
+         CALL DBVIX_BL ('E', 1, IXEV)
 
          CALL MDRSRV ('SCRVAR', KVAR, NUMEL * LISEV(0))
          CALL MDSTAT (NERR, MEM)

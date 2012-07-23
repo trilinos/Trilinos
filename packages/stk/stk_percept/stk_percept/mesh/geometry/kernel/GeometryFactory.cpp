@@ -38,7 +38,8 @@ bool GeometryFactory::read_file(const std::string& filename, PerceptMesh* mesh_d
         if (part)
         {
             GeometryEvaluator* eval = new GeometryEvaluator(part);
-            eval->mGeometry = i;
+            eval->mGeometry = geometry_entities[i];
+            //eval->mGeometry = i;
             geomDatabase->add_evaluator(eval);
         }
     }

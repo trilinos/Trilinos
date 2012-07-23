@@ -219,6 +219,7 @@ void assert_shapes_are_equal_throw(
 template <
   class xLayout , class xDataType , unsigned xRankDynamic , unsigned xRank ,
   class yLayout , class yDataType , unsigned yRankDynamic , unsigned yRank >
+inline
 void assert_shapes_are_equal(
   const Shape<xLayout,xDataType,xRankDynamic,xRank> & x ,
   const Shape<yLayout,yDataType,yRankDynamic,yRank> & y )
@@ -227,6 +228,31 @@ void assert_shapes_are_equal(
   typedef Shape<yLayout,yDataType,yRankDynamic,yRank> y_type ;
 
   if ( x != y ) {
+    assert_shapes_are_equal_throw(
+      typeid(typename x_type::array_layout),
+      x_type::value_size ,
+      x_type::rank, x.Stride, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
+      typeid(typename y_type::array_layout),
+      y_type::value_size ,
+      y_type::rank, y.Stride, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
+  }
+}
+
+template <
+  class xLayout , class xDataType , unsigned xRankDynamic , unsigned xRank ,
+  class yLayout , class yDataType , unsigned yRankDynamic , unsigned yRank >
+inline
+void assert_shapes_equal_dimension(
+  const Shape<xLayout,xDataType,xRankDynamic,xRank> & x ,
+  const Shape<yLayout,yDataType,yRankDynamic,yRank> & y )
+{
+  typedef Shape<xLayout,xDataType,xRankDynamic,xRank> x_type ;
+  typedef Shape<yLayout,yDataType,yRankDynamic,yRank> y_type ;
+
+  if ( x.rank != y.rank ||
+       x.N0 != y.N0 || x.N1 != y.N1 || x.N2 != y.N2 || x.N3 != y.N3 ||
+       x.N4 != y.N4 || x.N5 != y.N5 || x.N6 != y.N6 || x.N7 != y.N7 ) {
+
     assert_shapes_are_equal_throw(
       typeid(typename x_type::array_layout),
       x_type::value_size ,
@@ -263,24 +289,63 @@ void assert_shape_effective_rank1_at_leastN(
 
 //----------------------------------------------------------------------------
 
-template < class ShapeType , unsigned Rank >
-struct assert_shape_is_rank ;
+template< class ShapeType > struct assert_shape_is_rank_zero ;
+template< class ShapeType > struct assert_shape_is_rank_one ;
+template< class ShapeType > struct assert_shape_is_rank_two ;
+template< class ShapeType > struct assert_shape_is_rank_three ;
+template< class ShapeType > struct assert_shape_is_rank_four ;
+template< class ShapeType > struct assert_shape_is_rank_five ;
+template< class ShapeType > struct assert_shape_is_rank_six ;
+template< class ShapeType > struct assert_shape_is_rank_seven ;
+template< class ShapeType > struct assert_shape_is_rank_eight ;
 
-template < class Layout , class Type , unsigned RankDynamic , unsigned Rank >
-struct assert_shape_is_rank< Shape< Layout , Type , RankDynamic , Rank > , Rank >
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_zero< Shape< Layout , Type , RankDynamic , 0 > >
+  : public true_type {};
+
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_one< Shape< Layout , Type , RankDynamic , 1 > >
+  : public true_type {};
+
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_two< Shape< Layout , Type , RankDynamic , 2 > >
+  : public true_type {};
+
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_three< Shape< Layout , Type , RankDynamic , 3 > >
+  : public true_type {};
+
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_four< Shape< Layout , Type , RankDynamic , 4 > >
+  : public true_type {};
+
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_five< Shape< Layout , Type , RankDynamic , 5 > >
+  : public true_type {};
+
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_six< Shape< Layout , Type , RankDynamic , 6 > >
+  : public true_type {};
+
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_seven< Shape< Layout , Type , RankDynamic , 7 > >
+  : public true_type {};
+
+template < class Layout , class Type , unsigned RankDynamic >
+struct assert_shape_is_rank_eight< Shape< Layout , Type , RankDynamic , 8 > >
   : public true_type {};
 
 //----------------------------------------------------------------------------
 
-void assert_shape_bounds( const size_t rank ,
-                          const size_t n0 , const size_t n1 ,
-                          const size_t n2 , const size_t n3 ,
-                          const size_t n4 , const size_t n5 ,
-                          const size_t n6 , const size_t n7 ,
-                          const size_t i0 , const size_t i1 ,
-                          const size_t i2 , const size_t i3 ,
-                          const size_t i4 , const size_t i5 ,
-                          const size_t i6 , const size_t i7 );
+void assert_shape_bounds_throw( const size_t rank ,
+                                const size_t n0 , const size_t n1 ,
+                                const size_t n2 , const size_t n3 ,
+                                const size_t n4 , const size_t n5 ,
+                                const size_t n6 , const size_t n7 ,
+                                const size_t i0 , const size_t i1 ,
+                                const size_t i2 , const size_t i3 ,
+                                const size_t i4 , const size_t i5 ,
+                                const size_t i6 , const size_t i7 );
 
 template< class ShapeType >
 inline
@@ -303,10 +368,12 @@ void assert_shape_bounds( const ShapeType & shape ,
                   6 == ShapeType::rank ? true : i6 < shape.N6 && (
                   7 == ShapeType::rank ? true : i7 < shape.N7 )))))));
 
-  assert_shape_bounds_throw( ShapeType::rank ,
-                             shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
-                             shape.N4 , shape.N5 , shape.N6 , shape.N7 ,
-                             i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
+  if ( ! ok ) {
+    assert_shape_bounds_throw( ShapeType::rank ,
+                               shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
+                               shape.N4 , shape.N5 , shape.N6 , shape.N7 ,
+                               i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
+  }
 }
 
 //----------------------------------------------------------------------------

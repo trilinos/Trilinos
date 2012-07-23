@@ -135,12 +135,12 @@ C           name is equal to the last character in the coordinate name.
 
          IF (DEFOK) THEN
 C           find the index for the x displacement variable
-            CALL DBVIX ('N', NDEF0+1, IXDEF)
+            CALL DBVIX_BL ('N', NDEF0+1, IXDEF)
 C           find the index for the y displacement variable
-            CALL DBVIX ('N', NDEF0+2, IYDEF)
+            CALL DBVIX_BL ('N', NDEF0+2, IYDEF)
             IF (IS3DIM) THEN
 C              find the index for the z displacement variable
-               CALL DBVIX ('N', NDEF0+3, IZDEF)
+               CALL DBVIX_BL ('N', NDEF0+3, IZDEF)
             ELSE
                IZDEF = 0
             END IF
@@ -166,13 +166,13 @@ C      --If no time steps, no displacement variables
       ELSE
 
          WRITE (*, *)
-         CALL DBVTYP (IXDEF, CDUM, NXDEF)
-         CALL DBVTYP (IYDEF, CDUM, NYDEF)
+         CALL DBVTYP_BL (IXDEF, CDUM, NXDEF)
+         CALL DBVTYP_BL (IYDEF, CDUM, NYDEF)
          IF (.NOT. IS3DIM) THEN
             WRITE (STRING, '(10A)') 'Displacement variables are ',
      &         NAMENV(NXDEF), ' ', NAMENV(NYDEF)
          ELSE
-            CALL DBVTYP (IZDEF, CDUM, NZDEF)
+            CALL DBVTYP_BL (IZDEF, CDUM, NZDEF)
             WRITE (STRING, '(10A)') 'Displacement variables are ',
      &         NAMENV(NXDEF), ' ', NAMENV(NYDEF), ' ', NAMENV(NZDEF)
          END IF

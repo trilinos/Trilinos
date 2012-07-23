@@ -274,6 +274,26 @@ standard_deviation() const
 }
 
 template <typename ordinal_type, typename value_type, typename storage_type> 
+value_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+two_norm() const
+{
+  return std::sqrt(this->two_norm_squared());
+}
+
+template <typename ordinal_type, typename value_type, typename storage_type> 
+value_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+two_norm_squared() const
+{
+  value_type nrm = 0.0;
+  for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++) {
+    nrm += coeff_[i]*coeff_[i]*basis_->norm_squared(i);
+  }
+  return nrm;
+}
+
+template <typename ordinal_type, typename value_type, typename storage_type> 
 std::ostream&
 Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 print(std::ostream& os) const

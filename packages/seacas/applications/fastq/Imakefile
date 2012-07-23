@@ -39,11 +39,11 @@ OBJS  =	fastq.o
 SRCS1 = \
 add1cn.f  add2cn.f  add2el.f  add2nd.f  add3nd.f  addjut.f \
 addkxl.f  addlxn.f  addnod.f  addrow.f  addsnp.f  addtuk.f \
-addwdg.f  addwt.f   adjmsh.f  adjrow.f  adjtri.f  alpclr.f \
+alpclr.f  addwdg.f  addwt.f   adjmsh.f  adjrow.f  adjtri.f  \
 amxbm.f   apalib.f  apalsm.f  arcpar.f  arcy.f    arelax.f \
-b4bad.f   bcross.f  bfnode.f  bisect.f  bmschm.f  boxit.f  \
+b4bad.f   bcross.f  bfnode.f  fq_bisect.f  bmschm.f  boxit.f  \
 bpinch.f  bubble.f  casmo.f   cclock.f  ch3to4.f  chcond.f \
-check.f   chkhol.f  chkkxl.f  chkrgn.f  chkwt.f   ciapal.f \
+fq_check.f   chkhol.f  chkkxl.f  chkrgn.f  chkwt.f   ciapal.f \
 close2.f  close4.f  close6.f  closeg.f  closel.f  closep.f \
 cntcrn.f  colaps.f  comsrt.f  condno.f  connod.f  cornp.f  \
 cpubrk.f  crcsiz.f  cross.f   csmang.f  d2grid.f  d2node.f \
@@ -60,8 +60,8 @@ gdata.f   getang.f  getcrn.f  getdum.f  getext.f  getfrm.f \
 geti12.f  geti1r.f  getime.f  getkxn.f  getlxn.f  getm1.f  \
 getm3.f   getm5.f   getnxn.f  getplp.f  getr12.f  getrow.f \
 getsbc.f  getsiz.f  gettrn.f  getwt.f   gkxn.f    gmesh.f  \
-gnlist.f  gnxka.f   gtxdum.f  help.f    inattr.f  inbody.f \
-inboun.f  inbrst.f  indexi.f  indexr.f  indx.f    infact.f \
+gnlist.f  gnxka.f   gtxdum.f  fq_help.f    inattr.f  inbody.f \
+inboun.f  inbrst.f  fq_indexi.f    indx.f    infact.f \
 ingrid.f  ingrpn.f  inhole.f  inintr.f  initdg.f  inline.f \
 innerh.f  inpoin.f  inqstr.f  inqtru.f  inregn.f  inrenm.f \
 inschm.f  inside.f  intrup.f  intsct.f  invert.f  invmap.f \
@@ -70,7 +70,7 @@ keyin.f   kxnadd.f  l2smo.f   labove.f  lcolor.f  linepr.f \
 linkbc.f  linken.f  linlen.f  list.f    listbf.f  llist.f  \
 longel.f  lowfnd.f  lpntin.f  lswap.f   ltadd.f   ltnew.f  \
 ltsort.f  lupang.f  mak2el.f  marksm.f  match2.f  matchk.f \
-mesage.f  mesh.f    midnod.f  minmax.f  mixvar.f  mkused.f \
+mesage.f  mesh.f    midnod.f  fq_minmax.f  mixvar.f  mkused.f \
 mmschm.f  mnmxk.f   mnorm.f   movep.f   ncklce.f  ndstat.f \
 nickc.f   nicks.f   node12.f  nodord.f  normnd.f  nps.f
 
@@ -81,20 +81,20 @@ picktr.f  pinch.f   pline.f   plotl.f   pmesh.f   pmschm.f \
 pschem.f  putcrs.f  putlxn.f  qaaval.f  qmesh.f   qual2.f  \
 qual2n.f  qual3.f   qual4.f   rdfsq.f   rdgens.f  rdmesh.f \
 refrsh.f  regext.f  renum.f   repsmo.f  resta.f   restry.f \
-revers.f  rgdstr.f  rgnsch.f  ringbl.f  rmesh.f   rotate.f \
+revers.f  rgdstr.f  rgnsch.f  ringbl.f  rmesh.f   fq_rotate.f \
 rowsmo.f  rplotl.f  savreg.f  setaxs.f  setcir.f  setlop.f \
 setn02.f  sew2.f    sflush.f  shrunk.f  sidep.f   skinit.f \
 skprnt.f  smogs.f   snapit.f  snappt.f  snapxy.f  snpin1.f \
 solve.f   sort.f    sortia.f  sortst.f  spaced.f  spawn.f  \
 spiral.f  spring.f  squash.f  srtnbc.f  srtsbc.f  strait.f \
 strcut.f  strlng.f  strsiz.f  subpen.f  subtri.f  subtrn.f \
-symbol.f  tabint.f  tablet.f  tmschm.f  tridel.f  trifix.f \
+fq_symbol.f  tabint.f  tablet.f  tmschm.f  tridel.f  trifix.f \
 tuck.f    umschm.f  undelm.f  unisnp.f  vinter.f \
 wedge.f   wrabqs.f  wrfsq.f   wrgens.f  wrjerr.f  wrnast.f \
-wrex2.f   zhole.f   zoomlt.f  dbpini.f  lenstr.f
+wrex2.f   zhole.f   zoomlt.f  fq_dbpini.f  
 
 SRCSF = \
-bisect.F digit.F erase.F erasel.F movep.F pmesh.F refrsh.F symbol.F
+bisect.F digit.F erase.F erasel.F movep.F pmesh.F refrsh.F fq_symbol.F
 
 SRCSf = ${SRCSF:.F=.f}
 OBJS1 = ${SRCS1:.f=.o}
@@ -105,7 +105,7 @@ OBJSF = ${SRCSF:.F=.o}
 ALLSRCS  = $(SRCS1) $(SRCS2) $(SRCS3) $(SRCSF)
 ALLOBJS  = $(OBJS1) $(OBJS2) $(OBJS3) $(OBJSF)
 
-LIBS     = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPES) $(PLT)
+LIBS     = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPES) $(PLT) $(SUPLIB)
 CGIOBJ   = $(LIBDIR)/vdicgi.o
 
 OBJSX11  = $(LIBDIR)/cdrabc.o $(LIBDIR)/cgisx11.o $(CGIOBJ)

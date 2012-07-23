@@ -143,7 +143,7 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator * () const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 0 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_zero< shape_type >::type ok_rank ;
       return *m_ptr_on_device ;
     }
 
@@ -152,7 +152,7 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator[]( const iType0 & i0 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 1 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_one< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0 ) );
 
@@ -164,7 +164,7 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator()( const iType0 & i0 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 1 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_one< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0 ) );
 
@@ -177,7 +177,7 @@ public:
   value_type & operator()( const iType0 & i0 ,
                            const iType1 & i1 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 2 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_two< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0, i1 ) );
 
@@ -191,7 +191,7 @@ public:
                            const iType1 & i1 ,
                            const iType2 & i2 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 3 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_three< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0, i1, i2 ) );
 
@@ -207,7 +207,7 @@ public:
                            const iType2 & i2 ,
                            const iType3 & i3 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 4 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_four< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
         Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3 ) );
@@ -225,7 +225,7 @@ public:
                            const iType3 & i3 ,
                            const iType4 & i4 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 5 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_five< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
         Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4 ) );
@@ -245,7 +245,7 @@ public:
                            const iType4 & i4 ,
                            const iType5 & i5 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 6 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_six< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
         Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5 ) );
@@ -267,7 +267,7 @@ public:
                            const iType5 & i5 ,
                            const iType6 & i6 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 7 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_seven< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
         Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
@@ -290,7 +290,7 @@ public:
                            const iType6 & i6 ,
                            const iType7 & i7 ) const
     {
-      typedef typename Impl::assert_shape_is_rank< shape_type , 8 >::type ok_rank ;
+      typedef typename Impl::assert_shape_is_rank_eight< shape_type >::type ok_rank ;
 
       KOKKOS_MACRO_CHECK(
         Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
@@ -428,9 +428,6 @@ private:
 
   template< class , class , class > friend class View ;
   template< class Dst , class Src >  friend class Impl::Factory ;
-
-  /// TO BE REMOVED:
-  template< class , class > friend class MultiVector ;
 };
 
 //----------------------------------------------------------------------------

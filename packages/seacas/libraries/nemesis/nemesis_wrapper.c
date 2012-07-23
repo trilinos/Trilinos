@@ -585,3 +585,12 @@ ne_put_elem_cmap(int  neid,	/* NetCDF/Exodus file ID */
   return ex_put_elem_cmap(neid, map_id, elem_ids, side_ids, proc_ids, processor);
 }
 
+int ne_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
+	       const char *ne_var_name, /* Nemesis index variable name */
+	       int64_t *index,	 /* array of length 2 to hold results */
+	       int      pos		 /* position of this proc/cmap in index */
+	       )
+{
+  return ex_get_idx(neid, ne_var_name, index, pos);
+}
+

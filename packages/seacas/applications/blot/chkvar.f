@@ -93,7 +93,7 @@ C   --   Uses NDIM, NVARNP, NVAREL of /DBNUMS/
          IF (MODDET(I) .EQ. 'CONTOUR') THEN
             N = 1
             NNDVAR = MAX (NNDVAR, N)
-            CALL DBVTYP (IDTVAR(1), TYP1, IDUM)
+            CALL DBVTYP_BL (IDTVAR(1), TYP1, IDUM)
             IF (TYP1 .EQ. 'E') NEDVAR = MAX (NEDVAR, N)
          ELSE IF (MODDET(I) .EQ. 'ELEMCONT') THEN
             N = 1
@@ -110,7 +110,7 @@ C   --   Uses NDIM, NVARNP, NVAREL of /DBNUMS/
             IF (NMIN .GT. NMAX) NMIN = NMAX
             IF ((MODTYP(I) .NE. 'SIGMAX')
      &         .OR. (MODTYP(I) .NE. 'SIGMIN')) THEN
-               CALL DBVTYP (NMIN, TYP1, IDUM)
+               CALL DBVTYP_BL (NMIN, TYP1, IDUM)
                IF ((TYP1 .EQ. 'N') .OR. (TYP1 .EQ. ' ')) THEN
                   MODTYP(I) = 'NODE'
                ELSE
@@ -168,7 +168,7 @@ C   --   Uses NDIM, NVARNP, NVAREL of /DBNUMS/
                OK = .FALSE.
                GOTO 150
             END IF
-            CALL DBVTYP (IDTVAR(1), TYP1, IDUM)
+            CALL DBVTYP_BL (IDTVAR(1), TYP1, IDUM)
             IF (TYP1 .NE. 'E') THEN
                CALL PRTERR ('CMDERR',
      &            'Contour variable must be an element variable')
@@ -178,8 +178,8 @@ C   --   Uses NDIM, NVARNP, NVAREL of /DBNUMS/
          ELSE IF (MODDET(I) .EQ. 'VECTOR') THEN
             IF ((MODTYP(I) .EQ. 'NODE')
      &         .OR. (MODTYP(I) .EQ. 'ELEMENT')) THEN
-               CALL DBVTYP (NMIN, TYP1, IDUM)
-               CALL DBVTYP (NMAX, TYP2, IDUM)
+               CALL DBVTYP_BL (NMIN, TYP1, IDUM)
+               CALL DBVTYP_BL (NMAX, TYP2, IDUM)
                IF (TYP1 .NE. TYP2) THEN
                   CALL PRTERR ('CMDERR',
      &               'Vector variables must'
@@ -189,7 +189,7 @@ C   --   Uses NDIM, NVARNP, NVAREL of /DBNUMS/
                END IF
             ELSE IF ((MODTYP(I) .EQ. 'SIGMAX')
      &         .OR. (MODTYP(I) .EQ. 'SIGMIN')) THEN
-               CALL DBVTYP (NMIN, TYP1, IDUM)
+               CALL DBVTYP_BL (NMIN, TYP1, IDUM)
                IF (TYP1 .NE. 'E') THEN
                   CALL PRTERR ('CMDERR',
      &               'Stress variables must be element variables')
@@ -206,7 +206,7 @@ C   --   Uses NDIM, NVARNP, NVAREL of /DBNUMS/
                   OK = .FALSE.
                   GOTO 150
                END IF
-               CALL DBVTYP (IDTVAR(1), TYP1, IDUM)
+               CALL DBVTYP_BL (IDTVAR(1), TYP1, IDUM)
                IF (TYP1 .NE. 'E') THEN
                   CALL PRTERR ('CMDERR',
      &               'Symbol variable must be an element variable')
@@ -222,7 +222,7 @@ C   --   Uses NDIM, NVARNP, NVAREL of /DBNUMS/
                   OK = .FALSE.
                   GOTO 150
                END IF
-               CALL DBVTYP (IDTVAR(J), TYP1, IDUM)
+               CALL DBVTYP_BL (IDTVAR(J), TYP1, IDUM)
                IF (TYP1 .NE. 'E') THEN
                   CALL PRTERR ('CMDERR',
      &               'Gauss variables must be element variables')

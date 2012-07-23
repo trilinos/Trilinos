@@ -166,6 +166,11 @@ namespace stk
         throw std::runtime_error("not implemented");
       }
 
+      virtual Teuchos::RCP<Function > gradient(int spatialDim=3)
+      {
+        throw std::runtime_error("not implemented");
+      }
+
       void derivativeAtPoint(MDArrayString& deriv_spec, MDArray& domain, MDArray& codomain, double time = 0.0)
       {
         derivative(deriv_spec)->operator()(domain, codomain, time);
@@ -191,11 +196,16 @@ namespace stk
       static const Function& Identity;
       //static Function Zero;
 
+      /// Verify that the last dimensions of @param in and @param out are the same; this allows Functions
+      ///   to be invoked at multiple points where the first M indices represent an M-d array of points
+      ///   to evaluate the function, while the last N indices should match the Functions domain and
+      ///   codomain dimensions.
+      bool argsAreValid(const MDArray& in, const MDArray& out);
+
     protected:
 
       static int last_dimension(MDArray& arr) { return arr.dimension(arr.rank()-1); }
       static NameToFunctionMap& getNameToFunctionMap();
-      bool argsAreValid(const MDArray& in, const MDArray& out);
 
       std::string m_name;
       unsigned m_integration_order;

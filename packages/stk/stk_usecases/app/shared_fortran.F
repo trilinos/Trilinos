@@ -104,7 +104,7 @@ c
 c
 c        Compute inverse of left cauchy green tensor (B^-1)
 c
-      call fmth_right_tensor_square36( nelem,nint,def_grad_inv,
+      call fmath_right_tensor_square36( nelem,nint,def_grad_inv,
      &     cg_left_inv)
 c
 c        Get eigenvalues of B^-1

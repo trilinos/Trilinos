@@ -1035,28 +1035,64 @@ namespace stk {
       if (m_geomSnap)
         {
 
-            GeometryKernelOpenNURBS gk;
-            // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
-            double doCheckMovement = 0.0; 
-            double doCheckCPUTime = 0.0;  
-            //double doCheckCPUTime = 0.1;
-            //double doCheckMovement = -1.0; 
+          SMOOTHING_OPTIONS option = SNAP_PLUS_SMOOTH;
+          //SMOOTHING_OPTIONS option = USE_LINE_SEARCH_WITH_MULTIPLE_STATES;
 
-            MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
-            GeometryFactory factory(&gk, &mesh_geometry);
-            factory.read_file(m_geomFile, &m_eMesh);
-            mesh_geometry.snap_points_to_geometry(&m_eMesh);
-            if (doCheckMovement != 0.0) 
-              mesh_geometry.print_node_movement_summary();
+          GeometryKernelOpenNURBS gk;
+          // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
+          double doCheckMovement = 0.0; 
+          //double doCheckMovement = -1.0; 
 
-            // no need to smooth it a second time if using Mesquite
-            if (0 && m_doSmoothGeometry)
-              {
-                smoothGeometry(mesh_geometry);
-                mesh_geometry.snap_points_to_geometry(&m_eMesh);
-              }
+          // anything exceeding a value > 0.0 will be printed
+          double doCheckCPUTime = 0.0;  
+          //double doCheckCPUTime = 0.1;
 
+          MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
+          GeometryFactory factory(&gk, &mesh_geometry);
+          factory.read_file(m_geomFile, &m_eMesh);
 
+          switch(option) {
+          case SNAP_PLUS_SMOOTH:
+            {
+              mesh_geometry.snap_points_to_geometry(&m_eMesh);
+              if (doCheckMovement != 0.0) 
+                mesh_geometry.print_node_movement_summary();
+
+              // no need to smooth it a second time if using Mesquite
+              if (0 && m_doSmoothGeometry)
+                {
+                  smoothGeometry(mesh_geometry,option);
+                  mesh_geometry.snap_points_to_geometry(&m_eMesh);
+                }
+            }
+            break;
+          case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
+            {
+              VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
+
+              // make a copy of current non-snapped state (dst,src)
+              m_eMesh.copy_field(m_eMesh.get_field("coordinates_NM1"), m_eMesh.get_coordinates_field() );
+
+              // do the snap
+              mesh_geometry.snap_points_to_geometry(&m_eMesh);
+              if (doCheckMovement != 0.0) 
+                mesh_geometry.print_node_movement_summary();
+
+              // make a copy of current snapped state
+              m_eMesh.copy_field(m_eMesh.get_field("coordinates_N"), m_eMesh.get_coordinates_field() );
+
+              // reset current state to non-snapped state
+              m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
+
+              if (1 && m_doSmoothGeometry)
+                {
+                  smoothGeometry(mesh_geometry,option);
+                  //mesh_geometry.snap_points_to_geometry(&m_eMesh);
+                }
+              
+            }
+            break;
+          }
 
         }
 #endif
@@ -1321,7 +1357,7 @@ namespace stk {
 #endif
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
-    void Refiner::smoothGeometry(MeshGeometry& mesh_geometry)
+    void Refiner::smoothGeometry(MeshGeometry& mesh_geometry, SMOOTHING_OPTIONS option)
     {
       bool do_mesquite_smoothing = true;
       if (do_mesquite_smoothing)
@@ -1333,30 +1369,51 @@ namespace stk {
 
           PerceptMesquiteMeshDomain pmd(&m_eMesh, &mesh_geometry);
 
+          switch(option) {
+          case SNAP_PLUS_SMOOTH:
+            {
 #define ALWAYS_PMM_PARALLEL 1
 #if ALWAYS_PMM_PARALLEL
-          PerceptMesquiteMesh pmm0(&m_eMesh, &pmd);
-          PerceptMesquiteMesh::PMMParallelMesh pmm(&pmm0);
-          Mesquite::MsqError err;
-          //pmm.helper.set_communication_model(Mesquite::ParallelHelperImpl::Blocking, err);
+              PerceptMesquiteMesh pmm0(&m_eMesh, &pmd);
+              PerceptMesquiteMesh::PMMParallelMesh pmm(&pmm0);
+              Mesquite::MsqError err;
+              //pmm.helper.set_communication_model(Mesquite::ParallelHelperImpl::Blocking, err);
 #else
-          PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
+              PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
 #endif
-          if (do_laplace)
-            {
-              PMMLaplaceSmoother1 ls;
-              if (do_jacobi) ls.get_smoother().do_jacobi_optimization();
-              ls.run(pmm, pmd, always_smooth, msq_debug);
+              if (do_laplace)
+                {
+                  PMMLaplaceSmoother1 ls;
+                  if (do_jacobi) ls.get_smoother().do_jacobi_optimization();
+                  ls.run(pmm, pmd, always_smooth, msq_debug);
+                }
+              else
+                {
+                  //PMMShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
+                  PMMShapeImprover si(100, 1.e-8, 20);
+                  //PMMShapeImprover si(5, 1.e-8, 20);
+                  //const double max_vertex_movement_term_crit=10;
+                  //PMMShapeSizeOrientImprover si(10);
+                  si.run(pmm, pmd, always_smooth, msq_debug);
+                }
             }
-          else
+            break;
+          case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
             {
+#if 0
+              // geometry used for classification of fixed/non-fixed nodes
+              PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
+
               //PMMShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
-              PMMShapeImprover si(100, 1.e-8, 20);
+              PMMParallelShapeImprover si(100, 1.e-8, 20);
               //PMMShapeImprover si(5, 1.e-8, 20);
               //const double max_vertex_movement_term_crit=10;
               //PMMShapeSizeOrientImprover si(10);
-              si.run(pmm, pmd, always_smooth, msq_debug);
+              si.run(pmm, &pmd, always_smooth, msq_debug);
+#endif
             }
+            break;
+          }
           return;
         }
       /**

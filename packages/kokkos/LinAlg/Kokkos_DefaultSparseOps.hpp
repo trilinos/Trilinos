@@ -81,7 +81,7 @@ namespace Kokkos {
       }
     };
 
-    template <class Ordinal, class Node> 
+    template <class Ordinal, class Node>
     class FirstTouchCRSAllocator {
       public:
       //! \brief Allocate and initialize the storage for the matrix values.
@@ -122,7 +122,7 @@ namespace Kokkos {
       }
     };
 
-    template <class Ordinal, class Node> 
+    template <class Ordinal, class Node>
     class DefaultCRSAllocator {
       public:
       //! \brief Allocate and initialize the storage for the matrix values.
@@ -133,7 +133,7 @@ namespace Kokkos {
         std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
         return ptrs;
       }
-  
+
       //! \brief Allocate and initialize the storage for a sparse graph.
       template <class T>
       static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const Ordinal> &rowPtrs)
@@ -374,6 +374,9 @@ namespace Kokkos {
     //! Constructor accepting and retaining a node object.
     DefaultHostSparseOps(const RCP<Node> &node);
 
+    //! Constructor accepting and retaining a node object, and taking parameters.
+    DefaultHostSparseOps(const RCP<Node> &node, Teuchos::ParameterList& params);
+
     //! Destructor
     ~DefaultHostSparseOps();
 
@@ -592,6 +595,22 @@ namespace Kokkos {
   , isInitialized_(false)
   , isEmpty_(false)
   {
+    // Make sure that users only specialize DefaultHostSparseOps for
+    // Kokkos Node types that are host Nodes (vs. device Nodes, such
+    // as GPU Nodes).
+    Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+  }
+
+  template<class Scalar, class Ordinal, class Node, class Allocator>
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  DefaultHostSparseOps (const RCP<Node> &node, Teuchos::ParameterList& params)
+  : node_(node)
+  , numRows_(0)
+  , isInitialized_(false)
+  , isEmpty_(false)
+  {
+    (void) params; // Not using this yet.
+
     // Make sure that users only specialize DefaultHostSparseOps for
     // Kokkos Node types that are host Nodes (vs. device Nodes, such
     // as GPU Nodes).

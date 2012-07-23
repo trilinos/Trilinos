@@ -91,7 +91,7 @@ C   --   Uses IS3DIM of /D3NUMS/
       INTEGER LINKF1(NLNKF)
       REAL XN(*), YN(*), ZN(*)
 
-      LOGICAL INTERP
+      LOGICAL INTERP_BL
       LOGICAL INTERC, INTEQC
       LOGICAL ISDONE(8)
       REAL XPTS(24), YPTS(24)
@@ -216,7 +216,7 @@ C      --contour area or a dividing line in the contour area
          IF (INTERC (VARNP(N), CNTR0, CNTR1)) THEN
             ICNTR = -1
             ISTATE = KCORNR
-         ELSE IF ((INTERP (CNTR0, VARNP(N), VARNP(N1), PSI))
+         ELSE IF ((INTERP_BL (CNTR0, VARNP(N), VARNP(N1), PSI))
      &      .AND. (VARNP(N1) .GT. CNTR0)) THEN
             ICNTR = 0
             CNTR = CNTR0
@@ -255,11 +255,11 @@ C            --Find the direction to follow this contour line through
 C            --the face center
 
                ISTATE = KERR3
-               IF (INTERP (CNTR, VARNP(N1), FM, PSI)) THEN
+               IF (INTERP_BL (CNTR, VARNP(N1), FM, PSI)) THEN
                   IDIR = +1
                   I = N1
                   ISTATE = KMIDDL
-               ELSE IF (INTERP (CNTR, VARNP(N), FM, PSI)) THEN
+               ELSE IF (INTERP_BL (CNTR, VARNP(N), FM, PSI)) THEN
                   IDIR = -1
                   I = N
                   ISTATE = KMIDDL
@@ -285,12 +285,12 @@ C            --to the side or through the middle
                ELSE
                   I = N
                END IF
-               IF (INTERP (CNTR, VARNP(N), VARNP(N1), PSI)) THEN
+               IF (INTERP_BL (CNTR, VARNP(N), VARNP(N1), PSI)) THEN
                   ISTATE = KOSIDE
 C               --If the corner is exactly on the contour range, check
 C               --if the line is moving away from the corner; if so, go
 C               --through the middle to prevent cycling on this corner
-                  IF (INTERP (CNTR, VARNP(I), FM, PSIX)) THEN
+                  IF (INTERP_BL (CNTR, VARNP(I), FM, PSIX)) THEN
                      IF (((IDIR .EQ. +1) .AND. (VARNP(N) .EQ. CNTR))
      &                  .OR.
      &                  ((IDIR .EQ. -1) .AND. (VARNP(N1) .EQ. CNTR)))
@@ -299,7 +299,7 @@ C               --through the middle to prevent cycling on this corner
                         ISTATE = KMIDDL
                      END IF
                   END IF
-               ELSE IF (INTERP (CNTR, VARNP(I), FM, PSI)) THEN
+               ELSE IF (INTERP_BL (CNTR, VARNP(I), FM, PSI)) THEN
                   ISTATE = KMIDDL
                END IF
 
@@ -344,17 +344,17 @@ C            --crossing was a corner or a CNTR0 crossing
                   ICNTR = MIN (-1, ICNTR-1)
                   ISTATE = KCORNR
                ELSE IF ((ICNTR .EQ. -2) .AND.
-     &            INTERP (CNTR0, VARNP(N), VARNP(N1), PSI)) THEN
+     &            INTERP_BL (CNTR0, VARNP(N), VARNP(N1), PSI)) THEN
                   ICNTR = 0
                   CNTR = CNTR0
                   ISTATE = KISIDE
                ELSE IF ((ICNTR .NE. 1) .AND.
-     &            INTERP (CNTR1, VARNP(N), VARNP(N1), PSI)) THEN
+     &            INTERP_BL (CNTR1, VARNP(N), VARNP(N1), PSI)) THEN
                   ICNTR = 1
                   CNTR = CNTR1
                   ISTATE = KISIDE
                ELSE IF ((ICNTR .NE. 0) .AND.
-     &            INTERP (CNTR0, VARNP(N), VARNP(N1), PSI)) THEN
+     &            INTERP_BL (CNTR0, VARNP(N), VARNP(N1), PSI)) THEN
                   ICNTR = 0
                   CNTR = CNTR0
                   ISTATE = KISIDE

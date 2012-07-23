@@ -482,6 +482,68 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
 //=============================================================================
 //=============================================================================
 
+STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_deriv_verify)
+{
+  EXCEPTWATCH;
+  /// test evaluation of field function at a point
+
+  const size_t num_x = 3;
+  const size_t num_y = 3;
+  const size_t num_z = 3;
+  std::string config_mesh =
+    Ioss::Utils::to_string(num_x) + "x" +
+    Ioss::Utils::to_string(num_y) + "x" +
+    Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
+
+  PerceptMesh eMesh(3u);
+  eMesh.new_mesh(GMeshSpec(config_mesh));
+
+  int vectorDimension = 0;  // signifies a scalar field
+  stk::mesh::FieldBase *f_test = eMesh.add_field("test", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+  eMesh.commit();
+  // no need for this in create mode: eMesh.readBulkData();
+
+  StringFunction sf1("x + y + z + t");
+
+  FieldFunction ff1("ff1", f_test, eMesh, 3, 1);
+  ff1.interpolateFrom(sf1);
+
+  
+
+  /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
+  stk::mesh::FieldBase *f_coords = eMesh.get_field("coordinates");
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", f_coords, eMesh,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// here we evaluate this field function
+  MDArray val1 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+  //std::cout << "eval = \n" << val1 << std::endl;
+
+  //double value = eval(1.2, 2.3, 3.4, 0.0, ff_coords);
+  MDArray pts(3);
+  MDArray output_pts(3);
+  pts(0) = 0.2; pts(1) = 0.3; pts(2) = 0.4; //pts(3) = 0.0;
+  ff_coords(pts, output_pts);
+  STKUNIT_ASSERT_NEAR(pts(0), output_pts(0), 1.e-9);
+  STKUNIT_ASSERT_NEAR(pts(1), output_pts(1), 1.e-9);
+  STKUNIT_ASSERT_NEAR(pts(2), output_pts(2), 1.e-9);
+
+#if 0
+  Teuchos::RCP<Function> deriv_ff = ff1.gradient();
+  MDArray outp1(3);
+  deriv_ff->operator()(pts, outp1);
+  STKUNIT_ASSERT_NEAR(outp1(0), 1.0, 1.e-9);
+  STKUNIT_ASSERT_NEAR(outp1(1), 1.0, 1.e-9);
+  STKUNIT_ASSERT_NEAR(outp1(2), 1.0, 1.e-9);
+#endif
+}
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
 STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
 {
   EXCEPTWATCH;

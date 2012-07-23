@@ -138,6 +138,11 @@ public:
   Selector operator ! () const
     { Selector S( *this ); return S.complement(); }
 
+  /** \brief  Is this part a member of the
+   *          set defined by the selector expression.
+   */
+  bool operator()( const Part & part ) const;
+
   /** \brief  Is this bucket a subset of the
    *          set defined by the selector expression.
    */
@@ -195,9 +200,10 @@ private:
   {
     bool result = i != j ;
     while ( result && i != j ) {
-      if ( i->m_count ) { // Compound statement
-        result = i->m_unary ^ apply( i + 1 , i + i->m_count , part_range , comp );
-        i += i->m_count ;
+      const unsigned statement_length = i->m_count;
+      if ( statement_length > 0 ) { // Check if compound statement
+        result = i->m_unary ^ apply( i + 1 , i + statement_length , part_range , comp );
+        i += statement_length;
       }
       else { // Test for containment of bucket in this part, or not in
         result = i->m_unary ^ part_is_present( i->m_part_id , part_range , comp );
@@ -214,6 +220,8 @@ private:
       ) const;
 
 };
+
+class Part;
 
 #ifndef SWIG
 std::ostream & operator<<( std::ostream & out, const Selector & selector);

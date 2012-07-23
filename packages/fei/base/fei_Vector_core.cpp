@@ -316,18 +316,18 @@ int fei::Vector_core::giveToVector(int numValues,
       }
 
       if (sumInto) {
-	fei::add_entry( *remote[proc], ind, val);
+        fei::add_entry( *remote[proc], ind, val);
       }
       else {
-	fei::put_entry( *remote[proc], ind, val);
+        fei::put_entry( *remote[proc], ind, val);
       }
     }
     else {
       int err = giveToUnderlyingVector(1, &ind, &val, sumInto, vectorIndex);
       if (err != 0) {
-	fei::console_out() << "giveToVector sumIn ERROR, ind: " << ind
-	     << ", val: " << val << FEI_ENDL;
-	ERReturn(-1);
+        fei::console_out() << "giveToVector sumIn ERROR, ind: " << ind
+          << ", val: " << val << FEI_ENDL;
+        ERReturn(-1);
       }
     }
   }

@@ -208,7 +208,7 @@ namespace stk
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P], [D], [D])
     IntrepidManager::Jacobian::
-    Jacobian(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag))
+    Jacobian(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag)), m_im(im)
     {
 
     }
@@ -224,6 +224,37 @@ namespace stk
     operator()(int i1, int i2, int i3) { return m_dummy;}
     const double&     IntrepidManager::Jacobian::
     operator()(int i1, int i2, int i3) const { return m_dummy;}
+
+
+    //------------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------------
+      /// ([C], [P], [D])
+    IntrepidManager::FaceNormal::
+    FaceNormal(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag)), m_im(im)
+    {
+
+    }
+    void
+    IntrepidManager::FaceNormal::
+    operator()(Jacobian& J, int i_face, CellTopology& topo)
+    {
+      // FIXME - don't instantiate this, since Intrepid isn't completely free of its own MDArray, FieldContainer
+#if 0
+      MDArray J_mda;
+      J.copyTo(J_mda);
+      MDArray fn_mda(m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+      CellTools<double>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
+      this->copyFrom(fn_mda);
+#endif
+      //CellTools<double>::getPhysicalFaceNormals(*this, jac, i_face, topo);
+      throw std::runtime_error(" don't instantiate this, since Intrepid isn't completely free of its own MDArray, FieldContainer");
+    }
+    //double m_dummy;
+    double&     IntrepidManager::FaceNormal::
+    operator()(int i1, int i2) { return m_dummy;}
+    const double&     IntrepidManager::FaceNormal::
+    operator()(int i1, int i2) const { return m_dummy;}
 
 
 

@@ -101,7 +101,7 @@ C   --   Uses NSPVAR of /SPVARS/
          DO 100 N = 1, NSPVAR
             IXSEGV(N) = 0
 
-            CALL DBVTYP (ISVID(N), CDUM, ID)
+            CALL DBVTYP_BL (ISVID(N), CDUM, ID)
             IF (NUMEQL (.FALSE., NELBLK, ISEVOK(1,ID)) .GT. 0) THEN
                CALL MDLONG ('ISEGEL', KSEGEL, (NSEGV+1) * (1+NNENUM))
                CALL MDSTAT (NERR, MEM)

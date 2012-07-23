@@ -180,8 +180,8 @@ C   --Get the command verb, which may be a variable name
       WORD = INVERB
       CALL ABRSTR (VERB, WORD, CMDTBL)
       IF (VERB .EQ. ' ') THEN
-         CALL DBVIX ('N', 1, INV)
-         CALL DBVIX ('E', 1, IEV)
+         CALL DBVIX_BL ('N', 1, INV)
+         CALL DBVIX_BL ('E', 1, IEV)
          IF ((LOCSTR (WORD, NVARNP, NAMES(INV)) .GT. 0)
      &      .OR. (LOCSTR (WORD, NVAREL, NAMES(IEV)) .GT. 0)) THEN
             VERB = 'SYPLOT'
@@ -353,7 +353,7 @@ C      --Get variable name
 
 C      --Get variable type
 
-         CALL DBVTYP (IVAR, TYP, IDUM)
+         CALL DBVTYP_BL (IVAR, TYP, IDUM)
 
          IF (NODVAR) THEN
             IF (TYP .NE. 'N') THEN
@@ -467,7 +467,7 @@ C      --element variable
          IF (.NOT. NODVAR) THEN
             NBAD = 0
             DO 170 IP = 1, NSPVAR
-               CALL DBVTYP (ISVID(IP), TYP, IVAR)
+               CALL DBVTYP_BL (ISVID(IP), TYP, IVAR)
                IF (NUMEQL (.FALSE., NELBLK, ISEVOK(1,IVAR)) .GT. 0) THEN
                   DO 150 IX = 1, NNENUM
                      IF (ISEVOK(IE2ELB(NENUM(IX)),IVAR)) GOTO 160

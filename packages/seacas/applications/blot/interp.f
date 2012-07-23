@@ -41,14 +41,14 @@ c Revision 1.2  1990/12/14  08:52:45  gdsjaar
 c Added RCS Id and Log to all files
 c
 C=======================================================================
-      LOGICAL FUNCTION INTERP (CNTR, F1, F2, PSI)
+      LOGICAL FUNCTION INTERP_BL (CNTR, F1, F2, PSI)
 C=======================================================================
 
-C   --*** INTERP *** (DETOUR) Compute interception point
+C   --*** INTERP_BL *** (DETOUR) Compute interception point
 C   --   Written by Amy Gilkey - revised 11/21/85
 C   --   D. P. Flanagan, 3/25/83
 C   --
-C   --INTERP tests if a contour value falls within an interval.
+C   --INTERP_BL tests if a contour value falls within an interval.
 C   --A degenerate interval fails regardless of the contour value. If the
 C   --test is passed, the nomalized interval coordinate of the contour
 C   --value is computed.  The returned function value is true only if the
@@ -62,12 +62,12 @@ C   --   PSI - OUT - normalized interval coordinate
 
 C   --Test if coordinate lies within the interval
 
-      INTERP = (F2 .NE. F1) .AND.
+      INTERP_BL = (F2 .NE. F1) .AND.
      &   (((F1 .LE. CNTR) .AND. (CNTR .LE. F2))
      &   .OR. ((F2 .LE. CNTR) .AND. (CNTR .LE. F1)))
 
 C   --Compute normalized interval coordinate
 
-      IF (INTERP) PSI = (CNTR - F1) / (F2 - F1)
+      IF (INTERP_BL) PSI = (CNTR - F1) / (F2 - F1)
       RETURN
       END

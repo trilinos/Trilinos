@@ -78,7 +78,7 @@ C
          CALL MESAGE ('TOLERANCE EXCEEDED')
          RETURN
       ELSE IF (IFIRST.NE.1) THEN
-         CALL ROTATE (NPER, X, Y, NID, IFIRST)
+         CALL FQ_ROTATE (NPER, X, Y, NID, IFIRST)
       END IF
 C
 C  DELETE THE STACKS
@@ -96,16 +96,16 @@ C
       IF (M1 .EQ. MMAX) THEN
          KNUM = 0
       ELSE IF (M2 .EQ. MMAX) THEN
-         CALL ROTATE (NPER, X, Y, NID, M1 + 1)
+         CALL FQ_ROTATE (NPER, X, Y, NID, M1 + 1)
          KNUM = 1
       ELSE IF (M3 .EQ. MMAX) THEN
-         CALL ROTATE (NPER, X, Y, NID, M1 + M2 + 1)
+         CALL FQ_ROTATE (NPER, X, Y, NID, M1 + M2 + 1)
          KNUM = 2
       ELSE IF (M4 .EQ. MMAX) THEN
-         CALL ROTATE (NPER, X, Y, NID, M1 + M2 + M3 + 1)
+         CALL FQ_ROTATE (NPER, X, Y, NID, M1 + M2 + M3 + 1)
          KNUM = 3
       ELSE IF (M5 .EQ. MMAX) THEN
-         CALL ROTATE (NPER, X, Y, NID, M1 + M2 + M3 + M4 + 1)
+         CALL FQ_ROTATE (NPER, X, Y, NID, M1 + M2 + M3 + M4 + 1)
          KNUM = 4
       END IF
       DO 100 KK = 1, KNUM

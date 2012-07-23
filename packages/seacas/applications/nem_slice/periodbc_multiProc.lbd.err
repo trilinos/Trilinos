@@ -1,2 +1,0 @@
-[0] Zoltan WARNING in rcb_fn (line 525 of ../../zoltan-3.601/src/rcb/rcb.c):  RCB partitioning called with no objects
-Error returned from Zoltan_LB_Partition (elb_loadbal.C:2774)
