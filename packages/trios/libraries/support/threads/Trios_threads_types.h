@@ -49,12 +49,16 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 #include <stdint.h>
+#if defined(HAVE_TRIOS_SEMAPHORE_H)
 #include <semaphore.h>
+#endif
 
 typedef struct {
     char  *name;
+#if defined(HAVE_TRIOS_SEM_T)
     sem_t  lock;
     sem_t *lock_ptr;
+#endif
 } nthread_lock_t;
 
 typedef struct {

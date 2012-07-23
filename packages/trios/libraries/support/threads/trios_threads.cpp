@@ -58,8 +58,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <errno.h>
 #include <string.h>
 
+#if defined(HAVE_TRIOS_SEMAPHORE_H)
 #include <semaphore.h>
-
+#endif
 
 #include "Trios_logger.h"
 #include "Trios_threads.h"
@@ -79,7 +80,16 @@ int nthread_lock_init(
 
 //    log_debug(thread_debug_level, "nthread_lock_init: initializing lock(%p), lock->lock(%p)", lock, lock->lock);
 
-#if defined(__APPLE__)
+#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
+    rc=sem_init(&lock->lock, 0, 1);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_lock_init: sem_init failed: %s\n", strerror(errno));
+        fflush(stderr);
+        lock->lock_ptr=NULL;
+        return(-1);
+    }
+    lock->lock_ptr=&lock->lock;
+#elif defined(HAVE_TRIOS_NAMED_SEMAPHORES)
     do {
         lock->name=tempnam("/tmp", "trios.");
         lock->lock_ptr=sem_open(lock->name+4, O_CREAT|O_EXCL, 0600, 1);
@@ -97,14 +107,7 @@ int nthread_lock_init(
         return(-1);
     }
 #else
-    rc=sem_init(&lock->lock, 0, 1);
-    if (rc == -1) {
-        fprintf(stderr, "nthread_lock_init: sem_init failed: %s\n", strerror(errno));
-        fflush(stderr);
-        lock->lock_ptr=NULL;
-        return(-1);
-    }
-    lock->lock_ptr=&lock->lock;
+
 #endif
 
 //    log_debug(thread_debug_level, "nthread_lock_init: initialized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
@@ -122,6 +125,8 @@ int nthread_lock(
     fflush(stderr);
 #endif
 
+#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+
     if (lock->lock_ptr == NULL) {
         fprintf(stderr, "nthread_lock: lock not initialized\n");
         fflush(stderr);
@@ -134,6 +139,8 @@ int nthread_lock(
         fflush(stderr);
         return(-1);
     }
+
+#endif
 
 #ifdef _DEBUG_LOCKS_
     fprintf(stderr, "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
@@ -153,6 +160,8 @@ int nthread_unlock(
     fflush(stderr);
 #endif
 
+#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+
     if (lock->lock_ptr == NULL) {
         fprintf(stderr, "nthread_unlock: lock not initialized\n");
         fflush(stderr);
@@ -165,6 +174,8 @@ int nthread_unlock(
         fflush(stderr);
         return(-1);
     }
+
+#endif
 
 #ifdef _DEBUG_LOCKS_
     fprintf(stderr, "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
@@ -182,13 +193,23 @@ int nthread_lock_fini(
 
 //    log_debug(thread_debug_level, "nthread_lock_fini: finalizing lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
 
+#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+
     if (lock->lock_ptr == NULL) {
         fprintf(stderr, "nthread_lock_fini: lock not initialized\n");
         fflush(stderr);
         return(-1);
     }
+#endif
 
-#if defined(__APPLE__)
+#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
+    rc=sem_destroy(lock->lock_ptr);
+    if (rc == -1) {
+        fprintf(stderr, "nthread_lock_fini: sem_destroy failed: %s\n", strerror(errno));
+        fflush(stderr);
+        return(-1);
+    }
+#elif defined(HAVE_TRIOS_NAMED_SEMAPHORES)
     rc=sem_close(lock->lock_ptr);
     if (rc == -1) {
         fprintf(stderr, "nthread_lock_fini: sem_close failed: %s\n", strerror(errno));
@@ -204,12 +225,7 @@ int nthread_lock_fini(
 
     free(lock->name);
 #else
-    rc=sem_destroy(lock->lock_ptr);
-    if (rc == -1) {
-        fprintf(stderr, "nthread_lock_fini: sem_destroy failed: %s\n", strerror(errno));
-        fflush(stderr);
-        return(-1);
-    }
+
 #endif
 
 //    log_debug(thread_debug_level, "nthread_lock_fini: finalized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
