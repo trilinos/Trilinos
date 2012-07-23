@@ -625,7 +625,52 @@ def emitForLoopPreface (defDict, loopIndex, indent=0):
                 ind + '}\n'
     return s
 
-def emitForLoopOneFor (defDict, alphaIsOne, indent=0):
+def emitBetaScaleStmt (entryToScale, fixedBetaValue, indent=0):
+    '''Generate statement for scaling an entry of the output vector by Y.
+
+    CSR sparse mat-vec can scale the entries of the output vector Y by
+    beta "in line," as the algorithm iterates over rows.  That is, it
+    doesn't need a prescale loop over all the rows of Y, as CSC sparse
+    mat-vec does.  The way we scale an entry of Y depends on the value
+    of the scaling factor beta.  If beta == 0, then conformance with
+    the Sparse BLAS standard requires setting the corresponding entry
+    of Y to zero initially, even if that entry originally contained
+    NaN or Inf.  If beta == 1, then we elide the statement completely,
+    as it is not necessary.  In the general case, when beta is neither
+    0 nor 1, we perform the multiplication.
+
+    This function generates the entire line of code, including indent,
+    closing semicolon, and endline.
+    
+    entryToScale (string): array reference to the output vector entry
+      to scale.
+
+    fixedBetaValue (integer or string): either 0, 1, or 'other'.  The
+      values 0 and 1 are special cases; anything else is handled
+      generically.  Either 0 or '0' do the same thing; either 1 or '1'
+      do the same thing.
+
+    indent (nonnegative integer): how many spaces to indent the
+      statement.'''
+    
+    # Convert the beta value to an integer, if possible.
+    # This makes the tests below easier to read.
+    try:
+        beta = int(fixedBetaValue)
+    except ValueError:
+        beta = 'other'
+
+    if beta == 0:
+        s = ' = STS::zero()'
+    elif beta == 1:
+        return '' # No need to scale
+    else: # beta != 0 and beta != 1
+        s = ' *= beta'
+
+    return ' '*indent + entryToScale + s + ';\n'
+
+
+def emitForLoopOneFor (defDict, alphaIsOne, beta, indent=0):
     '''Generate the sparse matrix-vector multiply routine's outer for
     loop and its contents, for a specific alpha case (alpha == 1 or
     alpha != 1), for either the for-while or the for-if variants of
@@ -633,6 +678,9 @@ def emitForLoopOneFor (defDict, alphaIsOne, indent=0):
 
     defDict: The usual dictionary.
     alphaIsOne (Boolean): True if alpha == 1, False if alpha != 1.
+    beta (integer or string): 0, 1, or something else.  See
+      documentation of the 'fixedBetaValue' argument of
+      emitBetaScaleStmt().
     indent (integer): How many spaces to indent each line of emitted code.'''
 
     variant = defDict['variant']
@@ -686,46 +734,54 @@ def emitForLoopOneFor (defDict, alphaIsOne, indent=0):
         ind + ' '*2 + whileOrIf + ' (k >= ptr[${loopIndex}+1]) {\n' + \
         ind + ' '*4 + '++${loopIndex};\n'
     if defDict['sparseFormat'] == 'CSR':
-        # CSR mat-vec can merge scaling Y by beta into the iteration
-        # over rows.  CSC mat-vec can't do that; it has to prescale.
+        # CSR mat-vec can merge scaling Y(i,:) by beta into the
+        # iteration over rows.  (CSC mat-vec can't do that; it has to
+        # prescale.)  Emit different code for special cases of beta.
+        # For beta == 1, we don't have to do anything.
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
-        s = s + \
-            ind + ' '*4 + '// We haven\'t seen row i before; scale Y(i,:) by beta.\n' + \
-            ind + ' '*4 + '// FIXME (mfh 21 Jul 2012) This breaks the Sparse BLAS\n' + \
-            ind + ' '*4 + '// convention for handling Y(i,j) == NaN when beta == 0.\n'
-        if defDict['hardCodeNumVecs']:
-            if defDict['numVecs'] > 1:
-                s = s + ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
-                for c in xrange (0, defDict['numVecs']):
-                    Y_ic = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
-                    s = s + ind + ' '*4 + Y_ic + ' *= beta;\n'
-            else:
-                Y_ic = emitDenseArefFixedCol (defDict, 'Y', 'i', 0, strideName='Y')
-                s = s + ind + ' '*4 + Y_ic + ' *= beta;\n'
-        elif unrollLength > 1:
+        if beta == 0:
             s = s + \
-                ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
-                ind + ' '*4 + 'Ordinal c = 0;\n' + \
-                ind + ' '*4 + '// Extra +1 in loop bound ensures first ' + str(unrollLength) + ' iterations get\n' + \
-                ind + ' '*4 + '// strip-mined, but requires that Ordinal be a signed type.\n' + \
-                ind + ' '*4 + 'for ( ; c < numVecs - ' + str(unrollLength-1) + '; c += ' + str(unrollLength) + ') {\n'
+                ind + ' '*4 + '// We haven\'t seen row i before; set Y(i,:) to 0.\n'
+        elif beta == 1:
+            s = s + \
+                ind + ' '*4 + '// We don\'t have to set Y(i,:) here, since beta == 1.\n'
+        elif beta != 1:
+            s = s + \
+                ind + ' '*4 + '// We haven\'t seen row i before; scale Y(i,:) by beta.\n'
+        if beta == 0 or beta != 1:
+            if defDict['hardCodeNumVecs']:
+                if defDict['numVecs'] > 1:
+                    s = s + ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+                    for c in xrange (0, defDict['numVecs']):
+                        Y_ic = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+                        s = s + emitBetaScaleStmt (Y_ic, beta, indent+4)
+                else:
+                    Y_ic = emitDenseArefFixedCol (defDict, 'Y', 'i', 0, strideName='Y')
+                    s = s + emitBetaScaleStmt (Y_ic, beta, indent+4)
+            elif unrollLength > 1:
+                s = s + \
+                    ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
+                    ind + ' '*4 + 'Ordinal c = 0;\n' + \
+                    ind + ' '*4 + '// Extra +1 in loop bound ensures first ' + str(unrollLength) + ' iterations get\n' + \
+                    ind + ' '*4 + '// strip-mined, but requires that Ordinal be a signed type.\n' + \
+                    ind + ' '*4 + 'for ( ; c < numVecs - ' + str(unrollLength-1) + '; c += ' + str(unrollLength) + ') {\n'
                 # Unrolled part of the loop.
-            for c in xrange (0, unrollLength):
-                Y_ic_fixed = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
-                s = s + ind + ' '*6 + Y_ic_fixed + ' *= beta;\n'
-            Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')
-            # "Leftover" part of the loop.
-            s = s + ind + ' '*4 + '}\n' + \
-                ind + ' '*4 + 'for ( ; c < numVecs; ++c) {\n' + \
-                ind + ' '*6 + Y_ic + ' *= beta;\n' + \
-                ind + ' '*4 + '}\n'
-        else: # unrollLength == 1, which means don't unroll loops at all.
-            s = s + ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
-            Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')            
-            s = s + \
-                ind + ' '*4 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
-                ind + ' '*6 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
-                ind + ' '*4 + '}\n'
+                for c in xrange (0, unrollLength):
+                    Y_ic_fixed = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+                    s = s + emitBetaScaleStmt (Y_ic_fixed, beta, indent+6)
+                Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')
+                # "Leftover" part of the loop.
+                s = s + ind + ' '*4 + '}\n' + \
+                    ind + ' '*4 + 'for ( ; c < numVecs; ++c) {\n' + \
+                    ind + emitBetaScaleStmt (Y_ic, beta, 6) + \
+                    ind + ' '*4 + '}\n'
+            else: # unrollLength == 1, which means don't unroll loops at all.
+                s = s + ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+                Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')            
+                s = s + \
+                    ind + ' '*4 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
+                    ind + emitBetaScaleStmt (Y_ic, beta, 6) + \
+                    ind + ' '*4 + '}\n'
     s = s + ind + ' '*2 + '}\n' # End of the 'while' loop for advancing the row/column index.
     s = s + \
         emitUpdateLoop (defDict, alphaIsOne, indent+2) + \
@@ -735,7 +791,7 @@ def emitForLoopOneFor (defDict, alphaIsOne, indent=0):
                                        RowCol=RowCol, \
                                        getMatVal=getMatVal)
 
-def emitForLoopTwoFor (defDict, alphaIsOne, indent=0):
+def emitForLoopTwoFor (defDict, alphaIsOne, beta, indent=0):
     '''Generate the sparse matrix-vector multiply routine's outer for
     loop and its contents, for a specific alpha case (alpha == 1 or
     alpha != 1), for the for-for variant of the algorithm (hence
@@ -743,6 +799,9 @@ def emitForLoopTwoFor (defDict, alphaIsOne, indent=0):
 
     defDict: The usual dictionary.
     alphaIsOne (Boolean): True if alpha == 1, False if alpha != 1.
+    beta (integer or string): 0, 1, or something else.  See
+      documentation of the 'fixedBetaValue' argument of
+      emitBetaScaleStmt().
     indent (integer): How many spaces to indent each line of emitted code.'''
 
     variant = defDict['variant']
@@ -783,42 +842,52 @@ def emitForLoopTwoFor (defDict, alphaIsOne, indent=0):
     # CSR mat-vec can merge scaling Y by beta into the iteration over
     # rows.  CSC mat-vec can't do that; it has to prescale.
     if sparseFmt == 'CSR':
+        # CSR mat-vec can merge scaling Y(i,:) by beta into the
+        # iteration over rows.  (CSC mat-vec can't do that; it has to
+        # prescale.)  Emit different code for special cases of beta.
+        # For beta == 1, we don't have to do anything.
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
-        s = s + \
-            ind + ' '*2 + '// We haven\'t seen row i before; scale Y(i,:) by beta.\n'
-        if defDict['hardCodeNumVecs']:
-            if defDict['numVecs'] > 1:
-                s = s + ind + ' '*2 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
-                for c in xrange (0, defDict['numVecs']):
-                    Y_ic = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
-                    s = s + ind + ' '*2 + Y_ic + ' *= beta;\n'
-            else:
-                Y_ic = emitDenseArefFixedCol (defDict, 'Y', 'i', 0, strideName='Y')
-                s = s + ind + ' '*2 + Y_ic + ' *= beta;\n'
-        elif unrollLength > 1:
+        if beta == 0:
+            s = s + ind + ' '*2 + '// We haven\'t seen row i before; set Y(i,:) to 0.\n'
+        elif beta == 1:
+            s = s + ind + ' '*2 + '// We don\'t have to set Y(i,:) here, since beta == 1.\n'
+        elif beta != 1:
             s = s + \
-                ind + ' '*2 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
-                ind + ' '*2 + 'Ordinal c = 0;\n' + \
-                ind + ' '*2 + '// Extra +1 in loop bound ensures first ' + str(unrollLength) + ' iterations get\n' + \
-                ind + ' '*2 + '// strip-mined, but requires that Ordinal be a signed type.\n' + \
-                ind + ' '*2 + 'for ( ; c < numVecs - ' + str(unrollLength-1) + '; c += ' + str(unrollLength) + ') {\n'
+                ind + ' '*2 + '// We haven\'t seen row i before; scale Y(i,:) by beta.\n'
+        if beta == 0 or beta != 1:
+            if defDict['hardCodeNumVecs']:
+                if defDict['numVecs'] > 1:
+                    s = s + ind + ' '*2 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+                    for c in xrange (0, defDict['numVecs']):
+                        Y_ic = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+                        s = s + emitBetaScaleStmt (Y_ic, beta, indent+2)
+                else:
+                    Y_ic = emitDenseArefFixedCol (defDict, 'Y', 'i', 0, strideName='Y')
+                    s = s + emitBetaScaleStmt (Y_ic, beta, indent+2)
+            elif unrollLength > 1:
+                s = s + \
+                    ind + ' '*2 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
+                    ind + ' '*2 + 'Ordinal c = 0;\n' + \
+                    ind + ' '*2 + '// Extra +1 in loop bound ensures first ' + str(unrollLength) + ' iterations get\n' + \
+                    ind + ' '*2 + '// strip-mined, but requires that Ordinal be a signed type.\n' + \
+                    ind + ' '*2 + 'for ( ; c < numVecs - ' + str(unrollLength-1) + '; c += ' + str(unrollLength) + ') {\n'
                 # Unrolled part of the loop.
-            for c in xrange (0, unrollLength):
-                Y_ic_fixed = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
-                s = s + ind + ' '*4 + Y_ic_fixed + ' *= beta;\n'
-            Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')
-            # "Leftover" part of the loop.
-            s = s + ind + ' '*2 + '}\n' + \
-                ind + ' '*2 + 'for ( ; c < numVecs; ++c) {\n' + \
-                ind + ' '*4 + Y_ic + ' *= beta;\n' + \
-                ind + ' '*2 + '}\n'
-        else: # unrollLength == 1, which means don't unroll loops at all.
-            s = s + ind + ' '*2 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
-            Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')            
-            s = s + \
-                ind + ' '*2 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
-                ind + ' '*4 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
-                ind + ' '*2 + '}\n'
+                for c in xrange (0, unrollLength):
+                    Y_ic_fixed = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+                    s = s + emitBetaScaleStmt (Y_ic_fixed, beta, indent+4)
+                Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')
+                # "Leftover" part of the loop.
+                s = s + ind + ' '*2 + '}\n' + \
+                    ind + ' '*2 + 'for ( ; c < numVecs; ++c) {\n' + \
+                    emitBetaScaleStmt (Y_ic, beta, indent+4) + \
+                    ind + ' '*2 + '}\n'
+            else: # unrollLength == 1, which means don't unroll loops at all.
+                s = s + ind + ' '*2 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
+                Y_ic = emitDenseAref (defDict, 'Y_i', '0', 'c', strideName='Y')            
+                s = s + \
+                    ind + ' '*2 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
+                    emitBetaScaleStmt (Y_ic, beta, indent+4) + \
+                    ind + ' '*2 + '}\n'
 
     # Begin the inner for loop.
     s = s + \
@@ -853,20 +922,76 @@ def emitForLoop (defDict, indent=0):
         RowCol = 'Row'
 
     if variant == 'for-for':
-        return ind + 'if (alpha == STS::one()) {\n' + \
-            emitForLoopTwoFor (defDict, True, indent+2) + \
-            ind + '}\n' + \
-            ind + 'else { // alpha != STS::one()\n' + \
-            emitForLoopTwoFor (defDict, False, indent+2) + \
-            ind + '}\n'
+        if defDict['sparseFormat'] == 'CSR':
+            # Special cases of beta only matter for CSR.
+            s = ind + 'if (alpha == STS::one()) {\n' + \
+                ind + ' '*2 + 'if (beta == STS::zero()) {\n' + \
+                emitForLoopTwoFor (defDict, True, 0, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else if (beta == STS::one()) {\n' + \
+                emitForLoopTwoFor (defDict, True, 1, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else { // beta != 0 && beta != 1\n' + \
+                emitForLoopTwoFor (defDict, True, 'other', indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + '}\n' + \
+                ind + 'else { // alpha != STS::one()\n' + \
+                ind + ' '*2 + 'if (beta == STS::zero()) {\n' + \
+                emitForLoopTwoFor (defDict, False, 0, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else if (beta == STS::one()) {\n' + \
+                emitForLoopTwoFor (defDict, False, 1, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else { // beta != 0 && beta != 1\n' + \
+                emitForLoopTwoFor (defDict, False, 'other', indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + '}\n'
+            return s
+        else:
+            beta = 'other'
+            return ind + 'if (alpha == STS::one()) {\n' + \
+                emitForLoopTwoFor (defDict, True, beta, indent+2) + \
+                ind + '}\n' + \
+                ind + 'else { // alpha != STS::one()\n' + \
+                emitForLoopTwoFor (defDict, False, beta, indent+2) + \
+                ind + '}\n'
     else: # 'for-while' or 'for-if'
-        return ind + 'const Ordinal nnz = ptr[num' + RowCol + 's];\n' + \
-            ind + 'if (alpha == STS::one()) {\n' + \
-            emitForLoopOneFor (defDict, True, indent+2) + \
-            ind + '}\n' + \
-            ind + 'else { // alpha != STS::one()\n' + \
-            emitForLoopOneFor (defDict, False, indent+2) + \
-            ind + '}\n'
+        s = ind + 'const Ordinal nnz = ptr[num' + RowCol + 's];\n'
+        if defDict['sparseFormat'] == 'CSR':
+            # Special cases of beta only matter for CSR.
+            s = s + \
+                ind + 'if (alpha == STS::one()) {\n' + \
+                ind + ' '*2 + 'if (beta == STS::zero()) {\n' + \
+                emitForLoopOneFor (defDict, True, 0, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else if (beta == STS::one()) {\n' + \
+                emitForLoopOneFor (defDict, True, 1, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else { // beta != 0 && beta != 1\n' + \
+                emitForLoopOneFor (defDict, True, 'other', indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + '}\n' + \
+                ind + 'else { // alpha != STS::one()\n' + \
+                ind + ' '*2 + 'if (beta == STS::zero()) {\n' + \
+                emitForLoopOneFor (defDict, False, 0, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else if (beta == STS::one()) {\n' + \
+                emitForLoopOneFor (defDict, False, 1, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else { // beta != 0 && beta != 1\n' + \
+                emitForLoopOneFor (defDict, False, 'other', indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + '}\n'
+        else:
+            beta = 'other'
+            s = s + \
+                ind + 'if (alpha == STS::one()) {\n' + \
+                emitForLoopOneFor (defDict, True, beta, indent+2) + \
+                ind + '}\n' + \
+                ind + 'else { // alpha != STS::one()\n' + \
+                emitForLoopOneFor (defDict, False, beta, indent+2) + \
+                ind + '}\n'
+        return s
 
 def emitUpdateLoop (defDict, alphaIsOne, indent=0):
     '''Return the update loop code for Y(i,:) = Y(i,:) + alpha*A_ij*X(j,:).
