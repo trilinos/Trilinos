@@ -4192,6 +4192,7 @@ static int new_client_connection(
      * Values passed through TCP to permit Gemini connection.
      */
     struct {
+        char             name[NNTI_HOSTNAME_LEN];
         uint32_t         addr;
         uint32_t         port;
         NNTI_instance_id instance;
@@ -4208,6 +4209,7 @@ static int new_client_connection(
 
     c->connection_type=CLIENT_CONNECTION;
 
+    strcpy(instance_out.name, transport_global_data.listen_name);
     instance_out.addr      = htonl((uint32_t)transport_global_data.listen_addr);
     instance_out.port      = htonl((uint32_t)transport_global_data.listen_port);
     instance_out.instance  = htonl(transport_global_data.instance);
@@ -4219,8 +4221,8 @@ static int new_client_connection(
     if (rc)
         goto out;
 
+    c->peer_name      = strdup(instance_in.name);
     c->peer_addr      = ntohl(instance_in.addr);
-//    c->peer_name      = strdup(inet_ntoa((in_addr)c->peer_addr));
     c->peer_port      = ntohl(instance_in.port);
     c->peer_instance  = ntohl(instance_in.instance);
     c->peer_alps_info = instance_in.alps_info;
@@ -4280,6 +4282,7 @@ static int new_server_connection(
      * Values passed through TCP to permit Gemini connection.
      */
     struct {
+        char             name[NNTI_HOSTNAME_LEN];
         uint32_t         addr;
         uint32_t         port;
         NNTI_instance_id instance;
@@ -4301,6 +4304,7 @@ static int new_server_connection(
 
     c->connection_type=SERVER_CONNECTION;
 
+    strcpy(instance_out.name, transport_global_data.listen_name);
     instance_out.addr      = htonl((uint32_t)transport_global_data.listen_addr);
     instance_out.port      = htonl((uint32_t)transport_global_data.listen_port);
     instance_out.instance  = htonl(transport_global_data.instance);
@@ -4312,8 +4316,8 @@ static int new_server_connection(
     if (rc)
         goto out;
 
+    c->peer_name      = strdup(instance_in.name);
     c->peer_addr      = ntohl(instance_in.addr);
-//    c->peer_name      = strdup(inet_ntoa((in_addr)c->peer_addr));
     c->peer_port      = ntohl(instance_in.port);
     c->peer_instance  = ntohl(instance_in.instance);
     c->peer_alps_info = instance_in.alps_info;
@@ -4471,8 +4475,8 @@ static NNTI_peer_t *get_peer_by_url(const char *url)
     conn_by_peer_iter_t i;
     if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
-        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
-                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
+        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p, url=%s",
+                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second, i->second->peer.url);
         if (strcmp(i->second->peer.url, url) == 0) {
             conn=i->second;
             break;
