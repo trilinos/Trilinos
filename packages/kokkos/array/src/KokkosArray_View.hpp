@@ -65,7 +65,7 @@ public:
 
   typedef typename Impl::remove_all_extents<data_type>::type  value_type ;
   typedef typename LayoutType::array_layout                   array_layout ;
-  typedef typename device_type::memory_space              memory_space ;
+  typedef typename device_type::memory_space                  memory_space ;
   typedef typename device_type::size_type                     size_type ;
 
 private:
@@ -299,6 +299,15 @@ View<DataType,LayoutType,DeviceType>::View( const View<DataType,LayoutType,Devic
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
+
+template< class DataType , class ArrayLayout , class MemorySpace >
+class ViewOperator ;
+
+}
+}
 
 #include <impl/KokkosArray_View_factory.hpp>
 

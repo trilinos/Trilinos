@@ -47,6 +47,7 @@
 #error "KOKKOS_MACRO_DEVICE undefined"
 #endif
 
+#include <stdio.h>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -60,6 +61,8 @@ namespace {
 template< typename T, class > class TestViewAPI ;
 template< typename T, class > class TestViewOperator ;
 
+/*--------------------------------------------------------------------------*/
+
 template< typename T >
 struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
 {
@@ -68,7 +71,6 @@ struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
   static const unsigned N = 100 ;
   static const unsigned D = 3 ;
 
-
   typedef KokkosArray::View< T[][D] , device_type > view_type ;
 
   const view_type v1 ;
@@ -76,7 +78,7 @@ struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
 
   TestViewOperator()
     : v1( KokkosArray::create<view_type>( "v1" , N ) )
-    , v2( KokkosArray::create<view_type>( "v1" , N ) )
+    , v2( KokkosArray::create<view_type>( "v2" , N ) )
     {}
 
   static void apply()
@@ -97,6 +99,651 @@ struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
   }
 };
 
+/*--------------------------------------------------------------------------*/
+
+template< class DataType ,
+          class DeviceType ,
+          unsigned Rank = KokkosArray::Impl::rank< DataType >::value >
+struct TestViewOperator_LeftAndRight ;
+
+template< class DataType , class DeviceType >
+struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
+{
+  typedef DeviceType                          device_type ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef int value_type ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update |= input ; }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutLeft, device_type > left_view ;
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutRight, device_type > right_view ;
+
+  typedef typename left_view ::shape_type  left_shape ;
+  typedef typename right_view::shape_type  right_shape ;
+
+  left_shape   lsh ;
+  right_shape  rsh ;
+  left_view    left ;
+  right_view   right ;
+  long         left_alloc ;
+  long         right_alloc ;
+
+  TestViewOperator_LeftAndRight()
+    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
+    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    , left( lsh )
+    , right( rsh )
+    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    {}
+
+  static void apply()
+  {
+    TestViewOperator_LeftAndRight driver ;
+   
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
+
+    int error_flag = 0 ;
+
+    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+
+    ASSERT_EQ( error_flag , 0 );
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    long offset ;
+
+    offset = -1 ;
+    for ( unsigned i7 = 0 ; i7 < lsh.N7 ; ++i7 )
+    for ( unsigned i6 = 0 ; i6 < lsh.N6 ; ++i6 )
+    for ( unsigned i5 = 0 ; i5 < lsh.N5 ; ++i5 )
+    for ( unsigned i4 = 0 ; i4 < lsh.N4 ; ++i4 )
+    for ( unsigned i3 = 0 ; i3 < lsh.N3 ; ++i3 )
+    for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    {
+      const long j = & left( i0, i1, i2, i3, i4, i5, i6, i7 ) -
+                     & left(  0,  0,  0,  0,  0,  0,  0,  0 );
+      if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
+      offset = j ;
+    }
+
+    offset = -1 ;
+    for ( unsigned i0 = 0 ; i0 < rsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < rsh.N1 ; ++i1 )
+    for ( unsigned i2 = 0 ; i2 < rsh.N2 ; ++i2 )
+    for ( unsigned i3 = 0 ; i3 < rsh.N3 ; ++i3 )
+    for ( unsigned i4 = 0 ; i4 < rsh.N4 ; ++i4 )
+    for ( unsigned i5 = 0 ; i5 < rsh.N5 ; ++i5 )
+    for ( unsigned i6 = 0 ; i6 < rsh.N6 ; ++i6 )
+    for ( unsigned i7 = 0 ; i7 < rsh.N7 ; ++i7 )
+    {
+      const long j = & right( i0, i1, i2, i3, i4, i5, i6, i7 ) -
+                     & right(  0,  0,  0,  0,  0,  0,  0,  0 );
+      if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
+      offset = j ;
+    }
+  }
+};
+
+template< class DataType , class DeviceType >
+struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
+{
+  typedef DeviceType                          device_type ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef int value_type ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update |= input ; }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutLeft, device_type > left_view ;
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutRight, device_type > right_view ;
+
+  typedef typename left_view ::shape_type  left_shape ;
+  typedef typename right_view::shape_type  right_shape ;
+
+  left_shape   lsh ;
+  right_shape  rsh ;
+  left_view    left ;
+  right_view   right ;
+  long         left_alloc ;
+  long         right_alloc ;
+
+  TestViewOperator_LeftAndRight()
+    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
+    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    , left( lsh )
+    , right( rsh )
+    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    {}
+
+  static void apply()
+  {
+    TestViewOperator_LeftAndRight driver ;
+   
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
+
+    int error_flag = 0 ;
+
+    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+
+    ASSERT_EQ( error_flag , 0 );
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    long offset ;
+
+    offset = -1 ;
+    for ( unsigned i6 = 0 ; i6 < lsh.N6 ; ++i6 )
+    for ( unsigned i5 = 0 ; i5 < lsh.N5 ; ++i5 )
+    for ( unsigned i4 = 0 ; i4 < lsh.N4 ; ++i4 )
+    for ( unsigned i3 = 0 ; i3 < lsh.N3 ; ++i3 )
+    for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    {
+      const long j = & left( i0, i1, i2, i3, i4, i5, i6 ) -
+                     & left(  0,  0,  0,  0,  0,  0,  0 );
+      if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
+      offset = j ;
+    }
+
+    offset = -1 ;
+    for ( unsigned i0 = 0 ; i0 < rsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < rsh.N1 ; ++i1 )
+    for ( unsigned i2 = 0 ; i2 < rsh.N2 ; ++i2 )
+    for ( unsigned i3 = 0 ; i3 < rsh.N3 ; ++i3 )
+    for ( unsigned i4 = 0 ; i4 < rsh.N4 ; ++i4 )
+    for ( unsigned i5 = 0 ; i5 < rsh.N5 ; ++i5 )
+    for ( unsigned i6 = 0 ; i6 < rsh.N6 ; ++i6 )
+    {
+      const long j = & right( i0, i1, i2, i3, i4, i5, i6 ) -
+                     & right(  0,  0,  0,  0,  0,  0,  0 );
+      if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
+      offset = j ;
+    }
+  }
+};
+
+template< class DataType , class DeviceType >
+struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
+{
+  typedef DeviceType                          device_type ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef int value_type ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update |= input ; }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutLeft, device_type > left_view ;
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutRight, device_type > right_view ;
+
+  typedef typename left_view ::shape_type  left_shape ;
+  typedef typename right_view::shape_type  right_shape ;
+
+  left_shape   lsh ;
+  right_shape  rsh ;
+  left_view    left ;
+  right_view   right ;
+  long         left_alloc ;
+  long         right_alloc ;
+
+  TestViewOperator_LeftAndRight()
+    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
+    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    , left( lsh )
+    , right( rsh )
+    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    {}
+
+  static void apply()
+  {
+    TestViewOperator_LeftAndRight driver ;
+   
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
+
+    int error_flag = 0 ;
+
+    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+
+    ASSERT_EQ( error_flag , 0 );
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    long offset ;
+
+    offset = -1 ;
+    for ( unsigned i5 = 0 ; i5 < lsh.N5 ; ++i5 )
+    for ( unsigned i4 = 0 ; i4 < lsh.N4 ; ++i4 )
+    for ( unsigned i3 = 0 ; i3 < lsh.N3 ; ++i3 )
+    for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    {
+      const long j = & left( i0, i1, i2, i3, i4, i5 ) -
+                     & left(  0,  0,  0,  0,  0,  0 );
+      if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
+      offset = j ;
+    }
+
+    offset = -1 ;
+    for ( unsigned i0 = 0 ; i0 < rsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < rsh.N1 ; ++i1 )
+    for ( unsigned i2 = 0 ; i2 < rsh.N2 ; ++i2 )
+    for ( unsigned i3 = 0 ; i3 < rsh.N3 ; ++i3 )
+    for ( unsigned i4 = 0 ; i4 < rsh.N4 ; ++i4 )
+    for ( unsigned i5 = 0 ; i5 < rsh.N5 ; ++i5 )
+    {
+      const long j = & right( i0, i1, i2, i3, i4, i5 ) -
+                     & right(  0,  0,  0,  0,  0,  0 );
+      if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
+      offset = j ;
+    }
+  }
+};
+
+template< class DataType , class DeviceType >
+struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
+{
+  typedef DeviceType                          device_type ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef int value_type ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update |= input ; }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutLeft, device_type > left_view ;
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutRight, device_type > right_view ;
+
+  typedef typename left_view ::shape_type  left_shape ;
+  typedef typename right_view::shape_type  right_shape ;
+
+  left_shape   lsh ;
+  right_shape  rsh ;
+  left_view    left ;
+  right_view   right ;
+  long         left_alloc ;
+  long         right_alloc ;
+
+  TestViewOperator_LeftAndRight()
+    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
+    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    , left( lsh )
+    , right( rsh )
+    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    {}
+
+  static void apply()
+  {
+    TestViewOperator_LeftAndRight driver ;
+   
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
+
+    int error_flag = 0 ;
+
+    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+
+    ASSERT_EQ( error_flag , 0 );
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    long offset ;
+
+    offset = -1 ;
+    for ( unsigned i4 = 0 ; i4 < lsh.N4 ; ++i4 )
+    for ( unsigned i3 = 0 ; i3 < lsh.N3 ; ++i3 )
+    for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    {
+      const long j = & left( i0, i1, i2, i3, i4 ) -
+                     & left(  0,  0,  0,  0,  0 );
+      if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
+      offset = j ;
+    }
+
+    offset = -1 ;
+    for ( unsigned i0 = 0 ; i0 < rsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < rsh.N1 ; ++i1 )
+    for ( unsigned i2 = 0 ; i2 < rsh.N2 ; ++i2 )
+    for ( unsigned i3 = 0 ; i3 < rsh.N3 ; ++i3 )
+    for ( unsigned i4 = 0 ; i4 < rsh.N4 ; ++i4 )
+    {
+      const long j = & right( i0, i1, i2, i3, i4 ) -
+                     & right(  0,  0,  0,  0,  0 );
+      if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
+      offset = j ;
+    }
+  }
+};
+
+template< class DataType , class DeviceType >
+struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
+{
+  typedef DeviceType                          device_type ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef int value_type ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update |= input ; }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutLeft, device_type > left_view ;
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutRight, device_type > right_view ;
+
+  typedef typename left_view ::shape_type  left_shape ;
+  typedef typename right_view::shape_type  right_shape ;
+
+  left_shape   lsh ;
+  right_shape  rsh ;
+  left_view    left ;
+  right_view   right ;
+  long         left_alloc ;
+  long         right_alloc ;
+
+  TestViewOperator_LeftAndRight()
+    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
+    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    , left( lsh )
+    , right( rsh )
+    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    {}
+
+  static void apply()
+  {
+    TestViewOperator_LeftAndRight driver ;
+   
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
+
+    int error_flag = 0 ;
+
+    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+
+    ASSERT_EQ( error_flag , 0 );
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    long offset ;
+
+    offset = -1 ;
+    for ( unsigned i3 = 0 ; i3 < lsh.N3 ; ++i3 )
+    for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    {
+      const long j = & left( i0, i1, i2, i3 ) -
+                     & left(  0,  0,  0,  0 );
+      if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
+      offset = j ;
+    }
+
+    offset = -1 ;
+    for ( unsigned i0 = 0 ; i0 < rsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < rsh.N1 ; ++i1 )
+    for ( unsigned i2 = 0 ; i2 < rsh.N2 ; ++i2 )
+    for ( unsigned i3 = 0 ; i3 < rsh.N3 ; ++i3 )
+    {
+      const long j = & right( i0, i1, i2, i3 ) -
+                     & right(  0,  0,  0,  0 );
+      if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
+      offset = j ;
+    }
+  }
+};
+
+template< class DataType , class DeviceType >
+struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
+{
+  typedef DeviceType                          device_type ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef int value_type ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update |= input ; }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutLeft, device_type > left_view ;
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutRight, device_type > right_view ;
+
+  typedef typename left_view ::shape_type  left_shape ;
+  typedef typename right_view::shape_type  right_shape ;
+
+  left_shape   lsh ;
+  right_shape  rsh ;
+  left_view    left ;
+  right_view   right ;
+  long         left_alloc ;
+  long         right_alloc ;
+
+  TestViewOperator_LeftAndRight()
+    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
+    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    , left( lsh )
+    , right( rsh )
+    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    {}
+
+  static void apply()
+  {
+    TestViewOperator_LeftAndRight driver ;
+   
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
+
+    int error_flag = 0 ;
+
+    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+
+    ASSERT_EQ( error_flag , 0 );
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    long offset ;
+
+    offset = -1 ;
+    for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    {
+      const long j = & left( i0, i1, i2 ) -
+                     & left(  0,  0,  0 );
+      if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
+      offset = j ;
+    }
+
+    offset = -1 ;
+    for ( unsigned i0 = 0 ; i0 < rsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < rsh.N1 ; ++i1 )
+    for ( unsigned i2 = 0 ; i2 < rsh.N2 ; ++i2 )
+    {
+      const long j = & right( i0, i1, i2 ) -
+                     & right(  0,  0,  0 );
+      if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
+      offset = j ;
+    }
+  }
+};
+
+template< class DataType , class DeviceType >
+struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
+{
+  typedef DeviceType                          device_type ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef int value_type ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update |= input ; }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutLeft, device_type > left_view ;
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutRight, device_type > right_view ;
+
+  typedef typename left_view ::shape_type  left_shape ;
+  typedef typename right_view::shape_type  right_shape ;
+
+  left_shape   lsh ;
+  right_shape  rsh ;
+  left_view    left ;
+  right_view   right ;
+  long         left_alloc ;
+  long         right_alloc ;
+
+  TestViewOperator_LeftAndRight()
+    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
+    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    , left( lsh )
+    , right( rsh )
+    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    {}
+
+  static void apply()
+  {
+    TestViewOperator_LeftAndRight driver ;
+   
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
+
+    int error_flag = 0 ;
+
+    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+
+    ASSERT_EQ( error_flag , 0 );
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    long offset ;
+
+    offset = -1 ;
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    {
+      const long j = & left( i0, i1 ) -
+                     & left(  0,  0 );
+      if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
+      offset = j ;
+    }
+
+    offset = -1 ;
+    for ( unsigned i0 = 0 ; i0 < rsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < rsh.N1 ; ++i1 )
+    {
+      const long j = & right( i0, i1 ) -
+                     & right(  0,  0 );
+      if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
+      offset = j ;
+    }
+  }
+};
+
+/*--------------------------------------------------------------------------*/
 
 template<typename T>
 class TestViewAPI< T, KOKKOS_MACRO_DEVICE >
@@ -111,6 +758,13 @@ public:
     run_test_const();
     run_test_vector();
     TestViewOperator< T , device >::apply();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2][3] , device >::apply();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2] , device >::apply();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4] , device >::apply();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3] , device >::apply();
+    TestViewOperator_LeftAndRight< int[2][3][4][2] , device >::apply();
+    TestViewOperator_LeftAndRight< int[2][3][4] , device >::apply();
+    TestViewOperator_LeftAndRight< int[2][3] , device >::apply();
   }
 
   enum { NP = 1000 ,

@@ -48,7 +48,8 @@
 #include <Host/KokkosArray_Host_Parallel.hpp>
 
 #include <KokkosArray_Host_macros.hpp>
-#include <impl/KokkosArray_Shape_macros.hpp>
+#include <impl/KokkosArray_ViewOperLeft_macros.hpp>
+#include <impl/KokkosArray_ViewOperRight_macros.hpp>
 #include <impl/KokkosArray_View_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 

@@ -48,7 +48,8 @@
 #include <KokkosArray_View.hpp>
 
 #include <KokkosArray_Cuda_macros.hpp>
-#include <impl/KokkosArray_Shape_macros.hpp>
+#include <impl/KokkosArray_ViewOperLeft_macros.hpp>
+#include <impl/KokkosArray_ViewOperRight_macros.hpp>
 #include <impl/KokkosArray_View_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 

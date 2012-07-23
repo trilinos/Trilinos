@@ -51,6 +51,8 @@
 
 namespace KokkosArray {
 
+//----------------------------------------------------------------------------
+
 template< typename IntType , class LayoutType >
 class PrefixSum< IntType , LayoutType , KOKKOS_MACRO_DEVICE >
 {

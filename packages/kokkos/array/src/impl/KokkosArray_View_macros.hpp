@@ -55,8 +55,20 @@ namespace KokkosArray {
 
 template< class DataType , class LayoutType >
 class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
+  : public Impl::ViewOperator< DataType ,
+                               typename LayoutType::array_layout ,
+                               KOKKOS_MACRO_DEVICE::memory_space >
 {
+private:
+  template< class , class , class > friend class View ;
+  template< class Dst , class Src >  friend class Impl::Factory ;
+
+  typedef Impl::ViewOperator< DataType ,
+                              typename LayoutType::array_layout ,
+                              KOKKOS_MACRO_DEVICE::memory_space > oper_type ;
+
 public:
+
   typedef DataType             data_type ;
   typedef LayoutType           layout_type ;
   typedef KOKKOS_MACRO_DEVICE  device_type ;
@@ -72,249 +84,69 @@ public:
   typedef typename LayoutType::array_layout                   array_layout ;
   typedef typename device_type::memory_space                  memory_space ;
   typedef typename device_type::size_type                     size_type ;
-
-  typedef typename
-    Impl::DefineShape< array_layout , data_type >::type  shape_type ;
-
-private:
-
-  typedef Impl::ShapeMap< shape_type , memory_space > shape_map ;
-
-public:
+  typedef typename oper_type::shape_type                      shape_type ;
 
   /*------------------------------------------------------------------*/
 
-  static const unsigned Rank = shape_type::rank ;
+  static const unsigned Rank = oper_type::shape_type::rank ;
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type rank() const { return shape_type::rank ; }
+  size_type rank() const { return oper_type::shape_type::rank ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension_0() const { return m_shape.N0 ; }
+  size_type dimension_0() const { return oper_type::m_shape.N0 ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension_1() const { return m_shape.N1 ; }
+  size_type dimension_1() const { return oper_type::m_shape.N1 ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension_2() const { return m_shape.N2 ; }
+  size_type dimension_2() const { return oper_type::m_shape.N2 ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension_3() const { return m_shape.N3 ; }
+  size_type dimension_3() const { return oper_type::m_shape.N3 ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension_4() const { return m_shape.N4 ; }
+  size_type dimension_4() const { return oper_type::m_shape.N4 ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension_5() const { return m_shape.N5 ; }
+  size_type dimension_5() const { return oper_type::m_shape.N5 ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension_6() const { return m_shape.N6 ; }
+  size_type dimension_6() const { return oper_type::m_shape.N6 ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension_7() const { return m_shape.N7 ; }
+  size_type dimension_7() const { return oper_type::m_shape.N7 ; }
 
   template< typename iType >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension( const iType & r ) const
     {
-      return iType(0) == r ? m_shape.N0 : (
-             iType(1) == r ? m_shape.N1 : (
-             iType(2) == r ? m_shape.N2 : (
-             iType(3) == r ? m_shape.N3 : (
-             iType(4) == r ? m_shape.N4 : (
-             iType(5) == r ? m_shape.N5 : (
-             iType(6) == r ? m_shape.N6 : (
-             iType(7) == r ? m_shape.N7 : 0 )))))));
+      return iType(0) == r ? oper_type::m_shape.N0 : (
+             iType(1) == r ? oper_type::m_shape.N1 : (
+             iType(2) == r ? oper_type::m_shape.N2 : (
+             iType(3) == r ? oper_type::m_shape.N3 : (
+             iType(4) == r ? oper_type::m_shape.N4 : (
+             iType(5) == r ? oper_type::m_shape.N5 : (
+             iType(6) == r ? oper_type::m_shape.N6 : (
+             iType(7) == r ? oper_type::m_shape.N7 : 0 )))))));
     }
-
-  /** \brief  Because memory is contiguous this is exposed */
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  value_type * ptr_on_device() const
-  { return m_ptr_on_device ; }
-
-  /*------------------------------------------------------------------*/
-  /*------------------------------------------------------------------*/
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator * () const
-    {
-      typedef typename Impl::assert_shape_is_rank_zero< shape_type >::type ok_rank ;
-      return *m_ptr_on_device ;
-    }
-
-  template< typename iType0 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator[]( const iType0 & i0 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_one< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0 ) );
-
-      return m_ptr_on_device[ i0 ]; 
-    }
-
-  template< typename iType0 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_one< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0 ) );
-
-      return m_ptr_on_device[ i0 ]; 
-    }
-
-  template< typename iType0 , typename iType1 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ,
-                           const iType1 & i1 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_two< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0, i1 ) );
-
-      return m_ptr_on_device[ shape_map::offset( m_shape, i0, i1 ) ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ,
-                           const iType1 & i1 ,
-                           const iType2 & i2 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_three< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0, i1, i2 ) );
-
-      return m_ptr_on_device[ shape_map::offset( m_shape, i0 , i1 , i2 ) ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ,
-                           const iType1 & i1 ,
-                           const iType2 & i2 ,
-                           const iType3 & i3 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_four< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3 ) );
-
-      return m_ptr_on_device[ shape_map::offset( m_shape, i0, i1, i2, i3 ) ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 , typename iType4 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ,
-                           const iType1 & i1 ,
-                           const iType2 & i2 ,
-                           const iType3 & i3 ,
-                           const iType4 & i4 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_five< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4 ) );
-
-      return m_ptr_on_device[
-               shape_map::offset( m_shape, i0, i1, i2, i3, i4 ) ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 , typename iType4 , typename iType5 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ,
-                           const iType1 & i1 ,
-                           const iType2 & i2 ,
-                           const iType3 & i3 ,
-                           const iType4 & i4 ,
-                           const iType5 & i5 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_six< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5 ) );
-
-      return m_ptr_on_device[
-               shape_map::offset( m_shape, i0, i1, i2, i3, i4, i5 ) ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 , typename iType4 , typename iType5 ,
-            typename iType6 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ,
-                           const iType1 & i1 ,
-                           const iType2 & i2 ,
-                           const iType3 & i3 ,
-                           const iType4 & i4 ,
-                           const iType5 & i5 ,
-                           const iType6 & i6 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_seven< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
-
-      return m_ptr_on_device[
-               shape_map::offset( m_shape, i0, i1, i2, i3, i4, i5, i6 ) ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 ,
-            typename iType3 , typename iType4 , typename iType5 ,
-            typename iType6 , typename iType7 >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ,
-                           const iType1 & i1 ,
-                           const iType2 & i2 ,
-                           const iType3 & i3 ,
-                           const iType4 & i4 ,
-                           const iType5 & i5 ,
-                           const iType6 & i6 ,
-                           const iType7 & i7 ) const
-    {
-      typedef typename Impl::assert_shape_is_rank_eight< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK(
-        Impl::assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
-
-      return m_ptr_on_device[ shape_map::offset(m_shape,i0,i1,i2,i3,i4,i5,i6,i7) ];
-    }
-
-#endif /* #if defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 
   /*------------------------------------------------------------------*/
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View()
-    : m_shape()
-    , m_ptr_on_device(0)
-    {}
+  View() {}
 
   /** \brief  Construct a view of the array */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   View( const View & rhs )
-    : m_shape(         rhs.m_shape )
-    , m_ptr_on_device( rhs.m_ptr_on_device )
-    { memory_space::increment( m_ptr_on_device ); }
+    {
+      oper_type::m_shape         = rhs.m_shape ;
+      oper_type::m_ptr_on_device = rhs.m_ptr_on_device ;
+      memory_space::increment( oper_type::m_ptr_on_device );
+    }
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
@@ -323,10 +155,10 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   View & operator = ( const View & rhs )
   {
-    memory_space::decrement( m_ptr_on_device );
-    m_shape          = rhs.m_shape ;
-    m_ptr_on_device  = rhs.m_ptr_on_device ;
-    memory_space::increment( m_ptr_on_device );
+    memory_space::decrement( oper_type::m_ptr_on_device );
+    oper_type::m_shape          = rhs.m_shape ;
+    oper_type::m_ptr_on_device  = rhs.m_ptr_on_device ;
+    memory_space::increment( oper_type::m_ptr_on_device );
     return *this ;
   }
 
@@ -334,7 +166,11 @@ public:
    *           If the last view then allocated memory is deallocated.
    */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  ~View() { memory_space::decrement( m_ptr_on_device ); m_ptr_on_device = 0 ; }
+  ~View()
+  {
+    memory_space::decrement( oper_type::m_ptr_on_device );
+    oper_type::m_ptr_on_device = 0 ;
+  }
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a compatible view */
@@ -342,8 +178,6 @@ public:
   template< class rhsType , class rhsMapSpec , class rhsMemory >
 //  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   View( const View< rhsType , rhsMapSpec , rhsMemory > & rhs )
-    : m_shape(         rhs.m_shape ) // Must be same type
-    , m_ptr_on_device( rhs.m_ptr_on_device ) // preserves 'const' requirement
     {
       typedef View< rhsType , rhsMapSpec , rhsMemory > rhs_type ;
       typedef typename rhs_type::array_layout rhs_array_layout ;
@@ -354,7 +188,9 @@ public:
       typedef typename Impl::StaticAssertSame<array_layout,rhs_array_layout>::type ok_layout ;
       typedef typename Impl::StaticAssertSame<memory_space,rhs_memory_space>::type ok_memory ;
 
-      memory_space::increment( m_ptr_on_device );
+      oper_type::m_shape         = rhs.m_shape ;         // Must be same type
+      oper_type::m_ptr_on_device = rhs.m_ptr_on_device ; // preserves 'const' requirement
+      memory_space::increment( oper_type::m_ptr_on_device );
     }
 
   template< class rhsType , class rhsMapSpec , class rhsMemory >
@@ -370,10 +206,10 @@ public:
       typedef typename Impl::StaticAssertSame<array_layout,rhs_array_layout>::type ok_layout ;
       typedef typename Impl::StaticAssertSame<memory_space,rhs_memory_space>::type ok_memory ;
 
-      memory_space::decrement( m_ptr_on_device );
-      m_shape          = rhs.m_shape ; // Must be same type
-      m_ptr_on_device  = rhs.m_ptr_on_device ;
-      memory_space::increment( m_ptr_on_device );
+      memory_space::decrement( oper_type::m_ptr_on_device );
+      oper_type::m_shape          = rhs.m_shape ; // Must be same type
+      oper_type::m_ptr_on_device  = rhs.m_ptr_on_device ;
+      memory_space::increment( oper_type::m_ptr_on_device );
 
       return *this ;
     }
@@ -382,20 +218,20 @@ public:
   /** \brief  Query if NULL view */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   operator bool () const
-  { return 0 != m_ptr_on_device ; }
+  { return 0 != oper_type::m_ptr_on_device ; }
 
   /** \brief  Query if view to same memory */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const View & rhs ) const
   {
-    return m_ptr_on_device == rhs.m_ptr_on_device && m_shape == rhs.m_shape ;
+    return oper_type::m_ptr_on_device == rhs.m_ptr_on_device && oper_type::m_shape == rhs.m_shape ;
   }
 
   /** \brief  Query if not view to same memory */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const View & rhs ) const
   {
-    return m_ptr_on_device != rhs.m_ptr_on_device || m_shape != rhs.m_shape ;
+    return oper_type::m_ptr_on_device != rhs.m_ptr_on_device || oper_type::m_shape != rhs.m_shape ;
   }
 
   /** \brief  Query if view to same memory */
@@ -403,7 +239,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const View<rhsDataType,rhsLayout,rhsMemory> & rhs ) const
   {
-    return m_ptr_on_device == rhs.m_ptr_on_device && m_shape == rhs.m_shape ;
+    return oper_type::m_ptr_on_device == rhs.m_ptr_on_device && oper_type::m_shape == rhs.m_shape ;
   }
 
   /** \brief  Query if not view to same memory */
@@ -411,23 +247,13 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const View<rhsDataType,rhsLayout,rhsMemory> & rhs ) const
   {
-    return m_ptr_on_device != rhs.m_ptr_on_device || m_shape != rhs.m_shape ;
+    return oper_type::m_ptr_on_device != rhs.m_ptr_on_device || oper_type::m_shape != rhs.m_shape ;
   }
 
   /*------------------------------------------------------------------*/
-
-private:
-
-  View( value_type * ptr )
-    : m_shape()
-    , m_ptr_on_device( ptr )
-    { memory_space::increment( m_ptr_on_device ); }
-
-  shape_type   m_shape ;
-  value_type * m_ptr_on_device ;
-
-  template< class , class , class > friend class View ;
-  template< class Dst , class Src >  friend class Impl::Factory ;
+  /** \brief  For unit testing shape mapping. */
+  explicit View( const typename oper_type::shape_type & shape )
+    { oper_type::m_shape = shape ; }
 };
 
 //----------------------------------------------------------------------------

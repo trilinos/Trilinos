@@ -48,6 +48,7 @@
 
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
+#include <impl/KokkosArray_Shape_factory.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -391,27 +392,25 @@ struct Factory< View< DataType , LayoutType , DeviceOutput > , MirrorUseView >
 
 
 /** \brief  Create subviews of multivectors */
-template< typename ValueType , class Device >
-struct Factory< void , View< ValueType[][0] , LayoutLeft , Device > >
+template< typename ValueType , class LayoutSpec , class Device >
+struct Factory< void , View< ValueType[][0] , LayoutSpec , Device > >
 {
   typedef typename StaticAssert< rank<ValueType>::value == 0 >::type ok_rank ;
 
   // The multivector type:
-  typedef View< ValueType[][0] , LayoutLeft , Device > input_type ;
+  typedef View< ValueType[][0] , LayoutSpec , Device > input_type ;
 
   typedef typename Device::memory_space memory_space ;
-  typedef typename input_type::shape_map shape_map ;
 
   inline static
-  View< ValueType[] , LayoutLeft , Device >
+  View< ValueType[] , LayoutSpec , Device >
   view( const input_type & input , const size_t J )
   {
-    View< ValueType[] , LayoutLeft , Device > output ;
+    View< ValueType[] , LayoutSpec , Device > output ;
 
     if ( input ) {
       output.m_shape.N0 = input.m_shape.N0 ;
-      output.m_ptr_on_device = input.m_ptr_on_device +
-                               shape_map::offset( input.m_shape , 0 , J );
+      output.m_ptr_on_device = input.ptr_on_device( 0 , J );
       memory_space::increment( output.m_ptr_on_device );
     }
 
@@ -419,16 +418,14 @@ struct Factory< void , View< ValueType[][0] , LayoutLeft , Device > >
   }
 
   inline static
-  View< ValueType , LayoutLeft , Device >
+  View< ValueType , LayoutSpec , Device >
   view( const input_type & input , const size_t I , size_t J )
   {
 
-    View< ValueType , LayoutLeft , Device > output ;
+    View< ValueType , LayoutSpec , Device > output ;
 
     if ( input ) {
-      output.m_ptr_on_device = input.m_ptr_on_device +
-                               shape_map::offset( input.m_shape , I , J );
-
+      output.m_ptr_on_device = input.ptr_on_device( I , J );
       memory_space::increment( output.m_ptr_on_device );
     }
 
@@ -446,7 +443,6 @@ struct Factory< void , View< ValueType[] , LayoutSpec , Device > >
   typedef View< ValueType[] , LayoutSpec , Device > input_type ;
 
   typedef typename Device::memory_space memory_space ;
-  typedef typename input_type::shape_map shape_map ;
 
   inline static
   View< ValueType , LayoutSpec , Device >
@@ -455,7 +451,7 @@ struct Factory< void , View< ValueType[] , LayoutSpec , Device > >
     View< ValueType , LayoutSpec , Device > output ;
 
     if ( input ) {
-      output.m_ptr_on_device = input.m_ptr_on_device + I ;
+      output.m_ptr_on_device = & input( I );
       memory_space::increment( output.m_ptr_on_device );
     }
 
