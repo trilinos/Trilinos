@@ -145,7 +145,7 @@ public:
 
   /*! Returns the dimension (0 or greater) of identifier weights.
    */
-  int getIdentifierWeightDim() const { return weights_.size(); }
+  int getIdentifierWeightDim() const { return this->getNumWeights(); }
 
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
@@ -160,22 +160,17 @@ public:
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
     ArrayView<input_t> &wgts) const 
   {
+    Ids = ArrayView<const gno_t>();
+    wgts = weights_.view(0, userWeightDim_);
+
     size_t n = getLocalNumIdentifiers();
-    size_t nweights = n * weights_.size();
-
-    Ids =  ArrayView<const gno_t>();
-    wgts = ArrayView<input_t>();
-
     if (n){
       if (gnosAreGids_)
         Ids = gids_(0, n);
       else
         Ids = gnosConst_(0, n);
-
-      if (nweights)
-        wgts = weights_.view(0, weights_.size());
     }
-    
+
     return n;
   }
 
@@ -206,6 +201,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
+  int userWeightDim_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
@@ -217,25 +213,27 @@ template <typename User>
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), weights_(), gnos_(), gnosConst_()
+      gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
-  int weightDim = ia->getNumberOfWeights();
+  userWeightDim_ = ia->getNumberOfWeights();
   size_t nLocalIds = ia->getLocalNumberOfIdentifiers();
 
-  Array<const scalar_t *> wgts(weightDim, NULL);
-  Array<int> wgtStrides(weightDim, 0);
-  Array<lno_t> weightArrayLengths(weightDim, 0);
+  Model<IdentifierInput<User> >::maxCount(*comm, userWeightDim_);
 
-  if (weightDim > 0){
-    input_t *w = new input_t [weightDim];
-    weights_ = arcp<input_t>(w, 0, weightDim);
+  Array<const scalar_t *> wgts(userWeightDim_, NULL);
+  Array<int> wgtStrides(userWeightDim_, 0);
+  Array<lno_t> weightArrayLengths(userWeightDim_, 0);
+
+  if (userWeightDim_ > 0){
+    input_t *w = new input_t [userWeightDim_];
+    weights_ = arcp<input_t>(w, 0, userWeightDim_);
   }
 
   const gid_t *gids=NULL;
 
   try{
     ia->getIdentifierList(gids);
-    for (int dim=0; dim < weightDim; dim++)
+    for (int dim=0; dim < userWeightDim_; dim++)
       ia->getIdentifierWeights(dim, wgts[dim], wgtStrides[dim]);
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -243,8 +241,8 @@ template <typename User>
   if (nLocalIds){
     gids_ = arcp(gids, 0, nLocalIds, false);
 
-    if (weightDim > 0){
-      for (int i=0; i < weightDim; i++){
+    if (userWeightDim_ > 0){
+      for (int i=0; i < userWeightDim_; i++){
         if (wgts[i] != NULL){
           ArrayRCP<const scalar_t> wgtArray(
             wgts[i], 0, nLocalIds*wgtStrides[i], false);
@@ -324,7 +322,7 @@ public:
 
   /*! Returns the dimension (0 or greater) of identifier weights.
    */
-  int getIdentifierWeightDim() const { return weights_.size(); }
+  int getIdentifierWeightDim() const { return this->getNumWeights();}
 
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
@@ -339,20 +337,15 @@ public:
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
     ArrayView<input_t> &wgts) const            
   {
+    Ids = ArrayView<const gno_t>();
+    wgts = weights_.view(0, userWeightDim_);
+
     size_t n = getLocalNumIdentifiers();
-    size_t nweights = weights_.size();
-
-    Ids = ArrayView<const gno_t>(Teuchos::null);
-    wgts = ArrayView<input_t>(Teuchos::null);
-
     if (n){
       if (gnosAreGids_)
-        Ids = gids_.view(0, n);
+        Ids = gids_(0, n);
       else
-        Ids = gnosConst_.view(0, n);
-
-      if (nweights)
-        wgts = weights_.view(0, nweights);
+        Ids = gnosConst_(0, n);
     }
 
     return n;
@@ -385,6 +378,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
+  int userWeightDim_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
@@ -396,7 +390,7 @@ template <typename User>
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), weights_(), gnos_(), gnosConst_()
+      gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
   /////////////////////////////////////////
   // Get global IDs.
@@ -433,19 +427,21 @@ template <typename User>
   /////////////////////////////////////////
   // Get weights.
 
-  int weightDim = ia->getNumberOfWeights();
-  Array<lno_t> weightListSizes(weightDim, 0);
+  userWeightDim_ = ia->getNumberOfWeights();
+  Array<lno_t> weightListSizes(userWeightDim_, 0);
 
-  if (weightDim > 0){
-    input_t *weightObj = new input_t [weightDim];
-    weights_ = arcp(weightObj, 0, weightDim);
+  Model<CoordinateInput<User> >::maxCount(*comm, userWeightDim_);
+
+  if (userWeightDim_ > 0){
+    input_t *weightObj = new input_t [userWeightDim_];
+    weights_ = arcp(weightObj, 0, userWeightDim_);
 
     if (nLocalIds > 0){
       const scalar_t *wgts=NULL;
       int stride = 0;
       size_t wgtListSize;
 
-      for (int wdim=0; wdim < weightDim; wdim++){
+      for (int wdim=0; wdim < userWeightDim_; wdim++){
         wgtListSize = ia->getCoordinateWeights(wdim, wgts, stride);
 
         if (wgtListSize > 0){  // non-uniform weights
@@ -526,20 +522,15 @@ public:
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
     ArrayView<input_t> &wgts) const            
   {
+    Ids = ArrayView<const gno_t>();
+    wgts = weights_.view(0, userWeightDim_);
+
     size_t n = getLocalNumIdentifiers();
-    size_t nweights = 0;
-
-    Ids = ArrayView<const gno_t>(Teuchos::null);
-    wgts = ArrayView<input_t>(Teuchos::null);
-
     if (n){
       if (gnosAreGids_)
         Ids = gids_(0, n);
       else
         Ids = gnosConst_(0, n);
-
-      if (nweights)
-        wgts = weights_(0, nweights);
     }
 
     return n;
@@ -572,6 +563,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
+  int userWeightDim_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
@@ -584,7 +576,7 @@ template <typename User>
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), weights_(), gnos_(), gnosConst_()
+      gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
   size_t nLocalIds;
   const gid_t *gids;
@@ -680,20 +672,15 @@ public:
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
     ArrayView<input_t> &wgts) const            
   {
+    Ids = ArrayView<const gno_t>();
+    wgts = weights_.view(0, userWeightDim_);
+
     size_t n = getLocalNumIdentifiers();
-    size_t nweights = 0;
-
-    Ids = ArrayView<const gno_t>(Teuchos::null);
-    wgts = ArrayView<input_t>(Teuchos::null);
-
     if (n){
       if (gnosAreGids_)
         Ids = gids_(0, n);
       else
         Ids = gnosConst_(0, n);
-
-      if (nweights)
-        wgts = weights_(0, nweights);
     }
 
     return n;
@@ -726,6 +713,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
+  int userWeightDim_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
@@ -738,7 +726,7 @@ template <typename User>
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), weights_(), gnos_(), gnosConst_()
+      gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
   size_t nLocalIds;
   const gid_t *gids;

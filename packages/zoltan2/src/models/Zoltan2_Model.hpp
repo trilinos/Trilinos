@@ -100,6 +100,9 @@ public:
   /*! \brief Return the number of weights supplied for each object.
    *   If the user supplied no weights, dimension one is returned, because
    *   one dimension of uniform weights is implied.
+   *
+   *   The concrete subclasses, however, return the number of weights
+   *   supplied by the user.
    */
   int getNumWeights() const { return weightDim_;}
 
@@ -188,6 +191,59 @@ protected:
     }
  
     delete [] rval;
+  }
+
+  /*! \brief Get the global maximum for each of an array of values.
+   *
+   *   Certain counts may not be available from processes that have
+   *   no data.  Models should find the maximum value of the count
+   *   across all processes to get the correct count.  (Examples
+   *   are coordinate dimension and weight dimension.)
+   */
+  template <typename T>
+    static void maxCount(const Comm<int> &comm, Array<T> &countValues)
+  {
+    size_t len = countValues.size();
+    if (comm.getSize() < 2 || len < 1)
+      return;
+    Array<T> globalValues(len);
+    Teuchos::reduceAll<int, T>(comm, Teuchos::REDUCE_MAX, len,
+      countValues.getRawPtr(), globalValues.getRawPtr());
+
+    countValues = globalValues;
+  }
+
+  /*! \brief Get the global maximum for a value.
+   *
+   *   Certain counts may not be available from processes that have
+   *   no data.  Models should find the maximum value of the count
+   *   across all processes to get the correct count.  (Examples
+   *   are coordinate dimension and weight dimension.)
+   */
+  template <typename T>
+    static void maxCount(const Comm<int> &comm, T &value1)
+  {
+    Array<T> values(1, value1);
+    maxCount<T>(comm, values);
+    value1 = values[0];
+  }
+
+  /*! \brief Get the global maximums for each of two values.
+   *
+   *   Certain counts may not be available from processes that have
+   *   no data.  Models should find the maximum value of the count
+   *   across all processes to get the correct count.  (Examples
+   *   are coordinate dimension and weight dimension.)
+   */
+  template <typename T>
+    static void maxCount(const Comm<int> &comm, T &value1, T &value2)
+  {
+    Array<T> values(2);
+    values[0] = value1;
+    values[1] = value2;
+    maxCount<T>(comm, values);
+    value1 = values[0];
+    value2 = values[1];
   }
 
 private:

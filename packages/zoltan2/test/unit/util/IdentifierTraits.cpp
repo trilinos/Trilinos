@@ -71,7 +71,7 @@ void check_traits(
   T gmin, gmax;
   std::cout << "global minMax: ";
   try{
-    id::globalMinMax(*comm, lo, hi, gmin, gmax);
+    id::globalMinMax(*comm, false, lo, hi, gmin, gmax);
   }
   catch(...){
     supported = false;

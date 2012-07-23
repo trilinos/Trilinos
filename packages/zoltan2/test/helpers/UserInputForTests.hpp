@@ -477,7 +477,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   bool aok = true;
   try{
     M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-      fname.str(), tcomm_, dnode, true, true, true);
+      fname.str(), tcomm_, dnode, true, true, false);
   }
   catch (std::exception &e) {
     //TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
