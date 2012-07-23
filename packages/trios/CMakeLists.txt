@@ -23,8 +23,8 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 INCLUDE(TriosProbeTimers)
 # Checks for a supported interconnect
 INCLUDE(TriosProbeNetwork)
-# Checks for differences in Pthread implementations
-INCLUDE(TriosProbeThreads)
+# Checks for a POSIX semaphore implementation
+INCLUDE(TriosProbeSemaphores)
 
 IF (TPL_ENABLE_Netcdf)
   TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_NETCDF_SERVICE
