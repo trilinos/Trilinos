@@ -162,9 +162,9 @@ namespace Stokhos {
 	  gramSchmidt(i+1, vs, u, u2);
 	}
 
-	std::cout << "i = " << i 
-		  << " alpha = " << alpha[i] << " beta = " << beta[i]
-		  << " nrm = " << nrm_sqrd[i] << std::endl;
+	// std::cout << "i = " << i 
+	// 	  << " alpha = " << alpha[i] << " beta = " << beta[i]
+	// 	  << " nrm = " << nrm_sqrd[i] << std::endl;
         TEUCHOS_TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
 	       	           "Stokhos::LanczosProjPCEBasis::lanczos():  "
 		           << " Polynomial " << i << " out of " << k
@@ -219,9 +219,9 @@ namespace Stokhos {
 	  gramSchmidt(i+1, vs, u, u2);
 	}
 
-	std::cout << "i = " << i 
-		  << " alpha = " << alpha[i] << " beta = " << beta[i]
-		  << " nrm = " << nrm_sqrd[i] << std::endl;
+	// std::cout << "i = " << i 
+	// 	  << " alpha = " << alpha[i] << " beta = " << beta[i]
+	// 	  << " nrm = " << nrm_sqrd[i] << std::endl;
         TEUCHOS_TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
 	       	           "Stokhos::LanczosProjPCEBasis::lanczos():  "
 		           << " Polynomial " << i << " out of " << k

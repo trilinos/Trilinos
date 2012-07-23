@@ -25,7 +25,7 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 /*
- *  This file contains routines to set the partition sizes.
+ *  This file contains routines to set the part sizes.
  */
 /*****************************************************************************/
 /*****************************************************************************/
@@ -35,19 +35,19 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
     int len, int *part_ids, int *wgt_idx, float *part_sizes)
 {
 /*
- *  Function to set the desired partition sizes. This function
+ *  Function to set the desired part sizes. This function
  *  only sets values locally. Later, Zoltan_LB_Get_Part_Sizes
  *  collects all the information across processors.
  *
  *  Input:
  *    zz            --  The Zoltan structure to which this method
  *                      applies.
- *    global_num    --  Global partition numbers? (0 for local numbers)
+ *    global_num    --  Global part numbers? (0 for local numbers)
  *    len           --  Length of arrays wgt_idx, part_idx, part_sizes
- *    part_ids      --  Array of partition ids (local or global)
+ *    part_ids      --  Array of part ids (local or global)
  *    wgt_idx       --  Array of indices between 0 and Obj_Wgt_Dim-1
- *    part_sizes    --  Array of floats that gives the desired partition 
- *                      size for each weight and each partition, i.e., 
+ *    part_sizes    --  Array of floats that gives the desired part 
+ *                      size for each weight and each part, i.e., 
  *                      part_sizes[i] corresponds to wgt_idx[i] and part_id[i]
  *
  *  Output:
@@ -62,7 +62,7 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  /* len = -1 will nullify all partition sizes set on this proc */
+  /* len = -1 will nullify all part sizes set on this proc */
   if (len == -1){
     zz->LB.Part_Info_Len = 0;
     goto End;
@@ -93,7 +93,7 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
       goto End;
   }
 
-  /* Add new data to partition info array. */
+  /* Add new data to part info array. */
   for (i=0,j=zz->LB.Part_Info_Len; i<len; i++,j++){
     zz->LB.Part_Info[j].Size = part_sizes[i];
     zz->LB.Part_Info[j].Part_id = part_ids[i]; 
@@ -117,18 +117,18 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
     int num_global_parts, int part_dim, float *part_sizes)
 {
 /*
- *  Function to get the scaled partition sizes.
+ *  Function to get the scaled part sizes.
  *
  *  Input:
  *    zz            --  The Zoltan structure to which this method
  *                      applies.
- *    num_global_parts -- Number of global partitions.
+ *    num_global_parts -- Number of global parts.
  *                      (This usually equals lb->Num_Global_Parts)
- *    part_dim      --  The number of object weights per partition.
+ *    part_dim      --  The number of object weights per part.
  *                      (This usually equals lb->Obj_Wgt_Dim.)
  *
  *  Output:
- *    part_sizes    --  Array of floats that gives the set partition 
+ *    part_sizes    --  Array of floats that gives the set part 
  *                      sizes, scaled such that they sum to one.
  */
   int i, j, nparts, fpart;
@@ -158,16 +158,16 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
       1, MPI_INT, MPI_MAX, zz->Communicator);
 
   if (j == 0){
-    /* Uniform partition sizes. */
+    /* Uniform part sizes. */
     zz->LB.Uniform_Parts = 1;
     for (i = 0; i < num_global_parts*part_dim; i++)
       part_sizes[i] = 1.0 / (float)num_global_parts;
   }
   else {
-   /* Get the partition sizes set by the user (application).
+   /* Get the part sizes set by the user (application).
     * Each processor puts its data in a part_dim * num_global_parts
     * array. Then we gather all the data across processors.
-    * Out-of-range partition size data is ignored.
+    * Out-of-range part size data is ignored.
     */
     zz->LB.Uniform_Parts = 0;
 
@@ -184,7 +184,7 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
       temp_part_sizes[i] = -1.0;
     }
     for (i = 0; i < zz->LB.Part_Info_Len; i++){
-      /* Only assemble partition sizes for partitions and weights
+      /* Only assemble part sizes for parts and weights
          in the requested range. */
       if (zz->LB.Part_Info[i].Idx < part_dim){
         j = zz->LB.Part_Info[i].Part_id;
@@ -193,7 +193,7 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
           j += fpart;
         }
         if (j >= num_global_parts){
-          sprintf(msg, "Partition number %d is >= num_global_parts %d.",
+          sprintf(msg, "Part number %d is >= num_global_parts %d.",
             j, num_global_parts);
           ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
           error = ZOLTAN_WARN;
@@ -220,7 +220,7 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
       }
 
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
-        printf("[%1d] In %s: Partition size %1d (before scaling) = ",  
+        printf("[%1d] In %s: Part size %1d (before scaling) = ",  
             zz->Proc, yo, i);
         for (j = 0; j < part_dim; j++)
           printf("%f, ",  part_sizes[i*part_dim+j]);
@@ -238,7 +238,7 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
       }
     }
 
-    /* Normalize partition sizes */
+    /* Normalize part sizes */
     for (i = 0; i < num_global_parts; i++)
       for (j = 0; j < part_dim; j++)
         part_sizes[i*part_dim+j] /= sum[j];

@@ -54,7 +54,7 @@ CompletePolynomialBasis(
   }
 
   // Compute basis terms
-  compute_terms();
+  CPBUtils::compute_terms(basis_orders, sz, terms, num_terms);
     
   // Compute norms
   norms.resize(sz);
@@ -251,12 +251,12 @@ computeTripleProductTensorNew(ordinal_type order) const
     // Add term if it is in the basis
     if (sum_i <= p && sum_j <= p && sum_k <= p) {
       if (inc_k)
-	K = compute_index(terms_k);
+	K = CPBUtils::compute_index(terms_k, terms, num_terms, p);
       if (K < order) {
 	if (inc_i)
-	  I = compute_index(terms_i);
+	  I = CPBUtils::compute_index(terms_i, terms, num_terms, p);
 	if (inc_j)
-	  J = compute_index(terms_j);
+	  J = CPBUtils::compute_index(terms_j, terms, num_terms, p);
 	value_type c = value_type(1.0);
 	for (ordinal_type dim=0; dim<d; dim++)
 	  c *= value(i_iterators[dim]);
@@ -478,7 +478,7 @@ ordinal_type
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 getIndex(const Teuchos::Array<ordinal_type>& term) const
 {
-  return compute_index(term);
+  return CPBUtils::compute_index(term, terms, num_terms, p);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -495,171 +495,4 @@ Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 getCoordinateBases() const
 {
   return bases;
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-compute_terms()
-{
-  // The approach here for ordering the terms is inductive on the total
-  // order p.  We get the terms of total order p from the terms of total
-  // order p-1 by incrementing the orders of the first dimension by 1.
-  // We then increment the orders of the second dimension by 1 for all of the
-  // terms whose first dimension order is 0.  We then repeat for the third
-  // dimension whose first and second dimension orders are 0, and so on.
-  // How this is done is most easily illustrated by an example of dimension 3:
-  //
-  // Order  terms   cnt  Order  terms   cnt
-  //   0    0 0 0          4    4 0 0  15 5 1
-  //                            3 1 0
-  //   1    1 0 0  3 2 1        3 0 1
-  //        0 1 0               2 2 0
-  //        0 0 1               2 1 1
-  //                            2 0 2
-  //   2    2 0 0  6 3 1        1 3 0
-  //        1 1 0               1 2 1
-  //        1 0 1               1 1 2
-  //        0 2 0               1 0 3
-  //        0 1 1               0 4 0
-  //        0 0 2               0 3 1
-  //                            0 2 2
-  //   3    3 0 0  10 4 1       0 1 3
-  //        2 1 0               0 0 4
-  //        2 0 1
-  //        1 2 0
-  //        1 1 1
-  //        1 0 2
-  //        0 3 0
-  //        0 2 1
-  //        0 1 2
-  //        0 0 3
-
-  // Temporary array of terms grouped in terms of same order
-  Teuchos::Array< Teuchos::Array< Teuchos::Array<ordinal_type> > > terms_order(p+1);
-
-  // Store number of terms up to each order
-  num_terms.resize(p+2, ordinal_type(0));
-
-  // Set order 0
-  terms_order[0].resize(1);
-  terms_order[0][0].resize(d, ordinal_type(0));
-  num_terms[0] = 1;
-
-  // The array "cnt" stores the number of terms we need to increment for each
-  // dimension.  
-  Teuchos::Array<ordinal_type> cnt(d), cnt_next(d), term(d);
-  for (ordinal_type j=0; j<d; j++) {
-    if (basis_orders[j] >= 1)
-      cnt[j] = 1;
-    else
-      cnt[j] = 0;
-    cnt_next[j] = 0;
-  }
-
-  sz = 1;
-  // Loop over orders
-  for (ordinal_type k=1; k<=p; k++) {
-
-    num_terms[k] = num_terms[k-1];
-
-    // Stores the index of the term we copying
-    ordinal_type prev = 0;
-
-    // Loop over dimensions
-    for (ordinal_type j=0; j<d; j++) {
-
-      // Increment orders of cnt[j] terms for dimension j
-      for (ordinal_type i=0; i<cnt[j]; i++) {
-	if (terms_order[k-1][prev+i][j] < basis_orders[j]) {
-	  term = terms_order[k-1][prev+i];
-	  ++term[j];
-	  terms_order[k].push_back(term);
-	  ++sz;
-	  num_terms[k]++;
-	  for (ordinal_type l=0; l<=j; l++)
-	    ++cnt_next[l];
-	}
-      }
-
-      // Move forward to where all orders for dimension j are 0
-      if (j < d-1)
-	prev += cnt[j] - cnt[j+1];
-
-    }
-
-    // Update the number of terms we must increment for the new order
-    for (ordinal_type j=0; j<d; j++) {
-      cnt[j] = cnt_next[j];
-      cnt_next[j] = 0;
-    }
-
-  }
-
-  num_terms[p+1] = sz;
-
-  // Copy into final terms array
-  terms.resize(sz);
-  ordinal_type i = 0;
-  for (ordinal_type k=0; k<=p; k++) {
-    ordinal_type num_k = terms_order[k].size();
-    for (ordinal_type j=0; j<num_k; j++)
-      terms[i++] = terms_order[k][j];
-  }
-
-  /*
-  std::cout << "sz = " << sz << std::endl;
-  for (ordinal_type i=0; i<sz; i++) {
-    std::cout << i << ":  ";
-    for (ordinal_type j=0; j<d; j++)
-      std::cout << terms[i][j] << " ";
-    std::cout << std::endl;
-  }
-  std::cout << "num_terms = ";
-  for (ordinal_type i=0; i<=p; i++)
-    std::cout << num_terms[i] << " ";
-  std::cout << std::endl;
-  */
-}
-
-template <typename ordinal_type, typename value_type>
-ordinal_type 
-Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-compute_index(const Teuchos::Array<ordinal_type>& term) const
-{
-  // The approach here for computing the index is to find the order block
-  // corresponding to this term by adding up the component orders.  We then
-  // do a linear search through the terms_order array for this order
-
-  // First compute order of term
-  ordinal_type ord = 0;
-  for (ordinal_type i=0; i<d; i++)
-    ord += term[i];
-  TEUCHOS_TEST_FOR_EXCEPTION(ord < 0 || ord > p, std::logic_error,
-		     "Stokhos::CompletePolynomialBasis::compute_index(): " <<
-		     "Term has invalid order " << ord);
-
-  // Now search through terms of that order to find a match
-  ordinal_type k;
-  if (ord == 0)
-    k = 0;
-  else
-    k = num_terms[ord-1];
-  ordinal_type k_max=num_terms[ord];
-  bool found = false;
-  while (k < k_max && !found) {
-    bool found_term = true;
-    for (ordinal_type j=0; j<d; j++) {
-      found_term = found_term && (term[j] == terms[k][j]);
-      if (!found_term)
-	break;
-    }
-    found = found_term;
-    ++k;
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(k >= k_max && !found, std::logic_error,
-		     "Stokhos::CompletePolynomialBasis::compute_index(): " <<
-		     "Could not find specified term.");
-
-  return k-1;
 }

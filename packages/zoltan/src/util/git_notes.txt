@@ -174,7 +174,7 @@ Commands:
    !! Do not rebase commits that you have pushed to a public repository. !!
    !! only rebase commits that have never been available publicly.  !!
 
--  git checkout `git rev-list -n 1 --before="2010-06-22" master
+-  git checkout `git rev-list -n 1 --before="2010-06-22" master`
    Checkout a copy of the code from a given date.
 
 ---------------------------------------------------------------------------

@@ -817,49 +817,48 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
       part = &fem_meta->declare_part(entity->name(), type);
     else
       part = &meta.declare_part(entity->name(), type);
-	stk::io::put_io_part_attribute(*part, entity);
+    stk::io::put_io_part_attribute(*part, entity);
 
-	const Ioss::ElementTopology *topology = entity->topology();
-	// Check spatial dimension of the element topology here so we
-	// can issue a more meaningful error message.  If the
-	// dimension is bad and we continue to the following calls,
-	// there is an exception and we get unintelligible (to the
-	// user) error messages.  Could also do a catch...
+    const Ioss::ElementTopology *topology = entity->topology();
+    // Check spatial dimension of the element topology here so we
+    // can issue a more meaningful error message.  If the
+    // dimension is bad and we continue to the following calls,
+    // there is an exception and we get unintelligible (to the
+    // user) error messages.  Could also do a catch...
 
-	if (entity->type() == Ioss::ELEMENTBLOCK) {
-	  assert(topology != NULL);
-	  if (fem_meta && (topology->spatial_dimension() < (int)fem_meta->spatial_dimension())) {
-	    // NOTE: The comparison is '<' and not '!=' since a 2D mesh
-	    // can contain a "3d" element -- a Beam is both a 2D and
-	    // 3D element...
+    if (entity->type() == Ioss::ELEMENTBLOCK) {
+      assert(topology != NULL);
+      if (fem_meta && (topology->spatial_dimension() < (int)fem_meta->spatial_dimension())) {
+	// NOTE: The comparison is '<' and not '!=' since a 2D mesh
+	// can contain a "3d" element -- a Beam is both a 2D and
+	// 3D element...
 
-	    std::ostringstream msg ;
-	    msg << "\n\nERROR: Element Block " << entity->name()
+	std::ostringstream msg ;
+	msg << "\n\nERROR: Element Block " << entity->name()
             << " contains " << topology->name() << " elements with spatial dimension "
             << topology->spatial_dimension()
             << "\n       which does not match the spatial dimension of the model which is "
             << fem_meta->spatial_dimension() << "\n\n";
 	    throw std::runtime_error( msg.str() );
-	  }
-	}
+      }
+    }
 
-	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
-	/// \todo IMPLEMENT Determine whether application can work
-	/// with this topology type... Perhaps map_topology_ioss_to_cell only
-	/// returns a valid topology if the application has registered
-    /// that it can handle that specific topology.
-
+    const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
+    // \todo IMPLEMENT Determine whether application can work
+    // with this topology type... Perhaps map_topology_ioss_to_cell only
+    // returns a valid topology if the application has registered
+    // that it can handle that specific topology.
+	  
     if (cell_topology != NULL) {
-      if( fem_meta )
-      {
-        const stk::mesh::fem::CellTopology cell_topo(cell_topology);
-        stk::mesh::fem::set_cell_topology(*part, cell_topo);
+      if( fem_meta ) {
+	const stk::mesh::fem::CellTopology cell_topo(cell_topology);
+	stk::mesh::fem::set_cell_topology(*part, cell_topo);
       }
       stk::io::set_cell_topology(*part, cell_topology);
     } else {
-	  /// \todo IMPLEMENT handle cell_topolgy mapping error...
-	}
-	stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, *part, type);
+      // \todo IMPLEMENT handle cell_topolgy mapping error...
+    }
+    stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, *part, type);
   }
 }
 
@@ -1099,6 +1098,9 @@ void define_side_block(stk::mesh::Part &part,
     side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage_type,
                                       Ioss::Field::MESH, side_count));
   }
+
+  // Add the attribute fields.
+  ioss_add_fields(part, part_primary_entity_rank(part), side_block, Ioss::Field::ATTRIBUTE);
 }
 
 void define_side_blocks(stk::mesh::Part &part,
@@ -1173,6 +1175,9 @@ void define_node_block(stk::mesh::Part &part,
   Ioss::NodeBlock * const nb = new Ioss::NodeBlock(io_region.get_database(),
                                                    name, num_nodes, spatial_dim);
   io_region.add( nb );
+
+  // Add the attribute fields.
+  ioss_add_fields(part, part_primary_entity_rank(part), nb, Ioss::Field::ATTRIBUTE);
 }
 
 
@@ -1260,6 +1265,9 @@ void define_node_set(stk::mesh::Part &part,
   Ioss::NodeSet * const ns =
     new Ioss::NodeSet( io_region.get_database(), part.name(), num_nodes);
   io_region.add(ns);
+
+  // Add the attribute fields.
+  ioss_add_fields(part, part_primary_entity_rank(part), ns, Ioss::Field::ATTRIBUTE);
 }
 } // namespace <blank>
 
@@ -1408,6 +1416,16 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
   if (df != NULL) {
     field_data_to_ioss(df, sides, &io, "distribution_factors", Ioss::Field::MESH);
   }
+
+  const std::vector<mesh::FieldBase *> &fields = meta_data.get_fields();
+  std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
+  while (I != fields.end()) {
+    const mesh::FieldBase *f = *I ; ++I ;
+    const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
+    if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
+      stk::io::field_data_to_ioss(f, sides, &io, f->name(), Ioss::Field::ATTRIBUTE);
+    }
+  }
 }
 
 //----------------------------------------------------------------------
@@ -1451,6 +1469,16 @@ void output_node_block(Ioss::NodeBlock &nb,
     meta_data.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
   assert(coord_field != NULL);
   field_data_to_ioss(coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
+
+  const std::vector<mesh::FieldBase *> &fields = meta_data.get_fields();
+  std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
+  while (I != fields.end()) {
+    const mesh::FieldBase *f = *I ; ++I ;
+    if (stk::io::is_valid_part_field(f, part_primary_entity_rank(part), part,
+				     meta_data.universal_part(), Ioss::Field::ATTRIBUTE, false)) {
+      stk::io::field_data_to_ioss(f, nodes, &nb, f->name(), Ioss::Field::ATTRIBUTE);
+    }
+  }
 }
 
 template <typename INT>
@@ -1550,6 +1578,19 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
     meta_data.get_field<stk::mesh::Field<double> >("distribution_factors");
   if (df_field != NULL) {
     stk::io::field_data_to_ioss(df_field, nodes, ns, "distribution_factors", Ioss::Field::MESH);
+  }
+
+  const std::vector<mesh::FieldBase *> &fields = meta_data.get_fields();
+  std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
+  while (I != fields.end()) {
+    const mesh::FieldBase *f = *I ; ++I ;
+    const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
+    if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
+      const mesh::FieldBase::Restriction &res = f->restriction(0, *part);
+      if (res.dimension() > 0) {
+        stk::io::field_data_to_ioss(f, nodes, ns, f->name(), Ioss::Field::ATTRIBUTE);
+      }
+    }
   }
 }
 

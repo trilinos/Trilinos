@@ -31,6 +31,10 @@
 #ifndef STOKHOS_UNIT_TEST_HELPERS_HPP
 #define STOKHOS_UNIT_TEST_HELPERS_HPP
 
+#include "Stokhos_OrthogPolyApprox.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_FancyOStream.hpp"
+
 namespace Stokhos {
 
   template<class OrdinalType, class ValueType>
@@ -108,39 +112,93 @@ namespace Stokhos {
 		     const ValueType& rel_tol, 
 		     const ValueType& abs_tol,
 		     Teuchos::FancyOStream& out)
-{
-  using Teuchos::as;
-  bool success = true;
-
-  out << "Comparing " << a1_name << " == " << a2_name << " ... ";
-
-  const int n = a1.size();
-
-  // Compare sizes
-  if (as<int>(a2.size()) != n) {
-    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == " 
-        << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
-    return false;
-  }
-  
-  // Compare elements
-  for( int i = 0; i < n; ++i ) {
-    ValueType err = std::abs(a1[i] - a2[i]);
-    ValueType tol = abs_tol + rel_tol*std::max(std::abs(a1[i]),std::abs(a2[i]));
-    if (err > tol) {
-      out << "\nError, relErr(" << a1_name << "[" << i << "]," << a2_name 
-	  << "[" << i << "]) = relErr(" << a1[i] << "," <<a2[i] <<") = "
-	  << err << " <= tol = " << tol << ": failed!\n";
-      success = false;
+  {
+    using Teuchos::as;
+    bool success = true;
+    
+    out << "Comparing " << a1_name << " == " << a2_name << " ... ";
+    
+    const int n = a1.size();
+    
+    // Compare sizes
+    if (as<int>(a2.size()) != n) {
+      out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == " 
+	  << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
+      return false;
     }
-  }
-  if (success) {
-    out << "passed\n";
+    
+    // Compare elements
+    for( int i = 0; i < n; ++i ) {
+      ValueType err = std::abs(a1[i] - a2[i]);
+      ValueType tol = 
+	abs_tol + rel_tol*std::max(std::abs(a1[i]),std::abs(a2[i]));
+      if (err > tol) {
+	out << "\nError, relErr(" << a1_name << "[" << i << "]," << a2_name 
+	    << "[" << i << "]) = relErr(" << a1[i] << "," <<a2[i] <<") = "
+	    << err << " <= tol = " << tol << ": failed!\n";
+	success = false;
+      }
+    }
+    if (success) {
+      out << "passed\n";
+    }
+    
+    return success;
   }
 
-  return success;
+  template<class ordinal_type, class scalar_type>
+  bool compareSDM(
+    const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& a1, 
+    const std::string& a1_name,
+    const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& a2, 
+    const std::string& a2_name,
+    const scalar_type& rel_tol, 
+    const scalar_type& abs_tol,
+    Teuchos::FancyOStream& out)
+  {
+    using Teuchos::as;
+    bool success = true;
+    
+    out << "Comparing " << a1_name << " == " << a2_name << " ... ";
+    
+    const ordinal_type m = a1.numRows();
+    const ordinal_type n = a1.numCols();
+    
+    // Compare number of rows
+    if (a2.numRows() != m) {
+      out << "\nError, "<<a1_name<<".numRows() = "<<a1.numRows()<<" == " 
+	  << a2_name<<".numRows() = "<<a2.numRows()<<" : failed!\n";
+      return false;
+    }
 
-}
+    // Compare number of columnns
+    if (a2.numCols() != n) {
+      out << "\nError, "<<a1_name<<".numCols() = "<<a1.numCols()<<" == " 
+	  << a2_name<<".numCols() = "<<a2.numCols()<<" : failed!\n";
+      return false;
+    }
+    
+    // Compare elements
+    for (ordinal_type i=0; i<m; i++) {
+      for (ordinal_type j=0; j<n; j++) {
+	scalar_type err = std::abs(a1(i,j) - a2(i,j));
+	scalar_type tol = 
+	  abs_tol + rel_tol*std::max(std::abs(a1(i,j)),std::abs(a2(i,j)));
+	if (err > tol) {
+	  out << "\nError, relErr(" << a1_name << "(" << i << "," << j << "), " 
+	      << a2_name << "(" << i << "," << j << ")) = relErr(" 
+	      << a1(i,j) << ", " <<a2(i,j) <<") = "
+	      << err << " <= tol = " << tol << ": failed!\n";
+	  success = false;
+	}
+      }
+    }
+    if (success) {
+      out << "passed\n";
+    }
+      
+    return success;
+  }
 }
 
 #endif // STOKHOS_UNIT_TEST_HELPERS_HPP

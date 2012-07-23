@@ -89,14 +89,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajor (
+matVecCscColMajorForfor (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -141,14 +141,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajor4Unrolled (
+matVecCscColMajorForfor4Unrolled (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -191,13 +191,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajor1Vec (
+matVecCscColMajorForfor1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -240,13 +241,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajor2Vec (
+matVecCscColMajorForfor2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -289,13 +291,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajor3Vec (
+matVecCscColMajorForfor3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -338,13 +341,622 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajor4Vec (
+matVecCscColMajorForfor4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhile (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhile4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhile1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhile2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhile3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhile4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForif (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForif4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForif1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForif2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForif3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForif4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -389,14 +1001,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajor (
+matVecCsrColMajorForfor (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -441,14 +1053,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajor4Unrolled (
+matVecCsrColMajorForfor4Unrolled (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -491,13 +1103,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajor1Vec (
+matVecCsrColMajorForfor1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -540,13 +1153,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajor2Vec (
+matVecCsrColMajorForfor2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -589,13 +1203,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajor3Vec (
+matVecCsrColMajorForfor3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -638,13 +1253,622 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajor4Vec (
+matVecCsrColMajorForfor4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhile (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhile4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhile1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhile2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhile3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhile4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForif (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForif4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForif1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForif2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForif3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForif4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -689,14 +1913,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajor (
+matVecCscRowMajorForfor (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -741,14 +1965,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajor4Unrolled (
+matVecCscRowMajorForfor4Unrolled (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -791,13 +2015,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajor1Vec (
+matVecCscRowMajorForfor1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -840,13 +2065,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajor2Vec (
+matVecCscRowMajorForfor2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -889,13 +2115,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajor3Vec (
+matVecCscRowMajorForfor3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -938,13 +2165,622 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajor4Vec (
+matVecCscRowMajorForfor4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhile (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhile4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhile1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhile2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhile3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhile4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForif (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForif4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForif1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForif2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForif3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForif4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -989,14 +2825,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajor (
+matVecCsrRowMajorForfor (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1041,14 +2877,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajor4Unrolled (
+matVecCsrRowMajorForfor4Unrolled (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1091,13 +2927,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajor1Vec (
+matVecCsrRowMajorForfor1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1140,13 +2977,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajor2Vec (
+matVecCsrRowMajorForfor2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1189,13 +3027,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajor3Vec (
+matVecCsrRowMajorForfor3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1238,13 +3077,622 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajor4Vec (
+matVecCsrRowMajorForfor4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhile (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhile4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhile1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhile2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhile3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhile4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForif (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForif4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForif1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForif2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForif3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForif4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1290,14 +3738,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajorConj (
+matVecCscColMajorForforConj (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1343,14 +3791,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajorConj4Unrolled (
+matVecCscColMajorForforConj4Unrolled (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1394,13 +3842,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajorConj1Vec (
+matVecCscColMajorForforConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1444,13 +3893,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajorConj2Vec (
+matVecCscColMajorForforConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1494,13 +3944,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajorConj3Vec (
+matVecCscColMajorForforConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1544,13 +3995,634 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscColMajorConj4Vec (
+matVecCscColMajorForforConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhileConj (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhileConj4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhileConj1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhileConj2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhileConj3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForwhileConj4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForifConj (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForifConj4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForifConj1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForifConj2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForifConj3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscColMajorForifConj4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1596,14 +4668,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajorConj (
+matVecCsrColMajorForforConj (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1649,14 +4721,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajorConj4Unrolled (
+matVecCsrColMajorForforConj4Unrolled (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1700,13 +4772,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajorConj1Vec (
+matVecCsrColMajorForforConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1750,13 +4823,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajorConj2Vec (
+matVecCsrColMajorForforConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1800,13 +4874,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajorConj3Vec (
+matVecCsrColMajorForforConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1850,13 +4925,634 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrColMajorConj4Vec (
+matVecCsrColMajorForforConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal colStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhileConj (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhileConj4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhileConj1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhileConj2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhileConj3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForwhileConj4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForifConj (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForifConj4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForifConj1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForifConj2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForifConj3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal colStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with column-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in column-major order.
+/// \param LDX [in] Stride between columns of X.  We assume unit
+///   stride between rows of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in column-major order.
+/// \param LDY [in] Stride between columns of Y.  We assume unit
+///   stride between rows of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrColMajorForifConj4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal colStrideY,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1902,14 +5598,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajorConj (
+matVecCscRowMajorForforConj (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -1955,14 +5651,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajorConj4Unrolled (
+matVecCscRowMajorForforConj4Unrolled (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2006,13 +5702,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajorConj1Vec (
+matVecCscRowMajorForforConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2056,13 +5753,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajorConj2Vec (
+matVecCscRowMajorForforConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2106,13 +5804,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajorConj3Vec (
+matVecCscRowMajorForforConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2156,13 +5855,634 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCscRowMajorConj4Vec (
+matVecCscRowMajorForforConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhileConj (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhileConj4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhileConj1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhileConj2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhileConj3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForwhileConj4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForifConj (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForifConj4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForifConj1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForifConj2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForifConj3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSC sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numCols+1) array of index offsets 
+///   between columns of the sparse matrix.
+/// \param ind [in] Array of row indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the row indices of
+///   column i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of column i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCscRowMajorForifConj4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2208,14 +6528,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajorConj (
+matVecCsrRowMajorForforConj (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2261,14 +6581,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajorConj4Unrolled (
+matVecCsrRowMajorForforConj4Unrolled (
   const Ordinal numRows,
   const Ordinal numCols,
   const Ordinal numVecs,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2312,13 +6632,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajorConj1Vec (
+matVecCsrRowMajorForforConj1Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2362,13 +6683,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajorConj2Vec (
+matVecCsrRowMajorForforConj2Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2412,13 +6734,14 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajorConj3Vec (
+matVecCsrRowMajorForforConj3Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
@@ -2462,13 +6785,634 @@ template<class Ordinal,
          class DomainScalar,
          class RangeScalar>
 void
-matVecCsrRowMajorConj4Vec (
+matVecCsrRowMajorForforConj4Vec (
   const Ordinal numRows,
   const Ordinal numCols,
+  const Ordinal,
   const RangeScalar& beta,
   RangeScalar Y[],
   const Ordinal rowStrideY,
-  const RangeScalar alpha,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhileConj (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhileConj4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhileConj1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhileConj2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhileConj3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForwhileConj4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForifConj (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param numVecs [in] Number of columns in X or Y (must be the same
+///   for both).
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForifConj4Unrolled (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal numVecs,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForifConj1Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForifConj2Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForifConj3Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
+  const Ordinal ptr[],
+  const Ordinal ind[],
+  const MatrixScalar val[],
+  const DomainScalar X[],
+  const Ordinal rowStrideX);
+
+/// CSR sparse matrix-(multi)vector multiply
+///   with row-major input / output (multi)vectors
+///   using conjugate of sparse matrix entries
+///
+/// \tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrices.
+/// \tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param numRows [in] Number of rows in the sparse matrix.
+/// \param numCols [in] Number of columns in the sparse matrix.
+/// \param X [out] Output multivector, stored in row-major order.
+/// \param LDX [in] Stride between rows of X.  We assume unit
+///   stride between columns of X.
+/// \param ptr [in] Length (numRows+1) array of index offsets 
+///   between rows of the sparse matrix.
+/// \param ind [in] Array of column indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of
+///   row i (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input multivector, stored in row-major order.
+/// \param LDY [in] Stride between rows of Y.  We assume unit
+///   stride between columns of Y.
+
+template<class Ordinal,
+         class MatrixScalar,
+         class DomainScalar,
+         class RangeScalar>
+void
+matVecCsrRowMajorForifConj4Vec (
+  const Ordinal numRows,
+  const Ordinal numCols,
+  const Ordinal,
+  const RangeScalar& beta,
+  RangeScalar Y[],
+  const Ordinal rowStrideY,
+  const RangeScalar& alpha,
   const Ordinal ptr[],
   const Ordinal ind[],
   const MatrixScalar val[],
