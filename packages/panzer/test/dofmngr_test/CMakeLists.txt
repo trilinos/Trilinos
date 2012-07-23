@@ -62,17 +62,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   COMM mpi
   )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SingleBlockDOFManagerTests
-  SOURCES SingleBlockDOFManagerTests.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 3
-  COMM mpi
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tDOFManager2_SimpleTests
-  SOURCES tDOFManager2_SimpleTests.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 4
-  COMM mpi
-  )
