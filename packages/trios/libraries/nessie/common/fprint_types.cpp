@@ -319,7 +319,7 @@ void fprint_NNTI_remote_addr(
         out << subprefix << "   data_tag = " << addr->NNTI_remote_addr_t_u.mpi.data_tag << std::endl;
         out << subprefix << "   size     = " << addr->NNTI_remote_addr_t_u.mpi.size << std::endl;
         break;
-    case NSSI_TRANSPORT_LOCAL:
+    case NNTI_TRANSPORT_LOCAL:
     case NNTI_TRANSPORT_NULL:
         break;
     }
