@@ -448,8 +448,9 @@ namespace Kokkos {
     //! Write a possibly more verbose description of this instance to out.
     void
     describe (Teuchos::FancyOStream& out,
-              const EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
     {
+      using Teuchos::EVerbosityLevel;
       using Teuchos::includesVerbLevel;
       using Teuchos::OSTab;
       using Teuchos::rcpFromRef;
@@ -491,7 +492,6 @@ namespace Kokkos {
           }
         }
       }
-
     }
 
     //@}
