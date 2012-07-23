@@ -47,8 +47,8 @@ int main(int argc, char *argv[])
 
 
     uint64_t start_ns=0, end_ns=0;
-    uint64_t start_ms, end_ms;
     uint64_t start_us, end_us;
+    uint64_t start_ms, end_ms;
     double start_sec, end_sec;
 
     printf("Test trios_timer (This is not a resolution test)\n");
@@ -60,17 +60,17 @@ int main(int argc, char *argv[])
     sleep(1);
 
 
-    start_ms = trios_get_time_ms();
-    start_us = trios_get_time_us();
-    start_sec = trios_get_time();
     start_ns = trios_get_time_ns();
+    start_us = trios_get_time_us();
+    start_ms = trios_get_time_ms();
+    start_sec = trios_get_time();
 
     /* sleep three seconds */
     sleep(sleeptime);
 
     end_ns = trios_get_time_ns();
-    end_ms = trios_get_time_ms();
     end_us = trios_get_time_us();
+    end_ms = trios_get_time_ms();
     end_sec = trios_get_time();
 
     printf("slept for %d seconds:\n", sleeptime);

@@ -264,13 +264,14 @@ int trios_timer_test()
 
     /* TODO: what should be the acceptable error (1/2 sec?) */
     static const uint64_t error_ms = 500;
-    uint64_t error_us = error_ms * 1000;
+
     uint64_t error_ns = error_ms * 1000000;
+    uint64_t error_us = error_ms * 1000;
     double error_sec = (double)error_ms/1000.0;
 
     uint64_t start_ns=0, t_ns=0;
-    uint64_t start_ms, t_ms;
     uint64_t start_us, t_us;
+    uint64_t start_ms, t_ms;
     double start_sec, t_sec;
 
     log_debug(timer_debug_level, "this is a timer test.  expect a 1 second delay.  starting...");
@@ -284,17 +285,23 @@ int trios_timer_test()
 
     /* run to get measurements */
     start_ns = trios_get_time_ns();
-    start_ms = trios_get_time_ms();
     start_us = trios_get_time_us();
+    start_ms = trios_get_time_ms();
     start_sec = trios_get_time();
 
     /* sleep one seconds */
     usleep(sleep_us);
 
     t_ns = trios_get_time_ns() - start_ns;
-    t_ms = trios_get_time_ms() - start_ms;
     t_us = trios_get_time_us() - start_us;
+    t_ms = trios_get_time_ms() - start_ms;
     t_sec = trios_get_time() - start_sec;
+
+    printf("slept for %lu seconds:\n", sleep_us);
+    printf("\tns = %lu\n", t_ns);
+    printf("\tus = %lu\n", t_us);
+    printf("\tms = %lu\n", t_ms);
+    printf("\tsec = %f\n", t_sec);
 
     /* Make sure our values have a reasonable error */
     if (labs(t_ns - (sleep_us * 1e3)) > error_ns) {
@@ -324,8 +331,8 @@ int trios_timer_test()
         rc |= 1;
     }
 
-    if (fabsl(t_sec - (sleep_us / 1e6)) > error_sec) {
-        double actual_err = fabsl(t_sec) - (double)sleep_us/1e6;
+    if (fabs(t_sec - ((double)sleep_us / 1e6)) > error_sec) {
+        double actual_err = fabs(t_sec - ((double)sleep_us/1e6));
         log_error(timer_debug_level,
                 "trios_timer failed sec timer test: err = %g sec "
                 " > acceptable err = %g",
