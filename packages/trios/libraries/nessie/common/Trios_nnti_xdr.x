@@ -71,7 +71,7 @@ enum NNTI_transport_id_t {
     NNTI_TRANSPORT_LUC,
 
     /** @brief Use a local buffer (no remote operations). */
-    NSSI_TRANSPORT_LOCAL,
+    NNTI_TRANSPORT_LOCAL,
 
     /** @brief No operations permitted. */
     NNTI_TRANSPORT_NULL
