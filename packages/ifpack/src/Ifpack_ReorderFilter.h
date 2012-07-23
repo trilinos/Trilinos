@@ -162,45 +162,25 @@ public:
   }
 
   //! Returns the number of global nonzero elements.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalNonzeros() const
+  virtual int NumGlobalNonzeros() const
   {
     return(Matrix()->NumGlobalNonzeros());
   }
 
   //! Returns the number of global rows.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalRows() const
+  virtual int NumGlobalRows() const
   {
     return(Matrix()->NumGlobalRows());
   }
 
   //! Returns the number of global columns.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalCols() const
+  virtual int NumGlobalCols() const
   {
     return(Matrix()->NumGlobalCols());
   }
 
   //! Returns the number of global diagonals.
-#ifdef EPETRA_ENABLE_REPLACEMENT_API
-  virtual long long
-#else
-  virtual int
-#endif
-  NumGlobalDiagonals() const
+  virtual int NumGlobalDiagonals() const
   {
     return(Matrix()->NumGlobalDiagonals());
   }
