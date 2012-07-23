@@ -42,7 +42,7 @@ template <typename T>
 
   for (size_t i=0; i < n; i++){
     if (val[i] < min) min = val[i];
-    else if (val[i] > max) max = val[i];
+    if (val[i] > max) max = val[i];
   }
   return std::pair<T,T>(min,max);
 }
@@ -92,17 +92,15 @@ template <typename T>
   void z2GlobalMinMax(const Comm<int> &comm, bool noLocalValues,
     T localMin, T localMax, T &globalMin, T &globalMax)
 {
+  if (noLocalValues){
+    localMin = numeric_limits<T>::max();
+    localMax = numeric_limits<T>::min();
+  }
+
   if (comm.getSize() == 1){
     globalMin = localMin;
     globalMax = localMax;
     return;
-  }
-
-  Zoltan2_MinMaxOperation<T> reductionOp;
-
-  if (noLocalValues){
-    localMin = numeric_limits<T>::max();
-    localMax = numeric_limits<T>::min();
   }
 
   T localValues[2] = {localMin, localMax};
@@ -111,6 +109,7 @@ template <typename T>
   char *lv = reinterpret_cast<char *>(&localValues[0]);
   char *gv = reinterpret_cast<char *>(&globalValues[0]);
 
+  Zoltan2_MinMaxOperation<T> reductionOp;
   Teuchos::reduceAll<int, char>(comm, reductionOp, 2*sizeof(T), lv, gv);
 
   globalMin = globalValues[0];
