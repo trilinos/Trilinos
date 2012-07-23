@@ -259,7 +259,7 @@ SystemInterface::SystemInterface()
     ignore_attributes    (false),
     ints_64_bits         (false),
     coord_sep            (false),
-    exit_status_switch   (false),
+    exit_status_switch   (true),
     dump_mapping         (false),
     show_unmatched       (false),
     noSymmetricNameCheck (false),
@@ -443,8 +443,9 @@ void SystemInterface::enroll_options()
   options_.enroll("norms", GetLongOption::NoValue,
 		  "Calculate L2 norm of variable differences and output if > 0.0", 0);
   options_.enroll("status", GetLongOption::NoValue,
-		  "Return exit status of 2 if the files are different.\n"
-		  "\t\tNormally, the exit status is always zero unless an error occurs.", 0);
+		  "Return exit status of 2 if the files are different. (default).", 0);
+  options_.enroll("ignore_status", GetLongOption::NoValue,
+		  "The exit status is always zero unless an error occurs.", 0);
   options_.enroll("maxnames", GetLongOption::MandatoryValue,
 		  "There is a compiled limit of 1000 exodus names.\n"
 		  "\t\tThis option allows the maximum number to be changed.",
@@ -781,6 +782,11 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve( "status")) {
     exit_status_switch = true;
   }
+
+  if (options_.retrieve( "ignore_status")) {
+    exit_status_switch = false;
+  }
+
   if (options_.retrieve("use_old_floor")) {
     Tolerance::use_old_floor = true;  // Change type to relative.
   }
@@ -925,6 +931,11 @@ void SystemInterface::Parse_Command_File()
 		    abbreviation(tok2, "status", 3) )
 	    {
 	      exit_status_switch = true;
+	    }
+	  else if ( abbreviation(tok1, "ignore", 3) &&
+		    abbreviation(tok2, "status", 3) )
+	    {
+	      exit_status_switch = false;
 	    }
 	  else if ( abbreviation(tok1, "exclude", 3) &&
 		    abbreviation(tok2, "times", 3) )
@@ -1612,6 +1623,8 @@ namespace {
       << "           on with the CALCULATE NORMS keyword.\n"
       << "         - The exit status return option, \"-stat\", can be turned on with the \n"
       << "           RETURN STATUS keyword.\n"
+      << "         - The ignore exit status return option, \"-ignore_status\", can be turned on with the \n"
+      << "           IGNORE STATUS keyword.\n"
       << "         - The pedantic compare option, \"-pedantic\", can be turned on with the \n"
       << "           PEDANTIC keyword.\n"
       << std::endl;

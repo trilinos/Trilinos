@@ -82,7 +82,7 @@ struct TimeInterp
 }
 ;
 
-string Version() { return "2.53 (2012-05-01)"; }
+string Version() { return "2.54 (2012-07-20)"; }
 
 string Date() {
   char tbuf[32];
