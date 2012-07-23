@@ -55,13 +55,12 @@
 
 
 /* ************************************************
- * Thread configuration
+ * Semaphore configuration
  * ************************************************ */
-#cmakedefine HAVE_TRIOS_PTHREAD 1
-#cmakedefine HAVE_TRIOS_PTHREAD_YIELD 1
-#cmakedefine HAVE_TRIOS_PTHREAD_YIELD_NP 1
-#cmakedefine HAVE_TRIOS_SCHED_YIELD 1
-#cmakedefine HAVE_TRIOS_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP 1
+#cmakedefine HAVE_TRIOS_SEMAPHORE_H 1
+#cmakedefine HAVE_TRIOS_SEM_T 1
+#cmakedefine HAVE_TRIOS_UNNAMED_SEMAPHORES 1
+#cmakedefine HAVE_TRIOS_NAMED_SEMAPHORES 1
 
 
 /* ************************************************
