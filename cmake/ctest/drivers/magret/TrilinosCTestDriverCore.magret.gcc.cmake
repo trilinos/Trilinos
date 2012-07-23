@@ -90,7 +90,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 #     "-DMesquite_ENABLE_TESTS:BOOL=ON"
 #     "-DCPPUNIT_LIBRARY:STRING=/Users/jmwille/install/cppunit-1.12.1/lib/libcppunit.a"
 #     "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
-#     "-DTPL_ENABLE_MATLAB=OFF"
+#     "-DTPL_ENABLE_Matio=OFF"
 #     )
  
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
