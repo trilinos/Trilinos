@@ -477,6 +477,8 @@ public:
   ///   here for later use.
   /// \param node [in/out] Kokkos Node instance, which the
   ///   constructors of graph_type and SparseOpsType require.
+  /// \param params [in/out] Parameters for configuring the
+  ///   SparseOpsType instance at construction.
   /// \param filename [in] Name of a Matrix Market sparse matrix file.
   /// \param uplo [in] Whether the matrix is lower triangular
   ///   (LOWER_TRI), upper triangular (UPPER_TRI), or neither
@@ -490,6 +492,7 @@ public:
   makeSparseOpsFromFile (ordinal_type& numRows,
                          ordinal_type& numCols,
                          const Teuchos::RCP<node_type>& node,
+                         Teuchos::ParameterList& params,
                          const std::string& filename,
                          const Teuchos::EUplo uplo = Teuchos::UNDEF_TRI,
                          const Teuchos::EDiag diag = Teuchos::NON_UNIT_DIAG) const
@@ -505,7 +508,7 @@ public:
     readFile (theNumRows, theNumCols, ptr, ind, val, filename);
     numRows = as<ordinal_type> (theNumRows);
     numCols = as<ordinal_type> (theNumCols);
-    return makeSparseOps (node, ptr, ind, val, uplo, diag);
+    return makeSparseOps (node, params, ptr, ind, val, uplo, diag);
   }
 
 
@@ -518,6 +521,8 @@ public:
   ///
   /// \param node [in/out] Kokkos Node instance, which the
   ///   constructors of graph_type and SparseOpsType require.
+  /// \param params [in/out] Parameters for configuring the
+  ///   SparseOpsType instance at construction.
   /// \param ptr [in] The first of the three CSR arrays.  For row r
   ///   (zero-based row indices), ptr[r] .. ptr[r+1]-1 give the index
   ///   range of ind and val for the entries of that row.
@@ -539,6 +544,7 @@ public:
   /// own internal format instead of just using the original arrays.
   Teuchos::RCP<SparseOpsType>
   makeSparseOps (const Teuchos::RCP<node_type>& node,
+                 Teuchos::ParameterList& params,
                  const Teuchos::ArrayRCP<const ordinal_type>& ptr,
                  const Teuchos::ArrayRCP<const ordinal_type>& ind,
                  const Teuchos::ArrayRCP<const scalar_type>& val,
@@ -552,7 +558,8 @@ public:
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    const ordinal_type numRows = static_cast<ordinal_type> (ptr.size() == 0 ? 0 : ptr.size() - 1);
+    const ordinal_type numRows =
+      static_cast<ordinal_type> (ptr.size() == 0 ? 0 : ptr.size() - 1);
     RCP<ParameterList> graphParams = parameterList ("Graph");
     RCP<graph_type> graph = rcp (new graph_type (numRows, numRows, node, graphParams));
 
@@ -564,7 +571,7 @@ public:
     RCP<ParameterList> finParams = parameterList ("Finalize");
     SparseOpsType::finalizeGraphAndMatrix (uplo, diag, *graph, *matrix, finParams);
 
-    RCP<SparseOpsType> ops = rcp (new SparseOpsType (node));
+    RCP<SparseOpsType> ops = rcp (new SparseOpsType (node, params));
     ops->setGraphAndMatrix (graph, matrix);
     return ops;
   }
@@ -573,6 +580,8 @@ public:
   ///
   /// \param A [in] The dense (lower or upper) triangular matrix.
   /// \param node [in/out] The Kokkos Node instance.
+  /// \param params [in/out] Parameters for configuring the
+  ///   SparseOpsType instance at construction.
   /// \param uplo [in] Whether A is lower (LOWER_TRI) or upper
   ///   (UPPER_TRI) triangular.
   /// \param diag [in] Whether A has an implicit unit diagonal
@@ -580,6 +589,7 @@ public:
   Teuchos::RCP<SparseOpsType>
   denseTriToSparseOps (const dense_matrix_type& A,
                        const Teuchos::RCP<node_type>& node,
+                       Teuchos::ParameterList& params,
                        const Teuchos::EUplo uplo,
                        const Teuchos::EDiag diag) const
   {
@@ -639,7 +649,7 @@ public:
     matrix->setValues (arcp_const_cast<const scalar_type> (val));
 
     SparseOpsType::finalizeGraphAndMatrix (uplo, diag, *graph, *matrix, null);
-    RCP<SparseOpsType> ops = rcp (new SparseOpsType (node));
+    RCP<SparseOpsType> ops = rcp (new SparseOpsType (node, params));
     ops->setGraphAndMatrix (graph, matrix);
     return ops;
   }
@@ -649,9 +659,12 @@ public:
   ///
   /// \param A [in] The dense matrix.
   /// \param node [in/out] The Kokkos Node instance.
+  /// \param params [in/out] Parameters for configuring the
+  ///   SparseOpsType instance at construction.
   Teuchos::RCP<SparseOpsType>
   denseToSparseOps (const dense_matrix_type& A,
-                    const Teuchos::RCP<node_type>& node) const
+                    const Teuchos::RCP<node_type>& node,
+                    Teuchos::ParameterList& params) const
   {
     using Teuchos::ArrayRCP;
     using Teuchos::arcp;
@@ -662,23 +675,24 @@ public:
     using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
 
-    const ordinal_type N = A.numRows ();
-    const ordinal_type NNZ = N*N;
+    const ordinal_type numRows = A.numRows ();
+    const ordinal_type numCols = A.numCols ();
+    const ordinal_type NNZ = numRows * numCols;
 
-    ArrayRCP<ordinal_type> ptr (N+1);
+    ArrayRCP<ordinal_type> ptr (numRows+1);
     ArrayRCP<ordinal_type> ind (NNZ);
     ArrayRCP<scalar_type> val (NNZ);
 
     ordinal_type counter = 0;
-    for (ordinal_type i = 0; i < N; ++i) {
+    for (ordinal_type i = 0; i < numRows; ++i) {
       ptr[i] = counter;
-      for (ordinal_type j = 0; j < N; ++j) {
+      for (ordinal_type j = 0; j < numCols; ++j) {
         ind[counter] = j;
         val[counter] = A(i, j);
         ++counter;
       }
     }
-    ptr[N] = counter;
+    ptr[numRows] = counter;
 
     TEUCHOS_TEST_FOR_EXCEPTION(counter != NNZ, std::logic_error,
       "TestSparseOps::denseToSparseOps: Expected " << NNZ << " entries in "
@@ -686,7 +700,7 @@ public:
       "this bug (in tests) to the Kokkos developers.");
 
     RCP<graph_type> graph =
-      rcp (new graph_type (  N, N, node, null));
+      rcp (new graph_type (numRows, numCols, node, null));
     graph->setStructure (arcp_const_cast<const ordinal_type> (ptr),
                          arcp_const_cast<const ordinal_type> (ind));
     RCP<matrix_type> matrix =
@@ -696,7 +710,7 @@ public:
     Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
     Teuchos::EDiag diag = Teuchos::NON_UNIT_DIAG;
     SparseOpsType::finalizeGraphAndMatrix (uplo, diag, *graph, *matrix, null);
-    RCP<SparseOpsType> ops = rcp (new SparseOpsType (node));
+    RCP<SparseOpsType> ops = rcp (new SparseOpsType (node, params));
     ops->setGraphAndMatrix (graph, matrix);
     return ops;
   }
@@ -819,6 +833,7 @@ public:
   /// passing falsely is even less likely.
   void
   testSparseOps (const Teuchos::RCP<node_type>& node,
+                 Teuchos::ParameterList& params,
                  const ordinal_type N,
                  const ordinal_type numVecs,
                  const magnitude_type tol) const
@@ -861,11 +876,11 @@ public:
 
     // Convert L_dense and U_dense into separate sparse matrices.
     RCP<SparseOpsType> L_sparse =
-      denseTriToSparseOps (*L_dense, node, LOWER_TRI, UNIT_DIAG);
+      denseTriToSparseOps (*L_dense, node, params, LOWER_TRI, UNIT_DIAG);
     RCP<SparseOpsType> U_sparse =
-      denseTriToSparseOps (*U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
+      denseTriToSparseOps (*U_dense, node, params, UPPER_TRI, NON_UNIT_DIAG);
     // Convert A_dense into a separate sparse matrix.
-    RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node);
+    RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node, params);
 
     // Compute a random input multivector.
     RCP<MV> X = makeMultiVector (node, N, numVecs);
@@ -1030,6 +1045,7 @@ public:
   benchmarkSparseOps (std::vector<std::pair<std::string, double> >& results,
                       const std::string& label,
                       const Teuchos::RCP<node_type>& node,
+                      Teuchos::ParameterList& params,
                       const ordinal_type numRows,
                       const ordinal_type numCols,
                       const ordinal_type numVecs,
@@ -1058,14 +1074,14 @@ public:
     if (testTriSolve) {
       makeDenseTestProblem (A_dense, L_dense, U_dense, ipiv, numRows);
       // Convert L_dense and U_dense into sparse matrices.
-      L_sparse = denseTriToSparseOps (*L_dense, node, LOWER_TRI, UNIT_DIAG);
-      U_sparse = denseTriToSparseOps (*U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
+      L_sparse = denseTriToSparseOps (*L_dense, node, params, LOWER_TRI, UNIT_DIAG);
+      U_sparse = denseTriToSparseOps (*U_dense, node, params, UPPER_TRI, NON_UNIT_DIAG);
     }
     else {
       A_dense = rcp (new dense_matrix_type (numRows, numCols));
     }
     // Convert A_dense into a sparse matrix.
-    A_sparse = denseToSparseOps (*A_dense, node);
+    A_sparse = denseToSparseOps (*A_dense, node, params);
 
     // // Compute a random input multivector.
     // RCP<MV> X = makeMultiVector (node, numCols, numVecs);
@@ -1101,6 +1117,7 @@ public:
                                  const std::string& filename,
                                  const std::string& label,
                                  const Teuchos::RCP<node_type>& node,
+                                 Teuchos::ParameterList& params,
                                  const ordinal_type numVecs,
                                  const int numTrials) const
   {
@@ -1116,7 +1133,7 @@ public:
     ordinal_type numRows = 0;
     ordinal_type numCols = 0;
     RCP<SparseOpsType> A_sparse =
-      makeSparseOpsFromFile (numRows, numCols, node, filename);
+      makeSparseOpsFromFile (numRows, numCols, node, params, filename);
 
     // Compute a random input multivector.
     RCP<MV> X = makeMultiVector (node, numCols, numVecs);

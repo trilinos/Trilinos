@@ -111,6 +111,9 @@ namespace {
   // Only certain Node types support this option.
   bool verbose = false;
 
+  bool unroll = true;
+  std::string variant ("all");
+
   // This will be set after reading the command-line arguments, so
   // that we can, for the particular Kokkos Node type, set things like
   // the number of threads to run.
@@ -144,6 +147,12 @@ namespace {
     clp.setOption ("verbose", "quiet", &verbose, "Whether Kokkos Node "
                    "initialization should print verbose status output, if the "
                    "Node type supports this.");
+    clp.setOption ("unroll", "dontUnroll", &unroll, "Whether Kokkos::SeqSparse"
+                   "Ops should unroll across columns of the multivectors.");
+    clp.setOption ("variant", &variant, "Which algorithm variant Kokkos::Seq"
+                   "SparseOps should use for sparse mat-vec.  Valid options "
+                   "are \"for-for\", \"for-while\", and \"for-if\".  You may "
+                   "also use \"all\", which tests all possibilities.");
 
     ParameterList nodeParams;
     if (numThreads != -1) {
@@ -161,21 +170,29 @@ namespace {
   class Tester {
   public:
     static void test (const std::string& sparseOpsTypeName) {
+      Teuchos::ParameterList params;
+      test (sparseOpsTypeName, params);
+    }
+
+    static void
+    test (const std::string& sparseOpsTypeName,
+          Teuchos::ParameterList& params)
+    {
       TestSparseOps<SparseOpsType> tester;
       if (benchmark) {
         std::vector<std::pair<std::string, double> > results;
         if (matrixFilename == "") {
-          tester.benchmarkSparseOps (results, sparseOpsTypeName, node,
+          tester.benchmarkSparseOps (results, sparseOpsTypeName, node, params,
                                      numRows, numCols, numVecs, numTrials);
         }
         else {
           tester.benchmarkSparseMatVecFromFile (results, matrixFilename,
                                                 sparseOpsTypeName, node,
-                                                numVecs, numTrials);
+                                                params, numVecs, numTrials);
         }
       }
       else {
-        tester.testSparseOps (node, numRows, numVecs, tol);
+        tester.testSparseOps (node, params, numRows, numVecs, tol);
       }
     }
   };
@@ -190,11 +207,56 @@ namespace {
   }
 
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
-  TEUCHOS_UNIT_TEST( SeqSparseOps, TestSparseOps )
+  // This test should work, but we omit it to save time.
+#if 0
+  TEUCHOS_UNIT_TEST( SeqSparseOpsDefaultParameters, TestSparseOps )
   {
     using Kokkos::SeqSparseOps;
     typedef SeqSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
     Tester<sparse_ops_type>::test ("SeqSparseOps");
+
+    if (benchmark) {
+      // Summarize timing results.  You should only call summarize()
+      // for all the different SparseOps types you plan to test in
+      // this executable.
+      //
+      // Extra endline makes the summarize() output nicer.  In
+      // benchmark mode, you should run with only one MPI process (if
+      // building with MPI at all).  We don't plan to run benchmark
+      // mode for the check-in or continuous integration tests.
+      std::cout << "\n";
+      Teuchos::TimeMonitor::summarize ();
+    }
+  }
+#endif // 0
+
+  // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
+  TEUCHOS_UNIT_TEST( SeqSparseOpsNonDefaultParameters, TestSparseOps )
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Kokkos::SeqSparseOps;
+    typedef SeqSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+
+    ParameterList params ("SeqSparseOps");
+    params.set ("Unroll across multivectors", unroll);
+    if (variant == "all") {
+      std::string variant = "for-for";
+      params.set ("Sparse matrix-vector multiply variant", variant);
+      Tester<sparse_ops_type>::test ("SeqSparseOps (for-for)", params);
+
+      variant = "for-while";
+      params.set ("Sparse matrix-vector multiply variant", variant);
+      Tester<sparse_ops_type>::test ("SeqSparseOps (for-while)", params);
+
+      variant = "for-if";
+      params.set ("Sparse matrix-vector multiply variant", variant);
+      Tester<sparse_ops_type>::test ("SeqSparseOps (for-if)", params);
+    }
+    else {
+      params.set ("Sparse matrix-vector multiply variant", variant);
+      Tester<sparse_ops_type>::test ("SeqSparseOps", params);
+    }
 
     if (benchmark) {
       // Summarize timing results.  You should only call summarize()
