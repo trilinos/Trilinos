@@ -38,10 +38,6 @@ APPEND_SET(SOURCES
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/threads)
 
-# If pthreads is supported, we use some of the features from Unix98: PTHREAD_MUTEX_DEFAULT,
-# PTHREAD_MUTEX_NORMAL, PTHREAD_MUTEX_RECURSIVE, and PTHREAD_MUTEX_ERRORCHECK
-ADD_DEFINITIONS(-D_GNU_SOURCE)
-
 APPEND_SET(HEADERS
   threads/Trios_threads.h
   threads/Trios_threads_types.h
