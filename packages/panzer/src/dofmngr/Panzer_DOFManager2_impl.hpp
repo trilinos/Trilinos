@@ -197,12 +197,7 @@ const std::vector<int> & DOFManager2<LO,GO>::getGIDFieldOffsets(const std::strin
 
 template <typename LO, typename GO>
 void DOFManager2<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const {
-  std::vector<GO> which = elementGIDs_[localElementID];
-  gids.resize(which.size());
-  for (size_t i = 0; i < which.size(); ++i) {
-    gids[i]=which[i];
-  }
-
+  gids = elementGIDs_[localElementID];
 }
 
 //builds the global unknowns array
