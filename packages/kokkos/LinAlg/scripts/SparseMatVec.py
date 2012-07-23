@@ -643,12 +643,21 @@ def emitBetaScaleStmt (entryToScale, fixedBetaValue, indent=0):
     closing semicolon, and endline.
     
     entryToScale (string): array reference to the output vector entry
-      to scale.
+      to which to write the scaled value.  This is on the left-hand
+      side of the assignment statement.  Depending on the value of
+      beta, we might also need to read the value to scale before
+      scaling it.  We assume for now that this "right-hand side"
+      expression is the same as the "left-hand side" expression to
+      scale.  This is not true if you are using explicit temporaries
+      to store the current entr{y,ies} of the output vector.  We will
+      need to add another argument ('rightHandSide') to this function
+      to handle that case.
 
-    fixedBetaValue (integer or string): either 0, 1, or 'other'.  The
-      values 0 and 1 are special cases; anything else is handled
-      generically.  Either 0 or '0' do the same thing; either 1 or '1'
-      do the same thing.
+    fixedBetaValue (integer or string): either -1, 0, 1, or 'other'.
+      The values -1, 0, and 1 are special cases; anything else is
+      handled generically.  For the special cases, you may use either
+      the value (as an integer; please, no floating-point values here)
+      or the equivalent string.
 
     indent (nonnegative integer): how many spaces to indent the
       statement.'''
@@ -660,11 +669,13 @@ def emitBetaScaleStmt (entryToScale, fixedBetaValue, indent=0):
     except ValueError:
         beta = 'other'
 
-    if beta == 0:
+    if beta == -1:
+        s = ' = -' + entryToScale
+    elif beta == 0:
         s = ' = STS::zero()'
     elif beta == 1:
         return '' # No need to scale
-    else: # beta != 0 and beta != 1
+    else: # beta != -1, beta != 0, and beta != 1
         s = ' *= beta'
 
     return ' '*indent + entryToScale + s + ';\n'
@@ -739,7 +750,10 @@ def emitForLoopOneFor (defDict, alphaIsOne, beta, indent=0):
         # prescale.)  Emit different code for special cases of beta.
         # For beta == 1, we don't have to do anything.
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
-        if beta == 0:
+        if beta == -1:
+            s = s + \
+                ind + ' '*4 + '// We haven\'t seen row i before; set Y(i,:) to -Y(i,:).\n'
+        elif beta == 0:
             s = s + \
                 ind + ' '*4 + '// We haven\'t seen row i before; set Y(i,:) to 0.\n'
         elif beta == 1:
@@ -748,7 +762,7 @@ def emitForLoopOneFor (defDict, alphaIsOne, beta, indent=0):
         elif beta != 1:
             s = s + \
                 ind + ' '*4 + '// We haven\'t seen row i before; scale Y(i,:) by beta.\n'
-        if beta == 0 or beta != 1:
+        if beta == -1 or beta == 0 or beta != 1:
             if defDict['hardCodeNumVecs']:
                 if defDict['numVecs'] > 1:
                     s = s + ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
@@ -847,14 +861,17 @@ def emitForLoopTwoFor (defDict, alphaIsOne, beta, indent=0):
         # prescale.)  Emit different code for special cases of beta.
         # For beta == 1, we don't have to do anything.
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
-        if beta == 0:
+        if beta == -1:
+            s = s + \
+                ind + ' '*2 + '// We haven\'t seen row i before; set Y(i,:) to -Y(i,:).\n'
+        elif beta == 0:
             s = s + ind + ' '*2 + '// We haven\'t seen row i before; set Y(i,:) to 0.\n'
         elif beta == 1:
             s = s + ind + ' '*2 + '// We don\'t have to set Y(i,:) here, since beta == 1.\n'
         elif beta != 1:
             s = s + \
                 ind + ' '*2 + '// We haven\'t seen row i before; scale Y(i,:) by beta.\n'
-        if beta == 0 or beta != 1:
+        if beta == -1 or beta == 0 or beta != 1:
             if defDict['hardCodeNumVecs']:
                 if defDict['numVecs'] > 1:
                     s = s + ind + ' '*2 + 'RangeScalar* const Y_i = &' + Y_i + ';\n'
@@ -925,24 +942,30 @@ def emitForLoop (defDict, indent=0):
         if defDict['sparseFormat'] == 'CSR':
             # Special cases of beta only matter for CSR.
             s = ind + 'if (alpha == STS::one()) {\n' + \
-                ind + ' '*2 + 'if (beta == STS::zero()) {\n' + \
+                ind + ' '*2 + 'if (beta == -STS::one()) {\n' + \
+                emitForLoopTwoFor (defDict, True, -1, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else if (beta == STS::zero()) {\n' + \
                 emitForLoopTwoFor (defDict, True, 0, indent+4) + \
                 ind + ' '*2 + '}\n' + \
                 ind + ' '*2 + 'else if (beta == STS::one()) {\n' + \
                 emitForLoopTwoFor (defDict, True, 1, indent+4) + \
                 ind + ' '*2 + '}\n' + \
-                ind + ' '*2 + 'else { // beta != 0 && beta != 1\n' + \
+                ind + ' '*2 + 'else { // beta != -1 && beta != 0 && beta != 1\n' + \
                 emitForLoopTwoFor (defDict, True, 'other', indent+4) + \
                 ind + ' '*2 + '}\n' + \
                 ind + '}\n' + \
                 ind + 'else { // alpha != STS::one()\n' + \
-                ind + ' '*2 + 'if (beta == STS::zero()) {\n' + \
+                ind + ' '*2 + 'if (beta == -STS::one()) {\n' + \
+                emitForLoopTwoFor (defDict, False, -1, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else if (beta == STS::zero()) {\n' + \
                 emitForLoopTwoFor (defDict, False, 0, indent+4) + \
                 ind + ' '*2 + '}\n' + \
                 ind + ' '*2 + 'else if (beta == STS::one()) {\n' + \
                 emitForLoopTwoFor (defDict, False, 1, indent+4) + \
                 ind + ' '*2 + '}\n' + \
-                ind + ' '*2 + 'else { // beta != 0 && beta != 1\n' + \
+                ind + ' '*2 + 'else { // beta != -1 && beta != 0 && beta != 1\n' + \
                 emitForLoopTwoFor (defDict, False, 'other', indent+4) + \
                 ind + ' '*2 + '}\n' + \
                 ind + '}\n'
@@ -961,24 +984,30 @@ def emitForLoop (defDict, indent=0):
             # Special cases of beta only matter for CSR.
             s = s + \
                 ind + 'if (alpha == STS::one()) {\n' + \
-                ind + ' '*2 + 'if (beta == STS::zero()) {\n' + \
+                ind + ' '*2 + 'if (beta == -STS::one()) {\n' + \
+                emitForLoopOneFor (defDict, True, -1, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else if (beta == STS::zero()) {\n' + \
                 emitForLoopOneFor (defDict, True, 0, indent+4) + \
                 ind + ' '*2 + '}\n' + \
                 ind + ' '*2 + 'else if (beta == STS::one()) {\n' + \
                 emitForLoopOneFor (defDict, True, 1, indent+4) + \
                 ind + ' '*2 + '}\n' + \
-                ind + ' '*2 + 'else { // beta != 0 && beta != 1\n' + \
+                ind + ' '*2 + 'else { // beta != -1 && beta != 0 && beta != 1\n' + \
                 emitForLoopOneFor (defDict, True, 'other', indent+4) + \
                 ind + ' '*2 + '}\n' + \
                 ind + '}\n' + \
                 ind + 'else { // alpha != STS::one()\n' + \
-                ind + ' '*2 + 'if (beta == STS::zero()) {\n' + \
+                ind + ' '*2 + 'if (beta == -STS::one()) {\n' + \
+                emitForLoopOneFor (defDict, False, -1, indent+4) + \
+                ind + ' '*2 + '}\n' + \
+                ind + ' '*2 + 'else if (beta == STS::zero()) {\n' + \
                 emitForLoopOneFor (defDict, False, 0, indent+4) + \
                 ind + ' '*2 + '}\n' + \
                 ind + ' '*2 + 'else if (beta == STS::one()) {\n' + \
                 emitForLoopOneFor (defDict, False, 1, indent+4) + \
                 ind + ' '*2 + '}\n' + \
-                ind + ' '*2 + 'else { // beta != 0 && beta != 1\n' + \
+                ind + ' '*2 + 'else { // beta != -1 && beta != 0 && beta != 1\n' + \
                 emitForLoopOneFor (defDict, False, 'other', indent+4) + \
                 ind + ' '*2 + '}\n' + \
                 ind + '}\n'

@@ -1482,7 +1482,25 @@ matVecCsrColMajorForfor (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -1514,7 +1532,7 @@ matVecCsrColMajorForfor (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -1534,7 +1552,25 @@ matVecCsrColMajorForfor (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -1566,7 +1602,7 @@ matVecCsrColMajorForfor (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -1614,7 +1650,43 @@ matVecCsrColMajorForfor4Unrolled (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] += A_ij * X_j[0];
+            Y_i[colStrideY] += A_ij * X_j[colStrideX];
+            Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+            Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -1673,7 +1745,7 @@ matVecCsrColMajorForfor4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -1711,7 +1783,43 @@ matVecCsrColMajorForfor4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] += alpha * A_ij * X_j[0];
+            Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+            Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+            Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -1770,7 +1878,7 @@ matVecCsrColMajorForfor4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -1836,7 +1944,18 @@ matVecCsrColMajorForfor1Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        Y[i] = -Y[i];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          Y[i] += A_ij * X[j];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         Y[i] = STS::zero();
@@ -1857,7 +1976,7 @@ matVecCsrColMajorForfor1Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i] *= beta;
@@ -1870,7 +1989,18 @@ matVecCsrColMajorForfor1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        Y[i] = -Y[i];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          Y[i] += alpha * A_ij * X[j];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         Y[i] = STS::zero();
@@ -1891,7 +2021,7 @@ matVecCsrColMajorForfor1Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i] *= beta;
@@ -1932,7 +2062,23 @@ matVecCsrColMajorForfor2Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -1961,7 +2107,7 @@ matVecCsrColMajorForfor2Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -1979,7 +2125,23 @@ matVecCsrColMajorForfor2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -2008,7 +2170,7 @@ matVecCsrColMajorForfor2Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -2054,7 +2216,25 @@ matVecCsrColMajorForfor3Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -2086,7 +2266,7 @@ matVecCsrColMajorForfor3Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -2106,7 +2286,25 @@ matVecCsrColMajorForfor3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -2138,7 +2336,7 @@ matVecCsrColMajorForfor3Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -2186,7 +2384,27 @@ matVecCsrColMajorForfor4Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -2221,7 +2439,7 @@ matVecCsrColMajorForfor4Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -2243,7 +2461,27 @@ matVecCsrColMajorForfor4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -2278,7 +2516,7 @@ matVecCsrColMajorForfor4Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -2341,7 +2579,27 @@ matVecCsrColMajorForwhile (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2377,7 +2635,7 @@ matVecCsrColMajorForwhile (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2399,7 +2657,27 @@ matVecCsrColMajorForwhile (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2435,7 +2713,7 @@ matVecCsrColMajorForwhile (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2498,7 +2776,45 @@ matVecCsrColMajorForwhile4Unrolled (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[colStrideY] = -Y_i[colStrideY];
+            Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+            Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2561,7 +2877,7 @@ matVecCsrColMajorForwhile4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2601,7 +2917,45 @@ matVecCsrColMajorForwhile4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[colStrideY] = -Y_i[colStrideY];
+            Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+            Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2664,7 +3018,7 @@ matVecCsrColMajorForwhile4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2746,7 +3100,20 @@ matVecCsrColMajorForwhile1Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i] = -Y[i];
+        }
+        Y[i] += A_ij * X[j];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2771,7 +3138,7 @@ matVecCsrColMajorForwhile1Vec (
         Y[i] += A_ij * X[j];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2786,7 +3153,20 @@ matVecCsrColMajorForwhile1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i] = -Y[i];
+        }
+        Y[i] += alpha * A_ij * X[j];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2811,7 +3191,7 @@ matVecCsrColMajorForwhile1Vec (
         Y[i] += alpha * A_ij * X[j];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2868,7 +3248,25 @@ matVecCsrColMajorForwhile2Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2901,7 +3299,7 @@ matVecCsrColMajorForwhile2Vec (
         Y_i[colStrideY] += A_ij * X_j[colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2921,7 +3319,25 @@ matVecCsrColMajorForwhile2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -2954,7 +3370,7 @@ matVecCsrColMajorForwhile2Vec (
         Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3016,7 +3432,27 @@ matVecCsrColMajorForwhile3Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3052,7 +3488,7 @@ matVecCsrColMajorForwhile3Vec (
         Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3074,7 +3510,27 @@ matVecCsrColMajorForwhile3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3110,7 +3566,7 @@ matVecCsrColMajorForwhile3Vec (
         Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3174,7 +3630,29 @@ matVecCsrColMajorForwhile4Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3213,7 +3691,7 @@ matVecCsrColMajorForwhile4Vec (
         Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3237,7 +3715,29 @@ matVecCsrColMajorForwhile4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3276,7 +3776,7 @@ matVecCsrColMajorForwhile4Vec (
         Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3341,7 +3841,29 @@ matVecCsrColMajorForif (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3381,7 +3903,7 @@ matVecCsrColMajorForif (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3405,7 +3927,29 @@ matVecCsrColMajorForif (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3445,7 +3989,7 @@ matVecCsrColMajorForif (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3510,7 +4054,47 @@ matVecCsrColMajorForif4Unrolled (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[colStrideY] = -Y_i[colStrideY];
+            Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+            Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3577,7 +4161,7 @@ matVecCsrColMajorForif4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3619,7 +4203,47 @@ matVecCsrColMajorForif4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[colStrideY] = -Y_i[colStrideY];
+            Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+            Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3686,7 +4310,7 @@ matVecCsrColMajorForif4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3770,7 +4394,22 @@ matVecCsrColMajorForif1Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i] = -Y[i];
+        }
+        Y[i] += A_ij * X[j];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3799,7 +4438,7 @@ matVecCsrColMajorForif1Vec (
         Y[i] += A_ij * X[j];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3816,7 +4455,22 @@ matVecCsrColMajorForif1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i] = -Y[i];
+        }
+        Y[i] += alpha * A_ij * X[j];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3845,7 +4499,7 @@ matVecCsrColMajorForif1Vec (
         Y[i] += alpha * A_ij * X[j];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3904,7 +4558,27 @@ matVecCsrColMajorForif2Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3941,7 +4615,7 @@ matVecCsrColMajorForif2Vec (
         Y_i[colStrideY] += A_ij * X_j[colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -3963,7 +4637,27 @@ matVecCsrColMajorForif2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4000,7 +4694,7 @@ matVecCsrColMajorForif2Vec (
         Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4064,7 +4758,29 @@ matVecCsrColMajorForif3Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4104,7 +4820,7 @@ matVecCsrColMajorForif3Vec (
         Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4128,7 +4844,29 @@ matVecCsrColMajorForif3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4168,7 +4906,7 @@ matVecCsrColMajorForif3Vec (
         Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4234,7 +4972,31 @@ matVecCsrColMajorForif4Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4277,7 +5039,7 @@ matVecCsrColMajorForif4Vec (
         Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4303,7 +5065,31 @@ matVecCsrColMajorForif4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -4346,7 +5132,7 @@ matVecCsrColMajorForif4Vec (
         Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -5804,7 +6590,25 @@ matVecCsrRowMajorForfor (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] = -Y_i[c];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] += A_ij * X_j[c];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -5836,7 +6640,7 @@ matVecCsrRowMajorForfor (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -5856,7 +6660,25 @@ matVecCsrRowMajorForfor (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] = -Y_i[c];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] += alpha * A_ij * X_j[c];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -5888,7 +6710,7 @@ matVecCsrRowMajorForfor (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -5936,7 +6758,43 @@ matVecCsrRowMajorForfor4Unrolled (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] = -Y_i[c];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] += A_ij * X_j[0];
+            Y_i[1] += A_ij * X_j[1];
+            Y_i[2] += A_ij * X_j[2];
+            Y_i[3] += A_ij * X_j[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] += A_ij * X_j[c];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -5995,7 +6853,7 @@ matVecCsrRowMajorForfor4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6033,7 +6891,43 @@ matVecCsrRowMajorForfor4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] = -Y_i[c];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] += alpha * A_ij * X_j[0];
+            Y_i[1] += alpha * A_ij * X_j[1];
+            Y_i[2] += alpha * A_ij * X_j[2];
+            Y_i[3] += alpha * A_ij * X_j[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] += alpha * A_ij * X_j[c];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6092,7 +6986,7 @@ matVecCsrRowMajorForfor4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6158,7 +7052,18 @@ matVecCsrRowMajorForfor1Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        Y[i*rowStrideY] = -Y[i*rowStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         Y[i*rowStrideY] = STS::zero();
@@ -6179,7 +7084,7 @@ matVecCsrRowMajorForfor1Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i*rowStrideY] *= beta;
@@ -6192,7 +7097,18 @@ matVecCsrRowMajorForfor1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        Y[i*rowStrideY] = -Y[i*rowStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         Y[i*rowStrideY] = STS::zero();
@@ -6213,7 +7129,7 @@ matVecCsrRowMajorForfor1Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i*rowStrideY] *= beta;
@@ -6254,7 +7170,23 @@ matVecCsrRowMajorForfor2Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6283,7 +7215,7 @@ matVecCsrRowMajorForfor2Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6301,7 +7233,23 @@ matVecCsrRowMajorForfor2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6330,7 +7278,7 @@ matVecCsrRowMajorForfor2Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6376,7 +7324,25 @@ matVecCsrRowMajorForfor3Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        Y_i[2] = -Y_i[2];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+          Y_i[2] += A_ij * X_j[2];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6408,7 +7374,7 @@ matVecCsrRowMajorForfor3Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6428,7 +7394,25 @@ matVecCsrRowMajorForfor3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        Y_i[2] = -Y_i[2];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+          Y_i[2] += alpha * A_ij * X_j[2];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6460,7 +7444,7 @@ matVecCsrRowMajorForfor3Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6508,7 +7492,27 @@ matVecCsrRowMajorForfor4Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        Y_i[2] = -Y_i[2];
+        Y_i[3] = -Y_i[3];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+          Y_i[2] += A_ij * X_j[2];
+          Y_i[3] += A_ij * X_j[3];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6543,7 +7547,7 @@ matVecCsrRowMajorForfor4Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6565,7 +7569,27 @@ matVecCsrRowMajorForfor4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        Y_i[2] = -Y_i[2];
+        Y_i[3] = -Y_i[3];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = val[k];
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+          Y_i[2] += alpha * A_ij * X_j[2];
+          Y_i[3] += alpha * A_ij * X_j[3];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6600,7 +7624,7 @@ matVecCsrRowMajorForfor4Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -6663,7 +7687,27 @@ matVecCsrRowMajorForwhile (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] += A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -6699,7 +7743,7 @@ matVecCsrRowMajorForwhile (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -6721,7 +7765,27 @@ matVecCsrRowMajorForwhile (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] += alpha * A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -6757,7 +7821,7 @@ matVecCsrRowMajorForwhile (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -6820,7 +7884,45 @@ matVecCsrRowMajorForwhile4Unrolled (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[1] = -Y_i[1];
+            Y_i[2] = -Y_i[2];
+            Y_i[3] = -Y_i[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+          Y_i[2] += A_ij * X_j[2];
+          Y_i[3] += A_ij * X_j[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] += A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -6883,7 +7985,7 @@ matVecCsrRowMajorForwhile4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -6923,7 +8025,45 @@ matVecCsrRowMajorForwhile4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[1] = -Y_i[1];
+            Y_i[2] = -Y_i[2];
+            Y_i[3] = -Y_i[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+          Y_i[2] += alpha * A_ij * X_j[2];
+          Y_i[3] += alpha * A_ij * X_j[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] += alpha * A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -6986,7 +8126,7 @@ matVecCsrRowMajorForwhile4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7068,7 +8208,20 @@ matVecCsrRowMajorForwhile1Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i*rowStrideY] = -Y[i*rowStrideY];
+        }
+        Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7093,7 +8246,7 @@ matVecCsrRowMajorForwhile1Vec (
         Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7108,7 +8261,20 @@ matVecCsrRowMajorForwhile1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i*rowStrideY] = -Y[i*rowStrideY];
+        }
+        Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7133,7 +8299,7 @@ matVecCsrRowMajorForwhile1Vec (
         Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7190,7 +8356,25 @@ matVecCsrRowMajorForwhile2Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7223,7 +8407,7 @@ matVecCsrRowMajorForwhile2Vec (
         Y_i[1] += A_ij * X_j[1];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7243,7 +8427,25 @@ matVecCsrRowMajorForwhile2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7276,7 +8478,7 @@ matVecCsrRowMajorForwhile2Vec (
         Y_i[1] += alpha * A_ij * X_j[1];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7338,7 +8540,27 @@ matVecCsrRowMajorForwhile3Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7374,7 +8596,7 @@ matVecCsrRowMajorForwhile3Vec (
         Y_i[2] += A_ij * X_j[2];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7396,7 +8618,27 @@ matVecCsrRowMajorForwhile3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7432,7 +8674,7 @@ matVecCsrRowMajorForwhile3Vec (
         Y_i[2] += alpha * A_ij * X_j[2];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7496,7 +8738,29 @@ matVecCsrRowMajorForwhile4Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+        Y_i[3] += A_ij * X_j[3];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7535,7 +8799,7 @@ matVecCsrRowMajorForwhile4Vec (
         Y_i[3] += A_ij * X_j[3];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7559,7 +8823,29 @@ matVecCsrRowMajorForwhile4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+        Y_i[3] += alpha * A_ij * X_j[3];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7598,7 +8884,7 @@ matVecCsrRowMajorForwhile4Vec (
         Y_i[3] += alpha * A_ij * X_j[3];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7663,7 +8949,29 @@ matVecCsrRowMajorForif (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] += A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7703,7 +9011,7 @@ matVecCsrRowMajorForif (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7727,7 +9035,29 @@ matVecCsrRowMajorForif (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] += alpha * A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7767,7 +9097,7 @@ matVecCsrRowMajorForif (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7832,7 +9162,47 @@ matVecCsrRowMajorForif4Unrolled (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[1] = -Y_i[1];
+            Y_i[2] = -Y_i[2];
+            Y_i[3] = -Y_i[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+          Y_i[2] += A_ij * X_j[2];
+          Y_i[3] += A_ij * X_j[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] += A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7899,7 +9269,7 @@ matVecCsrRowMajorForif4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -7941,7 +9311,47 @@ matVecCsrRowMajorForif4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[1] = -Y_i[1];
+            Y_i[2] = -Y_i[2];
+            Y_i[3] = -Y_i[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+          Y_i[2] += alpha * A_ij * X_j[2];
+          Y_i[3] += alpha * A_ij * X_j[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] += alpha * A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8008,7 +9418,7 @@ matVecCsrRowMajorForif4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8092,7 +9502,22 @@ matVecCsrRowMajorForif1Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i*rowStrideY] = -Y[i*rowStrideY];
+        }
+        Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8121,7 +9546,7 @@ matVecCsrRowMajorForif1Vec (
         Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8138,7 +9563,22 @@ matVecCsrRowMajorForif1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i*rowStrideY] = -Y[i*rowStrideY];
+        }
+        Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8167,7 +9607,7 @@ matVecCsrRowMajorForif1Vec (
         Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8226,7 +9666,27 @@ matVecCsrRowMajorForif2Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8263,7 +9723,7 @@ matVecCsrRowMajorForif2Vec (
         Y_i[1] += A_ij * X_j[1];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8285,7 +9745,27 @@ matVecCsrRowMajorForif2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8322,7 +9802,7 @@ matVecCsrRowMajorForif2Vec (
         Y_i[1] += alpha * A_ij * X_j[1];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8386,7 +9866,29 @@ matVecCsrRowMajorForif3Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8426,7 +9928,7 @@ matVecCsrRowMajorForif3Vec (
         Y_i[2] += A_ij * X_j[2];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8450,7 +9952,29 @@ matVecCsrRowMajorForif3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8490,7 +10014,7 @@ matVecCsrRowMajorForif3Vec (
         Y_i[2] += alpha * A_ij * X_j[2];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8556,7 +10080,31 @@ matVecCsrRowMajorForif4Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+        Y_i[3] += A_ij * X_j[3];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8599,7 +10147,7 @@ matVecCsrRowMajorForif4Vec (
         Y_i[3] += A_ij * X_j[3];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8625,7 +10173,31 @@ matVecCsrRowMajorForif4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = val[k];
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+        Y_i[3] += alpha * A_ij * X_j[3];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -8668,7 +10240,7 @@ matVecCsrRowMajorForif4Vec (
         Y_i[3] += alpha * A_ij * X_j[3];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = val[k];
@@ -10126,7 +11698,25 @@ matVecCsrColMajorForforConj (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10158,7 +11748,7 @@ matVecCsrColMajorForforConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10178,7 +11768,25 @@ matVecCsrColMajorForforConj (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10210,7 +11818,7 @@ matVecCsrColMajorForforConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10258,7 +11866,43 @@ matVecCsrColMajorForforConj4Unrolled (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] += A_ij * X_j[0];
+            Y_i[colStrideY] += A_ij * X_j[colStrideX];
+            Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+            Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10317,7 +11961,7 @@ matVecCsrColMajorForforConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10355,7 +11999,43 @@ matVecCsrColMajorForforConj4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] += alpha * A_ij * X_j[0];
+            Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+            Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+            Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10414,7 +12094,7 @@ matVecCsrColMajorForforConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10480,7 +12160,18 @@ matVecCsrColMajorForforConj1Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        Y[i] = -Y[i];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          Y[i] += A_ij * X[j];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         Y[i] = STS::zero();
@@ -10501,7 +12192,7 @@ matVecCsrColMajorForforConj1Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i] *= beta;
@@ -10514,7 +12205,18 @@ matVecCsrColMajorForforConj1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        Y[i] = -Y[i];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          Y[i] += alpha * A_ij * X[j];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         Y[i] = STS::zero();
@@ -10535,7 +12237,7 @@ matVecCsrColMajorForforConj1Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i] *= beta;
@@ -10576,7 +12278,23 @@ matVecCsrColMajorForforConj2Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10605,7 +12323,7 @@ matVecCsrColMajorForforConj2Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10623,7 +12341,23 @@ matVecCsrColMajorForforConj2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10652,7 +12386,7 @@ matVecCsrColMajorForforConj2Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10698,7 +12432,25 @@ matVecCsrColMajorForforConj3Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10730,7 +12482,7 @@ matVecCsrColMajorForforConj3Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10750,7 +12502,25 @@ matVecCsrColMajorForforConj3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10782,7 +12552,7 @@ matVecCsrColMajorForforConj3Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10830,7 +12600,27 @@ matVecCsrColMajorForforConj4Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10865,7 +12655,7 @@ matVecCsrColMajorForforConj4Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10887,7 +12677,27 @@ matVecCsrColMajorForforConj4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i];
+        Y_i[0] = -Y_i[0];
+        Y_i[colStrideY] = -Y_i[colStrideY];
+        Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i];
+          const DomainScalar* const X_j = &X[j];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i];
@@ -10922,7 +12732,7 @@ matVecCsrColMajorForforConj4Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i];
@@ -10985,7 +12795,27 @@ matVecCsrColMajorForwhileConj (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11021,7 +12851,7 @@ matVecCsrColMajorForwhileConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11043,7 +12873,27 @@ matVecCsrColMajorForwhileConj (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11079,7 +12929,7 @@ matVecCsrColMajorForwhileConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11142,7 +12992,45 @@ matVecCsrColMajorForwhileConj4Unrolled (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[colStrideY] = -Y_i[colStrideY];
+            Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+            Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11205,7 +13093,7 @@ matVecCsrColMajorForwhileConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11245,7 +13133,45 @@ matVecCsrColMajorForwhileConj4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[colStrideY] = -Y_i[colStrideY];
+            Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+            Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11308,7 +13234,7 @@ matVecCsrColMajorForwhileConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11390,7 +13316,20 @@ matVecCsrColMajorForwhileConj1Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i] = -Y[i];
+        }
+        Y[i] += A_ij * X[j];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11415,7 +13354,7 @@ matVecCsrColMajorForwhileConj1Vec (
         Y[i] += A_ij * X[j];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11430,7 +13369,20 @@ matVecCsrColMajorForwhileConj1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i] = -Y[i];
+        }
+        Y[i] += alpha * A_ij * X[j];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11455,7 +13407,7 @@ matVecCsrColMajorForwhileConj1Vec (
         Y[i] += alpha * A_ij * X[j];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11512,7 +13464,25 @@ matVecCsrColMajorForwhileConj2Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11545,7 +13515,7 @@ matVecCsrColMajorForwhileConj2Vec (
         Y_i[colStrideY] += A_ij * X_j[colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11565,7 +13535,25 @@ matVecCsrColMajorForwhileConj2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11598,7 +13586,7 @@ matVecCsrColMajorForwhileConj2Vec (
         Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11660,7 +13648,27 @@ matVecCsrColMajorForwhileConj3Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11696,7 +13704,7 @@ matVecCsrColMajorForwhileConj3Vec (
         Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11718,7 +13726,27 @@ matVecCsrColMajorForwhileConj3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11754,7 +13782,7 @@ matVecCsrColMajorForwhileConj3Vec (
         Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11818,7 +13846,29 @@ matVecCsrColMajorForwhileConj4Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11857,7 +13907,7 @@ matVecCsrColMajorForwhileConj4Vec (
         Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11881,7 +13931,29 @@ matVecCsrColMajorForwhileConj4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11920,7 +13992,7 @@ matVecCsrColMajorForwhileConj4Vec (
         Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -11985,7 +14057,29 @@ matVecCsrColMajorForifConj (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12025,7 +14119,7 @@ matVecCsrColMajorForifConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12049,7 +14143,29 @@ matVecCsrColMajorForifConj (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12089,7 +14205,7 @@ matVecCsrColMajorForifConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12154,7 +14270,47 @@ matVecCsrColMajorForifConj4Unrolled (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[colStrideY] = -Y_i[colStrideY];
+            Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+            Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[colStrideY] += A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12221,7 +14377,7 @@ matVecCsrColMajorForifConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12263,7 +14419,47 @@ matVecCsrColMajorForifConj4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[colStrideY] = -Y_i[colStrideY];
+            Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+            Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c*colStrideY] = -Y_i[c*colStrideY];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+          Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+          Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c*colStrideY] += alpha * A_ij * X_j[c*colStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12330,7 +14526,7 @@ matVecCsrColMajorForifConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12414,7 +14610,22 @@ matVecCsrColMajorForifConj1Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i] = -Y[i];
+        }
+        Y[i] += A_ij * X[j];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12443,7 +14654,7 @@ matVecCsrColMajorForifConj1Vec (
         Y[i] += A_ij * X[j];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12460,7 +14671,22 @@ matVecCsrColMajorForifConj1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i] = -Y[i];
+        }
+        Y[i] += alpha * A_ij * X[j];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12489,7 +14715,7 @@ matVecCsrColMajorForifConj1Vec (
         Y[i] += alpha * A_ij * X[j];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12548,7 +14774,27 @@ matVecCsrColMajorForifConj2Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12585,7 +14831,7 @@ matVecCsrColMajorForifConj2Vec (
         Y_i[colStrideY] += A_ij * X_j[colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12607,7 +14853,27 @@ matVecCsrColMajorForifConj2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12644,7 +14910,7 @@ matVecCsrColMajorForifConj2Vec (
         Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12708,7 +14974,29 @@ matVecCsrColMajorForifConj3Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12748,7 +15036,7 @@ matVecCsrColMajorForifConj3Vec (
         Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12772,7 +15060,29 @@ matVecCsrColMajorForifConj3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12812,7 +15122,7 @@ matVecCsrColMajorForifConj3Vec (
         Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12878,7 +15188,31 @@ matVecCsrColMajorForifConj4Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[colStrideY] += A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12921,7 +15255,7 @@ matVecCsrColMajorForifConj4Vec (
         Y_i[3*colStrideY] += A_ij * X_j[3*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12947,7 +15281,31 @@ matVecCsrColMajorForifConj4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i];
+          Y_i[0] = -Y_i[0];
+          Y_i[colStrideY] = -Y_i[colStrideY];
+          Y_i[2*colStrideY] = -Y_i[2*colStrideY];
+          Y_i[3*colStrideY] = -Y_i[3*colStrideY];
+        }
+        RangeScalar* const Y_i = &Y[i];
+        const DomainScalar* const X_j = &X[j];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[colStrideY] += alpha * A_ij * X_j[colStrideX];
+        Y_i[2*colStrideY] += alpha * A_ij * X_j[2*colStrideX];
+        Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -12990,7 +15348,7 @@ matVecCsrColMajorForifConj4Vec (
         Y_i[3*colStrideY] += alpha * A_ij * X_j[3*colStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -14448,7 +16806,25 @@ matVecCsrRowMajorForforConj (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] = -Y_i[c];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] += A_ij * X_j[c];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14480,7 +16856,7 @@ matVecCsrRowMajorForforConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14500,7 +16876,25 @@ matVecCsrRowMajorForforConj (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] = -Y_i[c];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] += alpha * A_ij * X_j[c];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14532,7 +16926,7 @@ matVecCsrRowMajorForforConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14580,7 +16974,43 @@ matVecCsrRowMajorForforConj4Unrolled (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] = -Y_i[c];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] += A_ij * X_j[0];
+            Y_i[1] += A_ij * X_j[1];
+            Y_i[2] += A_ij * X_j[2];
+            Y_i[3] += A_ij * X_j[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] += A_ij * X_j[c];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14639,7 +17069,7 @@ matVecCsrRowMajorForforConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14677,7 +17107,43 @@ matVecCsrRowMajorForforConj4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] = -Y_i[c];
+        }
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] += alpha * A_ij * X_j[0];
+            Y_i[1] += alpha * A_ij * X_j[1];
+            Y_i[2] += alpha * A_ij * X_j[2];
+            Y_i[3] += alpha * A_ij * X_j[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] += alpha * A_ij * X_j[c];
+          }
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14736,7 +17202,7 @@ matVecCsrRowMajorForforConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14802,7 +17268,18 @@ matVecCsrRowMajorForforConj1Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        Y[i*rowStrideY] = -Y[i*rowStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         Y[i*rowStrideY] = STS::zero();
@@ -14823,7 +17300,7 @@ matVecCsrRowMajorForforConj1Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i*rowStrideY] *= beta;
@@ -14836,7 +17313,18 @@ matVecCsrRowMajorForforConj1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        Y[i*rowStrideY] = -Y[i*rowStrideY];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         Y[i*rowStrideY] = STS::zero();
@@ -14857,7 +17345,7 @@ matVecCsrRowMajorForforConj1Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         Y[i*rowStrideY] *= beta;
@@ -14898,7 +17386,23 @@ matVecCsrRowMajorForforConj2Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14927,7 +17431,7 @@ matVecCsrRowMajorForforConj2Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14945,7 +17449,23 @@ matVecCsrRowMajorForforConj2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -14974,7 +17494,7 @@ matVecCsrRowMajorForforConj2Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15020,7 +17540,25 @@ matVecCsrRowMajorForforConj3Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        Y_i[2] = -Y_i[2];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+          Y_i[2] += A_ij * X_j[2];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15052,7 +17590,7 @@ matVecCsrRowMajorForforConj3Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15072,7 +17610,25 @@ matVecCsrRowMajorForforConj3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        Y_i[2] = -Y_i[2];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+          Y_i[2] += alpha * A_ij * X_j[2];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15104,7 +17660,7 @@ matVecCsrRowMajorForforConj3Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15152,7 +17708,27 @@ matVecCsrRowMajorForforConj4Vec (
     return; // Our work is done!
   }
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        Y_i[2] = -Y_i[2];
+        Y_i[3] = -Y_i[3];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+          Y_i[2] += A_ij * X_j[2];
+          Y_i[3] += A_ij * X_j[3];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15187,7 +17763,7 @@ matVecCsrRowMajorForforConj4Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15209,7 +17785,27 @@ matVecCsrRowMajorForforConj4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      for (Ordinal i = 0; i < numRows; ++i) {
+        // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        Y_i[0] = -Y_i[0];
+        Y_i[1] = -Y_i[1];
+        Y_i[2] = -Y_i[2];
+        Y_i[3] = -Y_i[3];
+        for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+          const Ordinal j = ind[k];
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          const DomainScalar* const X_j = &X[j*rowStrideX];
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+          Y_i[2] += alpha * A_ij * X_j[2];
+          Y_i[3] += alpha * A_ij * X_j[3];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; set Y(i,:) to 0.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15244,7 +17840,7 @@ matVecCsrRowMajorForforConj4Vec (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       for (Ordinal i = 0; i < numRows; ++i) {
         // We haven't seen row i before; scale Y(i,:) by beta.
         RangeScalar* const Y_i = &Y[i*rowStrideY];
@@ -15307,7 +17903,27 @@ matVecCsrRowMajorForwhileConj (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] += A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15343,7 +17959,7 @@ matVecCsrRowMajorForwhileConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15365,7 +17981,27 @@ matVecCsrRowMajorForwhileConj (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] += alpha * A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15401,7 +18037,7 @@ matVecCsrRowMajorForwhileConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15464,7 +18100,45 @@ matVecCsrRowMajorForwhileConj4Unrolled (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[1] = -Y_i[1];
+            Y_i[2] = -Y_i[2];
+            Y_i[3] = -Y_i[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+          Y_i[2] += A_ij * X_j[2];
+          Y_i[3] += A_ij * X_j[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] += A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15527,7 +18201,7 @@ matVecCsrRowMajorForwhileConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15567,7 +18241,45 @@ matVecCsrRowMajorForwhileConj4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[1] = -Y_i[1];
+            Y_i[2] = -Y_i[2];
+            Y_i[3] = -Y_i[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+          Y_i[2] += alpha * A_ij * X_j[2];
+          Y_i[3] += alpha * A_ij * X_j[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] += alpha * A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15630,7 +18342,7 @@ matVecCsrRowMajorForwhileConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15712,7 +18424,20 @@ matVecCsrRowMajorForwhileConj1Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i*rowStrideY] = -Y[i*rowStrideY];
+        }
+        Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15737,7 +18462,7 @@ matVecCsrRowMajorForwhileConj1Vec (
         Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15752,7 +18477,20 @@ matVecCsrRowMajorForwhileConj1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i*rowStrideY] = -Y[i*rowStrideY];
+        }
+        Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15777,7 +18515,7 @@ matVecCsrRowMajorForwhileConj1Vec (
         Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15834,7 +18572,25 @@ matVecCsrRowMajorForwhileConj2Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15867,7 +18623,7 @@ matVecCsrRowMajorForwhileConj2Vec (
         Y_i[1] += A_ij * X_j[1];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15887,7 +18643,25 @@ matVecCsrRowMajorForwhileConj2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15920,7 +18694,7 @@ matVecCsrRowMajorForwhileConj2Vec (
         Y_i[1] += alpha * A_ij * X_j[1];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -15982,7 +18756,27 @@ matVecCsrRowMajorForwhileConj3Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16018,7 +18812,7 @@ matVecCsrRowMajorForwhileConj3Vec (
         Y_i[2] += A_ij * X_j[2];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16040,7 +18834,27 @@ matVecCsrRowMajorForwhileConj3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16076,7 +18890,7 @@ matVecCsrRowMajorForwhileConj3Vec (
         Y_i[2] += alpha * A_ij * X_j[2];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16140,7 +18954,29 @@ matVecCsrRowMajorForwhileConj4Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+        Y_i[3] += A_ij * X_j[3];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16179,7 +19015,7 @@ matVecCsrRowMajorForwhileConj4Vec (
         Y_i[3] += A_ij * X_j[3];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16203,7 +19039,29 @@ matVecCsrRowMajorForwhileConj4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        while (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+        Y_i[3] += alpha * A_ij * X_j[3];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16242,7 +19100,7 @@ matVecCsrRowMajorForwhileConj4Vec (
         Y_i[3] += alpha * A_ij * X_j[3];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16307,7 +19165,29 @@ matVecCsrRowMajorForifConj (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] += A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16347,7 +19227,7 @@ matVecCsrRowMajorForifConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16371,7 +19251,29 @@ matVecCsrRowMajorForifConj (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          for (Ordinal c = 0; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        for (Ordinal c = 0; c < numVecs; ++c) {
+          Y_i[c] += alpha * A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16411,7 +19313,7 @@ matVecCsrRowMajorForifConj (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16476,7 +19378,47 @@ matVecCsrRowMajorForifConj4Unrolled (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[1] = -Y_i[1];
+            Y_i[2] = -Y_i[2];
+            Y_i[3] = -Y_i[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += A_ij * X_j[0];
+          Y_i[1] += A_ij * X_j[1];
+          Y_i[2] += A_ij * X_j[2];
+          Y_i[3] += A_ij * X_j[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] += A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16543,7 +19485,7 @@ matVecCsrRowMajorForifConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16585,7 +19527,47 @@ matVecCsrRowMajorForifConj4Unrolled (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Ordinal c = 0;
+          // Extra +1 in loop bound ensures first 4 iterations get
+          // strip-mined, but requires that Ordinal be a signed type.
+          for ( ; c < numVecs - 3; c += 4) {
+            Y_i[0] = -Y_i[0];
+            Y_i[1] = -Y_i[1];
+            Y_i[2] = -Y_i[2];
+            Y_i[3] = -Y_i[3];
+          }
+          for ( ; c < numVecs; ++c) {
+            Y_i[c] = -Y_i[c];
+          }
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Ordinal c = 0;
+        // Extra +1 in loop bound ensures first 4 iterations get
+        // strip-mined, but requires that Ordinal be a signed type.
+        for ( ; c < numVecs - 3; c += 4) {
+          Y_i[0] += alpha * A_ij * X_j[0];
+          Y_i[1] += alpha * A_ij * X_j[1];
+          Y_i[2] += alpha * A_ij * X_j[2];
+          Y_i[3] += alpha * A_ij * X_j[3];
+        }
+        for ( ; c < numVecs; ++c) {
+          Y_i[c] += alpha * A_ij * X_j[c];
+        }
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16652,7 +19634,7 @@ matVecCsrRowMajorForifConj4Unrolled (
         }
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16736,7 +19718,22 @@ matVecCsrRowMajorForifConj1Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i*rowStrideY] = -Y[i*rowStrideY];
+        }
+        Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16765,7 +19762,7 @@ matVecCsrRowMajorForifConj1Vec (
         Y[i*rowStrideY] += A_ij * X[j*rowStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16782,7 +19779,22 @@ matVecCsrRowMajorForifConj1Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          Y[i*rowStrideY] = -Y[i*rowStrideY];
+        }
+        Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16811,7 +19823,7 @@ matVecCsrRowMajorForifConj1Vec (
         Y[i*rowStrideY] += alpha * A_ij * X[j*rowStrideX];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16870,7 +19882,27 @@ matVecCsrRowMajorForifConj2Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16907,7 +19939,7 @@ matVecCsrRowMajorForifConj2Vec (
         Y_i[1] += A_ij * X_j[1];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16929,7 +19961,27 @@ matVecCsrRowMajorForifConj2Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -16966,7 +20018,7 @@ matVecCsrRowMajorForifConj2Vec (
         Y_i[1] += alpha * A_ij * X_j[1];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -17030,7 +20082,29 @@ matVecCsrRowMajorForifConj3Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -17070,7 +20144,7 @@ matVecCsrRowMajorForifConj3Vec (
         Y_i[2] += A_ij * X_j[2];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -17094,7 +20168,29 @@ matVecCsrRowMajorForifConj3Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -17134,7 +20230,7 @@ matVecCsrRowMajorForifConj3Vec (
         Y_i[2] += alpha * A_ij * X_j[2];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -17200,7 +20296,31 @@ matVecCsrRowMajorForifConj4Vec (
   }
   const Ordinal nnz = ptr[numRows];
   if (alpha == STS::one()) {
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += A_ij * X_j[0];
+        Y_i[1] += A_ij * X_j[1];
+        Y_i[2] += A_ij * X_j[2];
+        Y_i[3] += A_ij * X_j[3];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -17243,7 +20363,7 @@ matVecCsrRowMajorForifConj4Vec (
         Y_i[3] += A_ij * X_j[3];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -17269,7 +20389,31 @@ matVecCsrRowMajorForifConj4Vec (
     }
   }
   else { // alpha != STS::one()
-    if (beta == STS::zero()) {
+    if (beta == -STS::one()) {
+      Ordinal i = 0;
+      for (Ordinal k = 0; k < nnz; ++k) {
+        const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
+        const Ordinal j = ind[k];
+        // NOTE: "if" instead of "while" here is only valid
+        // if the matrix contains no empty columns.
+        if (k >= ptr[i+1]) {
+          ++i;
+          // We haven't seen row i before; set Y(i,:) to -Y(i,:).
+          RangeScalar* const Y_i = &Y[i*rowStrideY];
+          Y_i[0] = -Y_i[0];
+          Y_i[1] = -Y_i[1];
+          Y_i[2] = -Y_i[2];
+          Y_i[3] = -Y_i[3];
+        }
+        RangeScalar* const Y_i = &Y[i*rowStrideY];
+        const DomainScalar* const X_j = &X[j*rowStrideX];
+        Y_i[0] += alpha * A_ij * X_j[0];
+        Y_i[1] += alpha * A_ij * X_j[1];
+        Y_i[2] += alpha * A_ij * X_j[2];
+        Y_i[3] += alpha * A_ij * X_j[3];
+      }
+    }
+    else if (beta == STS::zero()) {
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -17312,7 +20456,7 @@ matVecCsrRowMajorForifConj4Vec (
         Y_i[3] += alpha * A_ij * X_j[3];
       }
     }
-    else { // beta != 0 && beta != 1
+    else { // beta != -1 && beta != 0 && beta != 1
       Ordinal i = 0;
       for (Ordinal k = 0; k < nnz; ++k) {
         const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
