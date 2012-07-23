@@ -19,6 +19,8 @@
 #include <Teuchos_ParameterList.hpp>
 
 #define EPS_SCALE 5
+#define LEAST_SIGNIFICANCE 0.0001
+#define SIGNIFICANCE_MUL 1000
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
 #endif
@@ -73,6 +75,44 @@ public:
   }
 
 
+};
+
+
+
+template <typename Ordinal, typename T>
+class PQJaggedCombinedMinMaxReductionOp  : public ValueTypeReductionOp<Ordinal,T>
+{
+private:
+  Ordinal numMin, numMax;
+
+public:
+  /*! \brief Default Constructor
+   */
+  PQJaggedCombinedMinMaxReductionOp ():numMin(0), numMax(0){}
+
+  /*! \brief Constructor
+   *   \param nsum  the count of how many sums will be computed at the
+   *             start of the list.
+   *   \param nmin  following the sums, this many minimums will be computed.
+   *   \param nmax  following the minimums, this many maximums will be computed.
+   */
+  PQJaggedCombinedMinMaxReductionOp (Ordinal nmin, Ordinal nmax):
+    numMin(nmin), numMax(nmax){}
+
+  /*! \brief Implement Teuchos::ValueTypeReductionOp interface
+   */
+  void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
+  {
+    Ordinal next=0;
+
+    for (Ordinal i=0; i < numMin; i++, next++)
+      if (inoutBuffer[next] > inBuffer[next])
+        inoutBuffer[next] = inBuffer[next];
+
+    for (Ordinal i=0; i < numMax; i++, next++)
+      if (inoutBuffer[next] < inBuffer[next])
+        inoutBuffer[next] = inBuffer[next];
+  }
 };
 } // namespace Teuchos
 
@@ -240,7 +280,7 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
     imbalanceTolerance = tol - 1.0;
 
   if (imbalanceTolerance <= 0)
-    imbalanceTolerance = 10e-4;  // TODO - what's a good choice
+    imbalanceTolerance = 10e-4;
 
   ////////////////////////////////////////////////////////
   // Geometric partitioning problem parameters of interest:
@@ -600,9 +640,21 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
 #pragma omp single
 #endif
   {
+    scalar_t localMinMax[2], globalMinMax[2];
+    localMinMax[0] = minCoordinate;
+    localMinMax[1] = maxCoordinate;
 
-    //TODO:Merge these communications.
+    Teuchos::PQJaggedCombinedMinMaxReductionOp<int, scalar_t> reductionOp(
+       1,   // number of left closest mins
+       1);  // number of right closest max
+
     try{
+
+
+      reduceAll<int, scalar_t>(*comm, reductionOp,
+          2, localMinMax, globalMinMax
+        );
+/*
       reduceAll<int,scalar_t>(
           *comm, Teuchos::REDUCE_MIN,
           1, &minCoordinate, &minm
@@ -612,17 +664,20 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
           *comm, Teuchos::REDUCE_MAX,
           1, &maxCoordinate, &maxm
       );
+      */
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
+    minCoordinate = globalMinMax[0];
+    maxCoordinate = globalMinMax[1];
     //MPI_Allreduce ( &minCoordinate, &minm, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
     //MPI_Allreduce ( &maxCoordinate, &maxm, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
   }
   //cout << "minm:" << minm << " maxm:" << maxm << endl;
 
   //cout << "sizeof scalar_t:" << sizeof(scalar_t)  << endl;
-  minCoordinate = minm;
-  maxCoordinate = maxm;
+  //minCoordinate = minm;
+  //maxCoordinate = maxm;
 #endif
 }
 
@@ -690,7 +745,9 @@ void getNewCoordinates_simple(
     scalar_t *leftClosestDistance, scalar_t *rightClosestDistance,
     scalar_t * cutLowerWeight,scalar_t * cutUpperWeight, scalar_t *&cutCoordinatesWork,
     float *nonRectelinearPart,
-    bool allowNonRectelinearPart, scalar_t maxScalar){
+    bool allowNonRectelinearPart, scalar_t maxScalar, const scalar_t * localtw,
+    const RCP<const Environment> &env,RCP<Comm<int> > &comm,
+    partId_t rectelinearCount, scalar_t *cutWeights, scalar_t *globalCutWeights){
 
   scalar_t seenW = 0;
   float expected = 0;
@@ -704,7 +761,7 @@ void getNewCoordinates_simple(
 #endif
   for (partId_t i = 0; i < noCuts; i++){
 
-
+    cutWeights[i] = 0;
     //if a left and right closes point is not found, set the distance to 0.
     if(leftClosestDistance[i] == maxScalar) leftClosestDistance[i] = 0;
     if(rightClosestDistance[i] == maxScalar) rightClosestDistance[i] = 0;
@@ -745,21 +802,40 @@ void getNewCoordinates_simple(
 
       scalar_t ew = totalWeight * expected;
 
-      //TODO if boundary is enough binary search on processors -- only if different part assignment in the same line is allowed.
+
       if(allowNonRectelinearPart){
-        if (totalPartWeights[i * 2 + 1] >= ew){
+        if (totalPartWeights[i * 2 + 1] == ew){
+        //if (totalPartWeights[i * 2 + 1] >= ew){
           isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
           allDone -=1;
-          cutCoordinatesWork [ i] = cutCoordinates[i];
-          //cout << "left:" << totalPartWeights[i * 2] << " with line:" << totalPartWeights[i * 2 + 1 ]<< " expected:" << ew << endl;
-
-          nonRectelinearPart[i] = 1 - (totalPartWeights[i * 2 + 1] - ew) / (totalPartWeights[i * 2 + 1] - totalPartWeights[i * 2]);
-          //cout << "nonRectelinearPart[i]:" << nonRectelinearPart[i] << endl;
+          cutCoordinatesWork [i] = cutCoordinates[i];
+          nonRectelinearPart[i] = 1;
+          //nonRectelinearPart[i] = 1 - (totalPartWeights[i * 2 + 1] - ew) / (totalPartWeights[i * 2 + 1] - totalPartWeights[i * 2]);
           continue;
         }
+        else if (totalPartWeights[i * 2 + 1] > ew){
+          isDone[i] = true;
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp atomic
+#endif
+          allDone -=1;
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp atomic
+#endif
+          rectelinearCount += 1;
+
+          cutCoordinatesWork [ i] = cutCoordinates[i];
+          scalar_t myWeightOnLine = localtw[i * 2 + 1] - localtw[i * 2];
+          cutWeights[i] = myWeightOnLine;
+
+          //cout << "me:" << comm->getRank() << " myr:" << nonRectelinearPart[i] << endl;
+          continue;
+        }
+
       }
 
       //when moving left, and upper and lower are set.
@@ -936,6 +1012,41 @@ void getNewCoordinates_simple(
     }
   }
 
+#pragma omp single
+  {
+    if(rectelinearCount > 0){
+      try{
+        Teuchos::scan<int,scalar_t>(
+            *comm, Teuchos::REDUCE_SUM,
+            noCuts,cutWeights, globalCutWeights
+        );
+      }
+      Z2_THROW_OUTSIDE_ERROR(*env)
+
+
+      for (partId_t i = 0; i < noCuts; ++i){
+        if(cutWeights[i] > 0) {
+          scalar_t expected = cutPartRatios[i];
+          scalar_t ew = totalWeight * expected;
+          scalar_t expectedWeightOnLine = ew - totalPartWeights[i * 2];
+          scalar_t myWeightOnLine = cutWeights[i];
+          scalar_t weightOnLineBefore = globalCutWeights[i];
+          scalar_t incMe = expectedWeightOnLine - weightOnLineBefore;
+          scalar_t mine = incMe + myWeightOnLine;
+          if(mine < 0){
+            nonRectelinearPart[i] = 0;
+          }
+          else if(mine >= myWeightOnLine){
+            nonRectelinearPart[i] = 1;
+          }
+          else {
+            nonRectelinearPart[i] = mine / myWeightOnLine;
+          }
+        }
+      }
+    }
+  }
+
   //swap the work with cut coordinates.
 
 #ifdef HAVE_ZOLTAN2_OMP
@@ -1002,10 +1113,13 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
     float *nonRectelinearPart,
     bool allowNonRectelinearPart,
     scalar_t maxScalar,
-    scalar_t minScalar
+    scalar_t minScalar,
+    scalar_t *cutWeights, scalar_t *globalCutWeights
 ){
 
 
+
+  partId_t recteLinearCount = 0;
   scalar_t *cutCoordinates_tmp = cutCoordinates;
   partId_t noCuts = partNo - 1;
 
@@ -1161,7 +1275,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
               myPartWeights[j * 2] -=	w;
               myLeftClosest[j] = 0;
               myRightClosest[j] = 0;
-              //TODO: check if the next cut coordinates are in same.
+              //TODO: check if the next cut coordinates are in same. // done...
               //break;
             } else {
               //if on the right, continue with the next line.
@@ -1186,13 +1300,13 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
           scalar_t minl = leftClosestDistance[0][i], minr = rightClosestDistance[0][i];
 
           for (int j = 1; j < noThreads; ++j){
-            //TODO: no need anymore to check if below zero.
-            if ((rightClosestDistance[j][i] < minr || minr < 0) && rightClosestDistance[j][i] >= 0 ){
+            if (rightClosestDistance[j][i] < minr ){
               minr = rightClosestDistance[j][i];
             }
-            if ((leftClosestDistance[j][i] < minl || minl < 0) && leftClosestDistance[j][i] >= 0){
+            if (leftClosestDistance[j][i] < minl ){
               minl = leftClosestDistance[j][i];
             }
+
           }
           lc[i] = minl;
           rc[i] = minr;
@@ -1251,7 +1365,9 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             cutCoordinates_tmp, noCuts,maxCoordinate, minCoordinate, glc,
             grc,cutLowerWeight, cutUpperWeight,cutCoordinatesWork,
             nonRectelinearPart,
-            allowNonRectelinearPart, maxScalar);
+            allowNonRectelinearPart, maxScalar, tw,
+            env,comm,
+            recteLinearCount, cutWeights, globalCutWeights);
       }
 
 
@@ -1301,23 +1417,15 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
     lno_t *partitionedPointPermutations,
     lno_t *newpartitionedPointPermutations, lno_t coordinateBegin, lno_t coordinateEnd,
     lno_t *coordinate_linked_list, lno_t **coordinate_starts, lno_t **coordinate_ends, lno_t numLocalCoord, float *actual_ratios, bool allowNonRectelinearPart,
-    scalar_t *totalPartWeights, scalar_t *coordWeights, bool pqJagged_uniformWeights, int myRank, int worldSize, scalar_t **partWeights, float **nonRectelinearRatios){
+    scalar_t *totalPartWeights, scalar_t *coordWeights, bool pqJagged_uniformWeights, int myRank, int worldSize, scalar_t **partWeights, float **nonRectelinearRatios,
+    lno_t ** partPointCounts){
 
   lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
   ++myRank;
-  //TODO: move this allocation to outside. Do not free at each dimension.
-  lno_t **partPointCounts = new lno_t *[noThreads];
+
   partId_t noCuts = partNo - 1;
 
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
-  for(int i = 0; i < noThreads; ++i){
-    if(i == 0){
-      partPointCounts[i] = totalCounts;
-    } else {
-      partPointCounts[i] = new lno_t[partNo];
-    }
-  }
-
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel
 #endif
@@ -1363,7 +1471,8 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
           if(fabs(cutCoordinates[i] - cutCoordinates[i -1]) < _EPSILON){
             //cout << "mi:" <<  myRatios[i] << " " << myRatios[i - 1]  << endl;
             myRatios[i] -= myRatios[i - 1] ;
-            //cout << "i:" << myRatios[i] << " " <<
+            myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
+            //cout << "me:" << myRank <<" i:" << i << " myR:"<< myRatios[i] << " " <<
             //    actual_ratios[i]<< endl;
           }
         }
@@ -1409,9 +1518,9 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 
           scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
           scalar_t decrease = w;
+          //scalar_t newRatio = 0;
           myRatios[j] -= decrease;
 
-          cout << "myRatios[" << j << "]:" << myRatios[j] << " decrease:" << decrease <<  " EPSILON:"<< _EPSILON <<endl;
           if(myRatios[j] < 0 && j < noCuts - 1){
             myRatios[j + 1] += myRatios[j];
           }
@@ -1497,14 +1606,6 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
       }
     }
   }
-
-  for(int i = 0; i < noThreads; ++i){
-    if(i != 0){
-      delete [] partPointCounts[i];
-    }
-  }
-
-  delete []partPointCounts;
 }
 
 template <typename T>
@@ -1549,7 +1650,6 @@ void AlgPQJagged(
     RCP<PartitioningSolution<Adapter> > &solution
 )
 {
-  cout << "start" << endl;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gno_t gno_t;
 
@@ -1625,8 +1725,6 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   partId_t totalPartCount = 1;
   partId_t maxPartNo = 0;
 
-  //TODO: part numbers are given as integers,
-  //although we assume they are size_t
   const partId_t *partNo = pl.getPtr<Array <partId_t> >("pqParts")->getRawPtr();
   for (int i = 0; i < coordDim; ++i){
     totalPartCount *= partNo[i];
@@ -1750,6 +1848,11 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   scalar_t **rightClosestDistance = allocMemory<scalar_t *>(numThreads);
 
   size_t maxTotalPartCount = maxPartNo + size_t(maxCutNo);
+
+
+  //lno_t **partPointCounts = new lno_t *[noThreads];
+  lno_t **partPointCounts = allocMemory<lno_t *>(numThreads);
+
   for(int i = 0; i < numThreads; ++i){
     //partWeights[i] = new scalar_t[maxTotalPartCount];
     partWeights[i] = allocMemory<scalar_t>(maxTotalPartCount);
@@ -1759,7 +1862,16 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
     //leftClosestDistance[i] = new scalar_t [maxCutNo];
     leftClosestDistance[i] = allocMemory<scalar_t>(maxCutNo);
+
+    //partPointCounts[i] = new lno_t[partNo];
+  partPointCounts[i] =  allocMemory<lno_t>(maxPartNo);
   }
+
+
+
+
+  scalar_t *cutWeights = allocMemory<scalar_t>(maxCutNo);
+  scalar_t *globalCutWeights = allocMemory<scalar_t>(maxCutNo);
 
   //scalar_t *totalPartWeights = new scalar_t[maxTotalPartCount];
   //for faster communication concatanation.
@@ -1773,6 +1885,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   partId_t leftPartitions = totalPartCount;
   scalar_t maxScalar_t = numeric_limits<float>::max();
   scalar_t minScalar_t = -numeric_limits<float>::max();
+
 
   for (int i = 0; i < coordDim; ++i){
 
@@ -1825,14 +1938,18 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             nonRectelinearPart,
             allowNonRectelinearPart,
             maxScalar_t,
-            minScalar_t);
+            minScalar_t,
+            cutWeights, globalCutWeights
+            );
       }
 
       getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], numThreads,
           pqJagged_coordinates[i], cutCoordinates, outTotalCounts + currentOut,
           partitionedPointCoordinates, newpartitionedPointCoordinates, coordinateBegin, coordinateEnd,
           coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords,
-          nonRectelinearPart, allowNonRectelinearPart, totalPartWeights_leftClosests_rightClosests, pqJagged_weights[0], pqJagged_uniformWeights, comm->getRank(), comm->getSize(), partWeights,nonRectRatios);
+          nonRectelinearPart, allowNonRectelinearPart, totalPartWeights_leftClosests_rightClosests,
+          pqJagged_weights[0], pqJagged_uniformWeights, comm->getRank(), comm->getSize(), partWeights,nonRectRatios,
+          partPointCounts);
 
       cutCoordinates += partNo[i] - 1;
       partitionCoordinateBegin += coordinateBegin - coordinateEnd;
@@ -1858,8 +1975,13 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
 
   //partId_t *partIds = new partId_t[numLocalCoords];
-  partId_t *partIds = allocMemory<partId_t>(numLocalCoords);
-  ArrayRCP<partId_t> partId = arcp(partIds, 0, numLocalCoords, true);
+
+  partId_t *partIds = NULL;
+  ArrayRCP<partId_t> partId;
+  if(numLocalCoords > 0){
+  /*partId_t **/partIds = allocMemory<partId_t>(numLocalCoords);
+  /*ArrayRCP<partId_t> */partId = arcp(partIds, 0, numLocalCoords, true);
+  }
   for(partId_t i = 0; i < totalPartCount;++i){
     lno_t begin = 0;
     lno_t end = inTotalCounts[i];
@@ -1868,6 +1990,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
       lno_t k = partitionedPointCoordinates[ii];
       partIds[k] = i;
+      //cout << "me:" << comm->getRank() << " ";
       cout << "part of coordinate:";
       for(int iii = 0; iii < coordDim; ++iii){
         cout <<  pqJagged_coordinates[iii][k] << " ";
@@ -1917,14 +2040,27 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     gnoList = arcpFromArrayView(pqJagged_gnos);
   }
 
+
+
+
   solution->setParts(gnoList, partId);
+
+
 
   for(int i = 0; i < numThreads; ++i){
     //delete []coordinate_starts[i];
     freeArray<lno_t>(coordinate_starts[i]);
     //delete []coordinate_ends[i] ;
     freeArray<lno_t>(coordinate_ends[i]);
+
+
+    //delete [] partPointCounts[i];
+    freeArray<lno_t>(partPointCounts[i]);
   }
+
+
+  //delete []partPointCounts;
+  freeArray<lno_t *>(partPointCounts);
 
   //delete [] imbalance_tolerances;
   //delete []coordinate_linked_list;
@@ -1948,6 +2084,11 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     //delete [] nonRectRatios;
     freeArray<float *>(nonRectRatios);
   }
+
+
+
+  freeArray<scalar_t>(cutWeights);
+  freeArray<scalar_t>(globalCutWeights);
 
 
   //delete [] partNo;
@@ -2024,6 +2165,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   //delete [] rightClosestDistance;
   freeArray<scalar_t *>(rightClosestDistance);
+
 }
 } // namespace Zoltan2
 
@@ -2072,9 +2214,6 @@ void getNewCoordinates(const size_t &total_part_count, const scalar_t * totalPar
       //cout << "\tconverged upper:" <<  cutUpperBounds[currentLine] << " loweR:" << cutLowerBounds[currentLine] << endl;
 
     } else if(leftImbalance < 0){
-      //TODO if boundary is enough binary search on processors
-      //if boundary is not enough, binary search
-      //cout << "moving to right" << endl;
       if (cutUpperBounds[currentLine] == -1){
         bool done = false;
         for (size_t ii = currentLine + 1; ii < noCuts ; ++ii){
