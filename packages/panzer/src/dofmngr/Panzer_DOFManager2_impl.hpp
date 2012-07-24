@@ -128,7 +128,7 @@ int DOFManager2<LO,GO>::addField(const std::string & blockID, const std::string 
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager2::addField: addField cannot be called after "
                       "buildGlobalUnknowns has been called"); 
-  TEUCHOS_TEST_FOR_EXCEPTION(!(connMngr_==Teuchos::null),std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION((connMngr_==Teuchos::null),std::logic_error,
                              "DOFManager2::addField: you must add a ConnManager before"
                              "you can associate a FP with a given block.")
   bool found=false;
