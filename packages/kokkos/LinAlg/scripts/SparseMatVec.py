@@ -289,6 +289,10 @@ unrollLength (positive integer): For hardCodeNumVecs==False, this
   nonnegative number of columns (numVecs) in the input and output
   multivectors.  Default is 4.
 
+'Fuse static array declaration and initialization' (Boolean): This
+  affects the output of emitTempOutputDeclAndInit().
+
+
 Abbreviations for sparse matrix-vector multiply variants
 --------------------------------------------------------
 
@@ -343,6 +347,16 @@ def makeDefDict (sparseFormat, dataLayout, variant, conjugateMatrixEntries, \
             'hardCodeNumVecs': hardCodeNumVecs,
             'numVecs': numVecs,
             'unrollLength': unrollLength}
+
+def makeTestDefDict (hardCodeNumVecs=False, numVecs=1):
+    '''Make a simple input dictionary for a common set of test cases.'''
+    sparseFormat = 'CSR'
+    dataLayout = 'column major'
+    variant = 'for-for'
+    conjugateMatrixEntries = False
+    unrollLength = 4
+    return makeDefDict(sparseFormat, dataLayout, variant, conjugateMatrixEntries, \
+                           hardCodeNumVecs, numVecs, unrollLength)
 
 def emitFuncDeclVariants (indent):
     '''Generate declarations of all sparse matrix-vector multiply variants.'''
@@ -624,6 +638,115 @@ def emitForLoopPreface (defDict, loopIndex, indent=0):
                 ind + ' '*2 + '}\n' + \
                 ind + '}\n'
     return s
+
+def emitTempOutputDeclAndInit (defDict, tempVarName, numVecs, beta, indent=0):
+    '''Emit statement(s) for declaring and initializing temporary output values.
+
+    It often pays to declare and use temporary variables for storing
+    and updating the current values of all entries in the current row
+    i of the output multivector Y.  This holds especially when
+    parallelizing CSR sparse mat-vec using OpenMP, since the compiler
+    can assume that the temporary variables declared within the
+    parallel region are not shared or aliased between threads.  Using
+    temporary variables may also avoid false aliasing between threads
+    that can reduce performance.
+
+    The generated code assumes that the number of columns (numVecs) in
+    the output multivector Y is a compile-time constant.  This is
+    because it declares a fixed-length array to hold the temporary
+    values.
+
+    The statements can include initialization for a specific case of
+    beta, so we include the beta value as an input.  
+
+    defDict (dictionary): The usual input dictionary.  If 'Fuse static
+      array declaration and initialization' is not a key in defDict,
+      or if it is a key in defDict and it is True, then the generated
+      code assumes that the C++ compiler can handle statements like
+      the following:
+   
+      RangeScalar Y_tmp[3] = { beta*Y_i[0], beta*Y_i[colStride], beta*Y_i[2*colStride] };
+
+      If 'Fuse static array declaration and initialization' is not a
+      key in defDict, then this function generates alternate code that
+      separates declaration and initialization of the temporary array.
+      For example:
+
+      RangeScalar Y_tmp[3];
+      Y_tmp[0] = beta*Y_i[0];
+      Y_tmp[1] = beta*Y_i[colStride];
+      Y_tmp[2] = beta*Y_i[2*colStride];
+
+    tempVarName (string): Name of the temporary variable to declare and to
+      which to assign initial values.
+
+    numVecs (positive integer): Number of columns in the output
+      multivector.  This must be a compile-time constant.
+
+    beta (integer or string): Either an integer value (check the
+      documentation of emitBetaScaleStmt() for the values of beta for
+      which we currently optimize) or 'other' (which means assume a
+      general value of beta).
+
+    indent (nonnegative integer): Number of spaces to indent each line
+      of the generated code.'''
+
+    if int(numVecs) != numVecs or numVecs < 0:
+        raise ValueError('Invalid numVecs value ' + str(numVecs) + \
+                             '.  numVecs must be a positive integer.');
+
+    if numVecs == 1:
+        s = ' '*indent + 'RangeScalar ${tempVarName} = '
+        Y_i0 = emitDenseArefFixedCol (defDict, 'Y_i', '0', 0, strideName='Y')
+        if beta == -1:
+            s += Template('-${Y_i0}').substitute(Y_i0=Y_i0)
+        elif beta == 0:
+            s += 'STS::zero()'
+        elif beta == 1:
+            s += Template('${Y_i0}').substitute(Y_i0=Y_i0)
+        else:
+            s += Template('beta * ${Y_i0}').substitute(Y_i0=Y_i0)
+        s += ';\n'
+        return Template(s).substitute(tempVarName=tempVarName)
+    else: # numVecs > 1:
+        if 'Fuse static array declaration and initialization' in defDict:
+            fuseDeclAndInit = defDict['Fuse static array declaration and initialization']
+        else:
+            fuseDeclAndInit = True
+
+        if fuseDeclAndInit:
+            s = ' '*indent + 'RangeScalar ${tempVarName}[${numVecs}] = { '
+            for j in xrange(0, numVecs):
+                Y_ij = emitDenseArefFixedCol (defDict, 'Y_i', '0', j, strideName='Y')
+                if beta == -1:
+                    s += Template('-${Y_ij}').substitute(Y_ij=Y_ij)
+                elif beta == 0:
+                    s += 'STS::zero()'
+                elif beta == 1:
+                    s += Template('${Y_ij}').substitute(Y_ij=Y_ij)
+                else:
+                    s += Template('beta * ${Y_ij}').substitute(Y_ij=Y_ij)
+                if j < numVecs - 1:
+                    s += ', '
+                else:
+                    s += ' };\n'
+        else:
+            ind = ' '*indent
+            s = ind + 'RangeScalar ${tempVarName}[${numVecs}];\n'
+            for j in xrange(0, numVecs):
+                Y_ij = emitDenseArefFixedCol (defDict, 'Y_i', '0', j, strideName='Y')
+                s += ind + '${tempVarName}[' + str(j) + '] = '
+                if beta == -1:
+                    s += Template('-${Y_ij}').substitute(Y_ij=Y_ij)
+                elif beta == 0:
+                    s += 'STS::zero()'
+                elif beta == 1:
+                    s += Template('${Y_ij}').substitute(Y_ij=Y_ij)
+                else:
+                    s += Template('beta * ${Y_ij}').substitute(Y_ij=Y_ij)
+                s += ';\n'
+        return Template(s).substitute(tempVarName=tempVarName, numVecs=numVecs)
+
 
 def emitBetaScaleStmt (entryToScale, fixedBetaValue, indent=0):
     '''Generate statement for scaling an entry of the output vector by Y.
