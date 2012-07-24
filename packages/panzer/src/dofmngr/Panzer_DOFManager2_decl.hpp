@@ -125,8 +125,7 @@ public:
 
   //TODO:this.
   const std::pair<std::vector<int>,std::vector<int> > & 
-  getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::method not implemented yet!"); }
+  getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const;
 
   const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const
   { return connMngr_->getElementBlock(blockId); }
