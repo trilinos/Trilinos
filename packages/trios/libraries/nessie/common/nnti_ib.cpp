@@ -698,7 +698,6 @@ NNTI_result_t NNTI_ib_connect (
     struct hostent *host_entry;
     struct sockaddr_in skin;
 
-    NNTI_peer_t *key;
     ib_connection *conn=NULL;
 
     assert(trans_hdl);
@@ -782,11 +781,9 @@ retry:
 
     conn->peer=*peer_hdl;
 
-    key=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
-    copy_peer(peer_hdl, key);
     insert_conn_qpn(conn->req_qp.qpn, conn);
     insert_conn_qpn(conn->data_qp.qpn, conn);
-    insert_conn_peer(key, conn);
+    insert_conn_peer(peer_hdl, conn);
 
     transition_connection_to_ready(s, conn);
 

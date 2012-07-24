@@ -1170,9 +1170,7 @@ NNTI_result_t NNTI_gni_connect (
 
     conn->peer=*peer_hdl;
 
-    key=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
-    copy_peer(peer_hdl, key);
-    insert_conn_peer(key, conn);
+    insert_conn_peer(peer_hdl, conn);
     insert_conn_instance(conn->peer_instance, conn);
 
     transition_connection_to_ready(s, conn);
@@ -5005,8 +5003,7 @@ static int check_for_waiting_connection()
     socklen_t len;
     int s;
     gni_connection *conn = NULL;
-    NNTI_peer_t *peer=NULL;
-    NNTI_peer_t *key=NULL;
+    NNTI_peer_t peer;
 
     len = sizeof(ssin);
     s = accept(transport_global_data.listen_sock, (struct sockaddr *) &ssin, &len);
@@ -5021,14 +5018,6 @@ static int check_for_waiting_connection()
             goto cleanup;
         }
     } else {
-        peer=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
-        log_debug(nnti_debug_level, "malloc returned peer=%p.", peer);
-        if (peer == NULL) {
-            log_error(nnti_debug_level, "malloc returned NULL.  out of memory?: %s", strerror(errno));
-            rc=NNTI_ENOMEM;
-            goto cleanup;
-        }
-
         conn = (gni_connection *)calloc(1, sizeof(gni_connection));
         log_debug(nnti_debug_level, "calloc returned conn=%p.", conn);
         if (conn == NULL) {
@@ -5043,7 +5032,7 @@ static int check_for_waiting_connection()
             goto cleanup;
         }
         create_peer(
-                peer,
+                &peer,
                 conn->peer_name,
                 conn->peer_addr,
                 conn->peer_port,
@@ -5051,9 +5040,7 @@ static int check_for_waiting_connection()
                 conn->peer_cookie,
                 conn->peer_instance);
 
-        key=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
-        copy_peer(peer, key);
-        insert_conn_peer(key, conn);
+        insert_conn_peer(&peer, conn);
         insert_conn_instance(conn->peer_instance, conn);
 
         transition_connection_to_ready(s, conn);
@@ -5067,15 +5054,13 @@ static int check_for_waiting_connection()
 
         if (logging_debug(nnti_debug_level)) {
             fprint_NNTI_peer(logger_get_file(), "peer",
-                    "end of check_listen_socket_for_new_connections", peer);
+                    "end of check_listen_socket_for_new_connections", &peer);
         }
     }
 
 cleanup:
     if (rc != NNTI_OK) {
-        if (peer!=NULL) free(peer);
         if (conn!=NULL) free(conn);
-        if (key!=NULL)  free(key);
     }
     return rc;
 }
