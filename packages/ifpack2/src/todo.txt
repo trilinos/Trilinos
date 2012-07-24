@@ -1,4 +1,27 @@
-* Add templated operator methods to all Preconditioners
+*** Internal to Ifpack2 ***
+
+* Add Overlap / AdditiveSchwarz capability 
+* Reordering (e.g. RCM), two ways
+  - implicitly for ILUs (as the matrix is being copied into the factors)
+  - explicitly returning a reordering vector (for the application to do itself)
+* Block Relaxation & Chebyshev 
+* Filtering
+* Less popular methods - IHSS, SORa
+* Add templated operator methods to all Preconditioners (for multiprecision)
   - add applyPrec<OpScalar> method to precs, which operates on MV<OpScalar> objects
   - call this from apply()
   - do this for all other operators 
+
+
+*** Requires Discussion w/ Other Package Devs ***
+
+* Partitioners - Zoltan2
+* Move to Xpetra?
+* Kokkos kernels?
+* Ifpack2 / ShyLU / MueLu relationships & interfaces
+* Ifpack2 hash table (should use the one in Teuchos?)
+* TPL support - HIPS, SuperLU(ILU), Euclid, Hypre, Sparskit) - Where does
+  this belong?
+
+
+
