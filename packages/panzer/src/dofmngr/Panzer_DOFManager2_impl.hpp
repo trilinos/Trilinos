@@ -128,7 +128,7 @@ int DOFManager2<LO,GO>::addField(const std::string & blockID, const std::string 
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager2::addField: addField cannot be called after "
                       "buildGlobalUnknowns has been called"); 
-  TEUCHOS_TEST_FOR_EXCEPTION(!(connMngr_==Teuchos::null),std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION((connMngr_==Teuchos::null),std::logic_error,
                              "DOFManager2::addField: you must add a ConnManager before"
                              "you can associate a FP with a given block.")
   bool found=false;
@@ -497,6 +497,22 @@ const std::vector<int> & DOFManager2<LO,GO>::getBlockFieldNumbers(const std::str
   int bid=bitr->second;
   return fa_fps_[bid]->fieldIds();
 
+}
+
+template <typename LO, typename GO>
+const std::pair<std::vector<int>,std::vector<int> > & 
+DOFManager2<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const{
+  bool found=false;
+  size_t index=0;
+  for(size_t i=0; i<blockOrder_.size(); ++i){
+    if(blockOrder_[i]==blockId){
+      found=true;
+      index=i;
+      break;
+    }
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(found,std::logic_error, "DOFManager2::getGIDFieldOffsets_closure: invalid block name.");
+  return fa_fps_[index]->localOffsets_closure(fieldNum, subcellDim, subcellId);
 }
 
 template <typename LO, typename GO>
