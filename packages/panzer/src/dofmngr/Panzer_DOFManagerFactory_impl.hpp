@@ -44,6 +44,7 @@
 #define PANZER_DOF_MANAGER_FACTORY_IMPL_HPP
 
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManager2.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 namespace panzer {
@@ -55,13 +56,27 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const
 {
+   if(useDOFManager2_)
+      return buildUniqueGlobalIndexer<panzer::DOFManager2<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+   else
+      return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+}
+
+template <typename LO,typename GO>
+template <typename DOFManagerT>
+Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
+                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const std::string & fieldOrder) const
+{
    Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
    pout->setShowProcRank(true);
    pout->setOutputToRootOnly(0);
 
    // build the DOF manager for the problem
-   Teuchos::RCP<panzer::DOFManager<LO,GO> > dofManager 
-         = Teuchos::rcp(new panzer::DOFManager<LO,GO>(connMngr,mpiComm));
+   Teuchos::RCP<DOFManagerT> dofManager 
+         = Teuchos::rcp(new DOFManagerT(connMngr,mpiComm));
 
    // by default assume orientations are not required
    bool orientationsRequired = false;

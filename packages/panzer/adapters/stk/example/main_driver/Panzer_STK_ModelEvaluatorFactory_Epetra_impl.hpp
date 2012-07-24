@@ -144,6 +144,7 @@ namespace panzer_stk {
 	Teuchos::ParameterList& p = pl->sublist("Assembly");
 	p.set<std::size_t>("Workset Size", 1);
 	p.set<std::string>("Field Order","");
+	p.set<bool>("Use DOFManager2",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
@@ -226,6 +227,7 @@ namespace panzer_stk {
     std::size_t workset_size = assembly_params.get<std::size_t>("Workset Size");
     std::string field_order  = assembly_params.get<std::string>("Field Order"); // control nodal ordering of unknown
                                                                                    // global IDs in linear system
+    bool use_dofmanager2  = assembly_params.get<bool>("Use DOFManager2"); // use FEI if false, otherwise use internal dof manager
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
     bool is_transient  = solncntl_params.get<std::string>("Piro Solver") == "Rythmos" ? true : false;
@@ -342,6 +344,7 @@ namespace panzer_stk {
        // use a flat DOF manager
 
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+       globalIndexerFactory.setUseDOFManager2(use_dofmanager2);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(*(mpi_comm->getRawMpiComm()),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
@@ -965,7 +968,7 @@ namespace panzer_stk {
           Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(globalIndexer);
 
        // add in the coordinate parameter list callback handler
-       if(determineCoordinateField(*dofs,fieldName)) {
+       if(dofs!=Teuchos::null && determineCoordinateField(*dofs,fieldName)) {
           std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
           fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
           reqHandler->addRequestCallback(Teuchos::rcp(new 

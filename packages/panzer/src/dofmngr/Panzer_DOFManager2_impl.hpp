@@ -85,6 +85,13 @@ DOFManager2<LO,GO>::DOFManager2()
 { }
 
 template <typename LO, typename GO>
+DOFManager2<LO,GO>::DOFManager2(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
+{ 
+   setConnManager(connMngr,mpiComm);
+}
+
+template <typename LO, typename GO>
 void DOFManager2<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
@@ -511,7 +518,7 @@ DOFManager2<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int 
       break;
     }
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(found,std::logic_error, "DOFManager2::getGIDFieldOffsets_closure: invalid block name.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!found,std::logic_error, "DOFManager2::getGIDFieldOffsets_closure: invalid block name.");
   return fa_fps_[index]->localOffsets_closure(fieldNum, subcellDim, subcellId);
 }
 
