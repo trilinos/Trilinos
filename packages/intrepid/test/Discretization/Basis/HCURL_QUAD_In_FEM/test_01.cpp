@@ -279,42 +279,41 @@ int main(int argc, char *argv[]) {
   // VALUE: Each row pair gives the 4x2 correct basis set values at an evaluation point: (P,F,D) layout
   double basisValues[] = {
     // first bf, first row of points
-    0.0, 1.0, 0.0, 0.5, 0.0, 0.0, 
+    1,0,1,0,1,0,
     // first bf, second row of points
-    0.0, 1.0, 0.0, 0.5, 0.0, 0.0, 
+    0.5,0,0.5,0,0.5,0,
     // first bf, third row of points
-    0.0, 1.0, 0.0, 0.5, 0.0, 0.0, 
+    0,0,0,0,0,0,
     // second bf, first row of points
-    0.0, 0.0, 0.0, 0.5, 0.0, 1.0, 
+    0,0,0,0,0,0,
     // second bf, second row of points
-    0.0, 0.0, 0.0, 0.5, 0.0, 1.0, 
+    0.5,0,0.5,0,0.5,0,
     // second bf, third row of points
-    0.0, 0.0, 0.0, 0.5, 0.0, 1.0, 
+    1,0,1,0,1,0,
     // third bf, first row of points
-    1.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+    0,1,0,0.5,0,0,
     // third bf, second row of points
-    0.5, 0.0, 0.5, 0.0, 0.5, 0.0,
+    0,1,0,0.5,0,0,    
     // third bf, third row of points
-    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+    0,1,0,0.5,0,0,
     // fourth bf, first row of points
-    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+    0,0,0,0.5,0,1,
     // fourth bf, second row of points
-    0.5, 0.0, 0.5, 0.0, 0.5, 0.0,
+    0,0,0,0.5,0,1,
     // fourth bf, third row of points
-    1.0, 0.0, 1.0, 0.0, 1.0, 0.0
+    0,0,0,0.5,0,1,
   };
   
   // CURL: correct values in (F,P) format
   double basisCurls[] = {
-    -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
     0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+    -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
     -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
     0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
   };
 
   
   try{
-        
     // Dimensions for the output arrays:
     int numFields = quadBasis.getCardinality();
     int numPoints = quadNodes.dimension(0);
