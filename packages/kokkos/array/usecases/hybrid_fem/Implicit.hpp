@@ -97,16 +97,17 @@ struct DirichletBoundary ;
 
 //----------------------------------------------------------------------------
 
-template< typename Scalar , class Device >
+template< typename Scalar , class FixtureType >
 PerformanceData run( comm::Machine machine ,
-                     const int global_count_x ,
-                     const int global_count_y ,
-                     const int global_count_z ,
+                     const int global_elem_x ,
+                     const int global_elem_y ,
+                     const int global_elem_z ,
                      const bool print_sample )
 {
-  typedef Device                           device_type;
-  typedef typename device_type::size_type  size_type ;
-  typedef Scalar                           scalar_type ;
+  typedef Scalar                              scalar_type ;
+  typedef FixtureType                         fixture_type ;
+  typedef typename fixture_type::device_type  device_type;
+  typedef typename device_type::size_type     size_type ;
 
   const size_t iteration_limit = 200 ;
   const double residual_tolerance = 1e-14 ;
@@ -119,15 +120,16 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // FEMesh types:
 
-  enum { ElementNodeCount = 8 };
-  typedef double coordinate_scalar_type ;
-  typedef FEMesh< coordinate_scalar_type , ElementNodeCount , device_type > mesh_type ;
+  typedef typename fixture_type::coordinate_scalar_type coordinate_scalar_type ;
+  typedef typename fixture_type::FEMeshType mesh_type ;
+
+  enum { ElementNodeCount = fixture_type::element_node_count };
 
   //------------------------------------
   // Sparse linear system types:
 
-  typedef KokkosArray::View< Scalar[] , Device >   vector_type ;
-  typedef KokkosArray::CrsMatrix< Scalar , Device >     matrix_type ;
+  typedef KokkosArray::View< Scalar[] , device_type >   vector_type ;
+  typedef KokkosArray::CrsMatrix< Scalar , device_type >     matrix_type ;
   typedef typename matrix_type::graph_type         matrix_graph_type ;
   typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;
 
@@ -156,9 +158,8 @@ PerformanceData run( comm::Machine machine ,
   KokkosArray::Impl::Timer wall_clock ;
 
   mesh_type mesh =
-    box_mesh_fixture< coordinate_scalar_type , device_type >
-      ( comm::size( machine ) , comm::rank( machine ) ,
-        global_count_x , global_count_y , global_count_z );
+    fixture_type::create( comm::size( machine ) , comm::rank( machine ) ,
+                          global_elem_x , global_elem_y , global_elem_z );
 
   mesh.parallel_data_map.machine = machine ;
 
@@ -233,7 +234,7 @@ PerformanceData run( comm::Machine machine ,
     wall_clock.reset();
 
     BoundaryFunctor::apply( linsys_matrix , linsys_rhs , mesh , 
-                            0 , global_count_z - 1 , 0 , global_count_z - 1 );
+                            0 , global_elem_z , 0 , global_elem_z );
 
     device_type::fence();
     perf_data.matrix_boundary_condition_time = comm::max( machine , wall_clock.seconds() );
@@ -282,27 +283,34 @@ template< typename Scalar , class Device >
 void driver( const char * label ,
              comm::Machine machine , int beg , int end , int runs )
 {
+  typedef double              coordinate_scalar_type ;
+  typedef FixtureElementHex8  fixture_element_type ;
+
+  typedef BoxMeshFixture< coordinate_scalar_type ,
+                          Device ,
+                          fixture_element_type > fixture_type ;
+
   if ( beg == 0 || end == 0 || runs == 0 ) return ;
 
   if ( comm::rank( machine ) == 0 ) {
     std::cout << std::endl ;
     std::cout << "\"KokkosArray::HybridFE::Implicit " << label << "\"" << std::endl;
     std::cout << "\"Size\" ,  \"Meshing\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\"" << std::endl
-              << "\"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\"" << std::endl ;
+              << "\"elems\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\"" << std::endl ;
   }
 
   for(int i = beg ; i < end ; i *= 2 )
   {
-    const int ix = (int) cbrt( (double) i );
+    const int ix = std::max( 1 , (int) cbrt( ((double) i) / 2.0 ) );
     const int iy = ix + 1 ;
-    const int iz = iy + 1 ;
+    const int iz = 2 * iy ;
     const int n  = ix * iy * iz ;
 
     PerformanceData perf_data , perf_best ;
 
     for(int j = 0; j < runs; j++){
 
-     perf_data = run<Scalar,Device>(machine,ix,iy,iz, false );
+     perf_data = run<Scalar,fixture_type>(machine,ix,iy,iz, false );
 
      if( j == 0 ) {
        perf_best = perf_data ;

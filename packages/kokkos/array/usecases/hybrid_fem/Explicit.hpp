@@ -241,16 +241,17 @@ struct PerformanceData {
   }
 };
 
-template<typename Scalar, class Device >
+template< typename Scalar , class FixtureType >
 PerformanceData run( comm::Machine machine ,
-                     const int global_count_x ,
-                     const int global_count_y ,
-                     const int global_count_z ,
+                     const int global_elem_x ,
+                     const int global_elem_y ,
+                     const int global_elem_z ,
                      const int steps ,
                      const int print_sample )
 {
-  typedef Device  device_type ;
-  typedef Scalar  scalar_type ;
+  typedef Scalar                              scalar_type ;
+  typedef FixtureType                         fixture_type ;
+  typedef typename fixture_type::device_type  device_type ;
 
   const int NumStates = 2;
 
@@ -281,17 +282,16 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // FEMesh types:
 
-  enum { ElementNodeCount = 8 };
-  typedef double coordinate_scalar_type ;
-  typedef HybridFEM::FEMesh< coordinate_scalar_type , ElementNodeCount , device_type > mesh_type ;
+  typedef typename fixture_type::FEMeshType mesh_type ;
+
+  enum { ElementNodeCount = fixture_type::element_node_count };
 
   // Generate mesh:
   KokkosArray::Impl::Timer wall_clock ;
 
   mesh_type mesh =
-    box_mesh_fixture< coordinate_scalar_type , device_type >
-      ( comm::size( machine ) , comm::rank( machine ) ,
-        global_count_x , global_count_y , global_count_z );
+    fixture_type::create( comm::size( machine ) , comm::rank( machine ) ,
+                          global_elem_x , global_elem_y , global_elem_z );
 
   mesh.parallel_data_map.machine = machine ;
 
@@ -329,7 +329,7 @@ PerformanceData run( comm::Machine machine ,
   initialize_element<Scalar,device_type>::apply( mesh_fields );
   initialize_node<   Scalar,device_type>::apply( mesh_fields );
 
-  const Scalar x_bc = global_count_x - 1 ;
+  const Scalar x_bc = global_elem_x ;
 
   // Initial condition on velocity to initiate a pulse along the X axis
   {
@@ -469,8 +469,8 @@ PerformanceData run( comm::Machine machine ,
       std::cout << std::endl ;
 
       const float tol = 1.0e-6 ;
-      const int yb = global_count_y - 1 ;
-      const int zb = global_count_z - 1 ;
+      const int yb = global_elem_y ;
+      const int zb = global_elem_z ;
       std::cout << "step " << step
                 << " : displacement(*," << yb << "," << zb << ") =" ;
       for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
@@ -485,9 +485,9 @@ PerformanceData run( comm::Machine machine ,
     else if ( 2 == print_sample ) {
 
       const float tol = 1.0e-6 ;
-      const int xb = global_count_x / 2 ;
-      const int yb = global_count_y / 2 ;
-      const int zb = global_count_z / 2 ;
+      const int xb = global_elem_x / 2 ;
+      const int yb = global_elem_y / 2 ;
+      const int zb = global_elem_z / 2 ;
 
       for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
         if ( fabs( model_coords_h(i,0) - xb ) < tol &&
@@ -516,7 +516,14 @@ template <typename Scalar, typename Device>
 static void driver( const char * label , comm::Machine machine ,
                     int beg , int end , int runs )
 {
-  int space = 16 ;
+  typedef double              coordinate_scalar_type ;
+  typedef FixtureElementHex8  fixture_element_type ;
+
+  typedef BoxMeshFixture< coordinate_scalar_type ,
+                          Device ,
+                          fixture_element_type > fixture_type ;
+
+  const int space = 16 ;
 
   if ( comm::rank( machine ) == 0 ) {
 
@@ -554,17 +561,17 @@ static void driver( const char * label , comm::Machine machine ,
 
   for(int i = beg ; i < end ; i *= 2 )
   {
-    const int iz = std::max( 2 , (int) cbrt( ((double) i) ) );
+    const int iz = std::max( 1 , (int) cbrt( ((double) i) / 2.0 ) );
     const int iy = iz + 1 ;
     const int ix = 2 * iy ;
-    const int nelem = ( ix - 1 ) * ( iy - 1 ) * ( iz - 1 );
-    const int nnode = ix * iy * iz ;
+    const int nelem = ix * iy * iz ;
+    const int nnode = ( ix + 1 ) * ( iy + 1 ) * ( iz + 1 );
 
     PerformanceData perf , best ;
 
     for(int j = 0; j < runs; j++){
 
-     perf = run<Scalar,Device>(machine,ix,iy,iz,steps,print_sample);
+     perf = run<Scalar,fixture_type>(machine,ix,iy,iz,steps,print_sample);
 
      if( j == 0 ) {
        best = perf ;

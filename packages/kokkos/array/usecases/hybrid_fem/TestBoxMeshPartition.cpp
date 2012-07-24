@@ -13,7 +13,7 @@ void test_box_partition( bool print )
 {
   const size_t np_max = 10000 ;
 
-  const BoxBounds use_box ;
+  const BoxBoundsLinear use_box ;
 
   BoxType root_box ;
 

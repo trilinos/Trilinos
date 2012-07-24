@@ -20,22 +20,22 @@ void test_host_fixture( comm::Machine machine ,
 void test_host_implicit( comm::Machine machine , 
                          size_t numa_node_count ,
                          size_t numa_node_thread_count ,
-                         size_t node_count_begin ,
-                         size_t node_count_end ,
+                         size_t elem_count_begin ,
+                         size_t elem_count_end ,
                          size_t count_run );
 
 void test_host_explicit( comm::Machine machine , 
                          size_t numa_node_count ,
                          size_t numa_node_thread_count ,
-                         size_t node_count_begin ,
-                         size_t node_count_end ,
+                         size_t elem_count_begin ,
+                         size_t elem_count_end ,
                          size_t count_run );
 
 void test_host_nonlinear( comm::Machine machine , 
                           size_t numa_node_count ,
                           size_t numa_node_thread_count ,
-                          size_t node_count_begin ,
-                          size_t node_count_end ,
+                          size_t elem_count_begin ,
+                          size_t elem_count_end ,
                           size_t count_run );
 
 
@@ -47,18 +47,18 @@ void test_cuda_fixture( comm::Machine machine ,
                         size_t nx , size_t ny , size_t nz );
 
 void test_cuda_implicit( comm::Machine machine ,
-                         size_t node_count_begin ,
-                         size_t node_count_end ,
+                         size_t elem_count_begin ,
+                         size_t elem_count_end ,
                          size_t count_run );
 
 void test_cuda_explicit( comm::Machine machine ,
-                         size_t node_count_begin ,
-                         size_t node_count_end ,
+                         size_t elem_count_begin ,
+                         size_t elem_count_end ,
                          size_t count_run );
 
 void test_cuda_nonlinear( comm:: Machine machine ,
-                          size_t node_count_begin ,
-                          size_t node_count_end ,
+                          size_t elem_count_begin ,
+                          size_t elem_count_end ,
                           size_t count_run );
 
 //----------------------------------------------------------------------------
@@ -184,10 +184,10 @@ void run( const std::string & argline , comm::Machine machine )
               << "    host NumNumaNode NumThreadPerNode <test>" << std::endl
               << "    cuda <test>" << std::endl
               << "where <test> is" << std::endl
-              << "    fixture   NumX NumY NumZ" << std::endl
-              << "    implicit  NumNodeBegin NumNodeEnd NumRun" << std::endl 
-              << "    nonlinear NumNodeBegin NumNodeEnd NumRun" << std::endl 
-              << "    explicit  NumNodeBegin NumNodeEnd NumRun" << std::endl ;
+              << "    fixture   NumElemX NumElemY NumElemZ" << std::endl
+              << "    implicit  NumElemBegin NumElemEnd NumRun" << std::endl 
+              << "    nonlinear NumElemBegin NumElemEnd NumRun" << std::endl 
+              << "    explicit  NumElemBegin NumElemEnd NumRun" << std::endl ;
 
   }
 }

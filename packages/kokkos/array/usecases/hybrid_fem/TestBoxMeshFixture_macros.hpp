@@ -43,16 +43,15 @@
 
 namespace TestFEMesh {
 
-template< typename coordinate_scalar_type >
-struct VerifyUnpack<
-  KokkosArray::View< coordinate_scalar_type[][3] , KOKKOS_MACRO_DEVICE > >
+template< typename T >
+struct VerifyUnpack< KokkosArray::View< T[][3] , KOKKOS_MACRO_DEVICE > >
 {
-  typedef KOKKOS_MACRO_DEVICE              device_type ;
-  typedef typename device_type::size_type  size_type ;
-  typedef size_type                        value_type ;
-  typedef KokkosArray::View< coordinate_scalar_type[] , device_type > buffer_type ;
+  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef device_type::size_type  size_type ;
+  typedef size_type               value_type ;
 
-  typedef KokkosArray::View< coordinate_scalar_type[][3] , device_type > array_type ;
+  typedef KokkosArray::View< T[] ,    device_type > buffer_type ;
+  typedef KokkosArray::View< T[][3] , device_type > array_type ;
 
 private:
 
@@ -80,18 +79,16 @@ public:
     const size_type node_id = i + node_begin ;
     const size_type k = i * 3 ;
 
-    const coordinate_scalar_type x = buffer[k];
-    const coordinate_scalar_type y = buffer[k+1];
-    const coordinate_scalar_type z = buffer[k+2];
+    const long xb = buffer[k];
+    const long yb = buffer[k+1];
+    const long zb = buffer[k+2];
+    const long xn = node_coords(node_id,0);
+    const long yn = node_coords(node_id,1);
+    const long zn = node_coords(node_id,2);
 
-    if ( x != node_coords(node_id,0) ||
-         y != node_coords(node_id,1) ||
-         z != node_coords(node_id,2) ) {
-      printf("TestFEMesh::VerifyUnpack failed at %d : node %d : { %d %d %d } != { %d %d %d }\n",
-             (int)i,(int)node_id, x,y,z,
-             node_coords(node_id,0),
-             node_coords(node_id,1),
-             node_coords(node_id,2));
+    if ( xb != xn || yb != yn || zb != zn ) {
+      printf("TestFEMesh::VerifyUnpack failed at %d : node %d : { %ld %ld %ld } != { %ld %ld %ld }\n",
+             (int)i,(int)node_id, xb,yb,zb, xn, yn, zn );
       ++update ;
     }
   }

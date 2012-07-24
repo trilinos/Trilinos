@@ -57,7 +57,7 @@
 
 namespace TestFEMesh {
 
-template< class FEMeshType >
+template< class ViewType >
 struct VerifyUnpack  ;
 
 }
@@ -152,14 +152,20 @@ void test_box_fixture( comm::Machine machine ,
                        const size_t nodes_ny ,
                        const size_t nodes_nz )
 {
-  typedef int coordinate_scalar_type ;
+  typedef long                coordinate_scalar_type ;
+  typedef FixtureElementHex8  fixture_element_type ;
+
+  typedef BoxMeshFixture< coordinate_scalar_type ,
+                          Device ,
+                          fixture_element_type > fixture_type ;
+
+  typedef typename fixture_type::FEMeshType  mesh_type ;
 
   const size_t proc_count = comm::size( machine );
   const size_t proc_local = comm::rank( machine ) ;
 
-  HybridFEM::FEMesh< coordinate_scalar_type , 8 , Device > mesh =
-    box_mesh_fixture< coordinate_scalar_type , Device >
-      ( proc_count , proc_local , nodes_nx , nodes_ny , nodes_nz );
+  mesh_type mesh =
+    fixture_type::create( proc_count , proc_local , nodes_nx - 1 , nodes_ny - 1 , nodes_nz - 1 );
 
   mesh.parallel_data_map.machine = machine ;
 

@@ -128,10 +128,24 @@ public:
   void apply( const BoxType & box_global ,
               const BoxType & box_part ,
                     BoxType & box_interior ,
-                    BoxType & box_use ) const ;
+                    BoxType & box_use ) const = 0 ;
 
   virtual ~BoxBounds() {}
   BoxBounds() {}
+};
+
+class BoxBoundsLinear : public BoxBounds
+{
+public:
+  /** \brief  Default bounds to one layer of ghosting */
+  virtual
+  void apply( const BoxType & box_global ,
+              const BoxType & box_part ,
+                    BoxType & box_interior ,
+                    BoxType & box_use ) const ;
+
+  virtual ~BoxBoundsLinear() {}
+  BoxBoundsLinear() {}
 };
 
 class BoxBoundsQuadratic : public BoxBounds {

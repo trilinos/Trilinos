@@ -149,10 +149,10 @@ size_t box_map_offset( const BoxType & local_use ,
 
 //----------------------------------------------------------------------------
 
-void BoxBounds::apply(  const BoxType & box_global ,
-                        const BoxType & box_part ,
-                              BoxType & box_interior ,
-                              BoxType & box_use ) const
+void BoxBoundsLinear::apply(  const BoxType & box_global ,
+                              const BoxType & box_part ,
+                                    BoxType & box_interior ,
+                                    BoxType & box_use ) const
 {
   const unsigned ghost = 1 ;
 
@@ -223,7 +223,7 @@ void BoxBoundsQuadratic::apply( const BoxType & box_global ,
 void box_partition_rcb( const BoxType        & root_box ,
                         std::vector<BoxType> & part_boxes )
 {
-  const BoxBounds use_boxes ;
+  const BoxBoundsLinear use_boxes ;
 
   const size_t part_count = part_boxes.size();
 
