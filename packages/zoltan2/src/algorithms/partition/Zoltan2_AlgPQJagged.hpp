@@ -747,7 +747,7 @@ void getNewCoordinates_simple(
     float *nonRectelinearPart,
     bool allowNonRectelinearPart, scalar_t maxScalar, const scalar_t * localtw,
     const RCP<const Environment> &env,RCP<Comm<int> > &comm,
-    partId_t rectelinearCount, scalar_t *cutWeights, scalar_t *globalCutWeights){
+    partId_t *rectelinearCount, scalar_t *cutWeights, scalar_t *globalCutWeights){
 
   scalar_t seenW = 0;
   float expected = 0;
@@ -760,7 +760,7 @@ void getNewCoordinates_simple(
 #pragma omp for
 #endif
   for (partId_t i = 0; i < noCuts; i++){
-
+    globalCutWeights[i] = 0;
     cutWeights[i] = 0;
     //if a left and right closes point is not found, set the distance to 0.
     if(leftClosestDistance[i] == maxScalar) leftClosestDistance[i] = 0;
@@ -817,6 +817,7 @@ void getNewCoordinates_simple(
           continue;
         }
         else if (totalPartWeights[i * 2 + 1] > ew){
+
           isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
@@ -826,12 +827,12 @@ void getNewCoordinates_simple(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-          rectelinearCount += 1;
+          *rectelinearCount += 1;
+
 
           cutCoordinatesWork [ i] = cutCoordinates[i];
           scalar_t myWeightOnLine = localtw[i * 2 + 1] - localtw[i * 2];
           cutWeights[i] = myWeightOnLine;
-
           //cout << "me:" << comm->getRank() << " myr:" << nonRectelinearPart[i] << endl;
           continue;
         }
@@ -1014,7 +1015,8 @@ void getNewCoordinates_simple(
 
 #pragma omp single
   {
-    if(rectelinearCount > 0){
+
+    if(*rectelinearCount > 0){
       try{
         Teuchos::scan<int,scalar_t>(
             *comm, Teuchos::REDUCE_SUM,
@@ -1025,7 +1027,7 @@ void getNewCoordinates_simple(
 
 
       for (partId_t i = 0; i < noCuts; ++i){
-        if(cutWeights[i] > 0) {
+        if(globalCutWeights[i] > 0) {
           scalar_t expected = cutPartRatios[i];
           scalar_t ew = totalWeight * expected;
           scalar_t expectedWeightOnLine = ew - totalPartWeights[i * 2];
@@ -1044,6 +1046,7 @@ void getNewCoordinates_simple(
           }
         }
       }
+      *rectelinearCount = 0;
     }
   }
 
@@ -1148,7 +1151,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
 
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel shared(allDone, globaltotalWeight)
+#pragma omp parallel shared(allDone, globaltotalWeight, recteLinearCount)
 #endif
   {
     //int iterationCount = 0;
@@ -1225,8 +1228,11 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
 
       while (allDone != 0){
-/*
+        if(comm->getRank() == 0)
         {
+
+#pragma omp single
+          {
           cout << endl << endl << "allDone:" << allDone << endl;
           for (size_t i = 0; i < noCuts; ++i){
             if(isDone[i] == false)
@@ -1234,8 +1240,8 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             else
               cout << "i:" << i <<  " c:" << cutCoordinates_tmp[i] <<  " done" << endl;
           }
+          }
         }
- */
 
         for (size_t i = 0; i < total_part_count; ++i){
           if(i/2 < noCuts && isDone[i/2]) continue;
@@ -1367,7 +1373,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             nonRectelinearPart,
             allowNonRectelinearPart, maxScalar, tw,
             env,comm,
-            recteLinearCount, cutWeights, globalCutWeights);
+            &recteLinearCount, cutWeights, globalCutWeights);
       }
 
 
@@ -1472,8 +1478,6 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
             //cout << "mi:" <<  myRatios[i] << " " << myRatios[i - 1]  << endl;
             myRatios[i] -= myRatios[i - 1] ;
             myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
-            //cout << "me:" << myRank <<" i:" << i << " myR:"<< myRatios[i] << " " <<
-            //    actual_ratios[i]<< endl;
           }
         }
       }
