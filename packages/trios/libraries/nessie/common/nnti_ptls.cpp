@@ -268,12 +268,13 @@ static const int MIN_TIMEOUT = 10;  /* in milliseconds */
  * can be initialized without this info (eg. a Portals client), <tt>my_url</tt> can
  * be NULL or empty.
  */
-int NNTI_ptl_init (
+NNTI_result_t NNTI_ptl_init (
         const NNTI_transport_id_t  trans_id,
         const char                *my_url,
         NNTI_transport_t          *trans_hdl)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     int max_interfaces;
     ptl_ni_limits_t actual;
@@ -281,10 +282,10 @@ int NNTI_ptl_init (
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
-    char memdesc[NNTI_URL_LEN];
+//    char memdesc[NNTI_URL_LEN];
     char *sep;
 
-    NNTI_nid nid;
+//    NNTI_nid nid;
     NNTI_pid pid;
 
     log_debug(nnti_debug_level, "enter");
@@ -299,15 +300,15 @@ int NNTI_ptl_init (
         nthread_lock_init(&nnti_wr_wrhash_lock);
 
         if (my_url != NULL) {
-            if ((rc=nnti_url_get_transport(my_url, transport, NNTI_URL_LEN)) != NNTI_OK) {
-                return(rc);
+            if ((nnti_rc=nnti_url_get_transport(my_url, transport, NNTI_URL_LEN)) != NNTI_OK) {
+                return(nnti_rc);
             }
             if (0!=strcmp(transport, "ptl")) {
                 return(NNTI_EINVAL);
             }
 
-            if ((rc=nnti_url_get_address(my_url, address, NNTI_URL_LEN)) != NNTI_OK) {
-                return(rc);
+            if ((nnti_rc=nnti_url_get_address(my_url, address, NNTI_URL_LEN)) != NNTI_OK) {
+                return(nnti_rc);
             }
 
 //            if ((rc=nnti_url_get_memdesc(my_url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
@@ -401,7 +402,7 @@ int NNTI_ptl_init (
     log_debug(nnti_debug_level, "exit");
 
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -419,12 +420,12 @@ int NNTI_ptl_init (
  *                - ex. "ptl://nid:pid/", "ib://ip_addr:port", "luc://endpoint_id/"
  *    - memory_descriptor - (optional) transport-specific representation of RMA params
  */
-int NNTI_ptl_get_url (
+NNTI_result_t NNTI_ptl_get_url (
         const NNTI_transport_t *trans_hdl,
         char                   *url,
         const uint64_t          maxlen)
 {
-    int rc=NNTI_OK;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     assert(trans_hdl);
     assert(url);
@@ -433,7 +434,7 @@ int NNTI_ptl_get_url (
     strncpy(url, trans_hdl->me.url, maxlen);
     url[maxlen-1]='\0';
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -451,17 +452,17 @@ int NNTI_ptl_get_url (
  * Connected transport: parse, connection and populate
  *
  */
-int NNTI_ptl_connect (
+NNTI_result_t NNTI_ptl_connect (
         const NNTI_transport_t *trans_hdl,
         const char             *url,
         const int               timeout,
         NNTI_peer_t            *peer_hdl)
 {
-    int rc=NNTI_OK;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
-    char memdesc[NNTI_URL_LEN];
+//    char memdesc[NNTI_URL_LEN];
     char *sep;
 
     NNTI_nid nid;
@@ -473,16 +474,16 @@ int NNTI_ptl_connect (
     assert(peer_hdl);
 
     if (url != NULL) {
-        if ((rc=nnti_url_get_transport(url, transport, NNTI_URL_LEN)) != NNTI_OK) {
-            return(rc);
+        if ((nnti_rc=nnti_url_get_transport(url, transport, NNTI_URL_LEN)) != NNTI_OK) {
+            return(nnti_rc);
         }
         if (0!=strcmp(transport, "ptl")) {
             /* the peer described by 'url' is not a Portals peer */
             return(NNTI_EINVAL);
         }
 
-        if ((rc=nnti_url_get_address(url, address, NNTI_URL_LEN)) != NNTI_OK) {
-            return(rc);
+        if ((nnti_rc=nnti_url_get_address(url, address, NNTI_URL_LEN)) != NNTI_OK) {
+            return(nnti_rc);
         }
 
 //        if ((rc=nnti_url_get_memdesc(url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
@@ -504,7 +505,7 @@ int NNTI_ptl_connect (
 
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -514,16 +515,16 @@ int NNTI_ptl_connect (
  * Perform any transport specific actions necessary to end communication with
  * this peer.
  */
-int NNTI_ptl_disconnect (
+NNTI_result_t NNTI_ptl_disconnect (
         const NNTI_transport_t *trans_hdl,
         NNTI_peer_t            *peer_hdl)
 {
-    int rc=NNTI_OK;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     assert(trans_hdl);
     assert(peer_hdl);
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -535,7 +536,7 @@ int NNTI_ptl_disconnect (
  * If the memory block doesn't meet the transport's requirements for memory
  * regions, then errors or poor performance may result.
  */
-int NNTI_ptl_register_memory (
+NNTI_result_t NNTI_ptl_register_memory (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
         const uint64_t          element_size,
@@ -544,7 +545,8 @@ int NNTI_ptl_register_memory (
         const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
     static uint64_t mbits=1;
 
     portals_memory_handle *ptls_mem_hdl=NULL;
@@ -642,8 +644,9 @@ int NNTI_ptl_register_memory (
                 PTL_EQ_HANDLER_NONE,
                 &transport_global_data.req_eq_h);
         nthread_unlock(&nnti_ptl_lock);
-        if (rc != NNTI_OK) {
+        if (rc != PTL_OK) {
             log_error(nnti_debug_level, "PtlEQAlloc() failed");
+            nnti_rc=NNTI_ENOMEM;
             goto cleanup;
         }
         ptls_mem_hdl->eq_h=transport_global_data.req_eq_h;
@@ -685,8 +688,9 @@ int NNTI_ptl_register_memory (
                     PTL_INS_AFTER,
                     &q_hdl->me_h[index]);
             nthread_unlock(&nnti_ptl_lock);
-            if (rc != NNTI_OK) {
+            if (rc != PTL_OK) {
                 log_error(nnti_debug_level, "could not attach ME");
+                nnti_rc=NNTI_ENOMEM;
                 goto cleanup;
             }
 
@@ -698,9 +702,10 @@ int NNTI_ptl_register_memory (
                     PTL_RETAIN,
                     &q_hdl->md_h[index]);
             nthread_unlock(&nnti_ptl_lock);
-            if (rc != NNTI_OK) {
+            if (rc != PTL_OK) {
                 log_error(nnti_debug_level, "could not alloc eq: %s",
                         ptl_err_str[rc]);
+                nnti_rc=NNTI_ENOMEM;
                 goto cleanup;
             }
             log_debug(nnti_debug_level, "attached q_hdl->md_h[%d]: %d", index, q_hdl->md_h[index]);
@@ -734,8 +739,9 @@ int NNTI_ptl_register_memory (
                 PTL_INS_AFTER,
                 &ptls_mem_hdl->me_h);
         nthread_unlock(&nnti_ptl_lock);
-        if (rc != NNTI_OK) {
+        if (rc != PTL_OK) {
             log_error(nnti_debug_level, "failed to attach me");
+            nnti_rc=NNTI_ENOMEM;
             goto cleanup;
         }
         log_debug(nnti_debug_level, "allocated me=%d with bufid=%d, match_id(%d,%d), mbits=%d",
@@ -758,8 +764,9 @@ int NNTI_ptl_register_memory (
                 PTL_RETAIN,
                 &ptls_mem_hdl->md_h);
         nthread_unlock(&nnti_ptl_lock);
-        if (rc != NNTI_OK) {
+        if (rc != PTL_OK) {
             log_error(nnti_debug_level, "failed to attach md");
+            nnti_rc=NNTI_ENOMEM;
             goto cleanup;
         }
         log_debug(nnti_debug_level, "attached ptls_mem_hdl->md_h: %d", ptls_mem_hdl->md_h);
@@ -785,7 +792,7 @@ cleanup:
 
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -795,10 +802,11 @@ cleanup:
  * Destroy an NNTI_buffer_t that was previously created by NNTI_regsiter_buffer().
  * It is the user's responsibility to release the the memory region.
  */
-int NNTI_ptl_unregister_memory (
+NNTI_result_t NNTI_ptl_unregister_memory (
         NNTI_buffer_t    *reg_buf)
 {
-    int rc=NNTI_OK, rc2=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
     portals_memory_handle *ptls_mem_hdl=NULL;
     log_level debug_level = nnti_debug_level;
 
@@ -821,12 +829,12 @@ int NNTI_ptl_unregister_memory (
             /* unlink the memory descriptor */
             log_debug(debug_level, "unlinking q_hdl->md_h[%d]: %d", index, q_hdl->md_h[index]);
             nthread_lock(&nnti_ptl_lock);
-            rc2 = PtlMDUnlink(q_hdl->md_h[index]);
+            rc = PtlMDUnlink(q_hdl->md_h[index]);
             nthread_unlock(&nnti_ptl_lock);
-            if (rc2 != NNTI_OK) {
+            if (rc != PTL_OK) {
                 log_warn(debug_level, "unable to unlink memory descriptor for queue %d: %s",
-                        index, ptl_err_str[rc2]);
-                rc = NNTI_EBADRPC;
+                        index, ptl_err_str[rc]);
+                nnti_rc = NNTI_ENOMEM;
                 goto cleanup;
             }
         }
@@ -834,12 +842,12 @@ int NNTI_ptl_unregister_memory (
         /* free the event queue */
         log_debug(debug_level, "freeing ptls_mem_hdl->eq_h: %d", ptls_mem_hdl->eq_h);
         nthread_lock(&nnti_ptl_lock);
-        rc2 = PtlEQFree(transport_global_data.req_eq_h);
+        rc = PtlEQFree(transport_global_data.req_eq_h);
         nthread_unlock(&nnti_ptl_lock);
         transport_global_data.req_eq_h=PTL_EQ_NONE;
-        if (rc2 != NNTI_OK) {
-            log_fatal(debug_level, "unable to free EQ: %s", ptl_err_str[rc2]);
-            rc = NNTI_EBADRPC;
+        if (rc != PTL_OK) {
+            log_fatal(debug_level, "unable to free EQ: %s", ptl_err_str[rc]);
+            nnti_rc = NNTI_ENOMEM;
             goto cleanup;
         }
     } else {
@@ -849,6 +857,7 @@ int NNTI_ptl_unregister_memory (
         nthread_unlock(&nnti_ptl_lock);
         if (rc != PTL_OK) {
             log_error(debug_level, "failed to unlink MD: %s", ptl_err_str[rc]);
+            nnti_rc = NNTI_ENOMEM;
             goto cleanup;
         }
 
@@ -872,7 +881,7 @@ cleanup:
 
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -882,12 +891,13 @@ cleanup:
  * Send a message (<tt>msg_hdl</tt>) to a peer (<tt>peer_hdl</tt>).  It is expected that the
  * message is small, but the exact maximum size is transport dependent.
  */
-int NNTI_ptl_send (
+NNTI_result_t NNTI_ptl_send (
         const NNTI_peer_t   *peer_hdl,
         const NNTI_buffer_t *msg_hdl,
         const NNTI_buffer_t *dest_hdl)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     portals_memory_handle *ptls_mem_hdl=NULL;
     portals_work_request  *wr=NULL;
@@ -947,15 +957,21 @@ int NNTI_ptl_send (
             match_bits,
             0,
             0);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to send with PUT: %s", ptl_err_str[rc]);
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
 
     wr->last_op=PTL_OP_SEND;
 
     ptls_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -966,14 +982,15 @@ int NNTI_ptl_send (
  * assumed that the destination is at least <tt>src_length</tt> bytes in size.
  *
  */
-int NNTI_ptl_put (
+NNTI_result_t NNTI_ptl_put (
         const NNTI_buffer_t *src_buffer_hdl,
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
         const uint64_t       dest_offset)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     portals_memory_handle *ptls_mem_hdl=NULL;
     portals_work_request  *wr=NULL;
@@ -1020,6 +1037,11 @@ int NNTI_ptl_put (
             dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.portals.match_bits,
             dest_offset,
             0);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to PUT region: %s", ptl_err_str[rc]);
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
 
     log_debug(nnti_debug_level, "putting to (%s, eq=%d)", dest_buffer_hdl->buffer_owner.url, ptls_mem_hdl->eq_h);
 
@@ -1028,9 +1050,10 @@ int NNTI_ptl_put (
     ptls_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -1041,14 +1064,15 @@ int NNTI_ptl_put (
  * assumed that the destination is at least <tt>src_length</tt> bytes in size.
  *
  */
-int NNTI_ptl_get (
+NNTI_result_t NNTI_ptl_get (
         const NNTI_buffer_t *src_buffer_hdl,
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
         const uint64_t       dest_offset)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     portals_memory_handle *ptls_mem_hdl=NULL;
     portals_work_request  *wr=NULL;
@@ -1103,6 +1127,11 @@ int NNTI_ptl_get (
             0,
             src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.portals.match_bits,
             src_offset);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to GET region: %s", ptl_err_str[rc]);
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
 
     log_debug(nnti_debug_level, "getting from (%s, eq=%d)", src_buffer_hdl->buffer_owner.url, ptls_mem_hdl->eq_h);
 
@@ -1111,9 +1140,10 @@ int NNTI_ptl_get (
     ptls_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -1126,19 +1156,19 @@ int NNTI_ptl_get (
  * means wait forever.  A timeout of <tt>0</tt> means do not wait.
  *
  */
-int NNTI_ptl_wait (
+NNTI_result_t NNTI_ptl_wait (
         const NNTI_buffer_t  *reg_buf,
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t        *status)
 {
-    int nnti_rc=NNTI_OK;
+    int rc=PTL_OK;
+    NNTI_result_t nnti_rc=NNTI_OK;
     portals_memory_handle *ptls_mem_hdl=NULL;
     portals_work_request  *wr=NULL;
 
     const NNTI_buffer_t  *wait_buf=NULL;
 
-    int rc=PTL_OK;
     int elapsed_time=0;
     int timeout_per_call;
     ptl_event_t event;
@@ -1385,7 +1415,7 @@ cleanup:
  *   1) All buffers in buf_list must be registered with the same transport.
  *   2) You can't wait on the request queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
-int NNTI_ptl_waitany (
+NNTI_result_t NNTI_ptl_waitany (
         const NNTI_buffer_t **buf_list,
         const uint32_t        buf_count,
         const NNTI_buf_ops_t  remote_op,
@@ -1393,13 +1423,13 @@ int NNTI_ptl_waitany (
         uint32_t             *which,
         NNTI_status_t        *status)
 {
-    int nnti_rc=NNTI_OK;
+    int rc=PTL_OK;
+    NNTI_result_t nnti_rc=NNTI_OK;
     portals_memory_handle *ptls_mem_hdl=NULL;
     portals_work_request  *wr=NULL;
 
     const NNTI_buffer_t  *wait_buf=NULL;
 
-    int rc=PTL_OK;
     int elapsed_time=0;
     int timeout_per_call;
     ptl_event_t event;
@@ -1413,7 +1443,7 @@ int NNTI_ptl_waitany (
     assert(buf_count > 0);
     if (buf_count > 1) {
         /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (int i=0;i<buf_count;i++) {
+        for (uint32_t i=0;i<buf_count;i++) {
             if (buf_list[i] != NULL) {
                 assert(((portals_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
             }
@@ -1583,20 +1613,20 @@ cleanup:
  *   1) All buffers in buf_list must be registered with the same transport.
  *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
-int NNTI_ptl_waitall (
+NNTI_result_t NNTI_ptl_waitall (
         const NNTI_buffer_t **buf_list,
         const uint32_t        buf_count,
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t       **status)
 {
-    int nnti_rc=NNTI_OK;
+    int rc=PTL_OK;
+    NNTI_result_t nnti_rc=NNTI_OK;
     portals_memory_handle *ptls_mem_hdl=NULL;
     portals_work_request  *wr=NULL;
 
     const NNTI_buffer_t  *wait_buf=NULL;
 
-    int rc=PTL_OK;
     int elapsed_time=0;
     int timeout_per_call;
     ptl_event_t event;
@@ -1610,7 +1640,7 @@ int NNTI_ptl_waitall (
     assert(buf_count > 0);
     if (buf_count > 1) {
         /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (int i=0;i<buf_count;i++) {
+        for (uint32_t i=0;i<buf_count;i++) {
             if (buf_list[i] != NULL) {
                 assert(((portals_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
             }
@@ -1718,7 +1748,7 @@ int NNTI_ptl_waitall (
 
 
 
-    for (int i=0;i<buf_count;i++) {
+    for (uint32_t i=0;i<buf_count;i++) {
         create_status(buf_list[i], remote_op, nnti_rc, status[i]);
 
         if (logging_debug(debug_level)) {
@@ -1779,7 +1809,7 @@ cleanup:
  * canceled.  Any new transport requests will fail.
  *
  */
-int NNTI_ptl_fini (
+NNTI_result_t NNTI_ptl_fini (
         const NNTI_transport_t *trans_hdl)
 {
 //    PtlFini();
@@ -2084,6 +2114,9 @@ static int process_event(
                     goto cleanup;
             }
             break;
+        case UNKNOWN_BUFFER:
+        default:
+            break;
     }
 
     if (event->ni_fail_type != PTL_NI_OK) {
@@ -2145,7 +2178,7 @@ static int is_wr_complete(
 {
     int rc=FALSE;
     portals_memory_handle *ptls_mem_hdl=NULL;
-    log_level debug_level = nnti_debug_level;
+//    log_level debug_level = nnti_debug_level;
 
     log_debug(nnti_debug_level, "enter (wr=%p)", wr);
 
@@ -2220,6 +2253,9 @@ static int is_wr_complete(
                 rc = TRUE;
             }
             break;
+        case UNKNOWN_BUFFER:
+        default:
+            break;
     }
 
     log_debug(nnti_debug_level, "exit (rc=%d)", rc);
@@ -2279,7 +2315,7 @@ static int is_buf_op_complete(
     int8_t rc=FALSE;
     portals_memory_handle *ptls_mem_hdl=NULL;
     portals_work_request  *wr=NULL;
-    log_level debug_level = nnti_debug_level;
+//    log_level debug_level = nnti_debug_level;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
@@ -2313,7 +2349,7 @@ static int8_t is_any_buf_op_complete(
 
     log_debug(nnti_debug_level, "enter");
 
-    for (int i=0;i<buf_count;i++) {
+    for (uint32_t i=0;i<buf_count;i++) {
         if ((buf_list[i] != NULL) &&
             (is_wr_queue_empty(buf_list[i]) == FALSE) &&
             (is_buf_op_complete(buf_list[i]) == TRUE)) {
@@ -2337,7 +2373,7 @@ static int8_t is_all_buf_ops_complete(
 
     log_debug(nnti_debug_level, "enter");
 
-    for (int i=0;i<buf_count;i++) {
+    for (uint32_t i=0;i<buf_count;i++) {
         if ((buf_list[i] != NULL) &&
             (is_wr_queue_empty(buf_list[i]) == FALSE) &&
             (is_buf_op_complete(buf_list[i]) == FALSE)) {

@@ -123,9 +123,9 @@ typedef std::deque<mpi_work_request *>::iterator wr_queue_iter_t;
 typedef struct mpi_memory_handle {
     mpi_buffer_type type;
 
-    uint32_t rtr_tag;
-    uint32_t rts_tag;
-    uint32_t data_tag;
+    int32_t rtr_tag;
+    int32_t rts_tag;
+    int32_t data_tag;
 
     wr_queue_t wr_queue;
 } mpi_memory_handle;
@@ -282,12 +282,13 @@ static const int MIN_TIMEOUT = 0;  /* in milliseconds */
  * can be initialized without this info (eg. a Portals client), <tt>my_url</tt> can
  * be NULL or empty.
  */
-int NNTI_mpi_init (
+NNTI_result_t NNTI_mpi_init (
         const NNTI_transport_id_t  trans_id,
         const char                *my_url,
         NNTI_transport_t          *trans_hdl)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     static uint8_t initialized=FALSE;
 
@@ -375,7 +376,7 @@ int NNTI_mpi_init (
     log_debug(nnti_debug_level, "exit");
 
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -393,12 +394,12 @@ int NNTI_mpi_init (
  *                - ex. "ptl://nid:pid/", "ib://ip_addr:port", "luc://endpoint_id/"
  *    - memory_descriptor - (optional) transport-specific representation of RMA params
  */
-int NNTI_mpi_get_url (
+NNTI_result_t NNTI_mpi_get_url (
         const NNTI_transport_t *trans_hdl,
         char                   *url,
         const uint64_t          maxlen)
 {
-    int rc=NNTI_OK;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     assert(trans_hdl);
     assert(url);
@@ -407,7 +408,7 @@ int NNTI_mpi_get_url (
     strncpy(url, trans_hdl->me.url, maxlen);
     url[maxlen-1]='\0';
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -425,18 +426,19 @@ int NNTI_mpi_get_url (
  * Connected transport: parse, connection and populate
  *
  */
-int NNTI_mpi_connect (
+NNTI_result_t NNTI_mpi_connect (
         const NNTI_transport_t *trans_hdl,
         const char             *url,
         const int               timeout,
         NNTI_peer_t            *peer_hdl)
 {
-    int rc=NNTI_OK;
+//    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
-    char memdesc[NNTI_URL_LEN];
-    char *sep;
+//    char memdesc[NNTI_URL_LEN];
+//    char *sep;
 
     int peer_rank;
 
@@ -446,16 +448,16 @@ int NNTI_mpi_connect (
     assert(peer_hdl);
 
     if (url != NULL) {
-        if ((rc=nnti_url_get_transport(url, transport, NNTI_URL_LEN)) != NNTI_OK) {
-            return(rc);
+        if ((nnti_rc=nnti_url_get_transport(url, transport, NNTI_URL_LEN)) != NNTI_OK) {
+            return(nnti_rc);
         }
         if (0!=strcmp(transport, "mpi")) {
             /* the peer described by 'url' is not an MPI peer */
             return(NNTI_EINVAL);
         }
 
-        if ((rc=nnti_url_get_address(url, address, NNTI_URL_LEN)) != NNTI_OK) {
-            return(rc);
+        if ((nnti_rc=nnti_url_get_address(url, address, NNTI_URL_LEN)) != NNTI_OK) {
+            return(nnti_rc);
         }
 
 //        if ((rc=nnti_url_get_memdesc(url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
@@ -474,7 +476,7 @@ int NNTI_mpi_connect (
 
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -484,16 +486,16 @@ int NNTI_mpi_connect (
  * Perform any transport specific actions necessary to end communication with
  * this peer.
  */
-int NNTI_mpi_disconnect (
+NNTI_result_t NNTI_mpi_disconnect (
         const NNTI_transport_t *trans_hdl,
         NNTI_peer_t            *peer_hdl)
 {
-    int rc=NNTI_OK;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     assert(trans_hdl);
     assert(peer_hdl);
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -505,7 +507,7 @@ int NNTI_mpi_disconnect (
  * If the memory block doesn't meet the transport's requirements for memory
  * regions, then errors or poor performance may result.
  */
-int NNTI_mpi_register_memory (
+NNTI_result_t NNTI_mpi_register_memory (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
         const uint64_t          element_size,
@@ -514,7 +516,9 @@ int NNTI_mpi_register_memory (
         const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf)
 {
-    int rc=NNTI_OK;
+//    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
+
     static uint64_t mbits=0x111;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
@@ -582,7 +586,7 @@ int NNTI_mpi_register_memory (
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag = mpi_mem_hdl->data_tag;
 
     if (ops == NNTI_RECV_QUEUE) {
-        uint32_t index=0;
+        int32_t index=0;
         mpi_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
         q_hdl->reg_buf=reg_buf;
@@ -626,7 +630,6 @@ int NNTI_mpi_register_memory (
 
     }
 
-cleanup:
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 "end of NNTI_mpi_register_memory", reg_buf);
@@ -634,7 +637,7 @@ cleanup:
 
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -644,10 +647,11 @@ cleanup:
  * Destroy an NNTI_buffer_t that was previously created by NNTI_regsiter_buffer().
  * It is the user's responsibility to release the the memory region.
  */
-int NNTI_mpi_unregister_memory (
+NNTI_result_t NNTI_mpi_unregister_memory (
         NNTI_buffer_t    *reg_buf)
 {
-    int rc=NNTI_OK, rc2=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
     mpi_memory_handle *mpi_mem_hdl=NULL;
     log_level debug_level = nnti_debug_level;
 
@@ -681,8 +685,6 @@ int NNTI_mpi_unregister_memory (
 
     del_target_buffer(reg_buf);
 
-cleanup:
-
     if (mpi_mem_hdl) delete mpi_mem_hdl;
 
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
@@ -696,7 +698,7 @@ cleanup:
 
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -706,12 +708,13 @@ cleanup:
  * Send a message (<tt>msg_hdl</tt>) to a peer (<tt>peer_hdl</tt>).  It is expected that the
  * message is small, but the exact maximum size is transport dependent.
  */
-int NNTI_mpi_send (
+NNTI_result_t NNTI_mpi_send (
         const NNTI_peer_t   *peer_hdl,
         const NNTI_buffer_t *msg_hdl,
         const NNTI_buffer_t *dest_hdl)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *wr=NULL;
@@ -771,6 +774,11 @@ int NNTI_mpi_send (
             tag,
             MPI_COMM_WORLD,
             &wr->request[SEND_INDEX]);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to send with Isend");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
 
     wr->request_ptr=&wr->request[SEND_INDEX];
     wr->request_count=1;
@@ -778,9 +786,10 @@ int NNTI_mpi_send (
     mpi_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -791,14 +800,15 @@ int NNTI_mpi_send (
  * assumed that the destination is at least <tt>src_length</tt> bytes in size.
  *
  */
-int NNTI_mpi_put (
+NNTI_result_t NNTI_mpi_put (
         const NNTI_buffer_t *src_buffer_hdl,
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
         const uint64_t       dest_offset)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *wr=NULL;
@@ -837,7 +847,7 @@ int NNTI_mpi_put (
     wr->rts_msg.offset=dest_offset;
     wr->rts_msg.tag   =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag;
 
-    MPI_Isend(
+    rc=MPI_Isend(
             &wr->rts_msg,
             sizeof(wr->rts_msg),
             MPI_BYTE,
@@ -845,11 +855,16 @@ int NNTI_mpi_put (
             dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.rts_tag,
             MPI_COMM_WORLD,
             &wr->request[RTS_REQ_INDEX]);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to Isend RTS msg");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
 
     wr->request_ptr=&wr->request[RTS_REQ_INDEX];
     wr->request_count=1;
 
-    MPI_Isend(
+    rc=MPI_Isend(
             (char*)src_buffer_hdl->payload+src_offset,
             src_length,
             MPI_BYTE,
@@ -857,6 +872,11 @@ int NNTI_mpi_put (
             dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag,
             MPI_COMM_WORLD,
             &wr->request[PUT_SEND_INDEX]);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to Isend region");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
 
     log_debug(nnti_debug_level, "putting to (%s, dest_rank=%d)", dest_buffer_hdl->buffer_owner.url, dest_rank);
 
@@ -865,9 +885,10 @@ int NNTI_mpi_put (
     mpi_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -878,14 +899,15 @@ int NNTI_mpi_put (
  * assumed that the destination is at least <tt>src_length</tt> bytes in size.
  *
  */
-int NNTI_mpi_get (
+NNTI_result_t NNTI_mpi_get (
         const NNTI_buffer_t *src_buffer_hdl,
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
         const uint64_t       dest_offset)
 {
-    int rc=NNTI_OK;
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *wr=NULL;
@@ -934,7 +956,7 @@ int NNTI_mpi_get (
     wr->rtr_msg.offset=src_offset;
     wr->rtr_msg.tag=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag;
 
-    MPI_Irecv(
+    rc=MPI_Irecv(
             (char*)dest_buffer_hdl->payload+dest_offset,
             src_length,
             MPI_BYTE,
@@ -942,8 +964,13 @@ int NNTI_mpi_get (
             dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag,
             MPI_COMM_WORLD,
             &wr->request[GET_RECV_INDEX]);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to Irecv region");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
 
-    MPI_Isend(
+    rc=MPI_Isend(
             &wr->rtr_msg,
             sizeof(wr->rtr_msg),
             MPI_BYTE,
@@ -951,6 +978,11 @@ int NNTI_mpi_get (
             src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.rtr_tag,
             MPI_COMM_WORLD,
             &wr->request[RTR_REQ_INDEX]);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to Isend RTR msg");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
 
     wr->request_ptr=&wr->request[RTR_REQ_INDEX];
     wr->request_count=1;
@@ -962,9 +994,10 @@ int NNTI_mpi_get (
     mpi_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(nnti_rc);
 }
 
 
@@ -977,26 +1010,26 @@ int NNTI_mpi_get (
  * means wait forever.  A timeout of <tt>0</tt> means do not wait.
  *
  */
-int NNTI_mpi_wait (
+NNTI_result_t NNTI_mpi_wait (
         const NNTI_buffer_t  *reg_buf,
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t        *status)
 {
-    int nnti_rc=NNTI_OK;
+    int rc=MPI_SUCCESS;
+    NNTI_result_t nnti_rc=NNTI_OK;
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *wr=NULL;
 
 //    const NNTI_buffer_t  *wait_buf=NULL;
 
-    int rc=MPI_SUCCESS;
     long elapsed_time=0;
     long timeout_per_call;
     MPI_Status event;
     int done=FALSE;
 
-    MPI_Request *reqs     =NULL;
-    uint32_t     req_count=0;
+//    MPI_Request *reqs     =NULL;
+//    uint32_t     req_count=0;
     int          which_req=0;
 
     log_level debug_level=nnti_debug_level;
@@ -1183,7 +1216,6 @@ int NNTI_mpi_wait (
                 "end of NNTI_mpi_wait", status);
     }
 
-cleanup:
     log_debug(debug_level, "exit");
 
     trios_stop_timer("NNTI_mpi_wait", total_time);
@@ -1203,7 +1235,7 @@ cleanup:
  *   1) All buffers in buf_list must be registered with the same transport.
  *   2) You can't wait on the request queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
-int NNTI_mpi_waitany (
+NNTI_result_t NNTI_mpi_waitany (
         const NNTI_buffer_t **buf_list,
         const uint32_t        buf_count,
         const NNTI_buf_ops_t  remote_op,
@@ -1211,7 +1243,8 @@ int NNTI_mpi_waitany (
         uint32_t             *which,
         NNTI_status_t        *status)
 {
-    int nnti_rc=NNTI_OK;
+    int rc=MPI_SUCCESS;
+    NNTI_result_t nnti_rc=NNTI_OK;
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *wr=NULL;
 
@@ -1220,11 +1253,10 @@ int NNTI_mpi_waitany (
     int which_req=-1;
     int done=FALSE;
 
-    int i=0;
+//    int i=0;
 
 //    const NNTI_buffer_t  *wait_buf=NULL;
 
-    int rc=MPI_SUCCESS;
     long elapsed_time=0;
     long timeout_per_call;
 
@@ -1243,7 +1275,7 @@ int NNTI_mpi_waitany (
     assert(buf_count > 0);
     if (buf_count > 1) {
         /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (int i=0;i<buf_count;i++) {
+        for (uint32_t i=0;i<buf_count;i++) {
             if (buf_list[i] != NULL) {
                 assert(((mpi_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
             }
@@ -1265,7 +1297,7 @@ int NNTI_mpi_waitany (
 
         requests=(MPI_Request *)calloc(buf_count, sizeof(MPI_Request*));
         assert(requests);
-        for (i=0;i<buf_count;i++) {
+        for (uint32_t i=0;i<buf_count;i++) {
             if (buf_list[i] != NULL) {
                 mpi_mem_hdl=(mpi_memory_handle *)buf_list[i]->transport_private;
                 assert(mpi_mem_hdl);
@@ -1395,14 +1427,15 @@ cleanup:
  *   1) All buffers in buf_list must be registered with the same transport.
  *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
-int NNTI_mpi_waitall (
+NNTI_result_t NNTI_mpi_waitall (
         const NNTI_buffer_t **buf_list,
         const uint32_t        buf_count,
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t       **status)
 {
-    int nnti_rc=NNTI_OK;
+    int rc=MPI_SUCCESS;
+    NNTI_result_t nnti_rc=NNTI_OK;
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *wr=NULL;
 
@@ -1410,9 +1443,8 @@ int NNTI_mpi_waitall (
     MPI_Request *requests=NULL;
     int done=FALSE;
 
-    int i=0;
+//    int i=0;
 
-    int rc=MPI_SUCCESS;
     long elapsed_time=0;
     long timeout_per_call;
 
@@ -1431,7 +1463,7 @@ int NNTI_mpi_waitall (
     assert(buf_count > 0);
     if (buf_count > 1) {
         /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (int i=0;i<buf_count;i++) {
+        for (uint32_t i=0;i<buf_count;i++) {
             if (buf_list[i] != NULL) {
                 assert(((mpi_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
             }
@@ -1453,7 +1485,7 @@ int NNTI_mpi_waitall (
         events  =(MPI_Status *)calloc(buf_count, sizeof(MPI_Status*));
         requests=(MPI_Request *)calloc(buf_count, sizeof(MPI_Request*));
         assert(requests);
-        for (i=0;i<buf_count;i++) {
+        for (uint32_t i=0;i<buf_count;i++) {
             if (buf_list[i] != NULL) {
                 mpi_mem_hdl=(mpi_memory_handle *)buf_list[i]->transport_private;
                 assert(mpi_mem_hdl);
@@ -1487,7 +1519,7 @@ int NNTI_mpi_waitall (
             log_debug(debug_level, "polling status is %d", rc);
 
             if (done == TRUE) {
-                for (i=0;i<buf_count;i++) {
+                for (uint32_t i=0;i<buf_count;i++) {
                     log_debug(debug_level, "Poll Event[%d]= {", i);
                     log_debug(debug_level, "\tsource  = %d", events[i].MPI_SOURCE);
                     log_debug(debug_level, "\ttag     = %d", events[i].MPI_TAG);
@@ -1530,7 +1562,7 @@ int NNTI_mpi_waitall (
             }
 
 //            wait_buf=decode_event_buffer(buf_list[0], &event);
-            for (i=0;i<buf_count;i++) {
+            for (uint32_t i=0;i<buf_count;i++) {
                 process_event(buf_list[i], &events[i]);
             }
 
@@ -1549,7 +1581,7 @@ int NNTI_mpi_waitall (
 
 
 
-    for (int i=0;i<buf_count;i++) {
+    for (uint32_t i=0;i<buf_count;i++) {
         create_status(buf_list[i], remote_op, nnti_rc, status[i]);
 
         if (nnti_rc == NNTI_OK) {
@@ -1583,7 +1615,7 @@ cleanup:
  * canceled.  Any new transport requests will fail.
  *
  */
-int NNTI_mpi_fini (
+NNTI_result_t NNTI_mpi_fini (
         const NNTI_transport_t *trans_hdl)
 {
 //    PtlFini();
@@ -2017,7 +2049,6 @@ static int process_event(
             break;
     }
 
-cleanup:
     return (rc);
 }
 
@@ -2495,7 +2526,7 @@ static int is_buf_op_complete(
     int8_t rc=FALSE;
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *wr=NULL;
-    log_level debug_level = nnti_debug_level;
+//    log_level debug_level = nnti_debug_level;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 

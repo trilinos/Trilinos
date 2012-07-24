@@ -108,27 +108,27 @@ typedef void (*ptl_eq_handler_t)(ptl_event_t *event);
 extern "C" {
 #endif
 
-int NNTI_ptl_init (
+NNTI_result_t NNTI_ptl_init (
         const NNTI_transport_id_t  trans_id,
         const char                *my_url,
         NNTI_transport_t          *trans_hdl);
 
-int NNTI_ptl_get_url (
+NNTI_result_t NNTI_ptl_get_url (
         const NNTI_transport_t *trans_hdl,
         char                   *url,
         const uint64_t          maxlen);
 
-int NNTI_ptl_connect (
+NNTI_result_t NNTI_ptl_connect (
         const NNTI_transport_t *trans_hdl,
         const char             *url,
         const int               timeout,
         NNTI_peer_t            *peer_hdl);
 
-int NNTI_ptl_disconnect (
+NNTI_result_t NNTI_ptl_disconnect (
         const NNTI_transport_t *trans_hdl,
         NNTI_peer_t            *peer_hdl);
 
-int NNTI_ptl_register_memory (
+NNTI_result_t NNTI_ptl_register_memory (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
         const uint64_t          element_size,
@@ -137,35 +137,35 @@ int NNTI_ptl_register_memory (
         const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf);
 
-int NNTI_ptl_unregister_memory (
+NNTI_result_t NNTI_ptl_unregister_memory (
         NNTI_buffer_t    *reg_buf);
 
-int NNTI_ptl_send (
+NNTI_result_t NNTI_ptl_send (
         const NNTI_peer_t   *peer_hdl,
         const NNTI_buffer_t *msg_hdl,
         const NNTI_buffer_t *dest_hdl);
 
-int NNTI_ptl_put (
+NNTI_result_t NNTI_ptl_put (
         const NNTI_buffer_t *src_buffer_hdl,
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
         const uint64_t       dest_offset);
 
-int NNTI_ptl_get (
+NNTI_result_t NNTI_ptl_get (
         const NNTI_buffer_t *src_buffer_hdl,
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
         const uint64_t       dest_offset);
 
-int NNTI_ptl_wait (
+NNTI_result_t NNTI_ptl_wait (
         const NNTI_buffer_t  *reg_buf,
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t        *status);
 
-int NNTI_ptl_waitany (
+NNTI_result_t NNTI_ptl_waitany (
         const NNTI_buffer_t **buf_list,
         const uint32_t        buf_count,
         const NNTI_buf_ops_t  remote_op,
@@ -173,14 +173,14 @@ int NNTI_ptl_waitany (
         uint32_t             *which,
         NNTI_status_t        *status);
 
-int NNTI_ptl_waitall (
+NNTI_result_t NNTI_ptl_waitall (
         const NNTI_buffer_t **buf_list,
         const uint32_t        buf_count,
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t       **status);
 
-int NNTI_ptl_fini (
+NNTI_result_t NNTI_ptl_fini (
         const NNTI_transport_t *trans_hdl);
 
 #ifdef __cplusplus
