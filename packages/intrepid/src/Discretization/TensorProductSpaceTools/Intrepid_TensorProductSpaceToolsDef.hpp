@@ -105,6 +105,61 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
 	   class ArrayTypeBasis>
+  void TensorProductSpaceTools::evaluateCollocated( ArrayTypeOut &vals ,
+						    const ArrayTypeCoeffs &coeffs ,
+						    const Array<RCP<ArrayTypeBasis> > &bases )
+  {
+    const unsigned space_dim = bases.size();
+
+#ifdef HAVE_INTREPID_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 3 array." );
+
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	TEUCHOS_TEST_FOR_EXCEPTION( bases[d]->rank() != 2 , std::invalid_argument ,
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated basis must be rank 2 array." );
+      }
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != coeffs.dimension(0) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of cells for vals and coeffs must match." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != coeffs.dimension(1) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of fields for vals and coeffs must match." );
+    
+    int product_of_basis_dimensions = 1;
+    int product_of_basis_points = 1;
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	product_of_basis_dimensions *= bases[d]->dimension(0);
+	product_of_basis_points *= bases[d]->dimension(1);
+      }
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_points , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in coeffs and bases ." );
+#endif    
+    
+
+    switch (space_dim)
+      {
+      case 2:
+	evaluateCollocated2D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases );
+	break;
+      case 3:
+	evaluateCollocated3D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases );
+	break;
+      }
+
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+	   class ArrayTypeBasis>
   void TensorProductSpaceTools::evaluateGradient( ArrayTypeOut &vals ,
 						  const ArrayTypeCoeffs &coeffs ,
 						  const Array<RCP<ArrayTypeBasis> > &bases ,
@@ -164,10 +219,80 @@ namespace Intrepid {
     switch (space_dim)
       {
       case 2:
-	evaluateGradient2D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases , Dbases );
+	TensorProductSpaceTools::evaluateGradient2D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases , Dbases );
 	break;
       case 3:
-	evaluateGradient3D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases , Dbases );
+	TensorProductSpaceTools::evaluateGradient3D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases , Dbases );
+	break;
+      }
+
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+	   class ArrayTypeBasis>
+  void TensorProductSpaceTools::evaluateGradientCollocated( ArrayTypeOut &vals ,
+							    const ArrayTypeCoeffs &coeffs ,
+							    const Array<RCP<ArrayTypeBasis> > &bases ,
+							    const Array<RCP<ArrayTypeBasis> > &Dbases )
+  {
+    const unsigned space_dim = bases.size();
+
+#ifdef HAVE_INTREPID_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 4 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 3 array." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( Dbases.size() != (int)space_dim , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): bases and Dbases must be same size." );
+   
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	TEUCHOS_TEST_FOR_EXCEPTION( bases[d]->rank() != 2 , std::invalid_argument ,
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated basis must be rank 2 array." );
+
+	TEUCHOS_TEST_FOR_EXCEPTION( Dbases[d]->rank() != 3 , std::invalid_argument ,
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated Dbasis must be rank 3 array." );
+      }
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != coeffs.dimension(0) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of cells for vals and coeffs must match." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != coeffs.dimension(1) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of fields for vals and coeffs must match." );
+    
+    int product_of_basis_dimensions = 1;
+    int product_of_basis_points = 1;
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	product_of_basis_dimensions *= bases[d]->dimension(0);
+	product_of_basis_points *= bases[d]->dimension(1);
+      }
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_points , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in coeffs and bases ." );
+
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	for (unsigned i=0;i<2;i++)
+	  {
+	    TEUCHOS_TEST_FOR_EXCEPTION( bases[d]->dimension(i) != Dbases[d]->dimension(i) , std::invalid_argument ,
+					">>>ERROR (TensorProductSpaceTools::evaluate): bases and Dbases have incompatible shape." );
+	  }
+      }
+#endif    
+
+    switch (space_dim)
+      {
+      case 2:
+	evaluateGradientCollocated2D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases , Dbases );
+	break;
+      case 3:
+	evaluateGradientCollocated3D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases , Dbases );
 	break;
       }
 
@@ -179,6 +304,71 @@ namespace Intrepid {
 					 const ArrayTypeData &data ,
 					 const Array<RCP<ArrayTypeBasis> > &basisVals ,
 					 const Array<RCP<ArrayTypeWeights> > &wts )
+  {
+    const unsigned space_dim = basisVals.size();
+
+#ifdef HAVE_INTREPID_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( data.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 3 array." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( basisVals.size() != (int)space_dim , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): bases ill-sized." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( wts.size() != (int)space_dim , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate):  quadrature weights ill-sized." );
+   
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	TEUCHOS_TEST_FOR_EXCEPTION( basisVals[d]->rank() != 2 , std::invalid_argument ,
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated basis must be rank 2 array." );
+
+	TEUCHOS_TEST_FOR_EXCEPTION( wts[d]->rank() != 1 , std::invalid_argument ,
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated Dbasis must be rank 2 array." );
+      }
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != data.dimension(0) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of cells for vals and coeffs must match." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != data.dimension(1) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of fields for vals and coeffs must match." );
+    
+    int product_of_basis_dimensions = 1;
+    int product_of_basis_points = 1;
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	product_of_basis_dimensions *= basisVals[d]->dimension(0);
+	product_of_basis_points *= basisVals[d]->dimension(1);
+      }
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( data.dimension(2) != product_of_basis_points , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in data and bases ." );
+
+#endif    
+
+    switch (space_dim)
+      {
+      case 2:
+	moments2D<Scalar, ArrayTypeOut, ArrayTypeData, ArrayTypeBasis, ArrayTypeWeights>( vals , data , basisVals , wts );
+	break;
+      case 3:
+	moments3D<Scalar, ArrayTypeOut, ArrayTypeData, ArrayTypeBasis, ArrayTypeWeights>( vals , data , basisVals , wts );
+	break;
+      }
+
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
+	   class ArrayTypeBasis, class ArrayTypeWeights>
+  void TensorProductSpaceTools::momentsCollocated( ArrayTypeOut &vals ,
+						   const ArrayTypeData &data ,
+						   const Array<RCP<ArrayTypeBasis> > &basisVals ,
+						   const Array<RCP<ArrayTypeWeights> > &wts )
   {
     const unsigned space_dim = basisVals.size();
 
@@ -287,10 +477,10 @@ namespace Intrepid {
 	product_of_basis_points *= basisVals[d]->dimension(1);
       }
     
-    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != product_of_basis_dimensions , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
     
-    TEUCHOS_TEST_FOR_EXCEPTION( data.dimension(1) != product_of_basis_points , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( data.dimension(2) != product_of_basis_points , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in data and bases ." );
 
 #endif    
@@ -298,10 +488,79 @@ namespace Intrepid {
     switch (space_dim)
       {
       case 2:
-	momentsGrad2D<Scalar, ArrayTypeOut, ArrayTypeData, ArrayTypeBasis, ArrayTypeWeights>( vals , data , basisVals , wts );
+	momentsGrad2D<Scalar, ArrayTypeOut, ArrayTypeData, ArrayTypeBasis, ArrayTypeWeights>( vals , data , basisVals , basisDVals , wts );
 	break;
       case 3:
-	momentsGrad3D<Scalar, ArrayTypeOut, ArrayTypeData, ArrayTypeBasis, ArrayTypeWeights>( vals , data , basisVals , wts );
+	momentsGrad3D<Scalar, ArrayTypeOut, ArrayTypeData, ArrayTypeBasis, ArrayTypeWeights>( vals , data , basisVals , basisDVals , wts );
+	break;
+      }
+
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
+	   class ArrayTypeBasis, class ArrayTypeWeights>
+  void TensorProductSpaceTools::momentsGradCollocated( ArrayTypeOut &vals ,
+					     const ArrayTypeData &data ,
+					     const Array<RCP<ArrayTypeBasis> > &basisVals ,
+					     const Array<RCP<ArrayTypeBasis> > &basisDVals ,
+					     const Array<RCP<ArrayTypeWeights> > &wts )
+  {
+    const unsigned space_dim = basisVals.size();
+
+#ifdef HAVE_INTREPID_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( data.rank() != 4 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 4 array." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( basisVals.size() != (int)space_dim , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): bases ill-sized." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( basisDVals.size() != (int)space_dim , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): bases ill-sized." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( wts.size() != (int)space_dim , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate):  quadrature weights ill-sized." );
+   
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	TEUCHOS_TEST_FOR_EXCEPTION( basisVals[d]->rank() != 2 , std::invalid_argument ,
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated basis must be rank 2 array." );
+
+	TEUCHOS_TEST_FOR_EXCEPTION( basisDVals[d]->rank() != 3 , std::invalid_argument ,
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated derivative basis must be rank 3 array." );
+
+	TEUCHOS_TEST_FOR_EXCEPTION( wts[d]->rank() != 1 , std::invalid_argument ,
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated Dbasis must be rank 2 array." );
+      }
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != data.dimension(0) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of cells for vals and coeffs must match." );
+    
+    int product_of_basis_dimensions = 1;
+    int product_of_basis_points = 1;
+    for (unsigned d=0;d<space_dim;d++)
+      {
+	product_of_basis_dimensions *= basisVals[d]->dimension(0);
+	product_of_basis_points *= basisVals[d]->dimension(1);
+      }
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( data.dimension(2) != product_of_basis_points , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in data and bases ." );
+
+#endif    
+
+    switch (space_dim)
+      {
+      case 2:
+	momentsGradCollocated2D<Scalar, ArrayTypeOut, ArrayTypeData, ArrayTypeBasis, ArrayTypeWeights>( vals , data , basisVals , basisDVals , wts );
+	break;
+      case 3:
+	momentsGradCollocated3D<Scalar, ArrayTypeOut, ArrayTypeData, ArrayTypeBasis, ArrayTypeWeights>( vals , data , basisVals , basisDVals , wts );
 	break;
       }
 
@@ -378,6 +637,38 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
 	   class ArrayTypeBasis>
+  void TensorProductSpaceTools::evaluateCollocated2D( ArrayTypeOut &vals ,
+						      const ArrayTypeCoeffs &coeffs ,
+						      const Array<RCP<ArrayTypeBasis> > &bases )
+  {
+    // just copy coeffs to vals!
+
+    const int numBfx = bases[0]->dimension(0);
+    const int numBfy = bases[1]->dimension(0);
+    
+    const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
+
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int f=0;f<numFields;f++)
+	  {
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    const int I = j * numBfx + i;
+		    vals(cell,f,I) = coeffs(cell,f,I);
+		  }
+	      }
+	  }
+      }
+
+    return;
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+	   class ArrayTypeBasis>
   void TensorProductSpaceTools::evaluate3D( ArrayTypeOut &vals ,
 					    const ArrayTypeCoeffs &coeffs ,
 					    const Array<RCP<ArrayTypeBasis> > &bases )  
@@ -423,7 +714,7 @@ namespace Intrepid {
 		      {
 			for (int i=0;i<numBfx;i++)
 			  {
-			    const int coeffIndex = k*numBfz*numBfx + j * numBfx + i;
+			    const int coeffIndex = k*numBfy*numBfx + j * numBfx + i;
 			    Xi(c,k,j,l) += Phix(i,l) * coeffs(c,f,coeffIndex);
 			  }
 		      }
@@ -463,6 +754,44 @@ namespace Intrepid {
 			  {
 			    vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l) += Theta(c,k,m,l) * Phiz(k,n);
 			  }
+		      }
+		  }
+	      }
+	  }
+      }
+
+    return;
+    
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+	   class ArrayTypeBasis>
+  void TensorProductSpaceTools::evaluateCollocated3D( ArrayTypeOut &vals ,
+						      const ArrayTypeCoeffs &coeffs ,
+						      const Array<RCP<ArrayTypeBasis> > &bases )  
+
+  {
+    // copy coeffs to vals
+    
+    const int numBfx = bases[0]->dimension(0);
+    const int numBfy = bases[1]->dimension(0);
+    const int numBfz = bases[2]->dimension(0);
+    
+    const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
+    
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {	
+	    for (int k=0;k<numBfz;k++)
+	      {
+		for (int j=0;j<numBfy;j++)
+		  {
+		    for (int i=0;i<numBfx;i++)
+		      {
+			const int I = k*numBfy*numBfx + j * numBfx + i;
+			vals(cell,field,I) = coeffs(cell,field,I);
 		      }
 		  }
 	      }
@@ -596,6 +925,81 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
 	   class ArrayTypeBasis>
+  void TensorProductSpaceTools::evaluateGradientCollocated2D( ArrayTypeOut &vals ,
+							      const ArrayTypeCoeffs &coeffs ,
+							      const Array<RCP<ArrayTypeBasis> > &bases ,
+							      const Array<RCP<ArrayTypeBasis> > &Dbases )
+  {
+    
+    const int numBfx = bases[0]->dimension(0);
+    const int numBfy = bases[1]->dimension(0);
+    const int numPtsx = bases[0]->dimension(1);
+    const int numPtsy = bases[1]->dimension(1);
+    const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
+    const ArrayTypeBasis &DPhix = *Dbases[0];
+    const ArrayTypeBasis &DPhiy = *Dbases[1];
+    
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int j=0;j<numPtsy;j++)
+	      {
+		for (int i=0;i<numPtsx;i++)
+		  {
+		    const int I = j * numPtsx + i;
+		    vals(cell,field,I,0) = 0.0;
+		    vals(cell,field,I,1) = 0.0;
+		  }
+	      }
+	  }
+      }
+    
+    // x derivative
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int j=0;j<numPtsy;j++)
+	      {
+		for (int i=0;i<numPtsx;i++)
+		  {
+		    const int I = j * numPtsx + i;
+		    for (int ell=0;ell<numBfx;ell++)
+		      {
+			const int Itmp = j*numPtsx + ell;
+			vals(cell,field,I,0) +=  coeffs(cell,field,Itmp) * DPhix( ell , i );
+		      }
+		  }
+	      }
+	  }
+      }
+
+    // y derivative
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int j=0;j<numPtsy;j++)
+	      {
+		for (int i=0;i<numPtsx;i++)
+		  {
+		    const int I = j * numPtsx + i;
+		    for (int m=0;m<numBfy;m++)
+		      {
+			const int Itmp = m*numPtsx + i;
+			vals(cell,field,I,1) +=  coeffs(cell,field,Itmp) * DPhiy( m , j );
+		      }
+		  }
+	      }
+	  }
+      }
+
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+	   class ArrayTypeBasis>
   void TensorProductSpaceTools::evaluateGradient3D( ArrayTypeOut &vals ,
 						    const ArrayTypeCoeffs &coeffs ,
 						    const Array<RCP<ArrayTypeBasis> > &bases ,
@@ -698,6 +1102,124 @@ namespace Intrepid {
     return;
   }
 
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+	   class ArrayTypeBasis>
+  void TensorProductSpaceTools::evaluateGradientCollocated3D( ArrayTypeOut &vals ,
+						    const ArrayTypeCoeffs &coeffs ,
+						    const Array<RCP<ArrayTypeBasis> > &bases ,
+						    const Array<RCP<ArrayTypeBasis> > &Dbases )
+  
+  {
+    const int numBfx = bases[0]->dimension(0);
+    const int numBfy = bases[1]->dimension(0);
+    const int numBfz = bases[2]->dimension(0);
+    const int numPtsx = bases[0]->dimension(1);
+    const int numPtsy = bases[1]->dimension(1);
+    const int numPtsz = bases[2]->dimension(1);
+    const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
+    const ArrayTypeBasis &Phix = *bases[0];
+    const ArrayTypeBasis &Phiy = *bases[1];
+    const ArrayTypeBasis &Phiz = *bases[2];
+    const ArrayTypeBasis &DPhix = *Dbases[0];
+    const ArrayTypeBasis &DPhiy = *Dbases[1];
+    const ArrayTypeBasis &DPhiz = *Dbases[2];
+
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int k=0;k<numPtsz;k++)
+	      {
+		for (int j=0;j<numPtsy;j++)
+		  {
+		    for (int i=0;i<numPtsx;i++)
+		      {
+			const int I = k * numPtsx * numPtsy + j * numPtsx + i;
+			vals(cell,field,I,0) = 0.0;
+			vals(cell,field,I,1) = 0.0;
+			vals(cell,field,I,2) = 0.0;
+		      }
+		  }
+	      }
+	  }
+      }
+    
+    // x derivative
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int k=0;k<numPtsz;k++)
+	      {
+		for (int j=0;j<numPtsy;j++)
+		  {
+		    for (int i=0;i<numPtsx;i++)
+		      {
+			const int I = k * numPtsx * numPtsy + j * numPtsx + i;
+			for (int ell=0;ell<numBfx;ell++)
+			  {
+			    const int Itmp = k * numPtsx * numPtsy + j*numPtsx + ell;
+			    vals(cell,field,I,0) +=  coeffs(cell,field,Itmp) * DPhix( ell , i );
+			  }
+		      }
+		  }
+	      }
+	  }
+      }
+
+    // y derivative
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int k=0;k<numPtsz;k++)
+	      {
+		for (int j=0;j<numPtsy;j++)
+		  {
+		    for (int i=0;i<numPtsx;i++)
+		      {
+			const int I = k * numPtsx * numPtsy + j * numPtsx + i;
+			for (int m=0;m<numBfy;m++)
+			  {
+			    const int Itmp = k * numPtsx * numPtsy + m * numPtsx + i;
+			    vals(cell,field,I,1) +=  coeffs(cell,field,Itmp) * DPhiy( m , j );
+			  }
+		      }
+		  }
+	      }
+	  }
+      }
+
+
+    // z derivative
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int k=0;k<numPtsz;k++)
+	      {
+		for (int j=0;j<numPtsy;j++)
+		  {
+		    for (int i=0;i<numPtsx;i++)
+		      {
+			const int I = k * numPtsx * numPtsy + j * numPtsx + i;
+			for (int n=0;n<numBfz;n++)
+			  {
+			    const int Itmp = n * numPtsx * numPtsy + j * numPtsx + i;
+			    vals(cell,field,I,2) +=  coeffs(cell,field,Itmp) * DPhiz( n , k );
+			  }
+		      }
+		  }
+	      }
+	  }
+      }
+
+
+  
+    return;
+  }
+
   template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
 	   class ArrayTypeBasis, class ArrayTypeWeights>
   void TensorProductSpaceTools::moments2D( ArrayTypeOut &vals ,
@@ -770,6 +1292,44 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
 	   class ArrayTypeBasis, class ArrayTypeWeights>
+  void TensorProductSpaceTools::momentsCollocated2D( ArrayTypeOut &vals ,
+					   const ArrayTypeData &data ,
+					   const Array<RCP<ArrayTypeBasis> > &basisVals ,
+					   const Array<RCP<ArrayTypeWeights> > &wts )
+  {
+    const int numBfx = basisVals[0]->dimension(0);
+    const int numBfy = basisVals[1]->dimension(0);
+    const int numPtsx = basisVals[0]->dimension(1);
+    const int numPtsy = basisVals[1]->dimension(1);
+    const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
+    
+    FieldContainer<double> Xi(numBfx,numPtsy);
+    
+    const ArrayTypeWeights &wtsx = *wts[0];
+    const ArrayTypeWeights &wtsy = *wts[1];
+
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int i=0;i<numBfx;i++)
+	      {
+		for (int j=0;j<numBfy;j++)
+		  {
+		    const int I = numBfy * i + j;
+		    vals(cell,field,I) = wtsx(i) * wtsy(j) * data(cell,field,I); 
+		  }
+	      }
+	  }
+      }
+
+    return;
+
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
+	   class ArrayTypeBasis, class ArrayTypeWeights>
   void TensorProductSpaceTools::moments3D( ArrayTypeOut &vals ,
 					   const ArrayTypeData &data ,
 					   const Array<RCP<ArrayTypeBasis> > &basisVals ,
@@ -784,7 +1344,8 @@ namespace Intrepid {
     const int numPtsz = basisVals[2]->dimension(1);
 
     const int numCells = vals.dimension(0);
-    
+    const int numFields = vals.dimension(1);
+
     const ArrayTypeBasis &Phix = *basisVals[0];
     const ArrayTypeBasis &Phiy = *basisVals[1];
     const ArrayTypeBasis &Phiz = *basisVals[2];
@@ -796,7 +1357,7 @@ namespace Intrepid {
     FieldContainer<double> Xi(numCells,numBfx,numPtsz,numPtsy);
     FieldContainer<double> Theta(numCells,numBfy,numBfx,numPtsz);
 
-    for (int f=0;f<numCells;f++)
+    for (int f=0;f<numFields;f++)
       {
 	// Xi phase
 	for (int c=0;c<numCells;c++)
@@ -854,6 +1415,50 @@ namespace Intrepid {
 	  }
 
       }
+    return;
+
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
+	   class ArrayTypeBasis, class ArrayTypeWeights>
+  void TensorProductSpaceTools::momentsCollocated3D( ArrayTypeOut &vals ,
+					   const ArrayTypeData &data ,
+					   const Array<RCP<ArrayTypeBasis> > &basisVals ,
+					   const Array<RCP<ArrayTypeWeights> > &wts )
+  {
+    const int numBfx = basisVals[0]->dimension(0);
+    const int numBfy = basisVals[1]->dimension(0);
+    const int numBfz = basisVals[2]->dimension(0);
+
+    const int numPtsx = basisVals[0]->dimension(1);
+    const int numPtsy = basisVals[1]->dimension(1);
+    const int numPtsz = basisVals[2]->dimension(1);
+
+    const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
+    
+    const ArrayTypeWeights &Wtx = *wts[0];
+    const ArrayTypeWeights &Wty = *wts[1];
+    const ArrayTypeWeights &Wtz = *wts[2];
+
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int k=0;k<numBfz;k++)
+	      {
+		for (int j=0;j<numBfy;j++)
+		  {
+		    for (int i=0;i<numBfx;i++)
+		      {
+			const int I = k * numBfy * numBfx + j * numBfx + i;
+			vals(cell,field,I) = Wtx(i) * Wty(j) * Wtz(k) * data(cell,field,I);
+		      }
+		  }
+	      }
+	  }
+      }
+
     return;
 
   }
@@ -928,6 +1533,83 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
 	   class ArrayTypeBasis, class ArrayTypeWeights>
+  void TensorProductSpaceTools::momentsGradCollocated2D( ArrayTypeOut &vals ,
+					       const ArrayTypeData &data ,
+					       const Array<RCP<ArrayTypeBasis> > &basisVals ,
+					       const Array<RCP<ArrayTypeBasis> > &Dbases ,
+					       const Array<RCP<ArrayTypeWeights> > &wts )
+  {
+    
+    const int numBfx = basisVals[0]->dimension(0);
+    const int numBfy = basisVals[1]->dimension(0);
+    const int numPtsx = basisVals[0]->dimension(1);
+    const int numPtsy = basisVals[1]->dimension(1);
+    const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
+    const ArrayTypeBasis &Phix = *basisVals[0];
+    const ArrayTypeBasis &Phiy = *basisVals[1];
+    const ArrayTypeBasis &DPhix = *Dbases[0];
+    const ArrayTypeBasis &DPhiy = *Dbases[1];
+    const ArrayTypeWeights &wtsx = *wts[0];
+    const ArrayTypeWeights &wtsy = *wts[1];
+
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    const int I=j*numBfx+i;
+		    vals(cell,field,I) = 0.0;
+		  }
+	      }
+	  }
+      }
+
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    const int I=j*numBfx+i;
+		    for (int m=0;m<numPtsx;m++)
+		      {
+			const int Itmp = j * numBfy + m;
+			vals(cell,field,Itmp) += wtsx(m) * wtsy(j) * DPhix(i,m);
+		      }
+		  }
+	      }
+	  }
+      }
+
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    const int I=j*numBfx+i;
+		    for (int n=0;n<numPtsy;n++)
+		      {
+			const int Itmp = n * numBfy + i;
+			vals(cell,field,Itmp) += wtsx(i) * wtsy(n) * DPhiy(j,n);
+		      }
+		  }
+	      }
+	  }
+      }
+    
+  }
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
+	   class ArrayTypeBasis, class ArrayTypeWeights>
   void TensorProductSpaceTools::momentsGrad3D( ArrayTypeOut &vals ,
 					       const ArrayTypeData &data ,
 					       const Array<RCP<ArrayTypeBasis> > &basisVals ,
@@ -970,9 +1652,9 @@ namespace Intrepid {
 			for (int l=0;l<numPtsx;l++)
 			  {
 			    const int dataIdx = n * numPtsy * numPtsx + m * numPtsx + l;
-			    Xi(c,i,n,m,0) += wtsx(l) * DPhix(i,l,0) * data(c,f,dataIdx);
-			    Xi(c,i,n,m,1) += wtsx(l) * Phix(i,l) * data(c,f,dataIdx);
-			    Xi(c,i,n,m,2) += wtsx(l) * Phix(i,l) * data(c,f,dataIdx);
+			    Xi(c,i,n,m,0) += wtsx(l) * DPhix(i,l,0) * data(c,f,dataIdx,0);
+			    Xi(c,i,n,m,1) += wtsx(l) * Phix(i,l) * data(c,f,dataIdx,1);
+			    Xi(c,i,n,m,2) += wtsx(l) * Phix(i,l) * data(c,f,dataIdx,2);
 			  }
 		      }
 		  }
@@ -1021,6 +1703,90 @@ namespace Intrepid {
 	  }
       }
 
+}
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeData,
+	   class ArrayTypeBasis, class ArrayTypeWeights>
+  void TensorProductSpaceTools::momentsGradCollocated3D( ArrayTypeOut &vals ,
+					       const ArrayTypeData &data ,
+					       const Array<RCP<ArrayTypeBasis> > &basisVals ,
+					       const Array<RCP<ArrayTypeBasis> > &basisDVals ,
+					       const Array<RCP<ArrayTypeWeights> > &wts )
+  {
+
+    const int numBfx = basisVals[0]->dimension(0);
+    const int numBfy = basisVals[1]->dimension(0);
+    const int numBfz = basisVals[2]->dimension(0);
+    const int numPtsx = basisVals[0]->dimension(1);
+    const int numPtsy = basisVals[1]->dimension(1);
+    const int numPtsz = basisVals[2]->dimension(1);
+    const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
+    const ArrayTypeBasis &Phix = *basisVals[0];
+    const ArrayTypeBasis &Phiy = *basisVals[1];
+    const ArrayTypeBasis &Phiz = *basisVals[2];
+    const ArrayTypeBasis &DPhix = *basisDVals[0];
+    const ArrayTypeBasis &DPhiy = *basisDVals[1];
+    const ArrayTypeBasis &DPhiz = *basisDVals[2];
+    const ArrayTypeWeights &wtsx = *wts[0];
+    const ArrayTypeWeights &wtsy = *wts[1];
+    const ArrayTypeWeights &wtsz = *wts[2];
+
+    for (int cell=0;cell<numCells;cell++)
+      {
+	for (int field=0;field<numFields;field++)
+	  {
+	    // x component of data versus x derivative of bases
+	    for (int k=0;k<numBfz;k++)
+	      {
+		for (int j=0;j<numBfy;j++)
+		  {
+		    for (int i=0;i<numBfx;i++)
+		      {
+			const int I = numBfy * numBfx * k + numBfy * j + i;
+			for (int ell=0;ell<numPtsx;ell++)
+			  {
+			    const int Itmp = numBfy * numBfx * k + numBfy * j + ell;
+			    vals(cell,field,I) += wtsx(ell) * wtsy(j) * wtsz(k) * DPhix( i , ell );
+			  }
+		      }
+		  }
+	      }
+	    // y component of data versus y derivative of bases
+	    for (int k=0;k<numBfz;k++)
+	      {
+		for (int j=0;j<numBfy;j++)
+		  {
+		    for (int i=0;i<numBfx;i++)
+		      {
+			const int I = numBfy * numBfx * k + numBfy * j + i;
+			for (int m=0;m<numPtsy;m++)
+			  {
+			    const int Itmp = numBfy * numBfx * k + numBfy * m + i;
+			    vals(cell,field,I) += wtsx(i) * wtsy(m) * wtsz(k) * DPhiy( j , m );
+			  }
+		      }
+		  }
+	      }
+	    // z component of data versus z derivative of bases
+	    for (int k=0;k<numBfz;k++)
+	      {
+		for (int j=0;j<numBfy;j++)
+		  {
+		    for (int i=0;i<numBfx;i++)
+		      {
+			const int I = numBfy * numBfx * k + numBfy * j + i;
+			for (int n=0;n<numPtsz;n++)
+			  {
+			    const int Itmp = numBfy * numBfx * n + numBfy * j + i;
+			    vals(cell,field,I) += wtsx(i) * wtsy(j) * wtsz(n) * DPhiz( k , n );
+			  }
+		      }
+		  }
+	      }
+	  }
+      }
+  
 }
 
 

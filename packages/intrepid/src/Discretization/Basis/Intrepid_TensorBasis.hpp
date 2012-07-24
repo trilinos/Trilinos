@@ -90,7 +90,6 @@ public:
   /** \brief  Destructor
    */
   virtual ~TensorBasis() {}
-  
 
 }; // class Tensor Basis
 
