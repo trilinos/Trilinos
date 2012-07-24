@@ -104,6 +104,8 @@ APPEND_SET(HEADERS
   Discretization/Integration/Intrepid_DefaultCubatureFactory.hpp
   Discretization/FunctionSpaceTools/Intrepid_FunctionSpaceToolsDef.hpp
   Discretization/FunctionSpaceTools/Intrepid_FunctionSpaceTools.hpp
+  Discretization/FunctionSpaceTools/Intrepid_FunctionSpaceToolsInPlaceDef.hpp
+  Discretization/FunctionSpaceTools/Intrepid_FunctionSpaceToolsInPlace.hpp
   Discretization/Basis/Intrepid_BasisDef.hpp
   Discretization/Basis/Intrepid_Basis.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEM.hpp
