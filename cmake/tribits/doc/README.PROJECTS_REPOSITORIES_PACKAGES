@@ -295,6 +295,40 @@ single repository or project email address.
 
 4) If none of the above are selected, then no email address is assigned.
 
+What the above setup does is it results in the TriBITS system
+creating a file called CDashSubprojectDependencies.xml that gets sent to
+CDash. CDash then takes this file and creates, or updates, a set of CDash
+users and sets up a mapping of Labels (which are used for TriBITS packages) to
+CDash user emails addresses. CDash is automatically set up to process this XML
+file and create and updates CDash users. It is not, however, set up to remove
+labels from existing users.  Therefore, if you change a TriBITS package's
+CDash regression email list (using one of the methods described above), then
+you need to manually remove the associated labels from the old email address.
+CDash will not remove them for you.
+
+Therefore, to change the mapping of CDash regression email addresses to
+TriBITS packages, you must perform the actions:
+
+1) Change the TriBITS CMake files as described above that result in the
+desired CDashSubprojectDependeinces.xml file. You can debug this by running
+the checkin-test.py script and seeing what gets written in the
+${PROJECT_NAME}Dependencies.xml file in the CHECKIN directory.
+
+2) Log onto the CDash server using an administrator account and then remove
+the auto-generated account for the CDash user email address for which labels
+are being removed (i.e. no longer associated with a TriBITS package).  This is
+needed since CDash seems to be unable to remove labels from an existing CDash
+user (however this might be fixed in a current version of CDash).
+
+3) The next time a CDash submit is performed by the
+TribitsCTestDriverCore.cmake script, the CDash user associated with the mail
+list with labels being removed will get automatically recreated with the right
+list of labels (according to the current CDashSubprojectDependencies.xml
+file).  Also, any new CDash users for new email addresses will be created.
+
+Hopefully that should be enough clues to manage the mapping of CDash
+regression email lists to TriBITS packages.
+
 
 D) Open issues:
 ---------------
