@@ -6012,6 +6012,8 @@ namespace Ioex {
 
 
       Ioex::Mesh mesh(spatialDimension, the_title);
+
+      get_id(node_blocks[0], EX_NODE_BLOCK, &ids_);
       Ioex::NodeBlock N(*node_blocks[0]);
       mesh.nodeblocks.push_back(N);
 
