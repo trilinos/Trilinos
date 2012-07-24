@@ -27,10 +27,11 @@ namespace impl {
 
 namespace {
 
-const char * universal_part_name()
+inline
+std::string universal_part_name()
 {
-  static const char name[] = "{UNIVERSAL}" ;
-  return name ;
+  static const std::string name = convert_to_internal_name("UNIVERSAL");
+  return name;
 }
 
 void assert_same_universe( const Part & superset ,

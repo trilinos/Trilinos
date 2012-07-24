@@ -193,11 +193,11 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
     "previously declared rank = " << existing_rank );
 
   if (! duplicate) {
-    std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + std::string(cell_topology.getName()) + std::string("}");
+    std::string part_name = std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + std::string(cell_topology.getName());
 
     ThrowErrorMsgIf(get_part(part_name) != 0, "Cannot register topology with same name as existing part '" << cell_topology.getName() << "'" );
 
-    Part &part = declare_part(part_name, entity_rank);
+    Part &part = declare_internal_part(part_name, entity_rank);
     m_cellTopologyPartEntityRankMap[cell_topology] = CellTopologyPartEntityRankMap::mapped_type(&part, entity_rank);
 
     assign_cell_topology(m_partCellTopologyVector, part.mesh_meta_data_ordinal(), cell_topology);
@@ -210,7 +210,7 @@ fem::CellTopology
 FEMMetaData::get_cell_topology(
   const std::string &   topology_name) const
 {
-  std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name + std::string("}");
+  std::string part_name = convert_to_internal_name(std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name);
 
   Part *part = get_part(part_name);
   if (part)

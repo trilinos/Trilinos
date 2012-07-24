@@ -6,17 +6,17 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <algorithm>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_util/util/string_case_compare.hpp>
+
+#include <algorithm>
 #include <ostream>
-
-
+#include <sstream>
 
 namespace stk {
 namespace mesh {
-  
+
 //----------------------------------------------------------------------
 
 Part * find( const PartVector & parts , const std::string & name )
@@ -186,6 +186,14 @@ bool intersect( const Part & a , const Part & b )
          contain( b_sub , a ) ||
          intersect( b_sub , a_sub );
 }
+
+std::string convert_to_internal_name(const std::string& part_name)
+{
+  std::ostringstream out;
+  out << INTERNAL_PART_PREFIX << part_name << INTERNAL_PART_POSTFIX;
+  return out.str();
+}
+
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

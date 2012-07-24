@@ -128,7 +128,7 @@ public:
    */
   Part & declare_part( const std::string & p_name, EntityRank rank );
 
-  /** \brief  Declare a part of the given name and entity rank
+  /** \brief  Declare a part of the given name
    *          Redeclaration returns the previously declared part.
    *
    *  This part does not have an entity type rank.
@@ -377,6 +377,10 @@ public:
 private:
   MetaData( const MetaData & );                ///< \brief  Not allowed
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
+
+  Part & declare_internal_part( const std::string & p_name);
+
+  Part & declare_internal_part( const std::string & p_name, EntityRank rank);
 
   bool   m_commit ;
   impl::PartRepository m_part_repo ;

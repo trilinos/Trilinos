@@ -126,8 +126,8 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
   // Declare the predefined parts
 
   m_universal_part = m_part_repo.universal_part();
-  m_owns_part = & declare_part( std::string("{OWNS}") );
-  m_shares_part = & declare_part( std::string("{SHARES}") );
+  m_owns_part = & declare_internal_part("OWNS");
+  m_shares_part = & declare_internal_part("SHARES");
 }
 
 MetaData::MetaData()
@@ -146,8 +146,8 @@ MetaData::MetaData()
   // Declare the predefined parts
 
   m_universal_part = m_part_repo.universal_part();
-  m_owns_part = & declare_part( std::string("{OWNS}") );
-  m_shares_part = & declare_part( std::string("{SHARES}") );
+  m_owns_part = & declare_internal_part("OWNS");
+  m_shares_part = & declare_internal_part("SHARES");
 }
 
 //----------------------------------------------------------------------
@@ -205,6 +205,10 @@ Part & MetaData::declare_part( const std::string & p_name )
   return *m_part_repo.declare_part( p_name, rank );
 }
 
+Part & MetaData::declare_internal_part( const std::string & p_name )
+{
+  return declare_part(convert_to_internal_name(p_name));
+}
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
 {
@@ -212,6 +216,11 @@ Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
   require_valid_entity_rank(rank);
 
   return *m_part_repo.declare_part( p_name , rank );
+}
+
+Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank rank )
+{
+  return declare_part(convert_to_internal_name(p_name), rank);
 }
 
 Part & MetaData::declare_part( const PartVector & part_intersect )

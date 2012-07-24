@@ -496,6 +496,9 @@ class FEMMetaData {
 
   private: // functions
 
+    Part & declare_internal_part( const std::string & p_name, EntityRank rank )
+    { return m_meta_data.declare_internal_part(p_name,rank); }
+
     void internal_set_spatial_dimension_and_ranks(size_t spatial_dimension);
 
     void internal_declare_known_cell_topology_parts();
