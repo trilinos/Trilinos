@@ -182,10 +182,8 @@ namespace Xpetra {
     {
       typedef Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> StridedMapClass;
 
-        int nDofsPerNode = Teuchos::as<int>(StridedMapClass::getFixedBlockSize());
         if(stridedBlockId != -1) {
           TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: stridedBlockId > stridingInfo.size()");
-          nDofsPerNode = Teuchos::as<int>(stridingInfo[stridedBlockId]);
         }
 
         // create TpetraMap using the dofs from ElementList
