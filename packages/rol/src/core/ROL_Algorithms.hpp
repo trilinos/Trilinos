@@ -1266,6 +1266,7 @@ namespace ROL{
             const Functional<VS>& obj_fn
         ){
             // Create some shortcuts
+            const Real& eps_s=state.eps_s;
             int& rejected_trustregion=state.rejected_trustregion;
             Vector& s=*(state.s.begin());
             Real& norm_s=state.norm_s;
@@ -1274,8 +1275,10 @@ namespace ROL{
             int& history_reset=state.history_reset;
 
             // Initialize the counter for the number of rejected steps
-            rejected_trustregion=0;
-            do{
+            for(rejected_trustregion=0;
+                true;
+                rejected_trustregion++
+            ) {
                 // If the number of rejected steps is above the history_reset
                 // threshold, destroy the quasi-Newton information
                 if(rejected_trustregion > history_reset){
@@ -1283,7 +1286,7 @@ namespace ROL{
                     oldS.empty();
                 }
 
-                    // Print out diagnostic information if we reject a step
+                // Print out diagnostic information if we reject a step
                 if(rejected_trustregion>0) printState(state,true);
 
                 // Use truncated-CG to find a new trial step
@@ -1291,18 +1294,21 @@ namespace ROL{
 
                 // Save the length of the trial step
                 norm_s=sqrt(VS::innr(s,s));
-               
-                // Increment the number of rejected steps (even if the step
-                // is ok.  This is corrected later.)
-                rejected_trustregion++;
-
-            // Check whether the step is good.
-            } while(!checkStep(state,H,obj_fn));
-
-            // Correct the number of rejected steps
-            rejected_trustregion--;
+                
+                // Check whether the step is good
+                if(checkStep(state,H,obj_fn)) break;
+                
+                // Alternatively, check if the step becomes so small
+                // that we're not making progress.  In this case, take
+                // a zero step and allow the stopping conditions to exit
+                if(norm_s < eps_s) {
+                    VS::scal(Real(0.),s);
+                    norm_s=Real(0.);
+                    break;
+                }
+            } 
         }
-        
+
         // Steepest descent search direction
         static void SteepestDescent(State& state){
             // Create some shortcuts 
@@ -1728,6 +1734,7 @@ namespace ROL{
             const int& linesearch_iter_max=state.linesearch_iter_max;
             const Real& obj_u=state.obj_u;
             const Real& obj_ups=state.obj_ups;
+            const Real& eps_s=state.eps_s;
             Vector& s=*(state.s.begin());
             Real& norm_s=state.norm_s;
             Real& alpha=state.alpha;
@@ -1757,7 +1764,7 @@ namespace ROL{
             // Do a line-search in the specified direction
             switch(kind){
             case GoldenSection_t:
-                    do{
+                do{
                     // Conduct the golden section search
                     goldenSection(state,obj_fn);
 
@@ -1765,15 +1772,23 @@ namespace ROL{
                     // information and reduce the size of alpha
                     if(obj_ups > obj_u){
                         norm_s=alpha*sqrt(VS::innr(s,s));
-                            printState(state,true);
-                        alpha /= Real(2.);
+                        printState(state,true);
+                        alpha /= Real(4.);
+
+                        // Check if the step becomes so small that we're not
+                        // making progress.  In this case, take a zero step 
+                        // and allow the stopping conditions to exit
+                        if(norm_s < eps_s) {
+                            alpha=0.;
+                            break;
+                        }
                     }
 
                 // If we don't decrease the objective, try another linesearch
                 } while(obj_u < obj_ups || obj_ups!=obj_ups);
                 break;
             case BackTracking_t:
-                    do{
+                do{
                     // Conduct a backtracking search
                     backTracking(state,obj_fn);
 
@@ -1782,8 +1797,16 @@ namespace ROL{
                     // alpha we previously searched.
                     if(obj_ups > obj_u){
                         norm_s=alpha*sqrt(VS::innr(s,s));
-                            printState(state,true);
+                        printState(state,true);
                         alpha = alpha/pow(Real(2.),linesearch_iter_max+1);
+
+                        // Check if the step becomes so small that we're not
+                        // making progress.  In this case, take a zero step 
+                        // and allow the stopping conditions to exit
+                        if(norm_s < eps_s) {
+                            alpha=0.;
+                            break;
+                        }
                     }
 
                 // If we don't decrease the objective, try another linesearch
