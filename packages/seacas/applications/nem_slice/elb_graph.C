@@ -39,6 +39,7 @@
  *	find_surnd_elems()
  *	find_adjacency()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include <sstream>
 #include <assert.h>                     // for assert
 #include <stdio.h>                      // for sprintf, printf, NULL
 #include <stdlib.h>                     // for realloc, malloc, free
@@ -685,6 +686,14 @@ namespace {
 
     graph->start[problem->num_vertices] = graph->adj.size();
     graph->nadj = graph->adj.size();
+
+    if (graph->start[problem->num_vertices] != graph->nadj) {
+      // Possibly an integer overflow... Output error message and stop.
+      std::ostringstream errmsg;
+      errmsg << "fatal: Graph adjacency edge count (" << graph->nadj << ") exceeds chaco 32-bit integer range.\n";
+      Gen_Error(0, errmsg.str().c_str());
+      return 0;
+    }
 
     /* Adjust for a mesh with spheres */
     if(problem->type == ELEMENTAL && sphere->num) {
