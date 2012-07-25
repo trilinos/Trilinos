@@ -23,8 +23,8 @@ SET(VERA_ENABLE_CASLBOA OFF CACHE BOOL "")
 # To avoid problem with EpetraExt_inout_test failure in optimized code for hybrid builds
 SET(Epetra_ENABLE_Fortran OFF CACHE BOOL "")
 
-# Turn off HDF5 in Epetra to avoid hdf5 conflicts
-SET(Epetra_ENABLE_HDF5 OFF CACHE BOOL "")
+# Turn off HDF5 in EpetraExt to avoid hdf5 conflicts
+SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "")
 
 # This compiler supports BinUtils
 SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
