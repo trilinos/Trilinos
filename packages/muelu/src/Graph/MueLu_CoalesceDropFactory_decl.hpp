@@ -75,6 +75,8 @@ namespace MueLu {
     /// SubBlockUnAmalgamationFactory (for generating the UnAmalgamation information)
     RCP<const FactoryBase> AmalgFact_;
 
+    /// map which contains all global Dirichlet boundary node ids
+    //mutable RCP<const Map> gBoundaryNodeMap_;
   }; //class CoalesceDropFactory
 
 } //namespace MueLu

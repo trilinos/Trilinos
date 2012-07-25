@@ -38,6 +38,10 @@ typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Zolt
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AmalgamationInfo;
 #endif
 
+#ifdef MUELU_CHEAPAGGREGATIONALGORITHM_SHORT
+typedef MueLu::CheapAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CheapAggregationAlgorithm;
+#endif
+
 #ifdef MUELU_SINGLELEVELFACTORYBASE_SHORT
 typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
 #endif

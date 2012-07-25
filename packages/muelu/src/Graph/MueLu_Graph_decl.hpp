@@ -24,7 +24,7 @@ namespace MueLu {
 
   public:
 
-    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { 
+    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph), gBoundaryNodeMap_(Teuchos::null) {
       //setObjectLabel(objectLabel); 
     }
 
@@ -41,8 +41,17 @@ namespace MueLu {
     //! returns overlapping import map (nodes)
     const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
 
+    //! set map with global ids of boundary nodes
+    void SetBoundaryNodeMap(const RCP<const Map> & gBoundaryNodeMap) { gBoundaryNodeMap_ = gBoundaryNodeMap; }
+
+    //! returns map with global ids of boundary nodes
+    const RCP<const Map> GetBoundaryNodeMap() const { return gBoundaryNodeMap_; }
+
     //! Return the list of vertices adjacent to the vertex 'v'
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
+
+    //! Return true if vertex with local id 'v' is on current proc
+    bool isLocalNeighborVertex(LocalOrdinal v) const;
 
 #ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const;
@@ -60,8 +69,9 @@ namespace MueLu {
 
     RCP<const CrsGraph> graph_;
 
-    // vector of boundary node GIDs on current proc
+    // vector of global boundary node IDs on current proc
     //RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes_;
+    RCP<const Map> gBoundaryNodeMap_;
 
   };
 

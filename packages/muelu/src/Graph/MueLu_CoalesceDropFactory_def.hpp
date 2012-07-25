@@ -142,19 +142,27 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   ///////////////// experimental
   LocalOrdinal nLocalBdryNodes = 0;
   GlobalOrdinal nGlobalBdryNodes = 0;
+  Array<GlobalOrdinal> bdryNodeIds;
   for(typename std::map<GlobalOrdinal,bool>::iterator it = gBoundaryNodes->begin(); it!=gBoundaryNodes->end(); it++) {
     if ((*it).second == true) {
       nLocalBdryNodes++;
+      bdryNodeIds.push_back((*it).first);
     }
   }
   Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, nLocalBdryNodes, Teuchos::ptr(&nGlobalBdryNodes) );
   GetOStream(Debug, 0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # detected Dirichlet boundary nodes = " << nGlobalBdryNodes << std::endl;
+
+  RCP<const Map> gBoundaryNodeMap = MapFactory::Build(nodeMap->lib(),
+                                                Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                bdryNodeIds,
+                                                nodeMap->getIndexBase(), nodeMap->getComm());
   //////////////////////////////
 
   // 6) create MueLu Graph object
   RCP<Graph> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
   // 7) store results in Level
+  graph->SetBoundaryNodeMap(gBoundaryNodeMap);
   currentLevel.Set("DofsPerNode", blockdim, this);
   currentLevel.Set("Graph", graph, this);
 }

@@ -15,6 +15,11 @@ namespace MueLu {
     return neighborVertices;
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  bool Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isLocalNeighborVertex(LocalOrdinal v) const {
+    return graph_->getColMap()->isNodeLocalElement(v);
+  }
+
 #ifdef MUELU_UNUSED
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   size_t Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNodeNumGhost() const { 
