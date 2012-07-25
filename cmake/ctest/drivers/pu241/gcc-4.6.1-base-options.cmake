@@ -23,6 +23,9 @@ SET(VERA_ENABLE_CASLBOA OFF CACHE BOOL "")
 # To avoid problem with EpetraExt_inout_test failure in optimized code for hybrid builds
 SET(Epetra_ENABLE_Fortran OFF CACHE BOOL "")
 
+# Turn off HDF5 in Epetra to avoid hdf5 conflicts
+SET(Epetra_ENABLE_HDF5 OFF CACHE BOOL "")
+
 # This compiler supports BinUtils
 SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 
@@ -30,8 +33,8 @@ SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 # SET(PVMLibraries_LIBRARY_DIRS /opt/gcc-4.6.1/tpls/pvm3/lib/LINUX64 CACHE FILEPATH "")
 # SET(PVMHeaders_INCLUDE_DIRS /opt/gcc-4.6.1/tpls/pvm3/include CACHE FILEPATH "")
 SET(HDF5_LIBRARY_NAMES "hdf5_hl;hdf5;hdf5_cpp" CACHE STRING "")
-SET(HDF5_LIBRARY_DIRS /opt/gcc-4.6.1/tpls/hdf5-1.8.9/lib CACHE FILEPATH "")
-SET(HDF5_INCLUDE_DIRS /opt/gcc-4.6.1/tpls/hdf5-1.8.9/include CACHE FILEPATH "")
+SET(HDF5_LIBRARY_DIRS /projects/gcc-4.6.1/tpls/hdf5-1.8.7/serial/lib CACHE FILEPATH "")
+SET(HDF5_INCLUDE_DIRS /projects/gcc-4.6.1/tpls/hdf5-1.8.7/serial/include CACHE FILEPATH "")
 SET(Netcdf_INCLUDE_DIRS /opt/gcc-4.6.1/tpls/netcdf-4.2/include CACHE FILEPATH "")
 SET(Netcdf_LIBRARY_DIRS /opt/gcc-4.6.1/tpls/netcdf-4.2/lib     CACHE FILEPATH "")
 SET(Zlib_INCLUDE_DIRS   /opt/gcc-4.6.1/tpls/zlib-1.2.7/include CACHE FILEPATH "")
