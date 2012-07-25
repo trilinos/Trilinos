@@ -18,7 +18,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#define EPS_SCALE 5
+#define EPS_SCALE 1
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
 #ifdef HAVE_ZOLTAN2_OMP
@@ -214,6 +214,9 @@ public:
 template <typename scalar_t>
 inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,size_t currentCutIndex, scalar_t *cutUpperWeight, scalar_t *cutLowerWeight, scalar_t ew){
 
+  if(cutUpperWeight[currentCutIndex] == cutLowerWeight[currentCutIndex]){
+    return cutLowerBounds[currentCutIndex];
+  }
   return ((cutUpperBounds[currentCutIndex] - cutLowerBounds[currentCutIndex]) /
       (cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]))  * (ew - cutLowerWeight[currentCutIndex]) + cutLowerBounds[currentCutIndex];
 }
@@ -238,7 +241,7 @@ inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,si
  */
 template <typename T>
 void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolerance,
-    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights){
+    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear){
 
   bool isSet;
   string strChoice;
@@ -297,8 +300,10 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   getParameterValue<int>(pl, "partitioning", "geometric",
       "rectilinear_blocks", isSet, intChoice);
 
-  if (isSet && intChoice==1)
+  if (isSet && intChoice==1){
     params.set(rcb_rectilinearBlocks);
+    allowNonrectelinear = false;
+  }
 
   getParameterValue<int>(pl, "partitioning", "geometric",
       "bisection_num_test_cuts", isSet, intChoice);
@@ -756,25 +761,32 @@ void getNewCoordinates_simple(
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 
 
+
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
   for (partId_t i = 0; i < noCuts; i++){
-    globalCutWeights[i] = 0;
-    cutWeights[i] = 0;
+
     //if a left and right closes point is not found, set the distance to 0.
-    if(leftClosestDistance[i] == maxScalar) leftClosestDistance[i] = 0;
-    if(rightClosestDistance[i] == maxScalar) rightClosestDistance[i] = 0;
-
-
-    //current weight of the part at the left of the cut line.
-    seenW = totalPartWeights[i * 2];
-
+    if(leftClosestDistance[i] == maxScalar)
+      leftClosestDistance[i] = 0;
+    if(rightClosestDistance[i] == maxScalar)
+      rightClosestDistance[i] = 0;
+  }
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
+  for (partId_t i = 0; i < noCuts; i++){
     //if already determined at previous iterations, do nothing.
     if(isDone[i]) {
       cutCoordinatesWork[i] = cutCoordinates[i];
       continue;
     }
+    //current weight of the part at the left of the cut line.
+    seenW = totalPartWeights[i * 2];
+    globalCutWeights[i] = 0;
+    cutWeights[i] = 0;
+
     expected = cutPartRatios[i];
     leftImbalance = imbalanceOf(seenW, totalWeight, expected);
     rightImbalance = imbalanceOf(totalWeight - seenW, totalWeight, 1 - expected);
@@ -783,8 +795,6 @@ void getNewCoordinates_simple(
     bool isRightValid = rightImbalance <= imbalanceTolerance && rightImbalance >= -imbalanceTolerance;
 
 
-    //cout << "leftImbalance: " << leftImbalance << imbalanceTolerance << endl;
-    //cout << "rightImbalance:" << rightImbalance << imbalanceTolerance <<  endl;
     //if the cut line reaches to desired imbalance.
     if(isLeftValid && isRightValid){
       isDone[i] = true;
@@ -792,8 +802,8 @@ void getNewCoordinates_simple(
 #pragma omp atomic
 #endif
       allDone -=1;
-
-      cutCoordinatesWork [ i] = cutCoordinates[i];
+      cutCoordinatesWork [i] = cutCoordinates[i];
+      continue;
     }
     //if upper bound and lower bound reaches to the same point.
     //the imbalance cannot be satisfied. Accept as it is.
@@ -805,7 +815,6 @@ void getNewCoordinates_simple(
 
       if(allowNonRectelinearPart){
         if (totalPartWeights[i * 2 + 1] == ew){
-        //if (totalPartWeights[i * 2 + 1] >= ew){
           isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
@@ -813,56 +822,58 @@ void getNewCoordinates_simple(
           allDone -=1;
           cutCoordinatesWork [i] = cutCoordinates[i];
           nonRectelinearPart[i] = 1;
-          //nonRectelinearPart[i] = 1 - (totalPartWeights[i * 2 + 1] - ew) / (totalPartWeights[i * 2 + 1] - totalPartWeights[i * 2]);
           continue;
         }
         else if (totalPartWeights[i * 2 + 1] > ew){
-
           isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
           allDone -=1;
-
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
           *rectelinearCount += 1;
-
-
           cutCoordinatesWork [ i] = cutCoordinates[i];
           scalar_t myWeightOnLine = localtw[i * 2 + 1] - localtw[i * 2];
           cutWeights[i] = myWeightOnLine;
-          //cout << "me:" << comm->getRank() << " myr:" << nonRectelinearPart[i] << endl;
           continue;
         }
-
       }
 
       //when moving left, and upper and lower are set.
       //set lower bound to current line.
+
       cutLowerBounds[i] = cutCoordinates[i] + rightClosestDistance[i];
       cutLowerWeight[i] = seenW;
 
       //compare the upper bound with the current lines.
       for (partId_t ii = i + 1; ii < noCuts ; ++ii){
         scalar_t pw = totalPartWeights[ii * 2];
-
+        scalar_t lw = totalPartWeights[ii * 2 + 1];
         if(pw >= ew){
           if(pw == ew){
-            cutCoordinatesWork[i] = cutCoordinates[ii];
-            isDone[i] = true;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp atomic
-#endif
-            allDone -=1;
+            cutUpperBounds[i] = cutCoordinates[ii];
+            //cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
+            cutUpperWeight[i] = pw;
+            cutLowerBounds[i] = cutCoordinates[ii];
+            cutLowerWeight[i] = pw;
           } else if (pw < cutUpperWeight[i]){
             //if a cut line is more strict than the current upper bound,
             //update the upper bound.
             cutUpperBounds[i] = cutCoordinates[ii] - leftClosestDistance[ii];
             //cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
-            cutUpperWeight[i] = totalPartWeights [2 * ii ];
+            cutUpperWeight[i] = pw;
           }
+          break;
+        }
+        //if comes here then pw < ew
+        if(lw >= ew){
+          cutUpperBounds[i] = cutCoordinates[ii];
+          //cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
+          cutUpperWeight[i] = lw;
+          cutLowerBounds[i] = cutCoordinates[ii];
+          cutLowerWeight[i] = pw;
           break;
         }
         //if a stricter lower bound is found,
@@ -872,6 +883,59 @@ void getNewCoordinates_simple(
           cutLowerWeight[i] = pw;
         }
       }
+
+      scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
+      if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
+        isDone[i] = true;
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp atomic
+#endif
+        allDone -=1;
+        cutCoordinatesWork [ i] = cutCoordinates[i];
+      } else {
+        cutCoordinatesWork [ i] = newPivot;
+      }
+    } else {
+
+      //moving to left.
+      scalar_t ew = totalWeight * expected;
+
+      //moving left, both upper and lower is set.
+      //set upper to current line.
+      cutUpperBounds[i] = cutCoordinates[i] - leftClosestDistance[i];
+      cutUpperWeight[i] = seenW;
+
+      // compare the current cut line weights with previous upper and lower bounds.
+      for (int ii = i - 1; ii >= 0; --ii){
+        scalar_t pw = totalPartWeights[ii * 2];
+        scalar_t lw = totalPartWeights[ii * 2 + 1];
+
+        if(pw <= ew){
+          if(pw == ew){
+            cutUpperBounds[i] = cutCoordinates[ii];
+            //cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
+            cutUpperWeight[i] = pw;
+            cutLowerBounds[i] = cutCoordinates[ii];
+            cutLowerWeight[i] = pw;
+          }
+          else if (pw > cutLowerWeight[i]){
+            cutLowerBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii];
+            //cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
+            cutLowerWeight[i] = pw;
+            if(lw > ew){
+              cutUpperBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii];
+              //cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
+              cutUpperWeight[i] = lw;
+            }
+          }
+          break;
+        }
+        if (pw >= ew && (pw < cutUpperWeight[i] || (pw == cutUpperWeight[i] && cutUpperBounds[i] > cutCoordinates[ii] - leftClosestDistance[ii]))){
+          cutUpperBounds[i] = cutCoordinates[ii] - leftClosestDistance[ii] ;
+          cutUpperWeight[i] = pw;
+        }
+      }
+
 
 
       scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
@@ -885,137 +949,14 @@ void getNewCoordinates_simple(
       } else {
         cutCoordinatesWork [ i] = newPivot;
       }
-
-
-    } else {
-
-      //moving to left.
-      scalar_t ew = totalWeight * expected;
-      /*
-      //if first iteration.
-      if (cutLowerBounds[i] == -1){
-
-        bool done = false;
-
-        //set the upper and lower bounds according to the part weights of the cut lines on the left side.
-        for (int ii = i - 1; ii >= 0; --ii){
-          scalar_t pw = totalPartWeights[ii * 2];
-          if(pw <= ew){
-            if(pw == ew){
-              cutCoordinatesWork[i] = cutCoordinates[ii];
-              isDone[i] = true;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp atomic
-#endif
-              allDone -=1;
-            } else {
-              cutUpperBounds[i] = cutCoordinates[ii + 1] - leftClosestDistance[ii + 1];
-              //cutUpperWeight[i] = totalPartWeights [2 * ii + 3];
-              cutUpperWeight[i] = totalPartWeights [2 * ii + 2];
-
-
-              cutLowerBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii];
-              //cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
-              cutLowerWeight[i] = totalPartWeights [2 * ii];
-
-              scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
-
-              if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
-                isDone[i] = true;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp atomic
-#endif
-                allDone -=1;
-                cutCoordinatesWork [ i] = cutCoordinates[i];
-              } else {
-                cutCoordinatesWork [ i] = newPivot;
-              }
-
-            }
-            done = true;
-            break;
-          }
-
-        }
-
-        //if not found a part weight lower than the expected one,
-        //set the lower bound to min coordinate.
-        if(!done){
-
-          cutUpperBounds[i] = cutCoordinates[0] - leftClosestDistance[0];
-          cutLowerBounds[i] = minCoordinate;
-
-          cutUpperWeight[i] = totalPartWeights [1];
-          cutLowerWeight[i] = 0;
-
-          scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
-          if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
-            isDone[i] = true;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp atomic
-#endif
-            allDone -=1;
-            cutCoordinatesWork [ i] = cutCoordinates[i];
-          } else {
-            cutCoordinatesWork [ i] = newPivot;
-          }
-
-        }
-      } else
-      */
-      {
-        //moving left, both upper and lower is set.
-        //set upper to current line.
-        cutUpperBounds[i] = cutCoordinates[i] - leftClosestDistance[i];
-        cutUpperWeight[i] = seenW;
-
-        // compare the current cut line weights with previous upper and lower bounds.
-        for (int ii = i - 1; ii >= 0; --ii){
-          scalar_t pw = totalPartWeights[ii * 2];
-
-          if(pw <= ew){
-            if(pw == ew){
-              cutCoordinatesWork[i] = cutCoordinates[ii];
-              isDone[i] = true;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp atomic
-#endif
-              allDone -=1;
-
-
-            } else if (pw > cutLowerWeight[i]){
-              cutLowerBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii];
-              //cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
-              cutLowerWeight[i] = totalPartWeights [2 * ii ];
-            }
-            break;
-          }
-          if (pw >= ew && pw < cutUpperWeight[i]){
-            cutUpperBounds[i] = cutCoordinates[ii] - leftClosestDistance[ii] ;
-            cutUpperWeight[i] = pw;
-          }
-
-        }
-
-        scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
-        if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
-          isDone[i] = true;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp atomic
-#endif
-          allDone -=1;
-          cutCoordinatesWork [ i] = cutCoordinates[i];
-        } else {
-          cutCoordinatesWork [ i] = newPivot;
-        }
-      }
-
     }
   }
 
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp barrier
 #pragma omp single
+#endif
   {
-
     if(*rectelinearCount > 0){
       try{
         Teuchos::scan<int,scalar_t>(
@@ -1044,19 +985,11 @@ void getNewCoordinates_simple(
           else {
             nonRectelinearPart[i] = mine / myWeightOnLine;
           }
+
         }
       }
       *rectelinearCount = 0;
     }
-  }
-
-  //swap the work with cut coordinates.
-
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp barrier
-#pragma omp single
-#endif
-  {
     scalar_t *t = cutCoordinatesWork;
     cutCoordinatesWork = cutCoordinates;
     cutCoordinates = t;
@@ -1228,21 +1161,23 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
 
       while (allDone != 0){
+
+        /*
         if(comm->getRank() == 0)
         {
-
 #pragma omp single
           {
-          cout << endl << endl << "allDone:" << allDone << endl;
-          for (size_t i = 0; i < noCuts; ++i){
-            if(isDone[i] == false)
-              cout << "i:" << i <<  " c:" << cutCoordinates_tmp[i] << " u:" << cutUpperBounds[i] << " l:" << cutLowerBounds[i] << " not done" << endl;
-            else
-              cout << "i:" << i <<  " c:" << cutCoordinates_tmp[i] <<  " done" << endl;
-          }
+            cout << endl << endl << "allDone:" << allDone << endl;
+            for (size_t i = 0; i < noCuts; ++i){
+
+              if(isDone[i] == false)
+                cout << "i:" << i <<  " c:" << cutCoordinates_tmp[i] << " u:" << cutUpperBounds[i] << " l:" << cutLowerBounds[i] << " not done" << endl;
+              else
+                cout << "i:" << i <<  " c:" << cutCoordinates_tmp[i] <<  " done" << endl;
+            }
           }
         }
-
+*/
         for (size_t i = 0; i < total_part_count; ++i){
           if(i/2 < noCuts && isDone[i/2]) continue;
           myPartWeights[i] = 0;
@@ -1281,8 +1216,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
               myPartWeights[j * 2] -=	w;
               myLeftClosest[j] = 0;
               myRightClosest[j] = 0;
-              //TODO: check if the next cut coordinates are in same. // done...
-              //break;
             } else {
               //if on the right, continue with the next line.
               scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
@@ -1297,7 +1230,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
         //TODO: if the number of cutlines are small, run it sequential.
         //accumulate left and right closest distances for different threads.
-
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
@@ -1316,12 +1248,10 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
           }
           lc[i] = minl;
           rc[i] = minr;
-
         }
 
         //TODO: if the number of cutlines are small, run it sequential.
         //accumulate part weights for different threads.
-
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
@@ -1348,8 +1278,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
         {
           //if the no point on the left or right of the cut line in the current processor.
           try{
-            //MPI_Allreduce ( totalPartWeights, tw, total_part_count, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-
             reduceAll<int, scalar_t>(*comm, reductionOp,
                 total_part_count + 2 * noCuts, tw, global_totalPartWeights_leftClosest_rightCloset
               );
@@ -1357,15 +1285,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
           Z2_THROW_OUTSIDE_ERROR(*env)
         }
 #endif
-/*
-        //get the new cut coordinates.
-        getNewCoordinates_simple<scalar_t>(total_part_count, totalPartWeights_leftClosest_rightCloset, isDone, cutPartRatios,
-            globaltotalWeight, imbalanceTolerance, allDone, cutUpperBounds, cutLowerBounds,
-            cutCoordinates_tmp, noCuts,maxCoordinate, minCoordinate, leftClosestDistance[0],
-            rightClosestDistance[0],cutLowerWeight, cutUpperWeight,cutCoordinatesWork,
-            nonRectelinearPart,
-            allowNonRectelinearPart);
-*/
+
         getNewCoordinates_simple<scalar_t>(total_part_count, gtw, isDone, cutPartRatios,
             globaltotalWeight, imbalanceTolerance, allDone, cutUpperBounds, cutLowerBounds,
             cutCoordinates_tmp, noCuts,maxCoordinate, minCoordinate, glc,
@@ -1427,9 +1347,10 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
     lno_t ** partPointCounts){
 
   lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
-  ++myRank;
+  //++myRank;
 
   partId_t noCuts = partNo - 1;
+
 
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 #ifdef HAVE_ZOLTAN2_OMP
@@ -1447,6 +1368,8 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
     scalar_t *myPartWeights = partWeights[me];
     float *myRatios = NULL;
     if (allowNonRectelinearPart){
+
+
       myRatios = nonRectelinearRatios[me];
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
@@ -1475,11 +1398,11 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
       if(noCuts > 0){
         for (partId_t i = noCuts - 1; i > 0 ; --i){
           if(fabs(cutCoordinates[i] - cutCoordinates[i -1]) < _EPSILON){
-            //cout << "mi:" <<  myRatios[i] << " " << myRatios[i - 1]  << endl;
             myRatios[i] -= myRatios[i - 1] ;
-            myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
           }
+          myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
         }
+
       }
     }
 
@@ -1522,10 +1445,9 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 
           scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
           scalar_t decrease = w;
-          //scalar_t newRatio = 0;
           myRatios[j] -= decrease;
 
-          if(myRatios[j] < 0 && j < noCuts - 1){
+          if(myRatios[j] < 0 && j < noCuts - 1 && fabs(cutCoordinates[j+1] - cutCoordinates[j]) < _EPSILON){
             myRatios[j + 1] += myRatios[j];
           }
           inserted = true;
@@ -1590,8 +1512,6 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 
 
     //write new indices
-
-    //cout << "\n\npart no:" << partNo << endl;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
@@ -1617,8 +1537,7 @@ T *allocMemory(size_t size){
   if (size > 0){
     T * a = new T[size];
     if (a == NULL) {
-      cout << "cannot allocate memory" << endl;
-      exit(1);
+      throw  "cannot allocate memory";
     }
     return a;
   }
@@ -1666,7 +1585,9 @@ void AlgPQJagged(
 
   multiCriteriaNorm mcnorm;
   bool ignoreWeights;
-  pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights);
+
+  bool allowNonRectelinearPart = true;
+  pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart);
 
   int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
@@ -1799,7 +1720,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   }
 
   partId_t maxCutNo = maxPartNo - 1;
-  bool allowNonRectelinearPart = true;
+  //allowNonRectelinearPart = false;
 
   float *nonRectelinearPart = NULL;
   float **nonRectRatios = NULL;
@@ -1904,7 +1825,8 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     leftPartitions /= partNo[i];
     for (int j = 0; j < currentPartitionCount; ++j, ++currentIn){
 
-      scalar_t used_imbalance = imbalanceTolerance * (LEAF_IMBALANCE_FACTOR + (1 - LEAF_IMBALANCE_FACTOR)   / leftPartitions) * 0.7;
+      //scalar_t used_imbalance = imbalanceTolerance * (LEAF_IMBALANCE_FACTOR + (1 - LEAF_IMBALANCE_FACTOR)   / leftPartitions) * 0.7;
+      scalar_t used_imbalance = 0;
 
       coordinateEnd= inTotalCounts[currentIn];
       coordinateBegin = currentIn==0 ? 0: inTotalCounts[currentIn -1];
@@ -1986,6 +1908,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   /*partId_t **/partIds = allocMemory<partId_t>(numLocalCoords);
   /*ArrayRCP<partId_t> */partId = arcp(partIds, 0, numLocalCoords, true);
   }
+
   for(partId_t i = 0; i < totalPartCount;++i){
     lno_t begin = 0;
     lno_t end = inTotalCounts[i];
@@ -1994,44 +1917,24 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
       lno_t k = partitionedPointCoordinates[ii];
       partIds[k] = i;
-      //cout << "me:" << comm->getRank() << " ";
+      /*
       cout << "part of coordinate:";
       for(int iii = 0; iii < coordDim; ++iii){
         cout <<  pqJagged_coordinates[iii][k] << " ";
       }
       cout << i;
       cout << endl;
+      */
     }
   }
 
-  /*
-   *
-   *
-  //lno_t * tot = new lno_t[totalPartCount];
-  lno_t * tot = allocMemory<lno_t>(totalPartCount);
-  try{
-    reduceAll<int,lno_t>(
-        *comm, Teuchos::REDUCE_SUM,
-        totalPartCount, inTotalCounts, tot
-    );
-  }
-  Z2_THROW_OUTSIDE_ERROR(*env)
 
-  inTotalCounts = tot;
-  double maxImbalance = 0;
-  for(size_t i = 0; i < totalPartCount;++i){
-    float imbalance = 0;
-    if(i > 0)
-      imbalance = imbalanceOf(float(inTotalCounts[i] - inTotalCounts[i -1]), float(numGlobalCoords), 1 / float(totalPartCount));
-    else
-      imbalance = imbalanceOf(float(inTotalCounts[i] - 0), float(numGlobalCoords), 1 / float(totalPartCount) );
-    if(imbalance > maxImbalance) maxImbalance = imbalance;
-  }
-  */
   if(comm->getRank() == 0){
+    /*
     for(size_t i = 0; i < totalPartCount - 1;++i){
       cout << "cut coordinate:" << allCutCoordinates[i] << endl;
     }
+    */
     double end = start;
 #ifdef HAVE_ZOLTAN2_OMP
     end = omp_get_wtime( );
@@ -2043,13 +1946,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   if(numLocalCoords > 0){
     gnoList = arcpFromArrayView(pqJagged_gnos);
   }
-
-
-
-
   solution->setParts(gnoList, partId);
-
-
 
   for(int i = 0; i < numThreads; ++i){
     //delete []coordinate_starts[i];
@@ -2151,6 +2048,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   //delete []totalPartWeights;
   freeArray<scalar_t>(totalPartWeights_leftClosests_rightClosests);
+  freeArray<scalar_t>(global_totalPartWeights_leftClosests_rightClosests);
 
   for(int i = 0; i < numThreads; ++i){
     //delete [] partWeights[i] ;

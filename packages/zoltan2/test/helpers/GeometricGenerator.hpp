@@ -305,8 +305,7 @@ public:
     lno_t iteration = 0;
     while (cnt < requestedPointcount){
       if(++iteration > MAX_ITER_ALLOWED) {
-        std::cout << "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates." << std::endl;
-        exit(1);
+        throw "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates.";
       }
       CoordinatePoint <T> p = this->getPoint();
 
@@ -366,8 +365,7 @@ public:
         p.z = normalDist(this->center.z, this->standartDevz);
         break;
       default:
-        cout << "unsupported dimension" << endl;
-        exit(1);
+        throw "unsupported dimension";
       }
     }
     return p;
@@ -452,8 +450,7 @@ public:
         p.z = unifRand(this->leftMostz, this->rightMostz);
         break;
       default:
-        std::cout << "unsupported dimension" << std::endl;
-        exit(1);
+        throw "unsupported dimension";
       }
     }
     return p;
@@ -521,7 +518,7 @@ public:
     else
       this->zstep = 1;
 
-    cout << xstep << " " << ystep << " " << zstep << endl;
+    //cout << xstep << " " << ystep << " " << zstep << endl;
 
   }
 
@@ -921,7 +918,7 @@ private:
     int count = this->countChar(weight_distribution, ' ');
     std::string *splittedStr = new string[count + 1];
     this->splitString(weight_distribution, ' ', splittedStr);
-    cout << count << endl;
+    //cout << count << endl;
     if(splittedStr[0] == "STEPPEDEQUATION"){
       T c=1;
       T a1=0,a2=0,a3=0;
@@ -1195,21 +1192,15 @@ private:
        */
     }
     catch(std::string s){
-      std::cout << "Error: " << s << std::endl;
-      std::cout << "============================================"<< std::endl;
-      exit(1);
+      throw s;
     }
 
     catch(char * s){
-      std::cout << "Error: " << s << std::endl;
-      std::cout << "============================================"<< std::endl;
-      exit(1);
+      throw s;
     }
 
     catch(char const* s){
-      std::cout << "Error: " << s << std::endl;
-      std::cout << "============================================"<< std::endl;
-      exit(1);
+      throw s;
     }
 
   }

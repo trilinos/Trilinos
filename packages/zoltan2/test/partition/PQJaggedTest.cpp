@@ -101,8 +101,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
     if(str[0] != param_comment){
       size_t pos = str.find('=');
       if(pos == string::npos){
-        cerr << "Invalid Line:" << str;
-        exit(1);
+        throw  "Invalid Line:" + str  + " in parameter file";
       }
       string paramname = trim_copy(str.substr(0,pos));
       string paramvalue = trim_copy(str.substr(pos + 1));
@@ -117,51 +116,9 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   Teuchos::ParameterList geoparams("geo params");
 
   readGeoGenParams(paramFile, geoparams, comm);
-
-  /*
-	//geoparams.set("dim", 2);
-	//geoparams.set("holes", "CIRCLE,-10,-10,15,CIRCLE,200,200,150");
-	//geoparams.set("out_file", fname);
-	//geoparams.set("distribution-0", "GRID,5,5,-10, 100, -10, 100");
-	//geoparams.set("distribution-1", "NORMAL,0,50,50,100,100");
-	//geoparams.set("distribution-2", "NORMAL,1000,100,0,5,5");
-
-	//geoparams.set("proc_load_distributions", "0.7,0.0,0.1,0.2");
-	geoparams.set("dim", 3);
-	//geoparams.set("distribution-0", "GRID,5,5,5,-10, 100, -10, 100, -10,100");
-	geoparams.set("distribution-1", "NORMAL,1000,-20,-20,-20,55,45,5");
-	//geoparams.set("distribution-2", "NORMAL,1000,100,100,0,5,5,5");
-	//geoparams.set("distribution-3", "NORMAL,1000,100,0,0,5,5,5");
-	//geoparams.set("distribution-4", "NORMAL,1000,0,100,0,5,5,5");
-
-	//geoparams.set("distribution-5", "UNIFORM,4000,0,100,0,100,0,100");
-	//geoparams.set("hole-0", "CUBE,-20,-20,-20,10");
-	geoparams.set("hole-1", "SPHERE,-20,-20,-20,20");
-	geoparams.set("WeightDistribution", "STEPPEDEQUATION");
-	geoparams.set("STEPPEDEQUATION-a1", "1");
-	geoparams.set("STEPPEDEQUATION-a1", "1");
-	geoparams.set("STEPPEDEQUATION-steps", "0");
-	geoparams.set("STEPPEDEQUATION-values", "1,2");
-	// a2=2 a3=3 b1=2 b2=2 b3=2 c=7.2 x1=8.2 y1=9.2 z1=9.3");
-
-	geoparams.set("hole-2", "SPHERE,0,0,-20,20");
-	geoparams.set("hole-3", "SPHERE,40,-20,0,20");
-	geoparams.set("hole-4", "SPHERE,-20,-40,-20,20");
-	geoparams.set("hole-5", "SPHERE,-20,-20,-0,20");
-	geoparams.set("hole-6", "SPHERE,-20,0,-20,20");
-	geoparams.set("hole-7", "SPHERE,-80,-20,-20,20");
-	geoparams.set("out_file", fname);
-	//geoparams.set("proc_load_distributions", "0.5,0.5,0.000,0.000");
-	//GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
-   */
-
   GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
-
-  //	UserInputForTests uinput(testDataFilePath, fname, comm, true);
-
-  //	RCP<tMVector_t> coords = uinput.getCoordinates();
   RCP<tMVector_t> coords = gg->getCoordinates();
-
+  delete gg;
   RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(coords);
 
 
@@ -378,7 +335,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   //parParams.set("algorithm", "rcb");
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
   geoParams.set("bisection_num_test_cuts", 7);
-  geoParams.set("rectilinear_blocks", "yes");
+  geoParams.set("rectilinear_blocks", "no");
 
   parParams.set("num_global_parts", 10);
 
@@ -478,7 +435,73 @@ bool getArgumentValue(string &argumentid, float &argumentValue, string argumentl
   return true;
 }
 
+void getArgVals(int argc, char **argv,   int &numParts, float &imbalance ,
+    int &numCoords, string &pqParts, int &opt,std::string &fname, std::string &paramFile){
 
+  for(int i = 0; i < argc; ++i){
+    string tmp = convert_to_string(argv[i]);
+    string identifier = "";
+    int value = -1; float fval = -1;
+    if(!getArgumentValue(identifier, fval, tmp)) continue;
+    value = int (fval);
+    if(identifier == "C"){
+
+      if(value > 0){
+
+
+        numParts=value;
+      } else {
+        throw  "Invalid argument at " + tmp;
+      }
+    } else
+      if(identifier == "P"){
+
+        stringstream stream(stringstream::in | stringstream::out);
+
+        stream << tmp;
+
+        getline(stream, fname, '=');
+        stream >> pqParts;
+      } else if(identifier == "D"){
+        if(value > 0){
+          numCoords=value;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
+      }else if(identifier == "I"){
+        if(fval > 0){
+          imbalance=fval;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
+      } else if(identifier == "F"){
+        stringstream stream(stringstream::in | stringstream::out);
+        stream << tmp;
+        getline(stream, fname, '=');
+
+        stream >> fname;
+      }
+
+      else if(identifier == "PF"){
+        stringstream stream(stringstream::in | stringstream::out);
+        stream << tmp;
+        getline(stream, paramFile, '=');
+        stream >> paramFile;
+      }
+      else if(identifier == "O"){
+        if(value >= 0 && value <= 3){
+          opt = value;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
+      }
+      else {
+        throw "Invalid argument at " + tmp;
+      }
+
+  }
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -494,96 +517,49 @@ int main(int argc, char *argv[])
   int opt = 3;
   std::string fname = "simple";
   std::string paramFile = "";
-  for(int i = 0; i < argc; ++i){
-    string tmp = convert_to_string(argv[i]);
-    string identifier = "";
-    int value = -1; float fval = -1;
-    if(!getArgumentValue(identifier, fval, tmp)) continue;
-    value = int (fval);
-    if(identifier == "C"){
 
-      if(value > 0){
-        numParts=value;
-      } else {
-        cout << "Invalid argument at " << tmp;
-        exit(1);
-      }	  	  } else
-        if(identifier == "P"){
+  try{
+    getArgVals(argc, argv,   numParts, imbalance ,
+        numCoords, pqParts, opt,fname, paramFile);
 
-          stringstream stream(stringstream::in | stringstream::out);
+    switch (opt){
+    case 0:
+      testFromDataFile(tcomm,numParts, imbalance,fname,pqParts);
+      break;
+    case 1:
+      meshCoordinatesTest2(tcomm,pqParts, numCoords, imbalance, numParts);
+      break;
+    case 2:
+      serialTest(numParts, numCoords, imbalance);
+      break;
+    case 3:
+      GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile);
+      break;
+    }
 
-          stream << tmp;
-
-          getline(stream, fname, '=');
-          stream >> pqParts;
-        } else if(identifier == "D"){
-          if(value > 0){
-            numCoords=value;
-          } else {
-            cout << "Invalid argument at " << tmp;
-            exit(1);
-          }
-        }else if(identifier == "I"){
-          if(fval > 0){
-            imbalance=fval;
-          } else {
-            cout << "Invalid argument at " << tmp;
-            exit(1);
-          }
-        } else if(identifier == "F"){
-          stringstream stream(stringstream::in | stringstream::out);
-          stream << tmp;
-          getline(stream, fname, '=');
-
-          stream >> fname;
-        }
-
-        else if(identifier == "PF"){
-          stringstream stream(stringstream::in | stringstream::out);
-          stream << tmp;
-          getline(stream, paramFile, '=');
-          stream >> paramFile;
-        }
-        else if(identifier == "O"){
-          if(value >= 0 && value <= 3){
-            opt = value;
-          } else {
-            cout << "Invalid argument at " << tmp;
-            exit(1);
-          }
-        }
-        else {
-          cout << "Invalid argument at " << tmp;
-          exit(1);
-
-        }
-
+    if (rank == 0)
+      std::cout << "PASS" << std::endl;
   }
 
-  //MPI_Init(&argc, &argv);
-  //int myrank; int numprocs;
-  //MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-  //MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-  //meshCoordinatesTest2(tcomm,numParts, numCoords, imbalance);
-  //meshCoordinatesTest(tcomm);
 
-  switch (opt){
-  case 0:
-    testFromDataFile(tcomm,numParts, imbalance,fname,pqParts);
-    break;
-  case 1:
-    meshCoordinatesTest2(tcomm,pqParts, numCoords, imbalance, numParts);
-    break;
-  case 2:
-    serialTest(numParts, numCoords, imbalance);
-    break;
-  case 3:
-    GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile);
-    break;
+  catch(std::string s){
+    if (rank == 0)
+    cerr << s << endl;
+  }
+
+  catch(char * s){
+    if (rank == 0)
+    cerr << s << endl;
+  }
+
+  catch(char const* s){
+
+    if (rank == 0)
+    cerr << s << endl;
+  }
+  catch (...){
   }
   //if (rank == 0)
   //  serialTest(numParts, numCoords, imbalance);
 
-  if (rank == 0)
-    std::cout << "PASS" << std::endl;
 }
