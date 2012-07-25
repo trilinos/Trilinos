@@ -75,7 +75,7 @@ TEUCHOS_STATIC_SETUP()
 }
 
 const std::string BaseMethodDefaults_name = "Base Method Defaults";
-const std::string BaseMethodDefaults_default = "DD";
+const std::string BaseMethodDefaults_default = "SA";
 Teuchos::RCP<
   Teuchos::StringToIntegralParameterEntryValidator<EMLProblemType>
   >
@@ -344,7 +344,7 @@ void MLPreconditionerFactory::setParameterList(
     TEUCHOS_TEST_FOR_EXCEPTION(
       0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
       ,Teuchos::Exceptions::InvalidParameterValue
-      ,"Error, the ML problem type \"" << defaultTypeStr << "\' is not recongnised by ML!"
+      ,"Error, the ML problem type \"" << defaultTypeStr << "\' is not recognized by ML!"
       );
     // Note, the only way the above exception message could be generated is if
     // a default problem type was removed from ML_Epetra::SetDefaults(...).
@@ -353,7 +353,7 @@ void MLPreconditionerFactory::setParameterList(
     // words, this adapter must be maintained as ML is maintained.  An
     // alternative design would be to just pass in whatever string to this
     // function.  This would improve maintainability but it would not generate
-    // very good error messages when a bad string was passed in.  Currenly,
+    // very good error messages when a bad string was passed in.  Currently,
     // the error message attached to the exception will contain the list of
     // valid problem types.
     paramList_->sublist(MLSettings_name).setParametersNotAlreadySet(
@@ -458,7 +458,7 @@ MLPreconditionerFactory::getValidParameters() const
         "being validated by ML!"
         );
       //std::cout << "\nMLSettings doc before = " << pl->getEntryPtr(MLSettings_name)->docString() << "\n";
-      { // Set of valid parameters (but perhaps not accetable values)
+      { // Set of valid parameters (but perhaps not acceptable values)
         for (
           int i = 0;
           i < implicit_cast<int>(BaseMethodDefaults_valueNames.size());
@@ -472,7 +472,7 @@ MLPreconditionerFactory::getValidParameters() const
               0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
               ,Teuchos::Exceptions::InvalidParameterValue
               ,"Error, the ML problem type \"" << defaultTypeStr
-              << "\' is not recongnised by ML!"
+              << "\' is not recognized by ML!"
               );
             mlSettingsPL.setParameters(defaultParams);
           }

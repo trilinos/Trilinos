@@ -40,7 +40,7 @@ namespace Thyra {
 
 /** \brief Concrete preconditioner factory subclass based on ML.
  *
- * ToDo: Finish documentation!
+ * For information on ML and its available options, please see the ML <A HREF=http://trilinos.sandia.gov/packages/ml/index.html>home page</A> or the ML User <A HREF="http://trilinos.sandia.gov/packages/ml/manuals.html">manuals</A>.
  */
 class MLPreconditionerFactory : public PreconditionerFactoryBase<double> {
 public:
