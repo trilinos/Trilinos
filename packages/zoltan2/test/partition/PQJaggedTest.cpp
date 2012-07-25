@@ -23,7 +23,6 @@
 #include <Teuchos_LAPACK.hpp>
 #include <fstream>
 #include <string>
-#include <omp.h>
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
