@@ -417,7 +417,7 @@ public:
   void
   readFile (ordinal_type& numRows,
             ordinal_type& numCols,
-            Teuchos::ArrayRCP<const ordinal_type>& rowptr,
+            Teuchos::ArrayRCP<const       size_t>& rowptr,
             Teuchos::ArrayRCP<const ordinal_type>& colind,
             Teuchos::ArrayRCP<const scalar_type>& values,
             const std::string& filename) const
@@ -445,17 +445,15 @@ public:
     // a syntax error in the file.
     (void) reader.readFile (ptr, ind, val, nrows, ncols, filename);
 
-    ArrayRCP<ordinal_type> ptrout ( nrows + 1 );
-    for (ordinal_type k = 0; k <= nrows; ++k) {
-      ptrout[k] = as<ordinal_type> (ptr[k]);
-    }
+    ArrayRCP<size_t> ptrout ( nrows + 1 );
+    std::copy( ptr.begin(), ptr.end(), ptrout.begin() );
     // Now we're done with ptr.
     ptr = null;
 
     // Assign the output arguments.
     numRows = as<ordinal_type> (nrows);
     numCols = as<ordinal_type> (ncols);
-    rowptr = arcp_const_cast<const ordinal_type> (ptrout);
+    rowptr = arcp_const_cast<const size_t> (ptrout);
     colind = arcp_const_cast<const ordinal_type> (ind);
     values = arcp_const_cast<const scalar_type> (val);
   }
@@ -502,7 +500,7 @@ public:
     using Teuchos::as;
 
     ordinal_type theNumRows = 0, theNumCols = 0;
-    ArrayRCP<const ordinal_type> ptr;
+    ArrayRCP<const       size_t> ptr;
     ArrayRCP<const ordinal_type> ind;
     ArrayRCP<const scalar_type> val;
     readFile (theNumRows, theNumCols, ptr, ind, val, filename);
@@ -545,7 +543,7 @@ public:
   Teuchos::RCP<SparseOpsType>
   makeSparseOps (const Teuchos::RCP<node_type>& node,
                  Teuchos::ParameterList& params,
-                 const Teuchos::ArrayRCP<const ordinal_type>& ptr,
+                 const Teuchos::ArrayRCP<const       size_t>& ptr,
                  const Teuchos::ArrayRCP<const ordinal_type>& ind,
                  const Teuchos::ArrayRCP<const scalar_type>& val,
                  const Teuchos::EUplo uplo = Teuchos::UNDEF_TRI,
@@ -609,7 +607,7 @@ public:
       (N*(N-1)) / 2 : // UNIT_DIAG
       (N*(N+1)) / 2;  // NON_UNIT_DIAG
 
-    ArrayRCP<ordinal_type> ptr (N+1);
+    ArrayRCP<      size_t> ptr (N+1);
     ArrayRCP<ordinal_type> ind (NNZ);
     ArrayRCP<scalar_type> val (NNZ);
 
@@ -642,7 +640,7 @@ public:
 
     RCP<graph_type> graph =
       rcp (new graph_type ( N, N, node, null));
-    graph->setStructure (arcp_const_cast<const ordinal_type> (ptr),
+    graph->setStructure (arcp_const_cast<const       size_t> (ptr),
                          arcp_const_cast<const ordinal_type> (ind));
     RCP<matrix_type> matrix =
       rcp (new matrix_type (rcp_const_cast<const graph_type> (graph), null));
@@ -679,7 +677,7 @@ public:
     const ordinal_type numCols = A.numCols ();
     const ordinal_type NNZ = numRows * numCols;
 
-    ArrayRCP<ordinal_type> ptr (numRows+1);
+    ArrayRCP<      size_t> ptr (numRows+1);
     ArrayRCP<ordinal_type> ind (NNZ);
     ArrayRCP<scalar_type> val (NNZ);
 
@@ -701,7 +699,7 @@ public:
 
     RCP<graph_type> graph =
       rcp (new graph_type (numRows, numCols, node, null));
-    graph->setStructure (arcp_const_cast<const ordinal_type> (ptr),
+    graph->setStructure (arcp_const_cast<const       size_t> (ptr),
                          arcp_const_cast<const ordinal_type> (ind));
     RCP<matrix_type> matrix =
       rcp (new matrix_type (rcp_const_cast<const graph_type> (graph), null));

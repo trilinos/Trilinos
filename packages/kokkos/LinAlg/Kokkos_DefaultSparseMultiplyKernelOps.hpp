@@ -46,20 +46,16 @@
 #define KERNEL_PREFIX
 #endif
 
-#ifdef __CUDACC__
-#include <Teuchos_ScalarTraitsCUDA.hpp>
-#else
 #include <Teuchos_ScalarTraits.hpp>
-#endif
 
 namespace Kokkos {
 
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
+  template <class Scalar, class OffsetType, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
   struct DefaultSparseMultiplyOp {
     // mat data
-    const Ordinal *ptrs;
-    const Ordinal *inds;
-    const Scalar  *vals;
+    const OffsetType *offs;
+    const Ordinal    *inds;
+    const Scalar     *vals;
     // matvec params
     RangeScalar        alpha, beta;
     Ordinal numRows;
@@ -69,9 +65,9 @@ namespace Kokkos {
     Ordinal numRHS, xstride, ystride;
 
     inline KERNEL_PREFIX void execute(size_t row) {
-      const Scalar  *v = vals + ptrs[row];
-      const Ordinal *i = inds + ptrs[row],
-                   *ie = inds + ptrs[row+1];
+      const Scalar  *v = vals + offs[row];
+      const Ordinal *i = inds + offs[row],
+                   *ie = inds + offs[row+1];
       if (NO_BETA_AND_OVERWRITE) {
         for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] = Teuchos::ScalarTraits<RangeScalar>::zero();
       }
@@ -116,6 +112,7 @@ namespace Kokkos {
   // Scalar are both complex.  However, this second Boolean template parameter
   // is not necessary for correctness.
   template <class Scalar, // the type of entries in the sparse matrix
+            class OffsetType, // the type of the row offsets
             class Ordinal, // the type of indices in the sparse matrix
             class DomainScalar, // the type of entries in the input (multi)vector
             class RangeScalar, // the type of entries in the output (multi)vector
@@ -123,13 +120,14 @@ namespace Kokkos {
             bool RangeScalarIsComplex=Teuchos::ScalarTraits<RangeScalar>::isComplex> // whether RangeScalar is complex valued.
   struct DefaultSparseTransposeMultiplyOp;
 
+
   // Partial specialization for when RangeScalar is real (not complex) valued.
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
-  struct DefaultSparseTransposeMultiplyOp<Scalar, Ordinal, DomainScalar, RangeScalar, NO_BETA_AND_OVERWRITE, false> {
+  template <class Scalar, class OffsetType, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
+  struct DefaultSparseTransposeMultiplyOp<Scalar, OffsetType, Ordinal, DomainScalar, RangeScalar, NO_BETA_AND_OVERWRITE, false> {
     // mat data
-    const Ordinal *ptrs;
-    const Ordinal *inds;
-    const Scalar  *vals;
+    const OffsetType *offs;
+    const Ordinal    *inds;
+    const Scalar     *vals;
     // matvec params
     RangeScalar        alpha, beta;
     Ordinal numRows, numCols;
@@ -140,7 +138,7 @@ namespace Kokkos {
 
     inline void execute() {
       using Teuchos::ScalarTraits;
-
+      
       if (NO_BETA_AND_OVERWRITE) {
         for (Ordinal j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
@@ -160,9 +158,9 @@ namespace Kokkos {
       // save the extra multiplication if possible
       if (alpha == ScalarTraits<RangeScalar>::one()) {
         for (Ordinal colAt=0; colAt < numRows; ++colAt) {
-          const Scalar  *v  = vals + ptrs[colAt];
-          const Ordinal *i  = inds + ptrs[colAt];
-          const Ordinal *ie = inds + ptrs[colAt+1];
+          const Scalar  *v  = vals + offs[colAt];
+          const Ordinal *i  = inds + offs[colAt];
+          const Ordinal *ie = inds + offs[colAt+1];
           // sparse outer product: AT[:,colAt] * X[ind]
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
@@ -182,9 +180,9 @@ namespace Kokkos {
       }
       else { // alpha != one
         for (Ordinal colAt=0; colAt < numRows; ++colAt) {
-          const Scalar  *v  = vals + ptrs[colAt];
-          const Ordinal *i  = inds + ptrs[colAt];
-          const Ordinal *ie = inds + ptrs[colAt+1];
+          const Scalar  *v  = vals + offs[colAt];
+          const Ordinal *i  = inds + offs[colAt];
+          const Ordinal *ie = inds + offs[colAt+1];
           // sparse outer product: AT[:,colAt] * X[ind
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
@@ -200,6 +198,7 @@ namespace Kokkos {
     }
   };
 
+
   // Partial specialization for when RangeScalar is complex valued.  The most
   // common case is that RangeScalar is a specialization of std::complex, but
   // this is not necessarily the case.  For example, CUDA has its own complex
@@ -207,12 +206,12 @@ namespace Kokkos {
   // marked as device methods.  This code assumes that RangeScalar, being
   // complex valued, has a constructor which takes two arguments, each of which
   // can be converted to Teuchos::ScalarTraits<RangeScalar>::magnitudeType.
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
-  struct DefaultSparseTransposeMultiplyOp<Scalar, Ordinal, DomainScalar, RangeScalar, NO_BETA_AND_OVERWRITE, true> {
+  template <class Scalar, class OffsetType, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
+  struct DefaultSparseTransposeMultiplyOp<Scalar, OffsetType, Ordinal, DomainScalar, RangeScalar, NO_BETA_AND_OVERWRITE, true> {
     // mat data
-    const Ordinal *ptrs;
-    const Ordinal *inds;
-    const Scalar  *vals;
+    const OffsetType *offs;
+    const Ordinal    *inds;
+    const Scalar     *vals;
     // matvec params
     RangeScalar        alpha, beta;
     Ordinal numRows, numCols;
@@ -224,7 +223,6 @@ namespace Kokkos {
     inline void execute() {
       using Teuchos::ScalarTraits;
       typedef typename ScalarTraits<RangeScalar>::magnitudeType RSMT;
-
       if (NO_BETA_AND_OVERWRITE) {
         for (Ordinal j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
@@ -244,9 +242,9 @@ namespace Kokkos {
       // save the extra multiplication if possible
       if (alpha == ScalarTraits<RangeScalar>::one()) {
         for (Ordinal colAt=0; colAt < numRows; ++colAt) {
-          const Scalar  *v  = vals + ptrs[colAt];
-          const Ordinal *i  = inds + ptrs[colAt];
-          const Ordinal *ie = inds + ptrs[colAt+1];
+          const Scalar  *v  = vals + offs[colAt];
+          const Ordinal *i  = inds + offs[colAt];
+          const Ordinal *ie = inds + offs[colAt+1];
           // sparse outer product: AT[:,colAt] * X[ind]
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
@@ -278,9 +276,9 @@ namespace Kokkos {
       }
       else { // alpha != one
         for (Ordinal colAt=0; colAt < numRows; ++colAt) {
-          const Scalar  *v  = vals + ptrs[colAt];
-          const Ordinal *i  = inds + ptrs[colAt];
-          const Ordinal *ie = inds + ptrs[colAt+1];
+          const Scalar  *v  = vals + offs[colAt];
+          const Ordinal *i  = inds + offs[colAt];
+          const Ordinal *ie = inds + offs[colAt+1];
           // sparse outer product: AT[:,colAt] * X[ind]
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);

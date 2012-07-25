@@ -322,10 +322,10 @@ namespace Kokkos {
     public:
       CUSPARSECrsGraph(int numRows, int numCols, const RCP<Node> &node, const RCP<ParameterList> &params);
       bool isEmpty() const;
-      void setStructure(const ArrayRCP<const int>  &ptrs,
+      void setStructure(const ArrayRCP<const size_t>  &ptrs,
                         const ArrayRCP<const int> &inds);
       void setDeviceData(const ArrayRCP<const int> &devptrs, const ArrayRCP<const int> &devinds);
-      inline ArrayRCP<const int> getPointers() const;
+      inline ArrayRCP<const size_t> getPointers() const;
       inline ArrayRCP<const int> getIndices() const;
       inline ArrayRCP<const int> getDevPointers() const;
       inline ArrayRCP<const int> getDevIndices() const;
@@ -341,9 +341,9 @@ namespace Kokkos {
       Teuchos::EUplo uplo_;
       Teuchos::EDiag diag_;
       // graph data
-      ArrayRCP<const int>  host_rowptrs_;
-      ArrayRCP<const int>  dev_rowptrs_;
-      ArrayRCP<const int>  host_colinds_, dev_colinds_;
+      ArrayRCP<const size_t> host_rowptrs_;
+      ArrayRCP<const int>    dev_rowptrs_;
+      ArrayRCP<const int>    host_colinds_, dev_colinds_;
       // TODO: add CSC data, for efficient tranpose multiply
   };
 
@@ -393,7 +393,7 @@ namespace Kokkos {
 
   template <class Node>
   void CUSPARSECrsGraph<Node>::setStructure(
-                      const ArrayRCP<const int> &ptrs,
+                      const ArrayRCP<const size_t> &ptrs,
                       const ArrayRCP<const int> &inds)
   {
     std::string tfecfFuncName("setStructure(ptrs,inds)");
@@ -416,7 +416,7 @@ namespace Kokkos {
   }
 
   template <class Node>
-  ArrayRCP<const int> CUSPARSECrsGraph<Node>::getPointers() const
+  ArrayRCP<const size_t> CUSPARSECrsGraph<Node>::getPointers() const
   { return host_rowptrs_; }
 
   template <class Node>
@@ -634,11 +634,11 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<int> allocRowPtrs(const RCP<Node> &node, const ArrayView<const int> &rowPtrs);
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs);
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T>
-    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const int> &ptrs);
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &ptrs);
 
     //! Finalize a graph is null for CUSPARSE.
     static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params);
@@ -776,6 +776,7 @@ namespace Kokkos {
   void CUSPARSEOps<Scalar,Node>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag,
                                                CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params)
   {
+    const size_t CUDA_MAX_INT = 2147483647;
     const std::string prefix("finalizeGraph()");
     RCP<Node> node = graph.getNode();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -784,8 +785,8 @@ namespace Kokkos {
     )
     // diag: have to allocate and indicate
     ArrayRCP<int>    devinds, devptrs;
-    ArrayRCP<const int> hostinds = graph.getIndices();
-    ArrayRCP<const int> hostptrs = graph.getPointers();
+    ArrayRCP<const int>    hostinds = graph.getIndices();
+    ArrayRCP<const size_t> hostptrs = graph.getPointers();
     const int numRows = graph.getNumRows();
     // set description
     graph.setMatDesc(uplo,diag);
@@ -799,7 +800,11 @@ namespace Kokkos {
       // neglected instead).  Therefore, because our API doesn't give
       // us explicit diagonal entries if diag == Teuchos::UNIT_DIAG,
       // we must allocate space for them.
-      const int numnz = hostinds.size() + numRows;
+      const size_t numnz = hostinds.size() + numRows;
+      TEUCHOS_TEST_FOR_EXCEPTION( 
+          numnz > CUDA_MAX_INT, std::runtime_error, 
+          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than " << CUDA_MAX_INT << " non-zeros." 
+      );
       devptrs = node->template allocBuffer<int>( numRows+1 );
       if (numnz) devinds = node->template allocBuffer<int>( numnz );
       ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
@@ -826,12 +831,18 @@ namespace Kokkos {
     }
     else {
       // our format == their format; just allocate and copy
+      const size_t numnz = hostinds.size();
+      TEUCHOS_TEST_FOR_EXCEPTION( 
+          numnz > CUDA_MAX_INT, std::runtime_error, 
+          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than " << CUDA_MAX_INT << " non-zeros." 
+      );
       devptrs = node->template allocBuffer<int>( numRows+1 );
-      node->copyToBuffer( numRows+1,  hostptrs(),  devptrs );
-      const int numnz = hostinds.size();
+      ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
+      std::copy( hostptrs.begin(), hostptrs.end(), h_devptrs.begin() );
+      h_devptrs = null;
       if (numnz) {
         devinds = node->template allocBuffer<int>( numnz );
-        node->copyToBuffer( numnz,     hostinds(), devinds );
+        node->copyToBuffer( numnz, hostinds(), devinds );
       }
     }
     // set the data
@@ -856,7 +867,7 @@ namespace Kokkos {
     Teuchos::EDiag diag;
     graph.getMatDesc(uplo,diag);
     ArrayRCP<Scalar>       devvals;
-    ArrayRCP<const int>    hostptrs = graph.getPointers();
+    ArrayRCP<const size_t> hostptrs = graph.getPointers();
     ArrayRCP<const Scalar> hostvals = matrix.getValues();
     const int numRows = graph.getNumRows();
     if (diag == Teuchos::UNIT_DIAG) {
@@ -959,12 +970,12 @@ namespace Kokkos {
 
   // ======= pointer allocation ===========
   template <class Scalar, class Node>
-  ArrayRCP<int>
-  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const int> &numEntriesPerRow)
+  ArrayRCP<size_t>
+  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
-    CUDANodeHostPinnedDeallocator<int> dealloc;
-    ArrayRCP<int> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
+    CUDANodeHostPinnedDeallocator<size_t> dealloc;
+    ArrayRCP<size_t> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
     ptrs[0] = 0;
     std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
     return ptrs;
@@ -974,7 +985,7 @@ namespace Kokkos {
   template <class Scalar, class Node>
   template <class T>
   ArrayRCP<T>
-  CUSPARSEOps<Scalar,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const int> &rowPtrs)
+  CUSPARSEOps<Scalar,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const size_t> &rowPtrs)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
     const int totalNumEntries = *(rowPtrs.end()-1);

@@ -65,10 +65,6 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#endif
-
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -158,10 +154,6 @@ namespace {
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -241,19 +233,6 @@ namespace {
       tpinode = rcp(new TPINode(pl));
     }
     return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOS_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
   }
 #endif
 
@@ -1462,66 +1441,22 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR)
 #endif
 
-#if 0
-//// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-//#if defined(HAVE_KOKKOS_CUSPARSE) && !defined(HAVE_TPETRA_MPI)
-//// float
-//#if defined(HAVE_KOKKOS_CUDA_FLOAT)
-//#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \
-//          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, float, ThrustGPUNode )
-//#else
-//#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-//#endif
-//// double
-//#if defined(HAVE_KOKKOS_CUDA_DOUBLE)
-//#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO) \
-//          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, double, ThrustGPUNode )
-//#else
-//#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-//#endif
-//// complex<float>
-//#if defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
-//#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO) \
-//          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexFloat, ThrustGPUNode )
-//#else
-//#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
-//#endif
-//// complex<double>
-//#if defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
-//#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO) \
-//          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexDouble, ThrustGPUNode )
-//#else
-//#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
-//#endif
-//#else
-//// none
-#endif // 0
-# define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
-//#endif
-
 #define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
     UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
     UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
     UNIT_TEST_TPINODE(LO, GO, SCALAR)
 
 #define UNIT_TEST_FLOAT(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, float) \
-    UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
+    UNIT_TEST_ALLCPUNODES(LO, GO, float)
 
 #define UNIT_TEST_DOUBLE(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, double) \
-    UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
+    UNIT_TEST_ALLCPUNODES(LO, GO, double)
 
 #define UNIT_TEST_COMPLEX_FLOAT(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexFloat) \
-    UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
+    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexFloat)
 
 #define UNIT_TEST_COMPLEX_DOUBLE(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble) \
-    UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
+    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble)
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   UNIT_TEST_DOUBLE(int, int)

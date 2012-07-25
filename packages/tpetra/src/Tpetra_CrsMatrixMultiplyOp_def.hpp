@@ -405,13 +405,6 @@ Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<Mat
               MultiVector<OPSCALAR,LO,GO,NODE> &Y, \
               Teuchos::ETransp mode,               \
               OPSCALAR alpha, OPSCALAR beta        \
-              ) const; \
-  \
-  template void CrsMatrix<MATSCALAR,LO,GO,NODE>::multiply<OPSCALAR,OPSCALAR>( \
-        const MultiVector<OPSCALAR,LO,GO,NODE> &X, \
-              MultiVector<OPSCALAR,LO,GO,NODE> &Y, \
-              Teuchos::ETransp mode,               \
-              OPSCALAR alpha, OPSCALAR beta        \
-              ) const; \
+              ) const;
 
 #endif // TPETRA_CRSMATRIXMULTIPLYOP_DEF_HPP

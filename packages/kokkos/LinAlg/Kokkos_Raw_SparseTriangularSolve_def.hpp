@@ -62,7 +62,7 @@ lowerTriSolveCscColMajor (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -78,7 +78,7 @@ lowerTriSolveCscColMajor (
 
   for (Ordinal c = 0; c < numCols; ++c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       if (r == c) {
@@ -106,7 +106,7 @@ lowerTriSolveCsrColMajor (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -120,7 +120,7 @@ lowerTriSolveCsrColMajor (
     }
     // We assume the diagonal entry is first in the row.
     const MatrixScalar A_rr = val[ptr[r]];
-    for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -144,7 +144,7 @@ lowerTriSolveCscRowMajor (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -160,7 +160,7 @@ lowerTriSolveCscRowMajor (
 
   for (Ordinal c = 0; c < numCols; ++c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       if (r == c) {
@@ -188,7 +188,7 @@ lowerTriSolveCsrRowMajor (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -202,7 +202,7 @@ lowerTriSolveCsrRowMajor (
     }
     // We assume the diagonal entry is first in the row.
     const MatrixScalar A_rr = val[ptr[r]];
-    for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -226,7 +226,7 @@ lowerTriSolveCscColMajorUnitDiag (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -241,7 +241,7 @@ lowerTriSolveCscColMajorUnitDiag (
   }
 
   for (Ordinal c = 0; c < numCols; ++c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -262,7 +262,7 @@ lowerTriSolveCsrColMajorUnitDiag (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -274,7 +274,7 @@ lowerTriSolveCsrColMajorUnitDiag (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r + j*colStrideX] = Y[r + j*colStrideY];
     }
-    for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -295,7 +295,7 @@ lowerTriSolveCscRowMajorUnitDiag (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -310,7 +310,7 @@ lowerTriSolveCscRowMajorUnitDiag (
   }
 
   for (Ordinal c = 0; c < numCols; ++c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -331,7 +331,7 @@ lowerTriSolveCsrRowMajorUnitDiag (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -343,7 +343,7 @@ lowerTriSolveCsrRowMajorUnitDiag (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r*rowStrideX + j] = Y[r*rowStrideY + j];
     }
-    for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -364,7 +364,7 @@ upperTriSolveCscColMajor (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -380,7 +380,7 @@ upperTriSolveCscColMajor (
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       if (r == c) {
@@ -408,7 +408,7 @@ upperTriSolveCsrColMajor (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -422,7 +422,7 @@ upperTriSolveCsrColMajor (
     }
     // We assume the diagonal entry is first in the row.
     const MatrixScalar A_rr = val[ptr[r]];
-    for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -446,7 +446,7 @@ upperTriSolveCscRowMajor (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -462,7 +462,7 @@ upperTriSolveCscRowMajor (
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       if (r == c) {
@@ -490,7 +490,7 @@ upperTriSolveCsrRowMajor (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -504,7 +504,7 @@ upperTriSolveCsrRowMajor (
     }
     // We assume the diagonal entry is first in the row.
     const MatrixScalar A_rr = val[ptr[r]];
-    for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -528,7 +528,7 @@ upperTriSolveCscColMajorUnitDiag (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -543,7 +543,7 @@ upperTriSolveCscColMajorUnitDiag (
   }
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -564,7 +564,7 @@ upperTriSolveCsrColMajorUnitDiag (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -576,7 +576,7 @@ upperTriSolveCsrColMajorUnitDiag (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r + j*colStrideX] = Y[r + j*colStrideY];
     }
-    for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -597,7 +597,7 @@ upperTriSolveCscRowMajorUnitDiag (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -612,7 +612,7 @@ upperTriSolveCscRowMajorUnitDiag (
   }
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -633,7 +633,7 @@ upperTriSolveCsrRowMajorUnitDiag (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -645,7 +645,7 @@ upperTriSolveCsrRowMajorUnitDiag (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r*rowStrideX + j] = Y[r*rowStrideY + j];
     }
-    for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -665,7 +665,7 @@ lowerTriSolveCscColMajorInPlace (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
@@ -673,7 +673,7 @@ lowerTriSolveCscColMajorInPlace (
 
   for (Ordinal c = 0; c < numCols; ++c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       if (r == c) {
@@ -700,7 +700,7 @@ lowerTriSolveCscRowMajorInPlace (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
@@ -708,7 +708,7 @@ lowerTriSolveCscRowMajorInPlace (
 
   for (Ordinal c = 0; c < numCols; ++c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       if (r == c) {
@@ -735,14 +735,14 @@ lowerTriSolveCscColMajorUnitDiagInPlace (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
   typedef Teuchos::ScalarTraits<MatrixScalar> STS;
 
   for (Ordinal c = 0; c < numCols; ++c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -762,14 +762,14 @@ lowerTriSolveCscRowMajorUnitDiagInPlace (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
   typedef Teuchos::ScalarTraits<MatrixScalar> STS;
 
   for (Ordinal c = 0; c < numCols; ++c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -789,7 +789,7 @@ upperTriSolveCscColMajorInPlace (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
@@ -797,7 +797,7 @@ upperTriSolveCscColMajorInPlace (
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       if (r == c) {
@@ -824,7 +824,7 @@ upperTriSolveCscRowMajorInPlace (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
@@ -832,7 +832,7 @@ upperTriSolveCscRowMajorInPlace (
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       if (r == c) {
@@ -859,14 +859,14 @@ upperTriSolveCscColMajorUnitDiagInPlace (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
   typedef Teuchos::ScalarTraits<MatrixScalar> STS;
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -886,14 +886,14 @@ upperTriSolveCscRowMajorUnitDiagInPlace (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
   typedef Teuchos::ScalarTraits<MatrixScalar> STS;
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = val[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -914,7 +914,7 @@ lowerTriSolveCscColMajorConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -930,7 +930,7 @@ lowerTriSolveCscColMajorConj (
 
   for (Ordinal c = 0; c < numCols; ++c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
@@ -958,7 +958,7 @@ lowerTriSolveCsrColMajorConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -972,7 +972,7 @@ lowerTriSolveCsrColMajorConj (
     }
     // We assume the diagonal entry is first in the row.
     const MatrixScalar A_rr = STS::conjugate (val[ptr[r]]);
-    for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = STS::conjugate (val[k]);
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -996,7 +996,7 @@ lowerTriSolveCscRowMajorConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1012,7 +1012,7 @@ lowerTriSolveCscRowMajorConj (
 
   for (Ordinal c = 0; c < numCols; ++c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
@@ -1040,7 +1040,7 @@ lowerTriSolveCsrRowMajorConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1054,7 +1054,7 @@ lowerTriSolveCsrRowMajorConj (
     }
     // We assume the diagonal entry is first in the row.
     const MatrixScalar A_rr = STS::conjugate (val[ptr[r]]);
-    for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = STS::conjugate (val[k]);
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1078,7 +1078,7 @@ lowerTriSolveCscColMajorUnitDiagConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1093,7 +1093,7 @@ lowerTriSolveCscColMajorUnitDiagConj (
   }
 
   for (Ordinal c = 0; c < numCols; ++c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1114,7 +1114,7 @@ lowerTriSolveCsrColMajorUnitDiagConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1126,7 +1126,7 @@ lowerTriSolveCsrColMajorUnitDiagConj (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r + j*colStrideX] = Y[r + j*colStrideY];
     }
-    for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = STS::conjugate (val[k]);
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1147,7 +1147,7 @@ lowerTriSolveCscRowMajorUnitDiagConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1162,7 +1162,7 @@ lowerTriSolveCscRowMajorUnitDiagConj (
   }
 
   for (Ordinal c = 0; c < numCols; ++c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1183,7 +1183,7 @@ lowerTriSolveCsrRowMajorUnitDiagConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1195,7 +1195,7 @@ lowerTriSolveCsrRowMajorUnitDiagConj (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r*rowStrideX + j] = Y[r*rowStrideY + j];
     }
-    for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = STS::conjugate (val[k]);
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1216,7 +1216,7 @@ upperTriSolveCscColMajorConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1232,7 +1232,7 @@ upperTriSolveCscColMajorConj (
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
@@ -1260,7 +1260,7 @@ upperTriSolveCsrColMajorConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1274,7 +1274,7 @@ upperTriSolveCsrColMajorConj (
     }
     // We assume the diagonal entry is first in the row.
     const MatrixScalar A_rr = STS::conjugate (val[ptr[r]]);
-    for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = STS::conjugate (val[k]);
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1298,7 +1298,7 @@ upperTriSolveCscRowMajorConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1314,7 +1314,7 @@ upperTriSolveCscRowMajorConj (
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
@@ -1342,7 +1342,7 @@ upperTriSolveCsrRowMajorConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1356,7 +1356,7 @@ upperTriSolveCsrRowMajorConj (
     }
     // We assume the diagonal entry is first in the row.
     const MatrixScalar A_rr = STS::conjugate (val[ptr[r]]);
-    for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = STS::conjugate (val[k]);
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1380,7 +1380,7 @@ upperTriSolveCscColMajorUnitDiagConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1395,7 +1395,7 @@ upperTriSolveCscColMajorUnitDiagConj (
   }
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1416,7 +1416,7 @@ upperTriSolveCsrColMajorUnitDiagConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1428,7 +1428,7 @@ upperTriSolveCsrColMajorUnitDiagConj (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r + j*colStrideX] = Y[r + j*colStrideY];
     }
-    for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = STS::conjugate (val[k]);
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1449,7 +1449,7 @@ upperTriSolveCscRowMajorUnitDiagConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1464,7 +1464,7 @@ upperTriSolveCscRowMajorUnitDiagConj (
   }
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1485,7 +1485,7 @@ upperTriSolveCsrRowMajorUnitDiagConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val,
   const DomainScalar* const Y,
@@ -1497,7 +1497,7 @@ upperTriSolveCsrRowMajorUnitDiagConj (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r*rowStrideX + j] = Y[r*rowStrideY + j];
     }
-    for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {
+    for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {
       const MatrixScalar A_rc = STS::conjugate (val[k]);
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1517,7 +1517,7 @@ lowerTriSolveCscColMajorInPlaceConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
@@ -1525,7 +1525,7 @@ lowerTriSolveCscColMajorInPlaceConj (
 
   for (Ordinal c = 0; c < numCols; ++c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
@@ -1552,7 +1552,7 @@ lowerTriSolveCscRowMajorInPlaceConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
@@ -1560,7 +1560,7 @@ lowerTriSolveCscRowMajorInPlaceConj (
 
   for (Ordinal c = 0; c < numCols; ++c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
@@ -1587,14 +1587,14 @@ lowerTriSolveCscColMajorUnitDiagInPlaceConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
   typedef Teuchos::ScalarTraits<MatrixScalar> STS;
 
   for (Ordinal c = 0; c < numCols; ++c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1614,14 +1614,14 @@ lowerTriSolveCscRowMajorUnitDiagInPlaceConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
   typedef Teuchos::ScalarTraits<MatrixScalar> STS;
 
   for (Ordinal c = 0; c < numCols; ++c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1641,7 +1641,7 @@ upperTriSolveCscColMajorInPlaceConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
@@ -1649,7 +1649,7 @@ upperTriSolveCscColMajorInPlaceConj (
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
@@ -1676,7 +1676,7 @@ upperTriSolveCscRowMajorInPlaceConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
@@ -1684,7 +1684,7 @@ upperTriSolveCscRowMajorInPlaceConj (
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
     MatrixScalar A_cc = STS::zero ();
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
@@ -1711,14 +1711,14 @@ upperTriSolveCscColMajorUnitDiagInPlaceConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal colStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
   typedef Teuchos::ScalarTraits<MatrixScalar> STS;
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       for (Ordinal j = 0; j < numVecs; ++j) {
@@ -1738,14 +1738,14 @@ upperTriSolveCscRowMajorUnitDiagInPlaceConj (
   const Ordinal numVecs,
   RangeScalar* const X,
   const Ordinal rowStrideX,
-  const Ordinal* const ptr,
+  const  size_t* const ptr,
   const Ordinal* const ind,
   const MatrixScalar* const val)
 {
   typedef Teuchos::ScalarTraits<MatrixScalar> STS;
 
   for (Ordinal c = numCols-1; c >= 0; --c) {
-    for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {
+    for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
       MatrixScalar A_rc = STS::conjugate (val[k]);
       for (Ordinal j = 0; j < numVecs; ++j) {

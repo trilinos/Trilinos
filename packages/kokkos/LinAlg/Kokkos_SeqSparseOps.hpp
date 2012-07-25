@@ -89,7 +89,7 @@ namespace Kokkos {
       return numCols_;
     }
 
-    Teuchos::ArrayRCP<const Ordinal> getPointers() const {
+    Teuchos::ArrayRCP<const size_t> getPointers() const {
       return ptr_;
     }
 
@@ -118,7 +118,7 @@ namespace Kokkos {
       return hasEmptyRows_;
     }
 
-    void setStructure (const Teuchos::ArrayRCP<const Ordinal>& ptr,
+    void setStructure (const Teuchos::ArrayRCP<const size_t>& ptr,
                        const Teuchos::ArrayRCP<const Ordinal>& ind);
     void setMatDesc (Teuchos::EUplo uplo, Teuchos::EDiag diag);
     void getMatDesc (Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const;
@@ -133,7 +133,7 @@ namespace Kokkos {
     Teuchos::EUplo tri_uplo_;
     Teuchos::EDiag unit_diag_;
 
-    Teuchos::ArrayRCP<const Ordinal> ptr_;
+    Teuchos::ArrayRCP<const size_t> ptr_;
     Teuchos::ArrayRCP<const Ordinal> ind_;
   };
 
@@ -199,7 +199,7 @@ namespace Kokkos {
   template <class Ordinal, class Node>
   void
   SeqCrsGraph<Ordinal,Node>::
-  setStructure (const Teuchos::ArrayRCP<const Ordinal> &ptr,
+  setStructure (const Teuchos::ArrayRCP<const size_t> &ptr,
                 const Teuchos::ArrayRCP<const Ordinal> &ind)
   {
     std::string tfecfFuncName("setStructure(ptr,ind)");
@@ -506,13 +506,13 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the row pointers.
-    static Teuchos::ArrayRCP<Ordinal>
-    allocRowPtrs (const ArrayView<const Ordinal>& numEntriesPerRow);
+    static Teuchos::ArrayRCP<size_t>
+    allocRowPtrs (const ArrayView<const size_t>& numEntriesPerRow);
 
     //! Allocate and initialize the storage for a sparse graph or matrix.
     template <class T>
     static Teuchos::ArrayRCP<T>
-    allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs);
+    allocStorage (const Teuchos::ArrayView<const size_t>& rowPtrs);
 
     //! Finalize a graph
     static void
@@ -698,7 +698,7 @@ namespace Kokkos {
     // we do this one of two ways:
     // packed CRS: array of row pointers, array of indices, array of values.
 
-    ArrayRCP<const Ordinal> ptr_;
+    ArrayRCP<const size_t>  ptr_;
     ArrayRCP<const Ordinal> ind_;
     ArrayRCP<const Scalar>  val_;
 
@@ -889,7 +889,7 @@ namespace Kokkos {
       isInitialized_, std::runtime_error, " operators already initialized."
     );
 
-    ArrayRCP<const Ordinal> ptr = opgraph->getPointers ();
+    ArrayRCP<const  size_t> ptr = opgraph->getPointers ();
     ArrayRCP<const Ordinal> ind = opgraph->getIndices ();
     ArrayRCP<const Scalar> val = opmatrix->getValues ();
     const Ordinal numRows = opgraph->getNumRows ();
@@ -926,11 +926,11 @@ namespace Kokkos {
     if (opgraph->isEmpty () || numRows_ == 0) {
       isEmpty_ = true;
       // We have to go through a little trouble because ptr_ is an
-      // array of const Ordinal, but we need to set its first entry
+      // array of const size_t, but we need to set its first entry
       // here.
-      ArrayRCP<Ordinal> myPtr = arcp<Ordinal> (1);
+      ArrayRCP<size_t> myPtr = arcp<size_t> (1);
       myPtr[0] = 0;
-      ptr_ = arcp_const_cast<const Ordinal> (myPtr);
+      ptr_ = arcp_const_cast<const size_t> (myPtr);
       myPtr = null;
 
       // The matrix is empty, so ind_ and val_ have zero entries.
@@ -998,7 +998,7 @@ namespace Kokkos {
       ": Input and output multivectors have different numbers of vectors (columns)."
     );
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<Ordinal> (X.getNumRows()) < numRows_,
+      static_cast<size_t> (X.getNumRows()) < static_cast<size_t> (numRows_),
       std::runtime_error,
       ": Output multivector X does not have enough rows.  X.getNumRows() == "
       << X.getNumRows() << ", but the matrix has " << numRows_ << " rows."
@@ -1026,7 +1026,7 @@ namespace Kokkos {
       const DST* const Y_raw = Y.getValues ().getRawPtr ();
       const Ordinal Y_stride = (Ordinal) Y.getStride ();
 
-      const Ordinal* const ptr = ptr_.getRawPtr ();
+      const  size_t* const ptr = ptr_.getRawPtr ();
       const Ordinal* const ind = ind_.getRawPtr ();
       const Scalar*  const val = val_.getRawPtr ();
       const Ordinal numRows = X.getNumRows ();
@@ -1206,14 +1206,14 @@ namespace Kokkos {
     const DST* const X_raw = X.getValues ().getRawPtr ();
     const Ordinal X_stride = X.getStride ();
 
-    const Ordinal* const ptr = ptr_.getRawPtr ();
+    const  size_t* const ptr = ptr_.getRawPtr ();
     const Ordinal* const ind = ind_.getRawPtr ();
     const Scalar*  const val = val_.getRawPtr ();
 
     // Pointer to the sparse matrix-vector multiply routine to use.
     void (*matVec) (const OT, const OT, const OT,
                     const RST&, RST[], const OT,
-                    const RST&, const OT[], const OT[], const MST[],
+                    const RST&, const size_t[], const OT[], const MST[],
                     const DST[], const OT);
 
     // The following very long switch statement selects one of the
@@ -1449,11 +1449,11 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::ArrayRCP<Ordinal>
+  Teuchos::ArrayRCP< size_t>
   SeqSparseOps<Scalar, Ordinal, Node>::
-  allocRowPtrs (const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
+  allocRowPtrs (const Teuchos::ArrayView<const  size_t>& numEntriesPerRow)
   {
-    Teuchos::ArrayRCP<Ordinal> ptr (numEntriesPerRow.size() + 1);
+    Teuchos::ArrayRCP< size_t> ptr (numEntriesPerRow.size() + 1);
     ptr[0] = 0;
     std::partial_sum (numEntriesPerRow.getRawPtr (),
                       numEntriesPerRow.getRawPtr () + numEntriesPerRow.size (),
@@ -1465,7 +1465,7 @@ namespace Kokkos {
   template <class T>
   Teuchos::ArrayRCP<T>
   SeqSparseOps<Scalar, Ordinal, Node>::
-  allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+  allocStorage (const Teuchos::ArrayView<const  size_t>& rowPtrs)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
       "SeqSparseOps::allocStorage: The input rowPtrs array must have length at "

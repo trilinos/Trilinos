@@ -634,16 +634,6 @@ namespace Tpetra {
     return rcp(new Import<LO,GO,Node>(src,tgt));
   }
 
-  /** \brief Deprecated. Use createImport().
-    */
-  template <class LO, class GO, class Node> 
-  RCP< const Import<LO,GO,Node> >
-  TPETRA_DEPRECATED makeImport( const RCP<const Map<LO,GO,Node> > & src, 
-                                const RCP<const Map<LO,GO,Node> > & tgt )
-  {
-    return createImport<LO,GO,Node>(src,tgt);
-  }
-
 } // namespace Tpetra
 
 #endif // TPETRA_IMPORT_HPP

@@ -55,20 +55,20 @@
 namespace Kokkos {
 
   // Extract Matrix Diagonal for Type 1 storage
-  template <class Scalar, class Ordinal>
+  template <class Scalar, class OffsetType, class Ordinal>
   struct ExtractDiagonalOp {
 
     // mat data
     Ordinal numRows;
-    const Ordinal  * ptrs;
+    const OffsetType  * ptrs;
     const Ordinal * inds;
     const Scalar  * vals;
     Scalar * diag;
 
     inline KERNEL_PREFIX void execute(size_t row) {
-      for (Ordinal c=ptrs[row]; c != ptrs[row+1]; ++c) {
-        if (row==(size_t)inds[c]) {
-          diag[row]=vals[c];
+      for (OffsetType k=ptrs[row]; k != ptrs[row+1]; ++k) {
+        if (row==(size_t)inds[k]) {
+          diag[row]=vals[k];
           break;
         }
       }
@@ -79,10 +79,10 @@ namespace Kokkos {
   /************************************************************************************/
   /********************************* Jacobi Kernels ***********************************/
   /************************************************************************************/
-  template <class Scalar, class Ordinal>
+  template <class Scalar, class OffsetType, class Ordinal>
   struct DefaultJacobiOp {
     Ordinal numRows;
-    const Ordinal  *ptrs;
+    const OffsetType  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -101,8 +101,8 @@ namespace Kokkos {
       const Scalar *bj  = b + rhs * bstride;
 
       Scalar tmp = bj[row];
-      for (Ordinal c=ptrs[row]; c<ptrs[row+1]; ++c) {
-        tmp -= vals[c] * x0j[inds[c]];
+      for (OffsetType k=ptrs[row]; k<ptrs[row+1]; ++k) {
+        tmp -= vals[k] * x0j[inds[k]];
       }
       xj[row]=x0j[row]+damping_factor*tmp/diag[row];
     }
@@ -114,9 +114,9 @@ namespace Kokkos {
   /************************************************************************************/
 
   // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
-  template <class Scalar, class Ordinal>
+  template <class Scalar, class OffsetType, class Ordinal>
   struct DefaultFineGrainHybridGaussSeidelOp {
-    const Ordinal  *ptrs;
+    const OffsetType  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -133,8 +133,8 @@ namespace Kokkos {
       Scalar       *xj = x + rhs * xstride;
       const Scalar *bj = b + rhs * bstride;
       Scalar tmp = bj[row];
-      for (Ordinal c=ptrs[row];c<ptrs[row+1];c++) {
-        tmp -= vals[c] * xj[inds[c]];
+      for (OffsetType k=ptrs[row];k<ptrs[row+1];k++) {
+        tmp -= vals[k] * xj[inds[k]];
       }
       xj[row]+=damping_factor*tmp/diag[row];
     }
@@ -147,9 +147,9 @@ namespace Kokkos {
 
   // Coarse-grain "hybrid" Gauss-Seidel for Type 1 storage.
   // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
-  template <class Scalar, class Ordinal>
+  template <class Scalar, class OffsetType, class Ordinal>
   struct DefaultCoarseGrainHybridGaussSeidelOp1 {
-    const Ordinal  *ptrs;
+    const OffsetType  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -170,8 +170,8 @@ namespace Kokkos {
       const Scalar *bj = b + rhs * bstride;
       for (size_t row=start_r;row<stop_r;row++){
         Scalar tmp = bj[row];
-        for (Ordinal c=ptrs[row];c<ptrs[row+1];c++) {
-          tmp -= vals[c] * xj[inds[c]];
+        for (OffsetType k=ptrs[row];k<ptrs[row+1];k++) {
+          tmp -= vals[k] * xj[inds[k]];
         }
         xj[row]+=damping_factor*tmp/diag[row];
       }
@@ -182,9 +182,9 @@ namespace Kokkos {
   /******************************** Chebyshev Kernels *********************************/
   /************************************************************************************/
 
-  template <class Scalar, class Ordinal>
+  template <class Scalar, class OffsetType, class Ordinal>
   struct DefaultChebyshevOp {
-    const Ordinal  *ptrs;
+    const OffsetType  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -213,8 +213,8 @@ namespace Kokkos {
         } else {
           // v=Ax
           vj=Teuchos::ScalarTraits<Scalar>::zero();
-          for (Ordinal c=ptrs[row]; c<ptrs[row+1]; ++c) {
-            vj += vals[c] * x0j[inds[c]];
+          for (OffsetType k=ptrs[row]; k<ptrs[row+1]; ++k) {
+            vj += vals[k] * x0j[inds[k]];
           }
           // w=theta^{-1} D^{-1} (b -Ax)
           wj[row]=(bj[row]-vj)/diag[row]*oneOverTheta;
@@ -224,8 +224,8 @@ namespace Kokkos {
       } else {
         //v=Ax
         vj=Teuchos::ScalarTraits<Scalar>::zero();
-        for (Ordinal c=ptrs[row]; c<ptrs[row+1]; ++c) {
-          vj += vals[c] * x0j[inds[c]];
+        for (OffsetType k=ptrs[row]; k<ptrs[row+1]; ++k) {
+          vj += vals[k] * x0j[inds[k]];
         }
         // w=dtemp1*w +  D^{-1}*dtemp2*(b-Ax)
         wj[row]=dtemp1*wj[row]+dtemp2*(bj[row]-vj)/diag[row];

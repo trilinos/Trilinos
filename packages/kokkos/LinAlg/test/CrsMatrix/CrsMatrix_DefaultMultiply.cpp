@@ -215,7 +215,7 @@ namespace {
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = 3*N - 2;
-    ArrayRCP<Ordinal> ptrs(N+1);
+    ArrayRCP<size_t>  ptrs(N+1);
     ArrayRCP<Ordinal> inds(totalNNZ);
     ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host

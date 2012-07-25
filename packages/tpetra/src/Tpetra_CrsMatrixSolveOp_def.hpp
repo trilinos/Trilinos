@@ -287,12 +287,6 @@ Tpetra::createCrsMatrixSolveOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatSca
   template void CrsMatrix<MATSCALAR,LO,GO,NODE>::localSolve<OPSCALAR,OPSCALAR>( \
         const MultiVector<OPSCALAR,LO,GO,NODE> &X, \
               MultiVector<OPSCALAR,LO,GO,NODE> &Y, \
-              Teuchos::ETransp mode) const; \
-  \
-  template void CrsMatrix<MATSCALAR,LO,GO,NODE>::solve<OPSCALAR,OPSCALAR>( \
-        const MultiVector<OPSCALAR,LO,GO,NODE> &X, \
-              MultiVector<OPSCALAR,LO,GO,NODE> &Y, \
-              Teuchos::ETransp mode) const; \
-
+              Teuchos::ETransp mode) const;
 
 #endif // TPETRA_CRSMATRIXSOLVEOP_DEF_HPP

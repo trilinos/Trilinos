@@ -403,13 +403,13 @@ namespace Tpetra {
       ///   implementation of \c readSparse() may become a lot shorter
       ///   in the future.
       static void
-      distribute (ArrayRCP<local_ordinal_type>& myNumEntriesPerRow,
-                  ArrayRCP<size_type>& myRowPtr,
+      distribute (ArrayRCP<size_t>& myNumEntriesPerRow,
+                  ArrayRCP<size_t>& myRowPtr,
                   ArrayRCP<global_ordinal_type>& myColInd,
                   ArrayRCP<scalar_type>& myValues,
                   const RCP<const map_type>& pRowMap,
-                  ArrayRCP<local_ordinal_type>& numEntriesPerRow,
-                  ArrayRCP<size_type>& rowPtr,
+                  ArrayRCP<size_t>& numEntriesPerRow,
+                  ArrayRCP<size_t>& rowPtr,
                   ArrayRCP<global_ordinal_type>& colInd,
                   ArrayRCP<scalar_type>& values,
                   const bool debug=false)
@@ -452,7 +452,7 @@ namespace Tpetra {
 
          // Space for my proc's number of entries per row.
          // Will be filled in below.
-         myNumEntriesPerRow = arcp<local_ordinal_type> (myNumRows);
+         myNumEntriesPerRow = arcp<size_t> (myNumRows);
 
          // Teuchos::receive() returns an int; here is space for it.
          int recvResult = 0;
@@ -767,10 +767,11 @@ namespace Tpetra {
          // don't need it to compute anything else in distribute().
          // Each proc can do this work for itself, since it only needs
          // myNumEntriesPerRow to do so.
-         myRowPtr = arcp<size_type> (myNumRows+1);
+         myRowPtr = arcp<size_t> (myNumRows+1);
          myRowPtr[0] = 0;
-         for (size_type k = 1; k < myNumRows+1; ++k)
+         for (size_type k = 1; k < myNumRows+1; ++k) {
            myRowPtr[k] = myRowPtr[k-1] + myNumEntriesPerRow[k-1];
+         }
          if (extraDebug && debug)
            {
              cerr << "Proc " << Teuchos::rank (*(pRowMap->getComm()))
@@ -799,8 +800,8 @@ namespace Tpetra {
       /// graph of the matrix, so that you can't add new entries.)
       ///
       static sparse_matrix_ptr
-      makeMatrix (ArrayRCP<local_ordinal_type>& myNumEntriesPerRow,
-                  ArrayRCP<size_type>& myRowPtr,
+      makeMatrix (ArrayRCP<size_t>& myNumEntriesPerRow,
+                  ArrayRCP<size_t>& myRowPtr,
                   ArrayRCP<global_ordinal_type>& myColInd,
                   ArrayRCP<scalar_type>& myValues,
                   const map_ptr& pRowMap,
@@ -1473,8 +1474,8 @@ namespace Tpetra {
         // matrix (with numEntriesPerRow as redundant but convenient
         // metadata, since it's computable from rowPtr and vice
         // versa).  They are valid only on Proc 0.
-        ArrayRCP<local_ordinal_type> numEntriesPerRow;
-        ArrayRCP<size_type> rowPtr;
+        ArrayRCP<size_t> numEntriesPerRow;
+        ArrayRCP<size_t> rowPtr;
         ArrayRCP<global_ordinal_type> colInd;
         ArrayRCP<scalar_type> values;
 
@@ -1507,7 +1508,7 @@ namespace Tpetra {
                 pAdder->getAdder()->getEntries();
 
               // Number of matrix entries (after merging).
-              const size_type numEntries = entries.size();
+              const size_t numEntries = (size_t)entries.size();
 
               if (debug) {
                 cerr << "----- Proc 0: Matrix has numRows=" << numRows
@@ -1518,18 +1519,17 @@ namespace Tpetra {
               // Make space for the CSR matrix data.  Converting to
               // CSR is easier if we fill numEntriesPerRow with zeros
               // at first.
-              numEntriesPerRow = arcp<local_ordinal_type> (numRows);
+              numEntriesPerRow = arcp<size_t> (numRows);
               std::fill (numEntriesPerRow.begin(), numEntriesPerRow.end(), 0);
-              rowPtr = arcp<size_type> (numRows+1);
-              std::fill (rowPtr.begin(), rowPtr.end(),
-                         static_cast<size_type>(0));
+              rowPtr = arcp<size_t> (numRows+1);
+              std::fill (rowPtr.begin(), rowPtr.end(), 0);
               colInd = arcp<global_ordinal_type> (numEntries);
               values = arcp<scalar_type> (numEntries);
 
               // Convert from array-of-structs coordinate format to CSR
               // (compressed sparse row) format.
               global_ordinal_type prvRow = 0;
-              size_type curPos = 0;
+              size_t curPos = 0;
               rowPtr[0] = 0;
               for (curPos = 0; curPos < numEntries; ++curPos) {
                 const element_type& curEntry = entries[curPos];
@@ -1648,8 +1648,8 @@ namespace Tpetra {
         // These arrays represent each processor's part of the matrix
         // data, in "CSR" format (sort of, since the row indices might
         // not be contiguous).
-        ArrayRCP<local_ordinal_type> myNumEntriesPerRow;
-        ArrayRCP<size_type> myRowPtr;
+        ArrayRCP<size_t> myNumEntriesPerRow;
+        ArrayRCP<size_t> myRowPtr;
         ArrayRCP<global_ordinal_type> myColInd;
         ArrayRCP<scalar_type> myValues;
         // Distribute the matrix data.  This is a collective operation.

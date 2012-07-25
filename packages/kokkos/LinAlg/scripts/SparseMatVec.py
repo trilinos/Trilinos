@@ -486,7 +486,7 @@ def emitFuncSig (defDict, indent=0):
         ind + '  RangeScalar Y[],\n' + \
         ind + '  const Ordinal ${denseRowCol}StrideY,\n' + \
         ind + '  const RangeScalar& alpha,\n' + \
-        ind + '  const Ordinal ptr[],\n' + \
+        ind + '  const size_t  ptr[],\n' + \
         ind + '  const Ordinal ind[],\n' + \
         ind + '  const MatrixScalar val[],\n' + \
         ind + '  const DomainScalar X[],\n' + \
@@ -847,7 +847,7 @@ def emitForLoopOneFor (defDict, alphaIsOne, beta, indent=0):
     s = ''
     s = s + \
         ind + 'Ordinal ${loopIndex} = 0;\n' + \
-        ind + 'for (Ordinal k = 0; k < nnz; ++k) {\n' + \
+        ind + 'for (size_t k = 0; k < nnz; ++k) {\n' + \
         ind + ' '*2 + 'const MatrixScalar A_ij = ${getMatVal};\n' + \
         ind + ' '*2 + 'const Ordinal ${otherIndex} = ind[k];\n'
     # Here comes the 'while' loop or 'if' statement for updating the
@@ -1031,7 +1031,7 @@ def emitForLoopTwoFor (defDict, alphaIsOne, beta, indent=0):
 
     # Begin the inner for loop.
     s = s + \
-        ind + ' '*2 + 'for (Ordinal k = ptr[${loopIndex}]; k < ptr[${loopIndex}+1]; ++k) {\n'
+        ind + ' '*2 + 'for (size_t k = ptr[${loopIndex}]; k < ptr[${loopIndex}+1]; ++k) {\n'
     # Fetch the current sparse matrix value and {row, column} index.
     s = s + \
         ind + ' '*4 + 'const MatrixScalar A_ij = ${getMatVal};\n' + \
@@ -1102,7 +1102,7 @@ def emitForLoop (defDict, indent=0):
                 emitForLoopTwoFor (defDict, False, beta, indent+2) + \
                 ind + '}\n'
     else: # 'for-while' or 'for-if'
-        s = ind + 'const Ordinal nnz = ptr[num' + RowCol + 's];\n'
+        s = ind + 'const size_t nnz = ptr[num' + RowCol + 's];\n'
         if defDict['sparseFormat'] == 'CSR':
             # Special cases of beta only matter for CSR.
             s = s + \

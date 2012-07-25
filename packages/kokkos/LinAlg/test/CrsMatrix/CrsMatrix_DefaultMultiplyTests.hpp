@@ -68,7 +68,7 @@
     typedef MultiVector<Scalar,Node>                                          MV;
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Ordinal numRows = 0;
-    Teuchos::ArrayRCP<Ordinal> ptrs(1); ptrs[0] = 0;
+    Teuchos::ArrayRCP<size_t> ptrs(1); ptrs[0] = 0;
     RCP<GRPH> G = rcp( new GRPH(numRows,numRows,node,null) );
     RCP<MAT>  A = rcp( new MAT(G,null) );
     G->setStructure(ptrs,null);

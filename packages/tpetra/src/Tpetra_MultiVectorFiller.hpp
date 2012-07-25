@@ -1471,12 +1471,9 @@ namespace Tpetra {
         createContigMapWithNode<LO, GO, NT> (invalid, unknownsPerNode, comm, node);
 
       std::ostringstream os;
-      int success = 1;
       try {
         MultiVectorFillerTester<MV>::testSameMap (targetMap, unknownsPerElt, numCols, out, verbLevel);
-        success = 1;
       } catch (std::exception& e) {
-        success = 0;
         os << e.what();
       }
 
