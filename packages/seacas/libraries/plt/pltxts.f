@@ -72,8 +72,8 @@ C=======================================================================
       CHARACTER*20 ESC
       INTEGER ASCII
       LOGICAL STATUS,CHRCI
-      DATA ESCCHR/'\'/
 
+      ESCCHR = CHAR(92)
       IFONT = 1
       CALL PLTSVV
       CALL PLTSTV(1,1.)

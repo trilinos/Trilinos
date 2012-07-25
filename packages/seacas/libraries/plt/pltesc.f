@@ -60,7 +60,7 @@ C=======================================================================
       END IF
 
       DO 2090 J = IP,LT
-         IF (TEXT(J:J).EQ.' ' .OR. TEXT(J:J).EQ.'\\') THEN
+         IF (TEXT(J:J).EQ.' ' .OR. TEXT(J:J).EQ. CHAR(92)) THEN
             GO TO 2100
 
          END IF
@@ -74,7 +74,7 @@ C=======================================================================
 
       END IF
 
-      IF (TEXT(J:J).EQ.'\\') THEN
+      IF (TEXT(J:J).EQ. CHAR(92)) THEN
          I = J - 1
       END IF
 

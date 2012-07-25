@@ -71,8 +71,8 @@ C=======================================================================
       REAL LENGTH,LENGT1
       INTEGER ASCII
       LOGICAL STATUS,CHRCI
-      DATA ESCCHR/'\'/
 
+      ESCCHR = CHAR(92)
       LENGTH = 0.
       LENGT1 = 0.
       YSZE = TEXTP(1)
