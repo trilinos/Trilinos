@@ -1503,7 +1503,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 #pragma omp for
 #endif
     for(partId_t j = 0; j < partNo; ++j){
-      scalar_t pwj = 0;
+      int pwj = 0;
       for (int i = 0; i < noThreads; ++i){
         pwj += partPointCounts[i][j];
       }
