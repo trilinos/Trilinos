@@ -64,7 +64,7 @@ namespace stk {
             A_tot += Ai;
             W_tot += Wi;
             double untangle_metric = 0.0;
-            double beta = 0.05*Wi;  // FIXME magic number
+            double beta = 0.1*Wi;  // FIXME magic number
             double temp_var = Ai;
             temp_var -= beta;
             double fval=0.0;

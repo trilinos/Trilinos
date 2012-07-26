@@ -1037,17 +1037,13 @@ namespace stk
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
             eMesh.populateParallelInfoFields(true,true,&boundarySelector);
-            eMesh.save_as(input_files_loc+"hex_4_smooth.0.e");
-
-            // save state of original mesh
-            // field, dst, src: 
-            eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
+            // cluster the mesh towards the bump
             for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
-                if (boundarySelector_5(**k)) 
+                //if (boundarySelector_5(**k)) 
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
@@ -1058,13 +1054,15 @@ namespace stk
                         stk::mesh::Entity& entity = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
-                        double ix = data[0];
-                        double iy = data[1];
-                        data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*.5;
+                        data[2] = data[2]*data[2];
                       }
                   }
               }
-            eMesh.save_as(input_files_loc+"hex_4_smooth.0_perturbed_small.e");
+            eMesh.save_as(input_files_loc+"hex_4_smooth.0.e");
+
+            // save state of original mesh
+            // field, dst, src: 
+            eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
             Mesquite::MsqError err;
             Mesquite::MeshImpl *msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
