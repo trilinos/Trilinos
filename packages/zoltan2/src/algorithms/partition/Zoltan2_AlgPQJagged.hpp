@@ -26,10 +26,11 @@
 #define EPS_SCALE 1
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
+
+//#undef HAVE_ZOLTAN2_OMP
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
 #endif
-
 
 
 //#define RCBCODE
@@ -1150,11 +1151,11 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
 
       int me = 0;
-#ifdef HAVE_ZOLTAN2_OMP
-      me = omp_get_thread_num();
+
       partId_t myCutStart = 0;
       partId_t myCutEnd = noCuts;
-
+#ifdef HAVE_ZOLTAN2_OMP
+      me = omp_get_thread_num();
 #ifdef USE_LESS_THREADS
       int scalar_t_bytes = sizeof(scalar_t);
       partId_t requiredPull = ceil(noCuts / double(numThreads));

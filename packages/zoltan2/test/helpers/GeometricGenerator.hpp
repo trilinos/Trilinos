@@ -285,9 +285,10 @@ public:
   int dimension;
   lno_t requested;
   lno_t assignedPrevious;
+  int worldSize;
   virtual ~CoordinateDistribution(){}
 
-  CoordinateDistribution(gno_t np_, int dim):numPoints(np_), dimension(dim), requested(0), assignedPrevious(0){}
+  CoordinateDistribution(gno_t np_, int dim, int worldSize):numPoints(np_), dimension(dim), requested(0), assignedPrevious(0), worldSize(worldSize){}
   virtual CoordinatePoint<T> getPoint() = 0;
   virtual T getXCenter() = 0;
   virtual T getXRadius() =0;
@@ -297,6 +298,9 @@ public:
     for (int i = 0; i < myRank; ++i){
       //cout << "me:" << myRank << " i:" << i << " s:" << sharedRatios_[i]<< endl;
       this->assignedPrevious += lno_t(sharedRatios_[i] * this->numPoints);
+      if (i < this->numPoints % this->worldSize){
+        this->assignedPrevious += 1;
+      }
     }
 
     this->requested = requestedPointcount;
@@ -344,7 +348,7 @@ public:
     return standartDevx;
   }
 
-  CoordinateNormalDistribution(lno_t np_, int dim, CoordinatePoint<T> center_ , T sd_x, T sd_y, T sd_z ): CoordinateDistribution<T,lno_t>(np_,dim),
+  CoordinateNormalDistribution(lno_t np_, int dim, CoordinatePoint<T> center_ , T sd_x, T sd_y, T sd_z, int worldSize): CoordinateDistribution<T,lno_t>(np_,dim,0),
       standartDevx(sd_x), standartDevy(sd_y), standartDevz(sd_z){
     this->center.x = center_.x;
     this->center.y = center_.y;
@@ -430,7 +434,7 @@ public:
   }
 
 
-  CoordinateUniformDistribution(lno_t np_, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z ): CoordinateDistribution<T,lno_t>(np_,dim),
+  CoordinateUniformDistribution(lno_t np_, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z, int worldSize ): CoordinateDistribution<T,lno_t>(np_,dim,0),
       leftMostx(l_x), rightMostx(r_x), leftMosty(l_y), rightMosty(r_y), leftMostz(l_z), rightMostz(r_z){}
 
   virtual ~CoordinateUniformDistribution(){};
@@ -499,7 +503,7 @@ public:
   }
 
 
-  CoordinateGridDistribution(lno_t alongX, lno_t alongY, lno_t alongZ, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z , int myRank_): CoordinateDistribution<T,lno_t>(alongX * alongY * alongZ,dim),
+  CoordinateGridDistribution(lno_t alongX, lno_t alongY, lno_t alongZ, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z , int myRank_, int worldSize): CoordinateDistribution<T,lno_t>(alongX * alongY * alongZ,dim,worldSize),
       leftMostx(l_x), rightMostx(r_x), leftMosty(l_y), rightMosty(r_y), leftMostz(l_z), rightMostz(r_z), myRank(myRank_){
     //currentX = leftMostx, currentY = leftMosty, currentZ = leftMostz;
     this->processCnt = 0;
@@ -529,8 +533,8 @@ public:
     lno_t xshift = 0, yshift = 0, zshift = 0;
 
     lno_t tmp = before % (this->along_X * this->along_Y);
-    yshift  = tmp / this->along_X;
-    xshift = tmp % this->along_X;
+    xshift  = tmp / this->along_X;
+    yshift = tmp % this->along_X;
     zshift = before / (this->along_X * this->along_Y);
 
 
@@ -722,7 +726,7 @@ private:
         if(this->dimension == 3){
           sd_z = fromString<T>(splittedStr[i++]);
         }
-        this->coordinateDistributions[this->distributionCount++] = new CoordinateNormalDistribution<T, lno_t>(np_, this->dimension, pp , sd_x, sd_y, sd_z );
+        this->coordinateDistributions[this->distributionCount++] = new CoordinateNormalDistribution<T, lno_t>(np_, this->dimension, pp , sd_x, sd_y, sd_z, worldSize );
 
       } else if(distName == "UNIFORM" ){
         int reqArg = 5;
@@ -746,7 +750,7 @@ private:
           r_z = fromString<T>(splittedStr[i++]);
         }
 
-        this->coordinateDistributions[this->distributionCount++] = new CoordinateUniformDistribution<T, lno_t>( np_,  this->dimension, l_x, r_x, l_y, r_y, l_z, r_z );
+        this->coordinateDistributions[this->distributionCount++] = new CoordinateUniformDistribution<T, lno_t>( np_,  this->dimension, l_x, r_x, l_y, r_y, l_z, r_z, worldSize );
       } else if (distName == "GRID"){
         int reqArg = 6;
         if(this->dimension == 3){
@@ -783,7 +787,7 @@ private:
           throw "Provide at least 1 point along each dimension for grid test.";
         }
         this->coordinateDistributions[this->distributionCount++] = new CoordinateGridDistribution<T, lno_t>
-        (np_x, np_y,np_z, this->dimension, l_x, r_x,l_y, r_y, l_z, r_z , this->myRank);
+        (np_x, np_y,np_z, this->dimension, l_x, r_x,l_y, r_y, l_z, r_z , this->myRank, worldSize);
 
       }
       else {
@@ -1267,12 +1271,18 @@ public:
     for(int i = 0; i < this->distributionCount; ++i){
       for(int ii = 0; ii < worldSize; ++ii){
         lno_t increment  = lno_t (this->coordinateDistributions[i]->numPoints * this->loadDistributions[ii]);
+        if (ii < this->coordinateDistributions[i]->numPoints % worldSize){
+          increment += 1;
+        }
         this->numGlobalCoords += increment;
         if(ii < myRank){
           prefixSum += increment;
         }
       }
       myPointCount += lno_t(this->coordinateDistributions[i]->numPoints * this->loadDistributions[myRank]);
+      if (myRank < this->coordinateDistributions[i]->numPoints % worldSize){
+        myPointCount += 1;
+      }
     }
 
 
@@ -1284,6 +1294,9 @@ public:
     srand ( time(NULL) + myRank);
     for (int i = 0; i < distributionCount; ++i){
       lno_t requestedPointCount = lno_t(this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank]);
+      if (myRank < this->coordinateDistributions[i]->numPoints % worldSize){
+        requestedPointCount += 1;
+      }
       this->coordinateDistributions[i]->GetPoints(requestedPointCount,this->points + this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
       this->numLocalCoords += requestedPointCount;
     }
