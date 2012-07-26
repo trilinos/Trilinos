@@ -52,6 +52,7 @@
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
 #include <FEMesh.hpp>
+#include <HexElement.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
