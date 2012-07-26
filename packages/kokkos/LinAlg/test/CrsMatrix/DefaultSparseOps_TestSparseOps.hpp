@@ -716,15 +716,17 @@ public:
   }
 
 
-  /// Return an initialized Kokkos::MultiVector, filled with zeros.
+  /// Return an initialized Kokkos::MultiVector, filled with zeros or random values.
   ///
   /// \param node [in] The Kokkos Node instance.
   /// \param numRows [in] The number of rows in the MultiVector.
   /// \param numCols [in] The number of columns in the MultiVector.
+  /// \param random [in] If true, fill with random values, else fill with zeros.
   Teuchos::RCP<Kokkos::MultiVector<scalar_type, node_type> >
   makeMultiVector (const Teuchos::RCP<node_type>& node,
                    const ordinal_type numRows,
-                   const ordinal_type numCols) const
+                   const ordinal_type numCols,
+                   const bool random=false) const
   {
     using Teuchos::arcp;
     using Teuchos::as;
@@ -738,7 +740,12 @@ public:
     X->initializeValues ( numRows, numCols,
                           arcp<scalar_type> (numRows*numCols),
                           numRows);
-    MVT::Init (*X, STS::zero ());
+    if (random) {
+      MVT::Random (*X);
+    }
+    else {
+      MVT::Init (*X, STS::zero ());
+    }
     return X;
   }
 
@@ -905,14 +912,57 @@ public:
                as<int> (Y_hat->getStride ()));
     A_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
                                                            (const MV) *X, *Y);
-
     // Compare Y and Y_hat.  Use Z as scratch space.
     relErr = maxRelativeError (Y_hat, Y, Z);
     if (relErr > tol) {
       err << "Sparse matrix-(multi)vector multiply test failed for general "
-        "matrix A.  Maximum relative error " << relErr << " exceeds "
-        "the given tolerance " << tol << ".\n";
+          << "matrix A, with alpha = 1 and beta = 0.  Maximum relative error "
+          << relErr << " exceeds the given tolerance " << tol << ".\n";
       success = false;
+    }
+
+    {
+      // Fill Y_hat with random values, make Y a copy of Y_hat, and
+      // test Y = beta*Y + alpha*A_sparse*X with different values of
+      // alpha and beta.  We include an irrational value in the list,
+      // since it's probably not a special case in the implementation.
+      const scalar_type rootTwo = STS::squareroot (STS::one() + STS::one());
+      const scalar_type alphaValues[] = {
+        -STS::one(), STS::zero(), STS::one(), -rootTwo, rootTwo
+      };
+      const int numAlphaValues = 5;
+      const scalar_type betaValues[] = {
+        -STS::one(), STS::zero(), STS::one(), -rootTwo, rootTwo
+      };
+      const int numBetaValues = 5;
+
+      for (int alphaInd = 0; alphaInd < numAlphaValues; ++alphaInd) {
+        for (int betaInd = 0; betaInd < numBetaValues; ++betaInd) {
+          const scalar_type alpha = alphaValues[alphaInd];
+          const scalar_type beta = betaValues[betaInd];
+
+          MVT::Random (*Y_hat);
+          MVT::Assign (*Y, *Y_hat);
+
+          blas.GEMM (NO_TRANS, NO_TRANS, N, numVecs, N,
+                     alpha, A_dense->values (), A_dense->stride (),
+                     X->getValues ().getRawPtr (), as<int> (X->getStride ()),
+                     beta, Y_hat->getValuesNonConst ().getRawPtr (),
+                     as<int> (Y_hat->getStride ()));
+          A_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, alpha,
+                                                                 (const MV) *X,
+                                                                 beta, *Y);
+          // Compare Y and Y_hat.  Use Z as scratch space.
+          relErr = maxRelativeError (Y_hat, Y, Z);
+          if (relErr > tol) {
+            err << "Sparse matrix-(multi)vector multiply test failed for general "
+                << "matrix A, with alpha = " << alpha << " and beta = " << beta
+                << ".  Maximum relative error " << relErr << " exceeds "
+                << "the given tolerance " << tol << ".\n";
+            success = false;
+          }
+        }
+      }
     }
 
     // Compute Y_hat := A_dense^T * X and Y := A_sparse^T * X.
@@ -927,9 +977,55 @@ public:
     relErr = maxRelativeError (Y_hat, Y, Z);
     if (relErr > tol) {
       err << "Sparse matrix-(multi)vector multiply (transpose) test failed for "
-        "general matrix A.  Maximum relative error " << relErr << " exceeds "
-        "the given tolerance " << tol << ".\n";
+          << "general matrix A, with alpha = 1 and beta = 0.  Maximum relative "
+          << "error " << relErr << " exceeds the given tolerance " << tol
+          << ".\n";
       success = false;
+    }
+
+    {
+      // Fill Y_hat with random values, make Y a copy of Y_hat, and
+      // test Y = beta * Y + alpha * A_sparse^T * X with different
+      // values of alpha and beta.  We include an irrational value in
+      // the list, since it's probably not a special case in the
+      // implementation.
+      const scalar_type rootTwo = STS::squareroot (STS::one() + STS::one());
+      const scalar_type alphaValues[] = {
+        -STS::one(), STS::zero(), STS::one(), -rootTwo, rootTwo
+      };
+      const int numAlphaValues = 5;
+      const scalar_type betaValues[] = {
+        -STS::one(), STS::zero(), STS::one(), -rootTwo, rootTwo
+      };
+      const int numBetaValues = 5;
+
+      for (int alphaInd = 0; alphaInd < numAlphaValues; ++alphaInd) {
+        for (int betaInd = 0; betaInd < numBetaValues; ++betaInd) {
+          const scalar_type alpha = alphaValues[alphaInd];
+          const scalar_type beta = betaValues[betaInd];
+
+          MVT::Random (*Y_hat);
+          MVT::Assign (*Y, *Y_hat);
+
+          blas.GEMM (TRANS, NO_TRANS, N, numVecs, N,
+                     alpha, A_dense->values (), A_dense->stride (),
+                     X->getValues ().getRawPtr (), as<int> (X->getStride ()),
+                     beta, Y_hat->getValuesNonConst ().getRawPtr (),
+                     as<int> (Y_hat->getStride ()));
+          A_sparse->template multiply<scalar_type, scalar_type> (TRANS, alpha,
+                                                                 (const MV) *X,
+                                                                 beta, *Y);
+          // Compare Y and Y_hat.  Use Z as scratch space.
+          relErr = maxRelativeError (Y_hat, Y, Z);
+          if (relErr > tol) {
+            err << "Sparse matrix-(multi)vector multiply (transpose) test "
+                << "failed for general matrix A, with alpha = " << alpha
+                << " and beta = " << beta << ".  Maximum relative error "
+                << relErr << " exceeds the given tolerance " << tol << ".\n";
+            success = false;
+          }
+        }
+      }
     }
 
     if (STS::isComplex) {
@@ -945,10 +1041,58 @@ public:
       relErr = maxRelativeError (Y_hat, Y, Z);
       if (relErr > tol) {
         err << "Sparse matrix-(multi)vector multiply (conjugate transpose) "
-          "test failed for general matrix A.  Maximum relative error "
-            << relErr << " exceeds the given tolerance " << tol << ".\n";
+            << "test failed for general matrix A, with alpha = 1 and beta = 0.  "
+            << "Maximum relative error " << relErr << " exceeds the given "
+            << "tolerance " << tol << ".\n";
         success = false;
       }
+
+      {
+        // Fill Y_hat with random values, make Y a copy of Y_hat, and
+        // test Y = beta * Y + alpha * A_sparse^H * X with different
+        // values of alpha and beta.  We include an irrational value in
+        // the list, since it's probably not a special case in the
+        // implementation.
+        const scalar_type rootTwo = STS::squareroot (STS::one() + STS::one());
+        const scalar_type alphaValues[] = {
+          -STS::one(), STS::zero(), STS::one(), -rootTwo, rootTwo
+        };
+        const int numAlphaValues = 5;
+        const scalar_type betaValues[] = {
+          -STS::one(), STS::zero(), STS::one(), -rootTwo, rootTwo
+        };
+        const int numBetaValues = 5;
+
+        for (int alphaInd = 0; alphaInd < numAlphaValues; ++alphaInd) {
+          for (int betaInd = 0; betaInd < numBetaValues; ++betaInd) {
+            const scalar_type alpha = alphaValues[alphaInd];
+            const scalar_type beta = betaValues[betaInd];
+
+            MVT::Random (*Y_hat);
+            MVT::Assign (*Y, *Y_hat);
+
+            blas.GEMM (CONJ_TRANS, NO_TRANS, N, numVecs, N,
+                       alpha, A_dense->values (), A_dense->stride (),
+                       X->getValues ().getRawPtr (), as<int> (X->getStride ()),
+                       beta, Y_hat->getValuesNonConst ().getRawPtr (),
+                       as<int> (Y_hat->getStride ()));
+            A_sparse->template multiply<scalar_type, scalar_type> (CONJ_TRANS, alpha,
+                                                                   (const MV) *X,
+                                                                   beta, *Y);
+            // Compare Y and Y_hat.  Use Z as scratch space.
+            relErr = maxRelativeError (Y_hat, Y, Z);
+            if (relErr > tol) {
+              err << "Sparse matrix-(multi)vector multiply (conjugate "
+                  << "transpose) test failed for general matrix A, with alpha = "
+                  << alpha << " and beta = " << beta << ".  Maximum relative "
+                  << "error " << relErr << " exceeds the given tolerance "
+                  << tol << ".\n";
+              success = false;
+            }
+          }
+        }
+      }
+
     }
 
     // Compute Z_hat := U_dense * X.  First copy X into Z_hat, since TRMM
@@ -978,9 +1122,9 @@ public:
                Y_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Y_hat->getStride ()));
 
-    // FIXME (mfh 19 June 2012) There's a bit of a problem with
-    // DefaultHostSparseOps: its multiply() method doesn't appear to
-    // respect the implicit unit diagonal indication.  Thus, for now,
+    // NOTE (mfh 19 June 2012) DefaultHostSparseOps' multiply() method
+    // doesn't respect the implicit unit diagonal indication.  Chris
+    // Baker assures me that this is the intent of multiply().  Thus,
     // we don't run this test.
     if (false) {
       // Compute Y = L_sparse * Z.

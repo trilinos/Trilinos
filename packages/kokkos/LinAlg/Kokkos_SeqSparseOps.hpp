@@ -1377,10 +1377,29 @@ namespace Kokkos {
             matVec = &Kokkos::Raw::matVecCsrColMajorForfor4Unrolled;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            matVec = &Kokkos::Raw::matVecCsrColMajorForif4Unrolled;
+            // FIXME (mfh 26 Jul 2012) Currently, the code generator
+            // is broken for the 'for-if' and 'for-while' variants,
+            // when the number of multivector columns is not fixed (it
+            // wasn't broken before -- it had to do with the
+            // introduction of temporaries).  We could either revert
+            // to the for-for variant, or throw an exception.  We do
+            // the latter, since for-if is not the default, and we
+            // want to make sure that people don't get confusing
+            // performance results.
+
+            //matVec = &Kokkos::Raw::matVecCsrColMajorForif4Unrolled;
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
           else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            matVec = &Kokkos::Raw::matVecCsrColMajorForwhile4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCsrColMajorForwhile4Unrolled;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
         }
         else if (trans == Teuchos::TRANS) {
@@ -1388,10 +1407,20 @@ namespace Kokkos {
             matVec = &Kokkos::Raw::matVecCscColMajorForfor4Unrolled;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForif4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForif4Unrolled;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
           else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            matVec = &Kokkos::Raw::matVecCscColMajorForwhile4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForwhile4Unrolled;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
         }
         else { // if (trans == Teuchos::CONJ_TRANS) {
@@ -1399,10 +1428,20 @@ namespace Kokkos {
             matVec = &Kokkos::Raw::matVecCscColMajorForforConj4Unrolled;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForifConj4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForifConj4Unrolled;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
           else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj4Unrolled;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
         }
       }
@@ -1412,10 +1451,20 @@ namespace Kokkos {
             matVec = &Kokkos::Raw::matVecCsrColMajorForfor;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            matVec = &Kokkos::Raw::matVecCsrColMajorForif;
+            //matVec = &Kokkos::Raw::matVecCsrColMajorForif;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
           else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            matVec = &Kokkos::Raw::matVecCsrColMajorForwhile;
+            //matVec = &Kokkos::Raw::matVecCsrColMajorForwhile;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
         }
         else if (trans == Teuchos::TRANS) {
@@ -1423,10 +1472,20 @@ namespace Kokkos {
             matVec = &Kokkos::Raw::matVecCscColMajorForfor;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForif;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForif;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
           else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            matVec = &Kokkos::Raw::matVecCscColMajorForwhile;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForwhile;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
         }
         else { // if (trans == Teuchos::CONJ_TRANS) {
@@ -1434,10 +1493,20 @@ namespace Kokkos {
             matVec = &Kokkos::Raw::matVecCscColMajorForforConj;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForifConj;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForifConj;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
           else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj;
+
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
+              "variant of sparse matrix-vector multiply is not currently "
+              "implemented for a non-fixed number of columns in the multi"
+              "vectors.  Please use the 'for-for' variant for now.");
           }
         }
       }

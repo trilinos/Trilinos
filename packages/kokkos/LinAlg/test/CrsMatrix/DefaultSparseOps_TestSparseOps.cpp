@@ -112,7 +112,7 @@ namespace {
   bool verbose = false;
 
   bool unroll = true;
-  std::string variant ("all");
+  std::string variant ("for-for");
 
   // This will be set after reading the command-line arguments, so
   // that we can, for the particular Kokkos Node type, set things like
