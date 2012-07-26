@@ -644,6 +644,7 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
   scalar_t minm = 0;scalar_t maxm = 0;
 
   {
+    //cout << "t:" << omp_get_num_threads();
     scalar_t localMinMax[2], globalMinMax[2];
     localMinMax[0] = minCoordinate;
     localMinMax[1] = maxCoordinate;
@@ -653,9 +654,18 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
        1);  // number of right closest max
 
     try{
+
       reduceAll<int, scalar_t>(*comm, reductionOp,
           2, localMinMax, globalMinMax
         );
+      /*
+      reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_MIN,
+          1, &minCoordinate, &(globalMinMax[0])
+        );
+      reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_MAX ,
+          1, &maxCoordinate, &(globalMinMax[1])
+        );
+        */
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
@@ -764,13 +774,28 @@ void getNewCoordinates_simple(
     partId_t *rectelinearCount, scalar_t *cutWeights, scalar_t *globalCutWeights,
     partId_t myCutStart, partId_t myCutEnd){
 
+
   scalar_t seenW = 0;
   float expected = 0;
   scalar_t leftImbalance = 0, rightImbalance = 0;
 
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 
-
+  /*
+#pragma omp single
+  {
+    cout << "me:" << comm->getRank() << endl;
+    comm->barrier();
+    cout << "me:"<< comm->getRank() << " s:" << myCutStart << " e:" << myCutEnd << endl;
+    for (partId_t i = 0; i < noCuts; i++){
+      cout << "me:"<< comm->getRank()<< " c["<<i<<"]:" << cutCoordinates[i] << endl;
+    }
+    for (partId_t i = 0; i < noCuts * 2 + 1; i++){
+      cout << "me:"<< comm->getRank()<< " pw["<<i<<"]:" << totalPartWeights[i] << endl;
+    }
+    comm->barrier();
+  }
+*/
 
 #ifndef USE_LESS_THREADS
 #ifdef HAVE_ZOLTAN2_OMP
@@ -798,6 +823,7 @@ void getNewCoordinates_simple(
 #endif
   for (partId_t i = myCutStart; i < myCutEnd; i++){
     //if already determined at previous iterations, do nothing.
+
     if(isDone[i]) {
       cutCoordinatesWork[i] = cutCoordinates[i];
       continue;
@@ -817,6 +843,7 @@ void getNewCoordinates_simple(
 
     //if the cut line reaches to desired imbalance.
     if(isLeftValid && isRightValid){
+
       isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
@@ -829,7 +856,6 @@ void getNewCoordinates_simple(
     //the imbalance cannot be satisfied. Accept as it is.
     //if left imbalance is lower than 0, then cut line should be moved to right.
     else if(leftImbalance < 0){
-
       scalar_t ew = totalWeight * expected;
 
 
@@ -978,7 +1004,7 @@ void getNewCoordinates_simple(
 #pragma omp barrier
 #endif
 #endif
-
+#pragma omp barrier
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
 #endif
@@ -1016,6 +1042,7 @@ void getNewCoordinates_simple(
       }
       *rectelinearCount = 0;
     }
+
     scalar_t *t = cutCoordinatesWork;
     cutCoordinatesWork = cutCoordinates;
     cutCoordinates = t;
@@ -1112,7 +1139,12 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
     //int iterationCount = 0;
     //calculate total weight
     if (pqJagged_uniformWeights) {
-      totalWeight = coordinateEnd - coordinateBegin;
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp single
+#endif
+      {
+        totalWeight = coordinateEnd - coordinateBegin;
+      }
     } else {
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for reduction(+:totalWeight)
@@ -1123,12 +1155,13 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
       }
     }
 
-    globaltotalWeight = totalWeight;
 
+//#pragma omp barrier
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
 #endif
     {
+      globaltotalWeight = totalWeight;
       scalar_t tw = 0;
       try{
         reduceAll<int,scalar_t>(
@@ -1142,7 +1175,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
       globaltotalWeight = tw;
     }
-
 
     if(noCuts == 0){
       tw[0] = globaltotalWeight;
@@ -1330,6 +1362,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             &recteLinearCount, cutWeights, globalCutWeights, myCutStart, myCutEnd);
       }
 
+      if(comm->getRank() == 0)
       if(me == 0) cout << "it:" << iteration << endl;
       //we cannot swap the arrays
       if (cutCoordinates != cutCoordinates_tmp){
@@ -1407,7 +1440,6 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
     lno_t *myStarts = coordinate_starts[me];
     lno_t *myEnds = coordinate_ends[me];
     lno_t *myPartPointCounts = partPointCounts[me];
-    scalar_t *myPartWeights = partWeights[me];
     float *myRatios = NULL;
     if (allowNonRectelinearPart){
 
@@ -1444,7 +1476,6 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
           }
           myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
         }
-
       }
     }
 
@@ -1826,7 +1857,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning");
   for (int i = 0; i < coordDim; ++i){
-
+    if(partNo[i] == 1) continue;
     env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i));
     lno_t partitionCoordinateBegin = 0;
     outTotalCounts = allocMemory<lno_t>(currentPartitionCount * partNo[i]);
@@ -1838,6 +1869,8 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     leftPartitions /= partNo[i];
     for (int j = 0; j < currentPartitionCount; ++j, ++currentIn){
 
+      if(comm->getRank() == 0)
+      cout << "i: " << i << " j:" << j << " ";
       //scalar_t used_imbalance = imbalanceTolerance * (LEAF_IMBALANCE_FACTOR + (1 - LEAF_IMBALANCE_FACTOR)   / leftPartitions) * 0.7;
       scalar_t used_imbalance = 0;
 
@@ -1847,9 +1880,10 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
       pqJagged_getMinMaxCoord<scalar_t, lno_t>(comm, pqJagged_coordinates[i], minCoordinate,maxCoordinate,
           env, numThreads, partitionedPointCoordinates, coordinateBegin, coordinateEnd, max_min_array, maxScalar_t, minScalar_t);
+
       env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
 
-      if(minCoordinate <= maxCoordinate && partNo[i] > 1){
+      if(minCoordinate <= maxCoordinate /*&& partNo[i] > 1*/){
 
         env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_cut_coord");
         pqJagged_getCutCoord_Weights<scalar_t>(
@@ -1857,6 +1891,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             pqJagged_uniformParts[0], pqJagged_partSizes[0], partNo[i] - 1,
             cutCoordinates, cutPartRatios, numThreads
         );
+
 
         env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_cut_coord");
 
@@ -1889,24 +1924,34 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             );
 
         env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_1d");
+        env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_chunks");
+        getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], numThreads,
+            pqJagged_coordinates[i], cutCoordinates, outTotalCounts + currentOut,
+            partitionedPointCoordinates, newpartitionedPointCoordinates, coordinateBegin, coordinateEnd,
+            coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords,
+            nonRectelinearPart, allowNonRectelinearPart, totalPartWeights_leftClosests_rightClosests,
+            pqJagged_weights[0], pqJagged_uniformWeights, comm->getRank(), comm->getSize(), partWeights,nonRectRatios,
+            partPointCounts);
+        env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_chunks");
       }
+      /*
+      else {
+#pragma omp parallel for
+        for(lno_t iii = coordinateBegin; iii < coordinateEnd; ++iii){
+          newpartitionedPointCoordinates[iii] = partitionedPointCoordinates[iii];
+        }
+        outTotalCounts[currentOut] = coordinateEnd - coordinateBegin;
+      }
+      */
 
 
-      env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_chunks");
-      getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], numThreads,
-          pqJagged_coordinates[i], cutCoordinates, outTotalCounts + currentOut,
-          partitionedPointCoordinates, newpartitionedPointCoordinates, coordinateBegin, coordinateEnd,
-          coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords,
-          nonRectelinearPart, allowNonRectelinearPart, totalPartWeights_leftClosests_rightClosests,
-          pqJagged_weights[0], pqJagged_uniformWeights, comm->getRank(), comm->getSize(), partWeights,nonRectRatios,
-          partPointCounts);
-      env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_chunks");
 
       cutCoordinates += partNo[i] - 1;
       partitionCoordinateBegin += coordinateBegin - coordinateEnd;
 
       for (partId_t ii = 0;ii < partNo[i]; ++ii){
         outTotalCounts[currentOut+ii] += previousEnd;
+        //cout << "total:" << outTotalCounts[currentOut + ii] << endl;
       }
       previousEnd = outTotalCounts[currentOut + partNo[i] - 1];
       currentOut += partNo[i];
