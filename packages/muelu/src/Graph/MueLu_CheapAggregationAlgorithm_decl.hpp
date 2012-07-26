@@ -93,7 +93,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    CheapAggregationAlgorithm(RCP<FactoryBase> const &graphFact = Teuchos::null);
+    CheapAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
 
     //! Destructor.
     virtual ~CheapAggregationAlgorithm() { }
@@ -119,11 +119,20 @@ namespace MueLu {
     /*! @brief Local aggregation. */
     LocalOrdinal CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const; // CoarsenUncoupled
 
+    LocalOrdinal Phase1(Graph const & graph, Aggregates & aggregates) const; // local uncoupled coarsening (Phase 1)
+    LocalOrdinal Phase2_maxlink(Graph const & graph, Aggregates & aggregates) const; // local uncoupled coarsening (Phase 2 [max_link])
+
+    LocalOrdinal Phase3(Graph const & graph, Aggregates & aggregates) const; // local uncoupled coarsening (Phase 3)
+    LocalOrdinal Phase4(Graph const & graph, Aggregates & aggregates) const; // local uncoupled coarsening (Phase 4)
+
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)
     Ordering ordering_;                /**<  natural, random, graph           */
     int      minNodesPerAggregate_;    /**<  aggregate size control           */
     int      maxNeighAlreadySelected_; /**<  complexity control               */
+
+    /// array with aggregation status of nodes on current proc
+    mutable Teuchos::ArrayRCP<NodeState> aggStat_;
 
   }; //class CheapAggregationAlgorithm
 

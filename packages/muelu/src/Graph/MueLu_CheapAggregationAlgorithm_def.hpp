@@ -26,13 +26,26 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheapAggregationAlgorithm(RCP<FactoryBase> const &graphFact)
+  CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheapAggregationAlgorithm(RCP<const FactoryBase> const &graphFact)
     : ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
   { }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const {
     Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm)");
+
+    LocalOrdinal ret = -1;
+    ret = Phase1(graph,aggregates);
+    ret = Phase2_maxlink(graph,aggregates);
+    ret = Phase3(graph,aggregates);
+    ret = Phase4(graph,aggregates);
+
+    return 0;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase1(Graph const & graph, Aggregates & aggregates) const {
+    Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase 1");
 
     RCP<const Map> gBoundaryNodeMap = graph.GetBoundaryNodeMap();
 
@@ -53,20 +66,21 @@ namespace MueLu {
 
 
     // aggregate state
-    Teuchos::ArrayRCP<NodeState> aggStat;
+    //Teuchos::ArrayRCP<NodeState> aggStat;
     const LocalOrdinal nRows = graph.GetNodeNumVertices();
-    if(nRows > 0) aggStat = Teuchos::arcp<NodeState>(nRows);
+    if(nRows > 0) aggStat_ = Teuchos::arcp<NodeState>(nRows);
     for(LocalOrdinal i=0; i<nRows; ++i) {
-      aggStat[i] = READY;
-      if(gBoundaryNodeMap->isNodeGlobalElement(graph.GetDomainMap()->getGlobalElement(i))) aggStat[i] = BDRY;
+      aggStat_[i] = READY;
+      if(gBoundaryNodeMap->isNodeGlobalElement(graph.GetDomainMap()->getGlobalElement(i))) aggStat_[i] = BDRY;
     }
 
 
     // vertex ids for output
     Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
     // some internal variables
-    LocalOrdinal nAggregates = 0;   // number of local aggregates on current proc
+    LocalOrdinal nLocalAggregates = 0;   // number of local aggregates on current proc
     std::queue<LocalOrdinal> graph_ordering_inodes; // inodes for graph ordering
     LocalOrdinal iNode2 = 0;        // local iteration variable
     LocalOrdinal iNode  = 0;        // current node
@@ -82,7 +96,7 @@ namespace MueLu {
         if(graph_ordering_inodes.size() == 0) {
           // add exactly one ready node for graph ordering aggregates
           for(LocalOrdinal jnode=0; jnode<nRows; jnode++) {
-            if(aggStat[jnode] == READY) {
+            if(aggStat_[jnode] == READY) {
               graph_ordering_inodes.push(jnode);
               break;
             }
@@ -94,7 +108,7 @@ namespace MueLu {
       }
 
       // consider iNode only if it is in READY state
-      if(aggStat[iNode] == READY) {
+      if(aggStat_[iNode] == READY) {
         // build new aggregate
         Aggregate ag;
         ag.list.push_back(iNode);
@@ -113,11 +127,11 @@ namespace MueLu {
             // only column indices of current proc are allowed
             if(graph.isLocalNeighborVertex(index)) {
               // check status of current neighbor node
-              if(aggStat[index]==READY ||
-                 aggStat[index]==NOTSEL ) {
+              if(aggStat_[index]==READY ||
+                 aggStat_[index]==NOTSEL ) {
                 ag.list.push_back(index); // add neighbor node to current aggregate
               }
-              else if(aggStat[index]!=BDRY){
+              else if(aggStat_[index]!=BDRY){
                 cnt_neighbours++;
               }
             } // end if: current column index belongs to this proc
@@ -131,29 +145,31 @@ namespace MueLu {
           (ag.list.size() < (unsigned int) GetMinNodesPerAggregate())) {      // not enough nodes in new aggregate
           // failed to build a new aggregate
           ag.list.clear();
-          aggStat[iNode] = NOTSEL; // node not valid to be supernode, mark it as NOTSEL
+          aggStat_[iNode] = NOTSEL; // node not valid to be supernode, mark it as NOTSEL
           if(ordering_ == GRAPH) {
             // even though the aggregate around iNode is not perfect, we try the ndoes where iNode is connected to
             // loop over all column indices
             for (typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
               LocalOrdinal index = *it;
-              if(graph.isLocalNeighborVertex(index) && aggStat[index] == READY) // if node connected to iNode is not aggregated
+              if(graph.isLocalNeighborVertex(index) && aggStat_[index] == READY) // if node connected to iNode is not aggregated
                 graph_ordering_inodes.push(index);
             }
           }
         } else {
           // accept new aggregate
           aggregates.SetIsRoot(iNode);    // mark iNode as root node for new aggregate 'ag'
-          ag.index = nAggregates++;       // aggregate accepted, increment aggregate counter
+          ag.index = nLocalAggregates++;       // aggregate accepted, increment aggregate counter
           vertex2AggId[iNode] = ag.index;
+          procWinner[iNode] = graph.GetComm()->getRank();
           for (unsigned int k=0; k<ag.list.size(); k++) {
-            aggStat[ag.list[k]] = SELECTED;
+            aggStat_[ag.list[k]] = SELECTED;
             vertex2AggId[ag.list[k]] = ag.index;
+            procWinner[ag.list[k]] = graph.GetComm()->getRank();
             if(ordering_ == GRAPH) {
               Teuchos::ArrayView<const LocalOrdinal> neighOfJNode = graph.getNeighborVertices(ag.list[k]);
               for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfJNode.begin(); it!=neighOfJNode.end(); ++it) {
                 LocalOrdinal index = *it;
-                if(graph.isLocalNeighborVertex(index) && aggStat[index] == READY)
+                if(graph.isLocalNeighborVertex(index) && aggStat_[index] == READY)
                   graph_ordering_inodes.push(index);
               }
             } // end GRAPH
@@ -161,12 +177,12 @@ namespace MueLu {
         } // end if accept aggs or decline aggs
 
 
-      } // end if aggStat[iNode] == READY
+      } // end if aggStat_[iNode] == READY
 
     } // end while
 
     // update aggregate object
-    aggregates.SetNumAggregates(nAggregates);
+    aggregates.SetNumAggregates(nLocalAggregates);
 
     // clean up
     if(graph_ordering_inodes.size()>0){
@@ -184,7 +200,7 @@ namespace MueLu {
 
         // compute number of local nodes with status "ready"
         for(LO i=0; i<nRows; ++i)
-          if(aggStat[i] == READY) localReady++;
+          if(aggStat_[i] == READY) localReady++;
         // compute global number of nodes with status "ready"
         sumAll(comm, localReady, globalReady);
         if(globalReady > 0)
@@ -196,12 +212,12 @@ namespace MueLu {
         GO globalSelected = 0;
         GO globalNRows    = 0;
         for(LO i=0; i<nRows; ++i)
-          if(aggStat[i] == SELECTED) localSelected++;
+          if(aggStat_[i] == SELECTED) localSelected++;
         sumAll(comm, localSelected, globalSelected);
         sumAll(comm, nRows, globalNRows);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 1: Nodes aggregated = " << globalSelected << " out of " << globalNRows << " nodes" << std::endl;
         GO nAggregatesGlobal = 0;
-        sumAll(comm, nAggregates, nAggregatesGlobal);
+        sumAll(comm, nLocalAggregates, nAggregatesGlobal);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 1: Total aggregates = " << nAggregatesGlobal << std::endl;
       }
     }
@@ -212,10 +228,274 @@ namespace MueLu {
     LO nLocalNotSelected = 0;
     LO nLocalReady       = 0;
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if      (aggStat[iNode] == SELECTED) nLocalSelected++;
-      else if (aggStat[iNode] == BDRY)     nLocalBdry++;
-      else if (aggStat[iNode] == NOTSEL)   nLocalNotSelected++;
-      else if (aggStat[iNode] == READY)    nLocalReady++;
+      if      (aggStat_[iNode] == SELECTED) nLocalSelected++;
+      else if (aggStat_[iNode] == BDRY)     nLocalBdry++;
+      else if (aggStat_[iNode] == NOTSEL)   nLocalNotSelected++;
+      else if (aggStat_[iNode] == READY)    nLocalReady++;
+    }
+
+    return nLocalReady + nLocalNotSelected;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase2_maxlink(Graph const & graph, Aggregates & aggregates) const {
+    Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase 2 [max_link]");
+
+    // vertex ids for output
+    Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+
+    const LocalOrdinal nRows = graph.GetNodeNumVertices();
+
+    // loop over all local rows
+    for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
+      if(aggStat_[iNode] == NOTSEL ||  // this is a non-aggregated node
+          aggStat_[iNode] == READY) {  // this is not good. There should be no ready nodes any more
+        LocalOrdinal selected_aggregate = -1;
+
+        std::map<LocalOrdinal,LocalOrdinal> aggid2cntconnections;
+
+        Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
+        for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode.begin(); it!=neighOfINode.end(); ++it) {
+          LocalOrdinal index = *it;
+          if(graph.isLocalNeighborVertex(index) && aggStat_[index] == SELECTED) {
+            LocalOrdinal aggid = vertex2AggId[index]; // get (local) aggregate id
+            if(aggid2cntconnections.count(aggid)>0) aggid2cntconnections[aggid] += 1;
+            else aggid2cntconnections[aggid] = 1;
+          } // if SELECTED
+
+        } // loop over all columns
+
+        // find aggregate id with most connections
+        LocalOrdinal maxcnt = 0;
+        for(typename std::map<LocalOrdinal,LocalOrdinal>::const_iterator it=aggid2cntconnections.begin(); it!=aggid2cntconnections.end();++it) {
+          if(maxcnt < it->second) {
+            maxcnt = it->second;
+            selected_aggregate = it->first;
+          }
+        }
+
+        // add node iNode to aggregate
+        if(selected_aggregate != -1) {
+          aggStat_[iNode] = SELECTED;
+          vertex2AggId[iNode] = selected_aggregate;
+          procWinner[iNode] = graph.GetComm()->getRank();
+        }
+      } // end if aggState == NOTSEL...
+    } // end loop over all local rows
+
+    // verbose
+    {
+      const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
+
+      if(IsPrint(Warnings0)) {
+        GO localReady  = 0;
+        GO globalReady = 0;
+
+        // compute number of local nodes with status "ready"
+        for(LO i=0; i<nRows; ++i)
+          if(aggStat_[i] == READY) localReady++;
+        // compute global number of nodes with status "ready"
+        sumAll(comm, localReady, globalReady);
+        if(globalReady > 0)
+          GetOStream(Warnings0,0) << "Aggregation (UC): Phase 2 [max_link] (WARNING) " << globalReady << " unaggregated nodes left (status READY)" << std::endl;
+      }
+
+      if(IsPrint(Statistics1)) {
+        LO localSelected  = 0;
+        GO globalSelected = 0;
+        GO globalNRows    = 0;
+        for(LO i=0; i<nRows; ++i)
+          if(aggStat_[i] == SELECTED) localSelected++;
+        sumAll(comm, localSelected, globalSelected);
+        sumAll(comm, nRows, globalNRows);
+        GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 2 [max_link]: Nodes aggregated = " << globalSelected << " out of " << globalNRows << " nodes" << std::endl;
+      }
+    }
+
+    // collect some local information
+    LO nLocalSelected    = 0;
+    LO nLocalBdry        = 0;
+    LO nLocalNotSelected = 0;
+    LO nLocalReady       = 0;
+    for (LO iNode = 0; iNode < nRows; iNode++) {
+      if      (aggStat_[iNode] == SELECTED) nLocalSelected++;
+      else if (aggStat_[iNode] == BDRY)     nLocalBdry++;
+      else if (aggStat_[iNode] == NOTSEL)   nLocalNotSelected++;
+      else if (aggStat_[iNode] == READY)    nLocalReady++;
+    }
+
+    return nLocalReady + nLocalNotSelected;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase3(Graph const & graph, Aggregates & aggregates) const {
+    Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase 3");
+
+    // form new aggregates from non-aggregated nodes
+
+    // vertex ids for output
+    Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+
+    const LocalOrdinal nRows = graph.GetNodeNumVertices();
+    LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates(); // return number of local aggregates on current proc
+
+    // loop over all local rows
+    for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
+      if(aggStat_[iNode] == NOTSEL ||  // this is a non-aggregated node
+          aggStat_[iNode] == READY) {  // this is not good. There should be no ready nodes any more
+        Aggregate ag;
+        ag.list.push_back(iNode);
+        ag.index = nLocalAggregates++;
+
+        Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
+        for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode.begin(); it!=neighOfINode.end(); ++it) {
+          LocalOrdinal index = *it;
+          if(graph.isLocalNeighborVertex(index) && aggStat_[index] != SELECTED && aggStat_[index] != BDRY) {
+            ag.list.push_back(index);
+          } // if !SELECTED && !BDRY
+        } // loop over all columns
+
+        // finalize aggregate
+        for(size_t k=0; k<ag.list.size(); k++) {
+          aggStat_[ag.list[k]] = SELECTED;
+          vertex2AggId[ag.list[k]] = ag.index;
+          procWinner[ag.list[k]] = graph.GetComm()->getRank();
+        }
+      } // end if NOTSEL
+    }   // end for
+
+    // update aggregate object
+    aggregates.SetNumAggregates(nLocalAggregates);
+
+    // verbose
+    {
+      const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
+
+      if(IsPrint(Warnings0)) {
+        GO localReady  = 0;
+        GO globalReady = 0;
+
+        // compute number of local nodes with status "ready"
+        for(LO i=0; i<nRows; ++i)
+          if(aggStat_[i] == READY) localReady++;
+        // compute global number of nodes with status "ready"
+        sumAll(comm, localReady, globalReady);
+        if(globalReady > 0)
+          GetOStream(Warnings0,0) << "Aggregation (UC): Phase 3 (WARNING) " << globalReady << " unaggregated nodes left (status READY)" << std::endl;
+      }
+
+      if(IsPrint(Statistics1)) {
+        LO localSelected  = 0;
+        GO globalSelected = 0;
+        GO globalNRows    = 0;
+        for(LO i=0; i<nRows; ++i)
+          if(aggStat_[i] == SELECTED) localSelected++;
+        sumAll(comm, localSelected, globalSelected);
+        sumAll(comm, nRows, globalNRows);
+        GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 3: Nodes aggregated = " << globalSelected << " out of " << globalNRows << " nodes" << std::endl;
+        GO nAggregatesGlobal = 0;
+        sumAll(comm, nLocalAggregates, nAggregatesGlobal);
+        GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 3: Total aggregates = " << nAggregatesGlobal << std::endl;
+      }
+    }
+
+    // collect some local information
+    LO nLocalSelected    = 0;
+    LO nLocalBdry        = 0;
+    LO nLocalNotSelected = 0;
+    LO nLocalReady       = 0;
+    for (LO iNode = 0; iNode < nRows; iNode++) {
+      if      (aggStat_[iNode] == SELECTED) nLocalSelected++;
+      else if (aggStat_[iNode] == BDRY)     nLocalBdry++;
+      else if (aggStat_[iNode] == NOTSEL)   nLocalNotSelected++;
+      else if (aggStat_[iNode] == READY)    nLocalReady++;
+    }
+
+    return nLocalReady + nLocalNotSelected;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase4(Graph const & graph, Aggregates & aggregates) const {
+    Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase 4");
+
+    // vertex ids for output
+    Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+
+    const LocalOrdinal nRows = graph.GetNodeNumVertices();
+    LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates(); // return number of local aggregates on current proc
+
+    // loop over all local rows
+    for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
+      if(aggStat_[iNode] == BDRY ) {
+        Aggregate ag;
+        ag.list.push_back(iNode);
+        ag.index = nLocalAggregates++;
+
+        Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
+        for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode.begin(); it!=neighOfINode.end(); ++it) {
+          LocalOrdinal index = *it;
+          if(graph.isLocalNeighborVertex(index) && aggStat_[index] != SELECTED && aggStat_[index] != BDRY) {
+            ag.list.push_back(index);
+          } // if !SELECTED && !BDRY
+        } // loop over all columns
+
+        // finalize aggregate
+        for(size_t k=0; k<ag.list.size(); k++) {
+          aggStat_[ag.list[k]] = SELECTED;
+          vertex2AggId[ag.list[k]] = ag.index;
+          procWinner[ag.list[k]] = graph.GetComm()->getRank();
+        }
+      } // end if NOTSEL
+    }   // end for
+
+    // update aggregate object
+    aggregates.SetNumAggregates(nLocalAggregates);
+
+    // verbose
+    {
+      const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
+
+      if(IsPrint(Warnings0)) {
+        GO localReady  = 0;
+        GO globalReady = 0;
+
+        // compute number of local nodes with status "ready"
+        for(LO i=0; i<nRows; ++i)
+          if(aggStat_[i] == READY) localReady++;
+        // compute global number of nodes with status "ready"
+        sumAll(comm, localReady, globalReady);
+        if(globalReady > 0)
+          GetOStream(Warnings0,0) << "Aggregation (UC): Phase 4 (WARNING) " << globalReady << " unaggregated nodes left (status READY)" << std::endl;
+      }
+
+      if(IsPrint(Statistics1)) {
+        LO localSelected  = 0;
+        GO globalSelected = 0;
+        GO globalNRows    = 0;
+        for(LO i=0; i<nRows; ++i)
+          if(aggStat_[i] == SELECTED) localSelected++;
+        sumAll(comm, localSelected, globalSelected);
+        sumAll(comm, nRows, globalNRows);
+        GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 4: Nodes aggregated = " << globalSelected << " out of " << globalNRows << " nodes" << std::endl;
+        GO nAggregatesGlobal = 0;
+        sumAll(comm, nLocalAggregates, nAggregatesGlobal);
+        GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 4: Total aggregates = " << nAggregatesGlobal << std::endl;
+      }
+    }
+
+    // collect some local information
+    LO nLocalSelected    = 0;
+    LO nLocalBdry        = 0;
+    LO nLocalNotSelected = 0;
+    LO nLocalReady       = 0;
+    for (LO iNode = 0; iNode < nRows; iNode++) {
+      if      (aggStat_[iNode] == SELECTED) nLocalSelected++;
+      else if (aggStat_[iNode] == BDRY)     nLocalBdry++;
+      else if (aggStat_[iNode] == NOTSEL)   nLocalNotSelected++;
+      else if (aggStat_[iNode] == READY)    nLocalReady++;
     }
 
     return nLocalReady + nLocalNotSelected;
