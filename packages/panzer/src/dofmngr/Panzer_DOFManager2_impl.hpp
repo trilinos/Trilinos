@@ -520,17 +520,11 @@ const std::vector<int> & DOFManager2<LO,GO>::getBlockFieldNumbers(const std::str
 template <typename LO, typename GO>
 const std::pair<std::vector<int>,std::vector<int> > & 
 DOFManager2<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const{
-  bool found=false;
-  size_t index=0;
-  for(size_t i=0; i<blockOrder_.size(); ++i){
-    if(blockOrder_[i]==blockId){
-      found=true;
-      index=i;
-      break;
-    }
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(!found,std::logic_error, "DOFManager2::getGIDFieldOffsets_closure: invalid block name.");
-  return fa_fps_[index]->localOffsets_closure(fieldNum, subcellDim, subcellId);
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager2::getGIDFieldOffsets_closure: BuildConnectivity must be run first.");
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
+  if(bitr==blockNameToID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "DOFManager2::getGIDFieldOffsets_closure: invalid block name.");
+  return fa_fps_[bitr->second]->localOffsets_closure(fieldNum, subcellDim, subcellId);
 }
 
 template <typename LO, typename GO>
