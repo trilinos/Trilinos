@@ -20,7 +20,7 @@
 
 
 #ifdef HAVE_ZOLTAN2_OMP
-#define USE_LESS_THREADS
+//#define USE_LESS_THREADS
 #endif
 #define CACHE_LINE_SIZE 64
 #define EPS_SCALE 1
@@ -33,7 +33,6 @@
 
 
 //#define RCBCODE
-#define mpi
 #define LEAF_IMBALANCE_FACTOR 0.1
 
 //imbalance calculation. Wreal / Wexpected - 1
@@ -761,7 +760,8 @@ void getNewCoordinates_simple(
     float *nonRectelinearPart,
     bool allowNonRectelinearPart, scalar_t maxScalar, const scalar_t * localtw,
     const RCP<const Environment> &env,RCP<Comm<int> > &comm,
-    partId_t *rectelinearCount, scalar_t *cutWeights, scalar_t *globalCutWeights){
+    partId_t *rectelinearCount, scalar_t *cutWeights, scalar_t *globalCutWeights,
+    partId_t myCutStart, partId_t myCutEnd){
 
   scalar_t seenW = 0;
   float expected = 0;
@@ -771,10 +771,12 @@ void getNewCoordinates_simple(
 
 
 
+#ifndef USE_LESS_THREADS
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-  for (partId_t i = 0; i < noCuts; i++){
+#endif
+  for (partId_t i = myCutStart; i < myCutEnd; i++){
 
     //if a left and right closes point is not found, set the distance to 0.
     if(leftClosestDistance[i] == maxScalar)
@@ -783,9 +785,17 @@ void getNewCoordinates_simple(
       rightClosestDistance[i] = 0;
   }
 #ifdef HAVE_ZOLTAN2_OMP
+#ifdef USE_LESS_THREADS
+#pragma omp barrier
+#endif
+#endif
+
+#ifndef USE_LESS_THREADS
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-  for (partId_t i = 0; i < noCuts; i++){
+#endif
+  for (partId_t i = myCutStart; i < myCutEnd; i++){
     //if already determined at previous iterations, do nothing.
     if(isDone[i]) {
       cutCoordinatesWork[i] = cutCoordinates[i];
@@ -961,8 +971,14 @@ void getNewCoordinates_simple(
     }
   }
 
+
 #ifdef HAVE_ZOLTAN2_OMP
+#ifdef USE_LESS_THREADS
 #pragma omp barrier
+#endif
+#endif
+
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
 #endif
   {
@@ -1036,7 +1052,7 @@ void getNewCoordinates_simple(
 template <typename scalar_t, typename lno_t>
 void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &comm,
     scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_weights,	bool pqJagged_uniformWeights,
-    scalar_t &minCoordinate, scalar_t &maxCoordinate, partId_t partNo, int noThreads,
+    scalar_t &minCoordinate, scalar_t &maxCoordinate, partId_t partNo, int numThreads,
     scalar_t imbalanceTolerance, scalar_t *cutCoordinates, lno_t *partitionedPointPermutations,
     lno_t coordinateBegin, lno_t coordinateEnd,
 
@@ -1067,9 +1083,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
   partId_t recteLinearCount = 0;
   scalar_t *cutCoordinates_tmp = cutCoordinates;
   partId_t noCuts = partNo - 1;
-
-
-
   scalar_t totalWeight = 0;
   size_t total_part_count = partNo + size_t (noCuts) ;
   partId_t allDone = noCuts;
@@ -1077,7 +1090,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
   scalar_t *tw = totalPartWeights_leftClosest_rightCloset;
   scalar_t *lc = totalPartWeights_leftClosest_rightCloset + total_part_count;
   scalar_t *rc = totalPartWeights_leftClosest_rightCloset + total_part_count + noCuts;
-
 
   scalar_t *glc = global_totalPartWeights_leftClosest_rightCloset + total_part_count;
   scalar_t *grc = global_totalPartWeights_leftClosest_rightCloset + total_part_count + noCuts;
@@ -1111,10 +1123,8 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
     }
 
     globaltotalWeight = totalWeight;
-#ifdef mpi
 
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp barrier
 #pragma omp single
 #endif
     {
@@ -1132,7 +1142,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
       globaltotalWeight = tw;
     }
 
-#endif
 
     if(noCuts == 0){
       tw[0] = globaltotalWeight;
@@ -1143,15 +1152,31 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
       int me = 0;
 #ifdef HAVE_ZOLTAN2_OMP
       me = omp_get_thread_num();
+      partId_t myCutStart = 0;
+      partId_t myCutEnd = noCuts;
+
+#ifdef USE_LESS_THREADS
+      int scalar_t_bytes = sizeof(scalar_t);
+      partId_t requiredPull = ceil(noCuts / double(numThreads));
+      partId_t minPull = partId_t (ceil(CACHE_LINE_SIZE / double(scalar_t_bytes)));
+      if(requiredPull > minPull){
+        minPull = requiredPull;
+      }
+      myCutStart = me * minPull;
+      myCutEnd = min(myCutStart + minPull, noCuts);
+#endif
 #endif
       scalar_t *myPartWeights = partWeights[me];
       scalar_t *myLeftClosest = leftClosestDistance[me];
       scalar_t *myRightClosest = rightClosestDistance[me];
 
+
+#ifndef USE_LESS_THREADS
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-      for(partId_t i = 0; i < noCuts; ++i){
+#endif
+      for(partId_t i = myCutStart; i < myCutEnd; ++i){
         isDone[i] = false;
         //cutLowerBounds[i] = -1;
         //cutUpperBounds[i] = -1;
@@ -1168,6 +1193,11 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
       }
 
 
+#ifdef USE_LESS_THREADS
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp barrier
+#endif
+#endif
       int iteration = 0;
       while (allDone != 0){
         iteration += 1;
@@ -1237,16 +1267,16 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
           }
         }
 
-        //TODO: if the number of cutlines are small, run it sequential.
-        //accumulate left and right closest distances for different threads.
+#ifndef USE_LESS_THREADS
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-        for(partId_t i = 0; i < noCuts; ++i){
+#endif
+        for(partId_t i = myCutStart; i < myCutEnd; ++i){
           if(isDone[i]) continue;
           scalar_t minl = leftClosestDistance[0][i], minr = rightClosestDistance[0][i];
 
-          for (int j = 1; j < noThreads; ++j){
+          for (int j = 1; j < numThreads; ++j){
             if (rightClosestDistance[j][i] < minr ){
               minr = rightClosestDistance[j][i];
             }
@@ -1259,29 +1289,24 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
           rc[i] = minr;
         }
 
-        //TODO: if the number of cutlines are small, run it sequential.
-        //accumulate part weights for different threads.
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
         for(size_t j = 0; j < total_part_count; ++j){
           if(noCuts != 0 && j/2 < noCuts && isDone[j/2]) continue;
           scalar_t pwj = 0;
-          for (int i = 0; i < noThreads; ++i){
+          for (int i = 0; i < numThreads; ++i){
             pwj += partWeights[i][j];
           }
           tw[j] = pwj + totalWeight;
-
         }
 
 
         //all to all partweight send;
         //get totalpartweights from different nodes sized total_part_count
         //reduce part sizes here within all mpi processes.
-#ifdef mpi
 
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp barrier
 #pragma omp single
 #endif
         {
@@ -1293,7 +1318,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
           }
           Z2_THROW_OUTSIDE_ERROR(*env)
         }
-#endif
 
         getNewCoordinates_simple<scalar_t>(total_part_count, gtw, isDone, cutPartRatios,
             globaltotalWeight, imbalanceTolerance, allDone, cutUpperBounds, cutLowerBounds,
@@ -1302,21 +1326,29 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             nonRectelinearPart,
             allowNonRectelinearPart, maxScalar, tw,
             env,comm,
-            &recteLinearCount, cutWeights, globalCutWeights);
+            &recteLinearCount, cutWeights, globalCutWeights, myCutStart, myCutEnd);
       }
 
       if(me == 0) cout << "it:" << iteration << endl;
       //we cannot swap the arrays
       if (cutCoordinates != cutCoordinates_tmp){
 
+
+#ifndef USE_LESS_THREADS
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-        for(partId_t i = 0; i < noCuts; ++i){
+#endif
+        for(partId_t i = myCutStart; i < myCutEnd; ++i){
           cutCoordinates[i] = cutCoordinates_tmp[i];
         }
 
+
+
 #ifdef HAVE_ZOLTAN2_OMP
+#ifdef USE_LESS_THREADS
+#pragma omp barrier
+#endif
 #pragma omp single
 #endif
         {
@@ -1512,7 +1544,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 #pragma omp for
 #endif
     for(partId_t j = 0; j < partNo; ++j){
-      int pwj = 0;
+      lno_t pwj = 0;
       for (int i = 0; i < noThreads; ++i){
         pwj += partPointCounts[i][j];
       }
@@ -1804,7 +1836,6 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
     leftPartitions /= partNo[i];
     for (int j = 0; j < currentPartitionCount; ++j, ++currentIn){
-      cout << "j:" << j << endl;
 
       //scalar_t used_imbalance = imbalanceTolerance * (LEAF_IMBALANCE_FACTOR + (1 - LEAF_IMBALANCE_FACTOR)   / leftPartitions) * 0.7;
       scalar_t used_imbalance = 0;

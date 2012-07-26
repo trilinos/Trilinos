@@ -296,7 +296,7 @@ public:
 
     for (int i = 0; i < myRank; ++i){
       //cout << "me:" << myRank << " i:" << i << " s:" << sharedRatios_[i]<< endl;
-      this->assignedPrevious += sharedRatios_[i] * this->numPoints;
+      this->assignedPrevious += lno_t(sharedRatios_[i] * this->numPoints);
     }
 
     this->requested = requestedPointcount;
@@ -1266,12 +1266,13 @@ public:
     gno_t prefixSum = 0;
     for(int i = 0; i < this->distributionCount; ++i){
       for(int ii = 0; ii < worldSize; ++ii){
-        this->numGlobalCoords += this->coordinateDistributions[i]->numPoints * this->loadDistributions[ii];
+        lno_t increment  = lno_t (this->coordinateDistributions[i]->numPoints * this->loadDistributions[ii]);
+        this->numGlobalCoords += increment;
         if(ii < myRank){
-          prefixSum += this->coordinateDistributions[i]->numPoints * this->loadDistributions[ii];
+          prefixSum += increment;
         }
       }
-      myPointCount += this->coordinateDistributions[i]->numPoints * this->loadDistributions[myRank];
+      myPointCount += lno_t(this->coordinateDistributions[i]->numPoints * this->loadDistributions[myRank]);
     }
 
 
@@ -1282,7 +1283,7 @@ public:
     this->numLocalCoords = 0;
     srand ( time(NULL) + myRank);
     for (int i = 0; i < distributionCount; ++i){
-      lno_t requestedPointCount = this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank];
+      lno_t requestedPointCount = lno_t(this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank]);
       this->coordinateDistributions[i]->GetPoints(requestedPointCount,this->points + this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
       this->numLocalCoords += requestedPointCount;
     }
