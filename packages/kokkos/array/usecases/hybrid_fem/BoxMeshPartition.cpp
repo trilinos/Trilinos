@@ -379,5 +379,3 @@ void box_partition_maps( const BoxType              & root_box ,
 }
 
 
-
-

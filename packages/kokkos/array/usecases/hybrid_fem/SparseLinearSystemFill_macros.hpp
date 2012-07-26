@@ -48,15 +48,16 @@ namespace HybridFEM {
 //----------------------------------------------------------------------------
 
 template< typename ScalarType ,
+          unsigned ElemNode ,
           typename CoordScalarType >
 struct GatherFill< 
   KokkosArray::CrsMatrix< ScalarType , KOKKOS_MACRO_DEVICE > ,
-  FEMesh< CoordScalarType , 8 , KOKKOS_MACRO_DEVICE > >
+  FEMesh< CoordScalarType , ElemNode , KOKKOS_MACRO_DEVICE > >
 {
-  typedef KOKKOS_MACRO_DEVICE                              device_type ;
-  typedef device_type::size_type                           size_type ;
+  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef device_type::size_type  size_type ;
 
-  static const size_type ElemNodeCount = 8 ;
+  static const size_type ElemNodeCount = ElemNode ;
 
   typedef KokkosArray::CrsMatrix< ScalarType , device_type >    matrix_type ;
   typedef typename matrix_type::coefficients_type   coefficients_type ;

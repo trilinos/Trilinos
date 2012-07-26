@@ -99,14 +99,9 @@ struct PerformanceData {
 
 //----------------------------------------------------------------------------
 
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct ElementComputation ;
-
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct DirichletSolution ;
-
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct DirichletResidual ;
+template< class MeshType , typename ScalarType > struct ElementComputation ;
+template< class MeshType , typename ScalarType > struct DirichletSolution ;
+template< class MeshType , typename ScalarType > struct DirichletResidual ;
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -217,19 +212,19 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef KokkosArray::View< Scalar[] , device_type >   vector_type ;
-  typedef KokkosArray::CrsMatrix< Scalar , device_type >     matrix_type ;
-  typedef typename matrix_type::graph_type         matrix_graph_type ;
-  typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;
+  typedef KokkosArray::View< Scalar[] , device_type >     vector_type ;
+  typedef KokkosArray::CrsMatrix< Scalar , device_type >  matrix_type ;
+  typedef typename matrix_type::graph_type                matrix_graph_type ;
+  typedef typename matrix_type::coefficients_type         matrix_coefficients_type ;
 
   typedef KokkosArray::Impl::Factory< matrix_graph_type , mesh_type > graph_factory ;
 
   //------------------------------------
   // Problem setup types:
 
-  typedef ElementComputation < Scalar , Scalar , device_type >  ElementFunctor ;
-  typedef DirichletSolution  < Scalar , Scalar , device_type > DirichletSolutionFunctor ;
-  typedef DirichletResidual  < Scalar , Scalar , device_type > DirichletResidualFunctor ;
+  typedef ElementComputation < mesh_type , Scalar > ElementFunctor ;
+  typedef DirichletSolution  < mesh_type , Scalar > DirichletSolutionFunctor ;
+  typedef DirichletResidual  < mesh_type , Scalar > DirichletResidualFunctor ;
 
   //------------------------------------
 
@@ -495,7 +490,8 @@ void driver( const char * label ,
              comm::Machine machine , int beg , int end , int runs )
 {
   typedef double              coordinate_scalar_type ;
-  typedef FixtureElementHex8  fixture_element_type ;
+  // typedef FixtureElementHex8  fixture_element_type ;
+  typedef FixtureElementHex27  fixture_element_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
                           Device ,

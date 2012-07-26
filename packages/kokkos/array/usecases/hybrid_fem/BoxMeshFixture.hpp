@@ -142,11 +142,11 @@ struct FixtureElementHex27 {
 
     for ( unsigned i = 0 ; i < vertex_box_parts.size() ; ++i ) {
       node_box_parts[i][0][1] =
-        std::max( node_box_global[0][1] , 2 * node_box_parts[i][0][1] );
+        std::min( node_box_global[0][1] , 2 * node_box_parts[i][0][1] );
       node_box_parts[i][1][1] =
-        std::max( node_box_global[1][1] , 2 * node_box_parts[i][1][1] );
+        std::min( node_box_global[1][1] , 2 * node_box_parts[i][1][1] );
       node_box_parts[i][2][1] =
-        std::max( node_box_global[2][1] , 2 * node_box_parts[i][2][1] );
+        std::min( node_box_global[2][1] , 2 * node_box_parts[i][2][1] );
     }
   }
 
@@ -158,7 +158,7 @@ struct FixtureElementHex27 {
     coord[2] = 0.5 * iz ;
   }
 
-  void elem_to_node( const unsigned node_local , unsigned coord[0] ) const
+  void elem_to_node( const unsigned node_local , unsigned coord[] ) const
   {
     coord[0] = 2 * coord[0] + elem_node_local_coord[ node_local ][0] ;
     coord[1] = 2 * coord[1] + elem_node_local_coord[ node_local ][1] ;
@@ -222,7 +222,7 @@ struct BoxMeshFixture {
     for ( size_type elem_index = 0 ;
                     elem_index < elem_count_total; ++elem_index ) {
 
-      coords_type elem_node_coord[ element_node_count ][3] ;
+      coordinate_scalar_type elem_node_coord[ element_node_count ][3] ;
 
       for ( size_type nn = 0 ; nn < element_node_count ; ++nn ) {
         const size_type node_index = elem_node_ids( elem_index , nn );
@@ -232,15 +232,30 @@ struct BoxMeshFixture {
         }
       }
 
+
       for ( size_type nn = 0 ; nn < element_node_count ; ++nn ) {
-        if ( elem_node_coord[nn][0] !=
-             elem_node_coord[ 0][0] + element.elem_node_local_coord[nn][0] ||
-             elem_node_coord[nn][1] !=
-             elem_node_coord[ 0][1] + element.elem_node_local_coord[nn][1] ||
-             elem_node_coord[nn][2] !=
-             elem_node_coord[ 0][2] + element.elem_node_local_coord[nn][2] ) {
-          throw std::runtime_error(
-            std::string("elem_node_coord mapping failure") );
+
+        double local[3];
+
+        element.node_coord( element.elem_node_local_coord[nn][0] ,
+                            element.elem_node_local_coord[nn][1] ,
+                            element.elem_node_local_coord[nn][2] ,
+                            local );
+
+        if ( elem_node_coord[nn][0] != elem_node_coord[ 0][0] + local[0] ||
+             elem_node_coord[nn][1] != elem_node_coord[ 0][1] + local[1] ||
+             elem_node_coord[nn][2] != elem_node_coord[ 0][2] + local[2] ) {
+
+          std::ostringstream msg ;
+          msg << "BoxMeshFixture elem_node_coord mapping failure { "
+              << elem_node_coord[nn][0] << " "
+              << elem_node_coord[nn][1] << " "
+              << elem_node_coord[nn][2] << " } != { "
+              << elem_node_coord[ 0][0] + local[0] << " "
+              << elem_node_coord[ 0][0] + local[1] << " "
+              << elem_node_coord[ 0][0] + local[2]
+              << " }" ;
+          throw std::runtime_error( msg.str() );
         }
       }
     }

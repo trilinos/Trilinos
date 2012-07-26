@@ -52,14 +52,14 @@ namespace NonLinear {
 
 //----------------------------------------------------------------------------
 
-template< typename ScalarType , typename ScalarCoordType >
-struct ElementComputation< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
+template< typename ScalarCoordType , unsigned ElemNode , typename ScalarType >
+struct ElementComputation<
+  FEMesh< ScalarCoordType , ElemNode , KOKKOS_MACRO_DEVICE > , ScalarType >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type;
-  typedef ScalarType              scalar_type ;
-  typedef device_type::size_type  size_type ;
+  typedef KOKKOS_MACRO_DEVICE  device_type;
+  typedef ScalarType           scalar_type ;
 
-  static const size_type ElementNodeCount = 8 ;
+  static const unsigned ElementNodeCount = ElemNode ;
 
   typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
 
@@ -254,7 +254,7 @@ public:
   }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( int ielem ) const
+  void operator()( const unsigned ielem ) const
   {
     // Gather nodal coordinates and solution vector:
 
@@ -263,8 +263,8 @@ public:
     double z[ FunctionCount ] ;
     double val[ FunctionCount ] ;
 
-    for ( int i = 0 ; i < 8 ; ++i ) {
-      const int node_index = elem_node_ids( ielem , i );
+    for ( unsigned i = 0 ; i < ElementNodeCount ; ++i ) {
+      const unsigned node_index = elem_node_ids( ielem , i );
 
       x[i] = node_coords( node_index , 0 );
       y[i] = node_coords( node_index , 1 );
@@ -276,9 +276,9 @@ public:
     double elem_vec[ FunctionCount ] ;
     double elem_mat[ FunctionCount ][ FunctionCount ] ;
 
-    for( size_type i = 0; i < FunctionCount ; i++ ) {
+    for( unsigned i = 0; i < FunctionCount ; i++ ) {
       elem_vec[i] = 0 ;
-      for( size_type j = 0; j < FunctionCount ; j++){
+      for( unsigned j = 0; j < FunctionCount ; j++){
         elem_mat[i][j] = 0 ;
       }
     }
@@ -300,9 +300,9 @@ public:
                                   elem_vec , elem_mat );
     }
 
-    for( size_type i = 0; i < FunctionCount ; i++){
+    for( unsigned i = 0; i < FunctionCount ; i++){
       element_vectors(ielem, i) = elem_vec[i] ;
-      for( size_type j = 0; j < FunctionCount ; j++){
+      for( unsigned j = 0; j < FunctionCount ; j++){
         element_matrices(ielem, i, j) = elem_mat[i][j] ;
       }
     }
@@ -312,19 +312,20 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ScalarType , typename ScalarCoordType >
-struct DirichletSolution< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
+template< typename ScalarCoordType , unsigned ElemNode , typename ScalarType >
+struct DirichletSolution<
+  FEMesh< ScalarCoordType , ElemNode , KOKKOS_MACRO_DEVICE > , ScalarType >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type;
-  typedef device_type::size_type  size_type ;
+  typedef KOKKOS_MACRO_DEVICE  device_type;
 
-  static const size_type ElementNodeCount = 8 ;
+  static const unsigned ElementNodeCount = ElemNode ;
 
   typedef KokkosArray::View< ScalarType[] , device_type >  vector_type ;
 
   typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
 
   typename mesh_type::node_coords_type node_coords ;
+
   vector_type     solution ;
   ScalarCoordType bc_lower_z ;
   ScalarCoordType bc_upper_z ;
@@ -332,7 +333,7 @@ struct DirichletSolution< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
   ScalarType      bc_upper_value ;
 
   KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type inode ) const
+  void operator()( const unsigned inode ) const
   {
    
   // Apply dirichlet boundary condition on the Solution vector.
@@ -370,13 +371,14 @@ struct DirichletSolution< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
   }
 };
 
-template< typename ScalarType , typename ScalarCoordType >
-struct DirichletResidual< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
+template< typename ScalarCoordType , unsigned ElemNode , typename ScalarType >
+struct DirichletResidual<
+  FEMesh< ScalarCoordType , ElemNode , KOKKOS_MACRO_DEVICE > , ScalarType >
 {
   typedef KOKKOS_MACRO_DEVICE     device_type;
   typedef device_type::size_type  size_type ;
 
-  static const size_type ElementNodeCount = 8 ;
+  static const unsigned ElementNodeCount = ElemNode ;
 
   typedef KokkosArray::CrsMatrix< ScalarType , device_type >    matrix_type ;
   typedef KokkosArray::View< ScalarType[] , device_type >  vector_type ;
@@ -390,7 +392,7 @@ struct DirichletResidual< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
   ScalarCoordType bc_upper_z ;
 
   KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type inode ) const
+  void operator()( const unsigned inode ) const
   {
     //  Apply a dirichlet boundary condition to 'irow'
     //  to maintain the symmetry of the original 
