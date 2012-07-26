@@ -17,7 +17,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isLocalNeighborVertex(LocalOrdinal v) const {
-    return graph_->getColMap()->isNodeLocalElement(v);
+    return graph_->getDomainMap()->isNodeLocalElement(v);
   }
 
 #ifdef MUELU_UNUSED
