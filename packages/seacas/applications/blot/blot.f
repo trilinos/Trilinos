@@ -934,7 +934,7 @@ C        Initialize line thicknesses for mesh plots
      *    ' the commands:',/,
      *    10x,'          "LIST MAP" (element map), or ',
      *    '"LIST NODEMAP" (node map)',/,
-     *    10x,'      To disable the maps and use local ids, restart'
+     *    10x,'      To disable the maps and use local ids, restart',
      *    ' blot with "-nomap node|element|all"',//,
      *    10x,'      Notify gdsjaar@sandia.gov if bugs found')
         
