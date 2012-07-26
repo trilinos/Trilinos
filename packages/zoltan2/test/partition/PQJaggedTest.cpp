@@ -147,6 +147,8 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   Teuchos::ParameterList params("test params");
 
   params.set("pqParts", pqParts);
+  params.set("timer_output_stream" , "std::cout");
+
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("num_global_parts", numParts);
   parParams.set("algorithm", "PQJagged");
@@ -183,6 +185,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
 
     cout << "testFromDataFile is done " << endl;
   }
+  problem.printTimers();
 }
 
 void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts, float imbalance, std::string fname, std::string pqParts)
@@ -222,6 +225,8 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
   Teuchos::ParameterList params("test params");
 
   params.set("pqParts", pqParts);
+
+  params.set("timer_output_stream" , "std::cout");
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("num_global_parts", numParts);
   parParams.set("algorithm", "PQJagged");
@@ -248,6 +253,8 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
 
     cout << "testFromDataFile is done " << endl;
   }
+
+  problem.printTimers();
 }
 
 void serialTest(int numParts, int numCoords, float imbalance)
