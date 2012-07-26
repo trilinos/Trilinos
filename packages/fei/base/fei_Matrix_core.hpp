@@ -258,7 +258,6 @@ class Matrix_core : protected fei::Logger {
   mutable FillableMat* remotelyOwned_last_requested_;
   std::vector<int> sendProcs_;
   std::vector<int> recvProcs_;
-  std::vector<std::vector<char> > recv_chars_;
   bool sendRecvProcsNeedUpdated_;
   mutable int proc_last_requested_;
 

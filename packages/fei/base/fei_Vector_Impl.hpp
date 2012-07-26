@@ -53,6 +53,7 @@
 #include <fei_VectorTraits_FEData.hpp>
 #include <snl_fei_FEVectorTraits.hpp>
 #include <snl_fei_FEVectorTraits_FED.hpp>
+#include <fei_SharedIDs.hpp>
 #include <fei_VectorSpace.hpp>
 #include <fei_Reducer.hpp>
 #include <fei_Logger.hpp>
@@ -278,6 +279,33 @@ fei::Vector_Impl<T>::Vector_Impl(fei::SharedPtr<fei::VectorSpace> vecSpace,
     FEI_OSTREAM& os = *output_stream_;
     os << dbgprefix_<<" ctor, numLocalEqns="<<numLocalEqns
        <<", typeName: "<<typeName()<<FEI_ENDL;
+  }
+
+  std::vector<int> idTypes;
+  vecSpace->getIDTypes(idTypes);
+  std::vector<int> eqns;
+  std::vector<double> zeros;
+  for(size_t i=0; i<idTypes.size(); ++i) {
+    int idType = idTypes[i];
+    fei::SharedIDs<int>& sharedIDs = vecSpace->getSharedIDs(idType);
+    const fei::SharedIDs<int>::map_type& idMap = sharedIDs.getSharedIDs();
+    fei::SharedIDs<int>::map_type::const_iterator
+      iter = idMap.begin(), iterEnd = idMap.end();
+    for(; iter!=iterEnd; ++iter) {
+      int ID = iter->first;
+      int eqn;
+      vecSpace->getGlobalIndex(idType, ID, eqn);
+      int ndof = vecSpace->getNumDegreesOfFreedom(idType, ID);
+      eqns.resize(ndof);
+      zeros.resize(ndof, 0.0);
+      for(int j=0; j<ndof; ++j) eqns[j] = eqn+j;
+      if (!isSolutionVector) {
+        sumIn(ndof, &eqns[0], &zeros[0]);
+      }
+      else {
+        copyIn(ndof, &eqns[0], &zeros[0]);
+      }
+    }
   }
 }
 

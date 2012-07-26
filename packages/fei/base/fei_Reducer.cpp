@@ -361,36 +361,36 @@ Reducer::addGraphEntries(fei::SharedPtr<fei::SparseRowGraph> matrixGraph)
     int* cols = &packedCols[rowOffsets[i]];
 
     if (slave_row) {
-      fei::FillableVec* Kdd_row = Kdd_.create_or_getRow(row);
-      fei::FillableVec* Kdi_row = Kdi_.create_or_getRow(row);
+      fei::CSVec* Kdd_row = Kdd_.create_or_getRow(row);
+      fei::CSVec* Kdi_row = Kdi_.create_or_getRow(row);
 
       for(int j=0; j<rowLength; ++j) {
         int col = cols[j];
         bool slave_col = isSlaveEqn(col);
 
         if (slave_col) {
-          Kdd_row->addEntry(col, 0.0);
+          add_entry(*Kdd_row, col, 0.0);
         }
         else {
-          Kdi_row->addEntry(col, 0.0);
+          add_entry(*Kdi_row, col, 0.0);
         }
       }
     }
     else {
       //not a slave row, so add slave columns to Kid, and non-slave
       //columns to graph.
-      fei::FillableVec* Kid_row = Kid_.create_or_getRow(row);
-      fei::FillableVec* Kii_row = Kii_.create_or_getRow(row);
+      fei::CSVec* Kid_row = Kid_.create_or_getRow(row);
+      fei::CSVec* Kii_row = Kii_.create_or_getRow(row);
 
       for(int j=0; j<rowLength; ++j) {
         int col = cols[j];
         bool slave_col = isSlaveEqn(col);
 
         if (slave_col) {
-          Kid_row->addEntry(col, 0.0);
+          add_entry(*Kid_row, col, 0.0);
         }
         else {
-          Kii_row->addEntry(col, 0.0);
+          add_entry(*Kii_row, col, 0.0);
         }
       }
     }
@@ -428,15 +428,15 @@ Reducer::addGraphIndices(int numRows, const int* rows,
     bool slave_row = isSlaveEqn(rows[i]);
 
     if (slave_row) {
-      fei::FillableVec* Kdd_row = Kdd_.create_or_getRow(rows[i]);
-      fei::FillableVec* Kdi_row = Kdi_.create_or_getRow(rows[i]);
+      fei::CSVec* Kdd_row = Kdd_.create_or_getRow(rows[i]);
+      fei::CSVec* Kdi_row = Kdi_.create_or_getRow(rows[i]);
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
-          Kdd_row->addEntry(cols[j], 0.0);
+          add_entry(*Kdd_row, cols[j], 0.0);
         }
         else {
-          Kdi_row->addEntry(cols[j], 0.0);
+          add_entry(*Kdi_row, cols[j], 0.0);
         }
       }
       ++mat_counter_;
@@ -444,14 +444,14 @@ Reducer::addGraphIndices(int numRows, const int* rows,
     else {
       //not a slave row, so add slave columns to Kid, and non-slave
       //columns to graph.
-      fei::FillableVec* Kid_row = no_slave_cols ?
+      fei::CSVec* Kid_row = no_slave_cols ?
         NULL : Kid_.create_or_getRow(rows[i]);
   
       unsigned num_non_slave_cols = 0;
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
-          Kid_row->addEntry(cols[j], 0.0);
+          add_entry(*Kid_row, cols[j], 0.0);
           ++mat_counter_;
         }
         else {
@@ -773,15 +773,15 @@ Reducer::addMatrixValues(int numRows, const int* rows,
     if (bool_array_[numCols+i]) {
       //slave row: slave columns go into Kdd, non-slave columns go
       //into Kdi.
-      fei::FillableVec* Kdd_row = Kdd_.create_or_getRow(rows[i]);
-      fei::FillableVec* Kdi_row = Kdi_.create_or_getRow(rows[i]);
+      fei::CSVec* Kdd_row = Kdd_.create_or_getRow(rows[i]);
+      fei::CSVec* Kdi_row = Kdi_.create_or_getRow(rows[i]);
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
-          Kdd_row->addEntry(cols[j], myvalues[i][j]);
+          add_entry(*Kdd_row, cols[j], myvalues[i][j]);
         }
         else {
-          Kdi_row->addEntry(cols[j], myvalues[i][j]);
+          add_entry(*Kdi_row, cols[j], myvalues[i][j]);
         }
       }
       ++mat_counter_;
@@ -803,12 +803,12 @@ Reducer::addMatrixValues(int numRows, const int* rows,
 
       //put non-slave columns into Kii,
       //and slave columns into Kid.
-      fei::FillableVec* Kid_row = Kid_.create_or_getRow(rows[i]);
+      fei::CSVec* Kid_row = Kid_.create_or_getRow(rows[i]);
 
       unsigned offset = 0;
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
-          Kid_row->addEntry(cols[j], myvalues[i][j]);
+          add_entry(*Kid_row, cols[j], myvalues[i][j]);
           ++mat_counter_;
         }
         else {

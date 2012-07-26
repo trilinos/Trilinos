@@ -89,23 +89,9 @@ CSVec::operator=(const FillableVec& invec)
   return *this;
 }
 
-void add_entry(CSVec& vec, int eqn, double coef)
+void add_entries(CSVec& vec, int num, const int* eqns, const double* coefs)
 {
-  std::vector<int>& v_ind = vec.indices();
-  std::vector<double>& v_coef = vec.coefs();
-
-  std::vector<int>::iterator
-    iter = std::lower_bound(v_ind.begin(), v_ind.end(), eqn);
-
-  size_t offset = iter - v_ind.begin();
-
-  if (iter == v_ind.end() || *iter != eqn) {
-    v_ind.insert(iter, eqn);
-    v_coef.insert(v_coef.begin()+offset, coef);
-  }
-  else {
-    v_coef[offset] += coef;
-  }
+  for(int i=0; i<num; ++i) add_entry(vec, eqns[i], coefs[i]);
 }
 
 void put_entry(CSVec& vec, int eqn, double coef)
@@ -125,6 +111,25 @@ void put_entry(CSVec& vec, int eqn, double coef)
   else {
     v_coef[offset] = coef;
   }
+}
+
+double get_entry(const CSVec& vec, int eqn)
+{
+  const std::vector<int>& v_ind = vec.indices();
+  const std::vector<double>& v_coef = vec.coefs();
+
+  if (vec.size() == 0) {
+    throw std::runtime_error("get_entry error, CSVec is empty");
+  }
+
+  std::vector<int>::const_iterator
+    iter = std::lower_bound(v_ind.begin(), v_ind.end(), eqn);
+
+  if (iter == v_ind.end()) {
+    throw std::runtime_error("get_entry error, entry not found.");
+  }
+
+  return v_coef[iter - v_ind.begin()];
 }
 
 void remove_entry(CSVec& vec, int eqn)

@@ -99,11 +99,12 @@ CSRMat::operator=(const fei::FillableMat& src)
 
   unsigned offset = 0;
   for(; iter != iter_end; ++iter) {
-    const FillableVec* v = iter->second;
-    FillableVec::const_iterator viter = v->begin(), vend = v->end();
-    for(; viter != vend; ++viter) {
-      colind_ptr[offset] = viter->first;
-      coef_ptr[offset++] = viter->second;
+    const CSVec* v = iter->second;
+    const std::vector<int>& v_ind = v->indices();
+    const std::vector<double>& v_coef = v->coefs();
+    for(size_t i=0; i<v_ind.size(); ++i) {
+      colind_ptr[offset] = v_ind[i];
+      coef_ptr[offset++] = v_coef[i];
     }
   }
 
@@ -248,7 +249,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
     int row = Arows[i];
     int jend = *Arowoffs++;
 
-    fei::FillableVec* fc_row = NULL;
+    fei::CSVec* fc_row = NULL;
     if (storeResultZeros) {
       fc_row = fc.create_or_getRow(row);
     }
@@ -291,7 +292,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
           fc_row = fc.create_or_getRow(row);
         }
 
-        fc_row->addEntry(resultCol, resultCoef);
+        add_entry(*fc_row, resultCol, resultCoef);
       }
     }
   }

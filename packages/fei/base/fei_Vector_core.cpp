@@ -425,15 +425,6 @@ int fei::Vector_core::gatherFromOverlap(bool accumulate)
     sendRecvProcsNeedUpdated_ = false;
   }
   
-//  int num_remote_sends_needed = 0;
-//  for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
-//    if ((int)i==fei::localProc(comm_)) continue;
-//    if (remotelyOwned_[i]->size() > 0) num_remote_sends_needed++;
-//  }
-//  if (num_remote_sends_needed != (int)sendProcs_.size()) {
-//    std::cout << "proc " << fei::localProc(comm_)<<", num_remote_sends_needed="<<num_remote_sends_needed<<", sendProcs_.size()="<<sendProcs_.size()<<std::endl;
-//  }
-
   send_chars.resize(sendProcs_.size());
 
   pack_send_buffers(sendProcs_, remotelyOwned_, send_chars);
@@ -457,7 +448,6 @@ int fei::Vector_core::gatherFromOverlap(bool accumulate)
   for(unsigned i=0; i<sendProcs_.size(); ++i) {
     int proc = sendProcs_[i];
     int size = send_chars[i].size();
-//std::cout<<"proc "<<fei::localProc(comm_)<<" sending "<<size<<" chars ("<<remotelyOwned_[proc]->indices().size()<<" indices/coefs) to proc "<<proc<<" accum="<<accumulate<<std::endl;
     MPI_Send(&size, 1, MPI_INT, proc, tag1, comm_);
   }
 

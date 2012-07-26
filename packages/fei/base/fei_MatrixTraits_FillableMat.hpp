@@ -93,7 +93,7 @@ namespace fei {
     static int getRowLength(FillableMat* mat, int row, int& length)
       {
         try {
-          const FillableVec* matrixrow = mat->getRow(row);
+          const CSVec* matrixrow = mat->getRow(row);
           length = matrixrow->size();
         }
         catch(...) {
@@ -118,17 +118,15 @@ namespace fei {
                       int row, int len, double* coefs, int* indices)
       {
         try {
-          const FillableVec* matrixrow = mat->getRow(row);
+          const CSVec* matrixrow = mat->getRow(row);
 
-          FillableVec::const_iterator
-            row_iter = matrixrow->begin(),
-            row_end = matrixrow->end();
-
-          int i=0;
-          for(; row_iter != row_end; ++row_iter, ++i) {
+          const std::vector<int>& row_indices = matrixrow->indices();
+          const std::vector<double>& row_coefs = matrixrow->coefs();
+          const int rowlen = row_indices.size();
+          for(int i=0; i<rowlen; ++i) {
             if (i >= len) break;
-            coefs[i] = row_iter->second;
-            indices[i] = row_iter->first;
+            coefs[i] = row_coefs[i];
+            indices[i] = row_indices[i];
           }
         }
         catch(...) {
@@ -175,10 +173,10 @@ namespace fei {
                       fei::Vector* x,
                       fei::Vector* y)
     {
-      fei::Vector_Impl<FillableVec>* fvx =
-        dynamic_cast<fei::Vector_Impl<FillableVec>* >(x);
-      fei::Vector_Impl<FillableVec>* fvy =
-        dynamic_cast<fei::Vector_Impl<FillableVec>* >(y);
+      fei::Vector_Impl<CSVec>* fvx =
+        dynamic_cast<fei::Vector_Impl<CSVec>* >(x);
+      fei::Vector_Impl<CSVec>* fvy =
+        dynamic_cast<fei::Vector_Impl<CSVec>* >(y);
 
       if (fvx == NULL || fvy == NULL) {
         return(-1);

@@ -67,7 +67,6 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 #include "fei_ProcEqns.hpp"
 #include "fei_EqnBuffer.hpp"
 #include <fei_FillableMat.hpp>
-#include <fei_FillableVec.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_CSVec.hpp>
 #include "fei_EqnCommMgr.hpp"

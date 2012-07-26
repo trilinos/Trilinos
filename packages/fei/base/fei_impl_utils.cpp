@@ -44,7 +44,6 @@
 #include <fei_CommUtils.hpp>
 #include <fei_iostream.hpp>
 #include <fei_impl_utils.hpp>
-#include <fei_FillableVec.hpp>
 #include <fei_FillableMat.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_CSVec.hpp>
@@ -106,17 +105,17 @@ void pack_FillableMat(const fei::FillableMat& mat,
 
   for(; r_iter!=r_end; ++r_iter) {
     int rowNumber = r_iter->first;
-    const fei::FillableVec* row = r_iter->second;
+    const fei::CSVec* row = r_iter->second;
 
     intdata[ioffset++] = rowNumber;
-    intdata[ioffset++] = row->size();
+    const int rowlen = row->size();
+    intdata[ioffset++] = rowlen;
 
-    fei::FillableVec::const_iterator
-      iter = row->begin(),
-      iend = row->end();
-    for(; iter!=iend; ++iter) {
-      intdata[ioffset++] = iter->first;
-      doubledata[doffset++] = iter->second;
+    const std::vector<int>& rowindices = row->indices();
+    const std::vector<double>& rowcoefs = row->coefs();
+    for(int i=0; i<rowlen; ++i) {
+      intdata[ioffset++] = rowindices[i];
+      doubledata[doffset++] = rowcoefs[i];
     }
   }
 }
@@ -149,17 +148,17 @@ void pack_FillableMat(const fei::FillableMat& mat,
 
   for(; r_iter!=r_end; ++r_iter) {
     int rowNumber = r_iter->first;
-    const fei::FillableVec* row = r_iter->second;
+    const fei::CSVec* row = r_iter->second;
 
     intdata[ioffset++] = rowNumber;
-    intdata[ioffset++] = row->size();
+    const int rowlen = row->size();
+    intdata[ioffset++] = rowlen;
 
-    fei::FillableVec::const_iterator
-      iter = row->begin(),
-      iend = row->end();
-    for(; iter!=iend; ++iter) {
-      intdata[ioffsetcols++] = iter->first;
-      doubledata[doffset++] = iter->second;
+    const std::vector<int>& rowindices = row->indices();
+    const std::vector<double>& rowcoefs = row->coefs();
+    for(int i=0; i<rowlen; ++i) {
+      intdata[ioffsetcols++] = rowindices[i];
+      doubledata[doffset++] = rowcoefs[i];
     }
   }
 }
@@ -354,7 +353,7 @@ void separate_BC_eqns(const fei::FillableMat& mat,
 
   for(; m_iter != m_end; ++m_iter) {
     int eqn = m_iter->first;
-    const fei::FillableVec* row = m_iter->second;
+    const fei::CSVec* row = m_iter->second;
 
     std::vector<int>::iterator
       iter = std::lower_bound(bcEqns.begin(), bcEqns.end(), eqn);
@@ -364,7 +363,7 @@ void separate_BC_eqns(const fei::FillableMat& mat,
       std::vector<double>::iterator viter = bcVals.begin();
       viter += offset;
       try {
-        double val = row->getEntry(eqn);
+        double val = get_entry(*row, eqn);
         bcVals.insert(viter, val);
       }
       catch(...) {
@@ -392,14 +391,12 @@ void create_col_to_row_map(const fei::FillableMat& mat,
 
   for(; m_iter != m_end; ++m_iter) {
     int rowNum = m_iter->first;
-    const fei::FillableVec* rowvec = m_iter->second;
+    const fei::CSVec* rowvec = m_iter->second;
 
-    fei::FillableVec::const_iterator
-      r_iter = rowvec->begin(),
-      r_end = rowvec->end();
+    const std::vector<int>& rowindices = rowvec->indices();
 
-    for(; r_iter != r_end; ++r_iter) {
-      int colNum = r_iter->first;
+    for(size_t i=0; i<rowindices.size(); ++i) {
+      int colNum = rowindices[i];
 
       crmap.insert(std::make_pair(colNum, rowNum));
     }
@@ -428,7 +425,7 @@ int remove_couplings(fei::FillableMat& mat)
     bool foundCoupling = false;
     for(; m_iter != m_end; ++m_iter) {
       int rownum = m_iter->first;
-      fei::FillableVec* mrow = m_iter->second;
+      fei::CSVec* mrow = m_iter->second;
 
       //now find which rows contain 'rownum' as a column-index:
       std::pair<MM_Iter,MM_Iter> mmi = crmap.equal_range(rownum);
@@ -437,23 +434,21 @@ int remove_couplings(fei::FillableMat& mat)
       for(MM_Iter cri = mmi.first; cri != mmi.second; ++cri) {
         int cri_row = cri->second;
 
-        fei::FillableVec* frow = mat.create_or_getRow(cri_row);
+        fei::CSVec* frow = mat.create_or_getRow(cri_row);
 
-        double coef = frow->getEntry(rownum);
+        double coef = get_entry(*frow,rownum);
 
-        frow->removeEntry(rownum);
+        remove_entry(*frow, rownum);
 
-        fei::CSVec csrow(*mrow);
+        std::vector<int>& indices = mrow->indices();
+        std::vector<double>& coefs = mrow->coefs();
 
-        std::vector<int>& indices = csrow.indices();
-        std::vector<double>& coefs = csrow.coefs();
-
-        size_t rowlen = csrow.size();
+        size_t rowlen = mrow->size();
         for(size_t ii=0; ii<rowlen; ++ii) {
           coefs[ii] *= coef;
         }
 
-        frow->addEntries(rowlen, &coefs[0], &indices[0]);
+        add_entries(*frow, rowlen, &indices[0], &coefs[0]);
         foundCoupling = true;
       }
     }

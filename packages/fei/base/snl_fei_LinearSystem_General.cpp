@@ -430,7 +430,8 @@ int extractDirichletBCs(fei::DirichletBCManager* bcManager,
     reducer->getLocalReducedEqns().size() :
     matrixGraph->getRowSpace()->getNumIndices_Owned();
 
-  bcEqns.reset(new fei::Matrix_Impl<fei::FillableMat>(localBCeqns, matrixGraph, numIndices));
+  bool zeroSharedRows = false;
+  bcEqns.reset(new fei::Matrix_Impl<fei::FillableMat>(localBCeqns, matrixGraph, numIndices, zeroSharedRows));
   fei::SharedPtr<fei::Matrix> bcEqns_reducer;
   if (numSlaves > 0) {
     bcEqns_reducer.reset(new fei::MatrixReducer(reducer, bcEqns));

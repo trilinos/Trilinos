@@ -99,15 +99,13 @@ FillableMat::operator=(const FillableMat& src)
 
   for(; s_iter != s_end; ++s_iter) {
     int row = s_iter->first;
-    const FillableVec* srow = s_iter->second;
+    const CSVec* srow = s_iter->second;
+    const std::vector<int>& s_ind = srow->indices();
+    const std::vector<double>& s_coef = srow->coefs();
 
-    FillableVec::const_iterator
-      r_iter = srow->begin(),
-      r_end = srow->end();
-
-    for(; r_iter != r_end; ++r_iter) {
-      int col = r_iter->first;
-      double coef = r_iter->second;
+    for(size_t i=0; i<s_ind.size(); ++i) {
+      int col = s_ind[i];
+      double coef = s_coef[i];
 
       putCoef(row, col, coef);
     }
@@ -124,7 +122,7 @@ FillableMat::setValues(double value)
     iter = matdata_.begin(), iter_end = matdata_.end();
 
   for(; iter != iter_end; ++iter) {
-    iter->second->setValues(value);
+    set_values(*(iter->second), value);
   }
 }
 
@@ -140,12 +138,17 @@ FillableMat::feipoolmat::iterator
 insert_row(FillableMat::feipoolmat& matdata,
            FillableMat::feipoolmat::iterator iter,
            int row,
-           fei_Pool_alloc<FillableVec>& vecpool)
+           fei_Pool_alloc<CSVec>& vecpool)
 {
-  static FillableVec dummy;
+  static CSVec dummy;
 
-  FillableVec* vptr = vecpool.allocate(1);
+  CSVec* vptr = vecpool.allocate(1);
   vecpool.construct(vptr, dummy);
+
+  if (vptr->indices().capacity() == 0) {
+    vptr->indices().reserve(16);
+    vptr->coefs().reserve(16);
+  }
 
   return matdata.insert(iter, std::make_pair(row, vptr));
 }
@@ -154,18 +157,18 @@ insert_row(FillableMat::feipoolmat& matdata,
 void
 FillableMat::sumInCoef(int row, int col, double coef)
 {
-  FillableVec* rowvec = create_or_getRow(row);
+  CSVec* rowvec = create_or_getRow(row);
 
-  rowvec->addEntry(col, coef);
+  add_entry(*rowvec, col, coef);
 }
 
 //-----------------------------------------------------------------
 void
 FillableMat::putCoef(int row, int col, double coef)
 {
-  FillableVec* rowvec = create_or_getRow(row);
+  CSVec* rowvec = create_or_getRow(row);
 
-  rowvec->putEntry(col, coef);
+  put_entry(*rowvec, col, coef);
 }
 
 //-----------------------------------------------------------------
@@ -173,10 +176,10 @@ void
 FillableMat::sumInRow(int row, const int* cols, const double* coefs,
                       unsigned len)
 {
-  FillableVec* rowvec = create_or_getRow(row);
+  CSVec* rowvec = create_or_getRow(row);
 
   for(unsigned i=0; i<len; ++i) {
-    rowvec->addEntry(cols[i], coefs[i]);
+    add_entry(*rowvec, cols[i], coefs[i]);
   }
 }
 
@@ -185,10 +188,10 @@ void
 FillableMat::putRow(int row, const int* cols, const double* coefs,
                     unsigned len)
 {
-  FillableVec* rowvec = create_or_getRow(row);
+  CSVec* rowvec = create_or_getRow(row);
 
   for(unsigned i=0; i<len; ++i) {
-    rowvec->putEntry(cols[i], coefs[i]);
+    put_entry(*rowvec, cols[i], coefs[i]);
   }
 }
 
@@ -208,7 +211,7 @@ FillableMat::hasRow(int row) const
 }
 
 //-----------------------------------------------------------------
-const FillableVec*
+const CSVec*
 FillableMat::getRow(int row) const
 {
   feipoolmat::const_iterator iter = matdata_.lower_bound(row);
@@ -221,7 +224,7 @@ FillableMat::getRow(int row) const
 }
 
 //-----------------------------------------------------------------
-FillableVec*
+CSVec*
 FillableMat::create_or_getRow(int row)
 {
   feipoolmat::iterator iter = matdata_.lower_bound(row);
@@ -266,8 +269,8 @@ FillableMat::operator==(const FillableMat& rhs) const
     int rhs_row = rhs_it->first;
     if (this_row != rhs_row) return false;
 
-    const FillableVec* this_row_vec = this_it->second;
-    const FillableVec* rhs_row_vec = rhs_it->second;
+    const CSVec* this_row_vec = this_it->second;
+    const CSVec* rhs_row_vec = rhs_it->second;
 
     if (*this_row_vec != *rhs_row_vec) return false;
   }
@@ -289,12 +292,12 @@ void print(std::ostream& os, const FillableMat& mat)
     irow = mat.begin(), irowend = mat.end();
   for(; irow!=irowend; ++irow) {
     int row = irow->first;
-    const FillableVec* vec = irow->second;
+    const CSVec* vec = irow->second;
+    const std::vector<int>& v_ind = vec->indices();
+    const std::vector<double>& v_coef = vec->coefs();
     os << "row " << row << ": ";
-    FillableVec::const_iterator
-      ivec = vec->begin(), ivecend = vec->end();
-    for(; ivec!=ivecend; ++ivec) {
-      os << "("<<ivec->first<<","<<ivec->second<<") ";
+    for(size_t i=0; i<v_ind.size(); ++i) {
+      os << "("<<v_ind[i]<<","<<v_coef[i]<<") ";
     }
     os << std::endl;
   }
@@ -310,7 +313,7 @@ int count_nnz(const FillableMat& mat)
     r_end = mat.end();
 
   for(; r_iter != r_end; ++r_iter) {
-    FillableVec* row = r_iter->second;
+    CSVec* row = r_iter->second;
     nnz += row->size();
   }
 
