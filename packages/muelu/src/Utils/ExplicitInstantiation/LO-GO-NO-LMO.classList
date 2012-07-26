@@ -9,3 +9,4 @@ UCAggregationFactory
 DemoFactory
 AmalgamationInfo
 CheapAggregationAlgorithm
+ExperimentalAggregationFactory

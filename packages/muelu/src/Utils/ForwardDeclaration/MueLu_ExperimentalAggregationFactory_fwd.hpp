@@ -1,0 +1,13 @@
+#ifndef MUELU_EXPERIMENTALAGGREGATIONFACTORY_FWD_HPP
+#define MUELU_EXPERIMENTALAGGREGATIONFACTORY_FWD_HPP
+
+namespace MueLu {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class ExperimentalAggregationFactory;
+}
+
+#ifndef MUELU_EXPERIMENTALAGGREGATIONFACTORY_SHORT
+#define MUELU_EXPERIMENTALAGGREGATIONFACTORY_SHORT
+#endif
+
+#endif // MUELU_EXPERIMENTALAGGREGATIONFACTORY_FWD_HPP
