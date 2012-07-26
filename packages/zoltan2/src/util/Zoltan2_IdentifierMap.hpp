@@ -613,8 +613,11 @@ template< typename User>
 
   // Keep gnoInBuf.  We're done with the others.
 
-  gidInBuf.release();
-  countInBuf.release();
+  // KDDKDD Release causes memory leaks; doesn't deallocate memory; just changes
+  // KDDKDD ownership to false.  We want ownership to be true so that the
+  // KDDKDD memory is freed when the pointers are reassigned.  7/26/2012
+  // KDDKDD gidInBuf.release();
+  // KDDKDD countInBuf.release();
 
   ///////////////////////////////////////////////////////////////////////
   // Send a request for information to the "answer process" for each 
@@ -746,14 +749,17 @@ template< typename User>
     }
   }
 
-  gidInBuf.release();
-  if (needGnoInfo){
-    gnoInBuf.release();
-  }
+  // KDDKDD Release causes memory leaks; doesn't deallocate memory; just changes
+  // KDDKDD ownership to false.  We want ownership to be true so that the
+  // KDDKDD memory is freed when the pointers are reassigned.  7/26/2012
+  // KDDKDD gidInBuf.release();
+  // KDDKDD if (needGnoInfo){
+  // KDDKDD     gnoInBuf.release();
+  // KDDKDD   }
 
   // Done with lookupMine.
 
-  lookupMine.release();
+  // KDDKDD lookupMine.release();
 
   try{
     ArrayView<const int> procView = procOutBuf();
