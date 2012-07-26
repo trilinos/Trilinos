@@ -1575,7 +1575,7 @@ private:
 
     // Time sparse triangular solve, no transpose.
     {
-      const std::string timerName (opsLabel + "Y = A \\ X (" + benchmarkLabel + ")");
+      const std::string timerName (opsLabel + ": Y = A \\ X (" + benchmarkLabel + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -1592,7 +1592,7 @@ private:
 
     // Time sparse triangular solve, transpose.
     {
-      const std::string timerName (opsLabel + "Y = A^T \\ X (" + benchmarkLabel + ")");
+      const std::string timerName (opsLabel + ": Y = A^T \\ X (" + benchmarkLabel + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -1610,7 +1610,7 @@ private:
     // Only test conjugate transpose if scalar_type is complex.
     if (STS::isComplex) {
       // Time sparse triangular solve, conjugate transpose.
-      const std::string timerName (opsLabel + "Y = A^H \\ X (" + benchmarkLabel + ")");
+      const std::string timerName (opsLabel + ": Y = A^H \\ X (" + benchmarkLabel + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
