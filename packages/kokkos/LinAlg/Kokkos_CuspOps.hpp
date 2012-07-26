@@ -54,15 +54,16 @@ notes:
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_TypeTraits.hpp>
+#include <Teuchos_BLAS_types.hpp>
 
 #include <Kokkos_ConfigDefs.hpp>
 #include <Kokkos_CUDANodeUtils.hpp>
 
+#include "Kokkos_CrsMatrixBase.hpp"
+#include "Kokkos_CrsGraphBase.hpp"
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
-
-#include <cusp/csr_matrix.h>
-#include "Kokkos_CuspOps.cuh"
+#include "Kokkos_CuspWrappers.hpp"
 
 namespace Kokkos {
 
@@ -77,10 +78,10 @@ namespace Kokkos {
     public:
       CuspCrsGraph(Ordinal numRows, Ordinal numCols, const RCP<Node> &node, const RCP<ParameterList> &params);
       bool isEmpty() const;
-      void setStructure(const ArrayRCP<const Ordinal>  &ptrs,
+      void setStructure(const ArrayRCP<const size_t>  &ptrs,
                         const ArrayRCP<const Ordinal> &inds);
       void setDeviceData(const ArrayRCP<const Ordinal> &devptrs, const ArrayRCP<const Ordinal> &devinds);
-      inline ArrayRCP<const Ordinal> getPointers() const;
+      inline ArrayRCP<const size_t>  getPointers() const;
       inline ArrayRCP<const Ordinal> getIndices() const;
       inline ArrayRCP<const Ordinal> getDevPointers() const;
       inline ArrayRCP<const Ordinal> getDevIndices() const;
@@ -93,7 +94,10 @@ namespace Kokkos {
       Teuchos::EUplo uplo_;
       Teuchos::EDiag diag_;
       // graph data
-      ArrayRCP<const Ordinal> host_rowptrs_, dev_rowptrs_, host_colinds_, dev_colinds_;
+      ArrayRCP<const size_t> host_rowptrs_;
+      ArrayRCP<const Ordinal> dev_rowptrs_;
+      ArrayRCP<const Ordinal> host_colinds_, dev_colinds_;
+      // TODO: add CSC data, for efficient tranpose multiply
   };
 
   //! \class CuspCrsMatrix
@@ -133,8 +137,8 @@ namespace Kokkos {
   { return isEmpty_; }
 
   template <class Ordinal, class Node>
-  void CuspCrsGraph<Ordinal,Node>::setStructure(const ArrayRCP<const Ordinal> &ptrs,
-                                        const ArrayRCP<const Ordinal> &inds)
+  void CuspCrsGraph<Ordinal,Node>::setStructure(const ArrayRCP<const size_t> &ptrs,
+                                                const ArrayRCP<const Ordinal> &inds)
   {
     std::string tfecfFuncName("setStructure(ptrs,inds)");
     const Ordinal numrows = this->getNumRows();
@@ -156,7 +160,7 @@ namespace Kokkos {
   }
 
   template <class Ordinal, class Node>
-  ArrayRCP<const Ordinal> CuspCrsGraph<Ordinal,Node>::getPointers() const
+  ArrayRCP<const size_t> CuspCrsGraph<Ordinal,Node>::getPointers() const
   { return host_rowptrs_; }
 
   template <class Ordinal, class Node>
@@ -173,7 +177,7 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void CuspCrsGraph<Ordinal,Node>::setDeviceData(const ArrayRCP<const Ordinal> &devptrs,
-                                         const ArrayRCP<const Ordinal> &devinds)
+                                                 const ArrayRCP<const Ordinal> &devinds)
   { dev_rowptrs_ = devptrs; dev_colinds_ = devinds; }
 
   template <class Ordinal, class Node>
@@ -183,7 +187,6 @@ namespace Kokkos {
   template <class Ordinal, class Node>
   void CuspCrsGraph<Ordinal,Node>::setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag)
   {
-    std::string tfecfFuncName("setMatDesc()");
     uplo_ = uplo;
     diag_ = diag;
   }
@@ -306,11 +309,11 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<Ordinal> allocRowPtrs(const RCP<Node> &node, const ArrayView<const Ordinal> &rowPtrs);
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs);
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T>
-    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const Ordinal> &ptrs);
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &ptrs);
 
     //! Finalize a graph is null for Cusp.
     static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, CuspCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params);
@@ -438,11 +441,8 @@ namespace Kokkos {
     Ordinal numRows_, numCols_, numNZ_;
     bool isInitialized_;
 
-    typedef typename Cuspdetails::types<Ordinal,Scalar>::csr_view           csr_matrix_view;
-
     ArrayRCP<const Ordinal> rowPtrs_, colInds_;
     ArrayRCP<const Scalar>  rowVals_;
-    RCP<csr_matrix_view>    A_mat_, transA_mat;
   };
 
 
@@ -451,6 +451,7 @@ namespace Kokkos {
   void CuspOps<Scalar,Ordinal,Node>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag,
                                                    CuspCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
   {
+    const Ordinal MAX_NNZ = Teuchos::OrdinalTraits<Ordinal>::max();
     const std::string prefix("finalizeGraph()");
     RCP<Node> node = graph.getNode();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -460,17 +461,22 @@ namespace Kokkos {
     // diag: have to allocate and indicate
     ArrayRCP<Ordinal>       devinds, devptrs;
     ArrayRCP<const Ordinal> hostinds = graph.getIndices();
-    ArrayRCP<const Ordinal> hostptrs = graph.getPointers();
+    ArrayRCP<const size_t> hostptrs = graph.getPointers();
     const Ordinal numRows = graph.getNumRows();
     // set description
     graph.setMatDesc(uplo,diag);
-    // allocate and initialize data
+    const size_t numnz = hostinds.size();
+    TEUCHOS_TEST_FOR_EXCEPTION( 
+        numnz > (size_t)MAX_NNZ, std::runtime_error, 
+        "Kokkos::CuspOps: Selected ordinal does not support more than " << MAX_NNZ << " non-zeros." 
+        );
     devptrs = node->template allocBuffer<Ordinal>( numRows+1 );
-    node->copyToBuffer( numRows+1,  hostptrs(),  devptrs );
-    const Ordinal numnz = hostinds.size();
+    ArrayRCP<Ordinal> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
+    std::copy( hostptrs.begin(), hostptrs.end(), h_devptrs.begin() );
+    h_devptrs = null;
     if (numnz) {
       devinds = node->template allocBuffer<Ordinal>( numnz );
-      node->copyToBuffer( numnz,     hostinds(), devinds );
+      node->copyToBuffer( numnz, hostinds(), devinds );
     }
     // set the data
     graph.setDeviceData(devptrs,devinds);
@@ -489,15 +495,11 @@ namespace Kokkos {
         matrix.isInitialized() == false,
         std::runtime_error, FuncName << ": matrix has not yet been initialized."
     )
-    // diag: have to allocate and indicate
-    Teuchos::EUplo uplo;
-    Teuchos::EDiag diag;
-    graph.getMatDesc(uplo,diag);
-    ArrayRCP<Scalar>           devvals;
-    ArrayRCP<const Ordinal>    hostptrs = graph.getPointers();
+    ArrayRCP<Scalar>        devvals;
+    ArrayRCP<const size_t> hostptrs = graph.getPointers();
     ArrayRCP<const Scalar> hostvals = matrix.getValues();
     const Ordinal numRows = graph.getNumRows();
-    const Ordinal numnz = hostptrs[numRows];
+    const size_t numnz = hostptrs[numRows];
     if (numnz) {
       devvals = node->template allocBuffer<Scalar>( numnz );
       node->copyToBuffer( numnz,     hostvals(), devvals );
@@ -536,8 +538,8 @@ namespace Kokkos {
 
   // ======= pointer allocation ===========
   template <class Scalar, class Ordinal, class Node>
-  ArrayRCP<Ordinal>
-  CuspOps<Scalar,Ordinal,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const Ordinal> &numEntriesPerRow)
+  ArrayRCP<size_t>
+  CuspOps<Scalar,Ordinal,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
     CUDANodeHostPinnedDeallocator<Ordinal> dealloc;
@@ -551,7 +553,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class T>
   ArrayRCP<T>
-  CuspOps<Scalar,Ordinal,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const Ordinal> &rowPtrs)
+  CuspOps<Scalar,Ordinal,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const size_t> &rowPtrs)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
     const Ordinal totalNumEntries = *(rowPtrs.end()-1);
@@ -602,36 +604,6 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
-  void CuspOps<Scalar,Ordinal,Node>::solve(Teuchos::ETransp trans,
-                                           const MultiVector<DomainScalar,Node> &Y,
-                                                 MultiVector< RangeScalar,Node> &X) const
-  {
-    //
-    std::string tfecfFuncName("solve()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
-    // get pointers,stride from X and Y
-    Ordinal stride_x = (Ordinal)X.getStride(),
-            stride_y = (Ordinal)Y.getStride();
-    const Scalar * data_y = Y.getValues().getRawPtr();
-    Scalar * data_x = X.getValuesNonConst().getRawPtr();
-    const Ordinal numMatRows = X.getNumRows();
-    const Ordinal numRHS     = X.getNumCols();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumRows() != Y.getNumRows(),
-        std::runtime_error, "X and Y do not have the same number of row vectors.")
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumCols() != Y.getNumCols(),
-        std::runtime_error, "X and Y do not have the same number of column vectors.")
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        Y.getNumRows() != numRows_,
-        std::runtime_error, "Y does not have the same number of rows as does the matrix.")
-  }
-
-
-  template <class Scalar, class Ordinal, class Node>
-  template <class DomainScalar, class RangeScalar>
   void CuspOps<Scalar,Ordinal,Node>::multiply(Teuchos::ETransp trans,
                                           RangeScalar alpha,
                                           const MultiVector<DomainScalar,Node> &X,
@@ -642,6 +614,9 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == false,
         std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        trans != Teuchos::NO_TRANS,
+        std::runtime_error, "no support for transpose multiplication in Cusp")
     // get pointers,stride from X and Y
     Ordinal stride_x = (Ordinal)X.getStride(),
             stride_y = (Ordinal)Y.getStride();
@@ -650,12 +625,18 @@ namespace Kokkos {
     const Ordinal numMatRows = Y.getNumRows();
     const Ordinal numMatCols = X.getNumRows();
     const Ordinal numRHS     = X.getNumCols();
+    const Ordinal numNZ      = rowVals_.size();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         (size_t)Y.getNumRows() != (size_t)numRows_,
         std::runtime_error, "Y does not have the same number of rows as does the matrix.")
+    Kokkos::Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(), 
+                                         numRHS, data_x, stride_x, data_y, stride_y);
+    if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
+      DefaultArithmetic< MultiVector< RangeScalar,Node > > ::Scale(Y,alpha);
+    }
   }
 
 
@@ -668,22 +649,47 @@ namespace Kokkos {
     //
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        trans != Teuchos::NO_TRANS,
+        std::runtime_error, "no support for transpose multiplication in Cusp")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == false,
         std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
     // get pointers,stride from X and Y
     Ordinal stride_x = (Ordinal)X.getStride(),
             stride_y = (Ordinal)Y.getStride();
-    const Scalar * data_x = X.getValues().getRawPtr();
-    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
+    const DomainScalar * data_x = X.getValues().getRawPtr();
+    RangeScalar * data_y = Y.getValuesNonConst().getRawPtr();
     const Ordinal numMatRows = Y.getNumRows();
     const Ordinal numMatCols = X.getNumRows();
     const Ordinal numRHS     = X.getNumCols();
+    const Ordinal numNZ      = rowVals_.size();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         (size_t)Y.getNumRows() != (size_t)numRows_,
         std::runtime_error, "Y does not have the same number of rows as does the matrix.")
+    // y = alpha*A*x + beta*y
+    if (beta == Teuchos::ScalarTraits<RangeScalar>::zero()) {
+      // don't need temp storage
+      Kokkos::Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(),
+                                           numRHS, data_x, stride_x, data_y, stride_y);
+      if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
+        DefaultArithmetic< MultiVector< RangeScalar,Node > > ::Scale(Y,alpha);
+      }
+    }
+    else {
+      // allocate temp space
+      typedef MultiVector<RangeScalar,Node> MV;
+      ArrayRCP<RangeScalar> tmp = node_->template allocBuffer<RangeScalar>( numMatRows*numRHS );
+      // tmp = A*X
+      Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(),
+                                   numRHS, data_x, stride_x, tmp.getRawPtr(), numMatRows);
+      // Y = alpha*tmp + beta*Y
+      MV mvtmp(node_);
+      mvtmp.initializeValues(numMatRows,numRHS,tmp,numMatRows);
+      DefaultArithmetic<MV>::GESUM(Y,alpha,mvtmp,beta);
+    }
   }
 
 } // namespace Kokkos

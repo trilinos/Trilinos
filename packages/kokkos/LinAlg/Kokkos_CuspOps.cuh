@@ -42,29 +42,35 @@
 #ifndef KOKKOS_CUSPOPS_CUH
 #define KOKKOS_CUSPOPS_CUH
 
+#include <cusp/array1d.h>
 #include <cusp/csr_matrix.h>
+#include <cusp/multiply.h>
 
-namespace Kokkos {
+#include "Kokkos_CuspWrappers.hpp"
 
-  namespace Cuspdetails {
-
-    template <class O, class S>
-    struct types {
-      typedef  thrust::device_ptr<O>                                              ind_ptr;
-      typedef  thrust::device_ptr<S>                                              val_ptr;
-      typedef  cusp::array1d_view< ind_ptr >                             ind_arr_view;
-      typedef  cusp::array1d_view< val_ptr >                             val_arr_view;
-      typedef  cusp::array2d_view< val_arr_view, cusp::column_major>              val_arr_view2d;
-      typedef  cusp::csr_matrix_view<ind_arr_view, ind_arr_view, val_arr_view>    csr_view;
-    };
-
-    // forward declaration for cusp adaptors
-    template <class Ordinal, class Scalar> 
-    void cuspCrsMultiply(const typename types<const Ordinal,const Scalar>::csr_view &A, 
-                         const typename types<const Ordinal,const Scalar>::val_arr_view2d &X, 
-                         const typename types<const Ordinal,      Scalar>::val_arr_view2d &Y) {}
-  } // end of namespace Cuspdetails
-
+// forward declaration for cusp adaptors
+template <class Offset, class Ordinal, class ScalarA, class ScalarX, class ScalarY> 
+void Kokkos::Cuspdetails::cuspCrsMultiply(
+                          Ordinal numRows, Ordinal numCols, Ordinal nnz, 
+                          const Offset *rowptrs, const Ordinal *colinds, const ScalarA *values, 
+                          Ordinal numRHS, const ScalarX *x, Ordinal xstride, ScalarY *y, Ordinal ystride) 
+{
+  typedef  thrust::device_ptr<const Offset>                                   off_ptr;
+  typedef  thrust::device_ptr<const Ordinal>                                  ind_ptr;
+  typedef  thrust::device_ptr<const ScalarA>                                  val_ptr;
+  typedef  cusp::array1d_view< off_ptr >                                 off_arr_view;
+  typedef  cusp::array1d_view< ind_ptr >                                 ind_arr_view;
+  typedef  cusp::array1d_view< val_ptr >                                 val_arr_view;
+  typedef  cusp::csr_matrix_view<off_arr_view, ind_arr_view, val_arr_view>   csr_view;
+  off_arr_view rptrs = cusp::make_array1d_view(off_ptr(rowptrs), off_ptr(rowptrs+numRows+1));
+  ind_arr_view cinds = cusp::make_array1d_view(ind_ptr(colinds), ind_ptr(colinds+nnz));
+  val_arr_view vals  = cusp::make_array1d_view(val_ptr(values),  val_ptr(values+nnz));
+  csr_view A = cusp::make_csr_matrix_view(numRows, numCols, nnz, rptrs, cinds, vals);
+  for (int j=0; j < numRHS; ++j) {
+    cusp::detail::device::spmv_csr_vector(A, x, y);
+    x += xstride;
+    y += ystride;
+  }
 }
 
 #endif // KOKKOS_CUSPOPS_CUH

@@ -356,7 +356,8 @@ ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, ThrustGPUNode )
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( short, float, ThrustGPUNode )
 #endif
 
-     UNIT_TEST_GROUP_ORDINAL(int)
-     typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
+UNIT_TEST_GROUP_ORDINAL(int)
+typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
+
 }
 

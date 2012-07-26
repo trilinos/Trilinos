@@ -39,36 +39,18 @@
 // ************************************************************************
 //@HEADER
 
-#include <cuComplex.h>
+#ifndef KOKKOS_CUSPWRAPPERS_HPP
+#define KOKKOS_CUSPWRAPPERS_HPP
 
-// include for ThrustGPUNode method implementations
-#include "Kokkos_ThrustGPUNode.cuh"
-#include "Kokkos_CuspOps.cuh"
+namespace Kokkos {
+  namespace Cuspdetails {
 
-// includes for all ops
-#include "Kokkos_MultiVectorKernelOps.hpp"
+    template <class Offset, class Ordinal, class ScalarA, class ScalarX, class ScalarY> 
+    void cuspCrsMultiply(Ordinal numRows, Ordinal numCols, Ordinal nnz, 
+                         const Offset *rowptrs, const Ordinal *colinds, const ScalarA *values, 
+                         Ordinal numRHS, const ScalarX *x, Ordinal xstride, ScalarY *y, Ordinal ystride);
 
-// cusp doesn't currently support mixed precision, but maybe it will one day...
-#define INSTANTIATE_CUSP_ORDINAL_SCALAR(POINTER,ORDINAL,SCALARA,SCALARX,SCALARY)                       \
-  template void Kokkos::Cuspdetails::cuspCrsMultiply<POINTER,ORDINAL,SCALARA,SCALARX,SCALARY>          \
-                       ( ORDINAL, ORDINAL, ORDINAL, const POINTER *, const ORDINAL *, const SCALARA *, \
-                         ORDINAL, const SCALARX *, ORDINAL, SCALARY *, ORDINAL );
+  } // end namespace cuspdetails
+} // end namespace kokkos
 
-#ifdef HAVE_KOKKOS_CUDA_FLOAT
-INSTANTIATE_CUSP_ORDINAL_SCALAR(short,short,float,float,float)
-INSTANTIATE_CUSP_ORDINAL_SCALAR(int,int,float,float,float)
-#endif
-#ifdef HAVE_KOKKOS_CUDA_DOUBLE
-INSTANTIATE_CUSP_ORDINAL_SCALAR(short,short,double,double,double)
-INSTANTIATE_CUSP_ORDINAL_SCALAR(int,int,double,double,double)
-#endif
-//typedef cusp::complex<float>  ComplexFloat;
-//typedef cusp::complex<double> ComplexDouble;
-//#ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
-//INSTANTIATE_CUSP_ORDINAL_SCALAR(short,ComplexFloat)
-//INSTANTIATE_CUSP_ORDINAL_SCALAR(int,ComplexFloat)
-//#endif
-//#ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
-//INSTANTIATE_CUSP_ORDINAL_SCALAR(short,ComplexDouble)
-//INSTANTIATE_CUSP_ORDINAL_SCALAR(int,ComplexDouble)
-//#endif
+#endif // KOKKOS_CUSPWRAPPERS_HPP
