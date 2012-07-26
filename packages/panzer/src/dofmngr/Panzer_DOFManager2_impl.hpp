@@ -88,7 +88,7 @@ template <typename LO, typename GO>
 DOFManager2<LO,GO>::DOFManager2(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
   : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
 { 
-   setConnManager(connMngr,mpiComm);
+  setConnManager(connMngr,mpiComm);
 }
 
 template <typename LO, typename GO>
@@ -114,7 +114,6 @@ void DOFManager2<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > 
 template <typename LO, typename GO>
 int DOFManager2<LO,GO>::addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern)
 {
-
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager2::addField: addField cannot be called after "
                       "buildGlobalUnknowns has been called"); 
@@ -148,16 +147,28 @@ int DOFManager2<LO,GO>::addField(const std::string & blockID, const std::string 
     blocknum++;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(!found,std::logic_error, "DOFManager2::addField: Invalid block name.");
-  fieldPatterns_.push_back(pattern);
-  fieldNameToAID_.insert(std::map<std::string,int>::value_type(str, numFields_));
-  //The default values for IDs are the sequential order they are added in.
-  fieldStringOrder_.push_back(str);
-  fieldAIDOrder_.push_back(numFields_);
-  //This is going to be associated with blocknum.
-  blockToAssociatedFP_[blocknum].push_back(numFields_);
-  ++numFields_;
-  return numFields_-1;
-
+  //This will be different if the FieldPattern is already present.
+  //We need to check for that.
+  found=false;
+  std::map<std::string,int>::const_iterator fpIter = fieldNameToAID_.find(str);
+  if(fpIter!=fieldNameToAID_.end())
+    found=true;
+  
+  if(!found){
+    fieldPatterns_.push_back(pattern);
+    fieldNameToAID_.insert(std::map<std::string,int>::value_type(str, numFields_));
+    //The default values for IDs are the sequential order they are added in.
+    fieldStringOrder_.push_back(str);
+    fieldAIDOrder_.push_back(numFields_);
+    //This is going to be associated with blocknum.
+    blockToAssociatedFP_[blocknum].push_back(numFields_);
+    ++numFields_;
+    return numFields_-1;
+  }
+  else{
+    blockToAssociatedFP_[blocknum].push_back(fpIter->second);
+    return numFields_;
+  }
 }
 
 
