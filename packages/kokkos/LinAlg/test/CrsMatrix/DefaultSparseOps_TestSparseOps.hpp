@@ -1338,7 +1338,7 @@ private:
     //MVT::Init (*Y, STS::zero()); // makeMultiVector() already does this.
     MVT::Random (*X);
 
-    const int numBenchmarks = STS::isComplex ? 6 : 4;
+    const int numBenchmarks = STS::isComplex ? 9 : 7;
     results.reserve (numBenchmarks);
 
     // Time sparse matrix-vector multiply, overwrite mode, no transpose.
@@ -1359,6 +1359,24 @@ private:
     }
 
     // Time sparse matrix-vector multiply, update mode, no transpose.
+    {
+      const std::string timerName (label + ": Y = Y + A*X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.template multiply<scalar_type, scalar_type> (Teuchos::NO_TRANS,
+                                                           STS::one(), *X,
+                                                           STS::one(), *Y);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Time sparse matrix-vector multiply, update mode, no transpose.
     // We subtract to simulate a residual computation.
     {
       const std::string timerName (label + ": Y = Y - A*X");
@@ -1372,6 +1390,43 @@ private:
           ops.template multiply<scalar_type, scalar_type> (Teuchos::NO_TRANS,
                                                            -STS::one(), *X,
                                                            STS::one(), *Y);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Time sparse matrix-vector multiply, update mode, no transpose.
+    // We subtract to simulate an alternate form for a residual computation.
+    {
+      const std::string timerName (label + ": Y = -Y + A*X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.template multiply<scalar_type, scalar_type> (Teuchos::NO_TRANS,
+                                                           STS::one(), *X,
+                                                           -STS::one(), *Y);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Time sparse matrix-vector multiply with alpha=0 and beta=-1.
+    {
+      const std::string timerName (label + ": Y = -Y + 0*A*X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.template multiply<scalar_type, scalar_type> (Teuchos::NO_TRANS,
+                                                           STS::zero(), *X,
+                                                           -STS::one(), *Y);
         }
       }
       results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
