@@ -152,21 +152,27 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
 
       std::vector<int> indices(10);
       int numIndices = 0;
-      int err = gGraph->ExtractGlobalRowCopy(3,10,numIndices,&indices[0]);
+
+      // Take degree of freedom in middle of mesh: Then look at ghosted graph
+      int err = gGraph->ExtractGlobalRowCopy(2,10,numIndices,&indices[0]);
       TEST_EQUALITY(err,0);
-      TEST_EQUALITY(numIndices,6); 
 
       indices.resize(numIndices);
       std::sort(indices.begin(),indices.end());
       if(numProcs==1) {
-         std::vector<int> compare(6);
-         compare[0] = 0; compare[1] = 1; compare[2] = 3;
-         compare[3] = 4; compare[4] = 6; compare[5] = 7;
+         TEST_EQUALITY(numIndices,9); 
+
+         std::vector<int> compare(9);
+         compare[0] = 0; compare[1] = 1; compare[2] = 2;
+         compare[3] = 3; compare[4] = 4; compare[5] = 5;
+         compare[3] = 6; compare[4] = 7; compare[5] = 8;
          
          TEST_EQUALITY(compare.size(),indices.size());
          TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
       }
       else if(numProcs==2 && myRank==0) {
+         TEST_EQUALITY(numIndices,6); 
+
          std::vector<int> compare(6);
          compare[0] = 0; compare[1] = 1; compare[2] = 2;
          compare[3] = 3; compare[4] = 4; compare[5] = 5;
@@ -175,14 +181,16 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
          TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
       }
       else if(numProcs==2 && myRank==1) {
+         TEST_EQUALITY(numIndices,6); 
+
          std::vector<int> compare(6);
-         compare[0] = 1; compare[1] = 3; compare[2] = 5;
+         compare[0] = 1; compare[1] = 2; compare[2] = 4;
          compare[3] = 6; compare[4] = 7; compare[5] = 8;
          
          TEST_EQUALITY(compare.size(),indices.size());
          TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
       }
-      else TEUCHOS_ASSERT(false);
+      
    }
 
    // test graph
