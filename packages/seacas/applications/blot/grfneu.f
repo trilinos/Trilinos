@@ -175,7 +175,6 @@ C   --Write the end curve record with the curve name
       WRITE (NEUGRF, 10080) 'END CURVE', CURVE
 10080  FORMAT (A, ',', A)
 
-      call FLUSH(NEUGRF)
   170 CONTINUE
       RETURN
 10090  FORMAT (1X, 5A)

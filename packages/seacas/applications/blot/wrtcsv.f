@@ -136,7 +136,6 @@ C      --Open the csv neutral file and write the title line
         write (*,*) NCRV, ' Curves written to CSV file.'
       end if
       write (ncsv,*) ' '
-      call flush(ncsv)
  170  continue
       RETURN
       END

@@ -929,13 +929,13 @@ C        Initialize line thicknesses for mesh plots
         write (*,9999)
  9999   FORMAT(/,
      *    10x,'NOTE: This version of blot uses global ids for both',
-     *    ' node and element ids by default.',/
+     *    ' node and element ids by default.',/,
      *    10x,'      To see the mapping from local to global, use',
-     *    ' the commands:',/
+     *    ' the commands:',/,
      *    10x,'          "LIST MAP" (element map), or ',
-     *    '"LIST NODEMAP" (node map)',/
+     *    '"LIST NODEMAP" (node map)',/,
      *    10x,'      To disable the maps and use local ids, restart'
-     *    ' blot with "-nomap node|element|all"',//
+     *    ' blot with "-nomap node|element|all"',//,
      *    10x,'      Notify gdsjaar@sandia.gov if bugs found')
         
         if (mapel .and. mapnd) then
