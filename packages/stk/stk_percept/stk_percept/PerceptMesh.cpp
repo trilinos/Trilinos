@@ -3592,6 +3592,11 @@ namespace stk {
       add_field("coordinates_N", node_rank(), scalarDimension);
       add_field("coordinates_NM1", node_rank(), scalarDimension);
       add_field("coordinates_lagged", node_rank(), scalarDimension);
+
+      add_field("cg_g", node_rank(), scalarDimension);
+      add_field("cg_r", node_rank(), scalarDimension);
+      add_field("cg_d", node_rank(), scalarDimension);
+      add_field("cg_s", node_rank(), scalarDimension);
     }
 
     void PerceptMesh::set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field)
@@ -3714,6 +3719,78 @@ namespace stk {
       fields.push_back(field_y);
 
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+    }
+
+    double PerceptMesh::nodal_field_dot(stk::mesh::FieldBase* field_x, stk::mesh::FieldBase* field_y)
+    {
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_dot x null");
+      VERIFY_OP_ON(field_y, !=, 0, "nodal_field_dot y null");
+      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+      double sum=0.0;
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              unsigned fd_size = bucket.field_data_size(*field_y);
+              unsigned stride = fd_size/sizeof(double);
+              // FIXME
+              //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
+              const unsigned num_nodes_in_bucket = bucket.size();
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  unsigned stride0=0;
+                  double *fdata_y = PerceptMesh::field_data( field_y , node, &stride0 );
+                  VERIFY_OP_ON(stride, ==, stride0,"strides...");
+                  double *fdata_x = PerceptMesh::field_data( field_x , node );
+                  if (fdata_y && fdata_x)
+                    {
+                      for (unsigned istride = 0; istride < stride; istride++)
+                        {
+                          sum += fdata_x[istride]*fdata_y[istride];
+                        }
+                    }
+                }
+            }
+        }
+
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & sum ) );
+      return sum;
+    }
+    void PerceptMesh::nodal_field_set_value(stk::mesh::FieldBase* field_x, double value)
+    {
+      VERIFY_OP_ON(field_x, !=, 0, "nodal_field_dot x null");
+      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              unsigned fd_size = bucket.field_data_size(*field_x);
+              unsigned stride = fd_size/sizeof(double);
+              // FIXME
+              //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
+              const unsigned num_nodes_in_bucket = bucket.size();
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  unsigned stride0=0;
+                  double *fdata_x = PerceptMesh::field_data( field_x , node, &stride0 );
+                  VERIFY_OP_ON(stride, ==, stride0,"strides...");
+                  if (fdata_x)
+                    {
+                      for (unsigned istride = 0; istride < stride; istride++)
+                        {
+                          fdata_x[istride] = value;
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z

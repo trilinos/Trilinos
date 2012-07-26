@@ -38,13 +38,17 @@ namespace stk {
       double m_max_edge_length_factor;
       double m_scale;
 
+      void get_gradient( Mesh* mesh, MeshDomain *domain);
+
       virtual double run_one_iteration( Mesh* mesh,  MeshDomain *domain,
                                       MsqError& err );
 
       virtual double total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid);
       virtual double metric(stk::mesh::Entity& entity, bool& valid);
       virtual void update_node_positions(Mesh* mesh, double alpha);
+      virtual bool check_convergence();
       
+      double m_dnew, m_dold, m_d0, m_dmid, m_dd;
 
     };
 

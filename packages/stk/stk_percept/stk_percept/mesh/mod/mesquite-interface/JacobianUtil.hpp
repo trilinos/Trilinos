@@ -25,7 +25,7 @@ namespace stk {
 
     using namespace Mesquite;
 
-    class JacobianUtil : public AveragingQM
+    class JacobianUtil : public Mesquite::AveragingQM
     {
       const double a2Con;
       const Exponent b2Con;

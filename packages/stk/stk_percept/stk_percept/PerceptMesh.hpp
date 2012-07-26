@@ -362,6 +362,12 @@ namespace stk {
                                 double beta, stk::mesh::FieldBase* field_y,
                                 double gamma, stk::mesh::FieldBase* field_z);
 
+      /// axpby calculates: x.y
+      double nodal_field_dot(stk::mesh::FieldBase* field_x, stk::mesh::FieldBase* field_y);
+
+      /// axpby calculates: x.y
+      void nodal_field_set_value(stk::mesh::FieldBase* field_x, double value=0.0);
+
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces

@@ -97,7 +97,7 @@ namespace stk
       Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
 
 
-#define DO_TESTS 1
+#define DO_TESTS 0
 #if DO_TESTS
 
 #define EXTRA_PRINT 0
@@ -518,7 +518,7 @@ namespace stk
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double ix = data[0]/double(nele);
                         //double bump_size=2.8; // 0.8
-                        double bump_size=0.8; // 0.8
+                        double bump_size=2.8; // 0.8
                           data[1] += (ix)*(1.0-ix)*bump_size*double(nele);
                         //std::cout << "tmp srk surface 1 node = " << data[0] << " " << data[1] << std::endl;
                       }
@@ -995,6 +995,135 @@ namespace stk
               }
 
             eMesh.save_as(output_files_loc+"hex_2_si_smooth.1.e");
+
+          }
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      // A cube with an indented bump on the bottom, new parallel smoother
+
+      STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_4)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+        unsigned par_size_max = s_par_size_max;
+
+        const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 3)
+        if (p_size <= par_size_max)
+          {
+            unsigned n = 12;
+            std::cout << "P["<<p_rank<<"] " << "tmp srk doing Laplace smoothing for hex_1 case, n = " << n << std::endl;
+            //unsigned nn = n+1;
+            //std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n*p_size)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            PerceptMesh eMesh(3);
+            eMesh.new_mesh(percept::GMeshSpec(gmesh_spec));
+            eMesh.addParallelInfoFields(true,true);
+            eMesh.add_coordinate_state_fields();
+            eMesh.commit();
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
+            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+
+            eMesh.populateParallelInfoFields(true,true,&boundarySelector);
+            eMesh.save_as(input_files_loc+"hex_4_smooth.0.e");
+
+            // save state of original mesh
+            // field, dst, src: 
+            eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
+
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                if (boundarySelector_5(**k)) 
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& entity = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double ix = data[0];
+                        double iy = data[1];
+                        data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*.5;
+                      }
+                  }
+              }
+            eMesh.save_as(input_files_loc+"hex_4_smooth.0_perturbed_small.e");
+
+            Mesquite::MsqError err;
+            Mesquite::MeshImpl *msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
+            std::ostringstream vtk_file;
+            vtk_file << "par_original_hex_mesh." << p_size << "." << p_rank << ".vtk";
+
+            msqMesh->write_vtk(vtk_file.str().c_str(), err); 
+            if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                if (boundarySelector_5(**k)) 
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& entity = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double ix = data[0];
+                        double iy = data[1];
+                        data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*4.;
+                      }
+                  }
+              }
+            // save state of projected mesh
+            // field, dst, src: 
+            eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
+
+            eMesh.save_as(input_files_loc+"hex_4_smooth.0_perturbed.e");
+
+            msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
+            std::ostringstream vtk_file1;
+            vtk_file1 << "par_untangle_original_hex_mesh." << p_size << "." << p_rank << ".vtk";
+
+            msqMesh->write_vtk(vtk_file1.str().c_str(), err); 
+            if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
+
+            std::cout << "tmp srk doing Shape smoothing for hex_4 case..." << std::endl;
+
+            //bool do_jacobi = true;
+            //Mesquite::MsqDebug::enable(1);
+            //Mesquite::MsqDebug::enable(2);
+            //Mesquite::MsqDebug::enable(3);
+
+            int  msq_debug             = 0; // 1,2,3 for more debug info
+            bool always_smooth         = true;
+            int innerIter = 1001;
+
+            {
+              PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
+              percept::PMMParallelShapeImprover pmmpsi(innerIter, 1.e-4, 1);
+              pmmpsi.run(pmm, 0, always_smooth, msq_debug);
+            }
+
+            eMesh.save_as(output_files_loc+"hex_4_si_smooth.1.e");
 
           }
       }

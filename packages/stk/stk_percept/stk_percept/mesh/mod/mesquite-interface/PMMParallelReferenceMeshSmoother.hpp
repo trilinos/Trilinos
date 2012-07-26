@@ -12,6 +12,7 @@
 #ifdef STK_BUILT_IN_SIERRA
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
 #include <boost/unordered_map.hpp>
 
 namespace stk {
@@ -50,7 +51,7 @@ namespace stk {
                                       MsqError& err );
 
       void sync_fields(int iter=0);
-      bool check_convergence();
+      virtual bool check_convergence();
       
     protected:
       NodeMap m_current_position;
@@ -58,6 +59,8 @@ namespace stk {
       NodeMap m_weight;
       NodeMap m_nweight;
       double m_dmax;
+      double m_total_metric;
+      int m_stage;
       double m_omega;
       double m_omega_prev;
       int m_iter;
@@ -73,6 +76,7 @@ namespace stk {
       stk::mesh::FieldBase *m_coord_field_current;
       stk::mesh::FieldBase *m_coord_field_lagged;
 
+      PMMSmootherMetric *m_metric;
     };
 
 
