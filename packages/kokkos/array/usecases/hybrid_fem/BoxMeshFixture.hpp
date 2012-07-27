@@ -52,6 +52,7 @@
 #include <KokkosArray_View.hpp>
 #include <BoxMeshPartition.hpp>
 #include <FEMesh.hpp>
+#include <HexElement.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -59,21 +60,10 @@ struct FixtureElementHex8 {
 
   static const unsigned element_node_count = 8 ;
 
+  HybridFEM::HexElement_TensorData< element_node_count > elem_data ;
   BoxBoundsLinear box_bounds ;
-  unsigned elem_node_local_coord[ element_node_count ][3] ;
 
-  FixtureElementHex8() : box_bounds()
-  {
-    const unsigned tmp[ element_node_count ][3] =
-      { { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 1 , 1 , 0 } , { 0 , 1 , 0 } ,
-        { 0 , 0 , 1 } , { 1 , 0 , 1 } , { 1 , 1 , 1 } , { 0 , 1 , 1 } };
-
-    for ( unsigned i = 0 ; i < element_node_count ; ++i ) {
-      elem_node_local_coord[i][0] = tmp[i][0] ;
-      elem_node_local_coord[i][1] = tmp[i][1] ;
-      elem_node_local_coord[i][2] = tmp[i][2] ;
-    }
-  }
+  FixtureElementHex8() : elem_data(), box_bounds() {}
 
   static void create_node_boxes_from_vertex_boxes(
     const BoxType                & vertex_box_global ,
@@ -85,39 +75,21 @@ struct FixtureElementHex8 {
     node_box_parts  = vertex_box_parts  ;
   }
 
-  void elem_to_node( const unsigned node_local , unsigned coord[0] ) const
+  void elem_to_node( const unsigned node_local , unsigned coord[] ) const
   {
-    coord[0] += elem_node_local_coord[ node_local ][0] ;
-    coord[1] += elem_node_local_coord[ node_local ][1] ;
-    coord[2] += elem_node_local_coord[ node_local ][2] ;
+    coord[0] += elem_data.eval_map[ node_local ][0] ;
+    coord[1] += elem_data.eval_map[ node_local ][1] ;
+    coord[2] += elem_data.eval_map[ node_local ][2] ;
   }
 };
 
 struct FixtureElementHex27 {
   static const unsigned element_node_count = 27 ;
 
+  HybridFEM::HexElement_TensorData< element_node_count > elem_data ;
   BoxBoundsQuadratic box_bounds ;
-  unsigned elem_node_local_coord[ element_node_count ][3] ;
 
-  FixtureElementHex27() : box_bounds()
-  {
-    const unsigned tmp[ element_node_count ][3] =
-    { { 0 , 0 , 0 } , { 2 , 0 , 0 } , { 2 , 2 , 0 } ,
-      { 0 , 2 , 0 } , { 0 , 0 , 2 } , { 2 , 0 , 2 } ,
-      { 2 , 2 , 2 } , { 0 , 2 , 2 } , { 1 , 0 , 0 } ,
-      { 2 , 1 , 0 } , { 1 , 2 , 0 } , { 0 , 1 , 0 } ,
-      { 0 , 0 , 1 } , { 2 , 0 , 1 } , { 2 , 2 , 1 } ,
-      { 0 , 2 , 1 } , { 1 , 0 , 2 } , { 2 , 1 , 2 } ,
-      { 1 , 2 , 2 } , { 0 , 1 , 2 } , { 1 , 1 , 1 } ,
-      { 1 , 1 , 0 } , { 1 , 1 , 2 } , { 0 , 1 , 1 } ,
-      { 2 , 1 , 1 } , { 1 , 0 , 1 } , { 1 , 2 , 1 } };
-
-    for ( unsigned i = 0 ; i < element_node_count ; ++i ) {
-      elem_node_local_coord[i][0] = tmp[i][0] ;
-      elem_node_local_coord[i][1] = tmp[i][1] ;
-      elem_node_local_coord[i][2] = tmp[i][2] ;
-    }
-  }
+  FixtureElementHex27() : elem_data(), box_bounds() {}
 
   static void create_node_boxes_from_vertex_boxes(
     const BoxType                & vertex_box_global ,
@@ -144,9 +116,9 @@ struct FixtureElementHex27 {
 
   void elem_to_node( const unsigned node_local , unsigned coord[] ) const
   {
-    coord[0] = 2 * coord[0] + elem_node_local_coord[ node_local ][0] ;
-    coord[1] = 2 * coord[1] + elem_node_local_coord[ node_local ][1] ;
-    coord[2] = 2 * coord[2] + elem_node_local_coord[ node_local ][2] ;
+    coord[0] = 2 * coord[0] + elem_data.eval_map[ node_local ][0] ;
+    coord[1] = 2 * coord[1] + elem_data.eval_map[ node_local ][1] ;
+    coord[2] = 2 * coord[2] + elem_data.eval_map[ node_local ][2] ;
   }
 };
 
@@ -219,9 +191,9 @@ struct BoxMeshFixture {
 
       for ( size_type nn = 0 ; nn < element_node_count ; ++nn ) {
 
-        const unsigned ix = element.elem_node_local_coord[nn][0] ;
-        const unsigned iy = element.elem_node_local_coord[nn][1] ;
-        const unsigned iz = element.elem_node_local_coord[nn][2] ;
+        const unsigned ix = element.elem_data.eval_map[nn][0] ;
+        const unsigned iy = element.elem_data.eval_map[nn][1] ;
+        const unsigned iz = element.elem_data.eval_map[nn][2] ;
 
         if ( elem_node_coord[nn][0] != elem_node_coord[0][0] + ix ||
              elem_node_coord[nn][1] != elem_node_coord[0][1] + iy ||

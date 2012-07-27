@@ -41,6 +41,9 @@
 //@HEADER
 */
 
+#ifndef ELEMENTHEX_HPP
+#define ELEMENTHEX_HPP
+
 namespace HybridFEM {
 
 template< unsigned NodeCount >
@@ -259,5 +262,7 @@ public:
 //----------------------------------------------------------------------------
 
 } /* namespace HybridFEM */
+
+#endif /* #ifndef ELEMENTHEX_HPP */
 
 
