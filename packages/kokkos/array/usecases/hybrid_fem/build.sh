@@ -87,6 +87,7 @@ then
   NVCC_SOURCES="./*.cu"
   NVCC_SOURCES="${NVCC_SOURCES} ../../src/Cuda/*.cu"
   LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda -lcusparse"
+  echo "Building cuda files as: nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}"
   nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}
 fi
 

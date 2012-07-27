@@ -105,6 +105,10 @@ struct FixtureElementHex27 {
     node_box_global[2][1] = 2 * node_box_global[2][1] - 1 ;
 
     for ( unsigned i = 0 ; i < vertex_box_parts.size() ; ++i ) {
+      node_box_parts[i][0][0] = 2 * node_box_parts[i][0][0] ;
+      node_box_parts[i][1][0] = 2 * node_box_parts[i][1][0] ;
+      node_box_parts[i][2][0] = 2 * node_box_parts[i][2][0] ;
+
       node_box_parts[i][0][1] =
         std::min( node_box_global[0][1] , 2 * node_box_parts[i][0][1] );
       node_box_parts[i][1][1] =
