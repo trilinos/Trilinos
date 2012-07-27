@@ -62,10 +62,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, BasicCreation ){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",1);
-    pl->set("Y Blocks",1);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",2);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",4);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -110,10 +110,10 @@ namespace {
   }
   TEUCHOS_UNIT_TEST( DOFManager2_tests, ReorderingFields ){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",1);
-    pl->set("Y Blocks",1);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",2);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",4);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -262,10 +262,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, myOwnedwithGhosted){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
+    pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",4);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -310,10 +310,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, gidsAreSet){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
+    pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",4);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -363,10 +363,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, gidFieldAssociations){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
-    pl->set("Y Blocks",2);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",2);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -439,12 +439,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dmyOwnedwithGhosted){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
-    pl->set("Y Blocks",2);
-    pl->set("Z Blocks",2);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("Z Blocks",1);
     pl->set("X Elements",4);
-    pl->set("Y Elements",4);
-    pl->set("Z Elements",4);
+    pl->set("Y Elements",2);
+    pl->set("Z Elements",2);
     
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
@@ -491,12 +491,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dgidsAreSet){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
-    pl->set("Y Blocks",2);
-    pl->set("Z Blocks",2);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("Z Blocks",1);
     pl->set("X Elements",4);
-    pl->set("Y Elements",4);
-    pl->set("Z Elements",4);
+    pl->set("Y Elements",2);
+    pl->set("Z Elements",2);
     
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
@@ -548,12 +548,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dgidFieldAssociations){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
-    pl->set("Y Blocks",2);
-    pl->set("Z Blocks",2);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("Z Blocks",1);
     pl->set("X Elements",4);
-    pl->set("Y Elements",4);
-    pl->set("Z Elements",4);
+    pl->set("Y Elements",2);
+    pl->set("Z Elements",2);
     
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
