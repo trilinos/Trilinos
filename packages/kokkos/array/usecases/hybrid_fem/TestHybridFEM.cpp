@@ -38,6 +38,13 @@ void test_host_nonlinear( comm::Machine machine ,
                           size_t elem_count_end ,
                           size_t count_run );
 
+void test_host_nonlinear_quadratic( comm::Machine machine , 
+                                    size_t numa_node_count ,
+                                    size_t numa_node_thread_count ,
+                                    size_t elem_count_begin ,
+                                    size_t elem_count_end ,
+                                    size_t count_run );
+
 
 //----------------------------------------------------------------------------
 
@@ -60,6 +67,14 @@ void test_cuda_nonlinear( comm:: Machine machine ,
                           size_t elem_count_begin ,
                           size_t elem_count_end ,
                           size_t count_run );
+
+void test_cuda_nonlinear_quadratic( comm::Machine machine , 
+                                    size_t elem_count_begin ,
+                                    size_t elem_count_end ,
+                                    size_t count_run );
+
+
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -127,6 +142,15 @@ void run( const std::string & argline , comm::Machine machine )
         test_host_nonlinear( machine , host_node_count , host_node_thread_count , mesh_node_begin , mesh_node_end , run );
  
       }   
+      else if ( which == std::string("nonlinear_quadratic") ) {
+ 
+        size_t mesh_node_begin = 100 ;
+        size_t mesh_node_end   = 300 ;
+        size_t run             =   1 ;
+        input >> mesh_node_begin >> mesh_node_end >> run ;
+        test_host_nonlinear_quadratic( machine , host_node_count , host_node_thread_count , mesh_node_begin , mesh_node_end , run );
+ 
+      }   
       else {
         cmd_error = true ;
       }
@@ -170,6 +194,15 @@ void run( const std::string & argline , comm::Machine machine )
 	test_cuda_nonlinear( machine , mesh_node_begin, mesh_node_end, run ); 
 
       }
+      else if ( which == std::string("nonlinear_quadratic") ) {
+
+	size_t mesh_node_begin = 100;
+	size_t mesh_node_end   = 300;
+	size_t run             =   1;
+        input >> mesh_node_begin >> mesh_node_end >> run ;
+	test_cuda_nonlinear_quadratic( machine , mesh_node_begin, mesh_node_end, run ); 
+
+      }
     }
 #endif
     else {
@@ -186,8 +219,9 @@ void run( const std::string & argline , comm::Machine machine )
               << "where <test> is" << std::endl
               << "    fixture   NumElemX NumElemY NumElemZ" << std::endl
               << "    implicit  NumElemBegin NumElemEnd NumRun" << std::endl 
+              << "    explicit  NumElemBegin NumElemEnd NumRun" << std::endl
               << "    nonlinear NumElemBegin NumElemEnd NumRun" << std::endl 
-              << "    explicit  NumElemBegin NumElemEnd NumRun" << std::endl ;
+              << "    nonlinear_quadratic NumElemBegin NumElemEnd NumRun" << std::endl ;
 
   }
 }

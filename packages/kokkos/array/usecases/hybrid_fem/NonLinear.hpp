@@ -485,17 +485,15 @@ PerformanceData run( comm::Machine machine ,
 
 //----------------------------------------------------------------------------
 
-template< typename Scalar , class Device >
+template< typename Scalar , class Device , class FixtureElement >
 void driver( const char * label ,
              comm::Machine machine , int beg , int end , int runs )
 {
-  typedef double              coordinate_scalar_type ;
-  typedef FixtureElementHex8  fixture_element_type ;
-  // typedef FixtureElementHex27  fixture_element_type ;
+  typedef double coordinate_scalar_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
                           Device ,
-                          fixture_element_type > fixture_type ;
+                          FixtureElement > fixture_type ;
 
   if ( beg == 0 || end == 0 || runs == 0 ) return ;
 
