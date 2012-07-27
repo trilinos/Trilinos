@@ -4,6 +4,16 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.10.3 July 27, 2012
+
+1. Epetra - Performance improvements for FEVector.
+
+2. Epetra - Fix a bug when using Insert mode for GlobalAssemble.
+
+3. Kokkos - Fix a bug with the default node selection.
+
+-------------------------------------------------------------------------------
+
 Release update 10.10.2 April 24, 2012
 
 1. Epetra            - Fix performance hot spot in Epetra_FEVector.
