@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
   }
 
   int globalNumDofs = 8898;  // used for the maps
-  int nDofsPerNode = 3;      // used for generating the fine level null-space
+  //int nDofsPerNode = 3;      // used for generating the fine level null-space
 
   // build strided maps
   // striding information: 2 velocity dofs and 1 pressure dof = 3 dofs per node
