@@ -493,7 +493,7 @@ public:
   T processCnt;
   int myRank;
   T xstep, ystep, zstep;
-
+  lno_t xshift, yshift, zshift;
 
   virtual T getXCenter(){
     return (rightMostx - leftMostx)/2  + leftMostx;
@@ -521,21 +521,19 @@ public:
       this->zstep = (rightMostz - leftMostz) / (alongZ - 1);
     else
       this->zstep = 1;
-
-    //cout << xstep << " " << ystep << " " << zstep << endl;
-
+    xshift = 0; yshift = 0; zshift = 0;
   }
 
   virtual ~CoordinateGridDistribution(){};
   virtual CoordinatePoint<T> getPoint(){
-    lno_t before = processCnt + this->assignedPrevious;
+    //lno_t before = processCnt + this->assignedPrevious;
     //cout << "before:" << processCnt << " " << this->assignedPrevious << endl;
-    lno_t xshift = 0, yshift = 0, zshift = 0;
+    //lno_t xshift = 0, yshift = 0, zshift = 0;
 
-    lno_t tmp = before % (this->along_X * this->along_Y);
-    xshift  = tmp / this->along_X;
-    yshift = tmp % this->along_X;
-    zshift = before / (this->along_X * this->along_Y);
+    //lno_t tmp = before % (this->along_X * this->along_Y);
+    //xshift  = tmp % this->along_X;
+    //yshift = tmp / this->along_X;
+    //zshift = before / (this->along_X * this->along_Y);
 
 
     CoordinatePoint <T> p;
@@ -543,8 +541,26 @@ public:
     p.y = yshift * this->ystep + leftMosty;
     p.z = zshift * this->zstep + leftMostz;
 
-    if(this->requested - 1 > this->processCnt)
+    ++xshift;
+    if(xshift == this->along_X){
+      ++yshift;
+      xshift = 0;
+      if(yshift == this->along_Y){
+        ++zshift;
+        yshift = 0;
+      }
+
+    }
+    /*
+    if(this->requested - 1 > this->processCnt){
       this->processCnt++;
+    } else {
+      cout << "req:" << this->requested << " pr:" <<this->processCnt << endl;
+      cout << "p:" << p.x << " " << p.y << " " << p.z <<  endl ;
+      cout << "s:" << xshift << " " << yshift << " " << zshift <<  endl ;
+      cout << "st:" << this->xstep << " " << this->ystep << " " << this->zstep <<  endl ;
+    }
+    */
     return p;
   }
 
@@ -786,6 +802,7 @@ private:
         if(np_x < 1 || np_z < 1 || np_y < 1 ){
           throw "Provide at least 1 point along each dimension for grid test.";
         }
+        //cout << "ly:" << l_y << " ry:" << r_y << endl;
         this->coordinateDistributions[this->distributionCount++] = new CoordinateGridDistribution<T, lno_t>
         (np_x, np_y,np_z, this->dimension, l_x, r_x,l_y, r_y, l_z, r_z , this->myRank, worldSize);
 
@@ -1291,12 +1308,13 @@ public:
 
     this->points = new CoordinatePoint<T> [myPointCount];
     this->numLocalCoords = 0;
-    srand ( time(NULL) + myRank);
+    srand (myRank);
     for (int i = 0; i < distributionCount; ++i){
       lno_t requestedPointCount = lno_t(this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank]);
       if (myRank < this->coordinateDistributions[i]->numPoints % worldSize){
         requestedPointCount += 1;
       }
+      //cout << "req:" << requestedPointCount << endl;
       this->coordinateDistributions[i]->GetPoints(requestedPointCount,this->points + this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
       this->numLocalCoords += requestedPointCount;
     }
