@@ -85,14 +85,6 @@ struct FixtureElementHex8 {
     node_box_parts  = vertex_box_parts  ;
   }
 
-  void node_coord( const unsigned ix, const unsigned iy, const unsigned iz,
-                   double coord[] ) const
-  {
-    coord[0] = ix ;
-    coord[1] = iy ;
-    coord[2] = iz ;
-  }
-
   void elem_to_node( const unsigned node_local , unsigned coord[0] ) const
   {
     coord[0] += elem_node_local_coord[ node_local ][0] ;
@@ -148,14 +140,6 @@ struct FixtureElementHex27 {
       node_box_parts[i][2][1] =
         std::min( node_box_global[2][1] , 2 * node_box_parts[i][2][1] );
     }
-  }
-
-  void node_coord( const unsigned ix, const unsigned iy, const unsigned iz,
-                   double coord[] ) const
-  {
-    coord[0] = 0.5 * ix ;
-    coord[1] = 0.5 * iy ;
-    coord[2] = 0.5 * iz ;
   }
 
   void elem_to_node( const unsigned node_local , unsigned coord[] ) const
@@ -235,25 +219,22 @@ struct BoxMeshFixture {
 
       for ( size_type nn = 0 ; nn < element_node_count ; ++nn ) {
 
-        double local[3];
+        const unsigned ix = element.elem_node_local_coord[nn][0] ;
+        const unsigned iy = element.elem_node_local_coord[nn][1] ;
+        const unsigned iz = element.elem_node_local_coord[nn][2] ;
 
-        element.node_coord( element.elem_node_local_coord[nn][0] ,
-                            element.elem_node_local_coord[nn][1] ,
-                            element.elem_node_local_coord[nn][2] ,
-                            local );
-
-        if ( elem_node_coord[nn][0] != elem_node_coord[ 0][0] + local[0] ||
-             elem_node_coord[nn][1] != elem_node_coord[ 0][1] + local[1] ||
-             elem_node_coord[nn][2] != elem_node_coord[ 0][2] + local[2] ) {
+        if ( elem_node_coord[nn][0] != elem_node_coord[0][0] + ix ||
+             elem_node_coord[nn][1] != elem_node_coord[0][1] + iy ||
+             elem_node_coord[nn][2] != elem_node_coord[0][2] + iz ) {
 
           std::ostringstream msg ;
           msg << "BoxMeshFixture elem_node_coord mapping failure { "
               << elem_node_coord[nn][0] << " "
               << elem_node_coord[nn][1] << " "
               << elem_node_coord[nn][2] << " } != { "
-              << elem_node_coord[ 0][0] + local[0] << " "
-              << elem_node_coord[ 0][0] + local[1] << " "
-              << elem_node_coord[ 0][0] + local[2]
+              << elem_node_coord[ 0][0] + ix << " "
+              << elem_node_coord[ 0][1] + iy << " "
+              << elem_node_coord[ 0][2] + iz
               << " }" ;
           throw std::runtime_error( msg.str() );
         }
@@ -403,7 +384,7 @@ struct BoxMeshFixture {
       KokkosArray::create_mirror( mesh.elem_node_ids );
 
     //------------------------------------
-    // node coordinates of grid.
+    // set node coordinates to grid location for subsequent verification
 
     for ( size_t iz = node_box_local_used[2][0] ;
                  iz < node_box_local_used[2][1] ; ++iz ) {
@@ -417,13 +398,9 @@ struct BoxMeshFixture {
       const size_t node_local_id =
         box_map_id( node_box_local_used , node_used_id_map , ix , iy , iz );
 
-      double coord[3] ;
-
-      element.node_coord( ix, iy, iz, coord );
-
-      node_coords( node_local_id , 0 ) = coord[0] ;
-      node_coords( node_local_id , 1 ) = coord[1] ;
-      node_coords( node_local_id , 2 ) = coord[2] ;
+      node_coords( node_local_id , 0 ) = ix ;
+      node_coords( node_local_id , 1 ) = iy ;
+      node_coords( node_local_id , 2 ) = iz ;
     }}}
 
     //------------------------------------
@@ -501,8 +478,28 @@ struct BoxMeshFixture {
       }
     }
     //------------------------------------
-
+    // Verify setup with node coordinates matching grid indices.
     verify( node_coords , elem_node_ids , node_elem_ids );
+
+    // Scale node coordinates to problem size.
+
+    {
+      const double problem_extent[3] =
+        { ( vertex_box_global[0][1] - 1 ) ,
+          ( vertex_box_global[1][1] - 1 ) ,
+          ( vertex_box_global[2][1] - 1 ) };
+
+      const double grid_extent[3] =
+        { ( node_box_global[0][1] - 1 ) ,
+          ( node_box_global[1][1] - 1 ) ,
+          ( node_box_global[2][1] - 1 ) };
+
+      for ( size_t i = 0 ; i < node_count_total ; ++i ) {
+        node_coords(i,0) = node_coords(i,0) * problem_extent[0] / grid_extent[0] ;
+        node_coords(i,1) = node_coords(i,1) * problem_extent[1] / grid_extent[1] ;
+        node_coords(i,2) = node_coords(i,2) * problem_extent[2] / grid_extent[2] ;
+      }
+    }
 
     KokkosArray::deep_copy( mesh.node_coords ,   node_coords );
     KokkosArray::deep_copy( mesh.elem_node_ids , elem_node_ids );

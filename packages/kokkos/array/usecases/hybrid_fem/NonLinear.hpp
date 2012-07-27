@@ -490,8 +490,8 @@ void driver( const char * label ,
              comm::Machine machine , int beg , int end , int runs )
 {
   typedef double              coordinate_scalar_type ;
-  // typedef FixtureElementHex8  fixture_element_type ;
-  typedef FixtureElementHex27  fixture_element_type ;
+  typedef FixtureElementHex8  fixture_element_type ;
+  // typedef FixtureElementHex27  fixture_element_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
                           Device ,
