@@ -68,31 +68,279 @@ namespace Kokkos {
     RangeScalar         *y;
     Ordinal numRHS, xstride, ystride;
 
+    // CrT 27Jul12: performance improvement 2x-8x.
+    // Changed the "while" loop to a "for" loop,
+    // Reversed order of loops (outside is the loop over RHS vectors, inside the loop over the row),
+    // Introduced temporary variables,
+    // Unrolled the loop over RHS vectors by 4, and
+    // Added specific cases for 1,2,3,4 RHS vectors.
+    //
+    // Unrolling and specialization are invisible to code that calls
+    // DefaultSparseMultiplyOP, since these operations are handled via
+    // an if-else within the execute function.  Without unrolling one
+    // would lose about 1/3 in performance (on Intel Sandy Bridge).
+    //
+    // When using the Intel compiler, the code below may be vectorized
+    // through the "always vectorize" directive #pragma simd (see
+    // comments in the code).  The resulting performance gain on Intel
+    // Sandy Bridge is 10-20%.  However, this currently only works if
+    // the temporary variable tmp (of type RangeScalar) is made a
+    // double/float explicitly.  This could be because the Intel
+    // compiler (most recent version, not yet released) does not know
+    // to ignore the SIMD reduction directive when the template
+    // parameter type does not support the SIMD vector instructions.
+    // This results in a compile error.  One workaround would be to
+    // specialize DefaultSparseMultiplyOp for various RangeScalar
+    // types, and only insert the pragma in the specialized versions.
+    //
+    // mfh (27 Jul 2012): Note that with the Intel compiler, #pragma
+    // simd vectorizes the loop according to the "fast" floating-point
+    // model (as in -fp-model=fast), even if that is not the
+    // prevailing model of the rest of the compilation unit.  Sparse
+    // matrix-vector multiply is a less sensitive kernel than others,
+    // so this should not be a risky optimization in terms of
+    // accuracy.  The main concern here is that the loop may flush
+    // denormal floating-point values to zero.  For a discussion, see
+    // e.g.,
+    // http://software.intel.com/en-us/articles/consistency-of-floating-point-results-using-the-intel-compiler/
+    //
+    // mfh (27 Jul 2012): Reviewed and briefly edited changes and comments.
     inline KERNEL_PREFIX void execute(size_t row) {
-      const Scalar  *v = vals + ptrs[row];
-      const Ordinal *i = inds + ptrs[row],
-                   *ie = inds + ptrs[row+1];
-      if (NO_BETA_AND_OVERWRITE) {
-        for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] = Teuchos::ScalarTraits<RangeScalar>::zero();
-      }
-      else {
-        for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] *= beta;
-      }
-      // save the extra multiplication if possible
-      if (alpha == Teuchos::ScalarTraits<RangeScalar>::one()) {
-        while (i != ie)
-        {
-          const  Scalar val = *v++;
-          const Ordinal ind = *i++;
-          for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] += (RangeScalar)val * (RangeScalar)x[j*xstride+ind];
+      const Ordinal start = ptrs[row];
+      const Ordinal end = ptrs[row+1];
+
+      // CrT: Unroll by 4 over numRHS; specialize for numRHS <= 4.
+      if (numRHS > 4) {
+        Ordinal j = 0;
+        if (alpha == Teuchos::ScalarTraits<RangeScalar>::one()) {
+          // Strip-mined portion of the loop over RHS vectors.
+          for (; j < numRHS - 3; j+=4) {
+            RangeScalar* const ys = y+j*ystride + row;
+            RangeScalar tmp[4] = {
+              Teuchos::ScalarTraits<RangeScalar>::zero(),
+              Teuchos::ScalarTraits<RangeScalar>::zero(),
+              Teuchos::ScalarTraits<RangeScalar>::zero(),
+              Teuchos::ScalarTraits<RangeScalar>::zero()
+            };
+
+            // CrT: Adding the pragma below improves performance by
+            // 15% on Intel SandyBridge, but with the (new beta)
+            // version of the Intel compiler that I tested, this
+            // doesn't work when RangeScalar is a template parameter.
+            // You have to change "RangeScalar tmp;" to "double tmp;".
+            //
+            //#pragma simd reduction(+: tmp)
+            for (Ordinal i = start; i < end; i++) {
+              const RangeScalar Aij = (RangeScalar)vals[i];
+              const DomainScalar* const xs = x+j*xstride + inds[i];
+              tmp[0] += Aij * (RangeScalar)xs[0 * xstride];
+              tmp[1] += Aij * (RangeScalar)xs[1 * xstride];
+              tmp[2] += Aij * (RangeScalar)xs[2 * xstride];
+              tmp[3] += Aij * (RangeScalar)xs[3 * xstride];
+            }
+            // The compiler should remove the branch, since the test
+            // value is a compile-time constant.
+            if (NO_BETA_AND_OVERWRITE) {
+              ys[0 * ystride] = tmp[0];
+              ys[1 * ystride] = tmp[1];
+              ys[2 * ystride] = tmp[2];
+              ys[3 * ystride] = tmp[3];
+            } else {
+              ys[0 * ystride] = tmp[0] + beta * ys[0 * ystride];
+              ys[1 * ystride] = tmp[1] + beta * ys[1 * ystride];
+              ys[2 * ystride] = tmp[2] + beta * ys[2 * ystride];
+              ys[3 * ystride] = tmp[3] + beta * ys[3 * ystride];
+            }
+          }
+          // Clean-up portion of the loop over RHS vectors.
+          for (; j < numRHS; ++j) {
+            RangeScalar* const ys = y+j*ystride + row;
+            const DomainScalar* const xs = x+j*xstride;
+            RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
+
+            // CrT: Adding the pragma below improves performance by
+            // 15% on Intel SandyBridge, but with the (new beta)
+            // version of the Intel compiler that I tested, this
+            // doesn't work when RangeScalar is a template parameter.
+            // You have to change "RangeScalar tmp;" to "double tmp;".
+            //
+            //#pragma simd reduction(+: tmp)
+            for (Ordinal i = start; i < end; i++) {
+              tmp += (RangeScalar)vals[i] * (RangeScalar)xs[inds[i]];
+            }
+            // The compiler should remove the branch, since the test
+            // value is a compile-time constant.
+            if (NO_BETA_AND_OVERWRITE)
+              ys[0] = tmp;
+            else
+              ys[0] = tmp + beta * ys[0];
+          }
+        }
+        else { // alpha != one
+          for (; j < numRHS - 3; j += 4) {
+            RangeScalar* const ys = y+j*ystride + row;
+            RangeScalar tmp[4] = {
+              Teuchos::ScalarTraits<RangeScalar>::zero(),
+              Teuchos::ScalarTraits<RangeScalar>::zero(),
+              Teuchos::ScalarTraits<RangeScalar>::zero(),
+              Teuchos::ScalarTraits<RangeScalar>::zero()
+            };
+
+            // CrT: +15% on SandyBridge but only if you change "RangeScalar tmp;" to "double tmp;"
+            //#pragma simd reduction(+: tmp)
+            for (Ordinal i = start; i < end; i++) {
+              const RangeScalar Aij = (RangeScalar)vals[i];
+              const DomainScalar* const xs = x+j*xstride + inds[i];
+              tmp[0] += Aij * (RangeScalar)xs[0 * xstride];
+              tmp[1] += Aij * (RangeScalar)xs[1 * xstride];
+              tmp[2] += Aij * (RangeScalar)xs[2 * xstride];
+              tmp[3] += Aij * (RangeScalar)xs[3 * xstride];
+            }
+
+            tmp[0] *= alpha;
+            tmp[1] *= alpha;
+            tmp[2] *= alpha;
+            tmp[3] *= alpha;
+
+            if (NO_BETA_AND_OVERWRITE) {
+              ys[0 * ystride] = tmp[0];
+              ys[1 * ystride] = tmp[1];
+              ys[2 * ystride] = tmp[2];
+              ys[3 * ystride] = tmp[3];
+            } else {
+              ys[0 * ystride] = tmp[0] + beta * ys[0 * ystride];
+              ys[1 * ystride] = tmp[1] + beta * ys[1 * ystride];
+              ys[2 * ystride] = tmp[2] + beta * ys[2 * ystride];
+              ys[3 * ystride] = tmp[3] + beta * ys[3 * ystride];
+            }
+          }
+          for (; j < numRHS; ++j) {
+            RangeScalar* const ys = y+j*ystride + row;
+            const DomainScalar* const xs = x+j*xstride;
+            RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
+
+            // CrT: +15% on SandyBridge but only if you change "RangeScalar tmp;" to "double tmp;"
+            //#pragma simd reduction(+: tmp)
+            for (Ordinal i = start; i < end; i++) {
+              tmp += (RangeScalar)vals[i] * (RangeScalar)xs[inds[i]];
+            }
+            tmp *= alpha;
+            if (NO_BETA_AND_OVERWRITE)
+              ys[0] = tmp;
+            else
+              ys[0] = tmp + beta * ys[0];
+          }
         }
       }
-      else { // alpha != one
-        while (i != ie)
-        {
-          const  Scalar val = *v++;
-          const Ordinal ind = *i++;
-          for (Ordinal j=0; j<numRHS; ++j) y[j*ystride+row] += alpha * (RangeScalar)val * (RangeScalar)x[j*xstride+ind];
+      else if (numRHS == 1) {
+        RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
+
+        //+15% on SandyBridge but only if you change "RangeScalar tmp;" to "double tmp;"
+        //#pragma simd reduction(+: tmp)
+        for (Ordinal i = start; i < end; i++) {
+          tmp += (RangeScalar)vals[i] * (RangeScalar)x[inds[i]];
+        }
+        if (alpha == Teuchos::ScalarTraits<RangeScalar>::one())
+          tmp *= alpha;
+        if (NO_BETA_AND_OVERWRITE)
+          y[row] = tmp;
+        else
+          y[row] = tmp + beta * y[row];
+      }
+      else if (numRHS == 2) {
+        RangeScalar* const ys = y + row;
+        RangeScalar tmp[2] = {
+          Teuchos::ScalarTraits<RangeScalar>::zero(),
+          Teuchos::ScalarTraits<RangeScalar>::zero()
+        };
+
+        //+15% on SandyBridge but only if you change "RangeScalar tmp;" to "double tmp;"
+        //#pragma simd reduction(+: tmp)
+        for (Ordinal i = start; i < end; i++) {
+          const RangeScalar Aij = (RangeScalar)vals[i];
+          const DomainScalar* const xs = x + inds[i];
+          tmp[0] += Aij * (RangeScalar)xs[0 * xstride];
+          tmp[1] += Aij * (RangeScalar)xs[1 * xstride];
+        }
+        if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
+          tmp[0] *= alpha;
+          tmp[1] *= alpha;
+        }
+        if (NO_BETA_AND_OVERWRITE) {
+          ys[0 * ystride] = tmp[0];
+          ys[1 * ystride] = tmp[1];
+        } else {
+          ys[0 * ystride] = tmp[0] + beta * ys[0 * ystride];
+          ys[1 * ystride] = tmp[1] + beta * ys[1 * ystride];
+        }
+      }
+      else if (numRHS == 3) {
+        RangeScalar* const ys = y + row;
+        RangeScalar tmp[3] = {
+          Teuchos::ScalarTraits<RangeScalar>::zero(),
+          Teuchos::ScalarTraits<RangeScalar>::zero(),
+          Teuchos::ScalarTraits<RangeScalar>::zero()
+        };
+
+        //+15% on SandyBridge but only if you change "RangeScalar tmp;" to "double tmp;"
+        //#pragma simd reduction(+: tmp)
+        for (Ordinal i = start; i < end; i++) {
+          const RangeScalar Aij = (RangeScalar)vals[i];
+          const DomainScalar* const xs = x + inds[i];
+          tmp[0] += Aij * (RangeScalar)xs[0 * xstride];
+          tmp[1] += Aij * (RangeScalar)xs[1 * xstride];
+          tmp[2] += Aij * (RangeScalar)xs[2 * xstride];
+        }
+        if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
+          tmp[0] *= alpha;
+          tmp[1] *= alpha;
+          tmp[2] *= alpha;
+        }
+        if (NO_BETA_AND_OVERWRITE) {
+          ys[0 * ystride] = tmp[0];
+          ys[1 * ystride] = tmp[1];
+          ys[2 * ystride] = tmp[2];
+        } else {
+          ys[0 * ystride] = tmp[0] + beta * ys[0 * ystride];
+          ys[1 * ystride] = tmp[1] + beta * ys[1 * ystride];
+          ys[2 * ystride] = tmp[2] + beta * ys[2 * ystride];
+        }
+      }
+      else { // if (numRHS == 4)
+        RangeScalar* const ys = y + row;
+        RangeScalar tmp[4] = {
+          Teuchos::ScalarTraits<RangeScalar>::zero(),
+          Teuchos::ScalarTraits<RangeScalar>::zero(),
+          Teuchos::ScalarTraits<RangeScalar>::zero(),
+          Teuchos::ScalarTraits<RangeScalar>::zero()
+        };
+
+        //+15% on SandyBridge but only if you change "RangeScalar tmp;" to "double tmp;"
+        //#pragma simd reduction(+: tmp)
+        for (Ordinal i = start; i < end; i++) {
+          const RangeScalar Aij = (RangeScalar)vals[i];
+          const DomainScalar* const xs = x + inds[i];
+          tmp[0] += Aij * (RangeScalar)xs[0 * xstride];
+          tmp[1] += Aij * (RangeScalar)xs[1 * xstride];
+          tmp[2] += Aij * (RangeScalar)xs[2 * xstride];
+          tmp[3] += Aij * (RangeScalar)xs[3 * xstride];
+        }
+        if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
+          tmp[0] *= alpha;
+          tmp[1] *= alpha;
+          tmp[2] *= alpha;
+          tmp[3] *= alpha;
+        }
+        if (NO_BETA_AND_OVERWRITE) {
+          ys[0 * ystride] = tmp[0];
+          ys[1 * ystride] = tmp[1];
+          ys[2 * ystride] = tmp[2];
+          ys[3 * ystride] = tmp[3];
+        } else {
+          ys[0 * ystride] = tmp[0] + beta * ys[0 * ystride];
+          ys[1 * ystride] = tmp[1] + beta * ys[1 * ystride];
+          ys[2 * ystride] = tmp[2] + beta * ys[2 * ystride];
+          ys[3 * ystride] = tmp[3] + beta * ys[3 * ystride];
         }
       }
     }
