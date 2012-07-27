@@ -1,8 +1,6 @@
 #ifndef MUELU_TENTATIVEPFACTORY_DEF_HPP
 #define MUELU_TENTATIVEPFACTORY_DEF_HPP
 
-#include <Teuchos_LAPACK.hpp>
-
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Operator.hpp>
@@ -224,7 +222,6 @@ namespace MueLu {
     //importer to handle moving Q
     importer = ImportFactory::Build(ghostQMap, fineA.getRowMap());
 
-    Teuchos::LAPACK<LO,SC> lapack;
     QR_Interface<SC,LO> qrWidget(NSDim);
 
     ArrayRCP<SC> localQR(maxAggSize*NSDim); // The submatrix of the nullspace to be orthogonalized.

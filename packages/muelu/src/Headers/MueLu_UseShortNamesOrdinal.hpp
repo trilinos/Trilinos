@@ -42,6 +42,10 @@ typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Ama
 typedef MueLu::CheapAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CheapAggregationAlgorithm;
 #endif
 
+#ifdef MUELU_EXPERIMENTALAGGREGATIONFACTORY_SHORT
+typedef MueLu::ExperimentalAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ExperimentalAggregationFactory;
+#endif
+
 #ifdef MUELU_SINGLELEVELFACTORYBASE_SHORT
 typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
 #endif
