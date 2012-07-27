@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __Kokkos_MySparseOps_hpp
-#define __Kokkos_MySparseOps_hpp
+#ifndef __Kokkos_SeqSparseOps_hpp
+#define __Kokkos_SeqSparseOps_hpp
 
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_DataAccess.hpp>
@@ -462,14 +462,14 @@ namespace Kokkos {
       using Teuchos::VERB_EXTREME;
       using std::endl;
 
-      // Interpret the default verbosity level as VERB_LOW.
+      // Interpret the default verbosity level as VERB_MEDIUM.
       const EVerbosityLevel vl =
-        (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+        (verbLevel == VERB_DEFAULT) ? VERB_MEDIUM : verbLevel;
 
       if (vl == VERB_NONE) {
         return;
       }
-      else if (includesVerbLevel (VERB_LOW, vl)) { // VERB_LOW >= vl
+      else if (includesVerbLevel (vl, VERB_LOW)) { // vl >= VERB_LOW
         out << this->description();
 
         if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
@@ -480,18 +480,53 @@ namespace Kokkos {
               << "unroll_ = " << unroll_ << endl
               << "isInitialized_ = " << isInitialized_ << endl;
           if (isInitialized_) {
+            std::string triUplo ("INVALID");
+            if (tri_uplo_ == Teuchos::UNDEF_TRI) {
+              triUplo = "UNDEF_TRI";
+            }
+            else if (tri_uplo_ == Teuchos::LOWER_TRI) {
+              triUplo = "LOWER_TRI";
+            }
+            else if (tri_uplo_ == Teuchos::UPPER_TRI) {
+              triUplo = "UPPER_TRI";
+            }
+            std::string unitDiag ("INVALID");
+            if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
+              unitDiag = "NON_UNIT_DIAG";
+            }
+            else if (unit_diag_ == Teuchos::UNIT_DIAG) {
+              unitDiag = "UNIT_DIAG";
+            }
+
             out << "numRows_ = " << numRows_ << endl
                 << "isEmpty_ = " << isEmpty_ << endl
-                << "hasEmptyRows_ = " << hasEmptyRows_ << endl;
+                << "hasEmptyRows_ = " << hasEmptyRows_ << endl
+                << "tri_uplo_ = " << triUplo << endl
+                << "unit_diag_ = " << unitDiag << endl;
             if (ptr_.size() > 0) {
               out << "numEntries = " << ptr_[ptr_.size()-1] << endl;
             }
             else {
               out << "numEntries = 0" << endl;
             }
-          }
-        }
-      }
+
+            if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
+              // Only print out all the sparse matrix's data in
+              // extreme verbosity mode.
+              out << "ptr_ = [";
+              std::copy (ptr_.begin(), ptr_.end(),
+                         std::ostream_iterator<Ordinal> (out, " "));
+              out << "]" << endl << "ind_ = [";
+              std::copy (ind_.begin(), ind_.end(),
+                         std::ostream_iterator<Ordinal> (out, " "));
+              out << "]" << endl << "val_ = [";
+              std::copy (val_.begin(), val_.end(),
+                         std::ostream_iterator<Scalar> (out, " "));
+              out << "]" << endl;
+            } // vl >= VERB_EXTREME
+          } // if is initialized
+        } // vl >= VERB_MEDIUM
+      } // vl >= VERB_LOW
     }
 
     //@}
@@ -946,36 +981,6 @@ namespace Kokkos {
     }
     opgraph->getMatDesc (tri_uplo_, unit_diag_);
     isInitialized_ = true;
-
-    // cerr << "SeqSparseOps::setGraphAndMatrix: on exit:" << endl
-    //      << "ptr_ = ";
-    // std::copy (ptr_.begin(), ptr_.end(), std::ostream_iterator<Ordinal> (cerr, " "));
-    // cerr << endl << "ind_ = ";
-    // std::copy (ind_.begin(), ind_.end(), std::ostream_iterator<Ordinal> (cerr, " "));
-    // cerr << endl << "val_ = ";
-    // std::copy (val_.begin(), val_.end(), std::ostream_iterator<Scalar> (cerr, " "));
-
-//     std::string triUplo;
-//     if (tri_uplo_ == Teuchos::UNDEF_TRI) {
-//       triUplo = "UNDEF_TRI";
-//     }
-//     else if (tri_uplo_ == Teuchos::LOWER_TRI) {
-//       triUplo = "LOWER_TRI";
-//     }
-//     else if (tri_uplo_ == Teuchos::UPPER_TRI) {
-//       triUplo = "UPPER_TRI";
-//     }
-//     std::string unitDiag;
-//     if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
-//       unitDiag = "NON_UNIT_DIAG";
-//     }
-//     else if (unit_diag_ == Teuchos::UNIT_DIAG) {
-//       unitDiag = "UNIT_DIAG";
-//     }
-    // cerr << endl << "numRows_ = " << numRows_ << endl
-    //      << "isEmpty_ = " << isEmpty_ << endl
-    //      << "tri_uplo_ = " << triUplo << endl
-    //      << "unit_diag_ = " << unitDiag << endl;
   }
 
   template <class Scalar, class Ordinal, class Node>
@@ -1550,5 +1555,5 @@ namespace Kokkos {
 
 } // namespace Kokkos
 
-#endif // #ifndef __Kokkos_MySparseOps_hpp
+#endif // #ifndef __Kokkos_SeqSparseOps_hpp
 

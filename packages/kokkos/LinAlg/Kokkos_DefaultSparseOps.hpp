@@ -42,8 +42,10 @@
 #ifndef KOKKOS_DEFAULTSPARSEOPS_HPP
 #define KOKKOS_DEFAULTSPARSEOPS_HPP
 
-#include <Teuchos_DataAccess.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
+#include <Teuchos_DataAccess.hpp>
+#include <Teuchos_Describable.hpp>
+#include <iterator>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -324,10 +326,10 @@ namespace Kokkos {
   /// \tparam Ordinal The type of (local) indices of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
   template <class Scalar, class Ordinal, class Node, class Allocator = details::DefaultCRSAllocator<Ordinal,Node> >
-  class DefaultHostSparseOps {
+  class DefaultHostSparseOps : public Teuchos::Describable {
   public:
+    //! \name Typedefs and structs
     //@{
-    //! @name Typedefs and structs
 
     //! The type of the individual entries of the sparse matrix.
     typedef Scalar  scalar_type;
@@ -368,7 +370,7 @@ namespace Kokkos {
     };
 
     //@}
-    //! @name Constructors/Destructor
+    //! \name Constructors/Destructor
     //@{
 
     //! Constructor accepting and retaining a node object.
@@ -381,7 +383,104 @@ namespace Kokkos {
     ~DefaultHostSparseOps();
 
     //@}
-    //! @name Accessor routines.
+    //! \name Implementation of Teuchos::Describable
+    //@{
+
+    //! One-line description of this instance.
+    std::string description () const {
+      using Teuchos::TypeNameTraits;
+      std::ostringstream os;
+      os <<  "Kokkos::DefaultHostSparseOps<"
+         << "Scalar=" << TypeNameTraits<Scalar>::name()
+         << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
+         << ", Node=" << TypeNameTraits<Node>::name()
+         << ">";
+      return os.str();
+    }
+
+    //! Write a possibly more verbose description of this instance to out.
+    void
+    describe (Teuchos::FancyOStream& out,
+              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+    {
+      using Teuchos::EVerbosityLevel;
+      using Teuchos::includesVerbLevel;
+      using Teuchos::OSTab;
+      using Teuchos::rcpFromRef;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+      using std::endl;
+
+      // Interpret the default verbosity level as VERB_MEDIUM.
+      const EVerbosityLevel vl =
+        (verbLevel == VERB_DEFAULT) ? VERB_MEDIUM : verbLevel;
+
+      if (vl == VERB_NONE) {
+        return;
+      }
+      else if (includesVerbLevel (vl, VERB_LOW)) { // vl >= VERB_LOW
+        out << this->description();
+
+        if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
+          out << ":" << endl;
+          OSTab tab1 (rcpFromRef (out));
+
+          out << "isInitialized_ = " << isInitialized_ << endl;
+          if (isInitialized_) {
+            std::string triUplo ("INVALID");
+            if (tri_uplo_ == Teuchos::UNDEF_TRI) {
+              triUplo = "UNDEF_TRI";
+            }
+            else if (tri_uplo_ == Teuchos::LOWER_TRI) {
+              triUplo = "LOWER_TRI";
+            }
+            else if (tri_uplo_ == Teuchos::UPPER_TRI) {
+              triUplo = "UPPER_TRI";
+            }
+            std::string unitDiag ("INVALID");
+            if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
+              unitDiag = "NON_UNIT_DIAG";
+            }
+            else if (unit_diag_ == Teuchos::UNIT_DIAG) {
+              unitDiag = "UNIT_DIAG";
+            }
+
+            out << "numRows_ = " << numRows_ << endl
+                << "isEmpty_ = " << isEmpty_ << endl
+                << "tri_uplo_ = " << triUplo << endl
+                << "unit_diag_ = " << unitDiag << endl;
+            if (ptrs_.size() > 0) {
+              out << "numEntries = " << ptrs_[ptrs_.size()-1] << endl;
+            }
+            else {
+              out << "numEntries = 0" << endl;
+            }
+
+            if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
+              // Only print out all the sparse matrix's data in
+              // extreme verbosity mode.
+              out << "ptrs_ = [";
+              std::copy (ptrs_.begin(), ptrs_.end(),
+                         std::ostream_iterator<Ordinal> (out, " "));
+              out << "]" << endl << "inds_ = [";
+              std::copy (inds_.begin(), inds_.end(),
+                         std::ostream_iterator<Ordinal> (out, " "));
+              out << "]" << endl << "vals_ = [";
+              std::copy (vals_.begin(), vals_.end(),
+                         std::ostream_iterator<Scalar> (out, " "));
+              out << "]" << endl;
+            } // vl >= VERB_EXTREME
+          } // if is initialized
+        } // vl >= VERB_MEDIUM
+      } // vl >= VERB_LOW
+    }
+
+    //@}
+    //! \name Accessor routines.
     //@{
 
     //! The Kokkos Node with which this object was instantiated.
