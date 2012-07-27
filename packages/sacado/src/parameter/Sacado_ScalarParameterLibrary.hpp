@@ -141,7 +141,7 @@ setRealValue(const std::string& name, double value)
      std::logic_error,
      std::string("Sacado::ScalarParameterLibrary::setValueAsConstant():  ")
      + "Invalid parameter family " + name);
-  (*it).second->setRealValue<EvalType>(value);
+  (*it).second-> template setRealValue<EvalType>(value);
 }
 
 template <typename EvalTypeTraits>
@@ -158,7 +158,7 @@ setValue(
       std::logic_error,
       std::string("Sacado::ScalarParameterLibrary::setValueAsIndependent():  ")
       + "Invalid parameter family " + name);
-  (*it).second->setValue<EvalType>(value);
+  (*it).second-> template setValue<EvalType>(value);
 }
 
 template <typename EvalTypeTraits>
@@ -173,7 +173,7 @@ getRealValue(const std::string& name) const
 		 std::logic_error,
 		 std::string("Sacado::ScalarParameterLibrary::getValue():  ")
 		 + "Invalid parameter family " + name);
-  return (*it).second->getRealValue<EvalType>();
+  return (*it).second-> template getRealValue<EvalType>();
 }
 
 template <typename EvalTypeTraits>
@@ -188,7 +188,7 @@ getValue(const std::string& name) const
 		 std::logic_error,
 		 std::string("Sacado::ScalarParameterLibrary::getValue():  ")
 		 + "Invalid parameter family " + name);
-  return (*it).second->getValue<EvalType>();
+  return (*it).second->template getValue<EvalType>();
 }
 
 template <typename EvalTypeTraits>
@@ -209,7 +209,7 @@ fillVector(const Teuchos::Array<std::string>& names,
 		   std::string("Sacado::ParameterLibraryBase::fillVector():  ")
 		   + "Invalid parameter family " + names[i]);
     pv.addParam((*it).second, 0.0);
-    pv[i].baseValue = (*it).second->getRealValue<EvalType>();
+    pv[i].baseValue = (*it).second->template getRealValue<EvalType>();
   }
 }
 
