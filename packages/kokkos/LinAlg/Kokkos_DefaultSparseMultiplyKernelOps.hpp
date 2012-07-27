@@ -240,7 +240,7 @@ namespace Kokkos {
         for (Ordinal i = start; i < end; i++) {
           tmp += (RangeScalar)vals[i] * (RangeScalar)x[inds[i]];
         }
-        if (alpha == Teuchos::ScalarTraits<RangeScalar>::one())
+        if (alpha != Teuchos::ScalarTraits<RangeScalar>::one())
           tmp *= alpha;
         if (NO_BETA_AND_OVERWRITE)
           y[row] = tmp;
