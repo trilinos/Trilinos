@@ -18,13 +18,15 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     )
   
   #Simple-Complex
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Simple-Complex
-    SOURCES Simple-Complex.cpp
-    DEPLIBS muelu muelu-xpetra
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
+  IF(HAVE_MUELU_INST_COMPLEX_INT_INT)
+  	TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Simple-Complex
+      SOURCES Simple-Complex.cpp
+      DEPLIBS muelu muelu-xpetra
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+  ENDIF()
 
   #Simple-LongInt
   IF(Teuchos_ENABLE_LONG_LONG_INT)

@@ -5,6 +5,7 @@
 #include "MueLu.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_GaussSeidelSmoother.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 // Define default template types
 typedef std::complex<double> Scalar;
