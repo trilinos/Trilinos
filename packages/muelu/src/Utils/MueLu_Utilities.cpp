@@ -191,6 +191,10 @@ namespace MueLu {
 #endif
     }
 
+    ///////////////////////// EXPERIMENTAL
+    if(A->IsView("stridedMaps")) C->CreateView("stridedMaps", A);
+    if(B->IsView("stridedMaps")) C->CreateView("stridedMaps", B);
+    ///////////////////////// EXPERIMENTAL
   } //Utils2::TwoMatrixAdd() (specialization)
 
 }
