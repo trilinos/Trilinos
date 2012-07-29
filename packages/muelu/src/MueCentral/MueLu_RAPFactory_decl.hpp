@@ -101,7 +101,7 @@ namespace MueLu {
     //@}
     
     //! @name internal plausibility check methods
-    void CheckMainDiagonal(Operator & Ac) const;
+    void CheckMainDiagonal(RCP<Operator> & Ac) const;
     //@}
 
     //! P Factory
