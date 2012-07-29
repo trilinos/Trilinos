@@ -325,11 +325,13 @@ t0 = MPI_Wtime();
 #endif
     }
 
-    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-    params->set("Optimize Storage",doOptimizeStorage);
-    C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
-                    (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                    params);
+    if(doFillComplete) {
+      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+      params->set("Optimize Storage",doOptimizeStorage);
+      C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
+		      (transposeA) ? A->getDomainMap() : A->getRangeMap(),
+		      params);
+    }
 
     ///////////////////////// EXPERIMENTAL
     C->CreateView("stridedMaps", A, transposeA, B, transposeB);
