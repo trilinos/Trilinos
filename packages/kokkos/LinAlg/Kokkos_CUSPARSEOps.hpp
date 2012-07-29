@@ -344,7 +344,7 @@ namespace Kokkos {
       ArrayRCP<const size_t> host_rowptrs_;
       ArrayRCP<const int>    dev_rowptrs_;
       ArrayRCP<const int>    host_colinds_, dev_colinds_;
-      // TODO: add CSC data, for efficient tranpose multiply
+      // TODO: add CSC data, for efficient transpose multiply
   };
 
   //! \class CUSPARSECrsMatrix
@@ -920,7 +920,7 @@ namespace Kokkos {
       TEUCHOS_TEST_FOR_EXCEPTION(stat != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
           FuncName << ": CSRSM_analysis(non-trans) returned error " << stat);
     }
-    if (params != null && params->get("Prepare Tranpose Solve",false)) {
+    if (params != null && params->get("Prepare Transpose Solve",false)) {
       ai_trans = CUSPARSEdetails::createSolveAnalysisInfo();
       cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_analysis(
           *hndl, CUSPARSE_OPERATION_TRANSPOSE,numRows,
@@ -929,7 +929,7 @@ namespace Kokkos {
       TEUCHOS_TEST_FOR_EXCEPTION(stat != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
           FuncName << ": CSRSM_analysis(trans) returned error " << stat);
     }
-    if (params != null && params->get("Prepare Conjugate Tranpose Solve",false)) {
+    if (params != null && params->get("Prepare Conjugate Transpose Solve",false)) {
       ai_conj = CUSPARSEdetails::createSolveAnalysisInfo();
       cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_analysis(
           *hndl, CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE,numRows,
@@ -940,10 +940,10 @@ namespace Kokkos {
     }
     matrix.setAnalyses( ai_non, ai_trans, ai_conj );
     //
-    if (params != null && params->get("Prepare Transpose Multiply",false)) {
-      // finish: compute CSC for transpose
-      TEUCHOS_TEST_FOR_EXCEPT(true);
-    }
+    // if (params != null && params->get("Prepare Transpose Multiply",false)) {
+    //   // finish: compute CSC for transpose
+    //   TEUCHOS_TEST_FOR_EXCEPT(true);
+    // }
   }
 
   // ======= graph and matrix finalization ===========
@@ -1025,7 +1025,7 @@ namespace Kokkos {
         std::runtime_error, " operators already initialized.");
     // get cusparse data from the matrix
     numRows_ = graph->getNumRows();
-    numRows_ = graph->getNumCols();
+    numCols_ = graph->getNumCols();
     matdescr_ = graph->getMatDesc();
     rowPtrs_ = graph->getDevPointers();
     colInds_ = graph->getDevIndices();
@@ -1055,15 +1055,20 @@ namespace Kokkos {
         stride_y = (int)Y.getStride();
     const Scalar * data_x = X.getValues().getRawPtr();
     Scalar * data_y = Y.getValuesNonConst().getRawPtr();
-    const int numMatRows = Y.getNumRows();
-    const int numMatCols = X.getNumRows();
+    const int numMatRows = numRows_;
+    const int numMatCols = numCols_;
+    const int opRows     = (trans == Teuchos::NO_TRANS ? numMatRows : numMatCols);
+    const int opCols     = (trans == Teuchos::NO_TRANS ? numMatCols : numMatRows);
     const int numRHS     = X.getNumCols();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)Y.getNumRows() != (size_t)numRows_,
-        std::runtime_error, "Y does not have the same number of rows as does the matrix.")
+        (size_t)X.getNumRows() != (size_t)opCols,
+        std::runtime_error, "Size of X is not congruous with dimensions of operator.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)Y.getNumRows() != (size_t)opRows,
+        std::runtime_error, "Size of Y is not congruous with dimensions of operator.")
     // call mat-vec
     cusparseOperation_t op;
     if      (trans == Teuchos::NO_TRANS)     op = CUSPARSE_OPERATION_NON_TRANSPOSE;
@@ -1123,15 +1128,20 @@ namespace Kokkos {
         stride_y = (int)Y.getStride();
     const Scalar * data_x = X.getValues().getRawPtr();
     Scalar * data_y = Y.getValuesNonConst().getRawPtr();
-    const int numMatRows = Y.getNumRows();
-    const int numMatCols = X.getNumRows();
+    const int numMatRows = numRows_;
+    const int numMatCols = numCols_;
+    const int opRows     = (trans == Teuchos::NO_TRANS ? numMatRows : numMatCols);
+    const int opCols     = (trans == Teuchos::NO_TRANS ? numMatCols : numMatRows);
     const int numRHS     = X.getNumCols();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)Y.getNumRows() != (size_t)numRows_,
-        std::runtime_error, "Y does not have the same number of rows as does the matrix.")
+        (size_t)X.getNumRows() != (size_t)opCols,
+        std::runtime_error, "Size of X is not congruous with dimensions of operator.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)Y.getNumRows() != (size_t)opRows,
+        std::runtime_error, "Size of Y is not congruous with dimensions of operator.")
     // call mat-vec
     cusparseOperation_t op;
     RCP<const cusparseHandle_t> hndl = CUSPARSEdetails::Session::getHandle();
