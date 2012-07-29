@@ -183,11 +183,6 @@ namespace MueLu {
 
     if(checkAc_) CheckMainDiagonal(RAP);
 
-    // call fillComplete
-    /*RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-    params->set("Optimize Storage",true);
-    RAP->fillComplete(AP->getDomainMap(), R->getRangeMap(), params);*/
-
     PrintMatrixInfo(*RAP, "Ac (explicit)");
     PrintLoadBalancingInfo(*RAP, "Ac (explicit)");
 
@@ -203,12 +198,7 @@ namespace MueLu {
     RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false, true, false); // FIXME: no optimization of storage since insertLocalValues cannot be called after fillComplete when values are optimized out (Epetra)
 
     if(checkAc_) CheckMainDiagonal(RAP);
-    
-    // call fillComplete
-    /*RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-    params->set("Optimize Storage",true);
-    RAP->fillComplete(AP->getDomainMap(), P->getDomainMap(), params);*/
-    
+       
     PrintMatrixInfo(*RAP, "Ac (implicit)");
     return RAP;
   }
@@ -245,25 +235,15 @@ namespace MueLu {
     Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
     for (size_t r=0; r<Ac->getRowMap()->getNodeNumElements(); r++) {
       if(diagVal[r]==0.0) {
-	      lZeroDiags++;
-	      diagVal[r] = 1.0; // replace 0.0 by 1.0
-	      /*if(repairZeroDiagonals_) {
-	        Teuchos::ArrayRCP<LocalOrdinal> indout(1,r);
-	        Teuchos::ArrayRCP<Scalar> valout(1,Teuchos::ScalarTraits<Scalar>::one());
-	        Ac.insertLocalValues(r, indout.view(0,indout.size()), valout.view(0,valout.size()));
-	      }*/
-      } else {
-        diagVal[r] = 0.0; // zero out nonzeros in diagonal vector
+        lZeroDiags++;
+        if(repairZeroDiagonals_) {
+          GlobalOrdinal grid = Ac->getRowMap()->getGlobalElement(r);
+          LocalOrdinal lcid = Ac->getColMap()->getLocalElement(grid);
+          Teuchos::ArrayRCP<LocalOrdinal> indout(1,lcid);
+          Teuchos::ArrayRCP<Scalar> valout(1,Teuchos::ScalarTraits<Scalar>::one());
+          Ac->insertLocalValues(r, indout.view(0,indout.size()), valout.view(0,valout.size()));
+        }
       }
-    }
-
-    // diagVec now has lZeroDiags entries with 1.0
-    // create diagonal matrix from diagVec
-    if(repairZeroDiagonals_) {
-      const RCP<Operator> diagOp = OperatorFactory::Build(diagVec);
-      RCP<Operator> tmpAc = Teuchos::null;
-      Utils2::TwoMatrixAdd(diagOp, false, 1.0, Ac, false, 1.0, tmpAc);
-      Ac = tmpAc;
     }
 
     if(IsPrint(Warnings0)) {
