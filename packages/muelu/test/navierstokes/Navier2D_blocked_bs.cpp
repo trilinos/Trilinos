@@ -477,7 +477,9 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////// define CoalesceDropFactory and Aggregation for A11
   // set up amalgamation for A11. Note: we're using a default null space factory (Teuchos::null)
   RCP<AmalgamationFactory> amalgFact11 = rcp(new AmalgamationFactory(A11Fact));
+  amalgFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
   RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory(A11Fact,amalgFact11));
+  dropFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
   RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory(dropFact11));
   UCAggFact11->SetMinNodesPerAggregate(9);
   UCAggFact11->SetMaxNeighAlreadySelected(2);

@@ -58,13 +58,13 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       stridedblocksize = fullblocksize;
     }
     oldView = A->SwitchToView(oldView);
-    GetOStream(Debug, 0) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " from strided maps. offset=" << offset << std::endl;
+    GetOStream(Statistics0, 0) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " and stridedblocksize=" << stridedblocksize << " from strided maps. offset=" << offset << std::endl;
     /*std::cout << "fullblocksize: " << fullblocksize << std::endl;
       std::cout << "offset: " << offset << std::endl;
       std::cout << "blockid: " << blockid << std::endl;
       std::cout << "nStridedOffset: " << nStridedOffset << std::endl;
       std::cout << "stridedblocksize: " << stridedblocksize << std::endl;*/
-  } else GetOStream(Debug, 0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+  } else GetOStream(Warnings0, 0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
   // TODO: maybe no striding information on coarser levels -> misuse nullspace vector?
 
   // 2) prepare maps for amalgamated graph of A and
