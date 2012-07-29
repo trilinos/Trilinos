@@ -108,6 +108,18 @@ public:
     matrixData_->insertGlobalValues(globalRow, cols, vals);
   }
 
+  //! Insert matrix entries, using local IDs.
+  /** All index values must be in the local space.
+      \pre \c localRow exists as an ID in the global row map
+      \pre <tt>isGloballyIndexed() == false</tt>
+      \pre <tt>isStorageOptimized() == false</tt>
+
+      \post <tt>isLocallyIndexed() == true</tt>
+  */
+  void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
+    matrixData_->insertLocalValues(localRow, cols, vals);
+  }
+
   //@}
 
   //! @name Transformational Methods

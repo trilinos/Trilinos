@@ -133,6 +133,16 @@ namespace Xpetra {
     */
     virtual void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) = 0;
 
+    //! Insert matrix entries, using local IDs.
+    /** All index values must be in the local space.
+        \pre \c localRow exists as an ID in the local row map
+        \pre <tt>isGloballyIndexed() == false</tt>
+        \pre <tt>isStorageOptimized() == false</tt>
+
+        \post <tt>isLocallyIndexed() == true</tt>
+    */
+    virtual void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) = 0;
+
     //@}
 
     //! @name Transformational Methods

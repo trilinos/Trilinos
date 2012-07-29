@@ -33,6 +33,9 @@ namespace Xpetra {
     //! Insert matrix entries, using global IDs.
     virtual void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals)= 0;
 
+    //! Insert matrix entries, using local IDs.
+    virtual void insertLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals)= 0;
+
     //! Set all matrix entries equal to scalarThis.
     virtual void setAllToScalar(const Scalar &alpha)= 0;
 

@@ -61,6 +61,9 @@ namespace Xpetra {
     //! Insert matrix entries, using global IDs.
     void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals);
 
+    //! Insert matrix entries, using local IDs.
+    void insertLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals);
+
     //! Set all matrix entries equal to scalarThis.
     void setAllToScalar(const Scalar &alpha) { XPETRA_MONITOR("EpetraCrsMatrix::setAllToScalar"); mtx_->PutScalar(alpha); }
 

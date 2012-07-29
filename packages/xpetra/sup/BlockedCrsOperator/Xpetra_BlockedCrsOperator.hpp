@@ -122,6 +122,19 @@ public:
         "insertGlobalValues not supported by BlockedCrsOperator!" );
   }
 
+  //! Insert matrix entries, using local IDs.
+  /** All index values must be in the local space.
+      \pre \c localRow exists as an ID in the local row map
+      \pre <tt>isGloballyIndexed() == false</tt>
+      \pre <tt>isStorageOptimized() == false</tt>
+
+      \post <tt>isLocallyIndexed() == true</tt>
+  */
+  void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+        "insertLocalValues not supported by BlockedCrsOperator!" );
+  }
+
   //@}
 
   //! @name Transformational Methods

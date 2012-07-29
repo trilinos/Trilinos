@@ -25,6 +25,11 @@ namespace Xpetra {
     XPETRA_ERR_CHECK(mtx_->InsertGlobalValues(globalRow, vals.size(), vals.getRawPtr(), cols.getRawPtr())); 
   }
 
+  void EpetraCrsMatrix::insertLocalValues(int localRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) {
+    XPETRA_MONITOR("EpetraCrsMatrix::insertLocalValues");
+    XPETRA_ERR_CHECK(mtx_->InsertMyValues(localRow, vals.size(), vals.getRawPtr(), cols.getRawPtr()));
+  }
+
   //TODO: throw same exception as Tpetra
   void EpetraCrsMatrix::getLocalRowCopy(int LocalRow, const ArrayView<int> &Indices, const ArrayView<double> &Values, size_t &NumEntries) const { 
     XPETRA_MONITOR("EpetraCrsMatrix::getLocalRowCopy");
