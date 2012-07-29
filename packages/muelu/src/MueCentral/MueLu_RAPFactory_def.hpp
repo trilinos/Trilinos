@@ -178,15 +178,15 @@ namespace MueLu {
     RCP<Operator> RAP;
     {
       SubFactoryMonitor m2(*this, "MxM: R x (AP)", levelID);
-      RAP = Utils::TwoMatrixMultiply(R, false, AP, false, false, false); // do fill complete by hand
+      RAP = Utils::TwoMatrixMultiply(R, false, AP, false, true, true);
     }
 
-    if(checkAc_) CheckMainDiagonal(*RAP);
+    if(checkAc_) CheckMainDiagonal(*RAP); // FIXME: allow CheckMainDiagonal to change RAP (i.e. fillComplete should be called after)
 
     // call fillComplete
-    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+    /*RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
     params->set("Optimize Storage",true);
-    RAP->fillComplete(AP->getDomainMap(), R->getRangeMap(), params);
+    RAP->fillComplete(AP->getDomainMap(), R->getRangeMap(), params);*/
 
     PrintMatrixInfo(*RAP, "Ac (explicit)");
     PrintLoadBalancingInfo(*RAP, "Ac (explicit)");
@@ -200,14 +200,14 @@ namespace MueLu {
 
     GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
     RCP<Operator> AP  = Utils::TwoMatrixMultiply(A, false, P, false);
-    RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false, false, false); // do fill complete by hand
+    RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false, true, true);
 
-    if(checkAc_) CheckMainDiagonal(*RAP);
+    if(checkAc_) CheckMainDiagonal(*RAP); // FIXME: allow CheckMainDiagonal to change RAP (i.e. fillComplete should be called after)
     
     // call fillComplete
-    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+    /*RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
     params->set("Optimize Storage",true);
-    RAP->fillComplete(AP->getDomainMap(), P->getDomainMap(), params);
+    RAP->fillComplete(AP->getDomainMap(), P->getDomainMap(), params);*/
     
     PrintMatrixInfo(*RAP, "Ac (implicit)");
     return RAP;
