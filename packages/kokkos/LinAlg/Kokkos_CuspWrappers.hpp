@@ -50,6 +50,12 @@ namespace Kokkos {
                          const Offset *rowptrs, const Ordinal *colinds, const ScalarA *values, 
                          Ordinal numRHS, const ScalarX *x, Ordinal xstride, ScalarY *y, Ordinal ystride);
 
+    template <class Offset, class Ordinal, class Scalar>
+    void cuspCrsTranspose(Ordinal numRows, Ordinal numCols, Ordinal nnz, 
+                          const Offset *rowptrs,   const Ordinal *colinds,   const Scalar *values, 
+                          Offset *rowptrs_t,       Ordinal *colinds_t,       Scalar *values_t);
+
+
   } // end namespace cuspdetails
 } // end namespace kokkos
 

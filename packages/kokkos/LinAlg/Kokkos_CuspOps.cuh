@@ -45,6 +45,7 @@
 #include <cusp/array1d.h>
 #include <cusp/csr_matrix.h>
 #include <cusp/multiply.h>
+#include <cusp/transpose.h>
 
 #include "Kokkos_CuspWrappers.hpp"
 
@@ -71,6 +72,36 @@ void Kokkos::Cuspdetails::cuspCrsMultiply(
     x += xstride;
     y += ystride;
   }
+}
+
+template <class Offset, class Ordinal, class Scalar>
+void Kokkos::Cuspdetails::cuspCrsTranspose(Ordinal numRows, Ordinal numCols, Ordinal nnz, 
+                                           const Offset *rowptrs,   const Ordinal *colinds,   const Scalar *values, 
+                                           Offset *rowptrs_t,       Ordinal *colinds_t,       Scalar *values_t) 
+{
+  typedef  thrust::device_ptr<const Offset>                           off_ptr;
+  typedef  thrust::device_ptr<const Ordinal>                          ind_ptr;
+  typedef  thrust::device_ptr<const Scalar>                           val_ptr;
+  typedef  thrust::device_ptr<Offset>                                 off_ptr_nc;
+  typedef  thrust::device_ptr<Ordinal>                                ind_ptr_nc;
+  typedef  thrust::device_ptr<Scalar>                                 val_ptr_nc;
+  typedef  cusp::array1d_view< off_ptr >                              off_arr;
+  typedef  cusp::array1d_view< ind_ptr >                              ind_arr;
+  typedef  cusp::array1d_view< val_ptr >                              val_arr;
+  typedef  cusp::array1d_view< off_ptr_nc >                           off_arr_nc;
+  typedef  cusp::array1d_view< ind_ptr_nc >                           ind_arr_nc;
+  typedef  cusp::array1d_view< val_ptr_nc >                           val_arr_nc;
+  typedef  cusp::csr_matrix_view<off_arr,    ind_arr,    val_arr>     csr_view;
+  typedef  cusp::csr_matrix_view<off_arr_nc, ind_arr_nc, val_arr_nc>  csr_view_nc;
+  off_arr a_rptrs = cusp::make_array1d_view(off_ptr(rowptrs), off_ptr(rowptrs+numRows+1));
+  ind_arr a_cinds = cusp::make_array1d_view(ind_ptr(colinds), ind_ptr(colinds+nnz));
+  val_arr a_vals  = cusp::make_array1d_view(val_ptr(values),  val_ptr(values+nnz));
+  csr_view A = cusp::make_csr_matrix_view(numRows, numCols, nnz, a_rptrs, a_cinds, a_vals);
+  off_arr_nc at_rptrs = cusp::make_array1d_view(off_ptr_nc(rowptrs_t), off_ptr_nc(rowptrs_t+numCols+1));
+  ind_arr_nc at_cinds = cusp::make_array1d_view(ind_ptr_nc(colinds_t), ind_ptr_nc(colinds_t+nnz));
+  val_arr_nc at_vals  = cusp::make_array1d_view(val_ptr_nc(values_t),  val_ptr_nc(values_t+nnz));
+  csr_view_nc At = cusp::make_csr_matrix_view(numCols, numRows, nnz, at_rptrs, at_cinds, at_vals);
+  cusp::transpose(A,At);
 }
 
 #endif // KOKKOS_CUSPOPS_CUH

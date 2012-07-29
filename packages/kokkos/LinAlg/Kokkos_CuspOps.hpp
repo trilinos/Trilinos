@@ -95,9 +95,8 @@ namespace Kokkos {
       Teuchos::EDiag diag_;
       // graph data
       ArrayRCP<const size_t> host_rowptrs_;
-      ArrayRCP<const Ordinal> dev_rowptrs_;
       ArrayRCP<const Ordinal> host_colinds_, dev_colinds_;
-      // TODO: add CSC data, for efficient tranpose multiply
+      ArrayRCP<const Ordinal> dev_rowptrs_;
   };
 
   //! \class CuspCrsMatrix
@@ -112,14 +111,16 @@ namespace Kokkos {
       CuspCrsMatrix(const RCP<const CuspCrsGraph<Ordinal,Node> > &graph, const RCP<ParameterList> &params);
       void setValues(const ArrayRCP<const Scalar> &vals);
       void setDeviceData(const ArrayRCP<const Scalar> &devvals);
+      void setDeviceDataTrans(const ArrayRCP<const Ordinal> &devptrs, const ArrayRCP<const Ordinal> &devinds, const ArrayRCP<const Scalar> &devvals);
       inline ArrayRCP<const Scalar> getValues() const;
       inline ArrayRCP<const Scalar> getDevValues() const;
+      inline void getDeviceDataTrans(ArrayRCP<const Ordinal> &, ArrayRCP<const Ordinal> &, ArrayRCP<const Scalar> &) const;
       inline bool isInitialized() const;
     private:
       bool isInitialized_;
       // matrix data
-      ArrayRCP<const Scalar> vals_, dev_vals_;
-      // TODO: add CSC data, for efficient transpose multiply
+      ArrayRCP<const Scalar> vals_, dev_vals_, dev_vals_t_;
+      ArrayRCP<const Ordinal> dev_rowptrs_t_, dev_colinds_t_;
   };
 
   template <class Ordinal, class Node>
@@ -234,6 +235,25 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void CuspCrsMatrix<Scalar,Ordinal,Node>::setDeviceData(const ArrayRCP<const Scalar> &devvals)
   { dev_vals_ = devvals; }
+
+  template <class Scalar, class Ordinal, class Node>
+  inline void CuspCrsMatrix<Scalar,Ordinal,Node>::getDeviceDataTrans(ArrayRCP<const Ordinal> &tptrs, 
+                                                                     ArrayRCP<const Ordinal> &tinds, 
+                                                                     ArrayRCP<const Scalar> &tvals) const
+  {
+    tptrs = dev_rowptrs_t_;  
+    tinds = dev_colinds_t_;  
+    tvals = dev_vals_t_;  
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  void CuspCrsMatrix<Scalar,Ordinal,Node>::setDeviceDataTrans(const ArrayRCP<const Ordinal> &devptrs, 
+                                                              const ArrayRCP<const Ordinal> &devinds, 
+                                                              const ArrayRCP<const Scalar> &devvals) { 
+    dev_rowptrs_t_ = devptrs; 
+    dev_colinds_t_ = devinds; 
+    dev_vals_t_    = devvals; 
+  }
 
   /// \class CuspOps
   /// \brief Default implementation of sparse matrix-vector multiply
@@ -441,8 +461,12 @@ namespace Kokkos {
     Ordinal numRows_, numCols_, numNZ_;
     bool isInitialized_;
 
+    // CSR data for A
     ArrayRCP<const Ordinal> rowPtrs_, colInds_;
     ArrayRCP<const Scalar>  rowVals_;
+    // CSR data for transpose(A)
+    ArrayRCP<const Ordinal> rowPtrs_t_, colInds_t_;
+    ArrayRCP<const Scalar>  rowVals_t_;
   };
 
 
@@ -498,8 +522,9 @@ namespace Kokkos {
     ArrayRCP<Scalar>        devvals;
     ArrayRCP<const size_t> hostptrs = graph.getPointers();
     ArrayRCP<const Scalar> hostvals = matrix.getValues();
-    const Ordinal numRows = graph.getNumRows();
-    const size_t numnz = hostptrs[numRows];
+    const Ordinal numRows = graph.getNumRows(),
+                  numCols = graph.getNumCols();
+    const Ordinal numnz = (Ordinal)hostptrs[numRows];
     if (numnz) {
       devvals = node->template allocBuffer<Scalar>( numnz );
       node->copyToBuffer( numnz,     hostvals(), devvals );
@@ -507,10 +532,23 @@ namespace Kokkos {
     matrix.setDeviceData(devvals);
     if (params != null) {
       // warn? if (params->get("Prepare Solve",false))  {}
-      // warn? if (params->get("Prepare Tranpose Solve",false))  {}
-      // warn? if (params->get("Prepare Conjugate Tranpose Solve",false))  {}
-      if (params->get("Prepare Transpose Multiply",false))  {} // explicitly create tranpose if true
-      if (params->get("Prepare Multiply",true))  {}            // delete non-transpose if false
+      // warn? if (params->get("Prepare Transpose Solve",false))  {}
+      // warn? if (params->get("Prepare Conjugate Transpose Solve",false))  {}
+
+      // explicitly create Transpose if true
+      if (params->get("Prepare Transpose Multiply",false)) {
+        ArrayRCP<Scalar>  tvals = node->template allocBuffer<Scalar>( numnz );
+        ArrayRCP<Ordinal> tptrs = node->template allocBuffer<Ordinal>( numCols+1 ), 
+                          tinds = node->template allocBuffer<Ordinal>( numnz );
+        ArrayRCP<const Ordinal> ptrs = graph.getDevPointers();
+        ArrayRCP<const Ordinal> inds = graph.getDevIndices();
+        ArrayRCP<const Scalar>  vals = matrix.getDevValues();
+        Cuspdetails::cuspCrsTranspose<Ordinal,Ordinal,Scalar>(numRows,numCols,numnz,
+                                      ptrs.getRawPtr(),inds.getRawPtr(),vals.getRawPtr(),
+                                      tptrs.getRawPtr(),tinds.getRawPtr(),tvals.getRawPtr());
+        matrix.setDeviceDataTrans(tptrs,tinds,tvals);
+      } 
+      // if (params->get("Prepare Multiply",true))  {}            // delete non-transpose if false
     }
   }
 
@@ -594,10 +632,11 @@ namespace Kokkos {
         std::runtime_error, " operators already initialized.");
     // get data from the matrix
     numRows_ = graph->getNumRows();
-    numRows_ = graph->getNumCols();
+    numCols_ = graph->getNumCols();
     rowPtrs_ = graph->getDevPointers();
     colInds_ = graph->getDevIndices();
     rowVals_ = matrix->getDevValues();
+    matrix->getDeviceDataTrans(rowPtrs_t_, colInds_t_, rowVals_t_);
     numNZ_ = colInds_.size();
     isInitialized_ = true;
   }
@@ -615,25 +654,36 @@ namespace Kokkos {
         isInitialized_ == false,
         std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        trans != Teuchos::NO_TRANS,
+        trans == Teuchos::CONJ_TRANS,
         std::runtime_error, "no support for transpose multiplication in Cusp")
     // get pointers,stride from X and Y
     Ordinal stride_x = (Ordinal)X.getStride(),
             stride_y = (Ordinal)Y.getStride();
     const Scalar * data_x = X.getValues().getRawPtr();
     Scalar * data_y = Y.getValuesNonConst().getRawPtr();
-    const Ordinal numMatRows = Y.getNumRows();
-    const Ordinal numMatCols = X.getNumRows();
+    const Ordinal numMatRows = numRows_;
+    const Ordinal numMatCols = numCols_;
+    const Ordinal opRows     = (trans == Teuchos::NO_TRANS ? numMatRows : numMatCols);
+    const Ordinal opCols     = (trans == Teuchos::NO_TRANS ? numMatCols : numMatRows);
     const Ordinal numRHS     = X.getNumCols();
     const Ordinal numNZ      = rowVals_.size();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)Y.getNumRows() != (size_t)numRows_,
-        std::runtime_error, "Y does not have the same number of rows as does the matrix.")
-    Kokkos::Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(), 
-                                         numRHS, data_x, stride_x, data_y, stride_y);
+        (size_t)X.getNumRows() != (size_t)opCols,
+        std::runtime_error, "Size of X is not congruous with dimensions of operator.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)Y.getNumRows() != (size_t)opRows,
+        std::runtime_error, "Size of Y is not congruous with dimensions of operator.")
+    if (trans == Teuchos::NO_TRANS) {
+      Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(), 
+                                   numRHS, data_x, stride_x, data_y, stride_y);
+    }
+    else {
+      Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(), 
+                                   numRHS, data_x, stride_x, data_y, stride_y);
+    }
     if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
       DefaultArithmetic< MultiVector< RangeScalar,Node > > ::Scale(Y,alpha);
     }
@@ -649,7 +699,7 @@ namespace Kokkos {
     //
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        trans != Teuchos::NO_TRANS,
+        trans == Teuchos::CONJ_TRANS,
         std::runtime_error, "no support for transpose multiplication in Cusp")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == false,
@@ -659,21 +709,32 @@ namespace Kokkos {
             stride_y = (Ordinal)Y.getStride();
     const DomainScalar * data_x = X.getValues().getRawPtr();
     RangeScalar * data_y = Y.getValuesNonConst().getRawPtr();
-    const Ordinal numMatRows = Y.getNumRows();
-    const Ordinal numMatCols = X.getNumRows();
+    const Ordinal numMatRows = numRows_;
+    const Ordinal numMatCols = numCols_;
+    const Ordinal opRows     = (trans == Teuchos::NO_TRANS ? numMatRows : numMatCols);
+    const Ordinal opCols     = (trans == Teuchos::NO_TRANS ? numMatCols : numMatRows);
     const Ordinal numRHS     = X.getNumCols();
     const Ordinal numNZ      = rowVals_.size();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)Y.getNumRows() != (size_t)numRows_,
-        std::runtime_error, "Y does not have the same number of rows as does the matrix.")
+        (size_t)X.getNumRows() != (size_t)opCols,
+        std::runtime_error, "Size of X is not congruous with dimensions of operator.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)Y.getNumRows() != (size_t)opRows,
+        std::runtime_error, "Size of Y is not congruous with dimensions of operator.")
     // y = alpha*A*x + beta*y
     if (beta == Teuchos::ScalarTraits<RangeScalar>::zero()) {
       // don't need temp storage
-      Kokkos::Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(),
-                                           numRHS, data_x, stride_x, data_y, stride_y);
+      if (trans == Teuchos::NO_TRANS) {
+        Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(),
+                                     numRHS, data_x, stride_x, data_y, stride_y);
+      }
+      else {
+        Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(), 
+                                     numRHS, data_x, stride_x, data_y, stride_y);
+      }
       if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
         DefaultArithmetic< MultiVector< RangeScalar,Node > > ::Scale(Y,alpha);
       }
@@ -681,13 +742,19 @@ namespace Kokkos {
     else {
       // allocate temp space
       typedef MultiVector<RangeScalar,Node> MV;
-      ArrayRCP<RangeScalar> tmp = node_->template allocBuffer<RangeScalar>( numMatRows*numRHS );
+      ArrayRCP<RangeScalar> tmp = node_->template allocBuffer<RangeScalar>( opRows*numRHS );
       // tmp = A*X
-      Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(),
-                                   numRHS, data_x, stride_x, tmp.getRawPtr(), numMatRows);
+      if (trans == Teuchos::NO_TRANS) {
+        Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(),
+                                     numRHS, data_x, stride_x, tmp.getRawPtr(), opRows);
+      }
+      else {
+        Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(), 
+                                     numRHS, data_x, stride_x, tmp.getRawPtr(), opRows);
+      }
       // Y = alpha*tmp + beta*Y
       MV mvtmp(node_);
-      mvtmp.initializeValues(numMatRows,numRHS,tmp,numMatRows);
+      mvtmp.initializeValues(opRows,numRHS,tmp,opRows);
       DefaultArithmetic<MV>::GESUM(Y,alpha,mvtmp,beta);
     }
   }

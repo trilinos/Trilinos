@@ -49,10 +49,13 @@
 #include "Kokkos_MultiVectorKernelOps.hpp"
 
 // cusp doesn't currently support mixed precision, but maybe it will one day...
-#define INSTANTIATE_CUSP_ORDINAL_SCALAR(POINTER,ORDINAL,SCALARA,SCALARX,SCALARY)                       \
-  template void Kokkos::Cuspdetails::cuspCrsMultiply<POINTER,ORDINAL,SCALARA,SCALARX,SCALARY>          \
-                       ( ORDINAL, ORDINAL, ORDINAL, const POINTER *, const ORDINAL *, const SCALARA *, \
-                         ORDINAL, const SCALARX *, ORDINAL, SCALARY *, ORDINAL );
+#define INSTANTIATE_CUSP_ORDINAL_SCALAR(OFFSET,ORDINAL,SCALARA,SCALARX,SCALARY)                       \
+  template void Kokkos::Cuspdetails::cuspCrsMultiply<OFFSET,ORDINAL,SCALARA,SCALARX,SCALARY>          \
+                       ( ORDINAL, ORDINAL, ORDINAL, const OFFSET *, const ORDINAL *, const SCALARA *, \
+                         ORDINAL, const SCALARX *, ORDINAL, SCALARY *, ORDINAL );                     \
+  template void Kokkos::Cuspdetails::cuspCrsTranspose(ORDINAL, ORDINAL, ORDINAL,                      \
+                        const OFFSET *, const ORDINAL *, const SCALARA *,                             \
+                        OFFSET *, ORDINAL *, SCALARA *);
 
 #ifdef HAVE_KOKKOS_CUDA_FLOAT
 INSTANTIATE_CUSP_ORDINAL_SCALAR(short,short,float,float,float)
