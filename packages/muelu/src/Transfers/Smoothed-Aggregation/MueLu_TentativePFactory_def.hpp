@@ -224,7 +224,10 @@ namespace MueLu {
 
     QR_Interface<SC,LO> qrWidget(NSDim);
 
-    ArrayRCP<SC> localQR(maxAggSize*NSDim); // The submatrix of the nullspace to be orthogonalized.
+    // reserve enough memory for QR decomposition
+    size_t localQRsize = maxAggSize*NSDim;
+    if(Teuchos::as<size_t>(maxAggSize) < NSDim) localQRsize = NSDim * NSDim; // make sure, that we always can store the coarse nsp matrix (R in QR decomp.) even if we have only too small aggregates for GEQRF routine.
+    ArrayRCP<SC> localQR(localQRsize); // The submatrix of the nullspace to be orthogonalized.
 
     //Allocate temporary storage for the tentative prolongator.
     GO nFineDofs = nonUniqueMap->getNodeNumElements();
@@ -272,7 +275,31 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column. Error.");
       } //for (LO j=0 ...
 
+#if 0
+      std::cout << "Input" << std::endl;
+      // loop over rows
+      for (size_t i=0; i<myAggSize; i++) {
+        // loop over cols
+        for (size_t j=0; j<NSDim; j++) {
+          std::cout << localQR[ myAggSize*j + i]; std::cout << "\t";
+        }
+        std::cout << std::endl;
+      }
+#endif
+
+      // calculate QR decomposition
+      // R is stored in localQR (size: myAggSize x NSDim)
       qrWidget.Compute(myAggSize, localQR);
+      
+      // special handling: small aggregates (i.e. 1 pt aggregate with big NSDim)
+      if(myAggSize<Teuchos::as<LocalOrdinal>(NSDim)) {
+        for(size_t i=myAggSize; i<NSDim; i++) {  // use result from Lapack call and fill remaining nullspace dofs with default nullspace
+	  for(size_t j=0; j<NSDim; j++) {
+	    if(i==j) localQR[NSDim*j+i] = 1.0;
+	    else localQR[NSDim*j+i] = 0.0;
+	  }
+	}
+      }
 
       // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
       // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
@@ -290,8 +317,48 @@ namespace MueLu {
         }
       }
 
+#if 0
+      std::cout << "R" << std::endl;
+      // loop over rows
+      for (size_t i=0; i<NSDim; i++) {
+        // loop over cols
+        for (size_t j=0; j<NSDim; j++) {
+          if(j>=i) { std::cout << localQR[ NSDim*j + i]; std::cout << "\t"; }
+          else
+            std::cout << "00\t";
+        }
+        std::cout << std::endl;
+      }
+#endif
+
       // Calculate Q, the tentative prolongator.
-      qrWidget.ExtractQ(myAggSize, localQR);
+      // The Lapack GEQRF call only works for myAggsize >= NSDim
+      if(myAggSize>=Teuchos::as<LocalOrdinal>(NSDim))
+        qrWidget.ExtractQ(myAggSize, localQR);
+      else {
+	// special handling for very small aggregates (with myAggsize < NSDim)
+        GetOStream(Warnings0,0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
+        // calculate identity matrix with zero columns for the last NSDim-myAggsize columns.
+        for (size_t i=0; i<Teuchos::as<size_t>(myAggSize); i++) {
+          // loop over cols
+          for (size_t j=0; j<NSDim; j++) {
+            if (j==i) localQR[ myAggSize*j + i] = 1.0;
+            else localQR[ myAggSize*j + i] = 0.0;
+          }
+        }
+      }
+
+#if 0
+      std::cout << "Q" << std::endl;
+      // loop over rows
+      for (size_t i=0; i<myAggSize; i++) {
+        // loop over cols
+        for (size_t j=0; j<NSDim; j++) {
+          std::cout << localQR[ myAggSize*j + i]; std::cout << "\t";
+        }
+        std::cout << std::endl << std::endl;
+      }
+#endif
 
       //Process each row in the local Q factor.  If the row is local to the current processor
       //according to the rowmap, insert it into Ptentative.  Otherwise, save it in ghostQ

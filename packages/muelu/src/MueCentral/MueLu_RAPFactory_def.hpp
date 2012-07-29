@@ -5,6 +5,8 @@
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_OperatorFactory.hpp>
 #include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_RAPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
@@ -14,7 +16,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RAPFactory(RCP<const FactoryBase> PFact, RCP<const FactoryBase> RFact, RCP<const FactoryBase> AFact)
-    : PFact_(PFact), RFact_(RFact), AFact_(AFact), implicitTranspose_(false) {}
+    : PFact_(PFact), RFact_(RFact), AFact_(AFact), implicitTranspose_(false), checkAc_(false), repairZeroDiagonals_(false) {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~RAPFactory() {}
@@ -97,6 +99,7 @@ namespace MueLu {
       if( bA != Teuchos::null) {
         RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
         Ac = BuildRAPBlock(R, A, P, levelID); // Triple matrix product for BlockedCrsOperatorClass
+	// TODO add plausibility check
       } else {
 
         // refactoring needed >>>>>>>>
@@ -113,6 +116,8 @@ namespace MueLu {
           RCP<const Import> permImporter = coarseLevel.Get< RCP<const Import> >("Importer",RFact_.get());
           crsMtx->doImport(*origMtx, *permImporter,Xpetra::INSERT);
           crsMtx = Teuchos::null;
+	  //TODO add plausibility check 
+	  
           newAc->fillComplete(P->getDomainMap(), P->getDomainMap());
           Ac = newAc;
           
@@ -173,8 +178,15 @@ namespace MueLu {
     RCP<Operator> RAP;
     {
       SubFactoryMonitor m2(*this, "MxM: R x (AP)", levelID);
-      RAP = Utils::TwoMatrixMultiply(R, false, AP, false);
+      RAP = Utils::TwoMatrixMultiply(R, false, AP, false, false, false); // do fill complete by hand
     }
+
+    if(checkAc_) CheckMainDiagonal(*RAP);
+
+    // call fillComplete
+    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+    params->set("Optimize Storage",true);
+    RAP->fillComplete(AP->getDomainMap(), R->getRangeMap(), params);
 
     PrintMatrixInfo(*RAP, "Ac (explicit)");
     PrintLoadBalancingInfo(*RAP, "Ac (explicit)");
@@ -188,8 +200,15 @@ namespace MueLu {
 
     GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
     RCP<Operator> AP  = Utils::TwoMatrixMultiply(A, false, P, false);
-    RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false);
+    RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false, false, false); // do fill complete by hand
 
+    if(checkAc_) CheckMainDiagonal(*RAP);
+    
+    // call fillComplete
+    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+    params->set("Optimize Storage",true);
+    RAP->fillComplete(AP->getDomainMap(), P->getDomainMap(), params);
+    
     PrintMatrixInfo(*RAP, "Ac (implicit)");
     return RAP;
   }
@@ -212,8 +231,35 @@ namespace MueLu {
     RCP<BlockedCrsOperatorClass> bAP  = Utils::TwoMatrixMultiplyBlock(bA, false, bP, false, true, true);
     RCP<BlockedCrsOperatorClass> bRAP = Utils::TwoMatrixMultiplyBlock(bR, false, bAP, false, true, true);
 
+    // TODO add CheckMainDiagonal for Blocked operator
     PrintMatrixInfo(*bRAP, "Ac (blocked)");
     return bRAP;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckMainDiagonal(Operator & Ac) const {
+    // plausibility check: no zeros on diagonal
+    LO lZeroDiags = 0;
+    RCP<Vector> diagVec = VectorFactory::Build(Ac.getRowMap());
+    Ac.getLocalDiagCopy(*diagVec);
+    Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
+    for (size_t r=0; r<Ac.getRowMap()->getNodeNumElements(); r++) {
+      if(diagVal[r]==0.0) {
+	lZeroDiags++;
+	if(repairZeroDiagonals_) {       
+	  Teuchos::ArrayRCP<LocalOrdinal> indout(1,r);
+	  Teuchos::ArrayRCP<Scalar> valout(1,Teuchos::ScalarTraits<Scalar>::one());
+	  Ac.insertLocalValues(r, indout.view(0,indout.size()), valout.view(0,valout.size()));
+	}
+      }
+    }
+    if(IsPrint(Warnings0)) {
+      const RCP<const Teuchos::Comm<int> > & comm = Ac.getRowMap()->getComm();
+      GO gZeroDiags = 0;
+      sumAll(comm, lZeroDiags, gZeroDiags);
+      if(repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
+      else                     GetOStream(Warnings0,0) << "RAPFactory (WARNING): found " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
