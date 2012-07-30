@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __Kokkos_SeqSparseOps_hpp
-#define __Kokkos_SeqSparseOps_hpp
+#ifndef __Kokkos_AltSparseOps_hpp
+#define __Kokkos_AltSparseOps_hpp
 
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_DataAccess.hpp>
@@ -1562,5 +1562,5 @@ namespace Kokkos {
 
 } // namespace Kokkos
 
-#endif // #ifndef __Kokkos_SeqSparseOps_hpp
+#endif // #ifndef __Kokkos_AltSparseOps_hpp
 

@@ -44,7 +44,7 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
-#include "Kokkos_SeqSparseOps.hpp"
+#include "Kokkos_AltSparseOps.hpp"
 #include "Kokkos_Version.hpp"
 #include "DefaultSparseOps_TestSparseOps.hpp"
 
