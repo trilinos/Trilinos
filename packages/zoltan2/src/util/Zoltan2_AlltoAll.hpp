@@ -407,6 +407,8 @@ void AlltoAll(const Comm<int> &comm,
   ArrayRCP<int> recvCounts;
 
   AlltoAllv<T>(comm, env, sendBuf, sendCounts, recvBuf, recvCounts, true);
+
+  delete [] counts;
 }
 
 }                   // namespace Z2
