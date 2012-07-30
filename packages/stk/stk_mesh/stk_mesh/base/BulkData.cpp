@@ -89,9 +89,10 @@ void ensure_part_superset_consistency( const Entity& entity )
 
 BulkData::BulkData( MetaData & mesh_meta_data ,
                     ParallelMachine parallel ,
-                    unsigned bucket_max_size )
+                    unsigned bucket_max_size ,
+                    bool use_memory_pool )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
-    m_entity_repo(),
+    m_entity_repo(use_memory_pool),
     m_bucket_repository(
         *this, bucket_max_size,
         mesh_meta_data.entity_rank_count(),

@@ -18,6 +18,86 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
+boost::fast_pool_allocator<Entity>& entity_allocator()
+{
+  static boost::fast_pool_allocator<Entity> entity_pool_allocator;
+  return entity_pool_allocator;
+}
+
+#ifdef SIERRA_MIGRATION
+boost::fast_pool_allocator<fmwk_attributes>& fmwk_attr_allocator()
+{
+  static boost::fast_pool_allocator<fmwk_attributes> fmwk_attr_allocator;
+  return fmwk_attr_allocator;
+}
+#endif
+
+Entity* EntityRepository::allocate_entity(bool use_pool)
+{
+  if (use_pool) {
+    static Entity tmp_entity;
+    Entity* new_entity = entity_allocator().allocate();
+    entity_allocator().construct(new_entity, tmp_entity);
+    return new_entity;
+  }
+  //else
+  return new Entity;
+}
+
+#ifdef SIERRA_MIGRATION
+fmwk_attributes* allocate_fmwk_attr(bool use_pool)
+{
+  if (use_pool) {
+    static fmwk_attributes tmp_attributes;
+    fmwk_attributes* fmwk_attrs = fmwk_attr_allocator().allocate();
+    fmwk_attr_allocator().construct(fmwk_attrs, tmp_attributes);
+    return fmwk_attrs;
+  }
+  //else
+  return new fmwk_attributes;
+}
+#endif
+
+void destroy_entity(Entity* entity, bool use_pool)
+{
+  if (use_pool) {
+    entity_allocator().destroy(entity);
+    entity_allocator().deallocate(entity, 1);
+    return;
+  }
+  //else
+  delete entity;
+}
+
+#ifdef SIERRA_MIGRATION
+void destroy_fmwk_attr(fmwk_attributes* fmwk_attr, bool use_pool)
+{
+  if (use_pool) {
+    fmwk_attr_allocator().destroy(fmwk_attr);
+    fmwk_attr_allocator().deallocate(fmwk_attr, 1);
+    return;
+  }
+  //else
+  delete fmwk_attr;
+}
+#endif
+
+void release_all_entity_memory(bool use_pool)
+{
+  if (use_pool) {
+    boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(Entity)>::release_memory();
+  }
+}
+
+#ifdef SIERRA_MIGRATION
+void release_all_fmwk_attr_memory(bool use_pool)
+{
+  if (use_pool) {
+    boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(fmwk_attributes)>::release_memory();
+  }
+}
+#endif
+
 EntityRepository::~EntityRepository()
 {
   try {
@@ -26,10 +106,8 @@ EntityRepository::~EntityRepository()
     }
   } catch(...){}
 
-  boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(Entity)>::release_memory();
-#ifdef SIERRA_MIGRATION
-  boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(fmwk_attributes)>::release_memory();
-#endif
+  release_all_entity_memory(m_use_pool);
+  release_all_fmwk_attr_memory(m_use_pool);
 }
 
 void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
@@ -45,12 +123,11 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
     " != " << print_entity_key(i->second));
 
   Entity* deleted_entity = i->second;
+
+  destroy_entity(deleted_entity, m_use_pool);
 #ifdef SIERRA_MIGRATION
-  m_fmwk_attr_alloc.destroy(deleted_entity->m_fmwk_attrs);
-  m_fmwk_attr_alloc.deallocate(deleted_entity->m_fmwk_attrs, 1);
+  destroy_fmwk_attr(deleted_entity->m_fmwk_attrs, m_use_pool);
 #endif
-  m_entity_alloc.destroy(deleted_entity);
-  m_entity_alloc.deallocate(deleted_entity, 1);
   i->second = NULL;
   m_entities.erase( i );
 }
@@ -58,14 +135,10 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
 Entity*
 EntityRepository::internal_allocate_entity(EntityKey entity_key)
 {
-  static Entity tmp_entity;
-  Entity* new_entity = m_entity_alloc.allocate();
-  m_entity_alloc.construct(new_entity, tmp_entity);
+  Entity* new_entity = allocate_entity(m_use_pool);
   new_entity->set_key(entity_key);
 #ifdef SIERRA_MIGRATION
-  static fmwk_attributes tmp_attributes;
-  fmwk_attributes* fmwk_attrs = m_fmwk_attr_alloc.allocate();
-  m_fmwk_attr_alloc.construct(fmwk_attrs, tmp_attributes);
+  fmwk_attributes* fmwk_attrs = allocate_fmwk_attr(m_use_pool);
   new_entity->m_fmwk_attrs = fmwk_attrs;
 #endif
   return new_entity;

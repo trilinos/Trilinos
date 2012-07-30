@@ -26,6 +26,7 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
+
 #include <boost/pool/pool_alloc.hpp>
 
 namespace stk {
@@ -53,7 +54,9 @@ class EntityRepository {
 
     typedef EntityMap::const_iterator iterator;
 
-    EntityRepository() : m_entities() {}
+    EntityRepository(bool use_pool)
+      : m_entities(), m_use_pool(use_pool) {}
+
     ~EntityRepository();
 
     Entity * get_entity( const EntityKey &key ) const;
@@ -113,14 +116,12 @@ class EntityRepository {
     void internal_expunge_entity( EntityMap::iterator i);
 
     Entity* internal_allocate_entity(EntityKey entity_key);
+    Entity* allocate_entity(bool use_pool);
 
     EntityMap m_entities;
-    boost::fast_pool_allocator<Entity> m_entity_alloc;
-#ifdef SIERRA_MIGRATION
-    boost::fast_pool_allocator<fmwk_attributes> m_fmwk_attr_alloc;
-#endif
+    bool m_use_pool;
 
-    //disabel copy constructor and assignment operator
+    //disable copy constructor and assignment operator
     EntityRepository(const EntityRepository &);
     EntityRepository & operator =(const EntityRepository &);
 };
