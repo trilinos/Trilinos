@@ -1,4 +1,3 @@
-/*
 //@HEADER
 // ************************************************************************
 // 
@@ -39,51 +38,23 @@
 // 
 // ************************************************************************
 //@HEADER
-*/
 
-// include for ThrustGPUNode method implementations
-#include "Kokkos_ThrustGPUNode.cuh"
+#ifndef KOKKOS_THRUSTGPU_WRAPPERS_HPP_
+#define KOKKOS_THRUSTGPU_WRAPPERS_HPP_
 
-// includes for all operators
-#include "TestOps.hpp"
-#include <thrust/generate.h>
-#include <thrust/reduce.h>
-#include <thrust/device_vector.h>
+#include "Kokkos_config.h"
 
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<int>    )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<float>  )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( NullOp         )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<int>     )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<float>   )
+namespace Kokkos {
+  namespace ThrustGPUNodeDetails {
+    
+    template <class WDP>
+    typename WDP::ReductionType
+    parallel_reduce(int begin, int end, WDP wd);
 
-struct thrust_test_constant_float
-{
-  __host__ __device__
-  float operator()() {return 1.0f;}
-};
-struct thrust_test_constant_int
-{
-  __host__ __device__
-  int operator()() {return 1;}
-};
+    template <class WDP>
+    void parallel_for(int begin, int end, WDP wd);
 
-void thrust_float_alloc(int N, thrust::device_vector<float> &buff) {
-  buff.resize(N);
-}
-void thrust_int_alloc(int N, thrust::device_vector<int> &buff) {
-  buff.resize(N);
-}
+  } // end namespace ThrustGPUNodeDetails 
+} // end namespace Kokkos 
 
-void thrust_float_init(thrust::device_vector<float> &buff) {
-  thrust::generate( buff.begin(), buff.end(), thrust_test_constant_float() );
-}
-void thrust_int_init(thrust::device_vector<int> &buff) {
-  thrust::generate( buff.begin(), buff.end(), thrust_test_constant_int() );
-}
-
-float thrust_float_sum(const thrust::device_vector<float> &buff) {
-  return thrust::reduce( buff.begin(), buff.end(), 0.0f, thrust::plus<float>() );
-}
-int thrust_int_sum(const thrust::device_vector<int> &buff) {
-  return thrust::reduce( buff.begin(), buff.end(), 0,    thrust::plus<int>() );
-}
+#endif // KOKKOS_THRUSTGPU_WRAPPERS_HPP_

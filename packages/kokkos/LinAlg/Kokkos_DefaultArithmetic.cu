@@ -55,21 +55,21 @@
 
 
 #define INSTANTIATE_MULTIVECTOR_SCALAR(SCALAR) \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::InitOp       <SCALAR> >(int, int, Kokkos::InitOp       <SCALAR> ); \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::AssignOp     <SCALAR> >(int, int, Kokkos::AssignOp     <SCALAR> ); \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::SingleScaleOp<SCALAR> >(int, int, Kokkos::SingleScaleOp<SCALAR> ); \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::MVScaleOp    <SCALAR> >(int, int, Kokkos::MVScaleOp    <SCALAR> ); \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::AbsOp        <SCALAR> >(int, int, Kokkos::AbsOp        <SCALAR> ); \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::RecipOp      <SCALAR> >(int, int, Kokkos::RecipOp      <SCALAR> ); \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::GESUMOp      <SCALAR> >(int, int, Kokkos::GESUMOp      <SCALAR> ); \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::GESUMOp3     <SCALAR> >(int, int, Kokkos::GESUMOp3     <SCALAR> ); \
-  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::MVElemMultOp <SCALAR> >(int, int, Kokkos::MVElemMultOp <SCALAR> ); \
-  template Kokkos::SumAbsOp    <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::SumAbsOp    <SCALAR> >(int, int, Kokkos::SumAbsOp    <SCALAR> ); \
-  template Kokkos::WeightNormOp<SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::WeightNormOp<SCALAR> >(int, int, Kokkos::WeightNormOp<SCALAR> ); \
-  template Kokkos::SumOp       <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::SumOp       <SCALAR> >(int, int, Kokkos::SumOp       <SCALAR> ); \
-  template Kokkos::MaxAbsOp    <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::MaxAbsOp    <SCALAR> >(int, int, Kokkos::MaxAbsOp    <SCALAR> ); \
-  template Kokkos::DotOp1      <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::DotOp1      <SCALAR> >(int, int, Kokkos::DotOp1      <SCALAR> ); \
-  template Kokkos::DotOp2      <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::DotOp2      <SCALAR> >(int, int, Kokkos::DotOp2      <SCALAR> );
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::InitOp       <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::AssignOp     <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::SingleScaleOp<SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::MVScaleOp    <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::AbsOp        <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::RecipOp      <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::GESUMOp      <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::GESUMOp3     <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( Kokkos::MVElemMultOp <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( Kokkos::SumAbsOp     <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( Kokkos::WeightNormOp <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( Kokkos::SumOp        <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( Kokkos::MaxAbsOp     <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( Kokkos::DotOp1       <SCALAR> ) \
+  KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( Kokkos::DotOp2       <SCALAR> )
 
 INSTANTIATE_MULTIVECTOR_SCALAR(int)
 INSTANTIATE_MULTIVECTOR_SCALAR(long)

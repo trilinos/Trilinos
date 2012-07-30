@@ -41,49 +41,23 @@
 //@HEADER
 */
 
-// include for ThrustGPUNode method implementations
-#include "Kokkos_ThrustGPUNode.cuh"
+#ifndef CUDA_BUILT_AXPY_HPP_
+#define CUDA_BUILT_AXPY_HPP_
 
-// includes for all operators
-#include "TestOps.hpp"
-#include <thrust/generate.h>
-#include <thrust/reduce.h>
-#include <thrust/device_vector.h>
+#ifndef KERNEL_PREFIX 
+#define KERNEL_PREFIX
+#endif
 
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<int>    )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<float>  )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( NullOp         )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<int>     )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<float>   )
-
-struct thrust_test_constant_float
+struct AddOp 
 {
-  __host__ __device__
-  float operator()() {return 1.0f;}
-};
-struct thrust_test_constant_int
-{
-  __host__ __device__
-  int operator()() {return 1;}
+  float a;
+  const float *x;
+  float *y;
+
+  inline KERNEL_PREFIX void execute(int i) const
+  {
+    y[i] += a*x[i];
+  }
 };
 
-void thrust_float_alloc(int N, thrust::device_vector<float> &buff) {
-  buff.resize(N);
-}
-void thrust_int_alloc(int N, thrust::device_vector<int> &buff) {
-  buff.resize(N);
-}
-
-void thrust_float_init(thrust::device_vector<float> &buff) {
-  thrust::generate( buff.begin(), buff.end(), thrust_test_constant_float() );
-}
-void thrust_int_init(thrust::device_vector<int> &buff) {
-  thrust::generate( buff.begin(), buff.end(), thrust_test_constant_int() );
-}
-
-float thrust_float_sum(const thrust::device_vector<float> &buff) {
-  return thrust::reduce( buff.begin(), buff.end(), 0.0f, thrust::plus<float>() );
-}
-int thrust_int_sum(const thrust::device_vector<int> &buff) {
-  return thrust::reduce( buff.begin(), buff.end(), 0,    thrust::plus<int>() );
-}
+#endif // CUDA_BUILT_AXPY_HPP_

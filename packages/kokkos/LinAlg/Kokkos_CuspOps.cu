@@ -41,8 +41,7 @@
 
 #include <cuComplex.h>
 
-// include for ThrustGPUNode method implementations
-#include "Kokkos_ThrustGPUNode.cuh"
+#include "Kokkos_config.h"
 #include "Kokkos_CuspOps.cuh"
 
 // includes for all ops
@@ -53,8 +52,8 @@
   template void Kokkos::Cuspdetails::cuspCrsMultiply<OFFSET,ORDINAL,SCALARA,SCALARX,SCALARY>          \
                        ( ORDINAL, ORDINAL, ORDINAL, const OFFSET *, const ORDINAL *, const SCALARA *, \
                          ORDINAL, const SCALARX *, ORDINAL, SCALARY *, ORDINAL );                     \
-  template void Kokkos::Cuspdetails::cuspCrsTranspose(ORDINAL, ORDINAL, ORDINAL,                      \
-                        const OFFSET *, const ORDINAL *, const SCALARA *,                             \
+  template void Kokkos::Cuspdetails::cuspCrsTranspose<OFFSET,ORDINAL,SCALARA>(ORDINAL, ORDINAL, ORDINAL, \
+                        const OFFSET *, const ORDINAL *, const SCALARA *,                                \
                         OFFSET *, ORDINAL *, SCALARA *);
 
 #ifdef HAVE_KOKKOS_CUDA_FLOAT
