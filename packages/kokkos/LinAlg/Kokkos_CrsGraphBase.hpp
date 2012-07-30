@@ -100,7 +100,7 @@ namespace Kokkos {
           \pre ptrs[0] == 0
           \pre ptrs[getNumRows()] == inds.size()
      */
-    virtual void setStructure(const ArrayRCP<const Ordinal> &ptrs,
+    virtual void setStructure(const ArrayRCP<const size_t> &ptrs,
                               const ArrayRCP<const Ordinal> &inds) = 0;
 
     //@}

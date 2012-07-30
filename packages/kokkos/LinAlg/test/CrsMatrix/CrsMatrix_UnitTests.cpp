@@ -81,13 +81,13 @@ namespace {
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     RCP<Graph> G = rcp(new Graph(N,N,node,parameterList()));
     {
-      ArrayRCP<int>  ptrs_tooSmall(N), ptrs_tooBig(N+2);
-      ArrayRCP<int>  inds;
+      ArrayRCP<size_t> ptrs_tooSmall(N), ptrs_tooBig(N+2);
+      ArrayRCP<int>    inds;
       TEST_THROW( G->setStructure(ptrs_tooSmall, inds), std::runtime_error );
       TEST_THROW( G->setStructure(ptrs_tooBig,   inds), std::runtime_error );
     }
     {
-      ArrayRCP<int> ptrs(N+1);
+      ArrayRCP<size_t> ptrs(N+1);
       for (int i=0; i<=N; ++i) ptrs[i] = i;
       ArrayRCP<int> tooFewInds(N-1);
       TEST_THROW( G->setStructure(ptrs, tooFewInds), std::runtime_error );
@@ -99,7 +99,7 @@ namespace {
     typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps SparseOps;
     typedef SparseOps::graph<int,Node>::graph_type             Graph;
     const int N = 10;
-    ArrayRCP<int> ptrs = arcp<int>(N+1);
+    ArrayRCP<size_t> ptrs = arcp<size_t>(N+1);
     std::fill(ptrs.begin(), ptrs.end(), 0);
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     RCP<Graph> G = rcp(new Graph(N,N,node,parameterList()));
@@ -121,7 +121,7 @@ namespace {
     const Ordinal testNumEntries = 3*N-2;
     ArrayRCP<Ordinal> inds(testNumEntries);
     ArrayRCP<Scalar > vals(testNumEntries);
-    ArrayRCP<Ordinal> ptrs(N+1);
+    ArrayRCP<size_t> ptrs(N+1);
     {
       std::fill( inds.begin(), inds.end(), 0 );
       std::fill( vals.begin(), vals.end(), 0 );
@@ -139,11 +139,8 @@ namespace {
     G->setStructure(ptrs, inds);
     SparseOps::finalizeGraph(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,null);
     ArrayRCP<const Ordinal> chkInds;
-    ArrayRCP<const Ordinal> chkPtrs;
     chkInds = G->getIndices();
-    chkPtrs = G->getPointers();
     TEST_EQUALITY( inds, chkInds );
-    TEST_EQUALITY( ptrs, chkPtrs );
     TEST_EQUALITY_CONST( G->isEmpty(), false );
     TEST_EQUALITY( G->getNumRows(), N );
     TEST_EQUALITY( G->getNumCols(), N );
@@ -166,7 +163,7 @@ namespace {
     const Ordinal testNumEntries = 3*N-2;
     ArrayRCP<Ordinal> inds(testNumEntries);
     ArrayRCP<Scalar > vals(testNumEntries);
-    ArrayRCP<Ordinal> ptrs(N+1);
+    ArrayRCP<size_t> ptrs(N+1);
     {
       std::fill( inds.begin(), inds.end(), 0 );
       std::fill( vals.begin(), vals.end(), 0 );
@@ -185,12 +182,9 @@ namespace {
     G->setStructure(ptrs,inds);
     M.setValues(vals);
     ArrayRCP<const Ordinal> chkInds;
-    ArrayRCP<const Ordinal> chkPtrs;
     ArrayRCP<const Scalar> chkVals;
-    chkPtrs = G->getPointers();
     chkInds = G->getIndices();
     chkVals = M.getValues();
-    TEST_EQUALITY( ptrs, chkPtrs );
     TEST_EQUALITY( inds, chkInds );
     TEST_EQUALITY( vals, chkVals );
     SparseOps::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,M,null);
@@ -208,18 +202,18 @@ namespace {
     // build a null-size graph
     Graph G(N,N,node,null);
     {
-      ArrayRCP<Ordinal> ptrs;
+      ArrayRCP<size_t>  ptrs;
       ArrayRCP<Ordinal> inds;
       ptrs = null;
       inds = null;
       // ptrs is null; not allowed
       TEST_THROW( G.setStructure(ptrs, inds), std::runtime_error );
-      ptrs = arcp<Ordinal>(1);
+      ptrs = arcp<size_t>(1);
       ptrs[0] = 0;
       G.setStructure(ptrs, inds);
       ptrs = null;
       inds = null;
-      ArrayRCP<const Ordinal> getptrs;
+      ArrayRCP<const size_t>  getptrs;
       ArrayRCP<const Ordinal> getinds;
       getptrs = G.getPointers();
       getinds = G.getIndices();

@@ -2,6 +2,10 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Trilinos 11.0: 
+--------------
+* Removed all deprecated methods.
+
 Trilinos 10.12:
 --------------
 

@@ -52,7 +52,7 @@
 #if defined(HAVE_KOKKOS_THREADPOOL)
 #  include <Kokkos_TPINode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_CUSPARSE)
+#if defined(HAVE_KOKKOS_CUSPARSE) || defined(HAVE_KOKKOS_CUSP)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 #if defined(HAVE_KOKKOS_OPENMP)
@@ -73,7 +73,7 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_OPENMP)
     TPETRA_CRSGRAPH_INSTANT(int,int,Kokkos::OpenMPNode)
 #endif
-#if defined(HAVE_KOKKOS_CUSPARSE)
+#if defined(HAVE_KOKKOS_CUSPARSE) || defined(HAVE_KOKKOS_CUSP)
     TPETRA_CRSGRAPH_INSTANT(int,int,Kokkos::ThrustGPUNode)
 #endif
 
@@ -88,7 +88,7 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_OPENMP)
     TPETRA_CRSGRAPH_INSTANT(int,long,Kokkos::OpenMPNode)
 #endif
-#if defined(HAVE_KOKKOS_CUSPARSE)
+#if defined(HAVE_KOKKOS_CUSPARSE) || defined(HAVE_KOKKOS_CUSP)
     TPETRA_CRSGRAPH_INSTANT(int,long,Kokkos::ThrustGPUNode)
 #endif
 #endif

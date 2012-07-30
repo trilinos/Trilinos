@@ -1,4 +1,3 @@
-/*
 //@HEADER
 // ************************************************************************
 // 
@@ -39,7 +38,6 @@
 // 
 // ************************************************************************
 //@HEADER
-*/
 
 #ifndef KOKKOS_THRUSTGPUNODE_CUH_
 #define KOKKOS_THRUSTGPUNODE_CUH_
@@ -51,49 +49,52 @@
 // must define this before including any kernels
 #define KERNEL_PREFIX __device__ __host__
 
-// MUST define this to prevent bringing in implementation of CUDANodeMemoryModel (and therefore, half of Teuchos)
-#define KOKKOS_NO_INCLUDE_INSTANTIATIONS
-#include <Kokkos_ThrustGPUNode.hpp>
+#include <Kokkos_ThrustGPUWrappers.hpp>
+#include <Teuchos_TestForException.hpp>
 
 namespace Kokkos {
 
-  template <class WDPin> 
-  struct ThrustExecuteWrapper {
-    mutable WDPin wd;
+  namespace ThrustGPUNodeDetails {
 
-    inline ThrustExecuteWrapper(WDPin in) : wd(in) {}
+    template <class WDPin> 
+    struct ThrustExecuteWrapper {
+      mutable WDPin wd;
+  
+      inline ThrustExecuteWrapper(WDPin in) : wd(in) {}
+  
+      __device__ __host__ inline void operator()(int i) const {
+        wd.execute(i);
+      }
+    };
+  
+    template <class WDPin> 
+    struct ThrustReduceWrapper {
+      mutable WDPin wd;
+      inline ThrustReduceWrapper (WDPin in) : wd(in) {}
+  
+      __device__ __host__ inline 
+      typename WDPin::ReductionType 
+      operator()(typename WDPin::ReductionType x, typename WDPin::ReductionType y) {
+        return wd.reduce(x,y);
+      }
+    };
+  
+    template <class WDPin>
+    struct ThrustGenerateWrapper {
+      mutable WDPin wd;
+      inline ThrustGenerateWrapper (WDPin in) : wd(in) {}
+   
+      __device__ __host__ inline 
+      typename WDPin::ReductionType
+      operator()(int i) {
+        return wd.generate(i);
+      }
+    };
 
-    __device__ __host__ inline void operator()(int i) const {
-      wd.execute(i);
-    }
-  };
-
-  template <class WDPin> 
-  struct ThrustReduceWrapper {
-    mutable WDPin wd;
-    inline ThrustReduceWrapper (WDPin in) : wd(in) {}
-
-    __device__ __host__ inline 
-    typename WDPin::ReductionType 
-    operator()(typename WDPin::ReductionType x, typename WDPin::ReductionType y) {
-      return wd.reduce(x,y);
-    }
-  };
-
-  template <class WDPin>
-  struct ThrustGenerateWrapper {
-    mutable WDPin wd;
-    inline ThrustGenerateWrapper (WDPin in) : wd(in) {}
- 
-    __device__ __host__ inline 
-    typename WDPin::ReductionType
-    operator()(int i) {
-      return wd.generate(i);
-    }
-  };
+  } // end namespace ThrustGPUNodeDetails 
 
   template <class WDP>
-  void ThrustGPUNode::parallel_for(int begin, int end, WDP wd) {
+  void ThrustGPUNodeDetails::parallel_for(int begin, int end, WDP wd) {
 #ifdef HAVE_KOKKOS_DEBUG
     cudaError_t err = cudaGetLastError();
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
@@ -102,7 +103,7 @@ namespace Kokkos {
         << cudaGetErrorString(err) );
 #endif
     // wrap in Thrust and hand to thrust::for_each
-    ThrustExecuteWrapper<WDP> body(wd);  
+    ThrustGPUNodeDetails::ThrustExecuteWrapper<WDP> body(wd);  
     thrust::counting_iterator<int,thrust::device_space_tag> bit(begin),
                                                             eit(end);
     thrust::for_each( bit, eit, body );
@@ -117,7 +118,7 @@ namespace Kokkos {
 
   template <class WDP>
   typename WDP::ReductionType
-  ThrustGPUNode::parallel_reduce(int begin, int end, WDP wd) 
+  ThrustGPUNodeDetails::parallel_reduce(int begin, int end, WDP wd) 
   {
 #ifdef HAVE_KOKKOS_DEBUG
     cudaError_t err = cudaGetLastError();
@@ -129,8 +130,8 @@ namespace Kokkos {
     // wrap in Thrust and hand to thrust::transform_reduce
     thrust::counting_iterator<int,thrust::device_space_tag> bit(begin),
                                                             eit(end);
-    ThrustReduceWrapper<WDP> ROp(wd);
-    ThrustGenerateWrapper<WDP> TOp(wd);
+    ThrustGPUNodeDetails::ThrustReduceWrapper<WDP> ROp(wd);
+    ThrustGPUNodeDetails::ThrustGenerateWrapper<WDP> TOp(wd);
     typename WDP::ReductionType init = wd.identity(), ret;
     ret = thrust::transform_reduce( bit, eit, TOp, init, ROp );
 #ifdef HAVE_KOKKOS_DEBUG
@@ -143,6 +144,12 @@ namespace Kokkos {
     return ret;
   }
 
-}
+} // end namespace Kokkos
+
+#define KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR(KERN) \
+  template void Kokkos::ThrustGPUNodeDetails::parallel_for< KERN >(int, int, KERN);
+
+#define KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED(KERN) \
+  template KERN::ReductionType Kokkos::ThrustGPUNodeDetails::parallel_reduce< KERN >(int, int, KERN );
 
 #endif

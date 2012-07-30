@@ -1,4 +1,3 @@
-/*
 //@HEADER
 // ************************************************************************
 // 
@@ -39,51 +38,39 @@
 // 
 // ************************************************************************
 //@HEADER
-*/
 
-// include for ThrustGPUNode method implementations
-#include "Kokkos_ThrustGPUNode.cuh"
+#include <cuComplex.h>
 
-// includes for all operators
-#include "TestOps.hpp"
-#include <thrust/generate.h>
-#include <thrust/reduce.h>
-#include <thrust/device_vector.h>
+#include "Kokkos_config.h"
+#include "Kokkos_CuspOps.cuh"
 
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<int>    )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<float>  )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( NullOp         )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<int>     )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<float>   )
+// includes for all ops
+#include "Kokkos_MultiVectorKernelOps.hpp"
 
-struct thrust_test_constant_float
-{
-  __host__ __device__
-  float operator()() {return 1.0f;}
-};
-struct thrust_test_constant_int
-{
-  __host__ __device__
-  int operator()() {return 1;}
-};
+// cusp doesn't currently support mixed precision, but maybe it will one day...
+#define INSTANTIATE_CUSP_ORDINAL_SCALAR(OFFSET,ORDINAL,SCALARA,SCALARX,SCALARY)                       \
+  template void Kokkos::Cuspdetails::cuspCrsMultiply<OFFSET,ORDINAL,SCALARA,SCALARX,SCALARY>          \
+                       ( ORDINAL, ORDINAL, ORDINAL, const OFFSET *, const ORDINAL *, const SCALARA *, \
+                         ORDINAL, const SCALARX *, ORDINAL, SCALARY *, ORDINAL );                     \
+  template void Kokkos::Cuspdetails::cuspCrsTranspose<OFFSET,ORDINAL,SCALARA>(ORDINAL, ORDINAL, ORDINAL, \
+                        const OFFSET *, const ORDINAL *, const SCALARA *,                                \
+                        OFFSET *, ORDINAL *, SCALARA *);
 
-void thrust_float_alloc(int N, thrust::device_vector<float> &buff) {
-  buff.resize(N);
-}
-void thrust_int_alloc(int N, thrust::device_vector<int> &buff) {
-  buff.resize(N);
-}
-
-void thrust_float_init(thrust::device_vector<float> &buff) {
-  thrust::generate( buff.begin(), buff.end(), thrust_test_constant_float() );
-}
-void thrust_int_init(thrust::device_vector<int> &buff) {
-  thrust::generate( buff.begin(), buff.end(), thrust_test_constant_int() );
-}
-
-float thrust_float_sum(const thrust::device_vector<float> &buff) {
-  return thrust::reduce( buff.begin(), buff.end(), 0.0f, thrust::plus<float>() );
-}
-int thrust_int_sum(const thrust::device_vector<int> &buff) {
-  return thrust::reduce( buff.begin(), buff.end(), 0,    thrust::plus<int>() );
-}
+#ifdef HAVE_KOKKOS_CUDA_FLOAT
+INSTANTIATE_CUSP_ORDINAL_SCALAR(short,short,float,float,float)
+INSTANTIATE_CUSP_ORDINAL_SCALAR(int,int,float,float,float)
+#endif
+#ifdef HAVE_KOKKOS_CUDA_DOUBLE
+INSTANTIATE_CUSP_ORDINAL_SCALAR(short,short,double,double,double)
+INSTANTIATE_CUSP_ORDINAL_SCALAR(int,int,double,double,double)
+#endif
+//typedef cusp::complex<float>  ComplexFloat;
+//typedef cusp::complex<double> ComplexDouble;
+//#ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+//INSTANTIATE_CUSP_ORDINAL_SCALAR(short,ComplexFloat)
+//INSTANTIATE_CUSP_ORDINAL_SCALAR(int,ComplexFloat)
+//#endif
+//#ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+//INSTANTIATE_CUSP_ORDINAL_SCALAR(short,ComplexDouble)
+//INSTANTIATE_CUSP_ORDINAL_SCALAR(int,ComplexDouble)
+//#endif

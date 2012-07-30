@@ -4,6 +4,8 @@ NodeAPI:
 * add node method to query data type support: bool Node::has_support<T>()
 
 LinAlg:
+* add transpose formation to: DefaultSparseOps, CUSPARSE
+* isolate Teuchos portions from ThrustGPUNode using non-Teuchos-exposing wrapper interfaces
+* add CASK TPL
 * document all sparse kernel TPL capabilities
-* add CUSP sparse mat-vec implementations for CUDA nodes
 * add CUBLAS GEMM for CUDA nodes

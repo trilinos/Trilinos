@@ -49,6 +49,9 @@
 #ifdef HAVE_KOKKOS_CUSPARSE
 #include "Kokkos_CUSPARSEOps.hpp"
 #endif
+#ifdef HAVE_KOKKOS_CUSP
+#include "Kokkos_CuspOps.hpp"
+#endif
 
 namespace Kokkos {
 
@@ -57,7 +60,7 @@ namespace Kokkos {
    */
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {
-    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::DefaultCRSAllocator<Ordinal,Node> >  SparseOps;
+    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::DefaultCRSAllocator>  SparseOps;
     typedef DefaultBlockSparseOps<Scalar,Ordinal,Node>  BlockSparseOps;
     typedef DefaultRelaxation    <Scalar,Ordinal,Node>  Relaxations;
   };
@@ -66,14 +69,14 @@ namespace Kokkos {
   class TBBNode;
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar,Ordinal,TBBNode> {
-    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::FirstTouchCRSAllocator<Ordinal,TBBNode> >  SparseOps;
+    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::FirstTouchCRSAllocator>  SparseOps;
     typedef DefaultBlockSparseOps<Scalar,Ordinal,TBBNode>  BlockSparseOps;
     typedef DefaultRelaxation    <Scalar,Ordinal,TBBNode>  Relaxations;
   };
   class TPINode;
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar,Ordinal,TPINode> {
-    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::FirstTouchCRSAllocator<Ordinal,TPINode> >  SparseOps;
+    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::FirstTouchCRSAllocator>  SparseOps;
     typedef FirstTouchSparseOps  <void  ,Ordinal,TPINode>  SparseOps;
     typedef DefaultBlockSparseOps<Scalar,Ordinal,TPINode>  BlockSparseOps;
     typedef DefaultRelaxation    <Scalar,Ordinal,TPINode>  Relaxations;
@@ -87,13 +90,28 @@ namespace Kokkos {
       DefaultDeviceSparseOps.
    */
    class ThrustGPUNode;
+#if defined(HAVE_KOKKOS_CUSP)
+   template <class Scalar, class Ordinal>
+   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
+     typedef CuspOps<void,Ordinal,ThrustGPUNode> SparseOps;
+   };
+#else 
    template <class Scalar, class Ordinal>
    struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
      // empty == fail
    };
-#ifdef HAVE_KOKKOS_CUSPARSE
-   template <class Scalar>
-   struct DefaultKernels<Scalar,int,ThrustGPUNode> {
+#endif
+#if defined(HAVE_KOKKOS_CUSPARSE)
+   template <>
+   struct DefaultKernels<void,int,ThrustGPUNode> {
+     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
+   };
+   template <>
+   struct DefaultKernels<float,int,ThrustGPUNode> {
+     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
+   };
+   template <>
+   struct DefaultKernels<double,int,ThrustGPUNode> {
      typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
    };
 #endif

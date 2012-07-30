@@ -61,29 +61,33 @@
 #include "Kokkos_OpenMPNode.hpp"
 #endif
 
-#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_THRUST)
-#define TEST_CUSPARSE
-#ifdef HAVE_KOKKOS_CUDA_FLOAT
-#define TEST_CUSPARSE_FLOAT
-#endif
-#ifdef HAVE_KOKKOS_CUDA_DOUBLE
-#define TEST_CUSPARSE_DOUBLE
-#endif
-#ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
-#define TEST_CUSPARSE_COMPLEX_FLOAT
-#endif
-#ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
-#define TEST_CUSPARSE_COMPLEX_DOUBLE
-#endif
-#endif
-
-#ifdef TEST_CUSPARSE
-#include "Kokkos_ThrustGPUNode.hpp"
-#include "Kokkos_CUSPARSEOps.hpp"
+#if (defined(HAVE_KOKKOS_CUSPARSE) || defined(HAVE_KOKKOS_CUSP)) && defined(HAVE_KOKKOS_THRUST)
+  #include "Kokkos_ThrustGPUNode.hpp"
+  #ifdef HAVE_KOKKOS_CUSPARSE
+    #include "Kokkos_CUSPARSEOps.hpp"
+  #endif
+  #ifdef HAVE_KOKKOS_CUSP
+    #include "Kokkos_CuspOps.hpp"
+  #endif
+  #define TEST_CUDA
+  #ifdef HAVE_KOKKOS_CUDA_FLOAT
+    #define TEST_CUDA_FLOAT
+  #endif
+  #ifdef HAVE_KOKKOS_CUDA_DOUBLE
+    #define TEST_CUDA_DOUBLE
+  #endif
+  #ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+    #define TEST_CUDA_COMPLEX_FLOAT
+  #endif
+  #ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+    #define TEST_CUDA_COMPLEX_DOUBLE
+  #endif
 #endif
 
 namespace {
 
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
   using Kokkos::MultiVector;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultKernels;
@@ -91,6 +95,7 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::null;
+  using Teuchos::tuple;
   using std::endl;
 
   using Kokkos::SerialNode;
@@ -107,7 +112,7 @@ namespace {
   using Kokkos::OpenMPNode;
   RCP<OpenMPNode> ompnode;
 #endif
-#ifdef TEST_CUSPARSE
+#ifdef TEST_CUDA
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> gpunode;
 #endif
@@ -173,7 +178,7 @@ namespace {
   }
 #endif
 
-#ifdef TEST_CUSPARSE
+#ifdef TEST_CUDA
   template <>
   RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
     if (gpunode == null) {
@@ -189,6 +194,94 @@ namespace {
   // UNIT TESTS
   //
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TransposeMultiply, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    const Scalar ONE = ST::one(),
+                ZERO = ST::zero();
+    // generate rectangular matrix:
+    // [-1 1]
+    // [-1 1]
+    // [-1 1]
+    if (N<2) return;
+    RCP<GRPH> G = rcp(new GRPH (N,2,node,null) );
+    RCP<MAT>  A = rcp(new MAT  (G,null) );
+    // allocate buffers for ptrs, indices and values
+    const Ordinal totalNNZ = 2*N;
+    ArrayRCP<size_t>  ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
+    // fill the buffers on the host
+    {
+      ptrs[0] = 0;
+      for (int i=0; i != N; ++i) {
+        ptrs[i] = 2*i;
+        inds[2*i  ] = 0;
+        inds[2*i+1] = 1;
+        vals[2*i  ] = -1;
+        vals[2*i+1] =  1;
+      }
+      ptrs[N] = totalNNZ;
+    }
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
+    A->setValues(vals);
+    vals = Teuchos::null;
+    RCP<ParameterList> plist = parameterList();
+    plist->set("Prepare Transpose Multiply",true);
+    OPS::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,plist);
+    OPS dsm(node);
+    out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
+    dsm.setGraphAndMatrix(G,A);
+
+    ArrayRCP<Scalar> xdat, axdat, atxdat;
+    xdat  = node->template allocBuffer<Scalar>(2);
+    node->template copyToBuffer<Scalar>(2, tuple<Scalar>(1.0,2.0), xdat);
+    axdat = node->template allocBuffer<Scalar>(N);
+    atxdat = node->template allocBuffer<Scalar>(2);
+    MV X(node), AX(node), ATX(node);
+    X.initializeValues(  2,1,  xdat,2);
+    AX.initializeValues( N,1, axdat,N);
+    ATX.initializeValues(2,1,atxdat,2);
+#ifdef HAVE_KOKKOS_DEBUG
+    node->sync();
+#endif
+    // AX = A*X
+    dsm.multiply(Teuchos::NO_TRANS,ONE,X,AX);     //  AX = ones()
+    dsm.multiply(Teuchos::TRANS,   ONE,AX,ATX);   // ATX = [-N;N]
+    dsm.multiply(Teuchos::TRANS,  -ONE,AX,ONE,X); // X = [1;2] - [-N;N] = [1+N;2-N]
+#ifdef HAVE_KOKKOS_DEBUG
+    node->sync();
+#endif
+    // AX should be all ones
+    {
+      ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
+      Scalar err = ZERO;
+      for (int i=0; i<N; ++i) {
+        err += ST::magnitude(ONE - axview[i]);
+      }
+      TEST_EQUALITY_CONST(err, ZERO);
+    }
+    // ATX should be [-N;N]
+    {
+      ArrayRCP<const Scalar> atxview = node->template viewBuffer<Scalar>(2,atxdat);
+      TEST_COMPARE_FLOATING_ARRAYS( atxview, tuple<Scalar>(-N,N), ZERO );
+    }
+    // X should be [1+N;2-N]
+    {
+      ArrayRCP<const Scalar> xview = node->template viewBuffer<Scalar>(2,xdat);
+      TEST_COMPARE_FLOATING_ARRAYS( xview, tuple<Scalar>(1+N,2-N), ZERO );
+    }
+  }
+
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseMultiply, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
@@ -200,8 +293,9 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
                 ZERO = ST::zero();
+    out << "Testing sparse ops " << Teuchos::TypeNameTraits<DSM>::name() << std::endl;
     // generate tridiagonal matrix:
-    // [ 2 -1                   ]
+    // [ 1 -1                   ]
     // [-1  3  -1               ]
     // [   -1   3  -1           ]
     // [                        ]
@@ -212,7 +306,7 @@ namespace {
     RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for ptrs, indices and values
     const Ordinal totalNNZ = 3*N - 2;
-    ArrayRCP<Ordinal> ptrs(N+1);
+    ArrayRCP<size_t>  ptrs(N+1);
     ArrayRCP<Ordinal> inds(totalNNZ);
     ArrayRCP<Scalar>  vals(totalNNZ);
     // fill the buffers on the host
@@ -297,6 +391,7 @@ namespace {
 
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,        SparseMultiply, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,     TransposeMultiply, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, NodeTest,       ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, ResubmitMatrix, ORDINAL, SCALAR, NODE )
 
@@ -336,21 +431,25 @@ namespace {
 
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
-#ifdef TEST_CUSPARSE_FLOAT
+#ifdef TEST_CUDA_FLOAT
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, float, ThrustGPUNode )
 #endif
-#ifdef TEST_CUSPARSE_DOUBLE
+#ifdef TEST_CUDA_DOUBLE
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, double, ThrustGPUNode )
 #endif
-#ifdef TEST_CUSPARSE_COMPLEX_FLOAT
+#ifdef TEST_CUDA_COMPLEX_FLOAT
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexFloat, ThrustGPUNode )
 #endif
-#ifdef TEST_CUSPARSE_COMPLEX_DOUBLE
+#ifdef TEST_CUDA_COMPLEX_DOUBLE
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, ThrustGPUNode )
 #endif
 
-     UNIT_TEST_GROUP_ORDINAL(int)
-     typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
+#ifdef HAVE_KOKKOS_CUSP 
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( short, float, ThrustGPUNode )
+#endif
+
+UNIT_TEST_GROUP_ORDINAL(int)
+typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
 
 }
 

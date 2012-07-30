@@ -1,4 +1,3 @@
-/*
 //@HEADER
 // ************************************************************************
 // 
@@ -39,51 +38,25 @@
 // 
 // ************************************************************************
 //@HEADER
-*/
 
-// include for ThrustGPUNode method implementations
-#include "Kokkos_ThrustGPUNode.cuh"
+#ifndef KOKKOS_CUSPWRAPPERS_HPP
+#define KOKKOS_CUSPWRAPPERS_HPP
 
-// includes for all operators
-#include "TestOps.hpp"
-#include <thrust/generate.h>
-#include <thrust/reduce.h>
-#include <thrust/device_vector.h>
+namespace Kokkos {
+  namespace Cuspdetails {
 
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<int>    )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<float>  )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( NullOp         )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<int>     )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<float>   )
+    template <class Offset, class Ordinal, class ScalarA, class ScalarX, class ScalarY> 
+    void cuspCrsMultiply(Ordinal numRows, Ordinal numCols, Ordinal nnz, 
+                         const Offset *rowptrs, const Ordinal *colinds, const ScalarA *values, 
+                         Ordinal numRHS, const ScalarX *x, Ordinal xstride, ScalarY *y, Ordinal ystride);
 
-struct thrust_test_constant_float
-{
-  __host__ __device__
-  float operator()() {return 1.0f;}
-};
-struct thrust_test_constant_int
-{
-  __host__ __device__
-  int operator()() {return 1;}
-};
+    template <class Offset, class Ordinal, class Scalar>
+    void cuspCrsTranspose(Ordinal numRows, Ordinal numCols, Ordinal nnz, 
+                          const Offset *rowptrs,   const Ordinal *colinds,   const Scalar *values, 
+                          Offset *rowptrs_t,       Ordinal *colinds_t,       Scalar *values_t);
 
-void thrust_float_alloc(int N, thrust::device_vector<float> &buff) {
-  buff.resize(N);
-}
-void thrust_int_alloc(int N, thrust::device_vector<int> &buff) {
-  buff.resize(N);
-}
 
-void thrust_float_init(thrust::device_vector<float> &buff) {
-  thrust::generate( buff.begin(), buff.end(), thrust_test_constant_float() );
-}
-void thrust_int_init(thrust::device_vector<int> &buff) {
-  thrust::generate( buff.begin(), buff.end(), thrust_test_constant_int() );
-}
+  } // end namespace cuspdetails
+} // end namespace kokkos
 
-float thrust_float_sum(const thrust::device_vector<float> &buff) {
-  return thrust::reduce( buff.begin(), buff.end(), 0.0f, thrust::plus<float>() );
-}
-int thrust_int_sum(const thrust::device_vector<int> &buff) {
-  return thrust::reduce( buff.begin(), buff.end(), 0,    thrust::plus<int>() );
-}
+#endif // KOKKOS_CUSPWRAPPERS_HPP

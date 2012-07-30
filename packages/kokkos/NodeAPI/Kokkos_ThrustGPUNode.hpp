@@ -44,6 +44,7 @@
 
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "Kokkos_CUDANodeMemoryModel.hpp"
+#include "Kokkos_ThrustGPUWrappers.hpp"
 
 namespace Kokkos {
 
@@ -87,6 +88,18 @@ class ThrustGPUNode : public CUDANodeMemoryModel {
   private:
     int totalMem_;
 };
+
+template <class WDP>
+void ThrustGPUNode::parallel_for(int begin, int end, WDP wd) {
+  ThrustGPUNodeDetails::parallel_for(begin,end,wd);
+}
+
+template <class WDP>
+typename WDP::ReductionType
+ThrustGPUNode::parallel_reduce(int begin, int end, WDP wd) 
+{
+  return ThrustGPUNodeDetails::parallel_reduce(begin,end,wd);
+}
 
 } // namespace Kokkos
 
