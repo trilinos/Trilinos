@@ -1217,7 +1217,7 @@ def emitForLoopTwoFor (defDict, alpha, beta, indent=0):
 	    indent = indent + 2
             ind = ' '*indent
             # Begin the inner for loop.
-            s += ind + ' '*2 + 'for (Ordinal k = ptr[${loopIndex}]; k < ptr[${loopIndex}+1]; ++k) {\n'
+            s += ind + ' '*2 + 'for (size_t k = ptr[${loopIndex}]; k < ptr[${loopIndex}+1]; ++k) {\n'
             # Fetch the current sparse matrix value and {row, column} index.
             s += ind + ' '*4 + 'const MatrixScalar A_ij = ${getMatVal};\n' + \
                 ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n'

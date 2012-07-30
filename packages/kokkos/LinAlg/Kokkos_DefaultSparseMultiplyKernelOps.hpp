@@ -102,12 +102,12 @@ namespace Kokkos {
     //
     // mfh (27 Jul 2012): Reviewed and briefly edited changes and comments.
     inline KERNEL_PREFIX void execute(size_t row) {
-      const OffsetType start = ptrs[row];
-      const OffsetType end = ptrs[row+1];
+      const OffsetType start = offs[row];
+      const OffsetType end = offs[row+1];
 
       // CrT: Unroll by 4 over numRHS; specialize for numRHS <= 4.
       if (numRHS > 4) {
-        OffsetType j = 0;
+        Ordinal j = 0;
         if (alpha == Teuchos::ScalarTraits<RangeScalar>::one()) {
           // Strip-mined portion of the loop over RHS vectors.
           for (; j < numRHS - 3; j+=4) {

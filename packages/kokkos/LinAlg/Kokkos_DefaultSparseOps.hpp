@@ -463,8 +463,11 @@ namespace Kokkos {
                 << "isEmpty_ = " << isEmpty_ << endl
                 << "tri_uplo_ = " << triUplo << endl
                 << "unit_diag_ = " << unitDiag << endl;
-            if (ptrs_.size() > 0) {
-              out << "numEntries = " << ptrs_[ptrs_.size()-1] << endl;
+            if (big_ptrs_.size() > 0) {
+              out << "numEntries = " << big_ptrs_[big_ptrs_.size()-1] << endl;
+            }
+            else if (sml_ptrs_.size() > 0) {
+              out << "numEntries = " << sml_ptrs_[sml_ptrs_.size()-1] << endl;
             }
             else {
               out << "numEntries = 0" << endl;
@@ -473,9 +476,15 @@ namespace Kokkos {
             if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
               // Only print out all the sparse matrix's data in
               // extreme verbosity mode.
-              out << "ptrs_ = [";
-              std::copy (ptrs_.begin(), ptrs_.end(),
-                         std::ostream_iterator<Ordinal> (out, " "));
+              out << "ptrs = [";
+              if (big_ptrs_.size() > 0) {
+                std::copy (big_ptrs_.begin(), big_ptrs_.end(),
+                           std::ostream_iterator<Ordinal> (out, " "));
+              }
+              else {
+                std::copy (sml_ptrs_.begin(), sml_ptrs_.end(),
+                           std::ostream_iterator<Ordinal> (out, " "));
+              }
               out << "]" << endl << "inds_ = [";
               std::copy (inds_.begin(), inds_.end(),
                          std::ostream_iterator<Ordinal> (out, " "));

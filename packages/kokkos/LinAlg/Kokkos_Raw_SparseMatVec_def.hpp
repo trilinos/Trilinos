@@ -202,7 +202,7 @@ matVecCscColMajorForfor4Unrolled (
       for ( ; c < numVecs; ++c) {
         const DomainScalar tmp = X[j + c*colStrideX];
 
-        for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
+        for (size_t k = ptr[j]; k < ptr[j+1]; ++k) {
           const MatrixScalar A_ij = val[k];
           const Ordinal i = ind[k];
           Y[i + c*colStrideY] += A_ij * tmp;
@@ -233,7 +233,7 @@ matVecCscColMajorForfor4Unrolled (
       for ( ; c < numVecs; ++c) {
         const DomainScalar tmp = X[j + c*colStrideX];
 
-        for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
+        for (size_t k = ptr[j]; k < ptr[j+1]; ++k) {
           const MatrixScalar A_ij = val[k];
           const Ordinal i = ind[k];
           Y[i + c*colStrideY] -= A_ij * tmp;
@@ -264,7 +264,7 @@ matVecCscColMajorForfor4Unrolled (
       for ( ; c < numVecs; ++c) {
         const DomainScalar tmp = X[j + c*colStrideX];
 
-        for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
+        for (size_t k = ptr[j]; k < ptr[j+1]; ++k) {
           const MatrixScalar A_ij = val[k];
           const Ordinal i = ind[k];
           Y[i + c*colStrideY] += alpha * A_ij * tmp;
@@ -2055,7 +2055,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -2093,7 +2093,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -2131,7 +2131,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -2169,7 +2169,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -2209,7 +2209,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -2247,7 +2247,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -2285,7 +2285,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -2323,7 +2323,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -2363,7 +2363,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -2401,7 +2401,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -2439,7 +2439,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -2477,7 +2477,7 @@ matVecCsrColMajorForfor4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -2565,7 +2565,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -2604,7 +2604,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -2643,7 +2643,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -2682,7 +2682,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -2723,7 +2723,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -2762,7 +2762,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -2801,7 +2801,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -2840,7 +2840,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -2881,7 +2881,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -2920,7 +2920,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -2959,7 +2959,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -2998,7 +2998,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = val[k];
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -8768,7 +8768,7 @@ matVecCscColMajorForforConj4Unrolled (
       for ( ; c < numVecs; ++c) {
         const DomainScalar tmp = X[j + c*colStrideX];
 
-        for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
+        for (size_t k = ptr[j]; k < ptr[j+1]; ++k) {
           const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
           const Ordinal i = ind[k];
           Y[i + c*colStrideY] += A_ij * tmp;
@@ -8799,7 +8799,7 @@ matVecCscColMajorForforConj4Unrolled (
       for ( ; c < numVecs; ++c) {
         const DomainScalar tmp = X[j + c*colStrideX];
 
-        for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
+        for (size_t k = ptr[j]; k < ptr[j+1]; ++k) {
           const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
           const Ordinal i = ind[k];
           Y[i + c*colStrideY] -= A_ij * tmp;
@@ -8830,7 +8830,7 @@ matVecCscColMajorForforConj4Unrolled (
       for ( ; c < numVecs; ++c) {
         const DomainScalar tmp = X[j + c*colStrideX];
 
-        for (Ordinal k = ptr[j]; k < ptr[j+1]; ++k) {
+        for (size_t k = ptr[j]; k < ptr[j+1]; ++k) {
           const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
           const Ordinal i = ind[k];
           Y[i + c*colStrideY] += alpha * A_ij * tmp;
@@ -10621,7 +10621,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -10659,7 +10659,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -10697,7 +10697,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -10735,7 +10735,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -10775,7 +10775,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -10813,7 +10813,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -10851,7 +10851,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -10889,7 +10889,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -10929,7 +10929,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -10967,7 +10967,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -11005,7 +11005,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -11043,7 +11043,7 @@ matVecCsrColMajorForforConj4Unrolled (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -11131,7 +11131,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -11170,7 +11170,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -11209,7 +11209,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -11248,7 +11248,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += A_ij * X[j + c*colStrideX];
@@ -11289,7 +11289,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -11328,7 +11328,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -11367,7 +11367,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -11406,7 +11406,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp -= A_ij * X[j + c*colStrideX];
@@ -11447,7 +11447,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = -Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -11486,7 +11486,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = STS::zero();
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -11525,7 +11525,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
@@ -11564,7 +11564,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
         for ( ; c < numVecs; ++c) {
           RangeScalar tmp = beta * Y[i + c*colStrideY];
 
-          for (Ordinal k = ptr[i]; k < ptr[i+1]; ++k) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
             const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
             const Ordinal j = ind[k];
             tmp += alpha * A_ij * X[j + c*colStrideX];
