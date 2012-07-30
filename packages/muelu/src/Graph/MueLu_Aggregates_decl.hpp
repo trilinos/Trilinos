@@ -47,7 +47,6 @@ namespace MueLu {
   public:
      
     Aggregates(const Graph & graph);
-    Aggregates(Aggregates & a); // special copy constructor (that skips amalgamation information)
     virtual ~Aggregates() { }
      
     LO GetNumAggregates() const           { return nAggregates_;        } // rename GetNumLocal ?

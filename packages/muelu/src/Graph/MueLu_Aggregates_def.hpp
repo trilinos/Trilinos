@@ -26,21 +26,6 @@ namespace MueLu {
       isRoot_[i] = false;
   }
 
-  // special copy constructor, does not handle amalgamation information!
-  // TODO remove this constructor
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(Aggregates & a) {
-    nAggregates_  = a.GetNumAggregates();
-
-    vertex2AggId_ = a.GetVertex2AggId();
-    procWinner_   = a.GetProcWinner();
-
-    isRoot_ = Teuchos::ArrayRCP<bool>(vertex2AggId_->getLocalLength());
-    for (size_t i=0; i < vertex2AggId_->getLocalLength(); i++)
-          isRoot_[i] = a.IsRoot(i);
-
-  }
-
   ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ArrayRCP<LocalOrdinal>  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateSizes() const {
