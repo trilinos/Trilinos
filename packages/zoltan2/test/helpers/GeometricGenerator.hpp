@@ -535,6 +535,12 @@ public:
     //yshift = tmp / this->along_X;
     //zshift = before / (this->along_X * this->along_Y);
 
+    if(this->processCnt == 0){
+      this->zshift = this->assignedPrevious / (along_X * along_Y);
+      this->yshift = (this->assignedPrevious % (along_X * along_Y)) / along_X;
+      this->xshift = (this->assignedPrevious % (along_X * along_Y)) % along_X;
+      ++this->processCnt;
+    }
 
     CoordinatePoint <T> p;
     p.x = xshift * this->xstep + leftMostx;
