@@ -327,7 +327,6 @@ public:
       points[cnt].z = p.z;
       ++cnt;
     }
-
   }
 
 };
@@ -348,7 +347,7 @@ public:
     return standartDevx;
   }
 
-  CoordinateNormalDistribution(lno_t np_, int dim, CoordinatePoint<T> center_ , T sd_x, T sd_y, T sd_z, int worldSize): CoordinateDistribution<T,lno_t>(np_,dim,0),
+  CoordinateNormalDistribution(lno_t np_, int dim, CoordinatePoint<T> center_ , T sd_x, T sd_y, T sd_z, int worldSize): CoordinateDistribution<T,lno_t>(np_,dim,worldSize),
       standartDevx(sd_x), standartDevy(sd_y), standartDevz(sd_z){
     this->center.x = center_.x;
     this->center.y = center_.y;
@@ -434,7 +433,7 @@ public:
   }
 
 
-  CoordinateUniformDistribution(lno_t np_, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z, int worldSize ): CoordinateDistribution<T,lno_t>(np_,dim,0),
+  CoordinateUniformDistribution(lno_t np_, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z, int worldSize ): CoordinateDistribution<T,lno_t>(np_,dim,worldSize),
       leftMostx(l_x), rightMostx(r_x), leftMosty(l_y), rightMosty(r_y), leftMostz(l_z), rightMostz(r_z){}
 
   virtual ~CoordinateUniformDistribution(){};
@@ -534,7 +533,7 @@ public:
     //xshift  = tmp % this->along_X;
     //yshift = tmp / this->along_X;
     //zshift = before / (this->along_X * this->along_Y);
-
+/*
     if(this->processCnt == 0){
       this->zshift = this->assignedPrevious / (along_X * along_Y);
       this->yshift = (this->assignedPrevious % (along_X * along_Y)) / along_X;
@@ -554,6 +553,31 @@ public:
       if(yshift == this->along_Y){
         ++zshift;
         yshift = 0;
+      }
+
+    }
+ */
+    if(this->processCnt == 0){
+      this->xshift = this->assignedPrevious / (along_Z * along_Y);
+      //this->yshift = (this->assignedPrevious % (along_X * along_Y)) / along_X;
+      this->zshift = (this->assignedPrevious % (along_Z * along_Y)) / along_Y;
+      //this->xshift = (this->assignedPrevious % (along_X * along_Y)) % along_X;
+      this->yshift = (this->assignedPrevious % (along_Z * along_Y)) % along_Y;
+      ++this->processCnt;
+    }
+
+    CoordinatePoint <T> p;
+    p.x = xshift * this->xstep + leftMostx;
+    p.y = yshift * this->ystep + leftMosty;
+    p.z = zshift * this->zstep + leftMostz;
+
+    ++yshift;
+    if(yshift == this->along_Y){
+      ++zshift;
+      yshift = 0;
+      if(zshift == this->along_Z){
+        ++xshift;
+        zshift = 0;
       }
 
     }
@@ -1316,6 +1340,7 @@ public:
     this->numLocalCoords = 0;
     srand (myRank);
     for (int i = 0; i < distributionCount; ++i){
+
       lno_t requestedPointCount = lno_t(this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank]);
       if (myRank < this->coordinateDistributions[i]->numPoints % worldSize){
         requestedPointCount += 1;
