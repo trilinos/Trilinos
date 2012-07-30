@@ -11,7 +11,9 @@
 
 #include "mpi.h"
 
-#define PRINT(a) do { std::cout << a << std::endl; } while(0)
+#define DEBUG_PRINT 0
+#define PRINT(a) do { if (DEBUG_PRINT) std::cout << a << std::endl; } while(0)
+#define PRINT_1(a) do { std::cout << a << std::endl; } while(0)
 
 namespace MESQUITE_NS {
 
@@ -181,7 +183,7 @@ namespace stk {
       m_total_metric = metric_check;
       if (check_convergence() || metric_check == 0.0)
         {
-          PRINT( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 );
+          PRINT_1( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 );
           //update_node_positions
           return total_metric(mesh,0.0,1.0, total_valid);
         }
@@ -227,14 +229,14 @@ namespace stk {
         //if (metric > sigma*metric_0)
         if (!converged)
           {
-            PRINT( "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor );
+            PRINT_1( "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor );
             do_print_elem_val = true;
             metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
             metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
             do_print_elem_val = false;
-            PRINT( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
+            PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
             metric_1 = total_metric(mesh, -1.e-6, 1.0, total_valid);
-            PRINT( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
+            PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
 
             throw std::runtime_error("can't reduce metric");
           }
@@ -264,7 +266,7 @@ namespace stk {
 
       /// x = x + alpha*d
       update_node_positions(mesh, alpha);
-      PRINT( "tmp srk iter= "<< m_iter << " dmax= " << m_dmax );
+      PRINT( "tmp srk iter= "<< m_iter << " dmax= " << m_dmax << " alpha= " << alpha);
 
       /// f'(x)
       get_gradient(mesh, domain);
