@@ -64,16 +64,16 @@
 
 namespace Kokkos {
 
-  /// \class SeqCrsGraph
+  /// \class AltCrsGraph
   /// \brief Local sparse graph in compressed sparse row format;
   ///   suitable for host-based Kokkos Nodes.
   template <class Ordinal,class Node>
-  class SeqCrsGraph {
+  class AltCrsGraph {
   public:
     typedef Ordinal ordinal_type;
     typedef Node node_type;
 
-    SeqCrsGraph (Ordinal numRows, Ordinal numCols,
+    AltCrsGraph (Ordinal numRows, Ordinal numCols,
                  const Teuchos::RCP<Node>& node,
                  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -138,23 +138,23 @@ namespace Kokkos {
   };
 
 
-  /// \class SeqCrsMatrix
+  /// \class AltCrsMatrix
   /// \brief Local sparse matrix in compressed sparse row format;
   ///   suitable for host-based Kokkos Nodes.
   ///
-  /// \note Tied to a particular SeqCrsGraph instance that defines the
+  /// \note Tied to a particular AltCrsGraph instance that defines the
   ///   structure of the sparse matrix.
   template <class Scalar,
             class Ordinal,
             class Node>
-  class SeqCrsMatrix {
+  class AltCrsMatrix {
   public:
     typedef Scalar scalar_type;
     typedef Ordinal ordinal_type;
     typedef Node node_type;
-    typedef SeqCrsGraph<Ordinal,Node> graph_type;
+    typedef AltCrsGraph<Ordinal,Node> graph_type;
 
-    SeqCrsMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> > &graph,
+    AltCrsMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> > &graph,
                   const Teuchos::RCP<Teuchos::ParameterList> &params);
 
     void setValues (const Teuchos::ArrayRCP<const Scalar>& val);
@@ -174,8 +174,8 @@ namespace Kokkos {
   };
 
   template <class Ordinal, class Node>
-  SeqCrsGraph<Ordinal,Node>::
-  SeqCrsGraph (Ordinal numRows, Ordinal numCols,
+  AltCrsGraph<Ordinal,Node>::
+  AltCrsGraph (Ordinal numRows, Ordinal numCols,
                const Teuchos::RCP<Node> &node,
                const Teuchos::RCP<Teuchos::ParameterList> &params) :
     node_ (node),
@@ -198,7 +198,7 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void
-  SeqCrsGraph<Ordinal,Node>::
+  AltCrsGraph<Ordinal,Node>::
   setStructure (const Teuchos::ArrayRCP<const Ordinal> &ptr,
                 const Teuchos::ArrayRCP<const Ordinal> &ind)
   {
@@ -265,7 +265,7 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void
-  SeqCrsGraph<Ordinal,Node>::
+  AltCrsGraph<Ordinal,Node>::
   setMatDesc (Teuchos::EUplo uplo, Teuchos::EDiag diag)
   {
     tri_uplo_ = uplo;
@@ -274,7 +274,7 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void
-  SeqCrsGraph<Ordinal,Node>::
+  AltCrsGraph<Ordinal,Node>::
   getMatDesc (Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const
   {
     uplo = tri_uplo_;
@@ -282,8 +282,8 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  SeqCrsMatrix<Scalar,Ordinal,Node>::
-  SeqCrsMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> >& graph,
+  AltCrsMatrix<Scalar,Ordinal,Node>::
+  AltCrsMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> >& graph,
                 const Teuchos::RCP<Teuchos::ParameterList>& params) :
     graph_ (graph),
     isInitialized_ (false)
@@ -298,7 +298,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void
-  SeqCrsMatrix<Scalar,Ordinal,Node>::
+  AltCrsMatrix<Scalar,Ordinal,Node>::
   setValues (const Teuchos::ArrayRCP<const Scalar> &val)
   {
     std::string tfecfFuncName("setValues(val)");
@@ -353,13 +353,13 @@ namespace Kokkos {
     //! Typedef for local graph class
     template <class O, class N>
     struct graph {
-      typedef SeqCrsGraph<O,N> graph_type;
+      typedef AltCrsGraph<O,N> graph_type;
     };
 
     //! Typedef for local matrix class
     template <class S, class O, class N>
     struct matrix {
-      typedef SeqCrsMatrix<S,O,N> matrix_type;
+      typedef AltCrsMatrix<S,O,N> matrix_type;
     };
 
     /// \brief Sparse operations type for a different scalar type.
@@ -560,13 +560,13 @@ namespace Kokkos {
     static void
     finalizeGraph (Teuchos::EUplo uplo,
                    Teuchos::EDiag diag,
-                   SeqCrsGraph<Ordinal, Node>& graph,
+                   AltCrsGraph<Ordinal, Node>& graph,
                    const Teuchos::RCP<Teuchos::ParameterList> &params);
 
     //! Finalize the matrix of an already-finalized graph.
     static void
-    finalizeMatrix (const SeqCrsGraph<Ordinal, Node>& graph,
-                    SeqCrsMatrix<Scalar, Ordinal, Node>& matrix,
+    finalizeMatrix (const AltCrsGraph<Ordinal, Node>& graph,
+                    AltCrsMatrix<Scalar, Ordinal, Node>& matrix,
                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Finalize a graph and a matrix.
@@ -580,14 +580,14 @@ namespace Kokkos {
     static void
     finalizeGraphAndMatrix (Teuchos::EUplo uplo,
                             Teuchos::EDiag diag,
-                            SeqCrsGraph<Ordinal, Node>& graph,
-                            SeqCrsMatrix<Scalar, Ordinal, Node>& matrix,
+                            AltCrsGraph<Ordinal, Node>& graph,
+                            AltCrsMatrix<Scalar, Ordinal, Node>& matrix,
                             const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Initialize sparse operations with a graph and matrix.
     void
-    setGraphAndMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> > &graph,
-                       const Teuchos::RCP<const SeqCrsMatrix<Scalar,Ordinal,Node> > &matrix);
+    setGraphAndMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> > &graph,
+                       const Teuchos::RCP<const AltCrsMatrix<Scalar,Ordinal,Node> > &matrix);
 
     //@}
     //! @name Computational methods
@@ -760,7 +760,7 @@ namespace Kokkos {
   AltSparseOps<Scalar,Ordinal,Node>::
   finalizeGraph (Teuchos::EUplo uplo,
                  Teuchos::EDiag diag,
-                 SeqCrsGraph<Ordinal,Node>& graph,
+                 AltCrsGraph<Ordinal,Node>& graph,
                  const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -773,8 +773,8 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void
   AltSparseOps<Scalar,Ordinal,Node>::
-  finalizeMatrix (const SeqCrsGraph<Ordinal,Node> &graph,
-                  SeqCrsMatrix<Scalar,Ordinal,Node> &matrix,
+  finalizeMatrix (const AltCrsGraph<Ordinal,Node> &graph,
+                  AltCrsMatrix<Scalar,Ordinal,Node> &matrix,
                   const Teuchos::RCP<Teuchos::ParameterList> &params)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -789,8 +789,8 @@ namespace Kokkos {
   AltSparseOps<Scalar,Ordinal,Node>::
   finalizeGraphAndMatrix (Teuchos::EUplo uplo,
                           Teuchos::EDiag diag,
-                          SeqCrsGraph<Ordinal,Node>& graph,
-                          SeqCrsMatrix<Scalar,Ordinal,Node>& matrix,
+                          AltCrsGraph<Ordinal,Node>& graph,
+                          AltCrsMatrix<Scalar,Ordinal,Node>& matrix,
                           const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -916,8 +916,8 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void
   AltSparseOps<Scalar,Ordinal,Node>::
-  setGraphAndMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> > &opgraph,
-                     const Teuchos::RCP<const SeqCrsMatrix<Scalar,Ordinal,Node> > &opmatrix)
+  setGraphAndMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> > &opgraph,
+                     const Teuchos::RCP<const AltCrsMatrix<Scalar,Ordinal,Node> > &opmatrix)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::arcp;
