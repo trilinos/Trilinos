@@ -162,7 +162,7 @@ namespace MueLu {
     if (vectorName_ == "Coordinates") {
       GetOStream(Runtime0,0) << "averaging coordinates" << std::endl;
       size_t numLocalRows = transferOp->getNodeNumRows();
-      Array<SC> numEntriesPerRow(numLocalRows);
+      Array<size_t> numEntriesPerRow(numLocalRows);
       for (size_t i=0; i<numLocalRows; ++i) {
         numEntriesPerRow.push_back(transferOp->getNumEntriesInLocalRow(i));
         if (numEntriesPerRow[i] == 0) numEntriesPerRow[i] = 1;
