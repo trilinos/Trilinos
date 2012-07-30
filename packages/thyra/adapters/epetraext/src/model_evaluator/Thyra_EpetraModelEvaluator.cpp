@@ -586,6 +586,11 @@ void EpetraModelEvaluator::evalModelImpl(
   // must be set before these can be translated into Epetra input arguments.
   inArgs.setArgs(inArgs_in);
 
+  // This is a special exception: see evalModel() in Thyra::ME documentation
+  if (is_null(inArgs_in.get_x_dot())) {
+    inArgs.set_x_dot(Teuchos::null);
+  }
+
   // Print the header and the values of the inArgs and outArgs objects!
   typedef double Scalar; // Needed for below macro!
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
