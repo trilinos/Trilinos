@@ -188,7 +188,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
     /*! @brief Get Operator Diagonal
      */
-   static RCP<Operator> BuildMatrixDiagonal(RCP<Operator> const &A); //BuildMatrixDiagonal()
+    static RCP<Operator> BuildMatrixDiagonal(RCP<Operator> const &A); //BuildMatrixDiagonal()
 
     /*! @brief Extract Operator Diagonal
 
@@ -209,10 +209,12 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
      */
    static void ScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true); //ScaleMatrix()
 
+#ifdef UNUSED // and does not work with SC=complex
     /*! @brief Get reciprocal of Operator diagonal
      */
 
    static RCP<Operator> BuildMatrixInverseDiagonal(RCP<Operator> const &A); //BuildMatrixInverseDiagonal()
+#endif
 
    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 

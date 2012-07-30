@@ -570,7 +570,6 @@ if (mypid == 0)
 #endif
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildMatrixDiagonal(RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &A)
   {
@@ -608,7 +607,6 @@ if (mypid == 0)
     return D;
 
   } //BuildMatrixDiagonal()
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(RCP<Operator> const &A)
@@ -658,7 +656,7 @@ if (mypid == 0)
 #endif // HAVE_MUELU_TPETRA
   } //ScaleMatrix()
 
-
+#ifdef UNUSED // and does not work with SC=complex
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildMatrixInverseDiagonal(RCP<Operator> const &A)
   {
@@ -695,6 +693,7 @@ if (mypid == 0)
     return D;
 
   } //BuildMatrixInverseDiagonal()
+#endif
 
   //   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
