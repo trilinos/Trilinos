@@ -283,11 +283,11 @@ int main(int argc, char **argv)
     std::cout << "z.mean()       = " << z.mean() << std::endl
 	      << "z2.mean()      = " << z2.mean() << std::endl
 	      << "mean error     = " 
-	      << std::abs(z.mean()-z2.mean()) << std::endl
+	      << std::abs(z.mean()-z2.mean())/std::abs(z.mean()) << std::endl
 	      << "z.std_dev()    = " << z.standard_deviation() << std::endl
 	      << "z2.std_dev()   = " << z2.standard_deviation() << std::endl
 	      << "std_dev error  = " 
-	      << std::abs(z.standard_deviation()-z2.standard_deviation()) 
+	      << std::abs(z.standard_deviation()-z2.standard_deviation())/std::abs(z.standard_deviation())
 	      << std::endl
 	      << "z coeff error  = " << err_z << std::endl;
     
