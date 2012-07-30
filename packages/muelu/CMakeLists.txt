@@ -87,6 +87,20 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
 ENDIF()
 
+# HAVE_MUELU_COMPLEX=ON iff:
+# - Teuchos_ENABLE_COMPLEX=ON and Explicit Instantiation = OFF
+# or
+# - HAVE_MUELU_INST_COMPLEX_INT_INT
+#
+# TODO: do we want also a MueLu_ENABLE_Complex option that turns ON automatically what we need?
+IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX) 
+    OR 
+    (HAVE_MUELU_INST_COMPLEX_INT_INT))
+  SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX ON)
+ELSE()
+  SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
+ENDIF()
+
 #
 # Add directory xpetra/cmake/ to the cmake module search path
 #
