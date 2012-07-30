@@ -80,7 +80,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
     // some internal variables
-    LocalOrdinal nLoca  lAggregates = 0;   // number of local aggregates on current proc
+    LocalOrdinal nLocalAggregates = 0;   // number of local aggregates on current proc
     std::queue<LocalOrdinal> graph_ordering_inodes; // inodes for graph ordering
     LocalOrdinal iNode2 = 0;        // local iteration variable
     LocalOrdinal iNode1  = 0;        // current node
