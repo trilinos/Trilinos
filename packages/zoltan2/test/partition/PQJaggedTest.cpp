@@ -559,7 +559,6 @@ int main(int argc, char *argv[])
   }
 
   catch(char const* s){
-
     if (rank == 0)
     cerr << s << endl;
   }
