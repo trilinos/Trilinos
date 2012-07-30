@@ -213,11 +213,11 @@ namespace MueLu {
         GO globalNRows    = 0;
         for(LO i=0; i<nRows; ++i)
           if(aggStat_[i] == SELECTED) localSelected++;
-        sumAll(comm, localSelected, globalSelected);
-        sumAll(comm, nRows, globalNRows);
+        sumAll(comm, (GO) localSelected, globalSelected);
+        sumAll(comm, (GO) nRows, globalNRows);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 1: Nodes aggregated = " << globalSelected << " out of " << globalNRows << " nodes" << std::endl;
         GO nAggregatesGlobal = 0;
-        sumAll(comm, nLocalAggregates, nAggregatesGlobal);
+        sumAll(comm, (GO) nLocalAggregates, nAggregatesGlobal);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 1: Total aggregates = " << nAggregatesGlobal << std::endl;
       }
     }
@@ -227,11 +227,11 @@ namespace MueLu {
     LO nLocalBdry        = 0;
     LO nLocalNotSelected = 0;
     LO nLocalReady       = 0;
-    for (LO iNode = 0; iNode < nRows; iNode++) {
-      if      (aggStat_[iNode] == SELECTED) nLocalSelected++;
-      else if (aggStat_[iNode] == BDRY)     nLocalBdry++;
-      else if (aggStat_[iNode] == NOTSEL)   nLocalNotSelected++;
-      else if (aggStat_[iNode] == READY)    nLocalReady++;
+    for (LO i = 0; i < nRows; i++) {
+      if      (aggStat_[i] == SELECTED) nLocalSelected++;
+      else if (aggStat_[i] == BDRY)     nLocalBdry++;
+      else if (aggStat_[i] == NOTSEL)   nLocalNotSelected++;
+      else if (aggStat_[i] == READY)    nLocalReady++;
     }
 
     return nLocalReady + nLocalNotSelected;
@@ -307,8 +307,8 @@ namespace MueLu {
         GO globalNRows    = 0;
         for(LO i=0; i<nRows; ++i)
           if(aggStat_[i] == SELECTED) localSelected++;
-        sumAll(comm, localSelected, globalSelected);
-        sumAll(comm, nRows, globalNRows);
+        sumAll(comm, (GO) localSelected, globalSelected);
+        sumAll(comm, (GO) nRows, globalNRows);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 2 [max_link]: Nodes aggregated = " << globalSelected << " out of " << globalNRows << " nodes" << std::endl;
       }
     }
@@ -392,11 +392,11 @@ namespace MueLu {
         GO globalNRows    = 0;
         for(LO i=0; i<nRows; ++i)
           if(aggStat_[i] == SELECTED) localSelected++;
-        sumAll(comm, localSelected, globalSelected);
-        sumAll(comm, nRows, globalNRows);
+        sumAll(comm, (GO) localSelected, globalSelected);
+        sumAll(comm, (GO) nRows, globalNRows);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 3: Nodes aggregated = " << globalSelected << " out of " << globalNRows << " nodes" << std::endl;
         GO nAggregatesGlobal = 0;
-        sumAll(comm, nLocalAggregates, nAggregatesGlobal);
+        sumAll(comm, (GO) nLocalAggregates, nAggregatesGlobal);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 3: Total aggregates = " << nAggregatesGlobal << std::endl;
       }
     }
@@ -477,11 +477,11 @@ namespace MueLu {
         GO globalNRows    = 0;
         for(LO i=0; i<nRows; ++i)
           if(aggStat_[i] == SELECTED) localSelected++;
-        sumAll(comm, localSelected, globalSelected);
-        sumAll(comm, nRows, globalNRows);
+        sumAll(comm, (GO) localSelected, globalSelected);
+        sumAll(comm, (GO) nRows, globalNRows);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 4: Nodes aggregated = " << globalSelected << " out of " << globalNRows << " nodes" << std::endl;
         GO nAggregatesGlobal = 0;
-        sumAll(comm, nLocalAggregates, nAggregatesGlobal);
+        sumAll(comm, (GO) nLocalAggregates, nAggregatesGlobal);
         GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 4: Total aggregates = " << nAggregatesGlobal << std::endl;
       }
     }
