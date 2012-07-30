@@ -80,16 +80,16 @@ namespace MueLu {
     Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
     // some internal variables
-    LocalOrdinal nLocalAggregates = 0;   // number of local aggregates on current proc
+    LocalOrdinal nLoca  lAggregates = 0;   // number of local aggregates on current proc
     std::queue<LocalOrdinal> graph_ordering_inodes; // inodes for graph ordering
     LocalOrdinal iNode2 = 0;        // local iteration variable
-    LocalOrdinal iNode  = 0;        // current node
+    LocalOrdinal iNode1  = 0;        // current node
 
     // main loop over all local rows of grpah(A)
     while (iNode2 < nRows) {
 
       // pick the next node to aggregate
-      if      (ordering_ == NATURAL) iNode = iNode2++;
+      if      (ordering_ == NATURAL) iNode1 = iNode2++;
       /*else if (ordering_ == RANDOM )*/  // NOT SUPPORTED YET
       else if (ordering_ == GRAPH) {
         // if there are no nodes for graph ordering scheme
@@ -103,18 +103,18 @@ namespace MueLu {
           }
         }
         if(graph_ordering_inodes.size()==0) break; // there's no ready node any more -> end phase 1
-        iNode = graph_ordering_inodes.front(); // take next node from graph ordering queue
+        iNode1 = graph_ordering_inodes.front(); // take next node from graph ordering queue
         graph_ordering_inodes.pop();           // delete this node in list
       }
 
-      // consider iNode only if it is in READY state
-      if(aggStat_[iNode] == READY) {
+      // consider iNode1 only if it is in READY state
+      if(aggStat_[iNode1] == READY) {
         // build new aggregate
         Aggregate ag;
-        ag.list.push_back(iNode);
+        ag.list.push_back(iNode1);
 
         // extract column information from graph for current row on current proc
-        Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
+        Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode1);
         //typename Teuchos::ArrayView<const LocalOrdinal>::size_type nnz = neighOfINode.size();
 
         LocalOrdinal cnt_neighbours = 0;  // number of possible neighbour nodes for current new aggregate
@@ -145,22 +145,22 @@ namespace MueLu {
           (ag.list.size() < (unsigned int) GetMinNodesPerAggregate())) {      // not enough nodes in new aggregate
           // failed to build a new aggregate
           ag.list.clear();
-          aggStat_[iNode] = NOTSEL; // node not valid to be supernode, mark it as NOTSEL
+          aggStat_[iNode1] = NOTSEL; // node not valid to be supernode, mark it as NOTSEL
           if(ordering_ == GRAPH) {
-            // even though the aggregate around iNode is not perfect, we try the ndoes where iNode is connected to
+            // even though the aggregate around iNode1 is not perfect, we try the ndoes where iNode1 is connected to
             // loop over all column indices
             for (typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
               LocalOrdinal index = *it;
-              if(graph.isLocalNeighborVertex(index) && aggStat_[index] == READY) // if node connected to iNode is not aggregated
+              if(graph.isLocalNeighborVertex(index) && aggStat_[index] == READY) // if node connected to iNode1 is not aggregated
                 graph_ordering_inodes.push(index);
             }
           }
         } else {
           // accept new aggregate
-          aggregates.SetIsRoot(iNode);    // mark iNode as root node for new aggregate 'ag'
+          aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
           ag.index = nLocalAggregates++;       // aggregate accepted, increment aggregate counter
-          vertex2AggId[iNode] = ag.index;
-          procWinner[iNode] = graph.GetComm()->getRank();
+          vertex2AggId[iNode1] = ag.index;
+          procWinner[iNode1] = graph.GetComm()->getRank();
           for (unsigned int k=0; k<ag.list.size(); k++) {
             aggStat_[ag.list[k]] = SELECTED;
             vertex2AggId[ag.list[k]] = ag.index;
@@ -177,7 +177,7 @@ namespace MueLu {
         } // end if accept aggs or decline aggs
 
 
-      } // end if aggStat_[iNode] == READY
+      } // end if aggStat_[iNode1] == READY
 
     } // end while
 
