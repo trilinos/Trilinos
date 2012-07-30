@@ -335,7 +335,7 @@ namespace Kokkos {
   ///
   /// While this class is templated on the Kokkos Node type, it does
   /// not use any functionality of the Kokkos Node.
-  template <class Scalar, class Ordinal>
+  template <class Scalar, class Ordinal, class Node>
   class AltSparseOps : public Teuchos::Describable {
   public:
     //! \name Typedefs and structs
