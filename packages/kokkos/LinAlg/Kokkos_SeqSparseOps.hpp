@@ -320,16 +320,23 @@ namespace Kokkos {
     }
   }
 
-  /// \class SeqSparseOps
-  /// \brief Implementation of local sequential sparse matrix-vector multiply
-  ///   and solve routines, for host-based Kokkos Node types.
+  /// \class AltSparseOps
+  /// \brief Alternate implementation of local sparse matrix-vector
+  ///   multiply and solve routines, for host-based Kokkos Node types.
   /// \ingroup kokkos_crs_ops
   ///
   /// \tparam Scalar The type of entries of the sparse matrix.
   /// \tparam Ordinal The type of (local) indices of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
-  template <class Scalar, class Ordinal, class Node>
-  class SeqSparseOps : public Teuchos::Describable {
+  ///
+  /// This class is called AltSparseOps ("alternate sparse
+  /// operations") because the default local sparse operations class
+  /// on host-based Kokkos Nodes is DefaultHostSparseOps.
+  ///
+  /// While this class is templated on the Kokkos Node type, it does
+  /// not use any functionality of the Kokkos Node.
+  template <class Scalar, class Ordinal>
+  class AltSparseOps : public Teuchos::Describable {
   public:
     //! \name Typedefs and structs
     //@{
@@ -341,7 +348,7 @@ namespace Kokkos {
     //! The Kokkos Node type.
     typedef Node    node_type;
     //! The type of this object, the sparse operator object
-    typedef SeqSparseOps<Scalar, Ordinal, Node> sparse_ops_type;
+    typedef AltSparseOps<Scalar, Ordinal, Node> sparse_ops_type;
 
     //! Typedef for local graph class
     template <class O, class N>
@@ -364,13 +371,13 @@ namespace Kokkos {
     /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar
     /// type to the appropriate scalar.
     ///
-    /// This always specifies a specialization of SeqSparseOps,
+    /// This always specifies a specialization of AltSparseOps,
     /// regardless of the scalar type S2.
     ///
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct bind_scalar {
-      typedef SeqSparseOps<S2, Ordinal, Node> other_type;
+      typedef AltSparseOps<S2, Ordinal, Node> other_type;
     };
 
     //@}
@@ -386,7 +393,7 @@ namespace Kokkos {
     /// you must use the constructor that takes a ParameterList.
     ///
     /// \param node [in/out] Kokkos Node instance.
-    SeqSparseOps (const Teuchos::RCP<Node>& node);
+    AltSparseOps (const Teuchos::RCP<Node>& node);
 
     /// \brief Constructor, with custom parameters.
     ///
@@ -402,11 +409,11 @@ namespace Kokkos {
     /// \param params [in/out] Parameters for the solve.  We fill in
     ///   the given ParameterList with its default values, but we
     ///   don't keep it around.  (This saves a bit of memory.)
-    SeqSparseOps (const Teuchos::RCP<Node>& node,
+    AltSparseOps (const Teuchos::RCP<Node>& node,
                   Teuchos::ParameterList& plist);
 
     //! Destructor
-    ~SeqSparseOps();
+    ~AltSparseOps();
 
     /// \brief Get a default ParameterList.
     ///
@@ -415,7 +422,7 @@ namespace Kokkos {
     ///
     /// This is a class (static) method so that you can get the
     /// default ParameterList (with built-in documentation) before
-    /// constructing a SeqSparseOps instance.
+    /// constructing a AltSparseOps instance.
     static Teuchos::RCP<const Teuchos::ParameterList>
     getDefaultParameters ()
     {
@@ -424,7 +431,7 @@ namespace Kokkos {
       using Teuchos::RCP;
       using Teuchos::rcp_const_cast;
 
-      RCP<ParameterList> plist = parameterList ("SeqSparseOps");
+      RCP<ParameterList> plist = parameterList ("AltSparseOps");
       setDefaultParameters (*plist);
       return rcp_const_cast<const ParameterList> (plist);
     }
@@ -437,7 +444,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os <<  "Kokkos::SeqSparseOps<"
+      os <<  "Kokkos::AltSparseOps<"
          << "Scalar=" << TypeNameTraits<Scalar>::name()
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -725,7 +732,7 @@ namespace Kokkos {
     setDefaultUnrollParameter (Teuchos::ParameterList& plist);
 
     //! Copy constructor (protected and unimplemented)
-    SeqSparseOps (const SeqSparseOps& source);
+    AltSparseOps (const AltSparseOps& source);
 
     //! The Kokkos Node instance given to this object's constructor.
     Teuchos::RCP<Node> node_;
@@ -750,7 +757,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   finalizeGraph (Teuchos::EUplo uplo,
                  Teuchos::EDiag diag,
                  SeqCrsGraph<Ordinal,Node>& graph,
@@ -758,28 +765,28 @@ namespace Kokkos {
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph.isInitialized(), std::runtime_error,
-      "Kokkos::SeqSparseOps::finalizeGraph: Graph has not yet been initialized."
+      "Kokkos::AltSparseOps::finalizeGraph: Graph has not yet been initialized."
     );
     graph.setMatDesc (uplo, diag);
   }
 
   template <class Scalar, class Ordinal, class Node>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   finalizeMatrix (const SeqCrsGraph<Ordinal,Node> &graph,
                   SeqCrsMatrix<Scalar,Ordinal,Node> &matrix,
                   const Teuchos::RCP<Teuchos::ParameterList> &params)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! matrix.isInitialized(), std::runtime_error,
-      "Kokkos::SeqSparseOps::finalizeMatrix(graph,matrix,params): "
+      "Kokkos::AltSparseOps::finalizeMatrix(graph,matrix,params): "
       "Matrix has not yet been initialized."
     );
   }
 
   template <class Scalar, class Ordinal, class Node>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   finalizeGraphAndMatrix (Teuchos::EUplo uplo,
                           Teuchos::EDiag diag,
                           SeqCrsGraph<Ordinal,Node>& graph,
@@ -788,12 +795,12 @@ namespace Kokkos {
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph.isInitialized(), std::runtime_error,
-      "Kokkos::SeqSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
+      "Kokkos::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
       "Graph has not yet been initialized."
     );
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! matrix.isInitialized(), std::runtime_error,
-      "Kokkos::SeqSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
+      "Kokkos::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
       "Matrix has not yet been initialized."
     );
     graph.setMatDesc (uplo, diag);
@@ -801,32 +808,32 @@ namespace Kokkos {
 
 
   template<class Scalar, class Ordinal, class Node>
-  SeqSparseOps<Scalar,Ordinal,Node>::
-  SeqSparseOps (const Teuchos::RCP<Node>& node) :
+  AltSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps (const Teuchos::RCP<Node>& node) :
     node_ (node),
     tri_uplo_ (Teuchos::UNDEF_TRI),      // Provisionally
     unit_diag_ (Teuchos::NON_UNIT_DIAG), // Provisionally
-    matVecVariant_ (SeqSparseOps<Scalar,Ordinal,Node>::FOR_FOR),
+    matVecVariant_ (AltSparseOps<Scalar,Ordinal,Node>::FOR_FOR),
     unroll_ (true),
     numRows_ (0),                        // Provisionally
     isInitialized_ (false),
     isEmpty_ (true),                     // Provisionally
     hasEmptyRows_ (true)                 // Provisionally
   {
-    // Make sure that users only specialize SeqSparseOps for Kokkos
+    // Make sure that users only specialize AltSparseOps for Kokkos
     // Node types that are host Nodes (vs. device Nodes, such as GPU
     // Nodes).
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
   }
 
   template<class Scalar, class Ordinal, class Node>
-  SeqSparseOps<Scalar,Ordinal,Node>::
-  SeqSparseOps (const Teuchos::RCP<Node>& node,
+  AltSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps (const Teuchos::RCP<Node>& node,
                 Teuchos::ParameterList& params) :
     node_ (node),
     tri_uplo_ (Teuchos::UNDEF_TRI),      // Provisionally
     unit_diag_ (Teuchos::NON_UNIT_DIAG), // Provisionally
-    matVecVariant_ (SeqSparseOps<Scalar,Ordinal,Node>::FOR_FOR),
+    matVecVariant_ (AltSparseOps<Scalar,Ordinal,Node>::FOR_FOR),
     unroll_ (true),
     numRows_ (0),                        // Provisionally
     isInitialized_ (false),
@@ -837,7 +844,7 @@ namespace Kokkos {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
-    // Make sure that users only specialize SeqSparseOps for Kokkos
+    // Make sure that users only specialize AltSparseOps for Kokkos
     // Node types that are host Nodes (vs. device Nodes, such as GPU
     // Nodes).
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
@@ -848,12 +855,12 @@ namespace Kokkos {
   }
 
   template<class Scalar, class Ordinal, class Node>
-  SeqSparseOps<Scalar,Ordinal,Node>::~SeqSparseOps() {
+  AltSparseOps<Scalar,Ordinal,Node>::~AltSparseOps() {
   }
 
   template<class Scalar, class Ordinal, class Node>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   setDefaultParameters (Teuchos::ParameterList& plist)
   {
     setDefaultMatVecVariantParameter (plist);
@@ -862,7 +869,7 @@ namespace Kokkos {
 
   template<class Scalar, class Ordinal, class Node>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   setDefaultUnrollParameter (Teuchos::ParameterList& plist)
   {
     const bool unroll = true;
@@ -873,7 +880,7 @@ namespace Kokkos {
 
   template<class Scalar, class Ordinal, class Node>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   setDefaultMatVecVariantParameter (Teuchos::ParameterList& plist)
   {
     using Teuchos::Array;
@@ -902,13 +909,13 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  RCP<Node> SeqSparseOps<Scalar,Ordinal,Node>::getNode() const {
+  RCP<Node> AltSparseOps<Scalar,Ordinal,Node>::getNode() const {
     return node_;
   }
 
   template <class Scalar, class Ordinal, class Node>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   setGraphAndMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> > &opgraph,
                      const Teuchos::RCP<const SeqCrsMatrix<Scalar,Ordinal,Node> > &opmatrix)
   {
@@ -929,7 +936,7 @@ namespace Kokkos {
     ArrayRCP<const Scalar> val = opmatrix->getValues ();
     const Ordinal numRows = opgraph->getNumRows ();
 
-    // cerr << "SeqSparseOps::setGraphAndMatrix: on entry to routine:" << endl
+    // cerr << "AltSparseOps::setGraphAndMatrix: on entry to routine:" << endl
     //      << "ptr = ";
     // std::copy (ptr.begin(), ptr.end(), std::ostream_iterator<size_t> (cerr, " "));
     // cerr << endl << "ind = ";
@@ -986,7 +993,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   solve (Teuchos::ETransp trans,
          const MultiVector<DomainScalar, Node>& Y,
          MultiVector<RangeScalar, Node>& X) const
@@ -1161,7 +1168,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   multiply (Teuchos::ETransp trans,
             RangeScalar alpha,
             const MultiVector<DomainScalar, Node>& X,
@@ -1176,7 +1183,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar,Ordinal,Node>::
   multiply (Teuchos::ETransp trans,
             RangeScalar alpha,
             const MultiVector<DomainScalar, Node> &X,
@@ -1524,7 +1531,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   Teuchos::ArrayRCP<Ordinal>
-  SeqSparseOps<Scalar, Ordinal, Node>::
+  AltSparseOps<Scalar, Ordinal, Node>::
   allocRowPtrs (const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
   {
     Teuchos::ArrayRCP<Ordinal> ptr (numEntriesPerRow.size() + 1);
@@ -1538,11 +1545,11 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class T>
   Teuchos::ArrayRCP<T>
-  SeqSparseOps<Scalar, Ordinal, Node>::
+  AltSparseOps<Scalar, Ordinal, Node>::
   allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
-      "SeqSparseOps::allocStorage: The input rowPtrs array must have length at "
+      "AltSparseOps::allocStorage: The input rowPtrs array must have length at "
       "least one, but rowPtrs.size() = " << rowPtrs.size() << ".");
 
     const Ordinal totalNumEntries = rowPtrs[rowPtrs.size() - 1];

@@ -209,11 +209,11 @@ namespace {
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
   // This test should work, but we omit it to save time.
 #if 0
-  TEUCHOS_UNIT_TEST( SeqSparseOpsDefaultParameters, TestSparseOps )
+  TEUCHOS_UNIT_TEST( AltSparseOpsDefaultParameters, TestSparseOps )
   {
-    using Kokkos::SeqSparseOps;
-    typedef SeqSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
-    Tester<sparse_ops_type>::test ("SeqSparseOps");
+    using Kokkos::AltSparseOps;
+    typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+    Tester<sparse_ops_type>::test ("AltSparseOps");
 
     if (benchmark) {
       // Summarize timing results.  You should only call summarize()
@@ -231,31 +231,31 @@ namespace {
 #endif // 0
 
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
-  TEUCHOS_UNIT_TEST( SeqSparseOpsNonDefaultParameters, TestSparseOps )
+  TEUCHOS_UNIT_TEST( AltSparseOpsNonDefaultParameters, TestSparseOps )
   {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
-    using Kokkos::SeqSparseOps;
-    typedef SeqSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+    using Kokkos::AltSparseOps;
+    typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
 
-    ParameterList params ("SeqSparseOps");
+    ParameterList params ("AltSparseOps");
     params.set ("Unroll across multivectors", unroll);
     if (variant == "all") {
       std::string variant = "for-for";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("SeqSparseOps (for-for)", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-for)", params);
 
       variant = "for-while";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("SeqSparseOps (for-while)", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-while)", params);
 
       variant = "for-if";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("SeqSparseOps (for-if)", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-if)", params);
     }
     else {
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("SeqSparseOps", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps", params);
     }
 
     if (benchmark) {
