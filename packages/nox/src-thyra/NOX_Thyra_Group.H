@@ -247,6 +247,9 @@ namespace NOX {
       //! Print out the group
       void print() const;
 
+      /** FOR POWER USERS ONLY!  Grab the inargs used by nox and allow the user to change it.  Used by pseudo-transient solver to add an x_dot and alpha/beta to the model evaluator call. */
+      ::Thyra::ModelEvaluatorBase::InArgs<double>& getNonconstInArgs();
+
     protected:
 
       //! resets the isValid flags to false
@@ -268,6 +271,8 @@ namespace NOX {
       void scaleResidualAndJacobian() const;
 
       void unscaleResidualAndJacobian() const;
+
+      Teuchos::RCP< const ::Thyra::ModelEvaluator<double> > getModel() const;
 
     protected:
 

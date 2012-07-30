@@ -134,6 +134,21 @@ APPEND_SET(SOURCES
   NOX_Solver_PrePostOperator.C
   )
 
+# Thyra-specific solvers
+IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src-thyra)
+
+  APPEND_SET(HEADERS
+    NOX_Solver_PseudoTransient.hpp
+    )
+
+  APPEND_SET(SOURCES
+    NOX_Solver_PseudoTransient.cpp
+    )
+
+ENDIF()
+
 # Merit Function
 APPEND_SET(HEADERS
   NOX_MeritFunction_Generic.H

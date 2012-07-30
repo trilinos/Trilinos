@@ -702,3 +702,15 @@ void NOX::Thyra::Group::unscaleResidualAndJacobian() const
     W_scaled->scaleLeft(*inv_weight_vec_);
   } 
 }
+
+Teuchos::RCP< const ::Thyra::ModelEvaluator<double> > 
+NOX::Thyra::Group::getModel() const
+{
+  return model_;
+}
+
+::Thyra::ModelEvaluatorBase::InArgs<double>& 
+NOX::Thyra::Group::getNonconstInArgs()
+{
+  return in_args_;
+}
