@@ -55,6 +55,8 @@ namespace Teuchos {
 
 namespace Kokkos {
 
+  /// \class OpenMPNode
+  /// \brief Kokkos Node using OpenMP for parallelization.
   class OpenMPNode : public StandardNodeMemoryModel {
   public:
 
@@ -96,6 +98,7 @@ namespace Kokkos {
     ///   should use.  Ignored if -1 or 0.
     void init(int numThreads);
 
+    //! Perform a parallel for loop on the given half-exclusive index range.
     template <class WDP>
     static void parallel_for(int beg, int end, WDP wd) {
 #pragma omp parallel for schedule(guided) default(shared)
@@ -104,6 +107,7 @@ namespace Kokkos {
       }
     }
 
+    //! Perform a parallel reduction on the given half-exclusive index range.
     template <class WDP>
     static typename WDP::ReductionType
     parallel_reduce(int beg, int end, WDP wd) {
@@ -122,13 +126,17 @@ namespace Kokkos {
       return globalResult;
     }
 
-    //! \begin No-op for OpenMPNode.
+    //! Synchronize threads; this is a no-op for OpenMPNode.
     inline void sync() const {};
 
   private:
-    //! "Num Threads" parameter value.  If <= 0, this is ignored.
+    /// \brief "Num Threads" parameter value.
+    ///
+    /// If <= 0, OpenMPNode ignores this and lets OpenMP pick its own
+    /// number of threads.
     int curNumThreads_;
-    //! Whether to print status output to std::cout.
+
+    //! Whether to print verbose status output to std::cout.
     bool verbose_;
   };
 
