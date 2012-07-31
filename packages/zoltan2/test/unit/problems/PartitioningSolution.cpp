@@ -238,4 +238,8 @@ int main(int argc, char *argv[])
   /////////////
   // Specify a list of parts of size 0.  (The rest should be uniform.)
 
+  delete [] lengths;
+  delete [] idLists;
+  delete [] sizeLists;
+  delete [] normalizedPartSizes;
 }
