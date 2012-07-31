@@ -114,7 +114,6 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   Teuchos::ArrayRCP<GlobalOrdinal> colinds;
   Teuchos::ArrayRCP<int>           rowptrs;
   Teuchos::ArrayRCP<size_t>        nnzPerRow;
-  //Teuchos::ArrayRCP<char>          type;
   int fail = 0;
   if (myRank == 0) {
     bool isSymmetric=false;
@@ -173,13 +172,13 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
         for (int i=colptrs[col]-1; i != colptrs[col+1]-1; ++i) {
           const int row = rowinds[i]-1;
           // add entry to (row,col), with value dvals[i]
-          const LocalOrdinal entry = rowptrs[row] + nnzPerRow[row];
+          const size_t entry = rowptrs[row] + nnzPerRow[row];
           svals[entry] = Teuchos::as<Scalar>(dvals[i]);
           colinds[entry] = Teuchos::as<GlobalOrdinal>(col);
           ++nnzPerRow[row];
           if (isSymmetric && row != col) {
             // add entry to (col,row), with value dvals[i]
-            const LocalOrdinal symentry = rowptrs[col] + nnzPerRow[col];
+            const size_t symentry = rowptrs[col] + nnzPerRow[col];
             svals[symentry] = Teuchos::as<Scalar>(dvals[i]);
             colinds[symentry] = Teuchos::as<GlobalOrdinal>(row);
             ++nnzPerRow[col];
@@ -227,7 +226,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     LocalOrdinal numRowsAlreadyDistributed = rowMap->getNodeNumElements();
     std::copy(nnzPerRow.begin(), nnzPerRow.begin()+numRowsAlreadyDistributed,myNNZ);
     for (int p=1; p < Teuchos::size(*comm); ++p) {
-      LocalOrdinal numRowsForP;
+      size_t numRowsForP;
       Teuchos::receive(*comm,p,&numRowsForP);
       if (numRowsForP) {
         Teuchos::send<int,size_t>(*comm,numRowsForP,nnzPerRow(numRowsAlreadyDistributed,numRowsForP).getRawPtr(),p);
