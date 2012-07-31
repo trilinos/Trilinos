@@ -3,6 +3,7 @@
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
@@ -134,7 +135,7 @@ namespace stk {
           // set current state and evaluate mesh validity (current = omega*project + (1-omega)*original)
           eMesh->nodal_field_axpbypgz(omega, coord_field_projected, (1.0-omega), coord_field_original, 0.0, coord_field_current);
 
-          int num_invalid = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
+          int num_invalid = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
 
           if (!get_parallel_rank()) 
             std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid << " for outer_iter= " << outer 
@@ -156,7 +157,7 @@ namespace stk {
               for (int iter = 0; iter < innerIter; iter++)
                 {
                   m_iter = iter;
-                  int num_invalid_0 = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
+                  int num_invalid_0 = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
                   m_num_invalid = num_invalid_0;
 
                   //               if (!get_parallel_rank() && num_invalid_0) 
@@ -165,13 +166,19 @@ namespace stk {
                   //                           << std::endl;
 
                   m_global_metric = run_one_iteration(mesh, domain, err);
+
                   sync_fields(iter);
-                  num_invalid_0 = PMMParallelShapeImprover::count_invalid_elements(*mesh, domain);
+                  num_invalid_0 = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
                   m_num_invalid = num_invalid_0;
                   bool conv = check_convergence();
                   if (!get_parallel_rank())
-                    std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid_0 << std::endl;
-                  //eMesh->save_as("iter_"+toString(iter)+"_mesh.e");
+                  {
+                    std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid_0 
+                              << " m_global_metric= " << m_global_metric << " m_untangled= " << m_untangled
+                              << std::endl;
+                  }
+
+                  //!! eMesh->save_as("iter_"+toString(iter)+"_mesh.e");
                   //if (!m_untangled && m_global_metric == 0.0)
                   if (!m_untangled && m_num_invalid == 0)
                     {
@@ -180,7 +187,7 @@ namespace stk {
                     }
                   if (conv && m_untangled) break;
                 }
-              eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");
+              //!! eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");
             }
 
           eMesh->copy_field(coord_field_lagged, coord_field);
