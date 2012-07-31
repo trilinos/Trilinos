@@ -48,6 +48,7 @@
 
 namespace Kokkos {
 
+  /// \class ReadyBufferHelper
   /// \brief A class to assist in readying buffers via the Node::readyBuffers() method.
   /// \ingroup kokkos_node_api
   ///
@@ -189,19 +190,47 @@ namespace Kokkos {
 
   /// \class ArrayOfViewsHelper
   /// \brief Helper class for getting an array of views.
+  /// \ingroup kokkos_node_api
+  ///
+  /// \tparam Node The Kokkos Node type.
+  ///
+  /// The class method getArrayOfNonConstView takes an array of
+  /// (device) buffers, and returns an array of (host) views of those
+  /// buffers.  The host views may be either write-only (meaning that
+  /// their contents on the host before being written are undefined),
+  /// or read-and-write (meaning that they have valid contents on the
+  /// host).
+  ///
+  /// All methods of ArrayOfViewsHelper are class (i.e., static)
+  /// methods.  It doesn't make sense to make an instance of
+  /// ArrayOfViewsHelper.  We forbid this syntactically by declaring
+  /// the (unimplemented) constructor private.
   template <class Node>
   class ArrayOfViewsHelper {
   public:
-    //! Invoke the Node's viewBufferNonConst() method to get an array of views.
+    /// \brief Invoke the Node's viewBufferNonConst() method to get an array of views.
+    ///
+    /// \param node [in/out] The Kokkos Node instance.
+    ///
+    /// \param rw [in] Whether to create read-and-write views, or
+    ///   write-only views.  Read-and-write views may be safely read
+    ///   before they are written.  Write-only views have undefined
+    ///   contents before they are written.  In both cases, views are
+    ///   to be read and written on the host.  If the device has a
+    ///   separate memory space, then each view is copied back to the
+    ///   device (namely, to their corresponding buffers in
+    ///   arrayOfBuffers) once its reference count falls to zero.
+    ///
+    /// \param arrayOfBuffers [in/out] The array of buffers for which
+    ///   to create views.
     template <class T>
     static ArrayRCP<ArrayRCP<T> >
     getArrayOfNonConstViews (const RCP<Node> &node,
                              ReadWriteOption rw,
                              const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers);
   private:
-    /*! Cannot allocate object; all static */
+    //! Constructor is private and undeclared, so you can't call it.
     ArrayOfViewsHelper();
-    ~ArrayOfViewsHelper();
   };
 
   template <class Node>
