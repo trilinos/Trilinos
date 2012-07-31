@@ -560,7 +560,7 @@ namespace Tpetra {
                {
                  const local_ordinal_type curNumEntries = myNumEntriesPerRow[k];
                  const GO myRow = myRows[k];
-                 const local_ordinal_type curPos = rowPtr[myRow];
+                 const size_t curPos = rowPtr[myRow];
                  if (extraDebug && debug)
                    {
                      cerr << "k = " << k << ", myRow = " << myRow << ": colInd("
@@ -664,8 +664,8 @@ namespace Tpetra {
                      // p's rows.  (Proc p will compute its row
                      // pointer array on its own, after it gets the
                      // data from Proc 0.)
-                     ArrayRCP<local_ordinal_type> theirNumEntriesPerRow;
-                     theirNumEntriesPerRow = arcp<local_ordinal_type> (theirNumRows);
+                     ArrayRCP<size_t> theirNumEntriesPerRow;
+                     theirNumEntriesPerRow = arcp<size_t> (theirNumRows);
                      for (size_type k = 0; k < theirNumRows; ++k)
                        theirNumEntriesPerRow[k] =
                          numEntriesPerRow[theirRows[k]];
