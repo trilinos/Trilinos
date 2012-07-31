@@ -40,7 +40,7 @@ namespace MueLu {
     //! Constructor.
     RepartitionFactory(RCP<const FactoryBase> loadBalancer=Teuchos::null,
                        RCP<const FactoryBase> AFact=Teuchos::null,
-                       LO minRowsPerProcessor=1000, SC nnzMaxMinRatio=1.2, GO startLevel=1, LO useDiffusiveHeuristic=0, GO minNnzPerProcessor=-1);
+                       LO minRowsPerProcessor=1000, double nnzMaxMinRatio=1.2, GO startLevel=1, LO useDiffusiveHeuristic=0, GO minNnzPerProcessor=-1);
 
     //! Destructor.
     virtual ~RepartitionFactory();

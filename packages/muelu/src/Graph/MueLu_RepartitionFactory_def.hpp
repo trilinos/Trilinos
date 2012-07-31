@@ -31,7 +31,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
                 RCP<const FactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
-                LO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
+                LO minRowsPerProcessor, double nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
     loadBalancer_(loadBalancer),
     AFact_(AFact),
     minRowsPerProcessor_(minRowsPerProcessor),
@@ -562,7 +562,7 @@ namespace MueLu {
                                            comm);
 
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build vectors", currentLevel));
-    RCP<Xpetra::Vector<SC,LO,GO,NO> > globalWeightVec = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(targetMap);  //TODO why does the compiler grumble about this when I omit template arguments?
+    RCP<Xpetra::Vector<double,LO,GO,NO> > globalWeightVec = Xpetra::VectorFactory<double,LO,GO,NO>::Build(targetMap);  //TODO why does the compiler grumble about this when I omit template arguments?
     RCP<Xpetra::Vector<LO,LO,GO,NO> > procWinnerVec = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(targetMap);
     ArrayRCP<LO> procWinner;
     if (procWinnerVec->getLocalLength() > 0)
@@ -608,7 +608,7 @@ namespace MueLu {
     while (doArbitrate)
     {
       ++numRounds;
-      ArrayRCP<SC> globalWeightVecData = globalWeightVec->getDataNonConst(0);
+      ArrayRCP<double> globalWeightVecData = globalWeightVec->getDataNonConst(0);
 
       //If this process doesn't yet own a partition, record all its nonzeros per partition as weights
       //If it doesn't contribute to a partition, make the weight small (0.1).  In this way, this pid
@@ -731,7 +731,7 @@ namespace MueLu {
   //----------------------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::SetImbalanceThreshold(Scalar threshold) {
+  void RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::SetImbalanceThreshold(double threshold) {
     nnzMaxMinRatio_ = threshold;
   }
 
