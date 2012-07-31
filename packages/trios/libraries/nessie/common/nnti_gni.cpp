@@ -225,7 +225,7 @@ typedef struct {
 
     uint64_t         wc_buffer_addr;  /* address of the work completion array */
     gni_mem_handle_t wc_mem_hdl;
-} nnti_gni_server_queue_attrs;
+} nnti_gni_recv_queue_attrs;
 
 /**
  * attrs to send to the server
@@ -233,11 +233,11 @@ typedef struct {
 typedef struct {
     uint64_t         unblock_buffer_addr; /* address of the unblock buffer */
     gni_mem_handle_t unblock_mem_hdl;     /* mem hdl to send to the server */
-} nnti_gni_client_queue_attrs;
+} nnti_gni_recv_queue_flow_control_attrs;
 
-typedef union {
-    nnti_gni_client_queue_attrs client;
-    nnti_gni_server_queue_attrs server;
+typedef struct {
+    nnti_gni_recv_queue_flow_control_attrs client;
+    nnti_gni_recv_queue_attrs              server;
 } nnti_gni_queue_remote_attrs;
 
 
@@ -520,27 +520,27 @@ static void send_rdma_wc (
 
 static int fetch_add_buffer_offset(
         nnti_gni_client_queue       *local_req_queue_attrs,
-        nnti_gni_server_queue_attrs *remote_req_queue_attrs,
+        nnti_gni_recv_queue_attrs *remote_req_queue_attrs,
         uint64_t                     addend,
         uint64_t                    *prev_offset);
 static int send_req(
         const NNTI_peer_t           *peer_hdl,
         nnti_gni_client_queue       *local_req_queue_attrs,
-        nnti_gni_server_queue_attrs *remote_req_queue_attrs,
+        nnti_gni_recv_queue_attrs *remote_req_queue_attrs,
         uint64_t                     offset,
         const NNTI_buffer_t         *reg_buf,
         gni_work_request            *wr);
 static int send_req_wc(
         const NNTI_peer_t           *peer_hdl,
         nnti_gni_client_queue       *local_req_queue_attrs,
-        nnti_gni_server_queue_attrs *remote_req_queue_attrs,
+        nnti_gni_recv_queue_attrs *remote_req_queue_attrs,
         uint64_t                     offset,
         const NNTI_buffer_t         *reg_buf,
         gni_work_request            *wr);
 static int request_send(
         const NNTI_peer_t           *peer_hdl,
         nnti_gni_client_queue       *client_q,
-        nnti_gni_server_queue_attrs *server_q,
+        nnti_gni_recv_queue_attrs *server_q,
         const NNTI_buffer_t         *reg_buf,
         int                          req_num);
 static int send_buffer(
@@ -1492,7 +1492,7 @@ NNTI_result_t NNTI_gni_send (
         trios_stop_timer("send to receive dest", call_time);
     }
 
-    log_debug(nnti_debug_level, "sending to (%s, instance=%lu)", peer_hdl->url, peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id);
+    log_debug(nnti_debug_level, "sending to (%s, instance=%llu)", peer_hdl->url, (uint64_t)peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id);
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -4187,7 +4187,7 @@ static int new_client_connection(
     int rc;
 
     /*
-     * Values passed through TCP to permit Gemini connection.
+     * Values passed through TCP to permit Gemini connection
      */
     struct {
         char             name[NNTI_HOSTNAME_LEN];
@@ -4195,39 +4195,56 @@ static int new_client_connection(
         uint32_t         port;
         NNTI_instance_id instance;
         alpsAppGni_t     alps_info;
+
+        uint32_t         client_has_recv_queue;
     } instance_in, instance_out;
     struct {
-        nnti_gni_server_queue_attrs server_attrs;
-    } sa_in;
+        nnti_gni_recv_queue_attrs server_attrs;
+    } sa_in, sa_out;
     struct {
-        nnti_gni_client_queue_attrs client_attrs;
-    } ca_out;
+        nnti_gni_recv_queue_flow_control_attrs client_attrs;
+    } ca_out, ca_in;
 
     trios_declare_timer(call_time);
 
     c->connection_type=CLIENT_CONNECTION;
 
+    /*
+     * Prepare to exchange TCP and ALPS parameters with the server
+     */
+    memset(&instance_out, 0, sizeof(instance_out));
     strcpy(instance_out.name, transport_global_data.listen_name);
     instance_out.addr      = htonl((uint32_t)transport_global_data.listen_addr);
     instance_out.port      = htonl((uint32_t)transport_global_data.listen_port);
     instance_out.instance  = htonl(transport_global_data.instance);
     instance_out.alps_info = transport_global_data.alps_info;
+    if ((transport_global_data.req_queue.req_size  > 0) &&
+        (transport_global_data.req_queue.req_count > 0)) {
+        instance_out.client_has_recv_queue = 1;
+    }
 
+    /*
+     * Exchange TCP and ALPS parameters with the server
+     */
     trios_start_timer(call_time);
     rc = tcp_exchange(sock, 0, &instance_in, &instance_out, sizeof(instance_in));
     trios_stop_timer("tcp_exchange", call_time);
     if (rc)
         goto out;
 
+    /*
+     * Record the server's parameters
+     */
     c->peer_name      = strdup(instance_in.name);
     c->peer_addr      = ntohl(instance_in.addr);
     c->peer_port      = ntohl(instance_in.port);
     c->peer_instance  = ntohl(instance_in.instance);
     c->peer_alps_info = instance_in.alps_info;
 
-
+    /*
+     * Read the receive queue attributes from the server
+     */
     memset(&sa_in, 0, sizeof(sa_in));
-
     trios_start_timer(call_time);
     rc = tcp_read(sock, &sa_in, sizeof(sa_in));
     trios_stop_timer("read server queue attrs", call_time);
@@ -4237,12 +4254,20 @@ static int new_client_connection(
     if (rc)
         goto out;
 
+    /*
+     * Record the server's attributes
+     */
     c->queue_remote_attrs.server=sa_in.server_attrs;
 
+    /*
+     * Setup flow control attributes
+     */
     client_req_queue_init(c);
 
+    /*
+     * Write receive queue flow control attributes to the server
+     */
     memset(&ca_out, 0, sizeof(ca_out));
-
     ca_out.client_attrs.unblock_buffer_addr=c->queue_local_attrs.unblock_buffer_addr;
     ca_out.client_attrs.unblock_mem_hdl    =c->queue_local_attrs.unblock_mem_hdl;
 
@@ -4254,6 +4279,57 @@ static int new_client_connection(
     }
     if (rc)
         goto out;
+
+
+
+    /*
+     * If the client registered a receive queue (bidirectional connection)...
+     */
+    if (instance_out.client_has_recv_queue == 1) {
+        memset(&sa_out, 0, sizeof(sa_out));
+
+        gni_memory_handle *gni_mem_hdl=(gni_memory_handle *)transport_global_data.req_queue.reg_buf->transport_private;
+
+        /*
+         * Then write the receive queue attributes to the server
+         */
+        sa_out.server_attrs.req_index_addr   =transport_global_data.req_queue.req_index_addr;
+        sa_out.server_attrs.req_index_mem_hdl=transport_global_data.req_queue.req_index_mem_hdl;
+        sa_out.server_attrs.req_buffer_addr  =(uint64_t)transport_global_data.req_queue.req_buffer;
+        sa_out.server_attrs.req_size         =transport_global_data.req_queue.req_size;
+        sa_out.server_attrs.req_count        =transport_global_data.req_queue.req_count;
+        sa_out.server_attrs.req_mem_hdl      =gni_mem_hdl->mem_hdl;
+        sa_out.server_attrs.wc_buffer_addr   =(uint64_t)transport_global_data.req_queue.wc_buffer;
+        sa_out.server_attrs.wc_mem_hdl       =transport_global_data.req_queue.wc_mem_hdl;
+
+        trios_start_timer(call_time);
+        rc = tcp_write(sock, &sa_out, sizeof(sa_out));
+        trios_stop_timer("write server queue attrs", call_time);
+        if (rc == sizeof(sa_out)) {
+            rc=0;
+        }
+        if (rc)
+            goto out;
+
+        /*
+         * Then read receive queue flow control attributes from the server
+         */
+        memset(&ca_in, 0, sizeof(ca_in));
+        trios_start_timer(call_time);
+        rc = tcp_read(sock, &ca_in, sizeof(ca_in));
+        trios_stop_timer("read client queue attrs", call_time);
+        if (rc == sizeof(ca_in)) {
+            rc=0;
+        }
+        if (rc)
+            goto out;
+
+        /*
+         * Record the server's flow control attributes
+         */
+        c->queue_remote_attrs.client=ca_in.client_attrs;
+    }
+
 
     rc=GNI_EpCreate (c->nic_hdl, transport_global_data.ep_cq_hdl, &c->ep_hdl);
     if (rc!=GNI_RC_SUCCESS) {
@@ -4277,7 +4353,7 @@ static int new_server_connection(
     int rc;
 
     /*
-     * Values passed through TCP to permit Gemini connection.
+     * Values passed through TCP to permit Gemini connection
      */
     struct {
         char             name[NNTI_HOSTNAME_LEN];
@@ -4285,13 +4361,15 @@ static int new_server_connection(
         uint32_t         port;
         NNTI_instance_id instance;
         alpsAppGni_t     alps_info;
+
+        uint32_t         client_has_recv_queue;
     } instance_in, instance_out;
     struct {
-        nnti_gni_server_queue_attrs server_attrs;
-    } sa_out;
+        nnti_gni_recv_queue_attrs server_attrs;
+    } sa_out, sa_in;
     struct {
-        nnti_gni_client_queue_attrs client_attrs;
-    } ca_in;
+        nnti_gni_recv_queue_flow_control_attrs client_attrs;
+    } ca_in, ca_out;
 
     trios_declare_timer(call_time);
 
@@ -4302,18 +4380,28 @@ static int new_server_connection(
 
     c->connection_type=SERVER_CONNECTION;
 
+    /*
+     * Prepare to exchange TCP and ALPS parameters with the client
+     */
+    memset(&instance_out, 0, sizeof(instance_out));
     strcpy(instance_out.name, transport_global_data.listen_name);
     instance_out.addr      = htonl((uint32_t)transport_global_data.listen_addr);
     instance_out.port      = htonl((uint32_t)transport_global_data.listen_port);
     instance_out.instance  = htonl(transport_global_data.instance);
     instance_out.alps_info = transport_global_data.alps_info;
 
+    /*
+     * Exchange TCP and ALPS parameters with the client
+     */
     trios_start_timer(call_time);
     rc = tcp_exchange(sock, 1, &instance_in, &instance_out, sizeof(instance_in));
     trios_stop_timer("tcp_exchange", call_time);
     if (rc)
         goto out;
 
+    /*
+     * Record the client's parameters
+     */
     c->peer_name      = strdup(instance_in.name);
     c->peer_addr      = ntohl(instance_in.addr);
     c->peer_port      = ntohl(instance_in.port);
@@ -4324,8 +4412,10 @@ static int new_server_connection(
     c->cdm_hdl = transport_global_data.cdm_hdl;
     c->nic_hdl = transport_global_data.nic_hdl;
 
+    /*
+     * Write the receive queue attributes to the client
+     */
     memset(&sa_out, 0, sizeof(sa_out));
-
     sa_out.server_attrs.req_index_addr   =transport_global_data.req_queue.req_index_addr;
     sa_out.server_attrs.req_index_mem_hdl=transport_global_data.req_queue.req_index_mem_hdl;
     sa_out.server_attrs.req_buffer_addr  =(uint64_t)transport_global_data.req_queue.req_buffer;
@@ -4344,8 +4434,10 @@ static int new_server_connection(
     if (rc)
         goto out;
 
+    /*
+     * Read receive queue flow control attributes from the client
+     */
     memset(&ca_in, 0, sizeof(ca_in));
-
     trios_start_timer(call_time);
     rc = tcp_read(sock, &ca_in, sizeof(ca_in));
     trios_stop_timer("read client queue attrs", call_time);
@@ -4355,7 +4447,56 @@ static int new_server_connection(
     if (rc)
         goto out;
 
+    /*
+     * Record the client's flow control attributes
+     */
     c->queue_remote_attrs.client=ca_in.client_attrs;
+
+
+
+    /*
+     * If the client registered a receive queue (bidirectional connection)...
+     */
+    if (instance_in.client_has_recv_queue == 1) {
+        /*
+         * Then read the receive queue attributes from the client
+         */
+        memset(&sa_in, 0, sizeof(sa_in));
+        trios_start_timer(call_time);
+        rc = tcp_read(sock, &sa_in, sizeof(sa_in));
+        trios_stop_timer("read server queue attrs", call_time);
+        if (rc == sizeof(sa_in)) {
+            rc=0;
+        }
+        if (rc)
+            goto out;
+
+        /*
+         * Record the client's attributes
+         */
+        c->queue_remote_attrs.server=sa_in.server_attrs;
+
+        /*
+         * Setup flow control attributes
+         */
+        client_req_queue_init(c);
+
+        /*
+         * Then write receive queue flow control attributes to the client
+         */
+        memset(&ca_out, 0, sizeof(ca_out));
+        ca_out.client_attrs.unblock_buffer_addr=c->queue_local_attrs.unblock_buffer_addr;
+        ca_out.client_attrs.unblock_mem_hdl    =c->queue_local_attrs.unblock_mem_hdl;
+
+        trios_start_timer(call_time);
+        rc = tcp_write(sock, &ca_out, sizeof(ca_out));
+        trios_stop_timer("write client queue attrs", call_time);
+        if (rc == sizeof(ca_out)) {
+            rc=0;
+        }
+        if (rc)
+            goto out;
+    }
 
 
     rc=GNI_EpCreate (c->nic_hdl, transport_global_data.ep_cq_hdl, &c->ep_hdl);
@@ -5600,7 +5741,7 @@ static int reset_req_index(
 
 static int fetch_add_buffer_offset(
         nnti_gni_client_queue       *local_req_queue_attrs,
-        nnti_gni_server_queue_attrs *remote_req_queue_attrs,
+        nnti_gni_recv_queue_attrs *remote_req_queue_attrs,
         uint64_t                     addend,
         uint64_t                    *prev_offset)
 {
@@ -5634,7 +5775,7 @@ static int fetch_add_buffer_offset(
 
     do {
         log_debug(debug_level, "calling PostFma(fetch add - req_index_ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
-                local_req_queue_attrs->req_index_ep_hdl, post_desc.local_addr, post_desc.remote_addr);
+                local_req_queue_attrs->req_index_ep_hdl, post_desc.local_addr, (uint64_t)post_desc.remote_addr);
         rc=GNI_PostFma(local_req_queue_attrs->req_index_ep_hdl, &post_desc);
         if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "PostFma(fetch add) failed: %d", rc);
 
@@ -5709,7 +5850,7 @@ static int fetch_add_buffer_offset(
 static int send_req(
         const NNTI_peer_t           *peer_hdl,
         nnti_gni_client_queue       *local_req_queue_attrs,
-        nnti_gni_server_queue_attrs *remote_req_queue_attrs,
+        nnti_gni_recv_queue_attrs *remote_req_queue_attrs,
         uint64_t                     offset,
         const NNTI_buffer_t         *reg_buf,
         gni_work_request            *wr)
@@ -5782,7 +5923,7 @@ static int send_req(
 static int send_req_wc(
         const NNTI_peer_t           *peer_hdl,
         nnti_gni_client_queue       *local_req_queue_attrs,
-        nnti_gni_server_queue_attrs *remote_req_queue_attrs,
+        nnti_gni_recv_queue_attrs *remote_req_queue_attrs,
         uint64_t                     offset,
         const NNTI_buffer_t         *reg_buf,
         gni_work_request            *wr)
@@ -5860,7 +6001,7 @@ static int send_req_wc(
 static int request_send(
         const NNTI_peer_t           *peer_hdl,
         nnti_gni_client_queue       *client_q,
-        nnti_gni_server_queue_attrs *server_q,
+        nnti_gni_recv_queue_attrs *server_q,
         const NNTI_buffer_t         *reg_buf,
         int                          req_num)
 {
@@ -6221,6 +6362,8 @@ static int client_req_queue_init(
     q->req_index=0;
     q->req_index_addr=(uint64_t)&q->req_index;
 
+    log_debug(nnti_debug_level, "client_req_queue->req_index_addr=%llu", (uint64_t)q->req_index_addr);
+
     q->unblock_buffer=0;
     q->unblock_buffer_addr=(uint64_t)&q->unblock_buffer;
 
@@ -6355,6 +6498,8 @@ static int server_req_queue_init(
 
     q->req_index     =0;
     q->req_index_addr=(uint64_t)&q->req_index;
+
+    log_debug(nnti_debug_level, "server_req_queue->req_index_addr=%llu", (uint64_t)q->req_index_addr);
 
     q->req_processed=0;
     q->req_processed_reset_limit=q->req_count;

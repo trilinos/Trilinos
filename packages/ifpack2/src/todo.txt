@@ -4,6 +4,8 @@
 * Reordering (e.g. RCM), two ways
   - implicitly for ILUs (as the matrix is being copied into the factors)
   - explicitly returning a reordering vector (for the application to do itself)
+ Reordering routines are to be accessed through Zoltan2, which
+  Ifpack2 will call. 
 * Block Relaxation & Chebyshev 
 * Filtering
 * Less popular methods - IHSS, SORa
@@ -11,17 +13,15 @@
   - add applyPrec<OpScalar> method to precs, which operates on MV<OpScalar> objects
   - call this from apply()
   - do this for all other operators 
-
+* Local Partitioners (except for the linear one) are to live in
+  Zoltan2, which Ifpack2 will call.
+* Ifpack2's hash table will be removed and it will depend of Teuchos' 
+  hash table instead, once Teuchos' hash table is improved.
+* TPL routines (e.g. HIPS, SuperLU(ILU), Euclid, Hypre, Sparskit) will
+  be accessed via an interface to Amesos2.
 
 *** Requires Discussion w/ Other Package Devs ***
-
-* Partitioners - Zoltan2
 * Move to Xpetra?
 * Kokkos kernels?
-* Ifpack2 / ShyLU / MueLu relationships & interfaces
-* Ifpack2 hash table (should use the one in Teuchos?)
-* TPL support - HIPS, SuperLU(ILU), Euclid, Hypre, Sparskit) - Where does
-  this belong?
-
 
 

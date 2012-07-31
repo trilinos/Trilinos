@@ -121,9 +121,6 @@ observedDefaultIntegrator(
 template<class Scalar>
 const std::string
 DefaultIntegrator<Scalar>::maxNumTimeSteps_name_ = "Max Number Time Steps";
-template<class Scalar>
-const std::string
-DefaultIntegrator<Scalar>::observeInitCond_name_ = "Observe Initial Condition";
 
 // replaced in code with std::numeric_limits<int>::max()
 // template<class Scalar>
@@ -138,7 +135,6 @@ template<class Scalar>
 DefaultIntegrator<Scalar>::DefaultIntegrator()
   :landOnFinalTime_(true),
    maxNumTimeSteps_(std::numeric_limits<int>::max()),
-   observeInitCond_(false),
    currTimeStepIndex_(-1)
 {}
 
@@ -227,7 +223,6 @@ void DefaultIntegrator<Scalar>::setParameterList(
   this->setMyParamList(paramList);
   maxNumTimeSteps_ = paramList->get(
     maxNumTimeSteps_name_, std::numeric_limits<int>::max());
-  observeInitCond_ = paramList->get(observeInitCond_name_, false);
   Teuchos::readVerboseObjectSublist(&*paramList,this);
 }
 
@@ -241,9 +236,6 @@ DefaultIntegrator<Scalar>::getValidParameters() const
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set(maxNumTimeSteps_name_, std::numeric_limits<int>::max(),
       "Set the maximum number of integration time-steps allowed."
-      );
-    pl->set(observeInitCond_name_, false,
-      "Flag to call Observer with initial conditions beofre integration."
       );
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
@@ -417,11 +409,6 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
     integrationObserver_->setOStream(out);
     integrationObserver_->setVerbLevel(incrVerbLevel(verbLevel,-1));
     integrationObserver_->observeStartTimeIntegration(*stepper_);
-
-  // AGS: attempt to write observe init conditions
-  if ( observeInitCond_ )
-     integrationObserver_->observeCompletedTimeStep(
-      *stepper_, stepCtrlInfoLast_, 0);
   }
 
   //
@@ -649,7 +636,6 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
   // Start by assume we can reach the time advance_to_t
   bool return_val = true;
-
   
   while ( !currStepperTimeRange.isInRange(advance_to_t) ) {
 

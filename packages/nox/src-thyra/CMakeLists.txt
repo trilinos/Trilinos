@@ -15,6 +15,7 @@ APPEND_SET(HEADERS
   Thyra_NonlinearSolver_NOX.hpp
   NOX_PrePostOperator_RowSumScaling.H
   NOX_MeritFunction_Weighted.hpp
+  NOX_Solver_PseudoTransient.hpp
   )
 
 APPEND_SET(SOURCES
@@ -24,6 +25,7 @@ APPEND_SET(SOURCES
   Thyra_NonlinearSolver_NOX.cpp
   NOX_PrePostOperator_RowSumScaling.C
   NOX_MeritFunction_Weighted.cpp
+  NOX_Solver_PseudoTransient.cpp
   )
 
 IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)

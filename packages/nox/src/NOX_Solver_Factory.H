@@ -88,6 +88,7 @@ namespace NOX {
     <li> "Trust Region Based" <Teuchos::ParameterList> Sublist for the NOX::Solver::TrustRegionBased solver.
     <li> "Inexact Trust Region Based" <Teuchos::ParameterList> Sublist for the NOX::Solver::InexactTrustRegionBased solver.
     <li> "Tensor Based" <Teuchos::ParameterList> Sublist for the NOX::Solver::TensorBased solver.
+    <li> "Pseudo-Transient" <Teuchos::ParameterList> Sublist for the NOX::Solver::PseudoTransient solver. (Requires Thyra support enabled)
     <li> "Tensor-Krylov Based" <Teuchos::ParameterList> Sublist for the NOX::Solver::TensorBasedTest solver. (Prerelease only)
     </ul>
     

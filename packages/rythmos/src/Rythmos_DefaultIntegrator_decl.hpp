@@ -228,13 +228,11 @@ private:
   bool landOnFinalTime_;
 
   int maxNumTimeSteps_;
-  bool observeInitCond_;
 
   int currTimeStepIndex_;
   StepControlInfo<Scalar> stepCtrlInfoLast_;
 
   static const std::string maxNumTimeSteps_name_;
-  static const std::string observeInitCond_name_;
   static const int maxNumTimeSteps_default_;
 
   // /////////////////////////

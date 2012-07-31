@@ -134,8 +134,8 @@ MonomialProjGramSchmidtPCEBasis(
     Teuchos::Array<value_type> w(pce_sz, 1.0);
     SDM R;
     Teuchos::Array<ordinal_type> piv(max_sz);
-    //for (int i=0; i<d+1; i++)
-    for (int i=0; i<max_sz; i++)
+    for (int i=0; i<d+1; i++)
+    //for (int i=0; i<max_sz; i++)
       piv[i] = 1;
     if (orthogonalization_method == "Householder")
       sz = CPQR_Householder_threshold(rank_threshold, Bp, w, Qp, R, piv);
