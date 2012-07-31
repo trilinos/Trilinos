@@ -61,6 +61,11 @@
 #include "Kokkos_Raw_SparseTriangularSolve_decl.hpp"
 #include "Kokkos_Raw_SparseTriangularSolve_def.hpp"
 
+#ifdef HAVE_KOKKOS_OPENMP
+#  include "Kokkos_OpenMPNode.hpp"
+#endif // HAVE_KOKKOS_OPENMP
+#include "Kokkos_SerialNode.hpp"
+
 
 namespace Kokkos {
 
@@ -72,8 +77,11 @@ namespace Kokkos {
     class AltSparseOpsDefaultAllocator {
     public:
       static Teuchos::ArrayRCP<Ordinal>
-      allocRowPtrs (const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
+      allocRowPtrs (const Teuchos::RCP<Node>& node,
+                    const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
       {
+        (void) node;
+
         const Ordinal numRows = numEntriesPerRow.size ();
 
         // Let the ArrayRCP constructor do the allocation.
@@ -93,8 +101,11 @@ namespace Kokkos {
       }
 
       static Teuchos::ArrayRCP<Ordinal>
-      copyRowPtrs (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+      copyRowPtrs (const Teuchos::RCP<Node>& node,
+                   const Teuchos::ArrayView<const Ordinal>& rowPtrs)
       {
+        (void) node;
+
         // Let the ArrayRCP constructor do the allocation.
         Teuchos::ArrayRCP<Ordinal> ptr (rowPtrs.size ());
 
@@ -108,8 +119,11 @@ namespace Kokkos {
 
       template<class T>
       static Teuchos::ArrayRCP<T>
-      allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+      allocStorage (const Teuchos::RCP<Node>& node,
+                    const Teuchos::ArrayView<const Ordinal>& rowPtrs)
       {
+        (void) node;
+
         using Teuchos::ArrayRCP;
         using Teuchos::arcp;
 
@@ -133,9 +147,12 @@ namespace Kokkos {
 
       template<class T>
       static Teuchos::ArrayRCP<T>
-      copyStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs,
+      copyStorage (const Teuchos::RCP<Node>& node,
+                   const Teuchos::ArrayView<const Ordinal>& rowPtrs,
                    const Teuchos::ArrayView<const T>& inputVals)
       {
+        (void) node;
+
         using Teuchos::ArrayRCP;
         using Teuchos::arcp;
 
@@ -169,14 +186,248 @@ namespace Kokkos {
     };
 
 
+    // Kokkos Kernels for generic first-touch allocation.
+    namespace {
+      template<class Ordinal, class T>
+      class ZeroInitKernel {
+      private:
+        T* const x_;
+
+      public:
+        ZeroInitKernel (T* const x) : x_ (x) {}
+
+        void execute (const Ordinal i) {
+          x_[i] = Teuchos::ScalarTraits<T>::zero ();
+        }
+      };
+
+      template<class Ordinal, class T>
+      class CopyKernel {
+      private:
+        T* const out_;
+        const T* const in_;
+
+      public:
+        CopyKernel (T* const out, const T* const in) :
+          out_ (out), in_ (in)
+        {}
+
+        void execute (const Ordinal i) {
+          out_[i] = in_[i];
+        }
+      };
+
+      template<class Ordinal, class T>
+      class CsrInitKernel {
+      private:
+        const Ordinal* const ptr_;
+        T* const val_;
+
+      public:
+        CsrInitKernel (const Ordinal* const ptr,
+                       T* const val) :
+          ptr_ (ptr),
+          val_ (val)
+        {}
+
+        void execute (const Ordinal i) {
+          for (Ordinal k = ptr_[i]; k < ptr_[i+1]; ++k) {
+            val_[k] = Teuchos::ScalarTraits<T>::zero ();
+          }
+        }
+      };
+
+
+      template<class Ordinal, class T>
+      class CsrCopyKernel {
+      private:
+        const Ordinal* const ptr_;
+        T* const outVal_;
+        const T* const inVal_;
+
+      public:
+        CsrCopyKernel (const Ordinal* const ptr,
+                       T* const outVal,
+                       const T* const inVal) :
+          ptr_ (ptr),
+          outVal_ (outVal),
+          inVal_ (inVal)
+        {}
+
+        void execute (const Ordinal i) {
+          for (Ordinal k = ptr_[i]; k < ptr_[i+1]; ++k) {
+            outVal_[k] = inVal_[k];
+          }
+        }
+      };
+    } // namespace (anonymous)
+
+
     /// \class AltSparseOpsFirstTouchAllocator
     /// \brief Allocator for AltSparseOps, based on first-touch allocation.
+    ///
+    /// \tparam Ordinal The type for indexing into (local) data.
+    /// \tparam Node The Kokkos Node type.
     template <class Ordinal, class Node>
     class AltSparseOpsFirstTouchAllocator {
     public:
       static Teuchos::ArrayRCP<Ordinal>
-      allocRowPtrs (const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
+      allocRowPtrs (const Teuchos::RCP<Node>& node,
+                    const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
       {
+        using Teuchos::ArrayRCP;
+        using Teuchos::arcp;
+        const Ordinal numRows = numEntriesPerRow.size ();
+
+        // Allocate raw, since arcp() might initialize in debug mode.
+        Ordinal* const rawPtr = new Ordinal [numRows + 1];
+
+        // Initialize the row pointers in parallel, using the Kokkos
+        // Node.  If the Kokkos Node's parallelization scheme respects
+        // first-touch initialization, this should set the proper NUMA
+        // affinity, at least at page boundaries.
+        typedef ZeroInitKernel<Ordinal, Ordinal> kernel_type;
+        node->parallel_for (0, numRows+1, kernel_type (rawPtr));
+
+        // Encapsulate the raw pointer in an (owning) ArrayRCP.
+        ArrayRCP<Ordinal> ptr = arcp<Ordinal> (rawPtr, 0, numRows+1, true);
+
+        if (numRows > 0) {
+          // Fill in ptr sequentially for now.  We might parallelize
+          // this later, though it's still only O(numRows) work.
+          // Parallel prefix is only likely to pay off for a large
+          // number of threads.
+          std::partial_sum (numEntriesPerRow.getRawPtr (),
+                            numEntriesPerRow.getRawPtr () + numRows,
+                            ptr.getRawPtr () + 1);
+        }
+        return ptr;
+      }
+
+      static Teuchos::ArrayRCP<Ordinal>
+      copyRowPtrs (const Teuchos::RCP<Node>& node,
+                   const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+      {
+        using Teuchos::arcp;
+        const Ordinal numRows = rowPtrs.size () - 1;
+
+        // Don't force the compiler to inline ArrayView::operator[] in
+        // the loop below.
+        const Ordinal* const rawRowPtrs = rowPtrs.getRawPtr ();
+
+        // Allocate raw, since arcp() might initialize in debug mode.
+        Ordinal* const rawPtr = new Ordinal [numRows + 1];
+
+        // Copy the row pointers in parallel.  If first touch works,
+        // this should set the proper affinity at page boundaries.
+        typedef CopyKernel<Ordinal, Ordinal> kernel_type;
+        node->parallel_for (0, numRows+1, kernel_type (rawPtr, rawRowPtrs));
+
+        // Encapsulate the raw pointer in an (owning) ArrayRCP.
+        return arcp<Ordinal> (rawPtr, 0, numRows+1, true);
+      }
+
+      template<class T>
+      static Teuchos::ArrayRCP<T>
+      allocStorage (const Teuchos::RCP<Node>& node,
+                    const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::arcp;
+
+        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
+          "AltSparseOpsFirstTouchAllocator::allocStorage: The input rowPtrs array "
+          "must have length at least one, but rowPtrs.size() = 0.  (Remember that "
+          "rowPtrs must have exactly one more entry than the number of rows in "
+          "the matrix.)");
+
+        const Ordinal numRows = rowPtrs.size() - 1;
+        const Ordinal totalNumEntries = rowPtrs[numRows];
+        const T zero = Teuchos::ScalarTraits<T>::zero ();
+
+        // Allocate raw, since arcp() might initialize in debug mode.
+        T* const rawVal = new T [totalNumEntries];
+
+        // Get the row pointer so that the compiler doesn't have to
+        // optimize the ArrayView.
+        const Ordinal* const rawRowPtrs = rowPtrs.getRawPtr ();
+
+        // Initialize the values in parallel.  If first touch works,
+        // this should set the proper affinity at page boundaries.  We
+        // iterate over the values using the row pointers, so that if
+        // the Kokkos Node parallelizes in a reproducible way, it will
+        // initialize the values using the same affinity with which
+        // the row pointers were initialized.
+        CsrInitKernel<Ordinal, T> kernel;
+        node->parallel_for (0, numRows, kernel);
+
+        // Encapsulate the raw pointer in an (owning) ArrayRCP.
+        return arcp<T> (rawVal, 0, totalNumEntries, true);
+      }
+
+
+      template<class T>
+      static Teuchos::ArrayRCP<T>
+      copyStorage (const Teuchos::RCP<Node>& node,
+                   const Teuchos::ArrayView<const Ordinal>& rowPtrs,
+                   const Teuchos::ArrayView<const T>& inputVals)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::arcp;
+
+        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
+          "AltSparseOpsFirstTouchAllocator::copyStorage: The input rowPtrs array "
+          "must have length at least one, but rowPtrs.size() = 0.  (Remember that "
+          "rowPtrs must have exactly one more entry than the number of rows in "
+          "the matrix.)");
+
+        const Ordinal numRows = rowPtrs.size() - 1;
+        const Ordinal totalNumEntries = rowPtrs[numRows];
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          inputVals.size() != totalNumEntries, std::invalid_argument,
+          "AltSparseOpsFirstTouchAllocator::copyStorage: The inputVals array "
+          "must have as many entries as the number of entries in the local "
+          "sparse matrix, namely " << totalNumEntries << ".");
+
+        // Allocate raw, since arcp() might initialize in debug mode.
+        T* const rawOutputVals = new T [totalNumEntries];
+
+        // Get the raw pointers so that the compiler doesn't have to
+        // optimize across the ArrayView inlining.
+        const Ordinal* const rawRowPtrs = rowPtrs.getRawPtr ();
+        const T* const rawInputVals = inputVals.getRawPtr ();
+
+        // Copy the values in parallel.  If first touch works, this
+        // should set the proper affinity at page boundaries.  We
+        // iterate over the values using the row pointers, so that if
+        // the Kokkos Node parallelizes in a reproducible way, it will
+        // initialize the values using the same affinity with which
+        // the row pointers were initialized.
+        typedef CsrCopyKernel<Ordinal, T> kernel_type;
+        kernel_type kernel (rawRowPtrs, rawOutputVals, rawInputVals);
+        node->parallel_for (0, numRows, kernel);
+
+        // Encapsulate the raw pointer in an (owning) ArrayRCP.
+        return arcp<T> (rawOutputVals, 0, totalNumEntries, true);
+      }
+    };
+
+
+#ifdef HAVE_KOKKOS_OPENMP
+    // Partial speicalization of AltSparseOpsFirstTouchAllocator for
+    // Node=Kokkos::OpenMPNode.  This just uses OpenMP pragmas
+    // directly, avoiding any possible overhead of going through the
+    // Kokkos Node instance.
+    template <class Ordinal>
+    class AltSparseOpsFirstTouchAllocator<Ordinal, OpenMPNode> {
+    public:
+      static Teuchos::ArrayRCP<Ordinal>
+      allocRowPtrs (const Teuchos::RCP<OpenMPNode>& node,
+                    const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
+      {
+        (void) node;
+
         using Teuchos::ArrayRCP;
         using Teuchos::arcp;
         const Ordinal numRows = numEntriesPerRow.size ();
@@ -211,8 +462,11 @@ namespace Kokkos {
       }
 
       static Teuchos::ArrayRCP<Ordinal>
-      copyRowPtrs (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+      copyRowPtrs (const Teuchos::RCP<OpenMPNode>& node,
+                   const Teuchos::ArrayView<const Ordinal>& rowPtrs)
       {
+        (void) node;
+
         using Teuchos::arcp;
         const Ordinal numRows = rowPtrs.size () - 1;
 
@@ -240,8 +494,11 @@ namespace Kokkos {
 
       template<class T>
       static Teuchos::ArrayRCP<T>
-      allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+      allocStorage (const Teuchos::RCP<OpenMPNode>& node,
+                    const Teuchos::ArrayView<const Ordinal>& rowPtrs)
       {
+        (void) node;
+
         using Teuchos::ArrayRCP;
         using Teuchos::arcp;
 
@@ -287,9 +544,12 @@ namespace Kokkos {
 
       template<class T>
       static Teuchos::ArrayRCP<T>
-      copyStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs,
+      copyStorage (const Teuchos::RCP<Kokkos::OpenMPNode>& node,
+                   const Teuchos::ArrayView<const Ordinal>& rowPtrs,
                    const Teuchos::ArrayView<const T>& inputVals)
       {
+        (void) node;
+
         using Teuchos::ArrayRCP;
         using Teuchos::arcp;
 
@@ -338,6 +598,8 @@ namespace Kokkos {
         return arcp<T> (rawOutputVals, 0, totalNumEntries, true);
       }
     };
+#endif // HAVE_KOKKOS_OPENMP
+
   } // namespace details
 
   /// \class AltCrsGraph
@@ -836,32 +1098,39 @@ namespace Kokkos {
 
     /// \brief Allocate and initialize the storage for the row pointers.
     ///
+    /// \param node [in/out] Kokkos Node instance.
     /// \param numEntriesPerRow [in] numEntriesPerRow[i] is the number
     ///   of entries in row i, for all rows of the local sparse matrix.
     static Teuchos::ArrayRCP<Ordinal>
-    allocRowPtrs (const ArrayView<const Ordinal>& numEntriesPerRow);
+    allocRowPtrs (const Teuchos::RCP<Node>& node,
+                  const ArrayView<const Ordinal>& numEntriesPerRow);
 
     /// \brief Copy the storage for the row pointers.
     ///
+    /// \param node [in/out] Kokkos Node instance.
     /// \param rowPtrs [in] The array of row offsets to copy.
     ///
     /// You might like to call this method if the Allocator promises a
     /// special allocation method (like first-touch allocation), but
     /// the input array was not allocated by the Allocator.
     static Teuchos::ArrayRCP<Ordinal>
-    copyRowPtrs (const Teuchos::ArrayView<const Ordinal>& rowPtrs);
+    copyRowPtrs (const Teuchos::RCP<Node>& node,
+                 const Teuchos::ArrayView<const Ordinal>& rowPtrs);
 
     /// \brief Allocate and initialize the storage for a sparse graph or matrix.
     ///
+    /// \param node [in/out] Kokkos Node instance.
     /// \param rowPtrs [in] The array of row offsets; the 'ptr' array
     ///   in the compressed sparse row storage format.  rowPtrs.size()
     ///   is one plus the number of rows in the local sparse matrix.
     template <class T>
     static Teuchos::ArrayRCP<T>
-    allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs);
+    allocStorage (const Teuchos::RCP<Node>& node,
+                  const Teuchos::ArrayView<const Ordinal>& rowPtrs);
 
     /// \brief Copy the storage for a sparse graph or matrix.
     ///
+    /// \param node [in/out] Kokkos Node instance.
     /// \param rowPtrs [in] The array of row offsets; the 'ptr' array
     ///   in the compressed sparse row storage format.  rowPtrs.size()
     ///   is one plus the number of rows in the local sparse matrix.
@@ -873,7 +1142,8 @@ namespace Kokkos {
     /// inputVals was not allocated by the Allocator.
     template <class T>
     static Teuchos::ArrayRCP<T>
-    copyStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs,
+    copyStorage (const Teuchos::RCP<Node>& node,
+                 const Teuchos::ArrayView<const Ordinal>& rowPtrs,
                  const Teuchos::ArrayView<const T>& inputVals);
 
     //! Finalize the graph.
@@ -1332,9 +1602,9 @@ namespace Kokkos {
         // Allocator template parameter.
         typedef details::AltSparseOpsFirstTouchAllocator<Ordinal, Node> alloc_type;
 
-        ptr_ = alloc_type::copyRowPtrs (ptr ());
-        ind_ = alloc_type::template copyStorage<Ordinal> (ptr (), ind ());
-        val_ = alloc_type::template copyStorage<Scalar> (ptr (), val ());
+        ptr_ = alloc_type::copyRowPtrs (node_, ptr ());
+        ind_ = alloc_type::template copyStorage<Ordinal> (node_, ptr (), ind ());
+        val_ = alloc_type::template copyStorage<Scalar> (node_, ptr (), val ());
       }
       else { // No first touch allocation.
         // We can just use these arrays directly.
@@ -1889,36 +2159,40 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node, class Allocator>
   Teuchos::ArrayRCP<Ordinal>
   AltSparseOps<Scalar, Ordinal, Node, Allocator>::
-  allocRowPtrs (const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
+  allocRowPtrs (const Teuchos::RCP<Node>& node,
+                const Teuchos::ArrayView<const Ordinal>& numEntriesPerRow)
   {
-    return allocator_type::allocRowPtrs (numEntriesPerRow);
+    return allocator_type::allocRowPtrs (node, numEntriesPerRow);
   }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   Teuchos::ArrayRCP<Ordinal>
   AltSparseOps<Scalar, Ordinal, Node, Allocator>::
-  copyRowPtrs (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+  copyRowPtrs (const Teuchos::RCP<Node>& node,
+               const Teuchos::ArrayView<const Ordinal>& rowPtrs)
   {
-    return allocator_type::copyRowPtrs (rowPtrs);
+    return allocator_type::copyRowPtrs (node, rowPtrs);
   }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class T>
   Teuchos::ArrayRCP<T>
   AltSparseOps<Scalar, Ordinal, Node, Allocator>::
-  allocStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+  allocStorage (const Teuchos::RCP<Node>& node,
+                const Teuchos::ArrayView<const Ordinal>& rowPtrs)
   {
-    return allocator_type::template allocStorage<T> (rowPtrs);
+    return allocator_type::template allocStorage<T> (node, rowPtrs);
   }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class T>
   Teuchos::ArrayRCP<T>
   AltSparseOps<Scalar, Ordinal, Node, Allocator>::
-  copyStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs,
+  copyStorage (const Teuchos::RCP<Node>& node,
+               const Teuchos::ArrayView<const Ordinal>& rowPtrs,
                const Teuchos::ArrayView<const T>& inputVals)
   {
-    return allocator_type::template allocStorage<T> (rowPtrs, inputVals);
+    return allocator_type::template allocStorage<T> (node, rowPtrs, inputVals);
   }
 
 } // namespace Kokkos
