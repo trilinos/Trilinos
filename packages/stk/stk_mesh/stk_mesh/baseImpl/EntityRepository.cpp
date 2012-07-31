@@ -107,7 +107,9 @@ EntityRepository::~EntityRepository()
   } catch(...){}
 
   release_all_entity_memory(m_use_pool);
+#ifdef SIERRA_MIGRATION
   release_all_fmwk_attr_memory(m_use_pool);
+#endif
 }
 
 void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
