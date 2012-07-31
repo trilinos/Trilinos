@@ -107,6 +107,8 @@ namespace {
   // Number of threads for the Kokkos Node instance.  -1 means use the
   // default behavior.
   int numThreads = -1;
+  // Whether to force AltSparseOps to use first-touch allocation.
+  bool forceFirstTouch = false;
   // Kokkos Node instance initialization verbosity.
   // Only certain Node types support this option.
   bool verbose = false;
@@ -153,6 +155,8 @@ namespace {
                    "SparseOps should use for sparse mat-vec.  Valid options "
                    "are \"for-for\", \"for-while\", and \"for-if\".  You may "
                    "also use \"all\", which tests all possibilities.");
+    clp.setOption ("forceFirstTouch", "dontForceFirstTouch", &forceFirstTouch,
+                   "Whether to force AltSparseOps to use first-touch allocation.");
 
     ParameterList nodeParams;
     if (numThreads != -1) {
@@ -240,6 +244,7 @@ namespace {
 
     ParameterList params ("AltSparseOps");
     params.set ("Unroll across multivectors", unroll);
+    params.set ("Force first-touch allocation", forceFirstTouch);
     if (variant == "all") {
       std::string variant = "for-for";
       params.set ("Sparse matrix-vector multiply variant", variant);

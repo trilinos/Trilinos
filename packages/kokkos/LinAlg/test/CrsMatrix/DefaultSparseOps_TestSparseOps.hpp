@@ -508,6 +508,7 @@ public:
     readFile (theNumRows, theNumCols, ptr, ind, val, filename);
     numRows = as<ordinal_type> (theNumRows);
     numCols = as<ordinal_type> (theNumCols);
+
     return makeSparseOps (node, params, ptr, ind, val, uplo, diag);
   }
 
@@ -542,6 +543,8 @@ public:
   /// After calling this method, you can set ptr, ind, and val to
   /// null.  This may free memory if the SparseOpsType copies into its
   /// own internal format instead of just using the original arrays.
+  /// Many implementations of SparseOpsType that we provide copy the
+  /// original data and reorganize them into a different format.
   Teuchos::RCP<SparseOpsType>
   makeSparseOps (const Teuchos::RCP<node_type>& node,
                  Teuchos::ParameterList& params,
@@ -561,6 +564,7 @@ public:
     const ordinal_type numRows =
       static_cast<ordinal_type> (ptr.size() == 0 ? 0 : ptr.size() - 1);
     RCP<ParameterList> graphParams = parameterList ("Graph");
+    // FIXME (mfh 30 Jul 2012) This assumes a square graph / matrix.
     RCP<graph_type> graph = rcp (new graph_type (numRows, numRows, node, graphParams));
 
     graph->setStructure (ptr, ind);

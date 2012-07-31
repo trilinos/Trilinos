@@ -325,7 +325,14 @@ namespace Kokkos {
   /// \tparam Scalar The type of entries of the sparse matrix.
   /// \tparam Ordinal The type of (local) indices of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
-  template <class Scalar, class Ordinal, class Node, class Allocator = details::DefaultCRSAllocator<Ordinal,Node> >
+  /// \tparam Allocator Class that defines static methods for
+  ///   allocating the various arrays used by the compressed sparse
+  ///   row format.  This is where first-touch allocation can be
+  ///   implemented, for example.
+  template <class Scalar,
+            class Ordinal,
+            class Node,
+            class Allocator = details::DefaultCRSAllocator<Ordinal,Node> >
   class DefaultHostSparseOps : public Teuchos::Describable {
   public:
     //! \name Typedefs and structs
