@@ -1872,140 +1872,140 @@ namespace Kokkos {
     case 1:
       if (trans == Teuchos::NO_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForfor1Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForfor1Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForif1Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForif1Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile1Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile1Vec<OT, MST, DST, RST>;
         }
       }
       else if (trans == Teuchos::TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForfor1Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForfor1Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForif1Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForif1Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhile1Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForwhile1Vec<OT, MST, DST, RST>;
         }
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForforConj1Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForforConj1Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForifConj1Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForifConj1Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj1Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj1Vec<OT, MST, DST, RST>;
         }
       }
       break;
     case 2:
       if (trans == Teuchos::NO_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForfor2Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForfor2Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForif2Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForif2Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile2Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile2Vec<OT, MST, DST, RST>;
         }
       }
       else if (trans == Teuchos::TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForfor2Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForfor2Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForif2Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForif2Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhile2Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForwhile2Vec<OT, MST, DST, RST>;
         }
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForforConj2Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForforConj2Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForifConj2Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForifConj2Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj2Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj2Vec<OT, MST, DST, RST>;
         }
       }
       break;
     case 3:
       if (trans == Teuchos::NO_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForfor3Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForfor3Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForif3Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForif3Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile3Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile3Vec<OT, MST, DST, RST>;
         }
       }
       else if (trans == Teuchos::TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForfor3Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForfor3Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForif3Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForif3Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhile3Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForwhile3Vec<OT, MST, DST, RST>;
         }
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForforConj3Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForforConj3Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForifConj3Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForifConj3Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj3Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj3Vec<OT, MST, DST, RST>;
         }
       }
       break;
     case 4:
       if (trans == Teuchos::NO_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForfor4Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForfor4Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForif4Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForif4Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile4Vec;
+          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile4Vec<OT, MST, DST, RST>;
         }
       }
       else if (trans == Teuchos::TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForfor4Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForfor4Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForif4Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForif4Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhile4Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForwhile4Vec<OT, MST, DST, RST>;
         }
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForforConj4Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForforConj4Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForifConj4Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForifConj4Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj4Vec;
+          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj4Vec<OT, MST, DST, RST>;
         }
       }
       break;
@@ -2013,7 +2013,7 @@ namespace Kokkos {
       if (unroll_) {
         if (trans == Teuchos::NO_TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCsrColMajorForfor4Unrolled;
+            matVec = &Kokkos::Raw::matVecCsrColMajorForfor4Unrolled<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
             // FIXME (mfh 26 Jul 2012) Currently, the code generator
@@ -2026,14 +2026,15 @@ namespace Kokkos {
             // want to make sure that people don't get confusing
             // performance results.
 
-            //matVec = &Kokkos::Raw::matVecCsrColMajorForif4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCsrColMajorForif4Unrolled<OT, MST, DST, RST>;
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
               "implemented for a non-fixed number of columns in the multi"
               "vectors.  Please use the 'for-for' variant for now.");
           }
-          else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCsrColMajorForwhile4Unrolled;
+          else { // matVecVariant_ == FOR_WHILE ||
+                 // (matVecVariant_ == FOR_IF && hasEmptyRows_)
+            //matVec = &Kokkos::Raw::matVecCsrColMajorForwhile4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2043,10 +2044,10 @@ namespace Kokkos {
         }
         else if (trans == Teuchos::TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForfor4Unrolled;
+            matVec = &Kokkos::Raw::matVecCscColMajorForfor4Unrolled<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCscColMajorForif4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForif4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2054,7 +2055,7 @@ namespace Kokkos {
               "vectors.  Please use the 'for-for' variant for now.");
           }
           else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCscColMajorForwhile4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForwhile4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2064,18 +2065,19 @@ namespace Kokkos {
         }
         else { // if (trans == Teuchos::CONJ_TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForforConj4Unrolled;
+            matVec = &Kokkos::Raw::matVecCscColMajorForforConj4Unrolled<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCscColMajorForifConj4Unrolled;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForifConj4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
               "implemented for a non-fixed number of columns in the multi"
               "vectors.  Please use the 'for-for' variant for now.");
           }
-          else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj4Unrolled;
+          else { // matVecVariant_ == FOR_WHILE ||
+                 // (matVecVariant_ == FOR_IF && hasEmptyRows_)
+            //matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2087,18 +2089,19 @@ namespace Kokkos {
       else { // Don't unroll across multivector columns
         if (trans == Teuchos::NO_TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCsrColMajorForfor;
+            matVec = &Kokkos::Raw::matVecCsrColMajorForfor<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCsrColMajorForif;
+            //matVec = &Kokkos::Raw::matVecCsrColMajorForif<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
               "implemented for a non-fixed number of columns in the multi"
               "vectors.  Please use the 'for-for' variant for now.");
           }
-          else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCsrColMajorForwhile;
+          else { // matVecVariant_ == FOR_WHILE ||
+                 // (matVecVariant_ == FOR_IF && hasEmptyRows_)
+            //matVec = &Kokkos::Raw::matVecCsrColMajorForwhile<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2108,18 +2111,19 @@ namespace Kokkos {
         }
         else if (trans == Teuchos::TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForfor;
+            matVec = &Kokkos::Raw::matVecCscColMajorForfor<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCscColMajorForif;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForif<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
               "implemented for a non-fixed number of columns in the multi"
               "vectors.  Please use the 'for-for' variant for now.");
           }
-          else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCscColMajorForwhile;
+          else { // matVecVariant_ == FOR_WHILE ||
+                 // (matVecVariant_ == FOR_IF && hasEmptyRows_)
+            //matVec = &Kokkos::Raw::matVecCscColMajorForwhile<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2129,18 +2133,19 @@ namespace Kokkos {
         }
         else { // if (trans == Teuchos::CONJ_TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForforConj;
+            matVec = &Kokkos::Raw::matVecCscColMajorForforConj<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCscColMajorForifConj;
+            //matVec = &Kokkos::Raw::matVecCscColMajorForifConj<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
               "implemented for a non-fixed number of columns in the multi"
               "vectors.  Please use the 'for-for' variant for now.");
           }
-          else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj;
+          else { // matVecVariant_ == FOR_WHILE ||
+                 // (matVecVariant_ == FOR_IF && hasEmptyRows_)
+            //matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
