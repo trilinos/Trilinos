@@ -61,6 +61,8 @@ class Epetra_Import;
 class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
+class Epetra_IntSerialDenseVector;
+
 
 // Define this to see a complete dump a an Epetra_CrsMatrix::Multiply(...) call
 //#define EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
@@ -246,6 +248,44 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
   //! Copy constructor.
   Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix);
 	
+
+
+  //! Epetra CrsMatrix constructor that also fuses Import and FillComplete().
+  /*!
+    A common use case is to create an empty destination Epetra_CrsMatrix,
+    redistribute from a source CrsMatrix (by an Import or Export
+    operation), then call FillComplete() on the destination
+    CrsMatrix.  This constructor fuses these three cases, for an
+    Import redistribution.
+    
+    Fusing redistribution and FillComplete() exposes potential
+    optimizations.  For example, it may make constructing the column
+    map faster, and it may avoid intermediate unoptimized storage in
+    the destination Epetra_CrsMatrix.  These optimizations may improve
+    performance for specialized kernels like sparse matrix-matrix
+    multiply, as well as for redistributing data after doing load
+    balancing.
+  
+    The resulting matrix is fill complete (in the sense of
+    Filled()) and has optimized storage (in the sense of
+    StorageOptimized()).  It has the same domain and range Maps as
+    the source matrix.
+    
+    \param SourceMatrix [in] The source matrix from which to
+    import.  The source of an Import must have a nonoverlapping
+    distribution.
+    
+    \param RowImporter [in] The Import instance containing a
+    precomputed redistribution plan.  The source Map of the
+    Import must be the same as the row Map of sourceMatrix.
+
+    \param RangeMap [in] The RangeMap to use.  The only reasonable
+    choices for this are eithe the TargetMap of RoImporter or the RangeMap
+    of SourceMatrix.
+  */
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter, const Epetra_Map &RangeMap);
+
+
   //! Epetra_CrsMatrix Destructor
   virtual ~Epetra_CrsMatrix();
   //@}
@@ -1167,6 +1207,40 @@ or if the number of entries in this row exceed the Length parameter.
 	  } 
 	  else { IndexOffset = 0; Indices = 0; Values_in  = 0; return (-1);} }
 	
+    
+    //! Returns a reference to the Epetra_IntSerialDenseVector used to hold the IndexOffsets (CRS rowptr)
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.
+    */
+    Epetra_IntSerialDenseVector& ExpertExtractIndexOffset();
+
+    //! Returns a reference to the Epetra_IntSerialDenseVector used to hold the All_Indices (CRS colind)
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.
+    */
+    Epetra_IntSerialDenseVector& ExpertExtractIndices();  
+
+    //! Returns a reference to the double* used to hold the values array
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.    
+    */
+    double *& ExpertExtractValues() {return All_Values_;}
+
+
+    //! Performs a FillComplete on an object that aready has filled CRS data
+    /*! Performs a lightweight FillComplete on an object that already has filled IndexOffsets, All_Indices and All_Values.
+      This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.
+       \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    int ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, bool MakeImportExport=true);
+
+
+    //! Makes sure this matrix has a unique CrsGraphData object
+    /*! This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.
+      \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    int ExpertMakeUniqueCrsGraphData();
+
   //! Forces FillComplete() to locally order ghostnodes associated with each remote processor in ascending order.
   /*! To be compliant with AztecOO, FillComplete() already locally orders ghostnodes such that
       information received from processor k has a lower local numbering than information received
@@ -1264,6 +1338,16 @@ or if the number of entries in this row exceed the Length parameter.
                      bool& VarSizes,
                      Epetra_Distributor& Distor);
 
+  int PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & Source, 
+				   int NumExportIDs,
+				   int * ExportLIDs,
+				   int & LenExports,
+				   char *& Exports,
+				   int & SizeOfPacket,
+				   int * Sizes,
+				   bool & VarSizes,
+				   Epetra_Distributor & Distor);
+
   int UnpackAndCombine(const Epetra_SrcDistObject& Source, 
                        int NumImportIDs,
                        int* ImportLIDs, 
@@ -1273,6 +1357,10 @@ or if the number of entries in this row exceed the Length parameter.
                        Epetra_Distributor& Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
+
+  // For fused constructor
+  int LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs, std::vector<int> & PIDList);
+
 
   //! Sort column entries, row-by-row, in ascending order.
   int SortEntries();
