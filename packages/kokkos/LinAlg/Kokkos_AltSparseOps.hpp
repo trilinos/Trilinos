@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __Kokkos_SeqSparseOps_hpp
-#define __Kokkos_SeqSparseOps_hpp
+#ifndef __Kokkos_AltSparseOps_hpp
+#define __Kokkos_AltSparseOps_hpp
 
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_DataAccess.hpp>
@@ -64,16 +64,292 @@
 
 namespace Kokkos {
 
-  /// \class SeqCrsGraph
+  namespace details {
+
+    /// \class AltSparseOpsDefaultAllocator
+    /// \brief Default allocator for AltSparseOps.
+    template <class Ordinal, class Node>
+    class AltSparseOpsDefaultAllocator {
+    public:
+      static Teuchos::ArrayRCP<size_t>
+      allocRowPtrs (const Teuchos::ArrayView<const size_t>& numEntriesPerRow)
+      {
+        const Ordinal numRows = numEntriesPerRow.size ();
+
+        // Let the ArrayRCP constructor do the allocation.
+        Teuchos::ArrayRCP<size_t> ptr (numRows + 1);
+        ptr[0] = 0; // We'll fill in the rest of the entries below.
+
+        if (numRows > 0) {
+          // Fill in ptr sequentially for now.  We might parallelize
+          // this later, though it's still only O(numRows) work.
+          // Parallel prefix is only likely to pay off for a large
+          // number of threads.
+          std::partial_sum (numEntriesPerRow.getRawPtr (),
+                            numEntriesPerRow.getRawPtr () + numRows,
+                            ptr.getRawPtr () + 1);
+        }
+        return ptr;
+      }
+
+      static Teuchos::ArrayRCP<size_t>
+      copyRowPtrs (const Teuchos::ArrayView<const size_t>& rowPtrs)
+      {
+        // Let the ArrayRCP constructor do the allocation.
+        Teuchos::ArrayRCP<size_t> ptr (rowPtrs.size ());
+
+        // Copy rowPtrs sequentially for now.  We might parallelize
+        // this later, though it's still only O(numRows) work.
+        std::copy (rowPtrs.getRawPtr (),
+                   rowPtrs.getRawPtr () + rowPtrs.size (),
+                   ptr.getRawPtr ());
+        return ptr;
+      }
+
+      template<class T>
+      static Teuchos::ArrayRCP<T>
+      allocStorage (const Teuchos::ArrayView<const size_t>& rowPtrs)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::arcp;
+
+        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
+          "AltSparseOpsDefaultAllocator::allocStorage: The input rowPtrs array "
+          "must have length at least one, but rowPtrs.size() = 0.  (Remember that "
+          "rowPtrs must have exactly one more entry than the number of rows in "
+          "the matrix.)");
+
+        const Ordinal numRows = rowPtrs.size() - 1;
+        const size_t totalNumEntries = rowPtrs[numRows];
+        const T zero = Teuchos::ScalarTraits<T>::zero ();
+
+        // Let the ArrayRCP constructor do the allocation.
+        ArrayRCP<T> val (totalNumEntries);
+
+        // Initialize the values sequentially.
+        std::fill (val.getRawPtr (), val.getRawPtr () + totalNumEntries, zero);
+        return val;
+      }
+
+      template<class T>
+      static Teuchos::ArrayRCP<T>
+      copyStorage (const Teuchos::ArrayView<const size_t>& rowPtrs,
+                   const Teuchos::ArrayView<const T>& inputVals)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::arcp;
+
+        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
+          "AltSparseOpsDefaultAllocator::copyStorage: The input rowPtrs array "
+          "must have length at least one, but rowPtrs.size() = 0.  (Remember that "
+          "rowPtrs must have exactly one more entry than the number of rows in "
+          "the matrix.)");
+
+        const Ordinal numRows = rowPtrs.size() - 1;
+        const size_t totalNumEntries = rowPtrs[numRows];
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          inputVals.size() != totalNumEntries, std::invalid_argument,
+          "AltSparseOpsDefaultAllocator::copyStorage: The inputVals array "
+          "must have as many entries as the number of entries in the local "
+          "sparse matrix, namely " << totalNumEntries << ".");
+
+        // Let the ArrayRCP constructor do the allocation.
+        ArrayRCP<T> val (totalNumEntries);
+
+        // Get the raw pointers so that the compiler doesn't have to
+        // optimize across the ArrayView inlining.
+        const T* const rawInputVals = inputVals.getRawPtr ();
+        T* const rawOutputVals = val.getRawPtr ();
+
+        // Copy the values sequentially.
+        std::copy (rawInputVals, rawInputVals + totalNumEntries, rawOutputVals);
+        return val;
+      }
+    };
+
+
+    /// \class AltSparseOpsFirstTouchAllocator
+    /// \brief Allocator for AltSparseOps, based on first-touch allocation.
+    template <class Ordinal, class Node>
+    class AltSparseOpsFirstTouchAllocator {
+    public:
+      static Teuchos::ArrayRCP<size_t>
+      allocRowPtrs (const Teuchos::ArrayView<const size_t>& numEntriesPerRow)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::arcp;
+        const Ordinal numRows = numEntriesPerRow.size ();
+
+        // Allocate raw, since arcp() might initialize in debug mode.
+        size_t* const rawPtr = new size_t [numRows + 1];
+
+        // Initialize the row pointers in parallel.  If the operating
+        // system respects first-touch initialization, this should set
+        // the proper NUMA affinity, at least at page boundaries.  We
+        // don't rely on the Kokkos Node for parallelization; instead,
+        // we use OpenMP, since that's what our kernels use.  If
+        // you're building without OpenMP support, the compiler will
+        // simply ignore this pragma.
+        #pragma omp parallel for
+        for (Ordinal i = 0; i < numRows+1; ++i) {
+          rawPtr[i] = 0;
+        }
+        // Encapsulate the raw pointer in an (owning) ArrayRCP.
+        ArrayRCP<size_t> ptr = arcp<size_t> (rawPtr, 0, numRows+1, true);
+
+        if (numRows > 0) {
+          // Fill in ptr sequentially for now.  We might parallelize
+          // this later, though it's still only O(numRows) work.
+          // Parallel prefix is only likely to pay off for a large
+          // number of threads.
+          std::partial_sum (numEntriesPerRow.getRawPtr (),
+                            numEntriesPerRow.getRawPtr () + numRows,
+                            ptr.getRawPtr () + 1);
+        }
+        return ptr;
+      }
+
+      static Teuchos::ArrayRCP<size_t>
+      copyRowPtrs (const Teuchos::ArrayView<const size_t>& rowPtrs)
+      {
+        using Teuchos::arcp;
+        const Ordinal numRows = rowPtrs.size () - 1;
+
+        // Don't force the compiler to inline ArrayView::operator[] in
+        // the loop below.
+        const size_t* const rawRowPtrs = rowPtrs.getRawPtr ();
+
+        // Allocate raw, since arcp() might initialize in debug mode.
+        size_t* const rawPtr = new size_t [numRows + 1];
+
+        // Copy the row pointers in parallel.  If first touch works,
+        // this should set the proper affinity at page boundaries.  We
+        // don't rely on the Kokkos Node for this; instead, we use
+        // OpenMP, since that's what our kernels use.  If you're
+        // building without OpenMP support, the compiler will simply
+        // ignore this pragma.
+        #pragma omp parallel for
+        for (Ordinal i = 0; i < numRows+1; ++i) {
+          rawPtr[i] = rawRowPtrs[i];
+        }
+
+        // Encapsulate the raw pointer in an (owning) ArrayRCP.
+        return arcp<size_t> (rawPtr, 0, numRows+1, true);
+      }
+
+      template<class T>
+      static Teuchos::ArrayRCP<T>
+      allocStorage (const Teuchos::ArrayView<const size_t>& rowPtrs)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::arcp;
+
+        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
+          "AltSparseOpsFirstTouchAllocator::allocStorage: The input rowPtrs array "
+          "must have length at least one, but rowPtrs.size() = 0.  (Remember that "
+          "rowPtrs must have exactly one more entry than the number of rows in "
+          "the matrix.)");
+
+        const Ordinal numRows = rowPtrs.size() - 1;
+        const size_t totalNumEntries = rowPtrs[numRows];
+        const T zero = Teuchos::ScalarTraits<T>::zero ();
+
+        // Allocate raw, since arcp() might initialize in debug mode.
+        T* const rawVal = new T [totalNumEntries];
+
+        // Get the row pointer so that the compiler doesn't have to
+        // optimize the ArrayView.
+        const size_t* const rawRowPtrs = rowPtrs.getRawPtr ();
+
+        // Initialize the values in parallel.  If first touch works,
+        // this should set the proper affinity at page boundaries.  We
+        // don't rely on the Kokkos Node for this; instead, we use
+        // OpenMP, since that's what our kernels use.  We also iterate
+        // over the values using the row pointers, so that if OpenMP
+        // parallelizes in a reproducible way, it will initialize the
+        // values using the same affinity with which the row pointers
+        // were initialized.
+        //
+        // If you're building without OpenMP support, the compiler will
+        // simply ignore this pragma.
+#pragma omp parallel for
+        for (Ordinal i = 0; i < numRows; ++i) {
+          for (size_t k = rawRowPtrs[i]; k < rawRowPtrs[i+1]; ++k) {
+            rawVal[k] = zero;
+          }
+        }
+
+        // Encapsulate the raw pointer in an (owning) ArrayRCP.
+        return arcp<T> (rawVal, 0, totalNumEntries, true);
+      }
+
+
+      template<class T>
+      static Teuchos::ArrayRCP<T>
+      copyStorage (const Teuchos::ArrayView<const size_t>& rowPtrs,
+                   const Teuchos::ArrayView<const T>& inputVals)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::arcp;
+
+        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
+          "AltSparseOpsFirstTouchAllocator::copyStorage: The input rowPtrs array "
+          "must have length at least one, but rowPtrs.size() = 0.  (Remember that "
+          "rowPtrs must have exactly one more entry than the number of rows in "
+          "the matrix.)");
+
+        const Ordinal numRows = rowPtrs.size() - 1;
+        const size_t totalNumEntries = rowPtrs[numRows];
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          inputVals.size() != totalNumEntries, std::invalid_argument,
+          "AltSparseOpsFirstTouchAllocator::copyStorage: The inputVals array "
+          "must have as many entries as the number of entries in the local "
+          "sparse matrix, namely " << totalNumEntries << ".");
+
+        // Allocate raw, since arcp() might initialize in debug mode.
+        T* const rawOutputVals = new T [totalNumEntries];
+
+        // Get the raw pointers so that the compiler doesn't have to
+        // optimize across the ArrayView inlining.
+        const size_t* const rawRowPtrs = rowPtrs.getRawPtr ();
+        const T* const rawInputVals = inputVals.getRawPtr ();
+
+        // Copy the values in parallel.  If first touch works, this
+        // should set the proper affinity at page boundaries.  We
+        // don't rely on the Kokkos Node for this; instead, we use
+        // OpenMP, since that's what our kernels use.  We also iterate
+        // over the values using the row pointers, so that if OpenMP
+        // parallelizes in a reproducible way, it will initialize the
+        // values using the same affinity with which the row pointers
+        // were initialized.
+        //
+        // If you're building without OpenMP support, the compiler will
+        // simply ignore this pragma.
+#pragma omp parallel for
+        for (Ordinal i = 0; i < numRows; ++i) {
+          for (size_t k = rawRowPtrs[i]; k < rawRowPtrs[i+1]; ++k) {
+            rawOutputVals[k] = rawInputVals[k];
+          }
+        }
+
+        // Encapsulate the raw pointer in an (owning) ArrayRCP.
+        return arcp<T> (rawOutputVals, 0, totalNumEntries, true);
+      }
+    };
+  } // namespace details
+
+  /// \class AltCrsGraph
   /// \brief Local sparse graph in compressed sparse row format;
   ///   suitable for host-based Kokkos Nodes.
   template <class Ordinal,class Node>
-  class SeqCrsGraph {
+  class AltCrsGraph {
   public:
     typedef Ordinal ordinal_type;
     typedef Node node_type;
 
-    SeqCrsGraph (Ordinal numRows, Ordinal numCols,
+    AltCrsGraph (Ordinal numRows, Ordinal numCols,
                  const Teuchos::RCP<Node>& node,
                  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -138,23 +414,23 @@ namespace Kokkos {
   };
 
 
-  /// \class SeqCrsMatrix
+  /// \class AltCrsMatrix
   /// \brief Local sparse matrix in compressed sparse row format;
   ///   suitable for host-based Kokkos Nodes.
   ///
-  /// \note Tied to a particular SeqCrsGraph instance that defines the
+  /// \note Tied to a particular AltCrsGraph instance that defines the
   ///   structure of the sparse matrix.
   template <class Scalar,
             class Ordinal,
             class Node>
-  class SeqCrsMatrix {
+  class AltCrsMatrix {
   public:
     typedef Scalar scalar_type;
     typedef Ordinal ordinal_type;
     typedef Node node_type;
-    typedef SeqCrsGraph<Ordinal,Node> graph_type;
+    typedef AltCrsGraph<Ordinal,Node> graph_type;
 
-    SeqCrsMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> > &graph,
+    AltCrsMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> > &graph,
                   const Teuchos::RCP<Teuchos::ParameterList> &params);
 
     void setValues (const Teuchos::ArrayRCP<const Scalar>& val);
@@ -174,8 +450,8 @@ namespace Kokkos {
   };
 
   template <class Ordinal, class Node>
-  SeqCrsGraph<Ordinal,Node>::
-  SeqCrsGraph (Ordinal numRows, Ordinal numCols,
+  AltCrsGraph<Ordinal,Node>::
+  AltCrsGraph (Ordinal numRows, Ordinal numCols,
                const Teuchos::RCP<Node> &node,
                const Teuchos::RCP<Teuchos::ParameterList> &params) :
     node_ (node),
@@ -198,7 +474,7 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void
-  SeqCrsGraph<Ordinal,Node>::
+  AltCrsGraph<Ordinal,Node>::
   setStructure (const Teuchos::ArrayRCP<const size_t> &ptr,
                 const Teuchos::ArrayRCP<const Ordinal> &ind)
   {
@@ -241,7 +517,7 @@ namespace Kokkos {
       ": Graph has already been initialized."
     )
 
-    const Ordinal numEntries = ptr[numRows];
+    const size_t numEntries = ptr[numRows];
     if (numRows == 0 || numEntries == 0) {
       isEmpty_ = true;
       hasEmptyRows_ = true; // trivially
@@ -265,7 +541,7 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void
-  SeqCrsGraph<Ordinal,Node>::
+  AltCrsGraph<Ordinal,Node>::
   setMatDesc (Teuchos::EUplo uplo, Teuchos::EDiag diag)
   {
     tri_uplo_ = uplo;
@@ -274,7 +550,7 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void
-  SeqCrsGraph<Ordinal,Node>::
+  AltCrsGraph<Ordinal,Node>::
   getMatDesc (Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const
   {
     uplo = tri_uplo_;
@@ -282,8 +558,8 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  SeqCrsMatrix<Scalar,Ordinal,Node>::
-  SeqCrsMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> >& graph,
+  AltCrsMatrix<Scalar,Ordinal,Node>::
+  AltCrsMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> >& graph,
                 const Teuchos::RCP<Teuchos::ParameterList>& params) :
     graph_ (graph),
     isInitialized_ (false)
@@ -298,7 +574,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void
-  SeqCrsMatrix<Scalar,Ordinal,Node>::
+  AltCrsMatrix<Scalar,Ordinal,Node>::
   setValues (const Teuchos::ArrayRCP<const Scalar> &val)
   {
     std::string tfecfFuncName("setValues(val)");
@@ -320,39 +596,57 @@ namespace Kokkos {
     }
   }
 
-  /// \class SeqSparseOps
-  /// \brief Implementation of local sequential sparse matrix-vector multiply
-  ///   and solve routines, for host-based Kokkos Node types.
+  /// \class AltSparseOps
+  /// \brief Alternate implementation of local sparse matrix-vector
+  ///   multiply and solve routines, for host-based Kokkos Node types.
   /// \ingroup kokkos_crs_ops
   ///
   /// \tparam Scalar The type of entries of the sparse matrix.
   /// \tparam Ordinal The type of (local) indices of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
-  template <class Scalar, class Ordinal, class Node>
-  class SeqSparseOps : public Teuchos::Describable {
+  /// \tparam Allocator Class that defines static methods for
+  ///   allocating the various arrays used by the compressed sparse
+  ///   row format.  This is where first-touch allocation can be
+  ///   implemented, for example.
+  ///
+  /// This class is called AltSparseOps ("alternate sparse
+  /// operations") because the default local sparse operations class
+  /// on host-based Kokkos Nodes is DefaultHostSparseOps.
+  ///
+  /// While this class is templated on the Kokkos Node type, it does
+  /// not use any functionality of the Kokkos Node.
+  ///
+  /// This class uses the given Allocator by default.
+  template <class Scalar,
+            class Ordinal,
+            class Node,
+            class Allocator = details::AltSparseOpsDefaultAllocator<Ordinal, Node> >
+  class AltSparseOps : public Teuchos::Describable {
   public:
     //! \name Typedefs and structs
     //@{
 
     //! The type of the individual entries of the sparse matrix.
-    typedef Scalar  scalar_type;
+    typedef Scalar scalar_type;
     //! The type of the (local) indices describing the structure of the sparse matrix.
     typedef Ordinal ordinal_type;
     //! The Kokkos Node type.
-    typedef Node    node_type;
-    //! The type of this object, the sparse operator object
-    typedef SeqSparseOps<Scalar, Ordinal, Node> sparse_ops_type;
+    typedef Node node_type;
+    //! The Allocator type, whose class methods allocate the three arrays.
+    typedef Allocator allocator_type;
+    //! The type of this object, the sparse operator object.
+    typedef AltSparseOps<Scalar, Ordinal, Node, Allocator> sparse_ops_type;
 
     //! Typedef for local graph class
     template <class O, class N>
     struct graph {
-      typedef SeqCrsGraph<O,N> graph_type;
+      typedef AltCrsGraph<O,N> graph_type;
     };
 
     //! Typedef for local matrix class
     template <class S, class O, class N>
     struct matrix {
-      typedef SeqCrsMatrix<S,O,N> matrix_type;
+      typedef AltCrsMatrix<S,O,N> matrix_type;
     };
 
     /// \brief Sparse operations type for a different scalar type.
@@ -364,13 +658,13 @@ namespace Kokkos {
     /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar
     /// type to the appropriate scalar.
     ///
-    /// This always specifies a specialization of SeqSparseOps,
+    /// This always specifies a specialization of AltSparseOps,
     /// regardless of the scalar type S2.
     ///
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct bind_scalar {
-      typedef SeqSparseOps<S2, Ordinal, Node> other_type;
+      typedef AltSparseOps<S2, Ordinal, Node> other_type;
     };
 
     //@}
@@ -386,7 +680,7 @@ namespace Kokkos {
     /// you must use the constructor that takes a ParameterList.
     ///
     /// \param node [in/out] Kokkos Node instance.
-    SeqSparseOps (const Teuchos::RCP<Node>& node);
+    AltSparseOps (const Teuchos::RCP<Node>& node);
 
     /// \brief Constructor, with custom parameters.
     ///
@@ -402,11 +696,11 @@ namespace Kokkos {
     /// \param params [in/out] Parameters for the solve.  We fill in
     ///   the given ParameterList with its default values, but we
     ///   don't keep it around.  (This saves a bit of memory.)
-    SeqSparseOps (const Teuchos::RCP<Node>& node,
+    AltSparseOps (const Teuchos::RCP<Node>& node,
                   Teuchos::ParameterList& plist);
 
     //! Destructor
-    ~SeqSparseOps();
+    ~AltSparseOps();
 
     /// \brief Get a default ParameterList.
     ///
@@ -415,7 +709,7 @@ namespace Kokkos {
     ///
     /// This is a class (static) method so that you can get the
     /// default ParameterList (with built-in documentation) before
-    /// constructing a SeqSparseOps instance.
+    /// constructing a AltSparseOps instance.
     static Teuchos::RCP<const Teuchos::ParameterList>
     getDefaultParameters ()
     {
@@ -424,7 +718,7 @@ namespace Kokkos {
       using Teuchos::RCP;
       using Teuchos::rcp_const_cast;
 
-      RCP<ParameterList> plist = parameterList ("SeqSparseOps");
+      RCP<ParameterList> plist = parameterList ("AltSparseOps");
       setDefaultParameters (*plist);
       return rcp_const_cast<const ParameterList> (plist);
     }
@@ -437,7 +731,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os <<  "Kokkos::SeqSparseOps<"
+      os <<  "Kokkos::AltSparseOps<"
          << "Scalar=" << TypeNameTraits<Scalar>::name()
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -540,26 +834,59 @@ namespace Kokkos {
     //! @name Initialization of graph and matrix
     //@{
 
-    //! \brief Allocate and initialize the storage for the row pointers.
+    /// \brief Allocate and initialize the storage for the row pointers.
+    ///
+    /// \param numEntriesPerRow [in] numEntriesPerRow[i] is the number
+    ///   of entries in row i, for all rows of the local sparse matrix.
     static Teuchos::ArrayRCP<size_t>
     allocRowPtrs (const ArrayView<const size_t>& numEntriesPerRow);
 
-    //! Allocate and initialize the storage for a sparse graph or matrix.
+    /// \brief Copy the storage for the row pointers.
+    ///
+    /// \param rowPtrs [in] The array of row offsets to copy.
+    ///
+    /// You might like to call this method if the Allocator promises a
+    /// special allocation method (like first-touch allocation), but
+    /// the input array was not allocated by the Allocator.
+    static Teuchos::ArrayRCP<Ordinal>
+    copyRowPtrs (const Teuchos::ArrayView<const Ordinal>& rowPtrs);
+
+    /// \brief Allocate and initialize the storage for a sparse graph or matrix.
+    ///
+    /// \param rowPtrs [in] The array of row offsets; the 'ptr' array
+    ///   in the compressed sparse row storage format.  rowPtrs.size()
+    ///   is one plus the number of rows in the local sparse matrix.
     template <class T>
     static Teuchos::ArrayRCP<T>
     allocStorage (const Teuchos::ArrayView<const size_t>& rowPtrs);
 
-    //! Finalize a graph
+    /// \brief Copy the storage for a sparse graph or matrix.
+    ///
+    /// \param rowPtrs [in] The array of row offsets; the 'ptr' array
+    ///   in the compressed sparse row storage format.  rowPtrs.size()
+    ///   is one plus the number of rows in the local sparse matrix.
+    /// \param inputVals [in] The array of input values (or column
+    ///   indices) to copy.
+    ///
+    /// You might like to call this method if the Allocator promises a
+    /// special allocation method (like first-touch allocation), but
+    /// inputVals was not allocated by the Allocator.
+    template <class T>
+    static Teuchos::ArrayRCP<T>
+    copyStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs,
+                 const Teuchos::ArrayView<const T>& inputVals);
+
+    //! Finalize the graph.
     static void
     finalizeGraph (Teuchos::EUplo uplo,
                    Teuchos::EDiag diag,
-                   SeqCrsGraph<Ordinal, Node>& graph,
+                   AltCrsGraph<Ordinal, Node>& graph,
                    const Teuchos::RCP<Teuchos::ParameterList> &params);
 
     //! Finalize the matrix of an already-finalized graph.
     static void
-    finalizeMatrix (const SeqCrsGraph<Ordinal, Node>& graph,
-                    SeqCrsMatrix<Scalar, Ordinal, Node>& matrix,
+    finalizeMatrix (const AltCrsGraph<Ordinal, Node>& graph,
+                    AltCrsMatrix<Scalar, Ordinal, Node>& matrix,
                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Finalize a graph and a matrix.
@@ -573,14 +900,14 @@ namespace Kokkos {
     static void
     finalizeGraphAndMatrix (Teuchos::EUplo uplo,
                             Teuchos::EDiag diag,
-                            SeqCrsGraph<Ordinal, Node>& graph,
-                            SeqCrsMatrix<Scalar, Ordinal, Node>& matrix,
+                            AltCrsGraph<Ordinal, Node>& graph,
+                            AltCrsMatrix<Scalar, Ordinal, Node>& matrix,
                             const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Initialize sparse operations with a graph and matrix.
     void
-    setGraphAndMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> > &graph,
-                       const Teuchos::RCP<const SeqCrsMatrix<Scalar,Ordinal,Node> > &matrix);
+    setGraphAndMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> > &graph,
+                       const Teuchos::RCP<const AltCrsMatrix<Scalar,Ordinal,Node> > &matrix);
 
     //@}
     //! @name Computational methods
@@ -724,23 +1051,32 @@ namespace Kokkos {
     static void
     setDefaultUnrollParameter (Teuchos::ParameterList& plist);
 
+    //! Set the default parameter for forcing first-touch allocation.
+    static void
+    setDefaultFirstTouchParameter (Teuchos::ParameterList& plist);
+
     //! Copy constructor (protected and unimplemented)
-    SeqSparseOps (const SeqSparseOps& source);
+    AltSparseOps (const AltSparseOps& source);
 
     //! The Kokkos Node instance given to this object's constructor.
     Teuchos::RCP<Node> node_;
 
-    // we do this one of two ways:
-    // packed CRS: array of row pointers, array of indices, array of values.
-
+    //! \name Raw compressed sparse row storage of the local sparse matrix.
+    //@{
     ArrayRCP<const size_t>  ptr_;
     ArrayRCP<const Ordinal> ind_;
     ArrayRCP<const Scalar>  val_;
+    //@}
 
     Teuchos::EUplo  tri_uplo_;
     Teuchos::EDiag unit_diag_;
+
+    //! \name Parameters set by the constructor's input ParameterList.
+    //@{
     EMatVecVariant matVecVariant_;
     bool unroll_;
+    bool firstTouchAllocation_;
+    //@}
 
     Ordinal numRows_;
     bool isInitialized_;
@@ -748,86 +1084,88 @@ namespace Kokkos {
     bool hasEmptyRows_;
   };
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   finalizeGraph (Teuchos::EUplo uplo,
                  Teuchos::EDiag diag,
-                 SeqCrsGraph<Ordinal,Node>& graph,
+                 AltCrsGraph<Ordinal,Node>& graph,
                  const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph.isInitialized(), std::runtime_error,
-      "Kokkos::SeqSparseOps::finalizeGraph: Graph has not yet been initialized."
+      "Kokkos::AltSparseOps::finalizeGraph: Graph has not yet been initialized."
     );
     graph.setMatDesc (uplo, diag);
   }
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
-  finalizeMatrix (const SeqCrsGraph<Ordinal,Node> &graph,
-                  SeqCrsMatrix<Scalar,Ordinal,Node> &matrix,
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  finalizeMatrix (const AltCrsGraph<Ordinal,Node> &graph,
+                  AltCrsMatrix<Scalar,Ordinal,Node> &matrix,
                   const Teuchos::RCP<Teuchos::ParameterList> &params)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! matrix.isInitialized(), std::runtime_error,
-      "Kokkos::SeqSparseOps::finalizeMatrix(graph,matrix,params): "
+      "Kokkos::AltSparseOps::finalizeMatrix(graph,matrix,params): "
       "Matrix has not yet been initialized."
     );
   }
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   finalizeGraphAndMatrix (Teuchos::EUplo uplo,
                           Teuchos::EDiag diag,
-                          SeqCrsGraph<Ordinal,Node>& graph,
-                          SeqCrsMatrix<Scalar,Ordinal,Node>& matrix,
+                          AltCrsGraph<Ordinal,Node>& graph,
+                          AltCrsMatrix<Scalar,Ordinal,Node>& matrix,
                           const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph.isInitialized(), std::runtime_error,
-      "Kokkos::SeqSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
+      "Kokkos::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
       "Graph has not yet been initialized."
     );
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! matrix.isInitialized(), std::runtime_error,
-      "Kokkos::SeqSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
+      "Kokkos::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
       "Matrix has not yet been initialized."
     );
     graph.setMatDesc (uplo, diag);
   }
 
 
-  template<class Scalar, class Ordinal, class Node>
-  SeqSparseOps<Scalar,Ordinal,Node>::
-  SeqSparseOps (const Teuchos::RCP<Node>& node) :
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  AltSparseOps (const Teuchos::RCP<Node>& node) :
     node_ (node),
     tri_uplo_ (Teuchos::UNDEF_TRI),      // Provisionally
     unit_diag_ (Teuchos::NON_UNIT_DIAG), // Provisionally
-    matVecVariant_ (SeqSparseOps<Scalar,Ordinal,Node>::FOR_FOR),
+    matVecVariant_ (AltSparseOps<Scalar, Ordinal, Node, Allocator>::FOR_FOR),
     unroll_ (true),
+    firstTouchAllocation_ (false),
     numRows_ (0),                        // Provisionally
     isInitialized_ (false),
     isEmpty_ (true),                     // Provisionally
     hasEmptyRows_ (true)                 // Provisionally
   {
-    // Make sure that users only specialize SeqSparseOps for Kokkos
+    // Make sure that users only specialize AltSparseOps for Kokkos
     // Node types that are host Nodes (vs. device Nodes, such as GPU
     // Nodes).
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
   }
 
-  template<class Scalar, class Ordinal, class Node>
-  SeqSparseOps<Scalar,Ordinal,Node>::
-  SeqSparseOps (const Teuchos::RCP<Node>& node,
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  AltSparseOps (const Teuchos::RCP<Node>& node,
                 Teuchos::ParameterList& params) :
     node_ (node),
     tri_uplo_ (Teuchos::UNDEF_TRI),      // Provisionally
     unit_diag_ (Teuchos::NON_UNIT_DIAG), // Provisionally
-    matVecVariant_ (SeqSparseOps<Scalar,Ordinal,Node>::FOR_FOR),
+    matVecVariant_ (AltSparseOps<Scalar, Ordinal, Node, Allocator>::FOR_FOR),
     unroll_ (true),
+    firstTouchAllocation_ (false),
     numRows_ (0),                        // Provisionally
     isInitialized_ (false),
     isEmpty_ (true),                     // Provisionally
@@ -837,32 +1175,39 @@ namespace Kokkos {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
-    // Make sure that users only specialize SeqSparseOps for Kokkos
+    // Make sure that users only specialize AltSparseOps for Kokkos
     // Node types that are host Nodes (vs. device Nodes, such as GPU
     // Nodes).
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
 
     params.validateParametersAndSetDefaults (*getDefaultParameters ());
-    matVecVariant_ = getIntegralValue<EMatVecVariant> (params, "Sparse matrix-vector multiply variant");
-    unroll_ = params.get<bool> ("Unroll across multivectors");
+
+    const std::string varParamName ("Sparse matrix-vector multiply variant");
+    const std::string unrollParamName ("Unroll across multivectors");
+    const std::string firstTouchParamName ("Force first-touch allocation");
+
+    matVecVariant_ = getIntegralValue<EMatVecVariant> (params, varParamName);
+    unroll_ = params.get<bool> (unrollParamName);
+    firstTouchAllocation_ = params.get<bool> (firstTouchParamName);
   }
 
-  template<class Scalar, class Ordinal, class Node>
-  SeqSparseOps<Scalar,Ordinal,Node>::~SeqSparseOps() {
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::~AltSparseOps() {
   }
 
-  template<class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   setDefaultParameters (Teuchos::ParameterList& plist)
   {
     setDefaultMatVecVariantParameter (plist);
     setDefaultUnrollParameter (plist);
+    setDefaultFirstTouchParameter (plist);
   }
 
-  template<class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   setDefaultUnrollParameter (Teuchos::ParameterList& plist)
   {
     const bool unroll = true;
@@ -871,9 +1216,21 @@ namespace Kokkos {
                "ouput multivectors");
   }
 
-  template<class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  setDefaultFirstTouchParameter (Teuchos::ParameterList& plist)
+  {
+    const bool firstTouchAllocation = false;
+    plist.set ("Force first-touch allocation", firstTouchAllocation,
+               "Whether to copy all the input data and initialize them in "
+               "parallel (using OpenMP if available), to ensure first-touch "
+               "initialization");
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  void
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   setDefaultMatVecVariantParameter (Teuchos::ParameterList& plist)
   {
     using Teuchos::Array;
@@ -896,21 +1253,22 @@ namespace Kokkos {
     vals[2] = FOR_IF;
 
     const std::string paramName ("Sparse matrix-vector multiply variant");
-    const std::string paramDoc ("Which algorithm variant to use for sparse matrix-vector multiply");
+    const std::string paramDoc ("Which algorithm variant to use for sparse "
+                                "matrix-vector multiply");
     plist.set (paramName, strs[0], paramDoc,
                stringToIntegralParameterEntryValidator<EMatVecVariant> (strs(), docs(), vals(), strs[0]));
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  RCP<Node> SeqSparseOps<Scalar,Ordinal,Node>::getNode() const {
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  RCP<Node> AltSparseOps<Scalar, Ordinal, Node, Allocator>::getNode() const {
     return node_;
   }
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
-  setGraphAndMatrix (const Teuchos::RCP<const SeqCrsGraph<Ordinal,Node> > &opgraph,
-                     const Teuchos::RCP<const SeqCrsMatrix<Scalar,Ordinal,Node> > &opmatrix)
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  setGraphAndMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> > &opgraph,
+                     const Teuchos::RCP<const AltCrsMatrix<Scalar,Ordinal,Node> > &opmatrix)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::arcp;
@@ -928,15 +1286,6 @@ namespace Kokkos {
     ArrayRCP<const Ordinal> ind = opgraph->getIndices ();
     ArrayRCP<const Scalar> val = opmatrix->getValues ();
     const Ordinal numRows = opgraph->getNumRows ();
-
-    // cerr << "SeqSparseOps::setGraphAndMatrix: on entry to routine:" << endl
-    //      << "ptr = ";
-    // std::copy (ptr.begin(), ptr.end(), std::ostream_iterator<size_t> (cerr, " "));
-    // cerr << endl << "ind = ";
-    // std::copy (ind.begin(), ind.end(), std::ostream_iterator<Ordinal> (cerr, " "));
-    // cerr << endl << "val = ";
-    // std::copy (val.begin(), val.end(), std::ostream_iterator<Scalar> (cerr, " "));
-    // cerr << endl << "numRows = " << numRows << endl;
 
     // Verify the input data before setting internal state.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -974,19 +1323,34 @@ namespace Kokkos {
     }
     else {
       isEmpty_ = false;
-      // We can just use these arrays directly.
-      ptr_ = ptr;
-      ind_ = ind;
-      val_ = val;
+
+      if (firstTouchAllocation_) {
+        // Override the input data's allocation.  This assumes that
+        // the input graph and matrix were not allocated using
+        // first-touch allocation.  Make copies, initializing them
+        // using the first-touch procedure.  This also overrides the
+        // Allocator template parameter.
+        typedef details::AltSparseOpsFirstTouchAllocator<Ordinal, Node> alloc_type;
+
+        ptr_ = alloc_type::copyRowPtrs (ptr ());
+        ind_ = alloc_type::template copyStorage<Ordinal> (ptr (), ind ());
+        val_ = alloc_type::template copyStorage<Scalar> (ptr (), val ());
+      }
+      else { // No first touch allocation.
+        // We can just use these arrays directly.
+        ptr_ = ptr;
+        ind_ = ind;
+        val_ = val;
+      }
     }
     opgraph->getMatDesc (tri_uplo_, unit_diag_);
     isInitialized_ = true;
   }
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   solve (Teuchos::ETransp trans,
          const MultiVector<DomainScalar, Node>& Y,
          MultiVector<RangeScalar, Node>& X) const
@@ -1158,10 +1522,10 @@ namespace Kokkos {
     }
   }
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   multiply (Teuchos::ETransp trans,
             RangeScalar alpha,
             const MultiVector<DomainScalar, Node>& X,
@@ -1173,10 +1537,10 @@ namespace Kokkos {
     this->template multiply<DST, RST> (trans, alpha, X, beta, Y);
   }
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
   void
-  SeqSparseOps<Scalar,Ordinal,Node>::
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   multiply (Teuchos::ETransp trans,
             RangeScalar alpha,
             const MultiVector<DomainScalar, Node> &X,
@@ -1522,38 +1886,42 @@ namespace Kokkos {
             alpha, ptr, ind, val, X_raw, X_stride);
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  Teuchos::ArrayRCP< size_t>
-  SeqSparseOps<Scalar, Ordinal, Node>::
-  allocRowPtrs (const Teuchos::ArrayView<const  size_t>& numEntriesPerRow)
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  Teuchos::ArrayRCP<size_t>
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  allocRowPtrs (const Teuchos::ArrayView<const size_t>& numEntriesPerRow)
   {
-    Teuchos::ArrayRCP< size_t> ptr (numEntriesPerRow.size() + 1);
-    ptr[0] = 0;
-    std::partial_sum (numEntriesPerRow.getRawPtr (),
-                      numEntriesPerRow.getRawPtr () + numEntriesPerRow.size (),
-                      ptr.getRawPtr () + 1);
-    return ptr;
+    return allocator_type::allocRowPtrs (numEntriesPerRow);
   }
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  Teuchos::ArrayRCP<Ordinal>
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  copyRowPtrs (const Teuchos::ArrayView<const Ordinal>& rowPtrs)
+  {
+    return allocator_type::copyRowPtrs (rowPtrs);
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class T>
   Teuchos::ArrayRCP<T>
-  SeqSparseOps<Scalar, Ordinal, Node>::
-  allocStorage (const Teuchos::ArrayView<const  size_t>& rowPtrs)
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  allocStorage (const Teuchos::ArrayView<const size_t>& rowPtrs)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
-      "SeqSparseOps::allocStorage: The input rowPtrs array must have length at "
-      "least one, but rowPtrs.size() = " << rowPtrs.size() << ".");
+    return allocator_type::template allocStorage<T> (rowPtrs);
+  }
 
-    const Ordinal totalNumEntries = rowPtrs[rowPtrs.size() - 1];
-    Teuchos::ArrayRCP<T> val (totalNumEntries);
-    std::fill (val.getRawPtr (),
-               val.getRawPtr () + totalNumEntries,
-               Teuchos::ScalarTraits<T>::zero ());
-    return val;
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class T>
+  Teuchos::ArrayRCP<T>
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  copyStorage (const Teuchos::ArrayView<const Ordinal>& rowPtrs,
+               const Teuchos::ArrayView<const T>& inputVals)
+  {
+    return allocator_type::template allocStorage<T> (rowPtrs, inputVals);
   }
 
 } // namespace Kokkos
 
-#endif // #ifndef __Kokkos_SeqSparseOps_hpp
+#endif // #ifndef __Kokkos_AltSparseOps_hpp
 

@@ -44,7 +44,7 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
-#include "Kokkos_SeqSparseOps.hpp"
+#include "Kokkos_AltSparseOps.hpp"
 #include "Kokkos_Version.hpp"
 #include "DefaultSparseOps_TestSparseOps.hpp"
 
@@ -107,6 +107,8 @@ namespace {
   // Number of threads for the Kokkos Node instance.  -1 means use the
   // default behavior.
   int numThreads = -1;
+  // Whether to force AltSparseOps to use first-touch allocation.
+  bool forceFirstTouch = false;
   // Kokkos Node instance initialization verbosity.
   // Only certain Node types support this option.
   bool verbose = false;
@@ -153,6 +155,8 @@ namespace {
                    "SparseOps should use for sparse mat-vec.  Valid options "
                    "are \"for-for\", \"for-while\", and \"for-if\".  You may "
                    "also use \"all\", which tests all possibilities.");
+    clp.setOption ("forceFirstTouch", "dontForceFirstTouch", &forceFirstTouch,
+                   "Whether to force AltSparseOps to use first-touch allocation.");
 
     ParameterList nodeParams;
     if (numThreads != -1) {
@@ -209,11 +213,11 @@ namespace {
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
   // This test should work, but we omit it to save time.
 #if 0
-  TEUCHOS_UNIT_TEST( SeqSparseOpsDefaultParameters, TestSparseOps )
+  TEUCHOS_UNIT_TEST( AltSparseOpsDefaultParameters, TestSparseOps )
   {
-    using Kokkos::SeqSparseOps;
-    typedef SeqSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
-    Tester<sparse_ops_type>::test ("SeqSparseOps");
+    using Kokkos::AltSparseOps;
+    typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+    Tester<sparse_ops_type>::test ("AltSparseOps");
 
     if (benchmark) {
       // Summarize timing results.  You should only call summarize()
@@ -231,31 +235,32 @@ namespace {
 #endif // 0
 
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
-  TEUCHOS_UNIT_TEST( SeqSparseOpsNonDefaultParameters, TestSparseOps )
+  TEUCHOS_UNIT_TEST( AltSparseOpsNonDefaultParameters, TestSparseOps )
   {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
-    using Kokkos::SeqSparseOps;
-    typedef SeqSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+    using Kokkos::AltSparseOps;
+    typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
 
-    ParameterList params ("SeqSparseOps");
+    ParameterList params ("AltSparseOps");
     params.set ("Unroll across multivectors", unroll);
+    params.set ("Force first-touch allocation", forceFirstTouch);
     if (variant == "all") {
       std::string variant = "for-for";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("SeqSparseOps (for-for)", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-for)", params);
 
       variant = "for-while";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("SeqSparseOps (for-while)", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-while)", params);
 
       variant = "for-if";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("SeqSparseOps (for-if)", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-if)", params);
     }
     else {
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("SeqSparseOps", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps", params);
     }
 
     if (benchmark) {
