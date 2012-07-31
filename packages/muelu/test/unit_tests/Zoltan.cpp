@@ -37,6 +37,7 @@ namespace MueLuTests {
     out << "that has a random number of nonzeros per row.  Good results have been precomputed" << std::endl;
     out << "for up to 5 processors.  The results are the number of nonzeros in the local matrix" << std::endl;
     out << "once the Zoltan repartitioning has been applied." << std::endl;
+    out << "The results can be viewed in Paraview by enabling code guarded by the macro MUELU_VISUALIZE_REPARTITIONING" << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
@@ -197,6 +198,7 @@ namespace MueLuTests {
       if (comm->getRank() == 0) TEST_EQUALITY( expectedResults[i], gtvData[i]);
     }
 
+#ifdef MUELU_VISUALIZE_REPARTITIONING
     //
     //Now write everything to a comma-separate list that ParaView can grok
     //
@@ -232,16 +234,19 @@ namespace MueLuTests {
     out << "   4) Split screen horizontally (Icon, top right)." << std::endl;
     out << "   5) Click on the eyeball in the Pipeline Browser to see the points." << std::endl;
     out << "   6) Under the Display tab, you can color points by scalar value and resize them." << std::endl;
+    out << std::endl;
+    out << " To display row weights next to each point:" << std::endl;
+    out << "   1) Click the \"Select Points Through\" button (2nd row) and select all points." << std::endl;
+    out << "   2) Under View pull-down menu, choose the \"Selection Inspector\"." << std::endl;
+    out << "   3) Under the Point Label, check the Visible box and set the Label Mode to \"row weight\"." << std::endl;
+#endif
 
   } //Build
 
   TEUCHOS_UNIT_TEST(Zoltan, Build3PDEs)
   {
 
-    // TODO: Hard coded results are wrong (they are a copy&past of another test)
-    // TODO: Results also seems unbalanced. Have to be verified...
-#warning test Zoltan_Build3PDEs disabled
-    return;
+    return; //FIXME need to fix matrix to use either a blocked or strided map.
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
@@ -251,6 +256,7 @@ namespace MueLuTests {
     out << "that has a random number of nonzeros per row and 3 DOFs per mesh point.  Good results have been precomputed" << std::endl;
     out << "for up to 5 processors.  The results are the number of nonzeros in the local matrix" << std::endl;
     out << "once the Zoltan repartitioning has been applied." << std::endl;
+    out << "The results can be viewed in Paraview by enabling code guarded by the macro MUELU_VISUALIZE_REPARTITIONING" << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
@@ -363,9 +369,9 @@ namespace MueLuTests {
         }*/
     }
 
-    coalescedMap->describe(*fos,Teuchos::VERB_EXTREME);
-    sleep(1); comm->barrier();
-    XYZ->describe(*fos,Teuchos::VERB_EXTREME);
+    //coalescedMap->describe(*fos,Teuchos::VERB_EXTREME);
+    //sleep(1); comm->barrier();
+    //XYZ->describe(*fos,Teuchos::VERB_EXTREME);
 
     LO numPartitions = comm->getSize();
     level.Set("number of partitions",numPartitions);
@@ -393,6 +399,8 @@ namespace MueLuTests {
                                                     map->getIndexBase(),comm);
     RCP<Xpetra::Vector<LO,LO,GO,NO> > localPartsVec = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(partitionMap);
 
+    RCP<Xpetra::Vector<LO,LO,GO,NO> > nnzPerRow = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(A->getRowMap());
+    Teuchos::ArrayRCP<GO> nnzData = nnzPerRow->getDataNonConst(0);
     //For the local rows in each partition, tally up the number of nonzeros.  This is what
     //Zoltan should be load-balancing.
     Teuchos::ArrayRCP<GO> lpvData = localPartsVec->getDataNonConst(0);
@@ -402,12 +410,26 @@ namespace MueLuTests {
       Teuchos::ArrayView<const SC> v;
       A->getLocalRowView(i,c,v);
       lpvData[decompData[i]] += v.size();
+      nnzData[i] = v.size();
     }
 
     lpvData = Teuchos::null;
     decompData = Teuchos::null;
+    nnzData = Teuchos::null;
 
-    //localPartsVec->describe(*fos,Teuchos::VERB_EXTREME);
+    /*
+    if (comm->getRank() == 0)
+      std::cout << "nnz per row" << std::endl;
+    nnzPerRow->describe(*fos,Teuchos::VERB_EXTREME);
+
+    if (comm->getRank() == 0)
+      std::cout << "Row-to-partition assignment (from Zoltan)" << std::endl;
+    decomposition->describe(*fos,Teuchos::VERB_EXTREME);
+
+    if (comm->getRank() == 0)
+      std::cout << "#nonzeros per partition" << std::endl;
+    localPartsVec->describe(*fos,Teuchos::VERB_EXTREME);
+    */
 
     //Send the local nnz tallies to pid 0, which can report the global sums.
     size_t mysize=1;
@@ -424,48 +446,46 @@ namespace MueLuTests {
     ArrayRCP<GO> expectedResults(numPartitions);
     switch (comm->getSize()) {
        case 1:
-         expectedResults[0] = 807;
+         expectedResults[0] = 3951;
          break;
 
        case 2:
-         expectedResults[0] = 364;
-         expectedResults[1] = 363;
+         expectedResults[0] = 1955;
+         expectedResults[1] = 1910;
          break;
 
        case 3:
-         expectedResults[0] = 277;
-         expectedResults[1] = 261;
-         expectedResults[2] = 269;
+         expectedResults[0] = 1326;
+         expectedResults[1] = 1340;
+         expectedResults[2] = 1321;
          break;
 
        case 4:
-         expectedResults[0] = 195;
-         expectedResults[1] = 186;
-         expectedResults[2] = 177;
-         expectedResults[3] = 168;
+         expectedResults[0] = 950;
+         expectedResults[1] = 922;
+         expectedResults[2] = 908;
+         expectedResults[3] = 936;
          break;
 
        case 5:
-         expectedResults[0] = 161;
-         expectedResults[1] = 145;
-         expectedResults[2] = 148;
-         expectedResults[3] = 159;
-         expectedResults[4] = 157;
+         expectedResults[0] = 774;
+         expectedResults[1] = 735;
+         expectedResults[2] = 726;
+         expectedResults[3] = 771;
+         expectedResults[4] = 759;
          break;
 
        default:
          break;
     };
 
-    //FIXME cool ... this next line causes a hang if locally the globalyTallyVec has no data.
-    //FIXME I get around this by making mysize (above) 1 instead of 0. Is this a bug or feature
-    //FIXME in getData?
     ArrayRCP<const LO> gtvData = globalTallyVec->getData(0);
 
     for (int i=0; i<numPartitions; ++i) {
       if (comm->getRank() == 0) TEST_EQUALITY( expectedResults[i], gtvData[i]);
     }
 
+#ifdef MUELU_VISUALIZE_REPARTITIONING
     //
     //Now write everything to a comma-separate list that ParaView can grok
     //
@@ -478,11 +498,12 @@ namespace MueLuTests {
     //write header information
     if (comm->getRank() == 0) {
       outFile = rcp(new std::ofstream(fileName.c_str()));
-      *outFile << "x coord, y coord, z coord, scalar" << std::endl;
+      *outFile << "x coord, y coord, z coord, partition, row weight" << std::endl;
     }
     comm->barrier();
 
     //append coordinates
+    nnzData = nnzPerRow->getDataNonConst(0);
     for (int j=0; j<comm->getSize(); ++j) {
       int mypid = comm->getRank();
       if (mypid == j) {
@@ -490,7 +511,10 @@ namespace MueLuTests {
         int blockSize = A->GetFixedBlockSize();
         //Coordinates are for coalesced system, D is for uncoalesced
         for (int i=0; i < D.size()/blockSize; ++i) {
-          *outFile << X[i] << ", " << Y[i] << ", " << ST::zero() << ", " << D[i*blockSize] << std::endl;
+          int nnz=0;
+          for (int k=0; k<blockSize; ++k)  nnz += nnzData[i*blockSize+k];
+            *outFile << X[i] << ", " << Y[i] << ", " << ST::zero() << ", "
+                     << D[i*blockSize] << ", " << nnz << std::endl;
         }
       }
     } //for (int i=0; i<comm->getSize(); ++i)
@@ -503,7 +527,13 @@ namespace MueLuTests {
     out << "   4) Split screen horizontally (Icon, top right)." << std::endl;
     out << "   5) Click on the eyeball in the Pipeline Browser to see the points." << std::endl;
     out << "   6) Under the Display tab, you can color points by scalar value and resize them." << std::endl;
+    out << std::endl;
+    out << " To display row weights next to each point:" << std::endl;
+    out << "   1) Click the \"Select Points Through\" button (2nd row) and select all points." << std::endl;
+    out << "   2) Under View pull-down menu, choose the \"Selection Inspector\"." << std::endl;
+    out << "   3) Under the Point Label, check the Visible box and set the Label Mode to \"row weight\"." << std::endl;
+#endif
 
-  } //Build
+  } //Build3PDEs
 
 }//namespace MueLuTests
