@@ -388,6 +388,8 @@ namespace Xpetra {
     // RCP<GOVector> variableBlockSizeInfo_; TODO: should be moved from CoalesceDropFactory to here.
 
     void SetFixedBlockSize(LocalOrdinal blksize) { 
+      if(IsView("StridedMaps") == false)
+        blksize_ = blksize;
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Exceptions::RuntimeError, "Xpetra::Operator::SetFixedBlockSize(): operator is not filled and completed."); // TODO: do we need this? we just wanna "copy" the domain and range map
 
       std::vector<size_t> stridingInfo;
