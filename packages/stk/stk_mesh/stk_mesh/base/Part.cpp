@@ -191,7 +191,8 @@ std::string convert_to_internal_name(const std::string& part_name)
 {
   std::ostringstream out;
   out << INTERNAL_PART_PREFIX << part_name << INTERNAL_PART_POSTFIX;
-  return out.str();
+  std::string out_str = out.str();
+  return out_str;
 }
 
 

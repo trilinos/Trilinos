@@ -323,7 +323,7 @@ int main(int argc, char* argv[])
 
   int part_count    = interface.part_count();
   if (part_count <= 1) {
-    std::cerr << "INFO: Only one processor or part, no concatenation needed.\n";
+    std::cout << "INFO: Only one processor or part, no concatenation needed.\n";
     exit(EXIT_SUCCESS);
   }
 
@@ -427,8 +427,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   int error = 0;
 
   if (debug_level & 1)
-    std::cerr << time_stamp(tsFormat);
-  std::cerr << "\n**** READ LOCAL (GLOBAL) INFO ****" << std::endl;
+    std::cout << time_stamp(tsFormat);
+  std::cout << "\n**** READ LOCAL (GLOBAL) INFO ****" << std::endl;
 
   std::string title0;
 
@@ -516,8 +516,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 			   &global, part_count, global_node_map);
 
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat);
-    std::cerr << "Finished reading/writing Global Info\n";
+      std::cout << time_stamp(tsFormat);
+    std::cout << "Finished reading/writing Global Info\n";
 
     // ****************************************************************************
     // Get Block information including element attributes
@@ -536,8 +536,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // Get Side sets
     if (!interface.omit_sidesets()) {
       if (debug_level & 1)
-	std::cerr << time_stamp(tsFormat);
-      std::cerr << "\n**** GET SIDE SETS *****\n";
+	std::cout << time_stamp(tsFormat);
+      std::cout << "\n**** GET SIDE SETS *****\n";
       get_sideset_metadata(part_count, sidesets, glob_ssets);
       if (global.count(SSET) != glob_ssets.size()) {
 	std::cerr << "\nWARNING: Invalid sidesets will not be written to output database.\n";
@@ -550,8 +550,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // Get Node sets
     if (!interface.omit_nodesets()) {
       if (debug_level & 1)
-	std::cerr << time_stamp(tsFormat);
-      std::cerr << "\n**** GET NODE SETS *****\n";
+	std::cout << time_stamp(tsFormat);
+      std::cout << "\n**** GET NODE SETS *****\n";
       get_nodesets(part_count, global.nodeCount, local_node_to_global, nodesets, glob_nsets, float_or_double);
       if (global.count(NSET) != glob_nsets.size()) {
 	std::cerr << "\nWARNING: Invalid nodesets will not be written to output database.\n";
@@ -563,8 +563,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // Start writing the output file...
 
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat);
-    std::cerr << "\n**** BEGIN WRITING OUTPUT FILE *****\n";
+      std::cout << time_stamp(tsFormat);
+    std::cout << "\n**** BEGIN WRITING OUTPUT FILE *****\n";
     CommunicationMetaData comm_data;
 
     // Create the output file...
@@ -607,15 +607,15 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       // c.2.  Write Global Node Number Map
       if (global.needNodeMap) {
 	if (debug_level & 1)
-	  std::cerr << time_stamp(tsFormat);
-	std::cerr << "Writing global node number map...\n";
+	  std::cout << time_stamp(tsFormat);
+	std::cout << "Writing global node number map...\n";
 	error=ex_put_node_num_map(ExodusFile::output(),TOPTR(global_node_map));
       }
     
       if (global.needElementMap) {
 	if (debug_level & 1)
-	  std::cerr << time_stamp(tsFormat);
-	std::cerr << "Writing out master global elements information...\n";
+	  std::cout << time_stamp(tsFormat);
+	std::cout << "Writing out master global elements information...\n";
 	if (global_element_map.size() > 0) {
 	  ex_put_elem_num_map(ExodusFile::output(), TOPTR(global_element_map));
 	}
@@ -634,23 +634,23 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   // 2. Get Coordinate Info.
   if (!interface.append()) {
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat);
-    std::cerr << "\n\n**** GET COORDINATE INFO ****\n";
+      std::cout << time_stamp(tsFormat);
+    std::cout << "\n\n**** GET COORDINATE INFO ****\n";
 
     error += get_put_coordinates(global, part_count, local_mesh,
 				 local_node_to_global, (T)0.0);
 
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat);
-    std::cerr << "Wrote coordinate information...\n";
+      std::cout << time_stamp(tsFormat);
+    std::cout << "Wrote coordinate information...\n";
   }
   // ####################TRANSIENT DATA SECTION###########################
   // ***********************************************************************
   // 9. Get Variable Information and names
 
   if (debug_level & 1)
-    std::cerr << time_stamp(tsFormat);
-  std::cerr << "\n**** GET VARIABLE INFORMATION AND NAMES ****" << std::endl;
+    std::cout << time_stamp(tsFormat);
+  std::cout << "\n**** GET VARIABLE INFORMATION AND NAMES ****" << std::endl;
 
   //  I. read number of variables for each type.
   //  NOTE: it is assumed that every processor has the same global, nodal,
@@ -730,8 +730,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   int num_time_steps = 0;
 
   if (debug_level & 1)
-    std::cerr << time_stamp(tsFormat);
-  std::cerr << "\n**** GET TRANSIENT NODAL, GLOBAL, AND ELEMENT DATA VALUES ****\n";
+    std::cout << time_stamp(tsFormat);
+  std::cout << "\n**** GET TRANSIENT NODAL, GLOBAL, AND ELEMENT DATA VALUES ****\n";
 
   // Stage I: Get the number_of_time_steps information
 
@@ -753,7 +753,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     std::cerr << "\nWARNING: The number of time steps is not the same on all input databases.\n"
 	      << "         Using minimum count of " << num_time_steps << "\n\n";
   } else {
-    std::cerr << "\nNumber of time steps on input databases = " << num_time_steps << "\n\n";
+    std::cout << "\nNumber of time steps on input databases = " << num_time_steps << "\n\n";
   }
 
   std::vector<T> global_values(global_vars.count(IN));
@@ -822,8 +822,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   ts_max = ts_max < num_time_steps ? ts_max : num_time_steps;
   if (ts_min <= ts_max) {
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat);
-    std::cerr << "\tTransferring step " << ts_min << " to step "
+      std::cout << time_stamp(tsFormat);
+    std::cout << "\tTransferring step " << ts_min << " to step "
 	      << ts_max << " by " << ts_step << std::endl;
   }
 
@@ -845,7 +845,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	continue;
       
       if (min_time_to_write >= 0.0) {
-	std::cerr << "\tAppend Mode: Skipping " << time_step - (ts_min-1)
+	std::cout << "\tAppend Mode: Skipping " << time_step - (ts_min-1)
 		  << " input steps to align times with already written steps on output file.\n\n";
 	min_time_to_write = -1.0;
       }
@@ -872,7 +872,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       // information
       if (global_vars.count(OUT) > 0) {
 	if (debug_level & 1)
-	  std::cerr << time_stamp(tsFormat) << "Global Variables...\n";
+	  std::cout << time_stamp(tsFormat) << "Global Variables...\n";
 	error += ex_get_var(id, time_step+1, EX_GLOBAL, 0, 0,
 			    global_vars.count(), TOPTR(global_values));
 	// Map ...
@@ -915,7 +915,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // ========================================================================
     // Nodal Values...
     if (debug_level & 1) {
-      std::cerr << time_stamp(tsFormat) << "Nodal Variables...\n";
+      std::cout << time_stamp(tsFormat) << "Nodal Variables...\n";
     }
     if (debug_level & 2) {
       for (int i=0; i < nodal_vars.count(OUT); i++) {
@@ -981,7 +981,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // ========================================================================
     // Extracting element transient variable data
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat) << "Element Variables...\n";
+      std::cout << time_stamp(tsFormat) << "Element Variables...\n";
 
     if (debug_level & 4){
       clear_master_values(element_vars, global, glob_blocks, master_element_values);
@@ -1009,7 +1009,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // ========================================================================
     // Extracting sideset transient variable data
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat) << "Sideset Variables...\n";
+      std::cout << time_stamp(tsFormat) << "Sideset Variables...\n";
 
     if (debug_level & 16){
       clear_master_values(sideset_vars, global, glob_ssets, master_sideset_values);
@@ -1026,7 +1026,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // ========================================================================
     // Extracting nodeset transient variable data
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat) << "Nodeset Variables...\n";
+      std::cout << time_stamp(tsFormat) << "Nodeset Variables...\n";
 
     if (debug_level & 32){
       clear_master_values(nodeset_vars, global, glob_nsets, master_nodeset_values);
@@ -1044,9 +1044,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     ex_update(ExodusFile::output());
 
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat);
+      std::cout << time_stamp(tsFormat);
 
-    std::cerr << "Wrote step " << std::setw(2) << time_step+1 << ", time "
+    std::cout << "Wrote step " << std::setw(2) << time_step+1 << ", time "
 	      << std::scientific << std::setprecision(4) << time_val;
 
     double cur_time = seacas_timer();
@@ -1054,13 +1054,13 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     double time_per_step = elapsed / time_step_out;
     double percentage_done = (time_step_out * 100.0) / output_steps;
     double estimated_remaining = time_per_step * (output_steps - time_step_out);
-    std::cerr << "\t\t["
+    std::cout << "\t\t["
 	      << std::fixed << std::setw(5) << std::setprecision(1)
 	      << percentage_done << "%, Elapsed=" << format_time(elapsed)
 	      << ", ETA=" << format_time(estimated_remaining)
 	      << "]\n";
     if (debug_level & 1) {
-      std::cerr << "\n";
+      std::cout << "\n";
     }
   }
 
@@ -1077,8 +1077,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   /*************************************************************************/
   // EXIT program
   if (debug_level & 1)
-    std::cerr << time_stamp(tsFormat);
-  std::cerr << "******* END *******\n";
+    std::cout << time_stamp(tsFormat);
+  std::cout << "******* END *******\n";
   return(error);
 }
 
@@ -1212,7 +1212,7 @@ namespace {
 
     error += ex_get_coord_names (in, coordinate_names);
     error += ex_put_coord_names(out,coordinate_names);
-    std::cerr << "Wrote coordinate names..." << std::endl;
+    std::cout << "Wrote coordinate names..." << std::endl;
 
     free_name_array(coordinate_names, dimensionality);
     return error;
@@ -1326,12 +1326,12 @@ namespace {
 			  std::vector<std::vector<Block> > &blocks,
 			  std::vector<Block> &glob_blocks)
   {
-    std::cerr << "\n\n**** GET BLOCK INFORMATION (INCL. ELEMENT ATTRIBUTES) ****\n";;
+    std::cout << "\n\n**** GET BLOCK INFORMATION (INCL. ELEMENT ATTRIBUTES) ****\n";;
 
     for (int ip =0; ip < part_count; ip++)
       blocks[ip].resize(local_mesh[ip].count(EBLK));
 
-    std::cerr << "Global block count = " << global.count(EBLK) << std::endl;
+    std::cout << "Global block count = " << global.count(EBLK) << std::endl;
 
     ExodusIdVector block_id(global.count(EBLK));
 
@@ -1354,16 +1354,16 @@ namespace {
       }
 
       if (debug_level & 4)
-	std::cerr << "\nGetting element block info for processor " << p
+	std::cout << "\nGetting element block info for processor " << p
 		  << "..." << std::endl;
       else {
 	if (p == 0)
-	  std::cerr << "\nGetting element block info.\n";
+	  std::cout << "\nGetting element block info.\n";
       }
 
       for (size_t b = 0; b < global.count(EBLK); b++) {
 	if (debug_level & 4)
-	  std::cerr << "Block " << b << ", Id = " << block_id[b];
+	  std::cout << "Block " << b << ", Id = " << block_id[b];
 
 	ex_block temp_block;
 	temp_block.id = block_id[b];
@@ -1409,10 +1409,10 @@ namespace {
 	  free_name_array(names, temp_block.num_attribute);
  	}
 	if (debug_level & 4) {
-	  std::cerr << ", Name = '" << blocks[p][b].name_;
-	  std::cerr << "', Elements = " << std::setw(12) << blocks[p][b].entity_count();
-	  std::cerr << ", Nodes/element = " << blocks[p][b].nodesPerElement;
-	  std::cerr << ", Attributes = " << blocks[p][b].attributeCount << std::endl;
+	  std::cout << ", Name = '" << blocks[p][b].name_;
+	  std::cout << "', Elements = " << std::setw(12) << blocks[p][b].entity_count();
+	  std::cout << ", Nodes/element = " << blocks[p][b].nodesPerElement;
+	  std::cout << ", Attributes = " << blocks[p][b].attributeCount << std::endl;
 	}
       }
     }	// end for p=0..part_count
@@ -1442,22 +1442,22 @@ namespace {
     T** attributes = new T*[global_num_blocks];
 
     if (debug_level & 1)
-      std::cerr << time_stamp(tsFormat);
-    std::cerr << "\nReading and Writing element connectivity & attributes\n";
+      std::cout << time_stamp(tsFormat);
+    std::cout << "\nReading and Writing element connectivity & attributes\n";
 
     for (int b = 0; b < global_num_blocks; b++)  {
 
       if (debug_level & 4) {
-	std::cerr << "\nOutput element block info for...\n";
-	std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id;
-	std::cerr << ", Name = '" << glob_blocks[b].name_;
-	std::cerr << "', Elements = " << std::setw(12) << glob_blocks[b].entity_count();
-	std::cerr << ", Nodes/element = " << glob_blocks[b].nodesPerElement;
-	std::cerr << ", Attributes = " << glob_blocks[b].attributeCount << std::endl;
+	std::cout << "\nOutput element block info for...\n";
+	std::cout << "Block " << b << ", Id = " << glob_blocks[b].id;
+	std::cout << ", Name = '" << glob_blocks[b].name_;
+	std::cout << "', Elements = " << std::setw(12) << glob_blocks[b].entity_count();
+	std::cout << ", Nodes/element = " << glob_blocks[b].nodesPerElement;
+	std::cout << ", Attributes = " << glob_blocks[b].attributeCount << std::endl;
       }
 
       if (debug_level & 4)
-	std::cerr << "B" << b << ":\t" << std::flush;
+	std::cout << "B" << b << ":\t" << std::flush;
 
 
       size_t max_nodes = glob_blocks[b].entity_count();
@@ -1486,7 +1486,7 @@ namespace {
 	if (blocks[p][b].entity_count() > 0) {	// non-zero length block
 	
 	  if (debug_level & 4)
-	    std::cerr << "#" << std::flush;
+	    std::cout << "#" << std::flush;
 	  size_t maximum_nodes = blocks[p][b].entity_count();
 	  maximum_nodes *= blocks[p][b].nodesPerElement;
 	  std::vector<INT> local_linkage(maximum_nodes);
@@ -1539,7 +1539,7 @@ namespace {
 	}	// end if blocks[p][b].entity_count() (non-zero length block)
 	else
 	  if (debug_level & 4)
-	    std::cerr << ".";
+	    std::cout << ".";
       }				// end for p=0..part_count-1
 
       // Write out block info
@@ -1556,9 +1556,9 @@ namespace {
 	delete [] attributes[b];
       }				// end for b=0..global_num_blocks-1
       if (debug_level & 4)
-	std::cerr << std::endl;
+	std::cout << std::endl;
     }
-    std::cerr << std::endl;
+    std::cout << std::endl;
     delete [] linkage;
     delete [] attributes;
   }
@@ -1616,7 +1616,7 @@ namespace {
     // sorted and there are no duplicates, we just need to see if the id
     // at global_element_map.size() == global_element_map.size();
     bool is_contiguous = (size_t)global_element_map[global_element_map.size()-1] == global_element_map.size();
-    std::cerr  << "Element id map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+    std::cout  << "Element id map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
     // Create the map that maps from a local processor element to the
     // global map. This combines the mapping local processor element to
@@ -1729,7 +1729,7 @@ namespace {
       }
       glob_blocks[b].offset_ = min_id;
       if (debug_level & 4) {
-	std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id
+	std::cout << "Block " << b << ", Id = " << glob_blocks[b].id
 		  << " min/max id = " << min_id+1 << "/" << max_id+1
 		  << " offset = " << glob_blocks[b].offset_ << "\n";
       }
@@ -1781,7 +1781,7 @@ namespace {
     // sorted and there are no duplicates, we just need to see if the id
     // at global_node_map.size() == global_node_map.size();
     bool is_contiguous = (size_t)global_node_map[global_node_map.size()-1] == global_node_map.size();
-    std::cerr  << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+    std::cout  << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
     // Create the map the maps from a local processor node to the
     // global map. This combines the mapping local processor node to
@@ -1861,20 +1861,20 @@ namespace {
       int nfield = (width-8) / maxlen;
       if (nfield < 1) nfield = 1;
 
-      std::cerr << "Found " << vars.count(OUT) << " " << vars.label() << " variables.\n";
+      std::cout << "Found " << vars.count(OUT) << " " << vars.label() << " variables.\n";
       {
 	int i = 0;
 	int ifld = 1;
-	std::cerr << "\t";
+	std::cout << "\t";
 	while (i < vars.count(OUT)) {
-	  std::cerr << std::setw(maxlen) << std::left << output_name_list[i++];
+	  std::cout << std::setw(maxlen) << std::left << output_name_list[i++];
 	  if (++ifld > nfield && i < vars.count(OUT)) {
-	    std::cerr << "\n\t";
+	    std::cout << "\n\t";
 	    ifld = 1;
 	  }
 	}
-	std::cerr << "\n\n";
-	std::cerr << std::right; // Reset back to what it was.
+	std::cout << "\n\n";
+	std::cout << std::right; // Reset back to what it was.
       }
 
       if (!interface.append()) {
@@ -2103,7 +2103,7 @@ namespace {
 	}
 	
 	if (debug_level & 32) {
-	  std::cerr << "Processor " << p << " ";
+	  std::cout << "Processor " << p << " ";
 	  nodesets[p][iset].dump();
 	}
       }
@@ -2222,7 +2222,7 @@ namespace {
     int exoid = ExodusFile::output();
 
     if (debug_level & 32)
-      std::cerr << "\nOutput NodeSets:\n";
+      std::cout << "\nOutput NodeSets:\n";
 
     for (size_t ns = 0; ns < glob_sets.size(); ns++) {
       ex_put_set(exoid, EX_NODE_SET, glob_sets[ns].id, TOPTR(glob_sets[ns].nodeSetNodes), 0);
@@ -2351,7 +2351,7 @@ namespace {
 	  sum += sets[p][b].entity_count();
 
 	  if (debug_level & 16) {
-	    std::cerr << "Processor " << p << " ";
+	    std::cout << "Processor " << p << " ";
 	    sets[p][b].dump();
 	  }
 	}
@@ -2417,7 +2417,7 @@ namespace {
     }
 
     if (debug_level & 16)
-      std::cerr << "\nOutput SideSets:\n";
+      std::cout << "\nOutput SideSets:\n";
 
     if (debug_level & 16) {
       for (size_t ss = 0; ss < glob_ssets.size(); ss++) {
@@ -2645,13 +2645,13 @@ namespace {
       }
 
       if (debug_level & debug) {
-	std::cerr << "Truth table for " << vars.label() << "\n";
+	std::cout << "Truth table for " << vars.label() << "\n";
 	int k = 0;
 	for (size_t b=0; b < global.count(object_type); b++) {
 	  for (int j = 0; j < vars.count(OUT); j++) {
-	    std::cerr << global.truthTable[object_type][k++];
+	    std::cout << global.truthTable[object_type][k++];
 	  }
-	  std::cerr << '\n';
+	  std::cout << '\n';
 	}
       }
     }

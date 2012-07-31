@@ -68,7 +68,8 @@ public:
    */
   BulkData( MetaData & mesh_meta_data ,
       ParallelMachine parallel ,
-      unsigned bucket_max_size = 1000 );
+      unsigned bucket_max_size = 1000 ,
+      bool use_memory_pool = true );
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */

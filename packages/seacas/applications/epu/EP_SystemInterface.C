@@ -243,7 +243,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("EPU_OPTIONS");
   if (options != NULL) {
-    std::cerr << "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
+    std::cout << "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
 	      << "\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
   }
@@ -254,11 +254,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help")) {
     options_.usage();
-    std::cerr << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
+    std::cout << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
 	      << "\tWrites: current_directory/basename.suf\n"
 	      << "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
 	      << "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n";
-    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
+    std::cout << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
 
@@ -451,7 +451,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   }
   
   if (options_.retrieve("copyright")) {
-    std::cerr << "\n"
+    std::cout << "\n"
 	      << "Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract\n"
 	      << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
 	      << "certain rights in this software\n"

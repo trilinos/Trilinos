@@ -55,9 +55,23 @@
 
 #include <use_cases/UseCase_3.hpp>
 
+// smoothing tests
+#define StackTraceTmp StackTrace
+#undef StackTrace
+#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeSizeOrientImprover.hpp>
+#define StackTrace StackTraceTmp
+
 // this is for testing the local-refine refactoring 
 #define UNIFORM_REFINER UniformRefiner
 //#define UNIFORM_REFINER TestLocalRefiner
+
+#define DO_SMOOTHING_TEST 0
 
 namespace stk
 {
@@ -3059,6 +3073,126 @@ namespace stk
         // end_demo
       }
 #endif
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+#if DO_SMOOTHING_TEST
+
+      // A cube with an indented bump on the bottom, new parallel smoother, convert to tet
+
+      STKUNIT_UNIT_TEST(regr_perceptMesquite, tet_4)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 3)
+        if (p_size <= 2)
+          {
+            unsigned n = 12;
+            std::cout << "P["<<p_rank<<"] " << "tmp srk doing Laplace smoothing for tet_1 case, n = " << n << std::endl;
+            std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            PerceptMesh eMesh(3);
+            eMesh.new_mesh(percept::GMeshSpec(gmesh_spec));
+            eMesh.addParallelInfoFields(true,true);
+            eMesh.add_coordinate_state_fields();
+            int scalarDimension=0;
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            Hex8_Tet4_6_12 convert_pattern(eMesh);
+            eMesh.commit();
+
+            UNIFORM_REFINER converter(eMesh, convert_pattern, proc_rank_field);
+            converter.doBreak();
+            eMesh.save_as(input_files_loc+"tet_4_smooth.0.0.e");
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1#Triangle_3#") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2#Triangle_3#") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3#Triangle_3#") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4#Triangle_3#") );
+            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5#Triangle_3#") );
+            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6#Triangle_3#") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+
+            eMesh.populateParallelInfoFields(true,true,&boundarySelector);
+
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+            // cluster the mesh towards the bump
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                //if (boundarySelector_5(**k)) 
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& entity = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        data[2] = data[2]*data[2];
+                      }
+                  }
+              }
+            eMesh.save_as(input_files_loc+"tet_4_smooth.0.e");
+
+            // save state of original mesh
+            // field, dst, src: 
+            eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                if (boundarySelector_5(**k)) 
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& entity = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double ix = data[0];
+                        double iy = data[1];
+                        data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*4.;
+                      }
+                  }
+              }
+            // save state of projected mesh
+            // field, dst, src: 
+            eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
+
+            eMesh.save_as(input_files_loc+"tet_4_smooth.0_perturbed.e");
+
+            std::cout << "tmp srk doing Shape smoothing for tet_4 case..." << std::endl;
+
+            //bool do_jacobi = true;
+            Mesquite::MsqDebug::disable(1);
+            //Mesquite::MsqDebug::enable(2);
+            //Mesquite::MsqDebug::enable(3);
+
+            int  msq_debug             = 0; // 1,2,3 for more debug info
+            bool always_smooth         = true;
+            int innerIter = 1001;
+
+            {
+              PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
+              stk::percept::PMMParallelShapeImprover pmmpsi(innerIter, 1.e-4, 1);
+              pmmpsi.run(pmm, 0, always_smooth, msq_debug);
+            }
+
+            eMesh.save_as(output_files_loc+"tet_4_si_smooth.1.e");
+
+          }
+
+      }
+#endif
+
 
     }//    namespace regression_tests
   }//  namespace adapt

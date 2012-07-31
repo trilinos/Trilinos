@@ -173,6 +173,19 @@ public:
   static std::string concreteName(const std::string&) { return name(); }
 };
 
+// mfh 31 Jul 2012: Specialization for "void" will hopefully fix
+// compile errors on Windows, such as the following:
+//
+// http://testing.sandia.gov/cdash/viewBuildError.php?buildid=611137
+//
+// I'm imitating the specialization of void* above.
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<void> {
+public:
+  static std::string name() { return "void"; }
+  static std::string concreteName(const std::string&) { return name(); }
+};
+
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
@@ -189,7 +202,7 @@ public:
 
 #endif // HAVE_TEUCHOS_COMPLEX
 
- 
+
 
 } // namespace Teuchos
 
