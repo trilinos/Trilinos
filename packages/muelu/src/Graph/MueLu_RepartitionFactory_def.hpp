@@ -62,6 +62,7 @@ namespace MueLu {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
 
+    //TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       
@@ -115,7 +116,7 @@ namespace MueLu {
         GO minNnz, maxNnz;
         maxAll(comm, (GO)numMyNnz, maxNnz);
         minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz); // min nnz over all proc (disallow any processors with 0 nnz)
-        Scalar imbalance = ((SC) maxNnz) / minNnz;
+        double imbalance = ((double) maxNnz) / minNnz;
         msg4 << std::endl << "    nonzero imbalance = " << imbalance  << ", max allowable = " << nnzMaxMinRatio_;
         if (imbalance > nnzMaxMinRatio_) {
           doRepartition = true;

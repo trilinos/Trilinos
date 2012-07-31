@@ -94,7 +94,7 @@ namespace MueLu {
   
   Imbalance is measured by \f$\max_k{N_k} / min_k{N_k}\f$, where \f$N_k\f$ is the number of nonzeros in the local matrix on process \f$k\f$.
   */
-  void SetImbalanceThreshold(Scalar threshold);
+  void SetImbalanceThreshold(double threshold);
 
   /*! @brief Set minimum allowable number of rows on any single process, below which repartitioning is initiated.
       
@@ -119,8 +119,8 @@ namespace MueLu {
     RCP<const FactoryBase> AFact_;
     //! Minimum number of rows over all processes.  If any process falls below this, repartitioning is initiated.
     LO     minRowsPerProcessor_;
-    //! Imbalance threshold, below which repartitioning is initiatied.  Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes.
-    Scalar nnzMaxMinRatio_;
+    //! Imbalance threshold, below which repartitioning is initiated.  Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes.
+    double nnzMaxMinRatio_;
     //! First level at which repartitioning can possibly occur.  Repartitioning at finer levels is suppressed.
     int    startLevel_;
 
