@@ -63,11 +63,12 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     )
 
   # <complex, int, int>
-  IF(Teuchos_ENABLE_COMPLEX)
-    SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT ON)
-  ELSE()
+# Teuchos_ENABLE_COMPLEX is ON by default (in release mode or when SS is enabled) but we don't want MueLu to be instantiated explicitly with complex by default as it is not frequently used.
+#  IF(Teuchos_ENABLE_COMPLEX)
+#    SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT ON)
+#  ELSE()
     SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT OFF)
-  ENDIF()
+#  ENDIF()
   TRIBITS_ADD_OPTION_AND_DEFINE(
     ${PACKAGE_NAME}_INST_COMPLEX_INT_INT
     HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT
@@ -85,6 +86,20 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     )
   ENDIF()
 
+ENDIF()
+
+# HAVE_MUELU_COMPLEX=ON iff:
+# - Teuchos_ENABLE_COMPLEX=ON and Explicit Instantiation = OFF
+# or
+# - HAVE_MUELU_INST_COMPLEX_INT_INT
+#
+# TODO: do we want also a MueLu_ENABLE_Complex option that turns ON automatically what we need?
+IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX) 
+    OR 
+    (HAVE_MUELU_INST_COMPLEX_INT_INT))
+  SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX ON)
+ELSE()
+  SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
 ENDIF()
 
 #

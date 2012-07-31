@@ -259,22 +259,22 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
   Teuchos::RCP<Vector > ColBasedOmega =
       VectorFactory::Build(Numerator->getMap()/*DinvAP0->getColMap()*/,true);
 
-  ColBasedOmega->putScalar(-666*Teuchos::ScalarTraits<Scalar>::one());
+  ColBasedOmega->putScalar(-666/**Teuchos::ScalarTraits<Scalar>::one()*/);
 
   Teuchos::ArrayRCP< const Scalar > Numerator_local = Numerator->getData(0);
   Teuchos::ArrayRCP< const Scalar > Denominator_local = Denominator->getData(0);
   Teuchos::ArrayRCP< Scalar >       ColBasedOmega_local = ColBasedOmega->getDataNonConst(0);
   LocalOrdinal zero_local = 0;
-  Scalar min_local = Teuchos::ScalarTraits<Scalar>::one() * 1000000;
+  Scalar min_local = 1000000; //Teuchos::ScalarTraits<Scalar>::one() * (Scalar) 1000000;
   Scalar max_local = Teuchos::ScalarTraits<Scalar>::zero();
   for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(Numerator->getLocalLength()); i++) {
     ColBasedOmega_local[i] = Numerator_local[i] / Denominator_local[i];
-    if(ColBasedOmega_local[i] < Teuchos::ScalarTraits<Scalar>::zero()) { // negative omegas are not valid. set them to zero
+    if(std::abs(ColBasedOmega_local[i]) < std::abs(Teuchos::ScalarTraits<Scalar>::zero())) { // negative omegas are not valid. set them to zero
       ColBasedOmega_local[i] = Teuchos::ScalarTraits<Scalar>::zero();
       zero_local++; // count zero omegas
     }
-    if(ColBasedOmega_local[i] < min_local) { min_local = ColBasedOmega_local[i]; }
-    if(ColBasedOmega_local[i] > max_local) { max_local = ColBasedOmega_local[i]; }
+    if(std::abs(ColBasedOmega_local[i]) < std::abs(min_local)) { min_local = std::abs(ColBasedOmega_local[i]); }
+    if(std::abs(ColBasedOmega_local[i]) > std::abs(max_local)) { max_local = std::abs(ColBasedOmega_local[i]); }
   }
 
   { // be verbose
@@ -305,7 +305,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
   RowBasedOmega =
       VectorFactory::Build(DinvAP0->getRowMap(),true);
 
-  RowBasedOmega->putScalar(-666*Teuchos::ScalarTraits<Scalar>::one());
+  RowBasedOmega->putScalar(-666); // TODO bad programming style
 
   bool bAtLeastOneDefined = false;
   Teuchos::ArrayRCP< Scalar > RowBasedOmega_local = RowBasedOmega->getDataNonConst(0);
@@ -316,14 +316,14 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     bAtLeastOneDefined = false;
     for(size_t j=0; j<Teuchos::as<size_t>(lindices.size()); j++) {
       Scalar omega = ColBasedOmega_local[lindices[j]];
-      if (omega != -666*Teuchos::ScalarTraits<Scalar>::one()) {
+      if (std::abs(omega) != -666) { // TODO bad programming style
         bAtLeastOneDefined = true;
-        if(RowBasedOmega_local[row] == -666*Teuchos::ScalarTraits<Scalar>::one())    RowBasedOmega_local[row] = omega;
-        else if(omega < RowBasedOmega_local[row]) RowBasedOmega_local[row] = omega;
+        if(std::abs(RowBasedOmega_local[row]) == -666)    RowBasedOmega_local[row] = omega;
+        else if(std::abs(omega) < std::abs(RowBasedOmega_local[row])) RowBasedOmega_local[row] = omega;
       }
     }
     if(bAtLeastOneDefined == true) {
-      if(RowBasedOmega_local[row] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmega_local[row] = Teuchos::ScalarTraits<Scalar>::zero();
+      if(std::abs(RowBasedOmega_local[row]) < 0 /*Teuchos::ScalarTraits<Scalar>::zero()*/) RowBasedOmega_local[row] = 0; /* Teuchos::ScalarTraits<Scalar>::zero();*/
     }
   }
 
