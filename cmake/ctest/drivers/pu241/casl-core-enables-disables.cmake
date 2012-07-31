@@ -29,6 +29,12 @@ SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Disabled in casl-core-enables-disables
 SET(STK_ENABLE_TESTS OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 SET(STK_ENABLE_EXAMPLES OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 
+# We don't have the Matio TPL for SEACAS
+SET(TPL_ENABLE_Matio OFF CACHE BOOL "")
+
+# Use CMake when building Dakota, not autotools
+SET(TriKota_ENABLE_DakotaCMake ON CACHE BOOL "")
+
 # Turn off this failing Rythmos test (see Trilinos bug 5485)
 SET(Rythmos_ImplicitRK_ConvergenceTest_MPI_1_DISABLE TRUE)
 

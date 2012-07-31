@@ -75,6 +75,21 @@ IF(TriKota_ENABLE_DakotaCMake)
 	"Boost include directory set by TriKota")
     ENDIF()
   ENDIF()
+
+  # Turn off a bunch of Dakota non-TriBITS-complient tests when buliding
+  # Dakota under Trilinos/TriKota.  Until these tests can be prefixed with
+  # TriKota_ and given the correct label there is no reason to enale them
+  # because they will not be run in automated testing.  However, allow users
+  # to enable them if they would really like.
+  SET(DAKOTA_ENABLE_TESTS OFF CACHE BOOL "")
+  SET(PECOS_ENABLE_TESTS OFF CACHE BOOL "")
+  SET(LHS_ENABLE_TESTS OFF CACHE BOOL "")
+  SET(HOPSPACK_ENABLE_TESTS OFF CACHE BOOL "")
+  SET(OPTPP_ENABLE_TESTS OFF CACHE BOOL "")
+  SET(HAVE_ACRO OFF CACHE BOOL "")
+  SET(HAVE_AMPL OFF CACHE BOOL "")
+  SET(HAVE_X_GRAPHICS OFF CACHE BOOL "")
+  SET(HAVE_HOPSPACK OFF CACHE BOOL "")
   
   # Configure Dakota and its packages
   MESSAGE("-->TriKota: Configuring Dakota using CMake")
