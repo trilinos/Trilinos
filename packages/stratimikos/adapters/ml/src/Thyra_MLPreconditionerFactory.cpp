@@ -272,7 +272,12 @@ void MLPreconditionerFactory::initializePrec(
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nComputing the preconditioner ...\n";
   timer.start(true);
-  TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
+  if (startingOver) {
+    TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ReComputePreconditioner());
+  }
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     OSTab(out).o() <<"=> Setup time = "<<timer.totalElapsedTime()<<" sec\n";
