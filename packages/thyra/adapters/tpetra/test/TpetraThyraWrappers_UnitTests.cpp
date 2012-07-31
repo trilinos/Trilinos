@@ -122,7 +122,7 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
   // numNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
 
-  Teuchos::ArrayRCP<int> numNz = Teuchos::arcp<int>(numMyElements);
+  Teuchos::ArrayRCP<size_t> numNz = Teuchos::arcp<size_t>(numMyElements);
 
   // We are building a tridiagonal matrix where each row has (-1 2 -1)
   // So we need 2 off-diagonal terms (except for the first and last equation)
