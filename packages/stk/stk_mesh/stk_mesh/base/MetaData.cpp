@@ -207,7 +207,8 @@ Part & MetaData::declare_part( const std::string & p_name )
 
 Part & MetaData::declare_internal_part( const std::string & p_name )
 {
-  return declare_part(convert_to_internal_name(p_name));
+  std::string internal_name = convert_to_internal_name(p_name);
+  return declare_part(internal_name);
 }
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
@@ -220,7 +221,8 @@ Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
 
 Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank rank )
 {
-  return declare_part(convert_to_internal_name(p_name), rank);
+  std::string internal_name = convert_to_internal_name(p_name);
+  return declare_part(internal_name, rank);
 }
 
 Part & MetaData::declare_part( const PartVector & part_intersect )
