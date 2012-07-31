@@ -253,9 +253,8 @@ namespace {
       typedef global_ordinal_type GO;
       typedef scalar_type ST;
       typedef node_type NT;
-      typedef Tpetra::Map<LO, GO, NT> map_type;
 
-      RCP<const map_type> map = X.getMap();
+      RCP<const Tpetra::Map<LO, GO, NT> > map = X.getMap();
       Array<LO> localIndices;
       const size_t numColumns = getNumColumns();
       for (size_t j = 0; j < numColumns; ++j) {
