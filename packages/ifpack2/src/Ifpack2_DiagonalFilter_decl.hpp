@@ -36,13 +36,6 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-//CMS
-//class Tpetra_Comm;
-//class Tpetra_Map;
-//class Tpetra_MultiVector;
-//class Tpetra_Import;
-//class Tpetra_BlockMap;
-
 namespace Ifpack2 {
 
 //! Ifpack2_DiagonalFilter: Filter to modify the diagonal entries of a given Tpetra_RowMatrix.
