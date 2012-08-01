@@ -130,7 +130,7 @@ namespace {
       if (myImageID == 0) {
         A->insertGlobalValues( 0, Teuchos::tuple<int>(0,1,2,3), Teuchos::tuple<double>(1.0,3.0,4.0,9.0) );
       }
-      A->fillComplete(dom,rng,Tpetra::DoOptimizeStorage);
+      A->fillComplete(dom,rng);
       testMatrix = A;
     }
     {
