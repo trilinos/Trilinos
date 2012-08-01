@@ -31,7 +31,6 @@ SubBlockAFactory
 BlockedGaussSeidelSmoother
 BraessSarazinSmoother
 AggregationExportFactory
-VariableInformationFactory
 PermutedTransferFactory
 MultiVectorTransferFactory
 SchurComplementFactory
