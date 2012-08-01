@@ -58,14 +58,30 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Maxwell
+    SOURCES example_Maxwell.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_GM
+    SOURCES getMatrices.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
   SOURCE_FILES ADR.xml
   	       Darcy.xml
                CurlLSFEMin.xml
                CurlLSFEMblock_in_block.xml
                DivLSFEMin.xml
-	      
+	       Maxwell.xml	      
                ML_nonsym.xml
+	       GetMatrixinput.xml
+	       test_K0_M1_D0.m
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
