@@ -328,6 +328,7 @@ public:
           }
           if(isInHole) continue;
           points[cnt].x = p.x;
+
           points[cnt].y = p.y;
           points[cnt].z = p.z;
           break;
@@ -363,6 +364,46 @@ public:
     */
   }
 
+  void GetPoints(lno_t requestedPointcount, T **coords/*preallocated sized numPoints*/, lno_t tindex,
+      Hole<T> **holes, lno_t holeCount,
+      float *sharedRatios_, int myRank){
+
+    for (int i = 0; i < myRank; ++i){
+      //cout << "me:" << myRank << " i:" << i << " s:" << sharedRatios_[i]<< endl;
+      this->assignedPrevious += lno_t(sharedRatios_[i] * this->numPoints);
+      if (i < this->numPoints % this->worldSize){
+        this->assignedPrevious += 1;
+      }
+    }
+
+    this->requested = requestedPointcount;
+      for(lno_t cnt = 0; cnt < requestedPointcount; ++cnt){
+        lno_t iteration = 0;
+        while(1){
+          if(++iteration > MAX_ITER_ALLOWED) {
+            throw "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates.";
+          }
+          CoordinatePoint <T> p = this->getPoint( this->assignedPrevious + cnt);
+
+          bool isInHole = false;
+          for(lno_t i = 0; i < holeCount; ++i){
+            if(holes[i][0].isInArea(p)){
+              isInHole = true;
+              break;
+            }
+          }
+          if(isInHole) continue;
+          coords[0][cnt + tindex] = p.x;
+          if(this->dimension > 1){
+            coords[1][cnt + tindex] = p.y;
+            if(this->dimension > 2){
+              coords[2][cnt + tindex] = p.z;
+            }
+          }
+          break;
+        }
+      }
+  }
 };
 
 template <typename T, typename lno_t, typename gno_t>
@@ -575,6 +616,10 @@ public:
     this->yshift = (pindex % (along_X * along_Y)) / along_X;
     this->xshift = (pindex % (along_X * along_Y)) % along_X;
 
+    this->xshift = pindex / (along_Z * along_Y);
+    this->zshift = (pindex % (along_Z * along_Y)) / along_Y;
+    this->yshift = (pindex % (along_Z * along_Y)) % along_Y;
+
     CoordinatePoint <T> p;
     p.x = xshift * this->xstep + leftMostx;
     p.y = yshift * this->ystep + leftMosty;
@@ -646,7 +691,7 @@ private:
   bool distinctCoordSet;
   CoordinateDistribution<T, lno_t,gno_t> **coordinateDistributions;
   int distributionCount;
-  CoordinatePoint<T> *points;
+  //CoordinatePoint<T> *points;
 
   WeightDistribution<T,T> **wd;
   int weight_dimension;  //dimension of the geometry
@@ -1289,7 +1334,7 @@ public:
       delete []this->wd;
     }
 
-    delete []this->points;
+    //delete []this->points;
   }
 
   GeometricGenerator(Teuchos::ParameterList &params, const RCP<const Teuchos::Comm<int> > & comm_){
@@ -1305,7 +1350,7 @@ public:
     this->holeCount = 0;
     this->distributionCount = 0;
     this->outfile = "";
-    this->points =  NULL;
+    //this->points =  NULL;
 
     /*
 		this->minx = 0;
@@ -1347,7 +1392,30 @@ public:
 
 
 
+    /*
     this->points = new CoordinatePoint<T> [myPointCount];
+#pragma omp parallel for
+    for(lno_t cnt = 0; cnt < myPointCount; ++cnt){
+      this->points[cnt].x = 0;
+      this->points[cnt].y = 0;
+      this->points[cnt].z = 0;
+    }
+    */
+
+    T **coords = new T *[this->coordinate_dimension];
+    for(int i = 0; i < this->coordinate_dimension; ++i){
+      coords[i] = new T[myPointCount];
+    }
+
+    for (int ii = 0; ii < this->coordinate_dimension; ++ii){
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
+      for(int i = 0; i < myPointCount; ++i){
+        coords[ii][i] = 0;
+      }
+    }
+
     this->numLocalCoords = 0;
     srand (myRank + 1);
     for (int i = 0; i < distributionCount; ++i){
@@ -1357,7 +1425,8 @@ public:
         requestedPointCount += 1;
       }
       //cout << "req:" << requestedPointCount << endl;
-      this->coordinateDistributions[i]->GetPoints(requestedPointCount,this->points + this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
+      //this->coordinateDistributions[i]->GetPoints(requestedPointCount,this->points + this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
+      this->coordinateDistributions[i]->GetPoints(requestedPointCount,coords, this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
       this->numLocalCoords += requestedPointCount;
     }
 
@@ -1373,12 +1442,12 @@ public:
       myfile.open ((this->outfile + toString<int>(myRank)).c_str());
       for(lno_t i = 0; i < this->numLocalCoords; ++i){
 
-        myfile << this->points[i].x;
+        myfile << coords[0][i];
         if(this->coordinate_dimension > 1){
-          myfile << " " << this->points[i].y;
+          myfile << " " << coords[1][i];
         }
         if(this->coordinate_dimension > 2){
-          myfile << " " << this->points[i].z;
+          myfile << " " << coords[2][i];
         }
         myfile << std::endl;
       }
@@ -1400,11 +1469,7 @@ public:
         new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, eltList, 0, comm_));
 
 
-    T **coords = new T *[this->coordinate_dimension];
-    for(int i = 0; i < this->coordinate_dimension; ++i){
-      coords[i] = new T[this->numLocalCoords];
-    }
-
+/*
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
@@ -1418,7 +1483,7 @@ public:
         }
       }
     }
-
+*/
     Teuchos::Array<Teuchos::ArrayView<const T> > coordView(this->coordinate_dimension);
     for (int i=0; i < this->coordinate_dimension; i++){
       if(this->numLocalCoords > 0){
