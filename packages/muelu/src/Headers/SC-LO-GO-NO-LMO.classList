@@ -40,3 +40,4 @@ AggregationExportFactory
 MultiVectorTransferFactory
 PermutedTransferFactory
 AmalgamationFactory
+AggStatTransferFactory

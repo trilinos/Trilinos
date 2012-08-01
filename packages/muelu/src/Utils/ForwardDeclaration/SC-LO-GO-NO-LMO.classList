@@ -37,3 +37,4 @@ PermutedTransferFactory
 MultiVectorTransferFactory
 SchurComplementFactory
 AmalgamationFactory
+AggStatTransferFactory
