@@ -2193,6 +2193,7 @@ namespace Tpetra {
             }
           } // if vl != VERB_LOW
         } // if it is my process' turn to print
+        comm->barrier();
       } // for each process in the communicator
     } // if vl != VERB_NONE
   }

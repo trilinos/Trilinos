@@ -266,6 +266,7 @@ namespace Tpetra {
             }
           }
         }
+        comm->barrier();
       }
     }
   }
