@@ -46,9 +46,6 @@ namespace Xpetra {
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
     EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
 
-    //! Destructor.
-    virtual ~EpetraMap() { } // virtual because EpetraMap used as a base class of EpetraStridedMap
-
     //@}
 
     //! @name Attributes
@@ -152,6 +149,9 @@ namespace Xpetra {
     //! @name Xpetra specific
     //@{
 
+    //! Destructor.
+    virtual ~EpetraMap() { } // virtual because EpetraMap used as a base class of EpetraStridedMap
+    
     //! EpetraMap constructor to wrap a Epetra_Map object
     EpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map) 
       : map_(map) { }

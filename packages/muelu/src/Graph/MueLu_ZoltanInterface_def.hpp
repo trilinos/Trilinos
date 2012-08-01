@@ -224,18 +224,15 @@ namespace MueLu {
       }
     } else {
       LocalOrdinal numBlocks = A->getRowMap()->getNodeNumElements() / blockSize;
-      std::set<LocalOrdinal> uniqueColsInBlockRow;
-      Teuchos::ArrayView<LO> nonconstCols =Teuchos::av_const_cast<LO>(cols);
       for (LocalOrdinal i=0; i<numBlocks; ++i) {
         gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i*blockSize);
+        LO nnz=0;
         for (LocalOrdinal j=i*blockSize; j<(i+1)*blockSize; ++j) {
           A->getLocalRowView(j,cols,vals);
-          LO *tt = nonconstCols.getRawPtr();
-          uniqueColsInBlockRow.insert(tt,tt+nonconstCols.size());  //yes, cols.size() is correct, one past last entry
+          nnz += vals.size();
         }
-        weights[i] = uniqueColsInBlockRow.size();
-        uniqueColsInBlockRow.clear();
-      } //for (size_t i=0; i<numBlocks; ++i)
+        weights[i] = nnz;
+      } //for (LocalOrdinal i=0; i<numBlocks; ++i)
     }
 
   } //GetLocalNumberOfNonzeros()

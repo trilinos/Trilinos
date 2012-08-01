@@ -32,7 +32,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - MueLu_INST_DOUBLE_INT_INT         (= ON by default)
 # - MueLu_INST_DOUBLE_INT_LONGLONGINT (= ON by default if TEUCHOS_ENABLE_LONG_LONG_INT enabled) TODO: do not work if Tpetra_ENABLE_EXPLICIT_INSTANTIATION=ON
-# - MueLu_INST_COMPLEX_INT_INT       (= ON by default if TEUCHOS_ENABLE_COMPLEX enabled)       TODO: we also need to check Tpetra_COMPLEX if EI of Tpetra=ON
+# - MueLu_INST_COMPLEX_INT_INT        (= ON by default if TEUCHOS_ENABLE_COMPLEX enabled)       TODO: we also need to check Tpetra_COMPLEX if EI of Tpetra=ON
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   # <double, int, int>
@@ -63,17 +63,20 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     )
 
   # <complex, int, int>
-#   IF(Teuchos_ENABLE_COMPLEX)
-#     SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT ON)
-#   ELSE()
-#     SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT OFF)
-#   ENDIF()
-#   TRIBITS_ADD_OPTION_AND_DEFINE(
-#     ${PACKAGE_NAME}_INST_COMPLEX_INT_INT
-#     HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT
-#     "Enable the use of explicit template instantiation with <complex, int, int>."
-#     ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT}
-#     )
+# Teuchos_ENABLE_COMPLEX is ON by default (in release mode or when SS is enabled) but we don't want MueLu to be instantiated explicitly with complex by default as it is not frequently used.
+#  IF(Teuchos_ENABLE_COMPLEX)
+#    SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT ON)
+#  ELSE()
+    SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT OFF)
+#  ENDIF()
+  TRIBITS_ADD_OPTION_AND_DEFINE(
+    ${PACKAGE_NAME}_INST_COMPLEX_INT_INT
+    HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT
+    "Enable the use of explicit template instantiation with <complex, int, int>."
+    ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT}
+    )
+
+  # sacado
   IF(${PACKAGE_NAME}_ENABLE_PCE_SUPPORT)
     TRIBITS_ADD_OPTION_AND_DEFINE(
       ${PACKAGE_NAME}_INST_PCE_INT_INT
@@ -83,6 +86,20 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     )
   ENDIF()
 
+ENDIF()
+
+# HAVE_MUELU_COMPLEX=ON iff:
+# - Teuchos_ENABLE_COMPLEX=ON and Explicit Instantiation = OFF
+# or
+# - HAVE_MUELU_INST_COMPLEX_INT_INT
+#
+# TODO: do we want also a MueLu_ENABLE_Complex option that turns ON automatically what we need?
+IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX) 
+    OR 
+    (HAVE_MUELU_INST_COMPLEX_INT_INT))
+  SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX ON)
+ELSE()
+  SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
 ENDIF()
 
 #

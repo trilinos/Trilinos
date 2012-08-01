@@ -47,7 +47,7 @@ namespace Xpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
-    Operator() : blksize_(1) { }
+    Operator() { }
 
     //! Destructor
     virtual ~Operator() { }
@@ -384,10 +384,8 @@ namespace Xpetra {
     // ----------------------------------------------------------------------------------
     // "TEMPORARY" VIEW MECHANISM
     // TODO: the view mechanism should be implemented as in MueMat.
-    LocalOrdinal blksize_; // TODO remove this
-    // RCP<GOVector> variableBlockSizeInfo_; TODO: should be moved from CoalesceDropFactory to here.
+    void SetFixedBlockSize(LocalOrdinal blksize) {
 
-    void SetFixedBlockSize(LocalOrdinal blksize) { 
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Exceptions::RuntimeError, "Xpetra::Operator::SetFixedBlockSize(): operator is not filled and completed."); // TODO: do we need this? we just wanna "copy" the domain and range map
 
       std::vector<size_t> stridingInfo;
@@ -415,11 +413,10 @@ namespace Xpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(rangeMap  == Teuchos::null, Exceptions::BadCast, "Xpetra::Operator::GetFixedBlockSize(): rangeMap is not of type StridedMap");
         TEUCHOS_TEST_FOR_EXCEPTION(domainMap == Teuchos::null, Exceptions::BadCast, "Xpetra::Operator::GetFixedBlockSize(): domainMap is not of type StridedMap");
         TEUCHOS_TEST_FOR_EXCEPTION(domainMap->getFixedBlockSize() != rangeMap->getFixedBlockSize(), Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): block size of rangeMap and domainMap are different.");
-        TEUCHOS_TEST_FOR_EXCEPTION(domainMap->getFixedBlockSize() != Teuchos::as<size_t>(blksize_), Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): block size of domainMap and blksize_ are different.");
         return Teuchos::as<LocalOrdinal>(domainMap->getFixedBlockSize()); // TODO: why LocalOrdinal?
       } else
-        TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): no blksize_ available."); // TODO remove this
-        return blksize_;
+        TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): no strided maps available."); // TODO remove this
+        return 1;
     }; //TODO: why LocalOrdinal?
 
     // ----------------------------------------------------------------------------------

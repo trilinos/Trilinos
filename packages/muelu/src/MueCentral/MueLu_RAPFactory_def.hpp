@@ -248,10 +248,11 @@ namespace MueLu {
 
     if(IsPrint(Warnings0)) {
       const RCP<const Teuchos::Comm<int> > & comm = Ac->getRowMap()->getComm();
+      GO lZeroDiagsGO = lZeroDiags; /* LO->GO conversion */
       GO gZeroDiags = 0;
-      sumAll(comm, lZeroDiags, gZeroDiags);
+      sumAll(comm, lZeroDiagsGO, gZeroDiags);
       if(repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
-      else                     GetOStream(Warnings0,0) << "RAPFactory (WARNING): found " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
+      else                     GetOStream(Warnings0,0) << "RAPFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
     }
   }
 

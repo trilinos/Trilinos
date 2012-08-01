@@ -31,11 +31,9 @@ development of new multigrid preconditioning techniques.
   - Ray Tuminaro, Sandia National Labs
   - Tobias Wiesner, Technical University Munich
 
-\section muelu_copyright Copyright
+\section muelu_copyright Copyright and License
 
-The MueLu copyright is pending.
-
-\verbinclude copyright.txt
+\verbinclude COPYRIGHT_AND_LICENSE
 
 \section muelu_questions For All Questions and Comments...
   

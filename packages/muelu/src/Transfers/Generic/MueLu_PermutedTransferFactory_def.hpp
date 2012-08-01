@@ -153,17 +153,17 @@ namespace MueLu {
                Proceed as usual
             */
             //Note, this is to avoid that Epetra only supports vectors of type int or double, not size_t, which is unsigned.
-            RCP<Vector> originalNnzPerRowVec = VectorFactory::Build(permImporter->getSourceMap());
-            ArrayRCP<Scalar> nnzPerRow = originalNnzPerRowVec->getDataNonConst(0);
+            RCP<Xpetra::Vector<double,LO,GO> > originalNnzPerRowVec = Xpetra::VectorFactory<double,LO,GO>::Build(permImporter->getSourceMap());
+            ArrayRCP<double> nnzPerRow = originalNnzPerRowVec->getDataNonConst(0);
             for (size_t i=0; i<originalR->getNodeNumRows(); ++i)
               nnzPerRow[i] = originalR->getNumEntriesInLocalRow(i);
             nnzPerRow = Teuchos::null;
-            RCP<Vector> permutedNnzPerRowVec = VectorFactory::Build(permImporter->getTargetMap());
+            RCP<Xpetra::Vector<double,LO,GO> > permutedNnzPerRowVec = Xpetra::VectorFactory<double,LO,GO>::Build(permImporter->getTargetMap());
             permutedNnzPerRowVec->doImport(*originalNnzPerRowVec,*permImporter,Xpetra::INSERT);
-            ArrayRCP<const Scalar> tmpData = permutedNnzPerRowVec->getData(0);
+            ArrayRCP<const double> tmpData = permutedNnzPerRowVec->getData(0);
             ArrayRCP<LocalOrdinal> permutedNnzPerRow(permutedNnzPerRowVec->getLocalLength());
             for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i) 
-              permutedNnzPerRow[i] = Teuchos::as<LocalOrdinal,Scalar>(tmpData[i]);
+              permutedNnzPerRow[i] = Teuchos::as<LocalOrdinal,double>(tmpData[i]);
             RCP<Operator> permutedR = OperatorFactory::Build(permImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
             permutedNnzPerRow = Teuchos::null;
             RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(permutedR);
