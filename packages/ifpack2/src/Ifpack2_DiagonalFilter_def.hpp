@@ -68,7 +68,7 @@ DiagonalFilter<MatrixType>::DiagonalFilter(const Teuchos::RCP<const Tpetra::RowM
       if (Indices[i] == MyRow) {
 	pos_[MyRow] = i;
 	val_->replaceLocalValue(MyRow, Values[i] * (RelativeThreshold_ - 1) +
-				AbsoluteThreshold_ * IFPACK2_SGN(Values[i]));
+				AbsoluteThreshold_ * IFPACK2_SGN(Teuchos::ScalarTraits<Scalar>::real(Values[i])));
 	break;
       }
     }
