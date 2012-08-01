@@ -429,9 +429,6 @@ namespace Tpetra {
      *  where @ denotes element-wise multiplication.
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
-     *
-     *  this = scalarThis * this(i,j) + scalarAB * B(i,j) * A(i,1) (A has only 1 column)
-     *
      */
     void
     elementWiseMultiply (Scalar scalarAB,
