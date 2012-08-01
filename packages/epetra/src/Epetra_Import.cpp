@@ -52,7 +52,6 @@
 
 //==============================================================================
 // Epetra_Import constructor for a Epetra_BlockMap object
-
 Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap)
   : Epetra_Object("Epetra::Import"),
     TargetMap_(targetMap),
@@ -70,36 +69,9 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_B
     NumRecv_(0),
     Distor_(0)
 {
-  Allocate(targetMap,sourceMap,-1,0);
-}
 
-Epetra_Import::Epetra_Import(const Epetra_BlockMap & targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs, const int * UserRemotePIDs)
-  : Epetra_Object("Epetra::Import"),
-    TargetMap_(targetMap),
-    SourceMap_(sourceMap),
-    NumSameIDs_(0),
-    NumPermuteIDs_(0),
-    PermuteToLIDs_(0),
-    PermuteFromLIDs_(0),
-    NumRemoteIDs_(0),
-    RemoteLIDs_(0),
-    NumExportIDs_(0),
-    ExportLIDs_(0),
-    ExportPIDs_(0),
-    NumSend_(0),
-    NumRecv_(0),
-    Distor_(0)
-{
-  Allocate(targetMap,sourceMap,NumRemotePIDs,UserRemotePIDs);
-}
-
-
-void Epetra_Import::Allocate(const Epetra_BlockMap & targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs, const int * UserRemotePIDs)
-{
-
-  int i,ierr;
+  int i;
   
-
   // Build three ID lists:
   // NumSameIDs - Number of IDs in TargetMap and SourceMap that are identical, up to the first
   //              nonidentical ID.
@@ -169,22 +141,15 @@ void Epetra_Import::Allocate(const Epetra_BlockMap & targetMap, const Epetra_Blo
   if( NumRemoteIDs_>0 && !sourceMap.DistributedGlobal() )
     ReportError("Warning in Epetra_Import: Serial Import has remote IDs. (Importing to Subset of Target Map)", 1);
   
-  // Test for distributed cases  
+  // Test for distributed cases
+  
   int * RemotePIDs = 0;
-  bool DeallocateRemotePids=true;
 
   if (sourceMap.DistributedGlobal()) {
     
-    if(UserRemotePIDs && NumRemotePIDs==NumRemoteIDs_){
-      // The count is right, so lets hope this works...
-      RemotePIDs = const_cast<int *>(UserRemotePIDs);
-      DeallocateRemotePids=false;
-    }
-    else{
-      if (NumRemoteIDs_>0)  RemotePIDs = new int[NumRemoteIDs_];
-      ierr=sourceMap.RemoteIDList(NumRemoteIDs_, RemoteGIDs, RemotePIDs, 0); // Get remote PIDs
-      if (ierr) throw ReportError("Error in sourceMap.RemoteIDList call", ierr);
-    }
+    if (NumRemoteIDs_>0)  RemotePIDs = new int[NumRemoteIDs_];
+    int ierr = sourceMap.RemoteIDList(NumRemoteIDs_, RemoteGIDs, RemotePIDs, 0); // Get remote PIDs
+    if (ierr) throw ReportError("Error in sourceMap.RemoteIDList call", ierr);
 
     //Get rid of IDs that don't exist in SourceMap
     if(NumRemoteIDs_>0) {
@@ -206,10 +171,10 @@ void Epetra_Import::Allocate(const Epetra_BlockMap & targetMap, const Epetra_Blo
             }
           NumRemoteIDs_ = cnt;
           delete [] RemoteGIDs;
-          if( DeallocateRemotePids ) delete [] RemotePIDs;
+          delete [] RemotePIDs;
           delete [] RemoteLIDs_;
           RemoteGIDs = NewRemoteGIDs;
-          RemotePIDs = NewRemotePIDs; DeallocateRemotePids=false;
+          RemotePIDs = NewRemotePIDs;
           RemoteLIDs_ = NewRemoteLIDs;
           ReportError("Warning in Epetra_Import: Target IDs not found in Source Map (Do you want to import to subset of Target Map?)", 1);
         }
@@ -217,7 +182,7 @@ void Epetra_Import::Allocate(const Epetra_BlockMap & targetMap, const Epetra_Blo
           NumRemoteIDs_ = 0;
           delete [] RemoteGIDs;
           RemoteGIDs = 0;
-          if( DeallocateRemotePids )  delete [] RemotePIDs;
+          delete [] RemotePIDs;
           RemotePIDs = 0;
         }
       }
@@ -248,7 +213,7 @@ void Epetra_Import::Allocate(const Epetra_BlockMap & targetMap, const Epetra_Blo
   }
 
   if( NumRemoteIDs_>0 ) delete [] RemoteGIDs;
-  if( NumRemoteIDs_>0 && DeallocateRemotePids ) delete [] RemotePIDs;
+  if( NumRemoteIDs_>0 ) delete [] RemotePIDs;
 
   if (NumTargetIDs>0) delete [] TargetGIDs;
   if (NumSourceIDs>0) delete [] SourceGIDs;

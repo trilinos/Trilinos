@@ -62,9 +62,9 @@ double RelativeThreshold = 1.01;
 Ifpack2_DiagonalFilter B(A, AbsoluteThreshold, RelativeThreshold);
 \endcode
 
-Note: This operation only really makes sense if the Thresholds are not complex.
+\author Michael Heroux, SNL 9214.
 
-\data Last modified on 31-Aug-12.
+\data Last modified on 24-Jan-05.
 
 */
 
@@ -82,8 +82,8 @@ public:
 public:
   //! Constructor.
   explicit DiagonalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
-			  magnitudeType AbsoluteThreshold,
-			  magnitudeType RelativeThreshold);
+			  Scalar AbsoluteThreshold,
+			  Scalar RelativeThreshold);
   
   //! Destructor.
   virtual ~DiagonalFilter();
@@ -329,9 +329,9 @@ private:
   //! Pointer to the matrix to be filtered
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
   //! This value (times the sgn(A(i,i)) is added to the diagonal elements
-  magnitudeType  AbsoluteThreshold_;
+  Scalar AbsoluteThreshold_;
   //! Multiplies A(i,i) by this value.
-  magnitudeType RelativeThreshold_;
+  Scalar RelativeThreshold_;
   //! Stores the position of the diagonal element, or -1 if not present.
   std::vector<LocalOrdinal> pos_;
   //! Stores as additional diagonal contribution due to the filter.

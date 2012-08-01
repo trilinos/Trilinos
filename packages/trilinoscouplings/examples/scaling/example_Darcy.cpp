@@ -962,8 +962,6 @@ int main(int argc, char *argv[]) {
    EpetraExt::MatrixMatrix::Multiply(DCurl1,false,DGrad1,false,FaceNode);
    FaceNode.PutScalar(1.0);
 
-
-
 /**********************************************************************************/
 /******************** INHOMOGENEOUS BOUNDARY CONDITIONS ***************************/
 /**********************************************************************************/
