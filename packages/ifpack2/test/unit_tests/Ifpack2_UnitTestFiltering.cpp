@@ -44,12 +44,11 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Ifpack2_DiagonalFilter.hpp>
+#include <Ifpack2_LocalFilter.hpp>
 //#include "Ifpack2_DropFilter.h"
 //#include "Ifpack2_SparsityFilter.h"
 //#include "Ifpack2_SingletonFilter.h"
 #include <Teuchos_RefCountPtr.hpp>
-
-
 
 #include <Teuchos_FancyOStream.hpp>
 
@@ -66,7 +65,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
   
-  // Useful matricices and such
+  // Useful matrices and such (tridiagonal test)
   global_size_t num_rows_per_proc = 5;
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc); 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
@@ -92,6 +91,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
 
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+
+
+  // ====================================== //
+  // create a new matrix, locally filtered  //
+  // ====================================== //
+  Ifpack2::LocalFilter<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > LocalA(Matrix);
+  Teuchos::ScalarTraits<double>::seedrandom(24601);
+  x.randomize();
+
+
+  // Apply w/ filter
+  LocalA.apply(x,y);
+
+  // Apply w/ GetRow
+  size_t max_nz_per_row=LocalA.getNodeMaxNumRowEntries();
+  Teuchos::Array<LocalOrdinal> Indices(max_nz_per_row);
+  Teuchos::Array<Scalar> Values(max_nz_per_row);
+  Teuchos::ArrayRCP<const Scalar> xview=x.get1dView();
+
+  for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
+    size_t NumEntries;
+    LocalA.getLocalRowCopy(i,Indices(),Values(),NumEntries);
+    Scalar sum=0;
+    for(LocalOrdinal j=0; (size_t) j < NumEntries; j++){
+      sum+=Values[j] * xview[Indices[j]];
+    }
+    z.replaceLocalValue(i,sum);
+  }
+    
+  // Diff
+  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+
+
+
 
   // ====================================== //
   // create a new matrix, dropping by value //

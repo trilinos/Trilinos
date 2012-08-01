@@ -349,10 +349,6 @@ private:
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
   mutable Teuchos::Array<Scalar> Values_;
 
-  //! Norms
-  Scalar NormOne_;
-  Scalar NormInf_;
-
 };// class LocalFilter
 
 }// namespace Ifpack2
