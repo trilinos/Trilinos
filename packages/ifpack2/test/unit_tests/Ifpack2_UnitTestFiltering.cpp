@@ -139,6 +139,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Filtering, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-//#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-//UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
-//#endif
+#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
+#endif
