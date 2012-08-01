@@ -308,9 +308,9 @@ public:
 
     this->requested = requestedPointcount;
 
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel for
-#endif
+//#ifdef HAVE_ZOLTAN2_OMP
+//#pragma omp parallel for
+//#endif
       for(lno_t cnt = 0; cnt < requestedPointcount; ++cnt){
         lno_t iteration = 0;
         while(1){

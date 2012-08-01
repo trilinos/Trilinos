@@ -124,12 +124,6 @@ public:
 namespace Zoltan2{
 
 //diffclock for temporary timing experiments.
-double diffclock(clock_t clock1,clock_t clock2)
-{
-  double diffticks=clock1-clock2;
-  double diffms=(diffticks*10)/CLOCKS_PER_SEC;
-  return diffms;
-}
 
 
 
@@ -203,8 +197,123 @@ public:
 };
 
 
+template <class lno_t,class scalar_t>
+class PQJagged_MaxPriorityQueue {
+private:
+    scalar_t *weights; //gains according to which the heap order is determined.
+    lno_t *real_indices;   //the vertex indices corresponding to the gains.
+    lno_t *inverse_vertex_positions; //points the position of each vertex
+    lno_t heap_size;    //the end of heap inclusive
+    lno_t max_size;    //max size of heap. --for addition
 
+    void push_down(lno_t i){
+      lno_t child1 = 2 * i + 1;
+      lno_t child2 = 2 * i + 2;
+      if((child1 >= heap_size || this->weights[i] >= this->weights[child1]) && (child2 >= heap_size || this->weights[i] >= this->weights[child2])){
+          return;
+      } else {
+        lno_t biggerchild = 0;
+          if(this->weights[child1] >= this->weights[child2]){
+              biggerchild = child1;
+          } else {
+              biggerchild = child2;
+          }
+          this->swap(i, biggerchild);
+          push_down(biggerchild);
+      }
+    }
 
+    void push_up(lno_t i){
+      if(i == 0 ) return;
+      lno_t parent = (i - 1) / 2;
+      //std::cout << "parent:" << parent << " child" << i << std::endl;
+      if(this->weights[parent] >= this->weights[i]){
+        return;
+      }
+      else {
+        this->swap(i, parent);
+        push_up(parent);
+      }
+    }
+
+    void swap(lno_t index1, lno_t index2){
+        scalar_t wtmp = this->weights[index1];
+        this->weights[index1] = this->weights[index2];
+        this->weights[index2] = wtmp;
+
+        lno_t itmp = this->inverse_vertex_positions[this->real_indices[index1]];
+        this->inverse_vertex_positions[this->real_indices[index1]] = this->inverse_vertex_positions[this->real_indices[index2]];
+        this->inverse_vertex_positions[this->real_indices[index2]] = itmp;
+
+        itmp = this->real_indices[index1];
+        this->real_indices[index1] = this->real_indices[index2];
+        this->real_indices[index2] = itmp;
+    }
+
+public:
+    //assumes indices starts from 1.
+    PQJagged_MaxPriorityQueue(lno_t max_size, scalar_t *gains, lno_t *real_indices, lno_t *positions){
+      this->set_Heap(max_size, gains, real_indices, positions);
+    }
+    PQJagged_MaxPriorityQueue(){}
+    ~PQJagged_MaxPriorityQueue(){}
+    void set_Heap(lno_t max_size_, scalar_t *weights_, lno_t *real_indices_, lno_t *positions_){
+        this->weights = weights_;
+        this->max_size = max_size_;
+        this->real_indices = real_indices_;
+        this->inverse_vertex_positions = positions_;
+        this->heap_size = max_size_;
+    }
+
+    void update(lno_t real_index, scalar_t weight_increase){
+      lno_t heap_index = this->inverse_vertex_positions[real_index];
+      if(heap_index == -1){
+        return;
+      }
+      this->weights[heap_index] += weight_increase;
+      if(weight_increase > 0){
+        this->push_up(heap_index);
+      }
+      else {
+        this->push_down(heap_index);
+      }
+    }
+
+    void top(lno_t *index, scalar_t *weight){
+      if(heap_size >= 0){
+          *index = this->real_indices[1];
+          *weight = this->weights[1];
+      } else {
+          *index = -1;
+          *weight = -1;
+      }
+    }
+
+    void pop(){
+      if(heap_size > 0){
+        this->inverse_vertex_positions[this->real_indices[0]] = -1;
+        this->weights[0] = this->weights[heap_size - 1];
+        this->real_indices[0] = this->real_indices[heap_size - 1];
+        this->inverse_vertex_positions[this->real_indices[heap_size - 1]] = 0;
+        --heap_size;
+        this->push_down(0);
+      }
+    }
+};
+
+void getMigrationGroups(lno_t *totalPartPointCounts, gno_t totalCount, partId_t partNo, int worldSize, scalar_t *proc_work_array,
+    partId_t *part_real_indices_work, partId_t *part_positions_work
+    ){
+  scalar_t idealWeight = totalCount / double(worldSize);
+  partId_t maxGroupNo = partNo;
+
+  for (int i = 0; i < worldSize; ++i){
+    proc_work_array[i] = idealWeight;
+  }
+  //PQJagged_MaxPriorityQueue<lno_t, scalar_t> parts(partNo, totalPartPointCounts_work, part_real_indices_work, lno_t *part_positions_work);
+  //PQJagged_MaxPriorityQueue<lno_t, scalar_t> procs(worldSize, proc_work_array, part_real_indices_work, lno_t *part_positions_work);
+
+}
 
 /*! \brief
  * Function that calculates the next pivot position,
@@ -1671,6 +1780,9 @@ std::string toString(tt obj){
   return tmp;
 }
 
+
+
+
 /*! \brief PQJagged coordinate partitioning algorithm.
  *
  *  \param env   library configuration and problem parameters
@@ -1691,6 +1803,7 @@ void AlgPQJagged(
 )
 {
 
+  cout << "pqJagged" << endl;
   env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
 
@@ -2028,12 +2141,11 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     lno_t begin = 0;
     lno_t end = inTotalCounts[i];
     if(i > 0) begin = inTotalCounts[i -1];
-    //cout << "begin:" << begin << " end:" << end << endl;
+#pragma omp parallel for
     for (lno_t ii = begin; ii < end; ++ii){
 
       lno_t k = partitionedPointCoordinates[ii];
       partIds[k] = i;
-
       /*
       cout << "part of coordinate:";
       for(int iii = 0; iii < coordDim; ++iii){
@@ -2042,11 +2154,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       cout << i;
       cout << endl;
       */
-
     }
     //cout << "begin:" << begin << " end:" << end << endl;
   }
-
   ArrayRCP<const gno_t> gnoList;
   if(numLocalCoords > 0){
     gnoList = arcpFromArrayView(pqJagged_gnos);
