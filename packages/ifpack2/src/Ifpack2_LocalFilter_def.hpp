@@ -57,16 +57,16 @@ LocalFilter<MatrixType>::LocalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<
 {
 
 #ifdef HAVE_MPI
-  SerialComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper((MPI_Comm)MPI_COMM_SELF)));
+  LocalComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper((MPI_Comm)MPI_COMM_SELF)));
 #else
-  SerialComm_ = Teuchos::rcp( new Tpetra::SerialComm<int> );
+  LocalComm_ = Teuchos::rcp( new Tpetra::SerialComm<int>() );
 #endif
 
   // localized matrix has all the local rows of Matrix
   NumRows_ = A_->getNodeNumRows();
 
   // build a linear map, based on the serial communicator
-  LocalMap_ = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(NumRows_,0,SerialComm_) );
+  LocalMap_ = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(NumRows_,0,LocalComm_) );
 
   // NodeNumEntries_ will contain the actual number of nonzeros
   // for each localized row (that is, without external nodes,
