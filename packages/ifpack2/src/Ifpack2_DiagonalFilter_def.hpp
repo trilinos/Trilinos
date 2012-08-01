@@ -60,12 +60,12 @@ DiagonalFilter<MatrixType>::DiagonalFilter(const Teuchos::RCP<const Tpetra::RowM
   std::vector<Scalar> Values(getNodeMaxNumRowEntries());
   size_t NumEntries;
 
-  for (LocalOrdinal MyRow = 0 ; (size_t)MyRow < getNodeNumRows() ; ++MyRow) {    
+  for (size_t MyRow = 0 ; MyRow < getNodeNumRows() ; ++MyRow) {    
     pos_[MyRow] = -1;
     A_->getLocalRowCopy(MyRow,Indices,Values,NumEntries);
 
     for (size_t i = 0 ; i < NumEntries ; ++i) {
-      if (Indices[i] == MyRow) {
+      if ((size_t)Indices[i] == MyRow) {
 	pos_[MyRow] = i;
 	val_->replaceLocalValue(MyRow, Values[i] * (RelativeThreshold_ - 1) +
 				AbsoluteThreshold_ * IFPACK2_SGN(Teuchos::ScalarTraits<Scalar>::real(Values[i])));

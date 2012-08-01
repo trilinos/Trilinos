@@ -91,13 +91,13 @@ LocalFilter<MatrixType>::LocalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<
   // diagonal entries (already modified)
   size_t ActualMaxNumEntries = 0;
 
-  for (LocalOrdinal i = 0 ; i < (LocalOrdinal)NumRows_ ; ++i) {
+  for (size_t i = 0 ; i < NumRows_ ; ++i) {
     
     NumEntries_[i] = 0;
     size_t Nnz, NewNnz = 0;
     A_->getLocalRowCopy(i,Indices_,Values_,Nnz);
-    for (LocalOrdinal j = 0 ; j < (LocalOrdinal)Nnz ; ++j) {
-      if (Indices_[j] < (LocalOrdinal)NumRows_ ) ++NewNnz;
+    for (size_t j = 0 ; j < Nnz ; ++j) {
+      if ((size_t) Indices_[j] < NumRows_ ) ++NewNnz;
     }
 
     if (NewNnz > ActualMaxNumEntries)
@@ -410,12 +410,12 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdina
   Y.putScalar(zero);
   size_t NumVectors = Y.getNumVectors();
 
-  for (LocalOrdinal i = 0 ; (size_t)i < NumRows_ ; ++i) {
+  for (size_t i = 0 ; i < NumRows_ ; ++i) {
     
     size_t Nnz;
     A_->getLocalRowCopy(i,Indices_(),Values_(),Nnz);
 
-    for (LocalOrdinal j = 0 ; (size_t)j < Nnz ; ++j) {
+    for (size_t j = 0 ; j < Nnz ; ++j) {
       if ((size_t)Indices_[j] < NumRows_ ) {
 	for (size_t k = 0 ; k < NumVectors ; ++k)
 	  y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];
