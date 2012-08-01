@@ -23,15 +23,16 @@ enum distribution {normal, uniform};
 const std::string distribution[] = {"distribution", "uniform"};
 #define DISTRIBUTION_COUNT 2
 
-#define HOLE_ALLOC_STEP = 10
+#define HOLE_ALLOC_STEP  10
+#define MAX_WEIGHT_DIM  10
 #define INVALID(STR) "Invalid argument at " + STR
 #define INVALIDSHAPE(STR, DIM) "Invalid shape name " + STR + " for " + 	DIM + ".\nValid shapes are \"SQUARE\", \"RECTANGLE\", \"CIRCLE\" for 2D, and \"CUBE\", \"RECTANGULAR_PRISM\", \"SPHERE\" for 3D"
 
 #define INVALID_SHAPE_ARG(SHAPE, REQUIRED) "Invalid argument count for shape " + SHAPE + ". Requires " + REQUIRED + " argument(s)."
 #define MAX_ITER_ALLOWED 500
 
-const std::string equation_with_step_function = "STEPPEDEQUATION";
-const std::string equation_with_step_function_parameters = equation_with_step_function + "-";
+const std::string weight_distribution = "WeightDistribution";
+const std::string weight_distribution_string = weight_distribution + "-";
 template <typename T>
 struct CoordinatePoint {
   T x;
@@ -278,22 +279,24 @@ public:
   }
 };
 
-template <typename T, typename lno_t>
+template <typename T, typename lno_t, typename gno_t>
 class CoordinateDistribution{
 public:
-  lno_t numPoints;
+  gno_t numPoints;
   int dimension;
   lno_t requested;
-  lno_t assignedPrevious;
+  gno_t assignedPrevious;
   int worldSize;
   virtual ~CoordinateDistribution(){}
 
   CoordinateDistribution(gno_t np_, int dim, int worldSize):numPoints(np_), dimension(dim), requested(0), assignedPrevious(0), worldSize(worldSize){}
-  virtual CoordinatePoint<T> getPoint() = 0;
+  virtual CoordinatePoint<T> getPoint(gno_t point_index) = 0;
   virtual T getXCenter() = 0;
   virtual T getXRadius() =0;
 
-  void GetPoints(lno_t requestedPointcount, CoordinatePoint<T> *points /*preallocated sized numPoints*/, Hole<T> **holes, lno_t holeCount, float *sharedRatios_, int myRank){
+  void GetPoints(lno_t requestedPointcount, CoordinatePoint<T> *points /*preallocated sized numPoints*/,
+      Hole<T> **holes, lno_t holeCount,
+      float *sharedRatios_, int myRank){
 
     for (int i = 0; i < myRank; ++i){
       //cout << "me:" << myRank << " i:" << i << " s:" << sharedRatios_[i]<< endl;
@@ -305,34 +308,65 @@ public:
 
     this->requested = requestedPointcount;
 
-    int cnt = 0;
-    lno_t iteration = 0;
-    while (cnt < requestedPointcount){
-      if(++iteration > MAX_ITER_ALLOWED) {
-        throw "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates.";
-      }
-      CoordinatePoint <T> p = this->getPoint();
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
+      for(lno_t cnt = 0; cnt < requestedPointcount; ++cnt){
+        lno_t iteration = 0;
+        while(1){
+          if(++iteration > MAX_ITER_ALLOWED) {
+            throw "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates.";
+          }
+          CoordinatePoint <T> p = this->getPoint( this->assignedPrevious + cnt);
 
-      bool isInHole = false;
-      for(lno_t i = 0; i < holeCount; ++i){
-        if(holes[i][0].isInArea(p)){
-          isInHole = true;
+          bool isInHole = false;
+          for(lno_t i = 0; i < holeCount; ++i){
+            if(holes[i][0].isInArea(p)){
+              isInHole = true;
+              break;
+            }
+          }
+          if(isInHole) continue;
+          points[cnt].x = p.x;
+          points[cnt].y = p.y;
+          points[cnt].z = p.z;
           break;
         }
       }
-      if(isInHole) continue;
-      iteration = 0;
-      points[cnt].x = p.x;
-      points[cnt].y = p.y;
-      points[cnt].z = p.z;
-      ++cnt;
+//#pragma omp parallel
+      /*
+    {
+
+      lno_t cnt = 0;
+      lno_t iteration = 0;
+      while (cnt < requestedPointcount){
+        if(++iteration > MAX_ITER_ALLOWED) {
+          throw "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates.";
+        }
+        CoordinatePoint <T> p = this->getPoint();
+
+        bool isInHole = false;
+        for(lno_t i = 0; i < holeCount; ++i){
+          if(holes[i][0].isInArea(p)){
+            isInHole = true;
+            break;
+          }
+        }
+        if(isInHole) continue;
+        iteration = 0;
+        points[cnt].x = p.x;
+        points[cnt].y = p.y;
+        points[cnt].z = p.z;
+        ++cnt;
+      }
     }
+    */
   }
 
 };
 
-template <typename T, typename lno_t>
-class CoordinateNormalDistribution:public CoordinateDistribution<T,lno_t>{
+template <typename T, typename lno_t, typename gno_t>
+class CoordinateNormalDistribution:public CoordinateDistribution<T,lno_t,gno_t>{
 public:
   CoordinatePoint<T> center;
   T standartDevx;
@@ -347,14 +381,16 @@ public:
     return standartDevx;
   }
 
-  CoordinateNormalDistribution(lno_t np_, int dim, CoordinatePoint<T> center_ , T sd_x, T sd_y, T sd_z, int worldSize): CoordinateDistribution<T,lno_t>(np_,dim,worldSize),
+  CoordinateNormalDistribution(gno_t np_, int dim, CoordinatePoint<T> center_ , T sd_x, T sd_y, T sd_z, int worldSize): CoordinateDistribution<T,lno_t,gno_t>(np_,dim,worldSize),
       standartDevx(sd_x), standartDevy(sd_y), standartDevz(sd_z){
     this->center.x = center_.x;
     this->center.y = center_.y;
     this->center.z = center_.z;
   }
 
-  virtual CoordinatePoint<T> getPoint(){
+  virtual CoordinatePoint<T> getPoint(gno_t pindex){
+
+    pindex = 0; // not used in normal distribution.
     CoordinatePoint <T> p;
     for(int i = 0; i < this->dimension; ++i){
       switch(i){
@@ -414,8 +450,8 @@ private:
   }
 };
 
-template <typename T, typename lno_t>
-class CoordinateUniformDistribution:public CoordinateDistribution<T,lno_t>{
+template <typename T, typename lno_t, typename gno_t>
+class CoordinateUniformDistribution:public CoordinateDistribution<T,lno_t, gno_t>{
 public:
   T leftMostx;
   T rightMostx;
@@ -433,13 +469,14 @@ public:
   }
 
 
-  CoordinateUniformDistribution(lno_t np_, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z, int worldSize ): CoordinateDistribution<T,lno_t>(np_,dim,worldSize),
+  CoordinateUniformDistribution(gno_t np_, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z, int worldSize ): CoordinateDistribution<T,lno_t,gno_t>(np_,dim,worldSize),
       leftMostx(l_x), rightMostx(r_x), leftMosty(l_y), rightMosty(r_y), leftMostz(l_z), rightMostz(r_z){}
 
   virtual ~CoordinateUniformDistribution(){};
-  virtual CoordinatePoint<T> getPoint(){
+  virtual CoordinatePoint<T> getPoint(gno_t pindex){
 
 
+    pindex = 0; //not used in uniform dist.
     CoordinatePoint <T> p;
     for(int i = 0; i < this->dimension; ++i){
       switch(i){
@@ -478,8 +515,8 @@ private:
   }
 };
 
-template <typename T, typename lno_t>
-class CoordinateGridDistribution:public CoordinateDistribution<T,lno_t>{
+template <typename T, typename lno_t, typename gno_t>
+class CoordinateGridDistribution:public CoordinateDistribution<T,lno_t,gno_t>{
 public:
   T leftMostx;
   T rightMostx;
@@ -487,12 +524,12 @@ public:
   T rightMosty;
   T leftMostz;
   T rightMostz;
-  lno_t along_X, along_Y, along_Z;
+  gno_t along_X, along_Y, along_Z;
   //T currentX, currentY, currentZ;
   T processCnt;
   int myRank;
   T xstep, ystep, zstep;
-  lno_t xshift, yshift, zshift;
+  gno_t xshift, yshift, zshift;
 
   virtual T getXCenter(){
     return (rightMostx - leftMostx)/2  + leftMostx;
@@ -502,7 +539,7 @@ public:
   }
 
 
-  CoordinateGridDistribution(lno_t alongX, lno_t alongY, lno_t alongZ, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z , int myRank_, int worldSize): CoordinateDistribution<T,lno_t>(alongX * alongY * alongZ,dim,worldSize),
+  CoordinateGridDistribution(gno_t alongX, gno_t alongY, gno_t alongZ, int dim, T l_x, T r_x, T l_y, T r_y, T l_z, T r_z , int myRank_, int worldSize): CoordinateDistribution<T,lno_t,gno_t>(alongX * alongY * alongZ,dim,worldSize),
       leftMostx(l_x), rightMostx(r_x), leftMosty(l_y), rightMosty(r_y), leftMostz(l_z), rightMostz(r_z), myRank(myRank_){
     //currentX = leftMostx, currentY = leftMosty, currentZ = leftMostz;
     this->processCnt = 0;
@@ -524,7 +561,7 @@ public:
   }
 
   virtual ~CoordinateGridDistribution(){};
-  virtual CoordinatePoint<T> getPoint(){
+  virtual CoordinatePoint<T> getPoint(gno_t pindex){
     //lno_t before = processCnt + this->assignedPrevious;
     //cout << "before:" << processCnt << " " << this->assignedPrevious << endl;
     //lno_t xshift = 0, yshift = 0, zshift = 0;
@@ -533,19 +570,16 @@ public:
     //xshift  = tmp % this->along_X;
     //yshift = tmp / this->along_X;
     //zshift = before / (this->along_X * this->along_Y);
-/*
-    if(this->processCnt == 0){
-      this->zshift = this->assignedPrevious / (along_X * along_Y);
-      this->yshift = (this->assignedPrevious % (along_X * along_Y)) / along_X;
-      this->xshift = (this->assignedPrevious % (along_X * along_Y)) % along_X;
-      ++this->processCnt;
-    }
+
+    this->zshift = pindex / (along_X * along_Y);
+    this->yshift = (pindex % (along_X * along_Y)) / along_X;
+    this->xshift = (pindex % (along_X * along_Y)) % along_X;
 
     CoordinatePoint <T> p;
     p.x = xshift * this->xstep + leftMostx;
     p.y = yshift * this->ystep + leftMosty;
     p.z = zshift * this->zstep + leftMostz;
-
+/*
     ++xshift;
     if(xshift == this->along_X){
       ++yshift;
@@ -554,9 +588,9 @@ public:
         ++zshift;
         yshift = 0;
       }
-
     }
- */
+*/
+    /*
     if(this->processCnt == 0){
       this->xshift = this->assignedPrevious / (along_Z * along_Y);
       //this->yshift = (this->assignedPrevious % (along_X * along_Y)) / along_X;
@@ -581,6 +615,7 @@ public:
       }
 
     }
+    */
     /*
     if(this->requested - 1 > this->processCnt){
       this->processCnt++;
@@ -595,22 +630,7 @@ public:
   }
 
 private:
-  //
-  // Generate a random number between 0 and 1
-  // return a uniform number in [0,1].
-  double unifRand()
-  {
-    return rand() / double(RAND_MAX);
-  }
-  //
-  // Generate a random number in a real interval.
-  // param a one end point of the interval
-  // param b the other end of the interval
-  // return a inform rand numberin [a,b].
-  T unifRand(T a, T b)
-  {
-    return (b-a)*unifRand() + a;
-  }
+
 };
 
 template <typename T, typename lno_t, typename gno_t, typename node_t>
@@ -618,19 +638,21 @@ class GeometricGenerator {
 private:
   Hole<T> **holes; //to represent if there is any hole in the input
   int holeCount;
-  int dimension;  //dimension of the geometry
+  int coordinate_dimension;  //dimension of the geometry
   gno_t numGlobalCoords;	//global number of coordinates requested to be created.
   lno_t numLocalCoords;
   float *loadDistributions; //sized as the number of processors, the load of each processor.
   bool loadDistSet;
   bool distinctCoordSet;
-  CoordinateDistribution<T, lno_t> **coordinateDistributions;
+  CoordinateDistribution<T, lno_t,gno_t> **coordinateDistributions;
   int distributionCount;
   CoordinatePoint<T> *points;
 
-  WeightDistribution<T,T> *wd;
+  WeightDistribution<T,T> **wd;
+  int weight_dimension;  //dimension of the geometry
 
   RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector;
+  RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmwVector;
   int worldSize;
   int myRank;
   T minx;
@@ -741,15 +763,15 @@ private:
     int argCnt = this->countChar(coordinate_distributions, ',') + 1;
     std::string *splittedStr = new std::string[argCnt];
     splitString(coordinate_distributions, ',', splittedStr);
-    coordinateDistributions = (CoordinateDistribution<T, lno_t> **) malloc(sizeof (CoordinateDistribution<T, lno_t> *) * 1);
+    coordinateDistributions = (CoordinateDistribution<T, lno_t,gno_t> **) malloc(sizeof (CoordinateDistribution<T, lno_t,gno_t> *) * 1);
     for(int i = 0; i < argCnt; ){
-      coordinateDistributions = (CoordinateDistribution<T, lno_t> **)realloc((void *)coordinateDistributions, (this->distributionCount + 1)* sizeof(CoordinateDistribution<T, lno_t> *));
+      coordinateDistributions = (CoordinateDistribution<T, lno_t,gno_t> **)realloc((void *)coordinateDistributions, (this->distributionCount + 1)* sizeof(CoordinateDistribution<T, lno_t,gno_t> *));
 
       std::string distName = splittedStr[i++];
       lno_t np_ = 0;
       if(distName == "NORMAL"){
         int reqArg = 5;
-        if (this->dimension == 3){
+        if (this->coordinate_dimension == 3){
           reqArg = 7;
         }
         if(i + reqArg > argCnt) {
@@ -762,21 +784,21 @@ private:
         pp.x = fromString<T>(splittedStr[i++]);
         pp.y = fromString<T>(splittedStr[i++]);
         pp.z = 0;
-        if(this->dimension == 3){
+        if(this->coordinate_dimension == 3){
           pp.z = fromString<T>(splittedStr[i++]);
         }
 
         T sd_x = fromString<T>(splittedStr[i++]);
         T sd_y = fromString<T>(splittedStr[i++]);
         T sd_z = 0;
-        if(this->dimension == 3){
+        if(this->coordinate_dimension == 3){
           sd_z = fromString<T>(splittedStr[i++]);
         }
-        this->coordinateDistributions[this->distributionCount++] = new CoordinateNormalDistribution<T, lno_t>(np_, this->dimension, pp , sd_x, sd_y, sd_z, worldSize );
+        this->coordinateDistributions[this->distributionCount++] = new CoordinateNormalDistribution<T, lno_t,gno_t>(np_, this->coordinate_dimension, pp , sd_x, sd_y, sd_z, worldSize );
 
       } else if(distName == "UNIFORM" ){
         int reqArg = 5;
-        if (this->dimension == 3){
+        if (this->coordinate_dimension == 3){
           reqArg = 7;
         }
         if(i + reqArg > argCnt) {
@@ -791,15 +813,15 @@ private:
 
         T l_z = 0, r_z = 0;
 
-        if(this->dimension == 3){
+        if(this->coordinate_dimension == 3){
           l_z = fromString<T>(splittedStr[i++]);
           r_z = fromString<T>(splittedStr[i++]);
         }
 
-        this->coordinateDistributions[this->distributionCount++] = new CoordinateUniformDistribution<T, lno_t>( np_,  this->dimension, l_x, r_x, l_y, r_y, l_z, r_z, worldSize );
+        this->coordinateDistributions[this->distributionCount++] = new CoordinateUniformDistribution<T, lno_t,gno_t>( np_,  this->coordinate_dimension, l_x, r_x, l_y, r_y, l_z, r_z, worldSize );
       } else if (distName == "GRID"){
         int reqArg = 6;
-        if(this->dimension == 3){
+        if(this->coordinate_dimension == 3){
           reqArg = 9;
         }
         if(i + reqArg > argCnt) {
@@ -812,7 +834,7 @@ private:
         lno_t np_z = 1;
 
 
-        if(this->dimension == 3){
+        if(this->coordinate_dimension == 3){
           np_z = fromString<lno_t>(splittedStr[i++]);
         }
 
@@ -824,7 +846,7 @@ private:
 
         T l_z = 0, r_z = 0;
 
-        if(this->dimension == 3){
+        if(this->coordinate_dimension == 3){
           l_z = fromString<T>(splittedStr[i++]);
           r_z = fromString<T>(splittedStr[i++]);
         }
@@ -833,12 +855,12 @@ private:
           throw "Provide at least 1 point along each dimension for grid test.";
         }
         //cout << "ly:" << l_y << " ry:" << r_y << endl;
-        this->coordinateDistributions[this->distributionCount++] = new CoordinateGridDistribution<T, lno_t>
-        (np_x, np_y,np_z, this->dimension, l_x, r_x,l_y, r_y, l_z, r_z , this->myRank, worldSize);
+        this->coordinateDistributions[this->distributionCount++] = new CoordinateGridDistribution<T, lno_t,gno_t>
+        (np_x, np_y,np_z, this->coordinate_dimension, l_x, r_x,l_y, r_y, l_z, r_z , this->myRank, worldSize);
 
       }
       else {
-        std::string tmp = toString<int>(this->dimension);
+        std::string tmp = toString<int>(this->coordinate_dimension);
         throw INVALIDSHAPE(distName, tmp);
       }
       this->numGlobalCoords += (gno_t) np_;
@@ -892,7 +914,7 @@ private:
       holes = (Hole<T> **)realloc((void *)holes, (this->holeCount + 1)* sizeof(Hole<T> *));
 
       std::string shapeName = splittedStr[i++];
-      if(shapeName == "SQUARE" && this->dimension == 2){
+      if(shapeName == "SQUARE" && this->coordinate_dimension == 2){
         if(i + 3 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "3");
         }
@@ -901,7 +923,7 @@ private:
         pp.y = fromString<T>(splittedStr[i++]);
         T edge = fromString<T>(splittedStr[i++]);
         this->holes[this->holeCount++] = new SquareHole<T>(pp, edge);
-      } else if(shapeName == "RECTANGLE" && this->dimension == 2){
+      } else if(shapeName == "RECTANGLE" && this->coordinate_dimension == 2){
         if(i + 4 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "4");
         }
@@ -912,7 +934,7 @@ private:
         T edgey = fromString<T>(splittedStr[i++]);
 
         this->holes[this->holeCount++] = new RectangleHole<T>(pp, edgex,edgey);
-      } else if(shapeName == "CIRCLE" && this->dimension == 2){
+      } else if(shapeName == "CIRCLE" && this->coordinate_dimension == 2){
         if(i + 3 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "3");
         }
@@ -921,7 +943,7 @@ private:
         pp.y = fromString<T>(splittedStr[i++]);
         T r = fromString<T>(splittedStr[i++]);
         this->holes[this->holeCount++] = new CircleHole<T>(pp, r);
-      }  else if(shapeName == "CUBE" && this->dimension == 3){
+      }  else if(shapeName == "CUBE" && this->coordinate_dimension == 3){
         if(i + 4 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "4");
         }
@@ -931,7 +953,7 @@ private:
         pp.z = fromString<T>(splittedStr[i++]);
         T edge = fromString<T>(splittedStr[i++]);
         this->holes[this->holeCount++] = new CubeHole<T>(pp, edge);
-      }  else if(shapeName == "RECTANGULAR_PRISM" && this->dimension == 3){
+      }  else if(shapeName == "RECTANGULAR_PRISM" && this->coordinate_dimension == 3){
         if(i + 6 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "6");
         }
@@ -944,7 +966,7 @@ private:
         T edgez = fromString<T>(splittedStr[i++]);
         this->holes[this->holeCount++] = new RectangularPrismHole<T>(pp, edgex, edgey, edgez);
 
-      }  else if(shapeName == "SPHERE" && this->dimension == 3){
+      }  else if(shapeName == "SPHERE" && this->coordinate_dimension == 3){
         if(i + 4 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "4");
         }
@@ -955,22 +977,28 @@ private:
         T r = fromString<T>(splittedStr[i++]);
         this->holes[this->holeCount++] = new SphereHole<T>(pp, r);
       }  else {
-        std::string tmp = toString<int>(this->dimension);
+        std::string tmp = toString<int>(this->coordinate_dimension);
         throw INVALIDSHAPE(shapeName, tmp);
       }
     }
     delete [] splittedStr;
   }
 
-  void getWeightDistribution(std::string weight_distribution){
-    if(weight_distribution == ""){
-      return;
-    }
-    int count = this->countChar(weight_distribution, ' ');
-    std::string *splittedStr = new string[count + 1];
-    this->splitString(weight_distribution, ' ', splittedStr);
-    //cout << count << endl;
-    if(splittedStr[0] == "STEPPEDEQUATION"){
+  void getWeightDistribution(std::string *weight_distribution_arr, int wdimension){
+    int wcount = 0;
+
+    this->wd = new WeightDistribution<T,T> *[wdimension];
+    for(int ii = 0; ii < MAX_WEIGHT_DIM; ++ii){
+      std::string weight_distribution = weight_distribution_arr[ii];
+      if(weight_distribution == "") continue;
+      if(wcount == wdimension) {
+        throw "Weight Dimension is provided as " + toString<int>(wdimension) + ". More weight distribution is provided.";
+      }
+
+      int count = this->countChar(weight_distribution, ' ');
+      std::string *splittedStr = new string[count + 1];
+      this->splitString(weight_distribution, ' ', splittedStr);
+      //cout << count << endl;
       T c=1;
       T a1=0,a2=0,a3=0;
       T x1=0,y1=0,z1=0;
@@ -995,40 +1023,40 @@ private:
           a1 = this->fromString<T>(value);
         }
         else if (parameter == "a2"){
-          if(this->dimension > 1){
+          if(this->coordinate_dimension > 1){
             a2 = this->fromString<T>(value);
           }
           else {
-            throw  parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+            throw  parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
           }
 
         }
         else if (parameter == "a3"){
-          if(this->dimension > 2){
+          if(this->coordinate_dimension > 2){
             a3 = this->fromString<T>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "b1"){
           b1 = this->fromString<T>(value);
         }
         else if (parameter == "b2"){
-          if(this->dimension > 1){
+          if(this->coordinate_dimension > 1){
             b2 = this->fromString<T>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "b3"){
 
-          if(this->dimension > 2){
+          if(this->coordinate_dimension > 2){
             b3 = this->fromString<T>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "c"){
@@ -1038,19 +1066,19 @@ private:
           x1 = this->fromString<T>(value);
         }
         else if (parameter == "y1"){
-          if(this->dimension > 1){
+          if(this->coordinate_dimension > 1){
             y1 = this->fromString<T>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "z1"){
-          if(this->dimension > 2){
+          if(this->coordinate_dimension > 2){
             z1 = this->fromString<T>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->dimension);
+            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "steps"){
@@ -1084,20 +1112,17 @@ private:
       }
 
 
-      this->wd =  new SteppedEquation<T,T>(a1, a2,  a3,  b1,  b2,  b3,  c,  x1,  y1,  z1, steps, values, stepCount);
+      this->wd[wcount++] =  new SteppedEquation<T,T>(a1, a2,  a3,  b1,  b2,  b3,  c,  x1,  y1,  z1, steps, values, stepCount);
 
       if(stepCount > 0){
         delete [] steps;
         delete [] values;
+
       }
     }
-    else if (splittedStr[0] == "ANOTHERWEIGHTCLASS"){
-
+    if(wcount != this->weight_dimension){
+      throw "Weight Dimension is provided as " + toString<int>(wdimension) + ". But " + toString<int>(wcount)+" weight distributions are provided.";
     }
-    else {
-      throw "Unknown weight distribution name " + splittedStr[0];
-    }
-
   }
 
   void parseParams(Teuchos::ParameterList params){
@@ -1107,8 +1132,11 @@ private:
       std::string distinctDescription = "";
       std::string coordinate_distributions = "";
       std::string outfile = "";
-      std::string weight_distribution = "";
-      std::string stepped_equation_parameters = "";
+      std::string weight_dimension_parameters[MAX_WEIGHT_DIM];
+      for (int i = 0; i < MAX_WEIGHT_DIM; ++i){
+        weight_dimension_parameters[i] = "";
+      }
+
 
       for (Teuchos::ParameterList::ConstIterator pit = params.begin(); pit != params.end(); ++pit ){
         const std::string &paramName = params.name(pit);
@@ -1132,31 +1160,33 @@ private:
           //TODO coordinate distribution description
         }
 
-        else if(paramName == "WeightDistribution"){
-          weight_distribution = getParamVal<std::string>(pe, paramName);
-          //TODO coordinate distribution description
-        } else if (paramName.find(equation_with_step_function_parameters) == 0){
+        else if (paramName.find(weight_distribution_string) == 0){
+          std::string weight_dist_param = paramName.substr(weight_distribution_string.size());
+          int dash_pos = weight_dist_param.find("-");
+          std::string distribution_index_string = weight_dist_param.substr(0, dash_pos);
+          int distribution_index = fromString<int>(distribution_index_string);
 
-          stepped_equation_parameters +=  " " + paramName.substr(equation_with_step_function_parameters.size())+ "="+ getParamVal<std::string>(pe, paramName);
+          if(distribution_index >= MAX_WEIGHT_DIM){
+            throw "Given distribution index:" + distribution_index_string + " larger than maximum allowed weight dimension:" + toString<int>(MAX_WEIGHT_DIM);
+          }
+          weight_dimension_parameters[distribution_index] +=  " " + weight_dist_param.substr(dash_pos + 1)+ "="+ getParamVal<std::string>(pe, paramName);
         }
         else if(paramName == "dim"){
           int dim = fromString<int>(getParamVal<std::string>(pe, paramName));
           if(dim < 2 && dim > 3){
             throw INVALID(paramName);
           } else {
-            this->dimension = dim;
+            this->coordinate_dimension = dim;
           }
         }
-        /*
-				else if(paramName == "num_global_coords"){
-					gno_t np = getParamVal<gno_t>(pe, paramName);
-					if(np < 1){
-						throw INVALID(paramName);
-					} else {
-						this->globalNumCoords = np;
-					}
-				}
-         */
+        else if(paramName == "wdim"){
+          int dim = fromString<int>(getParamVal<std::string>(pe, paramName));
+          if(dim < 1 && dim > MAX_WEIGHT_DIM){
+            throw INVALID(paramName);
+          } else {
+            this->weight_dimension = dim;
+          }
+        }
 
         else if(paramName == "proc_load_distributions"){
           proc_load_distributions = getParamVal<std::string>(pe, paramName);
@@ -1174,38 +1204,17 @@ private:
           }
         }
 
-
-
         else if(paramName == "out_file"){
           this->outfile = getParamVal<std::string>(pe, paramName);
         }
-        /*
-				else if(paramName == "minx"){
-					this->minx = getParamVal<T>(pe, paramName);
-				}
-				else if(paramName == "maxx"){
-					this->maxx = getParamVal<T>(pe, paramName);
-				}
-				else if(paramName == "miny"){
-					this->miny  = getParamVal<T>(pe, paramName);
-				}
-				else if(paramName == "maxy"){
-					this->maxy = getParamVal<T>(pe, paramName);
-				}
-				else if(paramName == "minz"){
-					this->minz = getParamVal<T>(pe, paramName);
-				}
-				else if(paramName == "maxz"){
-					this->maxz = getParamVal<T>(pe, paramName);
-				}
-         */
+
         else {
           throw INVALID(paramName);
         }
       }
 
 
-      if(this->dimension == 0){
+      if(this->coordinate_dimension == 0){
         throw "Dimension must be provided to coordinate generator.";
       }
       /*
@@ -1232,10 +1241,7 @@ private:
       //this->getDistinctCoordinateDescription(distinctDescription);
       this->getProcLoadDistributions(proc_load_distributions);
       this->getCoordinateDistributions(coordinate_distributions);
-      if(weight_distribution != equation_with_step_function && stepped_equation_parameters != ""){
-        throw "STEPPEDEQUATION parameters are provided without weight distribution is selected.";
-      }
-      this->getWeightDistribution(weight_distribution+stepped_equation_parameters);
+      this->getWeightDistribution(weight_dimension_parameters, this->weight_dimension);
       /*
 			if(this->numGlobalCoords <= 0){
 				throw "Must have at least 1 point";
@@ -1276,7 +1282,11 @@ public:
       free (this->coordinateDistributions);
     }
     if (this->wd){
-      delete this->wd;
+      for (int i = 0; i < this->weight_dimension; ++i){
+
+        delete this->wd[i];
+      }
+      delete []this->wd;
     }
 
     delete []this->points;
@@ -1285,7 +1295,8 @@ public:
   GeometricGenerator(Teuchos::ParameterList &params, const RCP<const Teuchos::Comm<int> > & comm_){
     this->wd = NULL;
     this->holes = NULL; //to represent if there is any hole in the input
-    this->dimension = 0;  //dimension of the geometry
+    this->coordinate_dimension = 0;  //dimension of the geometry
+    this->weight_dimension = 0;  //dimension of the geometry
     this->worldSize = comm_->getSize(); //comminication world object.
     this->numGlobalCoords = 0;	//global number of coordinates requested to be created.
     this->loadDistributions = NULL; //sized as the number of processors, the load of each processor.
@@ -1338,7 +1349,7 @@ public:
 
     this->points = new CoordinatePoint<T> [myPointCount];
     this->numLocalCoords = 0;
-    srand (myRank);
+    srand (myRank + 1);
     for (int i = 0; i < distributionCount; ++i){
 
       lno_t requestedPointCount = lno_t(this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank]);
@@ -1363,10 +1374,10 @@ public:
       for(lno_t i = 0; i < this->numLocalCoords; ++i){
 
         myfile << this->points[i].x;
-        if(this->dimension > 1){
+        if(this->coordinate_dimension > 1){
           myfile << " " << this->points[i].y;
         }
-        if(this->dimension > 2){
+        if(this->coordinate_dimension > 2){
           myfile << " " << this->points[i].z;
         }
         myfile << std::endl;
@@ -1389,24 +1400,27 @@ public:
         new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, eltList, 0, comm_));
 
 
-    T **coords = new T *[this->dimension];
-    for(int i = 0; i < this->dimension; ++i){
+    T **coords = new T *[this->coordinate_dimension];
+    for(int i = 0; i < this->coordinate_dimension; ++i){
       coords[i] = new T[this->numLocalCoords];
     }
 
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
     for(int i = 0; i < this->numLocalCoords; ++i){
       T tmp = this->points[i].x;
       coords[0][i] = tmp;
-      if(this->dimension > 1){
+      if(this->coordinate_dimension > 1){
         coords[1][i] = this->points[i].y;
-        if(this->dimension > 2){
+        if(this->coordinate_dimension > 2){
           coords[2][i] = this->points[i].z;
         }
       }
     }
 
-    Teuchos::Array<Teuchos::ArrayView<const T> > coordView(this->dimension);
-    for (int i=0; i < this->dimension; i++){
+    Teuchos::Array<Teuchos::ArrayView<const T> > coordView(this->coordinate_dimension);
+    for (int i=0; i < this->coordinate_dimension; i++){
       if(this->numLocalCoords > 0){
         Teuchos::ArrayView<const T> a(coords[i], this->numLocalCoords);
         coordView[i] = a;
@@ -1416,9 +1430,9 @@ public:
       }
     }
 
-    tmVector = RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(new Tpetra::MultiVector< T, lno_t, gno_t, node_t>( mp,
-        coordView.view(0, this->dimension), this->dimension
-    ));
+    tmVector = RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(
+        new Tpetra::MultiVector< T, lno_t, gno_t, node_t>( mp, coordView.view(0, this->coordinate_dimension), this->coordinate_dimension)
+        );
 
 
     /*
@@ -1428,34 +1442,68 @@ public:
 		Zoltan2::PartitioningSolution< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > solution;
 		xmv.applyPartitioningSolution<Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(this->tmVector, &tmVector2, solution);
      */
-    /*
-    switch(this->dimension){
-    case 1:
-      for (lno_t i = 0; i < this->numLocalCoords; ++i){
-        cout << this->wd->get1DWeight(coords[0][i]) << " " ;
-      }
-      break;
-    case 2:
-      for (lno_t i = 0; i < this->numLocalCoords; ++i){
-        cout << this->wd->get2DWeight(coords[0][i], coords[1][i]) << " " ;
-      }
-      break;
-    case 3:
-      for (lno_t i = 0; i < this->numLocalCoords; ++i){
-        cout << this->wd->get3DWeight(coords[0][i], coords[1][i], coords[2][i]) << " " ;
-      }
-      break;
-    default:
-      cerr <<"error in dimension." << endl;
-      exit(1);
+
+    T **wghts = new T *[this->coordinate_dimension];
+    for(int i = 0; i < this->weight_dimension; ++i){
+      wghts[i] = new T[this->numLocalCoords];
     }
-     */
-    for(int i = 0; i < this->dimension; ++i) delete [] coords[i]; delete []coords;
+
+    for(int ii = 0; ii < this->weight_dimension; ++ii){
+      switch(this->coordinate_dimension){
+      case 1:
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
+        for (lno_t i = 0; i < this->numLocalCoords; ++i){
+          wghts[ii][i] = this->wd[ii]->get1DWeight(coords[0][i]);
+        }
+        break;
+      case 2:
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
+        for (lno_t i = 0; i < this->numLocalCoords; ++i){
+          wghts[ii][i] = this->wd[ii]->get2DWeight(coords[0][i], coords[1][i]);
+        }
+        break;
+      case 3:
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
+        for (lno_t i = 0; i < this->numLocalCoords; ++i){
+          wghts[ii][i] = this->wd[ii]->get3DWeight(coords[0][i], coords[1][i], coords[2][i]);
+        }
+        break;
+      }
+    }
+    Teuchos::Array<Teuchos::ArrayView<const T> > weightView(this->weight_dimension);
+    for (int i=0; i < this->weight_dimension; i++){
+      if(this->numLocalCoords > 0){
+        Teuchos::ArrayView<const T> a(wghts[i], this->numLocalCoords);
+        weightView[i] = a;
+      } else{
+        Teuchos::ArrayView<const T> a;
+        weightView[i] = a;
+      }
+    }
+    if(this->weight_dimension){
+      tmwVector = RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(
+          new Tpetra::MultiVector< T, lno_t, gno_t, node_t>( mp, weightView.view(0, this->weight_dimension), this->weight_dimension)
+      );
+    }
+
+
+    for(int i = 0; i < this->coordinate_dimension; ++i) delete [] coords[i];
+    if(this->coordinate_dimension) delete []coords;
+    for(int i = 0; i < this->weight_dimension; ++i) delete [] wghts[i];
+    if(this->weight_dimension) delete []wghts;
   }
 
   RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > getCoordinates(){
-
     return this->tmVector;
   }
 
+  RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > getWeights(){
+    return this->tmwVector;
+  }
 };
