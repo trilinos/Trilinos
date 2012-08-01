@@ -72,7 +72,10 @@ namespace MueLu {
     SELECTED = -13,  /* indicates that a node has been assigned  */
     /* to an aggregate.                         */
 
-    BDRY = -15 /* indicates that a node is a Dirichlet bdry node */
+    BDRY = -15, /* indicates that a node is a Dirichlet bdry node */
+
+    READY_1PT = -16, /* indicates that a node is ready to be aggregates (as a single point aggregate only) */
+    SELECTED_1PT = -17 /* indicates that a 1pt aggregate node is already aggregated */
   };
 
   /*!
@@ -117,13 +120,14 @@ namespace MueLu {
     //@{
 
     /*! @brief Local aggregation. */
-    LocalOrdinal CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const; // CoarsenUncoupled
 
-    LocalOrdinal Phase1(Graph const & graph, Aggregates & aggregates) const; // local uncoupled coarsening (Phase 1)
-    LocalOrdinal Phase2_maxlink(Graph const & graph, Aggregates & aggregates) const; // local uncoupled coarsening (Phase 2 [max_link])
 
-    LocalOrdinal Phase3(Graph const & graph, Aggregates & aggregates) const; // local uncoupled coarsening (Phase 3)
-    LocalOrdinal Phase4(Graph const & graph, Aggregates & aggregates) const; // local uncoupled coarsening (Phase 4)
+    LocalOrdinal Phase1(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 1)
+    LocalOrdinal Phase1a(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat, Teuchos::ArrayRCP<NodeState> & coarse_aggStat) const; // local uncoupled coarsening (Phase 1a)
+    LocalOrdinal Phase2_maxlink(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 2 [max_link])
+
+    LocalOrdinal Phase3(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 3)
+    LocalOrdinal Phase4(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 4)
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)
@@ -131,8 +135,16 @@ namespace MueLu {
     int      minNodesPerAggregate_;    /**<  aggregate size control           */
     int      maxNeighAlreadySelected_; /**<  complexity control               */
 
-    /// array with aggregation status of nodes on current proc
-    mutable Teuchos::ArrayRCP<NodeState> aggStat_;
+    /*! @brief Utility to take a list of integers and reorder them randomly (by using a local permutation).
+      @param list On input, a bunch of integers. On output, the same integers in a different order
+      that is determined randomly.
+    */
+    void RandomReorder(Teuchos::ArrayRCP<LO> list) const; 
+
+    /*! @brief Generate a random number in the range [min, max] */
+    int RandomOrdinal(int min, int max) const;
+
+    //@}
 
   }; //class CheapAggregationAlgorithm
 
