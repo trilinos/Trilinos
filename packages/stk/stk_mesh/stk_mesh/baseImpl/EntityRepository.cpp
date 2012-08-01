@@ -126,10 +126,10 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
 
   Entity* deleted_entity = i->second;
 
-  destroy_entity(deleted_entity, m_use_pool);
 #ifdef SIERRA_MIGRATION
   destroy_fmwk_attr(deleted_entity->m_fmwk_attrs, m_use_pool);
 #endif
+  destroy_entity(deleted_entity, m_use_pool);
   i->second = NULL;
   m_entities.erase( i );
 }
