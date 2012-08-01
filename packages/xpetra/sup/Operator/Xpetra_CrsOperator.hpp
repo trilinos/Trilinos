@@ -63,7 +63,7 @@ public:
   }
 
   //! Constructor specifying (possibly different) number of entries in each row.
-  CrsOperator(const RCP<const Map> &rowMap, const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile)
+  CrsOperator(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile)
     : finalDefaultView_(false)
   {
     // Set matrix data

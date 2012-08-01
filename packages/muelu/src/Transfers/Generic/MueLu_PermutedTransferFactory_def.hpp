@@ -102,7 +102,7 @@ namespace MueLu {
 
             // Now copy P so that we can give it a domain map that matches the range map of R.
             //TODO is there a better preallocation strategy?
-            ArrayRCP<LocalOrdinal> nnzPerRow(originalP->getNodeNumRows(),0);
+            ArrayRCP<size_t> nnzPerRow(originalP->getNodeNumRows(),0);
             for (size_t i=0; i<originalP->getNodeNumRows(); ++i)
               nnzPerRow[i] = originalP->getNumEntriesInLocalRow(i);
             RCP<Operator> permutedP = OperatorFactory::Build(originalP->getRowMap(), nnzPerRow, Xpetra::StaticProfile);
@@ -160,10 +160,12 @@ namespace MueLu {
             nnzPerRow = Teuchos::null;
             RCP<Xpetra::Vector<double,LO,GO> > permutedNnzPerRowVec = Xpetra::VectorFactory<double,LO,GO>::Build(permImporter->getTargetMap());
             permutedNnzPerRowVec->doImport(*originalNnzPerRowVec,*permImporter,Xpetra::INSERT);
-            ArrayRCP<const double> tmpData = permutedNnzPerRowVec->getData(0);
+
+            ArrayRCP<const Scalar> tmpData = permutedNnzPerRowVec->getData(0);
             ArrayRCP<LocalOrdinal> permutedNnzPerRow(permutedNnzPerRowVec->getLocalLength());
             for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i) 
-              permutedNnzPerRow[i] = Teuchos::as<LocalOrdinal,double>(tmpData[i]);
+              permutedNnzPerRow[i] = Teuchos::as<LocalOrdinal,Scalar>(tmpData[i]);
+
             RCP<Operator> permutedR = OperatorFactory::Build(permImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
             permutedNnzPerRow = Teuchos::null;
             RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(permutedR);

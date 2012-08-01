@@ -40,7 +40,7 @@ namespace Xpetra {
     }
 
     //! Constructor specifying (possibly different) number of entries in each row.
-    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const LocalOrdinal > &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (rowMap->lib() == UseTpetra)
