@@ -255,7 +255,7 @@ namespace Kokkos {
         {}
 
         void execute (const Ordinal r) {
-          for (size_t k = ptr_[r]; k < ptr_[r+1]; ++r) {
+          for (size_t k = ptr_[r]; k < ptr_[r+1]; ++k) {
             outVal_[k] = inVal_[k];
           }
         }
