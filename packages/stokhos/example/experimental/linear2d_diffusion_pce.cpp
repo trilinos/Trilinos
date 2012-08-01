@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
 	  values0[j] = values[j].coeff(0);
 	J0->replaceLocalValues(i, indices, values0);
       }
-      J0->fillComplete(Tpetra::DoOptimizeStorage);
+      J0->fillComplete();
     }
 
     // compute preconditioner

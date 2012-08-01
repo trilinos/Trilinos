@@ -149,7 +149,7 @@ twoD_diffusion_problem(
 				   arrayView(&mesh[global_idx].up,1));
     }
   }
-  graph->fillComplete(Tpetra::DoOptimizeStorage);
+  graph->fillComplete();
 
   // Construct deterministic operator
   A = rcp(new Tpetra_CrsMatrix(graph));
@@ -294,7 +294,7 @@ create_W() const
 {
   Teuchos::RCP<Tpetra_CrsMatrix> AA = 
     Teuchos::rcp(new Tpetra_CrsMatrix(graph));
-  AA->fillComplete(Tpetra::DoOptimizeStorage);
+  AA->fillComplete();
   return AA;
 }
 
@@ -417,7 +417,7 @@ computeA(const FuncT& func, const Tpetra_Vector& p, Tpetra_CrsMatrix& jac)
 				arrayView(&a_up,1));
     }
   }
-  jac.fillComplete(Tpetra::DoOptimizeStorage);
+  jac.fillComplete();
 }
 
 template <typename Scalar, typename MeshScalar, typename BasisScalar,
