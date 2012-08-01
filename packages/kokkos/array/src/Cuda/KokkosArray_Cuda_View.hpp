@@ -53,39 +53,32 @@
 #include <impl/KokkosArray_View_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
+template< class DataType , class LayoutType >
+void View< DataType , LayoutType , Cuda >::create(
+  const std::string & label ,
+  const View< DataType , LayoutType , Cuda >::shape_type shape )
+{
+  const size_t count = Impl::allocation_count( shape );
+
+  oper_type::m_shape = shape ;
+  oper_type::m_ptr_on_device = (value_type *)
+    memory_space::allocate( label , 
+                            typeid(value_type) , 
+                            sizeof(value_type) , 
+                            count );
+}
+
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 namespace KokkosArray {
 namespace Impl {
-
-//----------------------------------------------------------------------------
-/** \brief  Primary creation / allocation factory based upon shape */
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Cuda > , 
-                typename View< DataType , LayoutType , Cuda >::shape_type >
-{
-  typedef View< DataType , LayoutType , Cuda >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-  typedef typename output_type::memory_space    memory_space ;
-  typedef typename output_type::value_type      value_type ;
-
-  inline static
-  output_type create( const std::string & label , const shape_type & shape )
-  {
-    const size_t count = allocation_count( shape );
-    output_type output ;
-
-    output.m_shape = shape ;
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              count );
-    return output ;
-  }
-};
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
 template< typename DataType , class LayoutType >
 struct Factory< View< DataType , LayoutType , Cuda > , DataType >
@@ -190,25 +183,6 @@ public:
                                               input. ptr_on_device() ,
                                               size );
   }
-
-
-  // Called by create_mirror
-  static inline
-  output_type create( const input_type & input )
-  {
-    typedef Cuda::memory_space            memory_space ;
-    typedef typename output_type::value_type  value_type ;
-
-    output_type output ;
-    output.m_shape = input.m_shape ;
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( std::string("mirror") ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    return output ;
-  }
 };
 
 template< class OutDataType , class OutLayoutType ,
@@ -311,18 +285,7 @@ public:
   static inline
   output_type create( const input_type & input )
   {
-    typedef Host::memory_space            memory_space ;
-    typedef typename output_type::value_type  value_type ;
-
-    output_type output ;
-    output.m_shape = input.m_shape ;
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( std::string("mirror") ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    return output ;
+    return output_type("mirror",input.m_shape);
   }
 };
 

@@ -77,9 +77,15 @@ struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
   const view_type v2 ;
 
   TestViewOperator()
+#if 0
     : v1( KokkosArray::create<view_type>( "v1" , N ) )
     , v2( KokkosArray::create<view_type>( "v2" , N ) )
     {}
+#else
+    : v1( "v1" , N )
+    , v2( "v2" , N )
+    {}
+#endif
 
   static void apply()
   {
@@ -142,8 +148,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -239,8 +245,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space>() )
+    , rsh( right_shape::template create< memory_space>() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -334,8 +340,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -427,8 +433,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -518,8 +524,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -607,8 +613,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -694,8 +700,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -779,12 +785,6 @@ public:
   typedef KokkosArray::View< T[][N1][N2][N3] , device > dView4 ;
   typedef KokkosArray::View< const T[][N1][N2][N3] , device > const_dView4 ;
 
-  struct MyView4 {
-    typedef T       data_type[][N1][N2][N3] ;
-    typedef device  layout_type ;
-    typedef device  device_type ;
-  };
-
   static void run_test()
   {
     typedef typename dView0::HostMirror  hView0 ;
@@ -802,8 +802,8 @@ public:
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
 
-    dx = KokkosArray::create<dView4>( "dx" , NP );
-    dy = KokkosArray::create<MyView4>( "dy" , NP );
+    dx = dView4( "dx" , NP );
+    dy = dView4( "dy" , NP );
 
     const_dView4 const_dx = dx ;
 
@@ -875,7 +875,7 @@ public:
   {
     typedef KokkosArray::View< DataType , device > typeX ;
     typedef KokkosArray::View< const DataType , device > const_typeX ;
-    typeX x = KokkosArray::create< typeX >( "X" );
+    typeX x( "X" );
     const_typeX xc = x ;
 
     ASSERT_TRUE( xc == x );
@@ -896,7 +896,7 @@ public:
     typedef KokkosArray::View< const T[] ,    KokkosArray::LayoutLeft , host > const_vector_type ;
     typedef KokkosArray::View< const T[][0] , KokkosArray::LayoutLeft , host > const_multivector_type ;
 
-    multivector_type mv = KokkosArray::create<multivector_type>( "mv" , Length , Count );
+    multivector_type mv = multivector_type( "mv" , Length , Count );
     vector_type v1 = KokkosArray::view( mv , 0 );
     vector_type v2 = KokkosArray::view( mv , 1 );
     vector_type v3 = KokkosArray::view( mv , 2 );

@@ -117,6 +117,8 @@ struct Factory< CrsArray< DataType , LayoutDst , DeviceDst , SizeType > ,
 
 //----------------------------------------------------------------------------
 
+#if 1
+
 template< class DataType , class Layout , class DeviceOutput , typename SizeType >
 struct Factory< CrsArray< DataType , Layout , DeviceOutput , SizeType > ,
                 MirrorUseView >
@@ -137,12 +139,13 @@ struct Factory< CrsArray< DataType , Layout , DeviceOutput , SizeType > ,
     output_type output ;
     output.row_map = Factory< row_map_type , MirrorUseView >
                        ::create( input.row_map );
-    output.entries = Factory< entries_type , MirrorUseView >
-                       ::create( input.entries );
+    output.entries = create_mirror_view( input.entries );
 
     return output ;
   }
 };
+
+#endif
 
 //----------------------------------------------------------------------------
 
@@ -168,8 +171,7 @@ struct Factory< CrsArray< DataType , LayoutOutput , DeviceOutput , MapSizeType >
     output.row_map = Factory< row_map_type , input_type >
                        ::create( label , input );
 
-    output.entries = KokkosArray::create< entries_type >
-                       ( label , output.row_map.sum() );
+    output.entries = entries_type( label , output.row_map.sum() );
 
     return output ;
   }
@@ -204,8 +206,7 @@ struct Factory< CrsArray< ValueType , LayoutOutput , DeviceOutput , MapSizeType 
 
     output_type output ;
 
-    output.row_map.m_data =
-      KokkosArray::create< row_map_data_type >( label , length + 1 );
+    output.row_map.m_data = row_map_data_type( label , length + 1 );
 
     typename row_map_data_type::HostMirror tmp =
       create_mirror( output.row_map.m_data );
@@ -219,13 +220,11 @@ struct Factory< CrsArray< ValueType , LayoutOutput , DeviceOutput , MapSizeType 
 
     // Create an populate the entries:
 
-    output.entries = KokkosArray::create< entries_type >
-                       ( label , output.row_map.sum() );
+    output.entries = entries_type( label , output.row_map.sum() );
 
-
+    // Create a mirror, use a view if possible
     typename entries_type::HostMirror host_entries =
-      Factory< typename entries_type::HostMirror , MirrorUseView >
-        ::create( output.entries );
+      create_mirror_view( output.entries );
 
     size_t total_count = 0 ;
     for ( size_t i = 0 ; i < length ; ++i ) {

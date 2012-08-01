@@ -49,6 +49,8 @@
 
 #else
 
+#include <impl/KokkosArray_ShapeLeft.hpp>
+
 namespace KokkosArray {
 namespace Impl {
 

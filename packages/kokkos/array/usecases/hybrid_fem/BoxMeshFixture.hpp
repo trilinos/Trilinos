@@ -337,13 +337,12 @@ struct BoxMeshFixture {
     typedef typename FEMeshType::node_elem_ids_type  node_elem_ids_type ;
 
     if ( node_count_total ) {
-      mesh.node_coords =
-        KokkosArray::create< node_coords_type >( std::string("node_coords"), node_count_total );
+      mesh.node_coords = node_coords_type( "node_coords", node_count_total );
     }
 
     if ( elem_count_total ) {
       mesh.elem_node_ids =
-        KokkosArray::create< elem_node_ids_type >( std::string("elem_node_ids"), elem_count_total );
+        elem_node_ids_type( "elem_node_ids", elem_count_total );
     }
 
     mesh.parallel_data_map.assign( node_count_interior ,

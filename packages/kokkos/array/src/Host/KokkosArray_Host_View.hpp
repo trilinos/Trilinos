@@ -53,41 +53,34 @@
 #include <impl/KokkosArray_View_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 
+#if 1
+
+namespace KokkosArray {
+
+template< class DataType , class LayoutType >
+void View< DataType , LayoutType , Host >::create(
+  const std::string & label ,
+  const View< DataType , LayoutType , Host >::shape_type shape )
+{
+  const size_t count = Impl::allocation_count( shape );
+
+  oper_type::m_shape = shape ;
+  oper_type::m_ptr_on_device = (value_type *)
+    memory_space::allocate( label ,
+                            typeid(value_type) ,
+                            sizeof(value_type) ,
+                            count );
+
+  Impl::HostParallelFill<value_type>( oper_type::m_ptr_on_device , 0 , count );
+}
+
+}
+
+#endif
+
 
 namespace KokkosArray {
 namespace Impl {
-
-//----------------------------------------------------------------------------
-/** \brief  Primary creation / allocation factory based upon shape */
-
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , 
-                typename View< DataType , LayoutType , Host >::shape_type >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef typename output_type::shape_type      shape_type ;
-  typedef typename output_type::memory_space    memory_space ;
-  typedef typename output_type::value_type      value_type ;
-
-  inline static
-  output_type create( const std::string & label , const shape_type & shape )
-  {
-    const size_t count = allocation_count( shape );
-
-    output_type output ;
-
-    output.m_shape = shape ;
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( label ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              count );
-
-    HostParallelFill<value_type>( output.m_ptr_on_device , 0 , count );
-
-    return output ;
-  }
-};
 
 //----------------------------------------------------------------------------
 
@@ -180,18 +173,7 @@ public:
   static inline
   output_type create( const input_type & input )
   {
-    typedef Host::memory_space            memory_space ;
-    typedef typename output_type::value_type  value_type ;
-
-    output_type output ;
-    output.m_shape = input.m_shape ;
-    output.m_ptr_on_device = (value_type *)
-      memory_space::allocate( std::string("mirror") ,
-                              typeid(value_type) ,
-                              sizeof(value_type) ,
-                              allocation_count( output.m_shape ) );
-
-    return output ;
+    return output_type("mirror",input.m_shape);
   }
 };
 

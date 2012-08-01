@@ -202,8 +202,8 @@ public:
     const size_t ncol = x.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx = KokkosArray::create<vector_type>( "xx" , n * ncol );
-    vector_type yy = KokkosArray::create<vector_type>( "yy" , n * ncol );
+    vector_type xx( "xx" , n * ncol );
+    vector_type yy( "yy" , n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       vector_type xx_view = KokkosArray::view( xx , n * col , n * ( col + 1 ) );

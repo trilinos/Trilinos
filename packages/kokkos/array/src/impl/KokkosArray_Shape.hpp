@@ -149,6 +149,9 @@ struct rank_dynamic< T[N] , J >
 template< class Layout , class Type , unsigned RankDynamic , unsigned Rank >
 struct Shape ;
 
+template< class ShapeType , class MemorySpace >
+struct ShapeMap ;
+
 template< class Layout , class Type >
 struct DefineShape {
   typedef Shape< Layout ,
@@ -392,6 +395,14 @@ struct Shape< Layout , Type , 0 , 0 >
   static const unsigned N5 = 0 ;
   static const unsigned N6 = 0 ;
   static const unsigned N7 = 0 ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create()
+  {
+    Shape shape ;
+    return shape ;
+  }
 };
 
 template < class Layout , class Type >
@@ -412,6 +423,14 @@ struct Shape< Layout , Type , 0 , 1 >
   static const unsigned N5 = 0 ;
   static const unsigned N6 = 0 ;
   static const unsigned N7 = 0 ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create()
+  {
+    Shape shape ;
+    return shape ;
+  }
 };
 
 template < class Layout , class Type >
@@ -432,6 +451,15 @@ struct Shape< Layout , Type , 1 , 1 >
   static const unsigned N5 = 0 ;
   static const unsigned N6 = 0 ;
   static const unsigned N7 = 0 ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    return shape ;
+  }
 };
 
 //----------------------------------------------------------------------------
@@ -456,6 +484,16 @@ struct Shape< Layout , Type , 0 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create()
+  {
+    Shape shape ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -477,6 +515,16 @@ struct Shape< Layout , Type , 1 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -498,6 +546,18 @@ struct Shape< Layout , Type , 2 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -519,6 +579,20 @@ struct Shape< Layout , Type , 3 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -540,6 +614,22 @@ struct Shape< Layout , Type , 4 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -561,6 +651,24 @@ struct Shape< Layout , Type , 5 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 ,
+                const unsigned arg_N4 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.N4 = arg_N4 ;
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -582,6 +690,26 @@ struct Shape< Layout , Type , 6 , Rank >
 
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 ,
+                const unsigned arg_N4 ,
+                const unsigned arg_N5 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.N4 = arg_N4 ;
+    shape.N5 = arg_N5 ;
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -603,15 +731,37 @@ struct Shape< Layout , Type , 7 , Rank >
   unsigned N6 ;
 
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 ,
+                const unsigned arg_N4 ,
+                const unsigned arg_N5 ,
+                const unsigned arg_N6 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.N4 = arg_N4 ;
+    shape.N5 = arg_N5 ;
+    shape.N6 = arg_N6 ;
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
-template< class Layout , class Type , unsigned Rank >
-struct Shape< Layout , Type , 8 , Rank >
+template< class Layout , class Type >
+struct Shape< Layout , Type , 8 , 8 >
 {
   typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 8 ;
-  static const unsigned rank         = Rank ;
+  static const unsigned rank         = 8 ;
   static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
@@ -623,6 +773,30 @@ struct Shape< Layout , Type , 8 , Rank >
   unsigned N5 ;
   unsigned N6 ;
   unsigned N7 ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 ,
+                const unsigned arg_N4 ,
+                const unsigned arg_N5 ,
+                const unsigned arg_N6 ,
+                const unsigned arg_N7 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.N4 = arg_N4 ;
+    shape.N5 = arg_N5 ;
+    shape.N6 = arg_N6 ;
+    shape.N7 = arg_N7 ;
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
 };
 
 //----------------------------------------------------------------------------

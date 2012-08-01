@@ -48,207 +48,65 @@
 
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
-#include <impl/KokkosArray_Shape_factory.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
 
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label )
+namespace Impl {
+
+template< class > struct ViewCreateMirror ;
+
+template< class DataType , class LayoutType , class DeviceType >
+struct ViewCreateMirror< View< DataType , LayoutType , DeviceType > >
 {
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
+  typedef View< DataType , LayoutType , DeviceType > output_type ;
 
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
+  inline static
+  output_type create( const output_type & src ) { return src ; }
 
-  const shape_type shape = shape_factory::create();
+  template< class DeviceSrc >
+  inline static
+  output_type create( const View< DataType , LayoutType , DeviceSrc > & src )
+  {
+    return output_type( "mirror" , src.shape() );
+  }
+};
 
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
+} // namespace Impl
+
+template< class DataType , class LayoutType , class DeviceType >
+typename View< DataType , LayoutType , DeviceType >::HostMirror
+create_mirror_view( const View<DataType,LayoutType,DeviceType> & input )
+{
+  typedef View< DataType , LayoutType , DeviceType > input_type ;
+  typedef typename input_type::HostMirror            output_type ;
+
+  return Impl::ViewCreateMirror< output_type >::create( input );
 }
 
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 )
+template< class DataType , class LayoutType , class DeviceType >
+typename View< DataType , LayoutType , DeviceType >::HostMirror
+create_mirror( const View<DataType,LayoutType,DeviceType> & input )
 {
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
+  typedef View< DataType , LayoutType , DeviceType > input_type ;
+  typedef typename input_type::HostMirror            output_type ;
 
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
+#if KOKKOS_MIRROR_VIEW_OPTIMIZE
+  return Impl::ViewCreateMirror< output_type >::create( input );
+#else
+  return output_type( "mirror" , input.shape() );
+#endif
 }
 
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 ,
-        const size_t n4 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 ,
-        const size_t n4 , const size_t n5 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 ,
-        const size_t n4 , const size_t n5 , const size_t n6 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5,n6);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 ,
-        const size_t n4 , const size_t n5 , const size_t n6 , const size_t n7 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5,n6,n7);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
 /** \brief  Span of a vector */
 template< typename ValueType , class LayoutSpec , class DeviceType >
 inline
@@ -373,6 +231,8 @@ void deep_copy( DataType & dst ,
 namespace KokkosArray {
 namespace Impl {
 
+#if 0
+
 template< class DataType , class LayoutType , class DeviceOutput >
 struct Factory< View< DataType , LayoutType , DeviceOutput > , MirrorUseView >
 {
@@ -385,11 +245,11 @@ struct Factory< View< DataType , LayoutType , DeviceOutput > , MirrorUseView >
   static inline
   output_type create( const View< DataType, LayoutType, DeviceInput > & input )
   {
-    typedef View< DataType , LayoutType , DeviceInput > input_type ;
-    return Factory< output_type , input_type >::create( input );
+    return output_type("mirror",input.m_shape);
   }
 };
 
+#endif
 
 /** \brief  Create subviews of multivectors */
 template< typename ValueType , class LayoutSpec , class Device >

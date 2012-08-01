@@ -81,18 +81,16 @@ public:
 
     type tensor ;
 
-    tensor.m_coord =
-      KokkosArray::create< map_type >( "sparse_tensor_coord" , input.size() );
-    tensor.m_value =
-      KokkosArray::create< value_array_type >( "sparse_tensor_value" , input.size() );
+    tensor.m_coord = map_type( "sparse_tensor_coord" , input.size() );
+    tensor.m_value = value_array_type( "sparse_tensor_value" , input.size() );
 
     // Try to create as a view, not a copy
     typename map_type::HostMirror
-      host_coord = create_mirror( tensor.m_coord , Impl::MirrorUseView() );
+      host_coord = create_mirror_view( tensor.m_coord );
 
     // Try to create as a view, not a copy
     typename value_array_type::HostMirror
-      host_value = create_mirror( tensor.m_value , Impl::MirrorUseView() );
+      host_value = create_mirror_view( tensor.m_value );
 
     size_type n = 0 ;
 
@@ -174,7 +172,7 @@ public:
     type tensor ;
 
     tensor.m_coord = create_crsarray< coord_array_type >( coord_work );
-    tensor.m_value = KokkosArray::create< value_array_type >( "tensor_value" , entry_count );
+    tensor.m_value = value_array_type( "tensor_value" , entry_count );
     tensor.m_entry_max = 0 ;
 
     for ( size_type i = 0 ; i < dimension ; ++i ) {
@@ -192,10 +190,10 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
     // Create mirror, is a view if is host memory
 
     typename coord_array_type::HostMirror
-      host_coord = create_mirror( tensor.m_coord , Impl::MirrorUseView() );
+      host_coord = create_mirror( tensor.m_coord , MirrorUseView() );
 
     typename value_array_type::HostMirror
-      host_value = create_mirror( tensor.m_value , Impl::MirrorUseView() );
+      host_value = create_mirror_view( tensor.m_value );
 
     // Fill arrays in coordinate order...
 

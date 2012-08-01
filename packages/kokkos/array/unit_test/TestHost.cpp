@@ -131,9 +131,9 @@ TEST_F( host , view_remap )
                              KokkosArray::LayoutLeft ,
                              KokkosArray::Host > diff_type ;
 
-  output_type output = KokkosArray::create< output_type >( "output" , N0 );
-  input_type  input  = KokkosArray::create< input_type  >( "input" , N0 , N1 );
-  diff_type   diff   = KokkosArray::create< diff_type   >( "diff" , N0 );
+  output_type output( "output" , N0 );
+  input_type  input ( "input" , N0 , N1 );
+  diff_type   diff  ( "diff" , N0 );
 
   int value = 0 ;
   for ( size_t i3 = 0 ; i3 < N3 ; ++i3 ) {

@@ -126,12 +126,11 @@ struct Factory< PrefixSum< IntTypeOutput , LayoutOutput , DeviceOutput > ,
 
     output_type output ;
 
-    output.m_data =
-      KokkosArray::create< output_view_type >( label , count + 1 );
+    output.m_data = output_view_type( label , count + 1 );
 
     // If same memory space then a view:
     typename output_view_type::HostMirror tmp =
-      create_mirror( output.m_data , MirrorUseView() );
+      create_mirror_view( output.m_data );
 
     // Could be made parallel
     output.m_sum = tmp[0] = 0 ;

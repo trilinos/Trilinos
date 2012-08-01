@@ -119,8 +119,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
                                const multivector_type R )
   {
     const size_type count  = Q.dimension_1();
-    value_type tmp = KokkosArray::create<value_type>("tmp");
-    value_type one = KokkosArray::create<value_type>("one");
+    value_type tmp("tmp");
+    value_type one("one");
 
     KokkosArray::deep_copy( one , (Scalar) 1 );
 
@@ -160,11 +160,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   static double test( const size_t length ,
                       const size_t count )
   {
-    multivector_type Q =
-      KokkosArray::create< multivector_type >( "Q" , length , count );
-
-    multivector_type R =
-      KokkosArray::create< multivector_type >( "R" , count , count );
+    multivector_type Q( "Q" , length , count );
+    multivector_type R( "R" , count , count );
 
     typename multivector_type::HostMirror A =
       KokkosArray::create_mirror( Q );

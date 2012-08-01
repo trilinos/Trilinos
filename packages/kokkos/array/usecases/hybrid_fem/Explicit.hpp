@@ -175,24 +175,24 @@ struct Fields {
 
     // compute with input/output
 
-    , dt(              KokkosArray::create< scalar_type >( "dt" ) )
-    , prev_dt(         KokkosArray::create< scalar_type >( "prev_dt" ) )
-    , displacement(    KokkosArray::create< geom_state_array_type >( "displacement" ,   num_nodes ) )
-    , velocity(        KokkosArray::create< geom_state_array_type >( "velocity" ,       num_nodes ) )
-    , acceleration(    KokkosArray::create< geom_array_type >(       "acceleration" ,   num_nodes_owned ) )
-    , internal_force(  KokkosArray::create< geom_array_type >(       "internal_force" , num_nodes_owned ) )
-    , nodal_mass(      KokkosArray::create< array_type >(            "nodal_mass" ,     num_nodes_owned ) )
-    , elem_mass(       KokkosArray::create< array_type >( "elem_mass" ,       num_elements ) )
-    , internal_energy( KokkosArray::create< array_type >( "internal_energy" , num_elements ) )
-    , stress_new(      KokkosArray::create< elem_sym_tensor_type >( "stress_new" ,      num_elements ) )
+    , dt(              "dt" )
+    , prev_dt(         "prev_dt" )
+    , displacement(    "displacement" ,   num_nodes )
+    , velocity(        "velocity" ,       num_nodes )
+    , acceleration(    "acceleration" ,   num_nodes_owned )
+    , internal_force(  "internal_force" , num_nodes_owned )
+    , nodal_mass(      "nodal_mass" ,     num_nodes_owned )
+    , elem_mass(       "elem_mass" ,       num_elements )
+    , internal_energy( "internal_energy" , num_elements )
+    , stress_new(      "stress_new" ,      num_elements )
 
     // temporary arrays
 
-    , rotation(      KokkosArray::create< elem_tensor_state_type >( "rotation" ,  num_elements ) )
-    , element_force( KokkosArray::create< elem_node_geom_type >( "element_force" ,  num_elements ) )
-    , vel_grad(      KokkosArray::create< elem_tensor_type >( "vel_grad" , num_elements ) )
-    , stretch(       KokkosArray::create< elem_sym_tensor_type >( "stretch" , num_elements ) )
-    , rot_stretch(   KokkosArray::create< elem_sym_tensor_type >( "rot_stretch" , num_elements ) )
+    , rotation(      "rotation" ,  num_elements )
+    , element_force( "element_force" ,  num_elements )
+    , vel_grad(      "vel_grad" , num_elements )
+    , stretch(       "stretch" , num_elements )
+    , rot_stretch(   "rot_stretch" , num_elements )
   { }
 };
 

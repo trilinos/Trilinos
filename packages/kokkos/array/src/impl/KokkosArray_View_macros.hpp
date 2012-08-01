@@ -134,6 +134,11 @@ public:
     }
 
   /*------------------------------------------------------------------*/
+
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  shape_type shape() const { return oper_type::m_shape ; }
+
+  /*------------------------------------------------------------------*/
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -251,6 +256,105 @@ public:
   }
 
   /*------------------------------------------------------------------*/
+#if 1
+
+private:
+
+  /** \brief  This device-specialized method may only be called
+   *          within a view constructor.
+   */
+  void create( const std::string & label , const shape_type shape );
+
+public:
+
+  View( const std::string & label , const shape_type shape )
+  {
+    create( label , shape );
+  }
+
+  explicit View( const std::string & label )
+  {
+    create( label , shape_type::template create<memory_space>() );
+  }
+
+  View( const std::string & label ,
+               const size_t n0 )
+  {
+    create( label , shape_type::template create<memory_space>(n0) );
+  }
+
+  View( const std::string & label ,
+               const size_t n0 ,
+               const size_t n1 )
+  {
+    create( label , shape_type::template create<memory_space>(n0,n1) );
+  }
+
+  View( const std::string & label ,
+               const size_t n0 ,
+               const size_t n1 ,
+               const size_t n2 )
+  {
+    create( label , shape_type::template create<memory_space>(n0,n1,n2) );
+  }
+
+  View( const std::string & label ,
+               const size_t n0 ,
+               const size_t n1 ,
+               const size_t n2 ,
+               const size_t n3 )
+  {
+    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3) );
+  }
+
+  View( const std::string & label ,
+               const size_t n0 ,
+               const size_t n1 ,
+               const size_t n2 ,
+               const size_t n3 ,
+               const size_t n4 )
+  {
+    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4) );
+  }
+
+  View( const std::string & label ,
+               const size_t n0 ,
+               const size_t n1 ,
+               const size_t n2 ,
+               const size_t n3 ,
+               const size_t n4 ,
+               const size_t n5 )
+  {
+    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5) );
+  }
+
+  View( const std::string & label ,
+               const size_t n0 ,
+               const size_t n1 ,
+               const size_t n2 ,
+               const size_t n3 ,
+               const size_t n4 ,
+               const size_t n5 ,
+               const size_t n6 )
+  {
+    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6) );
+  }
+
+  View( const std::string & label ,
+        const size_t n0 ,
+        const size_t n1 ,
+        const size_t n2 ,
+        const size_t n3 ,
+        const size_t n4 ,
+        const size_t n5 ,
+        const size_t n6 ,
+        const size_t n7 )
+  {
+    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6,n7) );
+  }
+
+  /*------------------------------------------------------------------*/
+#endif
   /** \brief  For unit testing shape mapping. */
   explicit View( const typename oper_type::shape_type & shape )
     { oper_type::m_shape = shape ; }

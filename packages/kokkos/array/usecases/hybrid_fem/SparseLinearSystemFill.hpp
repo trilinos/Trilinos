@@ -99,7 +99,7 @@ struct Factory< KokkosArray::CrsArray< IndexType , Layout , Device , IndexType >
     const size_t total_elem = mesh.elem_node_ids.dimension(0);
 
     if ( total_elem ) {
-      elem_map = KokkosArray::create< element_map_type >( std::string("element_map"), total_elem );
+      elem_map = element_map_type( std::string("element_map"), total_elem );
     }
 
     element_map_host_type elem_map_host = create_mirror( elem_map );
