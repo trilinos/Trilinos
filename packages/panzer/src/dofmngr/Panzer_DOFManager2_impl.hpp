@@ -55,6 +55,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Panzer_NodalFieldPattern.hpp"
 
 //#include "DOFManager2_decl.hpp"
 
@@ -249,7 +250,15 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
   /* STEPS.
    * 1.  Build GA_FP and all block's FA_FP's and place into respective data structures.
    */
+  //if you need orientations, be sure to extend to include nodes.
+  //
+  if(requireOrientations_){
+    //RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
+    //RCP< const panzer::FieldPattern> first_patten = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+    fieldPatterns_.push_back(Teuchos::rcp(new NodalFieldPattern(fieldPatterns_[0]->getCellTopology())));
+  }
   ga_fp_ = Teuchos::rcp(new GeometricAggFieldPattern(fieldPatterns_));
+
 
   connMngr_->buildConnectivity(*ga_fp_);
 
@@ -598,58 +607,80 @@ const std::string & DOFManager2<LO,GO>::getFieldString(int num) const{
 //going to need to be some substantial changes to the code as it applies
 //to this DOFManager, but the basic ideas and format should be similar.
 //
-//template <typename LO, typename GO>
-//void DOFManager2<LO,GO>::buildUnknownsOrientation(){
-//  orientation_.clear(); // clean up previous work
-//
-//  std::vector<std::string> elementBlockIds;
-//  connMngr_->getElementBlockIds(elementBlockIds);
-//
-//  // figure out how many total elements are owned by this processor (why is this so hard!)
-//  std::size_t myElementCount = 0;
-//  for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
-//    blockItr!=elementBlockIds.end();++blockItr)
-//    myElementCount += connMngr_->getElementBlock(*blockItr).size();
-//
-//  // allocate for each block
-//  orientation_.resize(myElementCount);
-//  
-//  // loop over all element blocks
-//  for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
-//    blockItr!=elementBlockIds.end();++blockItr) {
-//      const std::string & blockName = *blockItr; 
-//
-//     // this block has no unknowns (or elements)
-//    std::map<std::string,int>::const_iterator fap = blockNameToID_.find(blockName);
-//    if(fap==blockNameToID_.end() || fap->second==Teuchos::null) 
-//      continue;
-//
-//     // grab field patterns, will be necessary to compute orientations
-//    const FieldPattern & fieldPattern = fieldPatterns_[fap->second];
-//
-//    std::vector<std::pair<int,int> > topEdgeIndices;
-//    //Should be ga_fp_
-//    orientation_helpers::computePatternEdgeIndices(*ga_fp_,topEdgeIndices);
-//
-//    std::size_t numGIDs = getElementBlockGIDCount(blockName);
-//    const std::vector<LocalOrdinal> & elmts = getElementBlock(blockName);
-//    for(std::size_t e=0;e<elmts.size();e++) {
-//        // this is the vector of orientations to fill: initialize it correctly
-//      std::vector<char> & eOrientation = orientation_[elmts[e]];
-//      eOrientation.resize(numGIDs);
-//      for(std::size_t s=0;s<eOrientation.size();s++)
-//        eOrientation[s] = 1; // put in 1 by default 
-//
-//        // get geometry ids
-//      LocalOrdinalT connSz = connMngr_->getConnectivitySize(elmts[e]);
-//      const GlobalOrdinalT * connPtr = connMngr_->getConnectivity(elmts[e]); 
-//      const std::vector<GlobalOrdinalT> connectivity(connPtr,connPtr+connSz);
-//
-//      orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
-//    }
-//  }
-//}
+template <typename LO, typename GO>
+void DOFManager2<LO,GO>::buildUnknownsOrientation(){
+  orientation_.clear(); // clean up previous work
 
+  std::vector<std::string> elementBlockIds;
+  connMngr_->getElementBlockIds(elementBlockIds);
+
+  // figure out how many total elements are owned by this processor (why is this so hard!)
+  std::size_t myElementCount = 0;
+  for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin(); blockItr!=elementBlockIds.end();++blockItr)
+    myElementCount += connMngr_->getElementBlock(*blockItr).size();
+
+  // allocate for each block
+  orientation_.resize(myElementCount);
+  
+  // loop over all element blocks
+  for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
+    blockItr!=elementBlockIds.end();++blockItr) {
+      const std::string & blockName = *blockItr; 
+
+     // this block has no unknowns (or elements)
+    std::map<std::string,int>::const_iterator fap = blockNameToID_.find(blockName);
+    if(fap==blockNameToID_.end()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::buildUnknownsOrientation: invalid block name");
+    }
+
+    int bid=fap->second;
+
+     // grab field patterns, will be necessary to compute orientations
+    const FieldPattern & fieldPattern = *fa_fps_[bid];
+
+    std::vector<std::pair<int,int> > topEdgeIndices;
+    //Should be ga_fp_
+    orientation_helpers::computePatternEdgeIndices(*ga_fp_,topEdgeIndices);
+
+    //How many GIDs are associated with a particular element bloc
+    //std::size_t numGIDs = getElementBlockGIDCount(blockName);
+    const std::vector<LO> & elmts = connMngr_->getElementBlock(blockName);
+    for(std::size_t e=0;e<elmts.size();e++) {
+        // this is the vector of orientations to fill: initialize it correctly
+      std::vector<char> & eOrientation = orientation_[elmts[e]];
+      //This resize seems to be the same as fieldPattern.numberIDs(). 
+      //When computer ede orientations is called, that is the assert.
+      //There should be no reason to make it anymore complicated.
+      eOrientation.resize(fieldPattern.numberIds());
+      //eOrientation.resize(8);
+      for(std::size_t s=0;s<eOrientation.size();s++)
+        eOrientation[s] = 1; // put in 1 by default 
+
+        // get geometry ids
+      LO connSz = connMngr_->getConnectivitySize(elmts[e]);
+      const GO * connPtr = connMngr_->getConnectivity(elmts[e]); 
+      const std::vector<GO> connectivity(connPtr,connPtr+connSz);
+
+
+      orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
+    }
+  }
+}
+
+template <typename LO, typename GO>
+void DOFManager2<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double> & gidsOrientation) const
+{
+   // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
+
+   TEUCHOS_TEST_FOR_EXCEPTION(orientation_.size()==0,std::logic_error,
+                              "DOFManager2::getElementOrientations: Orientations were not constructed!");
+
+   const std::vector<char> & local_o = orientation_[localElmtId];
+   gidsOrientation.resize(local_o.size());
+   for(std::size_t i=0;i<local_o.size();i++) {
+      gidsOrientation[i] = double(local_o[i]);
+   }
+}
 
 } /*panzer*/
 

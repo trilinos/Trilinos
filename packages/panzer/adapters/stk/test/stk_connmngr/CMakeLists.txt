@@ -21,6 +21,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tDOFManager2_Orientation
+  SOURCES tDOFManager2_Orientation.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+  
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tSquareTriMeshDOFManager
   SOURCES tSquareTriMeshDOFManager.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 2

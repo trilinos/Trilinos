@@ -116,6 +116,9 @@ public:
   Teuchos::RCP<Teuchos::Comm<int> > getComm() const
   { return communicator_; }
 
+  Teuchos::RCP<const FieldPattern> getGeometricFieldPattern() const
+  { return ga_fp_; }
+
   void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
   { connMngr_->getElementBlockIds(elementBlockIds); }
   
@@ -147,8 +150,7 @@ public:
   bool validFieldOrder(const std::vector<std::string> & proposed_fieldOrder);
 
   //TODO:this
-  virtual void buildUnknownsOrientation()
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::method not implemented yet!"); }
+  void buildUnknownsOrientation();
 
   bool getOrientationsRequired() const
   { return requireOrientations_; }
@@ -157,10 +159,10 @@ public:
   { requireOrientations_ = ro; }
 
   //TODO:this
-  void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::method not implemented yet!"); }
+  void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const;
 
   const std::string & getFieldString(int num) const;
+
 
 protected:
   
@@ -185,7 +187,12 @@ protected:
 
   std::vector<GO> owned_;
   std::vector<GO> owned_and_ghosted_;
+  //Element GIDS ordered by LID.
   std::vector<std::vector< GO > > elementGIDs_;
+
+  //Mimics the functionality of the getElemenentBlcokGIDCount in
+  //the original DOFManager. Indexed according to blockOrder_.
+  std::vector<int> elementBlockGIDCount_;
 
   int numFields_;
 
