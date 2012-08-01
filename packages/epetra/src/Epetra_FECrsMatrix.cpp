@@ -63,7 +63,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
-    nonlocalMatrix_ (NULL)
+    nonlocalMatrix_ (NULL),
+    sourceMap_(NULL),
+    colMap_(NULL),
+    exporter_(NULL)
 {
   myFirstRow_ = rowMap.MinMyGID();
   myNumRows_ = rowMap.NumMyElements();
@@ -83,7 +86,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
-    nonlocalMatrix_ (NULL)
+    nonlocalMatrix_ (NULL),
+    sourceMap_(NULL),
+    colMap_(NULL),
+    exporter_(NULL)
 {
   myFirstRow_ = rowMap.MinMyGID();
   myNumRows_ = rowMap.NumMyElements();
@@ -104,7 +110,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
-    nonlocalMatrix_ (NULL)
+    nonlocalMatrix_ (NULL),
+    sourceMap_(NULL),
+    colMap_(NULL),
+    exporter_(NULL)
 {
   myFirstRow_ = rowMap.MinMyGID();
   myNumRows_ = rowMap.NumMyElements();
@@ -125,7 +134,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
-    nonlocalMatrix_ (NULL)
+    nonlocalMatrix_ (NULL),
+    sourceMap_(NULL),
+    colMap_(NULL),
+    exporter_(NULL)
 {
   myFirstRow_ = rowMap.MinMyGID();
   myNumRows_ = rowMap.NumMyElements();
@@ -144,7 +156,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
-    nonlocalMatrix_ (NULL)
+    nonlocalMatrix_ (NULL),
+    sourceMap_(NULL),
+    colMap_(NULL),
+    exporter_(NULL)
 {
   myFirstRow_ = RowMap().MinMyGID();
   myNumRows_ = RowMap().NumMyElements();
@@ -164,7 +179,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     workData_(128),
     useNonlocalMatrix_ (graph.UseNonlocalGraph() && graph.nonlocalGraph_ != 0),
     nonlocalMatrix_ (useNonlocalMatrix_ ? 
-        new Epetra_CrsMatrix(Copy,*graph.nonlocalGraph_) : NULL)
+    		new Epetra_CrsMatrix(Copy,*graph.nonlocalGraph_) : NULL),
+    sourceMap_(NULL),
+    colMap_(NULL),
+    exporter_(NULL)
 {
   myFirstRow_ = RowMap().MinMyGID();
   myNumRows_ = RowMap().NumMyElements();
@@ -180,7 +198,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
    nonlocalCols_(),
    nonlocalCoefs_(),
    workData_(128),
-   nonlocalMatrix_ (NULL)
+   nonlocalMatrix_ (NULL),
+   sourceMap_(NULL),
+   colMap_(NULL),
+   exporter_(NULL)
 {
   operator=(src);
 }
@@ -233,6 +254,14 @@ void Epetra_FECrsMatrix::DeleteMemory()
 
   if (nonlocalMatrix_ != 0)
     delete nonlocalMatrix_;
+
+  if ( sourceMap_ )
+	delete sourceMap_;
+  if ( colMap_ )
+	delete colMap_;
+  if ( exporter_ )
+	delete exporter_;
+
 }
 
 //----------------------------------------------------------------------------
@@ -487,16 +516,18 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete, Epetra_CombineMode combineMode)
+int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete, Epetra_CombineMode combineMode,
+                                       bool save_off_and_reuse_map_exporter)
 {
-  return( GlobalAssemble(DomainMap(), RangeMap(), callFillComplete, combineMode ));
+  return( GlobalAssemble(DomainMap(), RangeMap(), callFillComplete, combineMode, save_off_and_reuse_map_exporter));
 }
 
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
                                        const Epetra_Map& range_map,
                                        bool callFillComplete,
-                                       Epetra_CombineMode combineMode)
+                                       Epetra_CombineMode combineMode,
+                                       bool save_off_and_reuse_map_exporter)
 {
   if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
     if (callFillComplete) {
@@ -519,16 +550,20 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //We'll use the arbitrary distribution constructor of Map.
 
     int* nlr_ptr = nonlocalRows_.size() > 0 ? &nonlocalRows_[0] : 0;
-    Epetra_Map* sourceMap = new Epetra_Map(-1, nonlocalRows_.size(), nlr_ptr,
+    if (sourceMap_ == NULL)
+      sourceMap_ = new Epetra_Map(-1, nonlocalRows_.size(), nlr_ptr,
             Map().IndexBase(), Map().Comm());
 
     //If sourceMap has global size 0, then no nonlocal data exists and we can
     //skip most of this function.
-    if (sourceMap->NumGlobalElements() < 1) {
+    if (sourceMap_->NumGlobalElements() < 1) {
       if (callFillComplete) {
         EPETRA_CHK_ERR( FillComplete(domain_map, range_map) );
       }
-      delete sourceMap;
+      if (!save_off_and_reuse_map_exporter) {
+        delete sourceMap_;
+        sourceMap_ = NULL;
+      }
       return(0);
     }
 
@@ -550,7 +585,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     }
 
     int* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
-    Epetra_Map* colMap = new Epetra_Map(-1, cols.size(), cols_ptr,
+    if ( colMap_ == NULL )
+      colMap_ = new Epetra_Map(-1, cols.size(), cols_ptr,
          Map().IndexBase(), Map().Comm());
 
     //now we need to create a matrix with sourceMap and colMap, and fill it with
@@ -562,7 +598,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     }
 
     int* nlRLptr = nonlocalRowLengths.size()>0 ? &nonlocalRowLengths[0] : NULL;
-    tempMat = new Epetra_CrsMatrix(Copy, *sourceMap, *colMap, nlRLptr);
+    tempMat = new Epetra_CrsMatrix(Copy, *sourceMap_, *colMap_, nlRLptr);
 
 
     for(size_t i=0; i<nonlocalRows_.size(); ++i) {
@@ -572,8 +608,11 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
              &nonlocalCols_[i][0]) );
     }
 
-    delete sourceMap;
-    delete colMap;
+    if (!save_off_and_reuse_map_exporter) {
+      delete sourceMap_;
+      delete colMap_;
+      sourceMap_ = colMap_ = NULL;
+    }
   }
 
   //Next we need to make sure the 'indices-are-global' attribute of tempMat's
@@ -589,9 +628,10 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
   //and ColMap that we constructed the matrix with.
   EPETRA_CHK_ERR(tempMat->FillComplete(domain_map, range_map));
 
-  Epetra_Export* exporter = new Epetra_Export(tempMat->RowMap(), RowMap());
+  if (exporter_ == NULL)
+    exporter_ = new Epetra_Export(tempMat->RowMap(), RowMap());
 
-  EPETRA_CHK_ERR(Export(*tempMat, *exporter, combineMode));
+  EPETRA_CHK_ERR(Export(*tempMat, *exporter_, combineMode));
 
   if(callFillComplete) {
     EPETRA_CHK_ERR(FillComplete(domain_map, range_map));
@@ -607,8 +647,10 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     delete tempMat;
   }
 
-  delete exporter;
-
+  if (!save_off_and_reuse_map_exporter) {
+    delete exporter_;
+    exporter_ = NULL;
+  }
   return(0);
 }
 
