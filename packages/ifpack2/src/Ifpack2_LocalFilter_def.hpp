@@ -59,7 +59,7 @@ LocalFilter<MatrixType>::LocalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<
 #ifdef HAVE_MPI
   LocalComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper((MPI_Comm)MPI_COMM_SELF)));
 #else
-  LocalComm_ = Teuchos::rcp( new Tpetra::SerialComm<int>() );
+  LocalComm_ = Teuchos::rcp( new Teuchos::SerialComm<int>() );
 #endif
 
   // localized matrix has all the local rows of Matrix
