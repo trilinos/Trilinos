@@ -32,6 +32,7 @@ Ifpack2_UnitTestIlukGraph.cpp
 Ifpack2_UnitTestILUT.cpp
 Ifpack2_UnitTestFactory.cpp
 Ifpack2_UnitTestRelaxation.cpp
+Ifpack2_UnitTestFiltering.cpp
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
