@@ -47,8 +47,8 @@ namespace Ifpack2 {
 //==========================================================================
 template<class MatrixType>
 DiagonalFilter<MatrixType>::DiagonalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
-					   Scalar AbsoluteThreshold,
-					   Scalar RelativeThreshold):
+					   typename Teuchos::ScalarTraits<Scalar>::magnitudeType AbsoluteThreshold,
+					   typename Teuchos::ScalarTraits<Scalar>::magnitudeType RelativeThreshold):
   A_(Matrix),  
   AbsoluteThreshold_(AbsoluteThreshold),
   RelativeThreshold_(RelativeThreshold)
