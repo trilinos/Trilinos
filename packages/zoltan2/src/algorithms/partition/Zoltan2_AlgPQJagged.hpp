@@ -301,6 +301,7 @@ public:
     }
 };
 
+template <typename lno_t, typename gno_t, typename scalar_t, typename partId_t>
 void getMigrationGroups(lno_t *totalPartPointCounts, gno_t totalCount, partId_t partNo, int worldSize, scalar_t *proc_work_array,
     partId_t *part_real_indices_work, partId_t *part_positions_work
     ){
