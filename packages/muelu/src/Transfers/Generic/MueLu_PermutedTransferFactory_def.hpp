@@ -161,10 +161,10 @@ namespace MueLu {
             RCP<Xpetra::Vector<double,LO,GO> > permutedNnzPerRowVec = Xpetra::VectorFactory<double,LO,GO>::Build(permImporter->getTargetMap());
             permutedNnzPerRowVec->doImport(*originalNnzPerRowVec,*permImporter,Xpetra::INSERT);
 
-            ArrayRCP<const Scalar> tmpData = permutedNnzPerRowVec->getData(0);
-            ArrayRCP<LocalOrdinal> permutedNnzPerRow(permutedNnzPerRowVec->getLocalLength());
+            ArrayRCP<const double> tmpData = permutedNnzPerRowVec->getData(0);
+            ArrayRCP<size_t> permutedNnzPerRow(permutedNnzPerRowVec->getLocalLength());
             for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i) 
-              permutedNnzPerRow[i] = Teuchos::as<LocalOrdinal,Scalar>(tmpData[i]);
+              permutedNnzPerRow[i] = Teuchos::as<size_t,double>(tmpData[i]);
 
             RCP<Operator> permutedR = OperatorFactory::Build(permImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
             permutedNnzPerRow = Teuchos::null;
