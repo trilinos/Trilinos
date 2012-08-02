@@ -81,7 +81,7 @@ DropFilter<MatrixType>::DropFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Sc
     size_t Nnz, NewNnz=0;
     A_->getLocalRowCopy(i,Indices_,Values_,Nnz);
     for (size_t j = 0 ; j < Nnz ; ++j) {
-      if (((size_t)Indices_[i] == i) || (Teuchos::ScalarTraits<Scalar>::magnitude(Values_[i]) >= DropTol_))
+      if (((size_t)Indices_[j] == i) || (Teuchos::ScalarTraits<Scalar>::magnitude(Values_[j]) >= DropTol_))
 	NewNnz++;
     }
 
