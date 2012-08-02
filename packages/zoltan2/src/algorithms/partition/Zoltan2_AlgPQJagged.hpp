@@ -31,7 +31,7 @@
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
 #endif
-
+#define FIRST_TOUCH
 
 //#define RCBCODE
 #define LEAF_IMBALANCE_FACTOR 0.1
@@ -196,6 +196,13 @@ public:
 
 };
 
+template<typename T>
+inline void firstTouch(T *arrayName, size_t arraySize){
+#pragma omp parallel for
+  for(size_t jj = 0; jj < arraySize; ++jj){
+    arrayName[jj] = 0;
+  }
+}
 
 template <class lno_t,class scalar_t>
 class PQJagged_MaxPriorityQueue {
@@ -1804,7 +1811,6 @@ void AlgPQJagged(
 )
 {
 
-  cout << "pqJagged" << endl;
   env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
 
@@ -1907,6 +1913,12 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     partitionedPointCoordinates[i] = i;
   }
 
+#ifdef HAVE_ZOLTAN2_OMP
+#ifdef FIRST_TOUCH
+  firstTouch<lno_t>(newpartitionedPointCoordinates, numLocalCoords);
+#endif
+#endif
+
   //initially there is a single partition
   lno_t currentPartitionCount = 1;
 
@@ -1936,6 +1948,19 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     coordinate_ends[i] = allocMemory<lno_t>(maxPartNo);
   }
 
+#ifdef HAVE_ZOLTAN2_OMP
+#ifdef FIRST_TOUCH
+#pragma omp parallel
+  {
+    int me = omp_get_thread_num();
+    for(int ii = 0; ii < maxPartNo; ++ii){
+      coordinate_starts[me][ii] = 0;
+      coordinate_ends[me][ii] = 0;
+    }
+  }
+#endif
+#endif
+
   partId_t maxCutNo = maxPartNo - 1;
 
 
@@ -1944,18 +1969,44 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   if(allowNonRectelinearPart){
     nonRectelinearPart = allocMemory<float>(maxCutNo);
+#ifdef HAVE_ZOLTAN2_OMP
+#ifdef FIRST_TOUCH
+    firstTouch<float>(nonRectelinearPart, maxCutNo);
+#endif
+#endif
 
     nonRectRatios = allocMemory<float *>(numThreads);
 
     for(int i = 0; i < numThreads; ++i){
       nonRectRatios[i] = allocMemory<float>(maxCutNo);
     }
+#ifdef HAVE_ZOLTAN2_OMP
+#ifdef FIRST_TOUCH
+#pragma omp parallel
+  {
+    int me = omp_get_thread_num();
+    for(int ii = 0; ii < maxPartNo; ++ii){
+      nonRectRatios[me][ii] = 0;
+    }
+  }
+#endif
+#endif
+
   }
 
   scalar_t *cutCoordinatesWork = allocMemory<scalar_t>(maxCutNo); // work array to manipulate coordinate of cutlines in different iterations.
+#ifdef HAVE_ZOLTAN2_OMP
+#ifdef FIRST_TOUCH
+    firstTouch<scalar_t>(cutCoordinatesWork, maxCutNo);
+#endif
+#endif
 
   scalar_t *cutPartRatios = allocMemory<scalar_t>(maxPartNo); // the weight ratios at left side of the cuts. First is 0, last is 1.
-
+#ifdef HAVE_ZOLTAN2_OMP
+#ifdef FIRST_TOUCH
+    firstTouch<scalar_t>(cutPartRatios, maxCutNo);
+#endif
+#endif
   scalar_t *cutUpperBounds = allocMemory<scalar_t>(maxCutNo);  //to determine the next cut line with binary search
 
   scalar_t *cutLowerBounds = allocMemory<scalar_t>(maxCutNo);  //to determine the next cut line with binary search
@@ -1968,6 +2019,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   //scalar_t **partWeights = allocMemory<scalar_t *>(numThreads);
   double **partWeights = allocMemory<double *>(numThreads);
+
 
   scalar_t **leftClosestDistance = allocMemory<scalar_t *>(numThreads);
 
@@ -1985,7 +2037,20 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     leftClosestDistance[i] = allocMemory<scalar_t>(maxCutNo);
     partPointCounts[i] =  allocMemory<lno_t>(maxPartNo);
   }
-
+#ifdef HAVE_ZOLTAN2_OMP
+#ifdef FIRST_TOUCH
+#pragma omp parallel
+  {
+    int me = omp_get_thread_num();
+    for(int ii = 0; ii < maxPartNo; ++ii){
+      partWeights[me][ii] = 0;
+      rightClosestDistance[me][ii] = 0;
+      leftClosestDistance[me][ii] = 0;
+      partPointCounts[me][ii] = 0;
+    }
+  }
+#endif
+#endif
 
 
 
