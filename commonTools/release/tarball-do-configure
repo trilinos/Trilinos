@@ -8,8 +8,8 @@ EXTRA_ARGS=$@
 PROJECT_NAME=Trilinos
 SOURCE_DIR=../$PROJECT_NAME
 
-NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0
-BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_46_1
+NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.2
+BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_49_0
 MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.2.2
 
 #this is also needed to build pytrilinos not just configure

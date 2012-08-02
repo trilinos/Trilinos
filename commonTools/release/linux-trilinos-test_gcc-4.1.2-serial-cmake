@@ -4,8 +4,8 @@ EXTRA_ARGS=$@
 #needed to find qt
 export PATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin:/home/trilinos/tpl/gcc4.1.2/qt-4.5.2/bin:$PATH
 
-NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0
-BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_46_1
+NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.2
+BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_49_0
 MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.2.2
 SCOTCH_DIR=/home/trilinos/tpl/gcc4.1.2/scotch_5.1
 PARMETIS_DIR=/home/trilinos/tpl/gcc4.1.2/ParMETIS3_1
@@ -40,4 +40,4 @@ cmake \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 $EXTRA_ARGS \
-../trilinos-10.10-Source
+../trilinos-10.12.2-Source
