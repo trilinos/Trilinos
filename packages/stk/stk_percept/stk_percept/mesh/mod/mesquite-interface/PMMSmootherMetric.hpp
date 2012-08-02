@@ -57,20 +57,24 @@ namespace stk {
           {
             double Ai = jacA.mMetrics[i];
             double Wi = jacW.mMetrics[i];
-            if (Ai < 0)
+            if (Ai <= 0.)
               {
                 valid = false;
               }
             A_tot += Ai;
             W_tot += Wi;
             double untangle_metric = 0.0;
-            double beta = 0.1*Wi;  // FIXME magic number
-            double temp_var = Ai;
-            temp_var -= beta;
+            double beta = 0.01*Wi;  // FIXME magic number
+            double temp_var = Ai - beta;
             double fval=0.0;
             if(temp_var<0.0){
-              fval=std::fabs(temp_var)-temp_var;
+              //fval=std::fabs(temp_var)-temp_var;
+              fval = -temp_var;
             }
+            else
+              {
+                //fval = -0.001*temp_var;
+              }
             //fval = Ai;
             //untangle_metric = fval*fval;
             untangle_metric = fval;

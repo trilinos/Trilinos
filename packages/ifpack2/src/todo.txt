@@ -19,6 +19,9 @@
   hash table instead, once Teuchos' hash table is improved.
 * TPL routines (e.g. HIPS, SuperLU(ILU), Euclid, Hypre, Sparskit) will
   be accessed via an interface to Amesos2.
+* Fix the Ifpack2 Parameter Validation
+  - Allow for templates
+  - Fix organization
 
 *** Requires Discussion w/ Other Package Devs ***
 * Move to Xpetra?

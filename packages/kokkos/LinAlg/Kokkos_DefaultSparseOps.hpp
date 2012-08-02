@@ -46,6 +46,7 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Describable.hpp>
 #include <iterator>
+#include <Teuchos_OrdinalTraits.hpp>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -83,10 +84,10 @@ namespace Kokkos {
       }
     };
 
-    template <class Ordinal, class Node>
     class FirstTouchCRSAllocator {
       public:
       //! \brief Allocate and initialize the storage for the matrix values.
+      template <class Ordinal, class Node> 
       static ArrayRCP<Ordinal> allocRowPtrs(const RCP<Node> &node, const ArrayView<const Ordinal> &numEntriesPerRow)
       {
         const Ordinal numrows = numEntriesPerRow.size();
@@ -104,7 +105,7 @@ namespace Kokkos {
       }
 
       //! \brief Allocate and initialize the storage for a sparse graph.
-      template <class T>
+      template <class T, class Ordinal, class Node>
       static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const Ordinal> &rowPtrs)
       {
         const Ordinal totalNumEntries = *(rowPtrs.end()-1);
@@ -124,10 +125,10 @@ namespace Kokkos {
       }
     };
 
-    template <class Ordinal, class Node>
     class DefaultCRSAllocator {
       public:
       //! \brief Allocate and initialize the storage for the matrix values.
+      template <class Ordinal, class Node> 
       static ArrayRCP<Ordinal> allocRowPtrs(const RCP<Node> &node, const ArrayView<const Ordinal> &numEntriesPerRow)
       {
         ArrayRCP<Ordinal> ptrs = arcp<Ordinal>( numEntriesPerRow.size() + 1 );
@@ -137,8 +138,8 @@ namespace Kokkos {
       }
 
       //! \brief Allocate and initialize the storage for a sparse graph.
-      template <class T>
-      static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const Ordinal> &rowPtrs)
+      template <class T, class Ordinal, class Node> 
+      static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
       {
         const Ordinal totalNumEntries = *(rowPtrs.end()-1);
         // alloc data
@@ -161,15 +162,18 @@ namespace Kokkos {
     public:
       DefaultCrsGraph(Ordinal numRows, Ordinal numCols, const RCP<Node> &node, const RCP<ParameterList> &params);
       bool isEmpty() const;
-      void setStructure(const ArrayRCP<const Ordinal> &ptrs,
+      void setStructure(const ArrayRCP<const size_t> &ptrs,
                         const ArrayRCP<const Ordinal> &inds);
-      inline ArrayRCP<const Ordinal> getPointers() const;
+      inline ArrayRCP<const size_t>  getPointers() const;
+      inline void setSmallPointers(const ArrayRCP<const Ordinal> &ptrs);
+      inline ArrayRCP<const Ordinal> getSmallPointers() const;
       inline ArrayRCP<const Ordinal> getIndices() const;
       inline bool isInitialized() const;
       inline void setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag);
       inline void getMatDesc(Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const;
     private:
-      ArrayRCP<const Ordinal> ptrs_;
+      ArrayRCP<const  size_t> big_ptrs_;
+      ArrayRCP<const Ordinal> sml_ptrs_;
       ArrayRCP<const Ordinal> inds_;
       bool isInitialized_;
       bool isEmpty_;
@@ -211,16 +215,12 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void DefaultCrsGraph<Ordinal,Node>::setStructure(
-                      const ArrayRCP<const Ordinal> &ptrs,
+                      const ArrayRCP<const size_t>  &ptrs,
                       const ArrayRCP<const Ordinal> &inds)
   {
     std::string tfecfFuncName("setStructure(ptrs,inds)");
     const Ordinal numrows = this->getNumRows();
 
-    // mfh 19 June 2012: The tests expect std::runtime_error rather
-    // than the arguably more appropriate std::invalid_argument, so
-    // I'll throw std::runtime_error here.  Ditto for the other checks
-    // below.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ptrs.is_null (),
       std::runtime_error,
@@ -254,19 +254,29 @@ namespace Kokkos {
       " matrix has already been initialized."
     )
     if (numrows == 0 || numEntries == 0) isEmpty_ = true;
-    ptrs_ = ptrs;
+    big_ptrs_ = ptrs;
     inds_ = inds;
     isInitialized_ = true;
   }
 
   template <class Ordinal, class Node>
-  ArrayRCP<const Ordinal> DefaultCrsGraph<Ordinal,Node>::getPointers() const
-  { return ptrs_; }
+  ArrayRCP<const size_t> DefaultCrsGraph<Ordinal,Node>::getPointers() const
+  { return big_ptrs_; }
+
+  template <class Ordinal, class Node>
+  ArrayRCP<const Ordinal> DefaultCrsGraph<Ordinal,Node>::getSmallPointers() const
+  { return sml_ptrs_; }
+
+  template <class Ordinal, class Node>
+  void DefaultCrsGraph<Ordinal,Node>::setSmallPointers(const ArrayRCP<const Ordinal> &ptrs)
+  { 
+    sml_ptrs_ = ptrs; 
+    big_ptrs_ = null;
+  }
 
   template <class Ordinal, class Node>
   ArrayRCP<const Ordinal> DefaultCrsGraph<Ordinal,Node>::getIndices() const
   { return inds_; }
-
 
   template <class Ordinal, class Node>
   bool DefaultCrsGraph<Ordinal,Node>::isInitialized() const
@@ -325,14 +335,7 @@ namespace Kokkos {
   /// \tparam Scalar The type of entries of the sparse matrix.
   /// \tparam Ordinal The type of (local) indices of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
-  /// \tparam Allocator Class that defines static methods for
-  ///   allocating the various arrays used by the compressed sparse
-  ///   row format.  This is where first-touch allocation can be
-  ///   implemented, for example.
-  template <class Scalar,
-            class Ordinal,
-            class Node,
-            class Allocator = details::DefaultCRSAllocator<Ordinal,Node> >
+  template <class Scalar, class Ordinal, class Node, class Allocator = details::DefaultCRSAllocator>
   class DefaultHostSparseOps : public Teuchos::Describable {
   public:
     //! \name Typedefs and structs
@@ -460,8 +463,11 @@ namespace Kokkos {
                 << "isEmpty_ = " << isEmpty_ << endl
                 << "tri_uplo_ = " << triUplo << endl
                 << "unit_diag_ = " << unitDiag << endl;
-            if (ptrs_.size() > 0) {
-              out << "numEntries = " << ptrs_[ptrs_.size()-1] << endl;
+            if (big_ptrs_.size() > 0) {
+              out << "numEntries = " << big_ptrs_[big_ptrs_.size()-1] << endl;
+            }
+            else if (sml_ptrs_.size() > 0) {
+              out << "numEntries = " << sml_ptrs_[sml_ptrs_.size()-1] << endl;
             }
             else {
               out << "numEntries = 0" << endl;
@@ -470,9 +476,15 @@ namespace Kokkos {
             if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
               // Only print out all the sparse matrix's data in
               // extreme verbosity mode.
-              out << "ptrs_ = [";
-              std::copy (ptrs_.begin(), ptrs_.end(),
-                         std::ostream_iterator<Ordinal> (out, " "));
+              out << "ptrs = [";
+              if (big_ptrs_.size() > 0) {
+                std::copy (big_ptrs_.begin(), big_ptrs_.end(),
+                           std::ostream_iterator<Ordinal> (out, " "));
+              }
+              else {
+                std::copy (sml_ptrs_.begin(), sml_ptrs_.end(),
+                           std::ostream_iterator<Ordinal> (out, " "));
+              }
               out << "]" << endl << "inds_ = [";
               std::copy (inds_.begin(), inds_.end(),
                          std::ostream_iterator<Ordinal> (out, " "));
@@ -499,16 +511,16 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<Ordinal> allocRowPtrs(const RCP<Node> &node, const ArrayView<const Ordinal> &numEntriesPerRow)
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow)
     {
       return Allocator::allocRowPtrs(node,numEntriesPerRow);
     }
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T>
-    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const Ordinal> &rowPtrs)
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
     {
-      return Allocator::template allocStorage<T>(node,rowPtrs);
+      return Allocator::template allocStorage<T,size_t>(node,rowPtrs);
     }
 
     //! Finalize a graph
@@ -636,13 +648,40 @@ namespace Kokkos {
     //! Copy constructor (protected and unimplemented)
     DefaultHostSparseOps(const DefaultHostSparseOps& source);
 
+    void getOffsets(ArrayRCP<const size_t> &ptrs) const {
+      ptrs = big_ptrs_;
+    }
+
+    void getOffsets(ArrayRCP<const Ordinal> &ptrs) const {
+      ptrs = sml_ptrs_;
+    }
+
+    template <class DomainScalar, class RangeScalar, class OffsetType>
+    void solvePrivate(Teuchos::ETransp trans,
+                      const MultiVector<DomainScalar,Node> &Y,
+                            MultiVector< RangeScalar,Node> &X) const;
+
+    template <class DomainScalar, class RangeScalar, class OffsetType>
+    void multiplyPrivate(Teuchos::ETransp trans,
+                         RangeScalar alpha,
+                         const MultiVector<DomainScalar,Node> &X,
+                               MultiVector<RangeScalar,Node> &Y) const;
+
+    template <class DomainScalar, class RangeScalar, class OffsetType>
+    void multiplyPrivate(Teuchos::ETransp trans,
+                         RangeScalar alpha,
+                         const MultiVector<DomainScalar,Node> &X,
+                         RangeScalar beta,
+                         MultiVector<RangeScalar,Node> &Y) const;
+
     //! The Kokkos Node instance given to this object's constructor.
     RCP<Node> node_;
 
-    // we do this one of two ways:
-    // packed CRS: array of row pointers, array of indices, array of values.
+    // packed CRS: array of row pointers, array of indices, array of values
+    // pointers are EITHER size_t or Ordinal; one will be null
     ArrayRCP<const Ordinal> inds_;
-    ArrayRCP<const Ordinal> ptrs_;
+    ArrayRCP<const size_t>  big_ptrs_;
+    ArrayRCP<const Ordinal> sml_ptrs_;
     ArrayRCP<const Scalar>  vals_;
 
     Teuchos::EUplo  tri_uplo_;
@@ -657,13 +696,21 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node, class Allocator>
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
   {
-    // nothing much to do here
     graph.setMatDesc(uplo,diag);
     std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false,
         std::runtime_error, FuncName << ": graph has not yet been initialized."
     )
+    // determine how many non-zeros, so that we can decide whether to reduce the offset pointer type
+    ArrayRCP<const size_t> bigptrs = graph.getPointers();
+    const size_t numrows = bigptrs.size() - 1,
+                   numnz = bigptrs[numrows];
+    if (numnz < (size_t)Teuchos::OrdinalTraits<Ordinal>::max()) {
+      ArrayRCP<Ordinal> smallptrs = arcp<Ordinal>(numrows+1);
+      std::copy( bigptrs.begin(), bigptrs.end(), smallptrs.begin() );
+      graph.setSmallPointers(smallptrs);
+    }
   }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
@@ -680,17 +727,9 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node, class Allocator>
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::finalizeGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
   {
-    // nothing much to do here
-    graph.setMatDesc(uplo,diag);
-    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraphAndMatrix(graph,matrix,params)");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        graph.isInitialized() == false,
-        std::runtime_error, FuncName << ": graph has not yet been initialized."
-    )
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        matrix.isInitialized() == false,
-        std::runtime_error, FuncName << ": matrix has not yet been initialized."
-    )
+    // finalize them individually; no benefit to doing them together
+    finalizeGraph(uplo,diag,graph,params);
+    finalizeMatrix(graph,matrix,params);
   }
 
 
@@ -747,43 +786,36 @@ namespace Kokkos {
     }
     else {
       isEmpty_ = false;
-      ptrs_ = opgraph->getPointers();
+      big_ptrs_ = opgraph->getPointers();
+      sml_ptrs_ = opgraph->getSmallPointers();
       inds_ = opgraph->getIndices();
       vals_ = opmatrix->getValues();
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
+        big_ptrs_ != null && sml_ptrs_ != null,
+        std::logic_error, " Internal logic error: graph has small and big pointers. Please notify Kokkos team."
+      )
+      const size_t lenptrs = (big_ptrs_ != null ? big_ptrs_.size() : sml_ptrs_.size());
       // these checks just about the most that we can perform
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          (size_t)ptrs_.size() != (size_t)numRows_+1
-          || inds_.size() != vals_.size(),
+          lenptrs != (size_t)numRows_+1 || inds_.size() != vals_.size(),
           std::runtime_error, " matrix and graph seem incongruent.");
     }
     opgraph->getMatDesc( tri_uplo_, unit_diag_ );
     isInitialized_ = true;
   }
 
+
   template <class Scalar, class Ordinal, class Node, class Allocator>
-  template <class DomainScalar, class RangeScalar>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::solve(Teuchos::ETransp trans,
+  template <class DomainScalar, class RangeScalar, class OffsetType>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::solvePrivate(Teuchos::ETransp trans,
                                                         const MultiVector<DomainScalar,Node> &Y,
                                                               MultiVector< RangeScalar,Node> &X) const
   {
     std::string tfecfFuncName("solve(trans,Y,X)");
-    typedef DefaultSparseSolveOp<Scalar,Ordinal,DomainScalar,RangeScalar>            Op;
-    typedef DefaultSparseTransposeSolveOp<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " this solve was not fully initialized."
-    );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)X.getNumCols() != (size_t)Y.getNumCols(),
-        std::runtime_error, " Left hand side and right hand side multivectors have differing numbers of vectors."
-    );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)X.getNumRows() < (size_t)numRows_,
-        std::runtime_error, " Left-hand-side multivector does not have enough rows. "
-                            "Likely cause is that the column map was not provided to "
-                            "the Tpetra::CrsMatrix in the case of an implicit unit diagonal."
-    );
-
+    typedef DefaultSparseSolveOp<         Scalar,OffsetType,Ordinal,DomainScalar,RangeScalar>   Op;
+    typedef DefaultSparseTransposeSolveOp<Scalar,OffsetType,Ordinal,DomainScalar,RangeScalar>  TOp;
+    ArrayRCP<const OffsetType> ptrs;
+    getOffsets(ptrs);
     ReadyBufferHelper<Node> rbh(node_);
     if (numRows_ == 0) {
       // null op
@@ -800,7 +832,7 @@ namespace Kokkos {
         rbh.begin();
         wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
         wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<    Ordinal>(ptrs_);
+        wdp.offs    = rbh.template addConstBuffer< OffsetType>(ptrs);
         wdp.inds    = rbh.template addConstBuffer<    Ordinal>(inds_);
         wdp.vals    = rbh.template addConstBuffer<     Scalar>(vals_);
         rbh.end();
@@ -818,7 +850,7 @@ namespace Kokkos {
         rbh.begin();
         wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
         wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<    Ordinal>(ptrs_);
+        wdp.offs    = rbh.template addConstBuffer< OffsetType>(ptrs);
         wdp.inds    = rbh.template addConstBuffer<    Ordinal>(inds_);
         wdp.vals    = rbh.template addConstBuffer<     Scalar>(vals_);
         rbh.end();
@@ -838,23 +870,49 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::multiply(
+  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::solve(Teuchos::ETransp trans,
+                                                        const MultiVector<DomainScalar,Node> &Y,
+                                                              MultiVector< RangeScalar,Node> &X) const
+  {
+    std::string tfecfFuncName("solve(trans,Y,X)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, " this solve was not fully initialized."
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)X.getNumCols() != (size_t)Y.getNumCols(),
+        std::runtime_error, " Left hand side and right hand side multivectors have differing numbers of vectors."
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)X.getNumRows() < (size_t)numRows_,
+        std::runtime_error, " Left-hand-side multivector does not have enough rows. "
+                            "Likely cause is that the column map was not provided to "
+                            "the Tpetra::CrsMatrix in the case of an implicit unit diagonal."
+    );
+    if (big_ptrs_ != null) {
+      solvePrivate<DomainScalar,RangeScalar,size_t>(trans,Y,X);
+    }
+    else {
+      solvePrivate<DomainScalar,RangeScalar,Ordinal>(trans,Y,X);
+    }
+    return;
+  }
+
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar, class OffsetType>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::multiplyPrivate(
                                 Teuchos::ETransp trans,
                                 RangeScalar alpha,
                                 const MultiVector<DomainScalar,Node> &X,
                                       MultiVector<RangeScalar ,Node> &Y) const
   {
-    std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
     // the 1 template parameter below means that beta is not used in computations
     // and the output multivector enjoys overwrite semantics (i.e., will overwrite data/NaNs in Y)
-    typedef DefaultSparseMultiplyOp<         Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op;
-    typedef DefaultSparseTransposeMultiplyOp<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " sparse ops not initialized.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumCols() != Y.getNumCols(),
-        std::runtime_error, " X and Y do not have the same number of columns.");
+    typedef DefaultSparseMultiplyOp<         Scalar,OffsetType,Ordinal,DomainScalar,RangeScalar, 1>  Op;
+    typedef DefaultSparseTransposeMultiplyOp<Scalar,OffsetType,Ordinal,DomainScalar,RangeScalar, 1> TOp;
+    ArrayRCP<const OffsetType> ptrs;
+    getOffsets(ptrs);
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= 0 * X
@@ -870,7 +928,7 @@ namespace Kokkos {
         wdp.numRows = numRows_;
         wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<     Ordinal>(ptrs_);
+        wdp.offs    = rbh.template addConstBuffer<  OffsetType>(ptrs);
         wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
         wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
         wdp.xstride = X.getStride();
@@ -888,7 +946,7 @@ namespace Kokkos {
         wdp.numCols = Y.getNumRows();
         wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<     Ordinal>(ptrs_);
+        wdp.offs    = rbh.template addConstBuffer<  OffsetType>(ptrs);
         wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
         wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
         wdp.xstride = X.getStride();
@@ -902,10 +960,34 @@ namespace Kokkos {
     return;
   }
 
-
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::multiply(
+                                Teuchos::ETransp trans,
+                                RangeScalar alpha,
+                                const MultiVector<DomainScalar,Node> &X,
+                                      MultiVector<RangeScalar ,Node> &Y) const
+  {
+    std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, " sparse ops not initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getNumCols() != Y.getNumCols(),
+        std::runtime_error, " X and Y do not have the same number of columns.");
+    if (big_ptrs_ != null) {
+      multiplyPrivate<DomainScalar,RangeScalar,size_t>(trans,alpha,X,Y);
+    }
+    else {
+      multiplyPrivate<DomainScalar,RangeScalar,Ordinal>(trans,alpha,X,Y);
+    }
+    return;
+  }
+
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar, class OffsetType>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::multiplyPrivate(
                                 Teuchos::ETransp trans,
                                 RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
@@ -913,14 +995,10 @@ namespace Kokkos {
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
     // the 0 template parameter below means that beta is used in computations
     // and the output multivector enjoys accumulation semantics (i.e., will not overwrite data/NaNs in Y)
-    typedef DefaultSparseMultiplyOp<         Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op;
-    typedef DefaultSparseTransposeMultiplyOp<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " sparse ops not initialized.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumCols() != Y.getNumCols(),
-        std::runtime_error, " X and Y do not have the same number of columns.");
+    typedef DefaultSparseMultiplyOp<         Scalar,OffsetType,Ordinal,DomainScalar,RangeScalar, 0>  Op;
+    typedef DefaultSparseTransposeMultiplyOp<Scalar,OffsetType,Ordinal,DomainScalar,RangeScalar, 0> TOp;
+    ArrayRCP<const OffsetType> ptrs;
+    getOffsets(ptrs);
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= alpha * 0 * X + beta * Y
@@ -939,7 +1017,7 @@ namespace Kokkos {
         wdp.numRows = numRows_;
         wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<     Ordinal>(ptrs_);
+        wdp.offs    = rbh.template addConstBuffer<  OffsetType>(ptrs);
         wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
         wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
         wdp.xstride = X.getStride();
@@ -957,7 +1035,7 @@ namespace Kokkos {
         wdp.numCols = Y.getNumRows();
         wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<     Ordinal>(ptrs_);
+        wdp.offs    = rbh.template addConstBuffer<  OffsetType>(ptrs);
         wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
         wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
         wdp.xstride = X.getStride();
@@ -969,6 +1047,28 @@ namespace Kokkos {
       }
     }
     return;
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::multiply(
+                                Teuchos::ETransp trans,
+                                RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
+                                RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
+  {
+    std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, " sparse ops not initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getNumCols() != Y.getNumCols(),
+        std::runtime_error, " X and Y do not have the same number of columns.");
+    if (big_ptrs_ != null) {
+      multiplyPrivate<DomainScalar,RangeScalar,size_t>(trans,alpha,X,beta,Y);
+    }
+    else {
+      multiplyPrivate<DomainScalar,RangeScalar,Ordinal>(trans,alpha,X,beta,Y);
+    }
   }
 
 

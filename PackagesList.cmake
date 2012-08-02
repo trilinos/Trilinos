@@ -162,6 +162,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   NewPackage            packages/new_package              EX # Should be SS
   Optika		packages/optika		          SS
   Mesquite              packages/mesquite                 PS
+  MeshingGenie          packages/meshinggenie             EX
   FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 

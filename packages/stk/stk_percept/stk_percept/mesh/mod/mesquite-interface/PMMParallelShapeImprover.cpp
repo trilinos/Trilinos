@@ -4,6 +4,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother1.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 
@@ -113,7 +114,7 @@ namespace stk {
           // set current state and evaluate mesh validity
           eMesh->nodal_field_axpbypgz(alpha, coord_field_projected, (1.0-alpha), coord_field_original, 0.0, coord_field_current);
 
-          int num_invalid = count_invalid_elements(*mesh, domain);
+          int num_invalid = parallel_count_invalid_elements(eMesh);
           if (!get_parallel_rank()) 
             std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid current= " << num_invalid 
                       << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
@@ -123,7 +124,7 @@ namespace stk {
           for (int iter = 0; iter < innerIter; iter++)
             {
               //
-              int num_invalid = count_invalid_elements(*mesh, domain);
+              int num_invalid = parallel_count_invalid_elements(eMesh);
               if (!get_parallel_rank()) 
                 std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid current= " << num_invalid 
                           << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : "OK")
@@ -143,11 +144,46 @@ namespace stk {
     }
 
 
+    /// preferred for parallel
+    int PMMParallelShapeImprover::parallel_count_invalid_elements(PerceptMesh *eMesh)
+    {
+      PMMSmootherMetricUntangle utm(eMesh);
+
+      int num_invalid=0;
+      // element loop
+      {
+        stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
+
+        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          {
+            if (on_locally_owned_part(**k))  
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                const unsigned num_elements_in_bucket = bucket.size();
+
+                for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
+                  {
+                    stk::mesh::Entity& element = bucket[i_element];
+                    bool valid=true;
+                    utm.metric(element, valid);
+                    if (!valid)
+                      ++num_invalid;
+                  }
+              }
+          }
+      }
+      stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &num_invalid ) );
+      return num_invalid;
+    }
+
+
     int PMMParallelShapeImprover::count_invalid_elements(Mesh &mesh, MeshDomain *domain)
     {
       MsqError err;
       InstructionQueue q;
       int num_invalid = 0;
+      VERIFY_OP_ON(get_parallel_size(), ==, 1, "not ready for parallel; use PerceptMesh form of count_invalid_elements");
 
       if (1)
         {
@@ -201,8 +237,11 @@ namespace stk {
       Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
       if (!get_parallel_rank()) std::cout << "tmp srk PMMParallelShapeImprover::run: pmesh= " << pmesh << std::endl;
 
+      PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(&mesh);
+      PerceptMesh *eMesh = pmm->getPerceptMesh();
+
       Mesquite::MsqError mErr;
-      int num_invalid = count_invalid_elements(mesh, domain);
+      int num_invalid = parallel_count_invalid_elements(eMesh);
       if (!get_parallel_rank()) 
         std::cout << "\ntmp srk PMMParallelShapeImprover num_invalid before= " << num_invalid 
                       << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : 
@@ -225,7 +264,7 @@ namespace stk {
           //if (!get_parallel_rank()) 
           std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMParallelShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
 
-          num_invalid = count_invalid_elements(mesh, domain);
+          num_invalid = parallel_count_invalid_elements(eMesh);
           //if (!get_parallel_rank()) 
           std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMParallelShapeImprover num_invalid after= " << num_invalid << " " 
                     << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 

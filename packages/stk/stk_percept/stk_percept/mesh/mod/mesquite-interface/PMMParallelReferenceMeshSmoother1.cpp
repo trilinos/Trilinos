@@ -10,10 +10,12 @@
 #include <stdio.h>
 
 #include "mpi.h"
+#include <cstdio>
 
 #define DEBUG_PRINT 0
-#define PRINT(a) do { if (DEBUG_PRINT) std::cout << a << std::endl; } while(0)
-#define PRINT_1(a) do { std::cout << a << std::endl; } while(0)
+#define PRINT(a) do { if (DEBUG_PRINT && !m_eMesh->get_rank()) std::cout << "P[" << m_eMesh->get_rank() <<"] " << a << std::endl; } while(0)
+#define PRINT_1(a) do { if (!m_eMesh->get_rank()) std::cout << "P[" << m_eMesh->get_rank() <<"] " << a << std::endl; } while(0)
+#define PRINT_2(a) do {  std::cout << "P[" << m_eMesh->get_rank() <<"] " << a << " "; } while(0)
 
 namespace MESQUITE_NS {
 
@@ -140,10 +142,21 @@ namespace stk {
 
       //if (m_iter == 0) 
         {
+          stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
           m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
-          PRINT("tmp srk m_scale= " << m_scale);
-          stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMin<1>( & m_scale ) );
+          PRINT_1("tmp srk m_scale= " << m_scale);
         }
+
+        {
+          std::vector< const stk::mesh::FieldBase *> fields;
+          fields.push_back(cg_g_field);
+
+          // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
+          stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+          // the shared part (just the shared boundary)
+          //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
+        }
+
     }
 
     double PMMParallelReferenceMeshSmoother1::run_one_iteration( Mesh* mesh, MeshDomain *domain,
@@ -195,6 +208,7 @@ namespace stk {
       double alpha = m_scale;
       {
         double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
+
         double metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
         double norm_gradient = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
         PRINT( "tmp srk norm_gradient= " << norm_gradient );
@@ -214,6 +228,7 @@ namespace stk {
         while (!converged)
           {
             metric = total_metric(mesh, alpha, 1.0, total_valid);
+
             //converged = (metric > sigma*metric_0) && (alpha > 1.e-16);
             double mfac = alpha*armijo_offset_factor;
             converged = (metric < metric_0 + mfac);
@@ -297,7 +312,7 @@ namespace stk {
       PRINT("tmp srk beta = " << cg_beta);
 
       //int N = num_nodes;
-      //if (m_iter == N
+      //if (m_iter == N || cg_beta <= 0.0) 
       if (cg_beta <= 0.0) 
         {
           /// d = s
@@ -309,11 +324,66 @@ namespace stk {
           eMesh->nodal_field_axpby(1.0, cg_s_field, cg_beta, cg_d_field);
         }
 
-      //MSQ_ERRRTN(err);
       return total_metric(mesh,0.0,1.0, total_valid);
-      
     }
     
+    void PMMParallelReferenceMeshSmoother1::debug_print(double alpha)
+    {
+      if (1)
+        {
+          //stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
+          //stk::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
+          int spatialDim = m_eMesh->get_spatial_dim();
+          stk::mesh::FieldBase *cg_d_field    = m_eMesh->get_field("cg_d");
+          stk::mesh::FieldBase *cg_g_field    = m_eMesh->get_field("cg_g");
+          stk::mesh::FieldBase *cg_r_field    = m_eMesh->get_field("cg_r");
+          stk::mesh::FieldBase *cg_s_field    = m_eMesh->get_field("cg_s");
+
+          const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              // update local and globally shared 
+              //if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                const unsigned num_nodes_in_bucket = bucket.size();
+
+                for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
+                  {
+                    stk::mesh::Entity& node = bucket[i_node];
+
+                    double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
+                    double *cg_d = PerceptMesh::field_data(cg_d_field, node);
+                    double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                    double *cg_r = PerceptMesh::field_data(cg_r_field, node);
+                    double *cg_s = PerceptMesh::field_data(cg_s_field, node);
+
+                    bool dopr=false;
+                    unsigned nid = node.identifier();
+                    //if (nid == 71 || nid == 84 || nid == 97)
+                    if (nid == 15)
+                      dopr=true;
+                    char buf[1024];
+                    std::ostringstream ostr;
+                    bool owned = (node.owner_rank() == m_eMesh->get_rank());
+                    if (dopr)
+                      ostr << "P[" << m_eMesh->get_rank() << "] iter= " << m_iter << " nid= " << nid << " o= " << owned;
+                    for (int i=0; i < spatialDim; i++)
+                      {
+                        double dt = alpha*cg_d[i];
+                        if (dopr) {
+                          sprintf(buf, " i= %d dt= %12g coord= %12g g= %12g r= %12g s= %12g d= %12g", i, dt, coord_current[i], cg_g[i], cg_r[i], cg_s[i], cg_d[i]);
+                          ostr << buf;
+                        }
+                      }
+                    if (dopr && owned) std::cout << ostr.str() << std::endl;
+                  }
+              }
+            }
+        }
+
+    }
+
     void PMMParallelReferenceMeshSmoother1::update_node_positions(Mesh* mesh, double alpha)
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
@@ -322,8 +392,11 @@ namespace stk {
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       int spatialDim = eMesh->get_spatial_dim();
       stk::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
+      stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
 
       m_dmax = 0.0;
+      //debug_print(alpha);
+
       // node loop: update node positions
       {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
@@ -358,6 +431,21 @@ namespace stk {
               }
           }
       }
+
+      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_dmax ) );
+
+      {
+        std::vector< const stk::mesh::FieldBase *> fields;
+        fields.push_back(m_eMesh->get_coordinates_field());
+        fields.push_back(cg_g_field);
+
+        // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
+        stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+        // the shared part (just the shared boundary)
+        stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
+      }
+
+
     }
 
     double PMMParallelReferenceMeshSmoother1::total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid)
@@ -430,6 +518,7 @@ namespace stk {
                     double mm = metric(element, local_valid);
                     valid = valid && local_valid;
                     if (do_print_elem_val) PRINT( "element= " << element.identifier() << " metric= " << mm );
+                    if (do_print_elem_val && element.identifier() == 13) { std::cout << element.identifier() << " iter= " << m_iter << " element= " << element.identifier() << " metric= " << mm << std::endl;}
                     mtot += mm;
                   }
               }
@@ -440,7 +529,7 @@ namespace stk {
       m_eMesh->copy_field(coord_field_current, coord_field_lagged);
 
       stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( & mtot ) );
-      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & valid ) );
+      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMin<1>( & valid ) );
 
       return mtot;
       

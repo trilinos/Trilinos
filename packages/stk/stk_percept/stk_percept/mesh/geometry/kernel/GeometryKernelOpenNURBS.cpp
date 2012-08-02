@@ -4,6 +4,8 @@
 #include "GeometryKernelOpenNURBS.hpp"
 #include <string>
 
+#define DEBUG_GEOM_ON 0
+
 GeometryKernelOpenNURBS::GeometryKernelOpenNURBS()
 {
   ON::Begin();
@@ -37,7 +39,6 @@ bool GeometryKernelOpenNURBS::read_file
   if ( !onModel.IsValid() )
     return false;
 
-#define DEBUG_GEOM_ON 0
 #if DEBUG_GEOM_ON
   std::cout << "tmp geom onModel.m_object_table.Count() = " << onModel.m_object_table.Count() << std::endl;
   for (int i=0; i<onModel.m_object_table.Count(); i++)

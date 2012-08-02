@@ -170,7 +170,7 @@ namespace {
     }
     {
       // bad constructor
-      ArrayRCP<LO> hints = arcp<LO>(numLocal+1);
+      ArrayRCP<size_t> hints = arcp<size_t>(numLocal+1);
       std::fill(hints.begin(),hints.end(),1);
       hints[0] = INVALID;
       TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::invalid_argument ); // too many entries
@@ -804,7 +804,7 @@ namespace {
       params->set("Optimize Storage",((T & 2) == 2));
       {
         // create a diagonal graph, but where only my middle row has an entry
-        ArrayRCP<LO> toalloc = arcpClone<LO>( tuple<LO>(0,1,0) );
+        ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
         GRAPH ddgraph(map,toalloc,pftype);
         ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
         // before globalAssemble(), there should be one local entry on middle, none on the others

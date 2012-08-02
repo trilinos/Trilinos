@@ -14,6 +14,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
 #include <boost/unordered_map.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
 
 namespace stk {
   namespace percept {
@@ -53,6 +54,19 @@ namespace stk {
       void sync_fields(int iter=0);
       virtual bool check_convergence();
       
+      template<typename T>
+      void check_equal(T& val)
+      {
+        T global_min = val, global_max=val;
+        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & global_max ) );
+        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & global_max ) );
+        VERIFY_OP_ON( global_max, ==, val , "bad parallel val");
+        VERIFY_OP_ON( global_min, ==, val , "bad parallel val");
+        VERIFY_OP_ON( global_max, ==, global_min , "bad parallel val");
+      }
+
+      int count_invalid_elements(PerceptMesh *eMesh);
+
     protected:
       NodeMap m_current_position;
       NodeMap m_delta;

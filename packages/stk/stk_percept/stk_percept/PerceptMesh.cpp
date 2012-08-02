@@ -3666,7 +3666,10 @@ namespace stk {
       std::vector< const stk::mesh::FieldBase *> fields;
       fields.push_back(field_dest);
 
+      // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+      // the shared part (just the shared boundary)
+      stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
 
     }
 
@@ -3718,7 +3721,10 @@ namespace stk {
       //fields.push_back(field_x);
       fields.push_back(field_y);
 
+      // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+      // the shared part (just the shared boundary)
+      stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
     }
 
     double PerceptMesh::nodal_field_dot(stk::mesh::FieldBase* field_x, stk::mesh::FieldBase* field_y)
@@ -3766,7 +3772,8 @@ namespace stk {
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (on_locally_owned_part(**k)) 
+          // do it for all nodes
+          //if (on_locally_owned_part(**k)) 
             {
               stk::mesh::Bucket & bucket = **k ;
               unsigned fd_size = bucket.field_data_size(*field_x);
@@ -3849,7 +3856,10 @@ namespace stk {
       //fields.push_back(field_y);
       fields.push_back(field_z);
 
+      // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+      // the shared part (just the shared boundary)
+      stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
     }
 
     //====================================================================================================================================

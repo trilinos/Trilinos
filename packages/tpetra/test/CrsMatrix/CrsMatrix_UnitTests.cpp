@@ -682,7 +682,7 @@ namespace {
       }
     }
     {
-      ArrayRCP<LO> nnzperrow = arcp<LO>(numLocal);
+      ArrayRCP<size_t> nnzperrow = arcp<size_t>(numLocal);
       std::fill(nnzperrow.begin(), nnzperrow.end(), 3);
       MAT bdmat(rmap,cmap,nnzperrow,StaticProfile);
       TEST_EQUALITY(bdmat.getRowMap(), rmap);

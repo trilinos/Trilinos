@@ -67,12 +67,12 @@ namespace Kokkos {
   // lower -> diagonal is last entry on row
   // 
 
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+  template <class Scalar, class OffsetType, class Ordinal, class DomainScalar, class RangeScalar>
   struct DefaultSparseSolveOp {
     // mat data
-    const Ordinal *ptrs;
-    const Ordinal *inds;
-    const Scalar  *vals;
+    const OffsetType *offs;
+    const Ordinal    *inds;
+    const Scalar     *vals;
     Ordinal numRows;
     // matvec params
     bool unitDiag, upper;
@@ -92,9 +92,9 @@ namespace Kokkos {
         for (Ordinal j=0; j<numRHS; ++j) x[j*xstride+numRows-1] = (DomainScalar)y[j*ystride+numRows-1];
         for (Ordinal r=2; r < numRows+1; ++r) {
           const Ordinal row = numRows - r; // for row=numRows-2 to 0 step -1
-          const Ordinal *i = inds+ptrs[row],
-                       *ie = inds+ptrs[row+1];
-          const Scalar  *v = vals+ptrs[row];
+          const Ordinal *i = inds+offs[row],
+                       *ie = inds+offs[row+1];
+          const Scalar  *v = vals+offs[row];
           for (Ordinal j=0; j<numRHS; ++j) x[j*xstride+row] = (DomainScalar)y[j*ystride+row];
           while (i != ie) {
             const Ordinal ind = *i++;
@@ -105,13 +105,13 @@ namespace Kokkos {
       }
       else if (upper && !unitDiag) {
         // upper + non-unit
-        DomainScalar diag = vals[ptrs[numRows-1]];
+        DomainScalar diag = vals[offs[numRows-1]];
         for (Ordinal j=0; j<numRHS; ++j) x[j*xstride+numRows-1] = (DomainScalar)( y[j*ystride+numRows-1] / diag );
         for (Ordinal r=2; r < numRows+1; ++r) {
           const Ordinal row = numRows - r; // for row=numRows-2 to 0 step -1
-          const Ordinal *i = inds+ptrs[row],
-                       *ie = inds+ptrs[row+1];
-          const Scalar  *v = vals+ptrs[row];
+          const Ordinal *i = inds+offs[row],
+                       *ie = inds+offs[row+1];
+          const Scalar  *v = vals+offs[row];
           // capture and skip the diag
           ++i;
           diag = *v++;
@@ -129,9 +129,9 @@ namespace Kokkos {
         // lower + unit
         for (Ordinal j=0; j<numRHS; ++j) x[j*xstride] = (DomainScalar) y[j*ystride];
         for (Ordinal row=1; row < numRows; ++row) {
-          const Ordinal *i = inds+ptrs[row],
-                       *ie = inds+ptrs[row+1];
-          const Scalar  *v = vals+ptrs[row];
+          const Ordinal *i = inds+offs[row],
+                       *ie = inds+offs[row+1];
+          const Scalar  *v = vals+offs[row];
           for (Ordinal j=0; j<numRHS; ++j) x[j*xstride+row] = (DomainScalar) y[j*ystride+row];
           while (i != ie) {
             const Ordinal ind = *i++;
@@ -145,9 +145,9 @@ namespace Kokkos {
         DomainScalar diag = vals[0];
         for (Ordinal j=0; j<numRHS; ++j) x[j*xstride] = (DomainScalar)( y[j*ystride] / (RangeScalar)diag );
         for (Ordinal row=1; row < numRows; ++row) {
-          const Ordinal *i = inds+ptrs[row],
-                       *ie = inds+ptrs[row+1];
-          const Scalar  *v = vals+ptrs[row];
+          const Ordinal *i = inds+offs[row],
+                       *ie = inds+offs[row+1];
+          const Scalar  *v = vals+offs[row];
           // skip the diag
           --ie;
           for (Ordinal j=0; j<numRHS; ++j) x[j*xstride+row] = (DomainScalar) y[j*ystride+row];
@@ -163,12 +163,12 @@ namespace Kokkos {
     }
   };
 
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+  template <class Scalar, class OffsetType, class Ordinal, class DomainScalar, class RangeScalar>
   struct DefaultSparseTransposeSolveOp {
     // mat data
-    const Ordinal *ptrs;
-    const Ordinal *inds;
-    const Scalar  *vals;
+    const OffsetType *offs;
+    const Ordinal    *inds;
+    const Scalar     *vals;
     Ordinal numRows;
     // matvec params
     bool unitDiag, upper;
@@ -192,9 +192,9 @@ namespace Kokkos {
       if (upper && unitDiag) {
         // upper + unit
         for (Ordinal row=0; row < numRows-1; ++row) {
-          const Ordinal *i = inds+ptrs[row],
-                       *ie = inds+ptrs[row+1];
-          const Scalar  *v = vals+ptrs[row];
+          const Ordinal *i = inds+offs[row],
+                       *ie = inds+offs[row+1];
+          const Scalar  *v = vals+offs[row];
           while (i != ie) {
             const Ordinal ind = *i++;
             const Scalar  val = *v++;
@@ -206,9 +206,9 @@ namespace Kokkos {
         // upper + non-unit; diag is first element in row
         DomainScalar diag;
         for (Ordinal row=0; row < numRows-1; ++row) {
-          const Ordinal *i = inds+ptrs[row],
-                       *ie = inds+ptrs[row+1];
-          const Scalar  *v = vals+ptrs[row];
+          const Ordinal *i = inds+offs[row],
+                       *ie = inds+offs[row+1];
+          const Scalar  *v = vals+offs[row];
           // capture and skip the diag
           ++i;
           diag = *v++;
@@ -220,15 +220,15 @@ namespace Kokkos {
             for (Ordinal j=0; j<numRHS; ++j) x[j*xstride+ind] -= (DomainScalar)val * x[j*xstride+row];
           }
         }
-        diag = vals[ptrs[numRows-1]];
+        diag = vals[offs[numRows-1]];
         for (Ordinal j=0; j<numRHS; ++j) x[j*xstride+numRows-1] /= diag;
       }
       else if (!upper && unitDiag) {
         // lower + unit
         for (Ordinal row=numRows-1; row > 0; --row) {
-          const Ordinal *i = inds+ptrs[row],
-                       *ie = inds+ptrs[row+1];
-          const Scalar  *v = vals+ptrs[row];
+          const Ordinal *i = inds+offs[row],
+                       *ie = inds+offs[row+1];
+          const Scalar  *v = vals+offs[row];
           while (i != ie) {
             const Ordinal ind = *i++;
             const Scalar  val = *v++;
@@ -240,9 +240,9 @@ namespace Kokkos {
         // lower + non-unit; diag is last element in row
         DomainScalar diag;
         for (Ordinal row=numRows-1; row > 0; --row) {
-          const Ordinal *i = inds+ptrs[row],
-                       *ie = inds+ptrs[row+1];
-          const Scalar  *v = vals+ptrs[row];
+          const Ordinal *i = inds+offs[row],
+                       *ie = inds+offs[row+1];
+          const Scalar  *v = vals+offs[row];
           // capture and skip the diag
           diag = v[ie-i-1];
           --ie;

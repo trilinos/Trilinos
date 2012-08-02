@@ -1259,6 +1259,20 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="MeshingGenie" dir="packages/meshinggenie" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="meshinggenie-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="FEApp" dir="demos/FEApp" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Sacado,Epetra,EpetraExt,Stokhos,NOX,Piro"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>

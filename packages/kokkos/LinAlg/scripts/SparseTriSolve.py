@@ -405,7 +405,7 @@ def emitFuncSig (defDict, indent=0):
         ind + '  const Ordinal numVecs,\n' + \
         ind + '  RangeScalar* const X,\n' + \
         ind + '  const Ordinal ${denseRowCol}StrideX,\n' + \
-        ind + '  const Ordinal* const ptr,\n' + \
+        ind + '  const  size_t* const ptr,\n' + \
         ind + '  const Ordinal* const ind,\n' + \
         ind + '  const MatrixScalar* const val'
     if not defDict['inPlace']:
@@ -492,7 +492,7 @@ def emitCscOuterLoopBody (defDict, indent=0):
     if not defDict['unitDiag']:
         body = body + \
             indStr + 'MatrixScalar A_cc = STS::zero ();\n' + \
-            indStr + 'for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {\n' + \
+            indStr + 'for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {\n' + \
             indStr + ' '*2 + 'const Ordinal r = ind[k];\n'
         if defDict['conjugateMatrixEntries']:
             body = body + \
@@ -514,7 +514,7 @@ def emitCscOuterLoopBody (defDict, indent=0):
             indStr + '}\n'
     else:
         body = body + \
-            indStr + 'for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {\n' + \
+            indStr + 'for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {\n' + \
             indStr + ' '*2 + 'const Ordinal r = ind[k];\n'
         if defDict['conjugateMatrixEntries']:
             body = body + \
@@ -561,12 +561,12 @@ def emitCsrOuterLoopBody (defDict, indent=0):
         indStr + '}\n'
     if defDict['unitDiag']:
         body = body + \
-            indStr + 'for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {\n'            
+            indStr + 'for (size_t k = ptr[r]; k < ptr[r+1]; ++k) {\n'            
     else:
         body = body + \
             indStr + '// We assume the diagonal entry is first in the row.\n' + \
             indStr + 'const MatrixScalar A_rr = ' + diagValExpr + ';\n' + \
-            indStr + 'for (Ordinal k = ptr[r]+1; k < ptr[r+1]; ++k) {\n'
+            indStr + 'for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {\n'
     body = body + \
         indStr + ' '*2 + 'const MatrixScalar A_rc = ' + offDiagValExpr + ';\n' + \
         indStr + ' '*2 + 'const Ordinal c = ind[k];\n' + \

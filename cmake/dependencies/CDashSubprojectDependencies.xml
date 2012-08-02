@@ -808,6 +808,11 @@
       <Email address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="MeshingGenie">
+    <EmailAddresses>
+      <Email address="meshinggenie-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="FEApp">
     <Dependency name="Teuchos" type="ILR"/>
     <Dependency name="ThreadPool" type="ILO"/>

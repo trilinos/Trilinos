@@ -131,7 +131,7 @@ namespace Tpetra {
             class LocalMatOps>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
-             const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc,
+             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params)
   : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
@@ -187,7 +187,7 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-             const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc,
+             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params)
   : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
@@ -526,14 +526,14 @@ namespace Tpetra {
 
     const size_t numRows = getNodeNumRows();
     // here's what we want...
-    ArrayRCP<LO> inds;
-    ArrayRCP<LO> ptrs;
-    ArrayRCP<ST> vals;
+    ArrayRCP<LocalOrdinal> inds;
+    ArrayRCP<size_t>       ptrs;
+    ArrayRCP<Scalar>       vals;
     // get refs to data in myGraph_, so we can modify it as well
-    ArrayRCP<LO>            &lclInds1D_     = myGraph_->lclInds1D_;
-    ArrayRCP<ArrayRCP<LO> > &lclInds2D_     = myGraph_->lclInds2D_;
-    ArrayRCP<LO>            &rowPtrs_       = myGraph_->rowPtrs_;
-    ArrayRCP<LO>            &numRowEntries_ = myGraph_->numRowEntries_;
+    ArrayRCP<LocalOrdinal>            &lclInds1D_     = myGraph_->lclInds1D_;
+    ArrayRCP<ArrayRCP<LocalOrdinal> > &lclInds2D_     = myGraph_->lclInds2D_;
+    ArrayRCP<size_t>                  &rowPtrs_       = myGraph_->rowPtrs_;
+    ArrayRCP<size_t>                  &numRowEntries_ = myGraph_->numRowEntries_;
     size_t & nodeNumEntries_   = myGraph_->nodeNumEntries_;
     size_t & nodeNumAllocated_ = myGraph_->nodeNumAllocated_;
 
@@ -709,13 +709,14 @@ namespace Tpetra {
     // row offsets, within the scope of this routine, since we're only
     // filling the local matrix here (use fillLocalGraphAndMatrix() to
     // fill both the graph and the matrix at the same time).
-    ArrayRCP<LocalOrdinal> ptrs;
-    ArrayRCP<Scalar>       vals;
+    ArrayRCP<size_t> ptrs;
+    ArrayRCP<Scalar> vals;
+
     // get data from staticGraph_
     ArrayRCP<LocalOrdinal>            lclInds1D     = staticGraph_->lclInds1D_;
     ArrayRCP<ArrayRCP<LocalOrdinal> > lclInds2D     = staticGraph_->lclInds2D_;
-    ArrayRCP<LocalOrdinal>            rowPtrs       = staticGraph_->rowPtrs_;
-    ArrayRCP<LocalOrdinal>            numRowEntries = staticGraph_->numRowEntries_;
+    ArrayRCP<size_t>                  rowPtrs       = staticGraph_->rowPtrs_;
+    ArrayRCP<size_t>                  numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
     size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
 
@@ -758,7 +759,9 @@ namespace Tpetra {
       vals = sparse_ops_type::template allocStorage<Scalar> (getRowMap ()->getNode (), ptrs ());
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries[row];
-        std::copy( values2D_[row].begin(), values2D_[row].begin()+numentrs, vals+ptrs[row] );
+        std::copy (values2D_[row].begin(),
+                   values2D_[row].begin() + numentrs,
+                   vals+ptrs[row]);
       }
     }
     else if (getProfileType() == StaticProfile) {
@@ -2846,125 +2849,6 @@ namespace Tpetra {
   //                                                                         //
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // DEPRECATED
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class DomainScalar, class RangeScalar>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multiply(
-                                        const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                                              MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-                                              Teuchos::ETransp mode, RangeScalar alpha, RangeScalar beta) const
-  {
-    this->localMultiply(X,Y,mode,alpha,beta);
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // DEPRECATED
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class DomainScalar, class RangeScalar>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(
-                                    const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>  &Y,
-                                          MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                                          Teuchos::ETransp mode) const
-  {
-    this->localSolve(Y,X,mode);
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // DEPRECATED
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalRowView(
-                                GlobalOrdinal globalRow,
-                                ArrayRCP<const GlobalOrdinal> &indices,
-                                ArrayRCP<const Scalar>        &values) const
-  {
-    const std::string tfecfFuncName("getGlobalRowView()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isLocallyIndexed() == true, std::runtime_error, ": global indices do not exist; call getLocalRowView().");
-    const LocalOrdinal lrow = getRowMap()->getLocalElement(globalRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(lrow == LOT::invalid(), std::runtime_error, ": globalRow (== " << globalRow << ") does not belong to this node.");
-    const RowInfo rowinfo = staticGraph_->getRowInfo(lrow);
-    if (values1D_ != null && rowinfo.numEntries > 0) {
-      values  =                values1D_.persistingView(rowinfo.offset1D,rowinfo.numEntries);
-      indices = staticGraph_->gblInds1D_.persistingView(rowinfo.offset1D,rowinfo.numEntries);
-    }
-    else if (values2D_ != null && rowinfo.numEntries > 0) {
-      values  =                values2D_[lrow].persistingView(0,rowinfo.numEntries);
-      indices = staticGraph_->gblInds2D_[lrow].persistingView(0,rowinfo.numEntries);
-    }
-    return;
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // DEPRECATED
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalRowView(
-                                LocalOrdinal localRow,
-                                ArrayRCP<const LocalOrdinal> &indices,
-                                ArrayRCP<const Scalar>        &values) const
-  {
-    const std::string tfecfFuncName("getLocalRowView()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isGloballyIndexed() == true, std::runtime_error, ": local indices do not exist; call getGlobalRowView().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getRowMap()->isNodeLocalElement(localRow) == false, std::runtime_error, ": localRow (== " << localRow << ") is not valid on this node.");
-    const RowInfo rowinfo = staticGraph_->getRowInfo(localRow);
-    if (values1D_ != null && rowinfo.numEntries > 0) {
-      values  =                values1D_.persistingView(rowinfo.offset1D,rowinfo.numEntries);
-      indices = staticGraph_->lclInds1D_.persistingView(rowinfo.offset1D,rowinfo.numEntries);
-    }
-    else if (values2D_ != null && rowinfo.numEntries > 0) {
-      values  =                values2D_[localRow].persistingView(0,rowinfo.numEntries);
-      indices = staticGraph_->lclInds2D_[localRow].persistingView(0,rowinfo.numEntries);
-    }
-    return;
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // DEPRECATED
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage() {
-    // provided only for backwards compatibility
-    // previous semantics required that fillComplete() had been called.
-    const std::string tfecfFuncName("optimizeStorage()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error,
-        " requires that fillComplete() has already been called.");
-    if (isStorageOptimized() == false) {
-      resumeFill();
-      fillComplete(DoOptimizeStorage);
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // DEPRECATED
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(OptimizeOption os) {
-    fillComplete(getRowMap(),getRowMap(),os);
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // DEPRECATED
-  /////////////////////////////////////////////////////////////////////////////
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
-                const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
-                OptimizeOption os)
-  {
-    RCP<ParameterList> params = parameterList();
-    if (os == DoOptimizeStorage) params->set<bool>("Optimize Storage",true);
-    else                         params->set<bool>("Optimize Storage",false);
-    fillComplete(domainMap,rangeMap,params);
-  }
 
 } // namespace Tpetra
 

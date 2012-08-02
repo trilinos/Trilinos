@@ -179,7 +179,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-              const ArrayRCP<const LocalOrdinal>& NumEntriesPerRowToAlloc, 
+              const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
@@ -235,7 +235,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
-              const ArrayRCP<const LocalOrdinal> &NumEntriesPerRowToAlloc, 
+              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
@@ -593,41 +593,15 @@ namespace Tpetra {
       //@{
 
       //! Get an ArrayRCP of the row-offsets.
-      /*!  The returned buffer exists in host-memory.
+      /*!  The returned buffer exists in host-memory. This method may return Teuchos::null 
+           if "Delete Row Pointers" was \c true on fillComplete().
        */
-      ArrayRCP<const LocalOrdinal> getNodeRowPtrs() const;
+      ArrayRCP<const size_t> getNodeRowPtrs() const;
 
       //! Get an ArrayRCP of the packed column-indices.
       /*!  The returned buffer exists in host-memory.
        */
       ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
-
-      //@}
-
-      //! \name Deprecated methods; will be removed at some point in the near future.
-      //@{
-
-      /** \brief Re-allocate the data into contiguous storage.
-
-          This method is deprecated and will be removed in a future version of Tpetra, as 
-          the implementation of storage optimization has been below Tpetra to Kokkos.
-
-          Currently, the implementation simply calls resumeFill() and then fillComplete(OptimizeStorage). As such, it is 
-          required to be called by all nodes that participate in the associated communicator.
-       */
-      TPETRA_DEPRECATED void optimizeStorage();
-
-      //! Deprecated. Get a persisting const view of the elements in a specified global row of the graph.
-      TPETRA_DEPRECATED ArrayRCP<const GlobalOrdinal> getGlobalRowView(GlobalOrdinal GlobalRow) const;
-
-      //! Deprecated. Get a persisting const view of the elements in a specified local row of the graph.
-      TPETRA_DEPRECATED ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const;
-
-      //! \brief Signal that data entry is complete, specifying domain and range maps. 
-      TPETRA_DEPRECATED void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os);
-
-      //! \brief Signal that data entry is complete. 
-      TPETRA_DEPRECATED void fillComplete(OptimizeOption os);
 
       //@}
 
@@ -745,7 +719,7 @@ namespace Tpetra {
       ProfileType pftype_;
       // requested allocation sizes; we have to preserve these, because we perform late-allocation
       // number of non-zeros to allocate per row; set to null after they are allocated.
-      ArrayRCP<const LocalOrdinal> numAllocPerRow_;
+      ArrayRCP<const size_t> numAllocPerRow_;
       // number of non-zeros to allocate for all row; either this or numAllocPerRow_ is used, but not both.
       size_t numAllocForAllRows_;
 
@@ -768,7 +742,8 @@ namespace Tpetra {
       // only the first numRowEntries_[R] of these are valid
       // both of these are null for 2D (Dynamic) allocations
       // rowPtrs_ has length N+1, while numRowEntries_ has length N
-      ArrayRCP<LocalOrdinal> rowPtrs_;
+      // we may delete this to save memory on fillComplete, if "Delete Row Pointers" is speified
+      ArrayRCP<size_t> rowPtrs_;
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //
       // 2D/Dynamic structures. 
@@ -780,13 +755,8 @@ namespace Tpetra {
       ArrayRCP<ArrayRCP<GlobalOrdinal> > gblInds2D_;
 
       //! The number valid entries in the row.
-      ArrayRCP<LocalOrdinal>       numRowEntries_;
-
-      // TODO: these might be useful in the future
-      // ArrayRCP< typedef ArrayRCP<const GlobalOrdinal>::iterator > gRowPtrs_;
-      // ArrayRCP< typedef ArrayRCP<GlobalOrdinal>::iterator > gRowPtrsNC_;
-      // ArrayRCP< typedef ArrayRCP<const LocalOrdinal>::iterator > lRowPtrs_;
-      // ArrayRCP< typedef ArrayRCP<LocalOrdinal>::iterator > lRowPtrsNC_;
+      // This is deleted after fillCOmplete if "Optimize Storage" is set to \c true
+      ArrayRCP<size_t>       numRowEntries_;
 
       bool indicesAreAllocated_,
            indicesAreLocal_,
@@ -800,6 +770,19 @@ namespace Tpetra {
 
       // non-local data
       std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
+
+      bool haveRowInfo_;
+      inline bool                     hasRowInfo() const {
+#ifdef HAVE_TPETRA_DEBUG
+        bool actuallyHasRowInfo = true;
+        if (indicesAreAllocated() && getProfileType() == StaticProfile && rowPtrs_ == null) actuallyHasRowInfo = false;
+        TEUCHOS_TEST_FOR_EXCEPTION( 
+            actuallyHasRowInfo != haveRowInfo_, 
+            std::logic_error, "Internal logic error. Please contact Tpetra team."
+        )
+#endif
+        return haveRowInfo_;
+      }
 
   }; // class CrsGraph
 

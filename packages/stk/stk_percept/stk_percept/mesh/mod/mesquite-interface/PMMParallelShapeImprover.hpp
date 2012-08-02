@@ -110,6 +110,7 @@ namespace stk {
       {}
 
       static int count_invalid_elements(Mesh &mesh, Mesquite::MeshDomain *domain=0);
+      static int parallel_count_invalid_elements(PerceptMesh *eMesh);
 
       void run(Mesquite::Mesh &mesh, Mesquite::MeshDomain *domain, bool always_smooth=true, int debug=0);
 

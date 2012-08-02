@@ -460,7 +460,7 @@ namespace stk
             fixture.generate_mesh();
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-            eMesh.print_info("quad fixture",  2);
+            //eMesh.print_info("quad fixture",  2);
             eMesh.save_as(input_files_loc+"quad_4_smooth.0.e");
 
             eMesh.reopen();
@@ -519,7 +519,7 @@ namespace stk
                         double ix = data[0]/double(nele);
                         //double bump_size=2.8; // 0.8
                         double bump_size=2.8; // 0.8
-                          data[1] += (ix)*(1.0-ix)*bump_size*double(nele);
+                        data[1] += (ix)*(1.0-ix)*bump_size*double(nele);
                         //std::cout << "tmp srk surface 1 node = " << data[0] << " " << data[1] << std::endl;
                       }
                   }
@@ -1108,6 +1108,7 @@ namespace stk
 
             //bool do_jacobi = true;
             //Mesquite::MsqDebug::enable(1);
+            Mesquite::MsqDebug::disable(1);
             //Mesquite::MsqDebug::enable(2);
             //Mesquite::MsqDebug::enable(3);
 

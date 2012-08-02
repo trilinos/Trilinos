@@ -322,10 +322,10 @@ namespace Kokkos {
     public:
       CUSPARSECrsGraph(int numRows, int numCols, const RCP<Node> &node, const RCP<ParameterList> &params);
       bool isEmpty() const;
-      void setStructure(const ArrayRCP<const int>  &ptrs,
+      void setStructure(const ArrayRCP<const size_t>  &ptrs,
                         const ArrayRCP<const int> &inds);
       void setDeviceData(const ArrayRCP<const int> &devptrs, const ArrayRCP<const int> &devinds);
-      inline ArrayRCP<const int> getPointers() const;
+      inline ArrayRCP<const size_t> getPointers() const;
       inline ArrayRCP<const int> getIndices() const;
       inline ArrayRCP<const int> getDevPointers() const;
       inline ArrayRCP<const int> getDevIndices() const;
@@ -341,10 +341,10 @@ namespace Kokkos {
       Teuchos::EUplo uplo_;
       Teuchos::EDiag diag_;
       // graph data
-      ArrayRCP<const int>  host_rowptrs_;
-      ArrayRCP<const int>  dev_rowptrs_;
-      ArrayRCP<const int>  host_colinds_, dev_colinds_;
-      // TODO: add CSC data, for efficient tranpose multiply
+      ArrayRCP<const size_t> host_rowptrs_;
+      ArrayRCP<const int>    dev_rowptrs_;
+      ArrayRCP<const int>    host_colinds_, dev_colinds_;
+      // TODO: add CSC data, for efficient transpose multiply
   };
 
   //! \class CUSPARSECrsMatrix
@@ -392,9 +392,8 @@ namespace Kokkos {
   { return isEmpty_; }
 
   template <class Node>
-  void CUSPARSECrsGraph<Node>::setStructure(
-                      const ArrayRCP<const int> &ptrs,
-                      const ArrayRCP<const int> &inds)
+  void CUSPARSECrsGraph<Node>::setStructure(const ArrayRCP<const size_t> &ptrs,
+                                            const ArrayRCP<const int> &inds)
   {
     std::string tfecfFuncName("setStructure(ptrs,inds)");
     const int numrows = this->getNumRows();
@@ -416,7 +415,7 @@ namespace Kokkos {
   }
 
   template <class Node>
-  ArrayRCP<const int> CUSPARSECrsGraph<Node>::getPointers() const
+  ArrayRCP<const size_t> CUSPARSECrsGraph<Node>::getPointers() const
   { return host_rowptrs_; }
 
   template <class Node>
@@ -634,11 +633,11 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<int> allocRowPtrs(const RCP<Node> &node, const ArrayView<const int> &rowPtrs);
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs);
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T>
-    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const int> &ptrs);
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &ptrs);
 
     //! Finalize a graph is null for CUSPARSE.
     static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params);
@@ -776,6 +775,7 @@ namespace Kokkos {
   void CUSPARSEOps<Scalar,Node>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag,
                                                CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params)
   {
+    const size_t CUDA_MAX_INT = 2147483647;
     const std::string prefix("finalizeGraph()");
     RCP<Node> node = graph.getNode();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -784,14 +784,14 @@ namespace Kokkos {
     )
     // diag: have to allocate and indicate
     ArrayRCP<int>    devinds, devptrs;
-    ArrayRCP<const int> hostinds = graph.getIndices();
-    ArrayRCP<const int> hostptrs = graph.getPointers();
+    ArrayRCP<const int>    hostinds = graph.getIndices();
+    ArrayRCP<const size_t> hostptrs = graph.getPointers();
     const int numRows = graph.getNumRows();
     // set description
     graph.setMatDesc(uplo,diag);
     // allocate and initialize data
     if (diag == Teuchos::UNIT_DIAG) {
-      // cuSPARSE, unfortunately, always assumes that the diagonal
+      // CUSPARSE, unfortunately, always assumes that the diagonal
       // entries are present in the storage.  Therefore, this flag
       // only specifies whether they are considered or not; they are
       // assumed to be present, and neglecting them will result in
@@ -799,7 +799,11 @@ namespace Kokkos {
       // neglected instead).  Therefore, because our API doesn't give
       // us explicit diagonal entries if diag == Teuchos::UNIT_DIAG,
       // we must allocate space for them.
-      const int numnz = hostinds.size() + numRows;
+      const size_t numnz = hostinds.size() + numRows;
+      TEUCHOS_TEST_FOR_EXCEPTION( 
+          numnz > CUDA_MAX_INT, std::runtime_error, 
+          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than " << CUDA_MAX_INT << " non-zeros." 
+      );
       devptrs = node->template allocBuffer<int>( numRows+1 );
       if (numnz) devinds = node->template allocBuffer<int>( numnz );
       ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
@@ -826,12 +830,18 @@ namespace Kokkos {
     }
     else {
       // our format == their format; just allocate and copy
+      const size_t numnz = hostinds.size();
+      TEUCHOS_TEST_FOR_EXCEPTION( 
+          numnz > CUDA_MAX_INT, std::runtime_error, 
+          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than " << CUDA_MAX_INT << " non-zeros." 
+      );
       devptrs = node->template allocBuffer<int>( numRows+1 );
-      node->copyToBuffer( numRows+1,  hostptrs(),  devptrs );
-      const int numnz = hostinds.size();
+      ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
+      std::copy( hostptrs.begin(), hostptrs.end(), h_devptrs.begin() );
+      h_devptrs = null;
       if (numnz) {
         devinds = node->template allocBuffer<int>( numnz );
-        node->copyToBuffer( numnz,     hostinds(), devinds );
+        node->copyToBuffer( numnz, hostinds(), devinds );
       }
     }
     // set the data
@@ -856,7 +866,7 @@ namespace Kokkos {
     Teuchos::EDiag diag;
     graph.getMatDesc(uplo,diag);
     ArrayRCP<Scalar>       devvals;
-    ArrayRCP<const int>    hostptrs = graph.getPointers();
+    ArrayRCP<const size_t> hostptrs = graph.getPointers();
     ArrayRCP<const Scalar> hostvals = matrix.getValues();
     const int numRows = graph.getNumRows();
     if (diag == Teuchos::UNIT_DIAG) {
@@ -910,7 +920,7 @@ namespace Kokkos {
       TEUCHOS_TEST_FOR_EXCEPTION(stat != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
           FuncName << ": CSRSM_analysis(non-trans) returned error " << stat);
     }
-    if (params != null && params->get("Prepare Tranpose Solve",false)) {
+    if (params != null && params->get("Prepare Transpose Solve",false)) {
       ai_trans = CUSPARSEdetails::createSolveAnalysisInfo();
       cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_analysis(
           *hndl, CUSPARSE_OPERATION_TRANSPOSE,numRows,
@@ -919,7 +929,7 @@ namespace Kokkos {
       TEUCHOS_TEST_FOR_EXCEPTION(stat != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
           FuncName << ": CSRSM_analysis(trans) returned error " << stat);
     }
-    if (params != null && params->get("Prepare Conjugate Tranpose Solve",false)) {
+    if (params != null && params->get("Prepare Conjugate Transpose Solve",false)) {
       ai_conj = CUSPARSEdetails::createSolveAnalysisInfo();
       cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_analysis(
           *hndl, CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE,numRows,
@@ -930,10 +940,10 @@ namespace Kokkos {
     }
     matrix.setAnalyses( ai_non, ai_trans, ai_conj );
     //
-    if (params != null && params->get("Prepare Transpose Multiply",false)) {
-      // finish: compute CSC for transpose
-      TEUCHOS_TEST_FOR_EXCEPT(true);
-    }
+    // if (params != null && params->get("Prepare Transpose Multiply",false)) {
+    //   // finish: compute CSC for transpose
+    //   TEUCHOS_TEST_FOR_EXCEPT(true);
+    // }
   }
 
   // ======= graph and matrix finalization ===========
@@ -959,12 +969,12 @@ namespace Kokkos {
 
   // ======= pointer allocation ===========
   template <class Scalar, class Node>
-  ArrayRCP<int>
-  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const int> &numEntriesPerRow)
+  ArrayRCP<size_t>
+  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
-    CUDANodeHostPinnedDeallocator<int> dealloc;
-    ArrayRCP<int> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
+    CUDANodeHostPinnedDeallocator<size_t> dealloc;
+    ArrayRCP<size_t> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
     ptrs[0] = 0;
     std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
     return ptrs;
@@ -974,7 +984,7 @@ namespace Kokkos {
   template <class Scalar, class Node>
   template <class T>
   ArrayRCP<T>
-  CUSPARSEOps<Scalar,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const int> &rowPtrs)
+  CUSPARSEOps<Scalar,Node>::allocStorage(const RCP<Node> &/*node*/, const ArrayView<const size_t> &rowPtrs)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
     const int totalNumEntries = *(rowPtrs.end()-1);
@@ -983,6 +993,7 @@ namespace Kokkos {
     std::fill(buf.begin(), buf.end(), Teuchos::ScalarTraits<T>::zero() );
     return buf;
   }
+
   template<class Scalar, class Node>
   CUSPARSEOps<Scalar,Node>::CUSPARSEOps(const RCP<Node> &node)
   : node_(node)
@@ -1014,7 +1025,7 @@ namespace Kokkos {
         std::runtime_error, " operators already initialized.");
     // get cusparse data from the matrix
     numRows_ = graph->getNumRows();
-    numRows_ = graph->getNumCols();
+    numCols_ = graph->getNumCols();
     matdescr_ = graph->getMatDesc();
     rowPtrs_ = graph->getDevPointers();
     colInds_ = graph->getDevIndices();
@@ -1022,6 +1033,141 @@ namespace Kokkos {
     numNZ_ = colInds_.size();
     matrix->getAnalyses( aiNoTrans_, aiTrans_, aiConjTrans_ );
     isInitialized_ = true;
+  }
+
+  template <class Scalar, class Node>
+  template <class DomainScalar, class RangeScalar>
+  void CUSPARSEOps<Scalar,Node>::multiply(Teuchos::ETransp trans,
+                                          RangeScalar alpha,
+                                          const MultiVector<DomainScalar,Node> &X,
+                                                MultiVector< RangeScalar,Node> &Y) const
+  {
+    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
+    //
+    std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
+    // get pointers,stride from X and Y
+    int stride_x = (int)X.getStride(),
+        stride_y = (int)Y.getStride();
+    const Scalar * data_x = X.getValues().getRawPtr();
+    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
+    const int numMatRows = numRows_;
+    const int numMatCols = numCols_;
+    const int opRows     = (trans == Teuchos::NO_TRANS ? numMatRows : numMatCols);
+    const int opCols     = (trans == Teuchos::NO_TRANS ? numMatCols : numMatRows);
+    const int numRHS     = X.getNumCols();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getNumCols() != Y.getNumCols(),
+        std::runtime_error, "X and Y do not have the same number of column vectors.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)X.getNumRows() != (size_t)opCols,
+        std::runtime_error, "Size of X is not congruous with dimensions of operator.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)Y.getNumRows() != (size_t)opRows,
+        std::runtime_error, "Size of Y is not congruous with dimensions of operator.")
+    // call mat-vec
+    cusparseOperation_t op;
+    if      (trans == Teuchos::NO_TRANS)     op = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    else if (trans == Teuchos::TRANS)        op = CUSPARSE_OPERATION_TRANSPOSE;
+    else /* (trans == Teuchos::CONJ_TRANS)*/ op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+    RCP<const cusparseHandle_t> sess = CUSPARSEdetails::Session::getHandle();
+    const Scalar s_alpha = (Scalar)alpha,
+                 s_beta  = Teuchos::ScalarTraits<Scalar>::zero();
+#ifdef HAVE_KOKKOS_DEBUG
+    cudaError_t err = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
+        ": cudaGetLastError() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+    err = cudaThreadSynchronize();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
+        ": cudaThreadSynchronize() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+#endif
+    cusparseStatus_t stat;
+    stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
+        *sess, op, numMatRows, numRHS, numMatCols, numNZ_, &s_alpha,
+        *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(),
+        data_x, stride_x, &s_beta, data_y, stride_y);
+#ifdef HAVE_KOKKOS_DEBUG
+    err = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
+        ": cudaGetLastError() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+    err = cudaThreadSynchronize();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
+        ": cudaThreadSynchronize() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+#endif
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        stat != CUSPARSE_STATUS_SUCCESS,
+        std::runtime_error, ": CSRMM returned error " << stat);
+    return;
+  }
+
+
+  template <class Scalar, class Node>
+  template <class DomainScalar, class RangeScalar>
+  void CUSPARSEOps<Scalar,Node>::multiply(Teuchos::ETransp trans,
+                                          RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
+                                          RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
+  {
+    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
+    //
+    std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
+    // get pointers,stride from X and Y
+    int stride_x = (int)X.getStride(),
+        stride_y = (int)Y.getStride();
+    const Scalar * data_x = X.getValues().getRawPtr();
+    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
+    const int numMatRows = numRows_;
+    const int numMatCols = numCols_;
+    const int opRows     = (trans == Teuchos::NO_TRANS ? numMatRows : numMatCols);
+    const int opCols     = (trans == Teuchos::NO_TRANS ? numMatCols : numMatRows);
+    const int numRHS     = X.getNumCols();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getNumCols() != Y.getNumCols(),
+        std::runtime_error, "X and Y do not have the same number of column vectors.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)X.getNumRows() != (size_t)opCols,
+        std::runtime_error, "Size of X is not congruous with dimensions of operator.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)Y.getNumRows() != (size_t)opRows,
+        std::runtime_error, "Size of Y is not congruous with dimensions of operator.")
+    // call mat-vec
+    cusparseOperation_t op;
+    RCP<const cusparseHandle_t> hndl = CUSPARSEdetails::Session::getHandle();
+    if      (trans == Teuchos::NO_TRANS)     op = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    else if (trans == Teuchos::TRANS)        op = CUSPARSE_OPERATION_TRANSPOSE;
+    else /* (trans == Teuchos::CONJ_TRANS)*/ op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+    const Scalar s_alpha = (Scalar)alpha,
+                 s_beta  = (Scalar)beta;
+    cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
+        *hndl, op, numMatRows, numRHS, numMatCols, numNZ_, &s_alpha,
+        *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(),
+        data_x, stride_x, &s_beta, data_y, stride_y);
+#ifdef HAVE_KOKKOS_DEBUG
+    cudaError_t err = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
+        ": cudaGetLastError() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+    err = cudaThreadSynchronize();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
+        ": cudaThreadSynchronize() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+#endif
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        stat != CUSPARSE_STATUS_SUCCESS,
+        std::runtime_error, ": CSRMM returned error " << stat);
+    return;
   }
 
   template <class Scalar, class Node>
@@ -1088,131 +1234,6 @@ namespace Kokkos {
     return;
   }
 
-
-  template <class Scalar, class Node>
-  template <class DomainScalar, class RangeScalar>
-  void CUSPARSEOps<Scalar,Node>::multiply(Teuchos::ETransp trans,
-                                          RangeScalar alpha,
-                                          const MultiVector<DomainScalar,Node> &X,
-                                                MultiVector< RangeScalar,Node> &Y) const
-  {
-    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
-    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
-                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
-    //
-    std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
-    // get pointers,stride from X and Y
-    int stride_x = (int)X.getStride(),
-        stride_y = (int)Y.getStride();
-    const Scalar * data_x = X.getValues().getRawPtr();
-    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
-    const int numMatRows = Y.getNumRows();
-    const int numMatCols = X.getNumRows();
-    const int numRHS     = X.getNumCols();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumCols() != Y.getNumCols(),
-        std::runtime_error, "X and Y do not have the same number of column vectors.")
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)Y.getNumRows() != (size_t)numRows_,
-        std::runtime_error, "Y does not have the same number of rows as does the matrix.")
-    // call mat-vec
-    cusparseOperation_t op;
-    if      (trans == Teuchos::NO_TRANS)     op = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    else if (trans == Teuchos::TRANS)        op = CUSPARSE_OPERATION_TRANSPOSE;
-    else /* (trans == Teuchos::CONJ_TRANS)*/ op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
-    RCP<const cusparseHandle_t> sess = CUSPARSEdetails::Session::getHandle();
-    const Scalar s_alpha = (Scalar)alpha,
-                 s_beta  = Teuchos::ScalarTraits<Scalar>::zero();
-#ifdef HAVE_KOKKOS_DEBUG
-    cudaError_t err = cudaGetLastError();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
-        ": cudaGetLastError() returned error after function call:\n"
-        << cudaGetErrorString(err) );
-    err = cudaThreadSynchronize();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
-        ": cudaThreadSynchronize() returned error after function call:\n"
-        << cudaGetErrorString(err) );
-#endif
-    cusparseStatus_t stat;
-    stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
-        *sess, op, numMatRows, numRHS, numMatCols, numNZ_, &s_alpha,
-        *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(),
-        data_x, stride_x, &s_beta, data_y, stride_y);
-#ifdef HAVE_KOKKOS_DEBUG
-    err = cudaGetLastError();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
-        ": cudaGetLastError() returned error after function call:\n"
-        << cudaGetErrorString(err) );
-    err = cudaThreadSynchronize();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
-        ": cudaThreadSynchronize() returned error after function call:\n"
-        << cudaGetErrorString(err) );
-#endif
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        stat != CUSPARSE_STATUS_SUCCESS,
-        std::runtime_error, ": CSRMM returned error " << stat);
-    return;
-  }
-
-
-  template <class Scalar, class Node>
-  template <class DomainScalar, class RangeScalar>
-  void CUSPARSEOps<Scalar,Node>::multiply(Teuchos::ETransp trans,
-                                          RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
-                                          RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
-  {
-    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
-    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
-                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
-    //
-    std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
-    // get pointers,stride from X and Y
-    int stride_x = (int)X.getStride(),
-        stride_y = (int)Y.getStride();
-    const Scalar * data_x = X.getValues().getRawPtr();
-    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
-    const int numMatRows = Y.getNumRows();
-    const int numMatCols = X.getNumRows();
-    const int numRHS     = X.getNumCols();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumCols() != Y.getNumCols(),
-        std::runtime_error, "X and Y do not have the same number of column vectors.")
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)Y.getNumRows() != (size_t)numRows_,
-        std::runtime_error, "Y does not have the same number of rows as does the matrix.")
-    // call mat-vec
-    cusparseOperation_t op;
-    RCP<const cusparseHandle_t> hndl = CUSPARSEdetails::Session::getHandle();
-    if      (trans == Teuchos::NO_TRANS)     op = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    else if (trans == Teuchos::TRANS)        op = CUSPARSE_OPERATION_TRANSPOSE;
-    else /* (trans == Teuchos::CONJ_TRANS)*/ op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
-    const Scalar s_alpha = (Scalar)alpha,
-                 s_beta  = (Scalar)beta;
-    cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
-        *hndl, op, numMatRows, numRHS, numMatCols, numNZ_, &s_alpha,
-        *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(),
-        data_x, stride_x, &s_beta, data_y, stride_y);
-#ifdef HAVE_KOKKOS_DEBUG
-    cudaError_t err = cudaGetLastError();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
-        ": cudaGetLastError() returned error after function call:\n"
-        << cudaGetErrorString(err) );
-    err = cudaThreadSynchronize();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error,
-        ": cudaThreadSynchronize() returned error after function call:\n"
-        << cudaGetErrorString(err) );
-#endif
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        stat != CUSPARSE_STATUS_SUCCESS,
-        std::runtime_error, ": CSRMM returned error " << stat);
-    return;
-  }
 
 
 

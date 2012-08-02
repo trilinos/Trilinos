@@ -216,7 +216,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-               const ArrayRCP<const LocalOrdinal>& NumEntriesPerRowToAlloc,
+               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
                ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -272,7 +272,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
                const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-               const ArrayRCP<const LocalOrdinal>& NumEntriesPerRowToAlloc,
+               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
                ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -330,7 +330,9 @@ namespace Tpetra {
        \note If the matrix row already contains entries at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
        \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
     */
-    void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals);
+    void insertLocalValues(LocalOrdinal localRow, 
+                           const ArrayView<const LocalOrdinal> &cols, 
+                           const ArrayView<const Scalar> &vals);
 
     //! \brief Replace matrix entries, using global IDs.
     /** All index values must be in the global space.
@@ -757,42 +759,6 @@ namespace Tpetra {
                       size_t constantNumPackets,
                       Distributor &distor,
                       CombineMode combineMode);
-    //@}
-    //! \name Deprecated routines to be removed at some point in the future.
-    //@{
-
-    /** \brief Deprecated. Re-allocate the data into contiguous storage.
-
-        This method is deprecated and will be removed in a future version of Tpetra, as
-        the implementation of storage optimization has been below Tpetra to Kokkos.
-
-        Currently, the implementation simply calls resumeFill() and then fillComplete(OptimizeStorage). As such, it is
-        required to be called by all nodes that participate in the associated communicator.
-    */
-    TPETRA_DEPRECATED void optimizeStorage();
-
-    //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
-    TPETRA_DEPRECATED void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayRCP<const GlobalOrdinal> &indices, ArrayRCP<const Scalar> &values) const;
-
-    //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
-    TPETRA_DEPRECATED void getLocalRowView(LocalOrdinal LocalRow, ArrayRCP<const LocalOrdinal> &indices, ArrayRCP<const Scalar> &values) const;
-
-    //! Deprecated. Replaced by localMultiply().
-    template <class DomainScalar, class RangeScalar>
-    TPETRA_DEPRECATED
-    void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
-
-    //! Deprecated. Replaced by localSolve().
-    template <class DomainScalar, class RangeScalar>
-    TPETRA_DEPRECATED
-    void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
-
-    //! Deprecated. Now takes a ParameterList.
-    TPETRA_DEPRECATED void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os);
-
-    //! Deprecated. Now takes a ParameterList.
-    TPETRA_DEPRECATED void fillComplete(OptimizeOption os);
-
     //@}
 
   private:

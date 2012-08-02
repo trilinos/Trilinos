@@ -47,7 +47,7 @@
 // includes for all operators
 #include "PDP10_TestOps.hpp"
 
-template SumOp<int>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce<SumOp<int> >(int, int, SumOp<int>);
-template SumOp<float>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce<SumOp<float> >(int, int, SumOp<float>);
-template void Kokkos::ThrustGPUNode::parallel_for<InitOp<int> >(int, int, InitOp<int>);
-template void Kokkos::ThrustGPUNode::parallel_for<InitOp<float> >(int, int, InitOp<float>);
+KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<int> )
+KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<float> )
+KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<int> )
+KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<float> )

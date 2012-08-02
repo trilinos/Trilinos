@@ -194,26 +194,6 @@ namespace Tpetra
                                    const Teuchos::ArrayView<LocalOrdinal> &Indices,
                                    size_t &NumIndices) const = 0;
 
-      //! Get a persisting const view of the entries in a specified global row of the graph.
-      /*!
-        \param GlobalRow - (In) Global row from which to retrieve graph entries.
-
-         Note: If \c GlobalRow does not belong to this node, then returns <tt>Teuchos::null</tt>.
-
-        \pre isLocallyIndexed()==false
-       */
-      TPETRA_DEPRECATED virtual Teuchos::ArrayRCP<const GlobalOrdinal> getGlobalRowView(GlobalOrdinal GlobalRow) const = 0;
-
-      //! Get a persisting const view of the entries in a specified local row of the graph.
-      /*!
-        \param LocalRow - (In) Local row from which to retrieve graph entries.
-
-         Note: If \c LocalRow is not valid for this node, then returns <tt>Teuchos::null</tt>.
-
-        \pre isGloballyIndexed()==false
-       */
-      TPETRA_DEPRECATED virtual Teuchos::ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const = 0;
-
       //@}
 
   }; // class RowGraph

@@ -91,8 +91,14 @@ IF (Kokkos_ENABLE_Thrust)
     )
   APPEND_SET(TIMING_INSTALLS Kokkos_ThrustGPUNodeTestAndTiming)
 
-  CUDA_ADD_EXECUTABLE(Kokkos_CUDABuiltAxpy CUDABuiltAxpy.cu)
-  TARGET_LINK_LIBRARIES(Kokkos_CUDABuiltAxpy kokkosnodeapi)
+  CUDA_COMPILE(CUDA_FILES CUDABuiltAxpy.cu)
+  TRIBITS_ADD_EXECUTABLE(
+    CUDABuiltAxpy 
+    SOURCES CUDABuiltAxpy.cpp
+            ${CUDA_FILES}
+    COMM serial mpi
+    DEPLIBS kokkosnodeapi
+  )
 ENDIF()
 
 INSTALL(TARGETS ${TIMING_INSTALLS}
