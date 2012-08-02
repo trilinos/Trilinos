@@ -291,7 +291,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Zoltan, Build3PDEs)
   {
 
-    return; //FIXME need to fix matrix to use either a blocked or strided map.
+    return;
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
@@ -370,6 +370,9 @@ namespace MueLuTests {
 
     A->fillComplete();
     A->SetFixedBlockSize(dofsPerNode);
+    //A->PrintViews(*fos);
+    A->SwitchToView("stridedMaps");
+    std::cout << "block size = " << A->GetFixedBlockSize() << std::endl;
     level.Set("A",A);
 
     //build coordinates
