@@ -330,18 +330,19 @@ void LocalFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
 					      const Teuchos::ArrayView<Scalar> &Values,
 					      size_t &NumEntries) const 
 { 
-  TEUCHOS_TEST_FOR_EXCEPTION((LocalRow < 0 || (size_t) LocalRow >=  NumRows_ || (size_t) Indices.size() <  NumEntries_[LocalRow]), std::runtime_error, "Ifpack2::LocalFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
+  TEUCHOS_TEST_FOR_EXCEPTION((LocalRow < 0 || (size_t) LocalRow >=  NumRows_ || (size_t) Indices.size() <  NumEntries_[LocalRow]), std::runtime_error, "Ifpack2::LocalFilter::getLocalRowCopy invalid row or array size.");
 
+  size_t A_NumEntries=0;
   // always extract using the object Values_ and Indices_.
   // This is because I need more space than that given by
   // the user (for the external nodes)
-  A_->getLocalRowCopy(LocalRow,Indices_(),Values_(),NumEntries);
+  A_->getLocalRowCopy(LocalRow,Indices_(),Values_(),A_NumEntries);
 
   // populate the user's vectors
-  NumEntries = 0;
-  for (LocalOrdinal j = 0 ; j < Indices_.size(); ++j) {
+  NumEntries=0;
+  for (size_t j = 0 ; j < A_NumEntries; ++j) {
     // only local indices
-    if (( size_t)Indices_[j] < NumRows_ ) {
+    if ((size_t)Indices_[j] < NumRows_ ) {
       Indices[NumEntries] = Indices_[j];
       Values[NumEntries]  = Values_[j];
       NumEntries++;
