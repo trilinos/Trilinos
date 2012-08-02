@@ -31,6 +31,7 @@
 #include "Stokhos_LanczosPCEBasis.hpp"
 #include "Stokhos_LanczosProjPCEBasis.hpp"
 #include "Stokhos_QuadratureFactory.hpp"
+#include "Stokhos_ProductBasis.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
@@ -66,8 +67,8 @@ ProductLanczosGramSchmidtPCEBasis(
     // depend on only a single dimension.  In this case use the corresponding
     // original coordinate basis.  Convention is:  -2 -- not invariant, -1 --
     // constant, i >= 0 pce depends only on dimension i
-    // if (prod_basis != Teuchos::null)
-    //   is_invariant[i] = isInvariant(pce[i]);
+    if (prod_basis != Teuchos::null)
+      is_invariant[i] = isInvariant(pce[i]);
     if (is_invariant[i] >= 0) {
       coordinate_bases.push_back(coord_bases[is_invariant[i]]);
     }
@@ -104,7 +105,9 @@ ProductLanczosGramSchmidtPCEBasis(
   tensor_lanczos_basis = 
     Teuchos::rcp(
       new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(
-	coordinate_bases));
+	coordinate_bases,
+	params.get("Cijk Drop Tolerance", 1.0e-15),
+	params.get("Use Old Cijk Algorithm", false)));
 
   // Build Psi matrix -- Psi_ij = Psi_i(x^j)*w_j/<Psi_i^2>
   const Teuchos::Array<value_type>& weights = quad->getQuadWeights();
@@ -354,30 +357,6 @@ getName() const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::Array<ordinal_type>
-Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
-getTerm(ordinal_type i) const
-{
-  return tensor_lanczos_basis->getTerm(i);
-}
-
-template <typename ordinal_type, typename value_type>
-ordinal_type
-Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
-getIndex(const Teuchos::Array<ordinal_type>& term) const
-{
-  return tensor_lanczos_basis->getIndex(term);
-}
-
-template <typename ordinal_type, typename value_type>
-Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >
-Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
-getCoordinateBases() const
-{
-  return tensor_lanczos_basis->getCoordinateBases();
-}
-
-template <typename ordinal_type, typename value_type>
 void
 Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
 transformToOriginalBasis(const value_type *in, value_type *out,
@@ -427,21 +406,6 @@ Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
 getReducedQuadrature() const
 {
   return reduced_quad;
-}
-
-template <typename ordinal_type, typename value_type>
-void 
-Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
-getBasisAtOriginalQuadraturePoints(
-  Teuchos::Array< Teuchos::Array<double> >& red_basis_vals) const
-{
-  ordinal_type nqp = Q.numRows();
-  red_basis_vals.resize(nqp);
-  for (ordinal_type i=0; i<nqp; i++) {
-    red_basis_vals[i].resize(sz);
-    for (ordinal_type j=0; j<sz; j++)
-      red_basis_vals[i][j] = Q(j,i);
-  }
 }
 
 template <typename ordinal_type, typename value_type>

@@ -50,6 +50,15 @@ MonomialProjGramSchmidtPCEBasis(
   orthogonalization_method(params.get("Orthogonalization Method", 
 				      "Householder"))
 {
+  // Check for pce's that are constant and don't represent true random
+  // dimensions
+  Teuchos::Array< const Stokhos::OrthogPolyApprox<ordinal_type, value_type>* > pce2;
+  for (ordinal_type i=0; i<pce.size(); i++) {
+    if (pce[i].standard_deviation() > 1.0e-15)
+      pce2.push_back(&pce[i]);
+  }
+  d = pce2.size();
+    
   // Compute basis terms -- 2-D array giving powers for each linear index
   ordinal_type max_sz;
   CPBUtils::compute_terms(max_p, d, max_sz, terms, num_terms);
@@ -72,20 +81,22 @@ MonomialProjGramSchmidtPCEBasis(
   // Compute norms of each pce for rescaling
   Teuchos::Array<value_type> pce_norms(d, 0.0);
   for (ordinal_type j=0; j<d; j++) {
-    for (ordinal_type i=0; i<pce_sz; i++)
-      pce_norms[j] += pce[j][i]*pce[j][i]*pce_basis->norm_squared(i);
+    for (ordinal_type i=0; i<d; i++)
+      pce_norms[j] += (*pce2[j])[i]*(*pce2[j])[i]*pce_basis->norm_squared(i);
     pce_norms[j] = std::sqrt(pce_norms[j]);
   }
 
   // Compute F matrix -- PCEs evaluated at all quadrature points
   // Since F is used in the reduced quadrature below as the quadrature points
   // for this reduced basis, does scaling by the pce_norms mess up the points?
+  // No -- F essentially defines the random variables this basis is a function
+  // of, and thus they can be scaled in any way we want.  Because we don't 
+  // explicitly write the basis in terms of F, the scaling is implicit.
   SDM F(nqp, d);
   Teuchos::Array< Teuchos::Array<value_type> > values(nqp);
-  for (ordinal_type i=0; i<nqp; i++)
+  for (ordinal_type i=0; i<nqp; i++) 
     for (ordinal_type j=0; j<d; j++)
-      //F(i,j) = pce[j].evaluate(points[i], basis_values[i]) / pce_norms[j];
-      F(i,j) = pce[j].evaluate(points[i], basis_values[i]);
+      F(i,j) = pce2[j]->evaluate(points[i], basis_values[i]);
 
   // Compute B matrix -- monomials in F
   // for i=0,...,nqp-1
@@ -98,7 +109,7 @@ MonomialProjGramSchmidtPCEBasis(
     for (ordinal_type j=0; j<max_sz; j++) {
       B(i,j) = 1.0;
       for (ordinal_type k=0; k<d; k++)
-	B(i,j) *= std::pow(F(i,k) / pce_norms[k], terms[j][k]);
+	B(i,j) *= std::pow(F(i,k), terms[j][k]);
     }
   }
 
@@ -301,30 +312,6 @@ getName() const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::Array<ordinal_type>
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
-getTerm(ordinal_type i) const
-{
-  return terms[i];
-}
-
-template <typename ordinal_type, typename value_type>
-ordinal_type
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
-getIndex(const Teuchos::Array<ordinal_type>& term) const
-{
-  return CPBUtils::compute_index(term, terms, num_terms, p);
-}
-
-template <typename ordinal_type, typename value_type>
-Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
-getCoordinateBases() const
-{
-  return Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >();
-}
-
-template <typename ordinal_type, typename value_type>
 void
 Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
 transformToOriginalBasis(const value_type *in, value_type *out,
@@ -374,19 +361,4 @@ Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
 getReducedQuadrature() const
 {
   return reduced_quad;
-}
-
-template <typename ordinal_type, typename value_type>
-void 
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
-getBasisAtOriginalQuadraturePoints(
-  Teuchos::Array< Teuchos::Array<double> >& red_basis_vals) const
-{
-  ordinal_type nqp = Q.numRows();
-  red_basis_vals.resize(nqp);
-  for (ordinal_type i=0; i<nqp; i++) {
-    red_basis_vals[i].resize(sz);
-    for (ordinal_type j=0; j<sz; j++)
-      red_basis_vals[i][j] = Q(i,j);
-  }
 }
