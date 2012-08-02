@@ -135,6 +135,19 @@ namespace Xpetra {
       CreateView(viewLabel, rangeMap, domainMap);   
     }
 
+    //! Print all of the views associated with the Operator.
+    void PrintViews(Teuchos::FancyOStream &out) {
+      int last = out.getOutputToRootOnly();
+      out.setOutputToRootOnly(0);
+      Teuchos::Array<viewLabel_t> viewLabels;
+      Teuchos::Array<RCP<OperatorView> > viewList;
+      operatorViewTable_.arrayify(viewLabels,viewList);
+      out << "views associated with this operator" << std::endl;
+      for (int i=0; i<viewLabels.size(); ++i)
+        out << viewLabels[i] << std::endl;
+      out.setOutputToRootOnly(last);
+    }
+
     
     void RemoveView(const viewLabel_t viewLabel) {
       TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' does not exist.");
