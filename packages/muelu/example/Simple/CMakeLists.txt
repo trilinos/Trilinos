@@ -17,17 +17,6 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     COMM serial mpi
     )
   
-  #Simple-Complex
-  IF(HAVE_MUELU_COMPLEX)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Simple-Complex
-      SOURCES Simple-Complex.cpp
-      DEPLIBS muelu muelu-xpetra
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
-  ENDIF()
-
   #Simple-LongInt
   IF(Teuchos_ENABLE_LONG_LONG_INT)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -74,6 +63,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+
   #Simple-Tpetra
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Simple-Tpetra
@@ -82,9 +72,22 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
     COMM serial mpi
     DEPLIBS muelu muelu-xpetra muelu-adapters
     )
+
+  #Simple-Complex
+  IF(HAVE_MUELU_COMPLEX)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Simple-Complex
+      SOURCES Simple-Complex.cpp
+      DEPLIBS muelu muelu-xpetra
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+  ENDIF()
+
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
+
   #Simple-Epetra
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Simple-Epetra
@@ -93,6 +96,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE
     COMM serial mpi
     DEPLIBS muelu muelu-xpetra muelu-adapters
     )
+
 ENDIF()
 
 #TODO: NUM_MPI_PROCS->4
