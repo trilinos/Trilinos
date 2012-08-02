@@ -374,6 +374,7 @@ namespace Kokkos {
       {
         using Teuchos::ArrayRCP;
         using Teuchos::arcp;
+        using Teuchos::as;
 
         TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
           "AltSparseOpsFirstTouchAllocator::copyStorage: The input rowPtrs array "
@@ -384,8 +385,10 @@ namespace Kokkos {
         const Ordinal numRows = rowPtrs.size() - 1;
         const size_t totalNumEntries = rowPtrs[numRows];
 
+        // Casting from signed to unsigned won't cause overflow.
         TEUCHOS_TEST_FOR_EXCEPTION(
-          inputVals.size() != totalNumEntries, std::invalid_argument,
+          as<size_t> (inputVals.size()) != totalNumEntries,
+          std::invalid_argument,
           "AltSparseOpsFirstTouchAllocator::copyStorage: The inputVals array "
           "must have as many entries as the number of entries in the local "
           "sparse matrix, namely " << totalNumEntries << ".");
