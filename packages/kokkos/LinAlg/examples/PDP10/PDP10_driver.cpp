@@ -175,7 +175,7 @@
   /////////////////////////////////////////////////////////
   template <class Node>
   RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type>
-  gen_prob(RCP<Node> node, int N, int &totalNNZ)
+  gen_prob(RCP<Node> node, int N, size_t &totalNNZ)
   {
     typedef typename Kokkos::DefaultKernels<float,int,Node>::SparseOps   DSM;
     typedef typename DSM::template bind_scalar<float>::other_type       fDSM;
@@ -186,11 +186,11 @@
     RCP<MAT>  A= rcp(new MAT(G,null));
     // allocate buffers for offsets, indices and values
     totalNNZ = 3*N - 2;
-    ArrayRCP<int>   offsets(N+1);
-    ArrayRCP<int>   inds(totalNNZ);
-    ArrayRCP<float> vals(totalNNZ);
+    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<int>    inds(totalNNZ);
+    ArrayRCP<float>  vals(totalNNZ);
     {
-      int NNZsofar = 0;
+      size_t NNZsofar = 0;
       offsets[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
@@ -228,7 +228,7 @@
     typedef Kokkos::DefaultArithmetic< Kokkos::MultiVector<float,Node> > DMVA;
     RCP<Node> node = getNode<Node>();
     // create matrix
-    int NNZ = 0;
+    size_t NNZ = 0;
     RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type> A;
     A = gen_prob<Node>(node,N,NNZ);
     // Variables needed for iteration
@@ -286,7 +286,7 @@
     typedef Kokkos::DefaultArithmetic<MV> DMVA;
     RCP<Node> node = getNode<Node>();
     // create matrix
-    int NNZ = 0;
+    size_t NNZ = 0;
     RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type> A;
     A = gen_prob<Node>(node,N,NNZ);
     // Variables needed for iteration
