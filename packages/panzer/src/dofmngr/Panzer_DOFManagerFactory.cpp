@@ -49,7 +49,5 @@
 
 template class panzer::DOFManagerFactory<int,long int>;
 template class panzer::DOFManagerFactory<int,int>;
-template class panzer::DOFManagerFactory<short,int>;
-template class panzer::DOFManagerFactory<char,long int>;
 
 #endif

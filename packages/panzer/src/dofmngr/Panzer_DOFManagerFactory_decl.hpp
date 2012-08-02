@@ -50,6 +50,8 @@ namespace panzer {
 template <typename LO,typename GO>
 class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
 public:
+   DOFManagerFactory() : useDOFManager2_(false) {}
+
    virtual ~DOFManagerFactory() {}
 
 
@@ -67,6 +69,22 @@ public:
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder="") const;
+
+   void setUseDOFManager2(bool flag)
+   { useDOFManager2_ = flag; }
+
+   bool getUseDOFManager2() const
+   { return useDOFManager2_; }
+
+protected:
+   template <typename DOFManagerT>
+   Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+   buildUniqueGlobalIndexer(MPI_Comm mpiComm,
+                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const std::string & fieldOrder) const;
+
+   bool useDOFManager2_;
 };
 
 }

@@ -68,41 +68,47 @@ public:
 
   DOFManager2();
 
-  //TODO: Cosntructor that takes a connection manager.
-  
-  //Adds a Connection Manager that will be associated with this DOFManager2.
+  /** Constructor that sets the connection manager and communicator
+    * objects. This is equivalent to calling the default constructor and
+    * then "setConnManager" routine.
+    */
+  DOFManager2(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+
+  //! Adds a Connection Manager that will be associated with this DOFManager2.
   void setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm);
 
   Teuchos::RCP<const ConnManager<LO,GO> > getConnManager() const
   { return connMngr_; }
 
-  //Adds a field to be used in creating the Global Numbering
+  //! Adds a field to be used in creating the Global Numbering
   int addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern);
 
-  //Adds a field with an option for specifying the block.
+  //! Adds a field with an option for specifying the block.
   int addField(const std::string & blockID, const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern);
 
 
-  //Returns the fieldpattern of the given name
-  //This could also be done using the number you'd get from getFieldNum which
-  //isn't yet included.
+  /** Returns the fieldpattern of the given name
+    * This could also be done using the number you'd get from getFieldNum which
+    * isn't yet included.
+    */
   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & name);
 
   void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
   void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
-  //gets the number of fields
+  //! gets the number of fields
   int getNumFields() const;
 
-  //gets the field pattern so you can find a particular
-  //field in the GIDs aray.
+  /** gets the field pattern so you can find a particular
+    * field in the GIDs aray.
+    */
   const std::vector<int> & getGIDFieldOffsets(const std::string & blockID, int fieldNum) const;
 
-  //get associated GIDs for a given local element
+  //! get associated GIDs for a given local element
   void getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint="") const;
 
-  //builds the global unknowns array
+  //! builds the global unknowns array
   void buildGlobalUnknowns();
   
   int getFieldNum(const std::string & string) const;
@@ -110,23 +116,27 @@ public:
   Teuchos::RCP<Teuchos::Comm<int> > getComm() const
   { return communicator_; }
 
+  Teuchos::RCP<const FieldPattern> getGeometricFieldPattern() const
+  { return ga_fp_; }
+
   void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
   { connMngr_->getElementBlockIds(elementBlockIds); }
   
-  //Because we only have one element block, if the field is present, and
-  //the block is valid. It works
+  /** Because we only have one element block, if the field is present, and
+    * the block is valid. It works
+    */
   bool fieldInBlock(const std::string & field, const std::string & block) const;
 
-  //Because we only have one element block, we are guarenteed 
-  //that all fields are going to be in the one block we have
+  /** Because we only have one element block, we are guarenteed 
+    * that all fields are going to be in the one block we have
+    */
   const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const;
 
 //************************************************************************
 
   //TODO:this.
   const std::pair<std::vector<int>,std::vector<int> > & 
-  getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::method not implemented yet!"); }
+  getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const;
 
   const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const
   { return connMngr_->getElementBlock(blockId); }
@@ -140,8 +150,7 @@ public:
   bool validFieldOrder(const std::vector<std::string> & proposed_fieldOrder);
 
   //TODO:this
-  virtual void buildUnknownsOrientation()
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::method not implemented yet!"); }
+  void buildUnknownsOrientation();
 
   bool getOrientationsRequired() const
   { return requireOrientations_; }
@@ -150,10 +159,10 @@ public:
   { requireOrientations_ = ro; }
 
   //TODO:this
-  void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::method not implemented yet!"); }
+  void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const;
 
   const std::string & getFieldString(int num) const;
+
 
 protected:
   
@@ -178,7 +187,12 @@ protected:
 
   std::vector<GO> owned_;
   std::vector<GO> owned_and_ghosted_;
+  //Element GIDS ordered by LID.
   std::vector<std::vector< GO > > elementGIDs_;
+
+  //Mimics the functionality of the getElemenentBlcokGIDCount in
+  //the original DOFManager. Indexed according to blockOrder_.
+  std::vector<int> elementBlockGIDCount_;
 
   int numFields_;
 

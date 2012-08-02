@@ -62,10 +62,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, BasicCreation ){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",1);
-    pl->set("Y Blocks",1);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",2);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",4);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -110,10 +110,10 @@ namespace {
   }
   TEUCHOS_UNIT_TEST( DOFManager2_tests, ReorderingFields ){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",1);
-    pl->set("Y Blocks",1);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",2);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",4);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -262,10 +262,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, myOwnedwithGhosted){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
+    pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",4);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -310,10 +310,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, gidsAreSet){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
+    pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",4);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -363,10 +363,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, gidFieldAssociations){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
-    pl->set("Y Blocks",2);
-    pl->set("X Elements",5);
-    pl->set("Y Elements",5);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",4);
+    pl->set("Y Elements",2);
     
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
@@ -439,12 +439,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dmyOwnedwithGhosted){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
-    pl->set("Y Blocks",2);
-    pl->set("Z Blocks",2);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("Z Blocks",1);
     pl->set("X Elements",4);
-    pl->set("Y Elements",4);
-    pl->set("Z Elements",4);
+    pl->set("Y Elements",2);
+    pl->set("Z Elements",2);
     
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
@@ -491,12 +491,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dgidsAreSet){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
-    pl->set("Y Blocks",2);
-    pl->set("Z Blocks",2);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("Z Blocks",1);
     pl->set("X Elements",4);
-    pl->set("Y Elements",4);
-    pl->set("Z Elements",4);
+    pl->set("Y Elements",2);
+    pl->set("Z Elements",2);
     
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
@@ -548,12 +548,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dgidFieldAssociations){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",4);
-    pl->set("Y Blocks",2);
-    pl->set("Z Blocks",2);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("Z Blocks",1);
     pl->set("X Elements",4);
-    pl->set("Y Elements",4);
-    pl->set("Z Elements",4);
+    pl->set("Y Elements",2);
+    pl->set("Z Elements",2);
     
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
@@ -623,6 +623,61 @@ namespace {
 
   }
 
+  
+  TEUCHOS_UNIT_TEST( DOFManager2_tests, multiBloc){
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",1);
+    pl->set("Y Blocks",2);
+    pl->set("X Elements",5);
+    pl->set("Y Elements",5);
+    
+    panzer_stk::SquareQuadMeshFactory factory; 
+    factory.setParameterList(pl);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+    RCP<panzer::DOFManager2<LO,GO> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<LO,GO>());
+    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+
+    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+     
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+
+    std::vector<std::string> names;
+    names.push_back("Velocity");
+    names.push_back("Temperature");
+    names.push_back("Radiation Levels");
+    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager2->addField("eblock-0_0",names[0], pattern);
+    my_DOFManager2->addField("eblock-0_1",names[1], pattern);
+    my_DOFManager2->addField(names[2], pattern);
+
+
+    my_DOFManager2->buildGlobalUnknowns();
+    //Now that we have created the SingleBlockDOFManager, we can ensure it was created correctly.
+    TEST_EQUALITY(my_DOFManager2->getConnManager(),conn);
+
+
+    TEST_EQUALITY(my_DOFManager2->getFieldNum("Velocity"),0);
+    TEST_EQUALITY(my_DOFManager2->getFieldNum("Temperature"),1);
+    TEST_EQUALITY(my_DOFManager2->getFieldNum("Radiation Levels"),2);
+
+    TEST_EQUALITY(my_DOFManager2->getNumFields(), 3);
+
+    //const std::vector<GO> & vel_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",0); 
+    //const std::vector<GO> & tem_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",1); 
+    //const std::vector<GO> & rad_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",2); 
+    TEST_ASSERT(my_DOFManager2->fieldInBlock("Velocity","eblock-0_0"));
+    TEST_ASSERT(!my_DOFManager2->fieldInBlock("Velocity","eblock-0_1"));
+    TEST_ASSERT(my_DOFManager2->fieldInBlock("Temperature","eblock-0_1"));
+    TEST_ASSERT(!my_DOFManager2->fieldInBlock("Temperature","eblock-0_0"));
+    TEST_ASSERT(my_DOFManager2->fieldInBlock("Radiation Levels","eblock-0_1"));
+    TEST_ASSERT(my_DOFManager2->fieldInBlock("Radiation Levels","eblock-0_0"));
+
+    //TEST_EQUALITY(vel_offests.size(),tem_offests.size());
+    //TEST_EQUALITY(tem_offests.size(),rad_offests.size());
+  }
 
 
 } /*generic namespace*/ 
