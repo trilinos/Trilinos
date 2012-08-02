@@ -45,7 +45,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Ifpack2_DiagonalFilter.hpp>
 #include <Ifpack2_LocalFilter.hpp>
-//#include "Ifpack2_DropFilter.h"
+#include <Ifpack2_DropFilter.hpp>
 //#include "Ifpack2_SparsityFilter.h"
 //#include "Ifpack2_SingletonFilter.h"
 #include <Teuchos_RefCountPtr.hpp>
@@ -58,12 +58,15 @@ using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
 using namespace std;
 using Teuchos::rcp;
+using Teuchos::RCP;
 
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
   
   // Useful matrices and such (tridiagonal test)
   global_size_t num_rows_per_proc = 5;
@@ -72,17 +75,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap), y(rowmap), z(rowmap), a(rowmap),b(rowmap);
 
 
+  // Fill x for all time
+  Teuchos::ScalarTraits<double>::seedrandom(24601);
+  x.randomize();
+
+
+
   // ====================================== //
   // create a new matrix, diagonally filtered //
   // ====================================== //
   Scalar alpha = 100.0;
   Scalar beta = 1.0;
-  Ifpack2::DiagonalFilter<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > DropA(Matrix,alpha,beta);
-  Teuchos::ScalarTraits<double>::seedrandom(24601);
-  x.randomize();
+  Ifpack2::DiagonalFilter<CRS > DiagA(Matrix,alpha,beta);
 
   // Apply w/ Filter
-  DropA.apply(x,y);
+  DiagA.apply(x,y);
 
   // Apply manually
   Matrix->getLocalDiagCopy(b); 
@@ -96,10 +103,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ====================================== //
   // create a new matrix, locally filtered  //
   // ====================================== //
-  Ifpack2::LocalFilter<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > LocalA(Matrix);
-  Teuchos::ScalarTraits<double>::seedrandom(24601);
-  x.randomize();
-
+  Ifpack2::LocalFilter<CRS > LocalA(Matrix);
 
   // Apply w/ filter
   LocalA.apply(x,y);
@@ -123,18 +127,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
-
-
-
   // ====================================== //
   // create a new matrix, dropping by value //
   // ====================================== //
-  //
-  // drop all elements below 4.0. Only the upper-right element
-  // is maintained, plus all the diagonals that are not
-  // considering in dropping.
-  //  Ifpack_DropFilter DropA(Matrix,4.0);
-  //  assert (DropA.MaxNumEntries() == 2);
+  // drop all elements below 1.5. The matrix then becomes diagonal
+  Ifpack2::DropFilter<CRS> DropA(RCP<ROW >(&LocalA,false),1.5);
+				 //(Teuchos::ScalarTraits<Scalar>::magnitudeType) 1.5);
+
+  // Apply w/ filter
+  DropA.apply(x,y);
+
+  // Apply via diagonal
+  Matrix->getLocalDiagCopy(a);
+  z.elementWiseMultiply(1.0,x,a,0.0);
+
+  // Diff
+  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+  
 
   //  cout << "Sparsity, dropping by value" << endl;
   //  Ifpack_PrintSparsity_Simple(DropA);
