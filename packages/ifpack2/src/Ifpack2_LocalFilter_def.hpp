@@ -402,7 +402,7 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdina
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
 
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::LocalFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
+			     "Ifpack2::LocalFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
 
   Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = X.get2dView();
@@ -411,16 +411,25 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdina
   Y.putScalar(zero);
   size_t NumVectors = Y.getNumVectors();
 
-  for (size_t i = 0 ; i < NumRows_ ; ++i) {
-    
-    size_t Nnz;
-    A_->getLocalRowCopy(i,Indices_(),Values_(),Nnz);
 
-    for (size_t j = 0 ; j < Nnz ; ++j) {
-      if ((size_t)Indices_[j] < NumRows_ ) {
+  for (size_t i = 0 ; i < NumRows_ ; ++i) {
+    size_t Nnz;
+    // Use this class's getrow to make the below code simpler
+    getLocalRowCopy(i,Indices_(),Values_(),Nnz);
+    if (mode==Teuchos::NO_TRANS){
+      for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];
-      }
+	  y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];      
+    }
+    else if (mode==Teuchos::TRANS){
+      for (size_t j = 0 ; j < Nnz ; ++j) 
+	for (size_t k = 0 ; k < NumVectors ; ++k)
+	  y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+    }
+    else { //mode==Teuchos::CONJ_TRANS
+      for (size_t j = 0 ; j < Nnz ; ++j) 
+	for (size_t k = 0 ; k < NumVectors ; ++k)
+	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<Scalar>::conjugate(Values_[j]) * x_ptr[k][i];
     }
   }
 }
@@ -430,7 +439,7 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdina
 template<class MatrixType> 
 bool LocalFilter<MatrixType>::hasTransposeApply() const
 {
-  return A_->hasTransposeApply();
+  return false;
 }
 
 //==========================================================================  
