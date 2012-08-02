@@ -53,7 +53,7 @@ double string_to_double(const std::string &s)
 {			 
 	std::istringstream i(s); double x;
 	if (!(i >> x)) return 0; return x;			
-};
+}
 
 void save_polygonal_mesh(std::string file_name, std::vector<double> &x, std::vector<double> &y, std::vector<double> &z,
 	                   std::vector<std::vector<size_t> > &faces, double dm, double tol)
@@ -81,7 +81,7 @@ void save_polygonal_mesh(std::string file_name, std::vector<double> &x, std::vec
 		file << std::endl;
 	}
 	#pragma endregion
-};
+}
 
 void save_face_normals(std::string file_name, std::vector<double> nx, std::vector<double> &ny, std::vector<double> &nz)
 {
@@ -94,7 +94,7 @@ void save_face_normals(std::string file_name, std::vector<double> nx, std::vecto
 		file << nx[i] << " " << ny[i] << " " << nz[i] << std::endl;	
 	}
 	#pragma endregion
-};
+}
 
 int read_input(std::string file_name, double &dm, size_t &random_seed, double &tol, std::vector<double> &xb, std::vector<double> &yb, std::vector<double> &zb,
 	                                  std::vector< std::vector<size_t> > &bfaces, 
@@ -174,7 +174,7 @@ int read_input(std::string file_name, double &dm, size_t &random_seed, double &t
 	}
 	return 0;
 	#pragma endregion
-};
+}
 
 int read_input_stl(std::string file_name, std::vector<double> &xb, std::vector<double> &yb, std::vector<double> &zb,
 	                                  std::vector< std::vector<size_t> > &bfaces)
@@ -235,7 +235,7 @@ int read_input_stl(std::string file_name, std::vector<double> &xb, std::vector<d
 	}
 	return 0;
 	#pragma endregion
-};
+}
 
 
 int main(int argc, char *argv[])
@@ -269,5 +269,5 @@ int main(int argc, char *argv[])
 	std::cout<< "\n*** enter q to quit ...";
 	std::cin >> dummy_cc;*/
     return 0;
-};
+}
 
