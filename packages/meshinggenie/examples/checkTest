@@ -1,0 +1,4 @@
+LOG="${$}.log"
+./MeshingGenie_3dTest > $LOG 2>&1
+diff VCells.dat output.dat
+rm -f $LOG
