@@ -293,7 +293,6 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
                 ZERO = ST::zero();
-    out << "Testing sparse ops " << Teuchos::TypeNameTraits<DSM>::name() << std::endl;
     // generate tridiagonal matrix:
     // [ 1 -1                   ]
     // [-1  3  -1               ]

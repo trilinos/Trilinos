@@ -1,13 +1,13 @@
-/*
+
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               MeshingGenie: Fracture Meshing Services Package 
+//                 Copyright 2011 Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -39,15 +39,52 @@
 // 
 // ************************************************************************
 //@HEADER
-*/
 
-// include for ThrustGPUNode method implementations
-#include "Kokkos_ThrustGPUNode.cuh"
+// R5.0
 
-// includes for all operators
-#include "PDP10_TestOps.hpp"
+#ifndef HYBRID_MESHER_2D_H
+#define HYBRID_MESHER_2D_H
 
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<int> )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED( SumOp<float> )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<int> )
-KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR( InitOp<float> )
+#include "MeshingGenie_2d.h"
+
+class HybridMesher_2d
+{
+ public:
+  //! constructor
+  HybridMesher_2d(double dm, std::vector<double> &VoronoiBoundaries,
+		  std::vector< std::vector<double> > &Holes,
+		  std::vector< std::vector<double> > &Cracks,
+		  std::vector<double> &StructuredBoundary, int NumStr,
+		  int use_fixed_seed)
+    :_dm(dm), _VorBound(VoronoiBoundaries), _Holes(Holes),
+    _Cracks(Cracks), _StrBound(StructuredBoundary), _NumStr(NumStr),
+    _fixed_seed(use_fixed_seed)
+  {};
+
+
+  //! Destructor
+  ~HybridMesher_2d(){ };
+
+  int execute();
+
+  void get_Tessellation(std::vector<double> &x, std::vector<double> &y,
+			std::vector< std::vector<size_t> > &elements);
+
+ private:
+  void pave_region(size_t h, size_t i, size_t num_voronoi);
+
+  std::vector< std::vector<double> > _Cracks;
+  double _dm;
+  std::vector< std::vector<size_t> > _elements;
+  int _fixed_seed;
+  std::vector< std::vector<double> > _Holes;
+  int _NumStr;
+  std::vector<double> _StrBound;
+  std::vector<double> _VorBound;
+  std::vector<double> _x;
+  std::vector<double> _y;
+};
+
+#endif	
+
+
