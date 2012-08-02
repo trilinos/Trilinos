@@ -1127,7 +1127,7 @@ namespace Tpetra {
     //
     RowInfo rowInfo = staticGraph_->getRowInfo(localRow);
     if (indices.size() > 0) {
-      if (isGloballyIndexed() == true) {
+      if (isGloballyIndexed ()) {
         // must convert local indices to global indices
         const Map<LocalOrdinal,GlobalOrdinal,Node> &colMap = *getColMap();
         Array<GlobalOrdinal> gindices(indices.size());
@@ -1141,7 +1141,7 @@ namespace Tpetra {
         inds_view.ginds = gindices();
         staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
       }
-      else if (isLocallyIndexed() == true) {
+      else if (isLocallyIndexed ()) {
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.linds = indices;
         staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
@@ -1823,8 +1823,9 @@ namespace Tpetra {
       catch (std::runtime_error &e) {
         std::ostringstream omsg;
         omsg << e.what() << std::endl
-          << "caught in globalAssemble() in " << __FILE__ << ":" << __LINE__ << std::endl ;
-        throw std::runtime_error(omsg.str());
+             << "caught in globalAssemble() in " << __FILE__ << ":" << __LINE__
+             << std::endl ;
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, omsg.str());
       }
     }
 
@@ -1834,23 +1835,33 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resumeFill(const RCP<ParameterList> &params) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node,
+            class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  resumeFill (const RCP<ParameterList> &params)
+  {
+    std::string tfecfFuncName("resumeFill");
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *getRowMap()->getComm() );
-#endif
-    frobNorm_ = -ScalarTraits<Magnitude>::one();
-    if (isStaticGraph() == false) {
-      myGraph_->resumeFill(params);
+#endif // HAVE_TPETRA_DEBUG
+
+    // We use -1 to indicate that the Frobenius norm need to be recomputed.
+    frobNorm_ = -Teuchos::ScalarTraits<Magnitude>::one();
+    if (! isStaticGraph()) { // Don't resume fill of a nonowned graph.
+      myGraph_->resumeFill (params);
     }
     clearGlobalConstants();
     lclMatrix_ = null;
     lclMatOps_ = null;
     fillComplete_ = false;
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() == false || isFillComplete() == true, std::logic_error,
-        typeName(*this) << "::resumeFill(): Violated stated post-conditions. Please contact Tpetra team.");
-#endif
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! isFillActive() || isFillComplete(), std::logic_error,
+      "::resumeFill(): At end of method, either fill is not active or fill is "
+      "complete.  This violates stated post-conditions.  Please report this bug "
+      "to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
   }
 
 
@@ -1956,9 +1967,13 @@ namespace Tpetra {
     computeGlobalConstants();
     // fill local objects; will fill and finalize local graph if appropriate
     if (myGraph_ != null) {
+      // The matrix owns the graph, so fill the local graph at the
+      // same time as the local matrix.
       fillLocalGraphAndMatrix(params);
     }
     else {
+      // The matrix does _not_ own the graph, and the graph's
+      // structure is already fixed, so just fill the local matrix.
       fillLocalMatrix(params);
     }
     //
