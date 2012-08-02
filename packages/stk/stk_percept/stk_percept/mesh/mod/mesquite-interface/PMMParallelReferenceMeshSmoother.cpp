@@ -189,6 +189,8 @@ namespace stk {
                       m_untangled = true;
                     }
                   if (conv && m_untangled) break;
+      MPI_Barrier( MPI_COMM_WORLD );
+                  if (iter==120) exit(1);
                 }
 
               eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");

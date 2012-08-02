@@ -3631,14 +3631,14 @@ namespace stk {
       copy_field(field_dest, field_src);
     }
 
-    /// copy field state data from one state (src_state) to another (dest_state)
+    /// copy field data from one field (field_src) to another (field_dest)
     void PerceptMesh::copy_field(stk::mesh::FieldBase* field_dest, stk::mesh::FieldBase* field_src)
     {
-      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      stk::mesh::Selector not_aura =   get_fem_meta_data()->locally_owned_part() | get_fem_meta_data()->globally_shared_part() ;
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          //if (on_locally_owned_part(**k)) 
+          if (not_aura(**k)) 
             {
               stk::mesh::Bucket & bucket = **k ;
               unsigned fd_size = bucket.field_data_size(*field_dest);
@@ -3668,8 +3668,9 @@ namespace stk {
 
       // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+
       // the shared part (just the shared boundary)
-      stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
+      //stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
 
     }
 
@@ -3688,11 +3689,11 @@ namespace stk {
     {
       VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpby x null");
       VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpby y null");
-      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      stk::mesh::Selector not_aura =   get_fem_meta_data()->locally_owned_part() | get_fem_meta_data()->globally_shared_part() ;
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (on_locally_owned_part(**k)) 
+          if (not_aura(**k)) 
             {
               stk::mesh::Bucket & bucket = **k ;
               unsigned fd_size = bucket.field_data_size(*field_y);
@@ -3723,15 +3724,17 @@ namespace stk {
 
       // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+
       // the shared part (just the shared boundary)
-      stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
+      //stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
     }
 
     double PerceptMesh::nodal_field_dot(stk::mesh::FieldBase* field_x, stk::mesh::FieldBase* field_y)
     {
       VERIFY_OP_ON(field_x, !=, 0, "nodal_field_dot x null");
       VERIFY_OP_ON(field_y, !=, 0, "nodal_field_dot y null");
-      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      //stk::mesh::Selector not_aura = get_fem_meta_data()->locally_owned_part() | get_fem_meta_data()->globally_shared_part() ;
+      stk::mesh::Selector on_locally_owned_part =   get_fem_meta_data()->locally_owned_part();
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
       double sum=0.0;
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -3768,12 +3771,12 @@ namespace stk {
     void PerceptMesh::nodal_field_set_value(stk::mesh::FieldBase* field_x, double value)
     {
       VERIFY_OP_ON(field_x, !=, 0, "nodal_field_dot x null");
-      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      stk::mesh::Selector not_aura =   get_fem_meta_data()->locally_owned_part() | get_fem_meta_data()->globally_shared_part() ;
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           // do it for all nodes
-          //if (on_locally_owned_part(**k)) 
+          //if (not_aura(**k)) 
             {
               stk::mesh::Bucket & bucket = **k ;
               unsigned fd_size = bucket.field_data_size(*field_x);
@@ -3821,11 +3824,11 @@ namespace stk {
       VERIFY_OP_ON(field_x, !=, 0, "nodal_field_axpbypgz x null");
       VERIFY_OP_ON(field_y, !=, 0, "nodal_field_axpbypgz y null");
       VERIFY_OP_ON(field_z, !=, 0, "nodal_field_axpbypgz z null");
-      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      stk::mesh::Selector not_aura =   get_fem_meta_data()->locally_owned_part() | get_fem_meta_data()->globally_shared_part() ;
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (on_locally_owned_part(**k)) 
+          if (not_aura(**k)) 
             {
               stk::mesh::Bucket & bucket = **k ;
               unsigned fd_size = bucket.field_data_size(*field_y);
@@ -3858,8 +3861,9 @@ namespace stk {
 
       // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
       stk::mesh::communicate_field_data(get_bulk_data()->shared_aura(), fields);
+      
       // the shared part (just the shared boundary)
-      stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
+      //stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
     }
 
     //====================================================================================================================================

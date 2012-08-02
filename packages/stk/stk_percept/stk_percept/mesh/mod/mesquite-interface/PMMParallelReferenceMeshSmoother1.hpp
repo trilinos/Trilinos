@@ -39,6 +39,7 @@ namespace stk {
       double m_scale;
 
       void get_gradient( Mesh* mesh, MeshDomain *domain);
+      void get_scale( Mesh* mesh, MeshDomain *domain);
       void debug_print(double alpha);
 
       virtual double run_one_iteration( Mesh* mesh,  MeshDomain *domain,
