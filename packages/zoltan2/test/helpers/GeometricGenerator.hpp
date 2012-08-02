@@ -61,6 +61,9 @@ struct CoordinatePoint {
 		return true;
 	}
    */
+  CoordinatePoint(){
+    x = 0;y=0;z=0;
+  }
 };
 
 template <typename T>
