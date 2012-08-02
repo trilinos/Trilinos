@@ -97,7 +97,7 @@ namespace stk
       Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
 
 
-#define DO_TESTS 0
+#define DO_TESTS 1
 #if DO_TESTS
 
 #define EXTRA_PRINT 0
@@ -498,6 +498,8 @@ namespace stk
                       }
                   }
               }
+
+            eMesh.save_as(input_files_loc+"quad_4_smooth.1.e");
 
             // save state of original mesh
             // field, dst, src: 

@@ -564,7 +564,7 @@ namespace stk {
 
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
-      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - applies to Hex - moves nodes after geometry snap to try to avoid bad meshes");
+      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry snap to try to avoid bad meshes");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
@@ -713,6 +713,7 @@ namespace stk {
           PerceptMesh eMesh(0);
           std::string mesh_name = Ioss::Utils::decode_filename(input_mesh_save, 0, m_M);
           eMesh.open(mesh_name);
+          if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
           s_spatialDim = eMesh.get_spatial_dim();
           VERIFY_OP_ON(s_spatialDim, >=, 2, "AdaptMain bad spatial_dim");
         }
@@ -838,6 +839,7 @@ namespace stk {
                     if (do_normal_pass)
                       {
                         eMesh.open(input_mesh);
+                        if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
                         if (!s_spatialDim) s_spatialDim = eMesh.get_spatial_dim();
 
                         Util::setRank(eMesh.get_rank());
@@ -858,6 +860,7 @@ namespace stk {
 
                                     eMesh.close();
                                     eMesh.open(input_mesh);
+                                    if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
                                   }
                               }
             

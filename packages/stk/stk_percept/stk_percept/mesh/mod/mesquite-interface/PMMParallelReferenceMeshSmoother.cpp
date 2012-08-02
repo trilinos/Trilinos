@@ -146,6 +146,7 @@ namespace stk {
           m_num_invalid = num_invalid;
           m_untangled = (m_num_invalid == 0);
 
+          int iter_all=0;
           for (int stage = 0; stage < 2; stage++)
             {
               m_stage = stage;
@@ -154,7 +155,7 @@ namespace stk {
               else 
                 m_metric = &shape_metric;
 
-              for (int iter = 0; iter < innerIter; iter++)
+              for (int iter = 0; iter < innerIter; ++iter, ++iter_all)
                 {
                   m_iter = iter;
                   int num_invalid_0 = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
@@ -178,16 +179,19 @@ namespace stk {
                               << std::endl;
                   }
 
-                  //!! eMesh->save_as("iter_"+toString(iter)+"_mesh.e");
-                  //if (!m_untangled && m_global_metric == 0.0)
+                  //eMesh->save_as("iter_"+toString(iter)+"_mesh.e");
+                  //eMesh->save_as("iter_mesh."+toString(iter)+".e");
+                  eMesh->save_as("iter_"+toString(outer)+"_"+toString(stage)+"."+toString(iter)+".e");
+                  if (iter_all % 8 == 0) eMesh->save_as("anim_all."+toString(iter_all)+".e");
+
                   if (!m_untangled && m_num_invalid == 0)
                     {
                       m_untangled = true;
-                      //break;
                     }
                   if (conv && m_untangled) break;
                 }
-              //!! eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");
+
+              eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");
             }
 
           eMesh->copy_field(coord_field_lagged, coord_field);
