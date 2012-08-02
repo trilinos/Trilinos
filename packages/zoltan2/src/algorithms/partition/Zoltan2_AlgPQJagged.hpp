@@ -405,11 +405,13 @@ void pqJagged_getInputValues(
   if (weightDim == 0 || ignoreWeights){
 
     pqJagged_uniformWeights[0] = true;
+    pqJagged_weights[0] = NULL;
   }
   else{
     for (int wdim = 0; wdim < weightDim; wdim++){
       if (wgts[wdim].size() == 0){
         pqJagged_uniformWeights[wdim] = true;
+        pqJagged_weights[wdim] = NULL;
       }
       else{
         ArrayRCP<const scalar_t> ar;
@@ -430,6 +432,7 @@ void pqJagged_getInputValues(
   for (int wdim = 0; wdim < criteriaDim; wdim++){
     if (solution->criteriaHasUniformPartSizes(wdim)){
       pqJagged_uniformParts[wdim] = true;
+      pqJagged_partSizes[wdim] = NULL;
     }
     else{
       scalar_t *tmp = new scalar_t [numGlobalParts];
