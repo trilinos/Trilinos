@@ -42,8 +42,6 @@
 
 namespace Ifpack2 {
 
-#define IFPACK2_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
-
 //==========================================================================
 template<class MatrixType>
 DiagonalFilter<MatrixType>::DiagonalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
@@ -59,6 +57,8 @@ DiagonalFilter<MatrixType>::DiagonalFilter(const Teuchos::RCP<const Tpetra::RowM
   std::vector<LocalOrdinal> Indices(getNodeMaxNumRowEntries());
   std::vector<Scalar> Values(getNodeMaxNumRowEntries());
   size_t NumEntries;
+  magnitudeType mysign;
+ 
 
   for (size_t MyRow = 0 ; MyRow < getNodeNumRows() ; ++MyRow) {    
     pos_[MyRow] = -1;
@@ -67,8 +67,14 @@ DiagonalFilter<MatrixType>::DiagonalFilter(const Teuchos::RCP<const Tpetra::RowM
     for (size_t i = 0 ; i < NumEntries ; ++i) {
       if ((size_t)Indices[i] == MyRow) {
 	pos_[MyRow] = i;
+	if(Teuchos::ScalarTraits<Scalar>::real(Values[i]) < 0)
+	  mysign=-Teuchos::ScalarTraits<magnitudeType>::one();
+	else
+	  mysign=Teuchos::ScalarTraits<magnitudeType>::one();
+
+
 	val_->replaceLocalValue(MyRow, Values[i] * (RelativeThreshold_ - 1) +
-				AbsoluteThreshold_ * IFPACK2_SGN(Teuchos::ScalarTraits<Scalar>::real(Values[i])));
+				AbsoluteThreshold_ * mysign);
 	break;
       }
     }
