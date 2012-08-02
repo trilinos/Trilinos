@@ -264,7 +264,7 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Allocate linear system coefficients and rhs:
 
-  const size_t local_owned_length = jacobian.graph.row_map.length();
+  const size_t local_owned_length = jacobian.graph.row_map.dimension(0) - 1 ;
   const size_t local_total_length = mesh.node_coords.dimension(0);
 
   jacobian.coefficients =

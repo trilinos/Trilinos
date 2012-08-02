@@ -93,6 +93,30 @@ public:
   static void copy_to_host_from_device(   void * , const void * , size_t );
 };
 
+template< typename ValueType >
+struct DeepCopy< ValueType , Cuda , Cuda > {
+  DeepCopy( ValueType * dst , const ValueType * src , size_t count )
+  {
+    CudaMemorySpace::copy_to_device_from_device( dst , src , sizeof(ValueType) * count );
+  }
+};
+
+template< typename ValueType >
+struct DeepCopy< ValueType , Cuda , Host > {
+  DeepCopy( ValueType * dst , const ValueType * src , size_t count )
+  {
+    CudaMemorySpace::copy_to_device_from_host( dst , src , sizeof(ValueType) * count );
+  }
+};
+
+template< typename ValueType >
+struct DeepCopy< ValueType , Host , Cuda > {
+  DeepCopy( ValueType * dst , const ValueType * src , size_t count )
+  {
+    CudaMemorySpace::copy_to_host_from_device( dst , src , sizeof(ValueType) * count );
+  }
+};
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

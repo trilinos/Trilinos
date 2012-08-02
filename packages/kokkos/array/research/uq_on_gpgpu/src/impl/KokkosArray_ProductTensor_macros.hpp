@@ -375,7 +375,7 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension() const { return m_coord.row_map.length(); }
+  size_type dimension() const { return m_coord.row_map.dimension(0) - 1 ; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION

@@ -45,7 +45,6 @@
 
 #include <KokkosArray_View.hpp>
 
-#include <KokkosArray_PrefixSum.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
 #include <KokkosArray_Host.hpp>

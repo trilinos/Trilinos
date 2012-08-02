@@ -49,6 +49,7 @@
 namespace KokkosArray {
 
 class Host ;
+class Cuda ;
 
 } // namespace KokkosArray
 
@@ -63,40 +64,13 @@ struct SameType { static const bool value = false ; };
 template< class A >
 struct SameType<A,A> { static const bool value = true ; };
 
-struct MirrorUseView {};
-
 template< class DstType , class SrcType >  struct Factory ;
 
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+struct DeepCopy ;
+
 }
 }
-
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
-
-template< class ArrayType >
-inline
-typename ArrayType::HostMirror
-create_mirror( const ArrayType & input , const Impl::MirrorUseView )
-{
-  typedef typename ArrayType::HostMirror MirrorType ;
-  return Impl::Factory< MirrorType , Impl::MirrorUseView >::create( input );
-}
-
-template< class ArrayType >
-inline
-typename ArrayType::HostMirror
-create_mirror( const ArrayType & input )
-{
-  typedef typename ArrayType::HostMirror MirrorType ;
-#if KOKKOS_MIRROR_VIEW_OPTIMIZE
-  return Impl::Factory< MirrorType , Impl::MirrorUseView >::create( input );
-#else
-  return Impl::Factory< MirrorType , ArrayType >::create( input );
-#endif
-}
-
-} // KokkosArray
 
 //----------------------------------------------------------------------------
 

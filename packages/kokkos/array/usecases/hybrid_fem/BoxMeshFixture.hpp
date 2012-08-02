@@ -478,7 +478,7 @@ struct BoxMeshFixture {
 
     KokkosArray::deep_copy( mesh.node_coords ,   node_coords );
     KokkosArray::deep_copy( mesh.elem_node_ids , elem_node_ids );
-    KokkosArray::deep_copy( mesh.node_elem_ids , node_elem_ids );
+    KokkosArray::deep_copy( mesh.node_elem_ids.entries , node_elem_ids.entries );
 
     //------------------------------------
     // Communication lists:

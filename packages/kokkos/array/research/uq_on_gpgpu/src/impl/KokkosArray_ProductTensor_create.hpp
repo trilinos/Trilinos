@@ -190,7 +190,7 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
     // Create mirror, is a view if is host memory
 
     typename coord_array_type::HostMirror
-      host_coord = create_mirror( tensor.m_coord , MirrorUseView() );
+      host_coord = create_mirror_view( tensor.m_coord );
 
     typename value_array_type::HostMirror
       host_value = create_mirror_view( tensor.m_value );
@@ -228,7 +228,7 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
       }
     }
 
-    KokkosArray::deep_copy( tensor.m_coord , host_coord );
+    KokkosArray::deep_copy( tensor.m_coord.entries , host_coord.entries );
     KokkosArray::deep_copy( tensor.m_value , host_value );
 
     return tensor ;

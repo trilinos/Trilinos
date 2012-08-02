@@ -216,9 +216,8 @@ public:
 
     // Copy send buffer from the device to host memory for sending
 
-    KokkosArray::Impl::Factory< buffer_host_type , buffer_dev_type >
-      ::deep_copy( host_send_buffer , dev_buffer ,
-                   data_map.count_send * chunk_size );
+    KokkosArray::deep_copy( host_send_buffer , dev_buffer ,
+                            data_map.count_send * chunk_size );
 
     // Done with the device until communication is complete.
     // Application can dispatch asynchronous work on the device.
@@ -294,9 +293,8 @@ public:
 
     // Copy received data to device memory.
 
-    KokkosArray::Impl::Factory< buffer_dev_type , buffer_host_type >
-      ::deep_copy( dev_buffer , host_recv_buffer , 
-                   data_map.count_receive * chunk_size );
+    KokkosArray::deep_copy( dev_buffer , host_recv_buffer , 
+                            data_map.count_receive * chunk_size );
   }
 };
 

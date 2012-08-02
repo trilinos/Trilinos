@@ -113,7 +113,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.length();
+    const int n = A.graph.row_map.dimension(0) - 1 ;
     // const int nz = A.graph.entry_count();
 
     cusparseStatus_t status =
@@ -155,7 +155,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.length();
+    const int n = A.graph.row_map.dimension(0) - 1 ;
     // const int nz = A.graph.entry_count();
 
     cusparseStatus_t status =
@@ -197,7 +197,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.length();
+    const int n = A.graph.row_map.dimension(0) - 1 ;
     // const int nz = A.graph.entry_count();
     const size_t ncol = x.size();
 

@@ -93,7 +93,7 @@ struct Factory< KokkosArray::CrsArray< IndexType , Layout , Device , IndexType >
     typedef typename element_map_type::HostMirror element_map_host_type ;
 
     deep_copy( elem_node_ids , mesh.elem_node_ids );
-    deep_copy( node_elem_ids , mesh.node_elem_ids );
+    deep_copy( node_elem_ids.entries , mesh.node_elem_ids.entries );
 
     const size_t owned_node = mesh.parallel_data_map.count_owned ;
     const size_t total_elem = mesh.elem_node_ids.dimension(0);

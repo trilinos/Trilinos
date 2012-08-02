@@ -98,21 +98,6 @@ template< class T , unsigned N , unsigned J >
 struct rank< T[N] , J > : public unsigned_< rank<T,J+1>::value > {};
 
 //----------------------------------------------------------------------------
-
-#if 0
-
-/** \brief  Workaround some compiler's confusion between the types
- *          X[] and X[0]
- */
-template < class T > struct change_empty_extent_to_zero_extent
-  { typedef T type ; };
-
-template < class T > struct change_empty_extent_to_zero_extent<T[]>
-  { typedef T type[0]; };
-
-#endif
-
-//----------------------------------------------------------------------------
 /** \brief  Add 'const' to the value type of an array.
  *
  *  The precedence of the 'const' and array type specifications

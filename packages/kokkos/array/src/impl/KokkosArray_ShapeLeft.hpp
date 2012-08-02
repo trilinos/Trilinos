@@ -41,12 +41,59 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_PREFIXSUM_HPP
-#define KOKKOS_HOST_PREFIXSUM_HPP
+#ifndef KOKKOSARRAY_SHAPELEFT_HPP
+#define KOKKOSARRAY_SHAPELEFT_HPP
 
-#include <KokkosArray_Host_macros.hpp>
-#include <impl/KokkosArray_PrefixSum_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Shape.hpp>
 
-#endif /* #ifndef KOKKOS_HOST_PREFIXSUM_HPP */
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
+
+template< class T , unsigned RankDynamic , unsigned Rank >
+inline
+size_t allocation_count( const Shape<LayoutLeft,T,RankDynamic,Rank> & shape )
+{
+  return ( 0 == Rank ? 1 : (
+           1 == Rank ? shape.N0 : shape.Stride * shape.N1 * (
+           2 == Rank ? 1 : shape.N2 * (
+           3 == Rank ? 1 : shape.N3 * (
+           4 == Rank ? 1 : shape.N4 * (
+           5 == Rank ? 1 : shape.N5 * (
+           6 == Rank ? 1 : shape.N6 * (
+           7 == Rank ? 1 : shape.N7 ))))))));
+}
+
+//----------------------------------------------------------------------------
+
+template < class T , unsigned RankDynamic , unsigned Rank , class MemorySpace >
+struct ShapeMap< Shape<LayoutLeft,T,RankDynamic,Rank>, MemorySpace >
+{
+  inline static
+  size_t stride( const Shape<LayoutLeft,T,RankDynamic,Rank> shape )
+  {
+    const size_t right_block_count =
+      0 == Rank ? 1 : (
+      1 == Rank ? 1 : shape.N1 * (
+      2 == Rank ? 1 : shape.N2 * (
+      3 == Rank ? 1 : shape.N3 * (
+      4 == Rank ? 1 : shape.N4 * (
+      5 == Rank ? 1 : shape.N5 * (
+      6 == Rank ? 1 : shape.N6 * (
+      7 == Rank ? 1 : shape.N7 )))))));
+
+    return 1 == right_block_count ? shape.N0 :
+      MemorySpace::preferred_alignment( shape.value_size , shape.N0 );
+  }
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+} /* namespace Impl */
+} /* namespace KokkosArray */
+
+#endif /* #ifndef KOKKOSARRAY_SHAPELEFT_HPP */
 

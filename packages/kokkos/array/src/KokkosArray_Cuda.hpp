@@ -136,11 +136,6 @@ public:
 //----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
 
-#if   defined( KOKKOS_PREFIXSUM_HPP ) && \
-    ! defined( KOKKOS_CUDA_PREFIXSUM_HPP )
-#include <Cuda/KokkosArray_Cuda_PrefixSum.hpp>
-#endif
-
 //----------------------------------------------------------------------------
 
 

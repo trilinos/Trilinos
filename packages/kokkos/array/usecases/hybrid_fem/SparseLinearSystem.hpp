@@ -207,8 +207,8 @@ public:
                                             data_map.count_receive ;
 #else /* ! defined( HAVE_MPI ) */
 
-    const typename Device::size_type nrow = A.graph.row_map.length();
-    const typename Device::size_type ncol = A.graph.row_map.length();
+    const typename Device::size_type nrow = A.graph.row_map.dimension(0) - 1 ;
+    const typename Device::size_type ncol = A.graph.row_map.dimension(0) - 1 ;
 
 #endif
 

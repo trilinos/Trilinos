@@ -53,7 +53,8 @@
 #include <impl/KokkosArray_View_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 
-#if 1
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 
@@ -74,118 +75,22 @@ void View< DataType , LayoutType , Host >::create(
   Impl::HostParallelFill<value_type>( oper_type::m_ptr_on_device , 0 , count );
 }
 
-}
+} // namespace KokkosArray
 
-#endif
-
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
-
-/** \brief  Deep copy a single value */
-template< typename DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > , DataType >
-{
-  typedef View< DataType , LayoutType , Host >  output_type ;
-  typedef DataType                              input_type ;
-  typedef typename output_type::shape_type      shape_type ;
-  typedef typename output_type::value_type      value_type ;
-
-  typedef typename
-    assert_shape_is_rank_zero< shape_type >::type ok_rank ;
-
-  typedef typename
-    StaticAssertAssignable< value_type , DataType >::type ok_assign ;
-
-  static inline
-  void deep_copy( const output_type & output , const input_type & input )
-    { *output = input ; }
-};
-
-/** \brief  Deep copy a single value */
-template< typename DataType , class LayoutType >
-struct Factory< DataType , View< DataType , LayoutType , Host > >
-{
-  typedef DataType                              output_type ;
-  typedef View< DataType , LayoutType , Host >  input_type ;
-  typedef typename input_type::shape_type       shape_type ;
-  typedef typename output_type::value_type      value_type ;
-
-  typedef typename
-    assert_shape_is_rank_zero< shape_type >::type ok_rank ;
-
-  typedef typename
-    StaticAssertAssignable< DataType , value_type >::type ok_assign ;
-
-  static inline
-  void deep_copy( output_type & output , const input_type & input )
-    { output = *input ; }
-};
-
-//----------------------------------------------------------------------------
-/** \brief  Identical arrays */
-template< class DataType , class LayoutType >
-struct Factory< View< DataType , LayoutType , Host > ,
-                View< DataType , LayoutType , Host > >
-{
-public:
-  typedef View< DataType , LayoutType , Host > output_type ;
-  typedef View< DataType , LayoutType , Host > input_type ;
-
-  static inline
-  void deep_copy( const output_type & output ,
-                  const input_type  & input )
-  {
-    typedef typename output_type::value_type value_type ;
-
-    if ( output != input ) {
-
-      assert_shapes_are_equal( output.m_shape , input.m_shape );
-
-      const size_t count = allocation_count( output.m_shape );
-
-      HostParallelCopy<value_type,value_type>( output.ptr_on_device() ,
-                                               input. ptr_on_device() ,
-                                               count );
-    }
-  }
-
-  static inline
-  void deep_copy( const output_type & output ,
-                  const input_type  & input ,
-                  const size_t count )
-  {
-    typedef typename output_type::value_type value_type ;
-
-    // Only for rank-1 arrays, or arrays where higher ranks are one
-
-    assert_shape_effective_rank1_at_leastN( output.m_shape , count );
-    assert_shape_effective_rank1_at_leastN( input.m_shape , count );
-
-    HostParallelCopy<value_type,value_type>( output.ptr_on_device() ,
-                                             input. ptr_on_device() ,
-                                             count );
-  }
-
-  // Called by create_mirror
-  static inline
-  output_type create( const input_type & input )
-  {
-    return output_type("mirror",input.m_shape);
-  }
-};
-
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class OutputView , unsigned OutputRank ,
-          class InputView  , unsigned InputRank >
+template< class OutputView , class InputView  , unsigned Rank >
 struct HostViewRemap ;
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 8 , InputView , 8 >
+struct HostViewRemap< OutputView , InputView , 8 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -216,7 +121,7 @@ struct HostViewRemap< OutputView , 8 , InputView , 8 >
 };
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 7 , InputView , 7 >
+struct HostViewRemap< OutputView , InputView , 7 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -246,7 +151,7 @@ struct HostViewRemap< OutputView , 7 , InputView , 7 >
 };
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 6 , InputView , 6 >
+struct HostViewRemap< OutputView , InputView , 6 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -275,7 +180,7 @@ struct HostViewRemap< OutputView , 6 , InputView , 6 >
 };
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 5 , InputView , 5 >
+struct HostViewRemap< OutputView , InputView , 5 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -303,7 +208,7 @@ struct HostViewRemap< OutputView , 5 , InputView , 5 >
 };
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 4 , InputView , 4 >
+struct HostViewRemap< OutputView , InputView , 4 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -330,7 +235,7 @@ struct HostViewRemap< OutputView , 4 , InputView , 4 >
 };
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 3 , InputView , 3 >
+struct HostViewRemap< OutputView , InputView , 3 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -356,7 +261,7 @@ struct HostViewRemap< OutputView , 3 , InputView , 3 >
 };
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 2 , InputView , 2 >
+struct HostViewRemap< OutputView , InputView , 2 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -381,7 +286,7 @@ struct HostViewRemap< OutputView , 2 , InputView , 2 >
 };
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 1 , InputView , 1 >
+struct HostViewRemap< OutputView , InputView , 1 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -405,7 +310,7 @@ struct HostViewRemap< OutputView , 1 , InputView , 1 >
 };
 
 template< class OutputView , class InputView >
-struct HostViewRemap< OutputView , 0 , InputView , 0 >
+struct HostViewRemap< OutputView , InputView , 0 >
   : public HostThreadWorker<void>
 {
   const OutputView output ;
@@ -417,43 +322,80 @@ struct HostViewRemap< OutputView , 0 , InputView , 0 >
 };
 
 //----------------------------------------------------------------------------
+// Deep copy views with either different value types
+// or different layouts.
 
-template< class DataTypeOutput , class LayoutOutput ,
-          class DataTypeInput ,  class LayoutInput >
-struct Factory< View< DataTypeOutput , LayoutOutput , Host > ,
-                View< DataTypeInput ,  LayoutInput ,  Host > >
+template< class DataTypeDst , class LayoutDst ,
+          class DataTypeSrc , class LayoutSrc >
+struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
+                     View< DataTypeSrc , LayoutSrc , Host > ,
+                     true_type  /* Same value_type  */ ,
+                     false_type /* Different layout_type */ ,
+                     true_type  /* Same rank */ >
 {
-  typedef View< DataTypeOutput , LayoutOutput , Host > output_type ;
-  typedef View< DataTypeInput ,  LayoutInput ,  Host > input_type ;
+  typedef View< DataTypeDst , LayoutDst , Host > dst_type ;
+  typedef View< DataTypeSrc , LayoutSrc , Host > src_type ;
 
   static inline
-  void deep_copy( const output_type & output ,
-                  const input_type  & input )
+  void apply( const dst_type & dst , const src_type & src )
   {
-    typedef typename output_type::value_type output_value_type ;
-    typedef typename input_type ::value_type input_value_type ;
+    assert_shapes_equal_dimension( dst.shape() , src.shape() );
 
-    typedef typename output_type::shape_type output_shape ;
-    typedef typename input_type ::shape_type input_shape ;
-
-    assert_shapes_equal_dimension( output.m_shape , input.m_shape );
-
-    if ( output.m_shape == input.m_shape ) {
-      HostParallelCopy<output_value_type,input_value_type>(
-        output.ptr_on_device() ,
-        input. ptr_on_device() ,
-        allocation_count( output.m_shape ) );
-    }
-    else {
-      HostViewRemap< output_type , output_shape::rank ,
-                     input_type  , input_shape::rank >( output , input );
-    }
+    HostViewRemap< dst_type , src_type , dst_type::Rank >( dst , src );
   }
 };
 
-//----------------------------------------------------------------------------
+template< class DataTypeDst , class LayoutDst ,
+          class DataTypeSrc , class LayoutSrc ,
+          class SameLayout >
+struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
+                     View< DataTypeSrc , LayoutSrc , Host > ,
+                     false_type /* Different value_type  */ ,
+                     SameLayout /* Any layout */ ,
+                     true_type  /* Same rank */ >
+{
+  typedef View< DataTypeDst , LayoutDst , Host > dst_type ;
+  typedef View< DataTypeSrc , LayoutSrc , Host > src_type ;
+
+  static inline
+  void apply( const dst_type & dst , const src_type & src )
+  {
+    assert_shapes_equal_dimension( dst.shape() , src.shape() );
+
+    HostViewRemap< dst_type , src_type , dst_type::Rank >( dst , src );
+  }
+};
 
 } // namespace Impl
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class LayoutSrc >
+inline
+void deep_copy( ValueType & dst ,
+                const View< ValueType , LayoutSrc , Host > & src )
+{
+  typedef View< ValueType , LayoutSrc , Host > src_type ;
+  typedef typename src_type::shape_type        src_shape ;
+
+  typedef typename Impl::assert_shape_is_rank_zero< src_shape >::type ok_rank ;
+
+  dst = *src ;
+}
+
+template< typename ValueType , class LayoutDst >
+inline
+void deep_copy( const View< ValueType , LayoutDst , Host > & dst ,
+                const ValueType & src )
+{
+  typedef View< ValueType , LayoutDst , Host > dst_type ;
+  typedef typename dst_type::shape_type        dst_shape ;
+
+  typedef typename Impl::assert_shape_is_rank_zero< dst_shape >::type ok_rank ;
+
+  *dst = src ;
+}
+
 } // namespace KokkosArray
 
 #endif /* #ifndef KOKKOS_HOST_VIEW_HPP */

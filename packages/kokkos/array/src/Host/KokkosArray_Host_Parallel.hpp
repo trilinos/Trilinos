@@ -263,6 +263,15 @@ public:
     { HostThreadWorker<void>::execute( *this ); }
 };
 
+template< typename ValueType >
+struct DeepCopy<ValueType,Host,Host> {
+  DeepCopy( ValueType * dst , const ValueType * src , size_t count )
+  {
+    HostParallelCopy< ValueType , ValueType >( dst , src , count );
+  }
+};
+
+
 template< typename DstType >
 class HostParallelFill : public HostThreadWorker<void> {
 public:

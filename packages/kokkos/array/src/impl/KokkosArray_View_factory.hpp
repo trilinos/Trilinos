@@ -114,10 +114,10 @@ View< ValueType[] , LayoutSpec , DeviceType >
 view( const View< ValueType[] , LayoutSpec , DeviceType > & input ,
       const size_t iBeg , const size_t iEnd )
 {
-  typedef typename
-    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
-  
   typedef View< ValueType[] , LayoutSpec , DeviceType > input_type ;
+  typedef typename input_type::shape_type input_shape ;
+
+  typedef typename Impl::assert_shape_is_rank_one< input_shape >::type ok_rank ;
 
   return Impl::Factory< void , input_type >::view( input , iBeg , iEnd );
 }
@@ -171,54 +171,135 @@ view( const View< ValueType[] , LayoutLeft , DeviceType > & input ,
 //----------------------------------------------------------------------------
 /** \brief  Deep copy compatible arrays */
 
-template< class DataTypeDst , class LayoutDst , class DeviceDst ,
-          class DataTypeSrc , class LayoutSrc , class DeviceSrc >
-inline
-void deep_copy( const View<DataTypeDst,LayoutDst,DeviceDst> & dst ,
-                const View<DataTypeSrc,LayoutSrc,DeviceSrc> & src )
-{
-  typedef View<DataTypeDst,LayoutDst,DeviceDst> dst_type ;
-  typedef View<DataTypeSrc,LayoutSrc,DeviceSrc> src_type ;
+namespace Impl {
 
-  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
+template< class DstType ,
+          class SrcType ,
+          class SameValue = typename
+            is_same< typename DstType::value_type ,
+                     typename remove_const<
+                       typename SrcType::value_type >::type
+                   >::type ,
+          class SameLayout = typename
+            is_same< typename DstType::array_layout ,
+                     typename SrcType::array_layout >::type ,
+          class SameRank = typename
+             bool_< DstType::Rank == SrcType::Rank >::type >
+struct ViewDeepCopy ;
+
+// Deep copy compatible views:
+
+template< class DataDst , class LayoutDst , class DeviceDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc >
+struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
+                     View< DataSrc , LayoutSrc , DeviceSrc > ,
+                     true_type /* Same value_type   */ ,
+                     true_type /* Same array_layout */ ,
+                     true_type /* Same rank */ >
+{
+  typedef View< DataDst , LayoutDst , DeviceDst >  dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc >  src_type ;
+
+  inline static
+  void apply( const dst_type & dst , const src_type & src )
+  {
+    if ( dst != src ) {
+      assert_shapes_are_equal( dst.shape() , src.shape() );
+
+      DeepCopy<typename dst_type::value_type,DeviceDst,DeviceSrc>(
+        dst.ptr_on_device() ,
+        src.ptr_on_device() ,
+        allocation_count( dst.shape() ) );
+    }
+  }
+};
+
+} // namespace Impl
+
+template< typename ValueType , class LayoutSrc , class DeviceSrc >
+inline
+void deep_copy( ValueType & dst ,
+                const View< ValueType , LayoutSrc , DeviceSrc > & src )
+{
+  typedef View< ValueType , LayoutSrc , DeviceSrc > src_type ;
+  typedef typename src_type::shape_type             src_shape ;
+
+  typedef typename Impl::assert_shape_is_rank_zero< src_shape >::type ok_rank ;
+
+  Impl::DeepCopy<ValueType,Host,DeviceSrc>( & dst , src.ptr_on_device() , 1 );
 }
 
-template< class ScalarType , class LayoutDst , class DeviceDst ,
-                             class LayoutSrc , class DeviceSrc >
-void deep_copy( const View<ScalarType[],LayoutDst,DeviceDst> & dst ,
-                const View<ScalarType[],LayoutSrc,DeviceSrc> & src ,
-                const size_t n )
+template< typename ValueType , class LayoutDst , class DeviceDst >
+inline
+void deep_copy( const View< ValueType , LayoutDst , DeviceDst > & dst ,
+                const ValueType & src )
 {
-  typedef View<ScalarType[],LayoutDst,DeviceDst> dst_type ;
-  typedef View<ScalarType[],LayoutSrc,DeviceSrc> src_type ;
+  typedef View< ValueType , LayoutDst , DeviceDst > dst_type ;
+  typedef typename dst_type::shape_type             dst_shape ;
 
-  Impl::Factory< dst_type , src_type >::deep_copy( dst , src , n );
+  typedef typename Impl::assert_shape_is_rank_zero< dst_shape >::type ok_rank ;
+
+  Impl::DeepCopy<ValueType,DeviceDst,Host>( dst.ptr_on_device(), & src , 1 );
 }
 
-//----------------------------------------------------------------------------
-/** \brief  Deep copy a single value */
+// Deep copy a span of rank 1 arrays:
 
-template< class DataType , class LayoutType , class DeviceType >
+template< class DataDst , class LayoutDst , class DeviceDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc >
 inline
-void deep_copy( const View<DataType,LayoutType,DeviceType> & dst ,
-                const DataType & src )
+void deep_copy( const View< DataDst , LayoutDst , DeviceDst > & dst ,
+                const View< DataSrc , LayoutSrc , DeviceSrc > & src ,
+                size_t count )
 {
-  typedef View< DataType , LayoutType , DeviceType >  dst_type ;
-  typedef DataType                                    src_type ;
+  typedef View< DataDst , LayoutDst , DeviceDst > dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc > src_type ;
 
-  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
+  typedef typename dst_type::shape_type  dst_shape ;
+  typedef typename src_type::shape_type  src_shape ;
+
+  typedef typename dst_type::value_type dst_value_type ;
+  typedef typename src_type::value_type src_value_type ;
+
+  // Verify arrays are rank 1
+
+  typedef typename
+    Impl::assert_shape_is_rank_one< dst_shape >::type ok_dst_rank ;
+
+  typedef typename
+    Impl::assert_shape_is_rank_one< dst_shape >::type ok_dst_rank ;
+
+  // Verify value is the same type
+
+  typedef typename
+    Impl::StaticAssertSame< dst_value_type ,
+                            typename Impl::remove_const< src_value_type >::type
+                          >::type  ok_assign ;
+
+  // Copy if the destination is not simply a view of the source:
+
+  if ( count && dst != src ) {
+    Impl::assert_shape_bounds( dst.shape() , count - 1 );
+    Impl::assert_shape_bounds( src.shape() , count - 1 );
+
+    Impl::DeepCopy<dst_value_type,DeviceDst,DeviceSrc>(
+      dst.ptr_on_device() ,
+      src.ptr_on_device() ,
+      count );
+  }
 }
 
-/** \brief  Deep copy a single value */
-template< class DataType , class LayoutType , class DeviceType >
-inline
-void deep_copy( DataType & dst , 
-                const View<DataType,LayoutType,DeviceType> & src )
-{
-  typedef DataType                                    dst_type ;
-  typedef View< DataType , LayoutType , DeviceType >  src_type ;
+// Deep copy arbitrary arrays:
 
-  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
+template< class DataDst , class LayoutDst , class DeviceDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc >
+inline
+void deep_copy( const View< DataDst , LayoutDst , DeviceDst > & dst ,
+                const View< DataSrc , LayoutSrc , DeviceSrc > & src )
+{
+  typedef View< DataDst , LayoutDst , DeviceDst > dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc > src_type ;
+
+  Impl::ViewDeepCopy<dst_type,src_type>::apply( dst , src );
 }
 
 //----------------------------------------------------------------------------
@@ -230,26 +311,6 @@ void deep_copy( DataType & dst ,
 
 namespace KokkosArray {
 namespace Impl {
-
-#if 0
-
-template< class DataType , class LayoutType , class DeviceOutput >
-struct Factory< View< DataType , LayoutType , DeviceOutput > , MirrorUseView >
-{
-  typedef View< DataType , LayoutType , DeviceOutput > output_type ;
-
-  static inline
-  const output_type & create( const output_type & input ) { return input ; }
-
-  template< class DeviceInput >
-  static inline
-  output_type create( const View< DataType, LayoutType, DeviceInput > & input )
-  {
-    return output_type("mirror",input.m_shape);
-  }
-};
-
-#endif
 
 /** \brief  Create subviews of multivectors */
 template< typename ValueType , class LayoutSpec , class Device >

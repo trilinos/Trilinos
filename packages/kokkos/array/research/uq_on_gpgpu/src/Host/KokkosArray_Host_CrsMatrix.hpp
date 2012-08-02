@@ -95,7 +95,8 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    parallel_for( A.graph.row_map.length() , Multiply(A,x,y) );
+    const size_t row_count = A.graph.row_map.dimension(0) - 1 ;
+    parallel_for( row_count , Multiply(A,x,y) );
   }
 };
 

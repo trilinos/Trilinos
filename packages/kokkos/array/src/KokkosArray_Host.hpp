@@ -164,11 +164,6 @@ public:
 //----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
 
-#if   defined( KOKKOS_PREFIXSUM_HPP ) && \
-    ! defined( KOKKOS_HOST_PREFIXSUM_HPP )
-#include <Host/KokkosArray_Host_PrefixSum.hpp>
-#endif
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

@@ -181,7 +181,8 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Allocate linear system coefficients and rhs:
 
-  const size_t local_owned_length = linsys_matrix.graph.row_map.length();
+  const size_t local_owned_length =
+    linsys_matrix.graph.row_map.dimension(0) - 1 ;
 
   linsys_matrix.coefficients =
     matrix_coefficients_type( "coeff" , linsys_matrix.graph.entries.dimension(0) );
