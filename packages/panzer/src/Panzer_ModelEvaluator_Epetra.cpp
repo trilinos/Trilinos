@@ -419,7 +419,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   // fill.
   bool is_transient = false;
   if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot ))
-    is_transient = !Teuchos::is_null(inArgs.get_x_dot());
+    is_transient = nonnull(inArgs.get_x_dot());
 
   // Make sure construction built in transient support
   TEUCHOS_TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,

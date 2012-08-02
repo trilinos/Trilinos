@@ -229,7 +229,12 @@ namespace panzer_stk {
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
     bool is_transient  = solncntl_params.get<std::string>("Piro Solver") == "Rythmos" ? true : false;
- 
+    // for pseudo-transient, we need to enable transient solver support to get time derivatives into fill
+    if (solncntl_params.get<std::string>("Piro Solver") == "NOX") {
+      if (solncntl_params.sublist("NOX").get<std::string>("Nonlinear Solver") == "Pseudo-Transient")
+	is_transient = true;
+    }
+
     // build physics blocks
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
