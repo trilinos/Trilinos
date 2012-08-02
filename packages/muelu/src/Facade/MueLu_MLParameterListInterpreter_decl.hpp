@@ -99,10 +99,10 @@ namespace MueLu {
     //@{
 
     //! Read coarse solver options and build the corresponding smoother factory
-    static RCP<SmootherFactory> GetCoarsestSolverFactory(const Teuchos::ParameterList & params);
+    static RCP<SmootherFactory> GetCoarsestSolverFactory(const Teuchos::ParameterList & params, const RCP<FactoryBase> & AFact = Teuchos::null);
 
     //! Read smoother options and build the corresponding smoother factory
-    static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & params, int level);
+    static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & params, int level, const RCP<FactoryBase> & AFact = Teuchos::null);
 
     //@}
 
