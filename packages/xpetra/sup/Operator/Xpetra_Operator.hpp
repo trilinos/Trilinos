@@ -136,8 +136,9 @@ namespace Xpetra {
     }
 
     //! Print all of the views associated with the Operator.
-    void PrintViews(Teuchos::FancyOStream &out) {
+    void PrintViews(Teuchos::FancyOStream &out) const {
       int last = out.getOutputToRootOnly();
+      Teuchos::OSTab tab(out);
       out.setOutputToRootOnly(0);
       Teuchos::Array<viewLabel_t> viewLabels;
       Teuchos::Array<RCP<OperatorView> > viewList;
@@ -464,8 +465,11 @@ namespace Xpetra {
       if(IsView("stridedMaps") == true) RemoveView("stridedMaps");
       CreateView("stridedMaps", stridedRangeMap, stridedDomainMap); 
     }
+
+    //==========================================================================
+
     LocalOrdinal GetFixedBlockSize() const {
-      if(IsView("StridedMaps")==true) {
+      if(IsView("stridedMaps")==true) {
         Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > rangeMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getRowMap("stridedMaps"));
         Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > domainMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getColMap("stridedMaps"));
         TEUCHOS_TEST_FOR_EXCEPTION(rangeMap  == Teuchos::null, Exceptions::BadCast, "Xpetra::Operator::GetFixedBlockSize(): rangeMap is not of type StridedMap");

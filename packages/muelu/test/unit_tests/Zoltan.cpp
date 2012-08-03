@@ -291,8 +291,6 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Zoltan, Build3PDEs)
   {
 
-    return;
-
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -369,10 +367,10 @@ namespace MueLuTests {
     }
 
     A->fillComplete();
+
+    // Now treat the matrix as if it has 3 DOFs per node.
     A->SetFixedBlockSize(dofsPerNode);
-    //A->PrintViews(*fos);
     A->SwitchToView("stridedMaps");
-    std::cout << "block size = " << A->GetFixedBlockSize() << std::endl;
     level.Set("A",A);
 
     //build coordinates
