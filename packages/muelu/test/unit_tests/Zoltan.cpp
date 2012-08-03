@@ -291,6 +291,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Zoltan, Build3PDEs)
   {
 
+    return;
+
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
     out << "version: " << MueLu::Version() << std::endl;
