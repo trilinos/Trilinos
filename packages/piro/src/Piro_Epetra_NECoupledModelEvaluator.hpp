@@ -178,14 +178,12 @@ namespace Piro {
 	InArgs& reduced_inargs, 
 	OutArgs& reduced_outargs,
 	Teuchos::RCP<EpetraExt::ModelEvaluator>& reduced_solver,
-	Teuchos::RCP<Teuchos::ParameterList>& reduced_params,
-	Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > >& red_basis_vals) const;
+	Teuchos::RCP<Teuchos::ParameterList>& reduced_params) const;
 
       void do_dimension_projection(
 	const InArgs& inArgs, 
 	const InArgs& reduced_inargs, 
 	const OutArgs& reduced_outargs,
-	const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > >& red_basis_vals,
 	OutArgs& solver_outargs) const;
 
     private:
@@ -255,7 +253,6 @@ namespace Piro {
 
       bool reduce_dimension;
       mutable Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
-      mutable Teuchos::Array<Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > > > red_basis_vals;
     };
 
   }

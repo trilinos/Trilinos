@@ -36,7 +36,6 @@
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_ReducedPCEBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_Quadrature.hpp"
@@ -55,7 +54,6 @@ namespace Stokhos {
    */
   template <typename ordinal_type, typename value_type>
   class MonomialProjGramSchmidtPCEBasis : 
-    public ProductBasis<ordinal_type,value_type>,
     public ReducedPCEBasis<ordinal_type,value_type> {
   public:
 
@@ -129,35 +127,6 @@ namespace Stokhos {
 
     //@}
 
-    //! \name Implementation of Stokhos::ProductBasis methods
-    //@{
-
-    //! Get orders of each coordinate polynomial given an index \c i
-    /*!
-     * The returned array is of size \f$d\f$, where \f$d\f$ is the dimension of
-     * the basis, and entry \f$l\f$ is given by \f$i_l\f$ where
-     * \f$\Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)\f$.
-     */
-    virtual Teuchos::Array<ordinal_type> getTerm(ordinal_type i) const;
-
-    //! Get index of the multivariate polynomial given orders of each coordinate
-    /*!
-     * Given the array \c term storing \f$i_1,\dots,\i_d\f$, returns the index
-     * \f$i\f$ such that \f$\Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)\f$.
-     */
-    virtual ordinal_type 
-    getIndex(const Teuchos::Array<ordinal_type>& term) const;
-
-    //! Return coordinate bases
-    /*!
-     * Array is of size dimension().
-     */
-    Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, 
-							   value_type> > > 
-    getCoordinateBases() const;
-
-    //@}
-
     //! \name Implementation of Stokhos::ReducedPCEBasis methods
     //@{
 
@@ -178,10 +147,6 @@ namespace Stokhos {
     //! Get reduced quadrature object
     virtual Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >
     getReducedQuadrature() const;
-
-    //! Get reduced basis evaluated at original quadrature points
-    virtual void getBasisAtOriginalQuadraturePoints(
-      Teuchos::Array< Teuchos::Array<double> >& red_basis_vals) const;
 
     //@}
 

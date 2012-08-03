@@ -72,10 +72,6 @@ namespace Stokhos {
     virtual Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >
     getReducedQuadrature() const = 0;
 
-    //! Get reduced basis evaluated at original quadrature points
-    virtual void getBasisAtOriginalQuadraturePoints(
-      Teuchos::Array< Teuchos::Array<double> >& red_basis_vals) const = 0;
-
     //@}
 
   private:
