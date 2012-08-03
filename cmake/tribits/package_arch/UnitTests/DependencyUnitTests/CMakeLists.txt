@@ -444,6 +444,28 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  preCopyrightTrilinos_ShowInvalidPackageSelfDependency
+  ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
+    -DSHOW_SELF_PACKAGE_DEPENDENCY_ERROR=ON
+    -DTrilinos_ASSERT_MISSING_PACKAGES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Error, the package 'Teko' is listed as a dependency itself in the list"
+    " 'LIB_REQUIRED_DEP_PACKAGES'!"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  preCopyrightTrilinos_ShowInvalidSubpackageSelfDependency
+  ARGS
+    -DSHOW_SELF_SUBPACKAGE_DEPENDENCY_ERROR=ON
+    -DTrilinos_ASSERT_MISSING_PACKAGES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Error, the package 'ThyraTpetra' is listed as a dependency itself in the"
+     " list 'LIB_REQUIRED_DEP_PACKAGES'!"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   MissingExtraRepositoryFail
   ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=MissingExtraRepo
     -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=OFF

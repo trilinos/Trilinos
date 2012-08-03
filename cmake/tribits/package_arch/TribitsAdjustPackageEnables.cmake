@@ -84,6 +84,14 @@ FUNCTION(TRIBITS_ABORT_ON_MISSING_PACKAGE   DEP_PKG  PACKAGE_NAME  DEP_PKG_LIST_
 ENDFUNCTION()
 
 
+FUNCTION(TRIBITS_ABORT_ON_SELF_DEP  PACKAGE_NAME  DEP_PKG_LIST_NAME)
+  MULTILINE_SET(ERRMSG
+    "Error, the package '${PACKAGE_NAME}' is listed as a dependency itself"
+    " in the list '${DEP_PKG_LIST_NAME}'!")
+  MESSAGE(FATAL_ERROR ${ERRMSG})
+ENDFUNCTION()
+
+
 #
 # Function that helps to set up backward package dependency lists
 #
@@ -95,6 +103,9 @@ FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME  LIST_TYPE)
   SET(PACKAGE_DEPS_LIST)
 
   FOREACH(DEP_PKG ${${LIST_TYPE}})
+    IF (${DEP_PKG} STREQUAL ${PACKAGE_NAME})
+      TRIBITS_ABORT_ON_SELF_DEP("${PACKAGE_NAME}" "${LIST_TYPE}")
+    ENDIF()
     FIND_LIST_ELEMENT( ${PROJECT_NAME}_SE_PACKAGES ${DEP_PKG} DEP_PKG_FOUND)
     #PRINT_VAR(DEP_PKG_FOUND)
     IF (DEP_PKG_FOUND)
@@ -353,7 +364,7 @@ MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
   SET(SUBPACKAGE_FULLNAME ${PACKAGE_NAME}${SUBPACKAGE_NAME})
 
   #
-  # A) Get ready to read in the contents of this this pakages's Dependencies.cmake file
+  # A) Get ready to read in the contents of this this subpakages's Dependencies.cmake file
   #
 
   SET(${SUBPACKAGE_FULLNAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES "")
