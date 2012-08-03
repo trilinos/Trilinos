@@ -117,8 +117,10 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   readGeoGenParams(paramFile, geoparams, comm);
   GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
   RCP<tMVector_t> coords = gg->getCoordinates();
+  RCP<tMVector_t> weight= gg->getWeights();
   delete gg;
   RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(coords);
+  RCP<const tMVector_t> weightConst = Teuchos::rcp_const_cast<const tMVector_t>(weight);
 
 
   size_t localCount = coords->getLocalLength();
@@ -169,11 +171,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
 
-  //cout << "basl1" << endl;
   problem.solve();
-
-  //cout << "basla" << endl;
-
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
       problem.getSolution();
@@ -403,7 +401,6 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
   parParams.set("imbalance_tolerance", double(imbalance));
 
 #ifdef HAVE_ZOLTAN2_MPI
-
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
       MPI_COMM_WORLD);
 #else
@@ -561,8 +558,6 @@ int main(int argc, char *argv[])
   catch(char const* s){
     if (rank == 0)
     cerr << s << endl;
-  }
-  catch (...){
   }
   //if (rank == 0)
   //  serialTest(numParts, numCoords, imbalance);
