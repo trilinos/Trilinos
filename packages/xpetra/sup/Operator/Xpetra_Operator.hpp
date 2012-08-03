@@ -471,7 +471,7 @@ namespace Xpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(domainMap->getFixedBlockSize() != rangeMap->getFixedBlockSize(), Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): block size of rangeMap and domainMap are different.");
         return Teuchos::as<LocalOrdinal>(domainMap->getFixedBlockSize()); // TODO: why LocalOrdinal?
       } else
-        TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): no strided maps available."); // TODO remove this
+        //TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): no strided maps available."); // TODO remove this
         return 1;
     }; //TODO: why LocalOrdinal?
 
