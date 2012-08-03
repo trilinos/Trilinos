@@ -528,17 +528,17 @@ namespace Tpetra {
     // This method's goal is to fill in the three arrays (compressed
     // sparse row format) that define the sparse graph's and matrix's
     // structure, and the sparse matrix's values.
-    ArrayRCP<LocalOrdinal> inds;
-    ArrayRCP<size_t>       ptrs;
-    ArrayRCP<Scalar>       vals;
+    ArrayRCP<LO>     inds;
+    ArrayRCP<size_t> ptrs;
+    ArrayRCP<Scalar> vals;
 
     // Get references to the data in myGraph_, so we can modify them
     // as well.  Note that we only call fillLocalGraphAndMatrix() if
     // the matrix owns the graph, which means myGraph_ is not null.
-    ArrayRCP<LocalOrdinal>            &lclInds1D_     = myGraph_->lclInds1D_;
-    ArrayRCP<ArrayRCP<LocalOrdinal> > &lclInds2D_     = myGraph_->lclInds2D_;
-    ArrayRCP<size_t>                  &rowPtrs_       = myGraph_->rowPtrs_;
-    ArrayRCP<size_t>                  &numRowEntries_ = myGraph_->numRowEntries_;
+    ArrayRCP<LO>            &lclInds1D_     = myGraph_->lclInds1D_;
+    ArrayRCP<ArrayRCP<LO> > &lclInds2D_     = myGraph_->lclInds2D_;
+    ArrayRCP<size_t>        &rowPtrs_       = myGraph_->rowPtrs_;
+    ArrayRCP<size_t>        &numRowEntries_ = myGraph_->numRowEntries_;
     size_t & nodeNumEntries_   = myGraph_->nodeNumEntries_;
     size_t & nodeNumAllocated_ = myGraph_->nodeNumAllocated_;
 
@@ -552,6 +552,13 @@ namespace Tpetra {
       ptrs = sparse_ops_type::allocRowPtrs (getRowMap ()->getNode (), numRowEntries_ ());
       inds = sparse_ops_type::template allocStorage<LO> (getRowMap ()->getNode (), ptrs ());
       vals = sparse_ops_type::template allocStorage<ST> (getRowMap ()->getNode (), ptrs ());
+
+      // mfh 02 Aug 2012: numRowEntries_ tells the number of entries
+      // in each row.  Once we fill the local graph and matrix and
+      // optimize storage, we _should_ be able to let go of it.
+      // (There's some complicated thing in Tpetra::CrsGraph that
+      // doesn't want to let go of it in some cases.  I'm still trying
+      // to understand when and why.)
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
         std::copy (lclInds2D_[row].begin(),
@@ -573,11 +580,17 @@ namespace Tpetra {
       // those entries.
       if (nodeNumEntries_ != nodeNumAllocated_) {
         // We have to pack the 1-D storage, since the user didn't fill
-        // up all requested storage.
+        // up all requested storage.  We compute the row offsets
+        // (ptrs) from numRowEntries_, which has the true number of
+        // inserted entries in each row (vs. the number that we
+        // requested when constructing the matrix, which is used by
+        // the unpacked row offsets array rowPtrs_).
         ptrs = sparse_ops_type::allocRowPtrs (getRowMap ()->getNode (), numRowEntries_ ());
         inds = sparse_ops_type::template allocStorage<LO> (getRowMap ()->getNode (), ptrs ());
         vals = sparse_ops_type::template allocStorage<ST> (getRowMap ()->getNode (), ptrs ());
         for (size_t row=0; row < numRows; ++row) {
+          // rowPtrs_ contains the unpacked row offsets, so use it to
+          // copy data out of unpacked 1-D storage.
           const size_t numentrs = numRowEntries_[row];
           std::copy (lclInds1D_.begin() + rowPtrs_[row],
                      lclInds1D_.begin() + rowPtrs_[row] + numentrs,
@@ -601,57 +614,52 @@ namespace Tpetra {
     }
 
     // May we ditch the old allocations for the packed (and otherwise
-    // "optimized") allocations, later in this routine?  Request
-    // optimized storage by default.
-    bool requestOptimizedStorage = true;
+    // "optimized") allocations, later in this routine?  Optimize
+    // storage if the graph is not static, or if the graph already has
+    // optimized storage.
+    const bool default_OptimizeStorage =
+      ! isStaticGraph () || staticGraph_->isStorageOptimized ();
+    const bool requestOptimizedStorage =
+      params != null && params->get ("Optimize Storage", default_OptimizeStorage);
+
     // The graph has optimized storage when indices are allocated,
     // numRowEntries_ is null, and there are more than zero rows on
     // this process.  It's impossible for the graph to have dynamic
     // profile (getProfileType() == DynamicProfile) and be optimized
     // (isStorageOptimized()).
-    const bool default_OptimizeStorage =
-      ! isStaticGraph () || staticGraph_->isStorageOptimized ();
-    if (params != null) {
-      requestOptimizedStorage = params->get ("Optimize Storage", default_OptimizeStorage);
-    }
 
-    // NOTE (mfh 02 Aug 2012) This changes the policy for when to
-    // request optimized storage.  If the input ParameterList is null,
-    // the new default is now to optimize storage, whereas before the
-    // default when the parameter list was null was _not_ to optimize
-    // storage.  This now makes fillLocalGraphAndMatrix() have the
-    // same default behavior as fillLocalMatrix().
-
+    // FIXME (mfh 02 Aug 2012) fillLocalGraphAndMatrix() has different
+    // default behavior for the case params == null than
+    // fillLocalMatrix().  When I tried to give the two methods the
+    // same default behavior in this case, it caused all kinds of unit
+    // tests to fail, mainly revolving around numRowEntries_ being
+    // null or not.  I found it easier just to revert to the old
+    // behavior for now, though I would really, really like to make
+    // this less fragile.
+    //
+    // To elaborate: once we changed the default behavior, setting
+    // numRowEntries_ to null when requestOptimizedStorage is true
+    // causes CrsGraph to segfault when:
+    // - the graph has dynamic profile, and
+    // - if you do a fillResume(), modify structure, and then do a
+    //   fillComplete() on the owning CrsMatrix.
+    // This is odd because we set the graph to have static profile
+    // just below.
+    //
+    // Furthermore, once we changed the default behavior, setting
+    // numRowEntries_ to null when requestOptimizedStorage is true,
+    // when the graph has static profile, causes a unit test
+    // (tpetra/test/CrsMatrix/CrsMatrix_NonlocalAfterResume.hpp line
+    // 130) to fail.  This is because CrsGraph::isStorageOptimized()
+    // returns false if numRowEntries_ is not null.
     if (requestOptimizedStorage) {
       // Free the old, unpacked, unoptimized allocations.
 
-      // mfh 02 Aug 2012: It's allowed to set this to null, since
-      // we'll be changing the graph from dynamic to static profile
-      // below.
+      // mfh 02 Aug 2012: It's allowed to set these arrays to null,
+      // since we'll be changing the graph from dynamic to static
+      // profile below.
       lclInds2D_ = null;
-
-      if (staticGraph_->getProfileType() == StaticProfile) {
-        // FIXME (mfh 02 Aug 2012) For some reason, setting numRowEntries_ to
-        // null when the graph has dynamic profile causes CrsGraph to
-        // segfault if you do a fillResume() and then a fillComplete()
-        // on the owning CrsMatrix.  We'll have to go back into
-        // CrsGraph and figure out why.  It's odd because we set the
-        // graph to have static profile just below.  Anyway, not
-        // setting this to null fixes the segfault, though it might
-        // keep more memory around than we need.
-        //
-        // FIXME (mfh 02 Aug 2012) For some reason, setting
-        // numRowEntries_ to null when the graph has static profile
-        // causes one of the unit tests
-        // (tpetra/test/CrsMatrix/CrsMatrix_NonlocalAfterResume.hpp
-        // line 130) to fail.  Surprise!
-        // CrsGraph::isStorageOptimized() returns false if
-        // numRowEntries_ is not null.  Argh.  The only thing I can do
-        // is go back a few commits and imitate the original behavior.
-        // This seems a little bit too fragile for my tastes.
-
-        //numRowEntries_ = null;
-      }
+      numRowEntries_ = null;
       values2D_ = null;
 
       // Keep the new, packed, optimized allocations.
@@ -659,6 +667,8 @@ namespace Tpetra {
       lclInds1D_ = inds;
       rowPtrs_   = ptrs;
       values1D_  = vals;
+
+      // We've optimized storage; now the graph has static profile.
       myGraph_->pftype_ = StaticProfile;
     }
 
