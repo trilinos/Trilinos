@@ -38,8 +38,6 @@ template <typename T>
   T max = numeric_limits<T>::min();
   T min = numeric_limits<T>::max();
 
-  if (n < 1) return std::pair<T,T>(min, max);
-
   for (size_t i=0; i < n; i++){
     if (val[i] < min) min = val[i];
     if (val[i] > max) max = val[i];
@@ -750,6 +748,10 @@ template <typename T>
     if (len > 0){
       v0 = val[0];
       v1 = val[len-1];
+    }
+    else {
+      v0 = numeric_limits<T>::max();
+      v1 = numeric_limits<T>::min();
     }
   
     try{
