@@ -525,11 +525,16 @@ namespace Tpetra {
     typedef Scalar ST;
 
     const size_t numRows = getNodeNumRows();
-    // here's what we want...
+    // This method's goal is to fill in the three arrays (compressed
+    // sparse row format) that define the sparse graph's and matrix's
+    // structure, and the sparse matrix's values.
     ArrayRCP<LocalOrdinal> inds;
     ArrayRCP<size_t>       ptrs;
     ArrayRCP<Scalar>       vals;
-    // get refs to data in myGraph_, so we can modify it as well
+
+    // Get references to the data in myGraph_, so we can modify them
+    // as well.  Note that we only call fillLocalGraphAndMatrix() if
+    // the matrix owns the graph, which means myGraph_ is not null.
     ArrayRCP<LocalOrdinal>            &lclInds1D_     = myGraph_->lclInds1D_;
     ArrayRCP<ArrayRCP<LocalOrdinal> > &lclInds2D_     = myGraph_->lclInds2D_;
     ArrayRCP<size_t>                  &rowPtrs_       = myGraph_->rowPtrs_;
@@ -599,6 +604,11 @@ namespace Tpetra {
     // "optimized") allocations, later in this routine?  Request
     // optimized storage by default.
     bool requestOptimizedStorage = true;
+    // The graph has optimized storage when indices are allocated,
+    // numRowEntries_ is null, and there are more than zero rows on
+    // this process.  It's impossible for the graph to have dynamic
+    // profile (getProfileType() == DynamicProfile) and be optimized
+    // (isStorageOptimized()).
     const bool default_OptimizeStorage =
       ! isStaticGraph () || staticGraph_->isStorageOptimized ();
     if (params != null) {
@@ -614,8 +624,24 @@ namespace Tpetra {
 
     if (requestOptimizedStorage) {
       // Free the old, unpacked, unoptimized allocations.
+
+      // mfh 02 Aug 2012: It's allowed to set this to null, since
+      // we'll be changing the graph from dynamic to static profile
+      // below.
       lclInds2D_     = null;
-      numRowEntries_ = null;
+
+      if (staticGraph_->getProfileType() == StaticProfile) {
+        // FIXME (mfh 02 Aug 2012) For some reason, setting this to
+        // null when the graph has dynamic profile causes CrsGraph to
+        // segfault if you do a fillResume() and then a fillComplete()
+        // on the owning CrsMatrix.  We'll have to go back into
+        // CrsGraph and figure out why.  It's odd because we set the
+        // graph to have static profile just below.  Anyway, not
+        // setting this to null fixes the segfault, though it might
+        // keep more memory around than we need.  I'm also not sure if
+        // we need to fix this somehow.
+        numRowEntries_ = null;
+      }
       values2D_ = null;
 
       // Keep the new, packed, optimized allocations.
