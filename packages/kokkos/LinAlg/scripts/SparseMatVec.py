@@ -966,8 +966,9 @@ def emitForLoopOneFor (defDict, alpha, beta, indent=0):
         # Not 'const DomainScalar' in the for-if and for-while cases,
         # since we need to fetch the current input multivector value
         # first before we can assign to the temporary value.
-        s += ind + '// Before updating the matrix, tmp contains\n'
-        s += ind + '// the value(s) in X(j,:) (the j-th row of X).\n'
+        s += ind + '// Invariant: Right before updating Y(i,:), tmp = X(j,:).\n'
+        s += ind + '// Initializing tmp here isn\'t necessary for correctness, but it\n'
+        s += ind + '// makes compilers stop complaining about uninitialized variables.\n'
         tmpType = 'DomainScalar'
     else:
         tmpType = 'RangeScalar'
@@ -976,10 +977,20 @@ def emitForLoopOneFor (defDict, alpha, beta, indent=0):
         tmpSize = defDict['unrollLength']
     else:
         tmpSize = defDict['numVecs']
+
+    # Emit declaration of temporary variables.  We don't need to
+    # assign them an initial value for correctness, but doing so keeps
+    # the compiler from complaining.
+    #
+    # tmpTypeZero: The value zero, with the type of the temp(s).
+    tmpTypeZero = 'Teuchos::ScalarTraits<' + tmpType + '>::zero()'
     if tmpSize > 1:
         s += ind + tmpType + ' tmp[' + str(tmpSize) +'];\n'
-    else:
-        s += ind + tmpType + ' tmp;\n'
+        for kk in xrange(0, tmpSize):
+            s += ind + 'tmp[' + str(kk) + '] = ' + tmpTypeZero + ';\n'
+        s += '\n' # Set off the temps declaration by a blank line
+    else: # Only one temp value, not an array of them
+        s += ind + tmpType + ' tmp = ' + tmpTypeZero + ';\n'
 
     if defDict['sparseFormat'] == 'CSR':
         s = s + ind + 'RangeScalar* Y_i = Y;\n'

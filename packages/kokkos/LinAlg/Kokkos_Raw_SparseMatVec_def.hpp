@@ -667,9 +667,10 @@ matVecCscColMajorForwhile1Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -682,9 +683,10 @@ matVecCscColMajorForwhile1Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -697,9 +699,10 @@ matVecCscColMajorForwhile1Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -758,9 +761,13 @@ matVecCscColMajorForwhile2Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -777,9 +784,13 @@ matVecCscColMajorForwhile2Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -796,9 +807,13 @@ matVecCscColMajorForwhile2Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -861,9 +876,14 @@ matVecCscColMajorForwhile3Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -882,9 +902,14 @@ matVecCscColMajorForwhile3Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -903,9 +928,14 @@ matVecCscColMajorForwhile3Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -970,9 +1000,15 @@ matVecCscColMajorForwhile4Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -993,9 +1029,15 @@ matVecCscColMajorForwhile4Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1016,9 +1058,15 @@ matVecCscColMajorForwhile4Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1085,9 +1133,10 @@ matVecCscColMajorForif1Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1102,9 +1151,10 @@ matVecCscColMajorForif1Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1119,9 +1169,10 @@ matVecCscColMajorForif1Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1182,9 +1233,13 @@ matVecCscColMajorForif2Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1203,9 +1258,13 @@ matVecCscColMajorForif2Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1224,9 +1283,13 @@ matVecCscColMajorForif2Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1291,9 +1354,14 @@ matVecCscColMajorForif3Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1314,9 +1382,14 @@ matVecCscColMajorForif3Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1337,9 +1410,14 @@ matVecCscColMajorForif3Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1406,9 +1484,15 @@ matVecCscColMajorForif4Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1431,9 +1515,15 @@ matVecCscColMajorForif4Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -1456,9 +1546,15 @@ matVecCscColMajorForif4Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = val[k];
@@ -5308,7 +5404,7 @@ matVecCsrColMajorForwhile1Vec (
   const size_t nnz = ptr[numRows];
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5330,7 +5426,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5352,7 +5448,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5374,7 +5470,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5398,7 +5494,7 @@ matVecCsrColMajorForwhile1Vec (
   }
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5420,7 +5516,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5442,7 +5538,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5464,7 +5560,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5488,7 +5584,7 @@ matVecCsrColMajorForwhile1Vec (
   }
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5510,7 +5606,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5532,7 +5628,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5554,7 +5650,7 @@ matVecCsrColMajorForwhile1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5637,6 +5733,9 @@ matVecCsrColMajorForwhile2Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5664,6 +5763,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5691,6 +5793,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5718,6 +5823,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5747,6 +5855,9 @@ matVecCsrColMajorForwhile2Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5774,6 +5885,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5801,6 +5915,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5828,6 +5945,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5857,6 +5977,9 @@ matVecCsrColMajorForwhile2Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5884,6 +6007,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5911,6 +6037,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -5938,6 +6067,9 @@ matVecCsrColMajorForwhile2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6025,6 +6157,10 @@ matVecCsrColMajorForwhile3Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6056,6 +6192,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6087,6 +6227,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6118,6 +6262,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6151,6 +6299,10 @@ matVecCsrColMajorForwhile3Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6182,6 +6334,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6213,6 +6369,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6244,6 +6404,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6277,6 +6441,10 @@ matVecCsrColMajorForwhile3Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6308,6 +6476,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6339,6 +6511,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6370,6 +6546,10 @@ matVecCsrColMajorForwhile3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6461,6 +6641,11 @@ matVecCsrColMajorForwhile4Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6496,6 +6681,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6531,6 +6721,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6566,6 +6761,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6603,6 +6803,11 @@ matVecCsrColMajorForwhile4Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6638,6 +6843,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6673,6 +6883,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6708,6 +6923,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6745,6 +6965,11 @@ matVecCsrColMajorForwhile4Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6780,6 +7005,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6815,6 +7045,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6850,6 +7085,11 @@ matVecCsrColMajorForwhile4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6944,7 +7184,7 @@ matVecCsrColMajorForif1Vec (
   const size_t nnz = ptr[numRows];
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6968,7 +7208,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -6992,7 +7232,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7016,7 +7256,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7042,7 +7282,7 @@ matVecCsrColMajorForif1Vec (
   }
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7066,7 +7306,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7090,7 +7330,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7114,7 +7354,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7140,7 +7380,7 @@ matVecCsrColMajorForif1Vec (
   }
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7164,7 +7404,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7188,7 +7428,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7212,7 +7452,7 @@ matVecCsrColMajorForif1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7297,6 +7537,9 @@ matVecCsrColMajorForif2Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7326,6 +7569,9 @@ matVecCsrColMajorForif2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7355,6 +7601,9 @@ matVecCsrColMajorForif2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7384,6 +7633,9 @@ matVecCsrColMajorForif2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7415,6 +7667,9 @@ matVecCsrColMajorForif2Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7444,6 +7699,9 @@ matVecCsrColMajorForif2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7473,6 +7731,9 @@ matVecCsrColMajorForif2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7502,6 +7763,9 @@ matVecCsrColMajorForif2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7533,6 +7797,9 @@ matVecCsrColMajorForif2Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7562,6 +7829,9 @@ matVecCsrColMajorForif2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7591,6 +7861,9 @@ matVecCsrColMajorForif2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7620,6 +7893,9 @@ matVecCsrColMajorForif2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7709,6 +7985,10 @@ matVecCsrColMajorForif3Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7742,6 +8022,10 @@ matVecCsrColMajorForif3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7775,6 +8059,10 @@ matVecCsrColMajorForif3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7808,6 +8096,10 @@ matVecCsrColMajorForif3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7843,6 +8135,10 @@ matVecCsrColMajorForif3Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7876,6 +8172,10 @@ matVecCsrColMajorForif3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7909,6 +8209,10 @@ matVecCsrColMajorForif3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7942,6 +8246,10 @@ matVecCsrColMajorForif3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -7977,6 +8285,10 @@ matVecCsrColMajorForif3Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8010,6 +8322,10 @@ matVecCsrColMajorForif3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8043,6 +8359,10 @@ matVecCsrColMajorForif3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8076,6 +8396,10 @@ matVecCsrColMajorForif3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8169,6 +8493,11 @@ matVecCsrColMajorForif4Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8206,6 +8535,11 @@ matVecCsrColMajorForif4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8243,6 +8577,11 @@ matVecCsrColMajorForif4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8280,6 +8619,11 @@ matVecCsrColMajorForif4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8319,6 +8663,11 @@ matVecCsrColMajorForif4Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8356,6 +8705,11 @@ matVecCsrColMajorForif4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8393,6 +8747,11 @@ matVecCsrColMajorForif4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8430,6 +8789,11 @@ matVecCsrColMajorForif4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8469,6 +8833,11 @@ matVecCsrColMajorForif4Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8506,6 +8875,11 @@ matVecCsrColMajorForif4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8543,6 +8917,11 @@ matVecCsrColMajorForif4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -8580,6 +8959,11 @@ matVecCsrColMajorForif4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -9233,9 +9617,10 @@ matVecCscColMajorForwhileConj1Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9248,9 +9633,10 @@ matVecCscColMajorForwhileConj1Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9263,9 +9649,10 @@ matVecCscColMajorForwhileConj1Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9324,9 +9711,13 @@ matVecCscColMajorForwhileConj2Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9343,9 +9734,13 @@ matVecCscColMajorForwhileConj2Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9362,9 +9757,13 @@ matVecCscColMajorForwhileConj2Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9427,9 +9826,14 @@ matVecCscColMajorForwhileConj3Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9448,9 +9852,14 @@ matVecCscColMajorForwhileConj3Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9469,9 +9878,14 @@ matVecCscColMajorForwhileConj3Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9536,9 +9950,15 @@ matVecCscColMajorForwhileConj4Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9559,9 +9979,15 @@ matVecCscColMajorForwhileConj4Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9582,9 +10008,15 @@ matVecCscColMajorForwhileConj4Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9651,9 +10083,10 @@ matVecCscColMajorForifConj1Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9668,9 +10101,10 @@ matVecCscColMajorForifConj1Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9685,9 +10119,10 @@ matVecCscColMajorForifConj1Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
-    DomainScalar tmp;
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
+    DomainScalar tmp = Teuchos::ScalarTraits<DomainScalar>::zero();
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9748,9 +10183,13 @@ matVecCscColMajorForifConj2Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9769,9 +10208,13 @@ matVecCscColMajorForifConj2Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9790,9 +10233,13 @@ matVecCscColMajorForifConj2Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[2];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9857,9 +10304,14 @@ matVecCscColMajorForifConj3Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9880,9 +10332,14 @@ matVecCscColMajorForifConj3Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9903,9 +10360,14 @@ matVecCscColMajorForifConj3Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[3];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9972,9 +10434,15 @@ matVecCscColMajorForifConj4Vec (
   }
   const size_t nnz = ptr[numCols];
   if (alpha == STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -9997,9 +10465,15 @@ matVecCscColMajorForifConj4Vec (
     }
   }
   else if (alpha == -STS::one()) {
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -10022,9 +10496,15 @@ matVecCscColMajorForifConj4Vec (
     }
   }
   else { // alpha != 1 && alpha != -1
-    // Before updating the matrix, tmp contains
-    // the value(s) in X(j,:) (the j-th row of X).
+    // Invariant: Right before updating Y(i,:), tmp = X(j,:).
+    // Initializing tmp here isn't necessary for correctness, but it
+    // makes compilers stop complaining about uninitialized variables.
     DomainScalar tmp[4];
+    tmp[0] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[1] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[2] = Teuchos::ScalarTraits<DomainScalar>::zero();
+    tmp[3] = Teuchos::ScalarTraits<DomainScalar>::zero();
+
     Ordinal j = 0;
     for (size_t k = 0; k < nnz; ++k) {
       const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);
@@ -13874,7 +14354,7 @@ matVecCsrColMajorForwhileConj1Vec (
   const size_t nnz = ptr[numRows];
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -13896,7 +14376,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -13918,7 +14398,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -13940,7 +14420,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -13964,7 +14444,7 @@ matVecCsrColMajorForwhileConj1Vec (
   }
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -13986,7 +14466,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14008,7 +14488,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14030,7 +14510,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14054,7 +14534,7 @@ matVecCsrColMajorForwhileConj1Vec (
   }
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14076,7 +14556,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14098,7 +14578,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14120,7 +14600,7 @@ matVecCsrColMajorForwhileConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14203,6 +14683,9 @@ matVecCsrColMajorForwhileConj2Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14230,6 +14713,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14257,6 +14743,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14284,6 +14773,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14313,6 +14805,9 @@ matVecCsrColMajorForwhileConj2Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14340,6 +14835,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14367,6 +14865,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14394,6 +14895,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14423,6 +14927,9 @@ matVecCsrColMajorForwhileConj2Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14450,6 +14957,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14477,6 +14987,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14504,6 +15017,9 @@ matVecCsrColMajorForwhileConj2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14591,6 +15107,10 @@ matVecCsrColMajorForwhileConj3Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14622,6 +15142,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14653,6 +15177,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14684,6 +15212,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14717,6 +15249,10 @@ matVecCsrColMajorForwhileConj3Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14748,6 +15284,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14779,6 +15319,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14810,6 +15354,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14843,6 +15391,10 @@ matVecCsrColMajorForwhileConj3Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14874,6 +15426,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14905,6 +15461,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -14936,6 +15496,10 @@ matVecCsrColMajorForwhileConj3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15027,6 +15591,11 @@ matVecCsrColMajorForwhileConj4Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15062,6 +15631,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15097,6 +15671,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15132,6 +15711,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15169,6 +15753,11 @@ matVecCsrColMajorForwhileConj4Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15204,6 +15793,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15239,6 +15833,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15274,6 +15873,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15311,6 +15915,11 @@ matVecCsrColMajorForwhileConj4Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15346,6 +15955,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15381,6 +15995,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15416,6 +16035,11 @@ matVecCsrColMajorForwhileConj4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15510,7 +16134,7 @@ matVecCsrColMajorForifConj1Vec (
   const size_t nnz = ptr[numRows];
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15534,7 +16158,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15558,7 +16182,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15582,7 +16206,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15608,7 +16232,7 @@ matVecCsrColMajorForifConj1Vec (
   }
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15632,7 +16256,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15656,7 +16280,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15680,7 +16304,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15706,7 +16330,7 @@ matVecCsrColMajorForifConj1Vec (
   }
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15730,7 +16354,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::zero()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15754,7 +16378,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else if (beta == STS::one()) {
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15778,7 +16402,7 @@ matVecCsrColMajorForifConj1Vec (
       Y[i + 0*colStrideY] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
-      RangeScalar tmp;
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15863,6 +16487,9 @@ matVecCsrColMajorForifConj2Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15892,6 +16519,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15921,6 +16551,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15950,6 +16583,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -15981,6 +16617,9 @@ matVecCsrColMajorForifConj2Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16010,6 +16649,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16039,6 +16681,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16068,6 +16713,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16099,6 +16747,9 @@ matVecCsrColMajorForifConj2Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16128,6 +16779,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16157,6 +16811,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16186,6 +16843,9 @@ matVecCsrColMajorForifConj2Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[2];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16275,6 +16935,10 @@ matVecCsrColMajorForifConj3Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16308,6 +16972,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16341,6 +17009,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16374,6 +17046,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16409,6 +17085,10 @@ matVecCsrColMajorForifConj3Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16442,6 +17122,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16475,6 +17159,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16508,6 +17196,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16543,6 +17235,10 @@ matVecCsrColMajorForifConj3Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16576,6 +17272,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16609,6 +17309,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16642,6 +17346,10 @@ matVecCsrColMajorForifConj3Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[3];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16735,6 +17443,11 @@ matVecCsrColMajorForifConj4Vec (
   if (alpha == STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16772,6 +17485,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16809,6 +17527,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16846,6 +17569,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16885,6 +17613,11 @@ matVecCsrColMajorForifConj4Vec (
   else if (alpha == -STS::one()) {
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16922,6 +17655,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16959,6 +17697,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -16996,6 +17739,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -17035,6 +17783,11 @@ matVecCsrColMajorForifConj4Vec (
   else { // alpha != 1 && alpha != -1
     if (beta == -STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -17072,6 +17825,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -17109,6 +17867,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else if (beta == STS::one()) {
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
@@ -17146,6 +17909,11 @@ matVecCsrColMajorForifConj4Vec (
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp[4];
+      tmp[0] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[1] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[2] = Teuchos::ScalarTraits<RangeScalar>::zero();
+      tmp[3] = Teuchos::ScalarTraits<RangeScalar>::zero();
+
       RangeScalar* Y_i = Y;
       Ordinal i = 0;
       for (size_t k = 0; k < nnz; ++k) {
