@@ -76,19 +76,19 @@ bool Check_Global(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2)
   }
   if (file1.Num_Nodes() != file2.Num_Nodes()) {
     if(interface.map_flag != PARTIAL){
-      std::cout << "exodiff: ERROR .. Number of nodes don't agree." << std::endl;
+      std::cout << "exodiff: ERROR .. Number of nodes doesn't agree." << std::endl;
       is_same = false;
     }
   }
   if (file1.Num_Elmts() != file2.Num_Elmts()) {
     if(interface.map_flag != PARTIAL){
-      std::cout << "exodiff: ERROR .. Number of elements don't agree." << std::endl;
+      std::cout << "exodiff: ERROR .. Number of elements doesn't agree." << std::endl;
       is_same = false;
     }
   }
   if (!interface.map_flag && file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
     if(interface.map_flag != PARTIAL){
-      std::cout << "exodiff: ERROR .. Number of blocks don't agree." << std::endl;
+      std::cout << "exodiff: ERROR .. Number of blocks doesn't agree." << std::endl;
       is_same = false;
     }
   }
@@ -243,8 +243,10 @@ namespace {
   
     for (size_t e = 0; e < node_count; ++e) {
       if (conn1[e] != conn2[e]) {
-	std::cout << "exodiff: ERROR .. Connectivities for block id " << block1->Id()
-		  << " are not the same." << std::endl;
+	size_t elem = e / block2->Num_Nodes_per_Elmt();
+	size_t node = e % block2->Num_Nodes_per_Elmt();
+	std::cout << "exodiff: ERROR .. Connectivities in block id " << block1->Id() << " are not the same.\n"
+		  << "                  First difference is node " << node+1 << " of local element " << elem+1 << std::endl;
 	is_same = false;
 	break;
       }
@@ -275,14 +277,14 @@ namespace {
       }
     }
     if (block1->Size() != block2->Size()) {
-      std::cout << "exodiff: ERROR .. Block number of elements don't agree ("
+      std::cout << "exodiff: ERROR .. Block number of elements doesn't agree ("
 		<< block1->Size()
 		<< " != " << block2->Size() << ")."
 		<< std::endl;
       is_same = false;
     }
     if (block1->Num_Nodes_per_Elmt() != block2->Num_Nodes_per_Elmt()) {
-      std::cout << "exodiff: ERROR .. Block number of nodes per element don't agree ("
+      std::cout << "exodiff: ERROR .. Block number of nodes per element doesn't agree ("
 		<< block1->Num_Nodes_per_Elmt()
 		<< " != " << block2->Num_Nodes_per_Elmt() << ")."
 		<< std::endl;
@@ -290,7 +292,7 @@ namespace {
     }
 #if 0
     if (block1->Num_Attributes() != block2->Num_Attributes()) {
-      std::cout << "exodiff: ERROR .. Block number of attributes don't agree ("
+      std::cout << "exodiff: ERROR .. Block number of attributes doesn't agree ("
 		<< block1->Num_Attributes()
 		<< " != " << block2->Num_Attributes() << ")."
 		<< std::endl;
@@ -310,7 +312,7 @@ namespace {
     bool is_same = true;
     if (file1.Num_Node_Sets() != file2.Num_Node_Sets()) {
       if(interface.map_flag != PARTIAL){
-	std::cout << "exodiff: ERROR .. Number of nodesets don't agree...\n";
+	std::cout << "exodiff: ERROR .. Number of nodesets doesn't agree...\n";
 	if (interface.pedantic)
 	  is_same = false;
       }
@@ -394,7 +396,7 @@ namespace {
     bool is_same = true;
     if (file1.Num_Side_Sets() != file2.Num_Side_Sets()) {
       if(interface.map_flag != PARTIAL){
-	std::cout << "exodiff: ERROR .. Number of sidesets don't agree...\n";
+	std::cout << "exodiff: ERROR .. Number of sidesets doesn't agree...\n";
 	if (interface.pedantic)
 	  is_same = false;
       }
