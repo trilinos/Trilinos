@@ -177,14 +177,16 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Operator, StridedMaps, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_TPETRA
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Operator<Scalar, LO, GO, Node> Operator;
-    typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
     RCP<const Comm<int> > comm = getDefaultComm();
-
     const size_t numLocal = 10;
     const size_t INVALID = OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
+
+#ifdef HAVE_XPETRA_TPETRA
+    //typedef Teuchos::ScalarTraits<Scalar> ST;
+    //typedef Operator<Scalar, LO, GO, Node> Operator;
+    typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
+
+
     RCP<const Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
      {
        TpetraCrsMatrix<Scalar, LO, GO, Node> t =  TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
@@ -205,18 +207,14 @@ namespace {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    typedef Operator<double, int, int, Node> Operator;
-    typedef CrsOperator<double, int, int, Node> CrsOperator;
-    RCP<const Comm<int> > comm = getDefaultComm();
+    typedef CrsOperator<double, int, int, Node> EpCrsOperator;
 
-    const size_t numLocal = 10;
-    const size_t INVALID = OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
     RCP<const Map<int,int,Node> > map = Xpetra::MapFactory<int,int,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
      {
        EpetraCrsMatrix t =  EpetraCrsMatrix(map, numLocal);
 
        // Test of constructor
-       CrsOperator op(map,1);
+       EpCrsOperator op(map,1);
        op.fillComplete();
 
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
