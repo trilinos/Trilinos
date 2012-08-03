@@ -628,19 +628,29 @@ namespace Tpetra {
       // mfh 02 Aug 2012: It's allowed to set this to null, since
       // we'll be changing the graph from dynamic to static profile
       // below.
-      lclInds2D_     = null;
+      lclInds2D_ = null;
 
       if (staticGraph_->getProfileType() == StaticProfile) {
-        // FIXME (mfh 02 Aug 2012) For some reason, setting this to
+        // FIXME (mfh 02 Aug 2012) For some reason, setting numRowEntries_ to
         // null when the graph has dynamic profile causes CrsGraph to
         // segfault if you do a fillResume() and then a fillComplete()
         // on the owning CrsMatrix.  We'll have to go back into
         // CrsGraph and figure out why.  It's odd because we set the
         // graph to have static profile just below.  Anyway, not
         // setting this to null fixes the segfault, though it might
-        // keep more memory around than we need.  I'm also not sure if
-        // we need to fix this somehow.
-        numRowEntries_ = null;
+        // keep more memory around than we need.
+        //
+        // FIXME (mfh 02 Aug 2012) For some reason, setting
+        // numRowEntries_ to null when the graph has static profile
+        // causes one of the unit tests
+        // (tpetra/test/CrsMatrix/CrsMatrix_NonlocalAfterResume.hpp
+        // line 130) to fail.  Surprise!
+        // CrsGraph::isStorageOptimized() returns false if
+        // numRowEntries_ is not null.  Argh.  The only thing I can do
+        // is go back a few commits and imitate the original behavior.
+        // This seems a little bit too fragile for my tastes.
+
+        //numRowEntries_ = null;
       }
       values2D_ = null;
 
