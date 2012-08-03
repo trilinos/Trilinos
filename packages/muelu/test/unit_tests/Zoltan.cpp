@@ -291,8 +291,6 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Zoltan, Build3PDEs)
   {
 
-    return;
-
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -372,7 +370,6 @@ namespace MueLuTests {
 
     // Now treat the matrix as if it has 3 DOFs per node.
     A->SetFixedBlockSize(dofsPerNode);
-    A->SwitchToView("stridedMaps");
     level.Set("A",A);
 
     //build coordinates
@@ -424,18 +421,17 @@ namespace MueLuTests {
     LO numPartitions = comm->getSize();
     level.Set("number of partitions",numPartitions);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
-    //zoltan->SetNumberOfPartitions(numPartitions);
     //zoltan->SetOutputLevel(0); //options are 0=none, 1=summary, 2=every pid prints
     level.Request("Partition",zoltan.get());
     zoltan->Build(level);
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",zoltan.get());
-    /* //TODO temporary code to have the trivial decomposition (no change)
+    /* //temporary code to have the trivial decomposition (no change)
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
     for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
       *i = comm->getRank();
     decompEntries=Teuchos::null;
-    */ //TODO end of temporary code
+    */
 
     //Create vector whose local length is the global number of partitions.
     //This vector will record the local number of nonzeros associated with each partition.
