@@ -553,12 +553,8 @@ namespace Tpetra {
       inds = sparse_ops_type::template allocStorage<LO> (getRowMap ()->getNode (), ptrs ());
       vals = sparse_ops_type::template allocStorage<ST> (getRowMap ()->getNode (), ptrs ());
 
-      // mfh 02 Aug 2012: numRowEntries_ tells the number of entries
-      // in each row.  Once we fill the local graph and matrix and
-      // optimize storage, we _should_ be able to let go of it.
-      // (There's some complicated thing in Tpetra::CrsGraph that
-      // doesn't want to let go of it in some cases.  I'm still trying
-      // to understand when and why.)
+      // numRowEntries_ tells the number of valid entries
+      // in each row (as opposed to the allocated size)
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
         std::copy (lclInds2D_[row].begin(),
@@ -603,10 +599,6 @@ namespace Tpetra {
       else {
         // The user filled up all requested storage, so we don't have
         // to pack.
-        //
-        // FIXME (mfh 01 Aug 2012) If we don't use
-        // sparse_ops_type::allocStorage() to allocate ptrs, inds, and
-        // vals, then we won't get first-touch allocation.
         ptrs = rowPtrs_;
         inds = lclInds1D_;
         vals = values1D_;
@@ -627,48 +619,21 @@ namespace Tpetra {
     // this process.  It's impossible for the graph to have dynamic
     // profile (getProfileType() == DynamicProfile) and be optimized
     // (isStorageOptimized()).
-
-    // FIXME (mfh 02 Aug 2012) fillLocalGraphAndMatrix() has different
-    // default behavior for the case params == null than
-    // fillLocalMatrix().  When I tried to give the two methods the
-    // same default behavior in this case, it caused all kinds of unit
-    // tests to fail, mainly revolving around numRowEntries_ being
-    // null or not.  I found it easier just to revert to the old
-    // behavior for now, though I would really, really like to make
-    // this less fragile.
-    //
-    // To elaborate: once we changed the default behavior, setting
-    // numRowEntries_ to null when requestOptimizedStorage is true
-    // causes CrsGraph to segfault when:
-    // - the graph has dynamic profile, and
-    // - if you do a fillResume(), modify structure, and then do a
-    //   fillComplete() on the owning CrsMatrix.
-    // This is odd because we set the graph to have static profile
-    // just below.
-    //
-    // Furthermore, once we changed the default behavior, setting
-    // numRowEntries_ to null when requestOptimizedStorage is true,
-    // when the graph has static profile, causes a unit test
-    // (tpetra/test/CrsMatrix/CrsMatrix_NonlocalAfterResume.hpp line
-    // 130) to fail.  This is because CrsGraph::isStorageOptimized()
-    // returns false if numRowEntries_ is not null.
     if (requestOptimizedStorage) {
       // Free the old, unpacked, unoptimized allocations.
-
-      // mfh 02 Aug 2012: It's allowed to set these arrays to null,
-      // since we'll be changing the graph from dynamic to static
-      // profile below.
+      // Change the graph from dynamic to static allocaiton profile
+      // 
+      // delete old data
       lclInds2D_ = null;
       numRowEntries_ = null;
       values2D_ = null;
-
-      // Keep the new, packed, optimized allocations.
-      nodeNumAllocated_ = nodeNumEntries_;
+      // keep the new, packed, optimized allocations
       lclInds1D_ = inds;
       rowPtrs_   = ptrs;
       values1D_  = vals;
-
-      // We've optimized storage; now the graph has static profile.
+      // we're packed: number allocated is the same as the number of valid entries
+      nodeNumAllocated_ = nodeNumEntries_;
+      // we've switched to a static allocation profile (if we weren't already)
       myGraph_->pftype_ = StaticProfile;
     }
 
@@ -837,10 +802,6 @@ namespace Tpetra {
       else {
         // The user filled up all requested storage, so we don't have
         // to pack.
-        //
-        // FIXME (mfh 01 Aug 2012) If we don't use
-        // sparse_ops_type::allocStorage() to allocate vals, then we
-        // won't get first-touch allocation.
         vals = values1D_;
       }
     }
@@ -863,13 +824,11 @@ namespace Tpetra {
     else {
       lclparams = sublist (params, "Local Matrix");
     }
-    // The local matrix should be null at this point (mfh 01 Aug 2012:
-    // Does it have to be? What if we resumed fill and call
-    // fillComplete again?), but we delete it first in order to free
-    // memory before we allocate a new one.  Otherwise, we'll have to
-    // store two matrices temporarily, since the destructor of the old
-    // matrix won't be called until the new matrix's constructor
-    // finishes.
+
+    // The local matrix should be null at this point Just in case it isn't
+    // (future-proofing), delete it first in order to free memory before we allocate a new
+    // one.  Otherwise, we risk storing two matrices temporarily, since the destructor
+    // of the old matrix won't be called until the new matrix's constructor finishes.
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
@@ -1962,7 +1921,7 @@ namespace Tpetra {
     // there's only one process).  This call only costs a single
     // all-reduce if we don't need global assembly.
     if (getComm()->getSize() > 1) {
-      // mfh 03 May 2012: This calls insertGlobalValues(), one entry at a time.
+      // this calls insertGlobalValues(), one entry at a time.
       globalAssemble ();
     }
     else {
@@ -2681,7 +2640,7 @@ namespace Tpetra {
           // not a view, because the indices are stored as local
           // indices, not as global indices.
           //
-          // FIXME (mfh 14 Mar 2012) It might save some copying to add
+          // TODO (mfh 14 Mar 2012) It might save some copying to add
           // a method that gets a view of the values but a copy of the
           // global indices.
           const GO GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
@@ -2693,7 +2652,7 @@ namespace Tpetra {
           // views look like GO resp. Scalar, when the array they are
           // viewing is really an array of char.
           //
-          // FIXME (mfh 14 Mar 2012): Why do we need the reinterpret
+          // TODO (mfh 14 Mar 2012): Why do we need the reinterpret
           // cast?  Why can't we just store pairs?  Is it because
           // there are no Comm functions for sending and receiving
           // pairs?  How hard can that be to implement?
