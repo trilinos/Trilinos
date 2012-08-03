@@ -55,10 +55,14 @@
 
 //#include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
+#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_CrsOperator.hpp"
 #ifdef HAVE_XPETRA_TPETRA
-#include "Xpetra_TpetraCrsMatrix.hpp" //TMP
+#include "Xpetra_TpetraCrsMatrix.hpp"
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+#include "Xpetra_EpetraCrsMatrix.hpp"
 #endif
 namespace {
   using Teuchos::Array;
@@ -81,6 +85,10 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
   using Xpetra::TpetraCrsMatrix; //TMP
 #endif
+#ifdef HAVE_XPETRA_EPETRA
+  using Xpetra::EpetraCrsMatrix; //TMP
+#endif
+
   using Xpetra::Map;
 
   using Xpetra::viewLabel_t;
@@ -166,12 +174,70 @@ namespace {
 #endif
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Operator, StridedMaps, Scalar, LO, GO, Node )
+  {
+#ifdef HAVE_XPETRA_TPETRA
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef Operator<Scalar, LO, GO, Node> Operator;
+    typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    const size_t numLocal = 10;
+    const size_t INVALID = OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
+    RCP<const Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
+     {
+       TpetraCrsMatrix<Scalar, LO, GO, Node> t =  TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
+
+       // Test of constructor
+       CrsOperator op(map,1);
+       op.fillComplete();
+
+       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
+       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
+
+       op.SetFixedBlockSize(2);
+       TEST_EQUALITY(op.IsView("stridedMaps"),true);
+       TEST_EQUALITY(op.IsView("StridedMaps"),false);
+       int blkSize = op.GetFixedBlockSize();
+       TEST_EQUALITY_CONST(blkSize, 2);
+     }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    typedef Operator<double, int, int, Node> Operator;
+    typedef CrsOperator<double, int, int, Node> CrsOperator;
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    const size_t numLocal = 10;
+    const size_t INVALID = OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
+    RCP<const Map<int,int,Node> > map = Xpetra::MapFactory<int,int,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
+     {
+       EpetraCrsMatrix t =  EpetraCrsMatrix(map, numLocal);
+
+       // Test of constructor
+       CrsOperator op(map,1);
+       op.fillComplete();
+
+       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
+       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
+
+       op.SetFixedBlockSize(2);
+       TEST_EQUALITY(op.IsView("stridedMaps"),true);
+       TEST_EQUALITY(op.IsView("StridedMaps"),false);
+       int blkSize = op.GetFixedBlockSize();
+       TEST_EQUALITY_CONST(blkSize, 2);
+     }
+#endif
+  }
+
   // 
   // INSTANTIATIONS
   //
 
 #   define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                       \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Operator, ViewSwitching, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Operator, ViewSwitching, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Operator, StridedMaps, SC, LO, GO, Node )
   
   typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
