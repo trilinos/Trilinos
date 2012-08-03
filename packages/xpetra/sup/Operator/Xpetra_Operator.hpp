@@ -434,12 +434,6 @@ namespace Xpetra {
     //! Returns the CrsGraph associated with this matrix. 
     virtual RCP<const CrsGraph> getCrsGraph() const =0;
 
-  public: //TODO: protected
-    Teuchos::Hashtable<viewLabel_t, RCP<OperatorView> > operatorViewTable_; // hashtable storing the operator views (keys = view names, values = views).
-  
-    viewLabel_t defaultViewLabel_;  // label of the view associated with inital Operator construction
-    viewLabel_t currentViewLabel_;  // label of the current view
-
     // ----------------------------------------------------------------------------------
     // "TEMPORARY" VIEW MECHANISM
     // TODO: the view mechanism should be implemented as in MueMat.
@@ -482,6 +476,12 @@ namespace Xpetra {
     }; //TODO: why LocalOrdinal?
 
     // ----------------------------------------------------------------------------------
+
+    protected:
+      Teuchos::Hashtable<viewLabel_t, RCP<OperatorView> > operatorViewTable_; // hashtable storing the operator views (keys = view names, values = views).
+
+      viewLabel_t defaultViewLabel_;  // label of the view associated with inital Operator construction
+      viewLabel_t currentViewLabel_;  // label of the current view
 
   }; //class Operator
 
