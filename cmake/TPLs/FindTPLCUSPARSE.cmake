@@ -61,8 +61,8 @@ IF (NOT TPL_ENABLE_CUDA OR CUDA_VERSION VERSION_LESS "4.1")
 ELSE()
   IF(CMAKE_VERSION VERSION_LESS "2.8.8")
     # FindCUDA before CMake 2.8.8 does not find cusparse library; therefore, we must
-    find_library(TPL_CUSPARSE_FOUND
-      CUDA_cusparse_LIBRARY
+    find_library(CUDA_cusparse_LIBRARY
+      cusparse
       HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib
       )
     IF(CUDA_cusparse_LIBRARY STREQUAL "CUDA_cusparse_LIBRARY-NOTFOUND") 
