@@ -207,14 +207,14 @@ namespace {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    //typedef CrsOperator<double, int, int, Node> EpCrsOperator;
+    typedef Xpetra::CrsOperator<double, int, int, Node> EpCrsOperator;
 
     RCP<const Map<int,int,Node> > epmap = Xpetra::MapFactory<int,int,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
      {
        EpetraCrsMatrix t =  EpetraCrsMatrix(epmap, numLocal);
 
        // Test of constructor
-       CrsOperator op(epmap,1);
+       EpCrsOperator op(epmap,1);
        op.fillComplete();
 
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
