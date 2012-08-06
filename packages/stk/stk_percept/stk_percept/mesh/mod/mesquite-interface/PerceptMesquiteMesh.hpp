@@ -284,6 +284,8 @@ namespace stk {
         bool get_jacobi_vertex_coords(CMLNode *node_ptr, CubitVector &coords);
       */
   
+      static bool select_bucket(stk::mesh::Bucket& bucket, PerceptMesh *eMesh);
+
     private:
 
       bool select_bucket(stk::mesh::Bucket& bucket) const;

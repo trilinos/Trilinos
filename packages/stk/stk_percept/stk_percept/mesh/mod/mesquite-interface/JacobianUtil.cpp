@@ -221,7 +221,8 @@ namespace stk {
         case shards::Hexagon<6>::key:
 
         default:
-          throw std::runtime_error("unknown/unhandled topology in get_element_jacobians_at_vertices");
+          std::cout << "topology = " << topology.getName() << std::endl;
+          throw std::runtime_error("unknown/unhandled topology in JacobianUtil");
           break;
 
         } // end switch over element type

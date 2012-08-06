@@ -157,7 +157,7 @@ namespace stk {
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
-            if (on_locally_owned_part(**k))  
+            if (PerceptMesquiteMesh::select_bucket(**k, eMesh) && on_locally_owned_part(**k))  
               {
                 stk::mesh::Bucket & bucket = **k ;
                 const unsigned num_elements_in_bucket = bucket.size();
