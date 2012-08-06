@@ -2405,41 +2405,6 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_default_builds_mpi_debug_then_push_pass(self):
-
-    testName = "do_all_default_builds_mpi_debug_then_push_pass"
-
-    # Do the build/test only first (ready to push)
-    g_test_do_all_default_builds_mpi_debug_pass(self, testName)
-
-    # Do the push after the fact
-    checkin_test_run_case(
-      \
-      self,
-      \
-      testName,
-      \
-      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --push" \
-      +" --extra-pull-from=dummy:master" \
-      ,
-      \
-      g_cmndinterceptsCurrentBranch \
-      +g_cmndinterceptsDiffOnlyPasses \
-      +g_cmndinterceptsFinalPushPasses \
-      +g_cmndinterceptsSendFinalEmail \
-      ,
-      \
-      True,
-      \
-      "0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
-      +"=> A PUSH IS READY TO BE PERFORMED!\n" \
-      +"^DID PUSH: Trilinos:\n" \
-      ,
-      failRegexStrList = \
-      "eg pull dummy master\n" \
-      )
-
-
   def test_do_all_default_builds_mpi_debug_then_empty(self):
 
     testName = "do_all_default_builds_mpi_debug_then_push_pass"
