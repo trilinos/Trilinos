@@ -623,20 +623,20 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void CuspOps<Scalar,Ordinal,Node>::setGraphAndMatrix(const RCP<const CuspCrsGraph<Ordinal,Node> > &graph, 
-                                                       const RCP<const CuspCrsMatrix<Scalar,Ordinal,Node> > &matrix)
+  void CuspOps<Scalar,Ordinal,Node>::setGraphAndMatrix(const RCP<const CuspCrsGraph<Ordinal,Node> > &graph_in, 
+                                                       const RCP<const CuspCrsMatrix<Scalar,Ordinal,Node> > &matrix_in)
   {
-    std::string tfecfFuncName("setGraphAndMatrix(graph,matrix)");
+    std::string tfecfFuncName("setGraphAndMatrix(graph_in,matrix_in)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == true,
         std::runtime_error, " operators already initialized.");
     // get data from the matrix
-    numRows_ = graph->getNumRows();
-    numCols_ = graph->getNumCols();
-    rowPtrs_ = graph->getDevPointers();
-    colInds_ = graph->getDevIndices();
-    rowVals_ = matrix->getDevValues();
-    matrix->getDeviceDataTrans(rowPtrs_t_, colInds_t_, rowVals_t_);
+    numRows_ = graph_in->getNumRows();
+    numCols_ = graph_in->getNumCols();
+    rowPtrs_ = graph_in->getDevPointers();
+    colInds_ = graph_in->getDevIndices();
+    rowVals_ = matrix_in->getDevValues();
+    matrix_in->getDeviceDataTrans(rowPtrs_t_, colInds_t_, rowVals_t_);
     numNZ_ = colInds_.size();
     isInitialized_ = true;
   }
