@@ -108,6 +108,16 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_ENABLE_DEBUG}
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  Kokkos_ENABLE_MKL
+  HAVE_KOKKOS_MKL
+  "Enable Intel Math Kernel Library (MKL) support for sparse matrix kernels in Kokkos."
+  ${${PROJECT_NAME}_ENABLE_MKL}
+  )
+IF(Kokkos_ENABLE_MKL AND NOT ${PROJECT_NAME}_ENABLE_MKL)
+  MESSAGE(WARNING "Disabling Intel Math Kernel Library (MKL) support in Kokkos because ${PROJECT_NAME}_ENABLE_MKL is ${${PROJECT_NAME}_ENABLE_MKL}")
+ENDIF()
+
 ######################################################################
 ## BEGIN TSQR options
 ######################################################################
