@@ -79,7 +79,7 @@ nsplit.f  nxkbdy.f  nxkord.f  parc.f    paving.f  pcross.f \
 pdata.f   perim.f   periml.f  pickm1.f  pickm3.f  pickm5.f \
 picktr.f  pinch.f   pline.f   plotl.f   pmesh.f   pmschm.f \
 pschem.f  putcrs.f  putlxn.f  qaaval.f  qmesh.f   qual2.f  \
-qual2n.f  qual3.f   qual4.f   rdfsq.f   rdgens.f  rdmesh.f \
+qual2n.f  qual3.f   qual4.f   rdfsq.f   rdmesh.f \
 refrsh.f  regext.f  renum.f   repsmo.f  resta.f   restry.f \
 revers.f  rgdstr.f  rgnsch.f  ringbl.f  rmesh.f   fq_rotate.f \
 rowsmo.f  rplotl.f  savreg.f  setaxs.f  setcir.f  setlop.f \
