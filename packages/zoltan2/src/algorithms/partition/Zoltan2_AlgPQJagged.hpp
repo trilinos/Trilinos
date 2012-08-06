@@ -758,7 +758,7 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
     }
   }
 
-  scalar_t minm = 0;scalar_t maxm = 0;
+  //scalar_t minm = 0;scalar_t maxm = 0;
 
   {
     //cout << "t:" << omp_get_num_threads();
@@ -788,6 +788,94 @@ void pqJagged_getMinMaxCoord(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinat
 
     minCoordinate = globalMinMax[0];
     maxCoordinate = globalMinMax[1];
+  }
+}
+
+
+template <typename scalar_t, typename lno_t>
+void pqJagged_getMinMaxCoordofAllParts(RCP<Comm<int> > &comm, scalar_t *pqJagged_coordinates, scalar_t *global_min_max_coordinates,
+    const RCP<const Environment> &env, int numThreads,
+    lno_t *partitionedPointPermutations, lno_t *coordinateBegins,
+    scalar_t *max_min_array /*sized nothreads * 2*/,
+    scalar_t maxScalar, scalar_t minScalar, partId_t currentPartCount, scalar_t *local_min_max_coordinates /*sized currentPartCount * 2 */){
+
+  for (partId_t kk = 0; kk < currentPartCount; ++kk){
+    lno_t coordinateBegin = kk == 0 ? 0 : coordinateBegins[kk - 1];
+    lno_t coordinateEnd = coordinateBegins[kk];
+    scalar_t minCoordinate = maxScalar;
+    scalar_t maxCoordinate = minScalar;
+    if(coordinateBegin < coordinateEnd){
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel
+#endif
+      {
+        int myId = 0;
+#ifdef HAVE_ZOLTAN2_OMP
+        myId = omp_get_thread_num();
+#endif
+        scalar_t myMin, myMax;
+        size_t j = partitionedPointPermutations[coordinateBegin];
+        myMin = myMax = pqJagged_coordinates[j];
+        //cout << "coordinateBegin:" << coordinateBegin << " end:" << coordinateEnd << endl;
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
+        for(lno_t j = coordinateBegin + 1; j < coordinateEnd; ++j){
+          //int i = firstIteration ? j:partitionedPointCoordinates[coordinateBegin];
+          int i = partitionedPointPermutations[j];
+          //cout << pqJagged_coordinates[i] << endl;
+          if(pqJagged_coordinates[i] > myMax) myMax = pqJagged_coordinates[i];
+          if(pqJagged_coordinates[i] < myMin) myMin = pqJagged_coordinates[i];
+        }
+        max_min_array[myId] = myMin;
+        max_min_array[myId + numThreads] = myMax;
+        //cout << "myMin:" << myMin << " myMax:" << myMax << endl;
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp barrier
+#endif
+
+
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp single nowait
+#endif
+        {
+          minCoordinate = max_min_array[0];
+          for(int i = 1; i < numThreads; ++i){
+            if(max_min_array[i] < minCoordinate) minCoordinate = max_min_array[i];
+          }
+        }
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp single nowait
+#endif
+        {
+          maxCoordinate = max_min_array[numThreads];
+          for(int i = numThreads + 1; i < numThreads * 2; ++i){
+            if(max_min_array[i] > maxCoordinate) maxCoordinate = max_min_array[i];
+          }
+        }
+
+      }
+    }
+    local_min_max_coordinates[kk] = minCoordinate;
+    local_min_max_coordinates[kk + currentPartCount] = maxCoordinate;
+  }
+  //scalar_t minm = 0;scalar_t maxm = 0;
+
+  {
+    Teuchos::PQJaggedCombinedMinMaxReductionOp<int, scalar_t> reductionOp(
+       currentPartCount,   // number of left closest mins
+       currentPartCount);  // number of right closest max
+
+    try{
+
+      reduceAll<int, scalar_t>(*comm, reductionOp,
+          currentPartCount * 2, local_min_max_coordinates, global_min_max_coordinates
+        );
+    }
+    Z2_THROW_OUTSIDE_ERROR(*env)
   }
 }
 
@@ -1885,6 +1973,12 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   }
   totalDimensionCut = totalPartCount - 1;
 
+  partId_t maxTotalCumulativePartCount = totalPartCount / partNo[coordDim];
+
+
+  scalar_t *global_min_max_coordinates = allocMemory< scalar_t>(maxTotalCumulativePartCount);
+  scalar_t *local_min_max_coordinates = allocMemory< scalar_t>(maxTotalCumulativePartCount);
+
   // coordinates of the cut lines. First one is the min, last one is max coordinate.
   scalar_t *allCutCoordinates = allocMemory< scalar_t>(totalDimensionCut);
 
@@ -2107,6 +2201,15 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       lno_t *npc = newpartitionedPointCoordinates;
 #endif
 
+
+      env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
+      pqJagged_getMinMaxCoordofAllParts(comm, pqCoord, global_min_max_coordinates,
+          env, numThreads,
+          pc, inTotalCounts,
+          max_min_array /*sized nothreads * 2*/,
+          maxScalar_t, minScalar_t, currentPartitionCount, local_min_max_coordinates /*sized currentPartCount * 2 */);
+      env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
+
     for (int j = 0; j < currentPartitionCount; ++j, ++currentIn){
 
       if(comm->getRank() == 0)
@@ -2116,7 +2219,10 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
       coordinateEnd= inTotalCounts[currentIn];
       coordinateBegin = currentIn==0 ? 0: inTotalCounts[currentIn -1];
+      minCoordinate = global_min_max_coordinates[j];
+      maxCoordinate = global_min_max_coordinates[j + currentPartitionCount];
       //cout << "beg:" << coordinateBegin << " end:" << coordinateEnd << endl;
+      /*
       env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
 
 
@@ -2124,7 +2230,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
           env, numThreads, pc, coordinateBegin, coordinateEnd, max_min_array, maxScalar_t, minScalar_t);
 
       env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
-
+       */
       //cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
 
       for (partId_t ii = 0;ii < partNo[i]; ++ii){
