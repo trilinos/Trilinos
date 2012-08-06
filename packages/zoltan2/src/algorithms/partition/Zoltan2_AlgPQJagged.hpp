@@ -31,7 +31,7 @@
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
 #endif
-//#define FIRST_TOUCH
+#define FIRST_TOUCH
 
 //#define RCBCODE
 #define LEAF_IMBALANCE_FACTOR 0.1
@@ -1221,8 +1221,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
     scalar_t *cutWeights, scalar_t *globalCutWeights
 ){
 
-
-
   partId_t recteLinearCount = 0;
   scalar_t *cutCoordinates_tmp = cutCoordinates;
   partId_t noCuts = partNo - 1;
@@ -1288,8 +1286,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
       }
       Z2_THROW_OUTSIDE_ERROR(*env)
-
-
       globaltotalWeight = tw;
     }
 
@@ -1463,7 +1459,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 #pragma omp for
 #endif
         for(size_t j = 0; j < total_part_count; ++j){
-          if(noCuts != 0 && j/2 < noCuts && isDone[j/2]) continue;
+          if(noCuts != 0 && partId_t(j/2) < noCuts && isDone[j/2]) continue;
           double pwj = 0;
           for (int i = 0; i < numThreads; ++i){
             pwj += partWeights[i][j];
@@ -1525,7 +1521,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
         {
           cutCoordinatesWork = cutCoordinates_tmp;
         }
-
       }
     }
   }
@@ -1953,7 +1948,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 #pragma omp parallel
   {
     int me = omp_get_thread_num();
-    for(int ii = 0; ii < maxPartNo; ++ii){
+    for(partId_t ii = 0; ii < maxPartNo; ++ii){
       coordinate_starts[me][ii] = 0;
       coordinate_ends[me][ii] = 0;
     }
@@ -1985,7 +1980,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 #pragma omp parallel
   {
     int me = omp_get_thread_num();
-    for(int ii = 0; ii < maxPartNo; ++ii){
+    for(partId_t ii = 0; ii < maxPartNo; ++ii){
       nonRectRatios[me][ii] = 0;
     }
   }
@@ -2042,13 +2037,13 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 #pragma omp parallel
   {
     int me = omp_get_thread_num();
-    for(int ii = 0; ii < maxPartNo; ++ii){
+    for(partId_t ii = 0; ii < maxPartNo; ++ii){
       partPointCounts[me][ii] = 0;
     }
-    for(int ii = 0; ii < maxTotalPartCount; ++ii){
+    for(size_t ii = 0; ii < maxTotalPartCount; ++ii){
       partWeights[me][ii] = 0;
     }
-    for(int ii = 0; ii < maxCutNo; ++ii){
+    for(partId_t ii = 0; ii < maxCutNo; ++ii){
       rightClosestDistance[me][ii] = 0;
       leftClosestDistance[me][ii] = 0;
 
@@ -2056,8 +2051,6 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   }
 #endif
 #endif
-
-
 
   scalar_t *cutWeights = allocMemory<scalar_t>(maxCutNo);
   scalar_t *globalCutWeights = allocMemory<scalar_t>(maxCutNo);
@@ -2068,12 +2061,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   scalar_t *cutCoordinates =  allCutCoordinates;
 
-
-
   partId_t leftPartitions = totalPartCount;
   scalar_t maxScalar_t = numeric_limits<float>::max();
   scalar_t minScalar_t = -numeric_limits<float>::max();
-
 
   env->timerStop(MACRO_TIMERS, "PQJagged Problem_Init");
 
@@ -2090,7 +2080,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
     leftPartitions /= partNo[i];
 
-#ifdef FIRST_TOUCH
+#ifdef FIRST_TOUCH_2
     lno_t *pc =  allocMemory< lno_t>(numLocalCoords);
     lno_t *npc = allocMemory< lno_t>(numLocalCoords);
     scalar_t * pqCoord = allocMemory< scalar_t>(numLocalCoords);
@@ -2111,7 +2101,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 #endif
 #endif
 
-#ifndef FIRST_TOUCH
+#ifndef FIRST_TOUCH_2
       scalar_t * pqCoord = pqJagged_coordinates[i];
       lno_t *pc = partitionedPointCoordinates;
       lno_t *npc = newpartitionedPointCoordinates;
@@ -2231,7 +2221,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     //delete [] inTotalCounts;
     freeArray<lno_t>(inTotalCounts);
     inTotalCounts = outTotalCounts;
-#ifdef FIRST_TOUCH
+#ifdef FIRST_TOUCH_2
       delete [] pqCoord;
       //delete []pc;
       //delete []npc;

@@ -1457,6 +1457,7 @@ public:
       myfile.close();
     }
 
+    /*
     // target map
     Teuchos::ArrayView<const gno_t> eltList;
 
@@ -1467,9 +1468,10 @@ public:
       }
       eltList = Teuchos::ArrayView<const gno_t> (gnos, this->numLocalCoords);
     }
+    */
 
     RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
-        new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, eltList, 0, comm_));
+        new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, this->numLocalCoords, 0, comm_));
 
 
 /*
