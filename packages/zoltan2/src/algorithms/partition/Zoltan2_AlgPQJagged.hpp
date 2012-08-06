@@ -1976,8 +1976,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   partId_t maxTotalCumulativePartCount = totalPartCount / partNo[coordDim];
 
 
-  scalar_t *global_min_max_coordinates = allocMemory< scalar_t>(maxTotalCumulativePartCount);
-  scalar_t *local_min_max_coordinates = allocMemory< scalar_t>(maxTotalCumulativePartCount);
+  scalar_t *global_min_max_coordinates = allocMemory< scalar_t>(2 * maxTotalCumulativePartCount);
+  scalar_t *local_min_max_coordinates = allocMemory< scalar_t>(2 * maxTotalCumulativePartCount);
+
 
   // coordinates of the cut lines. First one is the min, last one is max coordinate.
   scalar_t *allCutCoordinates = allocMemory< scalar_t>(totalDimensionCut);
@@ -2074,7 +2075,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 #pragma omp parallel
   {
     int me = omp_get_thread_num();
-    for(partId_t ii = 0; ii < maxPartNo; ++ii){
+    for(partId_t ii = 0; ii < maxCutNo; ++ii){
       nonRectRatios[me][ii] = 0;
     }
   }
@@ -2196,24 +2197,25 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 #endif
 
 #ifndef FIRST_TOUCH_2
-      scalar_t * pqCoord = pqJagged_coordinates[i];
-      lno_t *pc = partitionedPointCoordinates;
-      lno_t *npc = newpartitionedPointCoordinates;
+    scalar_t * pqCoord = pqJagged_coordinates[i];
+    lno_t *pc = partitionedPointCoordinates;
+    lno_t *npc = newpartitionedPointCoordinates;
 #endif
 
 
-      env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
-      pqJagged_getMinMaxCoordofAllParts(comm, pqCoord, global_min_max_coordinates,
-          env, numThreads,
-          pc, inTotalCounts,
-          max_min_array /*sized nothreads * 2*/,
-          maxScalar_t, minScalar_t, currentPartitionCount, local_min_max_coordinates /*sized currentPartCount * 2 */);
-      env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
+    env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
+    pqJagged_getMinMaxCoordofAllParts(comm, pqCoord, global_min_max_coordinates,
+        env, numThreads,
+        pc, inTotalCounts,
+        max_min_array ,
+        maxScalar_t, minScalar_t, currentPartitionCount, local_min_max_coordinates );
+    env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
+
 
     for (int j = 0; j < currentPartitionCount; ++j, ++currentIn){
 
       if(comm->getRank() == 0)
-      cout << "i: " << i << " j:" << j << " ";
+        cout << "i: " << i << " j:" << j << " ";
       scalar_t used_imbalance = imbalanceTolerance * (LEAF_IMBALANCE_FACTOR + (1 - LEAF_IMBALANCE_FACTOR)   / leftPartitions) * 0.7;
       //scalar_t used_imbalance = 0;
 
@@ -2221,8 +2223,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       coordinateBegin = currentIn==0 ? 0: inTotalCounts[currentIn -1];
       minCoordinate = global_min_max_coordinates[j];
       maxCoordinate = global_min_max_coordinates[j + currentPartitionCount];
+
       //cout << "beg:" << coordinateBegin << " end:" << coordinateEnd << endl;
-      /*
+/*
       env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
 
 
@@ -2230,7 +2233,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
           env, numThreads, pc, coordinateBegin, coordinateEnd, max_min_array, maxScalar_t, minScalar_t);
 
       env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
-       */
+
+*/
+      //cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
       //cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
 
       for (partId_t ii = 0;ii < partNo[i]; ++ii){
@@ -2275,7 +2280,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             maxScalar_t,
             minScalar_t,
             cutWeights, globalCutWeights
-            );
+        );
 
         env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_1d");
         env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_chunks");
@@ -2296,7 +2301,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
         }
         outTotalCounts[currentOut] = coordinateEnd - coordinateBegin;
       }
-      */
+       */
 
 
 
@@ -2328,9 +2333,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     freeArray<lno_t>(inTotalCounts);
     inTotalCounts = outTotalCounts;
 #ifdef FIRST_TOUCH_2
-      delete [] pqCoord;
-      //delete []pc;
-      //delete []npc;
+    delete [] pqCoord;
+    //delete []pc;
+    //delete []npc;
 #endif
 
     env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i));
@@ -2383,6 +2388,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 */
 
 
+
+  freeArray<scalar_t> (global_min_max_coordinates);
+  freeArray<scalar_t> (local_min_max_coordinates);
 
   for(int i = 0; i < numThreads; ++i){
     //delete []coordinate_starts[i];
