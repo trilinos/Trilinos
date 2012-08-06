@@ -33,6 +33,9 @@ public:
    //! Call global to ghost on all the containers
    void globalToGhost(int p);
 
+   //! Call initialize on all containers
+   void initialize();
+
    const_iterator begin() const { return lookupTable_.begin(); }
    const_iterator end() const { return lookupTable_.end(); }
 

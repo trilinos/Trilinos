@@ -71,6 +71,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 
   GlobalEvaluationDataContainer gedc;
   in.fillGlobalEvaluationDataContainer(gedc);
+  gedc.initialize(); // make sure all ghosted data is ready to go
   gedc.globalToGhost(LOC::X | LOC::DxDt);
 
   // Push solution, x and dxdt into ghosted domain

@@ -26,6 +26,8 @@ public:
    virtual void ghostToGlobal(int mem) { lof_->ghostToGlobalContainer(*ghostedLOC_,*globalLOC_,mem); }
    virtual void globalToGhost(int mem) { lof_->globalToGhostContainer(*globalLOC_,*ghostedLOC_,mem); }
 
+   virtual void initializeData() { ghostedLOC_->initialize(); } 
+
    Teuchos::RCP<LinearObjContainer> getGhostedLOC() const { return ghostedLOC_; }
    Teuchos::RCP<LinearObjContainer> getGlobalLOC() const { return globalLOC_; }
 

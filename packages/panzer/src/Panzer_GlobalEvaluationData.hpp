@@ -16,6 +16,8 @@ public:
 
    virtual void ghostToGlobal(int mem) = 0;
    virtual void globalToGhost(int mem) = 0;
+
+   virtual void initializeData() = 0;
 };
 
 /** Class that overides the communication primitives
@@ -25,6 +27,7 @@ class GlobalEvaluationData_Default : public GlobalEvaluationData {
 public:
    virtual void ghostToGlobal(int mem) {}
    virtual void globalToGhost(int mem) {}
+   virtual void initializeData() {}
 };
 
 }
