@@ -1,0 +1,11 @@
+Aggregates
+Graph
+LeftoverAggregationAlgorithm
+LocalAggregationAlgorithm
+UCAggregationCommHelper
+UCAggregationFactory
+#SubBlockAggregationFactory
+AmalgamationInfo
+#Zoltan
+CheapAggregationAlgorithm
+ExperimentalAggregationFactory

@@ -1,0 +1,16 @@
+#Exceptions::BadCast
+#Exceptions::RuntimeError
+#Exceptions::NotImplemented
+#Describable
+DefaultPlatform
+#EpetraBlockMap
+EpetraCrsGraph	
+EpetraCrsMatrix	
+EpetraExport	
+EpetraImport	
+EpetraIntVector	
+EpetraMap	
+EpetraMultiVector	
+EpetraVector	
+Parameters	
+#RowInfo

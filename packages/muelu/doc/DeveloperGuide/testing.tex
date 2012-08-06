@@ -1,0 +1,23 @@
+\muelu supports both unit and broader testing.  Unit testing relies on the \teuchos unit-testing infrastructure\footnote{As of
+October, 2010, there
+doesn't seem to be much documentation for this.  Your best bet is to look at a package already using it, such as \ifpack2.}.
+Implementing new unit tests is straightforward.
+\be
+  \item Copy the file \cc{test/unit\_tests/Level.cpp} to a new filename of your choosing, say, \cc{foo.cpp}.
+  \item Edit \cc{foo.cpp} and put in your test.
+  \item Add \cc{foo.cpp} to the list of \cc{SOURCES} in file \cc{test/unit\_tests/CMakeLists.txt}.
+  \item Rebuild, run the unit test executable, and you should see the new test run.
+\ee
+
+To see the list of available options, type \cc{MueLu\_unit\_tests.exe --help}.  Two of the more useful options
+are \cc{--group} and \cc{--test}.  The former lets you run just one group of tests, e.g., just the
+\cc{MueLu::Level} tests.
+%
+\begin{verbatim}
+  MueLu_unit_tests.exe --group="Level"
+\end{verbatim}
+%
+The latter lets you run a single test.
+\begin{verbatim}
+  MueLu_unit_tests.exe --test="FillHierarchy1"
+\end{verbatim}

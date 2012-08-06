@@ -1,0 +1,43 @@
+<ParameterList name="Factories">
+
+  <Parameter name="S0" type="string" value="DirectSolver"/>
+
+  <ParameterList name="S1">
+    <Parameter name="factory" type="string" value="DirectSolver"/>
+  </ParameterList>
+
+  <ParameterList name="S2">
+    <Parameter name="factory" type="string" value="DirectSolver"/>
+    <Parameter name="type"  type="string" value=""/>
+  </ParameterList>
+
+  <ParameterList name="S3">
+    <Parameter name="factory" type="string" value="DirectSolver"/>
+    <Parameter name="type"  type="string" value="KLU"/>
+  </ParameterList>
+
+  <ParameterList name="S4">
+    <Parameter name="factory" type="string" value="DirectSolver"/>
+    <Parameter name="type"  type="string" value="klu"/>
+  </ParameterList>
+
+  <ParameterList name="S5">
+    <Parameter name="factory" type="string" value="DirectSolver"/>
+    <Parameter name="type"  type="string" value="SuperLu"/>
+  </ParameterList>
+
+  <ParameterList name="S6">
+    <Parameter name="factory" type="string" value="DirectSolver"/>
+    <Parameter name="type"  type="string" value="SuperLu_Dist"/>
+  </ParameterList>
+
+  <ParameterList name="S7">
+    <Parameter name="factory" type="string" value="DirectSolver"/>
+    <Parameter name="type" type="string" value="KLU"/>
+
+    <ParameterList name="ParameterList">
+      <!-- TODO: test with some Amesos/Amesos2 parameters -->
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

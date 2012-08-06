@@ -1,0 +1,47 @@
+<ParameterList name="MueLu">
+  
+  <!-- Configuration of the Xpetra operator (fine level) -->
+  <ParameterList name="Operator">
+    <Parameter name="PDE equations" type="int" value="2"/> <!-- Number of PDE equations at each grid node.-->
+  </ParameterList>
+
+  <!-- Factory collection
+       - Factories defined here can be used later on the 'Hierarchy' parameter list.
+       - A factory that do not appear on the 'Hierarchy' parameter list is not used to build the hierarchy.
+  -->
+  <ParameterList name="Factories">
+    <ParameterList name="SymGaussSeidel">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      
+      <Parameter name="type"                         type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="1"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+   
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+    
+    <Parameter name="numDesiredLevel" type="int" value="10"/> <!-- Max number of levels -->
+    
+    <ParameterList name="FineLevel">
+      <Parameter name="startLevel" type="int" value="0"/>
+      <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
+    </ParameterList>
+
+    <ParameterList name="OtherLevels">
+      <Parameter name="startLevel" type="int" value="1"/>
+      <Parameter name="P"          type="string" value="SaPFactory"/>
+      <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
+    </ParameterList>
+    
+    <ParameterList name="CoarsestLevel">
+      <Parameter name="startLevel"   type="int" value="-1"/>
+      <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
+    </ParameterList>
+    
+  </ParameterList>
+</ParameterList>

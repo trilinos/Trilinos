@@ -1,0 +1,36 @@
+This is a list of errors that you might see g++ produce, along with a ``plain English" explanation.
+
+\be
+\item {\bf The code:}
+\begin{verbatim}
+
+  #include "MueLu_UseShortNames.hpp"
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using namespace MueLu;
+
+  RCP<Level> levelOne = rcp(new Level() );
+\end{verbatim}
+{\bf The error message:}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{verbatim}
+
+/home/foo/Trilinos/MueLu/muelu/test/unit_tests/Hierarchy.cpp: In member function
+‘virtual void<unnamed>::Hierarchy_FillHierarchy1_UnitTest::runUnitTestImpl(
+Teuchos::FancyOStream&, bool&) const’:
+/home/foo/Trilinos/MueLu/muelu/test/unit_tests/Hierarchy.cpp:85: error:
+reference to ‘Level’ is ambiguous
+/home/foo/Trilinos/MueLu/muelu/src/Headers/MueLu_UseShortNames.hpp:36: error:
+candidates are: typedef class MueLu::Level<double, int, int, Kokkos::SerialNode,
+Kokkos::DefaultDeviceSparseOps<void, int, Kokkos::SerialNode> > Level
+/home/foo/Trilinos/MueLu/muelu/src/MueCentral/MueLu_Level.hpp:26: error:
+template<class SC, class LO, class GO, class NO, class LMO> class MueLu::Level
+/home/foo/Trilinos/MueLu/muelu/test/unit_tests/Hierarchy.cpp:85: error:
+template argument 1 is invalid
+\end{verbatim}
+{\bf The explanation:}\\
+There are two definitions of \verb!Level! in the current namespace.  In this case, one definition comes from the
+file ``MueLu\_UseShortNames.hpp", and the other comes from the \verb!MueLu! namespace.\\
+{\bf The solution:}\\
+Delete the line \verb!using namespace MueLu!.
+\ee

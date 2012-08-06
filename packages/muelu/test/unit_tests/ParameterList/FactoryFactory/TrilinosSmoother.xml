@@ -1,0 +1,19 @@
+<ParameterList name="Factories">
+
+  <Parameter name="S0" type="string" value="TrilinosSmoother"/>
+
+  <ParameterList name="S1">
+    <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+  </ParameterList>
+
+  <ParameterList name="S2">
+    <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"  type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor" type="int"    value="1"/>
+      </ParameterList>
+  </ParameterList>
+
+</ParameterList>

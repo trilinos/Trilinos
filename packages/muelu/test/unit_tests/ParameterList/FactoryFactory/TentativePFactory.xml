@@ -1,0 +1,9 @@
+<ParameterList name="Factories">
+
+  <Parameter name="P0" type="string" value="TentativePFactory"/>
+
+  <ParameterList name="P1">
+    <Parameter name="factory" type="string" value="TentativePFactory"/>
+  </ParameterList>
+
+</ParameterList>
