@@ -705,7 +705,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
 
 # Helper test case that is used as the inital case for other tests
-def g_test_do_all_without_serial_release_pass(testObject, testName):
+def g_test_do_all_default_builds_mpi_debug_pass(testObject, testName):
   checkin_test_run_case(
     \
     testObject,
@@ -968,16 +968,16 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_pass(self):
-    g_test_do_all_without_serial_release_pass(self, "do_all_without_serial_release_pass")
+  def test_do_all_default_builds_mpi_debug_pass(self):
+    g_test_do_all_default_builds_mpi_debug_pass(self, "do_all_default_builds_mpi_debug_pass")
 
 
-  def test_local_do_all_without_serial_release_pass(self):
+  def test_local_do_all_default_builds_mpi_debug_pass(self):
     checkin_test_run_case(
       \
       self,
       \
-      "local_do_all_without_serial_release_pass",
+      "local_do_all_default_builds_mpi_debug_pass",
       \
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       +" --extra-pull-from=machine:/path/to/repo:master --local-do-all" \
@@ -1006,12 +1006,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_test_fail_force_push_pass(self):
+  def test_do_all_default_builds_mpi_debug_test_fail_force_push_pass(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_test_fail_force_push_pass",
+      "do_all_default_builds_mpi_debug_test_fail_force_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       " --do-all --force-push --push",
@@ -1043,12 +1043,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_then_wipe_clean_pull_pass(self):
+  def test_do_all_default_builds_mpi_debug_then_wipe_clean_pull_pass(self):
 
-    testName = "do_all_without_serial_release_then_from_scratch_pull_pass"
+    testName = "do_all_default_builds_mpi_debug_then_from_scratch_pull_pass"
 
     # Do the build/test only first (ready to push)
-    g_test_do_all_without_serial_release_pass(self, testName)
+    g_test_do_all_default_builds_mpi_debug_pass(self, testName)
 
     # Do the push after the fact
     checkin_test_run_case(
@@ -1852,11 +1852,11 @@ class test_checkin_test(unittest.TestCase):
   # C) Test partial actions short of running tests
 
 
-  def test_without_serial_release_pull_only(self):
+  def test_default_builds_mpi_debug_pull_only(self):
     checkin_test_run_case(
       self,
       \
-      "without_serial_release_pull_only",
+      "default_builds_mpi_debug_pull_only",
       \
       "--default-builds=MPI_DEBUG --pull",
       \
@@ -1875,11 +1875,11 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_without_serial_release_pull_skip_push_readiness_check(self):
+  def test_default_builds_mpi_debug_pull_skip_push_readiness_check(self):
     checkin_test_run_case(
       self,
       \
-      "without_serial_release_pull_skip_push_readiness_check",
+      "default_builds_mpi_debug_pull_skip_push_readiness_check",
       \
       "--default-builds=MPI_DEBUG --pull --skip-push-readiness-check",
       \
@@ -1897,11 +1897,11 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_without_serial_release_pull_extra_pull_only(self):
+  def test_default_builds_mpi_debug_pull_extra_pull_only(self):
     checkin_test_run_case(
       self,
       \
-      "without_serial_release_pull_extra_pull_only",
+      "default_builds_mpi_debug_pull_extra_pull_only",
       \
       "--pull --extra-pull-from=machine:/repo/dir/repo:master",
       \
@@ -1923,11 +1923,11 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_without_serial_release_extra_pull_only(self):
+  def test_default_builds_mpi_debug_extra_pull_only(self):
     checkin_test_run_case(
       self,
       \
-      "without_serial_release_extra_pull_only",
+      "default_builds_mpi_debug_extra_pull_only",
       \
       "--extra-pull-from=machine:master",
       \
@@ -1944,11 +1944,11 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_without_serial_release_configure_only(self):
+  def test_default_builds_mpi_debug_configure_only(self):
     checkin_test_run_case(
       self,
       \
-      "without_serial_release_configure_only",
+      "default_builds_mpi_debug_configure_only",
       \
       "--default-builds=MPI_DEBUG --pull --configure",
       \
@@ -1972,11 +1972,11 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_without_serial_release_build_only(self):
+  def test_default_builds_mpi_debug_build_only(self):
     checkin_test_run_case(
       self,
       \
-      "without_serial_release_build_only",
+      "default_builds_mpi_debug_build_only",
       \
       "--make-options=-j3 --default-builds=MPI_DEBUG --pull --configure --build",
       \
@@ -2373,12 +2373,12 @@ class test_checkin_test(unittest.TestCase):
   # ToDo: Add test for build followed by test
 
 
-  def test_do_all_without_serial_release_then_push_pass(self):
+  def test_do_all_default_builds_mpi_debug_then_push_pass(self):
 
-    testName = "do_all_without_serial_release_then_push_pass"
+    testName = "do_all_default_builds_mpi_debug_then_push_pass"
 
     # Do the build/test only first (ready to push)
-    g_test_do_all_without_serial_release_pass(self, testName)
+    g_test_do_all_default_builds_mpi_debug_pass(self, testName)
 
     # Do the push after the fact
     checkin_test_run_case(
@@ -2405,12 +2405,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_then_push_pass(self):
+  def test_do_all_default_builds_mpi_debug_then_push_pass(self):
 
-    testName = "do_all_without_serial_release_then_push_pass"
+    testName = "do_all_default_builds_mpi_debug_then_push_pass"
 
     # Do the build/test only first (ready to push)
-    g_test_do_all_without_serial_release_pass(self, testName)
+    g_test_do_all_default_builds_mpi_debug_pass(self, testName)
 
     # Do the push after the fact
     checkin_test_run_case(
@@ -2440,12 +2440,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_then_empty(self):
+  def test_do_all_default_builds_mpi_debug_then_empty(self):
 
-    testName = "do_all_without_serial_release_then_push_pass"
+    testName = "do_all_default_builds_mpi_debug_then_push_pass"
 
     # Do the build/test only first (ready to push)
-    g_test_do_all_without_serial_release_pass(self, testName)
+    g_test_do_all_default_builds_mpi_debug_pass(self, testName)
 
     # Check the status after (no action arguments)
     checkin_test_run_case(
@@ -2605,12 +2605,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_unstaged_changed_files_fail(self):
+  def test_do_all_default_builds_mpi_debug_unstaged_changed_files_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_pull_fail",
+      "do_all_default_builds_mpi_debug_pull_fail",
       \
       "--do-all",
       g_cmndinterceptsCurrentBranch \
@@ -2627,12 +2627,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_staged_uncommitted_files_fail(self):
+  def test_do_all_default_builds_mpi_debug_staged_uncommitted_files_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_pull_fail",
+      "do_all_default_builds_mpi_debug_pull_fail",
       \
       "--do-all",
       g_cmndinterceptsCurrentBranch \
@@ -2649,12 +2649,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_unknown_files_fail(self):
+  def test_do_all_default_builds_mpi_debug_unknown_files_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_pull_fail",
+      "do_all_default_builds_mpi_debug_pull_fail",
       \
       "--do-all",
       g_cmndinterceptsCurrentBranch \
@@ -2671,12 +2671,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_pull_fail(self):
+  def test_do_all_default_builds_mpi_debug_pull_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_pull_fail",
+      "do_all_default_builds_mpi_debug_pull_fail",
       \
       "--do-all",
       g_cmndinterceptsCurrentBranch \
@@ -2755,11 +2755,11 @@ class test_checkin_test(unittest.TestCase):
     self.assertEqual(os.path.exists(testBaseDir+"/MPI_DEBUG/do-configure"), False)
 
 
-  def test_do_all_without_serial_release_configure_fail(self):
+  def test_do_all_default_builds_mpi_debug_configure_fail(self):
     checkin_test_run_case(
       self,
       \
-      "do_all_without_serial_release_configure_fail",
+      "do_all_default_builds_mpi_debug_configure_fail",
       \
       "--do-all --default-builds=MPI_DEBUG",
       \
@@ -2782,12 +2782,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_build_fail(self):
+  def test_do_all_default_builds_mpi_debug_build_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_build_fail",
+      "do_all_default_builds_mpi_debug_build_fail",
       \
       "--do-all --default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5",
       \
@@ -2813,12 +2813,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_test_fail(self):
+  def test_do_all_default_builds_mpi_debug_test_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_test_fail",
+      "do_all_default_builds_mpi_debug_test_fail",
       \
       "--do-all --default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5",
       \
@@ -2846,12 +2846,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_push_without_serial_release_final_pull_fail(self):
+  def test_do_all_push_default_builds_mpi_debug_final_pull_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_push_without_serial_release_final_pull_fail",
+      "do_all_push_default_builds_mpi_debug_final_pull_fail",
       \
       "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
@@ -2880,12 +2880,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_push_without_serial_release_final_commit_fail(self):
+  def test_do_all_push_default_builds_mpi_debug_final_commit_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_push_without_serial_release_final_commit_fail",
+      "do_all_push_default_builds_mpi_debug_final_commit_fail",
       \
       "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
@@ -2918,12 +2918,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_push_without_serial_release_push_fail(self):
+  def test_do_all_push_default_builds_mpi_debug_push_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_push_without_serial_release_push_fail",
+      "do_all_push_default_builds_mpi_debug_push_fail",
       \
       "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
@@ -2999,12 +2999,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_push_no_tests_fail(self):
+  def test_do_all_default_builds_mpi_debug_push_no_tests_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_push_no_tests_fail",
+      "do_all_default_builds_mpi_debug_push_no_tests_fail",
       \
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --do-all --push",
       \
@@ -3030,12 +3030,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_local_do_all_without_serial_release_push_fail(self):
+  def test_local_do_all_default_builds_mpi_debug_push_fail(self):
     checkin_test_run_case(
       \
       self,
       \
-      "local_do_all_without_serial_release_push_fail",
+      "local_do_all_default_builds_mpi_debug_push_fail",
       \
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --local-do-all --push",
       \
