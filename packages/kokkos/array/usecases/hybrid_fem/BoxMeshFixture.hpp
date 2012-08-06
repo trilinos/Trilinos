@@ -431,7 +431,7 @@ struct BoxMeshFixture {
     }
 
     mesh.node_elem_ids =
-      KokkosArray::create_crsarray< node_elem_ids_type >( node_elem_work );
+      KokkosArray::create_crsarray< node_elem_ids_type >( "node_elem_ids" , node_elem_work );
 
     typename node_elem_ids_type::HostMirror
       node_elem_ids = KokkosArray::create_mirror( mesh.node_elem_ids );

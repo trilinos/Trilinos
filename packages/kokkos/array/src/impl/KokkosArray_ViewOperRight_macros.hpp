@@ -74,7 +74,6 @@ private:
   ViewOperator & operator = ( const ViewOperator & );
 
   template< class , class , class > friend class KokkosArray::View ;
-  template< class Dst , class Src >  friend class KokkosArray::Impl::Factory ;
 
 public:
 

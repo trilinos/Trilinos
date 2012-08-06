@@ -48,8 +48,6 @@
 #include <typeinfo>
 #include <string>
 
-#include <impl/KokkosArray_forward.hpp>
-
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
@@ -91,10 +89,17 @@ public:
   static void copy_to_device_from_device( void * , const void * , size_t );
   static void copy_to_device_from_host(   void * , const void * , size_t );
   static void copy_to_host_from_device(   void * , const void * , size_t );
+
+  /*--------------------------------*/
 };
 
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+struct DeepCopy ;
+
 template< typename ValueType >
-struct DeepCopy< ValueType , Cuda , Cuda > {
+struct DeepCopy< ValueType , Cuda::memory_space , Cuda::memory_space > {
   DeepCopy( ValueType * dst , const ValueType * src , size_t count )
   {
     CudaMemorySpace::copy_to_device_from_device( dst , src , sizeof(ValueType) * count );
@@ -102,7 +107,7 @@ struct DeepCopy< ValueType , Cuda , Cuda > {
 };
 
 template< typename ValueType >
-struct DeepCopy< ValueType , Cuda , Host > {
+struct DeepCopy< ValueType , Cuda::memory_space , Host::memory_space > {
   DeepCopy( ValueType * dst , const ValueType * src , size_t count )
   {
     CudaMemorySpace::copy_to_device_from_host( dst , src , sizeof(ValueType) * count );
@@ -110,7 +115,7 @@ struct DeepCopy< ValueType , Cuda , Host > {
 };
 
 template< typename ValueType >
-struct DeepCopy< ValueType , Host , Cuda > {
+struct DeepCopy< ValueType , Host::memory_space , Cuda::memory_space > {
   DeepCopy( ValueType * dst , const ValueType * src , size_t count )
   {
     CudaMemorySpace::copy_to_host_from_device( dst , src , sizeof(ValueType) * count );

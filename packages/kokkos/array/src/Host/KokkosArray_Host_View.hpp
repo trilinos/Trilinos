@@ -59,7 +59,7 @@
 namespace KokkosArray {
 
 template< class DataType , class LayoutType >
-void View< DataType , LayoutType , Host >::create(
+void View< DataType , LayoutType , Host >::internal_private_create(
   const std::string & label ,
   const View< DataType , LayoutType , Host >::shape_type shape )
 {

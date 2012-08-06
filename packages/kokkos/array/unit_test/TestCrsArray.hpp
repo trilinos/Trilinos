@@ -51,8 +51,6 @@
 #include <sstream>
 #include <iostream>
 
-#include <impl/KokkosArray_Preprocessing_macros.hpp>
-
 /*--------------------------------------------------------------------------*/
 
 namespace {
@@ -120,7 +118,7 @@ public:
       total_length += ( sizes[i] = 6 + i % 4 );
     }
 
-    dView dx = KokkosArray::create_crsarray<dView>( sizes );
+    dView dx = KokkosArray::create_crsarray<dView>( "test" , sizes );
     hView hx = KokkosArray::create_mirror( dx );
     hView mx = KokkosArray::create_mirror( dx );
 

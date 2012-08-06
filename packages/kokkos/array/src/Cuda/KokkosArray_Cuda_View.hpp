@@ -59,7 +59,7 @@
 namespace KokkosArray {
 
 template< class DataType , class LayoutType >
-void View< DataType , LayoutType , Cuda >::create(
+void View< DataType , LayoutType , Cuda >::internal_private_create(
   const std::string & label ,
   const typename View< DataType , LayoutType , Cuda >::shape_type shape )
 {
@@ -73,56 +73,34 @@ void View< DataType , LayoutType , Cuda >::create(
                             count );
 }
 
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class LayoutSrc >
+inline
+void deep_copy( ValueType & dst ,
+                const View< ValueType , LayoutSrc , Cuda > & src )
+{
+  typedef View< ValueType , LayoutSrc , Cuda > src_type ;
+  typedef typename src_type::shape_type        src_shape ;
+
+  typedef typename Impl::assert_shape_is_rank_zero< src_shape >::type ok_rank ;
+
+  Cuda::memory_space::copy_to_host_from_device( & dst , src.ptr_on_device() , sizeof(ValueType) );
 }
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
-namespace KokkosArray {
-namespace Impl {
-
-template< class DeviceDst , class DeviceSrc >
-struct CudaDeepCopy ;
-
-template<>
-struct CudaDeepCopy<Cuda,Cuda>
+template< typename ValueType , class LayoutDst >
+inline
+void deep_copy( const View< ValueType , LayoutDst , Cuda > & dst ,
+                const ValueType & src )
 {
-  template< typename ValueType >
-  CudaDeepCopy( ValueType * dst ,
-                ValueType * src ,
-                size_t count )
-  {
-    Cuda::memory_space
-        ::copy_to_device_from_device( dst , src , sizeof(ValueType) * count );
-  }
-};
+  typedef View< ValueType , LayoutDst , Cuda > dst_type ;
+  typedef typename dst_type::shape_type        dst_shape ;
 
-template<>
-struct CudaDeepCopy<Cuda,Host>
-{
-  template< typename ValueType >
-  CudaDeepCopy( ValueType * dst ,
-                ValueType * src ,
-                size_t count )
-  {
-    Cuda::memory_space
-        ::copy_to_device_from_host( dst , src , sizeof(ValueType) * count );
-  }
-};
+  typedef typename Impl::assert_shape_is_rank_zero< dst_shape >::type ok_rank ;
 
-template<>
-struct CudaDeepCopy<Host,Cuda>
-{
-  template< typename ValueType >
-  CudaDeepCopy( ValueType * dst ,
-                ValueType * src ,
-                size_t count )
-  {
-    Cuda::memory_space
-        ::copy_to_host_from_device( dst , src , sizeof(ValueType) * count );
-  }
-};
+  Cuda::memory_space::copy_to_device_from_host( dst.ptr_on_device() , & src , sizeof(ValueType) );
+}
 
-} // namespace Impl
 } // namespace KokkosArray
 
 //----------------------------------------------------------------------------

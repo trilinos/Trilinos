@@ -68,16 +68,16 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
 
   typedef KokkosArray::View< Scalar ,
                              KokkosArray::LayoutLeft ,
-                             device_type > value_type ;
+                             device_type > value_view ;
 
   // Reduction   : result = dot( Q(:,j) , Q(:,j) );
   // PostProcess : R(j,j) = result ; inv = 1 / result ;
   struct InvNorm2 {
-    value_type  Rjj ;
-    value_type  inv ;
+    value_view  Rjj ;
+    value_view  inv ;
 
-    InvNorm2( const value_type & argR ,
-              const value_type & argInv )
+    InvNorm2( const value_view & argR ,
+              const value_view & argInv )
       : Rjj( argR )
       , inv( argInv )
       {}
@@ -94,11 +94,11 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   // PostProcess : tmp = - ( R(j,k) = result );
   struct DotM {
 
-    value_type  Rjk ;
-    value_type  tmp ;
+    value_view  Rjk ;
+    value_view  tmp ;
 
-    DotM( const value_type & argR ,
-          const value_type & argTmp )
+    DotM( const value_view & argR ,
+          const value_view & argTmp )
       : Rjk( argR )
       , tmp( argTmp )
       {}
@@ -119,8 +119,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
                                const multivector_type R )
   {
     const size_type count  = Q.dimension_1();
-    value_type tmp("tmp");
-    value_type one("one");
+    value_view tmp("tmp");
+    value_view one("one");
 
     KokkosArray::deep_copy( one , (Scalar) 1 );
 
@@ -129,8 +129,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
     for ( size_type j = 0 ; j < count ; ++j ) {
       // Reduction   : tmp = dot( Q(:,j) , Q(:,j) );
       // PostProcess : tmp = sqrt( tmp ); R(j,j) = tmp ; tmp = 1 / tmp ;
-      vector_type Qj  = KokkosArray::view( Q , j );
-      value_type Rjj = KokkosArray::view( R , j , j );
+      const vector_type Qj( Q , j );
+      const value_view  Rjj( R , j , j );
 
       KokkosArray::dot( Qj , InvNorm2( Rjj , tmp  ) );
 
@@ -138,8 +138,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
       KokkosArray::scale( tmp , Qj );
 
       for ( size_t k = j + 1 ; k < count ; ++k ) {
-        vector_type Qk  = KokkosArray::view( Q , k );
-        value_type Rjk = KokkosArray::view( R , j , k );
+        const vector_type Qk( Q , k );
+        const value_view  Rjk( R , j , k );
 
         // Reduction   : R(j,k) = dot( Q(:,j) , Q(:,k) );
         // PostProcess : tmp = - R(j,k);

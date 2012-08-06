@@ -217,7 +217,7 @@ PerformanceData run( comm::Machine machine ,
   typedef typename matrix_type::graph_type                matrix_graph_type ;
   typedef typename matrix_type::coefficients_type         matrix_coefficients_type ;
 
-  typedef KokkosArray::Impl::Factory< matrix_graph_type , mesh_type > graph_factory ;
+  typedef GraphFactory< matrix_graph_type , mesh_type > graph_factory ;
 
   //------------------------------------
   // Problem setup types:

@@ -264,7 +264,7 @@ public:
 };
 
 template< typename ValueType >
-struct DeepCopy<ValueType,Host,Host> {
+struct DeepCopy<ValueType,Host::memory_space,Host::memory_space> {
   DeepCopy( ValueType * dst , const ValueType * src , size_t count )
   {
     HostParallelCopy< ValueType , ValueType >( dst , src , count );

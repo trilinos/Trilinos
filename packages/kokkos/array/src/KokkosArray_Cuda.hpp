@@ -44,8 +44,18 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
+#include <KokkosArray_Host.hpp>
 #include <KokkosArray_Layout.hpp>
-#include <Cuda/KokkosArray_Cuda_MemorySpace.hpp>
+
+/*--------------------------------------------------------------------------*/
+
+namespace KokkosArray {
+namespace Impl {
+
+class CudaMemorySpace ;
+
+} // namespace Impl
+} // namespace KokkosArray
 
 /*--------------------------------------------------------------------------*/
 
@@ -125,6 +135,7 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
+#include <Cuda/KokkosArray_Cuda_MemorySpace.hpp>
 #include <Cuda/KokkosArray_Cuda_View.hpp>
 
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
@@ -132,9 +143,6 @@ public:
 #include <Cuda/KokkosArray_Cuda_ParallelReduce.hpp>
 
 #endif /* #ifndef KOKKOS_CUDA_HPP */
-
-//----------------------------------------------------------------------------
-/* Partial specializations for optional data structures */
 
 //----------------------------------------------------------------------------
 

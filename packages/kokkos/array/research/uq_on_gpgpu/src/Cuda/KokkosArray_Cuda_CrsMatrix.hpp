@@ -206,7 +206,8 @@ public:
     vector_type yy( "yy" , n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
-      vector_type xx_view = KokkosArray::view( xx , n * col , n * ( col + 1 ) );
+      const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
+      const vector_type xx_view( xx , span );
       KokkosArray::deep_copy(xx_view, x[col]);
     }
 
@@ -232,7 +233,8 @@ public:
     
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
-      vector_type yy_view = KokkosArray::view( yy , n * col , n * ( col + 1 ) );
+      const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
+      const vector_type yy_view( yy , span );
       KokkosArray::deep_copy(y[col], yy_view );
     }
   }

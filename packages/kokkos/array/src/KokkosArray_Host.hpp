@@ -46,13 +46,20 @@
 
 #include <cstddef>
 #include <KokkosArray_Layout.hpp>
-#include <Host/KokkosArray_Host_MemorySpace.hpp>
 
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
+namespace Impl {
+
+class HostMemorySpace ;
+
+} // namespace Impl
+} // namespace KokkosArray
 
 /*--------------------------------------------------------------------------*/
+
+namespace KokkosArray {
 
 /// \class Host
 /// \brief KokkosArray device for multicore processors in the host memory space.
@@ -153,6 +160,7 @@ public:
 
 } // namespace KokkosArray
 
+#include <Host/KokkosArray_Host_MemorySpace.hpp>
 #include <Host/KokkosArray_Host_View.hpp>
 
 #include <Host/KokkosArray_Host_Parallel.hpp>
@@ -160,9 +168,6 @@ public:
 #include <Host/KokkosArray_Host_ParallelReduce.hpp>
 
 #endif /* #define KOKKOS_HOST_HPP */
-
-//----------------------------------------------------------------------------
-/* Partial specializations for optional data structures */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

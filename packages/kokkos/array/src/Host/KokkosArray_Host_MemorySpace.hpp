@@ -48,8 +48,6 @@
 #include <typeinfo>
 #include <string>
 
-#include <impl/KokkosArray_forward.hpp>
-
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {

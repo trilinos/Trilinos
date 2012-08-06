@@ -61,7 +61,6 @@ class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
 {
 private:
   template< class , class , class > friend class View ;
-  template< class Dst , class Src >  friend class Impl::Factory ;
 
   typedef Impl::ViewOperator< DataType ,
                               typename LayoutType::array_layout ,
@@ -134,90 +133,9 @@ public:
     }
 
   /*------------------------------------------------------------------*/
-
+  /** \brief Query shape */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   shape_type shape() const { return oper_type::m_shape ; }
-
-  /*------------------------------------------------------------------*/
-  /*------------------------------------------------------------------*/
-  /** \brief  Construct a NULL view */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View() {}
-
-  /** \brief  Construct a view of the array */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View( const View & rhs )
-    {
-      oper_type::m_shape         = rhs.m_shape ;
-      oper_type::m_ptr_on_device = rhs.m_ptr_on_device ;
-      memory_space::increment( oper_type::m_ptr_on_device );
-    }
-
-  /** \brief  Assign to a view of the rhs array.
-   *          If the old view is the last view
-   *          then allocated memory is deallocated.
-   */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View & operator = ( const View & rhs )
-  {
-    memory_space::decrement( oper_type::m_ptr_on_device );
-    oper_type::m_shape          = rhs.m_shape ;
-    oper_type::m_ptr_on_device  = rhs.m_ptr_on_device ;
-    memory_space::increment( oper_type::m_ptr_on_device );
-    return *this ;
-  }
-
-  /**  \brief  Destroy this view of the array.
-   *           If the last view then allocated memory is deallocated.
-   */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  ~View()
-  {
-    memory_space::decrement( oper_type::m_ptr_on_device );
-    oper_type::m_ptr_on_device = 0 ;
-  }
-
-  /*------------------------------------------------------------------*/
-  /** \brief  Construct a compatible view */
-
-  template< class rhsType , class rhsMapSpec , class rhsMemory >
-//  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View( const View< rhsType , rhsMapSpec , rhsMemory > & rhs )
-    {
-      typedef View< rhsType , rhsMapSpec , rhsMemory > rhs_type ;
-      typedef typename rhs_type::array_layout rhs_array_layout ;
-      typedef typename rhs_type::memory_space rhs_memory_space ;
-      typedef typename rhs_type::value_type   rhs_value_type ;
-
-      typedef typename Impl::StaticAssertAssignable<value_type,  rhs_value_type>  ::type ok_value ;
-      typedef typename Impl::StaticAssertSame<array_layout,rhs_array_layout>::type ok_layout ;
-      typedef typename Impl::StaticAssertSame<memory_space,rhs_memory_space>::type ok_memory ;
-
-      oper_type::m_shape         = rhs.m_shape ;         // Must be same type
-      oper_type::m_ptr_on_device = rhs.m_ptr_on_device ; // preserves 'const' requirement
-      memory_space::increment( oper_type::m_ptr_on_device );
-    }
-
-  template< class rhsType , class rhsMapSpec , class rhsMemory >
-//  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View & operator = ( const View< rhsType , rhsMapSpec , rhsMemory > & rhs )
-    {
-      typedef View< rhsType , rhsMapSpec , rhsMemory > rhs_type ;
-      typedef typename rhs_type::array_layout rhs_array_layout ;
-      typedef typename rhs_type::memory_space rhs_memory_space ;
-      typedef typename rhs_type::value_type   rhs_value_type ;
-
-      typedef typename Impl::StaticAssertAssignable<value_type,  rhs_value_type>  ::type ok_value ;
-      typedef typename Impl::StaticAssertSame<array_layout,rhs_array_layout>::type ok_layout ;
-      typedef typename Impl::StaticAssertSame<memory_space,rhs_memory_space>::type ok_memory ;
-
-      memory_space::decrement( oper_type::m_ptr_on_device );
-      oper_type::m_shape          = rhs.m_shape ; // Must be same type
-      oper_type::m_ptr_on_device  = rhs.m_ptr_on_device ;
-      memory_space::increment( oper_type::m_ptr_on_device );
-
-      return *this ;
-    }
 
   /*------------------------------------------------------------------*/
   /** \brief  Query if NULL view */
@@ -229,14 +147,16 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const View & rhs ) const
   {
-    return oper_type::m_ptr_on_device == rhs.m_ptr_on_device && oper_type::m_shape == rhs.m_shape ;
+    return oper_type::m_ptr_on_device == rhs.m_ptr_on_device &&
+           oper_type::m_shape == rhs.m_shape ;
   }
 
   /** \brief  Query if not view to same memory */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const View & rhs ) const
   {
-    return oper_type::m_ptr_on_device != rhs.m_ptr_on_device || oper_type::m_shape != rhs.m_shape ;
+    return oper_type::m_ptr_on_device != rhs.m_ptr_on_device ||
+           oper_type::m_shape != rhs.m_shape ;
   }
 
   /** \brief  Query if view to same memory */
@@ -244,7 +164,8 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const View<rhsDataType,rhsLayout,rhsMemory> & rhs ) const
   {
-    return oper_type::m_ptr_on_device == rhs.m_ptr_on_device && oper_type::m_shape == rhs.m_shape ;
+    return oper_type::m_ptr_on_device == rhs.m_ptr_on_device &&
+           oper_type::m_shape == rhs.m_shape ;
   }
 
   /** \brief  Query if not view to same memory */
@@ -252,92 +173,429 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const View<rhsDataType,rhsLayout,rhsMemory> & rhs ) const
   {
-    return oper_type::m_ptr_on_device != rhs.m_ptr_on_device || oper_type::m_shape != rhs.m_shape ;
+    return oper_type::m_ptr_on_device != rhs.m_ptr_on_device ||
+           oper_type::m_shape != rhs.m_shape ;
   }
 
   /*------------------------------------------------------------------*/
-#if 1
+
+private:
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void internal_private_assign( const shape_type & shape , value_type * ptr )
+  {
+    oper_type::m_shape          = shape ;
+    oper_type::m_ptr_on_device  = ptr ;
+    memory_space::increment( oper_type::m_ptr_on_device );
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void internal_private_clear()
+  {
+    memory_space::decrement( oper_type::m_ptr_on_device );
+    oper_type::m_ptr_on_device = 0 ;
+  }
+
+public:
+
+  /** \brief  Construct a NULL view */
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  View() {}
+
+  /** \brief  Construct a view of the array */
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  View( const View & rhs )
+    {
+      internal_private_assign( rhs.m_shape , rhs.m_ptr_on_device );
+    }
+
+  /**  \brief  Destroy this view of the array.
+   *           If the last view then allocated memory is deallocated.
+   */
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  ~View()
+  {
+    internal_private_clear();
+  }
+
+  /** \brief  Assign to a view of the rhs array.
+   *          If the old view is the last view
+   *          then allocated memory is deallocated.
+   */
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  View & operator = ( const View & rhs )
+  {
+    internal_private_clear();
+    internal_private_assign( rhs.m_shape , rhs.m_ptr_on_device );
+    return *this ;
+  }
+
+  /*------------------------------------------------------------------*/
+  // Construct a compatible view:
+
+  template< class rhsType , class rhsLayout , class rhsMemory >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space , 
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type > data( rhs.shape() );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  // Assign a compatible view:
+
+  template< class rhsType , class rhsMapSpec , class rhsMemory >
+  View & operator = ( const View< rhsType , rhsMapSpec , rhsMemory > & rhs )
+    {
+      typedef View< rhsType , rhsMapSpec , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space , 
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type > data( rhs.shape() );
+
+      internal_private_clear();
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+
+      return *this ;
+    }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Construct a subview */
+
+  template< class rhsType , class rhsLayout , class rhsMemory , class ArgType0 >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs ,
+        const ArgType0 & arg0 )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space ,
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      typedef Impl::SubShape< shape_type , rhs_shape_type > subshape_type ;
+
+      const subshape_type data( rhs.shape() , arg0 );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  template< class rhsType , class rhsLayout , class rhsMemory ,
+            class ArgType0 , class ArgType1 >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs ,
+        const ArgType0 & arg0 ,
+        const ArgType1 & arg1 )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space ,
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type >
+         data( rhs.shape() , arg0 , arg1 );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  template< class rhsType , class rhsLayout , class rhsMemory ,
+            class ArgType0 , class ArgType1 , class ArgType2 >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs ,
+        const ArgType0 & arg0 ,
+        const ArgType1 & arg1 ,
+        const ArgType2 & arg2 )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space ,
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type >
+         data( rhs.shape() , arg0 , arg1 , arg2 );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  template< class rhsType , class rhsLayout , class rhsMemory ,
+            class ArgType0 , class ArgType1 , class ArgType2 ,
+            class ArgType3 >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs ,
+        const ArgType0 & arg0 ,
+        const ArgType1 & arg1 ,
+        const ArgType2 & arg2 ,
+        const ArgType3 & arg3 )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space ,
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type >
+         data( rhs.shape() , arg0 , arg1 , arg2 , arg3 );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  template< class rhsType , class rhsLayout , class rhsMemory ,
+            class ArgType0 , class ArgType1 , class ArgType2 ,
+            class ArgType3 , class ArgType4 >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs ,
+        const ArgType0 & arg0 ,
+        const ArgType1 & arg1 ,
+        const ArgType2 & arg2 ,
+        const ArgType3 & arg3 ,
+        const ArgType4 & arg4 )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space ,
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type >
+         data( rhs.shape() , arg0 , arg1 , arg2 , arg3 , arg4 );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  template< class rhsType , class rhsLayout , class rhsMemory ,
+            class ArgType0 , class ArgType1 , class ArgType2 ,
+            class ArgType3 , class ArgType4 , class ArgType5 >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs ,
+        const ArgType0 & arg0 ,
+        const ArgType1 & arg1 ,
+        const ArgType2 & arg2 ,
+        const ArgType3 & arg3 ,
+        const ArgType4 & arg4 ,
+        const ArgType5 & arg5 )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space ,
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type >
+         data( rhs.shape() , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  template< class rhsType , class rhsLayout , class rhsMemory ,
+            class ArgType0 , class ArgType1 , class ArgType2 ,
+            class ArgType3 , class ArgType4 , class ArgType5 ,
+            class ArgType6 >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs ,
+        const ArgType0 & arg0 ,
+        const ArgType1 & arg1 ,
+        const ArgType2 & arg2 ,
+        const ArgType3 & arg3 ,
+        const ArgType4 & arg4 ,
+        const ArgType5 & arg5 ,
+        const ArgType6 & arg6 )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space ,
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type >
+         data( rhs.shape() , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  template< class rhsType , class rhsLayout , class rhsMemory ,
+            class ArgType0 , class ArgType1 , class ArgType2 ,
+            class ArgType3 , class ArgType4 , class ArgType5 ,
+            class ArgType6 , class ArgType7 >
+  View( const View< rhsType , rhsLayout , rhsMemory > & rhs ,
+        const ArgType0 & arg0 ,
+        const ArgType1 & arg1 ,
+        const ArgType2 & arg2 ,
+        const ArgType3 & arg3 ,
+        const ArgType4 & arg4 ,
+        const ArgType5 & arg5 ,
+        const ArgType6 & arg6 ,
+        const ArgType7 & arg7 )
+    {
+      typedef View< rhsType , rhsLayout , rhsMemory > rhs_view ;
+      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::shape_type   rhs_shape_type ;
+      typedef typename rhs_view::memory_space rhs_memory_space ;
+
+      typedef typename
+        Impl::SubviewAssignable< value_type , memory_space ,
+                                 rhs_value_type , rhs_memory_space >::type
+          ok_assign ;
+
+      // SubShape<*,*> only exists for valid subshapes:
+
+      const Impl::SubShape< shape_type , rhs_shape_type >
+         data( rhs.shape(), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
+
+      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+    }
+
+  /*------------------------------------------------------------------*/
+  /*------------------------------------------------------------------*/
+  /* Creation with allocation of memory on the device */
 
 private:
 
   /** \brief  This device-specialized method may only be called
    *          within a view constructor.
    */
-  void create( const std::string & label , const shape_type shape );
+  void internal_private_create( const std::string & label ,
+                                const shape_type shape );
 
 public:
 
   View( const std::string & label , const shape_type shape )
   {
-    create( label , shape );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape );
   }
 
   explicit View( const std::string & label )
   {
-    create( label , shape_type::template create<memory_space>() );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>() );
   }
 
   View( const std::string & label ,
-               const size_t n0 )
+        const size_t n0 )
   {
-    create( label , shape_type::template create<memory_space>(n0) );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>(n0) );
   }
 
   View( const std::string & label ,
-               const size_t n0 ,
-               const size_t n1 )
+        const size_t n0 ,
+        const size_t n1 )
   {
-    create( label , shape_type::template create<memory_space>(n0,n1) );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>(n0,n1) );
   }
 
   View( const std::string & label ,
-               const size_t n0 ,
-               const size_t n1 ,
-               const size_t n2 )
+        const size_t n0 ,
+        const size_t n1 ,
+        const size_t n2 )
   {
-    create( label , shape_type::template create<memory_space>(n0,n1,n2) );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2) );
   }
 
   View( const std::string & label ,
-               const size_t n0 ,
-               const size_t n1 ,
-               const size_t n2 ,
-               const size_t n3 )
+        const size_t n0 ,
+        const size_t n1 ,
+        const size_t n2 ,
+        const size_t n3 )
   {
-    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3) );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3) );
   }
 
   View( const std::string & label ,
-               const size_t n0 ,
-               const size_t n1 ,
-               const size_t n2 ,
-               const size_t n3 ,
-               const size_t n4 )
+        const size_t n0 ,
+        const size_t n1 ,
+        const size_t n2 ,
+        const size_t n3 ,
+        const size_t n4 )
   {
-    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4) );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4) );
   }
 
   View( const std::string & label ,
-               const size_t n0 ,
-               const size_t n1 ,
-               const size_t n2 ,
-               const size_t n3 ,
-               const size_t n4 ,
-               const size_t n5 )
+        const size_t n0 ,
+        const size_t n1 ,
+        const size_t n2 ,
+        const size_t n3 ,
+        const size_t n4 ,
+        const size_t n5 )
   {
-    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5) );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5) );
   }
 
   View( const std::string & label ,
-               const size_t n0 ,
-               const size_t n1 ,
-               const size_t n2 ,
-               const size_t n3 ,
-               const size_t n4 ,
-               const size_t n5 ,
-               const size_t n6 )
+        const size_t n0 ,
+        const size_t n1 ,
+        const size_t n2 ,
+        const size_t n3 ,
+        const size_t n4 ,
+        const size_t n5 ,
+        const size_t n6 )
   {
-    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6) );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6) );
   }
 
   View( const std::string & label ,
@@ -350,11 +608,11 @@ public:
         const size_t n6 ,
         const size_t n7 )
   {
-    create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6,n7) );
+    View_create_requires_non_const_data_type< value_type >::success();
+    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6,n7) );
   }
 
   /*------------------------------------------------------------------*/
-#endif
   /** \brief  For unit testing shape mapping. */
   explicit View( const typename oper_type::shape_type & shape )
     { oper_type::m_shape = shape ; }

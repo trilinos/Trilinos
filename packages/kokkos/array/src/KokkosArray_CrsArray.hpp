@@ -45,6 +45,7 @@
 #define KOKKOS_CRSARRAY_HPP
 
 #include <string>
+#include <vector>
 
 #include <KokkosArray_View.hpp>
 
@@ -111,60 +112,39 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class CrsArrayType , class InputType >
-inline
+template< class CrsArrayType , class InputSizeType >
 CrsArray< typename CrsArrayType::data_type ,
           typename CrsArrayType::layout_type ,
           typename CrsArrayType::device_type ,
           typename CrsArrayType::size_type >
 create_crsarray( const std::string & label ,
-                 const InputType & input )
-{
-  typedef CrsArray< typename CrsArrayType::data_type ,
-                    typename CrsArrayType::layout_type ,
-                    typename CrsArrayType::device_type ,
-                    typename CrsArrayType::size_type >
-    output_type ;
+                 const std::vector< InputSizeType > & input );
 
-  return Impl::Factory< output_type , InputType >
-             ::create( label , input );
-}
-
-template< class CrsArrayType , class InputType >
-inline
+template< class CrsArrayType , class InputSizeType >
 CrsArray< typename CrsArrayType::data_type ,
           typename CrsArrayType::layout_type ,
           typename CrsArrayType::device_type ,
           typename CrsArrayType::size_type >
-create_crsarray( const InputType & input )
-{
-  typedef CrsArray< typename CrsArrayType::data_type ,
-                    typename CrsArrayType::layout_type ,
-                    typename CrsArrayType::device_type ,
-                    typename CrsArrayType::size_type >
-    output_type ;
-
-  return Impl::Factory< output_type , InputType >
-             ::create( std::string() , input );
-}
+create_crsarray( const std::string & label ,
+                 const std::vector< std::vector< InputSizeType > > & input );
 
 //----------------------------------------------------------------------------
 
-#if 0
+template< class DataType ,
+          class LayoutType ,
+          class DeviceType ,
+          typename SizeType >
+typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
+create_mirror_view(
+  const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input );
 
 template< class DataType ,
-          class LayoutDst , class DeviceDst ,
-          class LayoutSrc , class DeviceSrc ,
+          class LayoutType ,
+          class DeviceType ,
           typename SizeType >
-inline
-void deep_copy(       CrsArray<DataType,LayoutDst,DeviceDst,SizeType> & dst ,
-                const CrsArray<DataType,LayoutSrc,DeviceSrc,SizeType> & src )
-{
-  deep_copy( dst.entries , src.entries );
-  deep_copy( dst.row_map , src.row_map );
-}
-
-#endif
+typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
+create_mirror(
+  const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input );
 
 } // namespace KokkosArray
 

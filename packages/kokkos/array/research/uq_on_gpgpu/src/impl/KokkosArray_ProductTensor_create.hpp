@@ -171,7 +171,7 @@ public:
 
     type tensor ;
 
-    tensor.m_coord = create_crsarray< coord_array_type >( coord_work );
+    tensor.m_coord = create_crsarray< coord_array_type >( "tensor_coord" , coord_work );
     tensor.m_value = value_array_type( "tensor_value" , entry_count );
     tensor.m_entry_max = 0 ;
 

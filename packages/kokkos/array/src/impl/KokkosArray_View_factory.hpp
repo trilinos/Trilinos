@@ -104,73 +104,9 @@ create_mirror( const View<DataType,LayoutType,DeviceType> & input )
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-namespace KokkosArray {
-
-/** \brief  Span of a vector */
-template< typename ValueType , class LayoutSpec , class DeviceType >
-inline
-View< ValueType[] , LayoutSpec , DeviceType >
-view( const View< ValueType[] , LayoutSpec , DeviceType > & input ,
-      const size_t iBeg , const size_t iEnd )
-{
-  typedef View< ValueType[] , LayoutSpec , DeviceType > input_type ;
-  typedef typename input_type::shape_type input_shape ;
-
-  typedef typename Impl::assert_shape_is_rank_one< input_shape >::type ok_rank ;
-
-  return Impl::Factory< void , input_type >::view( input , iBeg , iEnd );
-}
-
-/** \brief  Vector of a multivector */
-template< typename ValueType , class DeviceType >
-inline
-View< ValueType[] , LayoutLeft , DeviceType >
-view( const View< ValueType[][0] , LayoutLeft , DeviceType > & input ,
-      const size_t J )
-{
-  typedef typename
-    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
-
-  typedef View< ValueType[][0] , LayoutLeft , DeviceType > input_type ;
-
-  return Impl::Factory< void , input_type >::view( input , J );
-}
-
-/** \brief  Value within a multivector */
-template< typename ValueType , class DeviceType >
-inline
-View< ValueType , LayoutLeft , DeviceType >
-view( const View< ValueType[][0] , LayoutLeft , DeviceType > & input ,
-      const size_t I , const size_t J )
-{
-  typedef typename
-    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
-
-  typedef View< ValueType[][0] , LayoutLeft , DeviceType > input_type ;
-
-  return Impl::Factory< void , input_type >::view( input , I , J );
-}
-
-/** \brief  Value within a vector */
-template< typename ValueType , class DeviceType >
-inline
-View< ValueType , LayoutLeft , DeviceType >
-view( const View< ValueType[] , LayoutLeft , DeviceType > & input ,
-      const size_t I )
-{
-  typedef typename
-    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
-
-  typedef View< ValueType[] , LayoutLeft , DeviceType > input_type ;
-
-  return Impl::Factory< void , input_type >::view( input , I );
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 /** \brief  Deep copy compatible arrays */
 
+namespace KokkosArray {
 namespace Impl {
 
 template< class DstType ,
@@ -206,7 +142,9 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
     if ( dst != src ) {
       assert_shapes_are_equal( dst.shape() , src.shape() );
 
-      DeepCopy<typename dst_type::value_type,DeviceDst,DeviceSrc>(
+      DeepCopy< typename dst_type::value_type ,
+                typename DeviceDst::memory_space ,
+                typename DeviceSrc::memory_space > (
         dst.ptr_on_device() ,
         src.ptr_on_device() ,
         allocation_count( dst.shape() ) );
@@ -215,32 +153,6 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
 };
 
 } // namespace Impl
-
-template< typename ValueType , class LayoutSrc , class DeviceSrc >
-inline
-void deep_copy( ValueType & dst ,
-                const View< ValueType , LayoutSrc , DeviceSrc > & src )
-{
-  typedef View< ValueType , LayoutSrc , DeviceSrc > src_type ;
-  typedef typename src_type::shape_type             src_shape ;
-
-  typedef typename Impl::assert_shape_is_rank_zero< src_shape >::type ok_rank ;
-
-  Impl::DeepCopy<ValueType,Host,DeviceSrc>( & dst , src.ptr_on_device() , 1 );
-}
-
-template< typename ValueType , class LayoutDst , class DeviceDst >
-inline
-void deep_copy( const View< ValueType , LayoutDst , DeviceDst > & dst ,
-                const ValueType & src )
-{
-  typedef View< ValueType , LayoutDst , DeviceDst > dst_type ;
-  typedef typename dst_type::shape_type             dst_shape ;
-
-  typedef typename Impl::assert_shape_is_rank_zero< dst_shape >::type ok_rank ;
-
-  Impl::DeepCopy<ValueType,DeviceDst,Host>( dst.ptr_on_device(), & src , 1 );
-}
 
 // Deep copy a span of rank 1 arrays:
 
@@ -281,7 +193,9 @@ void deep_copy( const View< DataDst , LayoutDst , DeviceDst > & dst ,
     Impl::assert_shape_bounds( dst.shape() , count - 1 );
     Impl::assert_shape_bounds( src.shape() , count - 1 );
 
-    Impl::DeepCopy<dst_value_type,DeviceDst,DeviceSrc>(
+      Impl::DeepCopy< dst_value_type ,
+                      typename DeviceDst::memory_space ,
+                      typename DeviceSrc::memory_space > (
       dst.ptr_on_device() ,
       src.ptr_on_device() ,
       count );
@@ -312,88 +226,19 @@ void deep_copy( const View< DataDst , LayoutDst , DeviceDst > & dst ,
 namespace KokkosArray {
 namespace Impl {
 
-/** \brief  Create subviews of multivectors */
-template< typename ValueType , class LayoutSpec , class Device >
-struct Factory< void , View< ValueType[][0] , LayoutSpec , Device > >
-{
-  typedef typename StaticAssert< rank<ValueType>::value == 0 >::type ok_rank ;
+/** \brief  Subview must have compatible pointer types and same memory space */
 
-  // The multivector type:
-  typedef View< ValueType[][0] , LayoutSpec , Device > input_type ;
+template< class DstType , class DstMemory ,
+          class SrcType , class SrcMemory >
+struct SubviewAssignable : public false_type {};
 
-  typedef typename Device::memory_space memory_space ;
+template< class Type , class Memory >
+struct SubviewAssignable< Type , Memory , Type , Memory >
+  : public true_type {};
 
-  inline static
-  View< ValueType[] , LayoutSpec , Device >
-  view( const input_type & input , const size_t J )
-  {
-    View< ValueType[] , LayoutSpec , Device > output ;
-
-    if ( input ) {
-      output.m_shape.N0 = input.m_shape.N0 ;
-      output.m_ptr_on_device = input.ptr_on_device( 0 , J );
-      memory_space::increment( output.m_ptr_on_device );
-    }
-
-    return output ;
-  }
-
-  inline static
-  View< ValueType , LayoutSpec , Device >
-  view( const input_type & input , const size_t I , size_t J )
-  {
-
-    View< ValueType , LayoutSpec , Device > output ;
-
-    if ( input ) {
-      output.m_ptr_on_device = input.ptr_on_device( I , J );
-      memory_space::increment( output.m_ptr_on_device );
-    }
-
-    return output ;
-  }
-};
-
-/** \brief  Create subview of vectors */
-template< typename ValueType , class LayoutSpec , class Device >
-struct Factory< void , View< ValueType[] , LayoutSpec , Device > >
-{
-  typedef typename StaticAssert< rank<ValueType>::value == 0 >::type ok_rank ;
-
-  // The multivector type:
-  typedef View< ValueType[] , LayoutSpec , Device > input_type ;
-
-  typedef typename Device::memory_space memory_space ;
-
-  inline static
-  View< ValueType , LayoutSpec , Device >
-  view( const input_type & input , const size_t I )
-  {
-    View< ValueType , LayoutSpec , Device > output ;
-
-    if ( input ) {
-      output.m_ptr_on_device = & input( I );
-      memory_space::increment( output.m_ptr_on_device );
-    }
-
-    return output ;
-  }
-
-  inline static
-  View< ValueType[] , LayoutSpec , Device >
-  view( const input_type & input , const size_t iBeg , const size_t iEnd )
-  {
-    View< ValueType[] , LayoutSpec , Device > output ;
-
-    if ( input ) {
-      output.m_shape.N0 = iEnd - iBeg ;
-      output.m_ptr_on_device = input.m_ptr_on_device + iBeg ;
-      memory_space::increment( output.m_ptr_on_device );
-    }
-
-    return output ;
-  }
-};
+template< class Type , class Memory >
+struct SubviewAssignable< const Type , Memory , Type , Memory >
+  : public true_type {};
 
 } // namespace Impl
 } // namespace KokkosArray

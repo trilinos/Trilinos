@@ -44,8 +44,6 @@
 #ifndef KOKKOS_IMPL_CRSARRAY_FACTORY_HPP
 #define KOKKOS_IMPL_CRSARRAY_FACTORY_HPP
 
-#include <vector>
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -85,6 +83,7 @@ struct CrsArrayCreateMirror< CrsArray< DataType , LayoutType , DeviceType , Size
 } // namespace Impl
 
 template< class DataType , class LayoutType , class DeviceType , typename SizeType >
+inline
 typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
 create_mirror_view( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input )
 {
@@ -95,6 +94,7 @@ create_mirror_view( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & i
 }
 
 template< class DataType , class LayoutType , class DeviceType , typename SizeType >
+inline
 typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
 create_mirror( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input )
 {
@@ -116,125 +116,119 @@ create_mirror( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input 
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
-namespace Impl {
+
+template< class CrsArrayType , class InputSizeType >
+inline
+CrsArray< typename CrsArrayType::data_type ,
+          typename CrsArrayType::layout_type ,
+          typename CrsArrayType::device_type ,
+          typename CrsArrayType::size_type >
+create_crsarray( const std::string & label ,
+                 const std::vector< InputSizeType > & input )
+{
+  typedef CrsArrayType                  output_type ;
+  typedef std::vector< InputSizeType >  input_type ;
+
+  typedef typename output_type::entries_type   entries_type ;
+
+  typedef View< typename output_type::size_type [] ,
+                typename output_type::layout_type ,
+                typename output_type::device_type > work_type ;
+
+  output_type output ;
+
+  // Create the row map:
+
+  const size_t length = input.size();
+
+  {
+    work_type row_work( "tmp" , length + 1 );
+
+    typename work_type::HostMirror row_work_host =
+      create_mirror_view( row_work );
+
+    size_t sum = 0 ;
+    row_work_host[0] = 0 ;
+    for ( size_t i = 0 ; i < length ; ++i ) {
+      row_work_host[i+1] = sum += input[i];
+    }
+
+    deep_copy( row_work , row_work_host );
+
+    output.entries   = entries_type( label , sum );
+    output.row_map   = row_work ;
+  }
+
+  return output ;
+}
 
 //----------------------------------------------------------------------------
 
-template< class DataType ,
-          class LayoutOutput ,
-          class DeviceOutput ,
-          typename MapSizeType ,
-          typename InputSizeType >
-struct Factory< CrsArray< DataType , LayoutOutput , DeviceOutput , MapSizeType > ,
-                std::vector< InputSizeType > >
+template< class CrsArrayType , class InputSizeType >
+inline
+CrsArray< typename CrsArrayType::data_type ,
+          typename CrsArrayType::layout_type ,
+          typename CrsArrayType::device_type ,
+          typename CrsArrayType::size_type >
+create_crsarray( const std::string & label ,
+                 const std::vector< std::vector< InputSizeType > > & input )
 {
-  typedef CrsArray< DataType , LayoutOutput , DeviceOutput, MapSizeType > output_type ;
-  typedef std::vector< InputSizeType > input_type ;
+  typedef CrsArrayType                                output_type ;
+  typedef std::vector< std::vector< InputSizeType > > input_type ;
+  typedef typename output_type::entries_type          entries_type ;
+  typedef typename output_type::size_type             size_type ;
 
-  static
-  output_type create( const std::string & label , const input_type & input )
-  {
-    typedef typename output_type::entries_type   entries_type ;
-    typedef View< MapSizeType[] , LayoutOutput , DeviceOutput > work_type ;
+  typedef typename
+    Impl::assert_shape_is_rank_one< typename entries_type::shape_type >::type
+      ok_rank ;
 
-    output_type output ;
+  typedef View< typename output_type::size_type [] ,
+                typename output_type::layout_type ,
+                typename output_type::device_type > work_type ;
+
+  output_type output ;
 
     // Create the row map:
 
-    const size_t length = input.size();
+  const size_t length = input.size();
 
-    {
-      work_type row_work( "tmp" , length + 1 );
-
-      typename work_type::HostMirror row_work_host =
-        create_mirror_view( row_work );
-
-      size_t sum = 0 ;
-      row_work_host[0] = 0 ;
-      for ( size_t i = 0 ; i < length ; ++i ) {
-        row_work_host[i+1] = sum += input[i];
-      }
-
-      deep_copy( row_work , row_work_host );
-
-      output.entries   = entries_type( label , sum );
-      output.row_map   = row_work ;
-    }
-
-    return output ;
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType ,
-          class LayoutOutput ,
-          class DeviceOutput ,
-          typename MapSizeType ,
-          typename InputType >
-struct Factory< CrsArray< ValueType , LayoutOutput , DeviceOutput , MapSizeType > ,
-                std::vector< std::vector< InputType > > >
-{
-  typedef CrsArray< ValueType , LayoutOutput , DeviceOutput , MapSizeType > output_type ;
-  typedef std::vector< std::vector< InputType > > input_type ;
-
-  static const bool OK =
-    StaticAssert< 1 == output_type::entries_type::Rank >::value ;
-
-  static
-  output_type create( const std::string & label , const input_type & input )
   {
-    typedef typename output_type::entries_type   entries_type ;
-    typedef View< MapSizeType[] , LayoutOutput , DeviceOutput > work_type ;
+    work_type row_work( "tmp" , length + 1 );
 
-    output_type output ;
+    typename work_type::HostMirror row_work_host =
+      create_mirror_view( row_work );
 
-    // Create the row map:
-
-    const size_t length = input.size();
-
-    {
-      work_type row_work( "tmp" , length + 1 );
-
-      typename work_type::HostMirror row_work_host =
-        create_mirror_view( row_work );
-
-      size_t sum = 0 ;
-      row_work_host[0] = 0 ;
-      for ( size_t i = 0 ; i < length ; ++i ) {
-        row_work_host[i+1] = sum += input[i].size();
-      }
-
-      deep_copy( row_work , row_work_host );
-
-      output.entries   = entries_type( label , sum );
-      output.row_map   = row_work ;
+    size_t sum = 0 ;
+    row_work_host[0] = 0 ;
+    for ( size_t i = 0 ; i < length ; ++i ) {
+      row_work_host[i+1] = sum += input[i].size();
     }
 
-    // Fill in the entries:
-    {
-      typename entries_type::HostMirror host_entries =
-        create_mirror_view( output.entries );
+    deep_copy( row_work , row_work_host );
 
-      size_t sum = 0 ;
-      for ( size_t i = 0 ; i < length ; ++i ) {
-        for ( size_t j = 0 ; j < input[i].size() ; ++j , ++sum ) {
-          host_entries( sum ) = input[i][j] ;
-        }
-      }
-
-      deep_copy( output.entries , host_entries );
-    }
-
-    return output ;
+    output.entries   = entries_type( label , sum );
+    output.row_map   = row_work ;
   }
-};
 
-//----------------------------------------------------------------------------
+  // Fill in the entries:
+  {
+    typename entries_type::HostMirror host_entries =
+      create_mirror_view( output.entries );
 
-} // namespace Impl
+    size_t sum = 0 ;
+    for ( size_t i = 0 ; i < length ; ++i ) {
+      for ( size_t j = 0 ; j < input[i].size() ; ++j , ++sum ) {
+        host_entries( sum ) = input[i][j] ;
+      }
+    }
+
+    deep_copy( output.entries , host_entries );
+  }
+
+  return output ;
+}
+
 } // namespace KokkosArray
-
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
