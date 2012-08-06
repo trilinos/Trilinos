@@ -179,18 +179,18 @@ namespace stk {
                               << std::endl;
                   }
 
-                  //eMesh->save_as("iter_"+toString(iter)+"_mesh.e");
-                  //eMesh->save_as("iter_mesh."+toString(iter)+".e");
-                  eMesh->save_as("iter_"+toString(outer)+"_"+toString(stage)+"."+toString(iter)+".e");
-                  if (iter_all % 8 == 0) eMesh->save_as("anim_all."+toString(iter_all)+".e");
+                  if (0)
+                    {
+                       eMesh->save_as("iter_"+toString(outer)+"_"+toString(stage)+"."+toString(iter)+".e");
+                       if (iter_all % 8 == 0) eMesh->save_as("anim_all."+toString(iter_all)+".e");
+                    }
 
                   if (!m_untangled && m_num_invalid == 0)
                     {
                       m_untangled = true;
                     }
                   if (conv && m_untangled) break;
-      MPI_Barrier( MPI_COMM_WORLD );
-                  if (iter==120) exit(1);
+                  //if (iter == 5) break;
                 }
 
               eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");

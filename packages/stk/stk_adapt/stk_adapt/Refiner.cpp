@@ -1071,30 +1071,25 @@ namespace stk {
             {
               //VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
 
-              if (1 && m_doSmoothGeometry)
+              if (m_doSmoothGeometry)
                 {
-                  std::cout << "P[" << m_eMesh.get_rank() << "] tmp srk here 1" << std::endl;
-
                   // make a copy of current non-snapped state (dst,src)
                   m_eMesh.copy_field(m_eMesh.get_field("coordinates_NM1"), m_eMesh.get_coordinates_field() );
 
-                  std::cout << "P[" << m_eMesh.get_rank() << "] tmp srk here 2" << std::endl;
+                }
 
-                  // do the snap
-                  mesh_geometry.snap_points_to_geometry(&m_eMesh);
-                  if (doCheckMovement != 0.0) 
-                    mesh_geometry.print_node_movement_summary();
+              // do the snap
+              mesh_geometry.snap_points_to_geometry(&m_eMesh);
+              if (doCheckMovement != 0.0) 
+                mesh_geometry.print_node_movement_summary();
 
-                  std::cout << "P[" << m_eMesh.get_rank() << "] tmp srk here 3" << std::endl;
-
+              if (m_doSmoothGeometry)
+                {
                   // make a copy of current snapped state
                   m_eMesh.copy_field(m_eMesh.get_field("coordinates_N"), m_eMesh.get_coordinates_field() );
 
-                  std::cout << "P[" << m_eMesh.get_rank() << "] tmp srk here 4" << std::endl;
                   // reset current state to non-snapped state
                   m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
-
-                  std::cout << "P[" << m_eMesh.get_rank() << "] tmp srk here 5" << std::endl;
 
                   smoothGeometry(mesh_geometry,option);
                   //mesh_geometry.snap_points_to_geometry(&m_eMesh);

@@ -27,13 +27,6 @@ namespace stk {
 
     class JacobianUtil : public Mesquite::AveragingQM
     {
-      const double a2Con;
-      const Exponent b2Con;
-      const Exponent c2Con;
-      
-      const double a3Con;
-      const Exponent b3Con;
-      const Exponent c3Con;
       Vector3D mCoords[4];
 
     public:
@@ -47,18 +40,13 @@ namespace stk {
 
       JacobianUtil() : 
         AveragingQM( QualityMetric::LINEAR ),
-
-        a2Con(1.0), 
-        b2Con(0.0), 
-        c2Con(1.0),
-        a3Con(1.0),
-        b3Con(0.0),
-        c3Con(1.0), m_num_nodes(0),
+        m_num_nodes(0),
         m_scale_to_unit(false)
       {
       }
 
-      bool operator()(double& averageJ, PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field);
+      bool operator()(double& averageJ, PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+                      const CellTopologyData * topology_data_in = 0 );
 
     };
   }
