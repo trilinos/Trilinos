@@ -22,19 +22,19 @@ SET(TIMEOUT_MINUTES 300) # 5 hours
 IF (RUN_REGULAR_TESTS)
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    MPI_DEBUG_GCC_TRILINOS
+    MPI_DEBUG_GCC
     ctest_linux_nightly_mpi_debug_gcc_4.6.1_trilinos.cmake
     TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    MPI_RELEASE_GCC_TRILINOS
+    MPI_RELEASE_GCC
     ctest_linux_nightly_mpi_release_gcc_4.6.1_trilinos.cmake
     TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_RELEASE_GCC_TRILINOS
+    SERIAL_RELEASE_GCC
     ctest_linux_nightly_serial_release_gcc_4.6.1_trilinos.cmake
     TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
     )

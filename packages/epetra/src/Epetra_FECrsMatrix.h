@@ -532,7 +532,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
       @return error-code 0 if successful, non-zero if some error occurs
    */
-   int GlobalAssemble(bool callFillComplete=true, Epetra_CombineMode combineMode=Add);
+   int GlobalAssemble(bool callFillComplete=true,
+                      Epetra_CombineMode combineMode=Add,
+                      bool save_off_and_reuse_map_exporter=false);
 
    /** Gather any overlapping/shared data into the non-overlapping partitioning
       defined by the Map that was passed to this matrix at construction time.
@@ -562,7 +564,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    int GlobalAssemble(const Epetra_Map& domain_map,
                       const Epetra_Map& range_map,
                       bool callFillComplete=true,
-                      Epetra_CombineMode combineMode=Add);
+                      Epetra_CombineMode combineMode=Add,
+                      bool save_off_and_reuse_map_exporter=false);
 
    /** Set whether or not non-local data values should be ignored. By default,
        non-local data values are NOT ignored.
@@ -622,6 +625,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    bool useNonlocalMatrix_;
    Epetra_CrsMatrix* nonlocalMatrix_;
+
+   Epetra_Map* sourceMap_;
+   Epetra_Map* colMap_;
+   Epetra_Export* exporter_;
 };//class Epetra_FECrsMatrix
 
 #endif /* EPETRA_FECRSMATRIX_H */

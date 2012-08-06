@@ -29,7 +29,5 @@ SET(HDF5_LIBRARY_NAMES "hdf5_hl;hdf5;hdf5_cpp" CACHE STRING "")
 SET(HDF5_LIBRARY_DIRS /opt/intel-11.1.064/tpls/hdf5-1.8.5-patch1/lib CACHE FILEPATH "")
 SET(HDF5_INCLUDE_DIRS /opt/intel-11.1.064/tpls/hdf5-1.8.5-patch1/include CACHE FILEPATH "")
 
-
 # Including these last to allow override above
-INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-vri-tpls.cmake)
 INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-core-enables-disables.cmake)

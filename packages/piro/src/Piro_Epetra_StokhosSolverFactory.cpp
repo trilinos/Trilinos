@@ -270,39 +270,46 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
   // more stochastic parameters than fundamental r.v.'s in the basis
   // (for correlation) or fewer.
   Teuchos::ParameterList& sgParameters = sgParams.sublist("SG Parameters");
-  int num_param_vectors = sgParameters.get("Number of SG Parameter Vectors", 1);
-  for (int i=0; i<num_param_vectors; i++) {
-    std::stringstream ss;
-    ss << "SG Parameter Vector " << i;
-    Teuchos::ParameterList& pList = sgParameters.sublist(ss.str());
-    int p_vec = pList.get("Parameter Vector Index", 0);
-    
-    // Create sg parameter vector
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p =
-      sg_nonlin_model->create_p_sg(p_vec);
-
-    // Initalize sg parameter vector
-    int num_params = sg_p->coefficientMap()->NumMyElements();
-    for (int j=0; j<num_params; j++) {
-      std::stringstream ss2;
-      ss2 << "Parameter " << j << " Initial Expansion Coefficients";
-      Teuchos::Array<double> initial_p_vals;
-      initial_p_vals = pList.get(ss2.str(),initial_p_vals);
-      if (initial_p_vals.size() == 0 && dim == num_params) {
-	// Default to mean-zero linear expansion, ie, p_i = \xi_i
-	// This only makes sense if the stochastic dimension is equal to the
-	// number of parameters
-	sg_p->term(j,0)[j] = 0.0;
-	sg_p->term(j,1)[j] = 1.0;  // Set order 1 coeff to 1 for this RV
+  bool set_initial_params = sgParameters.get("Set Initial SG Parameters", true);
+  if (set_initial_params) {
+    int num_param_vectors = 
+      sgParameters.get("Number of SG Parameter Vectors", 1);
+    Teuchos::Array<double> point(basis->dimension(), 1.0);
+    Teuchos::Array<double> basis_vals(basis->size());
+    basis->evaluateBases(point, basis_vals);
+    int idx=0;
+    for (int i=0; i<num_param_vectors; i++) {
+      std::stringstream ss;
+      ss << "SG Parameter Vector " << i;
+      Teuchos::ParameterList& pList = sgParameters.sublist(ss.str());
+      int p_vec = pList.get("Parameter Vector Index", i);
+      
+      // Create sg parameter vector
+      Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p =
+	sg_nonlin_model->create_p_sg(p_vec);
+      
+      // Initalize sg parameter vector
+      int num_params = sg_p->coefficientMap()->NumMyElements();
+      for (int j=0; j<num_params; j++) {
+	std::stringstream ss2;
+	ss2 << "Parameter " << j << " Initial Expansion Coefficients";
+	Teuchos::Array<double> initial_p_vals;
+	initial_p_vals = pList.get(ss2.str(),initial_p_vals);
+	if (initial_p_vals.size() == 0) {
+	  // Default to mean-zero linear expansion, ie, p_j = \xi_j,
+	  // by setting term j+1 to 1 (unnormalized)
+	  (*sg_p)[idx+1][j] = 1.0 / basis_vals[idx+1];
+	}
+	else
+	  for (Teuchos::Array<double>::size_type l=0; l<initial_p_vals.size(); 
+	       l++)
+	    (*sg_p)[l][j] = initial_p_vals[l];
+	idx++;
       }
-      else
-	for (Teuchos::Array<double>::size_type l=0; l<initial_p_vals.size(); 
-	     l++)
-	  (*sg_p)[l][j] = initial_p_vals[l];
-    }
 
-    // Set sg parameter vector
-    sg_nonlin_model->set_p_sg_init(p_vec, *sg_p);
+      // Set sg parameter vector
+      sg_nonlin_model->set_p_sg_init(p_vec, *sg_p);
+    }
   }
 
   // Setup stochastic initial guess

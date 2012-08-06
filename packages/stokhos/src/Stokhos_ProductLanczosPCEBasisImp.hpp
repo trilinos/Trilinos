@@ -396,22 +396,6 @@ getReducedQuadrature() const
 }
 
 template <typename ordinal_type, typename value_type>
-void 
-Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
-getBasisAtOriginalQuadraturePoints(
-  Teuchos::Array< Teuchos::Array<double> >& red_basis_vals) const
-{
-  ordinal_type sz = Phi.numRows();
-  ordinal_type nqp = Phi.numCols();
-  red_basis_vals.resize(nqp);
-  for (ordinal_type i=0; i<nqp; i++) {
-    red_basis_vals[i].resize(sz);
-    for (ordinal_type j=0; j<sz; j++)
-      red_basis_vals[i][j] = Phi(j,i);
-  }
-}
-
-template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
 isInvariant(const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce) const

@@ -927,11 +927,21 @@ namespace Tpetra {
     // debugging
     void checkInternalState() const;
 
-    // Two graph pointers needed in order to maintain const-correctness:
-    // staticGraph_ is a graph passed to the constructor. We are not allowed to modify it. it is always a valid pointer.
-    // myGraph_     is a graph created here. We are allowed to modify it. if myGraph_ != null, then staticGraph_ = myGraph_
+    /// \name (Global) graph pointers
+    ///
+    /// We keep two graph pointers in order to maintain const
+    /// correctness.  myGraph_ is a graph which we create internally.
+    /// Operations that change the sparsity structure also modify
+    /// myGraph_.  If myGraph_ != null, then staticGraph_ == myGraph_
+    /// pointerwise (we set the pointers equal to each other when we
+    /// create myGraph_).  myGraph_ is only null if this CrsMatrix was
+    /// created using the constructor with a const CrsGraph input
+    /// argument.  In this case, staticGraph_ is set to the input
+    /// CrsGraph.
+    //@{
     RCP<const Graph> staticGraph_;
     RCP<      Graph>     myGraph_;
+    //@}
 
     RCP<sparse_ops_type>   lclMatOps_;
     RCP<local_matrix_type> lclMatrix_;

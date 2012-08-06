@@ -107,3 +107,6 @@ rsync.*
 
 # Repostiory list file for egdist
 .egdist
+
+# Ignore Panassas temp files
+.panfs.*
