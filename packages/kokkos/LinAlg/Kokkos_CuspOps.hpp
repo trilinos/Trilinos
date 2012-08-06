@@ -580,8 +580,8 @@ namespace Kokkos {
   CuspOps<Scalar,Ordinal,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
-    CUDANodeHostPinnedDeallocator<Ordinal> dealloc;
-    ArrayRCP<Ordinal> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
+    CUDANodeHostPinnedDeallocator<size_t> dealloc;
+    ArrayRCP<size_t> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
     ptrs[0] = 0;
     std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
     return ptrs;
