@@ -1229,7 +1229,7 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
     print ""
 
     testPassed = False
-  
+
     if inOptions.doTest and buildPassed:
   
       cmnd = "ctest"
@@ -1248,6 +1248,16 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
         errStr = "FAILED: ctest failed returning "+str(testRtn)+"!"
         print "\n"+errStr+"\n"
         raise Exception(errStr)
+
+    elif inOptions.doTest and buildTestCase.skippedConfigureDueToNoEnables:
+
+      print "\nSkipping tests because because no packages are enabled!"
+      echoRunSysCmnd("touch "+getTestSuccessFileName())
+      # NOTE: We have to create this test success file because the presents of
+      # this file is used to determine in the build/test case is successful
+      # and therefore is okay to push.  This is needed when the script is run
+      # a second time to determine if a build/test is successful and therefore
+      # allow a push.
   
     elif inOptions.doTest and not buildPassed:
 

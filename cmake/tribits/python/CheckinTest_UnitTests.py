@@ -788,7 +788,56 @@ def checkin_test_configure_enables_test(testObject, testName, optionsStr, regexL
      modifiedFilesStr,
      extraPassRegexStr,
      )
-  
+
+
+# Used as a helper in follow-up tests  
+def  g_test_ss_extra_builds_ss_do_all_pass(testObject, testName):
+
+  testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+  writeStrToFile(testBaseDir+"/COMMON.config",
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+    +"-DBUILD_SHARED:BOOL=ON\n" \
+    +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+    +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+    )
+
+  writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+    +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+    )
+
+  modifiedFilesStr = ""
+
+  checkin_test_run_case(
+    \
+    testObject,
+    \
+    testName,
+    \
+    "--make-options=-j3 --ctest-options=-j5" \
+    +" --default-builds=MPI_DEBUG --ss-extra-builds=MPI_DEBUG_SS" \
+    +" --enable-packages=Phalanx" \
+    +" --do-all" \
+    ,
+    \
+    g_cmndinterceptsCurrentBranch \
+    +g_cmndinterceptsPullPasses \
+    +g_cmndinterceptsSendBuildTestCaseEmail \
+    +g_cmndinterceptsConfigBuildTestPasses \
+    +g_cmndinterceptsSendBuildTestCaseEmail \
+    +g_cmndinterceptsSendFinalEmail \
+    ,
+    \
+    True,
+    \
+    "Phalanx of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+    +"passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages\n" \
+    +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
+    +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+    +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+    +"^READY TO PUSH\n" \
+    )
 
 
 #
@@ -2364,7 +2413,6 @@ class test_checkin_test(unittest.TestCase):
       +"^DID PUSH\n" \
       )
 
-
   # E) Test intermediate states with rerunning to fill out
 
 
@@ -2431,6 +2479,70 @@ class test_checkin_test(unittest.TestCase):
       "0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
       "=> A PUSH IS READY TO BE PERFORMED!\n" \
       "^READY TO PUSH: Trilinos:\n"
+      )
+
+
+  def test_ss_extra_builds_ss_do_all_then_empty(self):
+
+    testName = "test_ss_extra_builds_ss_do_all_then_empty"
+
+    # --do-all without the push (ready to push)
+    g_test_ss_extra_builds_ss_do_all_pass(self, testName)
+
+    # Follow-up status (should be ready to push)
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --default-builds=MPI_DEBUG --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "0) MPI_DEBUG => passed: skipped configure, build, test due to no enabled packages\n" \
+      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"^READY TO PUSH\n" \
+      )
+
+
+  def test_ss_extra_builds_ss_do_all_then_push(self):
+
+    testName = "test_ss_extra_builds_ss_do_all_then_push"
+
+    # --do-all without the push (ready to push)
+    g_test_ss_extra_builds_ss_do_all_pass(self, testName)
+
+    # Follow-up status (should be ready to push)
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --default-builds=MPI_DEBUG --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
+      +" --push"
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsFinalPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "0) MPI_DEBUG => passed: skipped configure, build, test due to no enabled packages\n" \
+      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"^DID PUSH\n" \
       )
 
 
