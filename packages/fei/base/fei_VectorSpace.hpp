@@ -154,6 +154,10 @@ namespace fei {
     void defineIDTypes(int numIDTypes,
                        const int* idTypes);
 
+    void setIDMap(int idType,
+                  const int* localIDs_begin, const int* localIDs_end,
+                  const int* globalIDs_begin, const int* globalIDs_end);
+
     /** Add a set of identifiers to this solution-space. These solution-space
         entries consist of fields residing at identifiers.<br>
         Example: temperature field at a set of finite-element nodes.
@@ -366,6 +370,28 @@ namespace fei {
     */
     int getGlobalIndices(int numIDs,
                          const int* IDs,
+                         int idType,
+                         int fieldID,
+                         int* globalIndices);
+
+    /** Given a list of localIDs, fill an output-list of the global-indices that
+        correspond to the first instance of the specified field at each localID.
+
+        @param numIDs Input. Length of the IDs.
+        @param IDs Input. User-provided list of identifiers.
+        @param idType Input. Type of the IDs for which indices are being
+        requested.
+        @param fieldID Input. Specified field
+        @param globalIndices Output. User-allocated list which, on exit, will
+        contain the requested indices. Note that the length of this list is
+        assumed to be numIDs*getFieldSize(fieldID).
+
+        @return error-code 0 if successful Note that for any IDs that are not
+        found, or IDs which don't have the specified field, the corresponding
+        global-index will be -1.
+    */
+    int getGlobalIndicesLocalIDs(int numIDs,
+                         const int* localIDs,
                          int idType,
                          int fieldID,
                          int* globalIndices);

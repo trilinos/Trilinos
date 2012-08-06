@@ -89,6 +89,11 @@ int
 Vector_Local::scatterToOverlap()
 { return(0); }
 
+void
+Vector_Local::setCommSizes()
+{
+}
+
 int
 Vector_Local::gatherFromOverlap(bool accumulate)
 { (void)accumulate; return(0); }
@@ -175,6 +180,28 @@ Vector_Local::assembleFieldData(int fieldID,
 }
 
 int
+Vector_Local::assembleFieldDataLocalIDs(int fieldID,
+                       int idType,
+                       int numIDs,
+                       const int* localIDs,
+                       const double* data,
+                       bool sumInto,
+                       int vectorIndex)
+{
+  int fieldSize = vecSpace_->getFieldSize(fieldID);
+
+  work_indices_.resize(numIDs*fieldSize);
+  int* indicesPtr = &work_indices_[0];
+
+  CHK_ERR( vecSpace_->getGlobalIndicesLocalIDs(numIDs, localIDs, idType, fieldID,
+                                        indicesPtr) );
+
+  CHK_ERR( giveToVector(numIDs*fieldSize, indicesPtr, data, sumInto, vectorIndex) );
+
+  return(0);
+}
+
+int
 Vector_Local::sumInFieldData(int fieldID,
                        int idType,
                        int numIDs,
@@ -195,6 +222,18 @@ Vector_Local::copyInFieldData(int fieldID,
                         int vectorIndex)
 {
   return(assembleFieldData(fieldID, idType, numIDs, IDs,
+                           data, false, vectorIndex));
+}
+
+int
+Vector_Local::copyInFieldDataLocalIDs(int fieldID,
+                        int idType,
+                        int numIDs,
+                        const int* localIDs,
+                        const double* data,
+                        int vectorIndex)
+{
+  return(assembleFieldDataLocalIDs(fieldID, idType, numIDs, localIDs,
                            data, false, vectorIndex));
 }
 

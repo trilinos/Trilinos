@@ -554,8 +554,9 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
   }
 
   fei::SharedPtr<fei::FillableMat> inner(new fei::FillableMat);
+  bool zeroSharedRows = false;
   fei::SharedPtr<fei::Matrix_Impl<fei::FillableMat> > matrix;
-  matrix.reset(new fei::Matrix_Impl<fei::FillableMat>(inner, matrixGraph_, localsize));
+  matrix.reset(new fei::Matrix_Impl<fei::FillableMat>(inner, matrixGraph_, localsize, zeroSharedRows));
 
   fei::SharedPtr<fei::SparseRowGraph> remoteGraph =
     matrixGraph_->getRemotelyOwnedGraphRows();

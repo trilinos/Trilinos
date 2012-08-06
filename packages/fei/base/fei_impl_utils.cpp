@@ -122,14 +122,17 @@ void pack_FillableMat(const fei::FillableMat& mat,
 
 //----------------------------------------------------------------------------
 void pack_FillableMat(const fei::FillableMat& mat, 
-                      std::vector<char>& buffer)
+                      std::vector<char>& buffer,
+                      bool resize_buffer)
 {
   int nrows = mat.getNumRows();
   int nnz = fei::count_nnz(mat);
 
   int num_chars_int = (2 + nrows*2 + nnz)*sizeof(int);
   int num_chars_double = nnz*sizeof(double);
-  buffer.resize(num_chars_int + num_chars_double);
+  if (resize_buffer) {
+    buffer.resize(num_chars_int + num_chars_double);
+  }
 
   int* intdata = reinterpret_cast<int*>(&buffer[0]);
   double* doubledata = reinterpret_cast<double*>(&buffer[0]+num_chars_int);
@@ -297,7 +300,8 @@ bool unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat)
 
 void pack_indices_coefs(const std::vector<int>& indices,
                         const std::vector<double>& coefs,
-                        std::vector<char>& buffer)
+                        std::vector<char>& buffer,
+                        bool resize_buffer)
 {
   if (indices.size() != coefs.size()) {
     throw std::runtime_error("fei::impl_utils::pack_indices_coefs failed, sizes don't match.");
@@ -306,7 +310,9 @@ void pack_indices_coefs(const std::vector<int>& indices,
   int num = indices.size();
   int num_chars_int = (1+num)*sizeof(int);
   int num_chars = num_chars_int + num*sizeof(double);
-  buffer.resize(num_chars);
+  if (resize_buffer) {
+    buffer.resize(num_chars);
+  }
 
   int* intdata = reinterpret_cast<int*>(&buffer[0]);
   double* doubledata = reinterpret_cast<double*>(&buffer[0]+num_chars_int);

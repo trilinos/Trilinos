@@ -90,6 +90,8 @@ namespace fei {
     */
     int scatterToOverlap();
 
+    void setCommSizes() { target_->setCommSizes(); }
+
     /** Move any shared data from the overlapping decomposition to the
 	underlying non-overlapping decomposition.
     */
@@ -143,6 +145,13 @@ namespace fei {
 			int idType,
 			int numIDs,
 			const int* IDs,
+			const double* data,
+			int vectorIndex=0);
+
+    int copyInFieldDataLocalIDs(int fieldID,
+			int idType,
+			int numIDs,
+			const int* localIDs,
 			const double* data,
 			int vectorIndex=0);
 

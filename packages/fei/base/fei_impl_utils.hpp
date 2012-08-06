@@ -82,7 +82,8 @@ void pack_FillableMat(const fei::FillableMat& mat,
                       std::vector<double>& doubledata);
 
 void pack_FillableMat(const fei::FillableMat& mat,
-                      std::vector<char>& intdata);
+                      std::vector<char>& buffer,
+                      bool resize_buffer=true);
 
 /** unpack a pair of std::vector objects into an fei::FillableMat object.
     The std::vector objects are assumed to have been produced by the
@@ -104,7 +105,8 @@ bool unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat);
 
 void pack_indices_coefs(const std::vector<int>& indices,
                         const std::vector<double>& coefs,
-                        std::vector<char>& buffer);
+                        std::vector<char>& buffer,
+                        bool resize_buffer=true);
 
 void unpack_indices_coefs(const std::vector<char>& buffer,
                           std::vector<int>& indices,

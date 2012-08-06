@@ -73,6 +73,8 @@ class Vector_Local : public fei::Vector {
     */
     int scatterToOverlap();
 
+    void setCommSizes();
+
     /** Move any shared data from the overlapping decomposition to the
         underlying non-overlapping decomposition.
     */
@@ -127,6 +129,13 @@ class Vector_Local : public fei::Vector {
                         const double* data,
                         int vectorIndex=0);
 
+    int copyInFieldDataLocalIDs(int fieldID,
+                        int idType,
+                        int numIDs,
+                        const int* localIDs,
+                        const double* data,
+                        int vectorIndex=0);
+
     /** Copy field data out of the vector, into the caller-allocated data
         array.
         If the specified fieldID doesn't exist at one or more of the specified
@@ -160,6 +169,14 @@ class Vector_Local : public fei::Vector {
                        int idType,
                        int numIDs,
                        const int* IDs,
+                       const double* data,
+                       bool sumInto,
+                       int vectorIndex);
+
+  int assembleFieldDataLocalIDs(int fieldID,
+                       int idType,
+                       int numIDs,
+                       const int* localIDs,
                        const double* data,
                        bool sumInto,
                        int vectorIndex);

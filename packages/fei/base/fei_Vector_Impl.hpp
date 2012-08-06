@@ -120,6 +120,8 @@ namespace fei {
     */
     int scatterToOverlap();
 
+    void setCommSizes();
+
     /** Move any shared data from the overlapping decomposition to the
 	underlying non-overlapping decomposition.
     */
@@ -175,6 +177,13 @@ namespace fei {
 			int idType,
 			int numIDs,
 			const int* IDs,
+			const double* data,
+			int vectorIndex=0);
+
+    int copyInFieldDataLocalIDs(int fieldID,
+			int idType,
+			int numIDs,
+			const int* localIDs,
 			const double* data,
 			int vectorIndex=0);
 
@@ -307,6 +316,12 @@ fei::Vector_Impl<T>::Vector_Impl(fei::SharedPtr<fei::VectorSpace> vecSpace,
       }
     }
   }
+
+  setCommSizes();
+  std::vector<CSVec*>& remoteVecs = remotelyOwned();
+  for(size_t i=0; i<remoteVecs.size(); ++i) {
+    remoteVecs[i]->clear();
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -364,6 +379,18 @@ int fei::Vector_Impl<T>::scatterToOverlap()
   }
 
   return( Vector_core::scatterToOverlap() );
+}
+
+//----------------------------------------------------------------------------
+template<typename T>
+void fei::Vector_Impl<T>::setCommSizes()
+{
+  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
+    FEI_OSTREAM& os = *output_stream_;
+    os << dbgprefix_<<"setCommSizes"<<FEI_ENDL;
+  }
+
+  Vector_core::setCommSizes();
 }
 
 //----------------------------------------------------------------------------
@@ -481,6 +508,23 @@ int fei::Vector_Impl<T>::copyInFieldData(int fieldID,
   }
 
   return(assembleFieldData(fieldID, idType, numIDs, IDs, data, false, vectorIndex));
+}
+
+//----------------------------------------------------------------------------
+template<typename T>
+int fei::Vector_Impl<T>::copyInFieldDataLocalIDs(int fieldID,
+					int idType,
+					int numIDs,
+					const int* localIDs,
+					const double* data,
+					int vectorIndex)
+{
+  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
+    FEI_OSTREAM& os = *output_stream_;
+    os << dbgprefix_<<"copyInFieldDataLocalIDs(n="<<numIDs<<")"<<FEI_ENDL;
+  }
+
+  return(assembleFieldDataLocalIDs(fieldID, idType, numIDs, localIDs, data, false, vectorIndex));
 }
 
 //----------------------------------------------------------------------------

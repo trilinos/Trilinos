@@ -266,6 +266,8 @@ namespace fei {
     int multiply(fei::Vector* x,
                  fei::Vector* y);
 
+    void setCommSizes();
+
     /** After local overlapping data has been input, (e.g., element-data for a
         finite-element application) call this method to have data that 
         corresponds to shared identifiers be communicated from sharing-but-not-
@@ -500,6 +502,12 @@ fei::Matrix_Impl<T>::Matrix_Impl(fei::SharedPtr<T> matrix,
       const double* zerosPtr = &zeros[0];
       const int* cols = &srg->packedColumnIndices[srg->rowOffsets[row]];
       sumIn(1, &srg->rowNumbers[row], rowLength, cols, &zerosPtr);
+    }
+    setCommSizes();
+    std::map<int,FillableMat*>& remote = getRemotelyOwnedMatrices();
+    for(std::map<int,FillableMat*>::iterator iter=remote.begin(), end=remote.end(); iter!=end; ++iter)
+    {
+      iter->second->clear();
     }
   }
 }
@@ -952,6 +960,17 @@ int fei::Matrix_Impl<T>::multiply(fei::Vector* x,
                                  fei::Vector* y)
 {
   return( fei::MatrixTraits<T>::matvec(matrix_.get(), x, y) );
+}
+
+//----------------------------------------------------------------------------
+template<typename T>
+void fei::Matrix_Impl<T>::setCommSizes()
+{
+  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
+    (*output_stream_) << dbgprefix_<<"setCommSizes"<<FEI_ENDL;
+  }
+
+  Matrix_core::setCommSizes();
 }
 
 //----------------------------------------------------------------------------
