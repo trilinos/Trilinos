@@ -522,7 +522,6 @@ namespace Tpetra {
   fillLocalGraphAndMatrix (const RCP<ParameterList> &params)
   {
     typedef LocalOrdinal LO;
-    typedef Scalar ST;
 
     const size_t numRows = getNodeNumRows();
     // This method's goal is to fill in the three arrays (compressed
@@ -551,7 +550,7 @@ namespace Tpetra {
       // storage in inds resp. vals.
       ptrs = sparse_ops_type::allocRowPtrs (getRowMap ()->getNode (), numRowEntries_ ());
       inds = sparse_ops_type::template allocStorage<LO> (getRowMap ()->getNode (), ptrs ());
-      vals = sparse_ops_type::template allocStorage<ST> (getRowMap ()->getNode (), ptrs ());
+      vals = sparse_ops_type::template allocStorage<Scalar> (getRowMap ()->getNode (), ptrs ());
 
       // numRowEntries_ tells the number of valid entries
       // in each row (as opposed to the allocated size)
@@ -583,7 +582,7 @@ namespace Tpetra {
         // the unpacked row offsets array rowPtrs_).
         ptrs = sparse_ops_type::allocRowPtrs (getRowMap ()->getNode (), numRowEntries_ ());
         inds = sparse_ops_type::template allocStorage<LO> (getRowMap ()->getNode (), ptrs ());
-        vals = sparse_ops_type::template allocStorage<ST> (getRowMap ()->getNode (), ptrs ());
+        vals = sparse_ops_type::template allocStorage<Scalar> (getRowMap ()->getNode (), ptrs ());
         for (size_t row=0; row < numRows; ++row) {
           // rowPtrs_ contains the unpacked row offsets, so use it to
           // copy data out of unpacked 1-D storage.
@@ -1826,11 +1825,11 @@ namespace Tpetra {
         insertGlobalValues(ijv->i, tuple(ijv->j), tuple(ijv->v));
       }
       catch (std::runtime_error &e) {
-        std::ostringstream omsg;
-        omsg << e.what() << std::endl
+        std::ostringstream outmsg;
+        outmsg << e.what() << std::endl
              << "caught in globalAssemble() in " << __FILE__ << ":" << __LINE__
              << std::endl ;
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, omsg.str());
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, outmsg.str());
       }
     }
 
