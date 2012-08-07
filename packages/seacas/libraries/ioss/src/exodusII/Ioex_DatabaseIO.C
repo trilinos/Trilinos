@@ -7046,7 +7046,7 @@ namespace Ioex {
 		index += 3;
 	      }
 	    }
-	    unknown_attributes = attribute_count - index;
+	    unknown_attributes = attribute_count - (index-1);
 	  }
 
 	  else {
