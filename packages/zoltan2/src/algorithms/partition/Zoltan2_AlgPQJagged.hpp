@@ -27,7 +27,7 @@
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
 
-//#undef HAVE_ZOLTAN2_OMP
+#undef HAVE_ZOLTAN2_OMP
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
 #endif
@@ -2180,12 +2180,15 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
     leftPartitions /= partNo[i];
 
-#ifdef FIRST_TOUCH_2
-    env->timerStart(MACRO_TIMERS, "PQJagged FirstTouchCreation_" + istring);
-    lno_t *pc =  allocMemory< lno_t>(numLocalCoords);
-    lno_t *npc = allocMemory< lno_t>(numLocalCoords);
-    scalar_t * pqCoord = allocMemory< scalar_t>(numLocalCoords);
+    scalar_t * pqCoord = pqJagged_coordinates[i];
+    lno_t *pc = partitionedPointCoordinates;
+    lno_t *npc = newpartitionedPointCoordinates;
 #ifdef HAVE_ZOLTAN2_OMP
+#ifdef FIRST_TOUCH_2
+    timerStart(MACRO_TIMERS, "PQJagged FirstTouchCreation_" + istring);
+    pc =  allocMemory< lno_t>(numLocalCoords);
+    npc = allocMemory< lno_t>(numLocalCoords);
+    pqCoord = allocMemory< scalar_t>(numLocalCoords);
     for (int j = 0; j < currentPartitionCount; ++j){
 
       coordinateEnd= inTotalCounts[currentIn + j];
@@ -2204,16 +2207,11 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     }
     delete [] partitionedPointCoordinates;
     delete [] newpartitionedPointCoordinates;
-#endif
 
     env->timerStop(MACRO_TIMERS, "PQJagged FirstTouchCreation_" + istring);
 #endif
-
-#ifndef FIRST_TOUCH_2
-    scalar_t * pqCoord = pqJagged_coordinates[i];
-    lno_t *pc = partitionedPointCoordinates;
-    lno_t *npc = newpartitionedPointCoordinates;
 #endif
+
 
 /*
     env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring +"_min_max");
@@ -2345,6 +2343,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     //delete [] inTotalCounts;
     freeArray<lno_t>(inTotalCounts);
     inTotalCounts = outTotalCounts;
+#ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH_2
 
     env->timerStart(MACRO_TIMERS, "PQJagged FirstTouchFree_" + istring);
@@ -2353,6 +2352,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     env->timerStop(MACRO_TIMERS, "PQJagged FirstTouchFree_" + istring);
     //delete []pc;
     //delete []npc;
+#endif
 #endif
 
     env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring);
