@@ -256,7 +256,8 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
     ParameterEntry &entry = params.getEntry(name);
 
     if (entry.isList()){
-      ParameterList &pl = entry.getValue<ParameterList>(&pl);
+      ParameterList *dummy = NULL;
+      ParameterList &pl = entry.getValue<ParameterList>(dummy);
       convertStringToInt(pl);
     }
     else{
