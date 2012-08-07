@@ -128,7 +128,7 @@ template<typename lno_t, typename scalar_t>
     T *tmp = new T [n];
     env.localMemoryAssertion(__FILE__, __LINE__, n, tmp);
     for (size_t i=0,j=0; i < n; i++,j+=stride_){
-      tmp[i] = Teuchos::as<T>(vec_[j]);
+      tmp[i] = static_cast<T>(vec_[j]);
     }
     array = arcp(tmp, 0, n);
   }

@@ -769,14 +769,14 @@ template <typename T>
   
     if (gFlag == 1){  // all processes have consecutive values
   
-      size_t g0 = Teuchos::as<size_t>(gMin);
-      size_t g1 = Teuchos::as<size_t>(gMax);
+      size_t g0 = static_cast<size_t>(gMin);
+      size_t g1 = static_cast<size_t>(gMax);
     
       if (g1 - g0 + 1 == globalLen){
         size_t sentinel = g1 + 1;   // invalid id
         size_t sendVal = sentinel;
         if (len > 0)
-          sendVal = Teuchos::as<size_t>(v0);
+          sendVal = static_cast<size_t>(v0);
     
         Array<size_t> sendBuf(nprocs, sendVal);
         ArrayRCP<size_t> recvBuf;
@@ -801,8 +801,8 @@ template <typename T>
           if (globallyConsecutive){
             distBuf = new T [nprocs+1];
             for (int i=0; i < nprocs; i++)
-              distBuf[i] = Teuchos::as<T>(recvBuf[i]);
-            distBuf[nprocs] = Teuchos::as<T>(sentinel);
+              distBuf[i] = static_cast<T>(recvBuf[i]);
+            distBuf[nprocs] = static_cast<T>(sentinel);
           }
         }
         else{
@@ -819,14 +819,14 @@ template <typename T>
           if (globallyConsecutive){
             distBuf = new T [nprocs+1];
             for (int i=0; i < nprocs+1; i++)
-              distBuf[i] = Teuchos::as<T>(sentinel);
+              distBuf[i] = static_cast<T>(sentinel);
     
             for (int i=0; i < index.size(); i++)
-              distBuf[index[i]] = Teuchos::as<T>(recvBuf[index[i]]);
+              distBuf[index[i]] = static_cast<T>(recvBuf[index[i]]);
     
-            T useValue = Teuchos::as<T>(sentinel);
+            T useValue = static_cast<T>(sentinel);
             for (int i = nprocs-1; i >= 0; i--){
-              if (distBuf[i] == Teuchos::as<T>(sentinel))
+              if (distBuf[i] == static_cast<T>(sentinel))
                 distBuf[i] = useValue;
               else
                 useValue = distBuf[i];

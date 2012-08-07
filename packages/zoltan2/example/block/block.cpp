@@ -127,12 +127,6 @@ int main(int argc, char *argv[])
   problem.solve();
 
   ///////////////////////////////////////////////////////////////////////
-  // Obtain the solution
-
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-    problem.getSolution();
-
-  ///////////////////////////////////////////////////////////////////////
   // Check the solution.
 
   if (rank == 0)
