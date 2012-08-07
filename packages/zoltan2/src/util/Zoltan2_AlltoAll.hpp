@@ -256,14 +256,15 @@ void AlltoAllv(const Comm<int> &comm,
   char *sbuf = NULL;
   if (numChars > 0)
     sbuf = new char [numChars];
+  char *sbufptr = sbuf;
 
   ArrayView<const char> newSendBuf(sbuf, numChars);
 
   for (size_t i=0; i < numStrings; i++){
     size_t nchars = sendBuf[i].size();
-    *sbuf++ = static_cast<char>(nchars);
+    *sbufptr++ = static_cast<char>(nchars);
     for (size_t j=0; j < nchars; j++)
-      *sbuf++ = sendBuf[i][j];
+      *sbufptr++ = sendBuf[i][j];
   }
 
   ArrayRCP<char> newRecvBuf;
@@ -271,6 +272,9 @@ void AlltoAllv(const Comm<int> &comm,
 
   AlltoAllv<char>(comm, env, newSendBuf, newSendCount, 
     newRecvBuf, newRecvCount, countsAreUniform);
+
+  delete [] sbuf;
+  delete [] newCount;
 
   char *inBuf = newRecvBuf.getRawPtr();
 

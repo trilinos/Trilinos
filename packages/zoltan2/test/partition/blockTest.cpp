@@ -156,5 +156,10 @@ int main(int argc, char **argv)
   if (rank==0)
     std::cout << "PASS" << std:: endl;
 
+  delete [] myWeights;
+  delete [] myIds;
+  delete [] sumWeight;
+  delete [] totalWeight;
+
   return 0;
 }

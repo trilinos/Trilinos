@@ -260,13 +260,15 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
     ParameterEntry &entry = params.getEntry(name);
 
     if (entry.isList()){
-      ParameterList &pl = entry.getValue<ParameterList>(&pl);
+      ParameterList *dummy = NULL;
+      ParameterList &pl = entry.getValue<ParameterList>(dummy);
       convertStringToInt(pl);
     }
     else{
       if ((entry.validator()).get()){
         if (entry.validator()->getXMLTypeName() == validatorName){
-          string &entryValue = entry.getValue<string>(&entryValue);
+          string dummy("");
+          string &entryValue = entry.getValue<string>(&dummy);
           RCP<const s2i_t> s2i =
             Teuchos::rcp_dynamic_cast<const s2i_t>(entry.validator(), true);
           int val = s2i->getIntegralValue(entryValue);

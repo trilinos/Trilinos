@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
   if (rank == 0)
     cout << "PASS" << endl;
 
+  delete [] globalIds;
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Finalize();
 #endif

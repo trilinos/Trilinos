@@ -240,12 +240,10 @@ int main(int argc, char *argv[])
   /////////////
   // Specify a list of parts of size 0.  (The rest should be uniform.)
 
-  // Done
-
   delete [] lengths;
-  for (int i=0; i < maxWeightDim; i++){
-    delete [] idLists[i];
-    delete [] sizeLists[i];
+  for (int w=0; w < maxWeightDim; w++){
+    delete [] idLists[w];
+    delete [] sizeLists[w];
   }
   delete [] idLists;
   delete [] sizeLists;

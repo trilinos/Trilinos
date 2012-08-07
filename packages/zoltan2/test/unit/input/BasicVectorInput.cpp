@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
     valuePtrs[v] = mv_values + v;
   }
 
-  RCP<Zoltan2::BasicVectorInput<userTypes_t> > ia;
+  Zoltan2::BasicVectorInput<userTypes_t> *ia;
 
   {
     // A Zoltan2::BasicVectorInput object with one vector and no weights
@@ -148,8 +148,8 @@ int main(int argc, char *argv[])
     std::vector<int> strides;
   
     try{
-     ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
-       v_values, 1, weightValues, strides));
+     ia = new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
+       v_values, 1, weightValues, strides);
     }
     catch (std::exception &e){
       fail = 1;
@@ -157,9 +157,11 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 1", fail);
   
-    fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
+    fail = checkBasicVector(ia, numLocalIds, numLocalIds*nprocs,
       myIds, 1, valuePtrs, NULL, 0, NULL, NULL);
   
+    delete ia;
+
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 1", fail);
   }
 
@@ -175,8 +177,8 @@ int main(int argc, char *argv[])
     strides.push_back(1);
   
     try{
-     ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
-       v_values, 1, weightValues, strides));
+     ia = new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
+       v_values, 1, weightValues, strides);
     }
     catch (std::exception &e){
       fail = 1;
@@ -184,9 +186,11 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 2", fail);
   
-    fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
+    fail = checkBasicVector(ia, numLocalIds, numLocalIds*nprocs,
       myIds, 1, valuePtrs, NULL, wdim, weightPtrs, weightStrides);
   
+    delete ia;
+
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 2", fail);
   }
 
@@ -203,8 +207,8 @@ int main(int argc, char *argv[])
   
   
     try{
-      ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(
-        numLocalIds, myIds, values, vstrides, weightValues, wstrides));
+      ia = new Zoltan2::BasicVectorInput<userTypes_t>(
+        numLocalIds, myIds, values, vstrides, weightValues, wstrides);
     }
     catch (std::exception &e){
       fail = 1;
@@ -212,9 +216,11 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 3", fail);
   
-    fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
+    fail = checkBasicVector(ia, numLocalIds, numLocalIds*nprocs,
       myIds, mvdim, valuePtrs, valueStrides, 0, NULL, NULL);
   
+    delete ia;
+
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 3", fail);
   }
 
@@ -235,8 +241,8 @@ int main(int argc, char *argv[])
     }
   
     try{
-     ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(
-        numLocalIds, myIds, values, vstrides, weightValues, wstrides));
+     ia = new Zoltan2::BasicVectorInput<userTypes_t>(
+        numLocalIds, myIds, values, vstrides, weightValues, wstrides);
       
     }
     catch (std::exception &e){
@@ -245,15 +251,26 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
   
-    fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
+    fail = checkBasicVector(ia, numLocalIds, numLocalIds*nprocs,
       myIds, mvdim, valuePtrs, valueStrides,
       wdim, weightPtrs, weightStrides);
   
+    delete ia;
+
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 4", fail);
   }
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;
+
+  delete [] myIds;
+  delete [] weights;
+  delete [] weightStrides;
+  delete [] weightPtrs;
+  delete [] v_values;
+  delete [] mv_values;
+  delete [] valueStrides;
+  delete [] valuePtrs;
 
   return fail;
 }
