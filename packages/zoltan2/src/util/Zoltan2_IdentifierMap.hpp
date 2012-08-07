@@ -352,10 +352,10 @@ template< typename User>
   if (userGidsAreZoltan2Gnos_){   // our gnos are the app gids
     if (tt == TRANSLATE_LIB_TO_APP)
       for (size_t i=0; i < inLen; i++)
-        gid[i] = Teuchos::as<gid_t>(gno[i]);
+        gid[i] = static_cast<gid_t>(gno[i]);
     else
       for (size_t i=0; i < inLen; i++)
-        gno[i] = Teuchos::as<gno_t>(gid[i]);
+        gno[i] = static_cast<gno_t>(gid[i]);
   }
   else{              // we mapped gids to consecutive gnos
     gno_t firstGno = gnoDist_[myRank_];
@@ -436,7 +436,7 @@ template< typename User>
     else {                    // gnos must be the app gids
       if (userGidsAreConsecutive_){
         for (size_t i=0; i < inLen; i++){ 
-          gid_t tmp = Teuchos::as<gid_t>(gno[i]);
+          gid_t tmp = static_cast<gid_t>(gno[i]);
           lno[i] = IdentifierTraits<gid_t>::difference(myGids_[0], tmp);
           env_->localInputAssertion(__FILE__, __LINE__, "invalid global number",
             (lno[i] >= 0) && (lno[i] < lno_t(localNumberOfIds_)), 
@@ -446,7 +446,7 @@ template< typename User>
       else{
         for (size_t i=0; i < inLen; i++){ 
           try{
-            gid_t keyArg = Teuchos::as<gid_t>(gno[i]);
+            gid_t keyArg = static_cast<gid_t>(gno[i]);
             lno[i] = gidLookup_->lookup(keyArg);
           }
           catch (const std::exception &e) {
@@ -464,7 +464,7 @@ template< typename User>
       if (gnoDist_.size() > 0)  // gnos are consecutive
         gno[i] = firstGno + idx;
       else                     // gnos must be the app gids
-        gno[i] = Teuchos::as<gno_t>(myGids_[idx]);
+        gno[i] = static_cast<gno_t>(myGids_[idx]);
     }
   }
 }
@@ -498,7 +498,7 @@ template< typename User>
     gno_t *final = gnos + numProcs_ + 1;
 
     for (gno_t i=0; i < inLen; i++){
-      gno_t gno = Teuchos::as<gno_t>(in_gid[i]);
+      gno_t gno = static_cast<gno_t>(in_gid[i]);
       if (!skipGno)
         out_gno[i] = gno;
 
