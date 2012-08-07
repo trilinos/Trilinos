@@ -574,6 +574,7 @@ private:
 
   MemoryProfilerManager_t memoryOut_;  /*!< \brief memory profiling output */
   bool memoryOn_;
+  RCP<std::ofstream> memoryOutputFile_;
 };
 
 /*! \brief A value to indicate a string parameter that was 
@@ -592,6 +593,7 @@ private:
  *                      or Z2_UNSET_STRING
  *  \param ost     output stream type
  *  \param mgr     on return, a pointer to the created output manager
+ *  \param fptr    on return, an RCP to an ofstream if one was created.
  *
  * The template parameter is the data type of the entity being measured.
  */
@@ -599,7 +601,8 @@ template<typename metric_t>
   void makeMetricOutputManager(int rank, bool iPrint, 
     std::string fname, int ost,
     Teuchos::RCP<MetricOutputManager<metric_t> > &mgr,
-    std::string units, int fieldWidth)
+    std::string units, int fieldWidth,
+    RCP<std::ofstream> &fptr)
 {
   typedef MetricOutputManager<metric_t> manager_t;
 
@@ -625,6 +628,7 @@ template<typename metric_t>
       catch(std::exception &e){
         throw std::runtime_error(e.what());
       }
+      fptr = rcp(oFile);
     }
     mgr = Teuchos::rcp(new manager_t(rank, iPrint, *oFile, true,
       units, fieldWidth));

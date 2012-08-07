@@ -619,9 +619,9 @@ public:
     this->yshift = (pindex % (along_X * along_Y)) / along_X;
     this->xshift = (pindex % (along_X * along_Y)) % along_X;
 
-    this->xshift = pindex / (along_Z * along_Y);
-    this->zshift = (pindex % (along_Z * along_Y)) / along_Y;
-    this->yshift = (pindex % (along_Z * along_Y)) % along_Y;
+    //this->xshift = pindex / (along_Z * along_Y);
+   // this->zshift = (pindex % (along_Z * along_Y)) / along_Y;
+    //this->yshift = (pindex % (along_Z * along_Y)) % along_Y;
 
     CoordinatePoint <T> p;
     p.x = xshift * this->xstep + leftMostx;
@@ -723,8 +723,6 @@ private:
       throw INVALID(paramname);
     }
     return returnVal;
-
-
   }
 
   int countChar (std::string inStr, char countChar){
@@ -1457,6 +1455,7 @@ public:
       myfile.close();
     }
 
+    /*
     // target map
     Teuchos::ArrayView<const gno_t> eltList;
 
@@ -1467,9 +1466,10 @@ public:
       }
       eltList = Teuchos::ArrayView<const gno_t> (gnos, this->numLocalCoords);
     }
+    */
 
     RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
-        new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, eltList, 0, comm_));
+        new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, this->numLocalCoords, 0, comm_));
 
 
 /*

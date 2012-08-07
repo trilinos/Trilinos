@@ -170,6 +170,8 @@ int main(int argc, char *argv[])
     }
   }
 
+  delete [] normalizedPartSizes;
+
   gfail = globalFail(comm, fail);
   if (gfail){
     printFailureCode(comm, fail);   // exits after printing "FAIL"
@@ -245,5 +247,4 @@ int main(int argc, char *argv[])
   }
   delete [] idLists;
   delete [] sizeLists;
-  delete [] normalizedPartSizes;
 }

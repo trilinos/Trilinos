@@ -27,6 +27,8 @@ using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
+
+
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
 
@@ -78,7 +80,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
       getline (inParam,tmp);
     }
     inParam.close();
-    for (int i = 0; i < input.size(); ++i){
+    for (size_t i = 0; i < input.size(); ++i){
       inp[i] = input[i];
     }
   }
@@ -123,7 +125,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   RCP<const tMVector_t> weightConst = Teuchos::rcp_const_cast<const tMVector_t>(weight);
 
 
-  size_t localCount = coords->getLocalLength();
+  //size_t localCount = coords->getLocalLength();
   int dim = coords->getNumVectors();
 
   scalar_t *x=NULL, *y=NULL, *z=NULL;
@@ -135,7 +137,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
       z = coords->getDataNonConst(2).getRawPtr();
   }
 
-  const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
+  //const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
 
 #if 0
   typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
