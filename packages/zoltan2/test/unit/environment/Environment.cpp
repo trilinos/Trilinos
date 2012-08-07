@@ -188,9 +188,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (!fail && env->doMemoryProfiling() != true)
-    fail = 2007;
-
   if (!fail && env->errorCheckLevel_ != Zoltan2::BASIC_ASSERTION)
     fail = 2008;
 
