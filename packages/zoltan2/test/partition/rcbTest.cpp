@@ -39,7 +39,6 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
 
   RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
 
-  size_t localCount = coords->getLocalLength();
   int dim = coords->getNumVectors();
 
   scalar_t *x=NULL, *y=NULL, *z=NULL;
@@ -51,8 +50,6 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
       z = coords->getDataNonConst(2).getRawPtr();
   }
 
-  const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
-   
 #if 0
   typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
@@ -74,9 +71,6 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
 #endif
 
   problem.solve();
-
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution = 
-    problem.getSolution();
 
   if (comm->getRank() == 0)
     problem.printMetrics(cout);
@@ -126,9 +120,6 @@ void serialTest()
  
   serialProblem.solve();
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &serialSolution = 
-    serialProblem.getSolution();
-
   serialProblem.printMetrics(cout);
 }
 
@@ -167,9 +158,6 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
 #endif
 
   problem.solve();
-
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-    problem.getSolution();
 
   if (comm->getRank()  == 0)
     problem.printMetrics(cout);
