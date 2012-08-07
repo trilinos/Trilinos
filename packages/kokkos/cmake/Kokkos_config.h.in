@@ -12,8 +12,6 @@
 /* Define if you want to build Kokkos with OpenMP */
 #cmakedefine HAVE_KOKKOS_OPENMP
 
-/* Define if you want to build Kokkos with Intel Math Kernel Library (MKL) */
-#cmakedefine HAVE_KOKKOS_MKL
 
 /* Define if you want to build kokkos-experimental */
 #cmakedefine HAVE_KOKKOS_EXPERIMENTAL
@@ -60,6 +58,7 @@
 #cmakedefine HAVE_KOKKOS_CUSPARSE
 #cmakedefine HAVE_KOKKOS_THRUST
 #cmakedefine HAVE_KOKKOS_CUSP
+#cmakedefine HAVE_KOKKOS_MKL
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
