@@ -75,14 +75,13 @@
 #if defined(HAVE_KOKKOS_THREADPOOL)
 #  include <Kokkos_TPINode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THRUST)
-#  include <Kokkos_ThrustGPUNode.hpp>
-#endif
 
 /* the unit tests require some explicit instantiations that is not enabled in the build of the library
    specifically,
 
    usually weird stuff, like double wrappers around int matrices
+  
+   we currently have no mixed scalar support on CUDA GPUs (neither Cusp nor CUSPARSE provide it)
  */
 
 namespace Tpetra {
@@ -100,9 +99,6 @@ namespace Tpetra {
 # if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::TPINode)
 # endif
-//# if defined(HAVE_KOKKOS_CUSPARSE)
-//    TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::ThrustGPUNode)
-//# endif
 #endif
 
   // mixed: double wrapper for int matrix for CrsMatrix unit test
@@ -120,10 +116,6 @@ namespace Tpetra {
 # if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,int,int,int,Kokkos::TPINode)
-# endif
-# if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,int,int,int,Kokkos::ThrustGPUNode)
-    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,int,int,int,Kokkos::ThrustGPUNode)
 # endif
 #endif
 
@@ -143,10 +135,6 @@ namespace Tpetra {
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::TPINode)
 # endif
-//# if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_FLOAT)
-//    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::ThrustGPUNode)
-//    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::ThrustGPUNode)
-//# endif
 #endif
 
   // mixed: complex<float> wrapper for int matrix for CrsMatrix unit test
@@ -165,10 +153,6 @@ namespace Tpetra {
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,int,int,int,Kokkos::TPINode)
 # endif
-//# if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
-//    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,int,int,int,Kokkos::ThrustGPUNode)
-//    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,int,int,int,Kokkos::ThrustGPUNode)
-//# endif
 #endif
 
   // mixed: complex<double> wrapper for int matrix for CrsMatrix unit test
@@ -187,10 +171,6 @@ namespace Tpetra {
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TPINode)
 # endif
-//# if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
-//    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::ThrustGPUNode)
-//    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::ThrustGPUNode)
-//# endif
 #endif
 
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
