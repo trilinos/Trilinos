@@ -21,10 +21,9 @@ namespace Zoltan2
 /*! \brief MetricOutputManager handles output of profiling messages.
 
    The template parameter is the data type of the value that is being measured.
-   An Environment has a MetricOutputManager for timing and one for
-   memory profiling.
+   An Environment has a MetricOutputManager for memory profiling.
 
-   Parameters governing may be output:
+   Parameters governing memory output:
 
      \li \c memory_procs
      \li \c memory_output_stream
@@ -32,7 +31,6 @@ namespace Zoltan2
 
    For more information see at their definitions in
    createAllParameters() in Zoltan2_Parameters.cpp.
-
 */
 
 template <typename T>
@@ -47,6 +45,9 @@ template <typename T>
      *   \param metricsOn   true if any process outputs messages.
      *   \param units     name of units for metrics printed
      *   \param width     field width for metric value
+     *
+     *  It is the caller's responsibility to close and free the
+     *  ofstream.
      */
 
     MetricOutputManager (int rank, bool doPrinting, std::ofstream &Os, 
@@ -57,7 +58,7 @@ template <typename T>
         units_(units), width_(width){}
 
 
-    /*! \brief Constructor
+    /*! \brief Constructor for output to a stream.
      *   \param rank         the MPI rank of this process.
      *   \param doPrinting  true if this process outputs messages.
      *   \param messageOs      the output stream for messages.
@@ -78,8 +79,6 @@ template <typename T>
     {
       if (os_)
         os_->flush();
-      if (osFile_)
-        osFile_->close();
     };
 
     /*! \brief Return the output stream for  messages.

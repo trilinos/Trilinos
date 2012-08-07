@@ -76,7 +76,8 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
   myRank_(comm->getRank()), numProcs_(comm->getSize()), comm_(comm), 
   errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_(problemParams), params_(problemParams),
-  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false)
+  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false),
+  memoryOutputFile_()
 {
   commitParameters();
 }
@@ -84,7 +85,8 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
 Environment::Environment():
   myRank_(0), numProcs_(1), comm_(), errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_("emptyList"), params_("emptyList"), 
-  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false)
+  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false),
+  memoryOutputFile_()
 {
   comm_ = Teuchos::DefaultComm<int>::getComm();
   myRank_ = comm_->getRank();
@@ -95,6 +97,8 @@ Environment::Environment():
 
 Environment::~Environment()
 {
+  if (!memoryOutputFile_.is_null())
+    memoryOutputFile_->close();
 }
 
 void Environment::commitParameters()
@@ -205,7 +209,7 @@ void Environment::commitParameters()
 
     try{
       makeMetricOutputManager<long>(myRank_, iPrint, f2, os2, memoryOut_,
-        string("KB"), 10);
+        string("KB"), 10, memoryOutputFile_);
     }
     catch (std::exception &e){
       std::ostringstream oss;
