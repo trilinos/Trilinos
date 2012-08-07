@@ -109,7 +109,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE( 
-  Kokkos_ENABLE_MKL
+  ${PACKAGE_NAME}_ENABLE_MKL
   HAVE_KOKKOS_MKL
   "Enable Intel Math Kernel Library (MKL) support for sparse matrix kernels in Kokkos."
   ${${PROJECT_NAME}_ENABLE_MKL}
