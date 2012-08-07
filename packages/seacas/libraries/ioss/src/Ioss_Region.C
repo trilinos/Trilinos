@@ -1447,7 +1447,7 @@ namespace Ioss {
 	    // to the new entity in order to maintain the same order
 	    // since some codes access attributes by implicit order and
 	    // not name... (typically, element blocks only)
-	    size_t entity_count = ge->get_property("entity_count").get_int();
+	    size_t entity_count = this_ge->get_property("entity_count").get_int();
 	    
 	    Ioss::NameList attr_fields;
 	    ge->field_describe(Ioss::Field::ATTRIBUTE, &attr_fields);
