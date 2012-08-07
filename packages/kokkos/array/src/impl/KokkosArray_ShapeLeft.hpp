@@ -238,6 +238,8 @@ struct SubShape< Shape< LayoutLeft , DstDataType , 1 , 1 > ,
   typedef Shape< LayoutLeft , DstDataType , 1 , 1 > DstShape ;
   typedef Shape< LayoutLeft , SrcDataType , SrcRankDyn , 2 > SrcShape ;
 
+  typedef SubShape type ;
+
   DstShape shape ;
   size_t   offset ;
 

@@ -53,6 +53,8 @@
 
 namespace KokkosArray {
 
+#if 0
+
 template< class DataType , class LayoutType >
 class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
   : public Impl::ViewOperator< DataType ,
@@ -60,11 +62,32 @@ class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
                                KOKKOS_MACRO_DEVICE::memory_space >
 {
 private:
-  template< class , class , class > friend class View ;
-
   typedef Impl::ViewOperator< DataType ,
                               typename LayoutType::array_layout ,
                               KOKKOS_MACRO_DEVICE::memory_space > oper_type ;
+
+
+
+#else
+
+template< class DataType , class LayoutType >
+class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
+  : public Impl::ViewOper<
+      typename Impl::remove_all_extents<DataType>::type ,
+      KOKKOS_MACRO_DEVICE::memory_space ,
+      typename Impl::DefineShape< typename LayoutType::array_layout , DataType >::type >
+{
+private:
+
+  typedef Impl::ViewOper<
+      typename Impl::remove_all_extents<DataType>::type ,
+      KOKKOS_MACRO_DEVICE::memory_space ,
+      typename Impl::DefineShape<
+        typename LayoutType::array_layout , DataType >::type > oper_type ;
+
+#endif
+
+  template< class , class , class > friend class View ;
 
 public:
 
@@ -83,15 +106,17 @@ public:
   typedef typename LayoutType::array_layout                   array_layout ;
   typedef typename device_type::memory_space                  memory_space ;
   typedef typename device_type::size_type                     size_type ;
-  typedef typename oper_type::shape_type                      shape_type ;
+  // typedef typename oper_type::shape_type                      shape_type ;
+  typedef typename
+    Impl::DefineShape< array_layout , data_type >::type shape_type ;
 
   /*------------------------------------------------------------------*/
 
-  static const unsigned Rank = oper_type::shape_type::rank ;
+  static const unsigned Rank = shape_type::rank ;
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type rank() const { return oper_type::shape_type::rank ; }
+  size_type rank() const { return shape_type::rank ; }
 
   inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_0() const { return oper_type::m_shape.N0 ; }
@@ -131,6 +156,11 @@ public:
              iType(6) == r ? oper_type::m_shape.N6 : (
              iType(7) == r ? oper_type::m_shape.N7 : 0 )))))));
     }
+
+  /*------------------------------------------------------------------*/
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  value_type * ptr_on_device() const { return oper_type::m_ptr_on_device ; }
 
   /*------------------------------------------------------------------*/
   /** \brief Query shape */
@@ -198,11 +228,17 @@ private:
     oper_type::m_ptr_on_device = 0 ;
   }
 
+  /** \brief  This device-specialized method may only be called
+   *          within a view constructor.
+   */
+  void internal_private_create( const std::string & label ,
+                                const shape_type shape );
+
 public:
 
   /** \brief  Construct a NULL view */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  View() {}
+  View() { oper_type::m_ptr_on_device = 0 ; }
 
   /** \brief  Construct a view of the array */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -250,7 +286,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type > data( rhs.shape() );
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type data( rhs.shape() );
 
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
     }
@@ -272,7 +312,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type > data( rhs.shape() );
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type data( rhs.shape() );
 
       internal_private_clear();
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
@@ -299,7 +343,9 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      typedef Impl::SubShape< shape_type , rhs_shape_type > subshape_type ;
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
 
       const subshape_type data( rhs.shape() , arg0 );
 
@@ -324,8 +370,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type >
-         data( rhs.shape() , arg0 , arg1 );
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type data( rhs.shape() , arg0 , arg1 );
 
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
     }
@@ -349,8 +398,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type >
-         data( rhs.shape() , arg0 , arg1 , arg2 );
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type data( rhs.shape() , arg0 , arg1 , arg2 );
 
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
     }
@@ -376,8 +428,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type >
-         data( rhs.shape() , arg0 , arg1 , arg2 , arg3 );
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type data( rhs.shape() , arg0 , arg1 , arg2 , arg3 );
 
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
     }
@@ -404,8 +459,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type >
-         data( rhs.shape() , arg0 , arg1 , arg2 , arg3 , arg4 );
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type data( rhs.shape(), arg0, arg1, arg2, arg3, arg4 );
 
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
     }
@@ -433,7 +491,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type >
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type
          data( rhs.shape() , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 );
 
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
@@ -464,7 +526,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type >
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type
          data( rhs.shape() , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
 
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
@@ -496,7 +562,11 @@ public:
 
       // SubShape<*,*> only exists for valid subshapes:
 
-      const Impl::SubShape< shape_type , rhs_shape_type >
+      typedef typename
+        Impl::SubShape< shape_type , rhs_shape_type >::type
+          subshape_type ;
+
+      const subshape_type
          data( rhs.shape(), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
 
       internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
@@ -505,16 +575,6 @@ public:
   /*------------------------------------------------------------------*/
   /*------------------------------------------------------------------*/
   /* Creation with allocation of memory on the device */
-
-private:
-
-  /** \brief  This device-specialized method may only be called
-   *          within a view constructor.
-   */
-  void internal_private_create( const std::string & label ,
-                                const shape_type shape );
-
-public:
 
   View( const std::string & label , const shape_type shape )
   {
@@ -614,8 +674,8 @@ public:
 
   /*------------------------------------------------------------------*/
   /** \brief  For unit testing shape mapping. */
-  explicit View( const typename oper_type::shape_type & shape )
-    { oper_type::m_shape = shape ; }
+  explicit View( const shape_type & shape )
+    { internal_private_assign( shape , 0 ); }
 };
 
 //----------------------------------------------------------------------------

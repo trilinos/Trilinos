@@ -295,8 +295,8 @@ struct View_create_requires_non_const_data_type< const T > {};
 namespace KokkosArray {
 namespace Impl {
 
-template< class DataType , class ArrayLayout , class MemorySpace >
-class ViewOperator ;
+template< typename ValueType , class MemorySpace , class Shape >
+class ViewOper ;
 
 template< typename ValueType , class DeviceDst , class DeviceSrc >
 struct DeepCopy ;

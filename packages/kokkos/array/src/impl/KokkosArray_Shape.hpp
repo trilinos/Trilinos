@@ -401,17 +401,11 @@ struct Shape< Layout , Type , 0 , 0 >
   template< class MemorySpace >
   static inline
   Shape create()
-  {
-    Shape shape ;
-    return shape ;
-  }
+  { return Shape(); }
 
   static inline
   Shape create( const Shape )
-  {
-    Shape shape ;
-    return shape ;
-  }
+  { return Shape(); }
 };
 
 template < class Layout , class Type >
@@ -436,17 +430,11 @@ struct Shape< Layout , Type , 0 , 1 >
   template< class MemorySpace >
   static inline
   Shape create()
-  {
-    Shape shape ;
-    return shape ;
-  }
+  { return Shape(); }
 
   static inline
   Shape create( const Shape )
-  {
-    Shape shape ;
-    return shape ;
-  }
+  { return Shape(); }
 };
 
 template < class Layout , class Type >
@@ -556,6 +544,7 @@ struct Shape< Layout , Type , 1 , Rank >
   {
     Shape shape ;
     shape.N0 = arg_N0 ;
+    shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
     return shape ;
   }
@@ -599,6 +588,7 @@ struct Shape< Layout , Type , 2 , Rank >
     Shape shape ;
     shape.N0 = arg_N0 ;
     shape.N1 = arg_N1 ;
+    shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
     return shape ;
   }
@@ -645,6 +635,7 @@ struct Shape< Layout , Type , 3 , Rank >
     shape.N0 = arg_N0 ;
     shape.N1 = arg_N1 ;
     shape.N2 = arg_N2 ;
+    shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
     return shape ;
   }
@@ -694,6 +685,7 @@ struct Shape< Layout , Type , 4 , Rank >
     shape.N1 = arg_N1 ;
     shape.N2 = arg_N2 ;
     shape.N3 = arg_N3 ;
+    shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
     return shape ;
   }
@@ -746,6 +738,7 @@ struct Shape< Layout , Type , 5 , Rank >
     shape.N2 = arg_N2 ;
     shape.N3 = arg_N3 ;
     shape.N4 = arg_N4 ;
+    shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
     return shape ;
   }
@@ -801,6 +794,7 @@ struct Shape< Layout , Type , 6 , Rank >
     shape.N3 = arg_N3 ;
     shape.N4 = arg_N4 ;
     shape.N5 = arg_N5 ;
+    shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
     return shape ;
   }
@@ -859,6 +853,7 @@ struct Shape< Layout , Type , 7 , Rank >
     shape.N4 = arg_N4 ;
     shape.N5 = arg_N5 ;
     shape.N6 = arg_N6 ;
+    shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
     return shape ;
   }
@@ -920,6 +915,7 @@ struct Shape< Layout , Type , 8 , 8 >
     shape.N5 = arg_N5 ;
     shape.N6 = arg_N6 ;
     shape.N7 = arg_N7 ;
+    shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
     return shape ;
   }
@@ -959,8 +955,7 @@ struct SubShape< Shape< Layout , DstDataType , DstRankDyn , Rank > ,
   typedef Shape< Layout , SrcDataType , SrcRankDyn , Rank > SrcShape ;
 
   typedef typename
-    StaticAssert< SrcRankDyn <= DstRankDyn >::type
-      ok_rank_dynamic ;
+    StaticAssert< SrcRankDyn <= DstRankDyn , SubShape >::type type ;
 
   DstShape shape ;
   size_t   offset ;
@@ -983,6 +978,8 @@ struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
   typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
   typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 1 > SrcShape ;
 
+  typedef SubShape type ;
+
   DstShape shape ;
   size_t   offset ;
 
@@ -999,6 +996,8 @@ struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
 {
   typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
   typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 2 > SrcShape ;
+
+  typedef SubShape type ;
 
   DstShape shape ;
   size_t   offset ;
@@ -1017,6 +1016,8 @@ struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
 {
   typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
   typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 3 > SrcShape ;
+
+  typedef SubShape type ;
 
   DstShape shape ;
   size_t   offset ;
@@ -1037,6 +1038,8 @@ struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
   typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
   typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 4 > SrcShape ;
 
+  typedef SubShape type ;
+
   DstShape shape ;
   size_t   offset ;
 
@@ -1055,6 +1058,8 @@ struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
 {
   typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
   typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 5 > SrcShape ;
+
+  typedef SubShape type ;
 
   DstShape shape ;
   size_t   offset ;
@@ -1076,6 +1081,8 @@ struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
   typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
   typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 6 > SrcShape ;
 
+  typedef SubShape type ;
+
   DstShape shape ;
   size_t   offset ;
 
@@ -1095,6 +1102,8 @@ struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
 {
   typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
   typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 7 > SrcShape ;
+
+  typedef SubShape type ;
 
   DstShape shape ;
   size_t   offset ;
@@ -1116,6 +1125,8 @@ struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
 {
   typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
   typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 8 > SrcShape ;
+
+  typedef SubShape type ;
 
   DstShape shape ;
   size_t   offset ;
@@ -1139,6 +1150,8 @@ struct SubShape< Shape< Layout , DstDataType , 1 , 1 > ,
 {
   typedef Shape< Layout , DstDataType , 1 , 1 > DstShape ;
   typedef Shape< Layout , SrcDataType , 1 , 1 > SrcShape ;
+
+  typedef SubShape type ;
 
   DstShape shape ;
   size_t   offset ;

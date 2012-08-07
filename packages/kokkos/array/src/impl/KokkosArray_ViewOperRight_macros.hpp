@@ -54,93 +54,131 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class DataType >
-class ViewOperator< DataType , LayoutRight , KOKKOS_MACRO_DEVICE::memory_space >
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , 0 , 0 > >
 {
-public:
-
-  typedef typename remove_all_extents< DataType >::type       value_type ;
-  typedef typename DefineShape< LayoutRight , DataType >::type shape_type ;
-
 private:
-
-  shape_type   m_shape ;
-  value_type * m_ptr_on_device ;
-
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  ViewOperator() : m_shape() , m_ptr_on_device(0) {}
-
-  ViewOperator( const ViewOperator & );
-  ViewOperator & operator = ( const ViewOperator & );
-
   template< class , class , class > friend class KokkosArray::View ;
 
+  ValueType                      * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,0,0> m_shape ;
+
 public:
-
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  ~ViewOperator() {}
-
-  explicit ViewOperator( const shape_type & shape )
-    : m_shape( shape ), m_ptr_on_device(0) {}
-
-  /*------------------------------------------------------------------*/
-
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  value_type * ptr_on_device() const { return m_ptr_on_device ; }
-
-  /*------------------------------------------------------------------*/
 
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator * () const
-    {
-      typedef typename assert_shape_is_rank_zero< shape_type >::type ok_rank ;
-      return *m_ptr_on_device ;
-    }
+  ValueType & operator * () const
+    { return *m_ptr_on_device ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const ValueType & v ) const
+    { *m_ptr_on_device = v ; }
+
+#endif
+
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType , unsigned RankDyn >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , RankDyn , 1 > >
+{
+private:
+  template< class , class , class > friend class KokkosArray::View ;
+
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,RankDyn,1> m_shape ;
+
+public:
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator[]( const iType0 & i0 ) const
+  ValueType & operator()( const iType0 & i0 ) const
     {
-      typedef typename assert_shape_is_rank_one< shape_type >::type ok_rank ;
-      KOKKOS_MACRO_CHECK( assert_shape_bounds( m_shape, i0 ) );
+      KOKKOS_MACRO_CHECK(
+        assert_shape_bounds( m_shape, i0 ) );
+
       return m_ptr_on_device[ i0 ];
     }
 
   template< typename iType0 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 ) const
+  ValueType & operator[]( const iType0 & i0 ) const
     {
-      typedef typename assert_shape_is_rank_one< shape_type >::type ok_rank ;
-      KOKKOS_MACRO_CHECK( Impl::assert_shape_bounds( m_shape, i0 ) );
+      KOKKOS_MACRO_CHECK(
+        assert_shape_bounds( m_shape, i0 ) );
+
       return m_ptr_on_device[ i0 ];
     }
+
+#endif
+
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType , unsigned RankDyn >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , RankDyn , 2 > >
+{
+private:
+  template< class , class , class > friend class KokkosArray::View ;
+
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,RankDyn,2> m_shape ;
+
+public:
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 , typename iType1 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 , const iType1 & i1 ) const
+  ValueType & operator()( const iType0 & i0 , const iType1 & i1 ) const
     {
-      typedef typename assert_shape_is_rank_two< shape_type >::type ok_rank ;
-
-      KOKKOS_MACRO_CHECK( assert_shape_bounds( m_shape, i0, i1 ) );
+      KOKKOS_MACRO_CHECK(
+        assert_shape_bounds( m_shape, i0, i1 ) );
 
       return m_ptr_on_device[ i1 + i0 * m_shape.Stride ];
     }
 
+#endif
+
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType , unsigned RankDyn >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , RankDyn , 3 > >
+{
+private:
+  template< class , class , class > friend class KokkosArray::View ;
+
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,RankDyn,3> m_shape ;
+
+public:
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
   template< typename iType0 , typename iType1 , typename iType2 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
-                           const iType2 & i2 ) const
+  ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
+                          const iType2 & i2 ) const
     {
-      typedef typename assert_shape_is_rank_three< shape_type >::type ok_rank ;
-
       KOKKOS_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2 ) );
 
@@ -148,15 +186,33 @@ public:
                               i1 ) + i0 * m_shape.Stride ];
     }
 
+#endif
+
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType , unsigned RankDyn >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , RankDyn , 4 > >
+{
+private:
+  template< class , class , class > friend class KokkosArray::View ;
+
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,RankDyn,4> m_shape ;
+
+public:
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
-                           const iType2 & i2 , const iType3 & i3 ) const
+  ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
+                          const iType2 & i2 , const iType3 & i3 ) const
     {
-      typedef typename assert_shape_is_rank_four< shape_type >::type ok_rank ;
-
       KOKKOS_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3 ) );
 
@@ -165,16 +221,34 @@ public:
                               i1 )) + i0 * m_shape.Stride ];
     }
 
+#endif
+
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType , unsigned RankDyn >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , RankDyn , 5 > >
+{
+private:
+  template< class , class , class > friend class KokkosArray::View ;
+
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,RankDyn,5> m_shape ;
+
+public:
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
-                           const iType2 & i2 , const iType3 & i3 ,
-                           const iType4 & i4 ) const
+  ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
+                          const iType2 & i2 , const iType3 & i3 ,
+                          const iType4 & i4 ) const
     {
-      typedef typename assert_shape_is_rank_five< shape_type >::type ok_rank ;
-
       KOKKOS_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3, i4 ) );
 
@@ -184,16 +258,34 @@ public:
                               i1 ))) + i0 * m_shape.Stride ];
     }
 
+#endif
+
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType , unsigned RankDyn >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , RankDyn , 6 > >
+{
+private:
+  template< class , class , class > friend class KokkosArray::View ;
+
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,RankDyn,6> m_shape ;
+
+public:
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
-                           const iType2 & i2 , const iType3 & i3 ,
-                           const iType4 & i4 , const iType5 & i5 ) const
+  ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
+                          const iType2 & i2 , const iType3 & i3 ,
+                          const iType4 & i4 , const iType5 & i5 ) const
     {
-      typedef typename assert_shape_is_rank_six< shape_type >::type ok_rank ;
-
       KOKKOS_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5 ) );
 
@@ -204,18 +296,36 @@ public:
                               i1 )))) + i0 * m_shape.Stride ];
     }
 
+#endif
+
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType , unsigned RankDyn >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , RankDyn , 7 > >
+{
+private:
+  template< class , class , class > friend class KokkosArray::View ;
+
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,RankDyn,7> m_shape ;
+
+public:
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 ,
             typename iType6 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
-                           const iType2 & i2 , const iType3 & i3 ,
-                           const iType4 & i4 , const iType5 & i5 ,
-                           const iType6 & i6 ) const
+  ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
+                          const iType2 & i2 , const iType3 & i3 ,
+                          const iType4 & i4 , const iType5 & i5 ,
+                          const iType6 & i6 ) const
     {
-      typedef typename assert_shape_is_rank_seven< shape_type >::type ok_rank ;
-
       KOKKOS_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
 
@@ -227,18 +337,36 @@ public:
                               i1 ))))) + i0 * m_shape.Stride ];
     }
 
+#endif
+
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class ShapeType , unsigned RankDyn >
+class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+                Shape< LayoutRight , ShapeType , RankDyn , 8 > >
+{
+private:
+  template< class , class , class > friend class KokkosArray::View ;
+
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutRight,ShapeType,RankDyn,8> m_shape ;
+
+public:
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 ,
             typename iType6 , typename iType7 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
-                           const iType2 & i2 , const iType3 & i3 ,
-                           const iType4 & i4 , const iType5 & i5 ,
-                           const iType6 & i6 , const iType7 & i7 ) const
+  ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
+                          const iType2 & i2 , const iType3 & i3 ,
+                          const iType4 & i4 , const iType5 & i5 ,
+                          const iType6 & i6 , const iType7 & i7 ) const
     {
-      typedef typename assert_shape_is_rank_eight< shape_type >::type ok_rank ;
-
       KOKKOS_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
 
@@ -251,7 +379,7 @@ public:
                               i1 )))))) + i0 * m_shape.Stride ];
     }
 
-#endif /* #if defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+#endif
 
 };
 
