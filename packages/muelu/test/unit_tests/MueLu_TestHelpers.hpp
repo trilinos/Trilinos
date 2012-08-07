@@ -250,7 +250,7 @@ namespace MueLuTests {
 //
 
 //TODO: add directly to Teuchos ?
-#include "../xpetra/test/Xpetra_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
+//#include "../xpetra/test/Xpetra_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
 
 
 //
