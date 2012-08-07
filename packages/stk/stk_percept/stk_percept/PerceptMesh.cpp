@@ -2095,6 +2095,7 @@ namespace stk {
       const stk::ParallelMachine& comm = m_bulkData->parallel();
       stk::io::MeshData mesh_data_0;
       stk::io::MeshData& mesh_data = (m_iossMeshData_created && m_sync_io_regions) ? *m_iossMeshData : mesh_data_0;
+      //stk::io::MeshData& mesh_data = (m_iossMeshData_created ) ? *m_iossMeshData : mesh_data_0;
 
       //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
       if (p_size == 1 && m_streaming_size)
