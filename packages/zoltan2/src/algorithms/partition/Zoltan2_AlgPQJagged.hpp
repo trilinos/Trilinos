@@ -33,6 +33,7 @@
 #endif
 #define FIRST_TOUCH
 
+#define FIRST_TOUCH_2
 //#define RCBCODE
 #define LEAF_IMBALANCE_FACTOR 0.1
 
@@ -2165,7 +2166,8 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning");
   for (int i = 0; i < coordDim; ++i){
     if(partNo[i] == 1) continue;
-    env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i));
+    string istring = toString<int>(i);
+    env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring);
     lno_t partitionCoordinateBegin = 0;
     outTotalCounts = allocMemory<lno_t>(currentPartitionCount * partNo[i]);
 
@@ -2176,6 +2178,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     leftPartitions /= partNo[i];
 
 #ifdef FIRST_TOUCH_2
+    env->timerStart(MACRO_TIMERS, "PQJagged FirstTouchCreation_" + istring);
     lno_t *pc =  allocMemory< lno_t>(numLocalCoords);
     lno_t *npc = allocMemory< lno_t>(numLocalCoords);
     scalar_t * pqCoord = allocMemory< scalar_t>(numLocalCoords);
@@ -2186,14 +2189,21 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       coordinateBegin = currentIn==0 ? 0: inTotalCounts[currentIn + j -1];
 #pragma omp parallel for
       for(lno_t jj = coordinateBegin; jj < coordinateEnd; ++jj){
+
         lno_t ind = pc[jj] = partitionedPointCoordinates[jj];
         pqCoord[ind] = pqJagged_coordinates[i][ind];
-        npc[jj] = 0;
+
+        //lno_t ind = partitionedPointCoordinates[jj];
+        //pc[jj] = jj;
+        //pqCoord[jj] = pqJagged_coordinates[i][ind];
+        //npc[jj] = 0;
       }
     }
     delete [] partitionedPointCoordinates;
     delete [] newpartitionedPointCoordinates;
 #endif
+
+    env->timerStop(MACRO_TIMERS, "PQJagged FirstTouchCreation_" + istring);
 #endif
 
 #ifndef FIRST_TOUCH_2
@@ -2202,15 +2212,15 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     lno_t *npc = newpartitionedPointCoordinates;
 #endif
 
-
-    env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
+/*
+    env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring +"_min_max");
     pqJagged_getMinMaxCoordofAllParts(comm, pqCoord, global_min_max_coordinates,
         env, numThreads,
         pc, inTotalCounts,
         max_min_array ,
         maxScalar_t, minScalar_t, currentPartitionCount, local_min_max_coordinates );
-    env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
-
+    env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring +"_min_max");
+*/
 
     for (int j = 0; j < currentPartitionCount; ++j, ++currentIn){
 
@@ -2225,16 +2235,16 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       maxCoordinate = global_min_max_coordinates[j + currentPartitionCount];
 
       //cout << "beg:" << coordinateBegin << " end:" << coordinateEnd << endl;
-/*
-      env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
+
+      env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring +"_min_max");
 
 
       pqJagged_getMinMaxCoord<scalar_t, lno_t>(comm, pqCoord, minCoordinate,maxCoordinate,
           env, numThreads, pc, coordinateBegin, coordinateEnd, max_min_array, maxScalar_t, minScalar_t);
 
-      env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) +"_min_max");
+      env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring +"_min_max");
 
-*/
+
       //cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
       //cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
 
@@ -2244,7 +2254,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
       if(minCoordinate <= maxCoordinate /*&& partNo[i] > 1*/){
 
-        env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_cut_coord");
+        env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_cut_coord");
         pqJagged_getCutCoord_Weights<scalar_t>(
             minCoordinate, maxCoordinate,
             pqJagged_uniformParts[0], pqJagged_partSizes[0], partNo[i] - 1,
@@ -2252,11 +2262,11 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
         );
 
 
-        env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_cut_coord");
+        env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_cut_coord");
 
         scalar_t globalTotalWeight = 0;
 
-        env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_1d");
+        env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_1d");
         pqJagged_1DPart_simple<scalar_t, lno_t>(env,comm,pqCoord, pqJagged_weights[0], pqJagged_uniformWeights[0],
             minCoordinate,
             maxCoordinate, partNo[i], numThreads,
@@ -2282,8 +2292,8 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             cutWeights, globalCutWeights
         );
 
-        env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_1d");
-        env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_chunks");
+        env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_1d");
+        env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_chunks");
         getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], numThreads,
             pqCoord, cutCoordinates, outTotalCounts + currentOut,
             pc, npc, coordinateBegin, coordinateEnd,
@@ -2291,7 +2301,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             nonRectelinearPart, allowNonRectelinearPart, totalPartWeights_leftClosests_rightClosests,
             pqJagged_weights[0], pqJagged_uniformWeights, comm->getRank(), comm->getSize(), partWeights,nonRectRatios,
             partPointCounts);
-        env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i) + "_chunks");
+        env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_chunks");
       }
       /*
       else {
@@ -2333,12 +2343,16 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     freeArray<lno_t>(inTotalCounts);
     inTotalCounts = outTotalCounts;
 #ifdef FIRST_TOUCH_2
+
+    env->timerStart(MACRO_TIMERS, "PQJagged FirstTouchFree_" + istring);
     delete [] pqCoord;
+
+    env->timerStop(MACRO_TIMERS, "PQJagged FirstTouchFree_" + istring);
     //delete []pc;
     //delete []npc;
 #endif
 
-    env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + toString<int>(i));
+    env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring);
   }
 
   partId_t *partIds = NULL;
@@ -2357,14 +2371,14 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
       lno_t k = partitionedPointCoordinates[ii];
       partIds[k] = i;
-      /*
+/*
       cout << "part of coordinate:";
       for(int iii = 0; iii < coordDim; ++iii){
         cout <<  pqJagged_coordinates[iii][k] << " ";
       }
       cout << i;
       cout << endl;
-      */
+*/
     }
     //cout << "begin:" << begin << " end:" << end << endl;
   }

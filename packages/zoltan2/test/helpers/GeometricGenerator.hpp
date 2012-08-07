@@ -619,9 +619,9 @@ public:
     this->yshift = (pindex % (along_X * along_Y)) / along_X;
     this->xshift = (pindex % (along_X * along_Y)) % along_X;
 
-    this->xshift = pindex / (along_Z * along_Y);
-    this->zshift = (pindex % (along_Z * along_Y)) / along_Y;
-    this->yshift = (pindex % (along_Z * along_Y)) % along_Y;
+    //this->xshift = pindex / (along_Z * along_Y);
+   // this->zshift = (pindex % (along_Z * along_Y)) / along_Y;
+    //this->yshift = (pindex % (along_Z * along_Y)) % along_Y;
 
     CoordinatePoint <T> p;
     p.x = xshift * this->xstep + leftMostx;
@@ -723,8 +723,6 @@ private:
       throw INVALID(paramname);
     }
     return returnVal;
-
-
   }
 
   int countChar (std::string inStr, char countChar){
