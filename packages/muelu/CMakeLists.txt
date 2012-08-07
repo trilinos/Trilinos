@@ -103,17 +103,10 @@ ELSE()
 ENDIF()
 
 #
-# Add directory xpetra/cmake/ to the cmake module search path
-#
-
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PACKAGE_SOURCE_DIR}/xpetra/cmake)
-
-#
 # C) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(gallery) # iff EXAMPLE or TEST ENABLED
-ADD_SUBDIRECTORY(xpetra)
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(adapters)
 ADD_SUBDIRECTORY(doc)

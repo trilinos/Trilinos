@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Xpetra)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
 SET(LIB_OPTIONAL_DEP_PACKAGES Amesos Amesos2 Belos Epetra EpetraExt Kokkos
                               Ifpack Ifpack2 ML Tpetra Zoltan Stratimikos
                               Stokhos)
