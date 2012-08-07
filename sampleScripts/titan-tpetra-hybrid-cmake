@@ -1,0 +1,26 @@
+cmake  \
+  -DTPL_ENABLE_MPI=ON \
+  -DMPI_C_COMPILER=/opt/cray/xt-asyncpe/5.09/bin/cc \
+  -DMPI_CXX_COMPILER=/opt/cray/xt-asyncpe/5.09/bin/CC \
+  -DMPI_Fortran_COMPILER=/opt/cray/xt-asyncpe/5.09/bin/ftn \
+  -DMPI_EXEC="aprun" \
+  -DMPI_EXEC_NUMPROCS_FLAG="-n" \
+  -DTrilinos_LINK_SEARCH_START_STATIC=OFF \
+  -DTPL_BLAS_LIBRARIES:STRING=/opt/xt-libsci/11.0.04.4/gnu/46/interlagos/lib/libsci_gnu.a \
+  -DTPL_LAPACK_LIBRARIES:STRING=/opt/xt-libsci/11.0.04.4/gnu/46/interlagos/lib/libsci_gnu.a \
+  \
+  -DKokkos_ENABLE_CUDA_DOUBLE=ON \
+  -DTeuchos_ENABLE_COMPLEX=OFF                 \
+  -DTrilinos_ENABLE_Tpetra=ON \
+  -DTrilinos_ENABLE_Kokkos=ON \
+  -DTrilinos_ENABLE_TESTS=ON \
+  -DTPL_ENABLE_CUDA=ON \
+  -DTPL_ENABLE_Cusp=ON \
+  -DCusp_INCLUDE_DIRS=$HOME/gpulibs \
+  -DCUDA_PROPAGATE_HOST_FLAGS=OFF              \
+  -DTPL_ENABLE_CUSPARSE=ON \
+  -DTPL_ENABLE_Thrust=ON \
+  -DTrilinos_ENABLE_OpenMP=ON \
+  -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON \
+  \
+  /ccs/proj/nfi004/bakercg/Trilinos
