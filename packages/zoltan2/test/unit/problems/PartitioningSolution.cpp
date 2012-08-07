@@ -39,8 +39,8 @@ void makeArrays(int wdim, int *lens, partId_t **ids, scalar_t **sizes,
   ArrayRCP<scalar_t> *sizeArrays = new ArrayRCP<scalar_t> [wdim];
 
   for (int w=0; w < wdim; w++){
-    idArrays[w] = arcp(ids[w], 0, lens[w], true);
-    sizeArrays[w] = arcp(sizes[w], 0, lens[w], true);
+    idArrays[w] = arcp(ids[w], 0, lens[w], false);
+    sizeArrays[w] = arcp(sizes[w], 0, lens[w], false);
   }
 
   idList = arcp(idArrays, 0, wdim, true);
@@ -170,6 +170,8 @@ int main(int argc, char *argv[])
     }
   }
 
+  delete [] normalizedPartSizes;
+
   gfail = globalFail(comm, fail);
   if (gfail){
     printFailureCode(comm, fail);   // exits after printing "FAIL"
@@ -238,4 +240,13 @@ int main(int argc, char *argv[])
   /////////////
   // Specify a list of parts of size 0.  (The rest should be uniform.)
 
+  // Done
+
+  delete [] lengths;
+  for (int i=0; i < maxWeightDim; i++){
+    delete [] idLists[i];
+    delete [] sizeLists[i];
+  }
+  delete [] idLists;
+  delete [] sizeLists;
 }
