@@ -113,7 +113,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.length();
+    const int n = A.graph.row_map.dimension(0) - 1 ;
     // const int nz = A.graph.entry_count();
 
     cusparseStatus_t status =
@@ -155,7 +155,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.length();
+    const int n = A.graph.row_map.dimension(0) - 1 ;
     // const int nz = A.graph.entry_count();
 
     cusparseStatus_t status =
@@ -197,16 +197,17 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.length();
+    const int n = A.graph.row_map.dimension(0) - 1 ;
     // const int nz = A.graph.entry_count();
     const size_t ncol = x.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx = KokkosArray::create<vector_type>( "xx" , n * ncol );
-    vector_type yy = KokkosArray::create<vector_type>( "yy" , n * ncol );
+    vector_type xx( "xx" , n * ncol );
+    vector_type yy( "yy" , n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
-      vector_type xx_view = KokkosArray::view( xx , n * col , n * ( col + 1 ) );
+      const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
+      const vector_type xx_view( xx , span );
       KokkosArray::deep_copy(xx_view, x[col]);
     }
 
@@ -232,7 +233,8 @@ public:
     
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
-      vector_type yy_view = KokkosArray::view( yy , n * col , n * ( col + 1 ) );
+      const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
+      const vector_type yy_view( yy , span );
       KokkosArray::deep_copy(y[col], yy_view );
     }
   }

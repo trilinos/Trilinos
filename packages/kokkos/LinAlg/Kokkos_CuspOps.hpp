@@ -39,15 +39,6 @@
 // ************************************************************************
 //@HEADER
 
-/*
-
-notes:
-* multiply requires encapsulation of multivector using make_array2d_view
-* crs construction requires encapsulation of CSR matrix data via make_csr_matrix_view
-  this object can be used for multiplication or conversion to another format.
-* cusp::transpose() and cusp::convert() will come into play
-*/
-
 #ifndef KOKKOS_CUSPOPS_HPP
 #define KOKKOS_CUSPOPS_HPP
 
@@ -648,6 +639,9 @@ namespace Kokkos {
                                           const MultiVector<DomainScalar,Node> &X,
                                                 MultiVector< RangeScalar,Node> &Y) const
   {
+    // Cusp doesn't support mixed precision
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
     //
     std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -659,8 +653,8 @@ namespace Kokkos {
     // get pointers,stride from X and Y
     Ordinal stride_x = (Ordinal)X.getStride(),
             stride_y = (Ordinal)Y.getStride();
-    const Scalar * data_x = X.getValues().getRawPtr();
-    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
+    const DomainScalar * data_x = X.getValues().getRawPtr();
+    RangeScalar * data_y = Y.getValuesNonConst().getRawPtr();
     const Ordinal numMatRows = numRows_;
     const Ordinal numMatCols = numCols_;
     const Ordinal opRows     = (trans == Teuchos::NO_TRANS ? numMatRows : numMatCols);
@@ -696,6 +690,9 @@ namespace Kokkos {
                                           RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
                                           RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
   {
+    // Cusp doesn't support mixed precision
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
     //
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(

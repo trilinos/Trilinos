@@ -41,10 +41,11 @@
 //@HEADER
 */
 
-#include <impl/KokkosArray_Preprocessing_macros.hpp>
-
 #include <iostream>
 #include <string>
+
+#define KOKKOS_MACRO_IMPL_TO_STRING( X ) #X
+#define KOKKOS_MACRO_TO_STRING( X )  KOKKOS_MACRO_IMPL_TO_STRING( X )
 
 //------------------------------------------------------------------------
 

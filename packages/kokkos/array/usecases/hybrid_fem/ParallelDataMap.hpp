@@ -97,9 +97,9 @@ struct ParallelDataMap {
     count_send     = arg_count_owned - arg_count_interior ;
     count_receive  = arg_count_total - arg_count_owned ;
 
-    host_recv = KokkosArray::create< host_recv_type >( label , arg_recv_msg );
-    host_send = KokkosArray::create< host_send_type >( label , arg_send_msg );
-    host_send_item = KokkosArray::create< host_send_item_type >( label , arg_send_count );
+    host_recv = host_recv_type( label , arg_recv_msg );
+    host_send = host_send_type( label , arg_send_msg );
+    host_send_item = host_send_item_type( label , arg_send_count );
   }
 };
 
@@ -173,21 +173,21 @@ public:
                                  (unsigned) arg_data_map.host_send(i,1) );
     }
 
-    dev_buffer = KokkosArray::create< buffer_dev_type >
-                   ( std::string("AsyncExchange dev_buffer") ,
+    dev_buffer = buffer_dev_type(
+                     std::string("AsyncExchange dev_buffer") ,
                      arg_chunk * std::max( arg_data_map.count_send ,
                                            arg_data_map.count_receive ) );
 
-    host_recv_buffer = KokkosArray::create< buffer_host_type >
-                         ( std::string("AsyncExchange host_recv_buffer") ,
+    host_recv_buffer = buffer_host_type(
+                           std::string("AsyncExchange host_recv_buffer") ,
                            arg_chunk * arg_data_map.count_receive );
 
-    host_send_buffer = KokkosArray::create< buffer_host_type >
-                         ( std::string("AsyncExchange host_send_buffer") ,
+    host_send_buffer = buffer_host_type(
+                           std::string("AsyncExchange host_send_buffer") ,
                            arg_chunk * arg_data_map.count_send );
 
-    send_msg_buffer = KokkosArray::create< buffer_host_type >
-                        ( std::string("AsyncExchange send_msg_buffer") ,
+    send_msg_buffer = buffer_host_type(
+                          std::string("AsyncExchange send_msg_buffer") ,
                           arg_chunk * send_count_max );
 
     recv_request.assign( recv_msg_count , MPI_REQUEST_NULL );
@@ -216,9 +216,8 @@ public:
 
     // Copy send buffer from the device to host memory for sending
 
-    KokkosArray::Impl::Factory< buffer_host_type , buffer_dev_type >
-      ::deep_copy( host_send_buffer , dev_buffer ,
-                   data_map.count_send * chunk_size );
+    KokkosArray::deep_copy( host_send_buffer , dev_buffer ,
+                            data_map.count_send * chunk_size );
 
     // Done with the device until communication is complete.
     // Application can dispatch asynchronous work on the device.
@@ -294,9 +293,8 @@ public:
 
     // Copy received data to device memory.
 
-    KokkosArray::Impl::Factory< buffer_dev_type , buffer_host_type >
-      ::deep_copy( dev_buffer , host_recv_buffer , 
-                   data_map.count_receive * chunk_size );
+    KokkosArray::deep_copy( dev_buffer , host_recv_buffer , 
+                            data_map.count_receive * chunk_size );
   }
 };
 

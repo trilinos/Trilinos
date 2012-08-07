@@ -207,8 +207,8 @@ public:
                                             data_map.count_receive ;
 #else /* ! defined( HAVE_MPI ) */
 
-    const typename Device::size_type nrow = A.graph.row_map.length();
-    const typename Device::size_type ncol = A.graph.row_map.length();
+    const typename Device::size_type nrow = A.graph.row_map.dimension(0) - 1 ;
+    const typename Device::size_type ncol = A.graph.row_map.dimension(0) - 1 ;
 
 #endif
 
@@ -240,9 +240,9 @@ void cgsolve(
 
   Operator<AScalarType,VScalarType,Device> matrix_operator( data_map , A );
 
-  vector_type r  = create< vector_type >( "cg::r" , count_owned );
-  vector_type p  = create< vector_type >( "cg::p" , count_total );
-  vector_type Ap = create< vector_type >( "cg::Ap", count_owned );
+  vector_type r ( "cg::r" , count_owned );
+  vector_type p ( "cg::p" , count_total );
+  vector_type Ap( "cg::Ap", count_owned );
 
   /* p  = x      */ deep_copy( p , x , count_owned );
   /* Ap = A * p  */ matrix_operator.apply( p , Ap );

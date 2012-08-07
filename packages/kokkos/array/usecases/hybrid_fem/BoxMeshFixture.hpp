@@ -337,13 +337,12 @@ struct BoxMeshFixture {
     typedef typename FEMeshType::node_elem_ids_type  node_elem_ids_type ;
 
     if ( node_count_total ) {
-      mesh.node_coords =
-        KokkosArray::create< node_coords_type >( std::string("node_coords"), node_count_total );
+      mesh.node_coords = node_coords_type( "node_coords", node_count_total );
     }
 
     if ( elem_count_total ) {
       mesh.elem_node_ids =
-        KokkosArray::create< elem_node_ids_type >( std::string("elem_node_ids"), elem_count_total );
+        elem_node_ids_type( "elem_node_ids", elem_count_total );
     }
 
     mesh.parallel_data_map.assign( node_count_interior ,
@@ -432,7 +431,7 @@ struct BoxMeshFixture {
     }
 
     mesh.node_elem_ids =
-      KokkosArray::create_crsarray< node_elem_ids_type >( node_elem_work );
+      KokkosArray::create_crsarray< node_elem_ids_type >( "node_elem_ids" , node_elem_work );
 
     typename node_elem_ids_type::HostMirror
       node_elem_ids = KokkosArray::create_mirror( mesh.node_elem_ids );
@@ -479,7 +478,7 @@ struct BoxMeshFixture {
 
     KokkosArray::deep_copy( mesh.node_coords ,   node_coords );
     KokkosArray::deep_copy( mesh.elem_node_ids , elem_node_ids );
-    KokkosArray::deep_copy( mesh.node_elem_ids , node_elem_ids );
+    KokkosArray::deep_copy( mesh.node_elem_ids.entries , node_elem_ids.entries );
 
     //------------------------------------
     // Communication lists:

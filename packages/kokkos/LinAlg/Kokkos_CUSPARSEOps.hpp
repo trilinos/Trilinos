@@ -1042,7 +1042,7 @@ namespace Kokkos {
                                           const MultiVector<DomainScalar,Node> &X,
                                                 MultiVector< RangeScalar,Node> &Y) const
   {
-    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
+    // CUSPARSE doesn't support mixed precision
     Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
                                Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
     //
@@ -1115,7 +1115,7 @@ namespace Kokkos {
                                           RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
                                           RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
   {
-    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
+    // CUSPARSE doesn't support mixed precision
     Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
                                Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
     //

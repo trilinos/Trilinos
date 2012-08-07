@@ -115,7 +115,7 @@ void generate_matrix(
   const size_t block_size = KokkosArray::Impl::Multiply< block_type >::matrix_size( matrix.block );
 
   matrix.graph  = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
-  matrix.values = KokkosArray::create<block_vector_type>( "matrix" , block_size , total );
+  matrix.values = block_vector_type( "matrix" , block_size , total );
 
   typename graph_type::HostMirror h_graph =
     KokkosArray::create_mirror( matrix.graph );
@@ -165,8 +165,8 @@ void test_block_crs_matrix( const size_t M , const size_t N )
 
   generate_matrix( M , N , matrix );
 
-  block_vector_type x = KokkosArray::create<block_vector_type>( "x" , M , outer_length );
-  block_vector_type y = KokkosArray::create<block_vector_type>( "y" , M , outer_length );
+  block_vector_type x = block_vector_type( "x" , M , outer_length );
+  block_vector_type y = block_vector_type( "y" , M , outer_length );
 
   typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
   typename block_vector_type::HostMirror hy = KokkosArray::create_mirror( y );

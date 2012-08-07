@@ -217,7 +217,7 @@ PerformanceData run( comm::Machine machine ,
   typedef typename matrix_type::graph_type                matrix_graph_type ;
   typedef typename matrix_type::coefficients_type         matrix_coefficients_type ;
 
-  typedef KokkosArray::Impl::Factory< matrix_graph_type , mesh_type > graph_factory ;
+  typedef GraphFactory< matrix_graph_type , mesh_type > graph_factory ;
 
   //------------------------------------
   // Problem setup types:
@@ -264,23 +264,20 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Allocate linear system coefficients and rhs:
 
-  const size_t local_owned_length = jacobian.graph.row_map.length();
+  const size_t local_owned_length = jacobian.graph.row_map.dimension(0) - 1 ;
   const size_t local_total_length = mesh.node_coords.dimension(0);
 
   jacobian.coefficients =
-    KokkosArray::create< matrix_coefficients_type >( "jacobian_coeff" , jacobian.graph.entries.dimension(0) );
+    matrix_coefficients_type( "jacobian_coeff" , jacobian.graph.entries.dimension(0) );
 
   // Nonlinear residual for owned nodes:
-  residual =
-    KokkosArray::create< vector_type >( "residual" , local_owned_length );
+  residual = vector_type( "residual" , local_owned_length );
 
   // Nonlinear solution for owned and ghosted nodes:
-  nodal_solution = 
-    KokkosArray::create< vector_type >( "solution" , local_total_length );
+  nodal_solution = vector_type( "solution" , local_total_length );
 
   // Nonlinear solution update for owned nodes:
-  delta =
-    KokkosArray::create< vector_type >( "delta" , local_owned_length );
+  delta = vector_type( "delta" , local_owned_length );
 
   //------------------------------------
   // Allocation of arrays to fill the linear system
@@ -292,8 +289,8 @@ PerformanceData run( comm::Machine machine ,
   elem_vectors_type  elem_vectors ;  // Residual vectors
 
   if ( element_count ) {
-    elem_matrices = KokkosArray::create< elem_matrices_type >( std::string("elem_matrices"), element_count );
-    elem_vectors = KokkosArray::create< elem_vectors_type >( std::string("elem_vectors"), element_count );
+    elem_matrices = elem_matrices_type( std::string("elem_matrices"), element_count );
+    elem_vectors = elem_vectors_type( std::string("elem_vectors"), element_count );
   }
 
   //------------------------------------

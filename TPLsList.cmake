@@ -108,6 +108,7 @@
 #
 
 SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
+  MKL             "cmake/TPLs/"    EX
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
   CUDA            "cmake/TPLs/"    SS

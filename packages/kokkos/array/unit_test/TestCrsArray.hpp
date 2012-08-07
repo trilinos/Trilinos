@@ -51,8 +51,6 @@
 #include <sstream>
 #include <iostream>
 
-#include <impl/KokkosArray_Preprocessing_macros.hpp>
-
 /*--------------------------------------------------------------------------*/
 
 namespace {
@@ -68,80 +66,8 @@ public:
 
   TestCrsArray()
   {
-    run_test_void();
     run_test_graph();
     run_test_graph2();
-  }
-
-  void run_test_void()
-  {
-    typedef KokkosArray::PrefixSum< int , device > dView ;
-    typedef dView::HostMirror hView ;
-
-    enum { LENGTH = 1000 };
-    dView dx , dy , dz ;
-    hView hx , hy , hz ;
-    ASSERT_FALSE(dx);
-    ASSERT_FALSE(dy);
-    ASSERT_FALSE(dz);
-    ASSERT_FALSE(hx);
-    ASSERT_FALSE(hy);
-    ASSERT_FALSE(hz);
-
-    std::vector<long> x_size( LENGTH );
-    std::vector<size_t> y_size( LENGTH );
-    size_t sum = 0 ;
-    for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      const int size = ( i + 1 ) % 16 ;
-      x_size[i] = size ;
-      y_size[i] = size ;
-      sum += size ;
-    }
-
-    dx = KokkosArray::create_prefixsum<dView>( "dx" , x_size );
-    dy = KokkosArray::create_prefixsum<dView>( "dy" , y_size );
-
-    ASSERT_TRUE(dx);
-    ASSERT_TRUE(dy);
-    ASSERT_NE( dx , dy );
-
-    ASSERT_EQ( dx.length() , LENGTH );
-    ASSERT_EQ( dy.length() , LENGTH );
-    ASSERT_EQ( (size_t) dx.sum() , sum );
-    ASSERT_EQ( (size_t) dy.sum() , sum );
-
-    hx = KokkosArray::create_mirror( dx );
-    hy = KokkosArray::create_mirror( dy );
-
-    ASSERT_EQ( hx.length() , LENGTH );
-    ASSERT_EQ( hy.length() , LENGTH );
-    ASSERT_EQ( (size_t) hx.sum() , sum );
-    ASSERT_EQ( (size_t) hy.sum() , sum );
-
-    for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      const size_t x_begin = hx[i];
-      const size_t x_end   = hx[i+1];
-      const size_t y_begin = hy[i];
-      const size_t y_end   = hy[i+1];
-      ASSERT_EQ( (long) ( x_end - x_begin ) , x_size[i] );
-      ASSERT_EQ( (size_t) ( y_end - y_begin ) , y_size[i] );
-    }
-
-    dz = dx ; ASSERT_EQ( dx, dz); ASSERT_NE( dy, dz);
-    dz = dy ; ASSERT_EQ( dy, dz); ASSERT_NE( dx, dz);
-
-    dx = dView();
-    ASSERT_FALSE(dx);
-    ASSERT_TRUE( dy);
-    ASSERT_TRUE( dz);
-    dy = dView();
-    ASSERT_FALSE(dx);
-    ASSERT_FALSE(dy);
-    ASSERT_TRUE( dz);
-    dz = dView();
-    ASSERT_FALSE(dx);
-    ASSERT_FALSE(dy);
-    ASSERT_FALSE(dz);
   }
 
   void run_test_graph()
@@ -165,7 +91,7 @@ public:
     dx = KokkosArray::create_crsarray<dView>( "dx" , graph );
     hx = KokkosArray::create_mirror( dx );
    
-    ASSERT_EQ( hx.row_map.length() , LENGTH );
+    ASSERT_EQ( hx.row_map.dimension(0) - 1 , LENGTH );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const size_t begin = hx.row_map[i];
@@ -192,13 +118,13 @@ public:
       total_length += ( sizes[i] = 6 + i % 4 );
     }
 
-    dView dx = KokkosArray::create_crsarray<dView>( sizes );
+    dView dx = KokkosArray::create_crsarray<dView>( "test" , sizes );
     hView hx = KokkosArray::create_mirror( dx );
     hView mx = KokkosArray::create_mirror( dx );
 
-    ASSERT_EQ( (size_t) dx.row_map.length() , (size_t) LENGTH );
-    ASSERT_EQ( (size_t) hx.row_map.length() , (size_t) LENGTH );
-    ASSERT_EQ( (size_t) mx.row_map.length() , (size_t) LENGTH );
+    ASSERT_EQ( (size_t) dx.row_map.dimension(0) , (size_t) LENGTH + 1 );
+    ASSERT_EQ( (size_t) hx.row_map.dimension(0) , (size_t) LENGTH + 1 );
+    ASSERT_EQ( (size_t) mx.row_map.dimension(0) , (size_t) LENGTH + 1 );
 
     ASSERT_EQ( (size_t) dx.entries.dimension(0) , (size_t) total_length );
     ASSERT_EQ( (size_t) hx.entries.dimension(0) , (size_t) total_length );
@@ -218,11 +144,10 @@ public:
       }
     }
 
-    KokkosArray::deep_copy( dx , hx );
-
-    KokkosArray::deep_copy( mx , dx );
+    KokkosArray::deep_copy( dx.entries , hx.entries );
+    KokkosArray::deep_copy( mx.entries , dx.entries );
    
-    ASSERT_EQ( mx.row_map.length() , LENGTH );
+    ASSERT_EQ( mx.row_map.dimension(0) , (size_t) LENGTH + 1 );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const size_t entry_begin = mx.row_map[i];

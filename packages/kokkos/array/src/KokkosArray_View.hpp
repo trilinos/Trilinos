@@ -45,12 +45,21 @@
 #define KOKKOS_VIEW_HPP
 
 #include <string>
-#include <impl/KokkosArray_forward.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
 #include <impl/KokkosArray_Shape.hpp>
 
 namespace KokkosArray {
+
+class Host ;
+
+//----------------------------------------------------------------------------
+
+template < class >
+struct View_requires_a_device_specific_specialization_which_is_not_found ;
+
+template < class >
+struct View_create_requires_non_const_data_type ;
 
 //----------------------------------------------------------------------------
 
@@ -156,10 +165,16 @@ public:
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  View();
+  View()
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
 
   /** \brief  Construct a view of the array */
-  View( const View & rhs );
+  View( const View & rhs )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
@@ -181,119 +196,96 @@ public:
 
   /** \brief  Query if not view to same memory */
   bool operator != ( const View & ) const ;
+
+  /*------------------------------------------------------------------*/
+
+  explicit View( const std::string & )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
+
+  View( const std::string & , const unsigned N0 )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
+
+  View( const std::string & , const unsigned N0 ,
+                              const unsigned N1 )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
+
+  View( const std::string & , const unsigned N0 ,
+                              const unsigned N1 ,
+                              const unsigned N2 )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
+
+  View( const std::string & , const unsigned N0 ,
+                              const unsigned N1 ,
+                              const unsigned N2 ,
+                              const unsigned N3 )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
+
+  View( const std::string & , const unsigned N0 ,
+                              const unsigned N1 ,
+                              const unsigned N2 ,
+                              const unsigned N3 ,
+                              const unsigned N4 )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
+
+  View( const std::string & , const unsigned N0 ,
+                              const unsigned N1 ,
+                              const unsigned N2 ,
+                              const unsigned N3 ,
+                              const unsigned N4 ,
+                              const unsigned N5 )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
+
+  View( const std::string & , const unsigned N0 ,
+                              const unsigned N1 ,
+                              const unsigned N2 ,
+                              const unsigned N3 ,
+                              const unsigned N4 ,
+                              const unsigned N5 ,
+                              const unsigned N6 )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
+
+  View( const std::string & , const unsigned N0 ,
+                              const unsigned N1 ,
+                              const unsigned N2 ,
+                              const unsigned N3 ,
+                              const unsigned N4 ,
+                              const unsigned N5 ,
+                              const unsigned N6 ,
+                              const unsigned N7 )
+  {
+    View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
+  }
 };
 
 //----------------------------------------------------------------------------
 
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label );
-
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label , const size_t n0 );
-
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label , const size_t n0 , const size_t n1 );
-
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label , const size_t n0 , const size_t n1 ,
-                                    const size_t n2 );
-
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label , const size_t n0 , const size_t n1 ,
-                                    const size_t n2 , const size_t n3 );
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label , const size_t n0 , const size_t n1 ,
-                                    const size_t n2 , const size_t n3 ,
-                                    const size_t n4 );
-
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label , const size_t n0 , const size_t n1 ,
-                                    const size_t n2 , const size_t n3 ,
-                                    const size_t n4 , const size_t n5 );
-
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label , const size_t n0 , const size_t n1 ,
-                                    const size_t n2 , const size_t n3 ,
-                                    const size_t n4 , const size_t n5 ,
-                                    const size_t n6 );
-
-template< class ViewType >
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label , const size_t n0 , const size_t n1 ,
-                                    const size_t n2 , const size_t n3 ,
-                                    const size_t n4 , const size_t n5 ,
-                                    const size_t n6 , const size_t n7 );
+template< class DataType , class LayoutType , class DeviceType >
+typename View< DataType , LayoutType , DeviceType >::HostMirror
+create_mirror( const View<DataType,LayoutType,DeviceType> & );
 
 //----------------------------------------------------------------------------
 
-template< class DataTypeDst , class LayoutDst , class DeviceDst ,
-          class DataTypeSrc , class LayoutSrc , class DeviceSrc >
-void deep_copy( const View<DataTypeDst,LayoutDst,DeviceDst> & dst ,
-                const View<DataTypeSrc,LayoutSrc,DeviceSrc> & src );
+template < class T >
+struct View_create_requires_non_const_data_type { static void success(){} };
 
-template< class ScalarType , class LayoutDst , class DeviceDst ,
-                             class LayoutSrc , class DeviceSrc >
-void deep_copy( const View<ScalarType[],LayoutDst,DeviceDst> & dst ,
-                const View<ScalarType[],LayoutSrc,DeviceSrc> & src ,
-                const size_t );
-
-template< class ScalarType , class LayoutDst , class DeviceDst >
-void deep_copy( const View<ScalarType,LayoutDst,DeviceDst> & dst ,
-                const ScalarType & src );
-
-template< class ScalarType , class LayoutSrc , class DeviceSrc >
-void deep_copy( ScalarType & dst ,
-                const View<ScalarType,LayoutSrc,DeviceSrc> & src );
-
-//----------------------------------------------------------------------------
-
-template < class >
-struct template_class_View_requires_a_device_specific_specialization_which_is_not_found ;
-
-
-template< class DataType , class LayoutType , class DeviceType >
-View<DataType,LayoutType,DeviceType>::View()
-{
- template_class_View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
-}
-
-template< class DataType , class LayoutType , class DeviceType >
-View<DataType,LayoutType,DeviceType>::~View()
-{
- template_class_View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
-}
-
-template< class DataType , class LayoutType , class DeviceType >
-View<DataType,LayoutType,DeviceType>::View( const View<DataType,LayoutType,DeviceType> & rhs )
-{
- template_class_View_requires_a_device_specific_specialization_which_is_not_found<device_type>::fail();
-}
+template < class T >
+struct View_create_requires_non_const_data_type< const T > {};
 
 } // namespace KokkosArray
 
@@ -303,8 +295,11 @@ View<DataType,LayoutType,DeviceType>::View( const View<DataType,LayoutType,Devic
 namespace KokkosArray {
 namespace Impl {
 
-template< class DataType , class ArrayLayout , class MemorySpace >
-class ViewOperator ;
+template< typename ValueType , class MemorySpace , class Shape >
+class ViewOper ;
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+struct DeepCopy ;
 
 }
 }

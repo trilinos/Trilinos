@@ -133,7 +133,7 @@ PerformanceData run( comm::Machine machine ,
   typedef typename matrix_type::graph_type         matrix_graph_type ;
   typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;
 
-  typedef KokkosArray::Impl::Factory< matrix_graph_type , mesh_type > graph_factory ;
+  typedef GraphFactory< matrix_graph_type , mesh_type > graph_factory ;
 
   //------------------------------------
   // Problem setup types:
@@ -181,15 +181,14 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Allocate linear system coefficients and rhs:
 
-  const size_t local_owned_length = linsys_matrix.graph.row_map.length();
+  const size_t local_owned_length =
+    linsys_matrix.graph.row_map.dimension(0) - 1 ;
 
   linsys_matrix.coefficients =
-    KokkosArray::create< matrix_coefficients_type >( "coeff" , linsys_matrix.graph.entries.dimension(0) );
+    matrix_coefficients_type( "coeff" , linsys_matrix.graph.entries.dimension(0) );
 
-  linsys_rhs =
-    KokkosArray::create< vector_type >( "rhs" , local_owned_length );
-  linsys_solution =
-    KokkosArray::create< vector_type >( "solution" , local_owned_length );
+  linsys_rhs      = vector_type( "rhs" , local_owned_length );
+  linsys_solution = vector_type( "solution" , local_owned_length );
 
   //------------------------------------
   // Fill linear system
@@ -201,8 +200,8 @@ PerformanceData run( comm::Machine machine ,
     elem_vectors_type  elem_vectors ;
 
     if ( element_count ) {
-      elem_matrices = KokkosArray::create< elem_matrices_type >( std::string("elem_matrices"), element_count );
-      elem_vectors  = KokkosArray::create< elem_vectors_type >( std::string("elem_vectors"), element_count );
+      elem_matrices = elem_matrices_type( std::string("elem_matrices"), element_count );
+      elem_vectors  = elem_vectors_type ( std::string("elem_vectors"), element_count );
     }
 
     //------------------------------------

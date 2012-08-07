@@ -292,8 +292,8 @@ struct HexGrad< KOKKOS_MACRO_DEVICE >
 
   static double test( int count )
   {
-    elem_coord_type coord = KokkosArray::create< elem_coord_type >( "coord" , count );
-    elem_grad_type  grad  = KokkosArray::create< elem_grad_type >( "grad" , count );
+    elem_coord_type coord( "coord" , count );
+    elem_grad_type  grad ( "grad" , count );
 
     // Execute the parallel kernels on the arrays:
 

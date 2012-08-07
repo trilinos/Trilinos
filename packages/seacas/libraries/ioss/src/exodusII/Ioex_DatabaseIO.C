@@ -347,6 +347,24 @@ namespace {
       exodus_error(exoid, __LINE__, -1);
     if (buffer[0] != '\0') {
       Ioss::Utils::fixup_name(TOPTR(buffer));
+      // Filter out names of the form "basename_id" if the name
+      // id doesn't match the id in the name...
+      size_t base_size = basename.size();
+      if (std::strncmp(basename.c_str(), TOPTR(buffer), base_size) == 0) {
+	int64_t name_id = extract_id(TOPTR(buffer));
+	if (name_id > 0 && name_id != id) {
+	  // See if name is truly of form "basename_name_id"
+	  std::string tmp_name =  Ioss::Utils::encode_entity_name(basename, name_id);
+	  if (tmp_name == TOPTR(buffer)) {
+	    std::string new_name =  Ioss::Utils::encode_entity_name(basename, id);
+	    IOSS_WARNING << "WARNING: The entity named '" << TOPTR(buffer) << "' has the id " << id
+			 << " which does not match the embedded id " << name_id
+			 << ".\n         This can cause issues later on; the entity will be renamed to '"
+			 << new_name << "' (IOSS)\n\n";
+	    return new_name;
+	  }
+	}
+      }
       return (std::string(TOPTR(buffer)));
     } else {
       return Ioss::Utils::encode_entity_name(basename, id);
@@ -1669,7 +1687,9 @@ namespace Ioex {
 	}
       }
       if (block_name != alias) {
-	get_region()->add_alias(block_name, alias);
+	Ioss::GroupingEntity *test = get_region()->get_entity(alias);
+	if (test == NULL)
+	  get_region()->add_alias(block_name, alias);
       }
     
       // Check for additional variables.
@@ -7046,7 +7066,7 @@ namespace Ioex {
 		index += 3;
 	      }
 	    }
-	    unknown_attributes = attribute_count - index;
+	    unknown_attributes = attribute_count - (index-1);
 	  }
 
 	  else {

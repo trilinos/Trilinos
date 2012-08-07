@@ -48,319 +48,172 @@
 
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
-#include <impl/KokkosArray_Shape_factory.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
 
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label )
+namespace Impl {
+
+template< class > struct ViewCreateMirror ;
+
+template< class DataType , class LayoutType , class DeviceType >
+struct ViewCreateMirror< View< DataType , LayoutType , DeviceType > >
 {
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
+  typedef View< DataType , LayoutType , DeviceType > output_type ;
 
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
+  inline static
+  output_type create( const output_type & src ) { return src ; }
 
-  const shape_type shape = shape_factory::create();
+  template< class DeviceSrc >
+  inline static
+  output_type create( const View< DataType , LayoutType , DeviceSrc > & src )
+  {
+    return output_type( "mirror" , src.shape() );
+  }
+};
 
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
+} // namespace Impl
+
+template< class DataType , class LayoutType , class DeviceType >
+typename View< DataType , LayoutType , DeviceType >::HostMirror
+create_mirror_view( const View<DataType,LayoutType,DeviceType> & input )
+{
+  typedef View< DataType , LayoutType , DeviceType > input_type ;
+  typedef typename input_type::HostMirror            output_type ;
+
+  return Impl::ViewCreateMirror< output_type >::create( input );
 }
 
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 )
+template< class DataType , class LayoutType , class DeviceType >
+typename View< DataType , LayoutType , DeviceType >::HostMirror
+create_mirror( const View<DataType,LayoutType,DeviceType> & input )
 {
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
+  typedef View< DataType , LayoutType , DeviceType > input_type ;
+  typedef typename input_type::HostMirror            output_type ;
 
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
+#if KOKKOS_MIRROR_VIEW_OPTIMIZE
+  return Impl::ViewCreateMirror< output_type >::create( input );
+#else
+  return output_type( "mirror" , input.shape() );
+#endif
 }
 
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 ,
-        const size_t n4 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 ,
-        const size_t n4 , const size_t n5 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 ,
-        const size_t n4 , const size_t n5 , const size_t n6 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5,n6);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-template< class ViewType >
-inline
-View< typename ViewType::data_type ,
-      typename ViewType::layout_type ,
-      typename ViewType::device_type >
-create( const std::string & label ,
-        const size_t n0 , const size_t n1 , const size_t n2 , const size_t n3 ,
-        const size_t n4 , const size_t n5 , const size_t n6 , const size_t n7 )
-{
-  typedef View< typename ViewType::data_type ,
-                typename ViewType::layout_type ,
-                typename ViewType::device_type > view_type ;
-
-  typedef typename view_type::shape_type    shape_type ;
-  typedef typename view_type::memory_space  memory_space ;
-  typedef  Impl::Factory< shape_type , memory_space > shape_factory ;
-
-  const shape_type shape = shape_factory::create(n0,n1,n2,n3,n4,n5,n6,n7);
-
-  return Impl::Factory< view_type , shape_type >::create( label , shape );
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-/** \brief  Span of a vector */
-template< typename ValueType , class LayoutSpec , class DeviceType >
-inline
-View< ValueType[] , LayoutSpec , DeviceType >
-view( const View< ValueType[] , LayoutSpec , DeviceType > & input ,
-      const size_t iBeg , const size_t iEnd )
-{
-  typedef typename
-    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
-  
-  typedef View< ValueType[] , LayoutSpec , DeviceType > input_type ;
-
-  return Impl::Factory< void , input_type >::view( input , iBeg , iEnd );
-}
-
-/** \brief  Vector of a multivector */
-template< typename ValueType , class DeviceType >
-inline
-View< ValueType[] , LayoutLeft , DeviceType >
-view( const View< ValueType[][0] , LayoutLeft , DeviceType > & input ,
-      const size_t J )
-{
-  typedef typename
-    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
-
-  typedef View< ValueType[][0] , LayoutLeft , DeviceType > input_type ;
-
-  return Impl::Factory< void , input_type >::view( input , J );
-}
-
-/** \brief  Value within a multivector */
-template< typename ValueType , class DeviceType >
-inline
-View< ValueType , LayoutLeft , DeviceType >
-view( const View< ValueType[][0] , LayoutLeft , DeviceType > & input ,
-      const size_t I , const size_t J )
-{
-  typedef typename
-    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
-
-  typedef View< ValueType[][0] , LayoutLeft , DeviceType > input_type ;
-
-  return Impl::Factory< void , input_type >::view( input , I , J );
-}
-
-/** \brief  Value within a vector */
-template< typename ValueType , class DeviceType >
-inline
-View< ValueType , LayoutLeft , DeviceType >
-view( const View< ValueType[] , LayoutLeft , DeviceType > & input ,
-      const size_t I )
-{
-  typedef typename
-    Impl::StaticAssert< 0 == Impl::rank<ValueType>::value >::type ok_rank ;
-
-  typedef View< ValueType[] , LayoutLeft , DeviceType > input_type ;
-
-  return Impl::Factory< void , input_type >::view( input , I );
-}
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 /** \brief  Deep copy compatible arrays */
 
-template< class DataTypeDst , class LayoutDst , class DeviceDst ,
-          class DataTypeSrc , class LayoutSrc , class DeviceSrc >
-inline
-void deep_copy( const View<DataTypeDst,LayoutDst,DeviceDst> & dst ,
-                const View<DataTypeSrc,LayoutSrc,DeviceSrc> & src )
-{
-  typedef View<DataTypeDst,LayoutDst,DeviceDst> dst_type ;
-  typedef View<DataTypeSrc,LayoutSrc,DeviceSrc> src_type ;
+namespace KokkosArray {
+namespace Impl {
 
-  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
+template< class DstType ,
+          class SrcType ,
+          class SameValue = typename
+            is_same< typename DstType::value_type ,
+                     typename remove_const<
+                       typename SrcType::value_type >::type
+                   >::type ,
+          class SameLayout = typename
+            is_same< typename DstType::array_layout ,
+                     typename SrcType::array_layout >::type ,
+          class SameRank = typename
+             bool_< DstType::Rank == SrcType::Rank >::type >
+struct ViewDeepCopy ;
+
+// Deep copy compatible views:
+
+template< class DataDst , class LayoutDst , class DeviceDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc >
+struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
+                     View< DataSrc , LayoutSrc , DeviceSrc > ,
+                     true_type /* Same value_type   */ ,
+                     true_type /* Same array_layout */ ,
+                     true_type /* Same rank */ >
+{
+  typedef View< DataDst , LayoutDst , DeviceDst >  dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc >  src_type ;
+
+  inline static
+  void apply( const dst_type & dst , const src_type & src )
+  {
+    if ( dst != src ) {
+      assert_shapes_are_equal( dst.shape() , src.shape() );
+
+      DeepCopy< typename dst_type::value_type ,
+                typename DeviceDst::memory_space ,
+                typename DeviceSrc::memory_space > (
+        dst.ptr_on_device() ,
+        src.ptr_on_device() ,
+        allocation_count( dst.shape() ) );
+    }
+  }
+};
+
+} // namespace Impl
+
+// Deep copy a span of rank 1 arrays:
+
+template< class DataDst , class LayoutDst , class DeviceDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc >
+inline
+void deep_copy( const View< DataDst , LayoutDst , DeviceDst > & dst ,
+                const View< DataSrc , LayoutSrc , DeviceSrc > & src ,
+                size_t count )
+{
+  typedef View< DataDst , LayoutDst , DeviceDst > dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc > src_type ;
+
+  typedef typename dst_type::shape_type  dst_shape ;
+  typedef typename src_type::shape_type  src_shape ;
+
+  typedef typename dst_type::value_type dst_value_type ;
+  typedef typename src_type::value_type src_value_type ;
+
+  // Verify arrays are rank 1
+
+  typedef typename
+    Impl::assert_shape_is_rank_one< dst_shape >::type ok_dst_rank ;
+
+  typedef typename
+    Impl::assert_shape_is_rank_one< dst_shape >::type ok_dst_rank ;
+
+  // Verify value is the same type
+
+  typedef typename
+    Impl::StaticAssertSame< dst_value_type ,
+                            typename Impl::remove_const< src_value_type >::type
+                          >::type  ok_assign ;
+
+  // Copy if the destination is not simply a view of the source:
+
+  if ( count && dst != src ) {
+    Impl::assert_shape_bounds( dst.shape() , count - 1 );
+    Impl::assert_shape_bounds( src.shape() , count - 1 );
+
+      Impl::DeepCopy< dst_value_type ,
+                      typename DeviceDst::memory_space ,
+                      typename DeviceSrc::memory_space > (
+      dst.ptr_on_device() ,
+      src.ptr_on_device() ,
+      count );
+  }
 }
 
-template< class ScalarType , class LayoutDst , class DeviceDst ,
-                             class LayoutSrc , class DeviceSrc >
-void deep_copy( const View<ScalarType[],LayoutDst,DeviceDst> & dst ,
-                const View<ScalarType[],LayoutSrc,DeviceSrc> & src ,
-                const size_t n )
-{
-  typedef View<ScalarType[],LayoutDst,DeviceDst> dst_type ;
-  typedef View<ScalarType[],LayoutSrc,DeviceSrc> src_type ;
+// Deep copy arbitrary arrays:
 
-  Impl::Factory< dst_type , src_type >::deep_copy( dst , src , n );
-}
-
-//----------------------------------------------------------------------------
-/** \brief  Deep copy a single value */
-
-template< class DataType , class LayoutType , class DeviceType >
+template< class DataDst , class LayoutDst , class DeviceDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc >
 inline
-void deep_copy( const View<DataType,LayoutType,DeviceType> & dst ,
-                const DataType & src )
+void deep_copy( const View< DataDst , LayoutDst , DeviceDst > & dst ,
+                const View< DataSrc , LayoutSrc , DeviceSrc > & src )
 {
-  typedef View< DataType , LayoutType , DeviceType >  dst_type ;
-  typedef DataType                                    src_type ;
+  typedef View< DataDst , LayoutDst , DeviceDst > dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc > src_type ;
 
-  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
-}
-
-/** \brief  Deep copy a single value */
-template< class DataType , class LayoutType , class DeviceType >
-inline
-void deep_copy( DataType & dst , 
-                const View<DataType,LayoutType,DeviceType> & src )
-{
-  typedef DataType                                    dst_type ;
-  typedef View< DataType , LayoutType , DeviceType >  src_type ;
-
-  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
+  Impl::ViewDeepCopy<dst_type,src_type>::apply( dst , src );
 }
 
 //----------------------------------------------------------------------------
@@ -373,106 +226,19 @@ void deep_copy( DataType & dst ,
 namespace KokkosArray {
 namespace Impl {
 
-template< class DataType , class LayoutType , class DeviceOutput >
-struct Factory< View< DataType , LayoutType , DeviceOutput > , MirrorUseView >
-{
-  typedef View< DataType , LayoutType , DeviceOutput > output_type ;
+/** \brief  Subview must have compatible pointer types and same memory space */
 
-  static inline
-  const output_type & create( const output_type & input ) { return input ; }
+template< class DstType , class DstMemory ,
+          class SrcType , class SrcMemory >
+struct SubviewAssignable : public false_type {};
 
-  template< class DeviceInput >
-  static inline
-  output_type create( const View< DataType, LayoutType, DeviceInput > & input )
-  {
-    typedef View< DataType , LayoutType , DeviceInput > input_type ;
-    return Factory< output_type , input_type >::create( input );
-  }
-};
+template< class Type , class Memory >
+struct SubviewAssignable< Type , Memory , Type , Memory >
+  : public true_type {};
 
-
-/** \brief  Create subviews of multivectors */
-template< typename ValueType , class LayoutSpec , class Device >
-struct Factory< void , View< ValueType[][0] , LayoutSpec , Device > >
-{
-  typedef typename StaticAssert< rank<ValueType>::value == 0 >::type ok_rank ;
-
-  // The multivector type:
-  typedef View< ValueType[][0] , LayoutSpec , Device > input_type ;
-
-  typedef typename Device::memory_space memory_space ;
-
-  inline static
-  View< ValueType[] , LayoutSpec , Device >
-  view( const input_type & input , const size_t J )
-  {
-    View< ValueType[] , LayoutSpec , Device > output ;
-
-    if ( input ) {
-      output.m_shape.N0 = input.m_shape.N0 ;
-      output.m_ptr_on_device = input.ptr_on_device( 0 , J );
-      memory_space::increment( output.m_ptr_on_device );
-    }
-
-    return output ;
-  }
-
-  inline static
-  View< ValueType , LayoutSpec , Device >
-  view( const input_type & input , const size_t I , size_t J )
-  {
-
-    View< ValueType , LayoutSpec , Device > output ;
-
-    if ( input ) {
-      output.m_ptr_on_device = input.ptr_on_device( I , J );
-      memory_space::increment( output.m_ptr_on_device );
-    }
-
-    return output ;
-  }
-};
-
-/** \brief  Create subview of vectors */
-template< typename ValueType , class LayoutSpec , class Device >
-struct Factory< void , View< ValueType[] , LayoutSpec , Device > >
-{
-  typedef typename StaticAssert< rank<ValueType>::value == 0 >::type ok_rank ;
-
-  // The multivector type:
-  typedef View< ValueType[] , LayoutSpec , Device > input_type ;
-
-  typedef typename Device::memory_space memory_space ;
-
-  inline static
-  View< ValueType , LayoutSpec , Device >
-  view( const input_type & input , const size_t I )
-  {
-    View< ValueType , LayoutSpec , Device > output ;
-
-    if ( input ) {
-      output.m_ptr_on_device = & input( I );
-      memory_space::increment( output.m_ptr_on_device );
-    }
-
-    return output ;
-  }
-
-  inline static
-  View< ValueType[] , LayoutSpec , Device >
-  view( const input_type & input , const size_t iBeg , const size_t iEnd )
-  {
-    View< ValueType[] , LayoutSpec , Device > output ;
-
-    if ( input ) {
-      output.m_shape.N0 = iEnd - iBeg ;
-      output.m_ptr_on_device = input.m_ptr_on_device + iBeg ;
-      memory_space::increment( output.m_ptr_on_device );
-    }
-
-    return output ;
-  }
-};
+template< class Type , class Memory >
+struct SubviewAssignable< const Type , Memory , Type , Memory >
+  : public true_type {};
 
 } // namespace Impl
 } // namespace KokkosArray

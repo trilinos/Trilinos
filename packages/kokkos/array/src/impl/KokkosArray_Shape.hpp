@@ -46,7 +46,6 @@
 
 #include <typeinfo>
 #include <KokkosArray_Layout.hpp>
-#include <impl/KokkosArray_forward.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
 
@@ -148,6 +147,12 @@ struct rank_dynamic< T[N] , J >
  */
 template< class Layout , class Type , unsigned RankDynamic , unsigned Rank >
 struct Shape ;
+
+template< class ShapeType , class MemorySpace >
+struct ShapeMap ;
+
+template< class ShapeType >
+struct ShapeOffset ;
 
 template< class Layout , class Type >
 struct DefineShape {
@@ -392,6 +397,15 @@ struct Shape< Layout , Type , 0 , 0 >
   static const unsigned N5 = 0 ;
   static const unsigned N6 = 0 ;
   static const unsigned N7 = 0 ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create()
+  { return Shape(); }
+
+  static inline
+  Shape create( const Shape )
+  { return Shape(); }
 };
 
 template < class Layout , class Type >
@@ -412,6 +426,15 @@ struct Shape< Layout , Type , 0 , 1 >
   static const unsigned N5 = 0 ;
   static const unsigned N6 = 0 ;
   static const unsigned N7 = 0 ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create()
+  { return Shape(); }
+
+  static inline
+  Shape create( const Shape )
+  { return Shape(); }
 };
 
 template < class Layout , class Type >
@@ -432,6 +455,24 @@ struct Shape< Layout , Type , 1 , 1 >
   static const unsigned N5 = 0 ;
   static const unsigned N6 = 0 ;
   static const unsigned N7 = 0 ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    return shape ;
+  }
+
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    return shape ;
+  }
 };
 
 //----------------------------------------------------------------------------
@@ -456,6 +497,25 @@ struct Shape< Layout , Type , 0 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create()
+  {
+    Shape shape ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -477,6 +537,27 @@ struct Shape< Layout , Type , 1 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -498,6 +579,30 @@ struct Shape< Layout , Type , 2 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    shape.N1 = input.N1 ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -519,6 +624,33 @@ struct Shape< Layout , Type , 3 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    shape.N1 = input.N1 ;
+    shape.N2 = input.N2 ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -540,6 +672,36 @@ struct Shape< Layout , Type , 4 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    shape.N1 = input.N1 ;
+    shape.N2 = input.N2 ;
+    shape.N3 = input.N3 ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -561,6 +723,39 @@ struct Shape< Layout , Type , 5 , Rank >
   static const unsigned N5 = extent<Type,5>::value ;
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 ,
+                const unsigned arg_N4 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.N4 = arg_N4 ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    shape.N1 = input.N1 ;
+    shape.N2 = input.N2 ;
+    shape.N3 = input.N3 ;
+    shape.N4 = input.N4 ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -582,6 +777,42 @@ struct Shape< Layout , Type , 6 , Rank >
 
   static const unsigned N6 = extent<Type,6>::value ;
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 ,
+                const unsigned arg_N4 ,
+                const unsigned arg_N5 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.N4 = arg_N4 ;
+    shape.N5 = arg_N5 ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    shape.N1 = input.N1 ;
+    shape.N2 = input.N2 ;
+    shape.N3 = input.N3 ;
+    shape.N4 = input.N4 ;
+    shape.N5 = input.N5 ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
 template< class Layout , class Type , unsigned Rank >
@@ -603,15 +834,55 @@ struct Shape< Layout , Type , 7 , Rank >
   unsigned N6 ;
 
   static const unsigned N7 = extent<Type,7>::value ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 ,
+                const unsigned arg_N4 ,
+                const unsigned arg_N5 ,
+                const unsigned arg_N6 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.N4 = arg_N4 ;
+    shape.N5 = arg_N5 ;
+    shape.N6 = arg_N6 ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  // The source shape may have a lower dynamic rank
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    shape.N1 = input.N1 ;
+    shape.N2 = input.N2 ;
+    shape.N3 = input.N3 ;
+    shape.N4 = input.N4 ;
+    shape.N5 = input.N5 ;
+    shape.N6 = input.N6 ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
-template< class Layout , class Type , unsigned Rank >
-struct Shape< Layout , Type , 8 , Rank >
+template< class Layout , class Type >
+struct Shape< Layout , Type , 8 , 8 >
 {
   typedef Layout  array_layout ;
 
   static const unsigned rank_dynamic = 8 ;
-  static const unsigned rank         = Rank ;
+  static const unsigned rank         = 8 ;
   static const unsigned value_size   = remove_all_extents<Type>::type::value ;
 
   unsigned Stride ;
@@ -623,9 +894,290 @@ struct Shape< Layout , Type , 8 , Rank >
   unsigned N5 ;
   unsigned N6 ;
   unsigned N7 ;
+
+  template< class MemorySpace >
+  static inline
+  Shape create( const unsigned arg_N0 ,
+                const unsigned arg_N1 ,
+                const unsigned arg_N2 ,
+                const unsigned arg_N3 ,
+                const unsigned arg_N4 ,
+                const unsigned arg_N5 ,
+                const unsigned arg_N6 ,
+                const unsigned arg_N7 )
+  {
+    Shape shape ;
+    shape.N0 = arg_N0 ;
+    shape.N1 = arg_N1 ;
+    shape.N2 = arg_N2 ;
+    shape.N3 = arg_N3 ;
+    shape.N4 = arg_N4 ;
+    shape.N5 = arg_N5 ;
+    shape.N6 = arg_N6 ;
+    shape.N7 = arg_N7 ;
+    shape.Stride = 0 ; // to suppress compiler warning
+    shape.Stride = ShapeMap<Shape,MemorySpace>::stride( shape );
+    return shape ;
+  }
+
+  // The source shape may have a lower dynamic rank
+  template< class SrcType , unsigned SrcRankDyn >
+  static inline
+  Shape create( const Shape< Layout , SrcType , SrcRankDyn , rank > input )
+  {
+    Shape shape ;
+    shape.N0 = input.N0 ;
+    shape.N1 = input.N1 ;
+    shape.N2 = input.N2 ;
+    shape.N3 = input.N3 ;
+    shape.N4 = input.N4 ;
+    shape.N5 = input.N5 ;
+    shape.N6 = input.N6 ;
+    shape.N7 = input.N7 ;
+    shape.Stride = input.Stride ;
+    return shape ;
+  }
 };
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+template< class DstShape , class SrcShape >
+struct SubShape ;
+
+template< class Layout ,
+          class DstDataType , unsigned DstRankDyn ,
+          class SrcDataType , unsigned SrcRankDyn , unsigned Rank >
+struct SubShape< Shape< Layout , DstDataType , DstRankDyn , Rank > ,
+                 Shape< Layout , SrcDataType , SrcRankDyn , Rank > >
+{
+  typedef Shape< Layout , DstDataType , DstRankDyn , Rank > DstShape ;
+  typedef Shape< Layout , SrcDataType , SrcRankDyn , Rank > SrcShape ;
+
+  typedef typename
+    StaticAssert< SrcRankDyn <= DstRankDyn , SubShape >::type type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src )
+  {
+    shape  = DstShape::create( src );
+    offset = 0 ;
+  }
+};
+
+//----------------------------------------------------------------------------
+// Shape and offset for a single member:
+
+template< class DstLayout , class DstDataType ,
+          class SrcLayout , class SrcDataType , unsigned SrcRankDyn >
+struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
+                 Shape< SrcLayout , SrcDataType , SrcRankDyn , 1 > >
+{
+  typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
+  typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 1 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src , const size_t i0 )
+  {
+    offset = ShapeOffset< SrcShape >::apply(src,i0);
+  }
+};
+
+template< class DstLayout , class DstDataType ,
+          class SrcLayout , class SrcDataType , unsigned SrcRankDyn >
+struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
+                 Shape< SrcLayout , SrcDataType , SrcRankDyn , 2 > >
+{
+  typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
+  typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 2 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src ,
+            const size_t i0 , const size_t i1 )
+  {
+    offset = ShapeOffset< SrcShape >::apply(src,i0,i1);
+  }
+};
+
+template< class DstLayout , class DstDataType ,
+          class SrcLayout , class SrcDataType , unsigned SrcRankDyn >
+struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
+                 Shape< SrcLayout , SrcDataType , SrcRankDyn , 3 > >
+{
+  typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
+  typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 3 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src ,
+            const size_t i0 , const size_t i1 ,
+            const size_t i2 )
+  {
+    offset = ShapeOffset< SrcShape >::apply(src,i0,i1,i2);
+  }
+};
+
+template< class DstLayout , class DstDataType ,
+          class SrcLayout , class SrcDataType , unsigned SrcRankDyn >
+struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
+                 Shape< SrcLayout , SrcDataType , SrcRankDyn , 4 > >
+{
+  typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
+  typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 4 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src ,
+            const size_t i0 , const size_t i1 ,
+            const size_t i2 , const size_t i3 )
+  {
+    offset = ShapeOffset< SrcShape >::apply(src,i0,i1,i2,i3);
+  }
+};
+
+template< class DstLayout , class DstDataType ,
+          class SrcLayout , class SrcDataType , unsigned SrcRankDyn >
+struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
+                 Shape< SrcLayout , SrcDataType , SrcRankDyn , 5 > >
+{
+  typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
+  typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 5 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src ,
+            const size_t i0 , const size_t i1 ,
+            const size_t i2 , const size_t i3 ,
+            const size_t i4 )
+  {
+    offset = ShapeOffset< SrcShape >::apply(src,i0,i1,i2,i3,i4);
+  }
+};
+
+template< class DstLayout , class DstDataType ,
+          class SrcLayout , class SrcDataType , unsigned SrcRankDyn >
+struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
+                 Shape< SrcLayout , SrcDataType , SrcRankDyn , 6 > >
+{
+  typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
+  typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 6 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src ,
+            const size_t i0 , const size_t i1 ,
+            const size_t i2 , const size_t i3 ,
+            const size_t i4 , const size_t i5 )
+  {
+    offset = ShapeOffset< SrcShape >::apply(src,i0,i1,i2,i3,i4,i5);
+  }
+};
+
+template< class DstLayout , class DstDataType ,
+          class SrcLayout , class SrcDataType , unsigned SrcRankDyn >
+struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
+                 Shape< SrcLayout , SrcDataType , SrcRankDyn , 7 > >
+{
+  typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
+  typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 7 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src ,
+            const size_t i0 , const size_t i1 ,
+            const size_t i2 , const size_t i3 ,
+            const size_t i4 , const size_t i5 ,
+            const size_t i6 )
+  {
+    offset = ShapeOffset< SrcShape >::apply(src,i0,i1,i2,i3,i4,i5,i6);
+  }
+};
+
+template< class DstLayout , class DstDataType ,
+          class SrcLayout , class SrcDataType , unsigned SrcRankDyn >
+struct SubShape< Shape< DstLayout , DstDataType , 0 , 0 > ,
+                 Shape< SrcLayout , SrcDataType , SrcRankDyn , 8 > >
+{
+  typedef Shape< DstLayout , DstDataType , 0 , 0 > DstShape ;
+  typedef Shape< SrcLayout , SrcDataType , SrcRankDyn , 8 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src ,
+            const size_t i0 , const size_t i1 ,
+            const size_t i2 , const size_t i3 ,
+            const size_t i4 , const size_t i5 ,
+            const size_t i6 , const size_t i7 )
+  {
+    offset = ShapeOffset< SrcShape >::apply(src,i0,i1,i2,i3,i4,i5,i6,i7);
+  }
+};
+
+//----------------------------------------------------------------------------
+// Shape and offset for a span of a rank-1 array.
+
+template< class Layout , class DstDataType , class SrcDataType >
+struct SubShape< Shape< Layout , DstDataType , 1 , 1 > ,
+                 Shape< Layout , SrcDataType , 1 , 1 > >
+{
+  typedef Shape< Layout , DstDataType , 1 , 1 > DstShape ;
+  typedef Shape< Layout , SrcDataType , 1 , 1 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src )
+  {
+    shape  = DstShape::create( src );
+    offset = 0 ;
+  }
+
+  template< typename iType >
+  SubShape( const SrcShape src , const std::pair<iType,iType> span )
+  {
+    assert_shape_bounds( src , span.first );
+    offset = span.first ;
+
+    if ( span.first < span.second ) {
+      assert_shape_bounds( src , span.second );
+      shape.N0 = span.second - span.first ;
+    }
+    else {
+      shape.N0 = 0 ;
+    }
+  }
+};
+
 //----------------------------------------------------------------------------
 
 template< class Layout , class T , unsigned RankDynamic , unsigned Rank >

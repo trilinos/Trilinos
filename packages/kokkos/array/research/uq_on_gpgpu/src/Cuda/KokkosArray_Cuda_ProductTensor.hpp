@@ -265,9 +265,10 @@ public:
 
     //------------------------------------------------------------------------
 
+    const unsigned row_count = A.graph.row_map.dimension(0) - 1 ;
+
     const size_type nGridY =
-       std::min( A.graph.row_map.length() ,
-                 Impl::CudaTraits::UpperBoundGridCount / nGridX );
+       std::min( row_count , Impl::CudaTraits::UpperBoundGridCount / nGridX );
 
     const dim3 block( WARP_SIZE , nWarp , 1 );
     const dim3 grid(  nGridX , nGridY , 1 );
@@ -397,12 +398,14 @@ public:
       }
     }
 
+    const unsigned row_count = m_A.graph.row_map.dimension(0) - 1 ;
+
     // This thread is assigned:
     //   iBlockRow == block of the 'y' vector
     //   have_tensor, iA, jX, kY, tval == sparse tensor value
     // 
     for ( size_type iBlockRow = blockIdx.y ;
-                    iBlockRow < m_A.graph.row_map.length() ;
+                    iBlockRow < row_count ;
                     iBlockRow += gridDim.y ) {
 
       VectorScalar y_sum = 0 ;
@@ -640,6 +643,8 @@ public:
   {
     // Have at least nPool warps working on each tensor-block
 
+    const size_type row_count = A.graph.row_map.dimension(0) - 1 ;
+
     const size_type nPool = 8 ;
 
     const size_type maxWarp =
@@ -655,8 +660,7 @@ public:
     // Fill out block dimension with X
     // Fill out graph block-row count with Y
     const dim3 dGrid( ( A.block.dimension() + dBlock.y - 1 ) / dBlock.y ,
-                      A.graph.row_map.length() ,
-                      1 );
+                      row_count , 1 );
 
     // Maximum required to:
     //   Reduce one value of Y per thread

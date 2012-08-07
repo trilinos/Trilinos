@@ -565,6 +565,7 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
                      const ScalarType       bc_lower_value ,
                      const ScalarType       bc_upper_value )
   {
+    const size_t row_count = linsys_matrix.graph.row_map.dimension(0) - 1 ;
     DirichletBoundary op ;
     op.node_coords    = mesh.node_coords ;
     op.matrix         = linsys_matrix ;
@@ -573,7 +574,7 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
     op.bc_upper_z     = bc_upper_z ;
     op.bc_lower_value = bc_lower_value ;
     op.bc_upper_value = bc_upper_value ;
-    parallel_for( linsys_matrix.graph.row_map.length() , op );
+    parallel_for( row_count , op );
   }
 };
 
