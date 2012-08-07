@@ -1584,7 +1584,7 @@ namespace stk {
 
       m_iossMeshData = Teuchos::rcp( new stk::io::MeshData() );
       stk::io::MeshData& mesh_data = *m_iossMeshData;
-      mesh_data.m_input_region = &(*m_iossRegion);
+      mesh_data.m_input_region = m_iossRegion;
       stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
 
       stk::io::define_input_fields(mesh_data, meta_data);
@@ -2086,7 +2086,9 @@ namespace stk {
       std::string dbtype("exodusII");
 
       const stk::ParallelMachine& comm = m_bulkData->parallel();
-      stk::io::MeshData mesh_data;
+      stk::io::MeshData& mesh_data = *m_iossMeshData;
+      //stk::io::MeshData mesh_data;
+
       //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
       if (p_size == 1 && m_streaming_size)
         percept_create_output_mesh(out_filename, comm, bulk_data, mesh_data);
@@ -2100,6 +2102,7 @@ namespace stk {
       // Read and Write transient fields...
       double time = 0.0;
       stk::io::process_output_request(mesh_data, bulk_data, time);
+
 
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << " ... done" << std::endl;
     }

@@ -645,7 +645,7 @@ namespace stk {
       stk::mesh::BulkData *                 m_bulkData;
       stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
       //Teuchos::RCP<Ioss::Region>            m_iossRegion;
-      Ioss::Region*                         m_iossRegion;
+      Ioss::Region*                         m_iossRegion;   // the input region
       Teuchos::RCP<stk::io::MeshData>       m_iossMeshData;
       VectorFieldType*                      m_coordinatesField;
       int                                   m_spatialDim;
