@@ -67,6 +67,8 @@ namespace stk {
       m_bulkData(NULL),
       m_fixture(NULL),
       m_iossRegion(NULL),
+      m_iossMeshData_created(false),
+      m_sync_io_regions(false),
       m_coordinatesField(NULL),
       m_spatialDim(0),
       m_ownData(false),
@@ -87,6 +89,8 @@ namespace stk {
       m_bulkData(NULL),
       m_fixture(NULL),
       m_iossRegion(NULL),
+      m_iossMeshData_created(false),
+      m_sync_io_regions(false),
       m_coordinatesField(NULL),
       m_spatialDim(spatialDimension),
       m_ownData(false),
@@ -848,6 +852,8 @@ namespace stk {
       m_bulkData(bulkData),
         m_fixture(NULL),
         m_iossRegion(NULL),
+        m_iossMeshData_created(false),
+        m_sync_io_regions(false),
         m_coordinatesField(NULL),
         m_spatialDim(metaData->spatial_dimension()),
         m_ownData(false),
@@ -1583,6 +1589,7 @@ namespace stk {
       // The coordinates field will be set to the correct dimension.
 
       m_iossMeshData = Teuchos::rcp( new stk::io::MeshData() );
+      m_iossMeshData_created = true;
       stk::io::MeshData& mesh_data = *m_iossMeshData;
       mesh_data.m_input_region = m_iossRegion;
       stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
@@ -2086,8 +2093,8 @@ namespace stk {
       std::string dbtype("exodusII");
 
       const stk::ParallelMachine& comm = m_bulkData->parallel();
-      stk::io::MeshData& mesh_data = *m_iossMeshData;
-      //stk::io::MeshData mesh_data;
+      stk::io::MeshData mesh_data_0;
+      stk::io::MeshData& mesh_data = (m_iossMeshData_created && m_sync_io_regions) ? *m_iossMeshData : mesh_data_0;
 
       //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
       if (p_size == 1 && m_streaming_size)
@@ -2102,7 +2109,6 @@ namespace stk {
       // Read and Write transient fields...
       double time = 0.0;
       stk::io::process_output_request(mesh_data, bulk_data, time);
-
 
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << " ... done" << std::endl;
     }

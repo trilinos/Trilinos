@@ -368,6 +368,7 @@ namespace stk {
       /// set field to constant value
       void nodal_field_set_value(stk::mesh::FieldBase* field_x, double value=0.0);
 
+      void set_sync_io_regions(bool val) { m_sync_io_regions = val; }
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces
@@ -647,6 +648,8 @@ namespace stk {
       //Teuchos::RCP<Ioss::Region>            m_iossRegion;
       Ioss::Region*                         m_iossRegion;   // the input region
       Teuchos::RCP<stk::io::MeshData>       m_iossMeshData;
+      bool                                  m_iossMeshData_created;
+      bool                                  m_sync_io_regions;
       VectorFieldType*                      m_coordinatesField;
       int                                   m_spatialDim;
       bool                                  m_ownData;

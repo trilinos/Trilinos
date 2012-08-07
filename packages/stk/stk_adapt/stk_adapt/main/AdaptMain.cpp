@@ -509,6 +509,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
+      int sync_io_regions = 0;
       int delete_parents = 1;
       int print_memory_usage = 0;
       // a list of comma-separated names like Entity, Relation, Field, etc.
@@ -565,6 +566,7 @@ namespace stk {
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
       run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry snap to try to avoid bad meshes");
+      run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
@@ -840,6 +842,7 @@ namespace stk {
                       {
                         eMesh.open(input_mesh);
                         if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
+                        if (sync_io_regions == 1) eMesh.set_sync_io_regions(true);
                         if (!s_spatialDim) s_spatialDim = eMesh.get_spatial_dim();
 
                         Util::setRank(eMesh.get_rank());
