@@ -54,7 +54,7 @@ namespace Ifpack2 {
  Teuchos::RCP<Tpetra::RowMatrix> A;             // fill the elements of A,
  A->FillComplete();
 
- Ifpack2_LocalFilter LocalA(A);
+ Ifpack2_LocalFilter<Tpetra::RowMatrix> LocalA(A);
  \endcode
 
  Once created, \c LocalA defined, on each process, the submatrix 
