@@ -45,14 +45,14 @@ Ifpack2_DiagonalFilter modifies the elements on the diagonal.
 
 A typical use is as follows:
 \code
-Teuchos::RCP<Tpetra_RowMatrix> A;
+Teuchos::RCP<Tpetra::RowMatrix> A;
 // creates a matrix B such that
 // B(i,i) = AbsoluteThreshold * sgn(B(i,i)) + 
 //          RelativeThreshold * B(i,i)
 double AbsoluteThreshold = 1e-3;
 double RelativeThreshold = 1.01;
 
-Ifpack2_DiagonalFilter B(A, AbsoluteThreshold, RelativeThreshold);
+Ifpack2_DiagonalFilter<Tpetra::RowMatrix> B(A, AbsoluteThreshold, RelativeThreshold);
 \endcode
 
 Note: This operation only really makes sense if the Thresholds are not complex.
