@@ -800,7 +800,7 @@ private:
 
     // Create default view
     this->defaultViewLabel_ = "point";
-    CreateView(this->GetDefaultViewLabel(), getRangeMap(), getDomainMap());
+    this->CreateView(this->GetDefaultViewLabel(), getRangeMap(), getDomainMap());
 
     // Set current view
     this->currentViewLabel_ = this->GetDefaultViewLabel();

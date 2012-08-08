@@ -578,7 +578,7 @@ namespace MueLu {
 
       int count = 0;
       for (my_size_t i = 0; i < nVertices; i++) { 
-        if ((vertex2AggId[i] == MUELU_UNAGGREGATED) ) {
+        if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
           Nleftover++;
 
           // neighOfINode is the neighbor node list of node 'iNode'.

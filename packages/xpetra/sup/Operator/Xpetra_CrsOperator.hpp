@@ -453,7 +453,7 @@ private:
     
     // Create default view
     this->defaultViewLabel_ = "point";
-    CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());    
+    this->CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());    
     
     // Set current view
     this->currentViewLabel_ = this->GetDefaultViewLabel();
