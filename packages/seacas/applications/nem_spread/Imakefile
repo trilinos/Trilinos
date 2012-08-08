@@ -46,7 +46,7 @@ nem_spread.C             pe_input.C               pe_load_lb_info.C \
 pe_str_util.C            pe_util.C                pe_write_parExo_info.C \
 ps_restart.C             rf_allo.C                rf_mesh_param.C \
 rf_pre_proc.C            rf_util.C                sort_utils.C \
-md_timer_getrusage.C 	 md_wrap_generic_c.C
+md_timer_getrusage.C 	 
 
 LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) -lm
 OBJS = ${SRCS:.C=.o}
