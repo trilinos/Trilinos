@@ -156,7 +156,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   DropA.apply(x,y);
 
   // Apply via local matrix
-  LocalA.apply(x,y);
+  LocalA.apply(x,z);
 
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
