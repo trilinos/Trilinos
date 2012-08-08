@@ -7,6 +7,8 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+
 #include <stdio.h>
 
 #include "mpi.h"
@@ -36,7 +38,7 @@ namespace stk {
     bool PMMParallelReferenceMeshSmoother::check_convergence()
     {
       throw std::runtime_error("not implemented");
-      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_dmax ) );
+      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , stk::ReduceMax<1>( & m_dmax ) );
       bool cond = (m_num_invalid == 0 && m_dmax < gradNorm);
       return cond;
     }

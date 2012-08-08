@@ -294,9 +294,11 @@ namespace stk {
                 }
               //printHelp();
             }
+#if defined( STK_HAS_MPI )
           MPI_Barrier( m_comm );
-          //stk::RuntimeDoomedSymmetric() << "parse_command_line";
           MPI_Finalize();
+#endif
+          //stk::RuntimeDoomedSymmetric() << "parse_command_line";
           exit(1);
         }
 
@@ -639,7 +641,9 @@ namespace stk {
             }
           pclose(fpipe);
         }
+#if defined(STK_HAS_MPI)
       MPI_Barrier( comm );
+#endif
     }
 
 #if USE_GETCWD
@@ -818,7 +822,9 @@ namespace stk {
       if (err)
         throw std::runtime_error("ERROR in RunEnvironment::doLoadBalance: " + errString );
 
+#if defined(STK_HAS_MPI)
       MPI_Barrier( comm );
+#endif
     }
   } // namespace percept
 } // namespace stk
