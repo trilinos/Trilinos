@@ -75,11 +75,7 @@ template <typename T>
 
     /*! \brief Destructor
      */
-    ~MetricOutputManager() 
-    {
-      if (os_)
-        os_->flush();
-    };
+    ~MetricOutputManager() {}
 
     /*! \brief Return the output stream for  messages.
      */
