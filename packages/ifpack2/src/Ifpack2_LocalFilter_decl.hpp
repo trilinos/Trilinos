@@ -61,7 +61,7 @@ namespace Ifpack2 {
  corresponding to local rows and columns only. The creation 
  and use of
  \c LocalA is "cheap", as the elements of the local matrix are
- obtained through calls to ExtractMyRowCopy on the original, distributed
+ obtained through calls to getLocalRowCopy on the original, distributed
  matrix, say A. This means that \c A must remain in scope every time 
  \c LocalA is accessed.
 

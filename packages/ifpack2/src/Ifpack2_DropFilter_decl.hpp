@@ -51,7 +51,7 @@ Ifpack2::LocalFilter<Tpetra::RowMatrix> LocalA(A);
 // drop all elements below this value
 double DropTol = 1e-5;
 // now create the matrix, elements below DropTol are
-// not included in calls to getGlobalRowCopy() and apply()
+// not included in calls to getLocalRowCopy() and apply()
 // and Apply()
 Ifpack2::DropFilter<Tpetra::RowMatrix> DropA(LocalA,DropTol)
 \endcode
