@@ -1,5 +1,6 @@
 #include <cmath>
 #include <stdexcept>
+
 #include <sstream>
 #include <map>
 #include <stdio.h>
@@ -68,7 +69,7 @@ namespace stk {
       m_fixture(NULL),
       m_iossRegion(NULL),
       m_iossMeshData_created(false),
-      m_sync_io_regions(false),
+      m_sync_io_regions(true),
       m_coordinatesField(NULL),
       m_spatialDim(0),
       m_ownData(false),
@@ -90,7 +91,7 @@ namespace stk {
       m_fixture(NULL),
       m_iossRegion(NULL),
       m_iossMeshData_created(false),
-      m_sync_io_regions(false),
+      m_sync_io_regions(true),
       m_coordinatesField(NULL),
       m_spatialDim(spatialDimension),
       m_ownData(false),
@@ -853,7 +854,7 @@ namespace stk {
         m_fixture(NULL),
         m_iossRegion(NULL),
         m_iossMeshData_created(false),
-        m_sync_io_regions(false),
+        m_sync_io_regions(true),
         m_coordinatesField(NULL),
         m_spatialDim(metaData->spatial_dimension()),
         m_ownData(false),
@@ -2094,8 +2095,7 @@ namespace stk {
 
       const stk::ParallelMachine& comm = m_bulkData->parallel();
       stk::io::MeshData mesh_data_0;
-      stk::io::MeshData& mesh_data = (m_iossMeshData_created && m_sync_io_regions) ? *m_iossMeshData : mesh_data_0;
-      //stk::io::MeshData& mesh_data = (m_iossMeshData_created ) ? *m_iossMeshData : mesh_data_0;
+      stk::io::MeshData& mesh_data = (m_iossMeshData_created && m_sync_io_regions ) ? *m_iossMeshData : mesh_data_0;
 
       //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
       if (p_size == 1 && m_streaming_size)

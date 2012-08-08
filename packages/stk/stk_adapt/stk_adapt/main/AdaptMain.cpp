@@ -509,7 +509,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
-      int sync_io_regions = 0;
+      int sync_io_regions = 1;
       int delete_parents = 1;
       int print_memory_usage = 0;
       // a list of comma-separated names like Entity, Relation, Field, etc.
@@ -1053,6 +1053,7 @@ namespace stk {
 
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
+                            if (streaming_size) eMesh.setStreamingSize(m_M);
                             eMesh.save_as(output_mesh);
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
