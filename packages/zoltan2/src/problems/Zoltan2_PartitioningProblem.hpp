@@ -935,7 +935,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
           //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
           //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
           int arraySize = pl.getPtr<Array <int> >("pqParts")->size() - 1;
-          exceptionThrow = coordinateCnt == arraySize;
+          exceptionThrow = arraySize > 0;
           this->envConst_->localInputAssertion(__FILE__, __LINE__, "invalid length of cut lines. Size of cut lines should match with dimension of the input.",
                   		  exceptionThrow, BASIC_ASSERTION);
 
