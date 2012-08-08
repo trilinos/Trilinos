@@ -125,15 +125,15 @@ namespace Teuchos {
 template<class TypeTo, class TypeFrom>
 class ValueTypeConversionTraits {
 public:
-  //! Convert t to a TypeTo object.
+  //! Convert t from a TypeFrom object to a TypeTo object.
   static TypeTo convert (const TypeFrom t) {
     // This default implementation is just an implicit conversion and
     // may generate compiler warnings on dangerous conversions.
     return t;
   }
 
-  //! Convert t to a TypeTo object, in a more safe way.
-  static TypeTo safeConvert( const TypeFrom t ) {
+  //! Convert t from a TypeFrom object to a TypeTo object, in a more safe way.
+  static TypeTo safeConvert (const TypeFrom t) {
     // This default implementation is just an implicit conversion and
     // may generate compiler warnings on dangerous conversions.  No
     // runtime checking (e.g., for overflow) can be done by default;
@@ -157,13 +157,17 @@ public:
  * \code
  * double d = 3.14;
  * int i = Teuchos::as<double> (d);
+ * assert (i == 3);
  * \endcode
  * In a debug build of Teuchos, this will check for overflow, since
  * there are some double-precision floating-point values that do not
  * fit in a 32-bit integer.  In a release build, this will not check
  * for overflow.  You are responsible for knowing the difference.  If
  * you _always_ want to check for overflow (e.g., to validate user
- * input), use the asSafe() function.
+ * input), use the asSafe() function.  Note that conversion from a
+ * floating-point number to an integer, or from a higher-precision
+ * floating-point number to a lower-precision floating-point number,
+ * may truncate or round (as it does in the above example).
  *
  * "Debug build of Teuchos" means more than just building with debug
  * compiler flags.  It means debug checking was turned on when
@@ -173,6 +177,12 @@ public:
  * Note that enabling debug checking affects other operations in
  * Teuchos besides this conversion, and may have a significant
  * run-time cost, especially for RCP and ArrayRCP.
+ *
+ * \note We cannot promise that converting from a type T1 to another
+ *   type T2 and back again will result in the same T1 value with
+ *   which we started.  For example, converting from a long long to a
+ *   double may result in truncation, since long long has 63 bits of
+ *   significand and double has 53.
  *
  * Developer documentation
  * =======================
@@ -191,6 +201,13 @@ public:
  * types.  You must define both safeConvert() and convert() in the
  * specialization, since as() will call safeConvert() in a debug build
  * and convert() in a release build.
+ *
+ * \note The implementations below do not consider truncation of
+ *   floating-point values to be unsafe conversion.  For example,
+ *   converting from a long long (63 bits of significand) to a double
+ *   (53 bits of significand) may result in truncation, but we do not
+ *   consider this unsafe.  "Unsafe" mainly refers to overflow or lack
+ *   of representation.
  */
 template<class TypeTo, class TypeFrom>
 inline TypeTo as( const TypeFrom& t )
@@ -216,13 +233,18 @@ inline TypeTo as( const TypeFrom& t )
  * \code
  * double d = 3.14;
  * int i = Teuchos::as<double> (d);
+ * assert (i == 3);
  * \endcode
  * This function always checks for validity of the conversion before
  * attempting it.  Examples of invalid conversions are those which
  * would overflow, for example from double to int, if the
  * double-precision floating-point input is bigger than the largest
  * int or smaller than the smallest int.  If you only which to check
- * in a debug build, use the as() function instead.
+ * in a debug build, use the as() function instead.  Note that
+ * conversion from a floating-point number to an integer, or from a
+ * higher-precision floating-point number to a lower-precision
+ * floating-point number, may truncate or round (as it does in the
+ * above example).
  *
  * Developer documentation
  * =======================
@@ -237,6 +259,13 @@ inline TypeTo as( const TypeFrom& t )
  * specialization in the Teuchos namespace.  We provide
  * specializations of ValueTypeConversionTraits for a variety of
  * types.
+ *
+ * \note The implementations below do not consider truncation of
+ *   floating-point values to be unsafe conversion.  For example,
+ *   converting from a long long (63 bits of significand) to a double
+ *   (53 bits of significand) may result in truncation, but we do not
+ *   consider this unsafe.  "Unsafe" mainly refers to overflow or lack
+ *   of representation.
  */
 template<class TypeTo, class TypeFrom>
 inline TypeTo asSafe( const TypeFrom& t )

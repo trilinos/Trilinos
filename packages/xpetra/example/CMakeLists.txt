@@ -15,4 +15,4 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 #  DEPLIBS muelu-xpetra muelu
 #  )
 
-ADD_SUBDIRECTORY(Simple)
+#ADD_SUBDIRECTORY(Simple) depends on MueLu
