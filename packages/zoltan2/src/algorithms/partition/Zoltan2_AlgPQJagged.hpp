@@ -1441,7 +1441,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
       int iteration = 0;
       while (allDone != 0){
         iteration += 1;
-        /*
+/*
         if(comm->getRank() == 0)
         {
 #pragma omp single
@@ -1456,7 +1456,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             }
           }
         }
-        */
+*/
 
         for (size_t i = 0; i < total_part_count; ++i){
           if(i/2 < size_t(noCuts) && isDone[i/2]) continue;
@@ -1972,13 +1972,16 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   partId_t maxPartNo = 0;
 
   const partId_t *partNo = pl.getPtr<Array <partId_t> >("pqParts")->getRawPtr();
-  for (int i = 0; i < coordDim; ++i){
+  int partArraySize = pl.getPtr<Array <partId_t> >("pqParts")->size() - 1;
+
+  for (int i = 0; i < partArraySize; ++i){
     totalPartCount *= partNo[i];
     if(partNo[i] > maxPartNo) maxPartNo = partNo[i];
   }
   totalDimensionCut = totalPartCount - 1;
 
-  partId_t maxTotalCumulativePartCount = totalPartCount / partNo[coordDim];
+  //cout << "total:" << totalDimensionCut << " t:" << totalPartCount << endl;
+  //partId_t maxTotalCumulativePartCount = totalPartCount / partNo[partArraySize];
 
 
   //scalar_t *global_min_max_coordinates = allocMemory< scalar_t>(2 * maxTotalCumulativePartCount);
@@ -2168,8 +2171,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   env->timerStop(MACRO_TIMERS, "PQJagged Problem_Init");
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning");
-  for (int i = 0; i < coordDim; ++i){
+  for (int i = 0; i < partArraySize; ++i){
     if(partNo[i] == 1) continue;
+    int coordInd = i % coordDim;
     string istring = toString<int>(i);
     env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring);
     lno_t partitionCoordinateBegin = 0;
@@ -2181,7 +2185,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
     leftPartitions /= partNo[i];
 
-    scalar_t * pqCoord = pqJagged_coordinates[i];
+    scalar_t * pqCoord = pqJagged_coordinates[coordInd];
 
 
 /*
@@ -2321,26 +2325,30 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Part_Assignment");
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
   for(partId_t i = 0; i < totalPartCount;++i){
     lno_t begin = 0;
     lno_t end = inTotalCounts[i];
     if(i > 0) begin = inTotalCounts[i -1];
-
+/*
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel for
+#pragma omp for
 #endif
+    */
     for (lno_t ii = begin; ii < end; ++ii){
 
       lno_t k = partitionedPointCoordinates[ii];
       partIds[k] = i;
-/*
+      /*
       cout << "part of coordinate:";
       for(int iii = 0; iii < coordDim; ++iii){
         cout <<  pqJagged_coordinates[iii][k] << " ";
       }
       cout << i;
       cout << endl;
-*/
+       */
     }
     //cout << "begin:" << begin << " end:" << end << endl;
   }
