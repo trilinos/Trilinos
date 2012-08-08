@@ -1,12 +1,3 @@
-// @HEADER
-// ***********************************************************************
-//
-//         Zoltan2: Sandia Partitioning Ordering & Coloring Library
-//
-//                Copyright message goes here.   TODO
-//
-// ***********************************************************************
-
 Source file directories:
 ========================
 
