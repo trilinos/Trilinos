@@ -128,7 +128,12 @@ namespace stk {
 
     bool PerceptMesquiteMesh::select_bucket(stk::mesh::Bucket& bucket) const
     {
-      const CellTopologyData * cell_topo_data = m_eMesh->get_cell_topology(bucket);
+      return select_bucket(bucket, m_eMesh);
+    }
+
+    bool PerceptMesquiteMesh::select_bucket(stk::mesh::Bucket& bucket, PerceptMesh *eMesh) 
+    {
+      const CellTopologyData * cell_topo_data = eMesh->get_cell_topology(bucket);
       shards::CellTopology cell_topo(cell_topo_data);
 
       if (cell_topo.getKey() == shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()->key
@@ -143,6 +148,7 @@ namespace stk {
           return true;
         }
     }
+
     bool PerceptMesquiteMesh::select_element(stk::mesh::Entity& element) const
     {
       return select_bucket(element.bucket());

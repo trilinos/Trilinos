@@ -29,7 +29,8 @@
 #include "Stokhos_DenseDirectDivisionExpansionStrategy.hpp"
 #include "Stokhos_SPDDenseDirectDivisionExpansionStrategy.hpp"
 #include "Stokhos_MeanBasedDivisionExpansionStrategy.hpp"
-
+#include "Stokhos_GMRESDivisionExpansionStrategy.hpp"
+#include "Stokhos_CGDivisionExpansionStrategy.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
@@ -49,7 +50,37 @@ OrthogPolyExpansionBase(
     params = Teuchos::rcp(new Teuchos::ParameterList);
 
   // Create division strategy
-  std::string name = params->get("Division Strategy", "Dense Direct");
+  std::string name = params->get("Division Strategy","Dense Direct");
+  double tol = params->get("Division Tolerance", 1e-6);
+  int prec_iter = params->get("prec_iter", 1);
+  int max_it = params->get("max_it_div", 50);
+  std::string prec = params->get("Prec Strategy","None");
+  int PrecNum;
+  if (prec == "None")
+     PrecNum=0;
+  else if (prec == "Diag")
+     PrecNum=1;
+  else if (prec == "Jacobi")
+     PrecNum=2;
+  else if (prec == "GS")
+     PrecNum=3;
+  else if (prec == "Schur")
+     PrecNum=4;
+  else 
+     PrecNum=-1;
+  std::string linopt = params->get("Prec option", "whole");
+  int linear = 0;
+  if (linopt == "linear")
+	linear = 1; 
+
+  std::string schuropt = params->get("Schur option", "diag");
+  int diag = 0;
+  if (schuropt == "full")
+        diag = 1;
+
+  int equil = params->get("Equilibrate", 1);
+
+  
   if (name == "Dense Direct")
     division_strategy = 
       Teuchos::rcp(new DenseDirectDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk));
@@ -58,11 +89,17 @@ OrthogPolyExpansionBase(
       Teuchos::rcp(new SPDDenseDirectDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk));
   else if (name == "Mean-Based")
     division_strategy =
-      Teuchos::rcp(new MeanBasedDivisionExpansionStrategy<ordinal_type,value_type,node_type>());
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Invalid division strategy name" << name);
+      Teuchos::rcp(new MeanBasedDivisionExpansionStrategy<ordinal_type,value_type,node_type>()); 
+  else if (name == "GMRES")
+    division_strategy =
+      Teuchos::rcp(new GMRESDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk, prec_iter, tol, PrecNum, max_it, linear, diag ));
+  else if (name == "CG")
+    division_strategy =
+       Teuchos::rcp(new CGDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk, prec_iter, tol, PrecNum, max_it, linear, diag, equil));
+
+//    TEUCHOS_TEST_FOR_EXCEPTION(
+//      true, std::logic_error,
+//      "Invalid division strategy name" << name);
 }
 
 template <typename ordinal_type, typename value_type, typename node_type> 
@@ -83,9 +120,10 @@ unaryMinus(
   const value_type* ca = a.coeff();
 
   for (ordinal_type i=0; i<pc; i++)
+  {
     cc[i] = -ca[i];
+  }
 }
-
 template <typename ordinal_type, typename value_type, typename node_type> 
 void
 Stokhos::OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::
@@ -129,11 +167,11 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::divideEqual(const)");
 #endif
   ordinal_type pc = c.size();
-  value_type* cc = c.coeff();
-  for (ordinal_type i=0; i<pc; i++)
+  value_type* cc=c.coeff();
+  for (ordinal_type i=0; i<pc; i++){
     cc[i] /= val;
 }
-
+}
 template <typename ordinal_type, typename value_type, typename node_type> 
 void
 Stokhos::OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::

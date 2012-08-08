@@ -92,6 +92,6 @@ C   --   XN, YN, ZN - IN - the nodal coordinates
 10010  FORMAT (/, 1X, 'Node Ids are Global Ids',/,
      *   5X, 6X, 4X, 5 (3X, A8, :, 3X), :, /,
      &   (1X, 5 (3X, A8, :, 3X)))
-10020  FORMAT (1X, 'Node ', I6, 4X, 5 (1X, 1PE13.6), :, /,
+10020  FORMAT (1X, 'Node ', I9, 4X, 5 (1X, 1PE13.6), :, /,
      &   (1X, 5 (1X, 1PE13.6)))
       END

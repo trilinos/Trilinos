@@ -47,6 +47,7 @@
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 
 // Utilities
 #include "Teuchos_TimeMonitor.hpp"
@@ -76,13 +77,40 @@ const char *sg_prec_names[] = { "None",
 				"Stochastic" };
 
 // Stochastic division approaches
-enum SG_Div { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD };
-const int num_sg_div = 4;
-const SG_Div sg_div_values[] = { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD };
+enum SG_Div { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD, CGD };
+const int num_sg_div = 5;
+const SG_Div sg_div_values[] = { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD, CGD };
 const char *sg_div_names[] = { "Direct",
 			       "SPD-Direct",
 			       "Mean-Based", 
-			       "Quadrature" };
+			       "Quadrature",
+			       "CG"};
+
+// Stochastic division preconditioner approaches
+enum SG_DivPrec { NO, DIAG, JACOBI, GS, SCHUR };
+const int num_sg_divprec = 5;
+const SG_DivPrec sg_divprec_values[] = {NO, DIAG, JACOBI, GS, SCHUR};
+const char *sg_divprec_names[] = { "None",
+                               "Diag",
+                               "Jacobi",
+                               "GS", 
+                               "Schur"};
+
+
+// Option for Schur complement precond: full or diag D
+enum Schur_option { full, diag };
+const int num_schur_option = 2;
+const Schur_option Schur_option_values[] = { full, diag };
+const char *schur_option_names[] = { "full", "diag"};
+
+// Full matrix or linear matrix (pb = dim + 1 ) used for preconditioner
+enum Prec_option { whole, linear};
+const int num_prec_option = 2;
+const Prec_option Prec_option_values[] = { whole, linear };
+const char *prec_option_names[] = { "full", "linear"};
+
+#define _GNU_SOURCE 1
+#include <fenv.h>
 
 int main(int argc, char *argv[]) {
   typedef double MeshScalar;
@@ -98,6 +126,8 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
+
+//  feenableexcept(FE_ALL_EXCEPT);
 
   LocalOrdinal MyPID;
 
@@ -153,7 +183,7 @@ int main(int argc, char *argv[]) {
 		  num_krylov_method, krylov_method_values, krylov_method_names, 
 		  "Krylov solver method");
 
-    SG_Prec prec_method = MEAN;
+    SG_Prec prec_method = STOCHASTIC;
     CLP.setOption("prec_method", &prec_method, 
 		  num_sg_prec, sg_prec_values, sg_prec_names,
 		  "Preconditioner method");
@@ -162,9 +192,37 @@ int main(int argc, char *argv[]) {
     CLP.setOption("division_method", &division_method, 
 		  num_sg_div, sg_div_values, sg_div_names,
 		  "Stochastic division method");
+    
+    SG_DivPrec divprec_method = NO;
+    CLP.setOption("divprec_method", &divprec_method,
+                  num_sg_divprec, sg_divprec_values, sg_divprec_names,
+                  "Preconditioner for division method");
+    Schur_option schur_option = diag;
+    CLP.setOption("schur_option", &schur_option,
+                  num_schur_option, Schur_option_values, schur_option_names,
+                  "Schur option");
+    Prec_option prec_option = whole;
+    CLP.setOption("prec_option", &prec_option,
+                  num_prec_option, Prec_option_values, prec_option_names,
+                  "Prec option");
+
 
     double solver_tol = 1e-12;
     CLP.setOption("solver_tol", &solver_tol, "Outer solver tolerance");
+
+    double div_tol = 1e-6;
+    CLP.setOption("div_tol", &div_tol, "Tolerance in Iterative Solver");
+    
+    int prec_level = 1;
+    CLP.setOption("prec_level", &prec_level, "Level in Schur Complement Prec 0->Solve A0u0=g0 with division; 1->Form 1x1 Schur Complement");
+
+    int max_it_div = 50;
+    CLP.setOption("max_it_div", &max_it_div, "Maximum # of Iterations in Iterative Solver for Division");
+
+    bool equilibrate = true;
+    CLP.setOption("equilibrate", "noequilibrate", &equilibrate,
+                  "Equilibrate the linear system");
+
 
     CLP.parse( argc, argv );
 
@@ -181,10 +239,12 @@ int main(int argc, char *argv[]) {
 		<< "\torder              = " << order << std::endl
 		<< "\tnormalize_basis    = " << normalize_basis << std::endl
 		<< "\tsolver_method      = " << krylov_method_names[solver_method] << std::endl
-		<< "\tprec_method        = " << sg_prec_names[prec_method] 
-		<< std::endl
-		<< "\tdivision_method     = " << sg_div_names[division_method] 
-		<< std::endl;
+		<< "\tprec_method        = " << sg_prec_names[prec_method]	<< std::endl
+		<< "\tdivision_method    = " << sg_div_names[division_method] 	<< std::endl
+		<< "\tdiv_tol            = " << div_tol << std::endl
+		<< "\tdiv_prec           = " << sg_divprec_names[divprec_method]      << std::endl
+		<< "\tprec_level         = " << prec_level << std::endl
+  		<< "\tmax_it_div	 = " << max_it_div << std::endl;
     }
     bool nonlinear_expansion = false;
     if (randField == UNIFORM)
@@ -225,9 +285,42 @@ int main(int argc, char *argv[]) {
       expn_params->set("Division Strategy", "SPD Dense Direct");
       expn_params->set("Use Quadrature for Division", false);
     }
+    else if (division_method == CGD) {
+      expn_params->set("Division Strategy", "CG");
+      expn_params->set("Use Quadrature for Division", false);
+    }
+
     else if (division_method == QUAD) {
       expn_params->set("Use Quadrature for Division", true);
     }
+
+    if (divprec_method == NO)
+         expn_params->set("Prec Strategy", "None");
+    else if (divprec_method == DIAG)
+         expn_params->set("Prec Strategy", "Diag");
+    else if (divprec_method == JACOBI)
+         expn_params->set("Prec Strategy", "Jacobi");
+    else if (divprec_method == GS)
+         expn_params->set("Prec Strategy", "GS");
+    else if (divprec_method == SCHUR)
+         expn_params->set("Prec Strategy", "Schur");
+
+    if (schur_option == diag)
+        expn_params->set("Schur option", "diag");
+    else
+        expn_params->set("Schur option", "full");
+    if (prec_option == linear)
+        expn_params->set("Prec option", "linear");
+
+
+    if (equilibrate)
+	expn_params->set("Equilibrate", 1);
+    else
+	expn_params->set("Equilibrate", 0); 
+    expn_params->set("Division Tolerance", div_tol);
+    expn_params->set("prec_iter", prec_level);
+    expn_params->set("max_it_div", max_it_div);
+
     RCP<Stokhos::OrthogPolyExpansion<LocalOrdinal,BasisScalar> > expansion = 
       rcp(new Stokhos::QuadOrthogPolyExpansion<LocalOrdinal,BasisScalar>(
     	    basis, Cijk, quad, expn_params));
@@ -294,6 +387,7 @@ int main(int argc, char *argv[]) {
 	p_view[i].term(i,1) = 1.0 / basis_vals[i+1];
       }
     }
+       
 
     // Create preconditioner
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
@@ -339,12 +433,19 @@ int main(int argc, char *argv[]) {
 
     // Setup Belos solver
     RCP<ParameterList> belosParams = rcp(new ParameterList);
-    belosParams->set("Num Blocks", 20);
+   
+
+
+    belosParams->set("Flexible Gmres", false);
+
+    belosParams->set("Num Blocks", 500);//20
     belosParams->set("Convergence Tolerance", solver_tol);
     belosParams->set("Maximum Iterations", 1000);
     belosParams->set("Verbosity", 33);
     belosParams->set("Output Style", 1);
     belosParams->set("Output Frequency", 10);
+ 
+
     typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Belos::OperatorTraits<double,MV,OP> BOPT;
@@ -355,13 +456,15 @@ int main(int argc, char *argv[]) {
       problem->setRightPrec(M);
     problem->setProblem();
     RCP<Belos::SolverManager<double,MV,OP> > solver;
+  
+ 
     if (solver_method == CG)
       solver = rcp(new Belos::PseudoBlockCGSolMgr<double,MV,OP>(problem,
     								belosParams));
     else if (solver_method == GMRES)
-      solver = rcp(new Belos::PseudoBlockGmresSolMgr<double,MV,OP>(problem,
-    								   belosParams));
-
+      solver = rcp(new Belos::BlockGmresSolMgr<double,MV,OP>(problem, belosParams));
+    
+                                                        
     // Print initial residual norm
     std::vector<double> norm_f(1);
     BMVT::MvNorm(*f, norm_f);
@@ -397,6 +500,27 @@ int main(int argc, char *argv[]) {
     std::cout << "\nResponse =      " << std::endl;
     //Writer::writeDense(std::cout, g);
     Writer::writeDenseFile("stochastic_residual.mm", f);
+
+
+/*typedef Sacado::PCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > pce_type;
+     Teuchos::RCP<Stokhos::AlgebraicOrthogPolyExpansion<int,double> > alg_expn =
+      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(
+                     basis, Cijk, expn_params));
+    pce_type u_alg(alg_expn), v_alg(alg_expn);
+    u_alg.term(0,0) = 0.0;
+    for (int i=0; i<order; i++) {
+      u_alg.term(i,1) = 1.0;
+    }
+
+v_alg = 1.0 / (3.0 + u_alg);
+*/
+
+
+
+
+
+
+
 
     }
 

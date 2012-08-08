@@ -6,7 +6,7 @@
 
 #include <boost/unordered_map.hpp>
 
-#define DEBUG_GEOM_SNAP false
+#define DEBUG_GEOM_SNAP 0
 
 
 typedef std::vector<double> PointSet;

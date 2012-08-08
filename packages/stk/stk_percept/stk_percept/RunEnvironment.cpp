@@ -251,6 +251,7 @@ namespace stk {
 
       stk::Bootstrap::bootstrap();
 
+      if (0)
       for (int i = 0; i < m_argc; ++i) {
         const std::string s((m_argv)[i]);
         if ( s == "-h" || s == "-help" || s == "--help") {
@@ -270,7 +271,7 @@ namespace stk {
 
     }
 
-    void RunEnvironment::processCommandLine(int argc, char** argv)
+    int RunEnvironment::processCommandLine(int argc, char** argv)
     {
       int parallel_rank = stk::parallel_machine_rank(m_comm);
       int parallel_size = stk::parallel_machine_size(m_comm);
@@ -282,6 +283,8 @@ namespace stk {
 
       if (failed)
         {
+          std::cerr << std::endl;
+          std::cout << std::endl;
           if ( !parallel_rank)
             {
               std::cout << "Command Line error: echo of args:" << std::endl;
@@ -289,9 +292,12 @@ namespace stk {
                 {
                   std::cout << "failed = 1, arg[" << ii  << "] = " << (argv)[ii] << std::endl;
                 }
-              printHelp();
+              //printHelp();
             }
+#if defined( STK_HAS_MPI )
           MPI_Barrier( m_comm );
+          MPI_Finalize();
+#endif
           //stk::RuntimeDoomedSymmetric() << "parse_command_line";
           exit(1);
         }
@@ -321,6 +327,7 @@ namespace stk {
       //std::cout << "RunEnvironment::initialize done, m_workingDirectory= " << m_workingDirectory << std::endl;
       m_processCommandLine_invoked = true;
 
+      return 0;
     }
 
     RunEnvironment::~RunEnvironment()
@@ -358,7 +365,7 @@ namespace stk {
 
     void RunEnvironment::printHelp()
     {
-      std::cout << "Usage: stk_percept_mesh_mod  [options...]" << std::endl;
+      std::cout << "Usage: stk_adapt_exe  [options...]" << std::endl;
       clp.printHelpMessage("RunEnvironment",std::cout);
     }
 
@@ -431,7 +438,7 @@ namespace stk {
            we don't have an try/catch around this) when it encounters a
            unrecognized option or help is printed, use:
         */
-        clp.throwExceptions(true);
+        clp.throwExceptions(false);
 
         /* We now parse the command line where argc and argv are passed to
            the parse method.  Note that since we have turned off std::exception
@@ -441,6 +448,7 @@ namespace stk {
         Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn= Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ;
         try {
           parseReturn = clp.parse( argc, argv );
+          //std::cout << "tmp srk parseReturn = " << parseReturn << std::endl;
         }
         catch (std::exception exc)
           {
@@ -450,10 +458,14 @@ namespace stk {
 
         if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) {
 
-          return 0;
+          //std::cout << "tmp srk parseReturn = PARSE_HELP_PRINTED " << parseReturn << std::endl;
+
+          return 1;
         }
 
         if( parseReturn == Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION   ) {
+
+          // std::cout << "tmp srk parseReturn = PARSE_UNRECOGNIZED_OPTION " << parseReturn << std::endl;
 
           if (m_debug)
             out << "RunEnvironment::processCLP error, unrecognized option" << std::endl;
@@ -629,7 +641,9 @@ namespace stk {
             }
           pclose(fpipe);
         }
+#if defined(STK_HAS_MPI)
       MPI_Barrier( comm );
+#endif
     }
 
 #if USE_GETCWD
@@ -808,7 +822,9 @@ namespace stk {
       if (err)
         throw std::runtime_error("ERROR in RunEnvironment::doLoadBalance: " + errString );
 
+#if defined(STK_HAS_MPI)
       MPI_Barrier( comm );
+#endif
     }
   } // namespace percept
 } // namespace stk

@@ -499,6 +499,8 @@ namespace stk
                   }
               }
 
+            eMesh.save_as(input_files_loc+"quad_4_smooth.1.e");
+
             // save state of original mesh
             // field, dst, src: 
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());

@@ -109,7 +109,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
       CALL PCKSTR (1, STRA)
       LSTRA = LENSTR (STRA)
       WRITE (STRB, 10010, IOSTAT=IDUM) LENE(NELBLK), LENE(NELBLK)
-10010  FORMAT ('(', I8, '..', I8, ')')
+10010  FORMAT ('(', I10, '..', I10, ')')
       CALL PCKSTR (1, STRB)
       LSTRB = LENSTR (STRB)
 

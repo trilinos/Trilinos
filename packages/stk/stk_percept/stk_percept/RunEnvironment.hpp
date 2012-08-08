@@ -122,8 +122,8 @@ namespace stk {
       // Assumes already-initialized comm
       RunEnvironment(int *argc, char ***argv, stk::ParallelMachine comm, bool debug=false);
 
-      void processCommandLine(int argc, char **argv);
-      void processCommandLine() { processCommandLine(m_argc, m_argv); }
+      int processCommandLine(int argc, char **argv);
+      int processCommandLine() { return processCommandLine(m_argc, m_argv); }
 
       ~RunEnvironment();
 

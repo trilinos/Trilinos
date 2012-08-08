@@ -53,6 +53,7 @@ exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::AlgebraicOrthogPolyExpansion::exp()" 
 		       << ":  Method not implemented!");
+
 }
 
 template <typename ordinal_type, typename value_type>

@@ -570,7 +570,19 @@ bool SystemInterface::parse_options(int argc, char **argv)
       file2 = argv[option_index++];
     }
     if (option_index < argc) {
-      diff_file = argv[option_index++];
+      if (option_index+1 == argc) {
+	diff_file = argv[option_index++];
+      } else {
+	// Check for additional unknown arguments...
+	std::cerr << "\nERROR: Too many file arguments specified."
+		  << "\n       Probably options following filenames which is no longer allowed."
+		  << "\n       Unknown options are: ";
+	while (option_index < argc) {
+	  std::cerr << "'" << argv[option_index++] << "' ";
+	}
+	std::cerr << "\n\n";
+	return false;
+      }
     }
   } else {
     std::cerr << "\nERROR: no files specified\n\n";

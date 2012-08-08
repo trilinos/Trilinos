@@ -617,30 +617,11 @@
   <SubProject name="Xpetra">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Sacado" type="ILO"/>
-    <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="LO"/>
-    <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="LO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Thyra" type="ILO"/>
-    <Dependency name="Isorropia" type="ILO"/>
-    <Dependency name="AztecOO" type="ILO"/>
-    <Dependency name="Galeri" type="ILO"/>
-    <Dependency name="Amesos2" type="LO"/>
-    <Dependency name="Amesos" type="LO"/>
-    <Dependency name="Ifpack" type="LO"/>
-    <Dependency name="ML" type="LO"/>
-    <Dependency name="Belos" type="LO"/>
-    <Dependency name="Ifpack2" type="LO"/>
-    <Dependency name="Stratimikos" type="LO"/>
-    <Dependency name="Anasazi" type="ILO"/>
-    <Dependency name="Teko" type="ILO"/>
-    <Dependency name="TriKota" type="ILO"/>
-    <Dependency name="NOX" type="ILO"/>
-    <Dependency name="Stokhos" type="LO"/>
     <EmailAddresses>
       <Email address="xpetra-regression@software.sandia.gov"/>
     </EmailAddresses>

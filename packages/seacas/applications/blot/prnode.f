@@ -86,6 +86,6 @@ C   --   VARNP - IN - the selected nodal variables for the time step
 
 10000 FORMAT (/, 1X, 'NODAL TIME STEP VARIABLES')
 10010 FORMAT (1X, 'Row ',I4,', Column ',I1,' is variable ',A)
-10020 FORMAT (1X, 'Node', I6, 5 (1X, 1PE13.6), :, /,
-     &   (1X, 10X, 5 (1X, 1PE13.6)))
+10020 FORMAT (1X, 'Node', I9, 5 (1X, 1PE13.6), :, /,
+     &   (1X, 13X, 5 (1X, 1PE13.6)))
       END

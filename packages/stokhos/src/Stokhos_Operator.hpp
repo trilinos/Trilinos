@@ -1,3 +1,5 @@
+// $Id$ 
+// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -26,9 +28,34 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Sacado_ETPCE_OrthogPoly.hpp"
+#ifndef STOKHOS_OPERATOR_HPP
+#define STOKHOS_OPERATOR_HPP
 
-template <> 
-Teuchos::RCP<Sacado::ETPCE::OrthogPolyImpl<double, Stokhos::StandardStorage<int,double> >::expansion_type> Sacado::ETPCE::OrthogPolyImpl<double, Stokhos::StandardStorage<int,double> >::const_expansion_ =
- Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,double>);
+#include "Teuchos_SerialDenseMatrix.hpp"
 
+namespace Stokhos {
+    
+
+  class Operator {
+      
+  public:
+    //! Constructor
+     Operator() {} 
+  
+   
+    //! Destructor
+    virtual ~Operator() {}
+
+    //! Returns the result of a Operator inverse applied to a Teuchos::SerialDenseMatrix Input in Result.
+    
+    virtual int ApplyInverse(const Teuchos::SerialDenseMatrix<int, double>& Input, 
+                             Teuchos::SerialDenseMatrix<int, double>& Result, int m) const = 0;
+
+
+   
+   
+  }; // class Operator
+  
+} // namespace Stokhos
+
+#endif // STOKHOS_OPERATOR_HPP

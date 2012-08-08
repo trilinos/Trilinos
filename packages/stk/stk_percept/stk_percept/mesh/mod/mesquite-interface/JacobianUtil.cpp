@@ -67,17 +67,17 @@ namespace stk {
 
     bool JacobianUtil::jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d)
     {
-      A(0,0) = d[0]*(x[1][0] - x[0][0]);  
-      A(0,1) = d[1]*(x[2][0] - x[0][0]);
-      A(0,2) = d[2]*(x[3][0] - x[0][0]);
+      A(0,0) = (x[1][0] - x[0][0]);  
+      A(0,1) = (x[2][0] - x[0][0]);
+      A(0,2) = (x[3][0] - x[0][0]);
 
-      A(1,0) = d[0]*(x[1][1] - x[0][1]);
-      A(1,1) = d[1]*(x[2][1] - x[0][1]);
-      A(1,2) = d[2]*(x[3][1] - x[0][1]);
+      A(1,0) = (x[1][1] - x[0][1]);
+      A(1,1) = (x[2][1] - x[0][1]);
+      A(1,2) = (x[3][1] - x[0][1]);
 
-      A(2,0) = d[0]*(x[1][2] - x[0][2]);
-      A(2,1) = d[1]*(x[2][2] - x[0][2]);
-      A(2,2) = d[2]*(x[3][2] - x[0][2]);
+      A(2,0) = (x[1][2] - x[0][2]);
+      A(2,1) = (x[2][2] - x[0][2]);
+      A(2,2) = (x[3][2] - x[0][2]);
       if (m_scale_to_unit) scale_to_unit(A);
 
       detJ = det(A);
@@ -85,12 +85,13 @@ namespace stk {
     }
 
     /// modeled after code from Mesquite::IdealWeightMeanRatio::evaluate()
-    bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field)
+    bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+                                  const CellTopologyData * topology_data )
     {
       MsqError err;
-      MsqMatrix<3,3> J;
+      static MsqMatrix<3,3> J;
 
-      Vector3D n;			// Surface normal for 2D objects
+      static Vector3D n;			// Surface normal for 2D objects
 
       // Prism and Hex element descriptions
       static const int locs_prism[6][4] = {{0, 1, 2, 3}, {1, 2, 0, 4},
@@ -102,17 +103,20 @@ namespace stk {
                                          {6, 5, 7, 2}, {7, 6, 4, 3}};
       int i=0;
 
-      const Vector3D d_con(1.0, 1.0, 1.0);
+      static const Vector3D d_con(1.0, 1.0, 1.0);
 
       bool metric_valid = false;
-      const CellTopologyData *const topology_data = stk::percept::PerceptMesh::get_cell_topology(element);
-      shards::CellTopology topology(topology_data);
+      if (!topology_data) topology_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
       stk::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
       m_num_nodes = v_i.size();
 
-#define VERTEX_2D(vi) vector_2D( eMesh.field_data(coord_field, *vi.entity() ) )
-#define VERTEX_3D(vi) vector_3D( eMesh.field_data(coord_field, *vi.entity() ) )
+      //#define VERTEX_2D(vi) vector_2D( eMesh.field_data(coord_field, *vi.entity() ) )
+      //#define VERTEX_3D(vi) vector_3D( eMesh.field_data(coord_field, *vi.entity() ) )
+
+#define VERTEX_2D(vi) vector_2D( stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() ) )
+#define VERTEX_3D(vi) vector_3D( stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() ) )
+
 
       switch(topology_data->key) 
         {
@@ -221,7 +225,9 @@ namespace stk {
         case shards::Hexagon<6>::key:
 
         default:
-          throw std::runtime_error("unknown/unhandled topology in get_element_jacobians_at_vertices");
+          shards::CellTopology topology(topology_data);
+          std::cout << "topology = " << topology.getName() << std::endl;
+          throw std::runtime_error("unknown/unhandled topology in JacobianUtil");
           break;
 
         } // end switch over element type
