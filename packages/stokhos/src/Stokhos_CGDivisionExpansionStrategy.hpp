@@ -34,18 +34,19 @@
 #include "Stokhos_DivisionExpansionStrategy.hpp"
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include "Stokhos.hpp"
 #include "Stokhos_DiagPreconditioner.hpp"
 #include "Stokhos_JacobiPreconditioner.hpp"
 #include "Stokhos_GSPreconditioner.hpp"
 #include "Stokhos_SchurPreconditioner.hpp"
 #include "Stokhos_InversePreconditioner.hpp"
 #include "Stokhos_BlockPreconditioner.hpp"
+
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
+
 #include <iostream>
 #include <fstream>
 

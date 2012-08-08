@@ -94,8 +94,8 @@ create(Teuchos::ParameterList& sgParams)
 	Stokhos::QuadratureFactory<ordinal_type,value_type>::create(sgParams);
       quadParams.set("Stochastic Galerkin Quadrature", quad);
     }
-//    expansion = 
-//      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, quad, Teuchos::rcp(&expParams,false)));
+    expansion = 
+      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, quad, Teuchos::rcp(&expParams,false)));
    
 
  }
