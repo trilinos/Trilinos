@@ -47,13 +47,13 @@ A typical use is as follows:
 \code
 Teuchos::RCP<Tpetra::RowMatrix> A;
 // first localize the matrix
-Ifpack2::LocalFilter LocalA(A);
+Ifpack2::LocalFilter<Tpetra::RowMatrix> LocalA(A);
 // drop all elements below this value
 double DropTol = 1e-5;
 // now create the matrix, elements below DropTol are
-// not included in calls to ExtractMyRowCopy(), Multiply()
+// not included in calls to getGlobalRowCopy() and apply()
 // and Apply()
-Ifpack2::DropFilter DropA(LocalA,DropTol)
+Ifpack2::DropFilter<Tpetra::RowMatrix> DropA(LocalA,DropTol)
 \endcode
 
 <P>It is supposed that Ifpack2::DropFilter is used on localized matrices.
