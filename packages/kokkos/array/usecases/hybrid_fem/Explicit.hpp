@@ -452,57 +452,56 @@ PerformanceData run( comm::Machine machine ,
     perf_data.central_diff +=
       comm::max( machine , wall_clock.seconds() );
 
-    if ( print_sample ) {
+    if ( print_sample && 0 == step % 100 ) {
       KokkosArray::deep_copy( displacement_h , mesh_fields.displacement );
       KokkosArray::deep_copy( velocity_h ,     mesh_fields.velocity );
-    }
 
-    if ( 1 == print_sample ) {
+      if ( 1 == print_sample ) {
 
-      std::cout << "step " << step
-                << " : displacement(*,0,0) =" ;
-      for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
-        if ( model_coords_h(i,1) == 0 && model_coords_h(i,2) == 0 ) {
-          std::cout << " " << displacement_h(i,0,current_state);
+        std::cout << "step " << step
+                  << " : displacement(*,0,0) =" ;
+        for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
+          if ( model_coords_h(i,1) == 0 && model_coords_h(i,2) == 0 ) {
+            std::cout << " " << displacement_h(i,0,next_state);
+          }
         }
-      }
-      std::cout << std::endl ;
+        std::cout << std::endl ;
 
-      const float tol = 1.0e-6 ;
-      const int yb = global_elem_y ;
-      const int zb = global_elem_z ;
-      std::cout << "step " << step
-                << " : displacement(*," << yb << "," << zb << ") =" ;
-      for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
-        if ( fabs( model_coords_h(i,1) - yb ) < tol &&
-             fabs( model_coords_h(i,2) - zb ) < tol ) {
-          std::cout << " " << displacement_h(i,0,current_state);
+        const float tol = 1.0e-6 ;
+        const int yb = global_elem_y ;
+        const int zb = global_elem_z ;
+        std::cout << "step " << step
+                  << " : displacement(*," << yb << "," << zb << ") =" ;
+        for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
+          if ( fabs( model_coords_h(i,1) - yb ) < tol &&
+               fabs( model_coords_h(i,2) - zb ) < tol ) {
+            std::cout << " " << displacement_h(i,0,next_state);
+          }
         }
+        std::cout << std::endl ;
       }
-      std::cout << std::endl ;
+      else if ( 2 == print_sample ) {
 
-    }
-    else if ( 2 == print_sample ) {
+        const float tol = 1.0e-6 ;
+        const int xb = global_elem_x / 2 ;
+        const int yb = global_elem_y / 2 ;
+        const int zb = global_elem_z / 2 ;
 
-      const float tol = 1.0e-6 ;
-      const int xb = global_elem_x / 2 ;
-      const int yb = global_elem_y / 2 ;
-      const int zb = global_elem_z / 2 ;
-
-      for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
-        if ( fabs( model_coords_h(i,0) - xb ) < tol &&
-             fabs( model_coords_h(i,1) - yb ) < tol &&
-             fabs( model_coords_h(i,2) - zb ) < tol ) {
-          std::cout << "step " << step
-                    << " : displacement("
-                    << xb << "," << yb << "," << zb << ") = {" 
-                    << std::setprecision(6)
-                    << " " << displacement_h(i,0,next_state)
-                    << std::setprecision(2)
-                    << " " << displacement_h(i,1,next_state)
-                    << std::setprecision(2)
-                    << " " << displacement_h(i,2,next_state)
-                    << " }" << std::endl ;
+        for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
+          if ( fabs( model_coords_h(i,0) - xb ) < tol &&
+               fabs( model_coords_h(i,1) - yb ) < tol &&
+               fabs( model_coords_h(i,2) - zb ) < tol ) {
+            std::cout << "step " << step
+                      << " : displacement("
+                      << xb << "," << yb << "," << zb << ") = {" 
+                      << std::setprecision(6)
+                      << " " << displacement_h(i,0,next_state)
+                      << std::setprecision(2)
+                      << " " << displacement_h(i,1,next_state)
+                      << std::setprecision(2)
+                      << " " << displacement_h(i,2,next_state)
+                      << " }" << std::endl ;
+          }
         }
       }
     }
