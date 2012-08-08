@@ -85,5 +85,5 @@ C   --   Uses NVARNP, NVAREL of /DBNUMS/
       CALL SQZSTR (LABSTR, LSTR)
 
       RETURN
-10000  FORMAT (A, :, ' ', A, I6)
+10000  FORMAT (A, :, ' ', A, I12)
       END

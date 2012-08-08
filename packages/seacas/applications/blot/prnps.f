@@ -94,7 +94,7 @@ C   --   FACNPS - IN - the distribution factors for all sets
       CALL PCKSTR (1, STRA)
       LSTRA = LENSTR (STRA)
       WRITE (STRB, 10010, IOSTAT=IDUM) LNPSNL
-10010  FORMAT ('(index=', I6, ')')
+10010  FORMAT ('(index=', I9, ')')
       CALL PCKSTR (1, STRB)
       LSTRB = LENSTR (STRB)
 
@@ -146,7 +146,7 @@ C   --   FACNPS - IN - the distribution factors for all sets
 
 10020  FORMAT (/, 1X, 'Node Sets (Global Node Ids)', :, ' - ', A)
 10030  FORMAT (1X, 'Set', I9, 1X, A, ':',
-     &   I6, ' nodes', 1X, A,' name = "',A,'"')
+     &   I9, ' nodes', 1X, A,' name = "',A,'"')
 10040  FORMAT ((1X, 8I11))
 10050  FORMAT ((1X, 6 (2X, E11.4)))
       END
