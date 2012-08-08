@@ -6,10 +6,11 @@
 
 EXECUTABLE="proxyapp.exe"
 
-INC_PATH="-I. -I../../src"
+INC_PATH="-I. -I../femesh -I../../src"
 CXX="g++"
 
 CXX_SOURCES="./*.cpp"
+CXX_SOURCES="${CXX_SOURCES} ../femesh/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_Impl.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_MemorySpace.cpp"

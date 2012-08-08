@@ -222,7 +222,6 @@ void swap( KokkosArray::View< DataType , LayoutType , Device > & x ,
 
 namespace Explicit {
 
-template< class Device > struct Hex8Functions ;
 template< class Fields > struct InitializeElement ;
 template< class Fields > struct InitializeNode ;
 template< class Fields > struct GradFunctor ;

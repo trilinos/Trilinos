@@ -242,16 +242,19 @@ struct PerformanceData {
 };
 
 template< typename Scalar , class FixtureType >
-PerformanceData run( comm::Machine machine ,
-                     const int global_elem_x ,
-                     const int global_elem_y ,
-                     const int global_elem_z ,
+PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
+                     const int global_max_x ,
+                     const int global_max_y ,
+                     const int global_max_z ,
                      const int steps ,
                      const int print_sample )
 {
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
   typedef typename fixture_type::device_type  device_type ;
+  typedef typename fixture_type::FEMeshType   mesh_type ;
+
+  enum { ElementNodeCount = fixture_type::element_node_count };
 
   const int NumStates = 2;
 
@@ -276,29 +279,11 @@ PerformanceData run( comm::Machine machine ,
   const Scalar poissons_ratio=0.0;
   const Scalar  density = 8.0e-4;
 
+  const comm::Machine machine = mesh.parallel_data_map.machine ;
 
   PerformanceData perf_data ;
 
-  //------------------------------------
-  // FEMesh types:
-
-  typedef typename fixture_type::FEMeshType mesh_type ;
-
-  enum { ElementNodeCount = fixture_type::element_node_count };
-
-  // Generate mesh:
   KokkosArray::Impl::Timer wall_clock ;
-
-  mesh_type mesh =
-    fixture_type::create( comm::size( machine ) , comm::rank( machine ) ,
-                          global_elem_x , global_elem_y , global_elem_z );
-
-  mesh.parallel_data_map.machine = machine ;
-
-  device_type::fence();
-
-  perf_data.mesh_time = comm::max( machine , wall_clock.seconds() );
-  wall_clock.reset();
 
   //------------------------------------
   // Generate fields
@@ -329,7 +314,7 @@ PerformanceData run( comm::Machine machine ,
   initialize_element<Scalar,device_type>::apply( mesh_fields );
   initialize_node<   Scalar,device_type>::apply( mesh_fields );
 
-  const Scalar x_bc = global_elem_x ;
+  const Scalar x_bc = global_max_x ;
 
   // Initial condition on velocity to initiate a pulse along the X axis
   {
@@ -468,8 +453,8 @@ PerformanceData run( comm::Machine machine ,
         std::cout << std::endl ;
 
         const float tol = 1.0e-6 ;
-        const int yb = global_elem_y ;
-        const int zb = global_elem_z ;
+        const int yb = global_max_y ;
+        const int zb = global_max_z ;
         std::cout << "step " << step
                   << " : displacement(*," << yb << "," << zb << ") =" ;
         for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
@@ -483,9 +468,9 @@ PerformanceData run( comm::Machine machine ,
       else if ( 2 == print_sample ) {
 
         const float tol = 1.0e-6 ;
-        const int xb = global_elem_x / 2 ;
-        const int yb = global_elem_y / 2 ;
-        const int zb = global_elem_z / 2 ;
+        const int xb = global_max_x / 2 ;
+        const int yb = global_max_y / 2 ;
+        const int zb = global_max_z / 2 ;
 
         for ( int i = 0 ; i < mesh_fields.num_nodes_owned ; ++i ) {
           if ( fabs( model_coords_h(i,0) - xb ) < tol &&
@@ -513,14 +498,18 @@ PerformanceData run( comm::Machine machine ,
 
 template <typename Scalar, typename Device>
 static void driver( const char * label , comm::Machine machine ,
-                    int beg , int end , int runs )
+                    int elem_count_beg , int elem_count_end , int runs )
 {
+  typedef Scalar              scalar_type ;
+  typedef Device              device_type ;
   typedef double              coordinate_scalar_type ;
   typedef FixtureElementHex8  fixture_element_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
-                          Device ,
+                          device_type ,
                           fixture_element_type > fixture_type ;
+
+  typedef typename fixture_type::FEMeshType mesh_type ;
 
   const int space = 16 ;
 
@@ -531,7 +520,6 @@ static void driver( const char * label , comm::Machine machine ,
             << "\"" << std::endl;
   std::cout << std::left << std::setw(space) << "\"Element\" , ";
   std::cout << std::left << std::setw(space) << "\"Time Steps\" , ";
-  std::cout << std::left << std::setw(space) << "\"Setup\" , ";
   std::cout << std::left << std::setw(space) << "\"Initialize\" , ";
   std::cout << std::left << std::setw(space) << "\"ElemForce\" , ";
   std::cout << std::left << std::setw(space) << "\"NodeUpdate\" , ";
@@ -548,7 +536,6 @@ static void driver( const char * label , comm::Machine machine ,
   std::cout << std::left << std::setw(space) << "\"microsec\" , ";
   std::cout << std::left << std::setw(space) << "\"microsec\" , ";
   std::cout << std::left << std::setw(space) << "\"microsec\" , ";
-  std::cout << std::left << std::setw(space) << "\"microsec\" , ";
   std::cout << std::left << std::setw(space) << "\"microsec\"";
 
   std::cout << std::endl;
@@ -558,7 +545,7 @@ static void driver( const char * label , comm::Machine machine ,
   const int steps = 1000 ;
   const int print_sample = 0 ;
 
-  for(int i = beg ; i < end ; i *= 2 )
+  for(int i = elem_count_beg ; i < elem_count_end ; i *= 2 )
   {
     const int iz = std::max( 1 , (int) cbrt( ((double) i) / 2.0 ) );
     const int iy = iz + 1 ;
@@ -566,11 +553,17 @@ static void driver( const char * label , comm::Machine machine ,
     const int nelem = ix * iy * iz ;
     const int nnode = ( ix + 1 ) * ( iy + 1 ) * ( iz + 1 );
 
+    mesh_type mesh =
+      fixture_type::create( comm::size( machine ) ,
+                            comm::rank( machine ) , ix , iy , iz );
+
+    mesh.parallel_data_map.machine = machine ;
+
     PerformanceData perf , best ;
 
     for(int j = 0; j < runs; j++){
 
-     perf = run<Scalar,fixture_type>(machine,ix,iy,iz,steps,print_sample);
+     perf = run<Scalar,fixture_type>(mesh,ix,iy,iz,steps,print_sample);
 
      if( j == 0 ) {
        best = perf ;
@@ -588,7 +581,6 @@ static void driver( const char * label , comm::Machine machine ,
 
    std::cout << std::setw(space-3) << nelem << " , "
              << std::setw(space-3) << best.number_of_steps << " , "
-             << std::setw(space-3) << best.mesh_time * 1000000 << " , "
              << std::setw(space-3) << best.init_time * 1000000 << " , "
              << std::setw(space-3)
              << ( best.internal_force_time * 1000000 ) / best.number_of_steps << " , "
