@@ -515,31 +515,30 @@ static void driver( const char * label , comm::Machine machine ,
 
   if ( comm::rank( machine ) == 0 ) {
 
-  std::cout << std::endl ;
-  std::cout << "\"MiniExplicitDynamics with KokkosArray " << label
-            << "\"" << std::endl;
-  std::cout << std::left << std::setw(space) << "\"Element\" , ";
-  std::cout << std::left << std::setw(space) << "\"Time Steps\" , ";
-  std::cout << std::left << std::setw(space) << "\"Initialize\" , ";
-  std::cout << std::left << std::setw(space) << "\"ElemForce\" , ";
-  std::cout << std::left << std::setw(space) << "\"NodeUpdate\" , ";
-  std::cout << std::left << std::setw(space) << "\"NodeComm\" , ";
-  std::cout << std::left << std::setw(space) << "\"Time/Elem\" , ";
-  std::cout << std::left << std::setw(space) << "\"Time/Node\"";
+    std::cout << std::endl ;
+    std::cout << "\"MiniExplicitDynamics with KokkosArray " << label
+              << "\"" << std::endl;
+    std::cout << std::left << std::setw(space) << "\"Element\" , ";
+    std::cout << std::left << std::setw(space) << "\"Time Steps\" , ";
+    std::cout << std::left << std::setw(space) << "\"Initialize\" , ";
+    std::cout << std::left << std::setw(space) << "\"ElemForce\" , ";
+    std::cout << std::left << std::setw(space) << "\"NodeUpdate\" , ";
+    std::cout << std::left << std::setw(space) << "\"NodeComm\" , ";
+    std::cout << std::left << std::setw(space) << "\"Time/Elem\" , ";
+    std::cout << std::left << std::setw(space) << "\"Time/Node\"";
 
-  std::cout << std::endl;
+    std::cout << std::endl;
 
-  std::cout << std::left << std::setw(space) << "\"count\" , ";
-  std::cout << std::left << std::setw(space) << "\"iterations\" , ";
-  std::cout << std::left << std::setw(space) << "\"microsec\" , ";
-  std::cout << std::left << std::setw(space) << "\"microsec\" , ";
-  std::cout << std::left << std::setw(space) << "\"microsec\" , ";
-  std::cout << std::left << std::setw(space) << "\"microsec\" , ";
-  std::cout << std::left << std::setw(space) << "\"microsec\" , ";
-  std::cout << std::left << std::setw(space) << "\"microsec\"";
+    std::cout << std::left << std::setw(space) << "\"count\" , ";
+    std::cout << std::left << std::setw(space) << "\"iterations\" , ";
+    std::cout << std::left << std::setw(space) << "\"microsec\" , ";
+    std::cout << std::left << std::setw(space) << "\"microsec\" , ";
+    std::cout << std::left << std::setw(space) << "\"microsec\" , ";
+    std::cout << std::left << std::setw(space) << "\"microsec\" , ";
+    std::cout << std::left << std::setw(space) << "\"microsec\" , ";
+    std::cout << std::left << std::setw(space) << "\"microsec\"";
 
-  std::cout << std::endl;
-
+    std::cout << std::endl;
   }
 
   const int steps = 1000 ;

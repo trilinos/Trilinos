@@ -161,16 +161,25 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class FixtureType >
-PerformanceData run( comm::Machine machine ,
-                     const int global_elem_x ,
-                     const int global_elem_y ,
-                     const int global_elem_z ,
+PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
+                     const int global_max_x ,
+                     const int global_max_y ,
+                     const int global_max_z ,
                      const bool print_error )
 {
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
   typedef typename fixture_type::device_type  device_type;
   typedef typename device_type::size_type     size_type ;
+
+  typedef typename fixture_type::FEMeshType mesh_type ;
+  typedef typename fixture_type::coordinate_scalar_type coordinate_scalar_type ;
+
+  enum { ElementNodeCount = fixture_type::element_node_count };
+
+  const comm::Machine machine = mesh.parallel_data_map.machine ;
+
+  const size_t element_count = mesh.elem_node_ids.dimension(0);
 
   //------------------------------------
   // The amount of nonlinearity is proportional to the ratio
@@ -179,7 +188,7 @@ PerformanceData run( comm::Machine machine ,
 
   const ManufacturedSolution 
     exact_solution( /* zmin */ 0 ,
-                    /* zmax */ global_elem_z , 
+                    /* zmax */ global_max_z , 
                     /* T(zmin) */ 1 ,
                     /* T(zmax) */ 20 );
 
@@ -200,14 +209,6 @@ PerformanceData run( comm::Machine machine ,
   double residual_norm = 0 ;
 
   PerformanceData perf_data ;
-
-  //------------------------------------
-  // FEMesh types:
-
-  typedef typename fixture_type::coordinate_scalar_type coordinate_scalar_type ;
-  typedef typename fixture_type::FEMeshType mesh_type ;
-
-  enum { ElementNodeCount = fixture_type::element_node_count };
 
   //------------------------------------
   // Sparse linear system types:
@@ -240,17 +241,6 @@ PerformanceData run( comm::Machine machine ,
 
   KokkosArray::Impl::Timer wall_clock ;
 
-  mesh_type mesh =
-    fixture_type::create( comm::size( machine ) , comm::rank( machine ) ,
-                          global_elem_x , global_elem_y , global_elem_z );
-
-  mesh.parallel_data_map.machine = machine ;
-
-  device_type::fence();
-  perf_data.mesh_time = comm::max( machine , wall_clock.seconds() );
-
-  const size_t element_count = mesh.elem_node_ids.dimension(0);
-
   //------------------------------------
   // Generate sparse matrix graph and element->graph map.
 
@@ -259,6 +249,7 @@ PerformanceData run( comm::Machine machine ,
   graph_factory::create( mesh , jacobian.graph , element_map );
 
   device_type::fence();
+
   perf_data.graph_time = comm::max( machine , wall_clock.seconds() );
 
   //------------------------------------
@@ -483,39 +474,59 @@ PerformanceData run( comm::Machine machine ,
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class Device , class FixtureElement >
-void driver( const char * label ,
-             comm::Machine machine , int beg , int end , int runs )
+void driver( const char * label , comm::Machine machine ,
+             const int elem_count_beg ,
+             const int elem_count_end , int runs )
 {
-  typedef double coordinate_scalar_type ;
+  typedef Scalar          scalar_type ;
+  typedef Device          device_type ;
+  typedef double          coordinate_scalar_type ;
+  typedef FixtureElement  fixture_element_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
-                          Device ,
-                          FixtureElement > fixture_type ;
+                          device_type ,
+                          fixture_element_type > fixture_type ;
 
-  if ( beg == 0 || end == 0 || runs == 0 ) return ;
+  typedef typename fixture_type::FEMeshType mesh_type ;
+
+  if ( elem_count_beg == 0 || elem_count_end == 0 || runs == 0 ) return ;
 
   if ( comm::rank( machine ) == 0 ) {
     std::cout << std::endl ;
     std::cout << "\"KokkosArray::HybridFE::NonLinear " << label << "\"" << std::endl;
     std::cout
-      << "\"Size\" ,  \"Meshing\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\" , \"CG-Iter\" , \"Newton-Iter\" , \"Max-node-error\"" 
+      << "\"Size\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\" , \"CG-Iter\" , \"Newton-Iter\" , \"Max-node-error\"" 
       << std::endl
-      << "\"elems\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
+      << "\"elems\" , , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
       << std::endl ;
   }
 
-  for(int i = beg ; i < end ; i *= 2 )
+  const bool print_sample = 0 ;
+  const double x_curve = 1.0 ;
+  const double y_curve = 1.0 ;
+  const double z_curve = 0.8 ;
+
+  for(int i = elem_count_beg ; i < elem_count_end ; i *= 2 )
   {
     const int ix = std::max( 1 , (int) cbrt( ((double) i) / 2.0 ) );
     const int iy = 1 + ix ;
     const int iz = 2 * iy ;
     const int n  = ix * iy * iz ;
 
+    mesh_type mesh =
+      fixture_type::create( comm::size( machine ) ,
+                            comm::rank( machine ) ,
+                            ix , iy , iz ,
+                            x_curve , y_curve , z_curve );
+
+    mesh.parallel_data_map.machine = machine ;
+
+
     PerformanceData perf_data , perf_best ;
 
     for(int j = 0; j < runs; j++){
 
-      perf_data = run<Scalar,fixture_type>(machine,ix,iy,iz, false );
+      perf_data = run<Scalar,fixture_type>(mesh,ix,iy,iz, print_sample );
 
       if( j == 0 ) {
         perf_best = perf_data ;
@@ -528,7 +539,6 @@ void driver( const char * label ,
     if ( comm::rank( machine ) == 0 ) {
 
       std::cout << std::setw(8) << n << " , "
-                << std::setw(10) << perf_best.mesh_time * 1000 << " , "
                 << std::setw(10) << perf_best.graph_time * 1000 << " , "
                 << std::setw(10) << perf_best.elem_time * 1000 << " , "
                 << std::setw(10) << perf_best.matrix_gather_fill_time * 1000 << " , "

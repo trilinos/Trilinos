@@ -46,6 +46,7 @@
 
 /* #define KOKKOS_ARRAY_BOUNDS_CHECK 1 */
 
+#include <cmath>
 #include <stdexcept>
 #include <sstream>
 
@@ -222,7 +223,10 @@ struct BoxMeshFixture {
                             const size_t proc_local ,
                             const size_t elems_x ,
                             const size_t elems_y ,
-                            const size_t elems_z )
+                            const size_t elems_z ,
+                            const double x_coord_curve = 1 ,
+                            const double y_coord_curve = 1 ,
+                            const double z_coord_curve = 1 )
   {
     const size_t vertices_x = elems_x + 1 ;
     const size_t vertices_y = elems_y + 1 ;
@@ -456,8 +460,9 @@ struct BoxMeshFixture {
     // Verify setup with node coordinates matching grid indices.
     verify( node_coords , elem_node_ids , node_elem_ids );
 
-    // Scale node coordinates to problem size.
-
+    //------------------------------------
+    // Scale node coordinates to problem extent with 
+    // nonlinear mapping.
     {
       const double problem_extent[3] =
         { ( vertex_box_global[0][1] - 1 ) ,
@@ -470,9 +475,13 @@ struct BoxMeshFixture {
           ( node_box_global[2][1] - 1 ) };
 
       for ( size_t i = 0 ; i < node_count_total ; ++i ) {
-        node_coords(i,0) = node_coords(i,0) * problem_extent[0] / grid_extent[0] ;
-        node_coords(i,1) = node_coords(i,1) * problem_extent[1] / grid_extent[1] ;
-        node_coords(i,2) = node_coords(i,2) * problem_extent[2] / grid_extent[2] ;
+        const double x_unit = node_coords(i,0) / grid_extent[0] ;
+        const double y_unit = node_coords(i,1) / grid_extent[1] ;
+        const double z_unit = node_coords(i,2) / grid_extent[2] ;
+
+        node_coords(i,0) = problem_extent[0] * std::pow( x_unit , x_coord_curve );
+        node_coords(i,1) = problem_extent[1] * std::pow( y_unit , y_coord_curve );
+        node_coords(i,2) = problem_extent[2] * std::pow( z_unit , z_coord_curve );
       }
     }
 
