@@ -509,7 +509,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
-      int sync_io_regions = 1;
+      int sync_io_regions = 0;
       int delete_parents = 1;
       int print_memory_usage = 0;
       // a list of comma-separated names like Entity, Relation, Field, etc.
