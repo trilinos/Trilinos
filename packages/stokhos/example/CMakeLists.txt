@@ -1,6 +1,24 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
+TRIBITS_ADD_EXECUTABLE(
+  GMRES_example
+  SOURCES GMRES.cpp
+  COMM serial mpi
+  DEPLIBS stokhos
+  )
+ 
+TRIBITS_ADD_EXECUTABLE(
+  CG_example
+  SOURCES CG.cpp
+  COMM serial mpi
+  DEPLIBS stokhos
+  )
+
+
+
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   hermite_example
   SOURCES hermite_example.cpp

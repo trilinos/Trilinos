@@ -47,7 +47,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-
 // Typename of PC expansion type
 typedef Sacado::PCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > pce_type;
 
@@ -62,18 +61,6 @@ typedef Sacado::PCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > p
   const int num_division_prec = 5;
   const Division_Prec Division_prec_values[] = { None, Diag, Jacobi, GS, Schur };
   const char *division_prec_names[] = { "None", "Diag", "Jacobi","GS","Schur"};
-
-// Option for Schur complement precond: full or diag D
-   enum Schur_option { full, diag };
-   const int num_schur_option = 2;
-   const Schur_option Schur_option_values[] = { full, diag };
-   const char *schur_option_names[] = { "full", "diag"};
-
-// Full matrix or linear matrix (pb = dim + 1 ) used for preconditioner
-    enum Prec_option { whole, linear};
-    const int num_prec_option = 2;
-    const Prec_option Prec_option_values[] = { whole, linear };
-    const char *prec_option_names[] = { "full", "linear"};
 
 
 int main(int argc, char **argv)
@@ -102,11 +89,7 @@ int main(int argc, char **argv)
     CLP.setOption("tolerance", &tolerance, "Tolerance in Iterative Solver");
     int prec_level = 1;
     CLP.setOption("prec_level", &prec_level, "Level in Schur Complement Prec 0->Solve A0u0=g0 with division; 1->Form 1x1 Schur Complement");
-    int max_it_div = 50;
-    CLP.setOption("max_it_div", &max_it_div, "Maximum # of iterations for division iterative solver");
-    bool equilibrate = true;
-    CLP.setOption("equilibrate", "noequilibrate", &equilibrate,
-                  "Equilibrate the linear system");
+
 
     Division_Solver solve_method = Dense_Direct;
     CLP.setOption("solver", &solve_method,
@@ -116,14 +99,7 @@ int main(int argc, char **argv)
     CLP.setOption("prec", &prec_method,
                   num_division_prec, Division_prec_values, division_prec_names,
                   "Preconditioner Method");
-    Schur_option schur_option = diag;
-    CLP.setOption("schur_option", &schur_option,
-                  num_schur_option, Schur_option_values, schur_option_names,
-                  "Schur option");
-    Prec_option prec_option = whole;
-    CLP.setOption("prec_option", &prec_option,
-                  num_prec_option, Prec_option_values, prec_option_names,
-                  "Prec option");
+
     CLP.parse( argc, argv );
 
     // Basis
@@ -145,13 +121,12 @@ int main(int argc, char **argv)
     // Expansion methods
     Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,double> > quad_expn = 
       Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(
-		     basis, Cijk, quad)); 
+		     basis, Cijk, quad));
     Teuchos::RCP<Teuchos::ParameterList> alg_params = 
       Teuchos::rcp(new Teuchos::ParameterList);
     
-    alg_params->set("Division Tolerance", tolerance);
+    alg_params->set("Tolerance", tolerance);
     alg_params->set("prec_iter", prec_level);
-    alg_params->set("max_it_div", max_it_div);
     if (solve_method == Dense_Direct)
          alg_params->set("Division Strategy", "Dense Direct");
     else if (solve_method == GMRES)
@@ -170,27 +145,13 @@ int main(int argc, char **argv)
          alg_params->set("Prec Strategy", "GS");
     else if (prec_method == Schur)
          alg_params->set("Prec Strategy", "Schur");
-   
-    if (schur_option == diag)
-	alg_params->set("Schur option", "diag");
-    else 
-	alg_params->set("Schur option", "full");
-    if (prec_option == linear)
-	alg_params->set("Prec option", "linear");
-
-    alg_params->set("Use Quadrature for Division", false);
-   
-    if (equilibrate)
-        alg_params->set("Equilibrate", 1);
-    else
-        alg_params->set("Equilibrate", 0);
 
 
-     
-    Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,double> > alg_expn = 
-      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(
-		     basis, Cijk, quad, alg_params));
- 
+        
+    Teuchos::RCP<Stokhos::AlgebraicOrthogPolyExpansion<int,double> > alg_expn = 
+      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(
+		     basis, Cijk, alg_params));
+
     // Polynomial expansions
     pce_type u_quad(quad_expn), v_quad(quad_expn);
     u_quad.term(0,0) = 0.0;
@@ -202,18 +163,11 @@ int main(int argc, char **argv)
     for (int i=0; i<d; i++) {
       u_alg.term(i,1) = 1.0;
     }
-    
-      // Compute expansion
-     double scale = std::exp(shift); 
-    pce_type b_alg = std::exp(shift + u_alg)/scale;
-    pce_type b_quad = std::exp(shift + u_quad)/scale;
-//      v_alg = (1.0/scale) / b_alg;
-//      v_quad = (1.0/scale) / b_quad;
-	v_alg = 1.0 / std::exp(shift + u_alg);
-        v_quad = 1.0 /std::exp(shift + u_quad);
 
-//    std::cout << b_alg.getOrthogPolyApprox() << std::endl;
-    
+    // Compute expansion
+    v_quad = 1.0 / (shift + u_quad);
+    v_alg = 1.0 / (shift + u_alg);
+
     // Print u and v
 //    std::cout << "quadrature:   v = 1.0 / (shift + u) = ";
 //    v_quad.print(std::cout);
