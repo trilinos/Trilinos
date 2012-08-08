@@ -2316,6 +2316,9 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring);
   }
 
+  env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning");
+
+  env->timerStart(MACRO_TIMERS, "PQJagged Part_Assignment");
   partId_t *partIds = NULL;
   ArrayRCP<partId_t> partId;
   if(numLocalCoords > 0){
@@ -2324,7 +2327,6 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
   }
 
 
-  env->timerStart(MACRO_TIMERS, "PQJagged Part_Assignment");
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
@@ -2358,9 +2360,10 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     gnoList = arcpFromArrayView(pqJagged_gnos);
   }
 
+  env->timerStart(MACRO_TIMERS, "PQJagged Solution_Part_Assignment");
   solution->setParts(gnoList, partId);
+  env->timerStop(MACRO_TIMERS, "PQJagged Solution_Part_Assignment");
 
-  env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning");
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
 
