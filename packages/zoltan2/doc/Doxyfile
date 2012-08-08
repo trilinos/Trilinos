@@ -567,7 +567,7 @@ TAGFILES = \
   $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=../$(TRILINOS_HOME)/packages/epetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=../$(TRILINOS_HOME)/packages/tpetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/kokkos.tag=../$(TRILINOS_HOME)/packages/kokkos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag=../$(TRILINOS_HOME)/MueLu/muelu/xpetra/doc/html
+  $(TRILINOS_HOME)/packages/common/tag_files/xpetra.tag=../$(TRILINOS_HOME)/packages/xpetra/doc/html
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create 
 # a tag file that is based on the input files it reads. 

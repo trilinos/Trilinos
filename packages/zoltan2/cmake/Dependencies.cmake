@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Tpetra Kokkos Epetra Teuchos Xpetra MueLu)
+SET(LIB_REQUIRED_DEP_PACKAGES Tpetra Kokkos Epetra Teuchos Xpetra)
 SET(LIB_OPTIONAL_DEP_PACKAGES Anasazi)
 SET(TEST_REQUIRED_DEP_PACKAGES Tpetra Kokkos Epetra Teuchos Xpetra MueLu)
 SET(TEST_OPTIONAL_DEP_PACKAGES Zoltan)
