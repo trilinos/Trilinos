@@ -2,6 +2,8 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseSolver.hpp"
 
+//Computes the exact Schur complement block LU decomposition
+
 
 Stokhos::BlockPreconditioner::
 BlockPreconditioner(
@@ -100,8 +102,7 @@ ApplyInverse(const Teuchos::SerialDenseMatrix<int, double>& Input,
       for (int i=s; i<c; i++)
           Result(i,0)=r2(-s+i,0)/D(-s+i, -s+i);
 
-     std::cout << "Result = " << Result << std::endl; 
-      
+   
   
  return 0;
 }

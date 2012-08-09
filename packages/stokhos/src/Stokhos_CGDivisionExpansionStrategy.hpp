@@ -209,12 +209,6 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
       }
     }
   
-  std::ofstream myfile;
-  myfile.open ("A.txt");
-  myfile << *A;
-  myfile.close();
-
-
 // Compute B
     B->putScalar(0.0);
     for (ordinal_type i=0; i<pa; i++)
@@ -224,7 +218,7 @@ Teuchos::SerialDenseMatrix<ordinal_type,value_type> D(sz, 1);
 //Equilibrate the linear system
 if (equil == 1){
 	
-	//(i,1) entry of D = sqrt(one-norm(row i(A)))
+	//Create diag mtx of max row entries
 	for (int i=0; i<sz; i++){
 		Teuchos::SerialDenseMatrix<int, double> r(Teuchos::View, *A, 1, sz, i, 0);
 		D(i,0)=sqrt(r.normOne());
@@ -265,11 +259,17 @@ if (linear == 1){
         }
       }
     }
-  CG(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *M, diag);
-  std::ofstream file;
-  file.open ("M.txt");
-  file << *M;
-  file.close();
+
+ //Scale M
+ if (equil == 1){
+     //Compute inv(D)*M*inv(D)
+	for (int i=0; i<sz; i++){
+        	for (int j=0; j<sz; j++){
+            		(*M)(i,j)=(*M)(i,j)/(D(i,0)*D(j,0));
+            }
+ 	}
+  }
+         CG(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *M, diag);
 }
 
 else{
@@ -362,22 +362,6 @@ CG(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMatri
     k++;
     }                      
  
-    //Compute K*inv(M)
-    Stokhos::SchurPreconditioner precond(M, order, m, diag);
-    Teuchos::SerialDenseMatrix<int, double> MM(n,n); 
-    for (int i=0; i<n; i++){
-       Teuchos::SerialDenseMatrix<int, double> Ii(n,1);
-       Ii(i,0)=1;	
-       precond.ApplyInverse(Ii,Ii,prec_iter);
-       for (int j=0; j<n; j++)
-		MM(j,i)=Ii(j,0);
-       }
-  Teuchos::SerialDenseMatrix<int, double> AM(n,n);
-  AM.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, A, MM, 0.0);
-  std::ofstream file;
-  file.open ("AinvM.txt");
-  file << AM;
-  file.close(); 
   std::cout << "iteration count  " << k << std::endl;
   return 0; 
 }

@@ -123,14 +123,20 @@ const int num_prec_option = 2;
 const Prec_option Prec_option_values[] = { whole, linear };
 const char *prec_option_names[] = { "full", "linear"};
 
-#define _GNU_SOURCE 1
-#include <fenv.h>
+
+
 
 int main(int argc, char *argv[]) {
   typedef double MeshScalar;
   typedef double BasisScalar;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+
+  double g_mean_exp = 1.906587e-01;      // expected response mean
+  double g_std_dev_exp = 8.680605e-02;  // expected response std. dev.
+  double g_tol = 1e-6;               // tolerance on determining success
+
+
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -547,27 +553,46 @@ int main(int argc, char *argv[]) {
     Writer::writeDenseFile("stochastic_residual.mm", f);
 
 
-/*typedef Sacado::PCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > pce_type;
-     Teuchos::RCP<Stokhos::AlgebraicOrthogPolyExpansion<int,double> > alg_expn =
-      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(
-                     basis, Cijk, expn_params));
-    pce_type u_alg(alg_expn), v_alg(alg_expn);
-    u_alg.term(0,0) = 0.0;
-    for (int i=0; i<order; i++) {
-      u_alg.term(i,1) = 1.0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+    double g_mean = g->get1dView()[0].mean();
+    double g_std_dev = g->get1dView()[0].standard_deviation();
+    std::cout << "g mean = " << g_mean << std::endl;
+    std::cout << "g std_dev = " << g_std_dev << std::endl;
+    bool passed = false;
+    if (norm_f[0] < 1.0e-10 &&
+        std::abs(g_mean-g_mean_exp) < g_tol &&
+        std::abs(g_std_dev - g_std_dev_exp) < g_tol)
+      passed = true;
+    if (MyPID == 0) {
+      if (passed)
+        std::cout << "Example Passed!" << std::endl;
+      else{
+        std::cout << "Example Failed!" << std::endl;
+        std::cout << "expected g_mean = "<< g_mean_exp << std::endl;
+        std::cout << "expected g_std_dev = "<< g_std_dev_exp << std::endl;
+      }
     }
 
-v_alg = 1.0 / (3.0 + u_alg);
-*/
-
-
-
 
 
 
 
 
     }
+
+
 
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();

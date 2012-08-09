@@ -60,7 +60,7 @@ namespace Stokhos {
     //! Constructor
     GMRESDivisionExpansionStrategy(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_, const int prec_iter_, const double tol_, const int PrecNum_, const int max_it_, const int linear_, const int diag_);
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_, const int prec_iter_, const double tol_, const int PrecNum_, const int max_it_, const int linear_, const int diag_, const int equil_);
 
     //! Destructor
     virtual ~GMRESDivisionExpansionStrategy() {}
@@ -113,7 +113,7 @@ namespace Stokhos {
 
     int diag;
 
- 
+    int equil;
    
     
   }; // class GMRESDivisionExpansionStrategy
@@ -125,7 +125,7 @@ Stokhos::GMRESDivisionExpansionStrategy<ordinal_type,value_type,node_type>::
 GMRESDivisionExpansionStrategy(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
   const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_, 
-  const int prec_iter_, const double tol_, const int PrecNum_, const int max_it_, const int linear_, const int diag_):
+  const int prec_iter_, const double tol_, const int PrecNum_, const int max_it_, const int linear_, const int diag_, const int equil_):
   basis(basis_),
   Cijk(Cijk_),
   prec_iter(prec_iter_),
@@ -133,7 +133,8 @@ GMRESDivisionExpansionStrategy(
   PrecNum(PrecNum_), 
   max_it(max_it_),
   linear(linear_),
-  diag(diag_)
+  diag(diag_),
+  equil(equil_)
 
     
   
@@ -208,49 +209,75 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     for (ordinal_type i=0; i<pa; i++)
       (*B)(i,0) = ca[i]*basis->norm_squared(i);
 
-    // Compute X = A^{-1}*B
-    if (linear == 1){
- 	//Compute M, the linear matrix to be used in the preconditioner
- 	 pb = basis->dimension()+1;
+   Teuchos::SerialDenseMatrix<ordinal_type,value_type> D(sz, 1);
+   //Equilibrate the linear system
+   if (equil == 1){
+ 	//Create diag mtx of max row entries
+        for (int i=0; i<sz; i++){
+                Teuchos::SerialDenseMatrix<int, double> r(Teuchos::View, *A, 1, sz, i, 0);
+                D(i,0)=sqrt(r.normOne());
+        }
+        //Compute inv(D)*A*inv(D)
+        for (int i=0; i<sz; i++){
+                for (int j=0; j<sz; j++){
+                        (*A)(i,j)=(*A)(i,j)/(D(i,0)*D(j,0));
+        }}
 
+        //Scale b by inv(D)
+        for (int i=0; i<sz; i++){
+                (*B)(i,0)=(*B)(i,0)/D(i,0);
+        }
+
+   }
+
+  if (linear == 1){
+  //Compute M, the linear matrix to be used in the preconditioner
+ 	 pb = basis->dimension()+1;
          M->putScalar(0.0);
 	 if (pb < Cijk->num_k())
              k_end = Cijk->find_k(pb);
 		 for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
-      k = index(k_it);
-      tmp = value_type(0.0);
-      for ( typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it);
-           j_it != Cijk->j_end(k_it); ++j_it) {
-        j = index(j_it);
-        for ( typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
-             i_it  != Cijk->i_end(j_it); ++i_it) {
-          i = index(i_it);
-          cijk = value(i_it);
-          (*M)(i,j) += cijk*cb[k];
+      			k = index(k_it);
+      			tmp = value_type(0.0);
+      			for ( typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it);
+           			j_it != Cijk->j_end(k_it); ++j_it) {
+        			j = index(j_it);
+        			for ( typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+             				i_it  != Cijk->i_end(j_it); ++i_it) {
+          				i = index(i_it);
+          				cijk = value(i_it);
+          				(*M)(i,j) += cijk*cb[k];
+        			}
+      			}	
+    	}
+
+   //Scale M
+   if (equil == 1){
+        //Compute inv(D)*M*inv(D)
+   	for (int i=0; i<sz; i++){
+                for (int j=0; j<sz; j++){
+                        (*M)(i,j)=(*M)(i,j)/(D(i,0)*D(j,0));
+            }
         }
-      }
     }
 
 
-
-  
-    GMRES(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *M, diag);
+   	// Compute X = A^{-1}*B  
+    	GMRES(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *M, diag);
   }
 
   else{
 	GMRES(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *A, diag);
    }
 
+if (equil == 1 ) {
+        //Rescale X 
+        for (int i=0; i<sz; i++){
+             (*X)(i,0)=(*X)(i,0)/D(i,0);
+         }
+   }
 
-
-
-  Teuchos::SerialDenseMatrix<int, double> Ax(*B);
-  Ax.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0,*A, *X, 0.0); 
-   Ax-=*B;
-//  std::cout<<"A= " << *A << std::endl;
-//  std::cout << "B= " << *B << std::endl; 
-  std::cout<<"actual residual= " << Ax.normInf()<< std::endl; 
-    // Compute c
+// Compute c
     for (ordinal_type i=0; i<pc; i++)
       cc[i] = alpha*(*X)(i,0) + beta*cc[i];
   }
@@ -269,11 +296,8 @@ GMRES(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMa
  int n = A.numRows();
  int k = 1;
  double resid;
- 
- std::cout<<"n= " << n <<std::endl;
- std::cout<<"PrecNum= "<< PrecNum <<std::endl;
  Teuchos::SerialDenseMatrix<int, double> P(n,n);
-  Teuchos::SerialDenseMatrix<int, double> Ax(n,1);
+ Teuchos::SerialDenseMatrix<int, double> Ax(n,1);
  Ax.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, A, X, 0.0);
  Teuchos::SerialDenseMatrix<int, double> r0(B);
  r0-=Ax;
@@ -295,34 +319,30 @@ GMRES(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMa
   Teuchos::SerialDenseMatrix<int, double> c;
   Teuchos::SerialDenseMatrix<int, double> s;
   while (resid > tolerance && k < max_iter){
-//    std::cout << "k = " << k <<  std::endl;
     h.reshape(k+1,k);
     //Arnoldi iteration(Gram-Schmidt )
     V.reshape(n,k+1);
     //set vk to be kth col of V
     Teuchos::SerialDenseMatrix<int, double> vk(Teuchos::Copy, V, n,1,0,k-1);
-  
     //Preconditioning step: solve Mz=vk
-
     Teuchos::SerialDenseMatrix<int, double> z(vk);
-//     if (PrecNum != 0){
-          if (PrecNum == 1){
+        if (PrecNum == 1){
                Stokhos::DiagPreconditioner precond(M);
                precond.ApplyInverse(vk,z,prec_iter);
-          }
-         else if (PrecNum == 2){
-        	Stokhos::JacobiPreconditioner precond(M);
+        }
+        else if (PrecNum == 2){
+	       	Stokhos::JacobiPreconditioner precond(M);
         	precond.ApplyInverse(vk,z,2);
-         }
- 	 else if (PrecNum == 3){
+        }
+ 	else if (PrecNum == 3){
         	Stokhos::GSPreconditioner precond(M,1);
         	precond.ApplyInverse(vk,z,1);
-       }
+        }
   	else if (PrecNum == 4){
         	Stokhos::SchurPreconditioner precond(M, order, dim, diag);
-	        precond.ApplyInverse(vk,z,prec_iter);}
-//    }
- 
+	        precond.ApplyInverse(vk,z,prec_iter);
+	}
+
     w.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, A, z, 0.0);
     Teuchos::SerialDenseMatrix<int, double> vi(n,1);
     Teuchos::SerialDenseMatrix<int, double> ip(1,1);
@@ -336,9 +356,8 @@ GMRES(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMa
        vi.scale(ip(0,0));
        w-=vi;
      }
-     h(k,k-1)=w.normFrobenius();
-     
-     w.scale(1.0/w.normFrobenius());
+     h(k,k-1)=w.normFrobenius(); 
+     w.scale(1.0/h(k,k-1));
      //add column vk+1=w to V
      for (int i=0; i<n; i++){
         V(i,k)=w(i,0);
@@ -362,16 +381,12 @@ GMRES(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMa
      // Givens rotation on h and bb
      h(k-1,k-1)=l;
      h(k,k-1)=0;
-     
-
+    
      bb(k,0)=-s(k-1,0)*bb(k-1,0);
      bb(k-1,0)=c(k-1,0)*bb(k-1,0);
-     
-
+    
      //Determine residual    
-      resid = fabs(bb(k,0));
-
- //    std::cout << "resid = " << resid << std::endl;
+     resid = fabs(bb(k,0));
      k++;
    }
    //Extract upper triangular square matrix
@@ -383,7 +398,6 @@ GMRES(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMa
    Teuchos::SerialDenseMatrix<int, double> ans(X);
    V.reshape(n,k-1);
    ans.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, V, bb, 0.0);
-//    if (PrecNum != 0){
           if (PrecNum == 1){
                Stokhos::DiagPreconditioner precond(M);
                precond.ApplyInverse(ans,ans,prec_iter);
@@ -399,13 +413,8 @@ GMRES(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMa
           else if (PrecNum == 4){
                 Stokhos::SchurPreconditioner precond(M, order, dim, diag);
                 precond.ApplyInverse(ans,ans,prec_iter);}
-//      }
-  
-
-
-// prec.ApplyInverse(ans,ans,1);
    X+=ans;
-//   std::cout << "X=  " << X << std::endl;
+
    std::cout << "iteration count=  " << k-1 << std::endl;        
 
 

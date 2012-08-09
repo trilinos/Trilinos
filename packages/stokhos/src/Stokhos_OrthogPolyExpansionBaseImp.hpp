@@ -92,7 +92,7 @@ OrthogPolyExpansionBase(
       Teuchos::rcp(new MeanBasedDivisionExpansionStrategy<ordinal_type,value_type,node_type>()); 
   else if (name == "GMRES")
     division_strategy =
-      Teuchos::rcp(new GMRESDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk, prec_iter, tol, PrecNum, max_it, linear, diag ));
+      Teuchos::rcp(new GMRESDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk, prec_iter, tol, PrecNum, max_it, linear, diag, equil));
   else if (name == "CG")
     division_strategy =
        Teuchos::rcp(new CGDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk, prec_iter, tol, PrecNum, max_it, linear, diag, equil));
