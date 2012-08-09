@@ -1,3 +1,5 @@
+INCLUDE(TribitsCopyFilesToBinaryDir)
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_ParameterListInterpreter_cp
   SOURCE_FILES 
   Smoothed-Aggregation.xml   # duplication of factories
