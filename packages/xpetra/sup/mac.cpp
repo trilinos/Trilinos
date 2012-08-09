@@ -45,4 +45,4 @@
 // @HEADER
 // MacOs 'ar' utility doesn't work on empty library.
 
-void libmuelu_gallery() {}
+void libxpetra_sup() {}
