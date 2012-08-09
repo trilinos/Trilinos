@@ -525,7 +525,11 @@ Stokhos::SGModelEvaluator_Adaptive::get_p_names(int l) const
 Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGModelEvaluator_Adaptive::get_x_init() const
 {
-  return Teuchos::rcp(new Epetra_Vector(*get_x_map()));
+  // get stochastic galerking initial condition and write it out to x initial condition
+  Teuchos::RCP<Epetra_Vector> x_init = Teuchos::rcp(new Epetra_Vector(*get_x_map()));
+  adaptMngr->copyToAdaptiveVector(*get_x_sg_init(),*x_init);
+
+  return x_init;
 }
 
 Teuchos::RCP<const Epetra_Vector>
