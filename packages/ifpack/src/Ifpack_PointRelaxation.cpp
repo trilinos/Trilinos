@@ -29,6 +29,7 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include <iomanip>
+#include <cmath>
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Comm.h"
