@@ -17,7 +17,7 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 SET(HEADERS "")
 
-SET(SOURCES "")
+SET(SOURCES "mac.cpp")
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   APPEND_GLOB(SOURCES 
     StridedMap/Xpetra_StridedEpetraMap.cpp
