@@ -71,7 +71,7 @@
 #endif
 #define FIRST_TOUCH
 
-#define BINARYCUTSEARCH
+//#define BINARYCUTSEARCH
 //#define RCBCODE
 #define LEAF_IMBALANCE_FACTOR 0.1
 
@@ -1480,7 +1480,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
       int iteration = 0;
       while (allDone != 0){
         iteration += 1;
-/*
+        /*
         if(comm->getRank() == 0)
         {
 #pragma omp single
@@ -1495,13 +1495,12 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             }
           }
         }
-*/
+        */
 
         for (size_t i = 0; i < total_part_count; ++i){
 #ifndef BINARYCUTSEARCH
           if(i/2 < size_t(noCuts) && isDone[i/2]) continue;
 #endif
-
           //myPartWeights[i] = 0;
           myPartWeights[i] = 0;
         }
@@ -1540,40 +1539,42 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
               myPartWeights[j * 2 + 1] += w;
               //cout << "i:" << i << " to:" << j * 2 + 1 <<  " c:" << pqJagged_coordinates[i] << endl;
+
+              //if(j == 1)
+               //                                       cout << "0: to " << 0 << endl;
               myLeftClosest[j] = 0;
               myRightClosest[j] = 0;
               partId_t kk = j + 1;
               while(kk < noCuts){
-                scalar_t dist =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
-                if(dist < _EPSILON){
+                scalar_t distance =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
+                if(distance < _EPSILON){
                   myPartWeights[2 * kk + 1] += w;
-                  //cout << "i:" << i << " to:" << 2 * kk + 1 <<  " c:" << pqJagged_coordinates[i] << endl;
-                  myLeftClosest[j] = 0;
-                  myRightClosest[j] = 0;
+
+                  myLeftClosest[kk] = 0;
+                  myRightClosest[kk] = 0;
                   kk++;
                 }
                 else{
                   if(myLeftClosest[kk] > distance){
                     myLeftClosest[kk] = distance;
                   }
-
                   break;
                 }
               }
 
               kk = j - 1;
               while(kk >= 0){
-                scalar_t dist =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
-                //cout << "dist:" << dist << endl;
-                if(dist < _EPSILON){
+                scalar_t distance =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
+                if(distance < _EPSILON){
                   myPartWeights[2 * kk + 1] += w;
-                  //cout << "i:" << i << " to:" << 2 * kk + 1 <<  " c:" << pqJagged_coordinates[i] << endl;
-                  myLeftClosest[j] = 0;
-                  myRightClosest[j] = 0;
+                  myLeftClosest[kk] = 0;
+                  myRightClosest[kk] = 0;
                   kk--;
                 }
                 else{
                   if(myRightClosest[kk] > distance){
+     //               if(kk == 1)
+     //                                                       cout << "4: to " << distance << endl;
                     myRightClosest[kk] = distance;
                   }
 
@@ -1588,21 +1589,32 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 
                 distance = -distance;
                 if (myLeftClosest[j] > distance){
+   //               if(j == 1)
+   //                                                       cout << "4: to " << distance << endl;
                   myLeftClosest[j] = distance;
                 }
                 if(j > 0){
-                  scalar_t d2 = pqJagged_coordinates[i] - cutCoordinates_tmp[j - 1];
-                  if(d2 > _EPSILON){
-                    if (myRightClosest[j - 1] > d2){
-                      myRightClosest[j - 1] = d2;
+                  scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j - 1];
+                  if(distance > _EPSILON){
+                    if (myRightClosest[j - 1] > distance){
+ //                     if(j -1 == 1)
+ //                                                             cout << "5: to " << distance << endl;
+                      myRightClosest[j - 1] = distance;
                     }
-                  } else if(d2 < -_EPSILON){
-                    d2 = -d2;
-                    if (myLeftClosest[j - 1] > d2){
-                      myLeftClosest[j - 1] = d2;
+                  } else if(distance < -_EPSILON){
+                    distance = -distance;
+
+                    if (myLeftClosest[j - 1] > distance){
+
+//                      if(j -1 == 1)
+//                                                              cout << "6: to " << distance << endl;
+                      myLeftClosest[j - 1] = distance;
                     }
                   }
                   else {
+
+//                    if(j -1 == 1)
+//                                                            cout << "7: to " << distance << endl;
                     myLeftClosest[j - 1] = 0;
                     myRightClosest[j - 1 ] = 0;
                   }
@@ -1617,23 +1629,35 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
               else {
 
                 if (myRightClosest[j] > distance){
+
+//                  if(j  == 1)
+//                                                          cout << "8: to " << distance<< endl;
                   myRightClosest[j] = distance;
                 }
 
                 if(j < noCuts - 1){
 
-                  scalar_t d2 = pqJagged_coordinates[i] - cutCoordinates_tmp[j - 1];
-                  if(d2 > _EPSILON){
-                    if (myRightClosest[j + 1] > d2){
-                      myRightClosest[j + 1] = d2;
+                  scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j + 1];
+                  if(distance > _EPSILON){
+                    if (myRightClosest[j + 1] > distance){
+
+//                      if(j + 1 == 1)
+//                                                               cout << "9: to " << distance<< " j+1:" << j+1 << " c:" << cutCoordinates_tmp[j + 1] << " p:"<<pqJagged_coordinates[i]<<endl;
+                      myRightClosest[j + 1] = distance;
                     }
-                  } else if(d2 < -_EPSILON){
-                    d2 = -d2;
-                    if (myLeftClosest[j + 1] > d2){
-                      myLeftClosest[j + 1] = d2;
+                  } else if(distance < -_EPSILON){
+                    distance = -distance;
+                    if (myLeftClosest[j + 1] > distance){
+
+                      //if(j + 1 == 1)
+                      //                                         cout << "10: to " << distance<< endl;
+                      myLeftClosest[j + 1] = distance;
                     }
                   }
                   else {
+
+                    //if(j + 1 == 1)
+                    //                                         cout << "11: to " << 0<< endl;
                     myLeftClosest[j + 1] = 0;
                     myRightClosest[j + 1 ] = 0;
                   }
@@ -1662,11 +1686,12 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             */
           }
         }
-        /*
+/*
         for (size_t i = 0; i < total_part_count; ++i){
+          if (i == 2)
           cout << "t:" << i << " :" << myPartWeights[i] << " c:" << cutCoordinates_tmp[i/2] << " r:" << myRightClosest[i/2] << " l:" << myLeftClosest[i/2]<< endl;
         }
-        */
+*/
         for (size_t i = 1; i < total_part_count; ++i){
 
           if(i % 2 == 0 && i > 1&& fabs(cutCoordinates_tmp[i / 2] - cutCoordinates_tmp[i /2 - 1]) < _EPSILON){
@@ -1678,6 +1703,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
         }
 /*
         for (size_t i = 0; i < total_part_count; ++i){
+          if (i == 2)
           cout << "t:" << i << " :" << myPartWeights[i] << " c:" << cutCoordinates_tmp[i/2] << " r:" << myRightClosest[i/2] << " l:" << myLeftClosest[i/2]<< endl;
         }
 */
