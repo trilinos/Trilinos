@@ -87,7 +87,7 @@ namespace Kokkos {
     class FirstTouchCRSAllocator {
       public:
       //! \brief Allocate and initialize the storage for the matrix values.
-      template <class Ordinal, class Node> 
+      template <class Ordinal, class Node>
       static ArrayRCP<Ordinal> allocRowPtrs(const RCP<Node> &node, const ArrayView<const Ordinal> &numEntriesPerRow)
       {
         const Ordinal numrows = numEntriesPerRow.size();
@@ -128,7 +128,7 @@ namespace Kokkos {
     class DefaultCRSAllocator {
       public:
       //! \brief Allocate and initialize the storage for the matrix values.
-      template <class Ordinal, class Node> 
+      template <class Ordinal, class Node>
       static ArrayRCP<Ordinal> allocRowPtrs(const RCP<Node> &node, const ArrayView<const Ordinal> &numEntriesPerRow)
       {
         ArrayRCP<Ordinal> ptrs = arcp<Ordinal>( numEntriesPerRow.size() + 1 );
@@ -138,7 +138,7 @@ namespace Kokkos {
       }
 
       //! \brief Allocate and initialize the storage for a sparse graph.
-      template <class T, class Ordinal, class Node> 
+      template <class T, class Ordinal, class Node>
       static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
       {
         const Ordinal totalNumEntries = *(rowPtrs.end()-1);
@@ -269,8 +269,8 @@ namespace Kokkos {
 
   template <class Ordinal, class Node>
   void DefaultCrsGraph<Ordinal,Node>::setSmallPointers(const ArrayRCP<const Ordinal> &ptrs)
-  { 
-    sml_ptrs_ = ptrs; 
+  {
+    sml_ptrs_ = ptrs;
     big_ptrs_ = null;
   }
 
@@ -362,21 +362,51 @@ namespace Kokkos {
       typedef DefaultCrsMatrix<S,O,N> matrix_type;
     };
 
-    /// \brief Sparse operations type for a different scalar type.
+    /// \brief Local sparse operations type for a different scalar type.
     ///
-    /// The bind_scalar struct defines the type responsible for sparse
-    /// operations for a scalar type S2, which may be different from
-    /// \c Scalar.
+    /// The bind_scalar struct defines the type responsible for local
+    /// sparse operations for a scalar type S2, which may be different
+    /// from \c Scalar.
     ///
-    /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar type to the appropriate scalar.
+    /// This class' typedef is used by Tpetra::CrsMatrix to bind a
+    /// potentially "void" scalar type to the appropriate scalar.
+    /// Other local sparse ops implementations (especially those that
+    /// wrap third-party libraries implementing sparse kernels) might
+    /// use this to provide a "fall-back" sparse ops implementation of
+    /// a possibly different type, if the third-party library does not
+    /// support scalar type S2.
     ///
-    /// This always specifies a specialization of \c
-    /// DefaultHostSparseOps, regardless of the scalar type S2.
+    /// In the case of DefaultHostSparseOps, this class' typedef
+    /// always specifies a specialization of \c DefaultHostSparseOps,
+    /// regardless of the scalar type S2.  This is not necessarily
+    /// true of other implementations of local sparse ops.
     ///
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct bind_scalar {
       typedef DefaultHostSparseOps<S2,Ordinal,Node,Allocator> other_type;
+    };
+
+    /// \brief Local sparse operations type for a different ordinal type.
+    ///
+    /// The bind_scalar struct defines the type responsible for local
+    /// sparse operations for an ordinal type O2, which may be
+    /// different from \c Ordinal.
+    ///
+    /// In the case of DefaultHostSparseOps, this class' typedef
+    /// always specifies a specialization of \c DefaultHostSparseOps,
+    /// regardless of the ordinal type S2.  This is not necessarily
+    /// true of other implementations of local sparse ops.  Other
+    /// local sparse ops implementations (especially those that wrap
+    /// third-party libraries implementing sparse kernels) might use
+    /// this to provide a "fall-back" sparse ops implementation of a
+    /// possibly different type, if the third-party library does not
+    /// support ordinal type O2.
+    ///
+    /// \tparam O2 An ordinal type possibly different from \c Ordinal.
+    template <class O2>
+    struct bind_ordinal {
+      typedef DefaultHostSparseOps<Scalar,O2,Node,Allocator> other_type;
     };
 
     //@}
@@ -506,7 +536,6 @@ namespace Kokkos {
     RCP<Node> getNode() const;
 
     //@}
-
     //! @name Initialization of graph and matrix
     //@{
 
@@ -790,7 +819,7 @@ namespace Kokkos {
       sml_ptrs_ = opgraph->getSmallPointers();
       inds_ = opgraph->getIndices();
       vals_ = opmatrix->getValues();
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         big_ptrs_ != null && sml_ptrs_ != null,
         std::logic_error, " Internal logic error: graph has small and big pointers. Please notify Kokkos team."
       )
@@ -1071,6 +1100,244 @@ namespace Kokkos {
     }
   }
 
+  /// \brief Partial specialization of DefaultHostSparseOps for Scalar=void.
+  /// \ingroup kokkos_crs_ops
+  ///
+  /// \tparam Ordinal The type of (local) indices of the sparse matrix.
+  /// \tparam Node The Kokkos Node type.
+  /// \tparam Allocator The allocator type.
+  ///
+  /// \warning This partial specialization is _not_ for users.  Kokkos
+  ///   developers should see the discussion below explaining why we
+  ///   need this partial specialization.
+  ///
+  /// Developer documentation
+  /// =======================
+  ///
+  /// We include a partial specialization as a work-around for a
+  /// Windows MSVC compilation problem reported on 08 Aug 2012 by
+  /// Brent Perschbacher.  The issue is that MSVC is attempting to
+  /// compile the generic methods for Scalar=void, since we do refer
+  /// to the type for Scalar=void in e.g., Tpetra::CrsGraph.  However,
+  /// whenever we refer to the Scalar=void case, we only reference the
+  /// typedefs and inner classes inside, not the methods.  Other
+  /// compilers do not attempt to compile methods of a template class
+  /// that aren't called; MSVC apparently does.
+  ///
+  /// Kokkos developers must imitate DefaultHostSparseOps by providing
+  /// their own partial specializations of their local sparse kernels
+  /// classes for the Scalar=void case.
+  ///
+  /// gcc 4.5.1 says that "default template arguments may not be used
+  /// in partial specializations," so we aren't allowed to specify a
+  /// default Allocator.
+  template <class Ordinal, class Node, class Allocator>
+  class DefaultHostSparseOps<void, Ordinal, Node, Allocator> : public Teuchos::Describable {
+  public:
+    //! \name Typedefs and structs
+    //@{
+
+    //! The type of the individual entries of the sparse matrix.
+    typedef void scalar_type;
+    //! The type of the (local) indices describing the structure of the sparse matrix.
+    typedef Ordinal ordinal_type;
+    //! The Kokkos Node type.
+    typedef Node node_type;
+    //! The type of this object, the sparse operator object
+    typedef DefaultHostSparseOps<void, Ordinal, Node, Allocator> sparse_ops_type;
+
+    /** \brief Typedef for local graph class */
+    template <class O, class N>
+    struct graph {
+      typedef DefaultCrsGraph<O,N> graph_type;
+    };
+
+    /** \brief Typedef for local matrix class */
+    template <class S, class O, class N>
+    struct matrix {
+      typedef DefaultCrsMatrix<S,O,N> matrix_type;
+    };
+
+    /// \brief Sparse operations type for a different scalar type.
+    ///
+    /// The bind_scalar struct defines the type responsible for sparse
+    /// operations for a scalar type S2, which may be different from
+    /// scalar_type.  (In fact, it _should_ be different than
+    /// scalar_type=void in this case.  The intended use case is to
+    /// rebind scalar_type=void to the different scalar type S2 of a
+    /// matrix.)
+    ///
+    /// This always specifies a specialization of \c
+    /// DefaultHostSparseOps, regardless of the scalar type S2.
+    ///
+    /// \tparam S2 A scalar type possibly different from \c scalar_type.
+    template <class S2>
+    struct bind_scalar {
+      typedef DefaultHostSparseOps<S2,Ordinal,Node,Allocator> other_type;
+    };
+
+    /// \brief Sparse operations type for a different ordinal type.
+    ///
+    /// The bind_ordinal struct defines the type responsible for
+    /// sparse operations for an ordinal type O2, which may be
+    /// different from Ordinal.
+    ///
+    /// This always specifies a specialization of \c
+    /// DefaultHostSparseOps, regardless of the ordinal type O2.
+    ///
+    /// \tparam O2 An ordinal type possibly different from \c Ordinal.
+    template <class O2>
+    struct bind_ordinal {
+      typedef DefaultHostSparseOps<void, O2, Node, Allocator> other_type;
+    };
+
+    //@}
+    //! \name Constructors/Destructor
+    //@{
+
+    //! Constructor that takes a Kokkos Node: DO NOT CALL (Scalar=void specialization).
+    DefaultHostSparseOps (const RCP<Node> &node) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Someone attempted to "
+        "instantiate Kokkos::DefaultHostSparseOps with Scalar=void.  "
+        "This is not allowed.  "
+        "The Scalar=void specialization exists only for its typedefs.  "
+        "Please report this bug to the Kokkos developers.");
+    }
+
+    //! Constructor that takes a Kokkos Node and parameters: DO NOT CALL (Scalar=void specialization).
+    DefaultHostSparseOps (const RCP<Node> &node, Teuchos::ParameterList& params) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Someone attempted to "
+        "instantiate Kokkos::DefaultHostSparseOps with Scalar=void.  "
+        "This is not allowed.  "
+        "The Scalar=void specialization exists only for its typedefs.  "
+        "Please report this bug to the Kokkos developers.");
+    }
+
+    //! Destructor.
+    ~DefaultHostSparseOps() {
+      // We don't throw an exception here, because throwing exceptions
+      // in a destructor may cause the application to terminate [1].
+      // However, it's impossible that execution will reach this
+      // point, since all the constructors throw exceptions.
+      //
+      // [1] http://www.parashift.com/c++-faq/dtors-shouldnt-throw.html
+    }
+
+    //@}
+    //! \name Implementation of Teuchos::Describable
+    //@{
+
+    //! One-line description of this instance.
+    std::string description () const {
+      using Teuchos::TypeNameTraits;
+      std::ostringstream os;
+      os <<  "Kokkos::DefaultHostSparseOps<"
+         << "Scalar=void"
+         << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
+         << ", Node=" << TypeNameTraits<Node>::name()
+         << ">";
+      return os.str();
+    }
+
+    //! Write a possibly more verbose description of this instance to out.
+    void
+    describe (Teuchos::FancyOStream& out,
+              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+    {
+      using Teuchos::includesVerbLevel;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+
+      // Interpret the default verbosity level as VERB_MEDIUM.
+      const Teuchos::EVerbosityLevel vl =
+        (verbLevel == VERB_DEFAULT) ? VERB_MEDIUM : verbLevel;
+
+      if (vl == VERB_NONE) {
+        return;
+      }
+      else if (includesVerbLevel (vl, VERB_LOW)) { // vl >= VERB_LOW
+        out << this->description() << std::endl;
+      }
+    }
+
+    //@}
+    //! \name Accessor routines.
+    //@{
+
+    //! The Kokkos Node with which this object was instantiated.
+    RCP<Node> getNode() const {
+      // You're not supposed to instantiate this object, so we always
+      // return null here.
+      return Teuchos::null;
+    }
+
+    //@}
+    //! @name Initialization of graph and matrix
+    //@{
+
+    /// \brief Allocate and initialize the storage for the row offsets.
+    ///
+    /// \note This is still implemented in the Scalar=void
+    ///   specialization, since Tpetra::CrsGraph may use it for
+    ///   allocating its row offsets.  Since it's a class method, we
+    ///   may call it without needing to instantiate a
+    ///   DefaultHostSparseOps instance.
+    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow)
+    {
+      return Allocator::allocRowPtrs(node,numEntriesPerRow);
+    }
+
+    /// \brief Allocate and initialize the storage for graph or matrix storage.
+    ///
+    /// \note This is still implemented in the Scalar=void
+    ///   specialization, since Tpetra::CrsGraph may use it for
+    ///   allocating the column indices (T=Ordinal).  Since it's a
+    ///   class method, we may call it without needing to instantiate
+    ///   a DefaultHostSparseOps instance.
+    template <class T>
+    static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
+    {
+      return Allocator::template allocStorage<T,size_t>(node,rowPtrs);
+    }
+
+    /// \brief Finalize a graph.
+    ///
+    /// \note This is still implemented in the Scalar=void
+    ///   specialization, since Tpetra::CrsGraph may use it for
+    ///   finalizing the graph structure.  Since it's a class method,
+    ///   we may call it without needing to instantiate a
+    ///   DefaultHostSparseOps instance.
+    static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params) {
+      using Teuchos::ArrayRCP;
+      using Teuchos::as;
+
+      std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
+
+      graph.setMatDesc(uplo,diag);
+      TEUCHOS_TEST_FOR_EXCEPTION(graph.isInitialized() == false,
+        std::runtime_error, FuncName << ": graph has not yet been initialized.");
+
+      // determine how many non-zeros, so that we can decide whether to reduce the offset pointer type
+      ArrayRCP<const size_t> bigptrs = graph.getPointers();
+      const size_t numrows = bigptrs.size() - 1,
+        numnz = bigptrs[numrows];
+      if (numnz < as<size_t> (Teuchos::OrdinalTraits<Ordinal>::max())) {
+        ArrayRCP<Ordinal> smallptrs = arcp<Ordinal>(numrows+1);
+        std::copy( bigptrs.begin(), bigptrs.end(), smallptrs.begin() );
+        graph.setSmallPointers(smallptrs);
+      }
+    }
+
+    //@}
+
+  private:
+    //! Copy constructor (protected and unimplemented)
+    DefaultHostSparseOps(const DefaultHostSparseOps& source);
+  };
 
   /** \example CrsMatrix_DefaultMultiplyTests.hpp
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.
