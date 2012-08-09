@@ -378,11 +378,11 @@ void Relaxation<MatrixType>::compute()
 
     for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
       A_->getLocalRowCopy(i, Indices(), Values(), NumEntries);      
-      Scalar diagonal_boost=Teuchos::ScalarTraits<Scalar>::zero();
+      magnitudeType diagonal_boost=Teuchos::ScalarTraits<Scalar>::zero();
       for (size_t k = 0 ; k < NumEntries ; ++k) 
 	if((size_t)Indices[k] > i)
-	  diagonal_boost+=Values[k]/two;  
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i]) < Teuchos::ScalarTraits<Scalar>::magnitude(L1Eta_*diagonal_boost))
+	  diagonal_boost+= Teuchos::ScalarTraits<Scalar>::magnitude(Values[k]/two);  
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i]) < L1Eta_*diagonal_boost)
 	DiagView[i]+=diagonal_boost;
     }
   }
