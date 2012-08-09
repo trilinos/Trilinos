@@ -87,6 +87,9 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("relaxation: damping factor", (double)1.0);
   params.set("relaxation: min diagonal value", (double)1.0);
   params.set("relaxation: zero starting solution", true);
+  params.set("relaxation: backward mode",false);
+  params.set("relaxation: use l1",false);
+  params.set("relaxation: l1 eta",(double)1.5);
 
   // Ifpack2_SPARSKIT.cpp
   params.set("fact: sparskit: lfil", (int)0);
