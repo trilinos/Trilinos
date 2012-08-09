@@ -283,9 +283,9 @@ t0 = MPI_Wtime();
         RCP<Epetra_CrsMatrix> epC = Op2NonConstEpetraCrs(C);
 
         //ML's multiply cannot implicitly tranpose either matrix.
-        bool canUseML=true;
+        int canUseML=1;
         if (transposeA || transposeB)
-          canUseML=false;
+          canUseML=0;
 
         switch (canUseML) {
 
