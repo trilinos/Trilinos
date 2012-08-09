@@ -98,8 +98,8 @@ namespace Belos {
     //! @name Operator application method
     //@{ 
     
-    /*! \brief This routine takes the Cthulu::MultiVector \c x and applies the operator
-      to it resulting in the Cthulu::MultiVector \c y, which is returned.
+    /*! \brief This routine takes the Xpetra::MultiVector \c x and applies the operator
+      to it resulting in the Xpetra::MultiVector \c y, which is returned.
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
@@ -116,7 +116,7 @@ namespace Belos {
     }
 
 #ifdef HAVE_MUELU_TPETRA  
-    // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
+    // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
       \note It is expected that any problem with applying this operator to \c x will be
@@ -201,7 +201,7 @@ namespace Belos {
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
-    // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
+    // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
       \note It is expected that any problem with applying this operator to \c x will be
