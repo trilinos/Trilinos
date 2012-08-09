@@ -257,6 +257,9 @@ int main(int argc, char *argv[])
   // Report
 
   TimeMonitor::summarize();
+
+  if (comm->getRank() == 0)
+    std::cout << "PASS" << std::endl;
 }
 
 void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
