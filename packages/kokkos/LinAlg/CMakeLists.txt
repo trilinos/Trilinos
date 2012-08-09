@@ -94,6 +94,16 @@ IF (Kokkos_ENABLE_Thrust)
 #  SET(KOKKOS_LINALG_CUDALIBS "")
 ENDIF()
 
+ASSERT_DEFINED(Kokkos_ENABLE_MKL)
+IF (Kokkos_ENABLE_MKL)
+  APPEND_SET(HEADERS
+    Kokkos_Mkl_RawSparseKernels.hpp
+    )
+  APPEND_SET(SOURCES
+    Kokkos_Mkl_RawSparseKernels.cpp
+    )
+ENDIF ()
+
 #
 # C) Define the targets for package's library(s)
 #
