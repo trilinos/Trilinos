@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Mark Hoemmen <mhoemme AT sandia DOT gov>
-# Time-stamp: <2012-08-06 17:26:49 mhoemme>
+# Time-stamp: <2012-08-08 18:21:14 mhoemme>
 #
 # Example CMake configure script for Trilinos, that uses Intel's Math
 # Kernel Library (MKL) both for the BLAS and LAPACK implementation,
@@ -63,16 +63,15 @@ concat_path $HOME/pkg/gcc-4.5.1/bin
 # Treat them as extra CMake options.
 EXTRA_ARGS=$@
 
-# Root directory of the Intel MKL install.  I've chosen to install it
-# in user space.  For details on how to link with MKL, see the MKL
-# Link Line Advisor:
+# Root directory of the Intel MKL install.  For details on how to link
+# with MKL, see the MKL Link Line Advisor:
 #
 # http://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/
 #
 # Also refer to the documentation in
 # <TrilinosSource>/cmake/TPLs/FindTPLMKL.cmake, where <TrilinosSource>
 # is the root directory of your Trilinos source tree.
-MKLROOT=/home/mhoemme/pkg/mkl-10.3/mkl
+MKLROOT=/opt/intel/mkl
 
 # Point to the user-space install of OpenMPI (MPI implementation).
 MPI_ROOT=${HOME}/pkg/openmpi-1.4.3
@@ -93,6 +92,7 @@ cmake \
   -D BLAS_LIBRARY_NAMES:STRING="mkl_rt" \
   -D LAPACK_LIBRARY_DIRS:FILEPATH="${MKLROOT}/lib/intel64" \
   -D LAPACK_LIBRARY_NAMES:STRING="mkl_rt" \
+  -D TPL_ENABLE_MKL:BOOL=ON \
   -D MKL_LIBRARY_DIRS:FILEPATH="${MKLROOT}/lib/intel64" \
   -D MKL_LIBRARY_NAMES:STRING="mkl_rt" \
   -D MKL_INCLUDE_DIRS:FILEPATH="${MKLROOT}/include" \
