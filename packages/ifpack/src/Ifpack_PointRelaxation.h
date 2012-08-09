@@ -437,6 +437,10 @@ private:
   bool ZeroStartingSolution_;
   //! Backward-Mode Gauss Seidel 
   bool DoBackwardGS_;
+  //! Do L1 Jacobi/GS/SGS
+  bool DoL1Method_;
+  //! Eta parameter for modified L1 method
+  double L1Eta_;
   // @}
 
   
