@@ -1165,14 +1165,14 @@ struct SubShape< Shape< Layout , DstDataType , 1 , 1 > ,
   template< typename iType >
   SubShape( const SrcShape src , const std::pair<iType,iType> span )
   {
-    assert_shape_bounds( src , span.first );
-    offset = span.first ;
-
     if ( span.first < span.second ) {
-      assert_shape_bounds( src , span.second );
+      assert_shape_bounds( src , span.first );
+      assert_shape_bounds( src , span.second - 1 );
+      offset   = span.first ;
       shape.N0 = span.second - span.first ;
     }
     else {
+      offset   = 0 ;
       shape.N0 = 0 ;
     }
   }

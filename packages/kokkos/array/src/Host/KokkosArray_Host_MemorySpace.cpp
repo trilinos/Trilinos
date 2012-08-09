@@ -133,7 +133,7 @@ void HostMemorySpace::increment( const void * ptr )
   if ( 0 != ptr && HostInternal::singleton().is_master_thread() ) {
     HostMemoryImpl & s = HostMemoryImpl::singleton();
 
-    (void) s.m_allocations.increment( ptr );
+    s.m_allocations.increment( ptr );
   }
 }
 
@@ -142,10 +142,10 @@ void HostMemorySpace::decrement( const void * ptr )
   if ( 0 != ptr && HostInternal::singleton().is_master_thread() ) {
     HostMemoryImpl & s = HostMemoryImpl::singleton();
 
-    MemoryTracking::Info info = s.m_allocations.decrement( ptr );
+    void * ptr_alloc = s.m_allocations.decrement( ptr );
 
-    if ( 0 == info.count ) {
-      free( const_cast<void*>( info.begin ) );
+    if ( 0 != ptr_alloc ) {
+      free( ptr_alloc );
     }
   }
 }

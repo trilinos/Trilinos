@@ -154,54 +154,6 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
 
 } // namespace Impl
 
-// Deep copy a span of rank 1 arrays:
-
-template< class DataDst , class LayoutDst , class DeviceDst ,
-          class DataSrc , class LayoutSrc , class DeviceSrc >
-inline
-void deep_copy( const View< DataDst , LayoutDst , DeviceDst > & dst ,
-                const View< DataSrc , LayoutSrc , DeviceSrc > & src ,
-                size_t count )
-{
-  typedef View< DataDst , LayoutDst , DeviceDst > dst_type ;
-  typedef View< DataSrc , LayoutSrc , DeviceSrc > src_type ;
-
-  typedef typename dst_type::shape_type  dst_shape ;
-  typedef typename src_type::shape_type  src_shape ;
-
-  typedef typename dst_type::value_type dst_value_type ;
-  typedef typename src_type::value_type src_value_type ;
-
-  // Verify arrays are rank 1
-
-  typedef typename
-    Impl::assert_shape_is_rank_one< dst_shape >::type ok_dst_rank ;
-
-  typedef typename
-    Impl::assert_shape_is_rank_one< dst_shape >::type ok_dst_rank ;
-
-  // Verify value is the same type
-
-  typedef typename
-    Impl::StaticAssertSame< dst_value_type ,
-                            typename Impl::remove_const< src_value_type >::type
-                          >::type  ok_assign ;
-
-  // Copy if the destination is not simply a view of the source:
-
-  if ( count && dst != src ) {
-    Impl::assert_shape_bounds( dst.shape() , count - 1 );
-    Impl::assert_shape_bounds( src.shape() , count - 1 );
-
-      Impl::DeepCopy< dst_value_type ,
-                      typename DeviceDst::memory_space ,
-                      typename DeviceSrc::memory_space > (
-      dst.ptr_on_device() ,
-      src.ptr_on_device() ,
-      count );
-  }
-}
-
 // Deep copy arbitrary arrays:
 
 template< class DataDst , class LayoutDst , class DeviceDst ,

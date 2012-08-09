@@ -135,7 +135,7 @@ public:
   typedef Device                                          device_type ;
   typedef KokkosArray::ParallelDataMap                    data_map_type ;
   typedef KokkosArray::View< ValueType[] , device_type >  buffer_dev_type ;
-  typedef KokkosArray::View< ValueType[] , Host >         buffer_host_type ;
+  typedef typename buffer_dev_type::HostMirror            buffer_host_type ;
 
 private:
 
@@ -148,6 +148,8 @@ private:
   buffer_host_type     host_send_buffer ;
   buffer_host_type     send_msg_buffer ;
   buffer_dev_type      dev_buffer ;
+  buffer_dev_type      dev_send_buffer ; // Subview for send
+  buffer_dev_type      dev_recv_buffer ; // Subview for receive
   std::vector< MPI_Request > recv_request ;
 
 public:
@@ -163,33 +165,53 @@ public:
   , host_send_buffer()
   , send_msg_buffer()
   , dev_buffer()
+  , dev_send_buffer()
+  , dev_recv_buffer()
   , recv_request()
   {
     const size_t send_msg_count = arg_data_map.host_send.dimension(0);
     const size_t recv_msg_count = arg_data_map.host_recv.dimension(0);
+
+    const size_t send_msg_length = arg_chunk * arg_data_map.count_send ;
+    const size_t recv_msg_length = arg_chunk * arg_data_map.count_receive ;
 
     for ( size_t i = 0 ; i < send_msg_count ; ++i ) {
       send_count_max = std::max( send_count_max ,
                                  (unsigned) arg_data_map.host_send(i,1) );
     }
 
+    // A single shared buffer on the device can be used for
+    // send and receive message buffers.
     dev_buffer = buffer_dev_type(
                      std::string("AsyncExchange dev_buffer") ,
-                     arg_chunk * std::max( arg_data_map.count_send ,
-                                           arg_data_map.count_receive ) );
+                     std::max( send_msg_length , recv_msg_length ) );
 
+    // Total send subview of the device buffer
+    dev_send_buffer =
+      buffer_dev_type( dev_buffer ,
+                       std::pair<size_t,size_t>( 0 , send_msg_length ) );
+
+    // Total receive subview of the device buffer
+    dev_recv_buffer =
+      buffer_dev_type( dev_buffer ,
+                       std::pair<size_t,size_t>( 0 , recv_msg_length ) );
+
+    // Total receive message buffer on the host:
     host_recv_buffer = buffer_host_type(
                            std::string("AsyncExchange host_recv_buffer") ,
-                           arg_chunk * arg_data_map.count_receive );
+                           recv_msg_length );
 
+    // Total send message buffer on the host:
     host_send_buffer = buffer_host_type(
                            std::string("AsyncExchange host_send_buffer") ,
-                           arg_chunk * arg_data_map.count_send );
+                           send_msg_length );
 
+    // Individual send message buffer on the host:
     send_msg_buffer = buffer_host_type(
                           std::string("AsyncExchange send_msg_buffer") ,
                           arg_chunk * send_count_max );
 
+    // MPI asynchronous receive request handles:    
     recv_request.assign( recv_msg_count , MPI_REQUEST_NULL );
   }
 
@@ -216,8 +238,7 @@ public:
 
     // Copy send buffer from the device to host memory for sending
 
-    KokkosArray::deep_copy( host_send_buffer , dev_buffer ,
-                            data_map.count_send * chunk_size );
+    KokkosArray::deep_copy( host_send_buffer , dev_send_buffer );
 
     // Done with the device until communication is complete.
     // Application can dispatch asynchronous work on the device.
@@ -293,8 +314,7 @@ public:
 
     // Copy received data to device memory.
 
-    KokkosArray::deep_copy( dev_buffer , host_recv_buffer , 
-                            data_map.count_receive * chunk_size );
+    KokkosArray::deep_copy( dev_recv_buffer , host_recv_buffer );
   }
 };
 

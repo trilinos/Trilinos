@@ -479,9 +479,9 @@ struct BoxMeshFixture {
         const double y_unit = node_coords(i,1) / grid_extent[1] ;
         const double z_unit = node_coords(i,2) / grid_extent[2] ;
 
-        node_coords(i,0) = problem_extent[0] * std::pow( x_unit , x_coord_curve );
-        node_coords(i,1) = problem_extent[1] * std::pow( y_unit , y_coord_curve );
-        node_coords(i,2) = problem_extent[2] * std::pow( z_unit , z_coord_curve );
+        node_coords(i,0) = coordinate_scalar_type( problem_extent[0] * std::pow( x_unit , x_coord_curve ) );
+        node_coords(i,1) = coordinate_scalar_type( problem_extent[1] * std::pow( y_unit , y_coord_curve ) );
+        node_coords(i,2) = coordinate_scalar_type( problem_extent[2] * std::pow( z_unit , z_coord_curve ) );
       }
     }
 

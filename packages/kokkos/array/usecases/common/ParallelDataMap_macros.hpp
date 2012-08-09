@@ -76,11 +76,13 @@ public:
              const size_type     arg_count ,
              const array_type  & arg_input )
   {
-    PackArray op ;
-    op.output = arg_output ;
-    op.input  = arg_input ;
-    op.base   = arg_begin ;
-    parallel_for( arg_count , op );
+    if ( arg_count ) {
+      PackArray op ;
+      op.output = arg_output ;
+      op.input  = arg_input ;
+      op.base   = arg_begin ;
+      parallel_for( arg_count , op );
+    }
   }
 };
 
@@ -116,11 +118,13 @@ public:
                const size_type     arg_begin ,
                const size_type     arg_count )
   {
-    UnpackArray op ;
-    op.output = arg_output ;
-    op.input  = arg_input ;
-    op.base   = arg_begin ;
-    parallel_for( arg_count , op );
+    if ( arg_count ) {
+      UnpackArray op ;
+      op.output = arg_output ;
+      op.input  = arg_input ;
+      op.base   = arg_begin ;
+      parallel_for( arg_count , op );
+    }
   }
 };
 
