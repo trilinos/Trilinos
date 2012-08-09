@@ -43,7 +43,7 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_AlgRCB.hpp
+/*! \file Zoltan2_AlgPQJagged.hpp
 \brief Contains the recursive coordinate bisection algorthm.
  */
 
@@ -71,7 +71,7 @@
 #endif
 #define FIRST_TOUCH
 
-
+#define BINARYCUTSEARCH
 //#define RCBCODE
 #define LEAF_IMBALANCE_FACTOR 0.1
 
@@ -1498,7 +1498,10 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 */
 
         for (size_t i = 0; i < total_part_count; ++i){
+#ifndef BINARYCUTSEARCH
           if(i/2 < size_t(noCuts) && isDone[i/2]) continue;
+#endif
+
           //myPartWeights[i] = 0;
           myPartWeights[i] = 0;
         }
@@ -1508,13 +1511,186 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
           myRightClosest[i] = maxScalar;
         }
 
+#ifdef BINARYCUTSEARCH
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
+        for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+          int i = partitionedPointPermutations[ii];
+          partId_t lc = 0;
+          partId_t uc = noCuts - 1;
 
+          scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
+
+          bool isInserted = false;
+          bool onLeft = false;
+          bool onRight = false;
+          partId_t lastPart = -1;
+          while(uc >= lc)
+          {
+
+            lastPart = -1;
+            onLeft = false;
+            onRight = false;
+            partId_t j = (uc + lc) / 2;
+            scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
+            scalar_t absdistance = fabs(distance);
+
+            if(absdistance < _EPSILON){
+
+              myPartWeights[j * 2 + 1] += w;
+              //cout << "i:" << i << " to:" << j * 2 + 1 <<  " c:" << pqJagged_coordinates[i] << endl;
+              myLeftClosest[j] = 0;
+              myRightClosest[j] = 0;
+              partId_t kk = j + 1;
+              while(kk < noCuts){
+                scalar_t dist =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
+                if(dist < _EPSILON){
+                  myPartWeights[2 * kk + 1] += w;
+                  //cout << "i:" << i << " to:" << 2 * kk + 1 <<  " c:" << pqJagged_coordinates[i] << endl;
+                  myLeftClosest[j] = 0;
+                  myRightClosest[j] = 0;
+                  kk++;
+                }
+                else{
+                  if(myLeftClosest[kk] > distance){
+                    myLeftClosest[kk] = distance;
+                  }
+
+                  break;
+                }
+              }
+
+              kk = j - 1;
+              while(kk >= 0){
+                scalar_t dist =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
+                //cout << "dist:" << dist << endl;
+                if(dist < _EPSILON){
+                  myPartWeights[2 * kk + 1] += w;
+                  //cout << "i:" << i << " to:" << 2 * kk + 1 <<  " c:" << pqJagged_coordinates[i] << endl;
+                  myLeftClosest[j] = 0;
+                  myRightClosest[j] = 0;
+                  kk--;
+                }
+                else{
+                  if(myRightClosest[kk] > distance){
+                    myRightClosest[kk] = distance;
+                  }
+
+                  break;
+                }
+              }
+              isInserted = true;
+              break;
+            }
+            else {
+              if (distance < 0) {
+
+                distance = -distance;
+                if (myLeftClosest[j] > distance){
+                  myLeftClosest[j] = distance;
+                }
+                if(j > 0){
+                  scalar_t d2 = pqJagged_coordinates[i] - cutCoordinates_tmp[j - 1];
+                  if(d2 > _EPSILON){
+                    if (myRightClosest[j - 1] > d2){
+                      myRightClosest[j - 1] = d2;
+                    }
+                  } else if(d2 < -_EPSILON){
+                    d2 = -d2;
+                    if (myLeftClosest[j - 1] > d2){
+                      myLeftClosest[j - 1] = d2;
+                    }
+                  }
+                  else {
+                    myLeftClosest[j - 1] = 0;
+                    myRightClosest[j - 1 ] = 0;
+                  }
+
+                }
+
+                uc = j - 1;
+                onLeft = true;
+                lastPart = j;
+              }
+            //if it is on the left
+              else {
+
+                if (myRightClosest[j] > distance){
+                  myRightClosest[j] = distance;
+                }
+
+                if(j < noCuts - 1){
+
+                  scalar_t d2 = pqJagged_coordinates[i] - cutCoordinates_tmp[j - 1];
+                  if(d2 > _EPSILON){
+                    if (myRightClosest[j + 1] > d2){
+                      myRightClosest[j + 1] = d2;
+                    }
+                  } else if(d2 < -_EPSILON){
+                    d2 = -d2;
+                    if (myLeftClosest[j + 1] > d2){
+                      myLeftClosest[j + 1] = d2;
+                    }
+                  }
+                  else {
+                    myLeftClosest[j + 1] = 0;
+                    myRightClosest[j + 1 ] = 0;
+                  }
+
+                }
+
+                lc = j + 1;
+                onRight = true;
+                lastPart = j;
+              }
+            }
+          }
+          if(!isInserted){
+            if(onRight){
+              myPartWeights[2 * lastPart + 2] += w;
+             //cout << "i:" << i << " to:" << 2*lastPart + 2 << " c:" << pqJagged_coordinates[i]<< endl;
+            }
+            else if(onLeft){
+              //cout << "i:" << i << " to:" << 2*lastPart <<  " c:" << pqJagged_coordinates[i] << endl;
+              myPartWeights[2 * lastPart] += w;
+            }
+            /*
+            else {
+              cout << "last part" << lastPart<<" error" << endl; exit(1);
+            }
+            */
+          }
+        }
+        /*
+        for (size_t i = 0; i < total_part_count; ++i){
+          cout << "t:" << i << " :" << myPartWeights[i] << " c:" << cutCoordinates_tmp[i/2] << " r:" << myRightClosest[i/2] << " l:" << myLeftClosest[i/2]<< endl;
+        }
+        */
+        for (size_t i = 1; i < total_part_count; ++i){
+
+          if(i % 2 == 0 && i > 1&& fabs(cutCoordinates_tmp[i / 2] - cutCoordinates_tmp[i /2 - 1]) < _EPSILON){
+            myPartWeights[i] = myPartWeights[i-2];
+            continue;
+          }
+
+          myPartWeights[i] += myPartWeights[i-1];
+        }
+/*
+        for (size_t i = 0; i < total_part_count; ++i){
+          cout << "t:" << i << " :" << myPartWeights[i] << " c:" << cutCoordinates_tmp[i/2] << " r:" << myRightClosest[i/2] << " l:" << myLeftClosest[i/2]<< endl;
+        }
+*/
+
+#endif
+#ifndef BINARYCUTSEARCH
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
         for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
           int i = partitionedPointPermutations[ii];
 
+          scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
           //get a coordinate and compare it with cut lines from left to right.
           for(partId_t j = 0; j < noCuts; ++j){
 
@@ -1522,7 +1698,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
             scalar_t absdistance = fabs(distance);
             if(absdistance < _EPSILON){
-              scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
               myPartWeights[j * 2] -= w;
               //myPartWeights[j * 2] += w;
               myLeftClosest[j] = 0;
@@ -1540,7 +1715,6 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             //if it is on the left
               else {
                 //if on the right, continue with the next line.
-                scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
                 myPartWeights[j * 2] -=	w;
                 myPartWeights[j * 2 + 1] -=	w;
                 //myPartWeights[j * 2] += w;
@@ -1552,19 +1726,8 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
               }
           }
         }
+#endif
 
-/*
-#pragma omp critical
-        {
-          for(size_t j = 0; j < noCuts; ++j){
-            cout << "me:" << me << " j:" << j << " w:" << myPartWeights[j * 2] << endl;
-          }
-
-          for(size_t j = 0; j < noCuts; ++j){
-            cout << "cut w:" << me << " j:" << j << " w:" << myPartWeights[j * 2 + 1] << endl;
-          }
-        }
-*/
 #ifndef USE_LESS_THREADS
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
@@ -1596,7 +1759,12 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
           for (int i = 0; i < numThreads; ++i){
             pwj += partWeights[i][j];
           }
+#ifndef BINARYCUTSEARCH
           tw[j] = totalWeight + pwj;
+#endif
+#ifdef BINARYCUTSEARCH
+          tw[j] = pwj;
+#endif
         }
 
 
@@ -1717,6 +1885,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
         scalar_t leftWeight = r * (totalPartWeights[i * 2 + 1] - totalPartWeights[i * 2]);
         for(int ii = 0; ii < noThreads; ++ii){
           if(leftWeight > _EPSILON){
+
             scalar_t ithWeight = partWeights[ii][i * 2 + 1] - partWeights[ii][i * 2 ];
             if(ithWeight < leftWeight){
               nonRectelinearRatios[ii][i] = ithWeight;
@@ -2343,6 +2512,8 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       previousEnd = outTotalCounts[currentOut + partNo[i] - 1];
       currentOut += partNo[i];
 
+      if(comm->getRank() == 0)
+        cout << endl;
     }
 
     lno_t * tmp = partitionedPointCoordinates;
@@ -2382,14 +2553,14 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
       lno_t k = partitionedPointCoordinates[ii];
       partIds[k] = i;
-      /*
+/*
       cout << "part of coordinate:";
       for(int iii = 0; iii < coordDim; ++iii){
         cout <<  pqJagged_coordinates[iii][k] << " ";
       }
       cout << i;
       cout << endl;
-       */
+*/
     }
     //cout << "begin:" << begin << " end:" << end << endl;
   }
