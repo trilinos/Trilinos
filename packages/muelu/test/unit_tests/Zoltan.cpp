@@ -239,9 +239,12 @@ namespace MueLuTests {
     //FIXME in getData?
     ArrayRCP<const LO> gtvData = globalTallyVec->getData(0);
 
+#ifdef __linux__
+    out << "Checking results..." << std::endl;
     for (int i=0; i<numPartitions; ++i) {
       if (comm->getRank() == 0) TEST_EQUALITY( expectedResults[i], gtvData[i]);
     }
+#endif
 
 #ifdef MUELU_VISUALIZE_REPARTITIONING
     //
@@ -525,9 +528,12 @@ namespace MueLuTests {
 
     ArrayRCP<const LO> gtvData = globalTallyVec->getData(0);
 
+#ifdef __linux__
+    out << "Checking results..." << std::endl;
     for (int i=0; i<numPartitions; ++i) {
       if (comm->getRank() == 0) TEST_EQUALITY( expectedResults[i], gtvData[i]);
     }
+#endif
 
 #ifdef MUELU_VISUALIZE_REPARTITIONING
     //
