@@ -109,6 +109,10 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
                                    ZeroStartingSolution_);
 
   DoBackwardGS_         = List.get("relaxation: backward mode",DoBackwardGS_);
+
+  DoL1Method_           = List.get("relaxation: use l1",DoL1Method_);
+
+  L1Eta_                = List.get("relaxation: l1 eta",L1Eta_);
   
   SetLabel();
 
