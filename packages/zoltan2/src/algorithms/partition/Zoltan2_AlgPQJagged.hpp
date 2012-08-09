@@ -1965,7 +1965,79 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 
 
     //determine part of each point
+#ifdef BINARYCUTSEARCH
 
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
+    for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+
+      int i = partitionedPointPermutations[ii];
+      partId_t lc = 0;
+      partId_t uc = noCuts - 1;
+
+
+      bool isInserted = false;
+      bool onLeft = false;
+      bool onRight = false;
+      partId_t lastPart = -1;
+      while(uc >= lc)
+      {
+
+        lastPart = -1;
+        onLeft = false;
+        onRight = false;
+        partId_t j = (uc + lc) / 2;
+        scalar_t distance = pqJagged_coordinates[i] - cutCoordinates[j];
+        scalar_t absdistance = fabs(distance);
+
+        if(allowNonRectelinearPart && myRatios[j] > _EPSILON * EPS_SCALE * 10 && absdistance < _EPSILON ){
+          scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+          isInserted = true;
+          scalar_t decrease = w;
+          myRatios[j] -= decrease;
+
+          if(myRatios[j] < 0 && j < noCuts - 1 && fabs(cutCoordinates[j+1] - cutCoordinates[j]) < _EPSILON){
+            myRatios[j + 1] += myRatios[j];
+          }
+          isInserted = true;
+          pqPV.inserToPart(j, i);
+          myPartPointCounts[j] +=  1;
+          break;
+        }
+        else {
+          if (distance < 0) {
+            uc = j - 1;
+            onLeft = true;
+            lastPart = j;
+          }
+          else {
+            lc = j + 1;
+            onRight = true;
+            lastPart = j;
+          }
+        }
+      }
+      if(!isInserted){
+        if(onRight){
+          pqPV.inserToPart(lastPart + 1, i);
+          myPartPointCounts[lastPart + 1] +=  1;
+        }
+        else if(onLeft){
+          pqPV.inserToPart(lastPart , i);
+          myPartPointCounts[lastPart] +=  1;
+        }
+        else {
+          cout << "ERROR" << endl;
+        }
+      }
+    }
+    for(partId_t i = 1; i < partNo; ++i){
+      myPartPointCounts[i] += myPartPointCounts[i-1];
+    }
+#endif
+
+#ifndef BINARYCUTSEARCH
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
@@ -2009,7 +2081,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
         pqPV.inserToPart(noCuts, i);
       }
     }
-
+#endif
     //accumulate the starts of each thread.
 
 #ifdef HAVE_ZOLTAN2_OMP
@@ -2053,7 +2125,13 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
       for (int i = 0; i < noThreads; ++i){
         pwj += partPointCounts[i][j];
       }
+#ifndef BINARYCUTSEARCH
       totalCounts[j] = pwj + numCoordsInPart;
+#endif
+#ifdef BINARYCUTSEARCH
+      totalCounts[j] = pwj;
+#endif
+      //cout << "j:" << totalCounts[j] << endl;
     }
 
 
