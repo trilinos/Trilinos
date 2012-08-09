@@ -38,9 +38,12 @@ namespace stk {
     bool PMMParallelReferenceMeshSmoother::check_convergence()
     {
       throw std::runtime_error("not implemented");
+#if 0
       stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , stk::ReduceMax<1>( & m_dmax ) );
       bool cond = (m_num_invalid == 0 && m_dmax < gradNorm);
       return cond;
+#endif
+      return false;
     }
 
     double PMMParallelReferenceMeshSmoother::run_one_iteration( Mesh* mesh, MeshDomain *domain,
