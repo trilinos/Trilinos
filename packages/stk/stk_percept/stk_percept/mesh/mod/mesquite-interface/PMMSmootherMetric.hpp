@@ -40,8 +40,15 @@ namespace stk {
 
     class PMMSmootherMetricUntangle : public PMMSmootherMetric
     {
+      double m_beta_mult;
     public:
-      PMMSmootherMetricUntangle(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
+      PMMSmootherMetricUntangle(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {
+        int spatialDim= eMesh->get_spatial_dim();
+        m_beta_mult = std::sqrt(0.05);
+        if (spatialDim == 2) m_beta_mult = m_beta_mult*m_beta_mult;
+        else if (spatialDim == 3) m_beta_mult =0.05; // m_beta_mult*m_beta_mult*m_beta_mult;
+        m_beta_mult = 0.05;
+      }
       virtual double metric(stk::mesh::Entity& element, bool& valid)
       {
         valid = true;
@@ -67,7 +74,7 @@ namespace stk {
             //A_tot += Ai;
             //W_tot += Wi;
             double untangle_metric = 0.0;
-            double beta = 0.01*Wi;  // FIXME magic number
+            double beta = m_beta_mult*Wi;
             double temp_var = Ai - beta;
             double fval=0.0;
             if(temp_var<0.0){

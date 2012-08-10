@@ -35,7 +35,11 @@ namespace stk {
         {
           return true; // for untangle
         }
-      if (m_num_invalid == 0 && m_dnew < gradNorm*gradNorm*m_d0 && m_dmax < gradNorm)
+      if (m_stage == 0 && m_num_invalid == 0 && m_dmax < gradNorm)
+        {
+          return true;
+        }
+      if (m_num_invalid == 0 && (m_dnew < gradNorm*gradNorm*m_d0 && m_dmax < gradNorm))
         {
           return true;
         }      
@@ -304,6 +308,7 @@ namespace stk {
         //double sigma=0.95;
         double tau = 0.5;
         double c0 = 1.e-4;
+        double min_alpha_factor=1.e-12;
 
         get_gradient(mesh, domain);
         double norm_gradient2 = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
@@ -323,7 +328,7 @@ namespace stk {
                     << " total_valid= " << total_valid );
             if (!converged)
               alpha *= tau;
-            if (alpha < std::max(1.e-6*m_scale, 1.e-16))
+            if (alpha < std::max(min_alpha_factor*m_scale, 1.e-16))
               break;
           }
         //if (metric > sigma*metric_0)
