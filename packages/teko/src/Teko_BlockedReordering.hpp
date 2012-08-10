@@ -403,6 +403,12 @@ Teuchos::RCP<const Thyra::MultiVectorBase<double> >
 buildFlatMultiVector(const BlockReorderManager & mgr,
                      const Teuchos::RCP<const Thyra::ProductMultiVectorBase<double> > & blkVec);
 
+/** \brief Convert a reordered vector space into a flat vector space
+  */
+Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+buildFlatVectorSpace(const BlockReorderManager & mgr,
+                     const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & blkSpc);
+
 /** \brief Convert a string to a block reorder manager object
   *
   * Convert a string to a block reorder manager object. These
