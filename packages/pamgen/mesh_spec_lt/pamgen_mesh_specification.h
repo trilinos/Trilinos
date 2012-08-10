@@ -1,7 +1,7 @@
 // $Id$
 
-#ifndef mesh_specification_LT_H
-#define mesh_specification_LT_H
+#ifndef pamgen_mesh_specification_LT_H
+#define pamgen_mesh_specification_LT_H
 
 #include "../asrc/element_dictionary.h"
 #include <string>

@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #include "../asrc/element_dictionary.h"
-#include "mesh_specification.h"
+#include "pamgen_mesh_specification.h"
 #include <string.h>
 
 namespace ms_lt{

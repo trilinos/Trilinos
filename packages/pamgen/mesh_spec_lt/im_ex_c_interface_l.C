@@ -1,7 +1,7 @@
 #include <cstring>
 #include <stdlib.h>
 #include "im_exodusII_l.h"
-#include "mesh_specification.h"
+#include "pamgen_mesh_specification.h"
 #include <strings.h>
 #include <stdio.h>
 

@@ -103,8 +103,8 @@ MS_LT = $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
-	$(srcdir)/../mesh_spec_lt/mesh_specification.C \
-	$(srcdir)/../mesh_spec_lt/mesh_specification.h
+	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C \
+	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h
 
 RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
 	$(srcdir)/../rtcompiler/ArrayNumberRTC.hh \
