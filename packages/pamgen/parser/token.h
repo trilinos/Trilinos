@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-#include "../asrc/code_types.h"
+#include "pamgen_code_types.h"
 #include "token_enum.h"
 #include "token_value.h"
 

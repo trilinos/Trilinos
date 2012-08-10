@@ -1,4 +1,4 @@
-#include "code_types.h"
+#include "pamgen_code_types.h"
 
 namespace PAMGEN_NEVADA {
 

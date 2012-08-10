@@ -3,7 +3,7 @@
 #ifndef keywordH
 #define keywordH
 
-#include "../asrc/code_types.h"
+#include "pamgen_code_types.h"
 #include "token.h"
 #include <strings.h>
 #include "token_stream.h"

@@ -3,7 +3,7 @@
 #ifndef element_dictionaryH
 #define element_dictionaryH
 
-#include "code_types.h"
+#include "pamgen_code_types.h"
 namespace PAMGEN_NEVADA {
 
 

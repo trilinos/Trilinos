@@ -1,7 +1,7 @@
 // $Id$
 
-#include "code_types.h"
-#include "element_dictionary.h"
+#include "pamgen_code_types.h"
+#include "pamgen_element_dictionary.h"
 
 namespace PAMGEN_NEVADA {
 

@@ -104,7 +104,12 @@ MS_LT = $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C \
-	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h
+	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h \
+        $(srcdir)/../mesh_spec_lt/pamgen_code_types.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_element_dictionary.C \
+	$(srcdir)/../mesh_spec_lt/pamgen_element_dictionary.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_fudges.C \
+	$(srcdir)/../mesh_spec_lt/pamgen_fudges.h 
 
 RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
 	$(srcdir)/../rtcompiler/ArrayNumberRTC.hh \
@@ -142,17 +147,16 @@ RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
 	$(srcdir)/../rtcompiler/common.C \
 	$(srcdir)/../rtcompiler/commonRTC.hh
 
-ASRC = $(srcdir)/../asrc/code_types.h \
-	$(srcdir)/../asrc/element_dictionary.C \
-	$(srcdir)/../asrc/element_dictionary.h \
-	$(srcdir)/../asrc/fudges.C \
-	$(srcdir)/../asrc/fudges.h 
 
 
 CORE_H =  $(srcdir)/create_inline_mesh.h \
 	$(srcdir)/../mesh_spec_lt/im_exodusII.h \
 	$(srcdir)/../mesh_spec_lt/im_exodusII_ext.h \
-	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h 
+	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_code_types.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_fidges.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_element_dictionary.h 
 
 UTIL_H = 
 

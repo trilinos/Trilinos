@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <assert.h>
 
-#include "../asrc/element_dictionary.h"
+#include "pamgen_element_dictionary.h"
 #include "pamgen_mesh_specification.h"
 #include <string.h>
 

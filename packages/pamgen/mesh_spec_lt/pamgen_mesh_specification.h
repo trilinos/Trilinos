@@ -3,7 +3,7 @@
 #ifndef pamgen_mesh_specification_LT_H
 #define pamgen_mesh_specification_LT_H
 
-#include "../asrc/element_dictionary.h"
+#include "pamgen_element_dictionary.h"
 #include <string>
 #include <sstream>
 #include <ios>

@@ -1,7 +1,7 @@
 #include "inline_mesh_desc.h"
 #include "radial_inline_mesh_desc.h"
 #include "uns_inline_decomp.h"
-#include "../asrc/fudges.h"
+#include "pamgen_fudges.h"
 #include "Vector.h"
 
 namespace PAMGEN_NEVADA {
