@@ -435,4 +435,6 @@ IF (Stokhos_ENABLE_Thrust)
 
 ENDIF()
 
-ADD_SUBDIRECTORY(experimental)
+IF(Stokhos_ENABLE_Experimental)
+  ADD_SUBDIRECTORY(experimental)
+ENDIF()
