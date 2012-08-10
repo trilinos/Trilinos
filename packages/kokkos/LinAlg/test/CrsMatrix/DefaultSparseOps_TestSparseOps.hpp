@@ -115,9 +115,17 @@ private:
   typedef Teuchos::BLAS<int, scalar_type> blas_type;
   //! The LAPACK wrapper type.
   typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
+  //@}
+
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
+  const bool verbose_;
 
 public:
-  //@}
+  TestSparseOps (const Teuchos::RCP<Teuchos::FancyOStream>& out,
+                 const bool verbose=false) :
+    out_ (out),
+    verbose_ (verbose)
+  {}
 
   /// \brief Compute dense test matrices for sparse triangular solve.
   ///
@@ -1020,10 +1028,35 @@ public:
     using Teuchos::CONJ_TRANS;
     using Teuchos::NON_UNIT_DIAG;
     using Teuchos::UNIT_DIAG;
+    using std::endl;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
     typedef Kokkos::DefaultArithmetic<MV> MVT;
+
+    Teuchos::FancyOStream& out = *out_;
+    if (verbose_) {
+      out << "testSparseMatVec:";
+      Teuchos::OSTab tab1 (out_);
+      out << "Input parameters:" << endl;
+      Teuchos::OSTab tab2 (out_);
+      out << "numRows = " << numRows << endl
+          << "numCols = " << numCols << endl
+          << "numVecs = " << numVecs << endl
+          << "tol     = " << tol << endl;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numRows < Teuchos::OrdinalTraits<ordinal_type>::zero(),
+      std::invalid_argument,
+      "testSparseMatVec: numRows = " << numRows << " < 0.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numCols < Teuchos::OrdinalTraits<ordinal_type>::zero(),
+      std::invalid_argument,
+      "testSparseMatVec: numCols = " << numCols << " < 0.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numVecs < Teuchos::OrdinalTraits<ordinal_type>::zero(),
+      std::invalid_argument,
+      "testSparseMatVec: numVecs = " << numVecs << " < 0.");
 
     // A record of error messages reported by any failed tests.
     // We run _all_ the tests first, then report any failures.
@@ -1040,6 +1073,11 @@ public:
 
     // Convert A_dense into a separate sparse matrix.
     RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node, params);
+    if (verbose_) {
+      Teuchos::OSTab tab1 (out_);
+      out << "A_sparse description:";
+      A_sparse->describe (out, verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE);
+    }
 
     // We make MVs for input, results, and scratch space (since the
     // BLAS' dense triangular solve overwrites its input).  Y and
@@ -1384,11 +1422,32 @@ public:
     using Teuchos::CONJ_TRANS;
     using Teuchos::NON_UNIT_DIAG;
     using Teuchos::UNIT_DIAG;
+    using std::endl;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
     typedef Kokkos::DefaultArithmetic<MV> MVT;
 
+    Teuchos::FancyOStream& out = *out_;
+    if (verbose_) {
+      out << "testSparseTriOps:";
+    }
+    Teuchos::OSTab tab1 (out_);
+    if (verbose_) {
+      out << "Input parameters:" << endl;
+      Teuchos::OSTab tab2 (out_);
+      out << "N       = " << N << endl
+          << "numVecs = " << numVecs << endl
+          << "tol     = " << tol << endl;
+      if (implicitUnitDiagTriMultCorrect) {
+        out << "Not a";
+      }
+      else {
+        out << "A";
+      }
+      out << "ssuming that sparse mat-vec works correctly "
+        "for implicit unit diagonal matrices." << endl;
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(
       N < Teuchos::OrdinalTraits<ordinal_type>::zero(),
       std::invalid_argument,
@@ -1414,10 +1473,22 @@ public:
     // Convert L_dense and U_dense into separate sparse matrices.
     RCP<SparseOpsType> L_sparse =
       denseTriToSparseOps (*L_dense, node, params, LOWER_TRI, UNIT_DIAG);
+    if (verbose_) {
+      out << "L_sparse description:";
+      L_sparse->describe (out, verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE);
+    }
     RCP<SparseOpsType> U_sparse =
       denseTriToSparseOps (*U_dense, node, params, UPPER_TRI, NON_UNIT_DIAG);
+    if (verbose_) {
+      out << "U_sparse description:";
+      U_sparse->describe (out, verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE);
+    }
     // Convert A_dense into a separate sparse matrix.
     RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node, params);
+    if (verbose_) {
+      out << "A_sparse description:";
+      A_sparse->describe (out, verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE);
+    }
 
     // We make MVs for input, results, and scratch space (since the
     // BLAS' dense triangular solve overwrites its input).  Y and
@@ -1437,6 +1508,9 @@ public:
     // Test sparse triangular matrix-(multi)vector multiply.
     //////////////////////////////////////////////////////////////////////
 
+    if (verbose_) {
+      out << "Testing upper triangular sparse mat-vec" << endl;
+    }
     // Compute Y_hat := U_dense * X.  First copy X into Y_hat, since
     // TRMM overwrites its input.
     MVT::Assign (*Y_hat, (const MV) *X);
@@ -1450,6 +1524,10 @@ public:
                                                            (const MV) *X, *Y);
     // Compare Y and Y_hat.
     relErr = maxRelativeError (Y_hat, Y, Y_scratch);
+    if (verbose_) {
+      Teuchos::OSTab tab2 (out_);
+      out << "Relative error: " << relErr << endl;
+    }
     if (relErr > tol) {
       err << "Sparse matrix-(multi)vector multiply test failed for upper "
         "triangular matrix U." << std::endl << "Maximum relative error "
@@ -1470,6 +1548,9 @@ public:
     MVT::Random (*X_hat);
     MVT::Random (*X);
 
+    if (verbose_) {
+      out << "Testing upper triangular transpose sparse mat-vec" << endl;
+    }
     // Compute X_hat := U_dense^T * Y.
     MVT::Assign (*X_hat, (const MV) *Y);
     blas.TRMM (LEFT_SIDE, UPPER_TRI, TRANS, NON_UNIT_DIAG, N, numVecs,
@@ -1481,6 +1562,10 @@ public:
                                                            (const MV) *Y, *X);
     // Compare X and X_hat.
     relErr = maxRelativeError (X_hat, X, X_scratch);
+    if (verbose_) {
+      Teuchos::OSTab tab2 (out_);
+      out << "Relative error: " << relErr << endl;
+    }
     if (relErr > tol) {
       err << "Sparse matrix-(multi)vector multiply test failed for "
         "transpose of upper triangular matrix U." << std::endl
@@ -1493,15 +1578,18 @@ public:
     // Test sparse triangular mat-vec: conjugate transpose case.
     //////////////////////////////////////////////////////////////////////
 
-    // Start over with a fresh random Y.
-    MVT::Random (*Y);
-    // Fill X_hat and X with random values, just to make sure the
-    // operations below aren't fakely reported correct by means of
-    // leftover values.
-    MVT::Random (*X_hat);
-    MVT::Random (*X);
-
     if (STS::isComplex) {
+      // Start over with a fresh random Y.
+      MVT::Random (*Y);
+      // Fill X_hat and X with random values, just to make sure the
+      // operations below aren't fakely reported correct by means of
+      // leftover values.
+      MVT::Random (*X_hat);
+      MVT::Random (*X);
+
+      if (verbose_) {
+        out << "Testing upper triangular conjugate transpose sparse mat-vec" << endl;
+      }
       // Compute X_hat := U_dense^T * Y.
       MVT::Assign (*X_hat, (const MV) *Y);
       blas.TRMM (LEFT_SIDE, UPPER_TRI, CONJ_TRANS, NON_UNIT_DIAG, N, numVecs,
@@ -1514,6 +1602,10 @@ public:
                                                              (const MV) *Y, *X);
       // Compare X and X_hat.
       relErr = maxRelativeError (X_hat, X, X_scratch);
+      if (verbose_) {
+        Teuchos::OSTab tab2 (out_);
+        out << "Relative error: " << relErr << endl;
+      }
       if (relErr > tol) {
         err << "Sparse matrix-(multi)vector multiply test failed for "
           "conjugate transpose of upper triangular matrix U." << std::endl
@@ -1536,12 +1628,10 @@ public:
     MVT::Random (*Y_hat);
     MVT::Random (*Y);
 
-    // FIXME (mfh 10 Aug 2012) I can't seem to get this test to pass,
-    // no matter whether or not I assume that the implicit unit
-    // diagonal case works.  I'm not sure what to do and I don't want
-    // this to hold up some of my other bug fixes, so I'm going to
-    // disable this test for now.
-
+    if (verbose_) {
+      out << "Testing implicit unit diagonal lower triangular "
+        "sparse mat-vec" << endl;
+    }
     // Compute Y_hat := L_dense * X.
     MVT::Assign (*Y_hat, (const MV) *X);
     blas.TRMM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numVecs,
@@ -1566,6 +1656,10 @@ public:
     }
     // Compare Y and Y_hat.
     relErr = maxRelativeError (Y_hat, Y, Y_scratch);
+    if (verbose_) {
+      Teuchos::OSTab tab2 (out_);
+      out << "Relative error: " << relErr << endl;
+    }
     if (relErr > tol) {
       err << "Sparse matrix-(multi)vector multiply test failed for lower "
         "triangular matrix L with implicit unit diagonal." << std::endl
@@ -1586,6 +1680,10 @@ public:
     MVT::Random (*X_hat);
     MVT::Random (*X);
 
+    if (verbose_) {
+      out << "Testing implicit unit diagonal lower triangular "
+        "sparse triangular solve" << endl;
+    }
     // Compute X_hat := L_dense \ Y.
     MVT::Assign (*X_hat, (const MV) *Y);
     blas.TRSM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numVecs,
@@ -1596,6 +1694,10 @@ public:
     L_sparse->template solve<scalar_type, scalar_type> (NO_TRANS, (const MV) *Y, *X);
     // Compare X and X_hat.
     relErr = maxRelativeError (X_hat, X, X_scratch);
+    if (verbose_) {
+      Teuchos::OSTab tab2 (out_);
+      out << "Relative error: " << relErr << endl;
+    }
     if (relErr > tol) {
       err << "Sparse triangular solve test failed for lower triangular matrix "
         "L with implicit unit diagonal." << std::endl
@@ -1612,6 +1714,9 @@ public:
     MVT::Random (*X_hat);
     MVT::Random (*X);
 
+    if (verbose_) {
+      out << "Testing upper triangular sparse triangular solve" << endl;
+    }
     // Compute X_hat = U_dense \ Y.
     MVT::Assign (*X_hat, (const MV) *Y);
     blas.TRSM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numVecs,
@@ -1623,6 +1728,10 @@ public:
                                                         (const MV) *Y, *X);
     // Compare X and X_hat.
     relErr = maxRelativeError (X_hat, X, X_scratch);
+    if (verbose_) {
+      Teuchos::OSTab tab2 (out_);
+      out << "Relative error: " << relErr << endl;
+    }
     if (relErr > tol) {
       err << "Sparse triangular solve test failed for upper triangular matrix "
         "U." << std::endl << "Maximum relative error " << relErr

@@ -220,7 +220,13 @@ namespace {
           Teuchos::ParameterList& params,
           const bool implicitUnitDiagTriMultCorrect=false)
     {
-      TestSparseOps<SparseOpsType> tester;
+      using Teuchos::FancyOStream;
+      using Teuchos::getFancyOStream;
+      using Teuchos::RCP;
+      using Teuchos::rcpFromRef;
+
+      RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
+      TestSparseOps<SparseOpsType> tester (out, verbose);
       if (benchmark) {
         std::vector<std::pair<std::string, double> > results;
         if (matrixFilename == "") {
