@@ -338,7 +338,7 @@ public:
   virtual ~CoordinateDistribution(){}
 
   CoordinateDistribution(gno_t np_, int dim, int worldSize):numPoints(np_), dimension(dim), requested(0), assignedPrevious(0), worldSize(worldSize){}
-  virtual CoordinatePoint<T> getPoint(gno_t point_index) = 0;
+  virtual CoordinatePoint<T> getPoint(gno_t point_index, unsigned int &state) = 0;
   virtual T getXCenter() = 0;
   virtual T getXRadius() =0;
 
@@ -356,16 +356,34 @@ public:
 
     this->requested = requestedPointcount;
 
+    unsigned int slice =  UINT_MAX/(this->worldSize);
+    unsigned int stateBegin = myRank * slice;
+
 //#ifdef HAVE_ZOLTAN2_OMP
 //#pragma omp parallel for
 //#endif
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel
+#endif
+    {
+      int me = 0;
+      int tsize = 1;
+#ifdef HAVE_ZOLTAN2_OMP
+      me = omp_get_thread_num();
+      tsize = omp_get_num_threads();
+#endif
+      unsigned int state = stateBegin + me * slice/(tsize);
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
       for(lno_t cnt = 0; cnt < requestedPointcount; ++cnt){
         lno_t iteration = 0;
         while(1){
           if(++iteration > MAX_ITER_ALLOWED) {
             throw "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates.";
           }
-          CoordinatePoint <T> p = this->getPoint( this->assignedPrevious + cnt);
+          CoordinatePoint <T> p = this->getPoint( this->assignedPrevious + cnt, &state);
 
           bool isInHole = false;
           for(lno_t i = 0; i < holeCount; ++i){
@@ -382,6 +400,7 @@ public:
           break;
         }
       }
+    }
 //#pragma omp parallel
       /*
     {
@@ -425,13 +444,37 @@ public:
     }
 
     this->requested = requestedPointcount;
+
+    unsigned int slice =  UINT_MAX/(this->worldSize);
+    unsigned int stateBegin = myRank * slice;
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel
+#endif
+    {
+      int me = 0;
+      int tsize = 1;
+#ifdef HAVE_ZOLTAN2_OMP
+      me = omp_get_thread_num();
+      tsize = omp_get_num_threads();
+#endif
+      unsigned int state = stateBegin + me * (slice/(tsize));
+      /*
+#pragma omp critical
+      {
+
+        cout << "myRank:" << me << " stateBeg:" << stateBegin << " tsize:" << tsize << " state:" << state <<  " slice: " << slice / tsize <<  endl;
+      }
+      */
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
       for(lno_t cnt = 0; cnt < requestedPointcount; ++cnt){
         lno_t iteration = 0;
         while(1){
           if(++iteration > MAX_ITER_ALLOWED) {
             throw "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates.";
           }
-          CoordinatePoint <T> p = this->getPoint( this->assignedPrevious + cnt);
+          CoordinatePoint <T> p = this->getPoint( this->assignedPrevious + cnt, state);
 
           bool isInHole = false;
           for(lno_t i = 0; i < holeCount; ++i){
@@ -451,6 +494,7 @@ public:
           break;
         }
       }
+    }
   }
 };
 
@@ -477,20 +521,21 @@ public:
     this->center.z = center_.z;
   }
 
-  virtual CoordinatePoint<T> getPoint(gno_t pindex){
+  virtual CoordinatePoint<T> getPoint(gno_t pindex, unsigned int &state){
 
     pindex = 0; // not used in normal distribution.
     CoordinatePoint <T> p;
+
     for(int i = 0; i < this->dimension; ++i){
       switch(i){
       case 0:
-        p.x = normalDist(this->center.x, this->standartDevx);
+        p.x = normalDist(this->center.x, this->standartDevx, state);
         break;
       case 1:
-        p.y = normalDist(this->center.y, this->standartDevy);
+        p.y = normalDist(this->center.y, this->standartDevy, state);
         break;
       case 2:
-        p.z = normalDist(this->center.z, this->standartDevz);
+        p.z = normalDist(this->center.z, this->standartDevz, state);
         break;
       default:
         throw "unsupported dimension";
@@ -501,40 +546,25 @@ public:
 
   virtual ~CoordinateNormalDistribution(){};
 private:
-  T normalDist(T mu, T sigma) {
-    static bool deviateAvailable=false;        //        flag
-    static T storedDeviate;                        //        deviate from previous calculation
-    T polar, rsquared, var1, var2;
-
-    //        If no deviate has been stored, the polar Box-Muller transformation is
-    //        performed, producing two independent normally-distributed random
-    //        deviates.  One is stored for the next round, and one is returned.
-    if (!deviateAvailable) {
-
-      //        choose pairs of uniformly distributed deviates, discarding those
-      //        that don't fall within the unit circle
+  T normalDist(T center, T sd, unsigned int &state) {
+    static bool derived=false;
+    static T storedDerivation;
+    T polarsqrt, normalsquared, normal1, normal2;
+    if (!derived) {
       do {
-        var1=2.0*( T(rand())/T(RAND_MAX) ) - 1.0;
-        var2=2.0*( T(rand())/T(RAND_MAX) ) - 1.0;
-        rsquared=var1*var1+var2*var2;
-      } while ( rsquared>=1.0 || rsquared == 0.0);
+        normal1=2.0*( T(rand_r(&state))/T(RAND_MAX) ) - 1.0;
+        normal2=2.0*( T(rand_r(&state))/T(RAND_MAX) ) - 1.0;
+        normalsquared=normal1*normal1+normal2*normal2;
+      } while ( normalsquared>=1.0 || normalsquared == 0.0);
 
-      //        calculate polar tranformation for each deviate
-      polar=sqrt(-2.0*log(rsquared)/rsquared);
-
-      //        store first deviate and set flag
-      storedDeviate=var1*polar;
-      deviateAvailable=true;
-
-      //        return second deviate
-      return var2*polar*sigma + mu;
+      polarsqrt=sqrt(-2.0*log(normalsquared)/normalsquared);
+      storedDerivation=normal1*polarsqrt;
+      derived=true;
+      return normal2*polarsqrt*sd + center;
     }
-
-    //        If a deviate is available from a previous call to this function, it is
-    //        returned, and the flag is set to false.
     else {
-      deviateAvailable=false;
-      return storedDeviate*sigma + mu;
+      derived=false;
+      return storedDerivation*sd + center;
     }
   }
 };
@@ -562,7 +592,7 @@ public:
       leftMostx(l_x), rightMostx(r_x), leftMosty(l_y), rightMosty(r_y), leftMostz(l_z), rightMostz(r_z){}
 
   virtual ~CoordinateUniformDistribution(){};
-  virtual CoordinatePoint<T> getPoint(gno_t pindex){
+  virtual CoordinatePoint<T> getPoint(gno_t pindex, unsigned int &state){
 
 
     pindex = 0; //not used in uniform dist.
@@ -570,13 +600,13 @@ public:
     for(int i = 0; i < this->dimension; ++i){
       switch(i){
       case 0:
-        p.x = unifRand(this->leftMostx, this->rightMostx);
+        p.x = uniformDist(this->leftMostx, this->rightMostx, state);
         break;
       case 1:
-        p.y = unifRand(this->leftMosty, this->rightMosty);
+        p.y = uniformDist(this->leftMosty, this->rightMosty, state);
         break;
       case 2:
-        p.z = unifRand(this->leftMostz, this->rightMostz);
+        p.z = uniformDist(this->leftMostz, this->rightMostz, state);
         break;
       default:
         throw "unsupported dimension";
@@ -586,21 +616,10 @@ public:
   }
 
 private:
-  //
-  // Generate a random number between 0 and 1
-  // return a uniform number in [0,1].
-  double unifRand()
+
+  T uniformDist(T a, T b, unsigned int &state)
   {
-    return rand() / double(RAND_MAX);
-  }
-  //
-  // Generate a random number in a real interval.
-  // param a one end point of the interval
-  // param b the other end of the interval
-  // return a inform rand numberin [a,b].
-  T unifRand(T a, T b)
-  {
-    return (b-a)*unifRand() + a;
+    return (b-a)*(rand_r(&state) / double(RAND_MAX)) + a;
   }
 };
 
@@ -650,7 +669,7 @@ public:
   }
 
   virtual ~CoordinateGridDistribution(){};
-  virtual CoordinatePoint<T> getPoint(gno_t pindex){
+  virtual CoordinatePoint<T> getPoint(gno_t pindex, unsigned int &state){
     //lno_t before = processCnt + this->assignedPrevious;
     //cout << "before:" << processCnt << " " << this->assignedPrevious << endl;
     //lno_t xshift = 0, yshift = 0, zshift = 0;
@@ -660,6 +679,7 @@ public:
     //yshift = tmp / this->along_X;
     //zshift = before / (this->along_X * this->along_Y);
 
+    state = 0; //not used here
     this->zshift = pindex / (along_X * along_Y);
     this->yshift = (pindex % (along_X * along_Y)) / along_X;
     this->xshift = (pindex % (along_X * along_Y)) % along_X;
