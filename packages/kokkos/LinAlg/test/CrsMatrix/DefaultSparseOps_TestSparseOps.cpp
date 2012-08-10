@@ -102,18 +102,20 @@ namespace {
   // If true, run the benchmark instead of the test.
   bool benchmark = false;
   // Number of columns in the multivectors to benchmark.
-  // Must be at least as many as the number of rows.
   int numVecs = 1;
   // Number of threads for the Kokkos Node instance.  -1 means use the
   // default behavior.
   int numThreads = -1;
   // Whether to force AltSparseOps to use first-touch allocation.
   bool forceFirstTouch = false;
-  // Kokkos Node instance initialization verbosity.
-  // Only certain Node types support this option.
+  // Verbosity, including that of Kokkos Node initialization.  (Only
+  // certain Kokkos Node types support this option.)
   bool verbose = false;
-
+  // For AltSparseOps: Whether to use the version with loops unrolled
+  // over the input and output multivectors.
   bool unroll = true;
+  // For AltSparseOps: Which variant of sparse mat-vec to test; "all"
+  // means test all implemented variants.
   std::string variant ("for-for");
 
   // This will be set after reading the command-line arguments, so

@@ -1466,6 +1466,63 @@ public:
     MVT::Random (*Y_hat);
     MVT::Random (*Y);
 
+    // Compute Y_hat := U_dense^T * X.
+    MVT::Assign (*Y_hat, (const MV) *X);
+    blas.TRMM (LEFT_SIDE, UPPER_TRI, TRANS, NON_UNIT_DIAG, N, numVecs,
+               STS::one (), U_dense->values (), U_dense->stride (),
+               Y_hat->getValuesNonConst ().getRawPtr (),
+               as<int> (Y_hat->getStride ()));
+    // Compute Y := U_sparse^T * X.
+    U_sparse->template multiply<scalar_type, scalar_type> (TRANS, STS::one (),
+                                                           (const MV) *X, *Y);
+    // Compare Y and Y_hat.
+    relErr = maxRelativeError (Y_hat, Y, Y_scratch);
+    if (relErr > tol) {
+      err << "Sparse matrix-(multi)vector multiply test failed for "
+        "transpose of upper triangular matrix U." << std::endl
+          << "Maximum relative error " << relErr
+          << " exceeds the given tolerance " << tol << "." << std::endl;
+      success = false;
+    }
+
+    // Start over with a fresh random X.
+    MVT::Random (*X);
+    // Fill Y_hat and Y with random values, just to make sure the
+    // operations below aren't fakely reported correct by means of
+    // leftover values.
+    MVT::Random (*Y_hat);
+    MVT::Random (*Y);
+
+    if (STS::isComplex) {
+      // Compute Y_hat := U_dense^T * X.
+      MVT::Assign (*Y_hat, (const MV) *X);
+      blas.TRMM (LEFT_SIDE, UPPER_TRI, CONJ_TRANS, NON_UNIT_DIAG, N, numVecs,
+                 STS::one (), U_dense->values (), U_dense->stride (),
+                 Y_hat->getValuesNonConst ().getRawPtr (),
+                 as<int> (Y_hat->getStride ()));
+      // Compute Y := U_sparse^H * X.
+      U_sparse->template multiply<scalar_type, scalar_type> (CONJ_TRANS,
+                                                             STS::one (),
+                                                             (const MV) *X, *Y);
+      // Compare Y and Y_hat.
+      relErr = maxRelativeError (Y_hat, Y, Y_scratch);
+      if (relErr > tol) {
+        err << "Sparse matrix-(multi)vector multiply test failed for "
+          "conjugate transpose of upper triangular matrix U." << std::endl
+            << "Maximum relative error " << relErr
+            << " exceeds the given tolerance " << tol << "." << std::endl;
+        success = false;
+      }
+
+      // Start over with a fresh random X.
+      MVT::Random (*X);
+      // Fill Y_hat and Y with random values, just to make sure the
+      // operations below aren't fakely reported correct by means of
+      // leftover values.
+      MVT::Random (*Y_hat);
+      MVT::Random (*Y);
+    }
+
     // FIXME (mfh 10 Aug 2012) I can't seem to get this test to pass,
     // no matter whether or not I assume that the implicit unit
     // diagonal case works.  I'm not sure what to do and I don't want
