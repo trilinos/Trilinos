@@ -203,6 +203,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_SchurPreconditioner.hpp
   Stokhos_InversePreconditioner.hpp
   Stokhos_BlockPreconditioner.hpp
+  Stokhos_MueLu_QR_Interface_decl.hpp
+  Stokhos_MueLu_QR_Interface_def.hpp
   )
 
 SET(SOURCES ${SOURCES}

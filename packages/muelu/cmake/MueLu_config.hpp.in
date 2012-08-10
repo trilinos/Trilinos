@@ -34,5 +34,3 @@
 #cmakedefine HAVE_MUELU_TPETRA
 
 #cmakedefine HAVE_MUELU_ZOLTAN
-
-#cmakedefine HAVE_MUELU_STOKHOS

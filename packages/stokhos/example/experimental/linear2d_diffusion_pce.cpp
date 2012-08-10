@@ -56,6 +56,20 @@
 // Scalar types
 #include "linear2d_diffusion_scalar_types.hpp"
 
+// MueLu includes
+#include <MueLu.hpp>
+#include "Stokhos_MueLu_QR_Interface_decl.hpp"
+#include "Stokhos_MueLu_QR_Interface_def.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
+typedef Kokkos::DefaultNode::DefaultNodeType Node;
+typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+//#include <MueLu_UseShortNames.hpp>
+
+#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
+#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+
+
 // Random field types
 enum SG_RF { UNIFORM, LOGNORMAL };
 const int num_sg_rf = 2;
@@ -192,7 +206,7 @@ int main(int argc, char *argv[]) {
     CLP.setOption("division_method", &division_method, 
 		  num_sg_div, sg_div_values, sg_div_names,
 		  "Stochastic division method");
-    
+
     SG_DivPrec divprec_method = NO;
     CLP.setOption("divprec_method", &divprec_method,
                   num_sg_divprec, sg_divprec_values, sg_divprec_names,
@@ -364,6 +378,19 @@ int main(int argc, char *argv[]) {
     typedef problem_type::Tpetra_Vector Tpetra_Vector;
     typedef problem_type::Tpetra_CrsMatrix Tpetra_CrsMatrix;
     typedef Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix> Writer;
+    //Xpetra matrices
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsMatrix;
+    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_Operator;
+    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_TpetraCrsMatrix;
+    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsOperator;
+    typedef Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Belos_MueLuOperator;
+    //MueLu typedefs
+    typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MueLu_Hierarchy;
+    typedef MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmootherPrototype;
+    typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
+    typedef MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmootherFactory;
+    typedef MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FactoryManager;
+
     RCP<Tpetra_Vector> p = Tpetra::createVector<Scalar>(model->get_p_map(0));
     RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(model->get_x_map());
     x->putScalar(0.0);
@@ -387,22 +414,29 @@ int main(int argc, char *argv[]) {
 	p_view[i].term(i,1) = 1.0 / basis_vals[i+1];
       }
     }
-       
 
     // Create preconditioner
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
-    Teuchos::RCP<Tprec> M;
+    Teuchos::RCP<Belos_MueLuOperator> M;
+    RCP<MueLu_Hierarchy> H;
+    Teuchos::RCP<Xpetra_Operator> xopJ;
     if (prec_method != NONE) {
       Teuchos::ParameterList precParams;
       std::string prec_name = "RILUK";
       precParams.set("fact: iluk level-of-fill", 1);
       precParams.set("fact: iluk level-of-overlap", 0);
-      Ifpack2::Factory factory;
+      //Ifpack2::Factory factory;
+      RCP<Xpetra_CrsMatrix> xcrsJ;
       if (prec_method == MEAN) 
-	M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
+        xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J0));
+        //M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
       else if (prec_method == STOCHASTIC)
-	M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
-      M->setParameters(precParams);
+        xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
+        //M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
+      xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
+      H = rcp(new MueLu_Hierarchy(xopJ));
+      M = rcp(new Belos_MueLuOperator(H));
+      //M->setParameters(precParams);
     }
 
     // Evaluate model
@@ -427,8 +461,15 @@ int main(int argc, char *argv[]) {
 
     // compute preconditioner
     if (prec_method != NONE) {
-      M->initialize();
-      M->compute();
+      //M->initialize();
+      //M->compute();
+      Teuchos::ParameterList coarseParamList;
+      coarseParamList.set("fact: level-of-fill", 0);
+      RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("ILUT", coarseParamList) );
+      RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarsePrototype, Teuchos::null) );
+      FactoryManager fm;
+      fm.SetFactory("CoarseSolver", coarseSolverFact);
+      H->Setup(fm);
     }
 
     // Setup Belos solver
@@ -443,31 +484,31 @@ int main(int argc, char *argv[]) {
     belosParams->set("Maximum Iterations", 1000);
     belosParams->set("Verbosity", 33);
     belosParams->set("Output Style", 1);
-    belosParams->set("Output Frequency", 10);
- 
-
-    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+    belosParams->set("Output Frequency", 1);
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-    typedef Belos::OperatorTraits<double,MV,OP> BOPT;
-    typedef Belos::MultiVecTraits<double,MV> BMVT;
+    typedef Belos::OperatorT<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OP;
+    typedef Belos::OperatorTraits<Scalar,MV,OP> BOPT;
+    typedef Belos::MultiVecTraits<Scalar,MV> BMVT;
+    typedef Belos::MultiVecTraits<double,MV> BTMVT;
     typedef Belos::LinearProblem<double,MV,OP> BLinProb;
-    RCP< BLinProb > problem = rcp(new BLinProb(J, dx, f));
+    typedef Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BXpetraOp;
+    RCP<OP> belosJ = rcp(new BXpetraOp(xopJ)); // Turns an Xpetra::Operator object into a Belos operator
+    RCP< BLinProb > problem = rcp(new BLinProb(belosJ, dx, f));
     if (prec_method != NONE)
       problem->setRightPrec(M);
     problem->setProblem();
     RCP<Belos::SolverManager<double,MV,OP> > solver;
-  
- 
     if (solver_method == CG)
       solver = rcp(new Belos::PseudoBlockCGSolMgr<double,MV,OP>(problem,
     								belosParams));
     else if (solver_method == GMRES)
       solver = rcp(new Belos::BlockGmresSolMgr<double,MV,OP>(problem, belosParams));
     
-                                                        
+
     // Print initial residual norm
     std::vector<double> norm_f(1);
-    BMVT::MvNorm(*f, norm_f);
+    //BMVT::MvNorm(*f, norm_f);
+    BTMVT::MvNorm(*f, norm_f);
     if (MyPID == 0)
       std::cout << "\nInitial residual norm = " << norm_f[0] << std::endl;
 
@@ -492,7 +533,8 @@ int main(int argc, char *argv[]) {
     model->computeResponse(*x, *p, *g);
 
     // Print final residual norm
-    BMVT::MvNorm(*f, norm_f);
+    //BMVT::MvNorm(*f, norm_f);
+    BTMVT::MvNorm(*f, norm_f);
     if (MyPID == 0)
       std::cout << "\nFinal residual norm = " << norm_f[0] << std::endl;
 

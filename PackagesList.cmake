@@ -151,9 +151,9 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Rythmos               packages/rythmos                  PS
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
-  Stokhos               packages/stokhos                  SS
   Xpetra                packages/xpetra                   SS
   MueLu                 packages/muelu                    SS
+  Stokhos               packages/stokhos                  SS
   Piro                  packages/piro                     SS
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)
   CTrilinos             packages/CTrilinos                SS # Switched to SS to speed up checkin testing

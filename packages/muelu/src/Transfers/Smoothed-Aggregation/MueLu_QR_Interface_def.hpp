@@ -139,68 +139,6 @@ namespace MueLu {
     }
   } //ExtractQ()
 
-#if defined(HAVE_MUELU_STOKHOS) and defined(MUELU_SCALAR_IS_PCE_TYPE)
-  //Specialization for polynomial chaos expansion (PCE) scalar types.
-  template <class Scalar, class Storage, class LocalOrdinal>
-  QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), NSDim_(NSDim), info_(0) {
-        tau_ = ArrayRCP<Scalar>(NSDim);
-        work_ = ArrayRCP<Scalar>(NSDim);
-      }
-
-  template <class Scalar, class Storage, class LocalOrdinal>
-  void QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::Compute(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR) {
-        if (localQR.size() > localQR_.size())
-          localQR_.resize(localQR.size());
-        //convert pce to pod scalar
-        for (int i=0; i<localQR.size(); ++i) {
-          localQR_[i] = (localQR[i]).coeff(0);
-        }
-        lapack_.GEQRF( myAggSize, Teuchos::as<int>(NSDim_), localQR_.getRawPtr(), myAggSize,
-                      tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
-        if (info_ != 0) {
-          std::string msg = "QR_Interface: dgeqrf (LAPACK QR routine) returned error code " + Teuchos::toString(info_);
-          throw(Exceptions::RuntimeError(msg));
-        }
-        //promote POD scalar back to pce
-        for (int i=0; i<localQR.size(); ++i) {
-          localQR[i] = localQR_[i];
-        }
-        // LAPACK may have determined a better length for the work array.  Returns it in work[0],
-        // so we cast to avoid compiler warnings.  Taking a look at the NETLIB reference implementation
-        // CGEQRF (complex), work[0] is assigned an integer, so it's safe to take the magnitude.
-        // Scalar type might be complex, so take absolute value.
-        if ( std::abs(work_[0]) > workSize_) {
-          workSize_ = (int) std::abs(work_[0]);
-          work_ = ArrayRCP<Scalar>(workSize_);
-        }
-      } //Compute
-
-  template <class Scalar, class Storage, class LocalOrdinal>
-  void QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR) {
-        //call nonmember function (perhaps specialized)
-        //Note: localQR_ already contains the proper data because of prior call to Compute, so there is no need to resize or copy.
-        //      If Compute is called twice in a row, all bets are off.
-        LapackQR( lapack_, myAggSize, Teuchos::as<int>(NSDim_), localQR_, tau_, work_, workSize_, info_ );
-        if (info_ != 0) {
-          std::string msg = "QR_Interface: dorgqr (LAPACK auxiliary QR routine) returned error code " + Teuchos::toString(info_);
-          throw(Exceptions::RuntimeError(msg));
-        }
-        //promote POD scalar back to pce
-        for (int i=0; i<localQR.size(); ++i) {
-          localQR[i] = localQR_[i];
-        }
-  
-        // LAPACK may have determined a better length for the work array.  Returns it in work[0],
-        // so we cast to avoid compiler warnings.
-        // Scalar type might be complex, so take absolute value.
-        if ( std::abs(work_[0]) > workSize_) {
-          workSize_ = (int) std::abs(work_[0]);
-          work_ = ArrayRCP<Scalar>(workSize_);
-        }
-      } //ExtractQ
-#endif //ifdef HAVE_MUELU_STOKHOS
-
-
 } //namespace MueLu
 
 #endif // MUELU_QR_INTERFACE_DEF_HPP

@@ -1,6 +1,6 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2)
+IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND Stokhos_ENABLE_MueLu)
 
      TRIBITS_ADD_EXECUTABLE(
        Linear2D_Diffusion_Example
@@ -20,7 +20,7 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2)
 	       tpetra_pce_instantiations.cpp
 	       ifpack2_pce_instantiations.cpp
        COMM serial mpi
-       DEPLIBS stokhos
+       DEPLIBS stokhos muelu muelu-xpetra
       )
 
 ENDIF()

@@ -43,25 +43,25 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_QR_INTERFACE_DECL_HPP
-#define MUELU_QR_INTERFACE_DECL_HPP
+#ifndef STOKHOS_MUELU_QR_INTERFACE_DECL_HPP
+#define STOKHOS_MUELU_QR_INTERFACE_DECL_HPP
 
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_QR_Interface_decl.hpp"
 
 namespace MueLu {
 
+#if defined(HAVE_STOKHOS_MUELU)
   /*!
     @class QR_Interface class.
     @brief Interface to the Teuchos wrappers for LAPACK's QR.
-
-    Used in the computation of the tentative prolongator during smoothed aggregation.
-    Allows for specializations for Scalar types such as std::complex<double> and PCE.
+    
+    Specialization for polynomial chaos expansion (PCE) scalar types.
   */
-  template <class Scalar, class LocalOrdinal>
-  class QR_Interface {
-
+  template <class Scalar, class Storage, class LocalOrdinal>
+  class QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal > {
     public:
       //! @name Constructors/Destructors.
       //@{
@@ -74,10 +74,9 @@ namespace MueLu {
       virtual ~QR_Interface() {};
       //@}
 
-      //! @name Computational methods.
-      //@{
       //! Compute the QR factorization.
-      void Compute(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR);
+      void Compute(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR);
+
 
       /*! @brief Calculate the Q factor.
 
@@ -85,8 +84,7 @@ namespace MueLu {
         @param[in,out] localQR array that on input implicitly contains the factorization calculated by Compute.  On
                                output, this array explicitly contains Q.
       */
-      void ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR);
-      //@}
+      void ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR);
 
     private:
       //! Teuchos LAPACK wrapper.
@@ -101,23 +99,13 @@ namespace MueLu {
       ArrayRCP<Scalar> tau_;
       //! Temporary work space.
       ArrayRCP<Scalar> work_;
-  }; //class QR_Interface
-
-  //! @brief Non-member templated function to handle extracting Q from QR factorization.
-  template <class Scalar, class LocalOrdinal>
-  void LapackQR(Teuchos::LAPACK<LocalOrdinal,Scalar> &lapack, LocalOrdinal myAggSize,
-                int intFineNSDim, ArrayRCP<Scalar> &localQR, ArrayRCP<Scalar> &tau,
-                ArrayRCP<Scalar> &work, LocalOrdinal &workSize, LocalOrdinal &info);
-
-  //! @brief Non-member specialized function to handle extracting Q from QR factorization for Scalar==std::complex<double>
-  template <class LocalOrdinal>
-  void LapackQR(Teuchos::LAPACK<LocalOrdinal, std::complex<double> > &lapack,
-                LocalOrdinal myAggSize, int intFineNSDim, ArrayRCP<std::complex<double> > &localQR,
-                ArrayRCP<std::complex<double> > &tau, ArrayRCP<std::complex<double> > &work,
-                LocalOrdinal &workSize, LocalOrdinal &info);
+      //! POD (as opposed to PCE) local QR.
+      ArrayRCP<Scalar> localQR_;
+  };
+#endif //ifdef HAVE_STOKHOS_MUELU
 
 } //namespace MueLu
 
 #define MUELU_QR_INTERFACE_SHORT
 
-#endif //MUELU_QR_INTERFACE_DECL_HPP
+#endif //STOKHOS_MUELU_QR_INTERFACE_DECL_HPP
