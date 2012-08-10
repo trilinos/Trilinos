@@ -347,16 +347,16 @@ void CubeTetMeshFactory::buildTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
    // 
    int idSet[][3] = { { 0, 1, 2}, // back
                       { 0, 2, 3}, 
-                      { 0, 1, 5}, // bottom
-                      { 0, 5, 4},
-                      { 0, 4, 7}, // left
-                      { 0, 7, 3},
-                      { 6, 5, 1}, // right
-                      { 6, 1, 2},
-                      { 6, 2, 3}, // top
-                      { 6, 3, 7},
-                      { 6, 7, 4}, // front
-                      { 6, 4, 5} };
+                      { 0, 5, 1}, // bottom
+                      { 0, 4, 5},
+                      { 0, 7, 4}, // left
+                      { 0, 3, 7},
+                      { 6, 1, 5}, // right
+                      { 6, 2, 1},
+                      { 6, 3, 2}, // top
+                      { 6, 7, 3},
+                      { 6, 4, 7}, // front
+                      { 6, 5, 4} };
 
    for(int i=0;i<12;i++) {
       nodes[0] = h_nodes[idSet[i][0]];
