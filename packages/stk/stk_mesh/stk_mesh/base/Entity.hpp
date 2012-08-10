@@ -238,7 +238,7 @@ private:
   };
   static std::string TypeToString (ObjectTypeEnum type);
 
-		       
+
 
   template <class SharedAttr>
   void init_fmwk(

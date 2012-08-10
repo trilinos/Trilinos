@@ -133,7 +133,7 @@ void get_entities_through_relations(
 }
 
 inline
-void insert_part_and_supersets(OrdinalVector& induced_parts, 
+void insert_part_and_supersets(OrdinalVector& induced_parts,
                                Part& part,
                                bool include_supersets)
 {
