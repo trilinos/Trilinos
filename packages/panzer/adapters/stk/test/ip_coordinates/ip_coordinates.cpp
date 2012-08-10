@@ -203,6 +203,7 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
     user_data.set<int>("Workset Size",workset_size);
 
+    // IP is in center of element
     user_data.sublist("IP Coordinates").set<int>("Integration Order",1);
 
     // setup and evaluate ResponseLibrary
@@ -260,31 +261,95 @@ namespace panzer {
     TEST_ASSERT(coord_response->hasParameterList());
     
     Teuchos::RCP<Teuchos::ParameterList> pl = coord_response->getParameterList();
-    Teuchos::RCP<std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > coords = pl->get<Teuchos::RCP<std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > >("IP Coordinates");
+    Teuchos::RCP<std::map<std::string,Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > > > coords = 
+      pl->get<Teuchos::RCP<std::map<std::string,Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > > > >("IP Coordinates");
     
-    // NOTE: if the ordering of elements changes in the STK 2D object, this test may break
-    out << "\nPrinting element data for block: eblock-1_0" << std::endl;
-    for (std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator i = coords->begin(); i != coords->end(); ++i)
-      out << "pid = " << comm->MyPID() << ", lid = " << i->lid << ", coords(x,y,z) = (" << i->val[0] << "," << i->val[1] << ")" << std::endl;
-
+    // Debugging
+    if (true) {
+      Teuchos::RCP<Teuchos::FancyOStream> out2 = Teuchos::getFancyOStream(Teuchos::rcp(&out,false));
+      out2->setOutputToRootOnly(-1);
+      *out2 << "\nPrinting IP coordinates for block: eblock-0_0" << std::endl;
+      for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = ((*coords)["eblock-0_0"])->begin(); i != ((*coords)["eblock-0_0"])->end(); ++i)
+	*out2 << "pid = " << comm->MyPID() << ", val = " << *i << std::endl;
+      *out2 << "\nPrinting IP coordinates for block: eblock-1_0" << std::endl;
+      for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = ((*coords)["eblock-1_0"])->begin(); i != ((*coords)["eblock-1_0"])->end(); ++i)
+	*out2 << "pid = " << comm->MyPID() << ", val = " << *i << std::endl;
+    }
+   
+    
     const double double_tol = 10.0*std::numeric_limits<double>::epsilon();
-    if (comm->MyPID() == 0) {
-      for (std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator i = coords->begin(); i != coords->end(); ++i) {
-	if (i->lid == 0) {
-	  TEST_FLOATING_EQUALITY(i->val[0], 1.0, double_tol);
-	  TEST_FLOATING_EQUALITY(i->val[1], 1.0, double_tol);
+
+    // NOTE: if the ordering of elements in STK changes or the
+    // ordering of integration points in Intrepid changes, this test
+    // will break!  It assumes a fixed deterministic ordering.
+    if (tcomm->getSize() == 1) {
+      // eblock 1
+      {
+	std::vector<panzer::Traits::Residual::ScalarT>& values = *((*coords)["eblock-0_0"]); 
+	TEST_FLOATING_EQUALITY(values[0], 1.0, double_tol);  // x 
+	TEST_FLOATING_EQUALITY(values[1], 3.0, double_tol);  // x 
+	TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // x 
+	TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // x 
+	TEST_FLOATING_EQUALITY(values[4], 1.0, double_tol);  // y 
+	TEST_FLOATING_EQUALITY(values[5], 1.0, double_tol);  // y 
+	TEST_FLOATING_EQUALITY(values[6], 3.0, double_tol);  // y 
+	TEST_FLOATING_EQUALITY(values[7], 3.0, double_tol);  // y 
+      }
+      // eblock 2
+      {
+	std::vector<panzer::Traits::Residual::ScalarT>& values = *((*coords)["eblock-1_0"]);
+	TEST_FLOATING_EQUALITY(values[0], 5.0, double_tol);  // x 
+	TEST_FLOATING_EQUALITY(values[1], 7.0, double_tol);  // x 
+	TEST_FLOATING_EQUALITY(values[2], 5.0, double_tol);  // x 
+	TEST_FLOATING_EQUALITY(values[3], 7.0, double_tol);  // x 
+	TEST_FLOATING_EQUALITY(values[4], 1.0, double_tol);  // y 
+	TEST_FLOATING_EQUALITY(values[5], 1.0, double_tol);  // y 
+	TEST_FLOATING_EQUALITY(values[6], 3.0, double_tol);  // y 
+	TEST_FLOATING_EQUALITY(values[7], 3.0, double_tol);  // y 
+      }
+    }
+    else if (tcomm->getSize() == 2) {
+
+      if (comm->MyPID() == 0) {
+	// eblock 1
+	{
+	  std::vector<panzer::Traits::Residual::ScalarT>& values = *((*coords)["eblock-0_0"]); 
+	  TEST_FLOATING_EQUALITY(values[0], 1.0, double_tol);  // x 
+	  TEST_FLOATING_EQUALITY(values[1], 1.0, double_tol);  // x 
+	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y 
+	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
+	}
+	// eblock 2
+	{
+	  std::vector<panzer::Traits::Residual::ScalarT>& values = *((*coords)["eblock-1_0"]);
+	  TEST_FLOATING_EQUALITY(values[0], 5.0, double_tol);  // x 
+	  TEST_FLOATING_EQUALITY(values[1], 5.0, double_tol);  // x 
+	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y 
+	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
+	}
+      }
+      else if (comm->MyPID() == 1) {
+	// eblock 1
+	{
+	  std::vector<panzer::Traits::Residual::ScalarT>& values = *((*coords)["eblock-0_0"]); 
+	  TEST_FLOATING_EQUALITY(values[0], 3.0, double_tol);  // x 
+	  TEST_FLOATING_EQUALITY(values[1], 3.0, double_tol);  // x 
+	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y 
+	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
+	}
+	// eblock 2
+	{
+	  std::vector<panzer::Traits::Residual::ScalarT>& values = *((*coords)["eblock-1_0"]);
+	  TEST_FLOATING_EQUALITY(values[0], 7.0, double_tol);  // x 
+	  TEST_FLOATING_EQUALITY(values[1], 7.0, double_tol);  // x 
+	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y 
+	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
 	}
       }
     }
-    else if (comm->MyPID() == 1) {
-      for (std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator i = coords->begin(); i != coords->end(); ++i) {
-	if (i->lid == 0) {
-	  TEST_FLOATING_EQUALITY(i->val[0], 3.0, double_tol);
-	  TEST_FLOATING_EQUALITY(i->val[1], 1.0, double_tol);
-	}
-      }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Error - this test can only be run with 1 or 2 processes!");
     }
-    
 
   }
 

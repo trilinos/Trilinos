@@ -102,7 +102,7 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<
      Teuchos::rcp_dynamic_cast<ResponseAggregator_IPCoordinates_Data<panzer::Traits::Residual,TraitsT> >(data);
 
    typename Teuchos::RCP<IPCoordinates<panzer::Traits::Residual,TraitsT> > eval = 
-     Teuchos::rcp(new panzer::IPCoordinates<panzer::Traits::Residual,TraitsT>(ip_order,ipc_data->getNonconstCoords()));
+     Teuchos::rcp(new panzer::IPCoordinates<panzer::Traits::Residual,TraitsT>(ip_order,ipc_data->getNonconstBlockID(),ipc_data->getNonconstCoords()));
 
    fm.template registerEvaluator<panzer::Traits::Residual>(eval);
 
@@ -120,8 +120,8 @@ template <typename TraitsT>
 void ResponseAggregator_IPCoordinates<panzer::Traits::Residual,TraitsT>::
 aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const
 {
-  Teuchos::RCP<std::vector<typename IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > block_agg_coords =
-    Teuchos::rcp(new std::vector<typename IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>);
+  Teuchos::RCP< std::map<std::string,Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > > > block_agg_coords =
+    Teuchos::rcp(new std::map<std::string,Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > >);
 
   for (typename std::list<Teuchos::RCP<const Response<TraitsT> > >::const_iterator block = sources.begin();  block != sources.end(); ++block) {
     
@@ -129,11 +129,12 @@ aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const R
     
     Teuchos::RCP<Teuchos::ParameterList> pl = (*block)->getParameterList();
 
-    Teuchos::RCP<std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > coords = pl->get<Teuchos::RCP<std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > >("IP Coordinates");
+    std::string block_id = pl->get<std::string>("Element Block ID");
 
-    for (typename std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator point = coords->begin(); point != coords->end(); ++point) {
-      block_agg_coords->push_back(*point);
-    }
+    Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > coords = 
+      pl->get<Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > >("IP Coordinates");
+
+    (*block_agg_coords)[block_id] = coords;
     
   }
 

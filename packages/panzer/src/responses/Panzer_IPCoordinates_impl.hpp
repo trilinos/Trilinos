@@ -56,9 +56,11 @@ namespace panzer {
 template<typename EvalT, typename Traits>
 IPCoordinates<EvalT, Traits>::
 IPCoordinates(int in_ir_order,
-	      const Teuchos::RCP<std::vector<Coordinate> >& in_coords) :
+	      const Teuchos::RCP<std::string>& in_block_id,
+	      const Teuchos::RCP<std::vector<ScalarT> >& in_coords) :
   first_evaluation(true),
   ir_order(in_ir_order),
+  block_id(in_block_id),
   coords(in_coords)
 { 
   using Teuchos::RCP;
@@ -89,40 +91,34 @@ postRegistrationSetup(typename Traits::SetupData sd,
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
-void IPCoordinates<EvalT, Traits>::
-evaluateFields(typename Traits::EvalData workset)
-{ 
+void IPCoordinates<EvalT, Traits>::preEvaluate(typename Traits::PreEvalData data)
+{
   
-  if (first_evaluation) {
-
-    Intrepid::FieldContainer<double>& workset_coords = (workset.int_rules[ir_index])->ip_coordinates;
-
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
-
-      for (int ip = 0; ip < workset_coords.dimension(1); ++ip) {
-
-	Coordinate pt;
-	pt.lid = workset.cell_local_ids[cell];
-	int num_dims = workset_coords.dimension(2);
-	pt.val.resize(num_dims);
-
-	for (int dim = 0; dim < num_dims; ++dim)
-	  pt.val[dim] = workset_coords(static_cast<int>(cell),ip,dim); 
-
-	coords->push_back(pt);
-      }
-
-    }
-
-  }
-
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
-void IPCoordinates<EvalT, Traits>::preEvaluate(typename Traits::PreEvalData data)
-{
-  
+void IPCoordinates<EvalT, Traits>::
+evaluateFields(typename Traits::EvalData workset)
+{ 
+  if (first_evaluation) {
+
+    *block_id = workset.block_id;
+
+    Intrepid::FieldContainer<double>& workset_coords = (workset.int_rules[ir_index])->ip_coordinates;
+
+    // This ordering is for the DataTransferKit.  It blocks all x
+    // coordinates for a set of points, then all y coordinates and if
+    // required all z coordinates.
+    for (int dim = 0; dim < workset_coords.dimension(2); ++dim) {
+      for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+	for (int ip = 0; ip < workset_coords.dimension(1); ++ip) {
+	  coords->push_back(workset_coords(static_cast<int>(cell),ip,dim));
+	}
+      }
+    }
+
+  }
 }
 
 //**********************************************************************

@@ -56,6 +56,11 @@ namespace panzer {
    *  NOTE: This assumes a static mesh and does not recompute the
    *  coordinates on each response evaluation.  It is simple to change
    *  in the future if needed.
+   *
+   *  NOTE: This ordering of points is blocked by dimension.  All x
+   *  points values, then all y point values and then if required all
+   *  z point values.  This is ordering is done to support
+   *  DataTransferKit requirements.
    */
   template<typename EvalT, typename Traits>
   class IPCoordinates : 
@@ -64,13 +69,11 @@ namespace panzer {
   
   public:
     
-    struct Coordinate {
-      int lid;
-      std::vector<double> val;
-    };
-
+    typedef typename EvalT::ScalarT ScalarT;
+    
     IPCoordinates(int ir_order,
-		  const Teuchos::RCP<std::vector<Coordinate> >& coords);
+		  const Teuchos::RCP<std::string>& block_id,
+		  const Teuchos::RCP<std::vector<ScalarT> >& coords);
     
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& vm);
@@ -79,8 +82,6 @@ namespace panzer {
     void evaluateFields(typename Traits::EvalData ud);
     void postEvaluate(typename Traits::PostEvalData data);
 
-    typedef typename EvalT::ScalarT ScalarT;
-    
     const PHX::MDField<ScalarT,Cell,IP,Dim> getEvaluatedField() const;
 
   private:
@@ -95,8 +96,11 @@ namespace panzer {
     //! integration rule index
     int ir_index;
 
+    //! Block name from ResponseData object
+    Teuchos::RCP<std::string> block_id;
+
     //! Coordinate vector from ResponseData object
-    Teuchos::RCP<std::vector<Coordinate> > coords;
+    Teuchos::RCP<std::vector<ScalarT> > coords;
   };
   
 }

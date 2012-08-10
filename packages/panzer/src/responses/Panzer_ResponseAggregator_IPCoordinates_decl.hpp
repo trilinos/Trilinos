@@ -73,7 +73,8 @@ public:
   
   virtual void allocateAndInitializeData(const std::vector<std::string> & fields)
   { 
-    coords = Teuchos::rcp(new std::vector<typename IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>);
+    block_id = Teuchos::rcp(new std::string);
+    coords = Teuchos::rcp(new std::vector<panzer::Traits::Residual::ScalarT>);
     reinitializeData();
   }
   
@@ -82,25 +83,27 @@ public:
   virtual void fillResponse(const std::string & field,Response<TraitsT> & response) const
   { 
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->set("Element Block ID",*block_id);
     pl->set("IP Coordinates",coords);
     response.setParameterList(pl);
   }
   
    //! @}
- 
-  Teuchos::RCP<const std::vector<typename IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > getCoords() const
-  {
-    return coords;
-  }
+  Teuchos::RCP<const std::string> getBlockID() const
+  { return block_id; }
 
-  Teuchos::RCP<std::vector<typename IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > getNonconstCoords()
-  {
-    return coords;
-  }
-    
+  Teuchos::RCP<std::string> getNonconstBlockID()
+  { return block_id; }
+
+  Teuchos::RCP<const std::vector<panzer::Traits::Residual::ScalarT> > getCoords() const
+  { return coords; }
+
+  Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > getNonconstCoords()
+  { return coords; }
 
 private:
-  Teuchos::RCP<std::vector<typename IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > coords;
+  Teuchos::RCP<std::string> block_id;
+  Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > coords;
 };
 
 template <typename TraitsT>
