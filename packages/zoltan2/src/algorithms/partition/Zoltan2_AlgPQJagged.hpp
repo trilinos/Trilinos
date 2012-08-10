@@ -71,7 +71,7 @@
 #endif
 #define FIRST_TOUCH
 
-//#define BINARYCUTSEARCH
+#define BINARYCUTSEARCH
 //#define RCBCODE
 #define LEAF_IMBALANCE_FACTOR 0.1
 
@@ -1480,7 +1480,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
       int iteration = 0;
       while (allDone != 0){
         iteration += 1;
-        /*
+/*
         if(comm->getRank() == 0)
         {
 #pragma omp single
@@ -1495,7 +1495,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
             }
           }
         }
-        */
+*/
 
         for (size_t i = 0; i < total_part_count; ++i){
 #ifndef BINARYCUTSEARCH
@@ -1694,7 +1694,7 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
 */
         for (size_t i = 1; i < total_part_count; ++i){
 
-          if(i % 2 == 0 && i > 1&& fabs(cutCoordinates_tmp[i / 2] - cutCoordinates_tmp[i /2 - 1]) < _EPSILON){
+          if(i % 2 == 0 && i > 1 && i < total_part_count - 1 && fabs(cutCoordinates_tmp[i / 2] - cutCoordinates_tmp[i /2 - 1]) < _EPSILON){
             myPartWeights[i] = myPartWeights[i-2];
             continue;
           }
@@ -1703,10 +1703,11 @@ void pqJagged_1DPart_simple(const RCP<const Environment> &env,RCP<Comm<int> > &c
         }
 /*
         for (size_t i = 0; i < total_part_count; ++i){
-          if (i == 2)
+//          if (i == 2)
           cout << "t:" << i << " :" << myPartWeights[i] << " c:" << cutCoordinates_tmp[i/2] << " r:" << myRightClosest[i/2] << " l:" << myLeftClosest[i/2]<< endl;
         }
-*/
+        */
+
 
 #endif
 #ifndef BINARYCUTSEARCH
@@ -1939,7 +1940,6 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
           }
           myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
 
-          //cout << "m:" << i << ":" <<  myRatios[i] << endl;
         }
       }
 
@@ -1977,7 +1977,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
       partId_t uc = noCuts - 1;
 
 
-      bool isInserted = false;
+      //bool isInserted = false;
       bool onLeft = false;
       bool onRight = false;
       partId_t lastPart = -1;
@@ -1991,19 +1991,121 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
         scalar_t distance = pqJagged_coordinates[i] - cutCoordinates[j];
         scalar_t absdistance = fabs(distance);
 
-        if(allowNonRectelinearPart && myRatios[j] > _EPSILON * EPS_SCALE * 10 && absdistance < _EPSILON ){
+
+
+        if(allowNonRectelinearPart /*&& myRatios[j] > _EPSILON * EPS_SCALE * 10*/ /* myRatios[j] > fabs(myRatios[j] - w)*/ && absdistance < _EPSILON ){
+
           scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
-          isInserted = true;
+
+          partId_t jj = j -1;
+
+          while(jj >= 0 && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON){
+            --jj;
+          }
+          ++jj;
+          for (;jj < noCuts && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON; ++jj){
+
+            if(myRatios[jj] > _EPSILON * EPS_SCALE * 10 ){
+              myRatios[jj] -= w;
+              if(myRatios[jj] < 0 && jj < noCuts - 1 && fabs(cutCoordinates[jj+1] - cutCoordinates[jj]) < _EPSILON){
+                myRatios[jj + 1] += myRatios[jj];
+              }
+
+              onLeft = true;
+              lastPart = jj;
+              break;
+            }
+          }
+          if(!onLeft){
+            onRight= true;
+            lastPart = jj -1;
+          }
+
+          break;
+/*
+          if(myRatios[j] > _EPSILON * EPS_SCALE * 10 ){
+
+          //cout << "i:" << i << " pqJagged_coordinates[i]:" << pqJagged_coordinates[i] << " coordWeights[i]:" << coordWeights[i] << endl;
+
           scalar_t decrease = w;
           myRatios[j] -= decrease;
+
 
           if(myRatios[j] < 0 && j < noCuts - 1 && fabs(cutCoordinates[j+1] - cutCoordinates[j]) < _EPSILON){
             myRatios[j + 1] += myRatios[j];
           }
-          isInserted = true;
-          pqPV.inserToPart(j, i);
-          myPartPointCounts[j] +=  1;
+          //isInserted = true;
+          onLeft = true;
+          lastPart = j;
+          //pqPV.inserToPart(j, i);
+          //myPartPointCounts[j] +=  1;
           break;
+          }
+          else {
+            partId_t jj = j -1;
+            bool inserted = false;
+            while(jj >= 0 && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON){
+              if(myRatios[jj] > _EPSILON * EPS_SCALE * 10 ){
+
+                //cout << "i:" << i << " pqJagged_coordinates[i]:" << pqJagged_coordinates[i] << " coordWeights[i]:" << coordWeights[i] << endl;
+
+                scalar_t decrease = w;
+                myRatios[jj] -= decrease;
+
+                if(myRatios[jj] < 0 && jj < noCuts - 1 && fabs(cutCoordinates[jj+1] - cutCoordinates[jj]) < _EPSILON){
+                  myRatios[jj + 1] += myRatios[jj];
+                }
+                //isInserted = true;
+                onLeft = true;
+                lastPart = jj;
+                //pqPV.inserToPart(j, i);
+                //myPartPointCounts[j] +=  1;
+                inserted = true;
+                break;
+              }
+              --jj;
+            }
+            if(inserted){
+              break;
+            } else {
+              jj = j + 1;
+
+              while(jj < noCuts && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON){
+                cout << "trying i:" << i << " to " << jj << endl;
+                if(myRatios[jj] > _EPSILON * EPS_SCALE * 10 ){
+                  cout << "w:" << w << endl;
+                  //cout << "i:" << i << " pqJagged_coordinates[i]:" << pqJagged_coordinates[i] << " coordWeights[i]:" << coordWeights[i] << endl;
+
+                  scalar_t decrease = w;
+                  myRatios[jj] -= decrease;
+                  cout << "j:"<<j<<" mm:" << myRatios[j] << endl;
+
+                  if(myRatios[jj] < 0 && jj < noCuts - 1 && fabs(cutCoordinates[jj+1] - cutCoordinates[jj]) < _EPSILON){
+                    myRatios[jj + 1] += myRatios[jj];
+                  }
+                  //isInserted = true;
+                  onLeft = true;
+                  lastPart = jj;
+                  inserted = true;
+                  //pqPV.inserToPart(j, i);
+                  //myPartPointCounts[j] +=  1;
+                  break;
+                }
+                ++jj;
+              }
+              if(inserted){
+                break;
+              }
+              else {
+                cout << "strying i:" << i << " to " << jj - 1 << endl;
+                onRight= true;
+                lastPart = jj - 1;
+                break;
+
+              }
+            }
+          }
+          */
         }
         else {
           if (distance < 0) {
@@ -2018,19 +2120,21 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
           }
         }
       }
-      if(!isInserted){
-        if(onRight){
-          pqPV.inserToPart(lastPart + 1, i);
-          myPartPointCounts[lastPart + 1] +=  1;
-        }
-        else if(onLeft){
-          pqPV.inserToPart(lastPart , i);
-          myPartPointCounts[lastPart] +=  1;
-        }
-        else {
-          cout << "ERROR" << endl;
-        }
+      //if(!isInserted){
+      if(onRight){
+        //cout << "inserting i:" << i << " to " << lastPart + 1 << endl;
+        pqPV.inserToPart(lastPart + 1, i);
+        myPartPointCounts[lastPart + 1] +=  1;
       }
+      else if(onLeft){
+        //cout << "inserting i:" << i << " to " << lastPart << endl;
+        pqPV.inserToPart(lastPart , i);
+        myPartPointCounts[lastPart] +=  1;
+      }
+      /*else {
+        cout << "ERROR" << endl;
+      }*/
+      //}
     }
     for(partId_t i = 1; i < partNo; ++i){
       myPartPointCounts[i] += myPartPointCounts[i-1];
@@ -2548,6 +2652,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             pqJagged_uniformParts[0], pqJagged_partSizes[0], partNo[i] - 1,
             cutCoordinates, cutPartRatios, numThreads
         );
+
 
 
         env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_cut_coord");
