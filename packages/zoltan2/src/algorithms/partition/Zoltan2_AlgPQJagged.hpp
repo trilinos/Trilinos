@@ -1993,6 +1993,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 
 
 
+        //cout << "i:" << i << " abs:" << absdistance << endl;
         if(allowNonRectelinearPart /*&& myRatios[j] > _EPSILON * EPS_SCALE * 10*/ /* myRatios[j] > fabs(myRatios[j] - w)*/ && absdistance < _EPSILON ){
 
           scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
@@ -2006,6 +2007,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
           for (;jj < noCuts && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON; ++jj){
 
             if(myRatios[jj] > _EPSILON * EPS_SCALE * 10 ){
+              //cout << "jj:" << jj << "myR:" << myRatios[jj] << " n:" << myRatios[jj] - w << endl;
               myRatios[jj] -= w;
               if(myRatios[jj] < 0 && jj < noCuts - 1 && fabs(cutCoordinates[jj+1] - cutCoordinates[jj]) < _EPSILON){
                 myRatios[jj + 1] += myRatios[jj];
@@ -2692,7 +2694,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             partitionedPointCoordinates, newpartitionedPointCoordinates, coordinateBegin, coordinateEnd,
             coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords,
             nonRectelinearPart, allowNonRectelinearPart, totalPartWeights_leftClosests_rightClosests,
-            pqJagged_weights[0], pqJagged_uniformWeights, comm->getRank(), comm->getSize(), partWeights,nonRectRatios,
+            pqJagged_weights[0], pqJagged_uniformWeights[0], comm->getRank(), comm->getSize(), partWeights,nonRectRatios,
             partPointCounts);
         env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_chunks");
       }
