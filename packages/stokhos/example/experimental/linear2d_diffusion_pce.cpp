@@ -417,24 +417,27 @@ int main(int argc, char *argv[]) {
 
     // Create preconditioner
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
-    Teuchos::RCP<Belos_MueLuOperator> M;
+    RCP<Belos_MueLuOperator> M;
     RCP<MueLu_Hierarchy> H;
-    Teuchos::RCP<Xpetra_Operator> xopJ;
+    RCP<Xpetra_CrsMatrix> xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
+    RCP<Xpetra_Operator> xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
     if (prec_method != NONE) {
       Teuchos::ParameterList precParams;
       std::string prec_name = "RILUK";
       precParams.set("fact: iluk level-of-fill", 1);
       precParams.set("fact: iluk level-of-overlap", 0);
       //Ifpack2::Factory factory;
-      RCP<Xpetra_CrsMatrix> xcrsJ;
-      if (prec_method == MEAN) 
-        xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J0));
+      RCP<Xpetra_Operator> xopJ0;
+      if (prec_method == MEAN) {
+        RCP<Xpetra_CrsMatrix> xcrsJ0 = rcp(new Xpetra_TpetraCrsMatrix(J0));
+	xopJ0 = rcp(new Xpetra_CrsOperator(xcrsJ0));
         //M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
-      else if (prec_method == STOCHASTIC)
-        xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
+      }
+      else if (prec_method == STOCHASTIC) {
+        xopJ0 = xopJ;
         //M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
-      xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
-      H = rcp(new MueLu_Hierarchy(xopJ));
+      }
+      H = rcp(new MueLu_Hierarchy(xopJ0));
       M = rcp(new Belos_MueLuOperator(H));
       //M->setParameters(precParams);
     }
