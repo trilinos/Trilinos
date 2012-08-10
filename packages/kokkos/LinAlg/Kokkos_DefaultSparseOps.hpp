@@ -583,6 +583,13 @@ namespace Kokkos {
     /// Op(A) means A, the transpose of A, or the conjugate transpose
     /// of A, depending on the \c trans argument.
     ///
+    /// \note This method does not respect the implicit unit diagonal
+    ///   indication.  If you want to simulate having an implicitly
+    ///   stored unit diagonal for the operation Y := A*X, use the
+    ///   five-argument version of multiply() (that takes a 'beta'
+    ///   argument) and set beta = 1, so that you are computing Y := Y
+    ///   + A*X.
+    ///
     /// \tparam DomainScalar The type of entries in the input
     ///   multivector X.  This may differ from the type of entries in
     ///   A or in Y.
@@ -614,6 +621,11 @@ namespace Kokkos {
     /// transpose) to a multivector X, accumulating the result into Y.
     /// Op(A) means A, the transpose of A, or the conjugate transpose
     /// of A, depending on the \c trans argument.
+    ///
+    /// \note This method does not respect the implicit unit diagonal
+    ///   indication.  If you want to simulate having an implicitly
+    ///   stored unit diagonal for the operation Y := A*X, set beta =
+    ///   1, so that you are computing Y := Y + A*X.
     ///
     /// \tparam DomainScalar The type of entries in the input
     ///   multivector X.  This may differ from the type of entries in
