@@ -29,6 +29,8 @@
 
 #include <zoltan.h>
 
+#include <Zoltan2_Util.hpp>
+
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -188,9 +190,9 @@ void subGroupGloballyIncreasingIds(T numGlobalCoords,
   }
 }
 
-void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm);
-void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm);
-void timeZoltan(ZGO numGlobalCoords);
+void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm, bool);
+void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm, bool);
+void timeZoltan(ZGO numGlobalCoords, bool);
 
 ///////////////////////////////////////////////
 // Main
@@ -203,8 +205,10 @@ int main(int argc, char *argv[])
   RCP<const MpiComm<int> > comm = 
     rcp_dynamic_cast<const MpiComm<int> >(genComm);
 
+  int rank = genComm->getRank();
+
   if (argc < 2){
-    if (genComm->getRank() == 0)
+    if (rank == 0)
       usage(argv);
     return 1;
   }
@@ -214,10 +218,13 @@ int main(int argc, char *argv[])
   std::istringstream iss(theArg);
   iss >> numGlobalCoords;
   if (numGlobalCoords < genComm->getSize()){
-    if (genComm->getRank() == 0)
+    if (rank == 0)
       usage(argv);
     return 1;
   }
+
+  if (rank == 0)
+    std::cout << numGlobalCoords << " coordinates" << std::endl;
 
   tmvBuild = TimeMonitor::getNewTimer("CONSEC build Tpetra");
   tmvMigrate = TimeMonitor::getNewTimer("CONSEC migrate Tpetra");
@@ -236,23 +243,31 @@ int main(int argc, char *argv[])
 
   TimeMonitor::zeroOutTimers();
 
-  // Test with Tpetra::MultiVector
-
-  timeTpetra(numGlobalCoords, comm);
-  timeTpetra(numGlobalCoords, comm);
-  timeTpetra(numGlobalCoords, comm);
-
-  // Test with Epetra_MultiVector
-
-  timeEpetra(numGlobalCoords, comm);
-  timeEpetra(numGlobalCoords, comm);
-  timeEpetra(numGlobalCoords, comm);
+  int ntests = 3;
 
   // Test with Zoltan_Comm and Zoltan_DataDirectory
 
-  timeZoltan(numGlobalCoords);
-  timeZoltan(numGlobalCoords);
-  timeZoltan(numGlobalCoords);
+  for (int i=0; i < ntests; i++){
+    if (rank == 0)
+      std::cout << "Zoltan test " << i+1 << std::endl;
+    timeZoltan(numGlobalCoords, i==ntests-1);
+  }
+
+  // Test with Epetra_MultiVector
+
+  for (int i=0; i < ntests; i++){
+    if (rank == 0)
+      std::cout << "Epetra test " << i+1 << std::endl;
+    timeEpetra(numGlobalCoords, comm, i==ntests-1);
+  }
+
+  // Test with Tpetra::MultiVector
+
+  for (int i=0; i < ntests; i++){
+    if (rank == 0)
+      std::cout << "Tpetra test " << i+1 << std::endl;
+    timeTpetra(numGlobalCoords, comm, i==ntests-1);
+  }
 
   // Report
 
@@ -262,7 +277,8 @@ int main(int argc, char *argv[])
     std::cout << "PASS" << std::endl;
 }
 
-void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
+void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
+  bool doMemory)
 {
   int nprocs = comm->getSize();
   int rank = comm->getRank();
@@ -300,6 +316,12 @@ void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
 
   tmvBuild->stop();
 
+  if (rank==0 && doMemory){
+    long nkb = Zoltan2::getProcessKilobytes();
+    std::cout << "Create mvector 1: " << nkb << std::endl;;
+  }
+  
+
   ///////////// Step 2 //////////////////////////////////
   // Migrate the MV.
 
@@ -326,6 +348,11 @@ void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
   tmvMigrate->stop();
 
   delete [] coords;
+
+  if (rank==0 && doMemory){
+    long nkb = Zoltan2::getProcessKilobytes();
+    std::cout << "Create mvector 2: " << nkb << std::endl;;
+  }
 
   ///////////// Step 3 //////////////////////////////////
   // Divide processes into two halves.
@@ -411,7 +438,8 @@ void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
   tmvMigrateN->stop();
 }
 
-void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
+void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
+  bool doMemory)
 {
   RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > commPtr =
     comm->getRawMpiComm();
@@ -440,6 +468,11 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
 
   emvBuild->stop();
 
+  if (rank==0 && doMemory){
+    long nkb = Zoltan2::getProcessKilobytes();
+    std::cout << "Create mvector 1: " << nkb << std::endl;;
+  }
+
   ///////////// Step 2 //////////////////////////////////
   // Migrate the MV.
 
@@ -464,6 +497,11 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
   emvMigrate->stop();
 
   delete [] coords;
+
+  if (rank==0 && doMemory){
+    long nkb = Zoltan2::getProcessKilobytes();
+    std::cout << "Create mvector 2: " << nkb << std::endl;;
+  }
 
   ///////////// Step 3 //////////////////////////////////
   // Divide processes into two halves.
@@ -551,7 +589,8 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm)
   delete [] increasingGids;
 }
 
-void timeZoltan(ZGO numGlobalCoords)
+void timeZoltan(ZGO numGlobalCoords,
+  bool doMemory)
 {
   int nprocs, rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -588,6 +627,11 @@ void timeZoltan(ZGO numGlobalCoords)
   memset(coords, 0, sizeof(Scalar) * numLocalCoords * COORDDIM);
 
   ztnBuild->stop();
+
+  if (rank==0 && doMemory){
+    long nkb = Zoltan2::getProcessKilobytes();
+    std::cout << "Create mvector 1: " << nkb << std::endl;;
+  }
 
   Zoltan_DD_Destroy(&dd);
 
@@ -647,6 +691,11 @@ void timeZoltan(ZGO numGlobalCoords)
   Zoltan_Comm_Destroy(&commPlan);
   delete [] coords;
   delete [] gids;
+
+  if (rank==0 && doMemory){
+    long nkb = Zoltan2::getProcessKilobytes();
+    std::cout << "Create mvector 2: " << nkb << std::endl;;
+  }
 
   ///////////// Step 3 //////////////////////////////////
   // Divide processes into two halves.
