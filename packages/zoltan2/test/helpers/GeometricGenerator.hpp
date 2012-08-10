@@ -237,6 +237,7 @@ public:
     this->y1 = y1_;
     this->z1 = z1_;
 
+
     this->stepCount = stepCount_;
     if(this->stepCount > 0){
       this->steps = new T[this->stepCount];
@@ -260,7 +261,7 @@ public:
 
 
   virtual weighttype get1DWeight(T x){
-    T expressionRes = this->a1 * pow( (x - this->x1), b1);
+    T expressionRes = this->a1 * pow( (x - this->x1), b1) + c;
     if(this->stepCount > 0){
       for (int i = 0; i < this->stepCount; ++i){
         if (expressionRes < this->steps[i]) return this->values[i];
@@ -273,7 +274,7 @@ public:
   }
 
   virtual weighttype get2DWeight(T x, T y){
-    T expressionRes = this->a1 * pow( (x - this->x1), b1) + this->a2 * pow( (y - this->y1), b2);
+    T expressionRes = this->a1 * pow( (x - this->x1), b1) + this->a2 * pow( (y - this->y1), b2) + c;
     if(this->stepCount > 0){
       for (int i = 0; i < this->stepCount; ++i){
         if (expressionRes < this->steps[i]) return this->values[i];
@@ -739,12 +740,13 @@ private:
   CoordinateDistribution<T, lno_t,gno_t> **coordinateDistributions;
   int distributionCount;
   //CoordinatePoint<T> *points;
-
+  T **coords;
+  T **wghts;
   WeightDistribution<T,T> **wd;
   int weight_dimension;  //dimension of the geometry
 
-  RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector;
-  RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmwVector;
+  //RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector;
+  //RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmwVector;
   int worldSize;
   int myRank;
   T minx;
@@ -1373,12 +1375,21 @@ public:
     }
     if (this->wd){
       for (int i = 0; i < this->weight_dimension; ++i){
-
         delete this->wd[i];
       }
       delete []this->wd;
     }
 
+    if(this->weight_dimension){
+      for(int i = 0; i < this->weight_dimension; ++i)
+      delete [] this->wghts[i];
+      delete []this->wghts;
+    }
+    if(this->coordinate_dimension){
+      for(int i = 0; i < this->coordinate_dimension; ++i)
+      delete [] this->coords[i];
+      delete [] this->coords;
+    }
     //delete []this->points;
   }
 
@@ -1447,9 +1458,9 @@ public:
     }
     */
 
-    T **coords = new T *[this->coordinate_dimension];
+    this->coords = new T *[this->coordinate_dimension];
     for(int i = 0; i < this->coordinate_dimension; ++i){
-      coords[i] = new T[myPointCount];
+      this->coords[i] = new T[myPointCount];
     }
 
     for (int ii = 0; ii < this->coordinate_dimension; ++ii){
@@ -1457,7 +1468,7 @@ public:
 #pragma omp parallel for
 #endif
       for(int i = 0; i < myPointCount; ++i){
-        coords[ii][i] = 0;
+        this->coords[ii][i] = 0;
       }
     }
 
@@ -1471,7 +1482,7 @@ public:
       }
       //cout << "req:" << requestedPointCount << endl;
       //this->coordinateDistributions[i]->GetPoints(requestedPointCount,this->points + this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
-      this->coordinateDistributions[i]->GetPoints(requestedPointCount,coords, this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
+      this->coordinateDistributions[i]->GetPoints(requestedPointCount,this->coords, this->numLocalCoords, this->holes, this->holeCount,  this->loadDistributions, myRank);
       this->numLocalCoords += requestedPointCount;
     }
 
@@ -1487,64 +1498,18 @@ public:
       myfile.open ((this->outfile + toString<int>(myRank)).c_str());
       for(lno_t i = 0; i < this->numLocalCoords; ++i){
 
-        myfile << coords[0][i];
+        myfile << this->coords[0][i];
         if(this->coordinate_dimension > 1){
-          myfile << " " << coords[1][i];
+          myfile << " " << this->coords[1][i];
         }
         if(this->coordinate_dimension > 2){
-          myfile << " " << coords[2][i];
+          myfile << " " << this->coords[2][i];
         }
         myfile << std::endl;
       }
       myfile.close();
     }
 
-    /*
-    // target map
-    Teuchos::ArrayView<const gno_t> eltList;
-
-    if(this->numLocalCoords > 0){
-      gno_t *gnos = new gno_t [this->numLocalCoords];
-      for (lno_t i = 0; i < this->numLocalCoords; ++i){
-        gnos[i] = i + prefixSum;
-      }
-      eltList = Teuchos::ArrayView<const gno_t> (gnos, this->numLocalCoords);
-    }
-    */
-
-    RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
-        new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, this->numLocalCoords, 0, comm_));
-
-
-/*
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel for
-#endif
-    for(int i = 0; i < this->numLocalCoords; ++i){
-      T tmp = this->points[i].x;
-      coords[0][i] = tmp;
-      if(this->coordinate_dimension > 1){
-        coords[1][i] = this->points[i].y;
-        if(this->coordinate_dimension > 2){
-          coords[2][i] = this->points[i].z;
-        }
-      }
-    }
-*/
-    Teuchos::Array<Teuchos::ArrayView<const T> > coordView(this->coordinate_dimension);
-    for (int i=0; i < this->coordinate_dimension; i++){
-      if(this->numLocalCoords > 0){
-        Teuchos::ArrayView<const T> a(coords[i], this->numLocalCoords);
-        coordView[i] = a;
-      } else{
-        Teuchos::ArrayView<const T> a;
-        coordView[i] = a;
-      }
-    }
-
-    tmVector = RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(
-        new Tpetra::MultiVector< T, lno_t, gno_t, node_t>( mp, coordView.view(0, this->coordinate_dimension), this->coordinate_dimension)
-        );
 
 
     /*
@@ -1555,9 +1520,9 @@ public:
 		xmv.applyPartitioningSolution<Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(this->tmVector, &tmVector2, solution);
      */
 
-    T **wghts = new T *[this->coordinate_dimension];
+    this->wghts = new T *[this->coordinate_dimension];
     for(int i = 0; i < this->weight_dimension; ++i){
-      wghts[i] = new T[this->numLocalCoords];
+      this->wghts[i] = new T[this->numLocalCoords];
     }
 
     for(int ii = 0; ii < this->weight_dimension; ++ii){
@@ -1567,7 +1532,7 @@ public:
 #pragma omp parallel for
 #endif
         for (lno_t i = 0; i < this->numLocalCoords; ++i){
-          wghts[ii][i] = this->wd[ii]->get1DWeight(coords[0][i]);
+          this->wghts[ii][i] = this->wd[ii]->get1DWeight(this->coords[0][i]);
         }
         break;
       case 2:
@@ -1575,7 +1540,7 @@ public:
 #pragma omp parallel for
 #endif
         for (lno_t i = 0; i < this->numLocalCoords; ++i){
-          wghts[ii][i] = this->wd[ii]->get2DWeight(coords[0][i], coords[1][i]);
+          this->wghts[ii][i] = this->wd[ii]->get2DWeight(this->coords[0][i], this->coords[1][i]);
         }
         break;
       case 3:
@@ -1583,39 +1548,54 @@ public:
 #pragma omp parallel for
 #endif
         for (lno_t i = 0; i < this->numLocalCoords; ++i){
-          wghts[ii][i] = this->wd[ii]->get3DWeight(coords[0][i], coords[1][i], coords[2][i]);
+          this->wghts[ii][i] = this->wd[ii]->get3DWeight(this->coords[0][i], this->coords[1][i], this->coords[2][i]);
         }
         break;
       }
     }
-    Teuchos::Array<Teuchos::ArrayView<const T> > weightView(this->weight_dimension);
-    for (int i=0; i < this->weight_dimension; i++){
-      if(this->numLocalCoords > 0){
-        Teuchos::ArrayView<const T> a(wghts[i], this->numLocalCoords);
-        weightView[i] = a;
-      } else{
-        Teuchos::ArrayView<const T> a;
-        weightView[i] = a;
+  }
+
+  int getWeightDimension(){
+    return this->weight_dimension;
+  }
+  int getCoordinateDimension(){
+    return this->coordinate_dimension;
+  }
+  lno_t getNumLocalCoords(){
+    return this->numLocalCoords;
+  }
+  gno_t getNumGlobalCoords(){
+    return this->numGlobalCoords;
+  }
+
+  T **getLocalCoordinatesView(){
+    return this->coords;
+  }
+
+  T **getLocalWeightsView(){
+    return this->wghts;
+  }
+
+  void getLocalCoordinatesCopy( T ** c){
+    for(int ii = 0; ii < this->coordinate_dimension; ++ii){
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
+      for (lno_t i = 0; i < this->numLocalCoords; ++i){
+        c[ii][i] = this->coords[ii][i];
       }
     }
-    if(this->weight_dimension){
-      tmwVector = RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(
-          new Tpetra::MultiVector< T, lno_t, gno_t, node_t>( mp, weightView.view(0, this->weight_dimension), this->weight_dimension)
-      );
+  }
+
+  T **getLocalWeightsCopy(T **w){
+    for(int ii = 0; ii < this->weight_dimension; ++ii){
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel for
+#endif
+      for (lno_t i = 0; i < this->numLocalCoords; ++i){
+        w[ii][i] = this->wghts[ii][i];
+        //cout << "i:" << i << "w:" << w[ii][i] << endl;
+      }
     }
-
-
-    for(int i = 0; i < this->coordinate_dimension; ++i) delete [] coords[i];
-    if(this->coordinate_dimension) delete []coords;
-    for(int i = 0; i < this->weight_dimension; ++i) delete [] wghts[i];
-    if(this->weight_dimension) delete []wghts;
-  }
-
-  RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > getCoordinates(){
-    return this->tmVector;
-  }
-
-  RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > getWeights(){
-    return this->tmwVector;
   }
 };
