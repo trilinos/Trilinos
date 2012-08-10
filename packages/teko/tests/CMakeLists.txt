@@ -165,3 +165,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
+
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  ALOperator 
+#  SOURCES
+#    unit_tests/tALOperator.cpp
+#  #  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ReorderBlocking
+  SOURCES
+    unit_tests/tReorderBlocking.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )

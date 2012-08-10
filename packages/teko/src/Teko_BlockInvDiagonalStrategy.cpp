@@ -79,17 +79,34 @@ void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,BlockPrecondition
 
    Teko_DEBUG_MSG("# diags = " << diagCnt << ", # inverses = " << invCnt,6);
 
+   const std::string opPrefix = "JacobiDiagOp";
    if(diagCnt<=invCnt) {
       for(int i=0;i<diagCnt;i++) 
-         invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A)));
+         invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A),state,opPrefix,i));
    }
    else {
       for(int i=0;i<invCnt;i++) 
-         invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A)));
+         invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A),state,opPrefix,i));
 
       for(int i=invCnt;i<diagCnt;i++) 
-         invDiag.push_back(buildInverse(*defaultInvFact_,getBlock(i,i,A)));
+         invDiag.push_back(buildInverse(*defaultInvFact_,getBlock(i,i,A),state,opPrefix,i));
    }
+}
+
+LinearOp InvFactoryDiagStrategy::buildInverse(const InverseFactory & invFact,const LinearOp & matrix,
+                                              BlockPreconditionerState & state,
+                                              const std::string & opPrefix,int i) const
+{
+   std::stringstream ss;
+   ss << opPrefix << "_" << i;
+
+   ModifiableLinearOp & invOp = state.getModifiableOp(ss.str());
+   if(invOp==Teuchos::null) 
+      invOp = Teko::buildInverse(invFact,matrix);
+   else 
+      rebuildInverse(invFact,matrix,invOp);
+ 
+   return invOp;
 }
 
 } // end namespace Teko

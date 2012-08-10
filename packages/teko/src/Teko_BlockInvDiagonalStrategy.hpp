@@ -160,6 +160,11 @@ protected:
    std::vector<Teuchos::RCP<InverseFactory> > invDiagFact_;
    Teuchos::RCP<InverseFactory> defaultInvFact_;
 
+   //! Conveinence function for building inverse operators
+   LinearOp buildInverse(const InverseFactory & invFact,const LinearOp & matrix,
+                         BlockPreconditionerState & state,
+                         const std::string & opPrefix,int i) const;
+
 private:
    InvFactoryDiagStrategy();
    InvFactoryDiagStrategy(const InvFactoryDiagStrategy &);
