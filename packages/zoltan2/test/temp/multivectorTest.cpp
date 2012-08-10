@@ -754,4 +754,17 @@ void timeZoltan(ZGO numGlobalCoords)
   delete [] increasingGids;
   Zoltan_Comm_Destroy(&subCommPlan);
 }
+#else
+int main(int argc, char *argv[])
+{
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
+  Teuchos::RCP<const Teuchos::Comm<int> > genComm = 
+    Teuchos::DefaultComm<int>::getComm();
+
+  if (genComm->getRank() == 0){
+    std::cout << "Test not run because MPI is not available." << std::endl;
+    std::cout << "PASS" << std::endl;
+  }
+  return 0;
+}
 #endif  // HAVE_MPI
