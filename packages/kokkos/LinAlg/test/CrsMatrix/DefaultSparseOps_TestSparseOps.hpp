@@ -1434,7 +1434,7 @@ public:
     blas_type blas; // For dense matrix and vector operations.
 
     //////////////////////////////////////////////////////////////////////
-    // Test triangular matrix-(multi)vector multiply.
+    // Test sparse triangular matrix-(multi)vector multiply.
     //////////////////////////////////////////////////////////////////////
 
     // Compute Y_hat := U_dense * X.  First copy X into Y_hat, since
@@ -1458,25 +1458,29 @@ public:
       success = false;
     }
 
-    // Start over with a fresh random X.
-    MVT::Random (*X);
-    // Fill Y_hat and Y with random values, just to make sure the
+    //////////////////////////////////////////////////////////////////////
+    // Test sparse triangular mat-vec: transpose case.
+    //////////////////////////////////////////////////////////////////////
+
+    // Start over with a fresh random Y.
+    MVT::Random (*Y);
+    // Fill X_hat and X with random values, just to make sure the
     // operations below aren't fakely reported correct by means of
     // leftover values.
-    MVT::Random (*Y_hat);
-    MVT::Random (*Y);
+    MVT::Random (*X_hat);
+    MVT::Random (*X);
 
-    // Compute Y_hat := U_dense^T * X.
-    MVT::Assign (*Y_hat, (const MV) *X);
+    // Compute X_hat := U_dense^T * Y.
+    MVT::Assign (*X_hat, (const MV) *Y);
     blas.TRMM (LEFT_SIDE, UPPER_TRI, TRANS, NON_UNIT_DIAG, N, numVecs,
                STS::one (), U_dense->values (), U_dense->stride (),
-               Y_hat->getValuesNonConst ().getRawPtr (),
-               as<int> (Y_hat->getStride ()));
-    // Compute Y := U_sparse^T * X.
+               X_hat->getValuesNonConst ().getRawPtr (),
+               as<int> (X_hat->getStride ()));
+    // Compute X := U_sparse^T * Y.
     U_sparse->template multiply<scalar_type, scalar_type> (TRANS, STS::one (),
-                                                           (const MV) *X, *Y);
-    // Compare Y and Y_hat.
-    relErr = maxRelativeError (Y_hat, Y, Y_scratch);
+                                                           (const MV) *Y, *X);
+    // Compare X and X_hat.
+    relErr = maxRelativeError (X_hat, X, X_scratch);
     if (relErr > tol) {
       err << "Sparse matrix-(multi)vector multiply test failed for "
         "transpose of upper triangular matrix U." << std::endl
@@ -1485,6 +1489,45 @@ public:
       success = false;
     }
 
+    //////////////////////////////////////////////////////////////////////
+    // Test sparse triangular mat-vec: conjugate transpose case.
+    //////////////////////////////////////////////////////////////////////
+
+    // Start over with a fresh random Y.
+    MVT::Random (*Y);
+    // Fill X_hat and X with random values, just to make sure the
+    // operations below aren't fakely reported correct by means of
+    // leftover values.
+    MVT::Random (*X_hat);
+    MVT::Random (*X);
+
+    if (STS::isComplex) {
+      // Compute X_hat := U_dense^T * Y.
+      MVT::Assign (*X_hat, (const MV) *Y);
+      blas.TRMM (LEFT_SIDE, UPPER_TRI, CONJ_TRANS, NON_UNIT_DIAG, N, numVecs,
+                 STS::one (), U_dense->values (), U_dense->stride (),
+                 X_hat->getValuesNonConst ().getRawPtr (),
+                 as<int> (X_hat->getStride ()));
+      // Compute Y := U_sparse^H * X.
+      U_sparse->template multiply<scalar_type, scalar_type> (CONJ_TRANS,
+                                                             STS::one (),
+                                                             (const MV) *Y, *X);
+      // Compare X and X_hat.
+      relErr = maxRelativeError (X_hat, X, X_scratch);
+      if (relErr > tol) {
+        err << "Sparse matrix-(multi)vector multiply test failed for "
+          "conjugate transpose of upper triangular matrix U." << std::endl
+            << "Maximum relative error " << relErr
+            << " exceeds the given tolerance " << tol << "." << std::endl;
+        success = false;
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // Test lower triangular, implicit unit diagonal, sparse
+    // triangular mat-vec.
+    //////////////////////////////////////////////////////////////////////
+
     // Start over with a fresh random X.
     MVT::Random (*X);
     // Fill Y_hat and Y with random values, just to make sure the
@@ -1493,44 +1536,13 @@ public:
     MVT::Random (*Y_hat);
     MVT::Random (*Y);
 
-    if (STS::isComplex) {
-      // Compute Y_hat := U_dense^T * X.
-      MVT::Assign (*Y_hat, (const MV) *X);
-      blas.TRMM (LEFT_SIDE, UPPER_TRI, CONJ_TRANS, NON_UNIT_DIAG, N, numVecs,
-                 STS::one (), U_dense->values (), U_dense->stride (),
-                 Y_hat->getValuesNonConst ().getRawPtr (),
-                 as<int> (Y_hat->getStride ()));
-      // Compute Y := U_sparse^H * X.
-      U_sparse->template multiply<scalar_type, scalar_type> (CONJ_TRANS,
-                                                             STS::one (),
-                                                             (const MV) *X, *Y);
-      // Compare Y and Y_hat.
-      relErr = maxRelativeError (Y_hat, Y, Y_scratch);
-      if (relErr > tol) {
-        err << "Sparse matrix-(multi)vector multiply test failed for "
-          "conjugate transpose of upper triangular matrix U." << std::endl
-            << "Maximum relative error " << relErr
-            << " exceeds the given tolerance " << tol << "." << std::endl;
-        success = false;
-      }
-
-      // Start over with a fresh random X.
-      MVT::Random (*X);
-      // Fill Y_hat and Y with random values, just to make sure the
-      // operations below aren't fakely reported correct by means of
-      // leftover values.
-      MVT::Random (*Y_hat);
-      MVT::Random (*Y);
-    }
-
     // FIXME (mfh 10 Aug 2012) I can't seem to get this test to pass,
     // no matter whether or not I assume that the implicit unit
     // diagonal case works.  I'm not sure what to do and I don't want
     // this to hold up some of my other bug fixes, so I'm going to
     // disable this test for now.
-#if 0
-    // Compute Y_hat := L_dense * X.  First copy X into Y_hat, since
-    // TRMM overwrites its input.
+
+    // Compute Y_hat := L_dense * X.
     MVT::Assign (*Y_hat, (const MV) *X);
     blas.TRMM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numVecs,
                STS::one (), L_dense->values (), L_dense->stride (),
@@ -1543,10 +1555,11 @@ public:
                                                              (const MV) *X, *Y);
     }
     else {
-      // Compute Y := Y + L_sparse * X in order to simulate the effect
-      // of an implicitly stored unit diagonal.  We do this using
-      // beta=1, though it might be better to test beta=0 and use
-      // MVT::GESUM instead.
+      // Compute Y := X + L_sparse * X in order to simulate the effect
+      // of an implicitly stored unit diagonal.  We do this by first
+      // assigning X to Y, and then using beta=1, though it might be
+      // better to test beta=0 and use MVT::GESUM instead.
+      MVT::Assign (*Y, *X);
       L_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
                                                              (const MV) *X,
                                                              STS::one (), *Y);
@@ -1560,7 +1573,6 @@ public:
           << " exceeds the given tolerance " << tol << "." << std::endl;
       success = false;
     }
-#endif // 0
 
     //////////////////////////////////////////////////////////////////////
     // Test sparse triangular solve.

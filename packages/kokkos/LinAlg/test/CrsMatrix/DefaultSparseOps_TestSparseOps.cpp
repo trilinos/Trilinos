@@ -272,7 +272,7 @@ namespace {
     using Teuchos::RCP;
     using Kokkos::AltSparseOps;
     typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
-    const bool implicitUnitDiagTriMultCorrect = true;
+    const bool implicitUnitDiagTriMultCorrect = false;
 
     ParameterList params ("AltSparseOps");
     params.set ("Unroll across multivectors", unroll);

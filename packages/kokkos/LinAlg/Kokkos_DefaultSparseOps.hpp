@@ -585,10 +585,8 @@ namespace Kokkos {
     ///
     /// \note This method does not respect the implicit unit diagonal
     ///   indication.  If you want to simulate having an implicitly
-    ///   stored unit diagonal for the operation Y := A*X, use the
-    ///   five-argument version of multiply() (that takes a 'beta'
-    ///   argument) and set beta = 1, so that you are computing Y := Y
-    ///   + A*X.
+    ///   stored unit diagonal for the operation Y := A*X, you must
+    ///   compute Y := X + A*X instead.
     ///
     /// \tparam DomainScalar The type of entries in the input
     ///   multivector X.  This may differ from the type of entries in
@@ -624,8 +622,8 @@ namespace Kokkos {
     ///
     /// \note This method does not respect the implicit unit diagonal
     ///   indication.  If you want to simulate having an implicitly
-    ///   stored unit diagonal for the operation Y := A*X, set beta =
-    ///   1, so that you are computing Y := Y + A*X.
+    ///   stored unit diagonal for the operation Y := A*X, you must
+    ///   compute Y := X + A*X instead.
     ///
     /// \tparam DomainScalar The type of entries in the input
     ///   multivector X.  This may differ from the type of entries in
