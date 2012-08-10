@@ -87,28 +87,28 @@ enum SG_Prec { NONE, MEAN, STOCHASTIC };
 const int num_sg_prec = 3;
 const SG_Prec sg_prec_values[] = { NONE, MEAN, STOCHASTIC };
 const char *sg_prec_names[] = { "None",
-				"Mean-Based", 
-				"Stochastic" };
+                                "Mean-Based", 
+                                "Stochastic" };
 
 // Stochastic division approaches
 enum SG_Div { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD, CGD };
 const int num_sg_div = 5;
 const SG_Div sg_div_values[] = { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD, CGD };
 const char *sg_div_names[] = { "Direct",
-			       "SPD-Direct",
-			       "Mean-Based", 
-			       "Quadrature",
-			       "CG"};
+                               "SPD-Direct",
+                               "Mean-Based", 
+                               "Quadrature",
+                               "CG"};
 
 // Stochastic division preconditioner approaches
 enum SG_DivPrec { NO, DIAG, JACOBI, GS, SCHUR };
 const int num_sg_divprec = 5;
 const SG_DivPrec sg_divprec_values[] = {NO, DIAG, JACOBI, GS, SCHUR};
 const char *sg_divprec_names[] = { "None",
-                               "Diag",
-                               "Jacobi",
-                               "GS", 
-                               "Schur"};
+                                   "Diag",
+                                   "Jacobi",
+                                   "GS", 
+                                   "Schur"};
 
 
 // Option for Schur complement precond: full or diag D
@@ -172,15 +172,15 @@ int main(int argc, char *argv[]) {
 
     bool symmetric = false;
     CLP.setOption("symmetric", "unsymmetric", &symmetric, 
-		  "Symmetric discretization");
+                  "Symmetric discretization");
 
     int num_spatial_procs = -1;
     CLP.setOption("num_spatial_procs", &num_spatial_procs, "Number of spatial processors (set -1 for all available procs)");
 
     SG_RF randField = UNIFORM;
     CLP.setOption("rand_field", &randField, 
-		   num_sg_rf, sg_rf_values, sg_rf_names,
-		  "Random field type");
+                  num_sg_rf, sg_rf_values, sg_rf_names,
+                  "Random field type");
 
     double mu = 0.2;
     CLP.setOption("mean", &mu, "Mean");
@@ -196,22 +196,22 @@ int main(int argc, char *argv[]) {
 
     bool normalize_basis = true;
     CLP.setOption("normalize", "unnormalize", &normalize_basis, 
-		  "Normalize PC basis");
+                  "Normalize PC basis");
 
     Krylov_Method solver_method = GMRES;
     CLP.setOption("solver_method", &solver_method, 
-		  num_krylov_method, krylov_method_values, krylov_method_names, 
-		  "Krylov solver method");
+                  num_krylov_method, krylov_method_values, krylov_method_names, 
+                  "Krylov solver method");
 
     SG_Prec prec_method = STOCHASTIC;
     CLP.setOption("prec_method", &prec_method, 
-		  num_sg_prec, sg_prec_values, sg_prec_names,
-		  "Preconditioner method");
+                  num_sg_prec, sg_prec_values, sg_prec_names,
+                  "Preconditioner method");
 
     SG_Div division_method = DIRECT;
     CLP.setOption("division_method", &division_method, 
-		  num_sg_div, sg_div_values, sg_div_names,
-		  "Stochastic division method");
+                  num_sg_div, sg_div_values, sg_div_names,
+                  "Stochastic division method");
 
     SG_DivPrec divprec_method = NO;
     CLP.setOption("divprec_method", &divprec_method,
@@ -248,23 +248,23 @@ int main(int argc, char *argv[]) {
 
     if (MyPID == 0) {
       std::cout << "Summary of command line options:" << std::endl
-		<< "\tnum_mesh           = " << n << std::endl
-		<< "\tsymmetric          = " << symmetric << std::endl
-		<< "\tnum_spatial_procs  = " << num_spatial_procs << std::endl
-		<< "\trand_field         = " << sg_rf_names[randField] 
-		<< std::endl
-		<< "\tmean               = " << mu << std::endl
-		<< "\tstd_dev            = " << s << std::endl
-		<< "\tnum_kl             = " << num_KL << std::endl
-		<< "\torder              = " << order << std::endl
-		<< "\tnormalize_basis    = " << normalize_basis << std::endl
-		<< "\tsolver_method      = " << krylov_method_names[solver_method] << std::endl
-		<< "\tprec_method        = " << sg_prec_names[prec_method]	<< std::endl
-		<< "\tdivision_method    = " << sg_div_names[division_method] 	<< std::endl
-		<< "\tdiv_tol            = " << div_tol << std::endl
-		<< "\tdiv_prec           = " << sg_divprec_names[divprec_method]      << std::endl
-		<< "\tprec_level         = " << prec_level << std::endl
-  		<< "\tmax_it_div	 = " << max_it_div << std::endl;
+                << "\tnum_mesh           = " << n << std::endl
+                << "\tsymmetric          = " << symmetric << std::endl
+                << "\tnum_spatial_procs  = " << num_spatial_procs << std::endl
+                << "\trand_field         = " << sg_rf_names[randField] 
+                << std::endl
+                << "\tmean               = " << mu << std::endl
+                << "\tstd_dev            = " << s << std::endl
+                << "\tnum_kl             = " << num_KL << std::endl
+                << "\torder              = " << order << std::endl
+                << "\tnormalize_basis    = " << normalize_basis << std::endl
+                << "\tsolver_method      = " << krylov_method_names[solver_method] << std::endl
+                << "\tprec_method        = " << sg_prec_names[prec_method]    << std::endl
+                << "\tdivision_method    = " << sg_div_names[division_method]     << std::endl
+                << "\tdiv_tol            = " << div_tol << std::endl
+                << "\tdiv_prec           = " << sg_divprec_names[divprec_method]      << std::endl
+                << "\tprec_level         = " << prec_level << std::endl
+                << "\tmax_it_div     = " << max_it_div << std::endl;
     }
     bool nonlinear_expansion = false;
     if (randField == UNIFORM)
@@ -279,14 +279,11 @@ int main(int argc, char *argv[]) {
     Teuchos::Array< RCP<const Stokhos::OneDOrthogPolyBasis<LocalOrdinal,BasisScalar> > > bases(num_KL); 
     for (LocalOrdinal i=0; i<num_KL; i++)
       if (randField == UNIFORM)
-	bases[i] = rcp(new Stokhos::LegendreBasis<LocalOrdinal,BasisScalar>(
-			 order, normalize_basis));
-      else if (randField == LOGNORMAL)      
-	bases[i] = rcp(new Stokhos::HermiteBasis<int,double>(
-			 order, normalize_basis));
+        bases[i] = rcp(new Stokhos::LegendreBasis<LocalOrdinal,BasisScalar>(order, normalize_basis));
+      else if (randField == LOGNORMAL)
+        bases[i] = rcp(new Stokhos::HermiteBasis<int,double>(order, normalize_basis));
     RCP<const Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar> > basis = 
-      rcp(new Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar>(bases,
-		     1e-12));
+      rcp(new Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar>(bases, 1e-12));
     LocalOrdinal sz = basis->size();
     RCP<Stokhos::Sparse3Tensor<LocalOrdinal,BasisScalar> > Cijk = 
       basis->computeTripleProductTensor(sz);
@@ -334,16 +331,16 @@ int main(int argc, char *argv[]) {
 
 
     if (equilibrate)
-	expn_params->set("Equilibrate", 1);
+      expn_params->set("Equilibrate", 1);
     else
-	expn_params->set("Equilibrate", 0); 
+      expn_params->set("Equilibrate", 0); 
     expn_params->set("Division Tolerance", div_tol);
     expn_params->set("prec_iter", prec_level);
     expn_params->set("max_it_div", max_it_div);
 
     RCP<Stokhos::OrthogPolyExpansion<LocalOrdinal,BasisScalar> > expansion = 
       rcp(new Stokhos::QuadOrthogPolyExpansion<LocalOrdinal,BasisScalar>(
-    	    basis, Cijk, quad, expn_params));
+            basis, Cijk, quad, expn_params));
 
     if (MyPID == 0)
       std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
@@ -378,7 +375,7 @@ int main(int argc, char *argv[]) {
     typedef twoD_diffusion_problem<Scalar,MeshScalar,BasisScalar,LocalOrdinal,GlobalOrdinal,Node> problem_type;
     RCP<problem_type> model = 
       rcp(new problem_type(teuchos_app_comm, n, num_KL, s, mu, 
-			   nonlinear_expansion, symmetric));
+               nonlinear_expansion, symmetric));
 
     // Create vectors and operators
     typedef problem_type::Tpetra_Vector Tpetra_Vector;
@@ -417,7 +414,7 @@ int main(int argc, char *argv[]) {
     basis->evaluateBases(point, basis_vals);
     if (order > 0) {
       for (int i=0; i<num_KL; i++) {
-	p_view[i].term(i,1) = 1.0 / basis_vals[i+1];
+        p_view[i].term(i,1) = 1.0 / basis_vals[i+1];
       }
     }
 
@@ -456,11 +453,11 @@ int main(int argc, char *argv[]) {
       Teuchos::ArrayView<const Scalar> values;
       J0->resumeFill();
       for (size_t i=0; i<nrows; i++) {
-	J->getLocalRowView(i, indices, values);
-	Teuchos::Array<Scalar> values0(values.size());
-	for (LocalOrdinal j=0; j<values.size(); j++)
-	  values0[j] = values[j].coeff(0);
-	J0->replaceLocalValues(i, indices, values0);
+        J->getLocalRowView(i, indices, values);
+        Teuchos::Array<Scalar> values0(values.size());
+        for (LocalOrdinal j=0; j<values.size(); j++)
+          values0[j] = values[j].coeff(0);
+        J0->replaceLocalValues(i, indices, values0);
       }
       J0->fillComplete();
     }
@@ -505,8 +502,7 @@ int main(int argc, char *argv[]) {
     problem->setProblem();
     RCP<Belos::SolverManager<double,MV,OP> > solver;
     if (solver_method == CG)
-      solver = rcp(new Belos::PseudoBlockCGSolMgr<double,MV,OP>(problem,
-    								belosParams));
+      solver = rcp(new Belos::PseudoBlockCGSolMgr<double,MV,OP>(problem, belosParams));
     else if (solver_method == GMRES)
       solver = rcp(new Belos::BlockGmresSolMgr<double,MV,OP>(problem, belosParams));
     
@@ -523,9 +519,9 @@ int main(int argc, char *argv[]) {
 
     if (MyPID == 0) {
       if (ret == Belos::Converged)
-	std::cout << "Solver converged!" << std::endl;
+        std::cout << "Solver converged!" << std::endl;
       else
-	std::cout << "Solver failed to converge!" << std::endl;
+        std::cout << "Solver failed to converge!" << std::endl;
     }
 
     // Update x
