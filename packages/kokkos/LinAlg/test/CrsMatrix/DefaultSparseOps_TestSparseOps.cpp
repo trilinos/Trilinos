@@ -94,9 +94,9 @@ namespace {
   // conditioned on average.
   double tol = 1000 * Teuchos::ScalarTraits<double>::eps ();
   // Number of rows in the sparse matrices to test.
-  int numRows = 100;
+  int numRows = 5;
   // Number of columns in the sparse matrices to test.
-  int numCols = 100;
+  int numCols = 5;
   // Number of benchmark trials; timings are cumulative over all trials.
   int numTrials = 100;
   // If true, run the benchmark instead of the test.
