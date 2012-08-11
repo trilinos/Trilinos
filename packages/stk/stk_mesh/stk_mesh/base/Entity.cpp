@@ -77,6 +77,17 @@ std::string Entity::TypeToString (Entity::ObjectTypeEnum type) {
 
 // ---------------------------------------------------------------------
 
+void Entity::compress_relation_capacity()
+{
+  m_entityImpl.compress_relation_capacity();
+#ifdef SIERRA_MIGRATION
+  if (!m_fmwk_attrs->aux_relations.empty()) {
+    RelationVector tmp(m_fmwk_attrs->aux_relations);
+    tmp.swap(m_fmwk_attrs->aux_relations);
+  }
+#endif
+}
+
 void Entity::internal_swap_in_real_entity(const int globalId)
 {
   ThrowRequire(globalId > 0);

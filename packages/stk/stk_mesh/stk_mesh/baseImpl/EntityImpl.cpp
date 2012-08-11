@@ -88,6 +88,12 @@ void EntityImpl::log_modified_and_propagate()
 
 }
 
+void EntityImpl::compress_relation_capacity()
+{
+  RelationVector tmp(m_relation);
+  tmp.swap(m_relation);
+}
+
 void EntityImpl::log_created_parallel_copy()
 {
   TraceIfWatching("stk::mesh::impl::EntityImpl::log_created_parallel_copy", LOG_ENTITY, key());
