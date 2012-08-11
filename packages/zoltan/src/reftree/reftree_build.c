@@ -1,10 +1,3 @@
-/*****************************************************************************
- * CVS File Information :
- *    $RCSfile$
- *    $Author$
- *    $Date$
- *    $Revision$
- ****************************************************************************/
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

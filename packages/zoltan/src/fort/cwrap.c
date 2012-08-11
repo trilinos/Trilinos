@@ -1,8 +1,4 @@
 /*****************************************************************************
- * Zoltan Library for Parallel Applications                                  *
- * For more info, see the README file in the top-level Zoltan directory.     *  
- *****************************************************************************/
-/*****************************************************************************
  * KDD:  2/7/11
  * KDD:  This interface uses pointer aliasing to translate C pointers to 
  * KDD:  something that F90 can store and return.  It worked fine until 

@@ -1,16 +1,3 @@
-/*****************************************************************************
- * Zoltan Library for Parallel Applications                                  *
- * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
- * For more info, see the README file in the top-level Zoltan directory.     *
- *****************************************************************************/
-/*****************************************************************************
- * CVS File Information :
- *    $RCSfile$
- *    $Author$
- *    $Date$
- *    $Revision$
- ****************************************************************************/
-
 
 #ifdef TIMER_CALLBACKS
 /* Code that times how much time is spent in the callback functions.

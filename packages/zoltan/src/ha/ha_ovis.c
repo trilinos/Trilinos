@@ -1,7 +1,3 @@
-/*****************************************************************************
- * Zoltan Library for Parallel Applications                                  *
- * Copyright (c) 2000-2012, Sandia National Laboratories.                    *
- *****************************************************************************/
 
 
 #ifdef __cplusplus

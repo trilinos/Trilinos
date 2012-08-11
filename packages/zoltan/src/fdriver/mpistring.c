@@ -1,15 +1,3 @@
-/*****************************************************************************
- * Zoltan Library for Parallel Applications                                  *
- * For more info, see the README file in the top-level Zoltan directory.     *  
- *****************************************************************************/
-/*****************************************************************************
- * CVS File Information :
- *    $RCSfile$
- *    $Author$
- *    $Date$
- *    $Revision$
- ****************************************************************************/
-
 
 
 /* Wrapper for MPI routines that take string arguments, to avoid the

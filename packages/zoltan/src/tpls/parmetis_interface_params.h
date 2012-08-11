@@ -1,8 +1,3 @@
-/*****************************************************************************
- * Zoltan Library for Parallel Applications                                  *
- * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
- * For more info, see the README file in the top-level Zoltan directory.     *  
- *****************************************************************************/
 
 #ifndef __PARMETIS_INTERFACE_PARAMS_H
 #define __PARMETIS_INTERFACE_PARAMS_H
