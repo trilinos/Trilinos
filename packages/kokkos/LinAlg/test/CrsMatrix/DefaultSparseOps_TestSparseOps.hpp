@@ -119,13 +119,64 @@ private:
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   const bool verbose_;
+  const bool debug_;
+
+  //! Print A(:,j) (j is a zero-based index) to the given output stream.
+  void
+  printDenseColumn (Teuchos::FancyOStream& out,
+                    const dense_matrix_type& A,
+                    const ordinal_type j) const
+  {
+    const ordinal_type numRows = A.numRows ();
+    out << "[";
+    for (ordinal_type i = 0; i < numRows; ++i) {
+      out << A(i,j);
+      if (i + Teuchos::OrdinalTraits<ordinal_type>::one() < numRows) {
+        out << " ";
+      }
+    }
+    out << "]";
+  }
+
+  //! Print A to the given output stream.
+  void
+  printDenseMatrix (Teuchos::FancyOStream& out,
+                    const dense_matrix_type& A) const
+  {
+    const ordinal_type numRows = A.numRows ();
+    const ordinal_type numCols = A.numCols ();
+    out << "[" << std::endl;
+    for (ordinal_type j = 0; j < numCols; ++j) {
+      for (ordinal_type i = 0; i < numRows; ++i) {
+        out << A(i,j);
+        if (i + Teuchos::OrdinalTraits<ordinal_type>::one() < numRows) {
+          out << " ";
+        }
+      }
+      if (j + Teuchos::OrdinalTraits<ordinal_type>::one() < numCols) {
+        out << std::endl;
+      }
+    }
+    out << "]";
+  }
 
 public:
+  /// \brief Constructor.
+  ///
+  /// \param out [out] Output stream to which to write verbose or
+  ///   debug output.  Must be a valid (nonnull) output stream.
+  /// \param verbose [in] If true, print verbose status output to out.
+  /// \param debug [in] If true, print copious debug output to out.
   TestSparseOps (const Teuchos::RCP<Teuchos::FancyOStream>& out,
-                 const bool verbose=false) :
+                 const bool verbose=false,
+                 const bool debug=false) :
     out_ (out),
-    verbose_ (verbose)
-  {}
+    verbose_ (verbose),
+    debug_ (debug)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(out.is_null(), std::invalid_argument,
+      "TestSparseOps constructor: the given output stream 'out' must be nonnull.");
+  }
 
   /// \brief Compute dense test matrices for sparse triangular solve.
   ///
@@ -169,16 +220,35 @@ public:
                         const ordinal_type numRows) const
   {
     using Teuchos::Array;
+    using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef dense_matrix_type MT;
 
+    if (verbose_) {
+      *out_ << "makeDenseTestProblem:" << std::endl;
+    }
     const ordinal_type N = numRows;
+    //const ordinal_type numCols = numRows;
     RCP<MT> A = rcp (new MT (N, N));
     A->random ();
+
+    // Force A to be diagonally dominant, so that LU factorization doesn't pivot.
+    for (ordinal_type i = 0; i < numRows; ++i) {
+      (*A)(i,i) += as<scalar_type> (42);
+    }
+
     // Keep a copy of A, since LAPACK's LU factorization overwrites
     // its input matrix with the L and U factors.
     RCP<MT> A_copy = rcp (new MT (*A));
+
+    if (debug_) {
+      // Show the pre-factored matrix A.
+      Teuchos::OSTab tab2 (out_);
+      *out_ << "Pre-factored A = ";
+      printDenseMatrix (*out_, *A);
+      *out_ << std::endl;
+    }
 
     // Compute the LU factorization of A.
     lapack_type lapack;
@@ -219,90 +289,12 @@ public:
       }
     }
 
-    // "Commit" the outputs.
-    pivots.resize (N);
-    std::copy (ipiv.begin (), ipiv.end (), pivots.begin ());
-    A_out = A_copy; // Return the "original" A, before the factorization.
-    L_out = L;
-    U_out = U;
-  }
-
-  // mfh 28 Jun 2012: It would be nice to use LAPACK's banded solver
-  // to generate test problems, but it may be more trouble than it's
-  // worth to get the indexing right.  Having a good source of valid
-  // LU factorizations without needing N^2 data would be helpful,
-  // though for now we disable this code, since we don't know that it
-  // works.
-#if 0
-  void
-  makeBandedTestProblem (Teuchos::RCP<dense_matrix_type>& A_out,
-                         Teuchos::RCP<dense_matrix_type>& L_out,
-                         Teuchos::RCP<dense_matrix_type>& U_out,
-                         Teuchos::Array<ordinal_type>& pivots,
-                         const ordinal_type numRows) const
-  {
-    using Teuchos::Array;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef dense_matrix_type MT;
-
-    const ordinal_type M = numRows; // Number of rows in the matrix
-    const ordinal_type N = numRows; // Number of columns in the matrix
-    const ordinal_type KL = 1; // Number of subdiagonals
-    const ordinal_type KU = 1; // Number of superdiagonals
-    const ordinal_type LDAB = 2*KL + KU + 1; // As required by LAPACK
-
-    // On input: Don't fill top KL rows of A.
-    //
-    // On output: The top KL rows of A may be filled with elements of
-    // the U factor on output, due to row interchanges.
-
-    RCP<MT> A = rcp (new MT (LDAB, N));
-    // Just fill the whole matrix A with random numbers.  LAPACK won't
-    // use some of those elements; that's OK.
-    A->random ();
-
-    // Keep a copy of A, since LAPACK's LU factorization overwrites
-    // its input matrix with the L and U factors.
-    RCP<MT> A_copy = rcp (new MT (*A));
-
-    // Compute the LU factorization of A.
-    lapack_type lapack;
-    int info = 0;
-    Array<ordinal_type> ipiv (N);
-    lapack.GBTRF (M, N, KL, KU, A->values (), A->stride (), ipiv.getRawPtr (), &info);
-    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error, "LAPACK's _GBTRF "
-      "routine reported that its " << (-info) << "-th argument had an illegal "
-      "value.  This probably indicates a bug in the way Kokkos is calling the "
-      "routine.  Please report this bug to the Kokkos developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::runtime_error, "LAPACK's _GBTRF "
-      "routine reported that the " << info << "-th diagonal element of the U "
-      "factor is exactly zero.  This indicates that the matrix A is singular.  "
-      "A is pseudorandom, so it is possible but unlikely that it actually is "
-      "singular.  More likely is that the pseudorandom number generator isn't "
-      "working correctly.  This is not a Kokkos bug, but it could be a Teuchos "
-      "bug, since Teuchos is invoking the generator.");
-
-    // Create L and U, and copy out the lower resp. upper triangle
-    // (both packed in banded form) of A into L resp. U.
-    const ordinal_type LDU = KL + KU + 1;
-    RCP<MT> L = rcp (new MT (LDAB - LDU, N));
-    RCP<MT> U = rcp (new MT (LDU, N));
-    {
-      // Get the MT refs so we don't have to dereference the RCPs each
-      // time we change an entry.
-      MT& LL = *L;
-      MT& UU = *U;
-      MT& AA = *A;
-
-      for (ordinal_type j = 0; j < N; ++j) {
-        for (ordinal_type i = 0; i < LDU; ++i) {
-          U(i,j) = A(i,j);
-        }
-        for (ordinal_type i = LDU; i < LDAB; ++i) {
-          L(i,j) = A(i,j);
-        }
-      }
+    if (debug_) {
+      // Show the post-factored matrix A.
+      Teuchos::OSTab tab2 (out_);
+      *out_ << "Post-factored A = ";
+      printDenseMatrix (*out_, *A);
+      *out_ << std::endl;
     }
 
     // "Commit" the outputs.
@@ -312,119 +304,6 @@ public:
     L_out = L;
     U_out = U;
   }
-
-  /// \brief Repack LAPACK _GBTRF-style banded format into sparse format.
-  ///
-  /// A_in, L_in, and U_in come from makeBandedTestProblem() above.
-  ///
-  /// For an explanation of LAPACK's packed banded format, especially
-  /// that of the L and U factors from an LU factorization, see the <a
-  /// href="http://www.netlib.org/lapack/double/dgbtrf.f">DGBTRF</a>
-  /// documentation or the <a
-  /// href="http://www.netlib.org/lapack/lug/node124.html">LAPACK
-  /// Users' Guide.</a>
-  void
-  denseBandedToSparseOps (Teuchos::RCP<SparseOpsType>& A_out,
-                          Teuchos::RCP<SparseOpsType>& L_out,
-                          Teuchos::RCP<SparseOpsType>& U_out,
-                          const Teuchos::RCP<node_type>& node,
-                          const Teuchos::RCP<const dense_matrix_type>& A_in,
-                          const Teuchos::RCP<const dense_matrix_type>& L_in,
-                          const Teuchos::RCP<const dense_matrix_type>& U_in) const
-  {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    const ordinal_type LDAB = A_in.numRows (); // == 2*KL + KU + 1
-    const ordinal_type LDU = U_in.numRows ();  // == KL + KU + 1
-    const ordinal_type LDL = L_in.numRows ();  // == KL
-
-    const ordinal_type M = A_in.numCols ();
-    const ordinal_type N = A_in.numCols ();
-    const ordinal_type KL = LDL;
-    const ordinal_type KU = LDU - LDL - 1;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(2*KL + KU + 1 != LDAB, std::logic_error,
-      "Failed to compute KL and KU correctly.  2*KL + KU + 1 = "
-      << 2*KL + KU + 1 << " != LDAB = " << LDAB << ".  KL = " << KL
-      << ", KU = " << KU << ".  Please report this bug to the Kokkos "
-      "developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(KL + KU + 1 != LDU, std::logic_error,
-      "Failed to compute KL and KU correctly.  KL + KU + 1 = "
-      << KL + KU + 1 << " != LDU = " << LDU << ".  KL = " << KL
-      << ", KU = " << KU << ".  Please report this bug to the Kokkos "
-      "developers.");
-
-    // Make U.
-    RCP<SparseOpsType> U_sparse;
-    {
-      const ordinal_type nnz = LDU * N - ((LDU-1)*LDU)/2;
-      ArrayRCP<ordinal_type> ptr (LDU+1);
-      ArrayRCP<ordinal_type> ind (nnz);
-      ArrayRCP<scalar_type> val (nnz);
-      ordinal_type ctr = 0;
-      ptr[0] = 0;
-      for (ordinal_type r = 0; r < LDU; ++r) {
-        // Row 0 of U starts in the last row of the packed U matrix, at
-        // the (LDU-1, 0) entry (zero-based).  Read the entries in each
-        // row diagonally and to the northeast.  Row 1 starts at (LDU-1,
-        // 1).  In general, row r starts at (LDU-1, r), and has min(LDU,
-        // N-r) entries.
-        const ordinal_type numEntries = std::min (LDU, N-r);
-        ordinal_type curRow = LDU - 1;
-        ordinal_type curCol = r;
-        ordinal_type c = r; // start here; it's the upper triangle
-        for (ordinal_type k = 0; k < numEntries; ++k, ++ctr) {
-          val[ctr] = U(curRow--, curCol++);
-          ind[ctr] = c++;
-        }
-        ptr[r+1] = ctr;
-      }
-      U_sparse = makeSparseOps (node, Teuchos::null,
-                                M, N, ptr, ind, val, Teuchos::UPPER_TRI,
-                                Teuchos::NON_UNIT_DIAG);
-    }
-
-    // Make L
-    RCP<SparseOpsType> L_sparse;
-    {
-      // Row 0 of L starts in the first row of the packed L matrix, at
-      // the (0, 0) entry (zero-based).  Row 1 of L
-
-      // Read the entries in each row diagonally and to the northeast.
-
-      const ordinal_type nnz = LDU * N - ((LDU-1)*LDU)/2;
-      ArrayRCP<ordinal_type> ptr (LDU+1);
-      ArrayRCP<ordinal_type> ind (nnz);
-      ArrayRCP<scalar_type> val (nnz);
-      ordinal_type ctr = 0;
-      ptr[0] = 0;
-      for (ordinal_type r = 0; r < LDU; ++r) {
-        // Row 0 of U starts in the last row of the packed U matrix, at
-        // the (LDU-1, 0) entry (zero-based).  Read the entries in each
-        // row diagonally and to the northeast.  Row 1 starts at (LDU-1,
-        // 1).  In general, row r starts at (LDU-1, r), and has min(LDU,
-        // N-r) entries.
-        const ordinal_type numEntries = std::min (LDU, N-r);
-        ordinal_type curRow = LDU - 1;
-        ordinal_type curCol = r;
-        ordinal_type c = r; // start here; it's the upper triangle
-        for (ordinal_type k = 0; k < numEntries; ++k, ++ctr) {
-          val[ctr] = U(curRow--, curCol++);
-          ind[ctr] = c++;
-        }
-        ptr[r+1] = ctr;
-      }
-      // FIXME: Dimensions???
-      L_sparse = makeSparseOps (node, M, M, ptr, ind, val, Teuchos::LOWER_TRI,
-                                Teuchos::UNIT_DIAG);
-
-    }
-  }
-  // mfh 28 Jun 2012: See note above on using LAPACK's banded solver
-  // to generate sparse test problems.
-#endif // 0
 
   /// \brief Read a CSR-format sparse matrix from a Matrix Market file.
   ///
@@ -733,6 +612,10 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(N < 1, std::invalid_argument,
       "denseTriToSparseOps: Input dense matrix must have a positive number of "
       "rows.");
+    TEUCHOS_TEST_FOR_EXCEPTION(N != A.numCols (), std::invalid_argument,
+      "denseTriToSparseOps: Input dense matrix must be square.");
+    TEUCHOS_TEST_FOR_EXCEPTION(uplo == Teuchos::UNDEF_TRI, std::invalid_argument,
+      "denseTriToSparseOps: uplo must be Teuchos::LOWER_TRI or Teuchos::UPPER_TRI.");
 
     // If we're not storing the diagonal entries, subtract N off the
     // total number of entries to store.
@@ -813,10 +696,115 @@ public:
       "the sparse matrix, but got " << curOffset << " instead.  Please report "
       "this bug (in tests) to the Kokkos developers.");
 
+    if (debug_) {
+      // Verify the conversion process, by ensuring that every sparse
+      // matrix entry corresponds to its dense matrix entry.
+      for (ordinal_type i = 0; i < N; ++i) {
+        for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
+          const ordinal_type j = ind[k];
+          const scalar_type A_ij = val[k];
+          TEUCHOS_TEST_FOR_EXCEPTION(A_ij != A(i,j), std::logic_error,
+            "denseTriToSparseOps: conversion failed: in row i = " << i
+            << ", A_ij = " << val[k] << " in the sparse matrix, but A("
+            << i << "," << j << ") in the dense matrix is " << A(i,j) << ".");
+        }
+      }
+    }
+
     ArrayRCP<const size_t> constPtr = arcp_const_cast<const size_t> (ptr);
     ArrayRCP<const ordinal_type> constInd = arcp_const_cast<const ordinal_type> (ind);
     ArrayRCP<const scalar_type> constVal = arcp_const_cast<const scalar_type> (val);
     return makeSparseOpsFromArrays (node, params, N, N,
+                                    constPtr, constInd, constVal, uplo, diag);
+  }
+
+  /// \brief Convert and sparsify the given dense matrix to a sparse kernels object.
+  ///
+  /// \param A [in] The dense matrix.
+  /// \param node [in/out] The Kokkos Node instance.
+  /// \param params [in/out] Parameters for configuring the
+  ///   SparseOpsType instance at construction.
+  /// \param uplo [in] If you know that the matrix is lower or upper
+  ///   triangular, you may specify this in order to optimize sparse
+  ///   storage for that case.  We do not promise to verify this
+  ///   assertion.
+  /// \param diag [in] If you know that the matrix has an implicitly
+  ///   stored unit diagonal, triangular, you may specify this in
+  ///   order to optimize sparse storage for that case.  We do not
+  ///   promise to verify this assertion.
+  Teuchos::RCP<SparseOpsType>
+  sparsifyDenseToSparseOps (const dense_matrix_type& A,
+                            const Teuchos::RCP<node_type>& node,
+                            Teuchos::ParameterList& params,
+                            const Teuchos::EUplo uplo = Teuchos::UNDEF_TRI,
+                            const Teuchos::EDiag diag = Teuchos::NON_UNIT_DIAG)
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp;
+    using Teuchos::arcp_const_cast;
+    using Teuchos::as;
+    using Teuchos::null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    typedef Teuchos::OrdinalTraits<ordinal_type> OTO;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+    const ordinal_type numRows = A.numRows ();
+    const ordinal_type numCols = A.numCols ();
+
+    // Array of the number of entries in each column.
+    // Initialize to zero; compute below.
+    ArrayRCP<size_t> numEntriesPerRow (numRows, 0);
+
+    // Compute the number of nonzero entries in each row.
+    size_t totalNumEntries = 0;
+    for (ordinal_type j = OTO::zero(); j < numCols; ++j) {
+      for (ordinal_type i = OTO::zero(); i < numRows; ++i) {
+        if (A(i,j) != STS::zero()) {
+          ++numEntriesPerRow[i];
+          ++totalNumEntries;
+        }
+      }
+    }
+
+    // Allocate the three arrays for sparse matrix storage:
+    //
+    // ptr: row offsets (will be initialized correctly)
+    // ind: column indices (possibly filled with zeros)
+    // val: matrix entries (possibly filled with zeros)
+    ArrayRCP<size_t> ptr =
+      SparseOpsType::allocRowPtrs (node, numEntriesPerRow ());
+    // We don't need the array of entry counts per row anymore.
+    numEntriesPerRow = Teuchos::null;
+    ArrayRCP<ordinal_type> ind =
+      SparseOpsType::template allocStorage<ordinal_type> (node, ptr ());
+    ArrayRCP<scalar_type> val =
+      SparseOpsType::template allocStorage<scalar_type> (node, ptr ());
+
+    // Copy the dense matrix into ind and val.
+    size_t curOffset = 0;
+    for (ordinal_type i = 0; i < numRows; ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(ptr[i] != curOffset, std::logic_error,
+        "ptr[" << i << "] = " << ptr[i] << " != curOffset = " << curOffset
+        << ".");
+      for (ordinal_type j = 0; j < numCols; ++j) {
+        const scalar_type A_ij = A(i,j);
+        if (A_ij != STS::zero()) {
+          ind[curOffset] = j;
+          val[curOffset] = A_ij;
+          ++curOffset;
+        }
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(ptr[numRows] != curOffset, std::logic_error,
+      "ptr[" << numRows << "] = " << ptr[numRows] << " != curOffset = "
+      << curOffset << ".");
+
+    ArrayRCP<const size_t> constPtr = arcp_const_cast<const size_t> (ptr);
+    ArrayRCP<const ordinal_type> constInd = arcp_const_cast<const ordinal_type> (ind);
+    ArrayRCP<const scalar_type> constVal = arcp_const_cast<const scalar_type> (val);
+    return makeSparseOpsFromArrays (node, params, numRows, numCols,
                                     constPtr, constInd, constVal, uplo, diag);
   }
 
@@ -981,11 +969,11 @@ public:
     return maxRelNorm;
   }
 
-  // TODO (mfh 09 Aug 2012)
+  // TODO (mfh 10 Aug 2012)
   //
-  // 1. Replace testSparseOps() (which might be buggy, with false
-  //    failures?) with testSparseMatVec() and testSparseTriOps().
-  // DONE (10 Aug 2012)
+  // 1. Fix bug in ops with sparse triangular matrices for numRows >=
+  //    39.  It's probably a bug in the test code.
+  //
   // 2. Expand testSparseTriOps() to test the transpose and conjugate
   //    transpose cases.
 
@@ -1075,8 +1063,13 @@ public:
     RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node, params);
     if (verbose_) {
       Teuchos::OSTab tab1 (out_);
-      out << "A_sparse description:";
-      A_sparse->describe (out, verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE);
+      out << "A_sparse description:" << endl;
+      // const Teuchos::EVerbosityLevel verbLevel = verbose_ ?
+      //   (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_HIGH) :
+      //   Teuchos::VERB_NONE;
+      const Teuchos::EVerbosityLevel verbLevel =
+        verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE;
+      A_sparse->describe (out, verbLevel);
     }
 
     // We make MVs for input, results, and scratch space (since the
@@ -1410,6 +1403,7 @@ public:
   {
     using Teuchos::arcp;
     using Teuchos::Array;
+    using Teuchos::ArrayRCP;
     using Teuchos::as;
     using Teuchos::null;
     using Teuchos::RCP;
@@ -1427,6 +1421,9 @@ public:
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
     typedef Kokkos::DefaultArithmetic<MV> MVT;
+
+    const ordinal_type numRows = N;
+    const ordinal_type numCols = N;
 
     Teuchos::FancyOStream& out = *out_;
     if (verbose_) {
@@ -1473,21 +1470,38 @@ public:
     // Convert L_dense and U_dense into separate sparse matrices.
     RCP<SparseOpsType> L_sparse =
       denseTriToSparseOps (*L_dense, node, params, LOWER_TRI, UNIT_DIAG);
+    //sparsifyDenseToSparseOps (*L_dense, node, params, LOWER_TRI, UNIT_DIAG);
     if (verbose_) {
-      out << "L_sparse description:";
-      L_sparse->describe (out, verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE);
+      out << "L_sparse description:" << endl;
+      // const Teuchos::EVerbosityLevel verbLevel = verbose_ ?
+      //   (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_HIGH) :
+      //   Teuchos::VERB_NONE;
+      const Teuchos::EVerbosityLevel verbLevel =
+        verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE;
+      L_sparse->describe (out, verbLevel);
     }
     RCP<SparseOpsType> U_sparse =
       denseTriToSparseOps (*U_dense, node, params, UPPER_TRI, NON_UNIT_DIAG);
+    //sparsifyDenseToSparseOps (*U_dense, node, params, UPPER_TRI, NON_UNIT_DIAG);
     if (verbose_) {
-      out << "U_sparse description:";
-      U_sparse->describe (out, verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE);
+      out << "U_sparse description:" << endl;
+      // const Teuchos::EVerbosityLevel verbLevel = verbose_ ?
+      //   (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_HIGH) :
+      //   Teuchos::VERB_NONE;
+      const Teuchos::EVerbosityLevel verbLevel =
+        verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE;
+      U_sparse->describe (out, verbLevel);
     }
     // Convert A_dense into a separate sparse matrix.
     RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node, params);
     if (verbose_) {
-      out << "A_sparse description:";
-      A_sparse->describe (out, verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE);
+      out << "A_sparse description:" << endl;
+      // const Teuchos::EVerbosityLevel verbLevel = verbose_ ?
+      //   (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_HIGH) :
+      //   Teuchos::VERB_NONE;
+      const Teuchos::EVerbosityLevel verbLevel =
+        verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE;
+      A_sparse->describe (out, verbLevel);
     }
 
     // We make MVs for input, results, and scratch space (since the
@@ -1503,6 +1517,188 @@ public:
     RCP<MV> Y_scratch = makeMultiVector (node, N, numVecs, true);
 
     blas_type blas; // For dense matrix and vector operations.
+
+    //////////////////////////////////////////////////////////////////////
+    // Debug mode test that (L,U,A)_sparse == (L,U,A)_dense
+    //////////////////////////////////////////////////////////////////////
+
+    // Test that (L,U,A)_sparse == (L,U,A)_dense, by using mat-vecs to
+    // sample their columns one at a time.  Only do this for small
+    // numbers of rows and columns, since this is slow otherwise.
+    if (N <= 50) {
+      for (ordinal_type j = 0; j < N; ++j) {
+        if (verbose_) {
+          out << "Comparing A_sparse to A_dense: column "
+              << (j+1) << " of " << N << ":" << endl;
+        }
+        MVT::Init (*X, STS::zero ());
+        X->getValuesNonConst ()[j] = STS::one (); // X := e_j
+        MVT::Random (*Y_hat);
+        MVT::Random (*Y);
+
+        // Compute Y_hat := A_dense * X and Y := A_sparse * X.
+        blas.GEMM (NO_TRANS, NO_TRANS, numRows, numVecs, numCols,
+                   STS::one (), A_dense->values (), A_dense->stride (),
+                   X->getValues ().getRawPtr (), as<int> (X->getStride ()),
+                   STS::zero (), Y_hat->getValuesNonConst ().getRawPtr (),
+                   as<int> (Y_hat->getStride ()));
+        A_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
+                                                               (const MV) *X, *Y);
+        // Compare Y and Y_hat.
+        relErr = maxRelativeError (Y_hat, Y, Y_scratch);
+        if (verbose_) {
+          Teuchos::OSTab tab2 (out_);
+          out << "Relative error: " << relErr << endl;
+        }
+        if (relErr > tol) {
+          err << "Columns " << (j+1) << " of A_sparse and A_dense differ by "
+            "maximum relative error of " << relErr << ", which exceeds the "
+            "given tolerance " << tol << "." << endl;
+          success = false;
+        }
+
+        if (false) {
+          // Show the columns of A_dense and A_sparse.
+          Teuchos::OSTab tab2 (out_);
+          ArrayRCP<const scalar_type> Y_hat_ptr = Y_hat->getValues ();
+          ArrayRCP<const scalar_type> Y_ptr = Y->getValues ();
+
+          out << "A_dense(:," << (j+1) << ") = [";
+          for (ordinal_type i = 0; i < numRows; ++i) {
+            out << Y_hat_ptr[i];
+            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
+              out << " ";
+            }
+          }
+          out << "]" << endl;
+
+          out << "A_sparse(:," << (j+1) << ") = [";
+          for (ordinal_type i = 0; i < numRows; ++i) {
+            out << Y_ptr[i];
+            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
+              out << " ";
+            }
+          }
+          out << "]" << endl;
+        }
+      } // for each column j of A_{dense,sparse}
+
+      for (ordinal_type j = 0; j < N; ++j) {
+        if (verbose_) {
+          out << "Comparing U_sparse to U_dense: column "
+              << (j+1) << " of " << N << ":" << endl;
+        }
+        MVT::Init (*X, STS::zero ());
+        X->getValuesNonConst ()[j] = STS::one (); // X := e_j
+        MVT::Random (*Y_hat);
+        MVT::Random (*Y);
+
+        // Compute Y_hat := U_dense * X.
+        MVT::Assign (*Y_hat, (const MV) *X);
+        blas.TRMM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numVecs,
+                   STS::one (), U_dense->values (), U_dense->stride (),
+                   Y_hat->getValuesNonConst ().getRawPtr (),
+                   as<int> (Y_hat->getStride ()));
+        // Compute Y := U_sparse * X.
+        U_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
+                                                               (const MV) *X, *Y);
+        // Compare Y and Y_hat.
+        relErr = maxRelativeError (Y_hat, Y, Y_scratch);
+        if (verbose_) {
+          Teuchos::OSTab tab2 (out_);
+          out << "Relative error: " << relErr << endl;
+        }
+        if (relErr > tol) {
+          err << "Columns " << (j+1) << " of U_sparse and U_dense differ by "
+            "maximum relative error of " << relErr << ", which exceeds the "
+            "given tolerance " << tol << "." << endl;
+          success = false;
+          Teuchos::OSTab tab2 (out_);
+          ArrayRCP<const scalar_type> Y_hat_ptr = Y_hat->getValues ();
+          ArrayRCP<const scalar_type> Y_ptr = Y->getValues ();
+
+          out << "U_dense(:," << (j+1) << ") = [";
+          for (ordinal_type i = 0; i < numRows; ++i) {
+            out << Y_hat_ptr[i];
+            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
+              out << " ";
+            }
+          }
+          out << "]" << endl;
+
+          out << "U_sparse(:," << (j+1) << ") = [";
+          for (ordinal_type i = 0; i < numRows; ++i) {
+            out << Y_ptr[i];
+            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
+              out << " ";
+            }
+          }
+          out << "]" << endl;
+        }
+      } // for each column j of U_{dense,sparse}
+
+      for (ordinal_type j = 0; j < N; ++j) {
+        if (verbose_) {
+          out << "Comparing L_sparse to L_dense: column "
+              << (j+1) << " of " << N << ":" << endl;
+        }
+        MVT::Init (*X, STS::zero ());
+        X->getValuesNonConst ()[j] = STS::one (); // X := e_j
+        MVT::Random (*Y_hat);
+        MVT::Random (*Y);
+
+        // Compute Y_hat := L_dense * X.
+        MVT::Assign (*Y_hat, (const MV) *X);
+        blas.TRMM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numVecs,
+                   STS::one (), L_dense->values (), L_dense->stride (),
+                   Y_hat->getValuesNonConst ().getRawPtr (),
+                   as<int> (Y_hat->getStride ()));
+        // Compute Y := L_sparse * X.
+        if (implicitUnitDiagTriMultCorrect) {
+          L_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
+                                                                 (const MV) *X, *Y);
+        }
+        else {
+          MVT::Assign (*Y, *X);
+          L_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
+                                                                 (const MV) *X,
+                                                                 STS::one (), *Y);
+        }
+        // Compare Y and Y_hat.
+        relErr = maxRelativeError (Y_hat, Y, Y_scratch);
+        if (verbose_) {
+          Teuchos::OSTab tab2 (out_);
+          out << "Relative error: " << relErr << endl;
+        }
+        if (relErr > tol) {
+          err << "Columns " << (j+1) << " of L_sparse and L_dense differ by "
+            "maximum relative error of " << relErr << ", which exceeds the "
+            "given tolerance " << tol << "." << endl;
+          success = false;
+          Teuchos::OSTab tab2 (out_);
+          ArrayRCP<const scalar_type> Y_hat_ptr = Y_hat->getValues ();
+          ArrayRCP<const scalar_type> Y_ptr = Y->getValues ();
+
+          out << "L_dense(:," << (j+1) << ") = [";
+          for (ordinal_type i = 0; i < numRows; ++i) {
+            out << Y_hat_ptr[i];
+            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
+              out << " ";
+            }
+          }
+          out << "]" << endl;
+
+          out << "L_sparse(:," << (j+1) << ") = [";
+          for (ordinal_type i = 0; i < numRows; ++i) {
+            out << Y_ptr[i];
+            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
+              out << " ";
+            }
+          }
+          out << "]" << endl;
+        }
+      }
+    } // for each column j of L_{dense,sparse}
 
     //////////////////////////////////////////////////////////////////////
     // Test sparse triangular matrix-(multi)vector multiply.

@@ -111,6 +111,8 @@ namespace {
   // Verbosity, including that of Kokkos Node initialization.  (Only
   // certain Kokkos Node types support this option.)
   bool verbose = false;
+  // Whether to print copious debugging output.
+  bool debug = false;
   // For AltSparseOps: Whether to use the version with loops unrolled
   // over the input and output multivectors.
   bool unroll = true;
@@ -151,6 +153,8 @@ namespace {
     clp.setOption ("verbose", "quiet", &verbose, "Whether Kokkos Node "
                    "initialization should print verbose status output, if the "
                    "Node type supports this.");
+    clp.setOption ("debug", "release", &debug, "Whether to print copious "
+                   "debugging output.");
     clp.setOption ("unroll", "dontUnroll", &unroll, "Whether Kokkos::SeqSparse"
                    "Ops should unroll across columns of the multivectors.");
     clp.setOption ("variant", &variant, "Which algorithm variant Kokkos::Seq"
@@ -226,7 +230,7 @@ namespace {
       using Teuchos::rcpFromRef;
 
       RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
-      TestSparseOps<SparseOpsType> tester (out, verbose);
+      TestSparseOps<SparseOpsType> tester (out, verbose, debug);
       if (benchmark) {
         std::vector<std::pair<std::string, double> > results;
         if (matrixFilename == "") {
