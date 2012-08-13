@@ -183,7 +183,7 @@ public:
 
     NumVectors_ = NumVectors_in;
     IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
-    IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
+    IFPACK_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors_));
     // zero out vector elements
     for (int i = 0 ; i < NumRows_ ; ++i)
       for (int j = 0 ; j < NumVectors_ ; ++j) {
