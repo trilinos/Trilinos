@@ -487,7 +487,11 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     // do export if parameter exists in inArgs
     Teuchos::RCP<const Epetra_Vector> global_vec = inArgs.get_p(i->get<1>());
     if (nonnull(global_vec)) {
-      i->get<3>()->Import(*global_vec,*(i->get<2>()),Insert);
+      // Only import if the importer is nonnull
+      Teuchos::RCP<Epetra_Import> importer = i->get<2>();
+      if (nonnull(importer))
+	i->get<3>()->Import(*global_vec,*importer,Insert);
+
       // set in ae_inargs_ string lookup container
       Teuchos::RCP<panzer::EpetraLinearObjContainer> container = 
 	Teuchos::rcp(new panzer::EpetraLinearObjContainer(p_map_[i->get<1>()],p_map_[i->get<1>()]));
