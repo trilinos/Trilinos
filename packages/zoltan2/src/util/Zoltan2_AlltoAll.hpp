@@ -1,9 +1,46 @@
 // @HEADER
-// ***********************************************************************
-//
-//                Copyright message goes here.   TODO
 //
 // ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
 // @HEADER
 
 /*! \file Zoltan2_AlltoAll.hpp
@@ -22,83 +59,47 @@
 namespace Zoltan2
 {
 
-/*! \brief AlltoAll sends/receives a fixed number of objects to/from all processes.
- *
+/*! \brief Each process sends a value to every process, an all-to-all.
  *  \param  comm   The communicator for the process group involved
  *  \param  env    The environment, required for error messages
- *  \param  sendBuf  The data to be sent, in destination process rank order
- *  \param  count    The number of Ts to sendBuf to send to each process.
- *                   This must be the same on all processes.
- *  \param  recvBuf  On return, recvBuf has been allocated and contains
- *                   the packets sent to this process by others.
- *
- * The data type T must be a type for which assignment is defined.
- *
- * AlltoAll uses only point-to-point messages.  This is to avoid the MPI 
- * limitation of integer offsets and counters in collective operations.
- * In other words, LNO can be a 64-bit integer.  However each point to
- * point message size must fit in an int.
- *
- * It also avoids non-scalable MPI data structures that are associated
- * with collective operations.
- *
- * So this is slow, but will not encounter MPI resource limits for very 
- * large applications, some of which have already been encountered by
- * Zoltan users.
+ *  \param  sendCount The number to send to process p is in sendCount[p].
+ *  \param  recvCount On return, The number received from process p 
+ *                     will be in recvCount[p].
  */
 
-template <typename T, typename LNO>
-void AlltoAll(const Comm<int> &comm,
-              const Environment &env,
-              const ArrayView<const T> &sendBuf,
-              LNO count,
-              ArrayRCP<T> &recvBuf)         // output - allocated here
+void AlltoAllCount(const Comm<int> &comm, const Environment &env,
+ const ArrayView<const int> &sendCount, ArrayRCP<int> &recvCount)
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
 
-  if (count == 0) return;   // count is the same on all procs
+  RCP<const int> *messages = new RCP<const int> [nprocs];
+  for (int p=0; p < nprocs; p++)
+    messages[p] = rcp(sendCount.getRawPtr()+p, false);
 
-  LNO n = nprocs * count;
-  T *rptr = new T [n]; 
-  env.globalMemoryAssertion(__FILE__, __LINE__, n, rptr, rcp(&comm, false));
-  recvBuf = Teuchos::arcp<T>(rptr, 0, n);
+  ArrayRCP<RCP<const int> > messageArray(messages, 0, nprocs, true);
 
-  const T *sptr = sendBuf.getRawPtr();
+  int *counts = new int [nprocs];
+  recvCount = arcp(counts, 0, nprocs, true);
 
-  // Do self messages
-
-  for (LNO i=0, offset = rank*count; i < count; i++, offset++){
-    rptr[offset] = sptr[offset];
-  }
+  counts[rank] = sendCount[rank];
 
 #ifdef HAVE_ZOLTAN2_MPI
-  // Perform nprocs-1 point-to-point sends and receives.
 
-  size_t packetSize = count * sizeof(T);
-  env.globalInputAssertion(__FILE__, __LINE__,
-      "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
-      packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
+  // I was getting hangs in Teuchos::waitAll, so I do
+  // blocking receives below.
 
-  const char *sbuf = reinterpret_cast<const char *>(sptr);
-  char *rbuf = reinterpret_cast<char *>(rptr);
-
-  Array<ArrayRCP<const char> > sendArray(nprocs);
-  for (int p=0; p < nprocs; p++){
-    sendArray[p] = arcp(sbuf + p*packetSize, 0, packetSize, false);
-  }
-  
   for (int p=1; p < nprocs; p++){
     int recvFrom = (rank + nprocs - p) % nprocs;
     int sendTo = (rank + p) % nprocs;
 
-    try{  // Non blocking send
-      Teuchos::isend<int, char>(comm, sendArray[sendTo], sendTo);
+    try{  // non blocking send
+      Teuchos::isend<int, int>(comm, messageArray[sendTo], sendTo);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
 
-    try{  // blocking receive for msg just sent to me
-      Teuchos::receive<int, char>(comm, recvFrom, packetSize, rbuf + recvFrom*packetSize);
+    try{  // blocking receive for message just sent to me
+      Teuchos::receive<int, int>(comm, recvFrom, counts + recvFrom);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
   }
@@ -107,7 +108,7 @@ void AlltoAll(const Comm<int> &comm,
 #endif
 }
 
-/*! \brief AlltoAllv sends/receives a variable number of objects to/from all processes.
+/*! \brief AlltoAllv sends/receives data to/from all processes.
  *
  *  \param  comm   The communicator for the process group involved
  *  \param  env    The environment, required for error messages
@@ -117,38 +118,70 @@ void AlltoAll(const Comm<int> &comm,
  *                   the packets sent to this process by others.
  *  \param  recvCount On return, The number of Ts received from process p 
  *                     will be in recvCount[p].
+ *  \param countsAreUniform set to true if all messages sizes are the same.
+ *
+ * The data type T must be a type for which either
+ * Zoltan2::IdentifierTraits are defined or 
+ * Teuchos::DirectSerializationTraits is defined.
+ *
+ * AlltoAll uses only point-to-point messages.  This is to avoid the MPI 
+ * limitation of integer offsets and counters in collective operations.
+ * In other words, sendBuf.size() can exceed a value that fits into
+ * 32 bits. However each point to point message size must fit in an int.
+ *
+ * It also avoids non-scalable MPI data structures that are associated
+ * with collective operations.
+ *
+ * In addition it can be used for Zoltan2 global ID data types that are
+ * not serializable by Teuchos point-to-point messages.
  */
 
-template <typename T, typename LNO>
+template <typename T>
 void AlltoAllv(const Comm<int> &comm,
               const Environment &env,  
               const ArrayView<const T> &sendBuf,
-              const ArrayView<const LNO> &sendCount,
+              const ArrayView<const int> &sendCount,
               ArrayRCP<T> &recvBuf,      // output, allocated here
-              ArrayRCP<LNO> &recvCount)  // output, allocated here
+              ArrayRCP<int> &recvCount,   // output, allocated here
+              bool countsAreUniform=false)
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
 
-  try{
-    AlltoAll<LNO, LNO>(comm, env, sendCount, 1, recvCount);
+  if (countsAreUniform){
+    int *counts = new int [nprocs];
+    for (int i=0; i < nprocs; i++)
+      counts[i] = sendCount[0];
+    recvCount = arcp(counts, 0, nprocs, true);
   }
-  Z2_FORWARD_EXCEPTIONS;
+  else{
+    try{
+      AlltoAllCount(comm, env, sendCount, recvCount);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
 
   size_t *offsetIn = new size_t [nprocs+1];
   size_t *offsetOut = new size_t [nprocs+1];
+
+  ArrayRCP<size_t> offArray1(offsetIn, 0, nprocs+1, true);
+  ArrayRCP<size_t> offArray2(offsetOut, 0, nprocs+1, true);
   
   offsetIn[0] = offsetOut[0] = 0;
 
   size_t maxMsg=0;
+  bool offProc = false;
 
   for (int i=0; i < nprocs; i++){
-    offsetIn[i+1] = offsetIn[i] + (recvCount[i]*sizeof(T));
-    offsetOut[i+1] = offsetOut[i] + (sendCount[i]*sizeof(T));
+    offsetIn[i+1] = offsetIn[i] + recvCount[i];
+    offsetOut[i+1] = offsetOut[i] + sendCount[i];
     if (recvCount[i] > maxMsg)
       maxMsg = recvCount[i];
     if (sendCount[i] > maxMsg)
       maxMsg = recvCount[i];
+
+    if (!offProc && (i != rank) && (recvCount[i] > 0 || sendCount[i] > 0))
+      offProc = true;
   }
 
   env.globalInputAssertion(__FILE__, __LINE__,
@@ -157,328 +190,266 @@ void AlltoAllv(const Comm<int> &comm,
 
   size_t totalIn = offsetIn[nprocs];
 
-  char *rptr = NULL;
-  if (totalIn){
-    rptr = new char [totalIn]; 
-  }
+  T *rptr = NULL;
+
+  if (totalIn)
+    rptr = new T [totalIn]; 
+  
   env.globalMemoryAssertion(__FILE__, __LINE__, totalIn, !totalIn||rptr, 
     rcp(&comm, false));
 
-  recvBuf = Teuchos::arcp<T>(reinterpret_cast<T *>(rptr), 0, totalIn/sizeof(T), true);
+  recvBuf = Teuchos::arcp<T>(rptr, 0, totalIn, true);
 
-  const char *sptr = reinterpret_cast<const char *>(sendBuf.getRawPtr());
+  const T *sptr = sendBuf.getRawPtr();
 
   // Copy self messages
 
-  memcpy(rptr + offsetIn[rank], sptr + offsetOut[rank], 
-    sizeof(T) * recvCount[rank]);
+  if (recvCount[rank] > 0)
+    memcpy(rptr + offsetIn[rank], sptr + offsetOut[rank], 
+      recvCount[rank]*sizeof(T));
 
   if (nprocs < 2)
     return;
 
 #ifdef HAVE_ZOLTAN2_MPI
 
-  Array<ArrayRCP<const char> > sendArray(nprocs);
-  for (int p=0; p < nprocs; p++){
-    if (sendCount[p] > 0)
-      sendArray[p] = arcp(sptr + offsetOut[p], 0, sendCount[p]*sizeof(T), false);
-  }
+  // I was getting hangs in Teuchos::waitAll, so I do
+  // blocking receives below.
 
-  for (int p=1; p < nprocs; p++){
-    int recvFrom = (rank + nprocs - p) % nprocs;
-    int sendTo = (rank + p) % nprocs;
-
-    if (sendCount[sendTo] > 0){
-      try{  // non blocking send
-        Teuchos::isend<int, char>(comm, sendArray[sendTo], sendTo);
-      }
-      Z2_THROW_OUTSIDE_ERROR(env);
+  if (offProc){
+    Array<ArrayRCP<const T> > sendArray(nprocs);
+    for (int p=0; p < nprocs; p++){
+      if (p != rank && sendCount[p] > 0)
+        sendArray[p] = arcp(sptr + offsetOut[p], 0, sendCount[p], false);
     }
-
-    if (recvCount[recvFrom] > 0){
-      try{  // blocking receive for message just sent to me
-        Teuchos::receive<int, char>(comm, recvFrom, recvCount[recvFrom]*sizeof(T),
-           rptr + offsetIn[recvFrom]);
+  
+    for (int p=1; p < nprocs; p++){
+      int recvFrom = (rank + nprocs - p) % nprocs;
+      int sendTo = (rank + p) % nprocs;
+  
+      if (sendCount[sendTo] > 0){
+        try{  // non blocking send
+          Teuchos::isend<int, T>(comm, sendArray[sendTo], sendTo);
+        }
+        Z2_THROW_OUTSIDE_ERROR(env);
       }
-      Z2_THROW_OUTSIDE_ERROR(env);
+  
+      if (recvCount[recvFrom] > 0){
+        try{  // blocking receive for message just sent to me
+          Teuchos::receive<int, T>(comm, recvFrom, recvCount[recvFrom],
+             rptr + offsetIn[recvFrom]);
+        }
+        Z2_THROW_OUTSIDE_ERROR(env);
+      }
     }
   }
 
   comm.barrier();
+
 #endif
 }
 
-/*! \brief Serialization for std::vector<T>
- *
- * Teuchos::SerializationTraits exist for types that can be
- * sent in a Teuchos message, such as std::pair<T1, T2>.  It
- * does not exist for std::vector<T>, and it seems the serialization
- * interface does not make this possible.
- * 
- * These four methods are what the SerializationTraits interface
- * might look like if it could support type std::vector<T>.
- *
- * Buffer layout for std::vector<T> of size N, variable length vectors -
- *      LNO numberOfVectors      
- *      LNO offsetToStartsOfVectorElements[N] 
- *      T first element of first vector
- *        ...
- *      T last element of last vector
- *
- * Buffer layout for std::vector<T> of size N, identical length vectors -
- *      LNO numberOfVectors      
- *      T first element of first vector
- *        ...
- *      T last element of last vector
- *
- * Important: number of bytes returned is always a multiple of sizeof(T)
+/* \brief Specialization for std::string.
+  
+    For string of char. Number of chars in a string limited to SCHAR_MAX.
+    Send as chars: 1 char for length of string, then chars in string,
+     1 char for length of next string, and so on.
+    \todo error checking
  */
-
-template <typename T, typename LNO>
-  LNO fromObjectsToIndirectBytes(const LNO count, 
-    std::vector<T> const v[], 
-    LNO vLen=0)   // set vLen to vector length if all are the same length
-{
-  LNO nelements=0, nbytes=0, preamble=0;
-
-  if (vLen == 0){
-    for (LNO i=0; i < count; i++)
-      nelements += v[i].size();
-    preamble = sizeof(LNO) * (1 + count);
-  }
-  else{
-    nelements = vLen * count;
-    preamble = sizeof(LNO);
-  }
-
-  nbytes = preamble + (preamble % sizeof(T));  // T alignment
-
-  nbytes += nelements * sizeof(T);
-
-  return nbytes;
-}
-
-template <typename T, typename LNO>
-  void serialize(
-    const LNO count, const std::vector<T> v[], const LNO bytes, char buf[], 
-      LNO vLen=0)
-{
-  LNO preamble = sizeof(LNO);
-
-  if (vLen == 0){
-    preamble *= (1 + count);
-  }
-
-  LNO nbytes = preamble + (preamble % sizeof(T));  // T alignment
-
-  LNO offset = nbytes / sizeof(T);
-
-  LNO *info = reinterpret_cast<LNO *>(buf);
-  T* elements = reinterpret_cast<T *>(buf) + offset;
-
-  *info++ = count;
-
-  if (vLen == 0){
-    for (LNO i=0; i < count; i++){
-      int nelements = v[i].size();
-      *info++ = offset;
-  
-      for (LNO j=0; j < nelements; j++)
-        *elements++ = v[i][j];
-  
-      offset += nelements;
-    }
-  }
-  else{
-    for (LNO i=0; i < count; i++){
-      for (LNO j=0; j < vLen; j++){
-        *elements++ = v[i][j];
-      }
-    }
-  }
-}
-
-template <typename T, typename LNO>
-LNO fromIndirectBytesToObjectCount(const LNO bytes, char buf[]) 
-{
-  LNO *count = reinterpret_cast<LNO *>(buf);
-  return count[0];
-}
-
-template <typename T, typename LNO>
-  void deserialize(const LNO bytes, const char buf[], 
-     const LNO count, std::vector<T> v[], LNO vLen=0)
-{
-  LNO preamble = sizeof(LNO);
-
-  if (vLen == 0){
-    preamble *= (1 + count);
-  }
-
-  LNO nbytes = preamble + (preamble % sizeof(T));  // T alignment
-  LNO offset = nbytes / sizeof(T);
-
-  const T* elements = reinterpret_cast<const T *>(buf) + offset;
-
-  if (vLen > 0){
-    for (LNO i=0; i < count; i++){
-      v[i].resize(vLen);
-      v[i].clear();
-      for (LNO j=0; j < vLen; j++){
-        v[i].push_back(*elements++);
-      }
-    }
-  }
-  else{
-    const LNO *info = reinterpret_cast<const LNO *>(buf) + 1;
-    LNO lastOffset = LNO(bytes/sizeof(T));
-  
-    for (LNO i=0; i < count; i++){
-  
-      LNO length = ((i == count-1) ? lastOffset : info[i+1]) - info[i];
-  
-      v[i].resize(length);
-      v[i].clear();
-      for (LNO j=0; j < length; j++){
-        v[i].push_back(*elements++);
-      }
-    }
-  }
-
-}
-
-/*! \brief AlltoAllv sends/receives a std::vector<T> to/from all processes.
- *
- *  \param  comm   The communicator for the process group involved.
- *  \param  env    The environment, required for error messages.
- *  \param  sendBuf  The data to be sent, in destination process rank order.
- *  \param  sendCount sendCount[p] is the count of vectors to be sent 
-                       to process p.
- *  \param  recvBuf  On return, recvBuf has been allocated and contains
- *                   the vectors sent to this process by others.
- *  \param  recvCount On return, The number of vectors received from process p 
- *                     will be in recvCount[p].
- *  \param  vLen     If all vectors are the same length, set vLen to the
- *                  length of the vectors to make AlltoAllv more efficient.
- *
- * The vectors need not be the same length.
- *
- * This was written to better understand Teuchos communication, but it
- * may be useful as well. 
- */
-
-template <typename T, typename LNO>
-void AlltoAllv(const Comm<int>     &comm,
-  const Environment &env,
-  const ArrayView<const std::vector<T> > &sendBuf,
-  const ArrayView<const LNO>             &sendCount,
-  ArrayRCP<std::vector<T> >        &recvBuf,
-  ArrayRCP<LNO>                    &recvCount,
-  LNO            vLen=0)      // set if all vectors are the same length
+template <>
+void AlltoAllv(const Comm<int> &comm,
+              const Environment &env,  
+              const ArrayView<const string> &sendBuf,
+              const ArrayView<const int> &sendCount,
+              ArrayRCP<string> &recvBuf,  // output, allocated here
+              ArrayRCP<int> &recvCount,  // output, allocated here
+              bool countsAreUniform)
 {
   int nprocs = comm.getSize();
-  size_t totalSendSize = 0;
-  LNO offset = 0;
-  using Teuchos::is_null;
+  int *newCount = new int [nprocs];
+  memset(newCount, 0, sizeof(int) * nprocs);
+  ArrayView<const int> newSendCount(newCount, nprocs);
 
-  LNO *sendSize = new LNO [nprocs];
-  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, sendSize,
-    rcp(&comm, false));
+
+  size_t numStrings = sendBuf.size();
+  size_t numChars = 0;
+  bool fail=false;
+
+  for (int p=0, i=0; !fail && p < nprocs; p++){
+    for (int c=0; !fail && c < sendCount[p]; c++, i++){
+      size_t nchars = sendBuf[i].size();
+      if (nchars > SCHAR_MAX)
+        fail = true;
+      else
+        newCount[p] += nchars;
+    }
+    newCount[p] += sendCount[p];
+    numChars += newCount[p];
+  }
+
+  if (fail)
+    throw std::runtime_error("id string length exceeds SCHAR_MAX");
+
+  char *sbuf = NULL;
+  if (numChars > 0)
+    sbuf = new char [numChars];
+  char *sbufptr = sbuf;
+
+  ArrayView<const char> newSendBuf(sbuf, numChars);
+
+  for (size_t i=0; i < numStrings; i++){
+    size_t nchars = sendBuf[i].size();
+    *sbufptr++ = static_cast<char>(nchars);
+    for (size_t j=0; j < nchars; j++)
+      *sbufptr++ = sendBuf[i][j];
+  }
+
+  ArrayRCP<char> newRecvBuf;
+  ArrayRCP<int> newRecvCount;
+
+  AlltoAllv<char>(comm, env, newSendBuf, newSendCount, 
+    newRecvBuf, newRecvCount, countsAreUniform);
+
+  delete [] sbuf;
+  delete [] newCount;
+
+  char *inBuf = newRecvBuf.getRawPtr();
+
+  int numNewStrings = 0;
+  char *buf = inBuf;
+  char *endChar = inBuf + newRecvBuf.size();
+  while (buf < endChar){
+    int slen = static_cast<int>(*buf++);
+    buf += slen;
+    numNewStrings++;
+  }
+
+  // Counts to return
+  int *numStringsRecv = new int [nprocs];
+  memset(numStringsRecv, 0, sizeof(int) * nprocs);
+
+  // Data to return
+  string *newStrings = new string [numNewStrings];
+
+  buf = inBuf;
+  int next = 0;
 
   for (int p=0; p < nprocs; p++){
-    if (sendCount[p] > 0){
-      sendSize[p] = 
-        fromObjectsToIndirectBytes<T, LNO>(sendCount[p], 
-          sendBuf.getRawPtr() + offset, vLen);
-
-      offset += sendCount[p];
-      totalSendSize += sendSize[p];
-    }
-    else{
-      sendSize[p] = 0;
-    }
-  }
-
-  size_t bufSize = totalSendSize/sizeof(T);
-  
-  T *buf = NULL;
-  if (bufSize)
-    buf = new T [bufSize];
-  
-  env.globalMemoryAssertion(__FILE__, __LINE__, bufSize, !bufSize || buf,
-    rcp(&comm, false));
-
-  const std::vector<T> *vptr = sendBuf.getRawPtr();
-
-  char *charBuf = reinterpret_cast<char *>(buf);
-
-  for (int p=0; p < nprocs; p++){
-    if (sendCount[p] > 0){
-      serialize<T, LNO>(sendCount[p], vptr, sendSize[p], charBuf, vLen);
-      vptr += sendCount[p];
-      charBuf += sendSize[p];
-      sendSize[p] /= sizeof(T);
+    int nchars = newRecvCount[p];
+    endChar = buf + nchars;
+    while (buf < endChar){
+      int slen = *buf++;
+      string nextString;
+      for (int i=0; i < slen; i++)
+        nextString.push_back(*buf++);
+      newStrings[next++] = nextString;
+      numStringsRecv[p]++;
     }
   }
 
-  ArrayRCP<T> recvT;
-  ArrayRCP<LNO> recvSize;
-  ArrayView<const T> bufView(buf, bufSize);
-  ArrayView<const LNO> sendSizeView(sendSize, nprocs);
+  recvBuf = arcp<string>(newStrings, 0, numNewStrings, true);
+  recvCount = arcp<int>(numStringsRecv, 0, nprocs, true);
+}
 
-  try{
-    AlltoAllv<T, LNO>(comm, env, bufView, sendSizeView, recvT, recvSize);
-  }
-  Z2_FORWARD_EXCEPTIONS;
+#ifdef HAVE_ZOLTAN2_LONG_LONG
 
-  delete [] sendSize;
-  if (bufSize)
-    delete [] buf;
+/* \brief Specialization for unsigned long long 
+ */
+template <>
+void AlltoAllv(const Comm<int> &comm,
+              const Environment &env,  
+              const ArrayView<const unsigned long long> &sendBuf,
+              const ArrayView<const int> &sendCount,
+              ArrayRCP<unsigned long long> &recvBuf,  // output, allocated here
+              ArrayRCP<int> &recvCount,  // output, allocated here
+              bool countsAreUniform)
+{
+  const long long *sbuf = 
+    reinterpret_cast<const long long *>(sendBuf.getRawPtr());
+  ArrayView<const long long> newSendBuf(sbuf, sendBuf.size());
+  ArrayRCP<long long> newRecvBuf;
 
-  LNO *vectorCount = new LNO [nprocs];
-  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, vectorCount,
-    rcp(&comm, false));
+  AlltoAllv<long long>(comm, env, newSendBuf, sendCount, 
+    newRecvBuf, recvCount, countsAreUniform);
 
-  LNO totalCount = 0;
+  recvBuf = arcp_reinterpret_cast<unsigned long long>(newRecvBuf);
+}
+#endif
 
-  charBuf = reinterpret_cast<char *>(recvT.get());
+/* \brief Specialization for unsigned short 
+ */
+template <>
+void AlltoAllv(const Comm<int> &comm,
+              const Environment &env,  
+              const ArrayView<const unsigned short> &sendBuf,
+              const ArrayView<const int> &sendCount,
+              ArrayRCP<unsigned short> &recvBuf,  // output, allocated here
+              ArrayRCP<int> &recvCount,  // output, allocated here
+              bool countsAreUniform)
+{
+  const short *sbuf = reinterpret_cast<const short *>(sendBuf.getRawPtr());
+  ArrayView<const short> newSendBuf(sbuf, sendBuf.size());
+  ArrayRCP<short> newRecvBuf;
 
-  for (int p=0; p < nprocs; p++){
-    if (recvSize[p] > 0){
-      LNO bytecount = recvSize[p] * sizeof(T);
-      vectorCount[p] = 
-        fromIndirectBytesToObjectCount<T, LNO>(bytecount, charBuf);
+  AlltoAllv<short>(comm, env, newSendBuf, sendCount, 
+    newRecvBuf, recvCount, countsAreUniform);
 
-      charBuf += bytecount;
-      totalCount += vectorCount[p];
-    }
-    else{
-      vectorCount[p] = 0;
-    }
-  }
+  recvBuf = arcp_reinterpret_cast<unsigned short>(newRecvBuf);
+}
 
-  std::vector<T> *inVectors = NULL;
-  if (totalCount)
-    inVectors = new std::vector<T> [totalCount];
+/* \brief For data type unsigned char (no Teuchos::DirectSerializationTraits)
+ */
+template <>
+void AlltoAllv(const Comm<int> &comm,
+              const Environment &env,  
+              const ArrayView<const unsigned char> &sendBuf,
+              const ArrayView<const int> &sendCount,
+              ArrayRCP<unsigned char> &recvBuf,      // output, allocated here
+              ArrayRCP<int> &recvCount,  // output, allocated here
+              bool countsAreUniform)
+{
+  const char *sbuf = reinterpret_cast<const char *>(sendBuf.getRawPtr());
+  ArrayView<const char> newSendBuf(sbuf, sendBuf.size());
+  ArrayRCP<char> newRecvBuf;
 
-  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, 
-    !totalCount || inVectors, rcp(&comm, false));
+  AlltoAllv<char>(comm, env, newSendBuf, sendCount, 
+    newRecvBuf, recvCount, countsAreUniform);
 
-  charBuf = reinterpret_cast<char *>(recvT.get());
-  std::vector<T> *inv = inVectors;
+  recvBuf = arcp_reinterpret_cast<unsigned char>(newRecvBuf);
+}
 
-  for (int p=0; p < nprocs; p++){
-    if (recvSize[p] > 0){
-      LNO bytecount = recvSize[p] * sizeof(T);
-      deserialize<T, LNO>(bytecount, charBuf, vectorCount[p], inv, vLen);
+/*! \brief AlltoAll sends a fixed number of objects to/from all processes.
+ *
+ *  \param  comm   The communicator for the process group involved
+ *  \param  env    The environment, required for error messages
+ *  \param  sendBuf  The data to be sent, in destination process rank order
+ *  \param  count    The number of Ts to sendBuf to send to each process.
+ *                   This must be the same on all processes.
+ *  \param  recvBuf  On return, recvBuf has been allocated and contains
+ *                   the packets sent to this process by others.
+ */
 
-      charBuf += bytecount;
-      inv += vectorCount[p];
-    }
-  }
+template <typename T>
+void AlltoAll(const Comm<int> &comm,
+              const Environment &env,
+              const ArrayView<const T> &sendBuf,
+              int count,
+              ArrayRCP<T> &recvBuf)         // output - allocated here
+{
+  int nprocs = comm.getSize();
 
-  recvBuf = Teuchos::arcp(inVectors, 0, totalCount);
-  recvCount = Teuchos::arcp(vectorCount, 0, nprocs);
+  if (count == 0) return;   // count is the same on all procs
+
+  int *counts = new int [nprocs];
+  for (int i=0; i < nprocs; i++)
+    counts[i] = count;
+
+  ArrayView<const int> sendCounts(counts, nprocs);
+  ArrayRCP<int> recvCounts;
+
+  AlltoAllv<T>(comm, env, sendBuf, sendCounts, recvBuf, recvCounts, true);
+
+  delete [] counts;
 }
 
 }                   // namespace Z2

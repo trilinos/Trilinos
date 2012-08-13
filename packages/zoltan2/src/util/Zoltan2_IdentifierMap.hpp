@@ -1,9 +1,46 @@
 // @HEADER
-// ***********************************************************************
-//
-//                Copyright message goes here.
 //
 // ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
 // @HEADER
 
 /*! \file Zoltan2_IdentifierMap.hpp
@@ -352,10 +389,10 @@ template< typename User>
   if (userGidsAreZoltan2Gnos_){   // our gnos are the app gids
     if (tt == TRANSLATE_LIB_TO_APP)
       for (size_t i=0; i < inLen; i++)
-        gid[i] = Teuchos::as<gid_t>(gno[i]);
+        gid[i] = static_cast<gid_t>(gno[i]);
     else
       for (size_t i=0; i < inLen; i++)
-        gno[i] = Teuchos::as<gno_t>(gid[i]);
+        gno[i] = static_cast<gno_t>(gid[i]);
   }
   else{              // we mapped gids to consecutive gnos
     gno_t firstGno = gnoDist_[myRank_];
@@ -436,7 +473,7 @@ template< typename User>
     else {                    // gnos must be the app gids
       if (userGidsAreConsecutive_){
         for (size_t i=0; i < inLen; i++){ 
-          gid_t tmp = Teuchos::as<gid_t>(gno[i]);
+          gid_t tmp = static_cast<gid_t>(gno[i]);
           lno[i] = IdentifierTraits<gid_t>::difference(myGids_[0], tmp);
           env_->localInputAssertion(__FILE__, __LINE__, "invalid global number",
             (lno[i] >= 0) && (lno[i] < lno_t(localNumberOfIds_)), 
@@ -446,7 +483,7 @@ template< typename User>
       else{
         for (size_t i=0; i < inLen; i++){ 
           try{
-            gid_t keyArg = Teuchos::as<gid_t>(gno[i]);
+            gid_t keyArg = static_cast<gid_t>(gno[i]);
             lno[i] = gidLookup_->lookup(keyArg);
           }
           catch (const std::exception &e) {
@@ -464,7 +501,7 @@ template< typename User>
       if (gnoDist_.size() > 0)  // gnos are consecutive
         gno[i] = firstGno + idx;
       else                     // gnos must be the app gids
-        gno[i] = Teuchos::as<gno_t>(myGids_[idx]);
+        gno[i] = static_cast<gno_t>(myGids_[idx]);
     }
   }
 }
@@ -475,7 +512,7 @@ template< typename User>
     ArrayView<gno_t> out_gno,
     ArrayView<int> out_proc) const
 {
-  gno_t inLen=in_gid.size();
+  size_t inLen=in_gid.size();
 
   if (inLen == 0){
     return;
@@ -498,7 +535,7 @@ template< typename User>
     gno_t *final = gnos + numProcs_ + 1;
 
     for (gno_t i=0; i < inLen; i++){
-      gno_t gno = Teuchos::as<gno_t>(in_gid[i]);
+      gno_t gno = static_cast<gno_t>(in_gid[i]);
       if (!skipGno)
         out_gno[i] = gno;
 
@@ -524,13 +561,13 @@ template< typename User>
 
   Array<gid_t> gidOutBuf;
   Array<gno_t> gnoOutBuf;
-  Array<lno_t> countOutBuf(numProcs_, 0);
+  Array<int> countOutBuf(numProcs_, 0);
 
   ArrayRCP<gid_t> gidInBuf;
   ArrayRCP<gno_t> gnoInBuf;
-  ArrayRCP<lno_t> countInBuf;
+  ArrayRCP<int> countInBuf;
 
-  Array<lno_t> offsetBuf(numProcs_ + 1, 0);
+  Array<gno_t> offsetBuf(numProcs_ + 1, 0);
 
   if (localNumberOfIds_ > 0){
 
@@ -549,7 +586,7 @@ template< typename User>
     for (int p=1; p <= numProcs_; p++){
       offsetBuf[p] = offsetBuf[p-1] + countOutBuf[p-1];
     }
-  
+
     if (needGnoInfo){   
       // The gnos are not the gids, which also implies that
       // gnos are consecutive numbers given by gnoDist_.
@@ -558,7 +595,7 @@ template< typename User>
   
     for (size_t i=0; i < localNumberOfIds_; i++){
       int hashProc = IdentifierTraits<gid_t>::hashCode(myGids_[i]) % numProcs_;
-      lno_t offset = offsetBuf[hashProc];
+      gno_t offset = offsetBuf[hashProc];
       gidOutBuf[offset] = myGids_[i];
       if (needGnoInfo)
         gnoOutBuf[offset] = gnoDist_[myRank_] + i;
@@ -569,19 +606,18 @@ template< typename User>
   // Z2::AlltoAllv comment: Buffers are in process rank contiguous order.
 
   ArrayView<const gid_t> gidView = gidOutBuf();
-  ArrayView<const lno_t> countView = countOutBuf();
+  ArrayView<const int> countView = countOutBuf();
   try{
-    AlltoAllv<gid_t, lno_t>(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
+    AlltoAllv<gid_t>(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
   }
   Z2_FORWARD_EXCEPTIONS;
-
 
   gidOutBuf.clear();
 
   if (needGnoInfo){
     ArrayView<const gno_t> gnoView = gnoOutBuf();
     try{
-      AlltoAllv<gno_t, lno_t>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
+      AlltoAllv<gno_t>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
   }
@@ -598,12 +634,12 @@ template< typename User>
 
   // Use a vector to find process that sent gid.
 
-  std::vector<lno_t> firstIndex;
+  std::vector<gno_t> firstIndex;
   std::vector<int> sendProc;
-  lno_t indexTotal = 0;
+  gno_t indexTotal = 0;
 
   for (int p=0; p < numProcs_; p++){
-    lno_t bufLen = countInBuf[p];
+    int bufLen = countInBuf[p];
     if (bufLen > 0){
       firstIndex.push_back(indexTotal);
       sendProc.push_back(p);
@@ -614,8 +650,11 @@ template< typename User>
 
   // Keep gnoInBuf.  We're done with the others.
 
-  gidInBuf.release();
-  countInBuf.release();
+  // KDDKDD Release causes memory leaks; doesn't deallocate memory; just changes
+  // KDDKDD ownership to false.  We want ownership to be true so that the
+  // KDDKDD memory is freed when the pointers are reassigned.  7/26/2012
+  // KDDKDD gidInBuf.release();
+  // KDDKDD countInBuf.release();
 
   ///////////////////////////////////////////////////////////////////////
   // Send a request for information to the "answer process" for each 
@@ -636,57 +675,10 @@ template< typename User>
 
   size_t numberOfUniqueGids = lookupRequested->size();
 
+  std::map<gid_t, lno_t> answerMap;// map from gid to position of answer
+
   ArrayRCP<lno_t> uniqueIndices;
-  set<lno_t> duplicateIndices; // the position in in_gid of 1st duplicates
-  map<lno_t, lno_t> recvIndex; // map from in_gid position to recv buf pos
-  set<lno_t> missingIndices;
-  bool useIndices = false;
-
-  if (numberOfUniqueGids != inLen){
-
-    useIndices = true;
-
-    // The list of indices in increasing order in in_gid 
-    // for unique global Ids.
-
-    lookupRequested->getIndices(uniqueIndices);
-
-    // Create a set of indices into in_gid for global Ids
-    // that appeared earlier in the in_gid list. (So they
-    // are not in the uniqueIndices list.)
-
-    lno_t *current = uniqueIndices.getRawPtr();
-    lno_t prev = 0;
-    for (lno_t i=1; i < numberOfUniqueGids; i++){
-      if (current[i] > prev+1){
-        for (lno_t j=prev+1; j < current[i]; j++)
-          missingIndices.insert(j);
-      }
-      prev = current[i];
-    }
-    if (prev < inLen-1)
-      for (lno_t j=prev+1; j < inLen; j++)
-        missingIndices.insert(j);
-
-    env_->localBugAssertion(__FILE__, __LINE__, "index machinery",
-      numberOfUniqueGids + missingIndices.size() == inLen,
-      DEBUG_MODE_ASSERTION);
-
-    // Save the index of the first of each of the duplicate values.
-
-    typename set<lno_t>::iterator next = missingIndices.begin();
-    while (next != missingIndices.end()){
-      lno_t missingIdx = *next;
-      lno_t origIdx = lookupRequested->lookup(in_gid[missingIdx]); 
-      typename set<lno_t>::iterator rec = duplicateIndices.find(origIdx);
-      if (rec == duplicateIndices.end())
-        duplicateIndices.insert(origIdx);
-      ++next;
-    }
-  }
-  else{
-    lookupRequested.release();   // don't need it
-  }
+  lookupRequested->getIndices(uniqueIndices);
 
   countOutBuf.resize(numProcs_, 0);
 
@@ -700,8 +692,7 @@ template< typename User>
     }
 
     for (lno_t i=0; i < numberOfUniqueGids; i++){
-      lno_t idx = (useIndices ? uniqueIndices[i] : i);
-      gid_t gid = in_gid[idx];
+      gid_t gid = in_gid[uniqueIndices[i]];
       int hashProc = IdentifierTraits<gid_t>::hashCode(gid) % numProcs_;
       countOutBuf[hashProc]++;
     }
@@ -713,39 +704,21 @@ template< typename User>
     }
   
     for (lno_t i=0; i < numberOfUniqueGids; i++){
-      lno_t idx = (useIndices ? uniqueIndices[i] : i);
-      gid_t gid = in_gid[idx];
+      gid_t gid = in_gid[uniqueIndices[i]];
       int hashProc = IdentifierTraits<gid_t>::hashCode(gid) % numProcs_;
-      lno_t loc = offsetBuf[hashProc];
+      gno_t loc = offsetBuf[hashProc];
 
-      if (useIndices){
-        // If there are duplicates of this gid in in_gid, save
-        // the place where data will be found for it.
-        typename set<lno_t>::iterator rec = duplicateIndices.find(idx);
-        if (rec != duplicateIndices.end())
-          recvIndex[idx] = loc;
-      }
-    
+      answerMap[gid] = loc;
+
       gidOutBuf[loc] = gid;
       offsetBuf[hashProc] = loc + 1;
     }
-
-    duplicateIndices.clear();
-
-   // Recreate the offsets so we know the order of our gid requests later
-    offsetBuf[0] = 0;
-    for (int p=0; p < numProcs_; p++){
-      offsetBuf[p+1] = offsetBuf[p] + countOutBuf[p];
-    }
   }
-return;
-
-///////// CRASH here
 
   try{
     ArrayView<const gid_t> gidView = gidOutBuf();
-    ArrayView<const lno_t> countView = countOutBuf();
-    AlltoAllv<gid_t,lno_t>(*comm_, *env_, gidView, countView, 
+    ArrayView<const int> countView = countOutBuf();
+    AlltoAllv<gid_t>(*comm_, *env_, gidView, countView, 
       gidInBuf, countInBuf);
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -756,7 +729,7 @@ return;
   // Create and send answers to the processes that made requests of me.
   ///////////////////////////////////////////////////////////////////////
 
-  lno_t total = 0;
+  gno_t total = 0;
   for (int p=0; p < numProcs_; p++){
     countOutBuf[p] = countInBuf[p];
     total += countOutBuf[p];
@@ -777,10 +750,10 @@ return;
   if (total > 0){
   
     total=0;
-    typename std::vector<lno_t>::iterator indexFound;
+    typename std::vector<gno_t>::iterator indexFound;
   
     for (int p=0; p < numProcs_; p++){
-      for (lno_t i=0; i < countInBuf[p]; i++, total++){
+      for (int i=0; i < countInBuf[p]; i++, total++){
 
         lno_t index(0);
         bool badGid = false;
@@ -798,8 +771,8 @@ return;
         
         if (!badGid){
           indexFound = upper_bound(firstIndex.begin(), firstIndex.end(), index);
-     std::cout << (indexFound - firstIndex.begin() - 1) << std::endl;
-          procOutBuf[total] = sendProc[indexFound - firstIndex.begin() - 1];
+          int sendingProc = indexFound - firstIndex.begin() - 1;
+          procOutBuf[total] = sendProc[sendingProc];
     
           if (needGnoInfo){
             gnoOutBuf[total] = gnoInBuf[index];
@@ -813,19 +786,22 @@ return;
     }
   }
 
-  gidInBuf.release();
-  if (needGnoInfo){
-    gnoInBuf.release();
-  }
+  // KDDKDD Release causes memory leaks; doesn't deallocate memory; just changes
+  // KDDKDD ownership to false.  We want ownership to be true so that the
+  // KDDKDD memory is freed when the pointers are reassigned.  7/26/2012
+  // KDDKDD gidInBuf.release();
+  // KDDKDD if (needGnoInfo){
+  // KDDKDD     gnoInBuf.release();
+  // KDDKDD   }
 
   // Done with lookupMine.
 
-  lookupMine.release();
+  // KDDKDD lookupMine.release();
 
   try{
     ArrayView<const int> procView = procOutBuf();
-    ArrayView<const lno_t> countView = countOutBuf();
-    AlltoAllv<int,lno_t>(*comm_, *env_, procView, countView, procInBuf, countInBuf);
+    ArrayView<const int> countView = countOutBuf();
+    AlltoAllv<int>(*comm_, *env_, procView, countView, procInBuf, countInBuf);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -834,8 +810,8 @@ return;
   if (needGnoInfo){
     try{
       ArrayView<const gno_t> gnoView = gnoOutBuf();
-      ArrayView<const lno_t> countView = countOutBuf();
-      AlltoAllv<gno_t,lno_t>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
+      ArrayView<const int> countView = countOutBuf();
+      AlltoAllv<gno_t>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -848,43 +824,11 @@ return;
   // Done.  Process the replies to my queries
   ///////////////////////////////////////////////////////////////////////
 
-  if (useIndices){
-
-    for (lno_t i=0; i < numberOfUniqueGids; i++){
-      gid_t gid = in_gid[uniqueIndices[i]];
-      int hashProc = IdentifierTraits<gid_t>::hashCode(gid) % numProcs_;
-      lno_t loc = offsetBuf[hashProc];
-      out_proc[i] = procInBuf[loc];
-      if (needGnoInfo)
-        out_gno[i] = gnoInBuf[loc];
-      offsetBuf[hashProc] = loc + 1;
-    }
-
-    typename set<lno_t>::iterator next = missingIndices.begin();
-    while (next != missingIndices.end()){
-      lno_t missingIdx = *next;
-      lno_t origIdx = lookupRequested->lookup(in_gid[missingIdx]);
-      typename map<lno_t, lno_t>::iterator rec = recvIndex.find(origIdx);
-      env_->localBugAssertion(__FILE__, __LINE__, "index not found",
-        rec != recvIndex.end(), DEBUG_MODE_ASSERTION);
-         
-      lno_t loc = (*rec).second;
-      out_proc[missingIdx] = procInBuf[loc];
-      if (needGnoInfo)
-        out_gno[missingIdx] = gnoInBuf[loc];
-      ++next;
-    }
-  }
-  else {
-    for (lno_t i=0; i < inLen; i++){
-      int hashProc = 
-        IdentifierTraits<gid_t>::hashCode(in_gid[i]) % numProcs_;
-      lno_t loc = offsetBuf[hashProc];
-      out_proc[i] = procInBuf[loc];
-      if (needGnoInfo)
-        out_gno[i] = gnoInBuf[loc];
-      offsetBuf[hashProc] = loc + 1;
-    }
+  for (size_t i=0; i < inLen; i++){
+    lno_t loc = answerMap[in_gid[i]];
+    out_proc[i] = procInBuf[loc];
+    if (needGnoInfo)
+      out_gno[i] = gnoInBuf[loc];
   }
 }
 
@@ -978,7 +922,7 @@ template< typename User>
   //   trouble here?
 
   ArrayRCP<gno_t> gnoOutBuf;
-  ArrayRCP<lno_t> offsetBuf;
+  ArrayRCP<gno_t> offsetBuf;
 
   if (inLen){
     gno_t *tmpGno = new gno_t [inLen];
@@ -986,11 +930,11 @@ template< typename User>
     gnoOutBuf = arcp(tmpGno, 0, inLen, true);
   }
 
-  lno_t *tmpCount = new lno_t [numProcs_];
+  int *tmpCount = new int [numProcs_];
   env_->localMemoryAssertion(__FILE__, __LINE__, numProcs_, tmpCount);
-  ArrayRCP<lno_t> countOutBuf(tmpCount, 0, numProcs_, true);
+  ArrayRCP<int> countOutBuf(tmpCount, 0, numProcs_, true);
 
-  lno_t *tmpOff = new lno_t [numProcs_+1];
+  gno_t *tmpOff = new gno_t [numProcs_+1];
   env_->localMemoryAssertion(__FILE__, __LINE__, numProcs_+1, tmpOff);
   offsetBuf = arcp(tmpOff, 0, numProcs_+1, true);
 
@@ -1002,7 +946,7 @@ template< typename User>
 
   for (gno_t i=0; i < inLen; i++){
     int p = out_proc[i];
-    int off = offsetBuf[p];
+    gno_t off = offsetBuf[p];
     gnoOutBuf[off] = in_gno[i];
     offsetBuf[p]++;
   }
@@ -1015,10 +959,10 @@ template< typename User>
 
 
   ArrayRCP<gno_t> gnoInBuf;
-  ArrayRCP<lno_t> countInBuf;
+  ArrayRCP<int> countInBuf;
 
   try{
-    AlltoAllv<gno_t, lno_t>(*comm_, *env_, 
+    AlltoAllv<gno_t>(*comm_, *env_, 
       gnoOutBuf.view(0, inLen), countOutBuf.view(0, numProcs_),
       gnoInBuf, countInBuf);
   }
@@ -1027,7 +971,7 @@ template< typename User>
   gnoOutBuf.clear();
   countOutBuf.clear();
 
-  lno_t numRequests = 0;
+  gno_t numRequests = 0;
   for (int i=0; i < numProcs_; i++)
     numRequests += countInBuf[i];
 
@@ -1050,7 +994,7 @@ template< typename User>
   ArrayRCP<lno_t> newCountInBuf;
 
   try{
-    AlltoAllv<gid_t, lno_t>(*comm_, *env_, 
+    AlltoAllv<gid_t>(*comm_, *env_, 
       gidQueryBuf.view(0, numRequests), countInBuf.view(0, numProcs_),
       gidInBuf, newCountInBuf);
   }
@@ -1062,7 +1006,7 @@ template< typename User>
 
   for (gno_t i=0; i < inLen; i++){
     int p = out_proc[i];
-    int off = offsetBuf[p];
+    gno_t off = offsetBuf[p];
     out_gid[i] = gidInBuf[off];
     offsetBuf[p]++;
   }
@@ -1082,7 +1026,7 @@ template< typename User>
   localNumberOfIds_ = myGids_.size();
   const gid_t *gidPtr = myGids_.get();
   ArrayRCP<gid_t> tmpDist;
-  gid_t mingid_t=0, maxgid_t=0;
+  gid_t mingid=0, maxgid=0;
 
   userGidsAreConsecutive_ = globallyConsecutiveOrdinals<gid_t>(
     *comm_, *env_, gidPtr, localNumberOfIds_,      // input
@@ -1092,8 +1036,8 @@ template< typename User>
 
   if (userGidsAreTeuchosOrdinal_){
     if (!userGidsAreConsecutive_){
-      mingid_t = tmpDist[0];
-      maxgid_t = tmpDist[1];
+      mingid = tmpDist[0];
+      maxgid = tmpDist[1];
     }
     else{
       // A gno_t is large enough to hold gid_ts, but may be a different type.
@@ -1141,8 +1085,8 @@ template< typename User>
       maxGlobalGno_ = gnoDist_[numProcs_]-1;
     }
     else{
-      minGlobalGno_ = static_cast<gno_t>(mingid_t);
-      maxGlobalGno_ = static_cast<gno_t>(maxgid_t);
+      minGlobalGno_ = static_cast<gno_t>(mingid);
+      maxGlobalGno_ = static_cast<gno_t>(maxgid);
     }
   } else{
     // We map application gids to consecutive global numbers starting with 0.

@@ -7,7 +7,6 @@ SRCDIR=~/shared/projects/Trilinos
 /bin/rm -rf *.* CMakeFiles Testing packages preCopyrightTrilinos Makefile
 
 cmake \
--D Trilinos_ENABLE_Tpetra:BOOL=ON \
 -D Tpetra_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF \
 -D TPL_ENABLE_MPI:BOOL=ON \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/local/lib -lmpichcxx -lmpichf90 -lmpich -lmpl -lopa -lpthread" \
@@ -24,11 +23,7 @@ cmake \
 -D Teuchos_ENABLE_STACKTRACE=OFF \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
 -D MPI_EXEC_MAX_NUMPROCS:STRING=11 \
--D Trilinos_ENABLE_Teuchos:BOOL=ON \
 -D TPL_ENABLE_BinUtils:BOOL=OFF \
--D Trilinos_ENABLE_Epetra:BOOL=ON \
--D Trilinos_ENABLE_EpetraExt:BOOL=ON \
--D Trilinos_ENABLE_MueLu:BOOL=ON \
 -D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
 -D Trilinos_ENABLE_Zoltan2:BOOL=ON \
 -D LAPACK_LIBRARY_DIRS:FILEPATH=/usr/local/lib \

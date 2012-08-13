@@ -1,4 +1,48 @@
 // @HEADER
+//
+// ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
+// @HEADER
 // ***********************************************************************
 //            copyright
 //
@@ -38,11 +82,9 @@ template <typename T>
   T max = numeric_limits<T>::min();
   T min = numeric_limits<T>::max();
 
-  if (n < 1) return std::pair<T,T>(min, max);
-
   for (size_t i=0; i < n; i++){
     if (val[i] < min) min = val[i];
-    else if (val[i] > max) max = val[i];
+    if (val[i] > max) max = val[i];
   }
   return std::pair<T,T>(min,max);
 }
@@ -89,16 +131,19 @@ public:
 /*! \brief helper function to find global min and max of array of user Ids
  */
 template <typename T>
-  void z2GlobalMinMax(const Comm<int> &comm, 
-    const T &localMin, const T &localMax, T &globalMin, T &globalMax)
+  void z2GlobalMinMax(const Comm<int> &comm, bool noLocalValues,
+    T localMin, T localMax, T &globalMin, T &globalMax)
 {
+  if (noLocalValues){
+    localMin = numeric_limits<T>::max();
+    localMax = numeric_limits<T>::min();
+  }
+
   if (comm.getSize() == 1){
     globalMin = localMin;
     globalMax = localMax;
     return;
   }
-
-  Zoltan2_MinMaxOperation<T> reductionOp;
 
   T localValues[2] = {localMin, localMax};
   T globalValues[2];
@@ -106,6 +151,7 @@ template <typename T>
   char *lv = reinterpret_cast<char *>(&localValues[0]);
   char *gv = reinterpret_cast<char *>(&globalValues[0]);
 
+  Zoltan2_MinMaxOperation<T> reductionOp;
   Teuchos::reduceAll<int, char>(comm, reductionOp, 2*sizeof(T), lv, gv);
 
   globalMin = globalValues[0];
@@ -198,8 +244,12 @@ static inline T invalid() {
   \todo write an example where user's global ID is a C-struct containing
         \c i and \c j indices.
 
+  \todo fix this note regarding gid_t
   Developer note: By convention we use \c gid_t as the users global ID
   data type and \c gno_t as the data type used internally by Zoltan2.
+
+  Each data type which is not defined in Teuchos::DirectSerializationTraits
+  must have a Zoltan2::AlltoAllv specialization in Zoltan2_AlltoAll.hpp.
 */
 
 template<typename T>
@@ -293,6 +343,8 @@ struct IdentifierTraits {
   /*! \brief Find global minimum and maximum
 
       \param comm  Communicator for global operation
+      \param flag  true if there are no values on this process (so
+                    \c localMin and \c localMax are ignored), false otherwise
       \param localMin  The local minimum
       \param localMax  The local maximum
       \param globalMin  On return, the global minimum
@@ -301,8 +353,8 @@ struct IdentifierTraits {
        A \c std::logic_error is throw at runtime if T is a type
             that can not be ordered.
    */
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
     UndefIdTraits<T>::noop();
   }
 
@@ -341,9 +393,9 @@ struct IdentifierTraits<char> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
    return z2AreConsecutive(val, n); }
 };
@@ -365,9 +417,9 @@ struct IdentifierTraits<unsigned char> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
    return z2AreConsecutive(val, n); }
 };
@@ -389,9 +441,9 @@ struct IdentifierTraits<short> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
   return z2AreConsecutive(val, n); }
 };
@@ -413,9 +465,9 @@ struct IdentifierTraits<unsigned short> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
   return z2AreConsecutive(val, n); }
 };
@@ -437,9 +489,9 @@ struct IdentifierTraits<int> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
   return z2AreConsecutive(val, n); }
 };
@@ -461,9 +513,9 @@ struct IdentifierTraits<unsigned int> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
   return z2AreConsecutive(val, n); }
 };
@@ -487,9 +539,9 @@ struct IdentifierTraits<long> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){
     return z2AreConsecutive(val, n); }
 };
@@ -512,9 +564,9 @@ struct IdentifierTraits<unsigned long> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){
     return z2AreConsecutive(val, n); }
 };
@@ -539,9 +591,9 @@ struct IdentifierTraits<long long> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
     return z2AreConsecutive(val, n); }
 };
@@ -564,9 +616,9 @@ struct IdentifierTraits<unsigned long long> {
     min = ext.first;
     max = ext.second;
   }
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
-    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
     return z2AreConsecutive(val, n); }
 };
@@ -589,8 +641,8 @@ struct IdentifierTraits<string> {
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
     throw std::logic_error("invalid call");}
-  static void globalMinMax(const Comm<int> &comm,
-      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      T localMin, T localMax, T &globalMin, T &globalMax){
     throw std::logic_error("invalid call");}
   static bool areConsecutive(const T *val, size_t n){ 
     throw std::logic_error("invalid call");}
@@ -658,8 +710,8 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   static void minMax(const pair_t *values, size_t n, pair_t &min, pair_t &max) {
       throw std::logic_error("invalid call");}
 
-  static void globalMinMax(const Comm<int> &comm,
-      const pair_t &localMin, const pair_t &localMax, 
+  static void globalMinMax(const Comm<int> &comm, bool flag,
+      pair_t localMin, pair_t localMax, 
       pair_t &globalMin, pair_t &globalMax){
       throw std::logic_error("invalid call");}
 
@@ -690,80 +742,157 @@ template <typename T>
     const T* val, size_t len,
     ArrayRCP<T> &dist, size_t &globalLen)
 {
-  try{
-    reduceAll<int, size_t>(comm, Teuchos::REDUCE_SUM, 1, &len, &globalLen);
-  }
-  Z2_THROW_OUTSIDE_ERROR(env);
+  // Non-ordinals can not be consecutive.
 
-  if (!IdentifierTraits<T>::isGlobalOrdinal()){
+  if (!IdentifierTraits<T>::isGlobalOrdinal())
     return false;
-  }
 
-  // Get global minimum and maximum
+  // return values
 
-  T gMin, gMax;
-  T v0 = val[0];
-  T v1 = val[len-1];
+  T *distBuf= NULL;
+  T *minMaxBuf= NULL;
+  globalLen = 0;
 
-  try{
-    IdentifierTraits<T>::globalMinMax(comm, v0, v1, gMin, gMax);
-  }
-  Z2_FORWARD_EXCEPTIONS; 
+  // Locally consecutive?
 
-  T *minMax = new T [2];
-  minMax[0] = gMin;
-  minMax[1] = gMax;
-  dist = arcp<T>(minMax, 0, 2);
-
-  size_t g0 = Teuchos::as<size_t>(gMin);
-  size_t g1 = Teuchos::as<size_t>(gMax);
+  int nprocs = comm.getSize();
+  bool locallyConsecutive = IdentifierTraits<T>::areConsecutive(val, len);
   bool globallyConsecutive = false;
 
-  if (g1 - g0 + 1 == globalLen){
-
-    size_t sentinel = g1 + 1;
-    int nprocs = comm.getSize();
-    bool locallyConsecutive = IdentifierTraits<T>::areConsecutive(val, len);
-
-    if (locallyConsecutive && nprocs==1){
-      dist[nprocs] = Teuchos::as<T>(sentinel);
-      return true;
+  if (nprocs == 1){
+    if (locallyConsecutive){
+      distBuf = new T [2];
+      if (len > 0){
+        distBuf[0] = val[0];
+        distBuf[1] = val[len-1] + 1;
+      }
+      else{
+        distBuf[0] = 0;
+        distBuf[1] = 0;
+      }
+    }
+    else{
+      std::pair<T, T> extrema = z2LocalMinMax(val, len);
+      minMaxBuf = new T [2];
+      minMaxBuf[0] = extrema.first;
+      minMaxBuf[1] = extrema.second;
     }
 
+    globalLen = len;
+    globallyConsecutive = locallyConsecutive;
+  }
+  else{   // nprocs > 1
+    try{
+      reduceAll<int, size_t>(comm, Teuchos::REDUCE_SUM, 1, &len, &globalLen);
+    }
+    Z2_THROW_OUTSIDE_ERROR(env);
+  
+    T v0, v1, gMin, gMax;
+  
+    if (len > 0){
+      v0 = val[0];
+      v1 = val[len-1];
+    }
+    else {
+      v0 = numeric_limits<T>::max();
+      v1 = numeric_limits<T>::min();
+    }
+  
+    try{
+      IdentifierTraits<T>::globalMinMax(comm, len==0, v0, v1, gMin, gMax);
+    }
+    Z2_FORWARD_EXCEPTIONS; 
+  
     int lFlag = (locallyConsecutive ? 1 : 0);
     int gFlag = 0;
-
+  
     try{
       reduceAll<int, int>(comm, Teuchos::REDUCE_MIN, 1, &lFlag, &gFlag);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
+  
+    if (gFlag == 1){  // all processes have consecutive values
+  
+      size_t g0 = static_cast<size_t>(gMin);
+      size_t g1 = static_cast<size_t>(gMax);
+    
+      if (g1 - g0 + 1 == globalLen){
+        size_t sentinel = g1 + 1;   // invalid id
+        size_t sendVal = sentinel;
+        if (len > 0)
+          sendVal = static_cast<size_t>(v0);
+    
+        Array<size_t> sendBuf(nprocs, sendVal);
+        ArrayRCP<size_t> recvBuf;
+    
+        try{
+          AlltoAll<size_t>(comm, env, sendBuf, 1, recvBuf);
+        }
+        Z2_FORWARD_EXCEPTIONS;
+    
+        int numNoIds = 0;  // number of procs with no ids
+        for (int i=0; i < nprocs; i++)
+          if (recvBuf[i] == sentinel)
+            numNoIds++;
+    
+        globallyConsecutive = true;
+    
+        if (numNoIds == 0){
+          for (int i=1; globallyConsecutive && i < nprocs; i++)
+            if (recvBuf[i] < recvBuf[i-1])
+              globallyConsecutive = false;
+    
+          if (globallyConsecutive){
+            distBuf = new T [nprocs+1];
+            for (int i=0; i < nprocs; i++)
+              distBuf[i] = static_cast<T>(recvBuf[i]);
+            distBuf[nprocs] = static_cast<T>(sentinel);
+          }
+        }
+        else{
+          Array<int> index;
+          for (int i=0; i < nprocs; i++)
+            if (recvBuf[i] != sentinel)
+              index.push_back(i);
+    
+          for (int i=1; i < index.size(); i++){
+            if (recvBuf[index[i]] < recvBuf[index[i-1]])
+              globallyConsecutive = false;
+          }
+    
+          if (globallyConsecutive){
+            distBuf = new T [nprocs+1];
+            for (int i=0; i < nprocs+1; i++)
+              distBuf[i] = static_cast<T>(sentinel);
+    
+            for (int i=0; i < index.size(); i++)
+              distBuf[index[i]] = static_cast<T>(recvBuf[index[i]]);
+    
+            T useValue = static_cast<T>(sentinel);
+            for (int i = nprocs-1; i >= 0; i--){
+              if (distBuf[i] == static_cast<T>(sentinel))
+                distBuf[i] = useValue;
+              else
+                useValue = distBuf[i];
+            }
+          }
+        }
+      }
+    }  // all processes have locally consecutive values
 
-    if (gFlag == 0)  // not all processes have consecutive values
-      return false;
-
-    Array<size_t> sendBuf(nprocs);
-    ArrayRCP<size_t> recvBuf;
-
-    for (int i=0; i < nprocs; i++)
-      sendBuf[i] = Teuchos::as<size_t>(v0);
-
-    try{
-      AlltoAll<size_t, int>(comm, env, sendBuf, 1, recvBuf);
+    if (!globallyConsecutive){
+      minMaxBuf = new T [2];
+      minMaxBuf[0] = gMin;
+      minMaxBuf[1] = gMax;
     }
-    Z2_FORWARD_EXCEPTIONS;
+  }    // nprocs > 1
 
-    globallyConsecutive = true;
-    for (int i=1; globallyConsecutive && i < nprocs; i++)
-      if (recvBuf[i] < recvBuf[i-1]) globallyConsecutive = false;
-
-    if (globallyConsecutive){
-      T *idDist = new T [nprocs+1];
-      for (int i=0; i < nprocs; i++)
-        idDist[i] = Teuchos::as<T>(recvBuf[i]);
-      idDist[nprocs] = Teuchos::as<T>(sentinel);
-      dist = arcp(idDist, 0, nprocs+1);
-    }
-  }
+  if (minMaxBuf)
+    dist = arcp(minMaxBuf, 0, 2, true);
+  else if (distBuf)
+    dist = arcp(distBuf, 0, nprocs+1, true);
+  else
+     throw std::logic_error("no buffer");  // should never get here
 
   return globallyConsecutive;
 }

@@ -1,7 +1,47 @@
 // @HEADER
+//
 // ***********************************************************************
-//                Copyright message goes here.
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
 // ***********************************************************************
+//
+// @HEADER
 
 /*! \file UserInputForTests.hpp
  *  \brief Generate input for testing purposes.
@@ -469,13 +509,15 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
     std::cout << "UserInputForTests, Read: " << 
       shortPathName(fname, "test") << std::endl;
 
-  // This reader has some problems.  Until fixed, don't give
-  // up everything when the Reader fails. (Tpetra bug 5611)
+  // This reader has some problems.  "Pattern" matrices
+  // cannot be read.  Until the
+  // reader is fixed, we'll have to get inputs that are consistent with
+  // the reader. (Tpetra bug 5611 and 5624)
  
   bool aok = true;
   try{
     M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-      fname.str(), tcomm_, dnode, true, true);
+      fname.str(), tcomm_, dnode, true, true, false);
   }
   catch (std::exception &e) {
     //TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
@@ -498,7 +540,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   fname << path << "/" << testData << "_coord.mtx";
 
   size_t coordDim = 0, numGlobalCoords = 0;
-  size_t msg[2];
+  size_t msg[2]={0,0};
   ArrayRCP<ArrayRCP<scalar_t> > xyz;
   std::ifstream coordFile;
 
@@ -583,7 +625,6 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   }
 
   // Broadcast coordinate dimension
-
   Teuchos::broadcast<int, size_t>(*tcomm_, 0, 2, msg);
 
   coordDim = msg[0];
@@ -813,10 +854,12 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
   int vwgt_dim=0, ewgt_dim=0;
   int *start = NULL, *adj = NULL;
   float *ewgts = NULL, *vwgts = NULL;
-  size_t *nzPerRow = NULL;
+  size_t *nzPerRow = NULL;  //FIX_LATER
+  //lno_t *nzPerRow = NULL;
   int maxRowLen = 0;
   gno_t base = 0;
-  ArrayRCP<const size_t> rowSizes;
+  ArrayRCP<const size_t> rowSizes;   //FIX_LATER
+  //ArrayRCP<const lno_t> rowSizes;
   int fail = 0;
   bool haveEdges = true;
 
@@ -860,7 +903,8 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
     if (haveEdges)
       nedges = start[nvtxs];
 
-    nzPerRow = new size_t [nvtxs];
+    nzPerRow = new size_t [nvtxs];   //FIX_LATER
+    //nzPerRow = new lno_t [nvtxs];
     if (!nzPerRow)
       throw std::bad_alloc();
     rowSizes = arcp(nzPerRow, 0, nvtxs, true);
@@ -873,7 +917,8 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
       }
     }
     else{
-      memset(nzPerRow, 0, sizeof(size_t) * nvtxs);
+      memset(nzPerRow, 0, sizeof(size_t) * nvtxs);   //FIX_LATER
+      //memset(nzPerRow, 0, sizeof(lno_t) * nvtxs);
     }
 
     if (haveEdges){

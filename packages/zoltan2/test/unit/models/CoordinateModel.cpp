@@ -1,11 +1,47 @@
 // @HEADER
-// ***********************************************************************
-//
-//         Zoltan2: Sandia Partitioning Ordering & Coloring Library
-//
-//                Copyright message goes here.   TODO
 //
 // ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
 //
 // Testing of CoordinateModel
 //
@@ -17,6 +53,7 @@
 #include <set>
 
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -27,11 +64,22 @@ using namespace std;
 using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
+using std::cout;
+using std::endl;
 
 void testCoordinateModel(std::string &fname, int weightDim,
-  const RCP<const Comm<int> > &comm, bool consecutiveIds)
+  const RCP<const Comm<int> > &comm, bool consecutiveIds,
+  bool nodeZeroHasAll, bool printInfo)
 {
   int fail = 0, gfail = 0;
+
+  if (printInfo){
+    cout << "Test: " << fname << endl;
+    cout << "Weight dim: " << weightDim;
+    cout << " want consec ids: " << consecutiveIds;
+    cout << " proc 0 has all: " << nodeZeroHasAll;
+    cout << endl;
+  }
 
   //////////////////////////////////////////////////////////////
   // Input data
@@ -77,18 +125,35 @@ void testCoordinateModel(std::string &fname, int weightDim,
   // Are these coordinates correct
 
   int nLocalIds = coords->getLocalLength();
-  int nGlobalIds = coords->getGlobalLength();
   ArrayView<const gno_t> idList = coords->getMap()->getNodeElementList();
+
+  int nGlobalIds = 0;
+  if (nodeZeroHasAll){
+    if (comm->getRank() > 0){
+      x = y = z = NULL;
+      nLocalIds = 0;
+    }
+    else{
+      nGlobalIds = nLocalIds;
+    }
+    Teuchos::broadcast<int, int>(*comm, 0, &nGlobalIds);
+  }
+  else{
+    nGlobalIds = coords->getGlobalLength();
+  }
 
   Array<ArrayRCP<const scalar_t> > coordWeights(weightDim);
 
-  for (int wdim=0; wdim < weightDim; wdim++){
-    scalar_t *w = new scalar_t [nLocalIds];
-    for (int i=0; i < nLocalIds; i++){
-      w[i] = ((i%2) + 1) + wdim;
+  if (nLocalIds > 0){
+    for (int wdim=0; wdim < weightDim; wdim++){
+      scalar_t *w = new scalar_t [nLocalIds];
+      for (int i=0; i < nLocalIds; i++){
+        w[i] = ((i%2) + 1) + wdim;
+      }
+      coordWeights[wdim] = Teuchos::arcp(w, 0, nLocalIds);
     }
-    coordWeights[wdim] = Teuchos::arcp(w, 0, nLocalIds);
   }
+
 
   //////////////////////////////////////////////////////////////
   // Create a BasicCoordinateInput adapter object.
@@ -234,31 +299,23 @@ int main(int argc, char *argv[])
   string fname("simple");   // reader will seek coord file
   bool wishConsecutiveIds = true;
 
-  if (rank == 0){
-    std::cout << std::endl << fname;
-    std::cout << ", without consecutive IDs, no weights" << std::endl;
-  }
-  testCoordinateModel(fname, 0, comm, !wishConsecutiveIds);
+  testCoordinateModel(fname, 0, comm, !wishConsecutiveIds, false, rank==0);
 
-  if (rank == 0){
-    std::cout << std::endl << fname;
-    std::cout << ", with consecutive IDs, no weights" << std::endl;
-  }
-  testCoordinateModel(fname, 0, comm,  wishConsecutiveIds);
+  testCoordinateModel(fname, 0, comm,  wishConsecutiveIds, false, rank==0);
 
-  if (rank == 0){
-    std::cout << std::endl << fname;
-    std::cout << ", without consecutive IDs, dim 1 weights" << std::endl;
-  }
-  testCoordinateModel(fname, 1, comm, !wishConsecutiveIds);
+  testCoordinateModel(fname, 1, comm, !wishConsecutiveIds, false, rank==0);
 
-  if (rank == 0){
-    std::cout << std::endl << fname;
-    std::cout << ", with consecutive IDs, dim 2 weights " << std::endl;
-  }
-  testCoordinateModel(fname, 2, comm,  wishConsecutiveIds);
+  testCoordinateModel(fname, 2, comm,  wishConsecutiveIds, false, rank==0);
 
-  if (rank==0) std::cout << "PASS" << std::endl;
+  testCoordinateModel(fname, 0, comm, !wishConsecutiveIds, true, rank==0);
+
+  testCoordinateModel(fname, 0, comm,  wishConsecutiveIds, true, rank==0);
+
+  testCoordinateModel(fname, 1, comm, !wishConsecutiveIds, true, rank==0);
+
+  testCoordinateModel(fname, 2, comm,  wishConsecutiveIds, true, rank==0);
+
+  if (rank==0) cout << "PASS" << endl;
 
   return 0;
 }

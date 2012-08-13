@@ -16,7 +16,6 @@ cmake \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
 -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
 -D Trilinos_ENABLE_Zoltan2:BOOL=ON \
--D Trilinos_ENABLE_MueLu:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Zoltan2_ENABLE_AMD:BOOL=ON \
 -D AMD_BASE_DIR:PATH="/home/srajama/proj/AMD" \

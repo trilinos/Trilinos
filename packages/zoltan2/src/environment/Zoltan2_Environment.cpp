@@ -1,9 +1,46 @@
 // @HEADER
-// ***********************************************************************
-//
-//                Copyright message goes here.   TODO
 //
 // ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
 // @HEADER
 /*! \file Zoltan2_Environment.cpp
     \brief The definition of the Environment object.
@@ -77,7 +114,8 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
   myRank_(comm->getRank()), numProcs_(comm->getSize()), comm_(comm), 
   errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_(problemParams), params_(problemParams),
-  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false)
+  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false),
+  memoryOutputFile_()
 {
   commitParameters();
 }
@@ -85,7 +123,8 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
 Environment::Environment():
   myRank_(0), numProcs_(1), comm_(), errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_("emptyList"), params_("emptyList"), 
-  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false)
+  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false),
+  memoryOutputFile_()
 {
   comm_ = Teuchos::DefaultComm<int>::getComm();
   myRank_ = comm_->getRank();
@@ -96,6 +135,8 @@ Environment::Environment():
 
 Environment::~Environment()
 {
+  if (!memoryOutputFile_.is_null())
+    memoryOutputFile_->close();
 }
 
 void Environment::commitParameters()
@@ -206,7 +247,7 @@ void Environment::commitParameters()
 
     try{
       makeMetricOutputManager<long>(myRank_, iPrint, f2, os2, memoryOut_,
-        string("KB"), 10);
+        string("KB"), 10, memoryOutputFile_);
     }
     catch (std::exception &e){
       std::ostringstream oss;
@@ -257,13 +298,15 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
     ParameterEntry &entry = params.getEntry(name);
 
     if (entry.isList()){
-      ParameterList &pl = entry.getValue<ParameterList>(&pl);
+      ParameterList *dummy = NULL;
+      ParameterList &pl = entry.getValue<ParameterList>(dummy);
       convertStringToInt(pl);
     }
     else{
       if ((entry.validator()).get()){
         if (entry.validator()->getXMLTypeName() == validatorName){
-          string &entryValue = entry.getValue<string>(&entryValue);
+          string dummy("");
+          string &entryValue = entry.getValue<string>(&dummy);
           RCP<const s2i_t> s2i =
             Teuchos::rcp_dynamic_cast<const s2i_t>(entry.validator(), true);
           int val = s2i->getIntegralValue(entryValue);

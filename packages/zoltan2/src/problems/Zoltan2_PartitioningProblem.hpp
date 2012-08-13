@@ -1,9 +1,46 @@
 // @HEADER
-// ***********************************************************************
-//
-//                Copyright message goes here.   TODO
 //
 // ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
 // @HEADER
 
 /*! \file Zoltan2_PartitioningProblem.hpp
@@ -307,6 +344,7 @@ template <typename Adapter>
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
       timer_(), metricsRequested_(false), metrics_()
 {
+
   initializeProblem();
 }
 #endif
@@ -490,8 +528,9 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
-    else if (algorithm_ == string("mehmet")){
-      throw std::logic_error("partitioning algorithm mehmet not supported yet; uncomment call to AlgMehmet in Zoltan2_PartitioningProblem.hpp");
+    else if (algorithm_ == string("PQJagged")){
+    	AlgPQJagged<Adapter>(this->envConst_, problemComm_,
+    	        this->coordinateModel_, solution_);
 //      AlgMehmet<Adapter>(this->envConst_, problemComm_,
 //        this->coordinateModel_, solution_);
     }
@@ -619,7 +658,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == string("rcb") ||
              algorithm == string("rib") ||
-             algorithm == string("mehmet") ||
+             algorithm == string("PQJagged") ||
              algorithm == string("hsfc")){
 
       modelType_ = CoordinateModelType;
@@ -724,6 +763,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (inputType_ == CoordinateAdapterType){
       modelType_ = CoordinateModelType;
+      if(algorithm_ != string("PQJagged"))
       algorithm_ = string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
@@ -851,6 +891,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     typedef typename Adapter::base_adapter_t base_adapter_t;
 
+	const Teuchos::ParameterList pl = this->envConst_->getParameters();
+  	bool exceptionThrow = true;
     switch (modelType_) {
 
     case GraphModelType:
@@ -868,6 +910,54 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     case CoordinateModelType:
       this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
+
+      ////////////////////////////////////////////////////////////////////////////
+      // It's possible at this point that the Problem may want to
+      // add problem parameters to the parameter list in the Environment.
+      //
+      // Since the parameters in the Environment have already been
+      // validated in its constructor, a new Environment must be created:
+      ////////////////////////////////////////////////////////////////////////////
+      // Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
+      // const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
+      //
+      // ParameterList newParams = oldParams;
+      // newParams.set("new_parameter", "new_value");
+      //
+      // ParameterList &newPartParams = newParams.sublist("partitioning");
+      // newPartParams.set("new_partitioning_parameter", "its_value");
+      //
+      // this->env_ = rcp(new Environment(newParams, oldComm));
+      ////////////////////////////////////////////////////////////////////////////
+
+      if(algorithm == string("PQJagged")){
+          int coordinateCnt = this->coordinateModel_->getCoordinateDim();
+          //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
+          //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
+          int arraySize = pl.getPtr<Array <int> >("pqParts")->size() - 1;
+          exceptionThrow = arraySize > 0;
+          this->envConst_->localInputAssertion(__FILE__, __LINE__, "invalid length of cut lines. Size of cut lines should match with dimension of the input.",
+                  		  exceptionThrow, BASIC_ASSERTION);
+
+
+          int totalPartCount = 1;
+          for(int i = 0; i < arraySize; ++i){
+        	  //cout <<  pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i] << " ";
+        	  totalPartCount *= pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i];
+          }
+          Teuchos::ParameterList newParams = pl;
+          Teuchos::ParameterList &parParams = newParams.sublist("partitioning");
+
+          parParams.set("num_global_parts", totalPartCount);
+
+          //cout << endl;
+          Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->envConst_->comm_;
+
+          //this->envConst_ = rcp(new Environment(newParams, oldComm));
+
+
+      }
+
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->coordinateModel_);
@@ -888,6 +978,23 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     this->env_->memory("After creating Model");
   }
+
+  /*
+  Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
+  const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
+
+  ParameterList newParams = oldParams;
+  int totalPartCount = 1;
+  const int *partNo = pl.getPtr<Array <int> >("pqParts")->getRawPtr();
+
+  for (int i = 0; i < coordDim; ++i){
+	  totalPartCount *= partNo[i];
+  }
+  newParams.set("num_global_parts", totalPartCount);
+
+
+  this->env_ = rcp(new Environment(newParams, oldComm));
+*/
 }
 
 }  // namespace Zoltan2

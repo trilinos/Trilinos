@@ -1,11 +1,47 @@
 // @HEADER
-// ***********************************************************************
-//
-//                Copyright message goes here.   TODO
 //
 // ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
 // @HEADER
-//
 
 /*! \file Zoltan2_PartitioningSolution.hpp
     \brief Defines the PartitioningSolution class.
@@ -1090,9 +1126,10 @@ template <typename Adapter>
 
   partId_t lMax, lMin, gMax, gMin;
   
-  IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
+  if (len > 0)
+    IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
 
-  IdentifierTraits<partId_t>::globalMinMax(*comm_, 
+  IdentifierTraits<partId_t>::globalMinMax(*comm_, len == 0,
     lMin, lMax, gMin, gMax);
       
   nGlobalPartsSolution_ = gMax - gMin + 1;
@@ -1134,7 +1171,7 @@ template <typename Adapter>
     lno_t *tmpCount = new lno_t [nprocs];
     memset(tmpCount, 0, sizeof(lno_t) * nprocs);
     env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, tmpCount);
-    ArrayView<lno_t> countOutBuf(tmpCount, nprocs);
+    ArrayView<int> countOutBuf(tmpCount, nprocs);
 
     ArrayView<gno_t> outBuf;
 
@@ -1167,10 +1204,10 @@ template <typename Adapter>
     }
   
     ArrayRCP<gno_t> inBuf;
-    ArrayRCP<lno_t> countInBuf;
+    ArrayRCP<int> countInBuf;
   
     try{
-      AlltoAllv<gno_t, lno_t>(*comm_, *env_,
+      AlltoAllv<gno_t>(*comm_, *env_,
         outBuf, countOutBuf, inBuf, countInBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
@@ -1180,7 +1217,7 @@ template <typename Adapter>
 
     delete [] countOutBuf.getRawPtr();
 
-    lno_t newLen = 0;
+    gno_t newLen = 0;
     for (int i=0; i < nprocs; i++)
       newLen += countInBuf[i];
 
@@ -1337,7 +1374,7 @@ template <typename Adapter>
   size_t localNumIds          = gids_.size();
 
   // How many to each process?
-  Array<lno_t> counts(numProcs, 0);
+  Array<int> counts(numProcs, 0);
   if (onePartPerProc_)
     for (size_t i=0; i < localNumIds; i++)
       counts[parts_[i]]++;
@@ -1345,7 +1382,7 @@ template <typename Adapter>
     for (size_t i=0; i < localNumIds; i++)
       counts[procs_[i]]++;
 
-  Array<lno_t> offsets(numProcs+1, 0);
+  Array<gno_t> offsets(numProcs+1, 0);
   for (int i=1; i <= numProcs; i++){
     offsets[i] = offsets[i-1] + counts[i-1];
   }
@@ -1375,11 +1412,11 @@ template <typename Adapter>
     }
   }
 
-  ArrayRCP<lno_t> recvCounts;
+  ArrayRCP<int> recvCounts;
   RCP<const Environment> env = rcp(new Environment);
 
   try{
-    AlltoAllv<gid_t, lno_t>(*comm_, *env_, gidList.view(0,localNumIds),
+    AlltoAllv<gid_t>(*comm_, *env_, gidList.view(0,localNumIds),
       counts.view(0, numProcs), imports, recvCounts);
   }
   catch (std::exception &e){
@@ -1388,7 +1425,7 @@ template <typename Adapter>
 
   if (numExtra > 0){
     try{
-      AlltoAllv<Extra, lno_t>(*comm_, *env_, xtraInfo.view(0, localNumIds),
+      AlltoAllv<Extra>(*comm_, *env_, xtraInfo.view(0, localNumIds),
         counts.view(0, numProcs), newXtraInfo, recvCounts);
     }
     catch (std::exception &e){
