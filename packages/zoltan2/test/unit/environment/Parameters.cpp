@@ -47,6 +47,7 @@
 
 #include <Zoltan2_config.h>
 #include <Zoltan2_Environment.hpp>
+#include <Zoltan2_IntegerRangeList.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Array.hpp>
