@@ -86,7 +86,7 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   int indexBase = 0, ierr = 0;
 
   int numMyNodes = 2;
-  int* myNodes = new int[numMyNodes];
+  long long* myNodes = new long long[numMyNodes];
 
   if (localProc == 0) {
     myNodes[0] = 0;
@@ -101,7 +101,7 @@ int Drumm1(const Epetra_Map& map, bool verbose)
 
   delete [] myNodes;
   numMyNodes = 3;
-  myNodes = new int[numMyNodes];
+  myNodes = new long long[numMyNodes];
 
   if (localProc == 0) {
     myNodes[0] = 0;
@@ -165,7 +165,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
   int indexBase = 0, ierr = 0;
   int numMyNodes = 3;
-  int* myNodes = new int[numMyNodes];
+  long long* myNodes = new long long[numMyNodes];
 
   if (localProc == 0) {
     myNodes[0] = 0;
@@ -565,7 +565,7 @@ int Young1(const Epetra_Comm& Comm, bool verbose)
   }
 
   // Give rows 0-2 to proc 0 and 3-5 to proc 1
-  int             RowIndices[3];
+  long long             RowIndices[3];
   if (Comm.MyPID() == 0) {
     RowIndices[0] = 0;
     RowIndices[1] = 1;
@@ -579,7 +579,7 @@ int Young1(const Epetra_Comm& Comm, bool verbose)
   Epetra_Map & RowMap = RangeMap;
 
   // Define a second map that gives col 0 to proc 0 and col 1 to proc 1 
-  int             ColIndices[1];
+  long long             ColIndices[1];
   if (Comm.MyPID() == 0) {
     ColIndices[0] = 0;
   }
@@ -592,39 +592,39 @@ int Young1(const Epetra_Comm& Comm, bool verbose)
   // elements
   Epetra_FECrsGraph BrokenGraph(Copy, RowMap, 2);
   for (int i = 0; i < RangeMap.NumMyElements(); i++) {
-    int             ig = RowIndices[i];
-    int             jgs[2] = { 0, 1 };
+    long long             ig = RowIndices[i];
+    long long             jgs[2] = { 0, 1 };
     BrokenGraph.InsertGlobalIndices(1, &ig, 2, jgs);
   }
   BrokenGraph.GlobalAssemble(DomainMap, RangeMap);
 
   // Check the size of the matrix that would be created from the graph 
-  long long numCols1 = BrokenGraph.NumGlobalCols();
+  long long numCols1 = BrokenGraph.NumGlobalCols64();
   if (verbose) {
     std::cout << "Number of global rows in the graph where only "
-        "local elements were inserted: " << BrokenGraph.NumGlobalRows()
+        "local elements were inserted: " << BrokenGraph.NumGlobalRows64()
       << std::endl;
     std::cout << "Number of global cols in the graph where only "
-        "local elements were inserted: " << BrokenGraph.NumGlobalCols()
+        "local elements were inserted: " << BrokenGraph.NumGlobalCols64()
       << std::endl;
   }
   // Construct a graph where both processors insert into global elements
   Epetra_FECrsGraph Graph(Copy, RowMap, 2);
   for (int i = 0; i < 6; i++) {
-    int             ig = i;
-    int             jgs[2] = { 0, 1 };
+    long long             ig = i;
+    long long             jgs[2] = { 0, 1 };
     Graph.InsertGlobalIndices(1, &ig, 2, jgs);
   }
   Graph.GlobalAssemble(DomainMap, RangeMap);
 
   // Check the size of the matrix that would be created from the graph 
-  long long numCols2 = Graph.NumGlobalCols();
+  long long numCols2 = Graph.NumGlobalCols64();
   if (verbose) {
     std::cout << "Number of global rows in the graph where "
-        "global elements were inserted: " << Graph.NumGlobalRows()
+        "global elements were inserted: " << Graph.NumGlobalRows64()
        << std::endl;
     std::cout << "Number of global cols in the graph where "
-        "global elements were inserted: " << Graph.NumGlobalCols()
+        "global elements were inserted: " << Graph.NumGlobalCols64()
       << std::endl;
   }
 
@@ -638,21 +638,21 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
   int numlocalrows = 3;
   Epetra_Map rowmap((long long) -1, numlocalrows, 0, Comm);
 
-  int numglobalrows = numlocalrows*Comm.NumProc();
+  long long numglobalrows = numlocalrows*Comm.NumProc();
 
-  int numcols = 2*numglobalrows;
+  long long numcols = 2*numglobalrows;
 
   Epetra_FECrsGraph fegraph(Copy, rowmap, numcols);
 
-  int* cols = new int[numcols];
+  long long* cols = new long long[numcols];
   for(int j=0; j<numcols; ++j) cols[j] = j;
 
   Epetra_Map domainmap((long long) -1, numcols, 0, Comm);
 
-  int firstlocalrow = numlocalrows*mypid;
-  int lastlocalrow = numlocalrows*(mypid+1)-1;
+  long long firstlocalrow = numlocalrows*mypid;
+  long long lastlocalrow = numlocalrows*(mypid+1)-1;
 
-  for(int i=0; i<numglobalrows; ++i) {
+  for(long long i=0; i<numglobalrows; ++i) {
     //if i is a local row, then skip it. We want each processor to only
     //load rows that belong on other processors.
     if (i >= firstlocalrow && i <= lastlocalrow) continue;

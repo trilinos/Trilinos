@@ -86,8 +86,8 @@ Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm)
     
     if (numImports_>0) importIDs_ = new long long[numImports_];
     long long * ptr = importIDs_;
-    long long minGID = map_->MinMyGID();
-    long long maxGID = map_->MaxMyGID();
+    long long minGID = map_->MinMyGID64();
+    long long maxGID = map_->MaxMyGID64();
     
     if (myPID>0) for (int i=0; i< nx; i++) *ptr++ = minGID - nx + i;
     if (myPID+1<numProc) for (int i=0; i< nx; i++) *ptr++ = maxGID + i +1;
@@ -203,13 +203,13 @@ Epetra_CrsMatrix * Poisson2dOperator::GeneratePrecMatrix() const {
   Epetra_CrsMatrix * A = new Epetra_CrsMatrix(Copy, *map_, 3);
 
   int NumMyElements = map_->NumMyElements();
-  long long NumGlobalElements = map_->NumGlobalElements();
+  long long NumGlobalElements = map_->NumGlobalElements64();
 
   // Add  rows one-at-a-time
   double negOne = -1.0;
   double posTwo = 4.0;
   for (int i=0; i<NumMyElements; i++) {
-    long long GlobalRow = A->GRID(i); long long RowLess1 = GlobalRow - 1; long long RowPlus1 = GlobalRow + 1;
+    long long GlobalRow = A->GRID64(i); long long RowLess1 = GlobalRow - 1; long long RowPlus1 = GlobalRow + 1;
 
     if (RowLess1!=-1) A->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess1);
     if (RowPlus1!=NumGlobalElements) A->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus1);

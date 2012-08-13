@@ -145,8 +145,11 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
   // fix a couple of global integers
 
-  Comm().SumAll(&NumMyNonzeros_,&NumGlobalNonzeros_,1);
-  Comm().SumAll(&NumMyDiagonals_,&NumGlobalDiagonals_,1);
+//TODO: CJ
+  long long NumMyNonzeros_tmp = NumMyNonzeros_;
+  Comm().SumAll(&NumMyNonzeros_tmp,&NumGlobalNonzeros_,1);
+  long long NumMyDiagonals_tmp = NumMyDiagonals_;
+  Comm().SumAll(&NumMyDiagonals_tmp,&NumGlobalDiagonals_,1);
   Comm().MaxAll(&MaxMyNumEntries,&MaxNumEntries_,1);
 
   // build a list of global indices for columns
@@ -345,28 +348,53 @@ double ML_Epetra::RowMatrix::NormInf() const
   return(NormInf_);
 }
 
-
+//TODO: CJ correct the int returning functions.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 //==============================================================================
-long long ML_Epetra::RowMatrix::NumGlobalNonzeros() const
+int ML_Epetra::RowMatrix::NumGlobalNonzeros() const
 {
   return(NumGlobalNonzeros_);
 }
 
 //==============================================================================
-long long ML_Epetra::RowMatrix::NumGlobalRows() const
+int ML_Epetra::RowMatrix::NumGlobalRows() const
 {
   return(NumGlobalRows_);
 }
 
-
 //==============================================================================
-long long ML_Epetra::RowMatrix::NumGlobalCols() const
+int ML_Epetra::RowMatrix::NumGlobalCols() const
 {
   return(NumGlobalCols_);
 }
 
 //==============================================================================
-long long ML_Epetra::RowMatrix::NumGlobalDiagonals() const
+int ML_Epetra::RowMatrix::NumGlobalDiagonals() const
+{
+  return(NumGlobalDiagonals_);
+}
+#endif
+
+//==============================================================================
+long long ML_Epetra::RowMatrix::NumGlobalNonzeros64() const
+{
+  return(NumGlobalNonzeros_);
+}
+
+//==============================================================================
+long long ML_Epetra::RowMatrix::NumGlobalRows64() const
+{
+  return(NumGlobalRows_);
+}
+
+//==============================================================================
+long long ML_Epetra::RowMatrix::NumGlobalCols64() const
+{
+  return(NumGlobalCols_);
+}
+
+//==============================================================================
+long long ML_Epetra::RowMatrix::NumGlobalDiagonals64() const
 {
   return(NumGlobalDiagonals_);
 }

@@ -139,12 +139,15 @@ int main(int argc, char *argv[])
 
   // Insert values
   double one = 1.0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   // Try to add ints which should fail and be caught as an int
   try {
     A_LL.InsertGlobalValues(MyIntGlobalElementsLL[0], 1, &one, MyIntGlobalElementsLL+0);
   } catch(int i) {
     EPETRA_TEST_ERR(!(i==-1),ierr);
   }
+#endif
+
   // Add long longs which should succeed
   EPETRA_TEST_ERR(!(A_LL.InsertGlobalValues(MyGlobalElementsLL[0], 1, &one, MyGlobalElementsLL+0)==0),ierr);
   EPETRA_TEST_ERR(!(A_LL.IndicesAreGlobal()),ierr);
@@ -157,13 +160,6 @@ int main(int argc, char *argv[])
   
   MyGlobalElementsInt[0] = 2000+MyPID;
 
-  // Construct a Map that puts approximately the same Number of equations on each processor
-
-  Epetra_Map MapInt(NumGlobalEquations, NumMyEquations, MyGlobalElementsInt, 0, Comm);
-
-  EPETRA_TEST_ERR(!(MapInt.GlobalIndicesInt()),ierr);
-  EPETRA_TEST_ERR(MapInt.GlobalIndicesLongLong(),ierr);
-
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
 
@@ -173,6 +169,14 @@ int main(int argc, char *argv[])
   // Create int types meant to add to long long matrix for test of failure
   long long* MyLLGlobalElementsInt = new long long[NumMyEquations]; 
   MyLLGlobalElementsInt[0] = 2000000000+MyPID;
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  // Construct a Map that puts approximately the same Number of equations on each processor
+
+  Epetra_Map MapInt(NumGlobalEquations, NumMyEquations, MyGlobalElementsInt, 0, Comm);
+
+  EPETRA_TEST_ERR(!(MapInt.GlobalIndicesInt()),ierr);
+  EPETRA_TEST_ERR(MapInt.GlobalIndicesLongLong(),ierr);
 
   // Create a int Epetra_Matrix
   Epetra_CrsMatrix A_Int(Copy, MapInt, NumNzInt);
@@ -190,6 +194,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(A_Int.IndicesAreGlobal()),ierr);
   EPETRA_TEST_ERR(!(A_Int.FillComplete(false)==0),ierr);
   EPETRA_TEST_ERR(!(A_Int.IndicesAreLocal()),ierr);
+#endif
   
   delete [] MyGlobalElementsLL;
   delete [] NumNzLL;

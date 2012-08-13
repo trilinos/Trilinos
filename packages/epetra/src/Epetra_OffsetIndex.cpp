@@ -74,22 +74,29 @@ Epetra_OffsetIndex::Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
 
   if(!SourceGraph.RowMap().GlobalIndicesTypeMatch(TargetGraph.RowMap()))
      throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph and TargetGraph global indices type mismatch", -1);
-
   if(SourceGraph.RowMap().GlobalIndicesInt()) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
      GenerateLocalOffsets_<int>( SourceGraph, TargetGraph,
                             PermuteLIDs );
 
      GenerateRemoteOffsets_<int>( SourceGraph, TargetGraph,
                              ExportLIDs, RemoteLIDs,
                              Importer.Distributor() );
+#else
+    throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
   }
   else if(SourceGraph.RowMap().GlobalIndicesLongLong()) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
      GenerateLocalOffsets_<long long>( SourceGraph, TargetGraph,
                             PermuteLIDs );
 
      GenerateRemoteOffsets_<long long>( SourceGraph, TargetGraph,
                              ExportLIDs, RemoteLIDs,
                              Importer.Distributor() );
+#else
+    throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
   }
   else
      throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph global indices type unknown", -1);
@@ -123,22 +130,29 @@ Epetra_OffsetIndex::Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
 
   if(!SourceGraph.RowMap().GlobalIndicesTypeMatch(TargetGraph.RowMap()))
      throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph and TargetGraph global indices type mismatch", -1);
-
   if(SourceGraph.RowMap().GlobalIndicesInt()) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
      GenerateLocalOffsets_<int>( SourceGraph, TargetGraph,
                             PermuteLIDs );
 
      GenerateRemoteOffsets_<int>( SourceGraph, TargetGraph,
                              ExportLIDs, RemoteLIDs,
                              Exporter.Distributor() );
+#else
+    throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
   }
   else if(SourceGraph.RowMap().GlobalIndicesLongLong()) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
      GenerateLocalOffsets_<long long>( SourceGraph, TargetGraph,
                             PermuteLIDs );
 
      GenerateRemoteOffsets_<long long>( SourceGraph, TargetGraph,
                              ExportLIDs, RemoteLIDs,
                              Exporter.Distributor() );
+#else
+    throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
   }
   else
      throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph global indices type unknown", -1);
@@ -194,7 +208,7 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
   for( int i = 0; i < NumSame_; ++i ) SameOffsets_[i] = 0;
 
   for( int i = 0; i < NumSame_; ++i ) {
-    int_type GID = (int_type) SourceGraph.GRID(i);
+    int_type GID = (int_type) SourceGraph.GRID64(i);
     SourceGraph.ExtractGlobalRowCopy( GID,
                                       GlobalMaxNumSourceIndices,
                                       NumSourceIndices,
@@ -218,7 +232,7 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
   for( int i = 0; i < NumPermute_; ++i ) PermuteOffsets_[i] = 0;
 
   for( int i = 0; i < NumPermute_; ++i ) {
-    int_type GID = (int_type) SourceGraph.GRID(PermuteLIDs[i]);
+    int_type GID = (int_type) SourceGraph.GRID64(PermuteLIDs[i]);
     SourceGraph.ExtractGlobalRowCopy( GID,
                                       GlobalMaxNumSourceIndices,
                                       NumSourceIndices,
@@ -273,7 +287,7 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
   int_type * SourceArray = new int_type[TotalSize+1];
   int Loc = 0;
   for( int i = 0; i < NumExport_; ++i ) {
-    int_type GID = (int_type) SourceGraph.GRID(ExportLIDs[i]);
+    int_type GID = (int_type) SourceGraph.GRID64(ExportLIDs[i]);
     SourceArray[Loc] = Sizes[i]-1;
     SourceGraph.ExtractGlobalRowCopy( GID,
                                       GlobalMaxNumIndices,

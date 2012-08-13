@@ -81,16 +81,16 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
 	if(Map.GlobalIndicesInt())
 	{
        AllMinGIDs_int_ = new int[NumProc+1];
-       int MinMyGID = (int) Map.MinMyGID();
+       int MinMyGID = (int) Map.MinMyGID64();
        Map.Comm().GatherAll(&MinMyGID, AllMinGIDs_int_, 1);
-       AllMinGIDs_int_[NumProc] = (int) (1 + Map.MaxAllGID()); // Set max cap
+       AllMinGIDs_int_[NumProc] = (int) (1 + Map.MaxAllGID64()); // Set max cap
 	}
 	else if(Map.GlobalIndicesLongLong())
 	{
        AllMinGIDs_LL_ = new long long[NumProc+1];
-       long long MinMyGID = Map.MinMyGID();
+       long long MinMyGID = Map.MinMyGID64();
        Map.Comm().GatherAll(&MinMyGID, AllMinGIDs_LL_, 1);
-       AllMinGIDs_LL_[NumProc] = 1 + Map.MaxAllGID(); // Set max cap
+       AllMinGIDs_LL_[NumProc] = 1 + Map.MaxAllGID64(); // Set max cap
 	}
 	else
 		throw "Epetra_BasicDirectory::Epetra_BasicDirectory: Unknown map index type";
@@ -100,10 +100,18 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
   else {
 
 	int flag = -1;
-	if(Map.GlobalIndicesLongLong())
-		flag = Generate<long long>(Map);
-	else if(Map.GlobalIndicesInt())
-		flag = Generate<int>(Map);
+	if(Map.GlobalIndicesInt())
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+      flag = Generate<int>(Map);
+#else
+      throw "Epetra_BasicDirectory::Epetra_BasicDirectory: ERROR, GlobalIndicesInt but no API for it.";
+#endif
+	else if(Map.GlobalIndicesLongLong())
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      flag = Generate<long long>(Map);
+#else
+      throw "Epetra_BasicDirectory::Epetra_BasicDirectory: ERROR, GlobalIndicesLongLong but no API for it.";
+#endif
 
 	assert(flag==0);
   }
@@ -236,8 +244,8 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
 {
   int i;
   SizeIsConst_ = Map.ConstantElementSize();
-  int_type MinAllGID = (int_type) Map.MinAllGID();
-  int_type MaxAllGID = (int_type) Map.MaxAllGID();
+  int_type MinAllGID = (int_type) Map.MinAllGID64();
+  int_type MaxAllGID = (int_type) Map.MaxAllGID64();
   // DirectoryMap will have a range of elements from the minimum to the maximum
   // GID of the user map, and an IndexBase of MinAllGID from the user map
   int_type Dir_NumGlobalElements = MaxAllGID - MinAllGID + 1;
@@ -390,7 +398,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   int i;
   int MyPID = Map.Comm().MyPID();
   int NumProc = Map.Comm().NumProc();
-  int_type n_over_p = (int_type) (Map.NumGlobalElements() / NumProc);
+  int_type n_over_p = (int_type) (Map.NumGlobalElements64() / NumProc);
 
   // Test for simple cases
 
@@ -433,8 +441,8 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   // Linear Map case
   if (Map.LinearMap()) {
     
-    int_type MinAllGID = (int_type) Map.MinAllGID(); // Get Min of all GID
-    int_type MaxAllGID = (int_type) Map.MaxAllGID(); // Get Max of all GID
+    int_type MinAllGID = (int_type) Map.MinAllGID64(); // Get Min of all GID
+    int_type MaxAllGID = (int_type) Map.MaxAllGID64(); // Get Max of all GID
     for (i=0; i<NumEntries; i++) {
       int LID = -1; // Assume not found
       int Proc = -1;
@@ -676,6 +684,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 }
 
 //==============================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 						const int NumEntries,
 						const int * GlobalEntries,
@@ -690,7 +699,9 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	return GetDirectoryEntries<int>(Map, NumEntries, GlobalEntries, Procs,
 		LocalEntries, EntrySizes, high_rank_sharing_procs);
 }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 // GetDirectoryEntries: Get non-local GID references ( procID and localID )
 // 			Space should already be allocated for Procs and
 //     			LocalEntries.
@@ -708,6 +719,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	return GetDirectoryEntries<long long>(Map, NumEntries, GlobalEntries, Procs,
 		LocalEntries, EntrySizes, high_rank_sharing_procs);
 }
+#endif
 
 //==============================================================================
 void Epetra_BasicDirectory::Print( ostream & os) const {

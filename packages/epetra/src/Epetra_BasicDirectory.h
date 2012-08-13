@@ -108,6 +108,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 
     \return Integer error code, set to 0 if successful.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int GetDirectoryEntries( const Epetra_BlockMap& Map,
 			   const int NumEntries,
 			   const int * GlobalEntries,
@@ -115,7 +116,9 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 			   int * LocalEntries,
 			   int * EntrySizes,
 			   bool high_rank_sharing_procs=false) const;
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int GetDirectoryEntries( const Epetra_BlockMap& Map,
 			   const int NumEntries,
 			   const long long * GlobalEntries,
@@ -123,6 +126,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 			   int * LocalEntries,
 			   int * EntrySizes,
 			   bool high_rank_sharing_procs=false) const;
+#endif
 
   //!GIDsAllUniquelyOwned: returns true if all GIDs appear on just one processor.
   /*! If any GIDs are owned by multiple processors, returns false.

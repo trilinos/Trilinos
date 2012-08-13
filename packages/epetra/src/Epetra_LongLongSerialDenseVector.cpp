@@ -42,25 +42,27 @@
 
 #include "Epetra_LongLongSerialDenseVector.h"
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
 //=============================================================================
 Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector()
   : Epetra_LongLongSerialDenseMatrix()
 {
-	SetLabel("Epetra::LongLongSerialDenseVector");
+  SetLabel("Epetra::LongLongSerialDenseVector");
 }
 
 //=============================================================================
 Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector(int length)
   : Epetra_LongLongSerialDenseMatrix(length, 1)
 {
-	SetLabel("Epetra::LongLongSerialDenseVector");
+  SetLabel("Epetra::LongLongSerialDenseVector");
 }
 
 //=============================================================================
 Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector(Epetra_DataAccess CV_in, long long* Values_in, int Length_in)
   : Epetra_LongLongSerialDenseMatrix(CV_in, Values_in, Length_in, Length_in, 1)
 {
-	SetLabel("Epetra::LongLongSerialDenseVector");
+  SetLabel("Epetra::LongLongSerialDenseVector");
 }
 
 //=============================================================================
@@ -74,37 +76,39 @@ Epetra_LongLongSerialDenseVector::~Epetra_LongLongSerialDenseVector()
 
 //=========================================================================
 Epetra_LongLongSerialDenseVector& Epetra_LongLongSerialDenseVector::operator = (const Epetra_LongLongSerialDenseVector& Source) {
-	Epetra_LongLongSerialDenseMatrix::operator=(Source); // call this->Epetra_LongLongSerialDenseMatrix::operator =
-	return(*this);
+  Epetra_LongLongSerialDenseMatrix::operator=(Source); // call this->Epetra_LongLongSerialDenseMatrix::operator =
+  return(*this);
 }
 
 //=============================================================================
 int Epetra_LongLongSerialDenseVector::MakeViewOf(const Epetra_LongLongSerialDenseVector& Source) {
-	int errorcode = Epetra_LongLongSerialDenseMatrix::MakeViewOf(Source);
-	return(errorcode);
+  int errorcode = Epetra_LongLongSerialDenseMatrix::MakeViewOf(Source);
+  return(errorcode);
 }
 
 //=========================================================================
 void Epetra_LongLongSerialDenseVector::Print(ostream& os) const {
-	if(CV_ == Copy)
-		os << "Data access mode: Copy" << endl;
-	else
-		os << "Data access mode: View" << endl;
-	if(A_Copied_)
-		os << "A_Copied: yes" << endl;
-	else
-		os << "A_Copied: no" << endl;
-	os << "Length(M): " << M_ << endl;
-	if(M_ == 0)
-		os << "(vector is empty, no values to display)";
-	else
-		for(int i = 0; i < M_; i++)
+  if(CV_ == Copy)
+    os << "Data access mode: Copy" << endl;
+  else
+    os << "Data access mode: View" << endl;
+  if(A_Copied_)
+    os << "A_Copied: yes" << endl;
+  else
+    os << "A_Copied: no" << endl;
+  os << "Length(M): " << M_ << endl;
+  if(M_ == 0)
+    os << "(vector is empty, no values to display)";
+  else
+    for(int i = 0; i < M_; i++)
       os << (*this)(i) << " ";
-	os << endl;
+  os << endl;
 }
 
 //=========================================================================
 int Epetra_LongLongSerialDenseVector::Random() {
-	int errorcode = Epetra_LongLongSerialDenseMatrix::Random();
-	return(errorcode);
+  int errorcode = Epetra_LongLongSerialDenseMatrix::Random();
+  return(errorcode);
 }
+
+#endif // EPETRA_NO_64BIT_GLOBAL_INDICES

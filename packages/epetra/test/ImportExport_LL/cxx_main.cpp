@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
   long long *TargetMyGlobalElements = new long long[NumMyElements];
 
-  long long MinGID = SourceMap.MinMyGID();
+  long long MinGID = SourceMap.MinMyGID64();
   for (i=0; i< NumMyEquations/2; i++) TargetMyGlobalElements[i] = i + MinGID; // Half will be the same...
   for (i=NumMyEquations/2; i<NumMyEquations; i++) {
     int index = abs((int)(((double) (NumGlobalEquations-1) ) * RandVec[i]));
@@ -345,8 +345,8 @@ int main(int argc, char *argv[])
   OverlapNumMyElements = NumMyElements + 1;
   if (MyPID==0) OverlapNumMyElements--;
 
-  if (MyPID==0) OverlapMinMyGID = StandardMap.MinMyGID();
-  else OverlapMinMyGID = StandardMap.MinMyGID()-1;
+  if (MyPID==0) OverlapMinMyGID = StandardMap.MinMyGID64();
+  else OverlapMinMyGID = StandardMap.MinMyGID64()-1;
 
   long long * OverlapMyGlobalElements = new long long[OverlapNumMyElements];
 
@@ -471,13 +471,13 @@ int main(int argc, char *argv[])
   NumSubMapElements = EPETRA_MIN(NumSubMapElements,StandardMap.NumMyElements()-SubStart);
   Epetra_Map SubMap((long long) -1, NumSubMapElements, StandardMyGlobalElements+SubStart, 0, Comm);
 
-  Epetra_LongLongVector v3(View, SubMap, SubMap.MyGlobalElements_LL()); // Fill v3 with GID values for variety
+  Epetra_LongLongVector v3(View, SubMap, SubMap.MyGlobalElements64()); // Fill v3 with GID values for variety
   Epetra_Export subExporter(SubMap, StandardMap); // Export to a subset of indices of standard map
   EPETRA_TEST_ERR(!(v2.Export(v3,subExporter,Insert)==0),ierr);
 
   forierr = 0;
   for (i=0; i<SubMap.NumMyElements(); i++) {
-    int i1 = StandardMap.LID(SubMap.GID(i));
+    int i1 = StandardMap.LID(SubMap.GID64(i));
     forierr += !(v3[i]==v2[i1]);
   }
   EPETRA_TEST_ERR(forierr,ierr);
@@ -486,7 +486,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(v1.Import(v3,subImporter,Insert)==0),ierr);
 
   for (i=0; i<SubMap.NumMyElements(); i++) {
-    int i1 = StandardMap.LID(SubMap.GID(i));
+    int i1 = StandardMap.LID(SubMap.GID64(i));
     forierr += !(v3[i]==v1[i1]);
   }
   EPETRA_TEST_ERR(forierr,ierr);
@@ -555,7 +555,7 @@ int special_submap_import_test(Epetra_Comm& Comm)
   vec_target.PutValue(0);
 
   //set vec_source's contents so that entry[i] == GID[i].
-  long long* GIDs = map_source.MyGlobalElements_LL();
+  long long* GIDs = map_source.MyGlobalElements64();
   for(int i=0; i<map_source.NumMyElements(); ++i) {
     vec_source[i] = GIDs[i];
   }
@@ -566,7 +566,7 @@ int special_submap_import_test(Epetra_Comm& Comm)
 
   vec_target.Import(vec_source, importer, Insert);
 
-  GIDs = map_target.MyGlobalElements_LL();
+  GIDs = map_target.MyGlobalElements64();
   int test_failed = 0;
 
   //the test passes if the i-th entry in vec_target equals either 0 or
@@ -588,10 +588,10 @@ int combine_mode_test(Epetra_Comm& Comm)
   int localProc = Comm.MyPID();
 
 
-  int ids_source[1];
+  long long ids_source[1];
   ids_source[0] = localProc*2+2;
 
-  int ids_target[3];
+  long long ids_target[3];
   ids_target[0] = localProc*2+2;
   ids_target[1] = localProc*2+1;
   ids_target[2] = localProc*2+0;
@@ -607,7 +607,7 @@ int combine_mode_test(Epetra_Comm& Comm)
   vec_target.PutValue(0);
 
   //set vec_source's contents so that entry[i] == GID[i].
-  long long* GIDs = map_source.MyGlobalElements_LL();
+  long long* GIDs = map_source.MyGlobalElements64();
   for(int i=0; i<map_source.NumMyElements(); ++i) {
     vec_source[i] = GIDs[i];
   }
@@ -618,7 +618,7 @@ int combine_mode_test(Epetra_Comm& Comm)
 
   vec_target.Import(vec_source, importer, Insert);
 
-  GIDs = map_target.MyGlobalElements_LL();
+  GIDs = map_target.MyGlobalElements64();
   int test_failed = 0;
 
   //the test passes if the i-th entry in vec_target equals either 0 or

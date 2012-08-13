@@ -54,7 +54,9 @@ Epetra_BlockMapData::Epetra_BlockMapData(long long NumGlobalElements, int Elemen
     Directory_(0),
     LID_(0),
     MyGlobalElements_int_(0),
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     MyGlobalElements_LL_(0),
+#endif
     FirstPointInElementList_(0),
     ElementSizeList_(0),
     PointToElementList_(0),

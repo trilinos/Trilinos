@@ -47,6 +47,8 @@
 #include "Epetra_Object.h" 
 #include "Epetra_LongLongSerialDenseMatrix.h"
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
 //! Epetra_LongLongSerialDenseVector: A class for constructing and using dense vectors.
 
 /*! The Epetra_LongLongSerialDenseVector class enables the construction and use of integer-valued, 
@@ -102,8 +104,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseVector : public Epetra_Lon
            Length - Length of vector.
 
     Epetra_LongLongSerialDenseVector objects defined by the sized constructor are already sized to the
-		dimension given as a parameter. All values are initialized to 0. Calling this constructor 
-		is equivalent to using the default constructor, and then calling the Size function on it.
+    dimension given as a parameter. All values are initialized to 0. Calling this constructor 
+    is equivalent to using the default constructor, and then calling the Size function on it.
     Values should be defined by using the [] or () operators.
    */
   Epetra_LongLongSerialDenseVector(int Length_in);
@@ -117,7 +119,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseVector : public Epetra_Lon
     \param In 
            Length - Length of vector.
 
-	   See Detailed Description section for further discussion.
+     See Detailed Description section for further discussion.
   */
   Epetra_LongLongSerialDenseVector(Epetra_DataAccess CV_in, long long* Values_in, int Length_in);
   
@@ -130,9 +132,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseVector : public Epetra_Lon
     \param In 
            Length - Length of vector object.
 
-	   Allows user to define the dimension of a Epetra_LongLongSerialDenseVector. This function can
-	   be called at any point after construction.  Any values that were previously in this object are
-	   destroyed and the resized vector starts off with all zero values.
+     Allows user to define the dimension of a Epetra_LongLongSerialDenseVector. This function can
+     be called at any point after construction.  Any values that were previously in this object are
+     destroyed and the resized vector starts off with all zero values.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -143,10 +145,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseVector : public Epetra_Lon
     \param In 
            Length - Length of vector object.
 
-	   Allows user to define the dimension of a Epetra_LongLongSerialDenseVector. This function can
-	   be called at any point after construction.  Any values that were previously in this object are
-	   copied into the new size.  If the new shape is smaller than the original, the first Length values
-	   are copied to the new vector.
+     Allows user to define the dimension of a Epetra_LongLongSerialDenseVector. This function can
+     be called at any point after construction.  Any values that were previously in this object are
+     copied into the new size.  If the new shape is smaller than the original, the first Length values
+     are copied to the new vector.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -197,8 +199,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseVector : public Epetra_Lon
     
   //! Set vector values to random numbers.
   /*! 
-		LongLongSerialDenseVector uses the random number generator provided by Epetra_Util.
-		The vector values will be set to random values on the interval (0, 2^31 - 1).
+    LongLongSerialDenseVector uses the random number generator provided by Epetra_Util.
+    The vector values will be set to random values on the interval (0, 2^31 - 1).
 
     \return Integer error code, set to 0 if successful.
   */
@@ -213,13 +215,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseVector : public Epetra_Lon
   //! Returns const pointer to the values in vector.
   const long long* Values() const {return(A_);};
 
-	//! Returns the data access mode of the \e this vector.
-	Epetra_DataAccess CV() const {return(CV_);};
+  //! Returns the data access mode of the \e this vector.
+  Epetra_DataAccess CV() const {return(CV_);};
 
-	//! Copy from one vector to another.
+  //! Copy from one vector to another.
   /*!
     The operator= allows one to copy the values from one existing LongLongSerialDenseVector to another.
-		The left hand side vector will take on the data access mode of the right hand side vector. 
+    The left hand side vector will take on the data access mode of the right hand side vector. 
 
     \return Values of the left hand side vector are modified by the values of the right hand side vector.
   */
@@ -247,14 +249,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseVector : public Epetra_Lon
     This is used by Epetra_CrsGraph in the OptimizeStorage method. It is used
     so that an existing (Copy) vector can be converted to a View. This frees up
     memory that CrsGraph no longer needs.
-		
+    
     @param Source The LongLongSerialDenseVector this will become a view of.
-		
+    
     \return Integer error code, set to 0 if successful.
 
     \warning This method is extremely dangerous and should only be used by experts.
   */
-	
+  
   int MakeViewOf(const Epetra_LongLongSerialDenseVector& Source);
   //@}
 };
@@ -264,8 +266,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseVector : public Epetra_Lon
 inline long long& Epetra_LongLongSerialDenseVector::operator() (int Index) {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
+    throw ReportError("Index = " + toString(Index) + 
+                      " Out of Range 0 - " + toString(M_-1),-1);
 #endif
   return(A_[Index]);
 }
@@ -273,8 +275,8 @@ inline long long& Epetra_LongLongSerialDenseVector::operator() (int Index) {
 inline const long long& Epetra_LongLongSerialDenseVector::operator() (int Index) const {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
+    throw ReportError("Index = " + toString(Index) + 
+                      " Out of Range 0 - " + toString(M_-1),-1);
 #endif
    return(A_[Index]);
 }
@@ -282,20 +284,22 @@ inline const long long& Epetra_LongLongSerialDenseVector::operator() (int Index)
 inline long long& Epetra_LongLongSerialDenseVector::operator [] (int Index) {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
+    throw ReportError("Index = " + toString(Index) + 
+                      " Out of Range 0 - " + toString(M_-1),-1);
 #endif
    return(A_[Index]);
 }
 //=========================================================================
 inline const long long& Epetra_LongLongSerialDenseVector::operator [] (int Index) const {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
-	if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
+  if(Index >= M_ || Index < 0) 
+    throw ReportError("Index = " + toString(Index) + 
+                      " Out of Range 0 - " + toString(M_-1),-1);
 #endif
    return(A_[Index]);
 }
 //=========================================================================
+
+#endif // EPETRA_NO_64BIT_GLOBAL_INDICES
 
 #endif /* EPETRA_LONGLONGSERIALDENSEVECTOR_H */

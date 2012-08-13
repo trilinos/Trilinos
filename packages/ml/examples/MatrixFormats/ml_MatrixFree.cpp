@@ -291,22 +291,46 @@ public:
     return(14.0);
   }
 
-  virtual long long NumGlobalNonzeros() const
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+//TODO:CJ:  change data type for class members. check if changing is needed.
+
+  virtual int NumGlobalNonzeros() const
   {
     return(NumGlobalNonzeros_);
   }
 
-  virtual long long NumGlobalRows() const
+  virtual int NumGlobalRows() const
   {
     return(NumGlobalRows_);
   }
 
-  virtual long long NumGlobalCols() const
+  virtual int NumGlobalCols() const
   {
     return(NumGlobalRows_);
   }
 
-  virtual long long NumGlobalDiagonals() const
+  virtual int NumGlobalDiagonals() const
+  {
+    return(NumGlobalDiagonals_);
+  }
+#endif
+
+  virtual long long NumGlobalNonzeros64() const
+  {
+    return(NumGlobalNonzeros_);
+  }
+
+  virtual long long NumGlobalRows64() const
+  {
+    return(NumGlobalRows_);
+  }
+
+  virtual long long NumGlobalCols64() const
+  {
+    return(NumGlobalRows_);
+  }
+
+  virtual long long NumGlobalDiagonals64() const
   {
     return(NumGlobalDiagonals_);
   }

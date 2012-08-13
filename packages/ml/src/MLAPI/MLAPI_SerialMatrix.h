@@ -181,22 +181,44 @@ public:
     ML_CHK_ERR(-1);
   }
 
-  virtual long long NumGlobalNonzeros() const
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  virtual int NumGlobalNonzeros() const
   {
     return(NumMyNonzeros_);
   }
 
-  virtual long long NumGlobalRows() const
+  virtual int NumGlobalRows() const
   {
      return(NumMyRows_);
   }
 
-  virtual long long NumGlobalCols() const
+  virtual int NumGlobalCols() const
   {
     return(NumMyCols_);
   }
 
-  virtual long long NumGlobalDiagonals() const
+  virtual int NumGlobalDiagonals() const
+  {
+    return(NumMyDiagonals_);
+  }
+#endif
+
+  virtual long long NumGlobalNonzeros64() const
+  {
+    return(NumMyNonzeros_);
+  }
+
+  virtual long long NumGlobalRows64() const
+  {
+     return(NumMyRows_);
+  }
+
+  virtual long long NumGlobalCols64() const
+  {
+    return(NumMyCols_);
+  }
+
+  virtual long long NumGlobalDiagonals64() const
   {
     return(NumMyDiagonals_);
   }

@@ -49,6 +49,8 @@
 #include "Epetra_Distributor.h"
 class Epetra_Map;
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
 //! Epetra_LongLongVector: A class for constructing and using dense integer vectors on a parallel computer.
 
 /*! The Epetra_LongLongVector class enables the construction and use of integer
@@ -132,9 +134,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
     \param In 
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
 
-	   \warning Note that, because Epetra_LocalMap
-	   derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
-	   for all three types of Epetra map classes.
+     \warning Note that, because Epetra_LocalMap
+     derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
+     for all three types of Epetra map classes.
   \param In
   zeroOut - If <tt>true</tt> then the allocated memory will be zeroed
             out initialy.  If <tt>false</tt> then this memory will not
@@ -160,7 +162,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
 
     \return Integer error code, set to 0 if successful.
 
-	   See Detailed Description section for further discussion.
+     See Detailed Description section for further discussion.
   */
   Epetra_LongLongVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, long long *V);
 
@@ -249,7 +251,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   int MyLength() const {return(Map().NumMyPoints());};
 
   //! Returns the global vector length of vectors in the multi-vector.
-  long long GlobalLength() const {return(Map().NumGlobalPoints());};
+  long long GlobalLength() const {return(Map().NumGlobalPoints64());};
   //@}
 
   //! @name I/O methods
@@ -299,5 +301,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   bool UserAllocated_;
   bool Allocated_;
 };
+
+#endif // EPETRA_NO_64BIT_GLOBAL_INDICES
 
 #endif /* EPETRA_LONGLONGVECTOR_H */

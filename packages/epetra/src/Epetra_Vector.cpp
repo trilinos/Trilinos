@@ -95,11 +95,20 @@ const double& Epetra_Vector::operator [] (int Index) const  {
 */
 
 //=========================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_Vector::ReplaceGlobalValues(int NumEntries, const double * values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, values, Indices, true, false));
   return(0);
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Epetra_Vector::ReplaceGlobalValues(int NumEntries, const double * values, const long long * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, values, Indices, true, false));
+  return(0);
+}
+#endif
 //=========================================================================
 int Epetra_Vector::ReplaceMyValues(int NumEntries, const double * values, const int * Indices) {
   // Use the more general method below
@@ -143,10 +152,11 @@ int Epetra_Vector::SumIntoMyValues(int NumEntries, int BlockOffset, const double
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, const double * values, const int * Indices,
-				bool IndicesGlobal, bool SumInto) {
+template<typename int_type>
+int Epetra_Vector::TChangeValues(int NumEntries, int BlockOffset, const double * values, const int_type * Indices,
+        bool IndicesGlobal, bool SumInto) {
 
-  int cur_index;
+  int_type cur_index;
   int ierr = 0;
   if (BlockOffset<0) EPETRA_CHK_ERR(-1); // Offset is out-of-range
 
@@ -156,14 +166,14 @@ int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, const double * 
     else
       cur_index = Indices[i];
     
-    if (Map().MyLID(cur_index)) {
-      if (BlockOffset>=Map().ElementSize(cur_index)) EPETRA_CHK_ERR(-1); // Offset is out-of-range
-      int entry = Map().FirstPointInElement(cur_index);
+    if (Map().MyLID((int) cur_index)) {
+      if (BlockOffset>=Map().ElementSize((int) cur_index)) EPETRA_CHK_ERR(-1); // Offset is out-of-range
+      int entry = Map().FirstPointInElement((int) cur_index);
 
       if (SumInto)
-	Values_[entry+BlockOffset] += values[i];
+  Values_[entry+BlockOffset] += values[i];
       else
-	Values_[entry+BlockOffset] = values[i];
+  Values_[entry+BlockOffset] = values[i];
     }
     else ierr = 1;
   }
@@ -171,3 +181,21 @@ int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, const double * 
   EPETRA_CHK_ERR(ierr);
   return(0);
 }
+
+int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, const double * values, const int * Indices,
+        bool IndicesGlobal, bool SumInto) {
+  if(Map().GlobalIndicesInt())
+    return TChangeValues<int>(NumEntries, BlockOffset, values, Indices, IndicesGlobal, SumInto);
+  else
+    throw ReportError("Epetra_CrsMatrix::InsertGlobalValues long long version called for a matrix that is not long long.", -1);
+}
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, const double * values, const long long * Indices,
+        bool IndicesGlobal, bool SumInto) {
+  if(Map().GlobalIndicesLongLong())
+    return TChangeValues<long long>(NumEntries, BlockOffset, values, Indices, IndicesGlobal, SumInto);
+  else
+    throw ReportError("Epetra_Vector::ChangeValues long long version called for a matrix that is not long long.", -1);
+}
+#endif

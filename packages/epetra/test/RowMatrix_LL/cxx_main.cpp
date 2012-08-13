@@ -399,10 +399,10 @@ int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
   EPETRA_TEST_ERR(!A.LowerTriangular()==B.LowerTriangular(),ierr);
   EPETRA_TEST_ERR(!A.Map().SameAs(B.Map()),ierr);
   EPETRA_TEST_ERR(!A.MaxNumEntries()==B.MaxNumEntries(),ierr);
-  EPETRA_TEST_ERR(!A.NumGlobalCols()==B.NumGlobalCols(),ierr);
-  EPETRA_TEST_ERR(!A.NumGlobalDiagonals()==B.NumGlobalDiagonals(),ierr);
-  EPETRA_TEST_ERR(!A.NumGlobalNonzeros()==B.NumGlobalNonzeros(),ierr);
-  EPETRA_TEST_ERR(!A.NumGlobalRows()==B.NumGlobalRows(),ierr);
+  EPETRA_TEST_ERR(!A.NumGlobalCols64()==B.NumGlobalCols64(),ierr);
+  EPETRA_TEST_ERR(!A.NumGlobalDiagonals64()==B.NumGlobalDiagonals64(),ierr);
+  EPETRA_TEST_ERR(!A.NumGlobalNonzeros64()==B.NumGlobalNonzeros64(),ierr);
+  EPETRA_TEST_ERR(!A.NumGlobalRows64()==B.NumGlobalRows64(),ierr);
   EPETRA_TEST_ERR(!A.NumMyCols()==B.NumMyCols(),ierr);
   EPETRA_TEST_ERR(!A.NumMyDiagonals()==B.NumMyDiagonals(),ierr);
   EPETRA_TEST_ERR(!A.NumMyNonzeros()==B.NumMyNonzeros(),ierr);

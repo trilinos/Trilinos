@@ -7,15 +7,19 @@ INCLUDE(TribitsAddTest)
 
 # Example definitions
 
-ADD_SUBDIRECTORY(petra_power_method)
-ADD_SUBDIRECTORY(verySimple)
-ADD_SUBDIRECTORY(UG_Ex1)
-ADD_SUBDIRECTORY(UG_ExMaps)
-ADD_SUBDIRECTORY(my_example)
+IF (NOT Trilinos_NO_32BIT_GLOBAL_INDICES)
+	ADD_SUBDIRECTORY(petra_power_method)
+	ADD_SUBDIRECTORY(verySimple)
+	ADD_SUBDIRECTORY(UG_Ex1)
+	ADD_SUBDIRECTORY(UG_ExMaps)
+	ADD_SUBDIRECTORY(my_example)
+ENDIF()
 
-ADD_SUBDIRECTORY(my_example_LL)
-ADD_SUBDIRECTORY(petra_power_method_LL)
-ADD_SUBDIRECTORY(verySimple_LL)
+IF (NOT Trilinos_NO_64BIT_GLOBAL_INDICES)
+	ADD_SUBDIRECTORY(my_example_LL)
+	ADD_SUBDIRECTORY(petra_power_method_LL)
+	ADD_SUBDIRECTORY(verySimple_LL)
+ENDIF()
 
 # Below this line are subdirectories in epetra/example that are not exposed using autotools
 

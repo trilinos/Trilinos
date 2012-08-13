@@ -68,32 +68,32 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
-		    const Epetra_BlockMap& RowMap,
-		    int* NumIndicesPerRow,
-		    bool ignoreNonLocalEntries=false,
+        const Epetra_BlockMap& RowMap,
+        int* NumIndicesPerRow,
+        bool ignoreNonLocalEntries=false,
         bool buildNonlocalGraph=false);
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
-		    const Epetra_BlockMap& RowMap,
-		    int NumIndicesPerRow,
-		    bool ignoreNonLocalEntries=false,
+        const Epetra_BlockMap& RowMap,
+        int NumIndicesPerRow,
+        bool ignoreNonLocalEntries=false,
         bool buildNonlocalGraph=false);
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
-		    const Epetra_BlockMap& RowMap, 
-		    const Epetra_BlockMap& ColMap,
-		    int* NumIndicesPerRow,
-		    bool ignoreNonLocalEntries=false,
+        const Epetra_BlockMap& RowMap, 
+        const Epetra_BlockMap& ColMap,
+        int* NumIndicesPerRow,
+        bool ignoreNonLocalEntries=false,
         bool buildNonlocalGraph=false);
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
-		    const Epetra_BlockMap& RowMap, 
-		    const Epetra_BlockMap& ColMap,
-		    int NumIndicesPerRow,
-		    bool ignoreNonLocalEntries=false,
+        const Epetra_BlockMap& RowMap, 
+        const Epetra_BlockMap& ColMap,
+        int NumIndicesPerRow,
+        bool ignoreNonLocalEntries=false,
         bool buildNonlocalGraph=false);
 
   /** Constructor */
@@ -115,10 +115,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
     @param cols List of column-indices that will be used for each row in
         the 'rows' list.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int InsertGlobalIndices(int numRows, const int* rows,
-			  int numCols, const int* cols);
+        int numCols, const int* cols);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int InsertGlobalIndices(int numRows, const long long* rows,
-			  int numCols, const long long* cols);
+        int numCols, const long long* cols);
+#endif
 
    /** Gather any overlapping/shared data into the non-overlapping partitioning
       defined by the Map that was passed to this matrix at construction time.
@@ -178,10 +182,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
   void DeleteMemory();
   int InsertNonlocalRow(int row, int offset);
   int InputNonlocalIndices(int row,
-			   int numCols,
-			   const int* cols);
+         int numCols,
+         const int* cols);
   int InputNonlocalIndex(int rowoffset,
-			 int col);
+       int col);
 
   long long myFirstRow_;
   int myNumRows_;

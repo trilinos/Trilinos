@@ -96,7 +96,7 @@
        <li> If NumGlobalElements = NumMyElements (and not equal to zero)
             the map is defined to be a local replicated
             map.  In this case, objects constructed using this map will be identically replicated across
-	    all processors in the communicator.
+      all processors in the communicator.
        <li> If NumGlobalElements = -1 and NumMyElements is passed in then NumGlobalElements will
             be computed as the sum of NumMyElements across all processors.
        <li> If neither of the above is true, NumGlobalElements will be checked against the sum of 
@@ -212,17 +212,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
-	    C/C++ and 1 for Fortran.
-	    
+      C/C++ and 1 for Fortran.
+      
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
-	    processors.
+      processors.
 
     \return Pointer to a Epetra_BlockMap object.
 
   */ 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_BlockMap(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+#endif
 
   //! Epetra_BlockMap constructor for a user-defined linear distribution of constant size elements.
   /*! Creates a map that puts NumMyElements on the calling processor.  If 
@@ -245,19 +249,23 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
-	    C/C++ and 1 for Fortran.
-	    
+      C/C++ and 1 for Fortran.
+      
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
-	    processors.
+      processors.
 
     \return Pointer to a Epetra_BlockMap object.
 
   */ 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements, 
-		int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+     int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements, 
-		int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+    int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+#endif
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. The indices of the elements
@@ -277,31 +285,35 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
     
     \param In
             MyGlobalElements - Integer array of length NumMyElements.  The ith entry contains the
-	    global index value of the ith element on this processor.  Index values are not required to
-	    be contiguous on a processor, or to be within the range of 0 to NumGlobalElements.  As
-	    long as the index values are consistently defined and used, any set of NumGlobalElements
-	    distinct integer values is acceptable.
+      global index value of the ith element on this processor.  Index values are not required to
+      be contiguous on a processor, or to be within the range of 0 to NumGlobalElements.  As
+      long as the index values are consistently defined and used, any set of NumGlobalElements
+      distinct integer values is acceptable.
 
     \param In
             ElementSize - Number of points or vector entries per element.
 
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
-	    C/C++ and 1 for Fortran.
-	    
+      C/C++ and 1 for Fortran.
+      
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
-	    processors.
+      processors.
 
     \return Pointer to a Epetra_BlockMap object.
 
   */ 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
                   const int *MyGlobalElements,  
-		  int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+       int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
                   const long long *MyGlobalElements,  
-		  int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+      int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+#endif
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. If 
@@ -321,34 +333,38 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
     
     \param In
             MyGlobalElements - Integer array of length NumMyElements.  The ith entry contains the
-	    global index value of the ith element on this processor.  Index values are not required to
-	    be contiguous on a processor, or to be within the range of 0 to NumGlobalElements.  As
-	    long as the index values are consistently defined and used, any set of NumGlobalElements
-	    distinct integer values is acceptable.
+      global index value of the ith element on this processor.  Index values are not required to
+      be contiguous on a processor, or to be within the range of 0 to NumGlobalElements.  As
+      long as the index values are consistently defined and used, any set of NumGlobalElements
+      distinct integer values is acceptable.
 
     \param In
             ElementSizeList - A list of the element sizes for elements owned by the calling
-	    processor. The ith entry contains the element size of the ith element on this processor.
+      processor. The ith entry contains the element size of the ith element on this processor.
 
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
-	    C/C++ and 1 for Fortran.
-	    
+      C/C++ and 1 for Fortran.
+      
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
-	    processors.
+      processors.
 
     \return Pointer to a Epetra_BlockMap object.
 
   */ 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
                   const int *MyGlobalElements,
-		  const int *ElementSizeList, int IndexBase,
+      const int *ElementSizeList, int IndexBase,
                   const Epetra_Comm& Comm);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
                   const long long *MyGlobalElements,
-		  const int *ElementSizeList, int IndexBase,
+      const int *ElementSizeList, int IndexBase,
                   const Epetra_Comm& Comm);
+#endif
   
   //! Epetra_BlockMap copy constructor.
   Epetra_BlockMap(const Epetra_BlockMap& map);
@@ -367,12 +383,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
       If a GID is present on more than one processor, the lowest rank processor ID is used, as is the LID for that processor.
       If a GID is not present on any processor, the corresponding PID will return as -1.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int RemoteIDList(int NumIDs, const int * GIDList, int * PIDList, int * LIDList) const {
     return(RemoteIDList(NumIDs, GIDList, PIDList, LIDList, 0));
   };
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int RemoteIDList(int NumIDs, const long long * GIDList, int * PIDList, int * LIDList) const {
     return(RemoteIDList(NumIDs, GIDList, PIDList, LIDList, 0));
   };
+#endif
 
   //! Returns the processor IDs, corresponding local index value, and element size for a given list of global indices
   /*! For each element (GID) of a given a list of global element numbers (stored in GIDList) of length NumIDs,
@@ -380,36 +400,80 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
       local index (in LIDList) of the GID on that processor.  Finally it returns the element sizes in
       SizeList.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int RemoteIDList(int NumIDs, const int * GIDList, int * PIDList, int * LIDList, int * SizeList) const;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int RemoteIDList(int NumIDs, const long long * GIDList, int * PIDList, int * LIDList, int * SizeList) const;
+#endif
 
   //! Returns local ID of global ID, return -1 if not found on this processor.
-  int  LID(long long GID) const;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int  LID(int GID) const;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int  LID(long long GID) const;
+#endif
   
   //! Returns global ID of local ID, return IndexBase-1 if not found on this processor.
-  long long  GID(int LID) const; 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int  GID(int LID) const; 
+#endif
+  long long  GID64(int LID) const; 
   
   //! Returns the LID of the element that contains the given local PointID, and the Offset of the point in that element.
   int FindLocalElementID(int PointID, int & ElementID, int & ElementOffset)  const;
 
   //! Returns true if the GID passed in belongs to the calling processor in this map, otherwise returns false.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  bool  MyGID(int GID_in) const {return(LID(GID_in)!=-1);};
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   bool  MyGID(long long GID_in) const {return(LID(GID_in)!=-1);};
-   
+#endif
+
   //! Returns true if the LID passed in belongs to the calling processor in this map, otherwise returns false.
-  bool  MyLID(int LID_in) const {return(GID(LID_in)!=BlockMapData_->IndexBase_-1);};
+  bool  MyLID(int LID_in) const {return(GID64(LID_in)!=BlockMapData_->IndexBase_-1);};
   
   //!Returns the minimum global ID across the entire map.
-  long long  MinAllGID() const {return(BlockMapData_->MinAllGID_);};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int  MinAllGID() const {
+    if(GlobalIndicesInt())
+      return (int) MinAllGID64();
+    throw "Epetra_BlockMap::MinAllGID: GlobalIndices not int.";
+  }
+#endif
+  long long  MinAllGID64() const {return(BlockMapData_->MinAllGID_);};
   
   //! Returns the maximum global ID across the entire map.
-  long long  MaxAllGID() const {return(BlockMapData_->MaxAllGID_);};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int  MaxAllGID() const {
+    if(GlobalIndicesInt())
+      return (int) MaxAllGID64();
+    throw "Epetra_BlockMap::MaxAllGID: GlobalIndices not int.";
+  }
+#endif
+  long long  MaxAllGID64() const {return(BlockMapData_->MaxAllGID_);};
   
   //! Returns the maximum global ID owned by this processor.
-  long long  MinMyGID() const {return(BlockMapData_->MinMyGID_);};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int  MinMyGID() const {
+    if(GlobalIndicesInt())
+      return (int) MinMyGID64();
+    throw "Epetra_BlockMap::MinMyGID: GlobalIndices not int.";
+  }
+#endif
+  long long  MinMyGID64() const {return(BlockMapData_->MinMyGID_);};
   
   //! Returns the maximum global ID owned by this processor.
-  long long  MaxMyGID() const {return(BlockMapData_->MaxMyGID_);};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int  MaxMyGID() const {
+    if(GlobalIndicesInt())
+      return (int) MaxMyGID64();
+    throw "Epetra_BlockMap::MaxMyGID: GlobalIndices not int.";
+  }
+#endif
+  long long  MaxMyGID64() const {return(BlockMapData_->MaxMyGID_);};
   
   //!  The minimum local index value on the calling processor.
   int  MinLID() const {return(BlockMapData_->MinLID_);};
@@ -421,17 +485,32 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //! @name Size and dimension accessor functions
   //@{ 
   //! Number of elements across all processors.
-  long long  NumGlobalElements() const {return(BlockMapData_->NumGlobalElements_);};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int  NumGlobalElements() const {
+    if(GlobalIndicesInt())
+      return (int) NumGlobalElements64();
+    throw "Epetra_BlockMap::NumGlobalElements: GlobalIndices not int.";
+  }
+#endif
+  long long  NumGlobalElements64() const {return(BlockMapData_->NumGlobalElements_);};
   
   //! Number of elements on the calling processor.
   int  NumMyElements() const {return(BlockMapData_->NumMyElements_);};
   
   //! Puts list of global elements on this processor into the user-provided array.
-  int MyGlobalElements(long long * MyGlobalElementList) const;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int MyGlobalElements(int * MyGlobalElementList) const;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int MyGlobalElements(long long * MyGlobalElementList) const;
+#endif
 
-  int MyGlobalElementsPtr(long long *& MyGlobalElementList) const;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int MyGlobalElementsPtr(int *& MyGlobalElementList) const;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int MyGlobalElementsPtr(long long *& MyGlobalElementList) const;
+#endif
 
   //! Returns the size of elements in the map; only valid if map has constant element size.
   int  ElementSize() const {return(BlockMapData_->ElementSize_);};
@@ -449,7 +528,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   int  IndexBase() const {return(BlockMapData_->IndexBase_);};
   
   //! Number of global points for this map; equals the sum of all element sizes across all processors.
-  long long  NumGlobalPoints() const {return(BlockMapData_->NumGlobalPoints_);};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int  NumGlobalPoints() const {
+    if(GlobalIndicesInt())
+      return (int) NumGlobalPoints64();
+    throw "Epetra_BlockMap::NumGlobalPoints: GlobalIndices not int.";
+  }
+#endif
+  long long  NumGlobalPoints64() const {return(BlockMapData_->NumGlobalPoints_);};
   
   //! Number of local points for this map; equals the sum of all element sizes on the calling processor.
   int  NumMyPoints() const {return(BlockMapData_->NumMyPoints_);};
@@ -489,9 +575,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 
   bool GlobalIndicesTypeMatch(const Epetra_BlockMap& other) const
   {
-	  return
-		  GlobalIndicesInt() == other.GlobalIndicesInt() &&
-		  GlobalIndicesLongLong() == other.GlobalIndicesLongLong();
+    return
+      GlobalIndicesInt() == other.GlobalIndicesInt() &&
+      GlobalIndicesLongLong() == other.GlobalIndicesLongLong();
   }
 
   //! Returns true if map has constant element size.
@@ -517,8 +603,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //@{ 
 
   //! Pointer to internal array containing list of global IDs assigned to the calling processor.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int * MyGlobalElements() const;
-  long long * MyGlobalElements_LL() const;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  long long * MyGlobalElements64() const;
+#endif
 
   //! Pointer to internal array containing a mapping between the local elements and the first local point number in each element.
   /*! This array is a scan sum of the ElementSizeList such that the ith entry in FirstPointInElementList is the sum of the first
@@ -579,55 +669,67 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   bool IsDistributedGlobal(long long NumGlobalElements, int NumMyElements) const;
   void CheckValidNGE(long long NumGlobalElements);
   void EndOfConstructorOps();
-	void CleanupData();
+  void CleanupData();
   
   Epetra_BlockMapData * BlockMapData_;
 
 private:
 
-	void ConstructAutoUniform(long long NumGlobal_Elements, int Element_Size,
-			int Index_Base, const Epetra_Comm& comm, bool IsLongLong);
+  void ConstructAutoUniform(long long NumGlobal_Elements, int Element_Size,
+      int Index_Base, const Epetra_Comm& comm, bool IsLongLong);
 
-	void ConstructUserLinear(long long NumGlobal_Elements, int NumMy_Elements, 
-			int Element_Size, int Index_Base, const Epetra_Comm& comm, bool IsLongLong);
+  void ConstructUserLinear(long long NumGlobal_Elements, int NumMy_Elements, 
+      int Element_Size, int Index_Base, const Epetra_Comm& comm, bool IsLongLong);
 
-	template<typename int_type>
-	void ConstructUserConstant(int_type NumGlobal_Elements, int NumMy_Elements,
-			const int_type * myGlobalElements,
-			int Element_Size, int indexBase,
-			const Epetra_Comm& comm, bool IsLongLong);
+  template<typename int_type>
+  void ConstructUserConstant(int_type NumGlobal_Elements, int NumMy_Elements,
+      const int_type * myGlobalElements,
+      int Element_Size, int indexBase,
+      const Epetra_Comm& comm, bool IsLongLong);
 
-	template<typename int_type>
-	void ConstructUserVariable(int_type NumGlobal_Elements, int NumMy_Elements,
-			const int_type * myGlobalElements,
-			const int *elementSizeList, int indexBase,
-			const Epetra_Comm& comm, bool IsLongLong);
+  template<typename int_type>
+  void ConstructUserVariable(int_type NumGlobal_Elements, int NumMy_Elements,
+      const int_type * myGlobalElements,
+      const int *elementSizeList, int indexBase,
+      const Epetra_Comm& comm, bool IsLongLong);
 
-	template<typename int_type>
-	int_type& MyGlobalElementVal(int i);
+  template<typename int_type>
+  int_type& MyGlobalElementVal(int i);
 
-	template<typename int_type>
-	int_type MyGlobalElementValGet(int i);
+  template<typename int_type>
+  int_type MyGlobalElementValGet(int i);
 
-	template<typename int_type>
-	int SizeMyGlobalElement(int n);
+  template<typename int_type>
+  int SizeMyGlobalElement(int n);
 
-	template<typename int_type>
-	void TGlobalToLocalSetup();
+  template<typename int_type>
+  void TGlobalToLocalSetup();
 };
 
 
 template<> inline bool Epetra_BlockMap::GlobalIndicesIsType<int>()       const { return BlockMapData_->GlobalIndicesInt_; }
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline bool Epetra_BlockMap::GlobalIndicesIsType<long long>() const { return BlockMapData_->GlobalIndicesLongLong_; }
+#endif
 
 template<> inline int&       Epetra_BlockMap::MyGlobalElementVal<int>      (int i) { return BlockMapData_->MyGlobalElements_int_[i]; }
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline long long& Epetra_BlockMap::MyGlobalElementVal<long long>(int i) { return BlockMapData_->MyGlobalElements_LL_[i]; }
+#endif
 
 template<> inline int       Epetra_BlockMap::MyGlobalElementValGet<int>      (int i) { return BlockMapData_->MyGlobalElements_int_[i]; }
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline long long Epetra_BlockMap::MyGlobalElementValGet<long long>(int i) { return BlockMapData_->MyGlobalElements_LL_[i]; }
+#endif
 
 template<> inline int Epetra_BlockMap::SizeMyGlobalElement<int>      (int n) { return BlockMapData_->MyGlobalElements_int_.Size(n); }
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline int Epetra_BlockMap::SizeMyGlobalElement<long long>(int n) { return BlockMapData_->MyGlobalElements_LL_.Size(n); }
+#endif
 
 
 #endif /* EPETRA_BLOCKMAP_H */

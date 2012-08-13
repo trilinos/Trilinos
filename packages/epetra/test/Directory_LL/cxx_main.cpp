@@ -132,13 +132,13 @@ int directory_test_1(Epetra_Comm& Comm)
   int myFirstID = (myPID+1)*(myPID+1);
   int myNumIDs = 3+myPID;
 
-  int* myIDs = new int[myNumIDs];
+  long long* myIDs = new long long[myNumIDs];
   int i;
   for(i=0; i<myNumIDs; ++i) {
     myIDs[i] = myFirstID+i;
   }
 
-  Epetra_BlockMap blkmap(-1, myNumIDs, myIDs, 1, 0, Comm);
+  Epetra_BlockMap blkmap((long long)-1, myNumIDs, myIDs, 1, 0, Comm);
 
   Epetra_Directory* directory = Comm.CreateDirectory(blkmap);
 
@@ -146,8 +146,8 @@ int directory_test_1(Epetra_Comm& Comm)
   if (proc >= numProcs) proc = 0;
 
   int procNumIDs = 3+proc;
-  int procFirstID = (proc+1)*(proc+1);
-  int procLastID = procFirstID+procNumIDs - 1;
+  long long procFirstID = (proc+1)*(proc+1);
+  long long procLastID = procFirstID+procNumIDs - 1;
 
   int queryProc1 = -1;
   int queryProc2 = -1;
@@ -182,13 +182,13 @@ int directory_test_2(Epetra_Comm& Comm)
   int myFirstID = (numProcs-myPID)*(numProcs-myPID);
   int myNumIDs = 3;
 
-  int* myIDs = new int[myNumIDs];
+  long long* myIDs = new long long[myNumIDs];
   int i;
   for(i=0; i<myNumIDs; ++i) {
     myIDs[i] = myFirstID+i;
   }
 
-  Epetra_BlockMap blkmap(-1, myNumIDs, myIDs, 1, 0, Comm);
+  Epetra_BlockMap blkmap((long long)-1, myNumIDs, myIDs, 1, 0, Comm);
 
   Epetra_Directory* directory = Comm.CreateDirectory(blkmap);
 
@@ -196,8 +196,8 @@ int directory_test_2(Epetra_Comm& Comm)
   if (proc >= numProcs) proc = 0;
 
   int procNumIDs = 3;
-  int procFirstID = (numProcs-proc)*(numProcs-proc);
-  int procLastID = procFirstID+procNumIDs - 1;
+  long long procFirstID = (numProcs-proc)*(numProcs-proc);
+  long long procLastID = procFirstID+procNumIDs - 1;
 
   int queryProc1 = -1;
   int queryProc2 = -1;
@@ -229,7 +229,7 @@ int directory_test_3(Epetra_Comm& Comm)
   int myFirstID = (myPID+1)*(myPID+1);
   int myNumIDs = 4;
 
-  int* myIDs = new int[myNumIDs];
+  long long* myIDs = new long long[myNumIDs];
   int i;
   for(i=0; i<myNumIDs-1; ++i) {
     myIDs[i] = myFirstID+i;
@@ -241,7 +241,7 @@ int directory_test_3(Epetra_Comm& Comm)
   int nextProcFirstID = (nextProc+1)*(nextProc+1);
   myIDs[myNumIDs-1] = nextProcFirstID;
 
-  Epetra_BlockMap blkmap(-1, myNumIDs, myIDs, 1, 0, Comm);
+  Epetra_BlockMap blkmap((long long)-1, myNumIDs, myIDs, 1, 0, Comm);
 
   Epetra_Directory* directory = Comm.CreateDirectory(blkmap);
 
@@ -269,7 +269,7 @@ int directory_test_4(Epetra_Comm& Comm)
   int numMyGIDs = 2*num;
   int myFirstGID = myPID*num;
 
-  int* myGIDs = new int[numMyGIDs];
+  long long* myGIDs = new long long[numMyGIDs];
 
   for(int i=0; i<numMyGIDs; ++i) {
     myGIDs[i] = myFirstGID+i;
@@ -279,8 +279,9 @@ int directory_test_4(Epetra_Comm& Comm)
 
   delete [] myGIDs;
 
-  long long numGlobal0 = overlappingmap.NumGlobalElements();
+  long long numGlobal0 = overlappingmap.NumGlobalElements64();
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
   Epetra_Map uniquemap1 =
     Epetra_Util::Create_OneToOne_Map(overlappingmap);
 
@@ -289,8 +290,8 @@ int directory_test_4(Epetra_Comm& Comm)
   Epetra_Map uniquemap2 =
     Epetra_Util::Create_OneToOne_Map(overlappingmap, use_high_sharing_proc);
 
-  long long numGlobal1 = uniquemap1.NumGlobalElements();
-  long long numGlobal2 = uniquemap2.NumGlobalElements();
+  long long numGlobal1 = uniquemap1.NumGlobalElements64();
+  long long numGlobal2 = uniquemap2.NumGlobalElements64();
 
   //The two one-to-one maps should have the same number of global elems.
   if (numGlobal1 != numGlobal2) {
@@ -312,6 +313,7 @@ int directory_test_4(Epetra_Comm& Comm)
     return(-3);
   }
 
+#endif
   return(0);
 }
 
@@ -327,7 +329,7 @@ int directory_test_5(Epetra_Comm& Comm)
   int numMyGIDs = 2*num;
   int myFirstGID = myPID*num;
 
-  int* myGIDs = new int[numMyGIDs];
+  long long* myGIDs = new long long[numMyGIDs];
   int* sizes = new int[numMyGIDs];
 
   for(int i=0; i<numMyGIDs; ++i) {
@@ -335,13 +337,14 @@ int directory_test_5(Epetra_Comm& Comm)
     sizes[i] = myFirstGID+i+1;
   }
 
-  Epetra_BlockMap overlappingmap(-1, numMyGIDs, myGIDs, sizes, 0, Comm);
+  Epetra_BlockMap overlappingmap((long long)-1, numMyGIDs, myGIDs, sizes, 0, Comm);
 
   delete [] myGIDs;
   delete [] sizes;
 
-  long long numGlobal0 = overlappingmap.NumGlobalElements();
+  long long numGlobal0 = overlappingmap.NumGlobalElements64();
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
   Epetra_BlockMap uniquemap1 =
     Epetra_Util::Create_OneToOne_BlockMap(overlappingmap);
 
@@ -350,8 +353,8 @@ int directory_test_5(Epetra_Comm& Comm)
   Epetra_BlockMap uniquemap2 =
     Epetra_Util::Create_OneToOne_BlockMap(overlappingmap, use_high_sharing_proc);
 
-  long long numGlobal1 = uniquemap1.NumGlobalElements();
-  long long numGlobal2 = uniquemap2.NumGlobalElements();
+  long long numGlobal1 = uniquemap1.NumGlobalElements64();
+  long long numGlobal2 = uniquemap2.NumGlobalElements64();
 
   //The two one-to-one maps should have the same number of global elems.
   if (numGlobal1 != numGlobal2) {
@@ -372,6 +375,6 @@ int directory_test_5(Epetra_Comm& Comm)
   if ((myPID==0 || myPID==numProcs-1) && numLocal1 == numLocal2) {
     return(-3);
   }
-
+#endif
   return(0);
 }

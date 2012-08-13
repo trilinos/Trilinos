@@ -330,7 +330,7 @@ Epetra_CrsMatrix* create_and_fill_crs_matrix(const Epetra_Map& emap)
 {
   int localproc = emap.Comm().MyPID();
   int local_n = emap.NumMyElements();
-  long long global_n = emap.NumGlobalElements();
+  long long global_n = emap.NumGlobalElements64();
   long long myFirstGlobalRow = ((long long)localproc)*((long long)local_n);
   long long globalCols[3];
   double values[3];

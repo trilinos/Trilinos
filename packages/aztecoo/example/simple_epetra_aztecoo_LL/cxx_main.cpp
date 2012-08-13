@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts same number of equations on each processor
   Epetra_Map Map((long long) -1, NumMyElements, 0, Comm);
-  long long NumGlobalElements = Map.NumGlobalElements();
+  long long NumGlobalElements = Map.NumGlobalElements64();
 
   // Create a Epetra_Matrix
   Epetra_CrsMatrix A(Copy, Map, 3);
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   double negOne = -1.0;
   double posTwo = 2.0;
   for (int i=0; i<NumMyElements; i++) {
-    long long GlobalRow = A.GRID(i); long long RowLess1 = GlobalRow - 1; long long RowPlus1 = GlobalRow + 1;
+    long long GlobalRow = A.GRID64(i); long long RowLess1 = GlobalRow - 1; long long RowPlus1 = GlobalRow + 1;
 
     if (RowLess1!=-1) A.InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess1);
     if (RowPlus1!=NumGlobalElements) A.InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus1);

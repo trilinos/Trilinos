@@ -69,14 +69,14 @@ int main(int argc, char *argv[])
   Comm.Barrier();
   int NumMyElements = 2;
   Epetra_Map SourceMap((long long) -1, NumMyElements, 0, Comm);
-  long long NumGlobalElements = SourceMap.NumGlobalElements();
+  long long NumGlobalElements = SourceMap.NumGlobalElements64();
   
   Epetra_Vector SourceX(SourceMap);
 
   // Define SourceX = [0, 1, 2, 3, 4, 5]' with 2 elements per process
 
-  SourceX[0] = (double) SourceMap.GID(0);
-  SourceX[1] = (double) SourceMap.GID(1);
+  SourceX[0] = (double) SourceMap.GID64(0);
+  SourceX[1] = (double) SourceMap.GID64(1);
 
   cout << SourceX; // Print it to stdout
 
@@ -97,8 +97,8 @@ int main(int argc, char *argv[])
   cout << TargetOneX << endl;
 
   long long * GlobalElementList = new long long[2];
-  GlobalElementList[0] = 5 - SourceMap.GID(0);
-  GlobalElementList[1] = 5 - SourceMap.GID(1);
+  GlobalElementList[0] = 5 - SourceMap.GID64(0);
+  GlobalElementList[1] = 5 - SourceMap.GID64(1);
   
   Epetra_Map TargetTwoMap((long long) -1, 2, GlobalElementList, 0, Comm);
 

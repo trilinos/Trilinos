@@ -290,7 +290,7 @@ int Epetra_JadMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     if (!OperatorDomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
   }
 
-  UpdateFlops(2*NumVectors*NumGlobalNonzeros());
+  UpdateFlops(2*NumVectors*NumGlobalNonzeros64());
   return(0);
 }
 //=======================================================================================================

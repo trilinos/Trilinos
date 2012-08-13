@@ -232,7 +232,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     See Detailed Description section for further discussion.
   */
   Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
-		     double *A, int MyLDA, int NumVectors);
+         double *A, int MyLDA, int NumVectors);
 
   //! Set multi-vector values from array of pointers.
   /*!
@@ -251,7 +251,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     See Detailed Description section for further discussion.
   */
   Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
-		     double **ArrayOfPointers, int NumVectors);
+         double **ArrayOfPointers, int NumVectors);
 
   //! Set multi-vector values from list of vectors in an existing Epetra_MultiVector.
   /*!
@@ -269,7 +269,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     See Detailed Description section for further discussion.
   */
   Epetra_MultiVector(Epetra_DataAccess CV,  
-		     const Epetra_MultiVector& Source, int *Indices, int NumVectors);
+         const Epetra_MultiVector& Source, int *Indices, int NumVectors);
 
   //! Set multi-vector values from range of vectors in an existing Epetra_MultiVector.
   /*!
@@ -287,8 +287,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     See Detailed Description section for further discussion.
   */
   Epetra_MultiVector(Epetra_DataAccess CV, 
-		     const Epetra_MultiVector& Source, int StartIndex, 
-		     int NumVectors);
+         const Epetra_MultiVector& Source, int StartIndex, 
+         int NumVectors);
   
   //! Epetra_MultiVector destructor.  
   virtual ~Epetra_MultiVector();
@@ -317,8 +317,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors().
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int ReplaceGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int ReplaceGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue);
+#endif
 
 
   //! Replace current value at the specified (GlobalBlockRow, BlockRowOffset, VectorIndex) location with ScalarValue.
@@ -340,8 +344,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int ReplaceGlobalValue(long long GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+#endif
 
 
   //! Adds ScalarValue to existing value at the specified (GlobalRow, VectorIndex) location.
@@ -364,8 +372,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors().
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int SumIntoGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue);
+#endif
 
 
   //! Adds ScalarValue to existing value at the specified (GlobalBlockRow, BlockRowOffset, VectorIndex) location.
@@ -387,8 +399,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int SumIntoGlobalValue(int GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int SumIntoGlobalValue(long long GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+#endif
 
   //! Replace current value  at the specified (MyRow, VectorIndex) location with ScalarValue.
   /*!
@@ -495,7 +511,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   
   //! Set multi-vector values to random numbers.
   /*! MultiVector uses the random number generator provided by Epetra_Util. 
-		The multi-vector values will be set to random values on the interval (-1.0, 1.0).
+    The multi-vector values will be set to random values on the interval (-1.0, 1.0).
 
     \return Integer error code, set to 0 if successful.
 
@@ -674,7 +690,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful.
   */
   int Update(double ScalarA, const Epetra_MultiVector& A, 
-	     double ScalarB, const Epetra_MultiVector& B, double ScalarThis);
+       double ScalarB, const Epetra_MultiVector& B, double ScalarThis);
 
   //! Compute 1-norm of each vector in multi-vector.
   /*!
@@ -809,11 +825,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     copy is made and used for the computation.  This activity is transparent to the user,
     except that there is memory and computation overhead.  All temporary space is deleted
     prior to exit.}
-	 
+   
   */
   int Multiply(char TransA, char TransB, double ScalarAB, 
-	       const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-	       double ScalarThis );
+         const Epetra_MultiVector& A, const Epetra_MultiVector& B,
+         double ScalarThis );
   
 
 
@@ -825,7 +841,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     multiplication.
   */
   int Multiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-	       double ScalarThis );
+         double ScalarThis );
 
 
   //! Multiply a Epetra_MultiVector by the reciprocal of another, element-by-element.
@@ -836,7 +852,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     division.
   */
   int ReciprocalMultiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-			 double ScalarThis );
+       double ScalarThis );
 
   //@}
 
@@ -912,7 +928,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   int MyLength() const {return(MyLength_);};
 
   //! Returns the global vector length of vectors in the multi-vector.
-  long long GlobalLength() const {return(GlobalLength_);};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int GlobalLength() const {
+    if(Map().GlobalIndicesInt())
+      return (int) GlobalLength_;
+    throw "Epetra_MultiVector::GlobalLength: GlobalIndices not int.";
+  }
+#endif
+  long long GlobalLength64() const {return(GlobalLength_);};
 
   //! Returns the stride between  vectors in the multi-vector (only meaningful if ConstantStride() is true).
   int Stride() const {return(Stride_);};

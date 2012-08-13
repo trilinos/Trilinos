@@ -482,7 +482,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 		Epetra_CrsGraph SharedOrigG(Copy, Map1, NumIndicesPerRow);
 		Epetra_CrsGraph SharedOwnerG(SharedOrig);
 		
-		long long GlobalRow = SoleOwnerG.GRID(0);
+		long long GlobalRow = SoleOwnerG.GRID64(0);
 
 		// InsertGlobalIndices
 		if(verbose) cout << "InsertGlobalIndices..." << endl;
@@ -593,28 +593,28 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, long long NumGlobalRows1, int NumM
 
   EPETRA_TEST_ERR(!(NumMyNonzeros==NumMyNonzeros1),ierr);
 
-  long long NumGlobalRows = A.NumGlobalRows();
+  long long NumGlobalRows = A.NumGlobalRows64();
   if(verbose) cout << "Number of global Rows = " << NumGlobalRows << endl;
 
   EPETRA_TEST_ERR(!(NumGlobalRows==NumGlobalRows1),ierr);
 
-  long long NumGlobalNonzeros = A.NumGlobalNonzeros();
+  long long NumGlobalNonzeros = A.NumGlobalNonzeros64();
   if(verbose) cout << "Number of global Nonzero entries = " << NumGlobalNonzeros << endl;
 
   EPETRA_TEST_ERR(!(NumGlobalNonzeros==NumGlobalNonzeros1),ierr);
 
   // GlobalRowView should be illegal (since we have local indices)
 
-  EPETRA_TEST_ERR(!(A.ExtractGlobalRowView(A.RowMap().MaxMyGID(), NumGlobalIndices, GlobalCopyIndices)==-2),ierr);
+  EPETRA_TEST_ERR(!(A.ExtractGlobalRowView(A.RowMap().MaxMyGID64(), NumGlobalIndices, GlobalCopyIndices)==-2),ierr);
 
   // Other binary tests
 
   EPETRA_TEST_ERR(A.NoDiagonal(),ierr);
   EPETRA_TEST_ERR(!(A.Filled()),ierr);
-  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID())),ierr);
-  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID())),ierr);
-  EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID()),ierr);
-  EPETRA_TEST_ERR(A.MyGRID(-1+A.RowMap().MinMyGID()),ierr);
+  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID64())),ierr);
+  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID64())),ierr);
+  EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID64()),ierr);
+  EPETRA_TEST_ERR(A.MyGRID(-1+A.RowMap().MinMyGID64()),ierr);
   EPETRA_TEST_ERR(!(A.MyLRID(0)),ierr);
   EPETRA_TEST_ERR(!(A.MyLRID(NumMyRows-1)),ierr);
   EPETRA_TEST_ERR(A.MyLRID(-1),ierr);
@@ -622,27 +622,27 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, long long NumGlobalRows1, int NumM
     
   forierr = 0;
   for(i = 0; i < NumMyRows; i++) {
-    long long Row = A.GRID(i);
+    long long Row = A.GRID64(i);
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyIndices);
     A.ExtractMyRowView(i, NumMyIndices, MyViewIndices);
     forierr += !(NumGlobalIndices==NumMyIndices);
     for(j = 1; j < NumMyIndices; j++) EPETRA_TEST_ERR(!(MyViewIndices[j-1]<MyViewIndices[j]),ierr);
     for(j = 0; j < NumGlobalIndices; j++) {
-			forierr += !(GlobalCopyIndices[j]==A.GCID(MyViewIndices[j]));
+			forierr += !(GlobalCopyIndices[j]==A.GCID64(MyViewIndices[j]));
 			forierr += !(A.LCID(GlobalCopyIndices[j])==MyViewIndices[j]);
     }
   }
   EPETRA_TEST_ERR(forierr,ierr);
   forierr = 0;
   for(i = 0; i < NumMyRows; i++) {
-    long long Row = A.GRID(i);
+    long long Row = A.GRID64(i);
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyIndices);
     A.ExtractMyRowCopy(i, MaxNumIndices, NumMyIndices, MyCopyIndices);
     forierr += !(NumGlobalIndices==NumMyIndices);
     for(j = 1; j < NumMyIndices; j++) 
 			EPETRA_TEST_ERR(!(MyCopyIndices[j-1]<MyCopyIndices[j]),ierr);
     for(j = 0; j < NumGlobalIndices; j++) {
-			forierr += !(GlobalCopyIndices[j]==A.GCID(MyCopyIndices[j]));
+			forierr += !(GlobalCopyIndices[j]==A.GCID64(MyCopyIndices[j]));
 			forierr += !(A.LCID(GlobalCopyIndices[j])==MyCopyIndices[j]);
     }
 

@@ -76,7 +76,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   //! Epetra_CrsGraphData Constructor (user provided ColMap).
   Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const Epetra_BlockMap& ColMap, bool StaticProfile);
 
-	//! Epetra_CrsGraphData copy constructor (not defined).
+  //! Epetra_CrsGraphData copy constructor (not defined).
   Epetra_CrsGraphData(const Epetra_CrsGraphData& CrsGraphData);
 
   //! Epetra_CrsGraphData Destructor.
@@ -84,13 +84,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
 
   //@}
 
-	//! Outputs state of almost all data members. (primarily used for testing purposes).
-	/*! Output level: Uses same scheme as chmod. 4-bit = BlockMaps, 2-bit = Indices, 1-bit = Everything else.
-		Default paramenter sets it to 3, which is everything but the BlockMaps. Commonly used options:
-		1 = Everything except the BlockMaps & Indices_
-		2 = Just Indices_
-		3 = Everything except the BlockMaps
-	*/
+  //! Outputs state of almost all data members. (primarily used for testing purposes).
+  /*! Output level: Uses same scheme as chmod. 4-bit = BlockMaps, 2-bit = Indices, 1-bit = Everything else.
+    Default paramenter sets it to 3, which is everything but the BlockMaps. Commonly used options:
+    1 = Everything except the BlockMaps & Indices_
+    2 = Just Indices_
+    3 = Everything except the BlockMaps
+  */
   void Print(ostream& os, int level = 3) const;
 
   //! Epetra_CrsGraphData assignment operator (not defined)
@@ -206,11 +206,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   struct IndexData;
 
   IndexData<int>* data;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   IndexData<long long>* LL_data;
+#endif
 
   template<typename int_type>
   IndexData<int_type>& Data();
 };
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
 template<>
 struct Epetra_CrsGraphData::IndexData<long long>
@@ -221,39 +225,41 @@ struct Epetra_CrsGraphData::IndexData<long long>
   Epetra_LongLongSerialDenseVector All_Indices_;
 
   IndexData(int NumMyBlockRows, bool AllocSorted)
-	  :
+    :
     Indices_(NULL),
     SortedEntries_(),
     TempColIndices_(NULL),
     All_Indices_(0)
   {
-  	Allocate(NumMyBlockRows, AllocSorted);
+    Allocate(NumMyBlockRows, AllocSorted);
   }
 
   void Allocate(int NumMyBlockRows, bool AllocSorted)
   {
-  	Deallocate();
+    Deallocate();
 
-  	if(AllocSorted)
-  		SortedEntries_.resize(NumMyBlockRows);
-  	if(NumMyBlockRows > 0)
-  		Indices_ = new long long *[NumMyBlockRows];
+    if(AllocSorted)
+      SortedEntries_.resize(NumMyBlockRows);
+    if(NumMyBlockRows > 0)
+      Indices_ = new long long *[NumMyBlockRows];
   }
 
   void Deallocate()
   {
-  	delete[] Indices_;
-  	Indices_ = 0;
+    delete[] Indices_;
+    Indices_ = 0;
 
     std::vector< EntriesInOneRow<long long> > empty;
-  	SortedEntries_.swap(empty);
+    SortedEntries_.swap(empty);
 
-  	delete [] TempColIndices_;
-  	TempColIndices_ = 0;
+    delete [] TempColIndices_;
+    TempColIndices_ = 0;
 
-  	All_Indices_.Resize(0);
+    All_Indices_.Resize(0);
   }
 };
+
+#endif
 
 template<>
 struct Epetra_CrsGraphData::IndexData<int>
@@ -264,57 +270,59 @@ struct Epetra_CrsGraphData::IndexData<int>
   Epetra_IntSerialDenseVector All_Indices_;
 
   IndexData(int NumMyBlockRows, bool AllocSorted)
-	  :
+    :
     Indices_(NULL),
     SortedEntries_(),
     TempColIndices_(NULL),
     All_Indices_(0)
   {
-  	Allocate(NumMyBlockRows, AllocSorted);
+    Allocate(NumMyBlockRows, AllocSorted);
   }
 
   void Allocate(int NumMyBlockRows, bool AllocSorted)
   {
-  	Deallocate();
+    Deallocate();
 
-  	if(AllocSorted)
-  		SortedEntries_.resize(NumMyBlockRows);
+    if(AllocSorted)
+      SortedEntries_.resize(NumMyBlockRows);
 
-  	if(NumMyBlockRows > 0)
-  		Indices_ = new int *[NumMyBlockRows];
+    if(NumMyBlockRows > 0)
+      Indices_ = new int *[NumMyBlockRows];
   }
 
   void Deallocate()
   {
-  	delete[] Indices_;
-  	Indices_ = 0;
+    delete[] Indices_;
+    Indices_ = 0;
 
     std::vector< EntriesInOneRow<int> > empty;
-  	SortedEntries_.swap(empty);
+    SortedEntries_.swap(empty);
 
-  	delete [] TempColIndices_;
-  	TempColIndices_ = 0;
+    delete [] TempColIndices_;
+    TempColIndices_ = 0;
 
-  	All_Indices_.Resize(0);
+    All_Indices_.Resize(0);
   }
 };
-  
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<>
 inline Epetra_CrsGraphData::IndexData<long long>& Epetra_CrsGraphData::Data<long long>()
 {
   if(RowMap_.GlobalIndicesLongLong() && !IndicesAreLocal_)
-  	return *LL_data;
+    return *LL_data;
   else
-  	throw "Epetra_CrsGraphData::Data<long long>: Map indices not long long or are local";
+    throw "Epetra_CrsGraphData::Data<long long>: Map indices not long long or are local";
 }
+#endif
 
 template<>
 inline Epetra_CrsGraphData::IndexData<int>& Epetra_CrsGraphData::Data<int>()
 {
   if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && !IndicesAreGlobal_))
-  	return *data;
+    return *data;
   else
-  	throw "Epetra_CrsGraphData::Data<int>: Map indices not int or are global long long";
+    throw "Epetra_CrsGraphData::Data<int>: Map indices not int or are global long long";
 }
 
 

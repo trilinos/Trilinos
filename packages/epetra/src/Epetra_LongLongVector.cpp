@@ -44,6 +44,9 @@
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include <limits.h> // LLONG_MIN, LLONG_MAX
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
 //=============================================================================
 Epetra_LongLongVector::Epetra_LongLongVector(const Epetra_BlockMap& map, bool zeroOut)
   : Epetra_DistObject(map, "Epetra::LongLongVector"),
@@ -186,7 +189,7 @@ Epetra_LongLongVector& Epetra_LongLongVector::operator = (const Epetra_LongLongV
 
   if (MyLength() != V.MyLength())
     throw ReportError("Length of LongLongVectors incompatible in Assign.  The this LongLongVector has MyLength = " + toString(MyLength())
-		      + ".  The V LongLongVector has MyLength = " + toString(V.MyLength()), -1);
+          + ".  The V LongLongVector has MyLength = " + toString(V.MyLength()), -1);
   
   int iend = MyLength();
   for (int i=0; i<iend; i++) Values_[i] =V[i];
@@ -201,40 +204,40 @@ void Epetra_LongLongVector::Print(ostream& os) const {
     if (MyPID==iproc) {
       int NumMyElements1 =Map(). NumMyElements();
       int MaxElementSize1 = Map().MaxElementSize();
-	  long long * MyGlobalElements1 = Map().MyGlobalElements_LL();
+    long long * MyGlobalElements1 = Map().MyGlobalElements64();
       int * FirstPointInElementList1=0;
       if (MaxElementSize1!=1) FirstPointInElementList1 = Map().FirstPointInElementList();
 
       if (MyPID==0) {
-	os.width(8);
-	os <<  "     MyPID"; os << "    ";
-	os.width(12);
-	if (MaxElementSize1==1)
-	  os <<  "GID  ";
-	else
-	  os <<  "     GID/Point";
-	os.width(20);
-	os <<  "Value  ";
-	os << endl;
+  os.width(8);
+  os <<  "     MyPID"; os << "    ";
+  os.width(12);
+  if (MaxElementSize1==1)
+    os <<  "GID  ";
+  else
+    os <<  "     GID/Point";
+  os.width(20);
+  os <<  "Value  ";
+  os << endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
-	for (int ii=0; ii< Map().ElementSize(ii); ii++) {
-	  int iii;
-	  os.width(10);
-	  os <<  MyPID; os << "    ";
-	  os.width(10);
-	  if (MaxElementSize1==1) {
-	    os << MyGlobalElements1[i] << "    ";
-	    iii = i;
-	  }
-	  else {
-	    os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
-	    iii = FirstPointInElementList1[i]+ii;
-	  }
-	      os.width(20);
-	      os <<  Values_[iii];
-	  os << endl;
-	}
+  for (int ii=0; ii< Map().ElementSize(ii); ii++) {
+    int iii;
+    os.width(10);
+    os <<  MyPID; os << "    ";
+    os.width(10);
+    if (MaxElementSize1==1) {
+      os << MyGlobalElements1[i] << "    ";
+      iii = i;
+    }
+    else {
+      os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+      iii = FirstPointInElementList1[i]+ii;
+    }
+        os.width(20);
+        os <<  Values_[iii];
+    os << endl;
+  }
       }
       os << flush; 
     }
@@ -306,8 +309,8 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-	for (j=0; j<NumSameEntries; j++)
-	  To[j] = From[j];
+  for (j=0; j<NumSameEntries; j++)
+    To[j] = From[j];
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
@@ -316,16 +319,16 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     if (Case1) {
       
       for (j=0; j<NumPermuteIDs; j++) 
-	To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+  To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
     }
     // constant element size case
     else if (Case2) {
       
       for (j=0; j<NumPermuteIDs; j++) {
-	jj = MaxElementSize*PermuteToLIDs[j];
-	jjj = MaxElementSize*PermuteFromLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    To[jj+k] = From[jjj+k];
+  jj = MaxElementSize*PermuteToLIDs[j];
+  jjj = MaxElementSize*PermuteFromLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      To[jj+k] = From[jjj+k];
       }
     }
     
@@ -333,11 +336,11 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     else {
       
       for (j=0; j<NumPermuteIDs; j++) {
-	jj = ToFirstPointInElementList[PermuteToLIDs[j]];
-	jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
-	int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    To[jj+k] = From[jjj+k];
+  jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+  jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
+  int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      To[jj+k] = From[jjj+k];
       }
     }
   }
@@ -395,9 +398,9 @@ int Epetra_LongLongVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
     else if (ConstantElementSize) {
       
       for (j=0; j<NumExportIDs; j++) {
-	jj = MaxElementSize*ExportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    *ptr++ = From[jj+k];
+  jj = MaxElementSize*ExportLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      *ptr++ = From[jj+k];
       }
     }
     
@@ -406,11 +409,11 @@ int Epetra_LongLongVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
       
       SizeOfPacket = MaxElementSize;
       for (j=0; j<NumExportIDs; j++) {
-	ptr = (long long *) Exports + j*SizeOfPacket;
-	jj = FromFirstPointInElementList[ExportLIDs[j]];
-	int ElementSize = FromElementSizeList[ExportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    *ptr++ = From[jj+k];
+  ptr = (long long *) Exports + j*SizeOfPacket;
+  jj = FromFirstPointInElementList[ExportLIDs[j]];
+  int ElementSize = FromElementSizeList[ExportLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      *ptr++ = From[jj+k];
       }
     }
   }
@@ -465,18 +468,18 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   if (MaxElementSize==1) {
       
       if (CombineMode==Add)
-	for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] += *ptr++; // Add to existing value
+  for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] += *ptr++; // Add to existing value
       else if(CombineMode==Insert)
-	for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = *ptr++;
+  for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = *ptr++;
       else if(CombineMode==AbsMax)
         for (j=0; j<NumImportIDs; j++) {
-	  To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],(*ptr > 0 ? *ptr : -*ptr)); // CJ: No std::abs(long long) in VS2005
-	  ptr++;
-	}
+    To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],(*ptr > 0 ? *ptr : -*ptr)); // CJ: No std::abs(long long) in VS2005
+    ptr++;
+  }
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
       else if(CombineMode==Average)
-	for (j=0; j<NumImportIDs; j++) {To[ImportLIDs[j]] += *ptr++; To[ImportLIDs[j]] /= 2;}
+  for (j=0; j<NumImportIDs; j++) {To[ImportLIDs[j]] += *ptr++; To[ImportLIDs[j]] /= 2;}
   }
 
   // constant element size case
@@ -485,34 +488,34 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
    
     if (CombineMode==Add) {
       for (j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    To[jj+k] += *ptr++; // Add to existing value
+  jj = MaxElementSize*ImportLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      To[jj+k] += *ptr++; // Add to existing value
       }
     }
     else if(CombineMode==Insert) {
       for (j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    To[jj+k] = *ptr++;
+  jj = MaxElementSize*ImportLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      To[jj+k] = *ptr++;
       }
     }
     else if(CombineMode==AbsMax) {
       for (j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	for (k=0; k<MaxElementSize; k++) {
-	    To[jj+k] = EPETRA_MAX( To[jj+k], (*ptr > 0 ? *ptr : -*ptr)); // CJ: No std::abs(long long) in VS2005
-	    ptr++;
-	}
+  jj = MaxElementSize*ImportLIDs[j];
+  for (k=0; k<MaxElementSize; k++) {
+      To[jj+k] = EPETRA_MAX( To[jj+k], (*ptr > 0 ? *ptr : -*ptr)); // CJ: No std::abs(long long) in VS2005
+      ptr++;
+  }
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
     //        This might be an issue in the future, but we leave this way for now.
     else if(CombineMode==Average) {
       for (j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    { To[jj+k] += *ptr++; To[jj+k] /= 2;}
+  jj = MaxElementSize*ImportLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      { To[jj+k] += *ptr++; To[jj+k] /= 2;}
       }
     }
   }
@@ -525,42 +528,42 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 
     if (CombineMode==Add) {
       for (j=0; j<NumImportIDs; j++) {
-	ptr = (long long *) Imports + j*SizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    To[jj+k] += *ptr++; // Add to existing value
+  ptr = (long long *) Imports + j*SizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      To[jj+k] += *ptr++; // Add to existing value
       }
     }
     else  if(CombineMode==Insert){
       for (j=0; j<NumImportIDs; j++) {
-	ptr = (long long *) Imports + j*SizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    To[jj+k] = *ptr++;
+  ptr = (long long *) Imports + j*SizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      To[jj+k] = *ptr++;
       }
     }
     else  if(CombineMode==AbsMax){
       for (j=0; j<NumImportIDs; j++) {
-	ptr = (long long *) Imports + j*SizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	for (k=0; k<ElementSize; k++) {
-	    To[jj+k] = EPETRA_MAX( To[jj+k], (*ptr > 0 ? *ptr : -*ptr)); // CJ: No std::abs(long long) in VS2005
-	    ptr++;
-	}
+  ptr = (long long *) Imports + j*SizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+  for (k=0; k<ElementSize; k++) {
+      To[jj+k] = EPETRA_MAX( To[jj+k], (*ptr > 0 ? *ptr : -*ptr)); // CJ: No std::abs(long long) in VS2005
+      ptr++;
+  }
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
     //        This might be an issue in the future, but we leave this way for now.
     else if(CombineMode==Average) {
       for (j=0; j<NumImportIDs; j++) {
-	ptr = (long long *) Imports + j*SizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    { To[jj+k] += *ptr++; To[jj+k] /= 2;}
+  ptr = (long long *) Imports + j*SizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      { To[jj+k] += *ptr++; To[jj+k] /= 2;}
       }
     }
   }
@@ -568,3 +571,4 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   return(0);
 }
 
+#endif // EPETRA_NO_64BIT_GLOBAL_INDICES

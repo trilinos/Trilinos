@@ -962,7 +962,7 @@ int test_drumm1(Epetra_Comm& Comm)
   std::vector<int> indices;
   indices.push_back(0); indices.push_back(1);
 
-  for (size_t row=0; row<numGlobalElements; ++row) {
+  for (int row=0; row<numGlobalElements; ++row) {
     if ( A.MyGRID(row) )
       A.InsertGlobalValues(row, numGlobalElements, &(vals[row][0]), &indices[0]);
   }

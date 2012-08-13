@@ -46,6 +46,10 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Map.h"
 #include "Epetra_Export.h"
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
+// FIXME long long : whole file
+
 //=============================================================================
 Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMatrix)
   : OrigMatrix_(OrigMatrix),
@@ -109,8 +113,8 @@ void Epetra_RowMatrixTransposer::DeleteData (){
     delete [] Indices_;
     delete [] Values_;
   }
-	
-	
+  
+  
   for(i=0; i<NumMyCols_; i++) {
     int NumIndices = TransNumNz_[i];
     if (NumIndices>0) {
@@ -126,10 +130,10 @@ void Epetra_RowMatrixTransposer::DeleteData (){
 
 //=========================================================================
 int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, 
-						 Epetra_CrsMatrix *& TransposeMatrix, 
-						 Epetra_Map * TransposeRowMap_in) {
+             Epetra_CrsMatrix *& TransposeMatrix, 
+             Epetra_Map * TransposeRowMap_in) {
 
-// TODO this needs to be changed for long long, probably by using templates.
+// FIXME long long
 
   int i, j;
 
@@ -213,7 +217,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
       EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_));
     }
 
-    int ii = OrigMatrix_->RowMatrixRowMap().GID(i);
+    int ii = OrigMatrix_->RowMatrixRowMap().GID64(i); // FIXME long long
     for (j=0; j<NumIndices; j++) {
       int TransRow = Indices_[j];
       int loc = TransNumNz_[TransRow];
@@ -230,16 +234,16 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
 
   Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
   TransMyGlobalEquations_ = new int[NumMyCols_];
+
   TransMap.MyGlobalElements(TransMyGlobalEquations_);
-  
+
   /* Add  rows one-at-a-time */
 
   for (i=0; i<NumMyCols_; i++)
     {
       EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
-						    TransNumNz_[i], TransValues_[i], TransIndices_[i]));
+                TransNumNz_[i], TransValues_[i], TransIndices_[i]));
     }
- 
   // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
 
@@ -281,15 +285,15 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
   if (OrigMatrix_!=MatrixWithNewValues) { // Check if pointer of new matrix is same as previous input matrix
     OrigMatrix_ = MatrixWithNewValues; // Reset this pointer if not, then check for other attributes
     if (NumMyRows_ != OrigMatrix_->NumMyRows() ||
-	NumMyCols_ != OrigMatrix_->NumMyCols() ||
-	NumMyRows_ != OrigMatrix_->NumMyRows()) {
+  NumMyCols_ != OrigMatrix_->NumMyCols() ||
+  NumMyRows_ != OrigMatrix_->NumMyRows()) {
       EPETRA_CHK_ERR(-2); // New matrix not compatible with previous
     }
   }
 
   Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(MatrixWithNewValues);
 
-	
+  
   OrigMatrixIsCrsMatrix_ = (OrigCrsMatrix!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
 
 
@@ -304,7 +308,7 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
       EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_));
     }
 
-    int ii = OrigMatrix_->RowMatrixRowMap().GID(i);
+    int ii = OrigMatrix_->RowMatrixRowMap().GID64(i); // FIXME long long
     for (j=0; j<NumIndices; j++) {
       int TransRow = Indices_[j];
       int loc = TransNumNz_[TransRow];
@@ -321,15 +325,13 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
 
   Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
   TransMap.MyGlobalElements(TransMyGlobalEquations_);
-  
   /* Add  rows one-at-a-time */
 
   for (i=0; i<NumMyCols_; i++)
     {
       EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
-						    TransNumNz_[i], TransValues_[i], TransIndices_[i]));
+                TransNumNz_[i], TransValues_[i], TransIndices_[i]));
     }
- 
   // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
   const Epetra_Map& domain_map = OrigMatrix_->OperatorDomainMap();
@@ -355,10 +357,12 @@ Epetra_RowMatrixTransposer::operator=(const Epetra_RowMatrixTransposer& src)
   bool throw_error = true;
   if (throw_error) {
     std::cerr << std::endl
-	      << "Epetra_RowMatrixTransposer::operator= not supported."
-	      <<std::endl;
+        << "Epetra_RowMatrixTransposer::operator= not supported."
+        <<std::endl;
     throw -1;
   }
 
   return(*this);
 }
+
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES

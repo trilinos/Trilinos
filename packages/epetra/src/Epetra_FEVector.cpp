@@ -56,7 +56,7 @@
 //----------------------------------------------------------------------------
 Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& map,
                                  int numVectors,
-				 bool ignoreNonLocalEntries)
+         bool ignoreNonLocalEntries)
   : Epetra_MultiVector(map, numVectors),
     myFirstID_(0),
     myNumIDs_(0),
@@ -69,7 +69,7 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& map,
     nonlocalVector_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
-  myFirstID_ = map.MinMyGID();
+  myFirstID_ = map.MinMyGID64();
   myNumIDs_ = map.NumMyElements();
   nonlocalCoefs_.resize(numVectors);
 }
@@ -90,7 +90,7 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
     nonlocalVector_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
-  myFirstID_ = Map.MinMyGID();
+  myFirstID_ = Map.MinMyGID64();
   myNumIDs_ = Map.NumMyElements();
   nonlocalCoefs_.resize(NumVectors);
 }
@@ -111,7 +111,7 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
     nonlocalVector_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
-  myFirstID_ = Map.MinMyGID();
+  myFirstID_ = Map.MinMyGID64();
   myNumIDs_ = Map.NumMyElements();
   nonlocalCoefs_.resize(NumVectors);
 }
@@ -143,22 +143,26 @@ Epetra_FEVector::~Epetra_FEVector()
 }
 
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FEVector::SumIntoGlobalValues(int numIDs, const int* GIDs,
-			                 const double* values,
+                       const double* values,
                                          int vectorIndex)
 {
   return( inputValues( numIDs, GIDs, values, true, vectorIndex) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FEVector::SumIntoGlobalValues(int numIDs, const long long* GIDs,
-			                 const double* values,
+                       const double* values,
                                          int vectorIndex)
 {
   return( inputValues( numIDs, GIDs, values, true, vectorIndex) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FEVector::SumIntoGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
-			                 const Epetra_SerialDenseVector& values,
+                       const Epetra_SerialDenseVector& values,
                                          int vectorIndex)
 {
   if (GIDs.Length() != values.Length()) {
@@ -168,9 +172,10 @@ int Epetra_FEVector::SumIntoGlobalValues(const Epetra_IntSerialDenseVector& GIDs
   return( inputValues( GIDs.Length(), GIDs.Values(), values.Values(), true,
                        vectorIndex ) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FEVector::SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector& GIDs,
-			                 const Epetra_SerialDenseVector& values,
+                       const Epetra_SerialDenseVector& values,
                                          int vectorIndex)
 {
   if (GIDs.Length() != values.Length()) {
@@ -180,43 +185,51 @@ int Epetra_FEVector::SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector&
   return( inputValues( GIDs.Length(), GIDs.Values(), values.Values(), true,
                        vectorIndex ) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FEVector::SumIntoGlobalValues(int numIDs, const int* GIDs,
-					 const int* numValuesPerID,
-			                 const double* values,
+           const int* numValuesPerID,
+                       const double* values,
                                          int vectorIndex)
 {
   return( inputValues( numIDs, GIDs, numValuesPerID, values, true,
                        vectorIndex) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FEVector::SumIntoGlobalValues(int numIDs, const long long* GIDs,
-					 const int* numValuesPerID,
-			                 const double* values,
+           const int* numValuesPerID,
+                       const double* values,
                                          int vectorIndex)
 {
   return( inputValues( numIDs, GIDs, numValuesPerID, values, true,
                        vectorIndex) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FEVector::ReplaceGlobalValues(int numIDs, const int* GIDs,
-			                 const double* values,
+                       const double* values,
                                          int vectorIndex)
 {
   return( inputValues( numIDs, GIDs, values, false,
                        vectorIndex) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FEVector::ReplaceGlobalValues(int numIDs, const long long* GIDs,
-			                 const double* values,
+                       const double* values,
                                          int vectorIndex)
 {
   return( inputValues( numIDs, GIDs, values, false,
                        vectorIndex) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FEVector::ReplaceGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
-			                 const Epetra_SerialDenseVector& values,
+                       const Epetra_SerialDenseVector& values,
                                          int vectorIndex)
 {
   if (GIDs.Length() != values.Length()) {
@@ -226,9 +239,10 @@ int Epetra_FEVector::ReplaceGlobalValues(const Epetra_IntSerialDenseVector& GIDs
   return( inputValues( GIDs.Length(), GIDs.Values(), values.Values(), false,
                        vectorIndex) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FEVector::ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector& GIDs,
-			                 const Epetra_SerialDenseVector& values,
+                       const Epetra_SerialDenseVector& values,
                                          int vectorIndex)
 {
   if (GIDs.Length() != values.Length()) {
@@ -238,6 +252,7 @@ int Epetra_FEVector::ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector&
   return( inputValues( GIDs.Length(), GIDs.Values(), values.Values(), false,
                        vectorIndex) );
 }
+#endif
 //----------------------------------------------------------------------------
 template<typename int_type>
 int Epetra_FEVector::inputValues(int numIDs,
@@ -271,23 +286,26 @@ int Epetra_FEVector::inputValues(int numIDs,
 }
 
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FEVector::ReplaceGlobalValues(int numIDs, const int* GIDs,
-					 const int* numValuesPerID,
-			                 const double* values,
+           const int* numValuesPerID,
+                       const double* values,
                                          int vectorIndex)
 {
   return( inputValues( numIDs, GIDs, numValuesPerID, values, false,
                        vectorIndex) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FEVector::ReplaceGlobalValues(int numIDs, const long long* GIDs,
-					 const int* numValuesPerID,
-			                 const double* values,
+           const int* numValuesPerID,
+                       const double* values,
                                          int vectorIndex)
 {
   return( inputValues( numIDs, GIDs, numValuesPerID, values, false,
                        vectorIndex) );
 }
+#endif
 //----------------------------------------------------------------------------
 template<typename int_type>
 int Epetra_FEVector::inputValues(int numIDs,
@@ -298,7 +316,7 @@ int Epetra_FEVector::inputValues(int numIDs,
                                  int vectorIndex)
 {
   if(!Map().GlobalIndicesIsType<int_type>())
-	throw ReportError("Epetra_FEVector::inputValues mismatch between argument types (int/long long) and map type.", -1);
+  throw ReportError("Epetra_FEVector::inputValues mismatch between argument types (int/long long) and map type.", -1);
 
   int offset=0;
   for(int i=0; i<numIDs; ++i) {
@@ -343,7 +361,7 @@ int Epetra_FEVector::inputNonlocalValues(int_type GID, int numValues,
                                          int vectorIndex)
 {
   if(!Map().GlobalIndicesIsType<int_type>())
-	throw ReportError("Epetra_FEVector::inputValues mismatch between argument types (int/long long) and map type.", -1);
+  throw ReportError("Epetra_FEVector::inputValues mismatch between argument types (int/long long) and map type.", -1);
 
   
   //find offset of GID in nonlocalIDs_var
@@ -364,8 +382,8 @@ int Epetra_FEVector::inputNonlocalValues(int_type GID, int numValues,
 
     if (numValues != nonlocalElementSize_[offset]) {
       cerr << "Epetra_FEVector ERROR: block-size for GID " << GID << " is "
-	   << numValues<<" which doesn't match previously set block-size of "
-	   << nonlocalElementSize_[offset] << endl;
+     << numValues<<" which doesn't match previously set block-size of "
+     << nonlocalElementSize_[offset] << endl;
       return(-1);
     }
 
@@ -456,10 +474,18 @@ int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode,
                                     bool reuse_map_and_exporter)
 {
   if(Map().GlobalIndicesInt())
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     return GlobalAssemble<int>(mode, reuse_map_and_exporter);
-  
+#else
+    throw ReportError("Epetra_FEVector::GlobalAssemble: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
+
   if(Map().GlobalIndicesLongLong())
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     return GlobalAssemble<long long>(mode, reuse_map_and_exporter);
+#else
+    throw ReportError("Epetra_FEVector::GlobalAssemble: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
 
   throw ReportError("Epetra_FEVector::GlobalAssemble: Internal error, unable to determine global index type of maps", -1);
 }

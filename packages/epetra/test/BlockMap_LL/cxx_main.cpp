@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
     if (verbose) cout << "Test ostream << operator" << endl << flush;
   }
     // Build a small map for test cout.  Use 10 elements from current map
-    long long * MyEls = Map->MyGlobalElements_LL();
+    long long * MyEls = Map->MyGlobalElements64();
     int * MySz  = Map->ElementSizeList();
     int IndBase = Map->IndexBase();
     int MyLen = EPETRA_MIN(10+Comm.MyPID(),Map->NumMyElements());
@@ -329,8 +329,8 @@ int main(int argc, char *argv[]) {
   int numMyElems = Map1->NumMyElements();
   if (MyPID == 1) {
     EPETRA_TEST_ERR(!(numMyElems == 0), returnierr);
-    long long maxgid = Map1->MaxMyGID();
-    long long mingid = Map1->MinMyGID();
+    long long maxgid = Map1->MaxMyGID64();
+    long long mingid = Map1->MinMyGID64();
     EPETRA_TEST_ERR( !(maxgid<mingid), returnierr);
   }
 

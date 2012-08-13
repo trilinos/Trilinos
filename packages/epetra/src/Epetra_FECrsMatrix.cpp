@@ -51,9 +51,9 @@
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_Map& rowMap,
-				       int* NumEntriesPerRow,
-				       bool ignoreNonLocalEntries)
+               const Epetra_Map& rowMap,
+               int* NumEntriesPerRow,
+               bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, rowMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
@@ -70,15 +70,15 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL)
 {
-  myFirstRow_ = rowMap.MinMyGID();
+  myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
 }
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_Map& rowMap,
-				       int NumEntriesPerRow,
-				       bool ignoreNonLocalEntries)
+               const Epetra_Map& rowMap,
+               int NumEntriesPerRow,
+               bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, rowMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
@@ -95,16 +95,16 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL)
 {
-  myFirstRow_ = rowMap.MinMyGID();
+  myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
 }
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_Map& rowMap,
-				       const Epetra_Map& colMap,
-				       int* NumEntriesPerRow,
-				       bool ignoreNonLocalEntries)
+               const Epetra_Map& rowMap,
+               const Epetra_Map& colMap,
+               int* NumEntriesPerRow,
+               bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, rowMap, colMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
@@ -121,16 +121,16 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL)
 {
-  myFirstRow_ = rowMap.MinMyGID();
+  myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
 }
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_Map& rowMap,
-				       const Epetra_Map& colMap,
-				       int NumEntriesPerRow,
-				       bool ignoreNonLocalEntries)
+               const Epetra_Map& rowMap,
+               const Epetra_Map& colMap,
+               int NumEntriesPerRow,
+               bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, rowMap, colMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
@@ -147,14 +147,14 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL)
 {
-  myFirstRow_ = rowMap.MinMyGID();
+  myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
 }
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_CrsGraph& graph,
-				       bool ignoreNonLocalEntries)
+               const Epetra_CrsGraph& graph,
+               bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, graph),
     myFirstRow_(0),
     myNumRows_(0),
@@ -171,7 +171,7 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL)
 {
-  myFirstRow_ = RowMap().MinMyGID();
+  myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
 }
    
@@ -196,7 +196,7 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL)
 {
-  myFirstRow_ = RowMap().MinMyGID();
+  myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
 }
    
@@ -299,313 +299,362 @@ void Epetra_FECrsMatrix::DeleteMemory()
 }
 
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const int* indices,
-					    const double* const* values,
-					    int format)
+              const double* const* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, SUMINTO));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const long long* indices,
-					    const double* const* values,
-					    int format)
+              const double* const* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, SUMINTO));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int numRows, const int* rows,
-					    int numCols, const int* cols,
-					    const double* const* values,
-					    int format)
+              int numCols, const int* cols,
+              const double* const* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, SUMINTO));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int numRows, const long long* rows,
-					    int numCols, const long long* cols,
-					    const double* const* values,
-					    int format)
+              int numCols, const long long* cols,
+              const double* const* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, SUMINTO));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const int* indices,
-					    const double* values,
-					    int format)
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, SUMINTO));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const long long* indices,
-					    const double* values,
-					    int format)
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, SUMINTO));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int numRows, const int* rows,
-					    int numCols, const int* cols,
-					    const double* values,
-					    int format)
+              int numCols, const int* cols,
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, SUMINTO));
 }
 
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int numRows, const long long* rows,
-					    int numCols, const long long* cols,
-					    const double* values,
-					    int format)
+              int numCols, const long long* cols,
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, SUMINTO));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(const Epetra_IntSerialDenseVector& indices,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (indices.Length() != values.M() || indices.Length() != values.N()) {
     return(-1);
   }
 
   return( SumIntoGlobalValues(indices.Length(), indices.Values(),
-			      values.A(), format) );
+            values.A(), format) );
 }
 
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector& indices,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (indices.Length() != values.M() || indices.Length() != values.N()) {
     return(-1);
   }
 
   return( SumIntoGlobalValues(indices.Length(), indices.Values(),
-			      values.A(), format) );
+            values.A(), format) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(const Epetra_IntSerialDenseVector& indices,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (indices.Length() != values.M() || indices.Length() != values.N()) {
     return(-1);
   }
 
   return( InsertGlobalValues(indices.Length(), indices.Values(),
-			      values.A(), format) );
+            values.A(), format) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(const Epetra_LongLongSerialDenseVector& indices,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (indices.Length() != values.M() || indices.Length() != values.N()) {
     return(-1);
   }
 
   return( InsertGlobalValues(indices.Length(), indices.Values(),
-			      values.A(), format) );
+            values.A(), format) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(const Epetra_IntSerialDenseVector& indices,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (indices.Length() != values.M() || indices.Length() != values.N()) {
     return(-1);
   }
 
   return( ReplaceGlobalValues(indices.Length(), indices.Values(),
-			      values.A(), format) );
+            values.A(), format) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector& indices,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (indices.Length() != values.M() || indices.Length() != values.N()) {
     return(-1);
   }
 
   return( ReplaceGlobalValues(indices.Length(), indices.Values(),
-			      values.A(), format) );
+            values.A(), format) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(const Epetra_IntSerialDenseVector& rows,
-					    const Epetra_IntSerialDenseVector& cols,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_IntSerialDenseVector& cols,
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (rows.Length() != values.M() || cols.Length() != values.N()) {
     return(-1);
   }
 
   return( SumIntoGlobalValues(rows.Length(), rows.Values(),
-			      cols.Length(), cols.Values(),
-			      values.A(), format) );
+            cols.Length(), cols.Values(),
+            values.A(), format) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector& rows,
-					    const Epetra_LongLongSerialDenseVector& cols,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_LongLongSerialDenseVector& cols,
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (rows.Length() != values.M() || cols.Length() != values.N()) {
     return(-1);
   }
 
   return( SumIntoGlobalValues(rows.Length(), rows.Values(),
-			      cols.Length(), cols.Values(),
-			      values.A(), format) );
+            cols.Length(), cols.Values(),
+            values.A(), format) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(const Epetra_IntSerialDenseVector& rows,
-					   const Epetra_IntSerialDenseVector& cols,
-					   const Epetra_SerialDenseMatrix& values,
-					   int format)
+             const Epetra_IntSerialDenseVector& cols,
+             const Epetra_SerialDenseMatrix& values,
+             int format)
 {
   if (rows.Length() != values.M() || cols.Length() != values.N()) {
     return(-1);
   }
 
   return( InsertGlobalValues(rows.Length(), rows.Values(),
-			     cols.Length(), cols.Values(),
-			      values.A(), format) );
+           cols.Length(), cols.Values(),
+            values.A(), format) );
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(const Epetra_LongLongSerialDenseVector& rows,
-					   const Epetra_LongLongSerialDenseVector& cols,
-					   const Epetra_SerialDenseMatrix& values,
-					   int format)
+             const Epetra_LongLongSerialDenseVector& cols,
+             const Epetra_SerialDenseMatrix& values,
+             int format)
 {
   if (rows.Length() != values.M() || cols.Length() != values.N()) {
     return(-1);
   }
 
   return( InsertGlobalValues(rows.Length(), rows.Values(),
-			     cols.Length(), cols.Values(),
-			      values.A(), format) );
+           cols.Length(), cols.Values(),
+            values.A(), format) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(const Epetra_IntSerialDenseVector& rows,
-					    const Epetra_IntSerialDenseVector& cols,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_IntSerialDenseVector& cols,
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (rows.Length() != values.M() || cols.Length() != values.N()) {
     return(-1);
   }
 
   return( ReplaceGlobalValues(rows.Length(), rows.Values(),
-			      cols.Length(), cols.Values(),
-			      values.A(), format) );
+            cols.Length(), cols.Values(),
+            values.A(), format) );
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
 int Epetra_FECrsMatrix::ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector& rows,
-					    const Epetra_LongLongSerialDenseVector& cols,
-					    const Epetra_SerialDenseMatrix& values,
-					    int format)
+              const Epetra_LongLongSerialDenseVector& cols,
+              const Epetra_SerialDenseMatrix& values,
+              int format)
 {
   if (rows.Length() != values.M() || cols.Length() != values.N()) {
     return(-1);
   }
 
   return( ReplaceGlobalValues(rows.Length(), rows.Values(),
-			      cols.Length(), cols.Values(),
-			      values.A(), format) );
+            cols.Length(), cols.Values(),
+            values.A(), format) );
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(int numIndices, const int* indices,
-				    const double* const* values,
-				    int format)
+            const double* const* values,
+            int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, INSERT));
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
 int Epetra_FECrsMatrix::InsertGlobalValues(int numIndices, const long long* indices,
-				    const double* const* values,
-				    int format)
+            const double* const* values,
+            int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, INSERT));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const int* rows,
-				    int numCols, const int* cols,
-				    const double* const* values,
-				    int format)
+            int numCols, const int* cols,
+            const double* const* values,
+            int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, INSERT));
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
 int Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const long long* rows,
-				    int numCols, const long long* cols,
-				    const double* const* values,
-				    int format)
+            int numCols, const long long* cols,
+            const double* const* values,
+            int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, INSERT));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(int numIndices, const int* indices,
-					    const double* values,
-					    int format)
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, INSERT));
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
 int Epetra_FECrsMatrix::InsertGlobalValues(int numIndices, const long long* indices,
-					    const double* values,
-					    int format)
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, INSERT));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const int* rows,
-					    int numCols, const int* cols,
-					    const double* values,
-					    int format)
+              int numCols, const int* cols,
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, INSERT));
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
 int Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const long long* rows,
-					    int numCols, const long long* cols,
-					    const double* values,
-					    int format)
+              int numCols, const long long* cols,
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, INSERT));
 }
+#endif
 //----------------------------------------------------------------------------
 template<typename int_type>
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int_type GlobalRow, int NumEntries,
@@ -621,24 +670,30 @@ int Epetra_FECrsMatrix::SumIntoGlobalValues(int_type GlobalRow, int NumEntries,
     return InputNonlocalGlobalValues(GlobalRow, NumEntries, Indices, values, SUMINTO);
 }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
                                             const double* values, const int* Indices)
 {
   if(RowMap().GlobalIndicesInt())
-	return SumIntoGlobalValues<int>(GlobalRow, NumEntries, values, Indices);
+  return SumIntoGlobalValues<int>(GlobalRow, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_FECrsMatrix::SumIntoGlobalValues int version called for a matrix that is not int.", -1);
+  throw ReportError("Epetra_FECrsMatrix::SumIntoGlobalValues int version called for a matrix that is not int.", -1);
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
 
 int Epetra_FECrsMatrix::SumIntoGlobalValues(long long GlobalRow, int NumEntries,
                                             const double* values, const long long* Indices)
 {
   if(RowMap().GlobalIndicesLongLong())
-	return SumIntoGlobalValues<long long>(GlobalRow, NumEntries, values, Indices);
+  return SumIntoGlobalValues<long long>(GlobalRow, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_FECrsMatrix::SumIntoGlobalValues long long version called for a matrix that is not long long.", -1);
+  throw ReportError("Epetra_FECrsMatrix::SumIntoGlobalValues long long version called for a matrix that is not long long.", -1);
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
                                             const double* values, const int* Indices)
 {
@@ -646,6 +701,8 @@ int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
                            NumEntries, Indices, values,
                            Epetra_FECrsMatrix::ROW_MAJOR, INSERT));
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
 int Epetra_FECrsMatrix::InsertGlobalValues(long long GlobalRow, int NumEntries,
                                             const double* values, const long long* Indices)
@@ -654,7 +711,9 @@ int Epetra_FECrsMatrix::InsertGlobalValues(long long GlobalRow, int NumEntries,
                            NumEntries, Indices, values,
                            Epetra_FECrsMatrix::ROW_MAJOR, INSERT));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
                                             double* values, int* Indices)
 {
@@ -662,7 +721,8 @@ int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
                            NumEntries, Indices, values,
                            Epetra_FECrsMatrix::ROW_MAJOR, INSERT));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::InsertGlobalValues(long long GlobalRow, int NumEntries,
                                             double* values, long long* Indices)
 {
@@ -670,7 +730,9 @@ int Epetra_FECrsMatrix::InsertGlobalValues(long long GlobalRow, int NumEntries,
                            NumEntries, Indices, values,
                            Epetra_FECrsMatrix::ROW_MAJOR, INSERT));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
                                             const double* values, const int* Indices)
 {
@@ -678,7 +740,8 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
                            NumEntries, Indices, values,
                            Epetra_FECrsMatrix::ROW_MAJOR, REPLACE));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(long long GlobalRow, int NumEntries,
                                             const double* values, const long long* Indices)
 {
@@ -686,82 +749,95 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(long long GlobalRow, int NumEntries,
                            NumEntries, Indices, values,
                            Epetra_FECrsMatrix::ROW_MAJOR, REPLACE));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const int* indices,
-					    const double* const* values,
-					    int format)
+              const double* const* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, REPLACE));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const long long* indices,
-					    const double* const* values,
-					    int format)
+              const double* const* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, REPLACE));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
-					    int numCols, const int* cols,
-					    const double* const* values,
-					    int format)
+              int numCols, const int* cols,
+              const double* const* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, REPLACE));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const long long* rows,
-					    int numCols, const long long* cols,
-					    const double* const* values,
-					    int format)
+              int numCols, const long long* cols,
+              const double* const* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, REPLACE));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const int* indices,
-					    const double* values,
-					    int format)
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, REPLACE));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const long long* indices,
-					    const double* values,
-					    int format)
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numIndices, indices,
                            numIndices, indices,
                            values, format, REPLACE));
 }
+#endif
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
-					    int numCols, const int* cols,
-					    const double* values,
-					    int format)
+              int numCols, const int* cols,
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, REPLACE));
 }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const long long* rows,
-					    int numCols, const long long* cols,
-					    const double* values,
-					    int format)
+              int numCols, const long long* cols,
+              const double* values,
+              int format)
 {
   return(InputGlobalValues(numRows, rows,
                            numCols, cols,
                            values, format, REPLACE));
 }
+#endif
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete, Epetra_CombineMode combineMode,
                                        bool save_off_and_reuse_map_exporter)
@@ -807,7 +883,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 
     //If sourceMap has global size 0, then no nonlocal data exists and we can
     //skip most of this function.
-    if (sourceMap_->NumGlobalElements() < 1) {
+    if (sourceMap->NumGlobalElements64() < 1) {
       if (callFillComplete) {
         EPETRA_CHK_ERR( FillComplete(domain_map, range_map) );
       }
@@ -913,16 +989,24 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
                                        Epetra_CombineMode combineMode)
 {
   if(!domain_map.GlobalIndicesTypeMatch(range_map))
-     throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for domainMap and rangeMap", -1);
+    throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for domainMap and rangeMap", -1);
 
   if(!RowMap().GlobalIndicesTypeMatch(domain_map))
     throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for row map and incoming rangeMap", -1);
 
   if(RowMap().GlobalIndicesInt())
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     return GlobalAssemble<int>(domain_map, range_map, callFillComplete, combineMode);
-  
+#else
+    throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
+
   if(RowMap().GlobalIndicesLongLong())
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     return GlobalAssemble<long long>(domain_map, range_map, callFillComplete, combineMode);
+#else
+    throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
 
   throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: Internal error, unable to determine global index type of maps", -1);
 }
@@ -931,12 +1015,12 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 template<typename int_type>
 int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
             int numRows, const int_type* rows,
-					  int numCols, const int_type* cols,
-					  const double* values,
-					  int mode)
+            int numCols, const int_type* cols,
+            const double* values,
+            int mode)
 {
   if(!RowMap().GlobalIndicesIsType<int_type>())
-	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues_RowMajor mismatch between argument types (int/long long) and map type.", -1);
+  throw ReportError("Epetra_FECrsMatrix::InputGlobalValues_RowMajor mismatch between argument types (int/long long) and map type.", -1);
 
   int returncode = 0;
   int err = 0;
@@ -984,12 +1068,12 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
 //----------------------------------------------------------------------------
 template<typename int_type>
 int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
-					  int numCols, const int_type* cols,
-					  const double*const* values,
-					  int format, int mode)
+            int numCols, const int_type* cols,
+            const double*const* values,
+            int format, int mode)
 {
   if(!RowMap().GlobalIndicesIsType<int_type>())
-	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
+  throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   if (format != Epetra_FECrsMatrix::ROW_MAJOR &&
       format != Epetra_FECrsMatrix::COLUMN_MAJOR) {
@@ -1034,12 +1118,12 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
 //----------------------------------------------------------------------------
 template<typename int_type>
 int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
-					  int numCols, const int_type* cols,
-					  const double* values,
-					  int format, int mode)
+            int numCols, const int_type* cols,
+            const double* values,
+            int format, int mode)
 {
   if(!RowMap().GlobalIndicesIsType<int_type>())
-	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
+  throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   if (format == Epetra_FECrsMatrix::ROW_MAJOR) {
     return InputGlobalValues_RowMajor(numRows, rows, numCols, cols, values, mode);
@@ -1065,12 +1149,12 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
 //----------------------------------------------------------------------------
 template<typename int_type>
 int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
-						  int numCols, const int_type* cols,
-						  const double* values,
-						  int mode)
+              int numCols, const int_type* cols,
+              const double* values,
+              int mode)
 {
   if(!RowMap().GlobalIndicesIsType<int_type>())
-	throw ReportError("Epetra_FECrsMatrix::InputNonlocalGlobalValues mismatch between argument types (int/long long) and map type.", -1);
+  throw ReportError("Epetra_FECrsMatrix::InputNonlocalGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   // if we already have a nonlocal matrix object, this is easier...
   if (useNonlocalMatrix_) {
@@ -1125,7 +1209,7 @@ template<typename int_type>
 int Epetra_FECrsMatrix::InsertNonlocalRow(int_type row, typename std::vector<int_type>::iterator iter)
 {
   if(!RowMap().GlobalIndicesIsType<int_type>())
-	throw ReportError("Epetra_FECrsMatrix::InsertNonlocalRow mismatch between argument types (int/long long) and map type.", -1);
+  throw ReportError("Epetra_FECrsMatrix::InsertNonlocalRow mismatch between argument types (int/long long) and map type.", -1);
 
   std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
   std::vector<std::vector<int_type> >& nonlocalCols_var = nonlocalCols<int_type>();
@@ -1143,11 +1227,11 @@ int Epetra_FECrsMatrix::InsertNonlocalRow(int_type row, typename std::vector<int
 //----------------------------------------------------------------------------
 template<typename int_type>
 int Epetra_FECrsMatrix::InputNonlocalValue(int rowoffset,
-					   int_type col, double value,
-					   int mode)
+             int_type col, double value,
+             int mode)
 {
   if(!RowMap().GlobalIndicesIsType<int_type>())
-	throw ReportError("Epetra_FECrsMatrix::InputNonlocalValue mismatch between argument types (int/long long) and map type.", -1);
+  throw ReportError("Epetra_FECrsMatrix::InputNonlocalValue mismatch between argument types (int/long long) and map type.", -1);
 
   std::vector<int_type>& colIndices = nonlocalCols<int_type>()[rowoffset];
   std::vector<double>& coefs = nonlocalCoefs_[rowoffset];
@@ -1173,3 +1257,4 @@ int Epetra_FECrsMatrix::InputNonlocalValue(int rowoffset,
 
   return(0);
 }
+

@@ -189,28 +189,54 @@ public:
     return(Matrix().NormOne());
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of nonzero entries in the global matrix.
-  virtual long long NumGlobalNonzeros() const
+  virtual int NumGlobalNonzeros() const
   {
     return(Matrix().NumGlobalNonzeros());
   }
 
   //! Returns the number of global matrix rows.
-  virtual long long NumGlobalRows() const
+  virtual int NumGlobalRows() const
   {
     return(Matrix().NumGlobalRows());
   }
 
   //! Returns the number of global matrix columns.
-  virtual long long NumGlobalCols() const
+  virtual int NumGlobalCols() const
   {
     return(Matrix().NumGlobalCols());
   }
 
   //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-  virtual long long NumGlobalDiagonals() const
+  virtual int NumGlobalDiagonals() const
   {
     return(Matrix().NumGlobalDiagonals());
+  }
+#endif
+
+  //! Returns the number of nonzero entries in the global matrix.
+  virtual long long NumGlobalNonzeros64() const
+  {
+    return(Matrix().NumGlobalNonzeros64());
+  }
+
+  //! Returns the number of global matrix rows.
+  virtual long long NumGlobalRows64() const
+  {
+    return(Matrix().NumGlobalRows64());
+  }
+
+  //! Returns the number of global matrix columns.
+  virtual long long NumGlobalCols64() const
+  {
+    return(Matrix().NumGlobalCols64());
+  }
+
+  //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
+  virtual long long NumGlobalDiagonals64() const
+  {
+    return(Matrix().NumGlobalDiagonals64());
   }
 
   //! Returns the number of nonzero entries in the calling processor's portion of the matrix.

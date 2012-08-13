@@ -231,7 +231,7 @@ int Epetra_FastCrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_V
     if (Importer()!=0) y.Export(*ImportVector_, *Importer(), Add); // Fill y with Values from export vector
   }
 
-  UpdateFlops(2*NumGlobalNonzeros());
+  UpdateFlops(2*NumGlobalNonzeros64());
   return(0);
 }
 
@@ -342,7 +342,7 @@ int Epetra_FastCrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epe
     if (Importer()!=0) Y.Export(*ImportVector_, *Importer(), Add); // Fill Y with Values from export vector
   }
 
-  UpdateFlops(2*NumVectors*NumGlobalNonzeros());
+  UpdateFlops(2*NumVectors*NumGlobalNonzeros64());
   return(0);
 }
 
@@ -445,7 +445,7 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
     }
 
   }
-  UpdateFlops(2*NumGlobalNonzeros());
+  UpdateFlops(2*NumGlobalNonzeros64());
   return(0);
 }
 
@@ -565,6 +565,6 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
     }
   }
   
-  UpdateFlops(2*NumVectors*NumGlobalNonzeros());
+  UpdateFlops(2*NumVectors*NumGlobalNonzeros64());
   return(0);
 }

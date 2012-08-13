@@ -370,10 +370,10 @@ int main(int argc, char *argv[])
       if (verbose) cout << "\n*************** Results for " << nrhs << " RHS with ";
 
       bool StaticProfile = (j!=0);
-      if (verbose) 
-	if (StaticProfile) cout << " static profile\n";
-	else cout << " dynamic profile\n";
-      
+      if (verbose) {
+        if (StaticProfile) cout << " static profile\n";
+        else cout << " dynamic profile\n";
+      }
       GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
 			 Xoff.Values(), Yoff.Values(), nrhs, comm, verbose, summary,
 			 map, A, b, bt, xexact, StaticProfile, false);
@@ -569,7 +569,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   map = new Epetra_Map((long long)-1, numMyEquations, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
   delete [] myGlobalElements;
 
-  long long numGlobalEquations = map->NumGlobalElements();
+  long long numGlobalEquations = map->NumGlobalElements64();
 
   int profile = 0; if (StaticProfile) profile = numPoints;
 
@@ -597,7 +597,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
   for (int i=0; i<numMyEquations; i++) {
 
-    long long rowID = map->GID(i);
+    long long rowID = map->GID64(i);
     int numIndices = 0;
 
     for (int j=0; j<numPoints; j++) {
@@ -735,17 +735,20 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   Epetra_Map ptMap((long long)-1, numMyElements, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
   delete [] myGlobalElements;
 
-  long long numGlobalEquations = ptMap.NumGlobalElements();
+  long long numGlobalEquations = ptMap.NumGlobalElements64();
 
   Epetra_IntVector elementSizes(ptMap); // This vector will have the list of element sizes
   for (i=0; i<numMyElements; i++) 
-    elementSizes[i] = sizes[ptMap.GID(i)%nsizes]; // cycle through sizes array
+    elementSizes[i] = sizes[ptMap.GID64(i)%nsizes]; // cycle through sizes array
 
-  map = new Epetra_BlockMap((long long)-1, numMyElements, ptMap.MyGlobalElements_LL(), elementSizes.Values(),
+  map = new Epetra_BlockMap((long long)-1, numMyElements, ptMap.MyGlobalElements64(), elementSizes.Values(),
 			    ptMap.IndexBase(), ptMap.Comm());
 
   int profile = 0; if (StaticProfile) profile = numPoints;
   
+// FIXME: Won't compile until Epetra_VbrMatrix is modified.
+#if 0
+
   if (MakeLocalOnly) 
     A = new Epetra_VbrMatrix(Copy, *map, *map, profile); // Construct matrix rowmap=colmap
   else
@@ -767,7 +770,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
 
   for (i=0; i<numMyElements; i++) {
-    long long rowID = map->GID(i);
+    long long rowID = map->GID64(i);
     int numIndices = 0;
     int rowDim = sizes[rowID%nsizes];
     for (j=0; j<numPoints; j++) {
@@ -776,8 +779,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 	indices[numIndices++] = colID;
     }
 			
-// Won't compile until Epetra_VbrMatrix is modified.
-//TODO    A->BeginInsertGlobalValues(rowID, numIndices, indices);
+    A->BeginInsertGlobalValues(rowID, numIndices, indices);
 		
     for (j=0; j < numIndices; j++) {
       int colDim = sizes[indices[j]%nsizes];
@@ -824,6 +826,8 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
   A->Multiply(false, *xexact, *b);
   A->Multiply(true, *xexact, *bt);
+
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 
   return;
 }

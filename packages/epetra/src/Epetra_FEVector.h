@@ -89,7 +89,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    */
    Epetra_FEVector(const Epetra_BlockMap& Map,
                    int numVectors=1,
-		   bool ignoreNonLocalEntries=false);
+       bool ignoreNonLocalEntries=false);
 
   //! Set multi-vector values from two-dimensional array.
   /*!
@@ -112,7 +112,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
     See Detailed Description section for further discussion.
   */
   Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
-		     double *A, int MyLDA, int NumVectors,
+         double *A, int MyLDA, int NumVectors,
         bool ignoreNonLocalEntries=false);
   
   //! Set multi-vector values from array of pointers.
@@ -132,7 +132,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
     See Detailed Description section for further discussion.
   */
   Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
-		     double **ArrayOfPointers, int NumVectors,
+         double **ArrayOfPointers, int NumVectors,
             bool ignoreNonLocalEntries=false);
 
   /** Copy constructor. */
@@ -144,12 +144,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    /** Accumulate values into the vector, adding them to any values that
        already exist for the specified indices.
    */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    int SumIntoGlobalValues(int numIDs,
                            const int* GIDs, const double* values,
                            int vectorIndex=0);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    int SumIntoGlobalValues(int numIDs,
                            const long long* GIDs, const double* values,
                            int vectorIndex=0);
+#endif
 
    /** Accumulate values into the vector, adding them to any values that
        already exist for the specified GIDs.
@@ -161,19 +165,23 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
        the accompanying list of GIDs.
    */
    int SumIntoGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
-			   const Epetra_SerialDenseVector& values,
+         const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
    int SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector& GIDs,
-			   const Epetra_SerialDenseVector& values,
+         const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
 
    /** Copy values into the vector overwriting any values that already exist
         for the specified indices.
     */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    int ReplaceGlobalValues(int numIDs, const int* GIDs, const double* values,
                            int vectorIndex=0);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    int ReplaceGlobalValues(int numIDs, const long long* GIDs, const double* values,
                            int vectorIndex=0);
+#endif
 
    /** Copy values into the vector, replacing any values that
        already exist for the specified GIDs.
@@ -185,31 +193,38 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
        the accompanying list of GIDs.
    */
    int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
-			   const Epetra_SerialDenseVector& values,
+         const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
    int ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector& GIDs,
-			   const Epetra_SerialDenseVector& values,
+         const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
-
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    int SumIntoGlobalValues(int numIDs,
                            const int* GIDs,
-			   const int* numValuesPerID,
-			   const double* values,
+         const int* numValuesPerID,
+         const double* values,
                            int vectorIndex=0);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    int SumIntoGlobalValues(int numIDs,
                            const long long* GIDs,
-			   const int* numValuesPerID,
-			   const double* values,
+         const int* numValuesPerID,
+         const double* values,
                            int vectorIndex=0);
+#endif
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    int ReplaceGlobalValues(int numIDs, const int* GIDs,
-			   const int* numValuesPerID,
-			   const double* values,
+         const int* numValuesPerID,
+         const double* values,
                            int vectorIndex=0);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    int ReplaceGlobalValues(int numIDs, const long long* GIDs,
-			   const int* numValuesPerID,
-			   const double* values,
+         const int* numValuesPerID,
+         const double* values,
                            int vectorIndex=0);
+#endif
 
    /** Gather any overlapping/shared data into the non-overlapping partitioning
       defined by the Map that was passed to this vector at construction time.
@@ -249,7 +264,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   template<typename int_type>
   int inputValues(int numIDs,
                   const int_type* GIDs, const int* numValuesPerID,
-		  const double* values,
+      const double* values,
                   bool suminto,
                   int vectorIndex);
 
@@ -259,7 +274,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
 
   template<typename int_type>
   int inputNonlocalValues(int_type GID, int numValues, const double* values,
-			  bool suminto, int vectorIndex);
+        bool suminto, int vectorIndex);
 
   //! Allocate the Map, Export object, and MultiVector for nonlocal data.
   template<typename int_type>

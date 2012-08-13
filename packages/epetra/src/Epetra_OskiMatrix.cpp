@@ -317,7 +317,7 @@ int Epetra_OskiMatrix::Multiply(bool TransA,
   }
   if(ReturnVal)
     std::cerr << "OskiVector multiply error\n";
-  UpdateFlops(2 * NumGlobalNonzeros());
+  UpdateFlops(2 * NumGlobalNonzeros64());
   return ReturnVal;
 }
 
@@ -433,7 +433,7 @@ int Epetra_OskiMatrix::Multiply(bool TransA,
     // Handle case of rangemap being a local replicated map
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
   }
-  UpdateFlops(2 * NumGlobalNonzeros());
+  UpdateFlops(2 * NumGlobalNonzeros64());
   //Y.ResetView(Yp);
   return ReturnVal;
 }
@@ -599,7 +599,7 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
     }
     // Handle case of rangemap being a local replicated map
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(t->Reduce());
-    UpdateFlops(4 * NumGlobalNonzeros());
+    UpdateFlops(4 * NumGlobalNonzeros64());
 
   }
   else {
@@ -612,7 +612,7 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
       oskiX = oski_CreateVecView(xp,x.MyLength(),1);
       oskiY = oski_CreateVecView(yp,y.MyLength(),1);
       ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, oskiX, Beta, oskiY, oskiT);
-      UpdateFlops(4 * NumGlobalNonzeros());
+      UpdateFlops(4 * NumGlobalNonzeros64());
     }
     else {
 
@@ -736,7 +736,7 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
     }
     // Handle case of rangemap being a local replicated map
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(T->Reduce());
-    UpdateFlops(4 * NumGlobalNonzeros());
+    UpdateFlops(4 * NumGlobalNonzeros64());
 
   }
   else {
@@ -749,7 +749,7 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
       oskiX = oski_CreateMultiVecView(*Xp,X.MyLength(),NumVectors, LAYOUT_COLMAJ,LDX);
       oskiY = oski_CreateMultiVecView(*Yp,Y.MyLength(),NumVectors, LAYOUT_COLMAJ,LDY);
       ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, oskiX, Beta, oskiY, oskiT);
-      UpdateFlops(4 * NumGlobalNonzeros() *NumVectors);
+      UpdateFlops(4 * NumGlobalNonzeros64() *NumVectors);
     }
     else {
       if(T == NULL) {
@@ -864,7 +864,7 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(z.Reduce());
 
-    UpdateFlops(4 * NumGlobalNonzeros());
+    UpdateFlops(4 * NumGlobalNonzeros64());
   }
   //  ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), OP_TRANS, Omega, (*wCast).Oski_View(), Zeta, (*zCast).Oski_View());
   else {
@@ -919,7 +919,7 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(z.Reduce());
 
-    UpdateFlops(4 * NumGlobalNonzeros());
+    UpdateFlops(4 * NumGlobalNonzeros64());
 
   }
   if(ReturnVal)
@@ -1025,7 +1025,7 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Z.Reduce());
 
-    UpdateFlops(4 * NumGlobalNonzeros());
+    UpdateFlops(4 * NumGlobalNonzeros64());
   }
   //  ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), OP_TRANS, Omega, (*wCast).Oski_View(), Zeta, (*zCast).Oski_View());
   else {
@@ -1078,7 +1078,7 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Z.Reduce());
 
-    UpdateFlops(4 * NumGlobalNonzeros());
+    UpdateFlops(4 * NumGlobalNonzeros64());
 
   }
   return ReturnVal;
@@ -1147,7 +1147,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
     if(&T == NULL)
       delete(Tptr);
   }    
-  UpdateFlops(2 * Power * NumGlobalNonzeros());
+  UpdateFlops(2 * Power * NumGlobalNonzeros64());
   return ReturnVal;
 }
 

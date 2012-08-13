@@ -117,7 +117,7 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   //above-described finite-element problem.
 
   int indexBase = 0, ierr = 0;
-  int myNodes[4];
+  long long myNodes[4];
   double values[9];
   values[0] = 2.0;
   values[1] = 1.0;
@@ -223,7 +223,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
   if (localProc == 0) {
     int numMyNodes = 3;
-    int* myNodes = new int[numMyNodes];
+    long long* myNodes = new long long[numMyNodes];
     myNodes[0] = 0;
     myNodes[1] = 1;
     myNodes[2] = 3;
@@ -262,7 +262,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
   }
   else {
     int numMyNodes = 1;
-    int* myNodes = new int[numMyNodes];
+    long long* myNodes = new long long[numMyNodes];
     myNodes[0] = 2;
 
     Epetra_Map Map((long long)-1, numMyNodes, myNodes, indexBase, map.Comm());
@@ -272,7 +272,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
     delete [] myNodes;
     numMyNodes = 3;
-    myNodes = new int[numMyNodes];
+    myNodes = new long long[numMyNodes];
     myNodes[0] = 1;
     myNodes[1] = 2;
     myNodes[2] = 3;
@@ -328,7 +328,7 @@ int Drumm3(const Epetra_Map& map, bool verbose)
   double ElementArea = 0.5;
   
   int NumCols = 3;
-  int* Indices = new int[NumCols];
+  long long* Indices = new long long[NumCols];
 
   if(MyPID==0)  // indices corresponding to element 0 on processor 0
   {
@@ -827,8 +827,8 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
 
   EPETRA_CHK_ERR( A.GlobalAssemble(domainmap, map) );
 
-  long long numGlobalCols = A.NumGlobalCols();
-  long long numGlobalNNZ = A.NumGlobalNonzeros();
+  long long numGlobalCols = A.NumGlobalCols64();
+  long long numGlobalNNZ = A.NumGlobalNonzeros64();
 
   if (numGlobalCols != numcols ||
       numGlobalNNZ != numGlobalRows*numcols) {

@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   Epetra_Map Map(NumGlobalElements, IndexBase, Comm);
   int NumMyElements = Map.NumMyElements();
-  long long * MyGlobalElements = Map.MyGlobalElements_LL();
+  long long * MyGlobalElements = Map.MyGlobalElements64();
 
   Epetra_CrsMatrix A(Copy,Map,0);
   Epetra_Vector b(Map);

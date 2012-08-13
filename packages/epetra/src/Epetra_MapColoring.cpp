@@ -46,11 +46,12 @@
 #include "Epetra_MapColoring.h"
 #include "Epetra_Util.h"
 
-  // TODO this file needs to be changed for long long
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
+// FIXME long long : whole file
 
 //=============================================================================
 Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& map, int * elementColors, 
-				       const int defaultColor)
+               const int defaultColor)
   : Epetra_DistObject(map, "Epetra::MapColoring"),
     DefaultColor_(defaultColor),
     ColorIDs_(0),
@@ -68,7 +69,7 @@ Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& map, int * element
 }
 //=============================================================================
 Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& map,
-				       const int defaultColor)
+               const int defaultColor)
   : Epetra_DistObject(map, "Epetra::MapColoring"),
     DefaultColor_(defaultColor),
     ColorIDs_(0),
@@ -234,10 +235,10 @@ Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
   if (NumElements>0) {
     ColorElementLIDs = ColorLIDList(Color);
     ColorElementGIDs = new int[NumElements];
-    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]); // TODO long long
+    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID64(ColorElementLIDs[i]); // FIXME long long
   }
-  Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, //TODO long long
-				    Map().IndexBase(), Map().Comm());
+  Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, // FIXME long long
+            Map().IndexBase(), Map().Comm());
   if (ColorElementGIDs!=0) delete [] ColorElementGIDs;
   return(map);
 }
@@ -257,16 +258,16 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
     ColorElementLIDs = ColorLIDList(Color);
     ColorElementSizes = new int[NumElements];
     ColorElementGIDs = new int[NumElements];
-    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);// TODO long long
+    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID64(ColorElementLIDs[i]);// FIXME long long
   }
   int * MapElementSizes = Map().ElementSizeList();
 
   {for (int i=0; i<NumElements; i++) 
     ColorElementSizes[i] = MapElementSizes[ColorElementLIDs[i]];}
 
-  Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementGIDs, //TODO long long
-					      ColorElementSizes,
-					      Map().IndexBase(), Map().Comm());
+  Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementGIDs, // FIXME long long
+                ColorElementSizes,
+                Map().IndexBase(), Map().Comm());
 
   if (ColorElementGIDs!=0) delete [] ColorElementGIDs;
   if (ColorElementSizes!=0) delete [] ColorElementSizes;
@@ -289,35 +290,42 @@ void Epetra_MapColoring::Print(ostream& os) const {
       int NumMyElements1 =Map(). NumMyElements();
 
       if (MyPID==0) {
-	os.width(8);
-	os <<  "     MyPID"; os << "    ";
-	os.width(12);
-	os <<  "GID  ";
-	os.width(20);
-	os <<  "Color  ";
-	os << endl;
+  os.width(8);
+  os <<  "     MyPID"; os << "    ";
+  os.width(12);
+  os <<  "GID  ";
+  os.width(20);
+  os <<  "Color  ";
+  os << endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
-	os.width(10);
-	os <<  MyPID; os << "    ";
-	os.width(10);
+  os.width(10);
+  os <<  MyPID; os << "    ";
+  os.width(10);
 
-	  if(Map().GlobalIndicesInt())
-	  {
-		int * MyGlobalElements1 = Map().MyGlobalElements();
-		os << MyGlobalElements1[i] << "    ";
-	  }
-	  else if(Map().GlobalIndicesLongLong())
-	  {
-		long long * MyGlobalElements1 = Map().MyGlobalElements_LL();
-		os << MyGlobalElements1[i] << "    ";
-	  }
-	  else
-		throw ReportError("Epetra_MapColoring::Print ERROR, Don't know map global index type.",-1);
+    if(Map().GlobalIndicesInt()) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+        int * MyGlobalElements1 = Map().MyGlobalElements();
+        os << MyGlobalElements1[i] << "    ";
+#else
+        throw ReportError("Epetra_MapColoring::Print: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
+    }
+    else if(Map().GlobalIndicesLongLong())
+    {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    long long * MyGlobalElements1 = Map().MyGlobalElements64();
+    os << MyGlobalElements1[i] << "    ";
+#else
+        throw ReportError("Epetra_MapColoring::Print: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
+    }
+    else
+    throw ReportError("Epetra_MapColoring::Print: ERROR, Don't know map global index type.",-1);
 
-	os.width(20);
-	os <<  ElementColors_[i];
-	os << endl;
+  os.width(20);
+  os <<  ElementColors_[i];
+  os << endl;
       }
       os << flush; 
     }
@@ -339,34 +347,34 @@ void Epetra_MapColoring::Print(ostream& os) const {
       if (NumColors()==0) os << " No colored elements on processor " << MyPID << endl;
       else {
         os << "Number of colors in map = " << NumColors() << endl
-	         << "Default color           = " << DefaultColor() << endl << endl;
+           << "Default color           = " << DefaultColor() << endl << endl;
         if (MyPID==0) {
-	        os.width(8);
-	        os <<  "     MyPID"; os << "    ";
-	        os.width(12);
-	        os <<  "LID  ";
-	        os.width(20);
-	        os <<  "Color  ";
-	        os << endl;
+          os.width(8);
+          os <<  "     MyPID"; os << "    ";
+          os.width(12);
+          os <<  "LID  ";
+          os.width(20);
+          os <<  "Color  ";
+          os << endl;
         }
-	      int * ColorValues = ListOfColors();
-	      for (int ii=0; ii<NumColors(); ii++) {
-	        int CV = ColorValues[ii];
-	  int ColorCount = NumElementsWithColor(CV);
-	  int * LIDList = ColorLIDList(CV);
-	  
-	  
-	  for (int i=0; i < ColorCount; i++) {
-	    os.width(10);
-	    os <<  MyPID; os << "    ";
-	    os.width(10);
-	    os << LIDList[i] << "    ";
-	    os.width(20);
-	    os << CV;
-	    os << endl;
-	  }
-	  os << flush; 
-	}
+        int * ColorValues = ListOfColors();
+        for (int ii=0; ii<NumColors(); ii++) {
+          int CV = ColorValues[ii];
+    int ColorCount = NumElementsWithColor(CV);
+    int * LIDList = ColorLIDList(CV);
+    
+    
+    for (int i=0; i < ColorCount; i++) {
+      os.width(10);
+      os <<  MyPID; os << "    ";
+      os.width(10);
+      os << LIDList[i] << "    ";
+      os.width(20);
+      os << CV;
+      os << endl;
+    }
+    os << flush; 
+  }
       }
     }
     // Do a few global ops to give I/O a chance to complete
@@ -393,9 +401,9 @@ int Epetra_MapColoring::CheckSizes(const Epetra_SrcDistObject& Source) {
 //=========================================================================
 int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
                                        int NumSameIDs, 
-				       int NumPermuteIDs,
+               int NumPermuteIDs,
                                        int * PermuteToLIDs, 
-				       int *PermuteFromLIDs,
+               int *PermuteFromLIDs,
                                        const Epetra_OffsetIndex * Indexor)
 {
   (void)Indexor;
@@ -408,7 +416,7 @@ int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
   if (NumSameIDs>0)
     if (To!=From) {
       for (int j=0; j<NumSameIDs; j++)
-	To[j] = From[j];
+  To[j] = From[j];
     }
   // Do local permutation next
   if (NumPermuteIDs>0)
@@ -422,11 +430,11 @@ int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
 int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source,
                                        int NumExportIDs,
                                        int * ExportLIDs,
-				       int & LenExports,
+               int & LenExports,
                                        char * & Exports,
-				       int & SizeOfPacket,
-				       int * Sizes,
-				       bool & VarSizes,
+               int & SizeOfPacket,
+               int * Sizes,
+               bool & VarSizes,
                                        Epetra_Distributor & Distor)
 {
   (void)Sizes;
@@ -458,13 +466,13 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source,
 
 //=========================================================================
 int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
-					 int NumImportIDs,
+           int NumImportIDs,
                                          int * ImportLIDs, 
                                          int LenImports,
-					 char * Imports,
+           char * Imports,
                                          int & SizeOfPacket, 
-					 Epetra_Distributor & Distor, 
-					 Epetra_CombineMode CombineMode,
+           Epetra_Distributor & Distor, 
+           Epetra_CombineMode CombineMode,
                                          const Epetra_OffsetIndex * Indexor )
 {
   (void)Source;
@@ -501,3 +509,5 @@ int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   
   return(0);
 }
+
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES

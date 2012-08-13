@@ -103,6 +103,7 @@ bool compare_matrices(const Epetra_CrsMatrix& A, const Epetra_CrsMatrix& B)
 
   if(Amap.GlobalIndicesInt())
   {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int* rows = Amap.MyGlobalElements();
  
     Epetra_Util util;
@@ -143,9 +144,14 @@ bool compare_matrices(const Epetra_CrsMatrix& A, const Epetra_CrsMatrix& B)
         return(false);
       }
     }
+#else
+    throw "compare_matrices: GlobalIndices int but not API for it.";
+#endif
   }
   else if(Amap.GlobalIndicesLongLong()) {
-    long long* rows = Amap.MyGlobalElements_LL();
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+    long long* rows = Amap.MyGlobalElements64();
  
     Epetra_Util util;
  
@@ -185,6 +191,9 @@ bool compare_matrices(const Epetra_CrsMatrix& A, const Epetra_CrsMatrix& B)
         return(false);
       }
     }
+#else
+    throw "compare_matrices: GlobalIndices long long but not API for it.";
+#endif
   }
   else {
     return(false);

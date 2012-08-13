@@ -553,21 +553,21 @@ int main(int argc, char *argv[])
 
   double * RowLeftScaleValues = new double[NumMyRows2];
   double * ColRightScaleValues = new double[NumMyElements2];
-  long long RowLoopLength = RowMap.MaxMyGID()-RowMap.MinMyGID()+1;
+  long long RowLoopLength = RowMap.MaxMyGID64()-RowMap.MinMyGID64()+1;
   for (long long i=0; i<RowLoopLength; i++)
-    RowLeftScaleValues[i] = (double) ((i + RowMap.MinMyGID() ) % 2 + 1);
+    RowLeftScaleValues[i] = (double) ((i + RowMap.MinMyGID64() ) % 2 + 1);
   // For the column map, all procs own all elements
   for (int  i=0; i<NumMyElements2;i++)
     ColRightScaleValues[i] = i % 2 + 1;
 
-  long long RangeLoopLength = RangeMap.MaxMyGID()-RangeMap.MinMyGID()+1;
+  long long RangeLoopLength = RangeMap.MaxMyGID64()-RangeMap.MinMyGID64()+1;
   double * RangeLeftScaleValues = new double[(std::size_t) RangeLoopLength];
-  long long DomainLoopLength = DomainMap.MaxMyGID()-DomainMap.MinMyGID()+1;
+  long long DomainLoopLength = DomainMap.MaxMyGID64()-DomainMap.MinMyGID64()+1;
    double * DomainRightScaleValues = new double[(std::size_t) DomainLoopLength];
   for (long long i=0; i<RangeLoopLength; i++)
-    RangeLeftScaleValues[i] = 1.0/((i + RangeMap.MinMyGID() ) % 2 + 1);
+    RangeLeftScaleValues[i] = 1.0/((i + RangeMap.MinMyGID64() ) % 2 + 1);
   for (long long  i=0; i<DomainLoopLength;i++)
-    DomainRightScaleValues[i] = 1.0/((i + DomainMap.MinMyGID() ) % 2 + 1);
+    DomainRightScaleValues[i] = 1.0/((i + DomainMap.MinMyGID64() ) % 2 + 1);
                                                                                 
   Epetra_Vector xRow(View,RowMap,RowLeftScaleValues);
   Epetra_Vector xCol(View,ColMap,ColRightScaleValues);
@@ -898,7 +898,7 @@ cout << A2;
     if (verbose) cout << endl << "InvRowSums tests PASSED" << endl << endl;
 
   A3cm.PutScalar(2.0);
-  long long nnz_A3cm = A3cm.Graph().NumGlobalNonzeros();
+  long long nnz_A3cm = A3cm.Graph().NumGlobalNonzeros64();
   double check_frobnorm = sqrt(nnz_A3cm*4.0);
   double frobnorm = A3cm.NormFrobenius();
 
@@ -990,28 +990,28 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, long long NumGlobalRows1, int Num
 
   EPETRA_TEST_ERR(!(NumMyNonzeros==NumMyNonzeros1),ierr);
 
-  long long NumGlobalRows = A.NumGlobalRows();
+  long long NumGlobalRows = A.NumGlobalRows64();
   if (verbose) cout << "\n\nNumber of global Rows = " << NumGlobalRows << endl<< endl;
 
   EPETRA_TEST_ERR(!(NumGlobalRows==NumGlobalRows1),ierr);
 
-  long long NumGlobalNonzeros = A.NumGlobalNonzeros();
+  long long NumGlobalNonzeros = A.NumGlobalNonzeros64();
   if (verbose) cout << "\n\nNumber of global Nonzero entries = " << NumGlobalNonzeros << endl<< endl;
 
   EPETRA_TEST_ERR(!(NumGlobalNonzeros==NumGlobalNonzeros1),ierr);
 
   // GlobalRowView should be illegal (since we have local indices)
 
-  EPETRA_TEST_ERR(!(A.ExtractGlobalRowView(A.RowMap().MaxMyGID(), NumGlobalIndices, GlobalViewValues, GlobalViewIndices)==-2),ierr);
+  EPETRA_TEST_ERR(!(A.ExtractGlobalRowView(A.RowMap().MaxMyGID64(), NumGlobalIndices, GlobalViewValues, GlobalViewIndices)==-2),ierr);
 
   // Other binary tests
 
   EPETRA_TEST_ERR(A.NoDiagonal(),ierr);
   EPETRA_TEST_ERR(!(A.Filled()),ierr);
-  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID())),ierr);
-  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID())),ierr);
-  EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID()),ierr);
-  EPETRA_TEST_ERR(A.MyGRID(-1+A.RowMap().MinMyGID()),ierr);
+  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID64())),ierr);
+  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID64())),ierr);
+  EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID64()),ierr);
+  EPETRA_TEST_ERR(A.MyGRID(-1+A.RowMap().MinMyGID64()),ierr);
   EPETRA_TEST_ERR(!(A.MyLRID(0)),ierr);
   EPETRA_TEST_ERR(!(A.MyLRID(NumMyRows-1)),ierr);
   EPETRA_TEST_ERR(A.MyLRID(-1),ierr);
@@ -1019,7 +1019,7 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, long long NumGlobalRows1, int Num
 
   forierr = 0;
   for (int i = 0; i < NumMyRows; i++) {
-    long long Row = A.GRID(i);
+    long long Row = A.GRID64(i);
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyValues, GlobalCopyIndices);
     A.ExtractMyRowView(i, NumMyIndices, MyViewValues, MyViewIndices); // this is where the problem comes from
     forierr += !(NumGlobalIndices == NumMyIndices);
@@ -1027,7 +1027,7 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, long long NumGlobalRows1, int Num
 			forierr += !(MyViewIndices[j-1] < MyViewIndices[j]); // this is where the test fails
 		}
     for(int j = 0; j < NumGlobalIndices; j++) {
-			forierr += !(GlobalCopyIndices[j] == A.GCID(MyViewIndices[j]));
+			forierr += !(GlobalCopyIndices[j] == A.GCID64(MyViewIndices[j]));
 			forierr += !(A.LCID(GlobalCopyIndices[j]) == MyViewIndices[j]);
 			forierr += !(GlobalCopyValues[j] == MyViewValues[j]);
     }
@@ -1036,14 +1036,14 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, long long NumGlobalRows1, int Num
 
   forierr = 0;
   for (int i = 0; i < NumMyRows; i++) {
-    long long Row = A.GRID(i);
+    long long Row = A.GRID64(i);
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyValues, GlobalCopyIndices);
     A.ExtractMyRowCopy(i, MaxNumIndices, NumMyIndices, MyCopyValues, MyCopyIndices);
     forierr += !(NumGlobalIndices == NumMyIndices);
     for (int j = 1; j < NumMyIndices; j++) 
 			forierr += !(MyCopyIndices[j-1] < MyCopyIndices[j]);
     for (int j = 0; j < NumGlobalIndices; j++) {
-			forierr += !(GlobalCopyIndices[j] == A.GCID(MyCopyIndices[j]));
+			forierr += !(GlobalCopyIndices[j] == A.GCID64(MyCopyIndices[j]));
 			forierr += !(A.LCID(GlobalCopyIndices[j]) == MyCopyIndices[j]);
 			forierr += !(GlobalCopyValues[j] == MyCopyValues[j]);
     }
@@ -1103,4 +1103,5 @@ int check_graph_sharing(Epetra_Comm& Comm)
 
   return(0);
 }
+
 

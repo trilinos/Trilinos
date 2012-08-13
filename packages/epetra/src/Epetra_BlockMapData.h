@@ -80,7 +80,9 @@ class Epetra_BlockMapData : public Epetra_Data {
 
   Epetra_IntSerialDenseVector LID_;
   Epetra_IntSerialDenseVector MyGlobalElements_int_;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_LongLongSerialDenseVector MyGlobalElements_LL_;
+#endif
   Epetra_IntSerialDenseVector FirstPointInElementList_;
   Epetra_IntSerialDenseVector ElementSizeList_;
   Epetra_IntSerialDenseVector PointToElementList_;
@@ -114,9 +116,9 @@ class Epetra_BlockMapData : public Epetra_Data {
   int LastContiguousGIDLoc_;
   Epetra_HashTable<int> * LIDHash_;
 
-	// these are intentionally declared but not defined. See Epetra Developer's Guide for details.
+  // these are intentionally declared but not defined. See Epetra Developer's Guide for details.
   Epetra_BlockMapData(const Epetra_BlockMapData & BlockMapData);
-	Epetra_BlockMapData& operator=(const Epetra_BlockMapData & BlockMapData);
+  Epetra_BlockMapData& operator=(const Epetra_BlockMapData & BlockMapData);
 
 };
 #endif /* EPETRA_BLOCKMAPDATA_H */

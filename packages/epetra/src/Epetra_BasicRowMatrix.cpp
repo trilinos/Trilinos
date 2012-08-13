@@ -182,7 +182,7 @@ void Epetra_BasicRowMatrix::ComputeNumericConstants() const {
   else
     x2.MaxValue(&NormOne_); // Find max
 
-  UpdateFlops(2*NumGlobalNonzeros());
+  UpdateFlops(2*NumGlobalNonzeros64());
   HaveNumericConstants_ = true;
 }
 //=============================================================================
@@ -199,11 +199,11 @@ int Epetra_BasicRowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
 
   for(int i = 0; i < NumMyRows_; i++) {
     EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
-    long long ii = RowMatrixRowMap().GID(i);
+    long long ii = RowMatrixRowMap().GID64(i);
     
     Diagonal[i] = 0.0;
     for(int j = 0; j < NumEntries; j++) {
-      if(ii == RowMatrixColMap().GID(Indices[j])) {
+      if(ii == RowMatrixColMap().GID64(Indices[j])) {
 	Diagonal[i] = Values[j];
 	break;
       }
@@ -258,7 +258,7 @@ int Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector & x) const {
     EPETRA_CHK_ERR(-2); // The map of x must be the RowMap or RangeMap of A.
   }
   EPETRA_CHK_ERR(ierr);  
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   return(0);
 }
 //=============================================================================
@@ -282,7 +282,7 @@ int Epetra_BasicRowMatrix::LeftScale(const Epetra_Vector & x) {
     EPETRA_CHK_ERR(-2); // The Map of x must be the RowMap or RangeMap of A.
   }
   HaveNumericConstants_ = false;
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   return(0);
 }
 //=============================================================================
@@ -332,7 +332,7 @@ int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
   }
 
   EPETRA_CHK_ERR(ierr);
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   return(0);
 }
 //=============================================================================
@@ -356,7 +356,7 @@ int Epetra_BasicRowMatrix::RightScale(const Epetra_Vector & x) {
     EPETRA_CHK_ERR(-2); // The Map of x must be the RowMap or RangeMap of A.
   }
   HaveNumericConstants_ = false;
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   return(0);
 }
 //=============================================================================
@@ -446,7 +446,7 @@ int Epetra_BasicRowMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Ep
     if (!OperatorDomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
   }
 
-  UpdateFlops(2*NumVectors*NumGlobalNonzeros());
+  UpdateFlops(2*NumVectors*NumGlobalNonzeros64());
   return(0);
 }
 //=======================================================================================================
@@ -487,9 +487,9 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       if (MyPID==0) {
-    os <<    "\nNumber of Global Rows         = "; os << NumGlobalRows();    os << endl;
-    os <<    "Number of Global Cols         = "; os << NumGlobalCols();    os << endl;
-    os <<    "Number of Global Diagonals    = "; os << NumGlobalDiagonals(); os << endl;
+    os <<    "\nNumber of Global Rows         = "; os << NumGlobalRows64();    os << endl;
+    os <<    "Number of Global Cols         = "; os << NumGlobalCols64();    os << endl;
+    os <<    "Number of Global Diagonals    = "; os << NumGlobalDiagonals64(); os << endl;
 	os <<    "Number of Global Nonzeros     = "; os << NumGlobalNonzeros_; os << endl;
       }
       
@@ -526,10 +526,10 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
       
       for(int i = 0; i < NumMyRows_; i++) {
 	ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values());
-	long long Row = RowMatrixRowMap().GID(i); // Get global row number
+	long long Row = RowMatrixRowMap().GID64(i); // Get global row number
 	
 	for (int j = 0; j < NumEntries ; j++) {   
-	  long long Index = RowMatrixColMap().GID(Indices[j]);
+	  long long Index = RowMatrixColMap().GID64(Indices[j]);
 	  os.width(8);
 	  os <<  MyPID ; os << "    ";	
 	  os.width(10);

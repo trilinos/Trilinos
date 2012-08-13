@@ -46,6 +46,8 @@
 
 #include "Epetra_Object.h" 
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
 //! Epetra_LongLongSerialDenseMatrix: A class for constructing and using general dense integer matrices.
 
 /*! The Epetra_LongLongSerialDenseMatrix class enables the construction and use of integer-valued, general
@@ -88,7 +90,7 @@ These exceptions will be integer values as follows:
 <ol>
   <li> -1  Invalid row specified.
   <li> -2  Invalid column specified.
-	<li> -5  Invalid assignment (type mismatch).
+  <li> -5  Invalid assignment (type mismatch).
   <li> -99 Internal Epetra_LongLongSerialDenseMatrix error.  Contact developer.
 </ol>
 
@@ -136,8 +138,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
            NumCols - Number of columns in object.
 
     Epetra_SerialDenseMatrix objects defined by the shaped constructor are already shaped to the
-		dimensions given as a parameters. All values are initialized to 0. Calling this constructor 
-		is equivalent to using the default constructor, and then calling the Shape function on it.
+    dimensions given as a parameters. All values are initialized to 0. Calling this constructor 
+    is equivalent to using the default constructor, and then calling the Shape function on it.
     Values should be defined by using the [] or () operators.
    */
   Epetra_LongLongSerialDenseMatrix(int NumRows, int NumCols);
@@ -148,7 +150,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
            Epetra_DataAccess - Enumerated type set to Copy or View.
     \param In
            A - Pointer to an array of integer numbers.  The first vector starts at A.
-	   The second vector starts at A+LDA, the third at A+2*LDA, and so on.
+     The second vector starts at A+LDA, the third at A+2*LDA, and so on.
     \param In
            LDA - The "Leading Dimension", or stride between vectors in memory.
     \param In 
@@ -156,14 +158,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
     \param In 
            NumCols - Number of columns in object.
 
-	   See Detailed Description section for further discussion.
+     See Detailed Description section for further discussion.
   */
   Epetra_LongLongSerialDenseMatrix(Epetra_DataAccess CV, long long* A, int LDA, int NumRows, int NumCols);
   
   //! Epetra_LongLongSerialDenseMatrix copy constructor.
-	/*!
-		This matrix will take on the data access mode of the Source matrix.
-	*/
+  /*!
+    This matrix will take on the data access mode of the Source matrix.
+  */
   Epetra_LongLongSerialDenseMatrix(const Epetra_LongLongSerialDenseMatrix& Source);
 
   //! Epetra_LongLongSerialDenseMatrix destructor.  
@@ -179,9 +181,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
     \param In 
            NumCols - Number of columns in object.
 
-	   Allows user to define the dimensions of a Epetra_LongLongSerialDenseMatrix at any point. This function can
-	   be called at any point after construction.  Any values that were previously in this object are
-	   destroyed and the resized matrix starts off with all zero values.
+     Allows user to define the dimensions of a Epetra_LongLongSerialDenseMatrix at any point. This function can
+     be called at any point after construction.  Any values that were previously in this object are
+     destroyed and the resized matrix starts off with all zero values.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -194,10 +196,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
     \param In 
            NumCols - Number of columns in object.
 
-	   Allows user to define the dimensions of a Epetra_LongLongSerialDenseMatrix at any point. This function can
-	   be called at any point after construction.  Any values that were previously in this object are
-	   copied into the new shape.  If the new shape is smaller than the original, the upper left portion
-	   of the original matrix (the principal submatrix) is copied to the new matrix.
+     Allows user to define the dimensions of a Epetra_LongLongSerialDenseMatrix at any point. This function can
+     be called at any point after construction.  Any values that were previously in this object are
+     copied into the new shape.  If the new shape is smaller than the original, the upper left portion
+     of the original matrix (the principal submatrix) is copied to the new matrix.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -219,7 +221,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
   //! Copy from one matrix to another.
   /*!
     The operator= allows one to copy the values from one existing LongLongSerialDenseMatrix to another.
-		The left hand side matrix will take on the data access mode of the right hand side matrix. 
+    The left hand side matrix will take on the data access mode of the right hand side matrix. 
 
     \return Values of the left hand side matrix are modified by the values of the right hand side matrix.
   */
@@ -245,7 +247,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
 
     \return Element from the specified row and column.
 
-		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
+    \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     long long& operator () (int RowIndex, int ColIndex);
 
@@ -257,7 +259,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
 
     \return Element from the specified row and column.
 
-		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
+    \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const long long& operator () (int RowIndex, int ColIndex) const;
 
@@ -270,7 +272,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
     \return Pointer to address of specified column.
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
-		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
+    \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     long long* operator [] (int ColIndex);
 
@@ -283,14 +285,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
     \return Pointer to address of specified column.
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
-		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
+    \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const long long* operator [] (int ColIndex) const;
 
   //! Set matrix values to random numbers.
   /*! 
-		LongLongSerialDenseMatrix uses the random number generator provided by Epetra_Util.
-		The matrix values will be set to random values on the interval (0, 2^31 - 1).
+    LongLongSerialDenseMatrix uses the random number generator provided by Epetra_Util.
+    The matrix values will be set to random values on the interval (0, 2^31 - 1).
 
     \return Integer error code, set to 0 if successful.
   */
@@ -311,8 +313,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
   //! Returns the leading dimension of the \e this matrix.
   int LDA() const {return(LDA_);};
 
-	//! Returns the data access mode of the \e this matrix.
-	Epetra_DataAccess CV() const {return(CV_);};
+  //! Returns the data access mode of the \e this matrix.
+  Epetra_DataAccess CV() const {return(CV_);};
   //@}
   
   //! @name I/O methods
@@ -325,33 +327,33 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
   //@{ 
 
   //! Reset an existing LongLongSerialDenseMatrix to point to another Matrix.
-	/*! Allows an existing LongLongSerialDenseMatrix to become a View of another
-		matrix's data, regardless of the DataAccess mode of the Source matrix.
-		It is assumed that the Source matrix is an independent matrix, and 
-		no checking is done to verify this.
+  /*! Allows an existing LongLongSerialDenseMatrix to become a View of another
+    matrix's data, regardless of the DataAccess mode of the Source matrix.
+    It is assumed that the Source matrix is an independent matrix, and 
+    no checking is done to verify this.
 
-		This is used by Epetra_CrsGraph in the OptimizeStorage method. It is used so that
-		an existing (Copy) matrix can be converted to a View. This frees up
-		memory that CrsGraph no longer needs.
-		
-		@param Source The LongLongSerialDenseMatrix this will become a view of.
-		
-		\return Integer error code, set to 0 if successful, and set to -1 
-		if a type mismatch occured.
-		
-		\warning This method is extremely dangerous and should only be used by experts.
-	*/
-	
-	int MakeViewOf(const Epetra_LongLongSerialDenseMatrix& Source);
-	//@}
+    This is used by Epetra_CrsGraph in the OptimizeStorage method. It is used so that
+    an existing (Copy) matrix can be converted to a View. This frees up
+    memory that CrsGraph no longer needs.
+    
+    @param Source The LongLongSerialDenseMatrix this will become a view of.
+    
+    \return Integer error code, set to 0 if successful, and set to -1 
+    if a type mismatch occured.
+    
+    \warning This method is extremely dangerous and should only be used by experts.
+  */
+  
+  int MakeViewOf(const Epetra_LongLongSerialDenseMatrix& Source);
+  //@}
 
  protected:
 
-	void CopyMat(long long* Source, int Source_LDA, int NumRows, int NumCols, long long* Target, int Target_LDA);
+  void CopyMat(long long* Source, int Source_LDA, int NumRows, int NumCols, long long* Target, int Target_LDA);
   void CleanupData();
 
-	Epetra_DataAccess CV_;
-	bool A_Copied_;
+  Epetra_DataAccess CV_;
+  bool A_Copied_;
   int M_;
   int N_;
   int LDA_;
@@ -364,11 +366,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongSerialDenseMatrix : public Epetra_Obj
 inline long long& Epetra_LongLongSerialDenseMatrix::operator () (int RowIndex, int ColIndex) {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(RowIndex >= M_ || RowIndex < 0) 
-		throw ReportError("Row index = " + toString(RowIndex) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
+    throw ReportError("Row index = " + toString(RowIndex) + 
+                      " Out of Range 0 - " + toString(M_-1),-1);
   if(ColIndex >= N_ || ColIndex < 0) 
-		throw ReportError("Column index = " + toString(ColIndex) + 
-											" Out of Range 0 - " + toString(N_-1),-2);
+    throw ReportError("Column index = " + toString(ColIndex) + 
+                      " Out of Range 0 - " + toString(N_-1),-2);
 #endif
   return(A_[ColIndex*LDA_ + RowIndex]);
 }
@@ -376,20 +378,20 @@ inline long long& Epetra_LongLongSerialDenseMatrix::operator () (int RowIndex, i
 inline const long long& Epetra_LongLongSerialDenseMatrix::operator () (int RowIndex, int ColIndex) const {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(RowIndex >= M_ || RowIndex < 0) 
-		throw ReportError("Row index = " + toString(RowIndex) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
+    throw ReportError("Row index = " + toString(RowIndex) + 
+                      " Out of Range 0 - " + toString(M_-1),-1);
   if(ColIndex >= N_ || ColIndex < 0) 
-		throw ReportError("Column index = " + toString(ColIndex) + 
-											" Out of Range 0 - " + toString(N_-1),-2);
+    throw ReportError("Column index = " + toString(ColIndex) + 
+                      " Out of Range 0 - " + toString(N_-1),-2);
 #endif
-	return(A_[ColIndex * LDA_ + RowIndex]);
+  return(A_[ColIndex * LDA_ + RowIndex]);
 }
 //=========================================================================
 inline long long* Epetra_LongLongSerialDenseMatrix::operator [] (int ColIndex) {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(ColIndex >= N_ || ColIndex < 0) 
-		throw ReportError("Column index = " + toString(ColIndex) + 
-											" Out of Range 0 - " + toString(N_-1),-2);
+    throw ReportError("Column index = " + toString(ColIndex) + 
+                      " Out of Range 0 - " + toString(N_-1),-2);
 #endif
   return(A_+ ColIndex * LDA_);
 }
@@ -397,11 +399,13 @@ inline long long* Epetra_LongLongSerialDenseMatrix::operator [] (int ColIndex) {
 inline const long long* Epetra_LongLongSerialDenseMatrix::operator [] (int ColIndex) const {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(ColIndex >= N_ || ColIndex < 0) 
-		throw ReportError("Column index = " + toString(ColIndex) + 
-											" Out of Range 0 - " + toString(N_-1),-2);
+    throw ReportError("Column index = " + toString(ColIndex) + 
+                      " Out of Range 0 - " + toString(N_-1),-2);
 #endif
   return(A_ + ColIndex * LDA_);
 }
 //=========================================================================
+
+#endif // EPETRA_NO_64BIT_GLOBAL_INDICES
 
 #endif /* EPETRA_LONGLONGSERIALDENSEMATRIX_H */

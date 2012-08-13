@@ -65,7 +65,7 @@
        <li> If NumGlobalElements = NumMyElements (and not equal to zero)
             the map is defined to be a local replicated
             map.  In this case, objects constructed using this map will be identically replicated across
-	    all processors in the communicator.
+      all processors in the communicator.
        <li> If NumGlobalElements = -1 and NumMyElements is passed in then NumGlobalElements will
             be computed as the sum of NumMyElements across all processors.
        <li> If neither of the above is true, NumGlobalElements will be checked against the sum of 
@@ -130,17 +130,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
     
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
-	    C/C++ and 1 for Fortran.
-	    
+      C/C++ and 1 for Fortran.
+      
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
-	    processors.
+      processors.
 
     \return Pointer to a Epetra_Map object.
 
   */ 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_Map(long long NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
+#endif
 
 
 
@@ -162,17 +166,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
     
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
-	    C/C++ and 1 for Fortran.
-	    
+      C/C++ and 1 for Fortran.
+      
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
-	    processors.
+      processors.
 
     \return Pointer to a Epetra_Map object.
 
   */ 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_Map(long long NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
+#endif
 
 
 
@@ -195,37 +203,41 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
     
     \param In
             MyGlobalElements - Integer array of length NumMyElements.  The ith entry contains the
-	    global index value of the ith element on this processor.  Index values are not required to
-	    be contiguous on a processor, or to be within the range of 0 to NumGlobalElements.  As
-	    long as the index values are consistently defined and used, any set of NumGlobalElements
-	    distinct integer values is acceptable.
+      global index value of the ith element on this processor.  Index values are not required to
+      be contiguous on a processor, or to be within the range of 0 to NumGlobalElements.  As
+      long as the index values are consistently defined and used, any set of NumGlobalElements
+      distinct integer values is acceptable.
 
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
-	    C/C++ and 1 for Fortran.
-	    
+      C/C++ and 1 for Fortran.
+      
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
-	    processors.
+      processors.
 
     \return Pointer to a Epetra_Map object.
 
   */ 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobalElements, int NumMyElements,
              const int *MyGlobalElements,
              int IndexBase, const Epetra_Comm& Comm);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_Map(long long NumGlobalElements, int NumMyElements,
              const long long *MyGlobalElements,
              int IndexBase, const Epetra_Comm& Comm);
+#endif
   
-	//! Epetra_Map copy constructor.
+  //! Epetra_Map copy constructor.
   Epetra_Map(const Epetra_Map& map);
   
   //! Epetra_Map destructor.
   virtual ~Epetra_Map(void);
 
-	//! Assignment Operator
-	Epetra_Map & operator=(const Epetra_Map & map);
+  //! Assignment Operator
+  Epetra_Map & operator=(const Epetra_Map & map);
   
 };
 

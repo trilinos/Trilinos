@@ -83,8 +83,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     \param In
            MyRow - Local row.
     \param Out
-	   NumEntries - Number of nonzero values present.
-	  
+     NumEntries - Number of nonzero values present.
+    
     \return Integer error code, set to 0 if successful.
   */
     virtual int NumMyRowEntries(int MyRow, int & NumEntries) const = 0;
@@ -98,14 +98,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     \param In
            MyRow - Local row to extract.
     \param In
-	   Length - Length of Values and Indices.
+     Length - Length of Values and Indices.
     \param Out
-	   NumEntries - Number of nonzero entries extracted.
+     NumEntries - Number of nonzero entries extracted.
     \param Out
-	   Values - Extracted values for this row.
+     Values - Extracted values for this row.
     \param Out
-	   Indices - Extracted local column indices for the corresponding values.
-	  
+     Indices - Extracted local column indices for the corresponding values.
+    
     \return Integer error code, set to 0 if successful.
   */
     virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const = 0;
@@ -113,7 +113,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     //! Returns a copy of the main diagonal in a user-provided vector.
     /*! 
     \param Out
-	   Diagonal - Extracted main diagonal.
+     Diagonal - Extracted main diagonal.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -126,11 +126,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     //! Returns the result of a Epetra_RowMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
     \param In
-	   TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
+     TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+     X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
+     Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -140,29 +140,29 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     /*! This method will perform a triangular solve independently on each processor of the parallel machine.
         No communication is performed.
     \param In
-	   Upper -If true, solve Ux = y, otherwise solve Lx = y.
+     Upper -If true, solve Ux = y, otherwise solve Lx = y.
     \param In
-	   Trans -If true, solve transpose problem.
+     Trans -If true, solve transpose problem.
     \param In
-	   UnitDiagonal -If true, assume diagonal is unit (whether it's stored or not).
+     UnitDiagonal -If true, assume diagonal is unit (whether it's stored or not).
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
+     X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+     Y -A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
   */
     virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
-		      Epetra_MultiVector& Y) const = 0;
+          Epetra_MultiVector& Y) const = 0;
 
     //! Computes the sum of absolute values of the rows of the Epetra_RowMatrix, results returned in x.
     /*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the 
         \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
-	will make the infinity norm of the resulting matrix exactly 1.
+  will make the infinity norm of the resulting matrix exactly 1.
     \param Out
-	   x -A Epetra_Vector containing the row sums of the \e this matrix. 
-	   \warning It is assumed that the distribution of x is the same as the rows of \e this.
+     x -A Epetra_Vector containing the row sums of the \e this matrix. 
+     \warning It is assumed that the distribution of x is the same as the rows of \e this.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -172,7 +172,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     /*! The \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the row number of A
         and j denotes the column number of A.
     \param In
-	   x -A Epetra_Vector to solve for.
+     x -A Epetra_Vector to solve for.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -182,10 +182,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     /*! The vector x will return such that x[j] will contain the inverse of sum of the absolute values of the 
         \e this matrix will be sca such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.  Using the resulting vector from this function as input to 
-	RighttScale() will make the one norm of the resulting matrix exactly 1.
+  RighttScale() will make the one norm of the resulting matrix exactly 1.
     \param Out
-	   x -A Epetra_Vector containing the column sums of the \e this matrix. 
-	   \warning It is assumed that the distribution of x is the same as the rows of \e this.
+     x -A Epetra_Vector containing the column sums of the \e this matrix. 
+     \warning It is assumed that the distribution of x is the same as the rows of \e this.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -195,7 +195,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     /*! The \e this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.
     \param In
-	   x -The Epetra_Vector used for scaling \e this.
+     x -The Epetra_Vector used for scaling \e this.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -227,16 +227,28 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
       In that case, those nonzeros may be counted multiple times (also
       depending on the matrix implementation).
     */
-    virtual long long NumGlobalNonzeros() const = 0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    virtual int NumGlobalNonzeros() const = 0;
+#endif
+    virtual long long NumGlobalNonzeros64() const = 0;
 
     //! Returns the number of global matrix rows.
-    virtual long long NumGlobalRows() const = 0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    virtual int NumGlobalRows() const = 0;
+#endif
+    virtual long long NumGlobalRows64() const = 0;
 
     //! Returns the number of global matrix columns.
-    virtual long long NumGlobalCols() const= 0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    virtual int NumGlobalCols() const= 0;
+#endif
+    virtual long long NumGlobalCols64() const= 0;
 
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-    virtual long long NumGlobalDiagonals() const = 0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    virtual int NumGlobalDiagonals() const = 0;
+#endif
+    virtual long long NumGlobalDiagonals64() const = 0;
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     virtual int NumMyNonzeros() const = 0;

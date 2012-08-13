@@ -45,30 +45,39 @@
 
 //==============================================================================
 // Epetra_Map constructor for a Epetra-defined uniform linear distribution of elements.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 Epetra_Map::Epetra_Map(int numGlobalElements, int indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_Map::Epetra_Map(long long numGlobalElements, int indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
 }
+#endif
 //==============================================================================
 // Epetra_Map constructor for a user-defined linear distribution of constant block size elements.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements, int indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, numMyElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements, int indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, numMyElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
 }
+#endif
 //==============================================================================
 // Epetra_Map constructor for a user-defined arbitrary distribution of constant block size elements.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements,
                        const int * myGlobalElements,
                        int indexBase, const Epetra_Comm& comm)
@@ -76,6 +85,8 @@ Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements,
 {
   SetLabel("Epetra::Map");
 }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
                        const long long * myGlobalElements,
                        int indexBase, const Epetra_Comm& comm)
@@ -83,6 +94,7 @@ Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
 {
   SetLabel("Epetra::Map");
 }
+#endif
 //==============================================================================
 Epetra_Map::Epetra_Map(const Epetra_Map& map)
   : Epetra_BlockMap(map) // Map is just a special case of BlockMap

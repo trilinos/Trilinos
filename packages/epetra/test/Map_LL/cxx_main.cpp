@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
   Epetra_Map* SmallMap = 0;
   if (verbose1) {
     // Build a small map for test cout.  Use 10 elements from current map
-    long long* MyEls = Map->MyGlobalElements_LL();
+    long long* MyEls = Map->MyGlobalElements64();
     int IndBase = Map->IndexBase();
     int MyLen = EPETRA_MIN(10+Comm.MyPID(),Map->NumMyElements());
     SmallMap = new Epetra_Map((long long)-1, MyLen, MyEls, IndBase, Comm);

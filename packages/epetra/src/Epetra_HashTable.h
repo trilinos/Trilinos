@@ -72,7 +72,7 @@ class Epetra_HashTable : public Epetra_Object
 
   int Func( const long long key ) { 
     int intkey = (int) ((key & 0x000000007fffffffLL) + ((key & 0x7fffffff80000000LL) >> 31));
-    return (Seed_ ^ intkey)%Size_;
+    return (int) ((Seed_ ^ intkey)%Size_);
   } 
      
  public:
