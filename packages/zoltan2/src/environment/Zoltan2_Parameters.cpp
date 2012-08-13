@@ -11,6 +11,7 @@
 */
 
 #include <Zoltan2_Parameters.hpp>
+#include <Zoltan2_IntegerRangeList.hpp>
 #include <Zoltan2_Standards.hpp>
 
 #include <ostream>
