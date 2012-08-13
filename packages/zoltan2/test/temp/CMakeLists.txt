@@ -1,8 +1,8 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  trilinosTest
-  SOURCES trilinosTest.cpp
+  paramTest
+  SOURCES paramTest.cpp
   NUM_MPI_PROCS 4
   COMM mpi serial
   )
