@@ -27,53 +27,6 @@ namespace stk {
 
     using namespace Mesquite;
 
-    double PMMParallelReferenceMeshSmoother2::nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid )
-    {
-      int spatialDim = m_eMesh->get_spatial_dim();
-      valid = true;
-      double nm=0.0;
-
-      double xc[3]={0,0,0};
-
-      for (int i=0; i < spatialDim; i++)
-        {
-          xc[i]=coord_current[i];
-          double dt = alpha*cg_d[i];
-          coord_current[i] += dt;  
-        }
-
-      stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
-      for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
-        {
-          stk::mesh::Entity& element = *node_elems[i_elem].entity();
-          bool local_valid = true;
-          double val = m_metric->metric(element, local_valid);
-          nm += val;
-          valid = valid && local_valid;
-        }
-      for (int i=0; i < spatialDim; i++)
-        {
-          coord_current[i] = xc[i];
-        }
-
-      return nm;
-    }
-
-    double PMMParallelReferenceMeshSmoother2::nodal_edge_length_ave(stk::mesh::Entity& node)
-    {
-      //int spatialDim = m_eMesh->get_spatial_dim();
-      double nm=0.0;
-
-      stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
-      for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
-        {
-          stk::mesh::Entity& element = *node_elems[i_elem].entity();
-          double elem_edge_len = m_eMesh->edge_length_ave(element);
-          nm += elem_edge_len;
-        }
-      nm /= double(node_elems.size());
-      return nm;
-    }
 
     double PMMParallelReferenceMeshSmoother2::run_one_iteration( Mesh* mesh, MeshDomain *domain,
                                                               MsqError& err )

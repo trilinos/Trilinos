@@ -48,8 +48,8 @@ namespace stk {
       //virtual void update_node_positions(Mesh* mesh, double alpha);
       //virtual bool check_convergence();
 
-      double nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid );
-      double nodal_edge_length_ave(stk::mesh::Entity& node);
+      //double nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid );
+      //double nodal_edge_length_ave(stk::mesh::Entity& node);
 
     };
 

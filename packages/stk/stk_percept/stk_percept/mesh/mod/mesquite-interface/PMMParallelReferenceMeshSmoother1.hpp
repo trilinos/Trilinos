@@ -30,7 +30,7 @@ namespace stk {
                                         double grad_norm =1.e-8,
                                         int parallel_iterations = 20)
         : PMMParallelReferenceMeshSmoother(inner_iterations, cpu_time, grad_norm, parallel_iterations),
-          m_max_edge_length_factor(max_edge_length_factor), m_scale(1.)
+          m_max_edge_length_factor(max_edge_length_factor), m_scale(1.), m_pmm(0)
       {}
 
 
@@ -49,8 +49,13 @@ namespace stk {
       virtual double metric(stk::mesh::Entity& entity, bool& valid);
       virtual void update_node_positions(Mesh* mesh, double alpha);
       virtual bool check_convergence();
+
+      double nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid );
+      double nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng );
+      double nodal_edge_length_ave(stk::mesh::Entity& node);
       
       double m_dnew, m_dold, m_d0, m_dmid, m_dd;
+      PerceptMesquiteMesh *m_pmm;
 
     };
 

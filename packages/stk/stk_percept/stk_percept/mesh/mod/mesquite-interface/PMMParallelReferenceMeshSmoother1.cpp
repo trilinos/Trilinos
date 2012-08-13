@@ -29,6 +29,81 @@ namespace stk {
     const bool do_tot_test = false;
     bool do_print_elem_val = false;
 
+    double PMMParallelReferenceMeshSmoother1::nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng )
+    {
+      int spatialDim = m_eMesh->get_spatial_dim();
+      valid = true;
+      double nm=0.0;
+
+      double xc[3]={0,0,0};
+      double eps=1.e-6;
+      double eps1 = eps*nodal_edge_length_ave(node);
+      eps1=eps;
+
+      for (int i=0; i < spatialDim; i++)
+        {
+          xc[i]=coord_current[i];
+          double dt = eps1;
+          coord_current[i] += dt;  
+          double mp = nodal_metric(node, 0.0, coord_current, cg_d, valid);
+          coord_current[i] -= 2.0*dt;
+          double mm = nodal_metric(node, 0.0, coord_current, cg_d, valid);
+          coord_current[i] = xc[i];
+          ng[i] = (mp-mm)/(2.0*eps1);
+        }
+
+      return nm;
+    }
+
+    double PMMParallelReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid )
+    {
+      int spatialDim = m_eMesh->get_spatial_dim();
+      valid = true;
+      double nm=0.0;
+
+      double xc[3]={0,0,0};
+
+      for (int i=0; i < spatialDim; i++)
+        {
+          xc[i]=coord_current[i];
+          double dt = alpha*cg_d[i];
+          coord_current[i] += dt;  
+        }
+
+      stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
+      for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
+        {
+          stk::mesh::Entity& element = *node_elems[i_elem].entity();
+          bool local_valid = true;
+          double val = m_metric->metric(element, local_valid);
+          nm += val;
+          valid = valid && local_valid;
+        }
+      for (int i=0; i < spatialDim; i++)
+        {
+          coord_current[i] = xc[i];
+        }
+
+      return nm;
+    }
+
+    double PMMParallelReferenceMeshSmoother1::nodal_edge_length_ave(stk::mesh::Entity& node)
+    {
+      //int spatialDim = m_eMesh->get_spatial_dim();
+      double nm=0.0;
+
+      stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
+      for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
+        {
+          stk::mesh::Entity& element = *node_elems[i_elem].entity();
+          double elem_edge_len = m_eMesh->edge_length_ave(element);
+          nm += elem_edge_len;
+        }
+      nm /= double(node_elems.size());
+      return nm;
+    }
+
+
     bool PMMParallelReferenceMeshSmoother1::check_convergence()
     {
       if (m_stage == 0 && (m_dnew == 0.0 || m_total_metric == 0.0))
@@ -110,17 +185,22 @@ namespace stk {
                         
                         double eps = 1.e-6;
                         double eps1 = eps*edge_length_ave;
+                        eps1=eps;
 
+                        double gsav[3]={0,0,0};
                         for (int idim=0; idim < spatialDim; idim++)
                           {
                             double cc = coord_current[idim];
                             coord_current[idim] += eps1;
-                            double mp = metric(element, valid);
+                            bool pvalid=false, mvalid=false;
+                            double mp = metric(element, pvalid);
                             coord_current[idim] -= 2.0*eps1;
-                            double mm = metric(element, valid);
+                            double mm = metric(element, mvalid);
                             coord_current[idim] = cc;
-                            double dd = (mp - mm)/(2*eps1);
-
+                            double dd = 0.0;
+                            if ((pvalid && mvalid) || m_stage == 0)
+                              dd = (mp - mm)/(2*eps1);
+                            gsav[idim] = dd;
                             m_scale = std::max(m_scale, std::abs(dd)/edge_length_ave);
 
                             if (node_locally_owned)
@@ -131,28 +211,47 @@ namespace stk {
                               {
                                 cg_g[idim] = 0.0;
                               }
-                            
-                            // FIXME 
-                            if (0)
-                            {
-                              coord_current[idim] -= dd*eps;
-                              double m1=metric(element, valid);
-                              coord_current[idim] += dd*eps;
-                              if (metric_0 > 1.e-6)
-                                {
-                                  if (!(m1 < metric_0*(1.0+eps)))
-                                    {
-                                      PRINT( "bad grad" << " m1-metric_0 = " << (m1-metric_0) );
-                                    }
-                                  VERIFY_OP_ON(m1, <, metric_0*(1.0+eps), "bad gradient");
-                                }
-                            }
                           }
-                      }
-                  }
-              }
-          }
-      }
+
+                        // FIXME 
+                        if (0)
+                          {
+                            double gsn=0.0;
+                            for (int idim=0; idim < spatialDim; idim++)
+                              {
+                                gsn += gsav[idim]*gsav[idim];
+                              }
+                            gsn = std::sqrt(gsn);
+                            gsn = std::max(gsn,1.e-12);
+                            if (gsn > 1.e-4*edge_length_ave)
+                              {
+                                for (int idim=0; idim < spatialDim; idim++)
+                                  {
+                                    double dd = gsav[idim]/gsn*edge_length_ave;
+                                    coord_current[idim] -= dd*eps;
+                                  }
+                                double m1=metric(element, valid);
+                                for (int idim=0; idim < spatialDim; idim++)
+                                  {
+                                    double dd = gsav[idim]/gsn*edge_length_ave;
+                                    coord_current[idim] += dd*eps;
+                                  }
+                                if (metric_0 > 1.e-6)
+                                  {
+                                    if (!(m1 < metric_0*(1.0+eps)))
+                                      {
+                                        PRINT( "bad grad" << " m1-metric_0 = " << (m1-metric_0) << " gsav= " << gsav[0] << " " << gsav[1] << " " << gsav[2] );
+                                      }
+                                    VERIFY_OP_ON(m1, <, metric_0*(1.0+eps), "bad gradient");
+                                  }
+                              }
+                          }
+
+                      } // inode...
+                  } // i_element
+              } // on_locally_owned_part...
+          } // buckets
+      } // element loop...
 
       VectorFieldType *cg_g_field_v = static_cast<VectorFieldType *>(cg_g_field);
       stk::mesh::parallel_reduce(*m_eMesh->get_bulk_data(), stk::mesh::sum(*cg_g_field_v));
@@ -244,6 +343,7 @@ namespace stk {
                                                               MsqError& err )
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
+      m_pmm  = pmm;
       PerceptMesh *eMesh = pmm->getPerceptMesh();
 
       stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
@@ -259,6 +359,7 @@ namespace stk {
         {
           m_dmax = 0.0;
 
+          //PRINT_1("tmp srk get_gradient at m_iter=0");
           get_gradient(mesh, domain);
           /// r = -g
           eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_r_field);
@@ -294,6 +395,7 @@ namespace stk {
       //PRINT(" tmp srk m_dd= " << m_dd);
 
       /// line search
+      bool restarted=false;
       double alpha = m_scale;
       {
         //double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
@@ -310,6 +412,7 @@ namespace stk {
         double c0 = 1.e-4;
         double min_alpha_factor=1.e-12;
 
+        //PRINT_1("tmp srk get_gradient at linesearch");
         get_gradient(mesh, domain);
         double norm_gradient2 = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
 
@@ -331,10 +434,47 @@ namespace stk {
             if (alpha < std::max(min_alpha_factor*m_scale, 1.e-16))
               break;
           }
+
         //if (metric > sigma*metric_0)
         if (!converged)
           {
-            PRINT_1( "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor );
+            alpha=m_scale;
+            /// d = -g
+            eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_d_field);
+            restarted = true;
+
+            PRINT_1( "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) );
+            double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
+            metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
+            PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
+            metric_1 = total_metric(mesh, -1.e-6, 1.0, total_valid);
+            PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
+
+            //throw std::runtime_error("can't reduce metric");
+
+          }
+
+        while (!converged)
+          {
+            metric = total_metric(mesh, alpha, 1.0, total_valid);
+
+            //converged = (metric > sigma*metric_0) && (alpha > 1.e-16);
+            double mfac = alpha*armijo_offset_factor;
+            converged = (metric < metric_0 + mfac);
+            if (m_untangled) converged = converged && total_valid;
+            PRINT(  "tmp srk ### alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
+                    << " m_untangled = " << m_untangled
+                    << " total_valid= " << total_valid );
+            if (!converged)
+              alpha *= tau;
+            if (alpha < std::max(min_alpha_factor*m_scale, 1.e-16))
+              break;
+          }
+
+        //if (metric > sigma*metric_0)
+        if (!converged)
+          {
+            PRINT_1( "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) );
             do_print_elem_val = true;
             double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
             metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
@@ -345,6 +485,7 @@ namespace stk {
 
             throw std::runtime_error("can't reduce metric");
           }
+
         else
           {
             double a1 = alpha/2.;
@@ -371,21 +512,24 @@ namespace stk {
 
       /// x = x + alpha*d
       update_node_positions(mesh, alpha);
-      PRINT_1( "tmp srk iter= "<< m_iter << " dmax= " << m_dmax << " alpha= " << alpha);
+      //PRINT_1( "tmp srk iter= "<< m_iter << " dmax= " << m_dmax << " alpha= " << alpha);
+      bool debug_par = false;
 
       // FIXME
       double coord_mag = 0.0;
-      if (0) coord_mag= eMesh->nodal_field_dot(m_coord_field_current, m_coord_field_current);
+      if (debug_par) coord_mag= eMesh->nodal_field_dot(m_coord_field_current, m_coord_field_current);
 
       /// f'(x)
+      //PRINT_1("tmp srk get_gradient after update_node_positions");
       get_gradient(mesh, domain);
       double d_g = 0.0;
-      if (0) d_g = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
+      if (debug_par) d_g = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
+      debug_print(alpha);
 
       /// r = -g
       eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_r_field);
       double d_r = 0.0;
-      if (0) d_r = eMesh->nodal_field_dot(cg_r_field, cg_r_field);
+      if (debug_par) d_r = eMesh->nodal_field_dot(cg_r_field, cg_r_field);
 
       /// dold = dnew
       m_dold = m_dnew;
@@ -409,9 +553,10 @@ namespace stk {
 
       PRINT("tmp srk beta = " << cg_beta);
 
+
       //int N = num_nodes;
       //if (m_iter == N || cg_beta <= 0.0) 
-      if (cg_beta <= 0.0) 
+      if (cg_beta <= 0.0 || restarted) 
         {
           /// d = s
           eMesh->copy_field(cg_d_field, cg_s_field);
@@ -423,18 +568,23 @@ namespace stk {
         }
       //m_dd = eMesh->nodal_field_dot(cg_d_field, cg_d_field);
 
-      if (0)
+      double tm = total_metric(mesh,0.0,1.0, total_valid);
+
+      if (debug_par)
         {
           double d_s=eMesh->nodal_field_dot(cg_s_field, cg_s_field);
-          if (!m_eMesh->get_rank()) printf("tmp srk m_dnew[%d] = %30.12g m_dmid= %30.12g d_g= %30.12g d_r= %30.12g ||cg_s||= %30.12g beta= %30.12g coord_mag= %30.12g\n",  m_iter, m_dnew, m_dmid, d_g, d_r, d_s, cg_beta, coord_mag);
+          if (0 && !m_eMesh->get_rank()) printf("dmax[%3d]=%20.12g tm=%20.12g dnew=%20.12g dmid= %20.12g d_g= %20.12g d_r= %20.12g d_s= %20.12g beta= %20.12g coord= %20.12g\n",  
+                                           m_iter, m_dmax, tm, m_dnew, m_dmid, d_g, d_r, d_s, cg_beta, coord_mag);
+          if (!m_eMesh->get_rank()) printf("dmax[%3d]=%20.12e tm=%20.12e dnew=%20.12e d_g= %20.12e beta= %20.12e coord= %20.12e scl= %20.12e alp= %20.12e\n",  
+                                           m_iter, m_dmax, tm, m_dnew, d_g, cg_beta, coord_mag, m_scale, alpha);
         }
 
-      return total_metric(mesh,0.0,1.0, total_valid);
+      return tm;
     }
     
     void PMMParallelReferenceMeshSmoother1::debug_print(double alpha)
     {
-      if (1)
+      if (0)
         {
           //stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
           //stk::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
@@ -477,15 +627,88 @@ namespace stk {
                       {
                         double dt = alpha*cg_d[i];
                         if (dopr) {
-                          sprintf(buf, " i= %d dt= %12g coord= %12g g= %12g r= %12g s= %12g d= %12g", i, dt, coord_current[i], cg_g[i], cg_r[i], cg_s[i], cg_d[i]);
+                          sprintf(buf, "dmax i= %d dt= %12g coord= %12g g= %12g r= %12g s= %12g d= %12g", i, dt, coord_current[i], cg_g[i], cg_r[i], cg_s[i], cg_d[i]);
                           ostr << buf;
                         }
                       }
                     if (dopr && owned) std::cout << ostr.str() << std::endl;
+                    //if (dopr && m_eMesh->get_rank()==0) std::cout << ostr.str() << std::endl;
                   }
               }
             }
         }
+
+      if (1)
+        {
+          stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
+          stk::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
+          int spatialDim = m_eMesh->get_spatial_dim();
+          stk::mesh::FieldBase *cg_d_field    = m_eMesh->get_field("cg_d");
+          stk::mesh::FieldBase *cg_g_field    = m_eMesh->get_field("cg_g");
+          stk::mesh::FieldBase *cg_r_field    = m_eMesh->get_field("cg_r");
+          stk::mesh::FieldBase *cg_s_field    = m_eMesh->get_field("cg_s");
+
+          //if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
+          unsigned ids[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,71,84,97};
+          unsigned idl = sizeof(ids)/sizeof(unsigned);
+          idl = 13*13;
+          for (unsigned i_node=0; i_node < idl; i_node++)
+            {
+              MPI_Barrier( MPI_COMM_WORLD );
+
+              //stk::mesh::Entity* node_p = m_eMesh->get_bulk_data()->get_entity(0, ids[i_node]);
+              stk::mesh::Entity* node_p = m_eMesh->get_bulk_data()->get_entity(0, i_node+1);
+              if (node_p)
+                {
+                  stk::mesh::Entity& node = *node_p;
+
+                  double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
+                  double *cg_d = PerceptMesh::field_data(cg_d_field, node);
+                  double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                  double *cg_r = PerceptMesh::field_data(cg_r_field, node);
+                  double *cg_s = PerceptMesh::field_data(cg_s_field, node);
+
+                  bool dopr=true;
+                  unsigned nid = node.identifier();
+                  char buf[1024];
+                  std::ostringstream ostr;
+                  bool owned = (node.owner_rank() == m_eMesh->get_rank());
+                  if (dopr)
+                    ostr << " nid= " << nid << " dmax ";
+                  if (0) ostr << " owned= " << owned;
+                  //  ostr << "P[" << m_eMesh->get_rank() << "] dbp iter= " << m_iter << " nid= " << nid << " o= " << owned;
+                  double ng[3]={0,0,0};
+                  bool ng_valid=true;
+
+                  {
+                    bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                    bool fixed = m_pmm->get_fixed_flag(&node);
+                    if (fixed || isGhostNode)
+                      {
+                      }
+                    else
+                      {
+                        nodal_gradient(node, 0.0, coord_current, cg_d, ng_valid, ng);
+                      }
+                  }
+                  for (int i=0; i < spatialDim; i++)
+                    {
+                      double dt = alpha*cg_d[i];
+                      if (dopr) {
+                        if (0) sprintf(buf, "dt=%12g coord=%12g g=%12g r=%12g s=%12g d=%12g", dt, coord_current[i], cg_g[i], cg_r[i], cg_s[i], cg_d[i]);
+                        if (0) sprintf(buf, "coord=%35.18e g=%35.18e ",  coord_current[i], cg_g[i]);
+                        sprintf(buf, "g=%20.12e ng=%20.12e diff=%20.12e ",  cg_g[i], ng[i], cg_g[i]-ng[i]);
+                        ostr << buf;
+                      }
+                    }
+                  //if (dopr && owned) std::cout << ostr.str() << std::endl;
+                  //if (dopr && m_eMesh->get_rank()==0) std::cout << ostr.str() << std::endl;
+                  if (dopr && owned) std::cout << ostr.str() << std::endl;
+                }
+              MPI_Barrier( MPI_COMM_WORLD );
+
+            }
+        }        
 
     }
 
