@@ -229,6 +229,29 @@ IF (${PACKAGE_NAME}_ENABLE_Euclid)
 
 ENDIF()
 
+# Experimental code:
+# See the comments on "experimental" code in ifpack/CMakeLists.txt.  In
+# particular, experimental headers and source files are not included
+# in the build or install unless the Ifpack_ENABLE_Experimental CMake
+# option was set at configure time.
+#
+
+APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
+  #Ifpack_SupportGraph.hpp
+)
+APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
+  #Ifpack_SupportGraph.cpp
+)
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
+IF(${PACKAGE_NAME}_ENABLE_Experimental)
+  #
+  # Add experimental files to HEADERS and SOURCES.
+  # 
+  APPEND_SET(HEADERS ${${PACKAGE_NAME}_EXPERIMENTAL_HEADERS})
+  APPEND_SET(SOURCES ${${PACKAGE_NAME}_EXPERIMENTAL_SOURCES})
+ENDIF() # ${PACKAGE_NAME}_ENABLE_Experimental
+
 #
 # C) Define the targets for package's library(s)
 #
