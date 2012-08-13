@@ -47,6 +47,7 @@
 #include <Teuchos_Describable.hpp>
 #include <iterator>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -490,6 +491,7 @@ namespace Kokkos {
             }
 
             out << "numRows_ = " << numRows_ << endl
+                << "numCols_ = " << numCols_ << endl
                 << "isEmpty_ = " << isEmpty_ << endl
                 << "tri_uplo_ = " << triUplo << endl
                 << "unit_diag_ = " << unitDiag << endl;
@@ -526,6 +528,63 @@ namespace Kokkos {
           } // if is initialized
         } // vl >= VERB_MEDIUM
       } // vl >= VERB_LOW
+    }
+
+    /// \brief Convert to dense matrix and return.
+    ///
+    /// \warning This method is for debugging only.  It uses a lot of
+    ///   memory.  Users should never call this method.  Do not rely
+    ///   on this method continuing to exist in future releases.
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int, scalar_type> >
+    asDenseMatrix () const
+    {
+      using Teuchos::ArrayRCP;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      typedef Teuchos::OrdinalTraits<ordinal_type> OTO;
+      typedef Teuchos::ScalarTraits<scalar_type> STS;
+      typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
+
+      RCP<dense_matrix_type> A_ptr =
+        rcp (new dense_matrix_type (numRows_, numCols_));
+      dense_matrix_type& A = *A_ptr; // for notational convenience
+
+      if (big_ptrs_.size() > 0) {
+        ArrayRCP<const size_t> ptr = big_ptrs_;
+        for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
+          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
+            const ordinal_type j = inds_[k];
+            const scalar_type A_ij = vals_[k];
+            A(i,j) += A_ij;
+          }
+          if (unit_diag_ == Teuchos::UNIT_DIAG) {
+            // Respect whatever is in the sparse matrix, even if it is wrong.
+            // This is helpful for debugging.
+            A(i,i) += STS::one ();
+          }
+        }
+      }
+      else if (sml_ptrs_.size() > 0) {
+        ArrayRCP<const ordinal_type> ptr = sml_ptrs_;
+        for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
+          for (ordinal_type k = ptr[i]; k < ptr[i+1]; ++k) {
+            const ordinal_type j = inds_[k];
+            const scalar_type A_ij = vals_[k];
+            A(i,j) += A_ij;
+          }
+          if (unit_diag_ == Teuchos::UNIT_DIAG) {
+            // Respect whatever is in the sparse matrix, even if it is wrong.
+            // This is helpful for debugging.
+            A(i,i) += STS::one ();
+          }
+        }
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::DefaultHost"
+          "SparseOps::asDenseMatrix: both big_ptrs_ and sml_ptrs_ are empty.  "
+          "Please report this bug to the Kokkos developers.");
+      }
+      return A_ptr;
     }
 
     //@}
@@ -727,6 +786,7 @@ namespace Kokkos {
     Teuchos::EDiag unit_diag_;
 
     Ordinal numRows_;
+    Ordinal numCols_;
     bool isInitialized_;
     bool isEmpty_;
   };
@@ -776,6 +836,7 @@ namespace Kokkos {
   DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::DefaultHostSparseOps(const RCP<Node> &node)
   : node_(node)
   , numRows_(0)
+  , numCols_(0)
   , isInitialized_(false)
   , isEmpty_(false)
   {
@@ -790,6 +851,7 @@ namespace Kokkos {
   DefaultHostSparseOps (const RCP<Node> &node, Teuchos::ParameterList& params)
   : node_(node)
   , numRows_(0)
+  , numCols_(0)
   , isInitialized_(false)
   , isEmpty_(false)
   {
@@ -820,7 +882,8 @@ namespace Kokkos {
         isInitialized_ == true,
         std::runtime_error, " operators already initialized.");
     numRows_ = opgraph->getNumRows();
-    if (opgraph->isEmpty() || numRows_ == 0) {
+    numCols_ = opgraph->getNumCols();
+    if (opgraph->isEmpty() || numRows_ == 0 || numCols_ == 0) {
       isEmpty_ = true;
     }
     else {

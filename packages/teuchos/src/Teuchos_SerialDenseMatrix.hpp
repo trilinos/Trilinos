@@ -72,15 +72,15 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialSymDenseMatrix.hpp"
 
-/*! 	\class Teuchos::SerialDenseMatrix
-	\brief This class creates and provides basic support for dense rectangular matrix of templated type.
+/*!     \class Teuchos::SerialDenseMatrix
+        \brief This class creates and provides basic support for dense rectangular matrix of templated type.
 */
 /** \example DenseMatrix/cxx_main.cpp
     This is an example of how to use the Teuchos::SerialDenseMatrix class.
 */
 
 
-namespace Teuchos {  
+namespace Teuchos {
 
 template<typename OrdinalType, typename ScalarType>
 class SerialDenseMatrix : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>
@@ -93,16 +93,16 @@ public:
   typedef ScalarType scalarType;
 
   //! @name Constructor/Destructor methods.
-  //@{ 
+  //@{
 
   //! Default Constructor
   /*! Creates a empty matrix of no dimension.  The Shaping methods should be used to size this matrix.
-    Values of this matrix should be set using the [], (), or = operators.	
+    Values of this matrix should be set using the [], (), or = operators.
   */
   SerialDenseMatrix();
 
   //! Shaped Constructor
-  /*! 
+  /*!
     \param numRows - Number of rows in matrix.
     \param numCols - Number of columns in matrix.
     \param zeroOut - Initializes values to 0 if true (default)
@@ -116,7 +116,7 @@ public:
   /*!
     \param CV - Enumerated type set to Teuchos::Copy or Teuchos::View.
     \param values - Pointer to an array of ScalarType.  The first column starts at \c values,
-		the second at \c values+stride, etc.
+                the second at \c values+stride, etc.
     \param stride - The stride between the columns of the matrix in memory.
     \param numRows - Number of rows in matrix.
     \param numCols - Number of columns in matrix.
@@ -132,12 +132,12 @@ public:
   SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans = Teuchos::NO_TRANS);
 
   //! Submatrix Copy Constructor
-  /*! 
+  /*!
     \param CV - Enumerated type set to Teuchos::Copy or Teuchos::View.
     \param Source - Reference to another dense matrix from which values are to be copied.
     \param numRows - The number of rows in this matrix.
     \param numCols - The number of columns in this matrix.
-    \param startRow - The row of \c Source from which the submatrix copy should start. 
+    \param startRow - The row of \c Source from which the submatrix copy should start.
     \param startCol - The column of \c Source from which the submatrix copy should start.
 
     Creates a shaped matrix with \c numRows rows and \c numCols columns, which is a submatrix of \c Source.
@@ -151,7 +151,7 @@ public:
   //@}
 
   //! @name Shaping methods.
-  //@{ 
+  //@{
   //! Shape method for changing the size of a SerialDenseMatrix, initializing entries to zero.
   /*!
     \param numRows - The number of rows in this matrix.
@@ -185,23 +185,23 @@ public:
   //@}
 
   //! @name Set methods.
-  //@{ 
+  //@{
 
   //! Copies values from one matrix to another.
   /*!
-    The operator= copies the values from one existing SerialDenseMatrix to another. 
+    The operator= copies the values from one existing SerialDenseMatrix to another.
     If \c Source is a view (i.e. CV = Teuchos::View), then this method will
     return a view.  Otherwise, it will return a copy of \c Source.  \e this object
     will be resized if it is not large enough to copy \c Source into.
-  */	
+  */
   SerialDenseMatrix<OrdinalType, ScalarType>& operator= (const SerialDenseMatrix<OrdinalType, ScalarType>& Source);
 
   //! Copies values from one matrix to another.
   /*!
-    The operator= copies the values from one existing SerialDenseMatrix to another 
+    The operator= copies the values from one existing SerialDenseMatrix to another
     if the dimension of both matrices are the same.  If not, \e this matrix
     will be returned unchanged.
-  */	
+  */
   SerialDenseMatrix<OrdinalType, ScalarType>& assign (const SerialDenseMatrix<OrdinalType, ScalarType>& Source);
 
   //! Set all values in the matrix to a constant value.
@@ -223,13 +223,13 @@ public:
   //@}
 
   //! @name Accessor methods.
-  //@{ 
+  //@{
 
   //! Element access method (non-const).
   /*! Returns the element in the ith row and jth column if A(i,j) is specified, the
     expression A[j][i] will return the same element.
 
-  	\return Element from the specified \c rowIndex row and \c colIndex column.
+        \return Element from the specified \c rowIndex row and \c colIndex column.
     \warning The validity of \c rowIndex and \c colIndex will only be checked if Teuchos is
     configured with --enable-teuchos-abc.
   */
@@ -239,7 +239,7 @@ public:
   /*! Returns the element in the ith row and jth column if A(i,j) is specified, the expression
     A[j][i] will return the same element.
 
-  	\return Element from the specified \c rowIndex row and \c colIndex column.
+        \return Element from the specified \c rowIndex row and \c colIndex column.
     \warning The validity of \c rowIndex and \c colIndex will only be checked if Teuchos is
     configured with --enable-teuchos-abc.
   */
@@ -250,7 +250,7 @@ public:
     A[j][i] will return the same element as A(i,j).
 
     \return Pointer to the ScalarType array at the \c colIndex column ( \c values_+colIndex*stride_ ).
-    \warning The validity of \c colIndex will only be checked if Teuchos is	configured with 
+    \warning The validity of \c colIndex will only be checked if Teuchos is     configured with
     --enable-teuchos-abc.
   */
   ScalarType* operator [] (OrdinalType colIndex);
@@ -260,7 +260,7 @@ public:
     A[j][i] will return the same element as A(i,j).
 
     \return Pointer to the ScalarType array at the \c colIndex column ( \c values_+colIndex*stride_ ).
-    \warning The validity of \c colIndex will only be checked if Teuchos is	configured with 
+    \warning The validity of \c colIndex will only be checked if Teuchos is     configured with
     --enable-teuchos-abc.
   */
   const ScalarType* operator [] (OrdinalType colIndex) const;
@@ -272,7 +272,7 @@ public:
   //@}
 
   //! @name Mathematical methods.
-  //@{ 
+  //@{
 
   //! Add another matrix to \e this matrix.
   /*! Add \c Source to \e this if the dimension of both matrices are the same.  If not, \e this matrix
@@ -310,7 +310,7 @@ public:
 
   //! Multiply \c A * \c B and add them to \e this; \e this = \c beta * \e this + \c alpha*A*B.
   /*!
-    \param transa - Use the transpose of \c A if transa = Teuchos::TRANS, else don't use the 
+    \param transa - Use the transpose of \c A if transa = Teuchos::TRANS, else don't use the
     transpose if transa = Teuchos::NO_TRANS.
     \param transb - Use the transpose of \c B if transb = Teuchos::TRANS, else don't use the
     transpose if transb = Teuchos::NO_TRANS.
@@ -342,7 +342,7 @@ public:
   //@}
 
   //! @name Comparison methods.
-  //@{ 
+  //@{
 
   //! Equality of two matrices.
   /*! \return True if \e this matrix and \c Operand are of the same shape (rows and columns) and have
@@ -359,7 +359,7 @@ public:
   //@}
 
   //! @name Attribute methods.
-  //@{ 
+  //@{
 
   //! Returns the row dimension of this matrix.
   OrdinalType numRows() const { return(numRows_); }
@@ -375,7 +375,7 @@ public:
   //@}
 
   //! @name Norm methods.
-  //@{ 
+  //@{
 
   //! Returns the 1-norm of the matrix.
   typename ScalarTraits<ScalarType>::magnitudeType normOne() const;
@@ -384,11 +384,11 @@ public:
   typename ScalarTraits<ScalarType>::magnitudeType normInf() const;
 
   //! Returns the Frobenius-norm of the matrix.
-  typename ScalarTraits<ScalarType>::magnitudeType normFrobenius() const; 
+  typename ScalarTraits<ScalarType>::magnitudeType normFrobenius() const;
   //@}
 
   //! @name I/O methods.
-  //@{ 
+  //@{
   //! Print method.  Defines the behavior of the std::ostream << operator inherited from the Object class.
   virtual void print(std::ostream& os) const;
 
@@ -416,7 +416,7 @@ template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix()
   : CompObject(), Object("Teuchos::SerialDenseMatrix"), numRows_(0), numCols_(0), stride_(0), valuesCopied_(false), values_(0)
 {}
-  
+
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   OrdinalType numRows_in, OrdinalType numCols_in, bool zeroOut
@@ -425,7 +425,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
 {
   values_ = new ScalarType[stride_*numCols_];
   valuesCopied_ = true;
-  if (zeroOut == true)  
+  if (zeroOut == true)
     putScalar();
 }
 
@@ -445,20 +445,20 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
     valuesCopied_ = true;
   }
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans) : CompObject(), Object("Teuchos::SerialDenseMatrix"), numRows_(0), numCols_(0), stride_(0), valuesCopied_(true), values_(0)
 {
-  if ( trans == Teuchos::NO_TRANS ) 
+  if ( trans == Teuchos::NO_TRANS )
   {
     numRows_ = Source.numRows_;
     numCols_ = Source.numCols_;
     stride_ = numRows_;
     values_ = new ScalarType[stride_*numCols_];
     copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0);
-  } 
-  else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex ) 
-  {	  
+  }
+  else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex )
+  {
     numRows_ = Source.numCols_;
     numCols_ = Source.numRows_;
     stride_ = numRows_;
@@ -468,8 +468,8 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseM
         values_[j*stride_ + i] = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.values_[i*Source.stride_ + j]);
       }
     }
-  } 
-  else 
+  }
+  else
   {
     numRows_ = Source.numCols_;
     numCols_ = Source.numRows_;
@@ -482,7 +482,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseM
     }
   }
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   DataAccess CV, const SerialDenseMatrix<OrdinalType, ScalarType> &Source,
@@ -504,15 +504,15 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
     values_ = values_ + (stride_ * startCol) + startRow;
   }
 }
-    
+
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::~SerialDenseMatrix()
 {
   deleteArrays();
 }
-  
+
 //----------------------------------------------------------------------------------------------------
-//  Shape methods 
+//  Shape methods
 //----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
@@ -543,7 +543,7 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::shapeUninitialized(
   valuesCopied_ = true;
   return(0);
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 int SerialDenseMatrix<OrdinalType, ScalarType>::reshape(
   OrdinalType numRows_in, OrdinalType numCols_in
@@ -571,35 +571,35 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::reshape(
   valuesCopied_ = true;
   return(0);
 }
-   
+
 //----------------------------------------------------------------------------------------------------
-//   Set methods 
+//   Set methods
 //----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
 int SerialDenseMatrix<OrdinalType, ScalarType>::putScalar( const ScalarType value_in )
 {
   // Set each value of the dense matrix to "value".
-  for(OrdinalType j = 0; j < numCols_; j++) 
+  for(OrdinalType j = 0; j < numCols_; j++)
   {
-    for(OrdinalType i = 0; i < numRows_; i++) 
-	  {
-	    values_[i + j*stride_] = value_in;
-	  }
+    for(OrdinalType i = 0; i < numRows_; i++)
+          {
+            values_[i + j*stride_] = value_in;
+          }
   }
   return 0;
-}    
-    
+}
+
 template<typename OrdinalType, typename ScalarType>
 int SerialDenseMatrix<OrdinalType, ScalarType>::random()
 {
   // Set each value of the dense matrix to a random value.
-  for(OrdinalType j = 0; j < numCols_; j++) 
+  for(OrdinalType j = 0; j < numCols_; j++)
   {
-    for(OrdinalType i = 0; i < numRows_; i++) 
-	  {
-	    values_[i + j*stride_] = ScalarTraits<ScalarType>::random();
-	  }
+    for(OrdinalType i = 0; i < numRows_; i++)
+          {
+            values_[i + j*stride_] = ScalarTraits<ScalarType>::random();
+          }
   }
   return 0;
 }
@@ -617,11 +617,11 @@ SerialDenseMatrix<OrdinalType, ScalarType>::operator=(
 
   // If the source is a view then we will return a view, else we will return a copy.
   if (!Source.valuesCopied_) {
-    if(valuesCopied_)       { 
+    if(valuesCopied_)       {
       // Clean up stored data if this was previously a copy.
       deleteArrays();
     }
-    numRows_ = Source.numRows_; 
+    numRows_ = Source.numRows_;
     numCols_ = Source.numCols_;
     stride_ = Source.stride_;
     values_ = Source.values_;
@@ -660,7 +660,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::operator=(
       }
     }
     copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0);
-  } 
+  }
   return(*this);
 }
 
@@ -705,7 +705,7 @@ SerialDenseMatrix<OrdinalType,ScalarType>& SerialDenseMatrix<OrdinalType, Scalar
 }
 
 //----------------------------------------------------------------------------------------------------
-//   Accessor methods 
+//   Accessor methods
 //----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
@@ -716,7 +716,7 @@ inline ScalarType& SerialDenseMatrix<OrdinalType, ScalarType>::operator () (Ordi
 #endif
   return(values_[colIndex * stride_ + rowIndex]);
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 inline const ScalarType& SerialDenseMatrix<OrdinalType, ScalarType>::operator () (OrdinalType rowIndex, OrdinalType colIndex) const
 {
@@ -725,7 +725,7 @@ inline const ScalarType& SerialDenseMatrix<OrdinalType, ScalarType>::operator ()
 #endif
   return(values_[colIndex * stride_ + rowIndex]);
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 inline const ScalarType* SerialDenseMatrix<OrdinalType, ScalarType>::operator [] (OrdinalType colIndex) const
 {
@@ -734,7 +734,7 @@ inline const ScalarType* SerialDenseMatrix<OrdinalType, ScalarType>::operator []
 #endif
   return(values_ + colIndex * stride_);
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 inline ScalarType* SerialDenseMatrix<OrdinalType, ScalarType>::operator [] (OrdinalType colIndex)
 {
@@ -745,9 +745,9 @@ inline ScalarType* SerialDenseMatrix<OrdinalType, ScalarType>::operator [] (Ordi
 }
 
 //----------------------------------------------------------------------------------------------------
-//   Norm methods 
+//   Norm methods
 //----------------------------------------------------------------------------------------------------
-  
+
 template<typename OrdinalType, typename ScalarType>
 typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normOne() const
 {
@@ -760,25 +760,25 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
     ScalarType sum = 0;
     ptr = values_ + j * stride_;
     for(i = 0; i < numRows_; i++)
-	  {
-	    sum += ScalarTraits<ScalarType>::magnitude(*ptr++);
-	  }
+          {
+            sum += ScalarTraits<ScalarType>::magnitude(*ptr++);
+          }
     absSum = ScalarTraits<ScalarType>::magnitude(sum);
     if(absSum > anorm)
-	  {
-	    anorm = absSum;
-	  }
+          {
+            anorm = absSum;
+          }
   }
   updateFlops(numRows_ * numCols_);
   return(anorm);
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normInf() const
 {
   OrdinalType i, j;
   typename ScalarTraits<ScalarType>::magnitudeType sum, anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
-    
+
   for (i = 0; i < numRows_; i++) {
     sum = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
     for (j=0; j< numCols_; j++) {
@@ -789,7 +789,7 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
   updateFlops(numRows_ * numCols_);
   return(anorm);
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normFrobenius() const
 {
@@ -804,45 +804,39 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
   updateFlops(numRows_ * numCols_);
   return(anorm);
 }
-  
+
 //----------------------------------------------------------------------------------------------------
-//   Comparison methods 
+//   Comparison methods
 //----------------------------------------------------------------------------------------------------
-  
+
 template<typename OrdinalType, typename ScalarType>
 bool SerialDenseMatrix<OrdinalType, ScalarType>::operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand) const
 {
-  bool result = 1;
-  if((numRows_ != Operand.numRows_) || (numCols_ != Operand.numCols_))
-  {
-    result = 0;
+  if (numRows_ != Operand.numRows_ || numCols_ != Operand.numCols_) {
+    return false;
   }
-  else
-  {
-    OrdinalType i, j;
-    for(i = 0; i < numRows_; i++)
-	  {
-	    for(j = 0; j < numCols_; j++)
-      {
-        if((*this)(i, j) != Operand(i, j))
-        {
-          return 0;
+  else {
+    // Storage is column major, so outer loop is over columns.
+    for (OrdinalType j = 0; j < numCols_; ++j) {
+      for (OrdinalType i = 0; i < numRows_; ++i) {
+        if ((*this)(i, j) != Operand(i, j)) {
+          return false;
         }
       }
-	  }
+    }
+    return true;
   }
-  return result;
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 bool SerialDenseMatrix<OrdinalType, ScalarType>::operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand) const
 {
   return !((*this) == Operand);
 }
-  
+
 //----------------------------------------------------------------------------------------------------
-//   Multiplication method 
-//----------------------------------------------------------------------------------------------------  
+//   Multiplication method
+//----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>& SerialDenseMatrix<OrdinalType, ScalarType>::operator*= (const ScalarType alpha )
@@ -856,7 +850,7 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
 {
   OrdinalType i, j;
   ScalarType* ptr;
-    
+
   for (j=0; j<numCols_; j++) {
     ptr = values_ + j*stride_;
     for (i=0; i<numRows_; i++) { *ptr = alpha * (*ptr); ptr++; }
@@ -870,12 +864,12 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const SerialDenseMatrix<O
 {
   OrdinalType i, j;
   ScalarType* ptr;
-    
+
   // Check for compatible dimensions
   if ((numRows_ != A.numRows_) || (numCols_ != A.numCols_))
   {
     TEUCHOS_CHK_ERR(-1); // Return error
-  }    
+  }
   for (j=0; j<numCols_; j++) {
     ptr = values_ + j*stride_;
     for (i=0; i<numRows_; i++) { *ptr = A(i,j) * (*ptr); ptr++; }
@@ -904,14 +898,14 @@ int  SerialDenseMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETrans
   updateFlops(nflops);
   return(0);
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 int SerialDenseMatrix<OrdinalType, ScalarType>::multiply (ESide sideA, ScalarType alpha, const SerialSymDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
 {
   // Check for compatible dimensions
   OrdinalType A_nrows = A.numRows(), A_ncols = A.numCols();
   OrdinalType B_nrows = B.numRows(), B_ncols = B.numCols();
-  
+
   if (ESideChar[sideA]=='L') {
     if ((numRows_ != A_nrows) || (A_ncols != B_nrows) || (numCols_ != B_ncols)) {
       TEUCHOS_CHK_ERR(-1); // Return error
@@ -920,8 +914,8 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::multiply (ESide sideA, ScalarTyp
     if ((numRows_ != B_nrows) || (B_ncols != A_nrows) || (numCols_ != A_ncols)) {
       TEUCHOS_CHK_ERR(-1); // Return error
     }
-  } 
-  
+  }
+
   // Call SYMM function
   EUplo uplo = (A.upper() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI);
   this->SYMM(sideA, uplo, numRows_, numCols_, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
@@ -956,8 +950,8 @@ void SerialDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
 }
 
 //----------------------------------------------------------------------------------------------------
-//   Protected methods 
-//----------------------------------------------------------------------------------------------------  
+//   Protected methods
+//----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
 inline void SerialDenseMatrix<OrdinalType, ScalarType>::checkIndex( OrdinalType rowIndex, OrdinalType colIndex ) const {
@@ -979,7 +973,7 @@ void SerialDenseMatrix<OrdinalType, ScalarType>::deleteArrays(void)
     valuesCopied_ = false;
   }
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
 void SerialDenseMatrix<OrdinalType, ScalarType>::copyMat(
   ScalarType* inputMatrix, OrdinalType strideInput, OrdinalType numRows_in,
@@ -995,18 +989,18 @@ void SerialDenseMatrix<OrdinalType, ScalarType>::copyMat(
     ptr2 = inputMatrix + (j + startCol) * strideInput + startRow;
     if (alpha != Teuchos::ScalarTraits<ScalarType>::zero() ) {
       for(i = 0; i < numRows_in; i++)
-	    {
-	      *ptr1++ += alpha*(*ptr2++);
-	    }
+            {
+              *ptr1++ += alpha*(*ptr2++);
+            }
     } else {
       for(i = 0; i < numRows_in; i++)
-	    {
-	      *ptr1++ = *ptr2++;
-	    }
+            {
+              *ptr1++ = *ptr2++;
+            }
     }
   }
 }
-  
+
 } // namespace Teuchos
 
 

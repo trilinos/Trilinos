@@ -46,6 +46,7 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 #include <iterator>
 #include <stdexcept>
 
@@ -1058,6 +1059,7 @@ namespace Kokkos {
             }
 
             out << "numRows_ = " << numRows_ << endl
+                << "numCols_ = " << numCols_ << endl
                 << "isEmpty_ = " << isEmpty_ << endl
                 << "hasEmptyRows_ = " << hasEmptyRows_ << endl
                 << "tri_uplo_ = " << triUplo << endl
@@ -1086,6 +1088,39 @@ namespace Kokkos {
           } // if is initialized
         } // vl >= VERB_MEDIUM
       } // vl >= VERB_LOW
+    }
+
+    /// \brief Convert to dense matrix and return.
+    ///
+    /// \warning This method is for debugging only.  It uses a lot of
+    ///   memory.  Users should never call this method.  Do not rely
+    ///   on this method continuing to exist in future releases.
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int, scalar_type> >
+    asDenseMatrix () const
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      typedef Teuchos::OrdinalTraits<ordinal_type> OTO;
+      typedef Teuchos::ScalarTraits<scalar_type> STS;
+      typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
+
+      RCP<dense_matrix_type> A_ptr =
+        rcp (new dense_matrix_type (numRows_, numCols_));
+      dense_matrix_type& A = *A_ptr; // for notational convenience
+
+      for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
+        for (size_t k = ptr_[i]; k < ptr_[i+1]; ++k) {
+          const ordinal_type j = ind_[k];
+          const scalar_type A_ij = val_[k];
+          A(i,j) += A_ij;
+        }
+        if (unit_diag_ == Teuchos::UNIT_DIAG) {
+          // Respect whatever is in the sparse matrix, even if it is wrong.
+          // This is helpful for debugging.
+          A(i,i) += STS::one ();
+        }
+      }
+      return A_ptr;
     }
 
     //@}
@@ -1352,6 +1387,7 @@ namespace Kokkos {
     //@}
 
     Ordinal numRows_;
+    Ordinal numCols_;
     bool isInitialized_;
     bool isEmpty_;
     bool hasEmptyRows_;
@@ -1418,7 +1454,8 @@ namespace Kokkos {
     matVecVariant_ (AltSparseOps<Scalar, Ordinal, Node, Allocator>::FOR_FOR),
     unroll_ (true),
     firstTouchAllocation_ (false),
-    numRows_ (0),                        // Provisionally
+    numRows_ (Teuchos::OrdinalTraits<Ordinal>::zero ()),
+    numCols_ (Teuchos::OrdinalTraits<Ordinal>::zero ()),
     isInitialized_ (false),
     isEmpty_ (true),                     // Provisionally
     hasEmptyRows_ (true)                 // Provisionally
@@ -1439,7 +1476,8 @@ namespace Kokkos {
     matVecVariant_ (AltSparseOps<Scalar, Ordinal, Node, Allocator>::FOR_FOR),
     unroll_ (true),
     firstTouchAllocation_ (false),
-    numRows_ (0),                        // Provisionally
+    numRows_ (Teuchos::OrdinalTraits<Ordinal>::zero ()),
+    numCols_ (Teuchos::OrdinalTraits<Ordinal>::zero ()),
     isInitialized_ (false),
     isEmpty_ (true),                     // Provisionally
     hasEmptyRows_ (true)                 // Provisionally
@@ -1559,6 +1597,7 @@ namespace Kokkos {
     ArrayRCP<const Ordinal> ind = opgraph->getIndices ();
     ArrayRCP<const Scalar> val = opmatrix->getValues ();
     const Ordinal numRows = opgraph->getNumRows ();
+    const Ordinal numCols = opgraph->getNumCols ();
 
     // Verify the input data before setting internal state.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -1578,6 +1617,7 @@ namespace Kokkos {
       "opgraph->getPointers() and ind = opgraph->getIndices().");
 
     numRows_ = numRows;
+    numCols_ = numCols;
     hasEmptyRows_ = opgraph->hasEmptyRows ();
 
     if (opgraph->isEmpty () || numRows_ == 0) {
@@ -1640,13 +1680,22 @@ namespace Kokkos {
       ": Input and output multivectors have different numbers of vectors (columns)."
     );
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (X.getNumRows()) < static_cast<size_t> (numRows_),
+      static_cast<size_t> (X.getNumRows()) != static_cast<size_t> (numRows_),
       std::runtime_error,
-      ": Output multivector X does not have enough rows.  X.getNumRows() == "
-      << X.getNumRows() << ", but the matrix has " << numRows_ << " rows."
+      ": Dimensions of the matrix and the output multivector X do not match.  "
+      "X.getNumRows() == " << X.getNumRows() << ", but the matrix has "
+      << numRows_ << " rows."
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (Y.getNumRows()) != static_cast<size_t> (numCols_),
+      std::runtime_error,
+      ": Dimensions of the matrix and the input multivector Y do not match.  "
+      "Y.getNumRows() == " << Y.getNumRows() << ", but the matrix has "
+      << numCols_ << " columns."
     );
 
-    if (numRows_ == 0) {
+    if (numRows_ == Teuchos::OrdinalTraits<Ordinal>::zero () ||
+        numCols_ == Teuchos::OrdinalTraits<Ordinal>::zero ()) {
       return; // Nothing to do
     }
     else if (isEmpty_) {
@@ -1832,6 +1881,18 @@ namespace Kokkos {
       X.getNumCols() != Y.getNumCols(),
       std::runtime_error,
       ": X and Y do not have the same number of columns.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      X.getNumRows() != Teuchos::as<size_t> (numCols_),
+      std::runtime_error,
+      ": Dimensions of the matrix and the input multivector X do not match.  "
+      "X has " << X.getNumRows () << " rows, but the matrix has " << numCols_
+      << " columns.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      Y.getNumRows() != Teuchos::as<size_t> (numRows_),
+      std::runtime_error,
+      ": Dimensions of the matrix and the output multivector Y do not match.  "
+      "Y has " << Y.getNumRows () << " rows, but the matrix has " << numRows_
+      << " rows.");
 
     typedef ordinal_type OT;
     typedef scalar_type MST; // matrix scalar type

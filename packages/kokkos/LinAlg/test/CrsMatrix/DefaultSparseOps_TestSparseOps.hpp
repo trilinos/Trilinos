@@ -146,18 +146,40 @@ private:
     const ordinal_type numRows = A.numRows ();
     const ordinal_type numCols = A.numCols ();
     out << "[" << std::endl;
-    for (ordinal_type j = 0; j < numCols; ++j) {
+
+    // Save the original format flags before changing, so that if
+    // output throws an exception, we can restore the original flags
+    // before rethrowing.
+    std::ios_base::fmtflags flags = out.flags ();
+    try {
+      out << std::scientific;
+      out.precision (2); // Low precision, just for error checking
+
       for (ordinal_type i = 0; i < numRows; ++i) {
-        out << A(i,j);
+        for (ordinal_type j = 0; j < numCols; ++j) {
+          out << A(i,j);
+          if (j + Teuchos::OrdinalTraits<ordinal_type>::one() < numCols) {
+            out << " ";
+          }
+        }
         if (i + Teuchos::OrdinalTraits<ordinal_type>::one() < numRows) {
-          out << " ";
+          out << std::endl;
         }
       }
-      if (j + Teuchos::OrdinalTraits<ordinal_type>::one() < numCols) {
-        out << std::endl;
-      }
+    }
+    catch (...) {
+      out.flags (flags); // Restore original format flags.
+      throw;
     }
     out << "]";
+  }
+
+  void
+  printSparseMatrixAsDense (Teuchos::FancyOStream& out,
+                            const SparseOpsType& A_sparse) const
+  {
+    Teuchos::RCP<dense_matrix_type> A_dense = A_sparse.asDenseMatrix ();
+    printDenseMatrix (out, *A_dense);
   }
 
 public:
@@ -632,14 +654,14 @@ public:
     {
       size_t sumOfEntriesPerRow = 0; // correctness check
 
-      // Fill in the number of entries in each column.
+      // Fill in the number of entries in each row.
       for (ordinal_type i = 0; i < N; ++i) {
-        const size_t lastElt = (diag == Teuchos::UNIT_DIAG) ? 1 : 0;
+        const size_t implicitDiag = (diag == Teuchos::UNIT_DIAG) ? 1 : 0;
         if (uplo == Teuchos::LOWER_TRI) {
-          numEntriesPerRow[i] = (i + 1) - lastElt;
+          numEntriesPerRow[i] = (i + 1) - implicitDiag;
         }
         else if (uplo == Teuchos::UPPER_TRI) {
-          numEntriesPerRow[i] = (N - i) - lastElt;
+          numEntriesPerRow[i] = (N - i) - implicitDiag;
         }
         sumOfEntriesPerRow += numEntriesPerRow[i];
       }
@@ -659,7 +681,7 @@ public:
     ArrayRCP<size_t> ptr =
       SparseOpsType::allocRowPtrs (node, numEntriesPerRow ());
     // We don't need the array of entry counts per row anymore.
-    numEntriesPerRow = Teuchos::null;
+    //numEntriesPerRow = Teuchos::null;
     ArrayRCP<ordinal_type> ind =
       SparseOpsType::template allocStorage<ordinal_type> (node, ptr ());
     ArrayRCP<scalar_type> val =
@@ -678,9 +700,16 @@ public:
         upperBound = N; // exclusive
       }
       else { // uplo == Teuchos::LOWER_TRI
-        lowerBound = Teuchos::OrdinalTraits<ordinal_type>::zero ();
+        lowerBound = 0;
         upperBound = (diag == Teuchos::UNIT_DIAG) ? i : i+1; // exclusive
       }
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        as<size_t> (upperBound) - as<size_t> (lowerBound) != numEntriesPerRow[i],
+        std::logic_error,
+        "At row i = " << i << ", loop bounds do not match expected number of "
+        "entries per row.  upperBound = " << upperBound << ", lowerBound = "
+        << lowerBound << ", but numEntriesPerRow[i] = " << numEntriesPerRow[i]
+        << ".");
       // Copy valid entries of the current row
       for (ordinal_type j = lowerBound; j < upperBound; ++j) {
         ind[curOffset] = j;
@@ -1480,6 +1509,7 @@ public:
         verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE;
       L_sparse->describe (out, verbLevel);
     }
+
     RCP<SparseOpsType> U_sparse =
       denseTriToSparseOps (*U_dense, node, params, UPPER_TRI, NON_UNIT_DIAG);
     //sparsifyDenseToSparseOps (*U_dense, node, params, UPPER_TRI, NON_UNIT_DIAG);
@@ -1492,6 +1522,55 @@ public:
         verbose_ ? Teuchos::VERB_HIGH : Teuchos::VERB_NONE;
       U_sparse->describe (out, verbLevel);
     }
+
+    if (verbose_ && debug_) {
+      RCP<dense_matrix_type> L_sparseAsDense = L_sparse->asDenseMatrix ();
+      RCP<dense_matrix_type> U_sparseAsDense = U_sparse->asDenseMatrix ();
+
+      out << "L_dense:" << endl;
+      {
+        Teuchos::OSTab tab2 (out_);
+        printDenseMatrix (*out_, *L_dense);
+      }
+      out << endl << "L_sparse:" << endl;
+      {
+        Teuchos::OSTab tab2 (out_);
+        //printSparseMatrixAsDense (out, *L_sparse);
+        printDenseMatrix (*out_, *L_sparseAsDense);
+      }
+      out << endl << "U_dense:" << endl;
+      {
+        Teuchos::OSTab tab2 (out_);
+        printDenseMatrix (*out_, *U_dense);
+      }
+      out << endl << "U_sparse:" << endl;
+      {
+        Teuchos::OSTab tab2 (out_);
+        //printSparseMatrixAsDense (out, *U_sparse);
+        printDenseMatrix (*out_, *U_sparseAsDense);
+      }
+      out << endl;
+
+      // Check whether U_sparse == U_dense.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        *U_dense != *U_sparseAsDense, std::logic_error,
+        "Conversion of the upper triangular factor U to sparse format is "
+        "incorrect, since converting the sparse matrix back to dense results "
+        "in a different matrix than the original dense one.");
+
+      // Check whether L_sparse == L_dense.  This requires first
+      // subtracting away the unit diagonal from L_sparseAsDense,
+      // which asDenseMatrix() helpfully added.
+      for (ordinal_type i = 0; i < N; ++i) {
+        (*L_sparseAsDense)(i,i) -= STS::one ();
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        *L_dense != *L_sparseAsDense, std::logic_error,
+        "Conversion of the lower triangular factor L to sparse format is "
+        "incorrect, since converting the sparse matrix back to dense results "
+        "in a different matrix than the original dense one.");
+    }
+
     // Convert A_dense into a separate sparse matrix.
     RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node, params);
     if (verbose_) {
@@ -1526,11 +1605,11 @@ public:
     // sample their columns one at a time.  Only do this for small
     // numbers of rows and columns, since this is slow otherwise.
     if (N <= 50) {
+      if (verbose_) {
+        out << "Comparing A_sparse to A_dense, column by column" << endl;
+      }
+      magnitude_type maxRelErr = STM::zero ();
       for (ordinal_type j = 0; j < N; ++j) {
-        if (verbose_) {
-          out << "Comparing A_sparse to A_dense: column "
-              << (j+1) << " of " << N << ":" << endl;
-        }
         MVT::Init (*X, STS::zero ());
         X->getValuesNonConst ()[j] = STS::one (); // X := e_j
         MVT::Random (*Y_hat);
@@ -1546,48 +1625,24 @@ public:
                                                                (const MV) *X, *Y);
         // Compare Y and Y_hat.
         relErr = maxRelativeError (Y_hat, Y, Y_scratch);
-        if (verbose_) {
-          Teuchos::OSTab tab2 (out_);
-          out << "Relative error: " << relErr << endl;
-        }
         if (relErr > tol) {
           err << "Columns " << (j+1) << " of A_sparse and A_dense differ by "
             "maximum relative error of " << relErr << ", which exceeds the "
             "given tolerance " << tol << "." << endl;
           success = false;
         }
-
-        if (false) {
-          // Show the columns of A_dense and A_sparse.
-          Teuchos::OSTab tab2 (out_);
-          ArrayRCP<const scalar_type> Y_hat_ptr = Y_hat->getValues ();
-          ArrayRCP<const scalar_type> Y_ptr = Y->getValues ();
-
-          out << "A_dense(:," << (j+1) << ") = [";
-          for (ordinal_type i = 0; i < numRows; ++i) {
-            out << Y_hat_ptr[i];
-            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
-              out << " ";
-            }
-          }
-          out << "]" << endl;
-
-          out << "A_sparse(:," << (j+1) << ") = [";
-          for (ordinal_type i = 0; i < numRows; ++i) {
-            out << Y_ptr[i];
-            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
-              out << " ";
-            }
-          }
-          out << "]" << endl;
-        }
+        maxRelErr = std::max (maxRelErr, relErr);
       } // for each column j of A_{dense,sparse}
+      if (verbose_) {
+        Teuchos::OSTab tab2 (out_);
+        out << "Max relative column error: " << maxRelErr << endl;
+      }
 
+      if (verbose_) {
+        out << "Comparing U_sparse to U_dense, column by column" << endl;
+      }
+      maxRelErr = STM::zero ();
       for (ordinal_type j = 0; j < N; ++j) {
-        if (verbose_) {
-          out << "Comparing U_sparse to U_dense: column "
-              << (j+1) << " of " << N << ":" << endl;
-        }
         MVT::Init (*X, STS::zero ());
         X->getValuesNonConst ()[j] = STS::one (); // X := e_j
         MVT::Random (*Y_hat);
@@ -1604,44 +1659,24 @@ public:
                                                                (const MV) *X, *Y);
         // Compare Y and Y_hat.
         relErr = maxRelativeError (Y_hat, Y, Y_scratch);
-        if (verbose_) {
-          Teuchos::OSTab tab2 (out_);
-          out << "Relative error: " << relErr << endl;
-        }
         if (relErr > tol) {
           err << "Columns " << (j+1) << " of U_sparse and U_dense differ by "
             "maximum relative error of " << relErr << ", which exceeds the "
             "given tolerance " << tol << "." << endl;
           success = false;
-          Teuchos::OSTab tab2 (out_);
-          ArrayRCP<const scalar_type> Y_hat_ptr = Y_hat->getValues ();
-          ArrayRCP<const scalar_type> Y_ptr = Y->getValues ();
-
-          out << "U_dense(:," << (j+1) << ") = [";
-          for (ordinal_type i = 0; i < numRows; ++i) {
-            out << Y_hat_ptr[i];
-            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
-              out << " ";
-            }
-          }
-          out << "]" << endl;
-
-          out << "U_sparse(:," << (j+1) << ") = [";
-          for (ordinal_type i = 0; i < numRows; ++i) {
-            out << Y_ptr[i];
-            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
-              out << " ";
-            }
-          }
-          out << "]" << endl;
         }
+        maxRelErr = std::max (maxRelErr, relErr);
       } // for each column j of U_{dense,sparse}
+      if (verbose_) {
+        Teuchos::OSTab tab2 (out_);
+        out << "Max relative column error: " << maxRelErr << endl;
+      }
 
+      if (verbose_) {
+        out << "Comparing L_sparse to L_dense, column by column" << endl;
+      }
+      maxRelErr = STM::zero ();
       for (ordinal_type j = 0; j < N; ++j) {
-        if (verbose_) {
-          out << "Comparing L_sparse to L_dense: column "
-              << (j+1) << " of " << N << ":" << endl;
-        }
         MVT::Init (*X, STS::zero ());
         X->getValuesNonConst ()[j] = STS::one (); // X := e_j
         MVT::Random (*Y_hat);
@@ -1666,39 +1701,19 @@ public:
         }
         // Compare Y and Y_hat.
         relErr = maxRelativeError (Y_hat, Y, Y_scratch);
-        if (verbose_) {
-          Teuchos::OSTab tab2 (out_);
-          out << "Relative error: " << relErr << endl;
-        }
         if (relErr > tol) {
           err << "Columns " << (j+1) << " of L_sparse and L_dense differ by "
             "maximum relative error of " << relErr << ", which exceeds the "
             "given tolerance " << tol << "." << endl;
           success = false;
-          Teuchos::OSTab tab2 (out_);
-          ArrayRCP<const scalar_type> Y_hat_ptr = Y_hat->getValues ();
-          ArrayRCP<const scalar_type> Y_ptr = Y->getValues ();
-
-          out << "L_dense(:," << (j+1) << ") = [";
-          for (ordinal_type i = 0; i < numRows; ++i) {
-            out << Y_hat_ptr[i];
-            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
-              out << " ";
-            }
-          }
-          out << "]" << endl;
-
-          out << "L_sparse(:," << (j+1) << ") = [";
-          for (ordinal_type i = 0; i < numRows; ++i) {
-            out << Y_ptr[i];
-            if (i < numRows + Teuchos::OrdinalTraits<ordinal_type>::one()) {
-              out << " ";
-            }
-          }
-          out << "]" << endl;
         }
+        maxRelErr = std::max (maxRelErr, relErr);
+      } // for each column j of L_{dense,sparse}
+      if (verbose_) {
+        Teuchos::OSTab tab2 (out_);
+        out << "Max relative column error: " << maxRelErr << endl;
       }
-    } // for each column j of L_{dense,sparse}
+    } // if N <= 50
 
     //////////////////////////////////////////////////////////////////////
     // Test sparse triangular matrix-(multi)vector multiply.
