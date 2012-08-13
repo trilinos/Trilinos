@@ -208,21 +208,20 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 	}
       }
     }
-  
 // Compute B
     B->putScalar(0.0);
     for (ordinal_type i=0; i<pa; i++)
         (*B)(i,0) = ca[i]*basis->norm_squared(i);
-
-Teuchos::SerialDenseMatrix<ordinal_type,value_type> D(sz, 1);
+Teuchos::SerialDenseMatrix<int,double> D(sz, 1);
 //Equilibrate the linear system
 if (equil == 1){
-	
 	//Create diag mtx of max row entries
 	for (int i=0; i<sz; i++){
 		Teuchos::SerialDenseMatrix<int, double> r(Teuchos::View, *A, 1, sz, i, 0);
 		D(i,0)=sqrt(r.normOne());
 	}
+
+
 	//Compute inv(D)*A*inv(D)
 	for (int i=0; i<sz; i++){
 		for (int j=0; j<sz; j++){
@@ -235,7 +234,6 @@ if (equil == 1){
       	}
 
 }
-
 
 if (linear == 1){
 //Compute M, the linear matrix to be used in the preconditioner

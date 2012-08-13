@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
     int max_it_div = 50;
     CLP.setOption("max_it_div", &max_it_div, "Maximum # of Iterations in Iterative Solver for Division");
 
-    bool equilibrate = true;
+    bool equilibrate = false;
     CLP.setOption("equilibrate", "noequilibrate", &equilibrate,
                   "Equilibrate the linear system");
 

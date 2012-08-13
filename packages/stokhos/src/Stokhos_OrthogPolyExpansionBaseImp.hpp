@@ -78,7 +78,7 @@ OrthogPolyExpansionBase(
   if (schuropt == "full")
         diag = 1;
 
-  int equil = params->get("Equilibrate", 1);
+  int equil = params->get("Equilibrate", 0);
 
   
   if (name == "Dense Direct")
