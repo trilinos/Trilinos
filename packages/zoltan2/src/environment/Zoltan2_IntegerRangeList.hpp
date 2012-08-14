@@ -737,8 +737,8 @@ public:
 
 #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
-  RCP<const Tuechos::ParameterEntryValidator> getDummyValidator() const{
-    return Tuechos::DummyObjectGetter<IntegerRangeListValidator<Integral> >::getDummyObject();
+  RCP<const Teuchos::ParameterEntryValidator> getDummyValidator() const{
+    return Teuchos::DummyObjectGetter<IntegerRangeListValidator<Integral> >::getDummyObject();
   }
 #endif
 };
