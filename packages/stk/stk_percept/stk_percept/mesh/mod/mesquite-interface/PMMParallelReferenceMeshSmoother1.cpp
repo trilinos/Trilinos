@@ -38,7 +38,6 @@ namespace stk {
       double xc[3]={0,0,0};
       double eps=1.e-6;
       double eps1 = eps*nodal_edge_length_ave(node);
-      eps1=eps;
 
       for (int i=0; i < spatialDim; i++)
         {
@@ -185,7 +184,6 @@ namespace stk {
                         
                         double eps = 1.e-6;
                         double eps1 = eps*edge_length_ave;
-                        eps1=eps;
 
                         double gsav[3]={0,0,0};
                         for (int idim=0; idim < spatialDim; idim++)
@@ -413,7 +411,7 @@ namespace stk {
         double min_alpha_factor=1.e-12;
 
         //PRINT_1("tmp srk get_gradient at linesearch");
-        get_gradient(mesh, domain);
+        //get_gradient(mesh, domain);
         double norm_gradient2 = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
 
         double armijo_offset_factor = c0*norm_gradient2;
@@ -524,7 +522,7 @@ namespace stk {
       get_gradient(mesh, domain);
       double d_g = 0.0;
       if (debug_par) d_g = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
-      debug_print(alpha);
+      if (debug_par) debug_print(alpha);
 
       /// r = -g
       eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_r_field);
