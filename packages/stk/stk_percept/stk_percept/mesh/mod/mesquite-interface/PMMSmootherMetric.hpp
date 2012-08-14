@@ -20,7 +20,7 @@ namespace stk {
     class PMMSmootherMetric
     {
     public:
-      PMMSmootherMetric(PerceptMesh *eMesh) : m_eMesh(eMesh)
+      PMMSmootherMetric(PerceptMesh *eMesh) : m_topology_data(0), m_eMesh(eMesh)
       {
         m_coord_field_current   = eMesh->get_coordinates_field();
         m_coord_field_original  = eMesh->get_field("coordinates_NM1");
@@ -28,10 +28,13 @@ namespace stk {
 
       virtual double metric(stk::mesh::Entity& element, bool& valid)=0;
 
+      const CellTopologyData * m_topology_data ;
+
     protected:
       PerceptMesh *m_eMesh;
       stk::mesh::FieldBase *m_coord_field_current;
       stk::mesh::FieldBase *m_coord_field_original;
+      
     };
 
 
@@ -46,12 +49,12 @@ namespace stk {
         //jacA.m_scale_to_unit = true;
 
         double A_ = 0.0, W_ = 0.0; // current and reference detJ
-        jacA(A_, *m_eMesh, element, m_coord_field_current);
-        jacW(W_, *m_eMesh, element, m_coord_field_original);
+        jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
+        jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_untangle=0.0;
-        double A_tot=0, W_tot=0;
-        MsqMatrix<3,3> ident; 
-        ident.identity();
+        //double A_tot=0, W_tot=0;
+        //MsqMatrix<3,3> ident; 
+        //ident.identity();
 
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
@@ -61,8 +64,8 @@ namespace stk {
               {
                 valid = false;
               }
-            A_tot += Ai;
-            W_tot += Wi;
+            //A_tot += Ai;
+            //W_tot += Wi;
             double untangle_metric = 0.0;
             double beta = 0.01*Wi;  // FIXME magic number
             double temp_var = Ai - beta;
@@ -96,23 +99,20 @@ namespace stk {
         //jacA.m_scale_to_unit = true;
 
         double A_ = 0.0, W_ = 0.0; // current and reference detJ
-        jacA(A_, *m_eMesh, element, m_coord_field_current);
-        jacW(W_, *m_eMesh, element, m_coord_field_original);
+        jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
+        jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_shape=0.0;
-        double A_tot=0, W_tot=0;
         MsqMatrix<3,3> ident; 
         ident.identity();
 
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double Ai = jacA.mMetrics[i];
-            double Wi = jacW.mMetrics[i];
+            //double Wi = jacW.mMetrics[i];
             if (Ai < 0)
               {
                 valid = false;
               }
-            A_tot += Ai;
-            W_tot += Wi;
             double shape_metric = 0.0;
             if (std::fabs(Ai) > 1.e-10)
               {

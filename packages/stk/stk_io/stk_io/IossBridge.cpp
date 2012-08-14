@@ -1323,6 +1323,36 @@ void define_output_db(Ioss::Region & io_region ,
   if (input_region != NULL)
 	io_region.synchronize_id_and_name(input_region, true);
 
+  // for streaming refinement, each "pseudo-processor" doesn't know about others, so we pick a sort order
+  //   and use it for all pseudo-procs - the original_block_order property is used to set the order
+  //   on all procs.
+  if (sort_stk_parts)
+  {
+    int offset=0;
+    for (mesh::PartVector::const_iterator i = all_parts.begin();
+         i != all_parts.end(); ++i) {
+
+      mesh::Part * const part = *i ;
+
+      if (is_part_io_part(*part)) {
+        if (invalid_rank(part->primary_entity_rank()))
+          continue;
+        else if (part->primary_entity_rank() == el_rank)
+          {
+            Ioss::GroupingEntity *element_block = io_region.get_entity(part->name());
+            if (element_block)
+              {
+                if (element_block->property_exists("original_block_order")) {
+                  element_block->property_erase("original_block_order");
+                }
+                element_block->property_add(Ioss::Property("original_block_order", offset));
+                ++offset;
+              }
+          }
+      }
+    }
+  }
+
   io_region.end_mode( Ioss::STATE_DEFINE_MODEL );
 }
 

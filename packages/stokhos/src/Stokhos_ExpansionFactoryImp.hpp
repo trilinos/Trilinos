@@ -96,7 +96,9 @@ create(Teuchos::ParameterList& sgParams)
     }
     expansion = 
       Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, quad, Teuchos::rcp(&expParams,false)));
-  }
+   
+
+ }
   else if (exp_type == "For UQTK") {
 #ifdef HAVE_STOKHOS_FORUQTK
     typename Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type,value_type>::EXPANSION_METHOD method = 

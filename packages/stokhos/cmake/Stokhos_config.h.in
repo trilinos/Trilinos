@@ -27,6 +27,9 @@
 /* Define if ML is enabled */
 #cmakedefine HAVE_STOKHOS_ML
 
+/* Define if MueLu is enabled */
+#cmakedefine HAVE_STOKHOS_MUELU
+
 /* Define if Anasazi is enabled */
 #cmakedefine HAVE_STOKHOS_ANASAZI
 

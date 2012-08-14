@@ -183,6 +183,9 @@ public:
   /** \brief  Subset communicaiton list for this entity */
   PairIterEntityComm comm( const Ghosting & sub ) const { return m_entityImpl.comm( sub ); }
 
+//  RelationVector& rel_vec() { return m_entityImpl.rel_vec(); }
+  void compress_relation_capacity();
+
 private:
 
   void set_key(const EntityKey& arg_key) { m_entityImpl.set_key(arg_key); }

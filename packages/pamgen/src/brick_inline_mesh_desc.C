@@ -2,7 +2,7 @@
 #include "brick_inline_mesh_desc.h"
 #include "uns_inline_decomp.h"
 #include <sstream>
-#include "../asrc/fudges.h"
+#include "pamgen_fudges.h"
 #include <math.h>
 
 

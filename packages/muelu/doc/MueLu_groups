@@ -1,0 +1,10 @@
+/*! @defgroup MueLuBaseClasses The main MueLu base classes
+
+   some text
+*/
+
+/*! @defgroup MueLuTransferClasses The main MueLu prolongator classes
+*/
+
+/*! @defgroup MueLuManagingDataDependencies Handling data dependencies between factories
+*/

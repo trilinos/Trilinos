@@ -571,23 +571,26 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //nonlocal data. To do that, create a list of all column-indices that
     //occur in our nonlocal rows.
 
-    std::vector<int> cols;
+    if ( colMap_ == NULL ) {
+      std::vector<int> cols;
 
-    for(size_t i=0; i<nonlocalRows_.size(); ++i) {
-      for(size_t j=0; j<nonlocalCols_[i].size(); ++j) {
-        int col = nonlocalCols_[i][j];
-        std::vector<int>::iterator it =
-           std::lower_bound(cols.begin(), cols.end(), col);
-        if (it == cols.end() || *it != col) {
-          cols.insert(it, col);
+
+      for(size_t i=0; i<nonlocalRows_.size(); ++i) {
+        for(size_t j=0; j<nonlocalCols_[i].size(); ++j) {
+          int col = nonlocalCols_[i][j];
+          std::vector<int>::iterator it =
+              std::lower_bound(cols.begin(), cols.end(), col);
+          if (it == cols.end() || *it != col) {
+            cols.insert(it, col);
+          }
         }
       }
-    }
 
-    int* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
-    if ( colMap_ == NULL )
+      int* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
+
       colMap_ = new Epetra_Map(-1, cols.size(), cols_ptr,
-         Map().IndexBase(), Map().Comm());
+          Map().IndexBase(), Map().Comm());
+    }
 
     //now we need to create a matrix with sourceMap and colMap, and fill it with
     //our nonlocal data so we can then export it to the correct owning processors.

@@ -1447,6 +1447,8 @@ namespace Ioss {
 	    // to the new entity in order to maintain the same order
 	    // since some codes access attributes by implicit order and
 	    // not name... (typically, element blocks only)
+	    size_t entity_count = this_ge->get_property("entity_count").get_int();
+	    
 	    Ioss::NameList attr_fields;
 	    ge->field_describe(Ioss::Field::ATTRIBUTE, &attr_fields);
 	    Ioss::NameList::const_iterator IF;
@@ -1461,7 +1463,13 @@ namespace Ioss {
 		this_field.set_index(index);
 	      } else {
 		// If the field does not already exist, add it to the output node block
-		this_ge->field_add(field);
+		if (field.raw_count() != entity_count) {
+		  Ioss::Field new_field(field);
+		  new_field.reset_count(entity_count);
+		  this_ge->field_add(new_field);
+		} else {
+		  this_ge->field_add(field);
+		}
 	      }
 	    }
 	  }

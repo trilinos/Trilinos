@@ -52,8 +52,6 @@
 #include <sstream>
 #include <iostream>
 
-#include <impl/KokkosArray_Preprocessing_macros.hpp>
-
 /*--------------------------------------------------------------------------*/
 
 namespace {
@@ -77,9 +75,15 @@ struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
   const view_type v2 ;
 
   TestViewOperator()
+#if 0
     : v1( KokkosArray::create<view_type>( "v1" , N ) )
     , v2( KokkosArray::create<view_type>( "v2" , N ) )
     {}
+#else
+    : v1( "v1" , N )
+    , v2( "v2" , N )
+    {}
+#endif
 
   static void apply()
   {
@@ -142,8 +146,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -239,8 +243,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space>() )
+    , rsh( right_shape::template create< memory_space>() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -334,8 +338,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -427,8 +431,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -518,8 +522,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -607,8 +611,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -694,8 +698,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
   long         right_alloc ;
 
   TestViewOperator_LeftAndRight()
-    : lsh( KokkosArray::Impl::Factory<left_shape, memory_space>::create() )
-    , rsh( KokkosArray::Impl::Factory<right_shape,memory_space>::create() )
+    : lsh( left_shape ::template create< memory_space >() )
+    , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
     , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
@@ -756,6 +760,7 @@ public:
   {
     run_test();
     run_test_const();
+    run_test_subview();
     run_test_vector();
     TestViewOperator< T , device >::apply();
     TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2][3] , device >::apply();
@@ -767,7 +772,7 @@ public:
     TestViewOperator_LeftAndRight< int[2][3] , device >::apply();
   }
 
-  enum { NP = 1000 ,
+  enum { N0 = 1000 ,
          N1 = 3 ,
          N2 = 5 ,
          N3 = 7 };
@@ -778,12 +783,6 @@ public:
   typedef KokkosArray::View< T[][N1][N2] , device > dView3 ;
   typedef KokkosArray::View< T[][N1][N2][N3] , device > dView4 ;
   typedef KokkosArray::View< const T[][N1][N2][N3] , device > const_dView4 ;
-
-  struct MyView4 {
-    typedef T       data_type[][N1][N2][N3] ;
-    typedef device  layout_type ;
-    typedef device  device_type ;
-  };
 
   static void run_test()
   {
@@ -802,8 +801,8 @@ public:
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
 
-    dx = KokkosArray::create<dView4>( "dx" , NP );
-    dy = KokkosArray::create<MyView4>( "dy" , NP );
+    dx = dView4( "dx" , N0 );
+    dy = dView4( "dy" , N0 );
 
     const_dView4 const_dx = dx ;
 
@@ -812,12 +811,12 @@ public:
     ASSERT_TRUE(dy);
     ASSERT_NE( dx , dy );
 
-    ASSERT_EQ( dx.dimension(0) , NP );
+    ASSERT_EQ( dx.dimension(0) , N0 );
     ASSERT_EQ( dx.dimension(1) , N1 );
     ASSERT_EQ( dx.dimension(2) , N2 );
     ASSERT_EQ( dx.dimension(3) , N3 );
 
-    ASSERT_EQ( dy.dimension(0) , NP );
+    ASSERT_EQ( dy.dimension(0) , N0 );
     ASSERT_EQ( dy.dimension(1) , N1 );
     ASSERT_EQ( dy.dimension(2) , N2 );
     ASSERT_EQ( dy.dimension(3) , N3 );
@@ -826,7 +825,7 @@ public:
     hy = KokkosArray::create_mirror( dy );
 
     size_t count = 0 ;
-    for ( size_t ip = 0 ; ip < NP ; ++ip ) {
+    for ( size_t ip = 0 ; ip < N0 ; ++ip ) {
     for ( size_t i1 = 0 ; i1 < hx.dimension(1) ; ++i1 ) {
     for ( size_t i2 = 0 ; i2 < hx.dimension(2) ; ++i2 ) {
     for ( size_t i3 = 0 ; i3 < hx.dimension(3) ; ++i3 ) {
@@ -837,7 +836,7 @@ public:
     KokkosArray::deep_copy( dy , dx );
     KokkosArray::deep_copy( hy , dy );
 
-    for ( size_t ip = 0 ; ip < NP ; ++ip ) {
+    for ( size_t ip = 0 ; ip < N0 ; ++ip ) {
     for ( size_t i1 = 0 ; i1 < N1 ; ++i1 ) {
     for ( size_t i2 = 0 ; i2 < N2 ; ++i2 ) {
     for ( size_t i3 = 0 ; i3 < N3 ; ++i3 ) {
@@ -875,7 +874,7 @@ public:
   {
     typedef KokkosArray::View< DataType , device > typeX ;
     typedef KokkosArray::View< const DataType , device > const_typeX ;
-    typeX x = KokkosArray::create< typeX >( "X" );
+    typeX x( "X" );
     const_typeX xc = x ;
 
     ASSERT_TRUE( xc == x );
@@ -884,6 +883,23 @@ public:
     // typeX xf = xc ; // setting non-const from const must not compile
 
     check_auto_conversion_to_const( x , x );
+  }
+
+  static void run_test_subview()
+  {
+    typedef KokkosArray::View< const T , device > sView ;
+
+    dView0 d0( "d0" );
+    dView1 d1( "d1" , N0 );
+    dView2 d2( "d2" , N0 );
+    dView3 d3( "d3" , N0 );
+    dView4 d4( "d4" , N0 );
+
+    sView s0( d0 );
+    sView s1( d1 , 1 );
+    sView s2( d2 , 1 , 1 );
+    sView s3( d3 , 1 , 1 , 1 );
+    sView s4( d4 , 1 , 1 , 1 , 1 );
   }
 
   static void run_test_vector()
@@ -896,10 +912,10 @@ public:
     typedef KokkosArray::View< const T[] ,    KokkosArray::LayoutLeft , host > const_vector_type ;
     typedef KokkosArray::View< const T[][0] , KokkosArray::LayoutLeft , host > const_multivector_type ;
 
-    multivector_type mv = KokkosArray::create<multivector_type>( "mv" , Length , Count );
-    vector_type v1 = KokkosArray::view( mv , 0 );
-    vector_type v2 = KokkosArray::view( mv , 1 );
-    vector_type v3 = KokkosArray::view( mv , 2 );
+    multivector_type mv = multivector_type( "mv" , Length , Count );
+    vector_type v1( mv , 0 );
+    vector_type v2( mv , 1 );
+    vector_type v3( mv , 2 );
 
     ASSERT_TRUE( & v1[0] == & mv(0,0) );
     ASSERT_TRUE( & v2[0] == & mv(0,1) );

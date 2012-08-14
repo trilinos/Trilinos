@@ -147,7 +147,6 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const scalar_type alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.length();
 
     cusparseStatus_t status =
       cusparseScsrmv( s.handle ,

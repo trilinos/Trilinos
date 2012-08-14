@@ -1,0 +1,88 @@
+\documentclass{article}
+\usepackage{graphicx,amsmath}
+\usepackage{xspace} %puts spaces after macros only when needed
+\usepackage{url}
+
+
+% For listing code.  Default will be C++ unless you override it with the language=BLAH option.
+\usepackage{listings}
+\lstloadlanguages{C++}
+\lstset{language=C++,breaklines=true,showstringspaces=false}
+
+\usepackage[pdftex, pdfpagemode=none, pdfstartview=FitH]{hyperref}
+\usepackage[usenames]{color}
+\definecolor{Red}{rgb}{1,0,0}
+\definecolor{RayBlue}{rgb}{0,0,1}
+\definecolor{cmsPurple}{rgb}{1,0,1}
+\definecolor{jhuGreen}{rgb}{0,.7,.4}
+
+\hypersetup{
+  pdfauthor = {Jeremie Gaidamour, Axel Gerstenberger, Jonathan J. Hu, Christopher M. Siefert, Ray S. Tuminaro},
+  pdftitle = {MueLu Developers Guide}
+  pdfkeywords = {multigrid, algebraic multigrid, AMG, energy minimization, MueLu, Trilinos},
+  colorlinks= {true},
+  citecolor = {blue},
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% New command definitions are in definition.tex.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{definitions}
+
+\title{MueLu Developers Guide}
+
+\author{J\'er\'emie Gaidamour, Axel Gerstenberger, Jonathan J. Hu,\\
+        Christopher M. Siefert and  Raymond S. Tuminaro}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\maketitle
+
+\newpage
+\tableofcontents
+\newpage
+
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+\newpage
+
+% Page Style stuff
+\pagestyle{myheadings} \thispagestyle{plain} \markboth{Gaidamour,Gerstenberger,Hu,Siefert,Tuminaro}{\muelu Developers Guide}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}\label{sec:introduction}
+\input{introduction}
+
+\section{Getting Started}\label{sec:getting started}
+\input{gettingStarted}
+
+\section{Naming Conventions}\label{sec:naming conventions}
+\input{namingConventions}
+
+\section{Coding Conventions}\label{sec:coding conventions}
+\input{codingConventions}
+
+\section{Development}\label{sec:development}
+\input{development}
+
+\section{Testing}\label{sec:testing}
+\input{testing}
+
+\section{Hints}\label{sec:hints}
+\input{hints}
+
+\section{``Common" C++ errors}\label{sec:common errors}
+\input{commonErrors}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+% References
+\bibliographystyle{siam} \bibliography{devGuide}
+
+\end{document}

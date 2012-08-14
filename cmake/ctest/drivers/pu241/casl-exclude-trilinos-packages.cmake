@@ -16,6 +16,8 @@ SET(${PROJECT_NAME}_EXCLUDE_PACKAGES
   TrilinosCouplings
   MOOCHO
   Stokhos
+  Xpetra
+  MueLu
   Sundance
   CTrilinos
   ForTrilinos

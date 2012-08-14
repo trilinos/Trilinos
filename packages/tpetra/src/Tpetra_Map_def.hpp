@@ -275,7 +275,6 @@ namespace {
     // via a temporary array that compresses two all-gathers into one.
     //
     const int numProcs = comm->getSize();
-    const int myRank   = comm->getRank();
     // Leave an extra space at the end to put one plus the global max GID.
     allMinGids = arcp<GO> (as<size_type> (numProcs+1));
     allMaxGids = arcp<GO> (as<size_type> (numProcs));

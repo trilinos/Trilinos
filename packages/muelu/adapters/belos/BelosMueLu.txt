@@ -1,0 +1,31 @@
+
+  // Here are a list of the Belos adapters for MueLu. To use Belos::LinearProblem<ScalarType,MV,OP> with:
+  // A - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuPrecOp
+  // B - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuPrecOp (TODO: not available yet, and it is actually an adapter Epetra/MueLu)
+  // C - MV=Tpetra::MultiVector<...>    and OP=Tpetra_Operator<...>       , turns your MueLu::Hierarchy into a Belos::MueLuPrecOp (TODO: not available yet)
+  // D - MV=Xpetra::MultiVector<...>   and OP=Xpetra::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuXpetraPrecOp => TODO: this description have to be improved
+  // TODO: I can also quickly implements couples Tpetra::MultiVector/Xpetra::Operator and Epetra_MultiVector/Xpetra::Operator=> it's more for debugging...because it skip the XpetraMultiVecTrait
+
+  // JG Notes about the implementation of Belos adapters for Xpetra objects:
+  // To use Belos with Xpetra, we need here a common ancestor between classes Xpetra::Operator and MueLu::Hierarchy
+  // and then implement the Belos::OperatorTraits for this new class hierarchy ancestor.
+  //
+  // There is several way to do that:
+  // 1) Xpetra::Operator can be the common ancestor:
+  //  - 1a) MueLu::Hierarchy implements directly Xpetra::Operator
+  //  - 1b) MueLu::Hierarchy is wrapped to an object that implements this interface
+  // 2) Creates a new common interface and:
+  // - 2a) Both MueLu::Hierarchy and Xpetra::Operator inherit from it directly.
+  // - 2b) Wrap both MueLu::Hierarchy and Xpetra::Operator to respect the new interface.
+  //
+  // PB of 1): Right now, Xpetra::Operator is way to complicated to be the common interface.
+  //           At some point, Xpetra::Operator should correspond to the Tpetra::Operator interface and the old one should be renamed
+  //           1a) is the approach of Ifpack in some sense: Ifpack Preconditionner implements Epetra_Operator but there is problem 
+  //           with Apply vs ApplyInverse and so it ends up with an approach more similar to 1b).
+  //
+  // PB of 2b): If the new interface is only for Belos, we should not introduce inheritence dependency to it
+  //            Approach 2b) is very close to 1a) if the Xpetra::Operator is changed to be === to Tpetra::Operator
+  //
+  // Righ now, I adopt the approach 2b). The common interface is OperatorT. 
+  // This approach is very similar with what is done with Belos::Operator but here, we don't need to wrap Xpetra::MultiVector
+  // I think that the OperatorT interface should be provided by Belos and replace the Belos::Operator

@@ -894,20 +894,22 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
     const Scalar * const s_n ,
     Scalar * const rot_stress )const
   {
+    const int rot_state = current_state ; // 1 ;
+
     //   t : temporary variables
     //   s_n : stress_new in local memory space
     //   r_n : rotation_new in local memory space
     Scalar t[9], r_n[9];
 
-    r_n[0] = rotation(ielem, 0, 1);
-    r_n[1] = rotation(ielem, 1, 1);
-    r_n[2] = rotation(ielem, 2, 1);
-    r_n[3] = rotation(ielem, 3, 1);
-    r_n[4] = rotation(ielem, 4, 1);
-    r_n[5] = rotation(ielem, 5, 1);
-    r_n[6] = rotation(ielem, 6, 1);
-    r_n[7] = rotation(ielem, 7, 1);
-    r_n[8] = rotation(ielem, 8, 1);
+    r_n[0] = rotation(ielem, 0, rot_state );
+    r_n[1] = rotation(ielem, 1, rot_state );
+    r_n[2] = rotation(ielem, 2, rot_state );
+    r_n[3] = rotation(ielem, 3, rot_state );
+    r_n[4] = rotation(ielem, 4, rot_state );
+    r_n[5] = rotation(ielem, 5, rot_state );
+    r_n[6] = rotation(ielem, 6, rot_state );
+    r_n[7] = rotation(ielem, 7, rot_state );
+    r_n[8] = rotation(ielem, 8, rot_state );
 
     t[0] = s_n[K_S_XX]*r_n[K_F_XX]+ s_n[K_S_XY]*r_n[K_F_XY]+ s_n[K_S_XZ]*r_n[K_F_XZ];
     t[1] = s_n[K_S_YX]*r_n[K_F_XX]+ s_n[K_S_YY]*r_n[K_F_XY]+ s_n[K_S_YZ]*r_n[K_F_XZ];

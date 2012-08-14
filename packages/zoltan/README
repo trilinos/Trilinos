@@ -1,44 +1,87 @@
-##############################################################################
-# Zoltan Library for Parallel Applications                                   #
-# Copyright (c) 2000-2010, Sandia National Laboratories.                     #
-# Portions of this software and documentation are a contribution of NIST     #
-# and not subject to copyright in the United States.                         #
-##############################################################################
-Contacts:
+# @HEADER
+#
+########################################################################
+#
+#  Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
+#                  Copyright 2012 Sandia Corporation
+#
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Questions? Contact Karen Devine	kddevin@sandia.gov
+#                    Erik Boman	        egboman@sandia.gov
+#
+########################################################################
+#
+# @HEADER
+@HEADER
 
-  Karen Devine, Erik Boman
-  Scalable Algorithms Dept.
-  Sandia National Laboratories
-  P.O. Box 5800
-  Albuquerque, NM  87185-1318
+**********************************************************************
 
-  kddevin@sandia.gov egboman@sandia.gov
-##############################################################################
+ Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
+                 Copyright 2012 Sandia Corporation
 
-License:
+Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+the U.S. Government retains certain rights in this software.
 
-Zoltan is released under the GNU Lesser General Public License.  A 
-copy of the license is included in this distribution.  Contact one 
-of the developers listed above for more information.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-##############################################################################
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
 
-Important Notice:
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
 
-Neither Sandia, the government, the DOE, nor any of their employees, makes
-any warranty, express or implied, or assumes any legal liability or
-responsibility for the accuracy, completeness, or usefulness of any
-information, apparatus, product, or process disclosed, or represents that
-its use would not infringe privately owned rights. This information is made
-available on an "AS-IS" basis.
-ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-EXCLUDED HEREUNDER.
-Neither Sandia nor the Government, nor their agents, officers and employees
-shall be liable for any loss, damage (including, incidental, consequential
-and special), injury or other casualty of whatsoever kind, or by whomsoever
-caused, to the person or property of anyone arising out of or resulting from
-this information, or the accuracy and validity of this information. 
+3. Neither the name of the Corporation nor the names of the
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact Karen Devine	kddevin@sandia.gov
+                   Erik Boman	egboman@sandia.gov
+
+@HEADER
 
 ##############################################################################
 
@@ -47,5 +90,5 @@ INSTALLATION
 Instructions for building and installing Zoltan using CMAKE or Autotools
 are at the following web site:
 
-  http://www.cs.sandia.gov/zoltan/ug_html/ug_usage.html
+ http://www.cs.sandia.gov/zoltan/ug_html/ug_usage.html
 

@@ -115,6 +115,7 @@ public:
                      const elem_matrices_type & elem_matrices ,
                      const elem_vectors_type  & elem_vectors )
   {
+    const size_t row_count = matrix.graph.row_map.dimension(0) - 1 ;
     GatherFill op ;
     op.node_elem_ids = mesh.node_elem_ids ;
     op.elem_graph    = elem_graph ;
@@ -123,7 +124,7 @@ public:
     op.system_coeff  = matrix.coefficients ;
     op.system_rhs    = rhs ;
 
-    parallel_for( matrix.graph.row_map.length() , op );
+    parallel_for( row_count , op );
   }
 };
 

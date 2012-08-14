@@ -81,6 +81,14 @@ public:
       size  = rhs.size ;  length = rhs.length ; count = rhs.count ;
       return *this ;
     }
+
+    ~Info()
+    {
+      begin = 0 ; end = 0 ; type = 0 ;
+      size  = 0 ; length = 0 ; count = 0 ;
+    }
+
+    void print( std::ostream & ) const ;
   };
 
   /** \brief  Track a pointer. */
@@ -97,16 +105,14 @@ public:
               const std::string label )
   { track( ptr , & typeid(Type) , sizeof(Type) , length , label ); }
 
-  /** \brief  Increment the tracking count.
-   *          Return the post-incremented count.
-   */
-  Info increment( const void * ptr );
+  /** \brief  Increment the tracking count.  */
+  void increment( const void * ptr );
 
   /** \brief  Decrement the tracking count.
-   *          Return the post-decremented count.
-   *          If zero then the entry is deleted.
+   *          If zero then the entry is deleted and the
+   *          allocated pointer is returned.
    */
-  Info decrement( const void * ptr );
+  void * decrement( const void * ptr );
 
   /** \brief  Query a tracked pointer */
   Info query( const void * ptr ) const ;

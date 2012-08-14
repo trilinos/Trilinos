@@ -29,6 +29,7 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include <iomanip>
+#include <cmath>
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Comm.h"
@@ -70,7 +71,9 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix_in) :
   Matrix_(Teuchos::rcp(Matrix_in,false)),
   IsParallel_(false),
   ZeroStartingSolution_(true),
-  DoBackwardGS_(false)
+  DoBackwardGS_(false),
+  DoL1Method_(false),
+  L1Eta_(1.5)
 {
 }
 
@@ -107,6 +110,10 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
                                    ZeroStartingSolution_);
 
   DoBackwardGS_         = List.get("relaxation: backward mode",DoBackwardGS_);
+
+  DoL1Method_           = List.get("relaxation: use l1",DoL1Method_);
+
+  L1Eta_                = List.get("relaxation: l1 eta",L1Eta_);
   
   SetLabel();
 
@@ -184,6 +191,33 @@ int Ifpack_PointRelaxation::Compute()
     IFPACK_CHK_ERR(-5);
 
   IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*Diagonal_));
+
+  // Setup for L1 Methods.
+  // Here we add half the value of the off-processor entries in the row, 
+  // but only if diagonal isn't sufficiently large.
+  //
+  // Note: This is only done in the slower-but-more-general "RowMatrix" mode.  
+  //
+  // This follows from Equation (6.5) in:
+  // Baker, Falgout, Kolev and Yang.  Multigrid Smoothers for Ultraparallel Computing.
+  // SIAM J. Sci. Comput., Vol. 33, No. 5. (2011), pp. 2864--2887.
+  if(DoL1Method_ && IsParallel_) {
+    int maxLength = Matrix().MaxNumEntries();
+    std::vector<int> Indices(maxLength);
+    std::vector<double> Values(maxLength);
+    int NumEntries;
+
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, maxLength,NumEntries,
+					       &Values[0], &Indices[0]));
+      double diagonal_boost=0.0;
+      for (int k = 0 ; k < NumEntries ; ++i)
+	if(Indices[k] > i)
+	  diagonal_boost+=std::abs(Values[k]/2.0);  
+      if ((*Diagonal_)[i] < L1Eta_*diagonal_boost)
+	(*Diagonal_)[i]+=diagonal_boost;
+    }
+  }
 
   // check diagonal elements, store the inverses, and verify that
   // no zeros are around. If an element is zero, then by default

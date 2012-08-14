@@ -132,7 +132,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ====================================== //
   // drop all elements below 1.5. The matrix then becomes diagonal
   Ifpack2::DropFilter<CRS> DropA(RCP<ROW >(&LocalA,false),1.5);
-				 //(Teuchos::ScalarTraits<Scalar>::magnitudeType) 1.5);
 
   // Apply w/ filter
   DropA.apply(x,y);
@@ -145,19 +144,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
   
 
-  //  cout << "Sparsity, dropping by value" << endl;
-  //  Ifpack_PrintSparsity_Simple(DropA);
-
   // ========================================= //
   // create a new matrix, dropping by sparsity //
   // ========================================= //
   //
-  // Mantain 2 off-diagonal elements.
-  //  Ifpack_SparsityFilter SparsityA(Matrix,2);
+  // Mantain 3 off-diagonal elements, which is pretty boring
+  //  Ifpack_SparsityFilter SparsityA(Matrix,3);
+  Ifpack2::DropFilter<CRS> SparsityA(RCP<ROW >(&LocalA,false),3);
 
-  //  cout << "Sparsity, dropping by sparsity" << endl;
-  //  Ifpack_PrintSparsity_Simple(SparsityA);
-  //  assert (SparsityA.MaxNumEntries() == 3);
+  // Apply w/ filter
+  DropA.apply(x,y);
+
+  // Apply via local matrix
+  LocalA.apply(x,z);
+
+  // Diff
+  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
   // ======================================== //
   // create new matrices, dropping singletons //

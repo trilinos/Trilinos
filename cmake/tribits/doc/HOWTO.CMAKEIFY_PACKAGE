@@ -109,7 +109,7 @@ NOTE: Don't worry if you don't find all of the package dependencies
 right away.  If you leave any out, the compile/link cycle will tell
 you which ones you need to add.  It is better to initially understate
 the package dependencies than to overstate them because you can catch
-the former mistake but not the later.  The danger in overstating
+the former mistake but not the latter.  The danger in overstating
 package dependencies is that it will take longer to test code before
 you check in because you will have to build more libraries and test
 executables than you really need to.
@@ -193,8 +193,8 @@ how to do that (see NOINSTALLHEADERS).
 Set the name of the library being created in the macro call
 TRIBITS_ADD_LIBRARY(...).
 
-NOTE: The nane of this library typically will not need to be listed again in
-any other CMakeLists.txt file as it will become part of the package's offical
+NOTE: The name of this library typically will not need to be listed again in
+any other CMakeLists.txt file as it will become part of the package's official
 list of libraries.  On exception is when you need to link multiple libraries
 together within a package (see below) and when you have a TESTONLY library
 (see below).
@@ -202,7 +202,7 @@ together within a package (see below) and when you have a TESTONLY library
 6.c) Multiple libraries
 
 If the package has more than one library in the same CMakeList.txt
-file, see epetra/src/CMakeLists.txt for an example.  If the pacakge
+file, see epetra/src/CMakeLists.txt for an example.  If the package
 has more than one library spread out across several CMakeLists.txt
 file, see thyra/src/CMakeLists.txt,
 thyra/adapters/epetra/src/CMakeLists.txt, and
@@ -214,7 +214,7 @@ If your package has test-only libraries, then look at how this is
 handled in nox/test/utils/CMakeLists.txt with the library
 'noxtestutils'.  These test-only libraries are designated by passing
 TESTONLY into TRIBITS_ADD_LIBRARY(...).  These libraries are not added
-to the list of offical package libraries.  Instead, you need
+to the list of official package libraries.  Instead, you need
 specifically list the name of the library in your tests/examples
 TRIBITS_ADD_EXECUTABLE(...) function call such as in
 nox/test/epetra/NOX_Operators/CMakeLists.txt
@@ -253,7 +253,7 @@ examples of usage.
 A few points are worth mentioning:
 
 7.a) You must add tests for every test case that is listed in
-PACKAGE_DIR/test/defintion
+PACKAGE_DIR/test/definition
 
 The package thyra has some of the more varied examples of how to
 specify CTest tests for a variety of use cases.  It is worth your time
@@ -263,7 +263,7 @@ to look through some of these examples.
 depend
 
 You need to remember to use the ADD_SUBDIRECTORY(...) and related commands to
-add tests and examples after the libraries within a pacakge.
+add tests and examples after the libraries within a package.
 
 7.c) More advanced tests can be added with TRIBITS_ADD_ADVANCED_TEST(...)
 
@@ -281,13 +281,13 @@ in the file TribitsAddAdvancedTest.cmake and examples can be found in:
 
 Once you have completed up through step 4 and have the files
 PACKAGE_DIR/CMakeLists.txt (at least a skeleton) and
-PACKAGE_DIR/cmake/Dependinces.cmake in place, you can start
+PACKAGE_DIR/cmake/Dependencies.cmake in place, you can start
 configuring with cmake to test that things are working correctly.  It
 is helpful to define -DTrilinos_VERBOSE_CONFIGURE:BOOL=ON when you
 configure so that you can see what libraries, executables, and tests
 are being added.  You should always try to test your changes in small
 increments so that it is easy to debug problems.  If you do need to
-debug, puting in print statements using the MESSAGE(...) command and
+debug, putting in print statements using the MESSAGE(...) command and
 the helper function PRINT_VAR(...) is very useful.
 
 8.a) Run the CTest tests

@@ -166,11 +166,10 @@ void CudaMemorySpace::decrement( const void * ptr )
 
     CudaMemoryImpl & s = CudaMemoryImpl::singleton();
 
-    MemoryTracking::Info info = s.m_allocations.decrement( ptr );
+    void * ptr_alloc = s.m_allocations.decrement( ptr );
 
-    if ( 0 == info.count ) {
-      const bool failed =
-        cudaSuccess != cudaFree( const_cast<void*>( info.begin ) );
+    if ( 0 != ptr_alloc ) {
+      const bool failed = cudaSuccess != cudaFree( ptr_alloc );
 
       if ( failed ) {
         std::string msg("KokkosArray::Impl::CudaMemorySpace::decrement() failed cudaFree");

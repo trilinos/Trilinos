@@ -119,7 +119,7 @@ am__objects_4 = Bessel_I.$(OBJEXT) Block.$(OBJEXT) \
 	Tokenizer.$(OBJEXT) WhileBlock.$(OBJEXT) common.$(OBJEXT)
 am__objects_5 = im_ex_c_interface.$(OBJEXT) \
 	im_ex_c_interface_l.$(OBJEXT) im_ne_c_interface.$(OBJEXT) \
-	im_ne_c_interface_l.$(OBJEXT) mesh_specification.$(OBJEXT)
+	im_ne_c_interface_l.$(OBJEXT) pamgen_mesh_specification.$(OBJEXT)
 am__objects_6 =
 @HAVE_MPI_TRUE@am__objects_7 = $(am__objects_6)
 am_libpamgen_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -329,8 +329,13 @@ MS_LT = $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
-	$(srcdir)/../mesh_spec_lt/mesh_specification.C \
-	$(srcdir)/../mesh_spec_lt/mesh_specification.h
+	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C \
+	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h
+        $(srcdir)/../mesh_spec_lt/pamgen_code_types.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_element_dictionary.C \
+	$(srcdir)/../mesh_spec_lt/pamgen_element_dictionary.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_fudges.C \
+	$(srcdir)/../mesh_spec_lt/pamgen_fudges.h 
 
 RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
 	$(srcdir)/../rtcompiler/ArrayNumberRTC.hh \
@@ -368,16 +373,15 @@ RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
 	$(srcdir)/../rtcompiler/common.C \
 	$(srcdir)/../rtcompiler/commonRTC.hh
 
-ASRC = $(srcdir)/../asrc/code_types.h \
-	$(srcdir)/../asrc/element_dictionary.C \
-	$(srcdir)/../asrc/element_dictionary.h \
-	$(srcdir)/../asrc/fudges.C \
-	$(srcdir)/../asrc/fudges.h 
 
 CORE_H = $(srcdir)/create_inline_mesh.h \
 	$(srcdir)/../mesh_spec_lt/im_exodusII.h \
 	$(srcdir)/../mesh_spec_lt/im_exodusII_ext.h \
-	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h 
+	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_element_dictionary.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_fudges.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_code_types.h 
 
 UTIL_H = 
 UTIL = 
@@ -643,7 +647,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inline_mesh_driver_lt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legacy_inline_mesh_desc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lexer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mesh_specification.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pamgen_mesh_specification.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_routines.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_table.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser.Po@am__quote@
@@ -1185,19 +1189,19 @@ im_ne_c_interface_l.obj: $(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o im_ne_c_interface_l.obj `if test -f '$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; fi`
 
-mesh_specification.o: $(srcdir)/../mesh_spec_lt/mesh_specification.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT mesh_specification.o -MD -MP -MF $(DEPDIR)/mesh_specification.Tpo -c -o mesh_specification.o `test -f '$(srcdir)/../mesh_spec_lt/mesh_specification.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/mesh_specification.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/mesh_specification.Tpo $(DEPDIR)/mesh_specification.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/mesh_specification.C' object='mesh_specification.o' libtool=no @AMDEPBACKSLASH@
+pamgen_mesh_specification.o: $(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT pamgen_mesh_specification.o -MD -MP -MF $(DEPDIR)/pamgen_mesh_specification.Tpo -c -o pamgen_mesh_specification.o `test -f '$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/pamgen_mesh_specification.Tpo $(DEPDIR)/pamgen_mesh_specification.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C' object='pamgen_mesh_specification.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o mesh_specification.o `test -f '$(srcdir)/../mesh_spec_lt/mesh_specification.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/mesh_specification.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o pamgen_mesh_specification.o `test -f '$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C
 
-mesh_specification.obj: $(srcdir)/../mesh_spec_lt/mesh_specification.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT mesh_specification.obj -MD -MP -MF $(DEPDIR)/mesh_specification.Tpo -c -o mesh_specification.obj `if test -f '$(srcdir)/../mesh_spec_lt/mesh_specification.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/mesh_specification.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/mesh_specification.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/mesh_specification.Tpo $(DEPDIR)/mesh_specification.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/mesh_specification.C' object='mesh_specification.obj' libtool=no @AMDEPBACKSLASH@
+pamgen_mesh_specification.obj: $(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT pamgen_mesh_specification.obj -MD -MP -MF $(DEPDIR)/pamgen_mesh_specification.Tpo -c -o pamgen_mesh_specification.obj `if test -f '$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/pamgen_mesh_specification.Tpo $(DEPDIR)/pamgen_mesh_specification.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C' object='pamgen_mesh_specification.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o mesh_specification.obj `if test -f '$(srcdir)/../mesh_spec_lt/mesh_specification.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/mesh_specification.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/mesh_specification.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o pamgen_mesh_specification.obj `if test -f '$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

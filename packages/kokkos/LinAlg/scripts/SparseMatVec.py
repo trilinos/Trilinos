@@ -881,12 +881,14 @@ def emitTmpToY (defDict, indent=0):
 def emitTmpToYOneFor (defDict, beta, indent=0):
   
     ind = ' '*indent
+    sparseFormat = defDict['sparseFormat']
+
     if not defDict['hardCodeNumVecs']:
         tmpSize = defDict['unrollLength']
     else:
         tmpSize = defDict['numVecs']
     
-    if  defDict['sparseFormat'] == 'CSR':
+    if sparseFormat == 'CSR':
         As = 'Y'
         index = 'i'
         scale = beta
@@ -898,9 +900,17 @@ def emitTmpToYOneFor (defDict, beta, indent=0):
     for c in xrange (0, tmpSize):
         if tmpSize > 1:
             A_ic = emitDenseArefFixedCol (defDict, As + '_' + index, '0', c, strideName=As)
-        else:
+        else: # either don't unroll, or generate 1-vec code
             if defDict['hardCodeNumVecs']:
-                A_ic = emitDenseArefFixedCol (defDict, As, index, '0', strideName=As)
+                # Generate 1-vec code
+                if sparseFormat == 'CSR':
+                    # mfh 14 Aug 2012: CSR special case.  Not
+                    # necessary for correctness, but prevents compiler
+                    # warnings for unused assignment of 'RangeScalar*
+                    # Y_i'.
+                    A_ic = emitDenseArefFixedCol (defDict, 'Y_i', '0', c, strideName='Y')
+                else:
+                    A_ic = emitDenseArefFixedCol (defDict, As, index, '0', strideName=As)
             else:
                 A_ic = emitDenseArefFixedCol (defDict, As, index, 'c', strideName=As)
         s = s + ind + emitTmpStartValue (A_ic, 1) + ' = '

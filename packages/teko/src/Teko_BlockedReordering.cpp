@@ -301,17 +301,39 @@ Teuchos::RCP<Thyra::MultiVectorBase<double> >
 buildReorderedMultiVector(const BlockReorderManager & mgr,
                           const Teuchos::RCP<Thyra::ProductMultiVectorBase<double> > & blkVec)
 {
-   using Teuchos::rcp_const_cast;
+   typedef RCP<const BlockReorderManager> BRMptr;
 
-   // give vector const so that the right function is called
-   const Teuchos::RCP<const Thyra::ProductMultiVectorBase<double> > blkVecConst
-      = rcp_const_cast<const Thyra::ProductMultiVectorBase<double> >(blkVec);
-   
-   // its not really const, so take it away
-   const Teuchos::RCP<Thyra::MultiVectorBase<double> > result
-         = rcp_const_cast<Thyra::MultiVectorBase<double> >(buildReorderedMultiVector(mgr,blkVecConst));
+   int sz = mgr.GetNumBlocks();
 
-   return result; 
+   if(sz==0) {
+      // its a  leaf nodes
+      const BlockReorderLeaf & leaf = dynamic_cast<const BlockReorderLeaf &>(mgr);
+
+      // simply return entry in matrix
+      return blkVec->getNonconstMultiVectorBlock(leaf.GetIndex());
+   } 
+   else {
+      Array<RCP<Thyra::MultiVectorBase<double> > > multiVecs;
+      Array<RCP<const Thyra::VectorSpaceBase<double> > > vecSpaces;
+
+      // loop over each row
+      for(int i=0;i<sz;i++) {
+         BRMptr blkMgr = mgr.GetBlock(i);
+
+         const RCP<Thyra::MultiVectorBase<double> > lmv = buildReorderedMultiVector(*blkMgr,blkVec);
+         const RCP<const Thyra::VectorSpaceBase<double> > lvs = lmv->range();
+
+         multiVecs.push_back(lmv);
+         vecSpaces.push_back(lvs);
+      }
+
+      // build a vector space
+      const RCP<const Thyra::DefaultProductVectorSpace<double> > vs 
+            = Thyra::productVectorSpace<double>(vecSpaces);
+
+      // build the vector
+      return Thyra::defaultProductMultiVector<double>(vs,multiVecs);
+   }
 }
 
 /** \brief Convert a flat multi vector into a reordered multivector.
@@ -471,6 +493,55 @@ buildFlatMultiVector(const BlockReorderManager & mgr,
 
    // build the vector
    return Thyra::defaultProductMultiVector<double>(vs,multivecs);
+}
+
+/** Helper function to assist with the function
+  * of the same name.
+  */
+void buildFlatVectorSpace(const BlockReorderManager & mgr,
+                          const RCP<const Thyra::VectorSpaceBase<double> > & blkSpc,
+                          Array<RCP<const Thyra::VectorSpaceBase<double> > > & vecspaces)
+{
+   typedef RCP<const BlockReorderManager> BRMptr;
+
+   int sz = mgr.GetNumBlocks();
+
+   if(sz==0) {
+      // its a  leaf nodes
+      const BlockReorderLeaf & leaf = dynamic_cast<const BlockReorderLeaf &>(mgr);
+      int index = leaf.GetIndex();
+
+      // simply return entry in matrix
+      vecspaces[index] = blkSpc;
+   } 
+   else {
+      const RCP<const Thyra::ProductVectorSpaceBase<double> > prodSpc
+            = rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<double> >(blkSpc);
+ 
+      // get flattened elements from each child
+      for(int i=0;i<sz;i++) {
+         RCP<const Thyra::VectorSpaceBase<double> > space = prodSpc->getBlock(i);
+         buildFlatVectorSpace(*mgr.GetBlock(i),space,vecspaces);
+      }
+   }
+   
+}
+
+/** \brief Convert a reordered vector space into a flat vector space
+  */
+Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+buildFlatVectorSpace(const BlockReorderManager & mgr,
+                     const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & blkSpc)
+{
+   int numBlocks = mgr.LargestIndex()+1;
+ 
+   Array<RCP<const Thyra::VectorSpaceBase<double> > > vecspaces(numBlocks);
+
+   // flatten everything into a vector first
+   buildFlatVectorSpace(mgr,blkSpc,vecspaces);
+
+   // build a vector space
+   return Thyra::productVectorSpace<double>(vecspaces);
 }
 
 ////////////////////////////////////////////////////////////////

@@ -89,8 +89,8 @@ public:
     ASSERT_TRUE( info.length == 10 );
     ASSERT_TRUE( info.count  == 1 );
 
-    ASSERT_TRUE( 2 == tracking.increment( & a ).count );
-    ASSERT_TRUE( 3 == tracking.increment( & a ).count );
+    tracking.increment( & a ); ASSERT_TRUE( 2 == tracking.query( & a ).count );
+    tracking.increment( & a ); ASSERT_TRUE( 3 == tracking.query( & a ).count );
 
     info = tracking.query( & a );
     ASSERT_TRUE( info.label  == std::string("a") );
@@ -106,7 +106,7 @@ public:
     ASSERT_TRUE( info.length == 1 );
     ASSERT_TRUE( info.count  == 1 );
     
-    ASSERT_TRUE( 0 == tracking.decrement( & b ).count );
+    ASSERT_TRUE( 0 != tracking.decrement( & b ) );
 
     info = tracking.query( & b );
     ASSERT_TRUE( info.label  == std::string() );
@@ -116,7 +116,8 @@ public:
     ASSERT_TRUE( info.length == 0 );
     ASSERT_TRUE( info.count  == 0 );
 
-    ASSERT_TRUE( 2 == tracking.decrement( & a ).count );
+    ASSERT_TRUE( 0 == tracking.decrement( & a ) );
+    ASSERT_TRUE( 2 == tracking.query( & a ).count );
 
     info = tracking.query( & a );
     ASSERT_TRUE( info.label  == std::string("a") );
@@ -125,8 +126,9 @@ public:
     ASSERT_TRUE( info.length == 1 );
     ASSERT_TRUE( info.count  == 2 );
     
-    ASSERT_TRUE( 1 == tracking.decrement( & a ).count );
-    ASSERT_TRUE( 0 == tracking.decrement( & a ).count );
+    ASSERT_TRUE( 0 == tracking.decrement( & a ) );
+    ASSERT_TRUE( 1 == tracking.query( & a ).count );
+    ASSERT_TRUE( 0 != tracking.decrement( & a ) );
 
     info = tracking.query( & a );
     ASSERT_TRUE( info.label  == std::string() );
@@ -136,10 +138,11 @@ public:
     ASSERT_TRUE( info.length == 0 );
     ASSERT_TRUE( info.count  == 0 );
 
-    ASSERT_EQ( 2u , tracking.increment( & c[2] ).count );
-    ASSERT_EQ( 1u , tracking.decrement( & c[3] ).count );
+    tracking.increment( & c[2] ); ASSERT_EQ( 2u , tracking.query( & c[2] ).count );
+    ASSERT_TRUE( 0 == tracking.decrement( & c[3] ) );
+    ASSERT_EQ( 1u , tracking.query( & c[3] ).count );
 
-    ASSERT_TRUE( 0 == tracking.decrement( c ).count );
+    ASSERT_TRUE( 0 != tracking.decrement( c ) );
     ASSERT_TRUE( tracking.empty() );
   }
 };

@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+# Mark Hoemmen <mhoemme AT sandia DOT gov>
+# Time-stamp: <2012-08-08 18:21:14 mhoemme>
+#
+# Example CMake configure script for Trilinos, that uses Intel's Math
+# Kernel Library (MKL) both for the BLAS and LAPACK implementation,
+# and as a separate MKL TPL (Third-Party Library).  Specifically, in
+# this case, we're using the MKL for its sparse matrix kernels.  Here
+# are other details of my configuration:
+#
+# Operating system: GNU/Linux
+# Compiler: gcc (version 4.5.1, user-space installation)
+# MPI version: OpenMPI 1.4.3 (user-space installation)
+# Other TPLs: 
+# - Pthread (required for my MKL configuration), 
+# - Boost (optional, version 1.50.0, user-space installation)
+# - OpenMP (optional)
+#
+# I've chosen the single dynamic library way to link with MKL:
+#
+# http://software.intel.com/en-us/articles/a-new-linking-model-single-dynamic-library-mkl_rt-since-intel-mkl-103/
+#
+# I highly recommend this approach if you are able to use dynamic
+# libraries on your system.
+######################################################################
+
+
+# Script magic to pull in my user-space install of gcc.
+concat_path () {
+    if ! echo $PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
+	if [ "$2" = "after" ] ; then
+	    PATH=$PATH:$1
+	else
+	    PATH=$1:$PATH
+	fi
+    fi
+    export PATH
+}
+
+# Script magic to pull in my user-space install of gcc.
+concat_ld_library_path () {
+    if ! echo $LD_LIBRARY_PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
+	if [ "$2" = "after" ] ; then
+	    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$1
+	else
+	    LD_LIBRARY_PATH=$1:$LD_LIBRARY_PATH
+	fi
+    fi
+    export LD_LIBRARY_PATH
+}
+
+# Script magic to pull in my user-space install of gcc.
+# For some odd reason, the exports don't escape this script.
+if [ -d $HOME/pkg/gcc-4.5.1/lib64 ]; then
+    concat_ld_library_path $HOME/pkg/gcc-4.5.1/lib64
+else
+    concat_ld_library_path $HOME/pkg/gcc-4.5.1/lib
+fi
+concat_path $HOME/pkg/gcc-4.5.1/bin
+
+# Pull in any extra arguments given to this script.
+# Treat them as extra CMake options.
+EXTRA_ARGS=$@
+
+# Root directory of the Intel MKL install.  For details on how to link
+# with MKL, see the MKL Link Line Advisor:
+#
+# http://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/
+#
+# Also refer to the documentation in
+# <TrilinosSource>/cmake/TPLs/FindTPLMKL.cmake, where <TrilinosSource>
+# is the root directory of your Trilinos source tree.
+MKLROOT=/opt/intel/mkl
+
+# Point to the user-space install of OpenMPI (MPI implementation).
+MPI_ROOT=${HOME}/pkg/openmpi-1.4.3
+MPI_BIN=$MPI_ROOT/bin
+
+cmake \
+  -D BUILD_SHARED_LIBS:BOOL=ON \
+  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+  -D CMAKE_INSTALL_PREFIX:FILEPATH="$HOME/pkg/Trilinos/Mpi/Debug/Master" \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR="${HOME}/pkg/openmpi-1.4.3" \
+  -D MPI_EXEC:FILEPATH="${HOME}/pkg/openmpi-1.4.3/bin/mpiexec" \
+  -D MPI_Fortran_COMPILER:FILEPATH="${MPI_BIN}/mpif90" \
+  -D MPI_CXX_COMPILER:FILEPATH="${MPI_BIN}/mpicxx" \
+  -D MPI_C_COMPILER:FILEPATH="${MPI_BIN}/mpicc" \
+  -D CMAKE_CXX_FLAGS:STRING="-ansi -pedantic -Wall" \
+  -D BLAS_LIBRARY_DIRS:FILEPATH="${MKLROOT}/lib/intel64" \
+  -D BLAS_LIBRARY_NAMES:STRING="mkl_rt" \
+  -D LAPACK_LIBRARY_DIRS:FILEPATH="${MKLROOT}/lib/intel64" \
+  -D LAPACK_LIBRARY_NAMES:STRING="mkl_rt" \
+  -D TPL_ENABLE_MKL:BOOL=ON \
+  -D MKL_LIBRARY_DIRS:FILEPATH="${MKLROOT}/lib/intel64" \
+  -D MKL_LIBRARY_NAMES:STRING="mkl_rt" \
+  -D MKL_INCLUDE_DIRS:FILEPATH="${MKLROOT}/include" \
+  -D Trilinos_ENABLE_OpenMP:BOOL=ON \
+  -D TPL_ENABLE_Pthread:BOOL=ON \
+  -D TPL_ENABLE_Boost:BOOL=ON \
+  -D Boost_LIBRARY_DIRS:FILEPATH="${HOME}/pkg/boost/lib" \
+  -D Boost_INCLUDE_DIRS:FILEPATH="${HOME}/pkg/boost/include" \
+  -D DART_TESTING_TIMEOUT:STRING=600 \
+  -D Trilinos_ENABLE_TESTS:BOOL=ON \
+  -D Trilinos_ENABLE_DEBUG:BOOL=ON \
+  -D Trilinos_ENABLE_Epetra:BOOL=OFF \
+  -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+  -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
+  -D Teuchos_ENABLE_EXAMPLES:BOOL=ON \
+  -D Teuchos_ENABLE_TESTS:BOOL=ON \
+  -D Trilinos_ENABLE_Kokkos:BOOL=ON \
+  -D Kokkos_ENABLE_EXAMPLES:BOOL=ON \
+  -D Kokkos_ENABLE_TESTS:BOOL=ON \
+  -D Kokkos_ENABLE_TSQR:BOOL=ON \
+  -D TSQR_ENABLE_Fortran:BOOL=ON \
+  -D Trilinos_ENABLE_Tpetra:BOOL=ON \
+  -D Tpetra_ENABLE_TESTS:BOOL=ON \
+  -D Tpetra_ENABLE_BUGTESTS:BOOL=OFF \
+  -D Tpetra_ENABLE_EXAMPLES:BOOL=ON \
+  -D Tpetra_ENABLE_RTI:BOOL=OFF \
+  -D Tpetra_PRINT_Efficiency_Warnings:BOOL=ON \
+  $EXTRA_ARGS \
+  ..
+

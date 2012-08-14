@@ -1,0 +1,55 @@
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
+INCLUDE(CombinedOption)
+INCLUDE(DualScopeSet)
+ 
+#
+# A) Define the package
+#
+
+TRIBITS_PACKAGE(Xpetra)
+
+# Add directory xpetra/cmake/ to the cmake module search path
+DUAL_SCOPE_SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PACKAGE_SOURCE_DIR}/cmake)
+
+#
+# B) Set up package-specific options
+#
+
+TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+TRIBITS_ADD_DEBUG_OPTION()
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
+GLOBAL_SET(HAVE_XPETRA_TPETRA ${${PACKAGE_NAME}_ENABLE_Tpetra})
+
+GLOBAL_SET(HAVE_XPETRA_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
+
+GLOBAL_SET(HAVE_XPETRA_EPETRAEXT ${${PACKAGE_NAME}_ENABLE_EpetraExt})
+
+TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING
+  HAVE_XPETRA_PROFILING
+  "Enable detailed timing of Xpetra."
+  OFF)
+
+#
+#
+#
+
+ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(sup)
+
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
+
+#
+# Exclude files for source package.
+#
+
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
+
+#
+# D) Do standard postprocessing
+#
+
+TRIBITS_PACKAGE_POSTPROCESS()
+ 

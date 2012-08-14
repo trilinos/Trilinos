@@ -1,6 +1,6 @@
 #include <cstring>
 #include "im_ne_nemesisI_l.h"
-#include "mesh_specification.h"
+#include "pamgen_mesh_specification.h"
 #include <strings.h>
 
 

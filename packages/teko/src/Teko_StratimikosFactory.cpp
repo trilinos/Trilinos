@@ -14,6 +14,7 @@
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_StridedEpetraOperator.hpp"
 #include "Teko_BlockedEpetraOperator.hpp"
+#include "Teko_ReorderedLinearOp.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
 
@@ -185,10 +186,31 @@ void StratimikosFactory::initializePrec_Thyra(
   if(mediumVerbosity)
     *out << "\nComputing the preconditioner ...\n";
 
-  if(prec_Op==Teuchos::null)
-     prec_Op = Teko::buildInverse(*invFactory_,fwdOp);
-  else
-     Teko::rebuildInverse(*invFactory_,fwdOp,prec_Op);
+  // setup reordering if required
+  std::string reorderType = paramList_->get<std::string>("Reorder Type");
+  if(reorderType!="") {
+     
+     Teuchos::RCP<const Thyra::BlockedLinearOpBase<double> > blkFwdOp =
+         Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(fwdOp,true);
+     RCP<const Teko::BlockReorderManager> brm = Teko::blockedReorderFromString(reorderType);
+     Teko::LinearOp blockedFwdOp = Teko::buildReorderedLinearOp(*brm,blkFwdOp);
+
+     if(prec_Op==Teuchos::null) {
+        Teko::ModifiableLinearOp reorderedPrec = Teko::buildInverse(*invFactory_,blockedFwdOp);
+        prec_Op = Teuchos::rcp(new ReorderedLinearOp(brm,reorderedPrec));
+     }
+     else {
+        Teko::ModifiableLinearOp reorderedPrec = Teuchos::rcp_dynamic_cast<ReorderedLinearOp>(prec_Op,true)->getBlockedOp();
+        Teko::rebuildInverse(*invFactory_,blockedFwdOp,reorderedPrec);
+     }
+  }
+  else {
+     // no reordering required
+     if(prec_Op==Teuchos::null)
+        prec_Op = Teko::buildInverse(*invFactory_,fwdOp);
+     else
+        Teko::rebuildInverse(*invFactory_,fwdOp,prec_Op);
+  }
 
   // construct preconditioner
   timer.stop();

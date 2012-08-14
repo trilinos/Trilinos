@@ -509,6 +509,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
+      int sync_io_regions = 1;
       int delete_parents = 1;
       int print_memory_usage = 0;
       // a list of comma-separated names like Entity, Relation, Field, etc.
@@ -564,7 +565,8 @@ namespace stk {
 
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
-      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - applies to Hex - moves nodes after geometry snap to try to avoid bad meshes");
+      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry snap to try to avoid bad meshes");
+      run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
@@ -603,7 +605,8 @@ namespace stk {
                                     "INTERNAL use only by python script streaming refinement interface:\n");
       run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage       , "print memory usage");
 
-      run_environment.processCommandLine();
+      int err_clp = run_environment.processCommandLine();
+      if (err_clp) return err_clp;
 
       int result = 0;
       unsigned failed_proc_rank = 0u;
@@ -635,7 +638,7 @@ namespace stk {
           )
         {
           run_environment.printHelp();
-          exit(1);
+          return 1;
         }
 
 #if defined( STK_HAS_MPI )
@@ -659,7 +662,7 @@ namespace stk {
           m_iW = streaming_W ? streaming_iW : 0;
           SerializeNodeRegistry::getStreamingPiece(m_M, m_W, m_iW, m_M_0, m_M_1);
         }
-      std::cout << "tmp srk AdaptMain: " << PERCEPT_OUT(streaming_size) << PERCEPT_OUT(streaming_W) << PERCEPT_OUT(streaming_iW) << PERCEPT_OUT(m_M) << PERCEPT_OUT(m_W) << PERCEPT_OUT(m_iW) << PERCEPT_OUT(m_M_0) << PERCEPT_OUT(m_M_1) << std::endl;
+      //std::cout << "tmp srk AdaptMain: " << PERCEPT_OUT(streaming_size) << PERCEPT_OUT(streaming_W) << PERCEPT_OUT(streaming_iW) << PERCEPT_OUT(m_M) << PERCEPT_OUT(m_W) << PERCEPT_OUT(m_iW) << PERCEPT_OUT(m_M_0) << PERCEPT_OUT(m_M_1) << std::endl;
 #endif
 
       // FIXME - starting from -1 pass is bogus
@@ -713,6 +716,7 @@ namespace stk {
           PerceptMesh eMesh(0);
           std::string mesh_name = Ioss::Utils::decode_filename(input_mesh_save, 0, m_M);
           eMesh.open(mesh_name);
+          if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
           s_spatialDim = eMesh.get_spatial_dim();
           VERIFY_OP_ON(s_spatialDim, >=, 2, "AdaptMain bad spatial_dim");
         }
@@ -743,7 +747,7 @@ namespace stk {
                   delete_parents = delete_parents_save;
                 }
             }
-          std::cout << "tmp srk i_pass= " << i_pass << " delete_parents= " << delete_parents << " remove_original_elements= " << remove_original_elements << std::endl;
+          //std::cout << "tmp srk i_pass= " << i_pass << " delete_parents= " << delete_parents << " remove_original_elements= " << remove_original_elements << std::endl;
 #endif
 
           if (do_normal_pass)
@@ -838,6 +842,8 @@ namespace stk {
                     if (do_normal_pass)
                       {
                         eMesh.open(input_mesh);
+                        if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
+                        if (!sync_io_regions) eMesh.set_sync_io_regions(false);
                         if (!s_spatialDim) s_spatialDim = eMesh.get_spatial_dim();
 
                         Util::setRank(eMesh.get_rank());
@@ -858,6 +864,7 @@ namespace stk {
 
                                     eMesh.close();
                                     eMesh.open(input_mesh);
+                                    if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
                                   }
                               }
             
@@ -1046,6 +1053,7 @@ namespace stk {
 
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
+                            if (streaming_size) eMesh.setStreamingSize(m_M);
                             eMesh.save_as(output_mesh);
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;

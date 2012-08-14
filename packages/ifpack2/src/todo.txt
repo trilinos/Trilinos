@@ -8,6 +8,9 @@
   Ifpack2 will call. 
 * Block Relaxation & Chebyshev 
 * Filtering
+  - NodeFilter needs to wait until Radu's code is checked in
+  - ReorderFilter/Reordering needs to wait until Zoltan2 is in Trilinos and 
+    we can modify this to use Zoltan2 for reordering.
 * Less popular methods - IHSS, SORa
 * Add templated operator methods to all Preconditioners (for multiprecision)
   - add applyPrec<OpScalar> method to precs, which operates on MV<OpScalar> objects

@@ -1,0 +1,127 @@
+#
+# Include the global look and feel options
+#
+@INCLUDE_PATH          = $(TRILINOS_HOME)/packages
+@INCLUDE               = $(TRILINOS_HOME)/packages/common/Doxyfile
+
+# other Trilinos packages to which the MueLu doxygen should hyperlink
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/ifpack.tag=$(TRILINOS_HOME)/packages/ifpack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/amesos.tag=$(TRILINOS_HOME)/packages/amesos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag=$(TRILINOS_HOME)/MueLu/muelu/xpetra/doc/html 
+#
+# Use MathJax for nice rescaling of LaTeX output. Needs a fairly recent version of doxygen.
+#
+#USE_MATHJAX            = YES
+# this path *must* be relative to muelu/doc/html
+#MATHJAX_RELPATH        = ../../../../../../../Software/mathjax-MathJax-f5cd294
+#
+
+#
+# Package options
+#
+PROJECT_NAME           = "MueLu"
+PROJECT_NUMBER         = "Version of the Day"
+OUTPUT_DIRECTORY       = .
+OUTPUT_LANGUAGE        = English
+#
+# What and how documentation is extracted
+#
+IGNORE_PREFIX          = 
+INPUT_FILTER           = 
+IMAGE_PATH             = images
+EXAMPLE_PATTERNS       =
+EXAMPLE_PATH           = ../examples .
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+RECURSIVE              = YES
+SUBGROUPING            = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = NO
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+BRIEF_MEMBER_DESC      = YES
+REPEAT_BRIEF           = YES
+ALWAYS_DETAILED_SEC    = YES
+DETAILS_AT_TOP         = NO
+FULL_PATH_NAMES        = NO
+STRIP_FROM_PATH        = 
+SHOW_DIRECTORIES       = YES
+INTERNAL_DOCS          = NO
+CLASS_DIAGRAMS         = YES
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = NO
+REFERENCES_RELATION    = NO
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
+VERBATIM_HEADERS       = YES
+SHOW_INCLUDE_FILES     = YES
+JAVADOC_AUTOBRIEF      = NO
+INHERIT_DOCS           = YES
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = NO
+TAB_SIZE               = 2
+ENABLED_SECTIONS       = 
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = YES
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_FORMAT            = "$file:$line: $text"
+ALPHABETICAL_INDEX     = YES
+COLS_IN_ALPHA_INDEX    = 5
+#
+# What diagrams are created
+#
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+GRAPHICAL_HIERARCHY    = YES
+#UML_LOOK               = YES
+TEMPLATE_RELATIONS     = YES
+#TEMPLATE_RELATIONS     = NO
+#MAX_DOT_GRAPH_WIDTH    = 500
+HIDE_UNDOC_RELATIONS   = YES
+HAVE_DOT = NO
+#
+# Preprocessing
+#
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+SEARCH_INCLUDES        = YES
+INCLUDE_FILE_PATTERNS  = 
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS HAVE_MPI EPETRA_MPI \
+                         HAVE_MUELU_AMESOS HAVE_MUELU_AMESOS2 \
+                         HAVE_MUELU_BELOS \
+                         HAVE_MUELU_EPETRA HAVE_MUELU_EPETRAEXT \
+                         HAVE_MUELU_IFPACK HAVE_MUELU_IFPACK2 \
+                         HAVE_MUELU_ML \ 
+                         HAVE_MUELU_TPETRA \
+                         HAVE_MUELU_ZOLTAN \
+                         HAVE_MUELU_STOKHOS \
+#
+# What kind of documentation is generated
+#
+GENERATE_HTMLHELP      = NO
+DISABLE_INDEX          = NO
+GENERATE_TREEVIEW      = YES
+GENERATE_LATEX         = NO
+GENERATE_RTF           = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+#
+# Links to other packages
+#
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO
+GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu.tag

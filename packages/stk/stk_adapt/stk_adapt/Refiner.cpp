@@ -28,6 +28,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMShapeSizeOrientImprover.hpp>
 #define StackTrace StackTraceTmp
 
@@ -1035,8 +1036,8 @@ namespace stk {
       if (m_geomSnap)
         {
 
-          SMOOTHING_OPTIONS option = SNAP_PLUS_SMOOTH;
-          //SMOOTHING_OPTIONS option = USE_LINE_SEARCH_WITH_MULTIPLE_STATES;
+          //SMOOTHING_OPTIONS option = SNAP_PLUS_SMOOTH;
+          SMOOTHING_OPTIONS option = USE_LINE_SEARCH_WITH_MULTIPLE_STATES;
 
           GeometryKernelOpenNURBS gk;
           // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
@@ -1068,24 +1069,28 @@ namespace stk {
             break;
           case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
             {
-              VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
+              //VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
 
-              // make a copy of current non-snapped state (dst,src)
-              m_eMesh.copy_field(m_eMesh.get_field("coordinates_NM1"), m_eMesh.get_coordinates_field() );
+              if (m_doSmoothGeometry)
+                {
+                  // make a copy of current non-snapped state (dst,src)
+                  m_eMesh.copy_field(m_eMesh.get_field("coordinates_NM1"), m_eMesh.get_coordinates_field() );
+
+                }
 
               // do the snap
               mesh_geometry.snap_points_to_geometry(&m_eMesh);
               if (doCheckMovement != 0.0) 
                 mesh_geometry.print_node_movement_summary();
 
-              // make a copy of current snapped state
-              m_eMesh.copy_field(m_eMesh.get_field("coordinates_N"), m_eMesh.get_coordinates_field() );
-
-              // reset current state to non-snapped state
-              m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
-
-              if (1 && m_doSmoothGeometry)
+              if (m_doSmoothGeometry)
                 {
+                  // make a copy of current snapped state
+                  m_eMesh.copy_field(m_eMesh.get_field("coordinates_N"), m_eMesh.get_coordinates_field() );
+
+                  // reset current state to non-snapped state
+                  m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
+
                   smoothGeometry(mesh_geometry,option);
                   //mesh_geometry.snap_points_to_geometry(&m_eMesh);
                 }
@@ -1400,16 +1405,17 @@ namespace stk {
             break;
           case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
             {
-#if 0
+#if 1
               // geometry used for classification of fixed/non-fixed nodes
               PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
 
               //PMMShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
-              PMMParallelShapeImprover si(100, 1.e-8, 20);
-              //PMMShapeImprover si(5, 1.e-8, 20);
-              //const double max_vertex_movement_term_crit=10;
-              //PMMShapeSizeOrientImprover si(10);
-              si.run(pmm, &pmd, always_smooth, msq_debug);
+
+              percept::PMMParallelShapeImprover pmmpsi(1001, 1.e-4, 1);
+              //pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
+              pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
+
+
 #endif
             }
             break;

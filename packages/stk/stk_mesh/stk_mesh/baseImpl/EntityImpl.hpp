@@ -175,6 +175,9 @@ public:
   //a different key.
   void update_key(EntityKey key);
 
+//  RelationVector& rel_vec() {return m_relation;}
+  void compress_relation_capacity();
+
  private:
 
   EntityKey               m_key ;        ///< Globally unique key

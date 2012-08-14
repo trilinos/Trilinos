@@ -445,13 +445,15 @@ struct DirichletResidual<
                      const ScalarCoordType  bc_lower_z ,
                      const ScalarCoordType  bc_upper_z)
   {
+    const size_t row_count = linsys_matrix.graph.row_map.dimension(0) - 1 ;
+
     DirichletResidual op ;
     op.node_coords    = mesh.node_coords ;
     op.matrix         = linsys_matrix ;
     op.rhs            = linsys_rhs ;
     op.bc_lower_z     = bc_lower_z ;
     op.bc_upper_z     = bc_upper_z ;
-    parallel_for( linsys_matrix.graph.row_map.length() , op );
+    parallel_for( row_count , op );
   }
 };
 

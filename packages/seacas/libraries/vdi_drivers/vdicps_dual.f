@@ -210,14 +210,47 @@ C        kempty=0,  frame is void - do not draw
 C              >0,  frame has data - draw it
       COMMON /VCPSTD/ KEMPTY
 C
-      DATA PGFORM/0/
-      DATA PATNO,BORDER /20,1/
-C
-      DATA XCP,YCP /0.,0./
-C
+      DEV(1) = 0.0
+      dev(2) = 1.0
+      dev(3) = 1.0
+      dev(4) = 1.0
+      dev(5) = 15.0
+      dev(6) = 2.0
+      dev(7) = 0.0
+      dev(8) = 0.0
+      dev(9) = 0.0
+      dev(10) = 0.0
+      
+      dev(11) = 0.0
+      dev(12) = 0.0
+      dev(13) = 0.0
+      dev(14) = 0.0
+      dev(15) = 7230.0
+      dev(16) = 5040.0
+      dev(17) = 254.0
+      dev(18) = 178.0
+      dev(19) = 4.0
+      dev(20) = 10.0
+
+      dev(21) = 84.0
+      dev(22) = 0.0
+      dev(23) = 0.0
+      dev(24) = 3.0
+      dev(25) = 99999.
+      dev(26) = 0.0
+      dev(27) = 1.0
+      dev(28) = 0.0
+      dev(29) = 0.0
+      dev(30) = 5000.
+      
+      dev(31) = 750.
+      dev(32) = 0.0
+      dev(33) = 1.0
+
 C SET DEFAULT ATTRIBUTE VALUES.  ALL ARE DEVICE DEPENDENT EXCEPT
 C VECTOR(4)=0.0.
-      DATA VECTOR /0.,7.,1.,0.,.06255,.01,.0/
+C .. following removed since should be in block data...
+C     DATA VECTOR /0.,7.,1.,0.,.06255,.01,.0/
 C     VECTOR(1)=FOREGROUND COLOR - BLACK
 C           (2)=BACKGROUND COLOR - WHITE
 C           (3)=INTENSITY        - MAXIMUM
@@ -227,10 +260,24 @@ C           (6)=CHARACTER BOX Y  - ABOUT 1/10 INCHES
 C           (7)=CHARACTER BOX X  - 5/7 OF BOX-Y
 C
 C
+      vector(1) = 0.0
+      vector(2) = 7.0
+      vector(3) = 1.0
+      vector(4) = 0.0
+      vector(5) = 0.06255
+      vector(6) = 0.01
+      vector(7) = 0.0
+      
 C PROTECT INPUT PARAMETERS FROM BEING CHANGED.
       ASPEC1=ASPECT
       JUSTI1=JUSTIF
       KEMPTY=0
+
+      PGFORM = 0
+      PATNO = 20
+      BORDER = 1
+      XCP = 0.0
+      YCP = 0.0
 C
 C CHECK FOR VALID ASPECT.  IF(ASPECT.LT.0.0) THEN CALL VBERRH(721,5),
 C AND USE DEFAULT ASPECT.
@@ -645,13 +692,6 @@ C     parameters set to get same size plot as imagen and qms b&w.
 *-
 C INITIALIZE THE DEVICE CAPABILITIES VECTOR.
       COMMON /DEVCAP/ DEV(33)
-C
-C     data is for black & white device
-C
-      DATA DEV /0.,1.,1.,1.,15.,2.,0.,0.,0.,0.,
-     +          0.,0.,0.,0.,7230.,5040.,254.,178.,4.,10.,
-     +          84.,0.,0.,3.,99999.,0.,1.,0.,0.,5000.,
-     +          750.,0.,1./
       DATA NOCALL /0/
 C
 C     If device is 0, call to reset
@@ -2704,7 +2744,6 @@ C           (7)=CHARACTER BOX X
       COMMON /VCVEC2/ COORD, LSTCRD
       CHARACTER COORD*20, LSTCRD*20
       INTEGER IVECT
-      DATA IVECT/0/
 C
 C compute new point in dev. coord.
 C     convert to floating offsets

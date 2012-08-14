@@ -1,6 +1,6 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2)
+IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND Stokhos_ENABLE_MueLu)
 
      TRIBITS_ADD_EXECUTABLE(
        Linear2D_Diffusion_Example
@@ -20,8 +20,35 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2)
 	       tpetra_pce_instantiations.cpp
 	       ifpack2_pce_instantiations.cpp
        COMM serial mpi
-       DEPLIBS stokhos
+       DEPLIBS stokhos muelu muelu-xpetra
       )
+     TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_IPCE_Example
+            NAME "Linear2D_Diffusion_IPCE_Example_Direct"
+            ARGS "--division_method=Direct"
+            COMM serial mpi
+            NUM_MPI_PROCS 1 
+            PASS_REGULAR_EXPRESSION "Example Passed!"
+          )
+       TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_IPCE_Example
+            NAME "Linear2D_Diffusion_IPCE_Example_CG_Diag"
+            ARGS "--division_method=CG --divprec_method=Diag"
+            COMM serial mpi
+            NUM_MPI_PROCS 1
+            PASS_REGULAR_EXPRESSION "Example Passed!"
+          )
+      TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_IPCE_Example
+            NAME "Linear2D_Diffusion_IPCE_Example_CG_Schur"
+            ARGS "--division_method=CG --divprec_method=Schur"
+            COMM serial mpi
+            NUM_MPI_PROCS 1
+            PASS_REGULAR_EXPRESSION "Example Passed!"
+          )
+
+
+
 
 ENDIF()
 

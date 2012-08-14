@@ -116,6 +116,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_MeanBasedDivisionExpansionStrategy.hpp
   Stokhos_DenseDirectDivisionExpansionStrategy.hpp
   Stokhos_SPDDenseDirectDivisionExpansionStrategy.hpp
+  Stokhos_GMRESDivisionExpansionStrategy.hpp
+  Stokhos_CGDivisionExpansionStrategy.hpp
   Stokhos_OrthogPolyExpansionBase.hpp
   Stokhos_OrthogPolyExpansionBaseImp.hpp
   Stokhos_ConstantOrthogPolyExpansion.hpp
@@ -194,6 +196,15 @@ SET(HEADERS ${HEADERS}
   Stokhos_BasisInteractionGraph.hpp
   Stokhos_AdaptivityUtils.hpp
   Stokhos_AdaptivityManager.hpp
+  Stokhos_Operator.hpp
+  Stokhos_DiagPreconditioner.hpp
+  Stokhos_JacobiPreconditioner.hpp
+  Stokhos_GSPreconditioner.hpp
+  Stokhos_SchurPreconditioner.hpp
+  Stokhos_InversePreconditioner.hpp
+  Stokhos_BlockPreconditioner.hpp
+  Stokhos_MueLu_QR_Interface_decl.hpp
+  Stokhos_MueLu_QR_Interface_def.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -246,7 +257,13 @@ SET(SOURCES ${SOURCES}
   Stokhos_BasisInteractionGraph.cpp
   Stokhos_AdaptivityUtils.cpp
   Stokhos_AdaptivityManager.cpp
-  )
+  Stokhos_DiagPreconditioner.cpp
+  Stokhos_JacobiPreconditioner.cpp
+  Stokhos_GSPreconditioner.cpp
+  Stokhos_SchurPreconditioner.cpp
+  Stokhos_InversePreconditioner.cpp
+  Stokhos_BlockPreconditioner.cpp  
+)
 
 # Sacado
 IF (Stokhos_ENABLE_Sacado)

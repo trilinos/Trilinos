@@ -1,0 +1,32 @@
+The 'ParameterList' example collection presents some parameter list driven examples.
+
+A parameter list is a key/value database that can be used to configure the multigrid preconditioner built by MueLu.
+See documentation of Teuchos::ParameterList for more information.
+
+Note: additional examples of parameter lists are available in test/unit_test/ParameterList/*/*.xml
+
+Use --help to list available options.
+
+Example:
+
+- MueLu ParameterList
+
+- Stratimikos     - Call MueLu via the stratimikos interface
+
+   Usage:
+    ./MueLu_Stratimikos.exe : use xml configuration file stratimikos_ParameterList.xml
+
+   Note:
+    The source code is not MueLu specific and can be used with any Stratimikos strategy.
+
+- MLParameterList  - Run MueLu using a parameter list formatted for ML
+                     Can also run ML for comparison purposes
+#TODO: change name
+
+   Usage:
+    ./MueLu_MLParameterList.exe                            : use hard-coded parameter list
+    ./MueLu_MLParameterList.exe --xml=ml_ParameterList.xml : use xml configuration file
+    ./MueLu_MLParameterList.exe --muelu=0 --ml=1           : use ml instead of muelu
+
+
+

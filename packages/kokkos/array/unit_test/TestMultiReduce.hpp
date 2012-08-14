@@ -53,8 +53,6 @@
 
 #include <KokkosArray_ParallelReduce.hpp>
 
-#include <impl/KokkosArray_Preprocessing_macros.hpp>
-
 /*--------------------------------------------------------------------------*/
 
 namespace Test {

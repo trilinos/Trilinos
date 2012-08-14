@@ -47,6 +47,8 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Sc
   IsParallel_(false),
   ZeroStartingSolution_(true),
   DoBackwardGS_(false),
+  DoL1Method_(false),
+  L1Eta_(1.5),
   Condest_(-1.0),
   IsInitialized_(false),
   IsComputed_(false),
@@ -107,6 +109,8 @@ void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
   Ifpack2::getParameter(List, "relaxation: min diagonal value", MinDiagonalValue_);
   Ifpack2::getParameter(List, "relaxation: zero starting solution", ZeroStartingSolution_);
   Ifpack2::getParameter(List, "relaxation: backward mode",DoBackwardGS_);
+  Ifpack2::getParameter(List, "relaxation: use l1",DoL1Method_);
+  Ifpack2::getParameter(List, "relaxation: l1 eta",L1Eta_);
 }
 
 //==========================================================================
@@ -353,11 +357,39 @@ void Relaxation<MatrixType>::compute()
     "Ifpack2::Relaxation::compute, failed to create Diagonal_");
 
   A_->getLocalDiagCopy(*Diagonal_);
+  Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
+  
+  // Setup for L1 Methods.
+  // Here we add half the value of the off-processor entries in the row, 
+  // but only if diagonal isn't sufficiently large.
+  //
+  // Note: This is only done in the slower-but-more-general "RowMatrix" mode.  
+  //
+  // This follows from Equation (6.5) in:
+  // Baker, Falgout, Kolev and Yang.  Multigrid Smoothers for Ultraparallel Computing.
+  // SIAM J. Sci. Comput., Vol. 33, No. 5. (2011), pp. 2864--2887.
+  if(DoL1Method_ && IsParallel_) {
+    size_t maxLength = A_->getNodeMaxNumRowEntries();
+    Teuchos::Array<LocalOrdinal> Indices(maxLength);
+    Teuchos::Array<Scalar> Values(maxLength);
+    size_t NumEntries;
+
+    Scalar two=Teuchos::ScalarTraits<Scalar>::one()+Teuchos::ScalarTraits<Scalar>::one();
+
+    for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
+      A_->getLocalRowCopy(i, Indices(), Values(), NumEntries);      
+      magnitudeType diagonal_boost=Teuchos::ScalarTraits<magnitudeType>::zero();
+      for (size_t k = 0 ; k < NumEntries ; ++k) 
+	if((size_t)Indices[k] > i)
+	  diagonal_boost+= Teuchos::ScalarTraits<Scalar>::magnitude(Values[k]/two);  
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i]) < L1Eta_*diagonal_boost)
+	DiagView[i]+=diagonal_boost;
+    }
+  }
 
   // check diagonal elements, store the inverses, and verify that
   // no zeros are around. If an element is zero, then by default
   // its inverse is zero as well (that is, the row is ignored).
-  Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
   for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
     Scalar& diag = DiagView[i];
     if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < Teuchos::ScalarTraits<Scalar>::magnitude(MinDiagonalValue_))
@@ -378,10 +410,10 @@ void Relaxation<MatrixType>::compute()
     Importer_ = Teuchos::rcp( new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(A_->getDomainMap(),
 										  A_->getColMap()) );
 
-
     TEUCHOS_TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,
       "Ifpack2::Relaxation::compute ERROR failed to create Importer_");
   }
+
 
   ++NumCompute_;
   Time_->stop();
@@ -799,8 +831,12 @@ std::string Relaxation<MatrixType>::description() const {
   else if (PrecType_ == Ifpack2::SGS) oss << "Type = Sym. Gauss-Seidel, " << std::endl;
   //
   oss << ", global rows = " << A_->getGlobalNumRows()
-      << ", global cols = " << A_->getGlobalNumCols()
-      << "}";
+      << ", global cols = " << A_->getGlobalNumCols();
+
+  if (DoL1Method_)
+    oss<<", using L1 correction with eta "<<L1Eta_;
+
+  oss << "}";
   return oss.str();
 }
 

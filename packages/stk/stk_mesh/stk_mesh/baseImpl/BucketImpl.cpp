@@ -136,7 +136,9 @@ void BucketImpl::initialize_fields( unsigned i_dst )
   for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;
        i != e ; ++i, ++field_iter ) {
 
-    if (i->m_size == 0) continue;
+    if (i->m_size == 0) {
+      continue;
+    }
 
     const unsigned char* init_val = reinterpret_cast<const unsigned char*>((*field_iter)->get_initial_value());
     if (init_val != NULL) {
@@ -244,6 +246,7 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
 
       field_data_size += align( num_bytes_per_entity * m_capacity );
     }
+
     m_field_map[ num_fields ].m_base  = field_data_size ;
     m_field_map[ num_fields ].m_size = 0 ;
     m_field_map[ num_fields ].m_stride = NULL ;
@@ -265,11 +268,16 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
 
   //allocate space for the fields
   m_field_data = field_data_size > 0 ? new unsigned char[field_data_size] : NULL;
+
   //
-  //[TODO] ALAN, TODD: to investigate if this is necessary to fix valgrind
+  //[TODO] ALAN, TODD: to investigate if memory_zero is necessary to fix valgrind
   //issues in the following regression test:
   //adagio_rtest/presto/super_elem_rigid_body/super_elem_rigid_body.test|np1_explicit_reverseMPC
-  memory_zero(m_field_data, field_data_size);
+  //memory_zero(m_field_data, field_data_size);
+  //ABW UPDATE: found and fixed bug in strumento/src/element/SuperElementHandler.C
+  //which was reading past end of field, so this memory_zero is no longer
+  //necessary. 8/9/2012
+  //std::memset( m_field_data , 0xfff , field_data_size );
 
   m_field_data_end = m_field_data + field_data_size;
 }

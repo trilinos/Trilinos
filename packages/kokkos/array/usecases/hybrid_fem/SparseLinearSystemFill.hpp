@@ -61,22 +61,18 @@ template< class MatrixType , class MeshType > struct GatherFill ;
 
 //----------------------------------------------------------------------------
 
-namespace KokkosArray {
-namespace Impl {
+namespace HybridFEM {
 
-template< typename IndexType , typename CoordScalar ,
-          unsigned ElemNodeCount ,
-          class Layout , class Device >
-struct Factory< KokkosArray::CrsArray< IndexType , Layout , Device , IndexType > ,
-                HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > >
-{
-  typedef Device                                     device_type ;
-  typedef typename device_type::size_type            size_type  ;
-  typedef KokkosArray::CrsArray< IndexType , Layout , Device , IndexType > graph_type ;
-  typedef View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
+template< class GraphType , class MeshType >
+struct GraphFactory {
+  typedef GraphType                         graph_type ;
+  typedef MeshType                          mesh_type ;
+  typedef typename graph_type::device_type  device_type ;
+  typedef typename device_type::size_type   size_type  ;
 
-  typedef HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > mesh_type ;
+  static const unsigned ElemNodeCount = mesh_type::element_node_count ;
 
+  typedef KokkosArray::View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
 
   static
   void
@@ -93,13 +89,13 @@ struct Factory< KokkosArray::CrsArray< IndexType , Layout , Device , IndexType >
     typedef typename element_map_type::HostMirror element_map_host_type ;
 
     deep_copy( elem_node_ids , mesh.elem_node_ids );
-    deep_copy( node_elem_ids , mesh.node_elem_ids );
+    deep_copy( node_elem_ids.entries , mesh.node_elem_ids.entries );
 
     const size_t owned_node = mesh.parallel_data_map.count_owned ;
     const size_t total_elem = mesh.elem_node_ids.dimension(0);
 
     if ( total_elem ) {
-      elem_map = KokkosArray::create< element_map_type >( std::string("element_map"), total_elem );
+      elem_map = element_map_type( std::string("element_map"), total_elem );
     }
 
     element_map_host_type elem_map_host = create_mirror( elem_map );
@@ -133,7 +129,7 @@ struct Factory< KokkosArray::CrsArray< IndexType , Layout , Device , IndexType >
       offset += work.size();
     }
 
-    graph = create_crsarray< graph_type >( node_node_ids );
+    graph = KokkosArray::create_crsarray< graph_type >( "node_node_ids" , node_node_ids );
 
     //------------------------------------
     // ( element , node_row , node_column ) -> matrix_crs_column
@@ -183,8 +179,8 @@ if ( node_col != column[col_search] ) {
   }
 };
 
-} /* namespace Impl */
-} /* namespace KokkosArray */
+} // namespace HybridFEM
+
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

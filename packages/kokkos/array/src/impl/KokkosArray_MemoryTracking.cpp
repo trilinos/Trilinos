@@ -74,6 +74,18 @@ struct LessMemoryTrackingInfo {
   { return lhs_ptr < rhs.end ; }
 };
 
+void MemoryTracking::Info::print( std::ostream & s ) const
+{
+  s << "{ "
+    << "begin(" << begin << ") "
+    << "end(" << end << ") "
+    << "typeid(" << type->name() << ") "
+    << "size(" << size << ") "
+    << "length(" << length << ") "
+    << "count(" << count << ")  "
+    << "label(" << label << ") }" ;
+}
+
 void MemoryTracking::track(
   const void           * ptr ,
   const std::type_info * type ,
@@ -94,14 +106,8 @@ void MemoryTracking::track(
         << "size(" << size << ") ,"
         << "length(" << length << ") ,"
         << "label(" << label << ") )"
-        << " ERROR, already exists as { "
-        << "begin(" << i->begin << ") ,"
-        << "end(" << i->end << ") ,"
-        << "typeid(" << i->type->name() << ") ,"
-        << "size(" << i->size << ") ,"
-        << "length(" << i->length << ") ,"
-        << "label(" << i->label << ")"
-        << "count(" << i->count << ") }" ;
+        << " ERROR, already exists as " ;
+    i->print( msg );
     throw std::runtime_error( msg.str() );
   }
 
@@ -118,8 +124,7 @@ void MemoryTracking::track(
   m_tracking.insert( i , info );
 }
 
-MemoryTracking::Info
-MemoryTracking::increment( const void * ptr )
+void MemoryTracking::increment( const void * ptr )
 {
   const LessMemoryTrackingInfo compare ;
 
@@ -135,12 +140,9 @@ MemoryTracking::increment( const void * ptr )
   }
 
   ++( i->count );
-
-  return *i ;
 }
 
-MemoryTracking::Info
-MemoryTracking::decrement( const void * ptr )
+void * MemoryTracking::decrement( const void * ptr )
 {
   const LessMemoryTrackingInfo compare ;
 
@@ -157,14 +159,14 @@ MemoryTracking::decrement( const void * ptr )
 
   --( i->count );
 
+  void * ptr_alloc = 0 ;
+
   if ( 0 == i->count ) {
-    Info entry = *i ;
+    ptr_alloc = const_cast<void*>( i->begin );
     m_tracking.erase( i );
-    return entry ;
   }
-  else {
-    return *i ;
-  }
+
+  return ptr_alloc ;
 }
 
 MemoryTracking::Info
@@ -182,15 +184,9 @@ void MemoryTracking::print( std::ostream & s , const std::string & lead ) const
 {
   for ( std::vector<Info>::const_iterator
         i = m_tracking.begin() ; i != m_tracking.end() ; ++i ) {
-    s << lead
-      << "{ begin(" << i->begin << "), "
-      << "end(" << i->end << "), "
-      << "typeid(" << i->type->name() << "), "
-      << "size(" << i->size << "), "
-      << "length(" << i->length << "), "
-      << "label(" << i->label << "), "
-      << "count(" << i->count << ") }"
-      << std::endl ;
+    s << lead ;
+    i->print( s );
+    s << std::endl ;
   }
 }
 

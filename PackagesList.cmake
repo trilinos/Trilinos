@@ -151,6 +151,8 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Rythmos               packages/rythmos                  PS
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
+  Xpetra                packages/xpetra                   SS
+  MueLu                 packages/muelu                    SS
   Stokhos               packages/stokhos                  SS
   Piro                  packages/piro                     SS
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)
@@ -186,10 +188,10 @@ PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(SEACAS Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(SEACAS Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Mesquite AIX)
 PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(Xpetra Windows)

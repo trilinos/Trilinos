@@ -1,1 +1,0 @@
- 5 0 * * *       (cd $HOME/Zoltan.bugfix/test/th; ./cron_script) > $HOME/Zoltan.bugfix/test/th/cron.out 2>&1

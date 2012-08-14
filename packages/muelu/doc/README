@@ -1,0 +1,27 @@
+MueLu's documentation can be built in either the source or build directories:
+
+1) SOURCE DIRECTORY
+
+   You do not need to run cmake.  In the *source* tree, simply do the following
+   in the directory muelu/doc:
+
+    a) setenv TRILINOS_HOME /absolute/path/to/your/Trilinos/source/dir
+    b) doxygen Doxyfile
+
+2) BUILD DIRECTORY
+
+   a) setenv TRILINOS_HOME /absolute/path/to/your/Trilinos/source/dir
+   b) Run your cmake configure line or script.
+   c) In the *build* directory in the subdirectory muelu/doc,
+      type "make doc".  The documentation will be placed in muelu/doc/html.
+
+
+NOTES
+----
+1) Doxyfile.in is for cmake, Doxyfile is if you want to build the docs in the
+   source tree.  Both of these files include the same file, "Doxyfile.options".
+
+2) If you want better LaTeX rendering:
+   a) Download MathJax.
+   b) Use doxygen version 1.7.2 or later.
+   c) Edit the MathJax lines appropriately in Doxyfile.options.

@@ -54,14 +54,14 @@ namespace Ifpack2 {
  Teuchos::RCP<Tpetra::RowMatrix> A;             // fill the elements of A,
  A->FillComplete();
 
- Ifpack2_LocalFilter LocalA(A);
+ Ifpack2_LocalFilter<Tpetra::RowMatrix> LocalA(A);
  \endcode
 
  Once created, \c LocalA defined, on each process, the submatrix 
  corresponding to local rows and columns only. The creation 
  and use of
  \c LocalA is "cheap", as the elements of the local matrix are
- obtained through calls to ExtractMyRowCopy on the original, distributed
+ obtained through calls to getLocalRowCopy on the original, distributed
  matrix, say A. This means that \c A must remain in scope every time 
  \c LocalA is accessed.
 

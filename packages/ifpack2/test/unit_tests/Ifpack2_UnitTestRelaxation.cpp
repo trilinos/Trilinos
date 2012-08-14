@@ -219,11 +219,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test3, Scalar, LocalOrdinal
   TEST_NOTHROW(prec.apply(x, y));
 }
 
+  // Test apply() to make sure the L1 methods work
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test4, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+  
+  global_size_t num_rows_per_proc = 0;
+  
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  
+  Ifpack2::Relaxation<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
+  
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Jacobi");
+  params.set("relaxation: use l1",true);
+  prec.setParameters(params);
+  
+  prec.initialize();
+  prec.compute();
+  
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar(1);
+
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), 0);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), 0);
+  
+  TEST_NOTHROW(x.getLocalMV().getValues());
+  TEST_NOTHROW(y.getLocalMV().getValues());
+
+  TEST_NOTHROW(prec.apply(x, y));
+}
+
+
+
+
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test4, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 

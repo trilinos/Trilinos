@@ -1,0 +1,27 @@
+\subsection{Making sense of compile errors with templated code}
+The Perl script STLFilt by Leor Zolman is a useful tool for making compiler errors for templated code easier to read.  You
+can get the code from \url{http://www.bdsoft.com/tools/stlfilt.html}.
+Put the files \verb!gSTLFilt.pl! and \verb!gfilt! in a directory that is on your search path.
+Whenever you encounter a compile error, duplicate the compile invocation line, replace the compiler with \verb!gfilt!, and recompile.
+If you are using the MPI compiler wrappers, you'll need to add the MPI include directory along with
+\verb!gfilt!.
+
+Section \ref{sec:common errors} lists some C++ compilation errors that the \muelu developers have seen, along
+with explanations and solutions.
+
+\subsection{Using tags to navigate the \muelu source code}
+You can use a tag file to jump from the name of a class/method/function
+to its definition from within vim.   Assume that the \muelu source is in \verb!~/Codes/MueLu!.  First generate a tag file:
+\begin{verbatim}
+  cd ~/Codes/MueLu
+  ctags -R --tag-relative=no ${PWD}/src
+\end{verbatim}
+The file ``tags" should now exist in \verb!~/Codes/MueLu!.  Second, edit the file \verb!~/.vimrc!, and add the
+line:
+\begin{verbatim}
+autocmd BufEnter ~/Codes/MueLu/* :setlocal tags=~/Codes/MueLu/tags
+\end{verbatim}
+This line causes the tags files to become active whenever you edit a file in \verb!~/Codes/MueLu!.  To test this, edit
+the file \verb!MueLu/test/unit_tests/Level.cpp!, and move the cursor over the type \verb!Level!.  Type ``control ]",
+and you will jump to the class definition of \verb!MueLu::Level!.  To jump back, type ``control t".
+In vim, type \verb!:help tags! for extensive help on tags.

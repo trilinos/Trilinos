@@ -63,6 +63,8 @@ packages/trios trios-checkins@software.sandia.gov
 packages/seacas seacas-checkins@software.sandia.gov
 packages/teko teko-checkins@software.sandia.gov
 packages/meshinggenie Geofracturemeshingcodes@software.sandia.gov
+packages/muelu muelu-checkins@software.sandia.gov
+packages/xpetra xpetra-checkins@software.sandia.gov
 doc/Thyra thyra-checkins@software.sandia.gov
 doc/RefCountPtr teuchos-checkins@software.sandia.gov
 #cmake framework-checkins@software.sandia.gov

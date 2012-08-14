@@ -5414,7 +5414,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -5423,7 +5423,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5436,7 +5436,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -5445,7 +5445,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5458,7 +5458,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -5467,7 +5467,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5480,7 +5480,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -5489,7 +5489,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
   else if (alpha == -STS::one()) {
@@ -5504,7 +5504,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -5513,7 +5513,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5526,7 +5526,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -5535,7 +5535,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5548,7 +5548,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -5557,7 +5557,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5570,7 +5570,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -5579,7 +5579,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
   else { // alpha != 1 && alpha != -1
@@ -5594,7 +5594,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -5603,7 +5603,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5616,7 +5616,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -5625,7 +5625,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5638,7 +5638,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -5647,7 +5647,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -5660,7 +5660,7 @@ matVecCsrColMajorForwhile1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -5669,7 +5669,7 @@ matVecCsrColMajorForwhile1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
 }
@@ -7196,7 +7196,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -7205,7 +7205,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7220,7 +7220,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -7229,7 +7229,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7244,7 +7244,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -7253,7 +7253,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7268,7 +7268,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -7277,7 +7277,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
   else if (alpha == -STS::one()) {
@@ -7294,7 +7294,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -7303,7 +7303,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7318,7 +7318,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -7327,7 +7327,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7342,7 +7342,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -7351,7 +7351,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7366,7 +7366,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -7375,7 +7375,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
   else { // alpha != 1 && alpha != -1
@@ -7392,7 +7392,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -7401,7 +7401,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7416,7 +7416,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -7425,7 +7425,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7440,7 +7440,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -7449,7 +7449,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -7464,7 +7464,7 @@ matVecCsrColMajorForif1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -7473,7 +7473,7 @@ matVecCsrColMajorForif1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
 }
@@ -14364,7 +14364,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -14373,7 +14373,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14386,7 +14386,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -14395,7 +14395,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14408,7 +14408,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -14417,7 +14417,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14430,7 +14430,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -14439,7 +14439,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
   else if (alpha == -STS::one()) {
@@ -14454,7 +14454,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -14463,7 +14463,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14476,7 +14476,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -14485,7 +14485,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14498,7 +14498,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -14507,7 +14507,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14520,7 +14520,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -14529,7 +14529,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
   else { // alpha != 1 && alpha != -1
@@ -14544,7 +14544,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -14553,7 +14553,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14566,7 +14566,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -14575,7 +14575,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14588,7 +14588,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -14597,7 +14597,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -14610,7 +14610,7 @@ matVecCsrColMajorForwhileConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -14619,7 +14619,7 @@ matVecCsrColMajorForwhileConj1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
 }
@@ -16146,7 +16146,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -16155,7 +16155,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16170,7 +16170,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -16179,7 +16179,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16194,7 +16194,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -16203,7 +16203,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16218,7 +16218,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -16227,7 +16227,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp += A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
   else if (alpha == -STS::one()) {
@@ -16244,7 +16244,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -16253,7 +16253,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16268,7 +16268,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -16277,7 +16277,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16292,7 +16292,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -16301,7 +16301,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16316,7 +16316,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -16325,7 +16325,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp -= A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
   else { // alpha != 1 && alpha != -1
@@ -16342,7 +16342,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to -Y(i,:).
@@ -16351,7 +16351,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::zero()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16366,7 +16366,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; set Y(i,:) to 0.
@@ -16375,7 +16375,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else if (beta == STS::one()) {
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16390,7 +16390,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We don't have to set Y(i,:) here, since beta == 1.
@@ -16399,7 +16399,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
     else { // beta != -1 && beta != 0 && beta != 1
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
@@ -16414,7 +16414,7 @@ matVecCsrColMajorForifConj1Vec (
           // Write temp output from last iteration(s) to Y,
           // before incrementing the current row index.
           if (k > 0) {
-            Y[i + 0*colStrideY] = tmp;
+            Y_i[0] = tmp;
           }
           ++i;
           // We haven't seen row i before; scale Y(i,:) by beta.
@@ -16423,7 +16423,7 @@ matVecCsrColMajorForifConj1Vec (
         }
         tmp += alpha * A_ij * X[j];
       }
-      Y[i + 0*colStrideY] = tmp;
+      Y_i[0] = tmp;
     }
   }
 }

@@ -30,4 +30,5 @@
 
 template <> 
 Teuchos::RCP<Sacado::ETPCE::OrthogPolyImpl<double, Stokhos::StandardStorage<int,double> >::expansion_type> Sacado::ETPCE::OrthogPolyImpl<double, Stokhos::StandardStorage<int,double> >::const_expansion_ =
-  Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,double>);
+ Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,double>);
+

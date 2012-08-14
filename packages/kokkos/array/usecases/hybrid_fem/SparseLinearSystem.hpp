@@ -159,8 +159,6 @@ class Operator {
 private:
   const CrsMatrix<AScalarType,Device> A ;
 
-#if defined( HAVE_MPI )
-
   ParallelDataMap                                         data_map ;
   AsyncExchange< VScalarType , Device , ParallelDataMap > exchange ;
 
@@ -173,20 +171,9 @@ public:
     , exchange( arg_data_map , 1 )
     {}
 
-#else /* ! defined( HAVE_MPI ) */
-
-public:
-
-  Operator( const ParallelDataMap                  & ,
-            const CrsMatrix<AScalarType,Device>    & arg_A )
-    : A( arg_A ) {}
-
-#endif
-
   void apply( const View<VScalarType[],Device>  & x ,
               const View<VScalarType[],Device>  & y )
   {
-#if defined( HAVE_MPI )
     // Gather off-processor data for 'x'
 
     PackArray< vector_type >::pack( exchange.buffer() ,
@@ -202,17 +189,10 @@ public:
     UnpackArray< vector_type >::unpack( x , exchange.buffer() ,
                                         data_map.count_owned ,
                                         data_map.count_receive );
+
     const typename Device::size_type nrow = data_map.count_owned ;
     const typename Device::size_type ncol = data_map.count_owned +
                                             data_map.count_receive ;
-#else /* ! defined( HAVE_MPI ) */
-
-    const typename Device::size_type nrow = A.graph.row_map.length();
-    const typename Device::size_type ncol = A.graph.row_map.length();
-
-#endif
-
-
     Impl::Multiply<matrix_type,vector_type,vector_type>
       ::apply( A , nrow , ncol , x , y );
   }
@@ -240,14 +220,19 @@ void cgsolve(
 
   Operator<AScalarType,VScalarType,Device> matrix_operator( data_map , A );
 
-  vector_type r  = create< vector_type >( "cg::r" , count_owned );
-  vector_type p  = create< vector_type >( "cg::p" , count_total );
-  vector_type Ap = create< vector_type >( "cg::Ap", count_owned );
+  // Need input vector to matvec to be owned + received
+  vector_type pAll ( "cg::p" , count_total );
 
-  /* p  = x      */ deep_copy( p , x , count_owned );
-  /* Ap = A * p  */ matrix_operator.apply( p , Ap );
+  vector_type p( pAll , std::pair<size_t,size_t>(0,count_owned) );
+  vector_type r ( "cg::r" , count_owned );
+  vector_type Ap( "cg::Ap", count_owned );
+
+  /* r = b - A * x ; */
+
+  /* p  = x      */ deep_copy( p , x );
+  /* Ap = A * p  */ matrix_operator.apply( pAll , Ap );
   /* r  = b - Ap */ waxpby( data_map , 1.0 , b , -1.0 , Ap , r );
-  /* p  = r      */ deep_copy( p , r , count_owned );
+  /* p  = r      */ deep_copy( p , r );
 
   double old_rdot = dot( data_map , r );
 
@@ -258,7 +243,9 @@ void cgsolve(
 
   while ( tolerance < normr && iteration < maximum_iteration ) {
 
-    /* Ap = A * p  */ matrix_operator.apply( p , Ap );
+    /* pAp_dot = dot( p , Ap = A * p ) */
+
+    /* Ap = A * p  */ matrix_operator.apply( pAll , Ap );
 
     const double pAp_dot = dot( data_map , p , Ap );
     const double alpha   = old_rdot / pAp_dot ;

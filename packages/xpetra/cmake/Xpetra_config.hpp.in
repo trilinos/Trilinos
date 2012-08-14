@@ -1,0 +1,9 @@
+#cmakedefine HAVE_XPETRA_DEBUG
+
+#cmakedefine HAVE_XPETRA_TPETRA
+
+#cmakedefine HAVE_XPETRA_EPETRA
+
+#cmakedefine HAVE_XPETRA_EPETRAEXT
+
+#cmakedefine HAVE_XPETRA_PROFILING

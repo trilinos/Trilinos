@@ -5,7 +5,7 @@
 #ifndef token_valueH
 #define token_valueH
 
-#include "../asrc/code_types.h"
+#include "pamgen_code_types.h"
 
 typedef union 
 {

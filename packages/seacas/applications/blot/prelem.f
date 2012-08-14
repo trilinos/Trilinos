@@ -133,6 +133,6 @@ C   --   VAREL - IN - the selected element variables for the time step
 10000  FORMAT (/, ' Element Time Step Variables (Global Element Ids)')
 10010  FORMAT (1X, 'Row ',I4,', Column ',I1,' is variable ',A)
 10020  FORMAT (1PE13.6)
-10030  FORMAT (1X, 'Elem', I6, 5 (1X, A13))
-10040  FORMAT (1X, 10X, 5 (1X, A13))
+10030  FORMAT (1X, 'Elem', I9, 5 (1X, A13))
+10040  FORMAT (1X, 13X, 5 (1X, A13))
       END

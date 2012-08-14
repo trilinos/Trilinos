@@ -4,7 +4,7 @@
 #include "radial_trisection_inline_mesh_desc.h"
 #include <algorithm>
 #include "calc_decomp_cuts.h"
-#include "../asrc/fudges.h"
+#include "pamgen_fudges.h"
 #include "Random.h"
 #include <stdlib.h>
 

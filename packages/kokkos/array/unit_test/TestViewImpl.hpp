@@ -174,12 +174,12 @@ void test_view_impl()
   ASSERT_TRUE( ( KokkosArray::Impl::StaticAssert< shape_36_type::rank == 6 >::value ) );
   ASSERT_TRUE( ( KokkosArray::Impl::StaticAssert< shape_03_type::rank == 3 >::value ) );
 
-  shape_01_type shape_01 = KokkosArray::Impl::Factory<shape_01_type,DummyMemorySpace>::create();
-  shape_11_type shape_11 = KokkosArray::Impl::Factory<shape_11_type,DummyMemorySpace>::create( 1000 );
-  shape_03_type shape_03 = KokkosArray::Impl::Factory<shape_03_type,DummyMemorySpace>::create();
-  shape_14_type shape_14 = KokkosArray::Impl::Factory<shape_14_type,DummyMemorySpace>::create( 0 );
-  shape_22_type shape_22 = KokkosArray::Impl::Factory<shape_22_type,DummyMemorySpace>::create( 0 , 0 );
-  shape_36_type shape_36 = KokkosArray::Impl::Factory<shape_36_type,DummyMemorySpace>::create( 10 , 20 , 30 );
+  shape_01_type shape_01 = shape_01_type::create<DummyMemorySpace>();
+  shape_11_type shape_11 = shape_11_type::create<DummyMemorySpace>( 1000 );
+  shape_03_type shape_03 = shape_03_type::create<DummyMemorySpace>();
+  shape_14_type shape_14 = shape_14_type::create<DummyMemorySpace>( 0 );
+  shape_22_type shape_22 = shape_22_type::create<DummyMemorySpace>( 0 , 0 );
+  shape_36_type shape_36 = shape_36_type::create<DummyMemorySpace>( 10 , 20 , 30 );
 
   ASSERT_TRUE( shape_01.rank_dynamic == 0u );
   ASSERT_TRUE( shape_01.rank         == 1u );

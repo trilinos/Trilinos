@@ -181,10 +181,10 @@ test_product_tensor_matrix(
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_matrix_size = matrix.block.dimension();
 
-  matrix.values = KokkosArray::create<block_vector_type>( "matrix" , inner_matrix_size , graph_length );
+  matrix.values = block_vector_type( "matrix" , inner_matrix_size , graph_length );
 
-  block_vector_type x = KokkosArray::create<block_vector_type>( "x" , inner_length , outer_length );
-  block_vector_type y = KokkosArray::create<block_vector_type>( "y" , inner_length , outer_length );
+  block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
+  block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
 
   typename block_vector_type::HostMirror hM = KokkosArray::create_mirror( matrix.values );
   
@@ -291,10 +291,10 @@ test_product_tensor_diagonal_matrix(
 
   matrix.block  = KokkosArray::SymmetricDiagonalSpec< Device >( inner_length );
   matrix.graph  = KokkosArray::create_crsarray<graph_type>( std::string("test product tensor graph") , graph );
-  matrix.values = KokkosArray::create<block_vector_type>( "matrix" , matrix.block.matrix_size() , graph_length );
+  matrix.values = block_vector_type( "matrix" , matrix.block.matrix_size() , graph_length );
 
-  block_vector_type x = KokkosArray::create<block_vector_type>( "x" , inner_length , outer_length );
-  block_vector_type y = KokkosArray::create<block_vector_type>( "y" , inner_length , outer_length );
+  block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
+  block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
 
   typename block_vector_type::HostMirror hM =
     KokkosArray::create_mirror( matrix.values );
@@ -464,10 +464,9 @@ test_product_flat_commuted_matrix(
 
   const size_t flat_graph_length = matrix.graph.entries.dimension(0);
 
-  matrix.values =
-    KokkosArray::create<vector_type>( "matrix" , flat_graph_length );
-  vector_type x = KokkosArray::create<vector_type>( "x" , flat_length );
-  vector_type y = KokkosArray::create<vector_type>( "y" , flat_length );
+  matrix.values = vector_type( "matrix" , flat_graph_length );
+  vector_type x = vector_type( "x" , flat_length );
+  vector_type y = vector_type( "y" , flat_length );
 
   {
     typename vector_type::HostMirror hM =
@@ -625,11 +624,10 @@ test_product_flat_original_matrix(
 
   const size_t flat_graph_length = matrix.graph.entries.dimension(0);
 
-  matrix.values =
-    KokkosArray::create<vector_type>( "matrix" , flat_graph_length );
+  matrix.values = vector_type( "matrix" , flat_graph_length );
 
-  vector_type x = KokkosArray::create<vector_type>( "x" , flat_length );
-  vector_type y = KokkosArray::create<vector_type>( "y" , flat_length );
+  vector_type x = vector_type( "x" , flat_length );
+  vector_type y = vector_type( "y" , flat_length );
 
   {
     typename vector_type::HostMirror hM =
@@ -744,12 +742,11 @@ test_original_matrix_free_block(
 
     const size_t graph_length = matrix[block].graph.entries.dimension(0);
 
-    matrix[block].values =
-      KokkosArray::create<vec_type>( "matrix" , graph_length );
+    matrix[block].values = vec_type( "matrix" , graph_length );
 
-    x[block]   = KokkosArray::create<vec_type>( "x" , inner_length );
-    y[block]   = KokkosArray::create<vec_type>( "y" , inner_length );
-    tmp[block] = KokkosArray::create<vec_type>( "tmp" , inner_length );
+    x[block]   = vec_type( "x" , inner_length );
+    y[block]   = vec_type( "y" , inner_length );
+    tmp[block] = vec_type( "tmp" , inner_length );
 
     typename vec_type::HostMirror hM =
       KokkosArray::create_mirror( matrix[block].values );
@@ -876,9 +873,9 @@ test_flat_matrix(
 
   matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
-  matrix.values = KokkosArray::create<vector_type>( "matrix" , graph_length );
-  vector_type x = KokkosArray::create<vector_type>( "x" , length );
-  vector_type y = KokkosArray::create<vector_type>( "y" , length );
+  matrix.values = vector_type( "matrix" , graph_length );
+  vector_type x = vector_type( "x" , length );
+  vector_type y = vector_type( "y" , length );
 
   {
     typename vector_type::HostMirror hM =

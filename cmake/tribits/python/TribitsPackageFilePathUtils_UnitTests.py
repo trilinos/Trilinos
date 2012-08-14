@@ -104,6 +104,16 @@ class test_isGlobalBuildFileRequiringGlobalRebuild(unittest.TestCase):
       False )
 
 
+  def test_cmake_ctest_drivers_something(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'something/cmake/ctest/drivers/machine/somefile.cmake' ),
+      False )
+
+
+  def test_something_cmake_ctest_drivers_something(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/ctest/drivers/machine/somefile.cmake' ),
+      False )
+
+
   def test_cmake_UnitTests(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/anything/UnitTests/CMakeLists.txt' ),
       False )

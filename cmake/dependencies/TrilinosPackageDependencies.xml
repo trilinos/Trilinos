@@ -75,7 +75,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="TBB,CUDA,CUSPARSE,Thrust,Cusp"/>
+    <LIB_OPTIONAL_DEP_TPLS value="TBB,CUDA,CUSPARSE,Thrust,Cusp,MKL"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -1105,11 +1105,39 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Xpetra" dir="packages/xpetra" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Kokkos,Tpetra"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Tpetra"/>
+    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="xpetra-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
+  <Package name="MueLu" dir="packages/muelu" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Xpetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Belos,Epetra,EpetraExt,Kokkos,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Stratimikos"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Tpetra"/>
+    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="muelu-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="Stokhos" dir="packages/stokhos" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia,Kokkos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos,Tpetra,Belos,Ifpack2"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos,Tpetra,Belos,Ifpack2,MueLu"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust,Clp,GLPK,Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>

@@ -94,26 +94,30 @@ namespace {
   // conditioned on average.
   double tol = 1000 * Teuchos::ScalarTraits<double>::eps ();
   // Number of rows in the sparse matrices to test.
-  int numRows = 100;
+  int numRows = 5;
   // Number of columns in the sparse matrices to test.
-  int numCols = 100;
+  int numCols = 5;
   // Number of benchmark trials; timings are cumulative over all trials.
   int numTrials = 100;
   // If true, run the benchmark instead of the test.
   bool benchmark = false;
   // Number of columns in the multivectors to benchmark.
-  // Must be at least as many as the number of rows.
   int numVecs = 1;
   // Number of threads for the Kokkos Node instance.  -1 means use the
   // default behavior.
   int numThreads = -1;
   // Whether to force AltSparseOps to use first-touch allocation.
   bool forceFirstTouch = false;
-  // Kokkos Node instance initialization verbosity.
-  // Only certain Node types support this option.
+  // Verbosity, including that of Kokkos Node initialization.  (Only
+  // certain Kokkos Node types support this option.)
   bool verbose = false;
-
+  // Whether to print copious debugging output.
+  bool debug = false;
+  // For AltSparseOps: Whether to use the version with loops unrolled
+  // over the input and output multivectors.
   bool unroll = true;
+  // For AltSparseOps: Which variant of sparse mat-vec to test; "all"
+  // means test all implemented variants.
   std::string variant ("for-for");
 
   // This will be set after reading the command-line arguments, so
@@ -149,6 +153,8 @@ namespace {
     clp.setOption ("verbose", "quiet", &verbose, "Whether Kokkos Node "
                    "initialization should print verbose status output, if the "
                    "Node type supports this.");
+    clp.setOption ("debug", "release", &debug, "Whether to print copious "
+                   "debugging output.");
     clp.setOption ("unroll", "dontUnroll", &unroll, "Whether Kokkos::SeqSparse"
                    "Ops should unroll across columns of the multivectors.");
     clp.setOption ("variant", &variant, "Which algorithm variant Kokkos::Seq"
@@ -170,19 +176,61 @@ namespace {
   // UNIT TESTS
   //
 
+  /// \class Tester
+  /// \brief Class for testing SparseOpsType.
+  ///
+  /// \tparam SparseOpsType Implementation of local sparse kernels.
+  ///   Examples include Kokkos::DefaultHostSparseOps.
   template<class SparseOpsType>
   class Tester {
   public:
-    static void test (const std::string& sparseOpsTypeName) {
-      Teuchos::ParameterList params;
-      test (sparseOpsTypeName, params);
-    }
-
+    /// \brief Benchmark or test SparseOpsType, with default
+    ///   SparseOpsType parameters.
+    ///
+    /// \param sparseOpsTypeName [in] Name of the SparseOpsType class;
+    ///   used for generating timer labels in the benchmark.
+    ///
+    /// \param implicitUnitDiagTriMultCorrect [in] Whether
+    ///   SparseOpsType correctly implements sparse
+    ///   matrix-(multi)vector multiply with a triangular matrix with
+    ///   implicitly stored unit diagonal.  "Incorrectly" means that
+    ///   SparseOpsType assumes that all entries of the matrix are
+    ///   stored explicitly, regardless of its Teuchos::EDiag input
+    ///   value.  The SparseOpsType interface does not require this by
+    ///   default, but some implementations do.
     static void
     test (const std::string& sparseOpsTypeName,
-          Teuchos::ParameterList& params)
+          const bool implicitUnitDiagTriMultCorrect=false)
     {
-      TestSparseOps<SparseOpsType> tester;
+      Teuchos::ParameterList params;
+      test (sparseOpsTypeName, params, implicitUnitDiagTriMultCorrect);
+    }
+
+    /// \brief Benchmark or test SparseOpsType.
+    ///
+    /// \param sparseOpsTypeName [in] Name of the SparseOpsType class;
+    ///   used for generating timer labels in the benchmark.
+    /// \param params [in/out] Parameters for SparseOpsType's constructor.
+    /// \param implicitUnitDiagTriMultCorrect [in] Whether
+    ///   SparseOpsType correctly implements sparse
+    ///   matrix-(multi)vector multiply with a triangular matrix with
+    ///   implicitly stored unit diagonal.  "Incorrectly" means that
+    ///   SparseOpsType assumes that all entries of the matrix are
+    ///   stored explicitly, regardless of its Teuchos::EDiag input
+    ///   value.  The SparseOpsType interface does not require this by
+    ///   default, but some implementations do.
+    static void
+    test (const std::string& sparseOpsTypeName,
+          Teuchos::ParameterList& params,
+          const bool implicitUnitDiagTriMultCorrect=false)
+    {
+      using Teuchos::FancyOStream;
+      using Teuchos::getFancyOStream;
+      using Teuchos::RCP;
+      using Teuchos::rcpFromRef;
+
+      RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
+      TestSparseOps<SparseOpsType> tester (out, verbose, debug);
       if (benchmark) {
         std::vector<std::pair<std::string, double> > results;
         if (matrixFilename == "") {
@@ -196,7 +244,8 @@ namespace {
         }
       }
       else {
-        tester.testSparseOps (node, params, numRows, numVecs, tol);
+        tester.testSparseOps (node, params, numRows, numCols, numVecs, tol,
+                              implicitUnitDiagTriMultCorrect);
       }
     }
   };
@@ -207,7 +256,10 @@ namespace {
   {
     using Kokkos::DefaultHostSparseOps;
     typedef DefaultHostSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
-    Tester<sparse_ops_type>::test ("DefaultSparseHostOps");
+
+    const bool implicitUnitDiagTriMultCorrect = false;
+    Tester<sparse_ops_type>::test ("DefaultSparseHostOps",
+                                   implicitUnitDiagTriMultCorrect);
   }
 
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
@@ -217,20 +269,9 @@ namespace {
   {
     using Kokkos::AltSparseOps;
     typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
-    Tester<sparse_ops_type>::test ("AltSparseOps");
-
-    if (benchmark) {
-      // Summarize timing results.  You should only call summarize()
-      // for all the different SparseOps types you plan to test in
-      // this executable.
-      //
-      // Extra endline makes the summarize() output nicer.  In
-      // benchmark mode, you should run with only one MPI process (if
-      // building with MPI at all).  We don't plan to run benchmark
-      // mode for the check-in or continuous integration tests.
-      std::cout << "\n";
-      Teuchos::TimeMonitor::summarize ();
-    }
+    const bool implicitUnitDiagTriMultCorrect = true;
+    Tester<sparse_ops_type>::test ("AltSparseOps",
+                                   implicitUnitDiagTriMultCorrect);
   }
 #endif // 0
 
@@ -241,6 +282,7 @@ namespace {
     using Teuchos::RCP;
     using Kokkos::AltSparseOps;
     typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+    const bool implicitUnitDiagTriMultCorrect = false;
 
     ParameterList params ("AltSparseOps");
     params.set ("Unroll across multivectors", unroll);
@@ -248,19 +290,21 @@ namespace {
     if (variant == "all") {
       std::string variant = "for-for";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("AltSparseOps (for-for)", params);
-
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-for)", params,
+                                     implicitUnitDiagTriMultCorrect);
       variant = "for-while";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("AltSparseOps (for-while)", params);
-
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-while)", params,
+                                     implicitUnitDiagTriMultCorrect);
       variant = "for-if";
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("AltSparseOps (for-if)", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps (for-if)", params,
+                                     implicitUnitDiagTriMultCorrect);
     }
     else {
       params.set ("Sparse matrix-vector multiply variant", variant);
-      Tester<sparse_ops_type>::test ("AltSparseOps", params);
+      Tester<sparse_ops_type>::test ("AltSparseOps", params,
+                                     implicitUnitDiagTriMultCorrect);
     }
 
     if (benchmark) {

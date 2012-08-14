@@ -305,16 +305,15 @@ public:
     typedef typename int_array_type  ::HostMirror host_int_array_type ;
 
     tmp.m_degree_map =
-      KokkosArray::create< int_array_type >( "stochastic_tensor_degree_map" ,
-                                             work.m_bases_count + 1 ,
-                                             work.m_variable_count );
+      int_array_type( "stochastic_tensor_degree_map" ,
+                      work.m_bases_count + 1 ,
+                      work.m_variable_count );
 
     tmp.m_variable  = work.m_variable_count ;
 
     {
       // If possible the mirror uses a view.
-      host_int_array_type degree_map =
-        create_mirror( tmp.m_degree_map , Impl::MirrorUseView() );
+      host_int_array_type degree_map = create_mirror_view( tmp.m_degree_map );
 
       for ( int j = 0 ; j < work.m_variable_count ; ++j ) {
         degree_map(0,j) = work.m_variable_degree[j];

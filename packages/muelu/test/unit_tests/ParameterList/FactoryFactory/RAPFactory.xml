@@ -1,0 +1,9 @@
+<ParameterList name="Factories">
+
+  <Parameter name="A0" type="string" value="RAPFactory"/>
+
+  <ParameterList name="A1">
+    <Parameter name="factory" type="string" value="RAPFactory"/>
+  </ParameterList>
+
+</ParameterList>

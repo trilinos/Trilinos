@@ -47,6 +47,7 @@
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 
 // Utilities
 #include "Teuchos_TimeMonitor.hpp"
@@ -54,6 +55,20 @@
 
 // Scalar types
 #include "linear2d_diffusion_scalar_types.hpp"
+
+// MueLu includes
+#include <MueLu.hpp>
+#include "Stokhos_MueLu_QR_Interface_decl.hpp"
+#include "Stokhos_MueLu_QR_Interface_def.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
+typedef Kokkos::DefaultNode::DefaultNodeType Node;
+typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+//#include <MueLu_UseShortNames.hpp>
+
+#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
+#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+
 
 // Random field types
 enum SG_RF { UNIFORM, LOGNORMAL };
@@ -76,19 +91,52 @@ const char *sg_prec_names[] = { "None",
 				"Stochastic" };
 
 // Stochastic division approaches
-enum SG_Div { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD };
-const int num_sg_div = 4;
-const SG_Div sg_div_values[] = { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD };
+enum SG_Div { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD, CGD };
+const int num_sg_div = 5;
+const SG_Div sg_div_values[] = { DIRECT, SPD_DIRECT, MEAN_DIV, QUAD, CGD };
 const char *sg_div_names[] = { "Direct",
 			       "SPD-Direct",
 			       "Mean-Based", 
-			       "Quadrature" };
+			       "Quadrature",
+			       "CG"};
+
+// Stochastic division preconditioner approaches
+enum SG_DivPrec { NO, DIAG, JACOBI, GS, SCHUR };
+const int num_sg_divprec = 5;
+const SG_DivPrec sg_divprec_values[] = {NO, DIAG, JACOBI, GS, SCHUR};
+const char *sg_divprec_names[] = { "None",
+                               "Diag",
+                               "Jacobi",
+                               "GS", 
+                               "Schur"};
+
+
+// Option for Schur complement precond: full or diag D
+enum Schur_option { full, diag };
+const int num_schur_option = 2;
+const Schur_option Schur_option_values[] = { full, diag };
+const char *schur_option_names[] = { "full", "diag"};
+
+// Full matrix or linear matrix (pb = dim + 1 ) used for preconditioner
+enum Prec_option { whole, linear};
+const int num_prec_option = 2;
+const Prec_option Prec_option_values[] = { whole, linear };
+const char *prec_option_names[] = { "full", "linear"};
+
+
+
 
 int main(int argc, char *argv[]) {
   typedef double MeshScalar;
   typedef double BasisScalar;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+
+  double g_mean_exp = 1.906587e-01;      // expected response mean
+  double g_std_dev_exp = 8.680605e-02;  // expected response std. dev.
+  double g_tol = 1e-6;               // tolerance on determining success
+
+
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -98,6 +146,8 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
+
+//  feenableexcept(FE_ALL_EXCEPT);
 
   LocalOrdinal MyPID;
 
@@ -153,7 +203,7 @@ int main(int argc, char *argv[]) {
 		  num_krylov_method, krylov_method_values, krylov_method_names, 
 		  "Krylov solver method");
 
-    SG_Prec prec_method = MEAN;
+    SG_Prec prec_method = STOCHASTIC;
     CLP.setOption("prec_method", &prec_method, 
 		  num_sg_prec, sg_prec_values, sg_prec_names,
 		  "Preconditioner method");
@@ -163,8 +213,36 @@ int main(int argc, char *argv[]) {
 		  num_sg_div, sg_div_values, sg_div_names,
 		  "Stochastic division method");
 
+    SG_DivPrec divprec_method = NO;
+    CLP.setOption("divprec_method", &divprec_method,
+                  num_sg_divprec, sg_divprec_values, sg_divprec_names,
+                  "Preconditioner for division method");
+    Schur_option schur_option = diag;
+    CLP.setOption("schur_option", &schur_option,
+                  num_schur_option, Schur_option_values, schur_option_names,
+                  "Schur option");
+    Prec_option prec_option = whole;
+    CLP.setOption("prec_option", &prec_option,
+                  num_prec_option, Prec_option_values, prec_option_names,
+                  "Prec option");
+
+
     double solver_tol = 1e-12;
     CLP.setOption("solver_tol", &solver_tol, "Outer solver tolerance");
+
+    double div_tol = 1e-6;
+    CLP.setOption("div_tol", &div_tol, "Tolerance in Iterative Solver");
+    
+    int prec_level = 1;
+    CLP.setOption("prec_level", &prec_level, "Level in Schur Complement Prec 0->Solve A0u0=g0 with division; 1->Form 1x1 Schur Complement");
+
+    int max_it_div = 50;
+    CLP.setOption("max_it_div", &max_it_div, "Maximum # of Iterations in Iterative Solver for Division");
+
+    bool equilibrate = false;
+    CLP.setOption("equilibrate", "noequilibrate", &equilibrate,
+                  "Equilibrate the linear system");
+
 
     CLP.parse( argc, argv );
 
@@ -181,10 +259,12 @@ int main(int argc, char *argv[]) {
 		<< "\torder              = " << order << std::endl
 		<< "\tnormalize_basis    = " << normalize_basis << std::endl
 		<< "\tsolver_method      = " << krylov_method_names[solver_method] << std::endl
-		<< "\tprec_method        = " << sg_prec_names[prec_method] 
-		<< std::endl
-		<< "\tdivision_method     = " << sg_div_names[division_method] 
-		<< std::endl;
+		<< "\tprec_method        = " << sg_prec_names[prec_method]	<< std::endl
+		<< "\tdivision_method    = " << sg_div_names[division_method] 	<< std::endl
+		<< "\tdiv_tol            = " << div_tol << std::endl
+		<< "\tdiv_prec           = " << sg_divprec_names[divprec_method]      << std::endl
+		<< "\tprec_level         = " << prec_level << std::endl
+  		<< "\tmax_it_div	 = " << max_it_div << std::endl;
     }
     bool nonlinear_expansion = false;
     if (randField == UNIFORM)
@@ -225,9 +305,42 @@ int main(int argc, char *argv[]) {
       expn_params->set("Division Strategy", "SPD Dense Direct");
       expn_params->set("Use Quadrature for Division", false);
     }
+    else if (division_method == CGD) {
+      expn_params->set("Division Strategy", "CG");
+      expn_params->set("Use Quadrature for Division", false);
+    }
+
     else if (division_method == QUAD) {
       expn_params->set("Use Quadrature for Division", true);
     }
+
+    if (divprec_method == NO)
+         expn_params->set("Prec Strategy", "None");
+    else if (divprec_method == DIAG)
+         expn_params->set("Prec Strategy", "Diag");
+    else if (divprec_method == JACOBI)
+         expn_params->set("Prec Strategy", "Jacobi");
+    else if (divprec_method == GS)
+         expn_params->set("Prec Strategy", "GS");
+    else if (divprec_method == SCHUR)
+         expn_params->set("Prec Strategy", "Schur");
+
+    if (schur_option == diag)
+        expn_params->set("Schur option", "diag");
+    else
+        expn_params->set("Schur option", "full");
+    if (prec_option == linear)
+        expn_params->set("Prec option", "linear");
+
+
+    if (equilibrate)
+	expn_params->set("Equilibrate", 1);
+    else
+	expn_params->set("Equilibrate", 0); 
+    expn_params->set("Division Tolerance", div_tol);
+    expn_params->set("prec_iter", prec_level);
+    expn_params->set("max_it_div", max_it_div);
+
     RCP<Stokhos::OrthogPolyExpansion<LocalOrdinal,BasisScalar> > expansion = 
       rcp(new Stokhos::QuadOrthogPolyExpansion<LocalOrdinal,BasisScalar>(
     	    basis, Cijk, quad, expn_params));
@@ -271,6 +384,19 @@ int main(int argc, char *argv[]) {
     typedef problem_type::Tpetra_Vector Tpetra_Vector;
     typedef problem_type::Tpetra_CrsMatrix Tpetra_CrsMatrix;
     typedef Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix> Writer;
+    //Xpetra matrices
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsMatrix;
+    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_Operator;
+    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_TpetraCrsMatrix;
+    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsOperator;
+    typedef Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Belos_MueLuOperator;
+    //MueLu typedefs
+    typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MueLu_Hierarchy;
+    typedef MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmootherPrototype;
+    typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
+    typedef MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmootherFactory;
+    typedef MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FactoryManager;
+
     RCP<Tpetra_Vector> p = Tpetra::createVector<Scalar>(model->get_p_map(0));
     RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(model->get_x_map());
     x->putScalar(0.0);
@@ -297,18 +423,29 @@ int main(int argc, char *argv[]) {
 
     // Create preconditioner
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
-    Teuchos::RCP<Tprec> M;
+    RCP<Belos_MueLuOperator> M;
+    RCP<MueLu_Hierarchy> H;
+    RCP<Xpetra_CrsMatrix> xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
+    RCP<Xpetra_Operator> xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
     if (prec_method != NONE) {
       Teuchos::ParameterList precParams;
       std::string prec_name = "RILUK";
       precParams.set("fact: iluk level-of-fill", 1);
       precParams.set("fact: iluk level-of-overlap", 0);
-      Ifpack2::Factory factory;
-      if (prec_method == MEAN) 
-	M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
-      else if (prec_method == STOCHASTIC)
-	M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
-      M->setParameters(precParams);
+      //Ifpack2::Factory factory;
+      RCP<Xpetra_Operator> xopJ0;
+      if (prec_method == MEAN) {
+        RCP<Xpetra_CrsMatrix> xcrsJ0 = rcp(new Xpetra_TpetraCrsMatrix(J0));
+	xopJ0 = rcp(new Xpetra_CrsOperator(xcrsJ0));
+        //M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
+      }
+      else if (prec_method == STOCHASTIC) {
+        xopJ0 = xopJ;
+        //M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
+      }
+      H = rcp(new MueLu_Hierarchy(xopJ0));
+      M = rcp(new Belos_MueLuOperator(H));
+      //M->setParameters(precParams);
     }
 
     // Evaluate model
@@ -333,24 +470,39 @@ int main(int argc, char *argv[]) {
 
     // compute preconditioner
     if (prec_method != NONE) {
-      M->initialize();
-      M->compute();
+      //M->initialize();
+      //M->compute();
+      Teuchos::ParameterList coarseParamList;
+      coarseParamList.set("fact: level-of-fill", 0);
+      RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("ILUT", coarseParamList) );
+      RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarsePrototype, Teuchos::null) );
+      FactoryManager fm;
+      fm.SetFactory("CoarseSolver", coarseSolverFact);
+      H->Setup(fm);
     }
 
     // Setup Belos solver
     RCP<ParameterList> belosParams = rcp(new ParameterList);
-    belosParams->set("Num Blocks", 20);
+   
+
+
+    belosParams->set("Flexible Gmres", false);
+
+    belosParams->set("Num Blocks", 500);//20
     belosParams->set("Convergence Tolerance", solver_tol);
     belosParams->set("Maximum Iterations", 1000);
     belosParams->set("Verbosity", 33);
     belosParams->set("Output Style", 1);
-    belosParams->set("Output Frequency", 10);
-    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+    belosParams->set("Output Frequency", 1);
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-    typedef Belos::OperatorTraits<double,MV,OP> BOPT;
-    typedef Belos::MultiVecTraits<double,MV> BMVT;
+    typedef Belos::OperatorT<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OP;
+    typedef Belos::OperatorTraits<Scalar,MV,OP> BOPT;
+    typedef Belos::MultiVecTraits<Scalar,MV> BMVT;
+    typedef Belos::MultiVecTraits<double,MV> BTMVT;
     typedef Belos::LinearProblem<double,MV,OP> BLinProb;
-    RCP< BLinProb > problem = rcp(new BLinProb(J, dx, f));
+    typedef Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BXpetraOp;
+    RCP<OP> belosJ = rcp(new BXpetraOp(xopJ)); // Turns an Xpetra::Operator object into a Belos operator
+    RCP< BLinProb > problem = rcp(new BLinProb(belosJ, dx, f));
     if (prec_method != NONE)
       problem->setRightPrec(M);
     problem->setProblem();
@@ -359,12 +511,13 @@ int main(int argc, char *argv[]) {
       solver = rcp(new Belos::PseudoBlockCGSolMgr<double,MV,OP>(problem,
     								belosParams));
     else if (solver_method == GMRES)
-      solver = rcp(new Belos::PseudoBlockGmresSolMgr<double,MV,OP>(problem,
-    								   belosParams));
+      solver = rcp(new Belos::BlockGmresSolMgr<double,MV,OP>(problem, belosParams));
+    
 
     // Print initial residual norm
     std::vector<double> norm_f(1);
-    BMVT::MvNorm(*f, norm_f);
+    //BMVT::MvNorm(*f, norm_f);
+    BTMVT::MvNorm(*f, norm_f);
     if (MyPID == 0)
       std::cout << "\nInitial residual norm = " << norm_f[0] << std::endl;
 
@@ -389,7 +542,8 @@ int main(int argc, char *argv[]) {
     model->computeResponse(*x, *p, *g);
 
     // Print final residual norm
-    BMVT::MvNorm(*f, norm_f);
+    //BMVT::MvNorm(*f, norm_f);
+    BTMVT::MvNorm(*f, norm_f);
     if (MyPID == 0)
       std::cout << "\nFinal residual norm = " << norm_f[0] << std::endl;
 
@@ -398,7 +552,47 @@ int main(int argc, char *argv[]) {
     //Writer::writeDense(std::cout, g);
     Writer::writeDenseFile("stochastic_residual.mm", f);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    double g_mean = g->get1dView()[0].mean();
+    double g_std_dev = g->get1dView()[0].standard_deviation();
+    std::cout << "g mean = " << g_mean << std::endl;
+    std::cout << "g std_dev = " << g_std_dev << std::endl;
+    bool passed = false;
+    if (norm_f[0] < 1.0e-10 &&
+        std::abs(g_mean-g_mean_exp) < g_tol &&
+        std::abs(g_std_dev - g_std_dev_exp) < g_tol)
+      passed = true;
+    if (MyPID == 0) {
+      if (passed)
+        std::cout << "Example Passed!" << std::endl;
+      else{
+        std::cout << "Example Failed!" << std::endl;
+        std::cout << "expected g_mean = "<< g_mean_exp << std::endl;
+        std::cout << "expected g_std_dev = "<< g_std_dev_exp << std::endl;
+      }
     }
+
+
+
+
+
+
+    }
+
+
 
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();

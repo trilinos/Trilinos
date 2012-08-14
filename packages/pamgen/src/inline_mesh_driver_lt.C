@@ -1,5 +1,5 @@
 
-#include "../mesh_spec_lt/mesh_specification.h"
+#include "../mesh_spec_lt/pamgen_mesh_specification.h"
 #include "inline_mesh_desc.h"
 #include "uns_inline_decomp.h"
 #include <iostream>

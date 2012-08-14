@@ -39,15 +39,6 @@
 // ************************************************************************
 //@HEADER
 
-/*
-
-notes:
-* multiply requires encapsulation of multivector using make_array2d_view
-* crs construction requires encapsulation of CSR matrix data via make_csr_matrix_view
-  this object can be used for multiplication or conversion to another format.
-* cusp::transpose() and cusp::convert() will come into play
-*/
-
 #ifndef KOKKOS_CUSPOPS_HPP
 #define KOKKOS_CUSPOPS_HPP
 
@@ -580,8 +571,8 @@ namespace Kokkos {
   CuspOps<Scalar,Ordinal,Node>::allocRowPtrs(const RCP<Node> &/*node*/, const ArrayView<const size_t> &numEntriesPerRow)
   {
     // alloc page-locked ("pinned") memory on the host, specially allocated and specially deallocated
-    CUDANodeHostPinnedDeallocator<Ordinal> dealloc;
-    ArrayRCP<Ordinal> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
+    CUDANodeHostPinnedDeallocator<size_t> dealloc;
+    ArrayRCP<size_t> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
     ptrs[0] = 0;
     std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
     return ptrs;
@@ -623,20 +614,20 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void CuspOps<Scalar,Ordinal,Node>::setGraphAndMatrix(const RCP<const CuspCrsGraph<Ordinal,Node> > &graph, 
-                                                       const RCP<const CuspCrsMatrix<Scalar,Ordinal,Node> > &matrix)
+  void CuspOps<Scalar,Ordinal,Node>::setGraphAndMatrix(const RCP<const CuspCrsGraph<Ordinal,Node> > &graph_in, 
+                                                       const RCP<const CuspCrsMatrix<Scalar,Ordinal,Node> > &matrix_in)
   {
-    std::string tfecfFuncName("setGraphAndMatrix(graph,matrix)");
+    std::string tfecfFuncName("setGraphAndMatrix(graph_in,matrix_in)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == true,
         std::runtime_error, " operators already initialized.");
     // get data from the matrix
-    numRows_ = graph->getNumRows();
-    numCols_ = graph->getNumCols();
-    rowPtrs_ = graph->getDevPointers();
-    colInds_ = graph->getDevIndices();
-    rowVals_ = matrix->getDevValues();
-    matrix->getDeviceDataTrans(rowPtrs_t_, colInds_t_, rowVals_t_);
+    numRows_ = graph_in->getNumRows();
+    numCols_ = graph_in->getNumCols();
+    rowPtrs_ = graph_in->getDevPointers();
+    colInds_ = graph_in->getDevIndices();
+    rowVals_ = matrix_in->getDevValues();
+    matrix_in->getDeviceDataTrans(rowPtrs_t_, colInds_t_, rowVals_t_);
     numNZ_ = colInds_.size();
     isInitialized_ = true;
   }
@@ -648,6 +639,9 @@ namespace Kokkos {
                                           const MultiVector<DomainScalar,Node> &X,
                                                 MultiVector< RangeScalar,Node> &Y) const
   {
+    // Cusp doesn't support mixed precision
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
     //
     std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -659,8 +653,8 @@ namespace Kokkos {
     // get pointers,stride from X and Y
     Ordinal stride_x = (Ordinal)X.getStride(),
             stride_y = (Ordinal)Y.getStride();
-    const Scalar * data_x = X.getValues().getRawPtr();
-    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
+    const DomainScalar * data_x = X.getValues().getRawPtr();
+    RangeScalar * data_y = Y.getValuesNonConst().getRawPtr();
     const Ordinal numMatRows = numRows_;
     const Ordinal numMatCols = numCols_;
     const Ordinal opRows     = (trans == Teuchos::NO_TRANS ? numMatRows : numMatCols);
@@ -696,6 +690,9 @@ namespace Kokkos {
                                           RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
                                           RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
   {
+    // Cusp doesn't support mixed precision
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == false ||
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == false > cta; (void)cta;
     //
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
