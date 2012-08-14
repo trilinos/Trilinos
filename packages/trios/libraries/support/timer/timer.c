@@ -70,11 +70,18 @@ log_level timer_debug_level = LOG_UNDEFINED;
 #undef USING_MACH_ABSOLUTE_TIME
 #undef USING_CLOCK_GETTIME
 #undef USING_GETTIMEOFDAY
+#undef USING_MPITIME
+
 
 #if defined(HAVE_TRIOS_PAPI)
 #define USING_PAPI
 #include <papi.h>
 long_long init_usec, init_cycles;
+
+#elif defined (HAVE_TRIOS_MPI)
+#define USING_MPITIME
+#include <mpi.h>
+double inittime;
 
 #elif defined(HAVE_TRIOS_MACH_ABSOLUTE_TIME)
 #define USING_MACH_ABSOLUTE_TIME
@@ -124,6 +131,10 @@ static void init_timer() {
 
         init_usec = PAPI_get_real_usec();
         init_cycles = PAPI_get_real_cyc();
+#endif
+
+#ifdef USING_MPITIME
+        inittime = MPI_Wtime();
 #endif
 
 #ifdef USING_CLOCK_GETTIME
@@ -219,6 +230,11 @@ uint64_t trios_get_time_ns()
     result = result*(uint64_t)1000;
 #endif
 
+#ifdef USING_MPITIME
+    // MPI doesn't really have nanosecond resolution
+    result = (uint64_t) (MPI_Wtime() * 1000000000.0);
+#endif
+
     return result;
 }
 
@@ -228,8 +244,14 @@ uint64_t trios_get_time_ns()
  */
 double trios_get_time()
 {
+    double result = 0.0;
+
+#ifdef USING_MPITIME
+    result = MPI_Wtime();
+#else
         uint64_t ns = trios_get_time_ns();
-        double result = (double)ns*1.0e-9;
+        result = (double)ns*1.0e-9;
+#endif
         return result;
 }
 
@@ -349,6 +371,8 @@ const char *trios_timer_getimpl()
 {
 #ifdef USING_PAPI
     return "PAPI_get_real_usec()";
+#elif defined (USING_MPITIME)
+    return "MPI_Wtime()";
 #elif defined(USING_CLOCK_GETTIME)
     return "clock_gettime()";
 #elif defined (USING_MACH_ABSOLUTE_TIME)
