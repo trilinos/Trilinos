@@ -1,0 +1,79 @@
+%% LyX 2.0.4 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{geometry}
+\geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1.25in,rmargin=1.25in}
+\usepackage{color}
+\usepackage{babel}
+\usepackage{array}
+\usepackage{float}
+\usepackage{makeidx}
+\makeindex
+\usepackage{graphicx}
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
+ breaklinks=false,pdfborder={0 0 0},backref=false,colorlinks=true]
+ {hyperref}
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+%% Because html converters don't know tabularnewline
+\providecommand{\tabularnewline}{\\}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage[nottoc]{tocbibind} 
+
+\makeatother
+
+\begin{document}
+\input{rab_commands.tex}
+
+
+\title{Rythmos: Solution and Analysis Package for Differential-Algebraic
+Equations (DAEs) and Ordinary-Differential Equations (ODEs)}
+
+
+\author{Roscoe A. Bartlett, Oak Ridge National Laboratories\\
+Todd S. Coffey, Simulation Modeling Sciences\\
+Roger P. Pawlowski, Multiphysics Simulation Technology\\
+Curtis C. Ober, Numerical Analysis and Applications}
+\maketitle
+\begin{abstract}
+This document contains the basic theory on the time integrators; examples
+and usage; and software design and developer's guide for Rythmos.\newpage{}\tableofcontents{}
+\end{abstract}
+\newpage{}
+
+
+\part{Theory Manual}
+
+\include{RythmosTheoryIntroduction}\include{RythmosExplicitStepperFormulation}\include{RythmosImplicitStepperFormulation}\include{RythmosTheoryBDF}\include{RythmosTheoryIRK}
+
+\newpage{}
+
+
+\part{User's Manual}
+
+\include{RythmosUsersManualParameterList}\include{RythmosConvergenceTestExamples}
+
+\newpage{}
+
+
+\part{Developer's Guide}
+
+
+\part{Back Matter}
+
+\newpage{}
+
+\printindex{}
+
+\newpage{}
+
+\bibliographystyle{plain}
+\bibliography{RythmosTheory,../design_document/RythmosDesignSAND}
+
+\end{document}

@@ -37,7 +37,11 @@
 #include "EpetraExt_DiagonalTransientModel.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_ModelEvaluator.hpp"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
 #include "Epetra_SerialComm.h"
+#endif
 
 namespace Rythmos {
 
@@ -69,7 +73,12 @@ template<class Scalar>
 Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > 
   getDiagonalModel( Teuchos::RCP<Teuchos::ParameterList> paramList ) {
 
+#ifdef HAVE_MPI
+  Teuchos::RCP<Epetra_Comm> epetra_comm = 
+    Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD) );
+#else
   Teuchos::RCP<Epetra_Comm> epetra_comm = Teuchos::rcp(new Epetra_SerialComm);
+#endif
   Teuchos::RCP<EpetraExt::DiagonalTransientModel>
     epetraDiagonalModel = EpetraExt::diagonalTransientModel(
         epetra_comm, 

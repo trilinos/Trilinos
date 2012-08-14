@@ -1,0 +1,2682 @@
+\begin{figure} 
+\centering{} 
+  \begin{tabular}{p{0.9\textwidth}}
+\hspace*{0in} Integrator Base (Section~\ref{sec:Integrator Base})
+    \index{Integrator Base} \\ 
+\hspace*{0.2in} Integrator Settings (Section~\ref{sec:Integrator Settings})
+    \index{Integrator Settings} \\ 
+\hspace*{0.4in} Integrator Selection (Section~\ref{sec:Integrator Selection})
+    \index{Integrator Selection} \\ 
+\hspace*{0.6in} Default Integrator (Section~\ref{sec:Default Integrator})
+    \index{Default Integrator} \\ 
+\hspace*{0.8in} VerboseObject (Section~\ref{sec:VerboseObject})
+    \index{VerboseObject} \\ 
+\hspace*{0.2in} Integration Control Strategy Selection (Section~\ref{sec:Integration Control Strategy Selection})
+    \index{Integration Control Strategy Selection} \\ 
+\hspace*{0.4in} Simple Integration Control Strategy (Section~\ref{sec:Simple Integration Control Strategy})
+    \index{Simple Integration Control Strategy} \\ 
+\hspace*{0.2in} Stepper Settings (Section~\ref{sec:Stepper Settings})
+    \index{Stepper Settings} \\ 
+\hspace*{0.4in} Stepper Selection (Section~\ref{sec:Stepper Selection})
+    \index{Stepper Selection} \\ 
+\hspace*{0.6in} Forward Euler (Section~\ref{sec:Forward Euler})
+    \index{Forward Euler} \\ 
+\hspace*{0.6in} Backward Euler (Section~\ref{sec:Backward Euler})
+    \index{Backward Euler} \\ 
+\hspace*{0.6in} Implicit BDF (Section~\ref{sec:Implicit BDF})
+    \index{Implicit BDF} \\ 
+\hspace*{0.6in} Explicit RK (Section~\ref{sec:Explicit RK})
+    \index{Explicit RK} \\ 
+\hspace*{0.6in} Implicit RK (Section~\ref{sec:Implicit RK})
+    \index{Implicit RK} \\ 
+\hspace*{0.4in} Step Control Settings (Section~\ref{sec:Step Control Settings})
+    \index{Step Control Settings} \\ 
+\hspace*{0.6in} Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
+    \index{Step Control Strategy Selection} \\ 
+\hspace*{0.8in} Implicit BDF Stepper Step Control Strategy (Section~\ref{sec:Implicit BDF Stepper Step Control Strategy})
+    \index{Implicit BDF Stepper Step Control Strategy} \\ 
+\hspace*{1in} magicNumbers (Section~\ref{sec:magicNumbers})
+    \index{magicNumbers} \\ 
+\hspace*{0.8in} Implicit BDF Stepper Ramping Step Control Strategy (Section~\ref{sec:Implicit BDF Stepper Ramping Step Control Strategy})
+    \index{Implicit BDF Stepper Ramping Step Control Strategy} \\ 
+\hspace*{0.6in} Error Weight Vector Calculator Selection (Section~\ref{sec:Error Weight Vector Calculator Selection})
+    \index{Error Weight Vector Calculator Selection} \\ 
+\hspace*{0.8in} Implicit BDF Stepper Error Weight Vector Calculator (Section~\ref{sec:Implicit BDF Stepper Error Weight Vector Calculator})
+    \index{Implicit BDF Stepper Error Weight Vector Calculator} \\ 
+\hspace*{0.4in} Interpolator Selection (Section~\ref{sec:Interpolator Selection})
+    \index{Interpolator Selection} \\ 
+\hspace*{0.6in} Linear Interpolator (Section~\ref{sec:Linear Interpolator})
+    \index{Linear Interpolator} \\ 
+\hspace*{0.6in} Hermite Interpolator (Section~\ref{sec:Hermite Interpolator})
+    \index{Hermite Interpolator} \\ 
+\hspace*{0.6in} Cubic Spline Interpolator (Section~\ref{sec:Cubic Spline Interpolator})
+    \index{Cubic Spline Interpolator} \\ 
+\hspace*{0.4in} Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+    \index{Runge Kutta Butcher Tableau Selection} \\ 
+\hspace*{0.6in} Forward Euler (Section~\ref{sec:Forward Euler-Runge Kutta Butcher Tableau Selection})
+    \index{Forward Euler} \\ 
+\hspace*{0.6in} Explicit 2 Stage 2nd order by Runge (Section~\ref{sec:Explicit 2 Stage 2nd order by Runge})
+    \index{Explicit 2 Stage 2nd order by Runge} \\ 
+\hspace*{0.6in} Explicit Trapezoidal (Section~\ref{sec:Explicit Trapezoidal})
+    \index{Explicit Trapezoidal} \\ 
+\hspace*{0.6in} Explicit 3 Stage 3rd order (Section~\ref{sec:Explicit 3 Stage 3rd order})
+    \index{Explicit 3 Stage 3rd order} \\ 
+\hspace*{0.6in} Explicit 3 Stage 3rd order by Heun (Section~\ref{sec:Explicit 3 Stage 3rd order by Heun})
+    \index{Explicit 3 Stage 3rd order by Heun} \\ 
+\hspace*{0.6in}  ... \\ 
+\hspace*{0.2in} Interpolation Buffer Settings (Section~\ref{sec:Interpolation Buffer Settings})
+    \index{Interpolation Buffer Settings} \\ 
+\hspace*{0.4in} Trailing Interpolation Buffer Selection (Section~\ref{sec:Trailing Interpolation Buffer Selection})
+    \index{Trailing Interpolation Buffer Selection} \\ 
+\hspace*{0.6in} Interpolation Buffer (Section~\ref{sec:Interpolation Buffer})
+    \index{Interpolation Buffer} \\ 
+\hspace*{0.4in} Interpolation Buffer Appender Selection (Section~\ref{sec:Interpolation Buffer Appender Selection})
+    \index{Interpolation Buffer Appender Selection} \\ 
+\hspace*{0.6in} Pointwise Interpolation Buffer Appender (Section~\ref{sec:Pointwise Interpolation Buffer Appender})
+    \index{Pointwise Interpolation Buffer Appender} \\ 
+\hspace*{0.4in} Interpolator Selection (Section~\ref{sec:Interpolator Selection-Interpolation Buffer Settings})
+    \index{Interpolator Selection} \\ 
+\hspace*{0.6in} Linear Interpolator (Section~\ref{sec:Linear Interpolator-Interpolator Selection})
+    \index{Linear Interpolator} \\ 
+\hspace*{0.6in} Hermite Interpolator (Section~\ref{sec:Hermite Interpolator-Interpolator Selection})
+    \index{Hermite Interpolator} \\ 
+\hspace*{0.6in} Cubic Spline Interpolator (Section~\ref{sec:Cubic Spline Interpolator-Interpolator Selection})
+    \index{Cubic Spline Interpolator} \\ 
+  \end{tabular}
+\caption{Schematic of ParameterList heirarchy.} 
+\label{fig:ParameterList-schematic} 
+\end{figure} 
+\newpage 
+
+% ----------------------------------------------------------
+\subsection{Integrator Base}
+\label{sec:Integrator Base}
+\index{Integrator Base}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+   ROOT 
+  \item[Child(ren):]
+    Integrator Settings (Section~\ref{sec:Integrator Settings})
+      \index{Integrator Settings} 
+      \newline 
+    Integration Control Strategy Selection (Section~\ref{sec:Integration Control Strategy Selection})
+      \index{Integration Control Strategy Selection} 
+      \newline 
+    Stepper Settings (Section~\ref{sec:Stepper Settings})
+      \index{Stepper Settings} 
+      \newline 
+    Interpolation Buffer Settings (Section~\ref{sec:Interpolation Buffer Settings})
+      \index{Interpolation Buffer Settings} 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Integrator Settings}
+\label{sec:Integrator Settings}
+\index{Integrator Settings}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    These parameters are used directly in setting up the Integrator
+  \item[Parent(s):]
+    Integrator Base (Section~\ref{sec:Integrator Base})
+      \index{Integrator Base} 
+  \item[Child(ren):]
+    Integrator Selection (Section~\ref{sec:Integrator Selection})
+      \index{Integrator Selection} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Final Time = 1] 
+
+        \index{Integrator Settings!Final Time}
+        \index{Final Time}
+      \item[Land On Final Time = 1] 
+
+        \index{Integrator Settings!Land On Final Time}
+        \index{Land On Final Time}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Integrator Selection}
+\label{sec:Integrator Selection}
+\index{Integrator Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Integrator Settings (Section~\ref{sec:Integrator Settings})
+      \index{Integrator Settings} 
+  \item[Child(ren):]
+    Default Integrator (Section~\ref{sec:Default Integrator})
+      \index{Default Integrator} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Integrator Type = Default Integrator] 
+Determines the type of Rythmos::Integrator object that will be built.
+The parameters for each Integrator Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Default Integrator" & \\ 
+      \end{tabular}
+        \index{Integrator Selection!Integrator Type}
+        \index{Integrator Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Default Integrator}
+\label{sec:Default Integrator}
+\index{Default Integrator}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Integrator Selection (Section~\ref{sec:Integrator Selection})
+      \index{Integrator Selection} 
+  \item[Child(ren):]
+    VerboseObject (Section~\ref{sec:VerboseObject})
+      \index{VerboseObject} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Max Number Time Steps = 2147483647] 
+Set the maximum number of integration time-steps allowed.
+        \index{Default Integrator!Max Number Time Steps}
+        \index{Max Number Time Steps}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{VerboseObject}
+\label{sec:VerboseObject}
+\index{VerboseObject}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Default Integrator (Section~\ref{sec:Default Integrator})
+      \index{Default Integrator} 
+      \newline 
+    Simple Integration Control Strategy (Section~\ref{sec:Simple Integration Control Strategy})
+      \index{Simple Integration Control Strategy} 
+      \newline 
+    Forward Euler (Section~\ref{sec:Forward Euler})
+      \index{Forward Euler} 
+      \newline 
+    Backward Euler (Section~\ref{sec:Backward Euler})
+      \index{Backward Euler} 
+      \newline 
+    Implicit BDF (Section~\ref{sec:Implicit BDF})
+      \index{Implicit BDF} 
+      \newline 
+    Explicit RK (Section~\ref{sec:Explicit RK})
+      \index{Explicit RK} 
+      \newline 
+    Implicit RK (Section~\ref{sec:Implicit RK})
+      \index{Implicit RK} 
+      \newline 
+    magicNumbers (Section~\ref{sec:magicNumbers})
+      \index{magicNumbers} 
+      \newline 
+    Implicit BDF Stepper Error Weight Vector Calculator (Section~\ref{sec:Implicit BDF Stepper Error Weight Vector Calculator})
+      \index{Implicit BDF Stepper Error Weight Vector Calculator} 
+      \newline 
+    Linear Interpolator (Section~\ref{sec:Linear Interpolator})
+      \index{Linear Interpolator} 
+      \newline 
+    Hermite Interpolator (Section~\ref{sec:Hermite Interpolator})
+      \index{Hermite Interpolator} 
+      \newline 
+    Cubic Spline Interpolator (Section~\ref{sec:Cubic Spline Interpolator})
+      \index{Cubic Spline Interpolator} 
+      \newline 
+    Forward Euler (Section~\ref{sec:Forward Euler-Runge Kutta Butcher Tableau Selection})
+      \index{Forward Euler} 
+      \newline 
+    Explicit 2 Stage 2nd order by Runge (Section~\ref{sec:Explicit 2 Stage 2nd order by Runge})
+      \index{Explicit 2 Stage 2nd order by Runge} 
+      \newline 
+    Explicit Trapezoidal (Section~\ref{sec:Explicit Trapezoidal})
+      \index{Explicit Trapezoidal} 
+      \newline 
+    Explicit 3 Stage 3rd order (Section~\ref{sec:Explicit 3 Stage 3rd order})
+      \index{Explicit 3 Stage 3rd order} 
+      \newline 
+    Explicit 3 Stage 3rd order by Heun (Section~\ref{sec:Explicit 3 Stage 3rd order by Heun})
+      \index{Explicit 3 Stage 3rd order by Heun} 
+      \newline 
+    Explicit 3 Stage 3rd order TVD (Section~\ref{sec:Explicit 3 Stage 3rd order TVD})
+      \index{Explicit 3 Stage 3rd order TVD} 
+      \newline 
+    Explicit 4 Stage 3rd order by Runge (Section~\ref{sec:Explicit 4 Stage 3rd order by Runge})
+      \index{Explicit 4 Stage 3rd order by Runge} 
+      \newline 
+    Explicit 4 Stage (Section~\ref{sec:Explicit 4 Stage})
+      \index{Explicit 4 Stage} 
+      \newline 
+    Explicit 3/8 Rule (Section~\ref{sec:Explicit 3/8 Rule})
+      \index{Explicit 3/8 Rule} 
+      \newline 
+    Backward Euler (Section~\ref{sec:Backward Euler-Runge Kutta Butcher Tableau Selection})
+      \index{Backward Euler} 
+      \newline 
+    Singly Diagonal IRK 2 Stage 2nd order (Section~\ref{sec:Singly Diagonal IRK 2 Stage 2nd order})
+      \index{Singly Diagonal IRK 2 Stage 2nd order} 
+      \newline 
+    Singly Diagonal IRK 2 Stage 3rd order (Section~\ref{sec:Singly Diagonal IRK 2 Stage 3rd order})
+      \index{Singly Diagonal IRK 2 Stage 3rd order} 
+      \newline 
+    Singly Diagonal IRK 3 Stage 4th order (Section~\ref{sec:Singly Diagonal IRK 3 Stage 4th order})
+      \index{Singly Diagonal IRK 3 Stage 4th order} 
+      \newline 
+    Singly Diagonal IRK 5 Stage 4th order (Section~\ref{sec:Singly Diagonal IRK 5 Stage 4th order})
+      \index{Singly Diagonal IRK 5 Stage 4th order} 
+      \newline 
+    Singly Diagonal IRK 5 Stage 5th order (Section~\ref{sec:Singly Diagonal IRK 5 Stage 5th order})
+      \index{Singly Diagonal IRK 5 Stage 5th order} 
+      \newline 
+    Diagonal IRK 2 Stage 3rd order (Section~\ref{sec:Diagonal IRK 2 Stage 3rd order})
+      \index{Diagonal IRK 2 Stage 3rd order} 
+      \newline 
+    Implicit 1 Stage 2nd order Gauss (Section~\ref{sec:Implicit 1 Stage 2nd order Gauss})
+      \index{Implicit 1 Stage 2nd order Gauss} 
+      \newline 
+    Implicit 2 Stage 4th order Gauss (Section~\ref{sec:Implicit 2 Stage 4th order Gauss})
+      \index{Implicit 2 Stage 4th order Gauss} 
+      \newline 
+    Implicit 3 Stage 6th order Gauss (Section~\ref{sec:Implicit 3 Stage 6th order Gauss})
+      \index{Implicit 3 Stage 6th order Gauss} 
+      \newline 
+    Implicit 2 Stage 4th Order Hammer \& Hollingsworth (Section~\ref{sec:Implicit 2 Stage 4th Order Hammer and Hollingsworth})
+      \index{Implicit 2 Stage 4th Order Hammer \& Hollingsworth} 
+      \newline 
+    Implicit 3 Stage 6th Order Kuntzmann \& Butcher (Section~\ref{sec:Implicit 3 Stage 6th Order Kuntzmann and Butcher})
+      \index{Implicit 3 Stage 6th Order Kuntzmann \& Butcher} 
+      \newline 
+    Implicit 1 Stage 1st order Radau left (Section~\ref{sec:Implicit 1 Stage 1st order Radau left})
+      \index{Implicit 1 Stage 1st order Radau left} 
+      \newline 
+    Implicit 2 Stage 3rd order Radau left (Section~\ref{sec:Implicit 2 Stage 3rd order Radau left})
+      \index{Implicit 2 Stage 3rd order Radau left} 
+      \newline 
+    Implicit 3 Stage 5th order Radau left (Section~\ref{sec:Implicit 3 Stage 5th order Radau left})
+      \index{Implicit 3 Stage 5th order Radau left} 
+      \newline 
+    Implicit 1 Stage 1st order Radau right (Section~\ref{sec:Implicit 1 Stage 1st order Radau right})
+      \index{Implicit 1 Stage 1st order Radau right} 
+      \newline 
+    Implicit 2 Stage 3rd order Radau right (Section~\ref{sec:Implicit 2 Stage 3rd order Radau right})
+      \index{Implicit 2 Stage 3rd order Radau right} 
+      \newline 
+    Implicit 3 Stage 5th order Radau right (Section~\ref{sec:Implicit 3 Stage 5th order Radau right})
+      \index{Implicit 3 Stage 5th order Radau right} 
+      \newline 
+    Implicit 2 Stage 2nd order Lobatto A (Section~\ref{sec:Implicit 2 Stage 2nd order Lobatto A})
+      \index{Implicit 2 Stage 2nd order Lobatto A} 
+      \newline 
+    Implicit 3 Stage 4th order Lobatto A (Section~\ref{sec:Implicit 3 Stage 4th order Lobatto A})
+      \index{Implicit 3 Stage 4th order Lobatto A} 
+      \newline 
+    Implicit 4 Stage 6th order Lobatto A (Section~\ref{sec:Implicit 4 Stage 6th order Lobatto A})
+      \index{Implicit 4 Stage 6th order Lobatto A} 
+      \newline 
+    Implicit 2 Stage 2nd order Lobatto B (Section~\ref{sec:Implicit 2 Stage 2nd order Lobatto B})
+      \index{Implicit 2 Stage 2nd order Lobatto B} 
+      \newline 
+    Implicit 3 Stage 4th order Lobatto B (Section~\ref{sec:Implicit 3 Stage 4th order Lobatto B})
+      \index{Implicit 3 Stage 4th order Lobatto B} 
+      \newline 
+    Implicit 4 Stage 6th order Lobatto B (Section~\ref{sec:Implicit 4 Stage 6th order Lobatto B})
+      \index{Implicit 4 Stage 6th order Lobatto B} 
+      \newline 
+    Implicit 2 Stage 2nd order Lobatto C (Section~\ref{sec:Implicit 2 Stage 2nd order Lobatto C})
+      \index{Implicit 2 Stage 2nd order Lobatto C} 
+      \newline 
+    Implicit 3 Stage 4th order Lobatto C (Section~\ref{sec:Implicit 3 Stage 4th order Lobatto C})
+      \index{Implicit 3 Stage 4th order Lobatto C} 
+      \newline 
+    Implicit 4 Stage 6th order Lobatto C (Section~\ref{sec:Implicit 4 Stage 6th order Lobatto C})
+      \index{Implicit 4 Stage 6th order Lobatto C} 
+      \newline 
+    Interpolation Buffer (Section~\ref{sec:Interpolation Buffer})
+      \index{Interpolation Buffer} 
+      \newline 
+    Pointwise Interpolation Buffer Appender (Section~\ref{sec:Pointwise Interpolation Buffer Appender})
+      \index{Pointwise Interpolation Buffer Appender} 
+      \newline 
+    Linear Interpolator (Section~\ref{sec:Linear Interpolator-Interpolator Selection})
+      \index{Linear Interpolator} 
+      \newline 
+    Hermite Interpolator (Section~\ref{sec:Hermite Interpolator-Interpolator Selection})
+      \index{Hermite Interpolator} 
+      \newline 
+    Cubic Spline Interpolator (Section~\ref{sec:Cubic Spline Interpolator-Interpolator Selection})
+      \index{Cubic Spline Interpolator} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[Verbosity Level = default] 
+The verbosity level to use to override whatever is set in code.
+The value of "default" will allow the level set in code to be used.
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "default" & Use level set in code \\ 
+      "none" & Produce no output \\ 
+      "low" & Produce minimal output \\ 
+      "medium" & Produce a little more output \\ 
+      "high" & Produce a higher level of output \\ 
+      "extreme" & Produce the highest level of output \\ 
+      \end{tabular}
+        \index{VerboseObject!Verbosity Level}
+        \index{Verbosity Level}
+      \item[Output File = none] 
+The file to send output to.  If the value "none" is used, then
+whatever is set in code will be used.  However, any other std::string value
+will be used to create an std::ofstream object to a file with the given name.
+Therefore, any valid file name is a valid std::string value for this parameter.
+        \index{VerboseObject!Output File}
+        \index{Output File}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Integration Control Strategy Selection}
+\label{sec:Integration Control Strategy Selection}
+\index{Integration Control Strategy Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    Note that some settings conflict between step control and integration control.
+    In general, the integration control decides which steps will be fixed or variable,
+    not the stepper.  When the integration control decides to take variable steps, the
+    step control is then responsible for choosing appropriate step-sizes.
+  \item[Parent(s):]
+    Integrator Base (Section~\ref{sec:Integrator Base})
+      \index{Integrator Base} 
+  \item[Child(ren):]
+    Simple Integration Control Strategy (Section~\ref{sec:Simple Integration Control Strategy})
+      \index{Simple Integration Control Strategy} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Integration Control Strategy Type = None] 
+Determines the type of Rythmos::IntegrationControlStrategy object that will be built.
+The parameters for each Integration Control Strategy Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Simple Integration Control Strategy" & \\ 
+      \end{tabular}
+        \index{Integration Control Strategy Selection!Integration Control Strategy Type}
+        \index{Integration Control Strategy Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Simple Integration Control Strategy}
+\label{sec:Simple Integration Control Strategy}
+\index{Simple Integration Control Strategy}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Integration Control Strategy Selection (Section~\ref{sec:Integration Control Strategy Selection})
+      \index{Integration Control Strategy Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[Take Variable Steps = 1] 
+Take variable time steps or fixed time steps.
+If set to false, then the parameter "Fixed dt"
+or "Number of Time Steps" must be set!
+        \index{Simple Integration Control Strategy!Take Variable Steps}
+        \index{Take Variable Steps}
+      \item[Max dt = 1.79769e+308] 
+Gives the max size of the variable time steps.  This is only read and used if
+"Take Variable Steps" is set to true.
+        \index{Simple Integration Control Strategy!Max dt}
+        \index{Max dt}
+      \item[Number of Time Steps = -1] 
+Gives the number of fixed time steps.  The actual step size gets computed
+on the fly given the size of the time domain.
+This is only read and used if "Take Variable Steps" is set to false
+and "Fixed dt" is set to < 0.0.
+        \index{Simple Integration Control Strategy!Number of Time Steps}
+        \index{Number of Time Steps}
+      \item[Fixed dt = -1] 
+Gives the size of the fixed time steps.  This is only read and used if
+"Take Variable Steps" is set to false.
+        \index{Simple Integration Control Strategy!Fixed dt}
+        \index{Fixed dt}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Stepper Settings}
+\label{sec:Stepper Settings}
+\index{Stepper Settings}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Integrator Base (Section~\ref{sec:Integrator Base})
+      \index{Integrator Base} 
+  \item[Child(ren):]
+    Stepper Selection (Section~\ref{sec:Stepper Selection})
+      \index{Stepper Selection} 
+      \newline 
+    Step Control Settings (Section~\ref{sec:Step Control Settings})
+      \index{Step Control Settings} 
+      \newline 
+    Interpolator Selection (Section~\ref{sec:Interpolator Selection})
+      \index{Interpolator Selection} 
+      \newline 
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Stepper Selection}
+\label{sec:Stepper Selection}
+\index{Stepper Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Stepper Settings (Section~\ref{sec:Stepper Settings})
+      \index{Stepper Settings} 
+  \item[Child(ren):]
+    Forward Euler (Section~\ref{sec:Forward Euler})
+      \index{Forward Euler} 
+      \newline 
+    Backward Euler (Section~\ref{sec:Backward Euler})
+      \index{Backward Euler} 
+      \newline 
+    Implicit BDF (Section~\ref{sec:Implicit BDF})
+      \index{Implicit BDF} 
+      \newline 
+    Explicit RK (Section~\ref{sec:Explicit RK})
+      \index{Explicit RK} 
+      \newline 
+    Implicit RK (Section~\ref{sec:Implicit RK})
+      \index{Implicit RK} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Stepper Type = Backward Euler] 
+Determines the type of Rythmos::Stepper object that will be built.
+The parameters for each Stepper Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Forward Euler" & \\ 
+      "Backward Euler" & \\ 
+      "Implicit BDF" & \\ 
+      "Explicit RK" & \\ 
+      "Implicit RK" & \\ 
+      \end{tabular}
+        \index{Stepper Selection!Stepper Type}
+        \index{Stepper Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Forward Euler}
+\label{sec:Forward Euler}
+\index{Forward Euler}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Stepper Selection (Section~\ref{sec:Stepper Selection})
+      \index{Stepper Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Backward Euler}
+\label{sec:Backward Euler}
+\index{Backward Euler}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Stepper Selection (Section~\ref{sec:Stepper Selection})
+      \index{Stepper Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit BDF}
+\label{sec:Implicit BDF}
+\index{Implicit BDF}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Stepper Selection (Section~\ref{sec:Stepper Selection})
+      \index{Stepper Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit RK}
+\label{sec:Explicit RK}
+\index{Explicit RK}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Stepper Selection (Section~\ref{sec:Stepper Selection})
+      \index{Stepper Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit RK}
+\label{sec:Implicit RK}
+\index{Implicit RK}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Stepper Selection (Section~\ref{sec:Stepper Selection})
+      \index{Stepper Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Step Control Settings}
+\label{sec:Step Control Settings}
+\index{Step Control Settings}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    Not all step control strategies are compatible with each stepper.  If the strategy
+    has the name of a stepper in its name, then it only works with that stepper.
+  \item[Parent(s):]
+    Stepper Settings (Section~\ref{sec:Stepper Settings})
+      \index{Stepper Settings} 
+  \item[Child(ren):]
+    Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
+      \index{Step Control Strategy Selection} 
+      \newline 
+    Error Weight Vector Calculator Selection (Section~\ref{sec:Error Weight Vector Calculator Selection})
+      \index{Error Weight Vector Calculator Selection} 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Step Control Strategy Selection}
+\label{sec:Step Control Strategy Selection}
+\index{Step Control Strategy Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Step Control Settings (Section~\ref{sec:Step Control Settings})
+      \index{Step Control Settings} 
+  \item[Child(ren):]
+    Implicit BDF Stepper Step Control Strategy (Section~\ref{sec:Implicit BDF Stepper Step Control Strategy})
+      \index{Implicit BDF Stepper Step Control Strategy} 
+      \newline 
+    Implicit BDF Stepper Ramping Step Control Strategy (Section~\ref{sec:Implicit BDF Stepper Ramping Step Control Strategy})
+      \index{Implicit BDF Stepper Ramping Step Control Strategy} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Step Control Strategy Type = None] 
+Determines the type of Rythmos::StepControlStrategy object that will be built.
+The parameters for each Step Control Strategy Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Implicit BDF Stepper Step Control Strategy" & \\ 
+      "Implicit BDF Stepper Ramping Step Control Strategy" & \\ 
+      \end{tabular}
+        \index{Step Control Strategy Selection!Step Control Strategy Type}
+        \index{Step Control Strategy Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit BDF Stepper Step Control Strategy}
+\label{sec:Implicit BDF Stepper Step Control Strategy}
+\index{Implicit BDF Stepper Step Control Strategy}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
+      \index{Step Control Strategy Selection} 
+  \item[Child(ren):]
+    magicNumbers (Section~\ref{sec:magicNumbers})
+      \index{magicNumbers} 
+  \item[Parameters:]
+    \begin{description}
+      \item[minOrder = 1] 
+lower limit of order selection, guaranteed
+        \index{Implicit BDF Stepper Step Control Strategy!minOrder}
+        \index{minOrder}
+      \item[maxOrder = 5] 
+upper limit of order selection, does not guarantee this order
+        \index{Implicit BDF Stepper Step Control Strategy!maxOrder}
+        \index{maxOrder}
+      \item[relErrTol = 0.0001] 
+
+        \index{Implicit BDF Stepper Step Control Strategy!relErrTol}
+        \index{relErrTol}
+      \item[absErrTol = 1e-06] 
+
+        \index{Implicit BDF Stepper Step Control Strategy!absErrTol}
+        \index{absErrTol}
+      \item[constantStepSize = 0] 
+
+        \index{Implicit BDF Stepper Step Control Strategy!constantStepSize}
+        \index{constantStepSize}
+      \item[stopTime = 10] 
+
+        \index{Implicit BDF Stepper Step Control Strategy!stopTime}
+        \index{stopTime}
+      \item[failStepIfNonlinearSolveFails = 0] 
+Power user command. Will force the function acceptStep() to return false ieven if the LET is acceptable.  Used to run with loose tolerances but enforce a correct nonlinear solution to the step.
+        \index{Implicit BDF Stepper Step Control Strategy!failStepIfNonlinearSolveFails}
+        \index{failStepIfNonlinearSolveFails}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{magicNumbers}
+\label{sec:magicNumbers}
+\index{magicNumbers}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    These are knobs in the algorithm that have been set to reasonable values using lots of testing and heuristics and some theory.
+  \item[Parent(s):]
+    Implicit BDF Stepper Step Control Strategy (Section~\ref{sec:Implicit BDF Stepper Step Control Strategy})
+      \index{Implicit BDF Stepper Step Control Strategy} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[h0\_safety = 2] 
+
+        \index{magicNumbers!h0\_safety}
+        \index{h0\_safety}
+      \item[h0\_max\_factor = 0.001] 
+
+        \index{magicNumbers!h0\_max\_factor}
+        \index{h0\_max\_factor}
+      \item[h\_phase0\_incr = 2] 
+initial ramp-up in variable mode (stepSize multiplier)
+        \index{magicNumbers!h\_phase0\_incr}
+        \index{h\_phase0\_incr}
+      \item[h\_max\_inv = 0] 
+
+        \index{magicNumbers!h\_max\_inv}
+        \index{h\_max\_inv}
+      \item[Tkm1\_Tk\_safety = 2] 
+
+        \index{magicNumbers!Tkm1\_Tk\_safety}
+        \index{Tkm1\_Tk\_safety}
+      \item[Tkp1\_Tk\_safety = 0.5] 
+
+        \index{magicNumbers!Tkp1\_Tk\_safety}
+        \index{Tkp1\_Tk\_safety}
+      \item[r\_factor = 0.9] 
+used in rejectStep:  time step ratio multiplier
+        \index{magicNumbers!r\_factor}
+        \index{r\_factor}
+      \item[r\_safety = 2] 
+local error multiplier as part of time step ratio calculation
+        \index{magicNumbers!r\_safety}
+        \index{r\_safety}
+      \item[r\_fudge = 0.0001] 
+local error addition as part of time step ratio calculation
+        \index{magicNumbers!r\_fudge}
+        \index{r\_fudge}
+      \item[r\_min = 0.125] 
+used in rejectStep:  how much to cut step and lower bound for time step ratio
+        \index{magicNumbers!r\_min}
+        \index{r\_min}
+      \item[r\_max = 0.9] 
+upper bound for time step ratio
+        \index{magicNumbers!r\_max}
+        \index{r\_max}
+      \item[r\_hincr\_test = 2] 
+used in completeStep:  if time step ratio > this then set time step ratio to r\_hincr
+        \index{magicNumbers!r\_hincr\_test}
+        \index{r\_hincr\_test}
+      \item[r\_hincr = 2] 
+used in completeStep:  limit on time step ratio increases, not checked by r\_max
+        \index{magicNumbers!r\_hincr}
+        \index{r\_hincr}
+      \item[max\_LET\_fail = 15] 
+Max number of rejected steps
+        \index{magicNumbers!max\_LET\_fail}
+        \index{max\_LET\_fail}
+      \item[minTimeStep = 0] 
+bound on smallest time step in variable mode.
+        \index{magicNumbers!minTimeStep}
+        \index{minTimeStep}
+      \item[maxTimeStep = 10] 
+bound on largest time step in variable mode.
+        \index{magicNumbers!maxTimeStep}
+        \index{maxTimeStep}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit BDF Stepper Ramping Step Control Strategy}
+\label{sec:Implicit BDF Stepper Ramping Step Control Strategy}
+\index{Implicit BDF Stepper Ramping Step Control Strategy}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
+      \index{Step Control Strategy Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[Number of Constant First Order Steps = 10] 
+Number of constant steps to take before handing control to variable stepper.
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Number of Constant First Order Steps}
+        \index{Number of Constant First Order Steps}
+      \item[Initial Step Size = 0.001] 
+Initial time step size and target step size to take during the initial constant step phase (could be reduced due to step failures).
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Initial Step Size}
+        \index{Initial Step Size}
+      \item[Min Step Size = 1e-07] 
+Minimum time step size.
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Min Step Size}
+        \index{Min Step Size}
+      \item[Max Step Size = 1] 
+Maximum time step size.
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Max Step Size}
+        \index{Max Step Size}
+      \item[Step Size Increase Factor = 1.2] 
+Time step growth factor used after a successful time step. dt\_{n+1} = (increase factor) * dt\_n
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Step Size Increase Factor}
+        \index{Step Size Increase Factor}
+      \item[Step Size Decrease Factor = 0.5] 
+Time step reduction factor used for a failed time step. dt\_{n+1} = (decrease factor) * dt\_n
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Step Size Decrease Factor}
+        \index{Step Size Decrease Factor}
+      \item[Min Order = 1] 
+Minimum order to run at.
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Min Order}
+        \index{Min Order}
+      \item[Max Order = 5] 
+Maximum order to run at.
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Max Order}
+        \index{Max Order}
+      \item[Absolute Error Tolerance = 1e-05] 
+abstol value used in WRMS calculation.
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Absolute Error Tolerance}
+        \index{Absolute Error Tolerance}
+      \item[Relative Error Tolerance = 0.001] 
+reltol value used in WRMS calculation.
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Relative Error Tolerance}
+        \index{Relative Error Tolerance}
+      \item[Use LET To Determine Step Acceptance = FALSE] 
+If set to TRUE, then acceptance of step dependes on LET in addition to Nonlinear solver converging.
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "TRUE" & \\ 
+      "FALSE" & \\ 
+      \end{tabular}
+        \index{Implicit BDF Stepper Ramping Step Control Strategy!Use LET To Determine Step Acceptance}
+        \index{Use LET To Determine Step Acceptance}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Error Weight Vector Calculator Selection}
+\label{sec:Error Weight Vector Calculator Selection}
+\index{Error Weight Vector Calculator Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    Not all ErrWtVec calculators are compatible with each step control strategy.
+    If the calculator has the name of a stepper or another step control strategy in
+    its name, then it only works with that step control strategy.
+  \item[Parent(s):]
+    Step Control Settings (Section~\ref{sec:Step Control Settings})
+      \index{Step Control Settings} 
+  \item[Child(ren):]
+    Implicit BDF Stepper Error Weight Vector Calculator (Section~\ref{sec:Implicit BDF Stepper Error Weight Vector Calculator})
+      \index{Implicit BDF Stepper Error Weight Vector Calculator} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Error Weight Vector Calculator Type = None] 
+Determines the type of Rythmos::ErrWtVecCalc object that will be built.
+The parameters for each Error Weight Vector Calculator Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Implicit BDF Stepper Error Weight Vector Calculator" & \\ 
+      \end{tabular}
+        \index{Error Weight Vector Calculator Selection!Error Weight Vector Calculator Type}
+        \index{Error Weight Vector Calculator Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit BDF Stepper Error Weight Vector Calculator}
+\label{sec:Implicit BDF Stepper Error Weight Vector Calculator}
+\index{Implicit BDF Stepper Error Weight Vector Calculator}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Error Weight Vector Calculator Selection (Section~\ref{sec:Error Weight Vector Calculator Selection})
+      \index{Error Weight Vector Calculator Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Interpolator Selection}
+\label{sec:Interpolator Selection}
+\index{Interpolator Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    Note all Steppers accept an interpolator.  Currently, only the BackwardEuler
+    stepper does.
+  \item[Parent(s):]
+    Stepper Settings (Section~\ref{sec:Stepper Settings})
+      \index{Stepper Settings} 
+  \item[Child(ren):]
+    Linear Interpolator (Section~\ref{sec:Linear Interpolator})
+      \index{Linear Interpolator} 
+      \newline 
+    Hermite Interpolator (Section~\ref{sec:Hermite Interpolator})
+      \index{Hermite Interpolator} 
+      \newline 
+    Cubic Spline Interpolator (Section~\ref{sec:Cubic Spline Interpolator})
+      \index{Cubic Spline Interpolator} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Interpolator Type = None] 
+Determines the type of Rythmos::Interpolator object that will be built.
+The parameters for each Interpolator Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Linear Interpolator" & \\ 
+      "Hermite Interpolator" & \\ 
+      "Cubic Spline Interpolator" & \\ 
+      \end{tabular}
+        \index{Interpolator Selection!Interpolator Type}
+        \index{Interpolator Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Linear Interpolator}
+\label{sec:Linear Interpolator}
+\index{Linear Interpolator}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolator Selection (Section~\ref{sec:Interpolator Selection})
+      \index{Interpolator Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Hermite Interpolator}
+\label{sec:Hermite Interpolator}
+\index{Hermite Interpolator}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolator Selection (Section~\ref{sec:Interpolator Selection})
+      \index{Interpolator Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Cubic Spline Interpolator}
+\label{sec:Cubic Spline Interpolator}
+\index{Cubic Spline Interpolator}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolator Selection (Section~\ref{sec:Interpolator Selection})
+      \index{Interpolator Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Runge Kutta Butcher Tableau Selection}
+\label{sec:Runge Kutta Butcher Tableau Selection}
+\index{Runge Kutta Butcher Tableau Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    Only the Explicit RK Stepper and the Implicit RK Stepper accept an RK Butcher
+    Tableau.
+  \item[Parent(s):]
+    Stepper Settings (Section~\ref{sec:Stepper Settings})
+      \index{Stepper Settings} 
+  \item[Child(ren):]
+    Forward Euler (Section~\ref{sec:Forward Euler-Runge Kutta Butcher Tableau Selection})
+      \index{Forward Euler} 
+      \newline 
+    Explicit 2 Stage 2nd order by Runge (Section~\ref{sec:Explicit 2 Stage 2nd order by Runge})
+      \index{Explicit 2 Stage 2nd order by Runge} 
+      \newline 
+    Explicit Trapezoidal (Section~\ref{sec:Explicit Trapezoidal})
+      \index{Explicit Trapezoidal} 
+      \newline 
+    Explicit 3 Stage 3rd order (Section~\ref{sec:Explicit 3 Stage 3rd order})
+      \index{Explicit 3 Stage 3rd order} 
+      \newline 
+    Explicit 3 Stage 3rd order by Heun (Section~\ref{sec:Explicit 3 Stage 3rd order by Heun})
+      \index{Explicit 3 Stage 3rd order by Heun} 
+      \newline 
+    Explicit 3 Stage 3rd order TVD (Section~\ref{sec:Explicit 3 Stage 3rd order TVD})
+      \index{Explicit 3 Stage 3rd order TVD} 
+      \newline 
+    Explicit 4 Stage 3rd order by Runge (Section~\ref{sec:Explicit 4 Stage 3rd order by Runge})
+      \index{Explicit 4 Stage 3rd order by Runge} 
+      \newline 
+    Explicit 4 Stage (Section~\ref{sec:Explicit 4 Stage})
+      \index{Explicit 4 Stage} 
+      \newline 
+    Explicit 3/8 Rule (Section~\ref{sec:Explicit 3/8 Rule})
+      \index{Explicit 3/8 Rule} 
+      \newline 
+    Backward Euler (Section~\ref{sec:Backward Euler-Runge Kutta Butcher Tableau Selection})
+      \index{Backward Euler} 
+      \newline 
+    Singly Diagonal IRK 2 Stage 2nd order (Section~\ref{sec:Singly Diagonal IRK 2 Stage 2nd order})
+      \index{Singly Diagonal IRK 2 Stage 2nd order} 
+      \newline 
+    Singly Diagonal IRK 2 Stage 3rd order (Section~\ref{sec:Singly Diagonal IRK 2 Stage 3rd order})
+      \index{Singly Diagonal IRK 2 Stage 3rd order} 
+      \newline 
+    Singly Diagonal IRK 3 Stage 4th order (Section~\ref{sec:Singly Diagonal IRK 3 Stage 4th order})
+      \index{Singly Diagonal IRK 3 Stage 4th order} 
+      \newline 
+    Singly Diagonal IRK 5 Stage 4th order (Section~\ref{sec:Singly Diagonal IRK 5 Stage 4th order})
+      \index{Singly Diagonal IRK 5 Stage 4th order} 
+      \newline 
+    Singly Diagonal IRK 5 Stage 5th order (Section~\ref{sec:Singly Diagonal IRK 5 Stage 5th order})
+      \index{Singly Diagonal IRK 5 Stage 5th order} 
+      \newline 
+    Diagonal IRK 2 Stage 3rd order (Section~\ref{sec:Diagonal IRK 2 Stage 3rd order})
+      \index{Diagonal IRK 2 Stage 3rd order} 
+      \newline 
+    Implicit 1 Stage 2nd order Gauss (Section~\ref{sec:Implicit 1 Stage 2nd order Gauss})
+      \index{Implicit 1 Stage 2nd order Gauss} 
+      \newline 
+    Implicit 2 Stage 4th order Gauss (Section~\ref{sec:Implicit 2 Stage 4th order Gauss})
+      \index{Implicit 2 Stage 4th order Gauss} 
+      \newline 
+    Implicit 3 Stage 6th order Gauss (Section~\ref{sec:Implicit 3 Stage 6th order Gauss})
+      \index{Implicit 3 Stage 6th order Gauss} 
+      \newline 
+    Implicit 2 Stage 4th Order Hammer \& Hollingsworth (Section~\ref{sec:Implicit 2 Stage 4th Order Hammer and Hollingsworth})
+      \index{Implicit 2 Stage 4th Order Hammer \& Hollingsworth} 
+      \newline 
+    Implicit 3 Stage 6th Order Kuntzmann \& Butcher (Section~\ref{sec:Implicit 3 Stage 6th Order Kuntzmann and Butcher})
+      \index{Implicit 3 Stage 6th Order Kuntzmann \& Butcher} 
+      \newline 
+    Implicit 1 Stage 1st order Radau left (Section~\ref{sec:Implicit 1 Stage 1st order Radau left})
+      \index{Implicit 1 Stage 1st order Radau left} 
+      \newline 
+    Implicit 2 Stage 3rd order Radau left (Section~\ref{sec:Implicit 2 Stage 3rd order Radau left})
+      \index{Implicit 2 Stage 3rd order Radau left} 
+      \newline 
+    Implicit 3 Stage 5th order Radau left (Section~\ref{sec:Implicit 3 Stage 5th order Radau left})
+      \index{Implicit 3 Stage 5th order Radau left} 
+      \newline 
+    Implicit 1 Stage 1st order Radau right (Section~\ref{sec:Implicit 1 Stage 1st order Radau right})
+      \index{Implicit 1 Stage 1st order Radau right} 
+      \newline 
+    Implicit 2 Stage 3rd order Radau right (Section~\ref{sec:Implicit 2 Stage 3rd order Radau right})
+      \index{Implicit 2 Stage 3rd order Radau right} 
+      \newline 
+    Implicit 3 Stage 5th order Radau right (Section~\ref{sec:Implicit 3 Stage 5th order Radau right})
+      \index{Implicit 3 Stage 5th order Radau right} 
+      \newline 
+    Implicit 2 Stage 2nd order Lobatto A (Section~\ref{sec:Implicit 2 Stage 2nd order Lobatto A})
+      \index{Implicit 2 Stage 2nd order Lobatto A} 
+      \newline 
+    Implicit 3 Stage 4th order Lobatto A (Section~\ref{sec:Implicit 3 Stage 4th order Lobatto A})
+      \index{Implicit 3 Stage 4th order Lobatto A} 
+      \newline 
+    Implicit 4 Stage 6th order Lobatto A (Section~\ref{sec:Implicit 4 Stage 6th order Lobatto A})
+      \index{Implicit 4 Stage 6th order Lobatto A} 
+      \newline 
+    Implicit 2 Stage 2nd order Lobatto B (Section~\ref{sec:Implicit 2 Stage 2nd order Lobatto B})
+      \index{Implicit 2 Stage 2nd order Lobatto B} 
+      \newline 
+    Implicit 3 Stage 4th order Lobatto B (Section~\ref{sec:Implicit 3 Stage 4th order Lobatto B})
+      \index{Implicit 3 Stage 4th order Lobatto B} 
+      \newline 
+    Implicit 4 Stage 6th order Lobatto B (Section~\ref{sec:Implicit 4 Stage 6th order Lobatto B})
+      \index{Implicit 4 Stage 6th order Lobatto B} 
+      \newline 
+    Implicit 2 Stage 2nd order Lobatto C (Section~\ref{sec:Implicit 2 Stage 2nd order Lobatto C})
+      \index{Implicit 2 Stage 2nd order Lobatto C} 
+      \newline 
+    Implicit 3 Stage 4th order Lobatto C (Section~\ref{sec:Implicit 3 Stage 4th order Lobatto C})
+      \index{Implicit 3 Stage 4th order Lobatto C} 
+      \newline 
+    Implicit 4 Stage 6th order Lobatto C (Section~\ref{sec:Implicit 4 Stage 6th order Lobatto C})
+      \index{Implicit 4 Stage 6th order Lobatto C} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Runge Kutta Butcher Tableau Type = None] 
+Determines the type of Rythmos::RKButcherTableau object that will be built.
+The parameters for each Runge Kutta Butcher Tableau Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Forward Euler" & \\ 
+      "Explicit 2 Stage 2nd order by Runge" & \\ 
+      "Explicit Trapezoidal" & \\ 
+      "Explicit 3 Stage 3rd order" & \\ 
+      "Explicit 3 Stage 3rd order by Heun" & \\ 
+      "Explicit 3 Stage 3rd order TVD" & \\ 
+      "Explicit 4 Stage 3rd order by Runge" & \\ 
+      "Explicit 4 Stage" & \\ 
+      "Explicit 3/8 Rule" & \\ 
+      "Backward Euler" & \\ 
+      "Singly Diagonal IRK 2 Stage 2nd order" & \\ 
+      "Singly Diagonal IRK 2 Stage 3rd order" & \\ 
+      "Singly Diagonal IRK 3 Stage 4th order" & \\ 
+      "Singly Diagonal IRK 5 Stage 4th order" & \\ 
+      "Singly Diagonal IRK 5 Stage 5th order" & \\ 
+      "Diagonal IRK 2 Stage 3rd order" & \\ 
+      "Implicit 1 Stage 2nd order Gauss" & \\ 
+      "Implicit 2 Stage 4th order Gauss" & \\ 
+      "Implicit 3 Stage 6th order Gauss" & \\ 
+      "Implicit 2 Stage 4th Order Hammer \& Hollingsworth" & \\ 
+      "Implicit 3 Stage 6th Order Kuntzmann \& Butcher" & \\ 
+      "Implicit 1 Stage 1st order Radau left" & \\ 
+      "Implicit 2 Stage 3rd order Radau left" & \\ 
+      "Implicit 3 Stage 5th order Radau left" & \\ 
+      "Implicit 1 Stage 1st order Radau right" & \\ 
+      "Implicit 2 Stage 3rd order Radau right" & \\ 
+      "Implicit 3 Stage 5th order Radau right" & \\ 
+      "Implicit 2 Stage 2nd order Lobatto A" & \\ 
+      "Implicit 3 Stage 4th order Lobatto A" & \\ 
+      "Implicit 4 Stage 6th order Lobatto A" & \\ 
+      "Implicit 2 Stage 2nd order Lobatto B" & \\ 
+      "Implicit 3 Stage 4th order Lobatto B" & \\ 
+      "Implicit 4 Stage 6th order Lobatto B" & \\ 
+      "Implicit 2 Stage 2nd order Lobatto C" & \\ 
+      "Implicit 3 Stage 4th order Lobatto C" & \\ 
+      "Implicit 4 Stage 6th order Lobatto C" & \\ 
+      \end{tabular}
+        \index{Runge Kutta Butcher Tableau Selection!Runge Kutta Butcher Tableau Type}
+        \index{Runge Kutta Butcher Tableau Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Forward Euler}
+\label{sec:Forward Euler-Runge Kutta Butcher Tableau Selection}
+\index{Forward Euler}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Forward Euler
+  c = [ 0 ]'
+  A = [ 0 ]
+  b = [ 1 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit 2 Stage 2nd order by Runge}
+\label{sec:Explicit 2 Stage 2nd order by Runge}
+\index{Explicit 2 Stage 2nd order by Runge}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Explicit 2 Stage 2nd order by Runge
+  Also known as Explicit Midpoint
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S.P. Norsett, G. Wanner
+  Table 1.1, pg 135
+  c = [  0  1/2 ]'
+  A = [  0      ]
+      [ 1/2  0  ]
+  b = [  0   1  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit Trapezoidal}
+\label{sec:Explicit Trapezoidal}
+\index{Explicit Trapezoidal}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Explicit Trapezoidal
+  c = [  0   1  ]'
+  A = [  0      ]
+      [  1   0  ]
+  b = [ 1/2 1/2 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit 3 Stage 3rd order}
+\label{sec:Explicit 3 Stage 3rd order}
+\index{Explicit 3 Stage 3rd order}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Explicit 3 Stage 3rd order
+  c = [  0  1/2  1  ]'
+  A = [  0          ]
+      [ 1/2  0      ]
+      [ -1   2   0  ]
+  b = [ 1/6 4/6 1/6 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit 3 Stage 3rd order by Heun}
+\label{sec:Explicit 3 Stage 3rd order by Heun}
+\index{Explicit 3 Stage 3rd order by Heun}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Explicit 3 Stage 3rd order by Heun
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S.P. Norsett, G. Wanner
+  Table 1.1, pg 135
+  c = [  0  1/3 2/3 ]'
+  A = [  0          ]
+      [ 1/3  0      ]
+      [  0  2/3  0  ]
+  b = [ 1/4  0  3/4 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit 3 Stage 3rd order TVD}
+\label{sec:Explicit 3 Stage 3rd order TVD}
+\index{Explicit 3 Stage 3rd order TVD}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Explicit 3 Stage 3rd order TVD
+  Sigal Gottlieb and Chi-Wang Shu
+  'Total Variation Diminishing Runge-Kutta Schemes'
+  Mathematics of Computation
+  Volume 67, Number 221, January 1998, pp. 73-85
+  c = [  0   1  1/2 ]'
+  A = [  0          ]
+      [  1   0      ]
+      [ 1/4 1/4  0  ]
+  b = [ 1/6 1/6 4/6 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit 4 Stage 3rd order by Runge}
+\label{sec:Explicit 4 Stage 3rd order by Runge}
+\index{Explicit 4 Stage 3rd order by Runge}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Explicit 4 Stage 3rd order by Runge
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S.P. Norsett, G. Wanner
+  Table 1.1, pg 135
+  c = [  0  1/2  1   1  ]'
+  A = [  0              ]
+      [ 1/2  0          ]
+      [  0   1   0      ]
+      [  0   0   1   0  ]
+  b = [ 1/6 2/3  0  1/6 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit 4 Stage}
+\label{sec:Explicit 4 Stage}
+\index{Explicit 4 Stage}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Explicit 4 Stage
+  "The" Runge-Kutta Method (explicit):
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revised Edition
+  E. Hairer, S.P. Norsett, G. Wanner
+  Table 1.2, pg 138
+  c = [  0  1/2 1/2  1  ]'
+  A = [  0              ]
+      [ 1/2  0          ]
+      [  0  1/2  0      ]
+      [  0   0   1   0  ]
+  b = [ 1/6 1/3 1/3 1/6 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Explicit 3/8 Rule}
+\label{sec:Explicit 3/8 Rule}
+\index{Explicit 3/8 Rule}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Explicit 3/8 Rule
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S.P. Norsett, G. Wanner
+  Table 1.2, pg 138
+  c = [  0  1/3 2/3  1  ]'
+  A = [  0              ]
+      [ 1/3  0          ]
+      [-1/3  1   0      ]
+      [  1  -1   1   0  ]
+  b = [ 1/8 3/8 3/8 1/8 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Backward Euler}
+\label{sec:Backward Euler-Runge Kutta Butcher Tableau Selection}
+\index{Backward Euler}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Backward Euler
+  c = [ 1 ]'
+  A = [ 1 ]
+  b = [ 1 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Singly Diagonal IRK 2 Stage 2nd order}
+\label{sec:Singly Diagonal IRK 2 Stage 2nd order}
+\index{Singly Diagonal IRK 2 Stage 2nd order}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Singly Diagonal IRK 2 Stage 2nd order
+  Computer Methods for ODEs and DAEs
+  U. M. Ascher and L. R. Petzold
+  p. 106
+  gamma = (2+-sqrt(2))/2
+  c = [  gamma   1     ]'
+  A = [  gamma   0     ]
+      [ 1-gamma  gamma ]
+  b = [ 1-gamma  gamma ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[gamma = 0.292893] 
+The default value is gamma = (2-sqrt(2))/2 = 0.29289321881345243. This will produce an L-stable 2nd order method with the stage times within the timestep.  Other values of gamma will still produce an L-stable scheme, but will only be 1st order accurate.
+        \index{Singly Diagonal IRK 2 Stage 2nd order!gamma}
+        \index{gamma}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Singly Diagonal IRK 2 Stage 3rd order}
+\label{sec:Singly Diagonal IRK 2 Stage 3rd order}
+\index{Singly Diagonal IRK 2 Stage 3rd order}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Singly Diagonal IRK 2 Stage 3rd order
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S. P. Norsett, and G. Wanner
+  Table 7.2, pg 207
+  gamma = (3+-sqrt(3))/6 -> 3rd order and A-stable
+  gamma = (2+-sqrt(2))/2 -> 2nd order and L-stable
+  c = [  gamma     1-gamma  ]'
+  A = [  gamma     0        ]
+      [ 1-2*gamma  gamma    ]
+  b = [ 1/2        1/2      ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[3rd Order A-stable = 1] 
+If true, set gamma to gamma = (3+sqrt(3))/6 to obtain a 3rd order A-stable scheme. '3rd Order A-stable' and '2nd Order L-stable' can not both be true.
+        \index{Singly Diagonal IRK 2 Stage 3rd order!3rd Order A-stable}
+        \index{3rd Order A-stable}
+      \item[2nd Order L-stable = 0] 
+If true, set gamma to gamma = (2+sqrt(2))/2 to obtain a 2nd order L-stable scheme. '3rd Order A-stable' and '2nd Order L-stable' can not both be true.
+        \index{Singly Diagonal IRK 2 Stage 3rd order!2nd Order L-stable}
+        \index{2nd Order L-stable}
+      \item[gamma = 0.788675] 
+If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be used. The default value is the '3rd Order A-stable' gamma value, (3+sqrt(3))/6.
+        \index{Singly Diagonal IRK 2 Stage 3rd order!gamma}
+        \index{gamma}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Singly Diagonal IRK 3 Stage 4th order}
+\label{sec:Singly Diagonal IRK 3 Stage 4th order}
+\index{Singly Diagonal IRK 3 Stage 4th order}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Singly Diagonal IRK 3 Stage 4th order
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  pg100
+  gamma = (1/sqrt(3))*cos(pi/18)+1/2
+  delta = 1/(6*(2*gamma-1)^2)
+  c = [ gamma      1/2        1-gamma ]'
+  A = [ gamma                         ]
+      [ 1/2-gamma  gamma              ]
+      [ 2*gamma    1-4*gamma  gamma   ]
+  b = [ delta      1-2*delta  delta   ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Singly Diagonal IRK 5 Stage 4th order}
+\label{sec:Singly Diagonal IRK 5 Stage 4th order}
+\index{Singly Diagonal IRK 5 Stage 4th order}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Singly Diagonal IRK 5 Stage 4th order
+  L-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  pg100
+  c  = [ 1/4       3/4        11/20   1/2     1   ]'
+  A  = [ 1/4                                      ]
+       [ 1/2       1/4                            ]
+       [ 17/50     -1/25      1/4                 ]
+       [ 371/1360  -137/2720  15/544  1/4         ]
+       [ 25/24     -49/48     125/16  -85/12  1/4 ]
+  b  = [ 25/24     -49/48     125/16  -85/12  1/4 ]'
+  b' = [ 59/48     -17/96     225/32  -85/12  0   ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Singly Diagonal IRK 5 Stage 5th order}
+\label{sec:Singly Diagonal IRK 5 Stage 5th order}
+\index{Singly Diagonal IRK 5 Stage 5th order}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Singly Diagonal IRK 5 Stage 5th order
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  pg101
+  c = [ (6-sqrt(6))/10                (6+9*sqrt(6))/35             1                        (4-sqrt(6))/10         (4+sqrt(6))/10  ]'
+  A = [ (6-sqrt(6))/10                                                                                                             ]
+      [ (-6+5*sqrt(6))/14             (6-sqrt(6))/10                                                                               ]
+      [ (888+607*sqrt(6))/2850        (126-161*sqrt(6))/1425       (6-sqrt(6))/10                                                  ]
+      [ (3153-3082*sqrt(6))/14250     (3213+1148*sqrt(6))/28500    (-267+88*sqrt(6))/500    (6-sqrt(6))/10                         ]
+      [ (-32583+14638*sqrt(6))/71250  (-17199+364*sqrt(6))/142500  (1329-544*sqrt(6))/2500  (-96+131*sqrt(6))/625  (6-sqrt(6))/10  ]
+  b = [ 0                             0                            1/9                      (16-sqrt(6))/36        (16+sqrt(6))/36 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Diagonal IRK 2 Stage 3rd order}
+\label{sec:Diagonal IRK 2 Stage 3rd order}
+\index{Diagonal IRK 2 Stage 3rd order}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Diagonal IRK 2 Stage 3rd order
+  Hammer & Hollingsworth method
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S. P. Norsett, and G. Wanner
+  Table 7.1, pg 205
+  c = [  0   2/3 ]'
+  A = [  0    0  ]
+      [ 1/3  1/3 ]
+  b = [ 1/4  3/4 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 1 Stage 2nd order Gauss}
+\label{sec:Implicit 1 Stage 2nd order Gauss}
+\index{Implicit 1 Stage 2nd order Gauss}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 1 Stage 2nd order Gauss
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.2, pg 72
+  Also:  Implicit midpoint rule
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S. P. Norsett, and G. Wanner
+  Table 7.1, pg 205
+  c = [ 1/2 ]'
+  A = [ 1/2 ]
+  b = [  1  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 2 Stage 4th order Gauss}
+\label{sec:Implicit 2 Stage 4th order Gauss}
+\index{Implicit 2 Stage 4th order Gauss}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 2 Stage 4th order Gauss
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.2, pg 72
+  c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'
+  A = [ 1/4            1/4-sqrt(3)/6 ]
+      [ 1/4+sqrt(3)/6  1/4           ]
+  b = [ 1/2            1/2 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 3 Stage 6th order Gauss}
+\label{sec:Implicit 3 Stage 6th order Gauss}
+\index{Implicit 3 Stage 6th order Gauss}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 3 Stage 6th order Gauss
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.2, pg 72
+  c = [ 1/2-sqrt(15)/10   1/2              1/2+sqrt(15)/10  ]'
+  A = [ 5/36              2/9-sqrt(15)/15  5/36-sqrt(15)/30 ]
+      [ 5/36+sqrt(15)/24  2/9              5/36-sqrt(15)/24 ]
+      [ 5/36+sqrt(15)/30  2/9+sqrt(15)/15  5/36             ]
+  b = [ 5/18              4/9              5/18             ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 2 Stage 4th Order Hammer \& Hollingsworth}
+\label{sec:Implicit 2 Stage 4th Order Hammer and Hollingsworth}
+\index{Implicit 2 Stage 4th Order Hammer \& Hollingsworth}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 2 Stage 4th Order Hammer & Hollingsworth
+  Hammer & Hollingsworth method
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S. P. Norsett, and G. Wanner
+  Table 7.3, pg 207
+  c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'
+  A = [ 1/4            1/4-sqrt(3)/6 ]
+      [ 1/4+sqrt(3)/6  1/4           ]
+  b = [ 1/2            1/2           ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 3 Stage 6th Order Kuntzmann \& Butcher}
+\label{sec:Implicit 3 Stage 6th Order Kuntzmann and Butcher}
+\index{Implicit 3 Stage 6th Order Kuntzmann \& Butcher}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 3 Stage 6th Order Kuntzmann & Butcher
+  Kuntzmann & Butcher method
+  Solving Ordinary Differential Equations I:
+  Nonstiff Problems, 2nd Revided Edition
+  E. Hairer, S. P. Norsett, and G. Wanner
+  Table 7.4, pg 209
+  c = [ 1/2-sqrt(15)/10   1/2              1/2-sqrt(15)/10  ]'
+  A = [ 5/36              2/9-sqrt(15)/15  5/36-sqrt(15)/30 ]
+      [ 5/36+sqrt(15)/24  2/9              5/36-sqrt(15)/24 ]
+      [ 5/36+sqrt(15)/30  2/9+sqrt(15)/15  5/36             ]
+  b = [ 5/18              4/9              5/18             ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 1 Stage 1st order Radau left}
+\label{sec:Implicit 1 Stage 1st order Radau left}
+\index{Implicit 1 Stage 1st order Radau left}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 1 Stage 1st order Radau left
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.3, pg 73
+  c = [ 0 ]'
+  A = [ 1 ]
+  b = [ 1 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 2 Stage 3rd order Radau left}
+\label{sec:Implicit 2 Stage 3rd order Radau left}
+\index{Implicit 2 Stage 3rd order Radau left}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 2 Stage 3rd order Radau left
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.3, pg 73
+  c = [  0    2/3 ]'
+  A = [ 1/4  -1/4 ]
+      [ 1/4  5/12 ]
+  b = [ 1/4  3/4  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 3 Stage 5th order Radau left}
+\label{sec:Implicit 3 Stage 5th order Radau left}
+\index{Implicit 3 Stage 5th order Radau left}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 3 Stage 5th order Radau left
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.4, pg 73
+  c = [  0   (6-sqrt(6))/10       (6+sqrt(6))/10      ]'
+  A = [ 1/9  (-1-sqrt(6))/18      (-1+sqrt(6))/18     ]
+      [ 1/9  (88+7*sqrt(6))/360   (88-43*sqrt(6))/360 ]
+      [ 1/9  (88+43*sqrt(6))/360  (88-7*sqrt(6))/360  ]
+  b = [ 1/9  (16+sqrt(6))/36      (16-sqrt(6))/36     ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 1 Stage 1st order Radau right}
+\label{sec:Implicit 1 Stage 1st order Radau right}
+\index{Implicit 1 Stage 1st order Radau right}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 1 Stage 1st order Radau right
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.5, pg 74
+  c = [ 1 ]'
+  A = [ 1 ]
+  b = [ 1 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 2 Stage 3rd order Radau right}
+\label{sec:Implicit 2 Stage 3rd order Radau right}
+\index{Implicit 2 Stage 3rd order Radau right}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 2 Stage 3rd order Radau right
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.5, pg 74
+  c = [ 1/3     1   ]'
+  A = [ 5/12  -1/12 ]
+      [ 3/4    1/4  ]
+  b = [ 3/4    1/4  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 3 Stage 5th order Radau right}
+\label{sec:Implicit 3 Stage 5th order Radau right}
+\index{Implicit 3 Stage 5th order Radau right}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 3 Stage 5th order Radau right
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.6, pg 74
+  c = [ (4-sqrt(6))/10          (4+sqrt(6))/10                 1            ]'
+  A = [ (88-7*sqrt(6))/360      (296-169*sqrt(6))/1800  (-2+3*sqrt(6))/225  ]
+      [ (296+169*sqrt(6))/1800  (88+7*sqrt(6))/360      (-2-3*sqrt(6))/225  ]
+      [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9                 ]
+  b = [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9                 ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 2 Stage 2nd order Lobatto A}
+\label{sec:Implicit 2 Stage 2nd order Lobatto A}
+\index{Implicit 2 Stage 2nd order Lobatto A}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 2 Stage 2nd order Lobatto A
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.7, pg 75
+  c = [  0    1   ]'
+  A = [  0    0   ]
+      [ 1/2  1/2  ]
+  b = [ 1/2  1/2  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 3 Stage 4th order Lobatto A}
+\label{sec:Implicit 3 Stage 4th order Lobatto A}
+\index{Implicit 3 Stage 4th order Lobatto A}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 3 Stage 4th order Lobatto A
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.7, pg 75
+  c = [  0    1/2    1  ]'
+  A = [  0     0     0   ]
+      [ 5/24  1/3  -1/24  ]
+      [ 1/6   2/3   1/6   ]
+  b = [ 1/6   2/3   1/6   ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 4 Stage 6th order Lobatto A}
+\label{sec:Implicit 4 Stage 6th order Lobatto A}
+\index{Implicit 4 Stage 6th order Lobatto A}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 4 Stage 6th order Lobatto A
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.8, pg 75
+  c = [ 0               (5-sqrt(5))/10       (5+sqrt(5))/10       1                 ]'
+  A = [ 0               0                    0                    0                 ]
+      [ (11+sqrt(5)/120 (25-sqrt(5))/120     (25-13*sqrt(5))/120  (-1+sqrt(5))/120  ]
+      [ (11-sqrt(5)/120 (25+13*sqrt(5))/120  (25+sqrt(5))/120     (-1-sqrt(5))/120  ]
+      [ 1/12            5/12                 5/12                 1/12              ]
+  b = [ 1/12            5/12                 5/12                 1/12              ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 2 Stage 2nd order Lobatto B}
+\label{sec:Implicit 2 Stage 2nd order Lobatto B}
+\index{Implicit 2 Stage 2nd order Lobatto B}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 2 Stage 2nd order Lobatto B
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.9, pg 76
+  c = [  0    1   ]'
+  A = [ 1/2   0   ]
+      [ 1/2   0   ]
+  b = [ 1/2  1/2  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 3 Stage 4th order Lobatto B}
+\label{sec:Implicit 3 Stage 4th order Lobatto B}
+\index{Implicit 3 Stage 4th order Lobatto B}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 3 Stage 4th order Lobatto B
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.9, pg 76
+  c = [  0    1/2    1   ]'
+  A = [ 1/6  -1/6    0   ]
+      [ 1/6   1/3    0   ]
+      [ 1/6   5/6    0   ]
+  b = [ 1/6   2/3   1/6  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 4 Stage 6th order Lobatto B}
+\label{sec:Implicit 4 Stage 6th order Lobatto B}
+\index{Implicit 4 Stage 6th order Lobatto B}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 4 Stage 6th order Lobatto B
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.10, pg 76
+  c = [ 0     (5-sqrt(5))/10       (5+sqrt(5))/10       1     ]'
+  A = [ 1/12  (-1-sqrt(5))/24      (-1+sqrt(5))/24      0     ]
+      [ 1/12  (25+sqrt(5))/120     (25-13*sqrt(5))/120  0     ]
+      [ 1/12  (25+13*sqrt(5))/120  (25-sqrt(5))/120     0     ]
+      [ 1/12  (11-sqrt(5))/24      (11+sqrt(5))/24      0     ]
+  b = [ 1/12  5/12                 5/12                 1/12  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 2 Stage 2nd order Lobatto C}
+\label{sec:Implicit 2 Stage 2nd order Lobatto C}
+\index{Implicit 2 Stage 2nd order Lobatto C}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 2 Stage 2nd order Lobatto C
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.11, pg 76
+  c = [  0    1   ]'
+  A = [ 1/2 -1/2  ]
+      [ 1/2  1/2  ]
+  b = [ 1/2  1/2  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 3 Stage 4th order Lobatto C}
+\label{sec:Implicit 3 Stage 4th order Lobatto C}
+\index{Implicit 3 Stage 4th order Lobatto C}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 3 Stage 4th order Lobatto C
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.11, pg 76
+  c = [  0    1/2    1   ]'
+  A = [ 1/6  -1/3   1/6  ]
+      [ 1/6   5/12 -1/12 ]
+      [ 1/6   2/3   1/6  ]
+  b = [ 1/6   2/3   1/6  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Implicit 4 Stage 6th order Lobatto C}
+\label{sec:Implicit 4 Stage 6th order Lobatto C}
+\index{Implicit 4 Stage 6th order Lobatto C}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  Implicit 4 Stage 6th order Lobatto C
+  A-stable
+  Solving Ordinary Differential Equations II:
+  Stiff and Differential-Algebraic Problems,
+  2nd Revised Edition
+  E. Hairer and G. Wanner
+  Table 5.12, pg 76
+  c = [ 0     (5-sqrt(5))/10       (5+sqrt(5))/10       1          ]'
+  A = [ 1/12  -sqrt(5)/12          sqrt(5)/12          -1/12       ]
+      [ 1/12  1/4                  (10-7*sqrt(5))/60   sqrt(5)/60  ]
+      [ 1/12  (10+7*sqrt(5))/60    1/4                 -sqrt(5)/60 ]
+      [ 1/12  5/12                 5/12                 1/12       ]
+  b = [ 1/12  5/12                 5/12                 1/12       ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Interpolation Buffer Settings}
+\label{sec:Interpolation Buffer Settings}
+\index{Interpolation Buffer Settings}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Integrator Base (Section~\ref{sec:Integrator Base})
+      \index{Integrator Base} 
+  \item[Child(ren):]
+    Trailing Interpolation Buffer Selection (Section~\ref{sec:Trailing Interpolation Buffer Selection})
+      \index{Trailing Interpolation Buffer Selection} 
+      \newline 
+    Interpolation Buffer Appender Selection (Section~\ref{sec:Interpolation Buffer Appender Selection})
+      \index{Interpolation Buffer Appender Selection} 
+      \newline 
+    Interpolator Selection (Section~\ref{sec:Interpolator Selection-Interpolation Buffer Settings})
+      \index{Interpolator Selection} 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Trailing Interpolation Buffer Selection}
+\label{sec:Trailing Interpolation Buffer Selection}
+\index{Trailing Interpolation Buffer Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolation Buffer Settings (Section~\ref{sec:Interpolation Buffer Settings})
+      \index{Interpolation Buffer Settings} 
+  \item[Child(ren):]
+    Interpolation Buffer (Section~\ref{sec:Interpolation Buffer})
+      \index{Interpolation Buffer} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Interpolation Buffer Type = None] 
+Determines the type of Rythmos::InterpolationBuffer object that will be built.
+The parameters for each Interpolation Buffer Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Interpolation Buffer" & \\ 
+      \end{tabular}
+        \index{Trailing Interpolation Buffer Selection!Interpolation Buffer Type}
+        \index{Interpolation Buffer Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Interpolation Buffer}
+\label{sec:Interpolation Buffer}
+\index{Interpolation Buffer}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Trailing Interpolation Buffer Selection (Section~\ref{sec:Trailing Interpolation Buffer Selection})
+      \index{Trailing Interpolation Buffer Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[InterpolationBufferPolicy = Keep Newest Policy] 
+Interpolation Buffer Policy for when the maximum storage size is exceeded.  Static will throw an exception when the storage limit is exceeded.  Keep Newest will over-write the oldest data in the buffer when the storage limit is exceeded.
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "Invalid Policy" & \\ 
+      "Static Policy" & \\ 
+      "Keep Newest Policy" & \\ 
+      \end{tabular}
+        \index{Interpolation Buffer!InterpolationBufferPolicy}
+        \index{InterpolationBufferPolicy}
+      \item[StorageLimit = 0] 
+Storage limit for the interpolation buffer.
+        \index{Interpolation Buffer!StorageLimit}
+        \index{StorageLimit}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Interpolation Buffer Appender Selection}
+\label{sec:Interpolation Buffer Appender Selection}
+\index{Interpolation Buffer Appender Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolation Buffer Settings (Section~\ref{sec:Interpolation Buffer Settings})
+      \index{Interpolation Buffer Settings} 
+  \item[Child(ren):]
+    Pointwise Interpolation Buffer Appender (Section~\ref{sec:Pointwise Interpolation Buffer Appender})
+      \index{Pointwise Interpolation Buffer Appender} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Interpolation Buffer Appender Type = None] 
+Determines the type of Rythmos::InterpolationBufferAppender object that will be built.
+The parameters for each Interpolation Buffer Appender Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Pointwise Interpolation Buffer Appender" & \\ 
+      \end{tabular}
+        \index{Interpolation Buffer Appender Selection!Interpolation Buffer Appender Type}
+        \index{Interpolation Buffer Appender Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Pointwise Interpolation Buffer Appender}
+\label{sec:Pointwise Interpolation Buffer Appender}
+\index{Pointwise Interpolation Buffer Appender}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolation Buffer Appender Selection (Section~\ref{sec:Interpolation Buffer Appender Selection})
+      \index{Interpolation Buffer Appender Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Interpolator Selection}
+\label{sec:Interpolator Selection-Interpolation Buffer Settings}
+\index{Interpolator Selection}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolation Buffer Settings (Section~\ref{sec:Interpolation Buffer Settings})
+      \index{Interpolation Buffer Settings} 
+  \item[Child(ren):]
+    Linear Interpolator (Section~\ref{sec:Linear Interpolator-Interpolator Selection})
+      \index{Linear Interpolator} 
+      \newline 
+    Hermite Interpolator (Section~\ref{sec:Hermite Interpolator-Interpolator Selection})
+      \index{Hermite Interpolator} 
+      \newline 
+    Cubic Spline Interpolator (Section~\ref{sec:Cubic Spline Interpolator-Interpolator Selection})
+      \index{Cubic Spline Interpolator} 
+  \item[Parameters:]
+    \begin{description}
+      \item[Interpolator Type = None] 
+Determines the type of Rythmos::Interpolator object that will be built.
+The parameters for each Interpolator Type are specified in this sublist
+
+  Valid std::string values:
+
+      \begin{tabular}{lp{0.4\textwidth}}
+      "None" & \\ 
+      "Linear Interpolator" & \\ 
+      "Hermite Interpolator" & \\ 
+      "Cubic Spline Interpolator" & \\ 
+      \end{tabular}
+        \index{Interpolator Selection!Interpolator Type}
+        \index{Interpolator Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Linear Interpolator}
+\label{sec:Linear Interpolator-Interpolator Selection}
+\index{Linear Interpolator}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolator Selection (Section~\ref{sec:Interpolator Selection-Interpolation Buffer Settings})
+      \index{Interpolator Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Hermite Interpolator}
+\label{sec:Hermite Interpolator-Interpolator Selection}
+\index{Hermite Interpolator}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolator Selection (Section~\ref{sec:Interpolator Selection-Interpolation Buffer Settings})
+      \index{Interpolator Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Cubic Spline Interpolator}
+\label{sec:Cubic Spline Interpolator-Interpolator Selection}
+\index{Cubic Spline Interpolator}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+  \item[Parent(s):]
+    Interpolator Selection (Section~\ref{sec:Interpolator Selection-Interpolation Buffer Settings})
+      \index{Interpolator Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}

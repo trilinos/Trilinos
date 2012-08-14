@@ -42,6 +42,7 @@
 #include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_ImplicitBDFStepperStepControl.hpp"
+#include "Rythmos_ImplicitBDFStepperRampingStepControl.hpp"
 #include "Rythmos_InterpolationBuffer.hpp"
 #include "Rythmos_PointwiseInterpolationBufferAppender.hpp"
 //#include "Rythmos_SmartInterpolationBufferAppender.hpp"
@@ -120,6 +121,7 @@ namespace {
   static std::string defaultIntegrator_name = "Default Integrator";
   static std::string simpleIntegrationControl_name = "Simple Integration Control Strategy";
   static std::string implicitBDFStepControl_name = "Implicit BDF Stepper Step Control Strategy";
+  static std::string implicitBDFRampingStepControl_name = "Implicit BDF Stepper Ramping Step Control Strategy";
   static std::string defaultInterpolationBuffer_name = "Interpolation Buffer";
   static std::string pointwiseInterpolationBufferAppender_name = "Pointwise Interpolation Buffer Appender";
 //  static std::string smartInterpolationBufferAppender_name = "Smart Interpolation Buffer Appender";
@@ -576,8 +578,14 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
   stepControlBuilder_->setObjectName(stepControlBuilder_name);
   stepControlBuilder_->setObjectTypeName(stepControlBuilderType_name);
   stepControlBuilder_->setObjectFactory(
-      abstractFactoryStd< StepControlStrategyBase<Scalar>, ImplicitBDFStepperStepControl<Scalar> >(),
+      abstractFactoryStd< StepControlStrategyBase<Scalar>,
+                          ImplicitBDFStepperStepControl<Scalar> >(),
       implicitBDFStepControl_name
+      );
+  stepControlBuilder_->setObjectFactory(
+      abstractFactoryStd< StepControlStrategyBase<Scalar>,
+                          ImplicitBDFStepperRampingStepControl<Scalar> >(),
+      implicitBDFRampingStepControl_name
       );
   stepControlBuilder_->setDefaultObject("None");
 

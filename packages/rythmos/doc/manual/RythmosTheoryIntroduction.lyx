@@ -1,0 +1,484 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+Here we design and describe a set of C++ interfaces and concrete implementations
+ for the solution of a broad class of transient ordinary differential equations
+ (ODEs) and differential algebraic equations (DAEs) in a consistent manner.
+ 
+\end_layout
+
+\begin_layout Section
+Mathematical Formulation of DAEs/ODEs for Basic Time Steppers
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:sec:mathformulation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Here we describe the basic mathematical form of a general nonlinear DAE
+ (or ODE) for the purpose of presenting it to a forward time integrator.
+ At the most general level of abstraction, we will consider the solution
+ of fully implicit DAEs of the form 
+\begin_inset Formula 
+\begin{eqnarray}
+f(\dot{x},x,t) & = & 0,\;\mbox{for}\; t\in[t_{0},t_{f}],\label{rythmos:eq:dae}\\
+x(t_{0}) & = & x_{0}\label{rythmos:eq:dae:ic}
+\end{eqnarray}
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tabbing}
+\end_layout
+
+\end_inset
+
+ where
+\begin_inset space \hspace{}
+\length 5ex
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+=
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+>
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Formula $x\:\in\:\mathcal{X}$
+\end_inset
+
+ is the vector of differential state variables, 
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+>
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Formula $\dot{x}=d(x)/d(t)\:\in\:\mathcal{X}$
+\end_inset
+
+ is the vector of temporal derivatives of 
+\begin_inset Formula $x$
+\end_inset
+
+, 
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+>
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Formula $t,t_{0},t_{f}\:\in\:\RE$
+\end_inset
+
+ are the current, initial, and the final times respectively, 
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+>
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Formula $f(\dot{x},x,t)\:\in\:\mathcal{X}^{2}\times\RE\rightarrow\mathcal{F}$
+\end_inset
+
+ defines the DAE vector function, 
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+>
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Formula $\mathcal{X}\:\subseteq\:\RE^{n_{x}}$
+\end_inset
+
+ is the vector space of the state variables 
+\begin_inset Formula $x$
+\end_inset
+
+, and 
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+>
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Formula $\mathcal{F}\:\subseteq\:\RE^{n_{x}}$
+\end_inset
+
+ is the vector space of the output of the DAE function 
+\begin_inset Formula $f(\ldots)$
+\end_inset
+
+.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tabbing}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Here we have been careful to define the Hilbert vector spaces 
+\begin_inset Formula $\mathcal{X}$
+\end_inset
+
+ and 
+\begin_inset Formula $\mathcal{F}$
+\end_inset
+
+ for the involved vectors and vector functions.
+ The relevance of defining these vector spaces is that they come equipped
+ with a definition of the space's scalar product (i.e.
+\begin_inset space \space{}
+\end_inset
+
+
+\begin_inset Formula $<u,v>_{\mathcal{X}}$
+\end_inset
+
+ for 
+\begin_inset Formula $u,v\in\mathcal{X}$
+\end_inset
+
+) which should be considered and used when designing the numerical algorithms.
+\end_layout
+
+\begin_layout Standard
+The above general DAE can be specialized to more specific types of problems
+ based on the nature of Jacobian matrices 
+\begin_inset Formula $\jac{f}{\dot{x}}\in\mathcal{F}|\mathcal{X}$
+\end_inset
+
+ and 
+\begin_inset Formula $\jac{f}{x}\in\mathcal{F}|\mathcal{X}$
+\end_inset
+
+.
+ Here we use the notation 
+\begin_inset Formula $\mathcal{F}|\mathcal{X}$
+\end_inset
+
+ to define a linear operator space that maps vectors from the vector space
+ 
+\begin_inset Formula $\mathcal{X}$
+\end_inset
+
+ to the vector space 
+\begin_inset Formula $\mathcal{F}$
+\end_inset
+
+.
+ Note that the adjoint of such linear operators are defined in terms of
+ these vector spaces (i.e.
+\begin_inset space \space{}
+\end_inset
+
+
+\begin_inset Formula $<Au,v>_{\mathcal{F}}=<A^{T}v,u>_{\mathcal{X}}$
+\end_inset
+
+ where 
+\begin_inset Formula $A\in\mathcal{F}|\mathcal{X}$
+\end_inset
+
+ and 
+\begin_inset Formula $A^{T}$
+\end_inset
+
+ denotes the adjoint operator for 
+\begin_inset Formula $A$
+\end_inset
+
+).
+ Here we assume that these first derivatives exist for the specific intervals
+ of 
+\begin_inset Formula $t\in[t_{0},t_{f}]$
+\end_inset
+
+ of which such an time integrator algorithm will be directly applied the
+ the problem.
+\end_layout
+
+\begin_layout Standard
+The precise class of the problem is primarily determined by the nature of
+ the Jacobian 
+\begin_inset Formula $\jac{f}{\dot{x}}$
+\end_inset
+
+: 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\jac{f}{\dot{x}}=I\in\mathcal{F}|\mathcal{X}$
+\end_inset
+
+ yields an explicit ODE 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\jac{f}{\dot{x}}$
+\end_inset
+
+ full rank yields an implicit ODE 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\jac{f}{\dot{x}}$
+\end_inset
+
+ rank deficient yields a general DAE.
+ 
+\end_layout
+
+\begin_layout Standard
+In addition, the ODE/DAE may be linear or nonlinear and DAEs are classified
+ by their index 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BCP"
+
+\end_inset
+
+.
+ It is expected that a DAE will be able to tell a integrator what type of
+ problem it is (
+\emph on
+i.e.
+\emph default
+, explicit ODE, implicit ODE, general DAE) and which, if any, of the variables
+ are linear in the problem.
+ This type of information can be exploited in a time integration algorithm.
+\end_layout
+
+\begin_layout Standard
+Another formulation we will consider is the semi-explicit DAE formulation:
+ 
+\begin_inset Formula 
+\begin{equation}
+\begin{array}{rcl}
+\dot{y} & = & f(y,z,t)\;\mbox{for}\; t\in[t_{0},t_{f}],\\
+0 & = & g(y,z,t)\;\mbox{where}\; x=[y,z],\\
+x(t_{0}) & = & x_{0}.
+\end{array}\label{rythmos:eq:dae:semiexplicit}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For each transient computation, the formulation will be cast into the general
+ form in (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:dae"
+
+\end_inset
+
+)--(
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:dae:ic"
+
+\end_inset
+
+) to demonstrate how this general formulation can be exploited in many different
+ contexts.
+ 
+\end_layout
+
+\begin_layout Standard
+It is important for DAE initial-value problems that the initial values of
+ the solution, 
+\begin_inset Formula $x_{0}$
+\end_inset
+
+, and time derivative, 
+\begin_inset Formula $\dot{x}_{0}$
+\end_inset
+
+, satisfy the DAE residual
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Brown1998"
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+f(\dot{x}_{0},x_{0},t_{0})=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

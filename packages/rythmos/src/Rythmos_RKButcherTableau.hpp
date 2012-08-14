@@ -53,9 +53,11 @@ namespace Rythmos {
   inline const std::string Explicit4Stage_name() { return  "Explicit 4 Stage"; } // done
   inline const std::string Explicit3_8Rule_name() { return  "Explicit 3/8 Rule"; } // done
 
+  inline const std::string ExplicitTrapezoidal_name() { return  "Explicit Trapezoidal"; } // done
   inline const std::string Explicit2Stage2ndOrderRunge_name() { return  "Explicit 2 Stage 2nd order by Runge"; } // done
   inline const std::string Explicit3Stage3rdOrderHeun_name() { return  "Explicit 3 Stage 3rd order by Heun"; } // done
   inline const std::string Explicit3Stage3rdOrder_name() { return  "Explicit 3 Stage 3rd order"; } // done
+  inline const std::string Explicit3Stage3rdOrderTVD_name() { return  "Explicit 3 Stage 3rd order TVD"; } // done
   inline const std::string Explicit4Stage3rdOrderRunge_name() { return  "Explicit 4 Stage 3rd order by Runge"; } // done
 
   inline const std::string Implicit1Stage2ndOrderGauss_name() { return  "Implicit 1 Stage 2nd order Gauss"; } // done
@@ -88,6 +90,7 @@ namespace Rythmos {
 
   inline const std::string DIRK2Stage3rdOrder_name() { return  "Diagonal IRK 2 Stage 3rd order"; } // done
 
+  inline const std::string SDIRK2Stage2ndOrder_name() { return  "Singly Diagonal IRK 2 Stage 2nd order"; } // done
   inline const std::string SDIRK2Stage3rdOrder_name() { return  "Singly Diagonal IRK 2 Stage 3rd order"; } // done
   inline const std::string SDIRK5Stage5thOrder_name() { return  "Singly Diagonal IRK 5 Stage 5th order"; } // done
   inline const std::string SDIRK5Stage4thOrder_name() { return  "Singly Diagonal IRK 5 Stage 4th order"; } // done
@@ -297,7 +300,8 @@ class Explicit4Stage4thOrder_RKBT :
       std::ostringstream myDescription;
       myDescription << Explicit4Stage_name() << "\n"
                   << "\"The\" Runge-Kutta Method (explicit):\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.2, pg 138\n"
                   << "c = [  0  1/2 1/2  1  ]'\n"
@@ -370,7 +374,8 @@ class Explicit3_8Rule_RKBT :
 
       std::ostringstream myDescription;
       myDescription << Explicit3_8Rule_name() << "\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.2, pg 138\n"
                   << "c = [  0  1/3 2/3  1  ]'\n"
@@ -444,7 +449,8 @@ class Explicit4Stage3rdOrderRunge_RKBT :
 
       std::ostringstream myDescription;
       myDescription << Explicit4Stage3rdOrderRunge_name() << "\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
                   << "c = [  0  1/2  1   1  ]'\n"
@@ -568,6 +574,70 @@ class Explicit3Stage3rdOrder_RKBT :
 
 
 template<class Scalar>
+class Explicit3Stage3rdOrderTVD_RKBT :
+  virtual public RKButcherTableauDefaultBase<Scalar>
+{
+  public:
+    Explicit3Stage3rdOrderTVD_RKBT()
+    { 
+
+      std::ostringstream myDescription;
+      myDescription << Explicit3Stage3rdOrderTVD_name() << "\n" 
+                    << "Sigal Gottlieb and Chi-Wang Shu\n"
+                    << "'Total Variation Diminishing Runge-Kutta Schemes'\n"
+                    << "Mathematics of Computation\n"
+                    << "Volume 67, Number 221, January 1998, pp. 73-85\n"
+                    << "c = [  0   1  1/2 ]'\n"
+                    << "A = [  0          ]\n"
+                    << "    [  1   0      ]\n"
+                    << "    [ 1/4 1/4  0  ]\n"
+                    << "b = [ 1/6 1/6 4/6 ]'" << std::endl;
+      typedef ScalarTraits<Scalar> ST;
+      Scalar one = ST::one();
+      Scalar zero = ST::zero();
+      Scalar onehalf = ST::one()/(2*ST::one());
+      Scalar onefourth = ST::one()/(4*ST::one());
+      Scalar onesixth = ST::one()/(6*ST::one());
+      Scalar foursixth = 4*ST::one()/(6*ST::one());
+
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
+
+      // Fill myA:
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
+
+      myA(1,0) = one;
+      myA(1,1) = zero;
+      myA(1,2) = zero;
+
+      myA(2,0) = onefourth;
+      myA(2,1) = onefourth;
+      myA(2,2) = zero;
+
+      // Fill myb:
+      myb(0) = onesixth;
+      myb(1) = onesixth;
+      myb(2) = foursixth;
+      
+      // fill b_c_
+      myc(0) = zero;
+      myc(1) = one;
+      myc(2) = onehalf;
+
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
+      this->setMy_order(3);
+    }
+};
+
+
+template<class Scalar>
 class Explicit3Stage3rdOrderHeun_RKBT :
   virtual public RKButcherTableauDefaultBase<Scalar>
 {
@@ -576,7 +646,8 @@ class Explicit3Stage3rdOrderHeun_RKBT :
     { 
       std::ostringstream myDescription;
       myDescription << Explicit3Stage3rdOrderHeun_name() << "\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
                   << "c = [  0  1/3 2/3 ]'\n"
@@ -638,7 +709,9 @@ class Explicit2Stage2ndOrderRunge_RKBT :
     { 
       std::ostringstream myDescription;
       myDescription << Explicit2Stage2ndOrderRunge_name() << "\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+                  << "Also known as Explicit Midpoint\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
                   << "c = [  0  1/2 ]'\n"
@@ -679,34 +752,85 @@ class Explicit2Stage2ndOrderRunge_RKBT :
 };
 
 
-// 04/07/09 tscoffe:  I verified manually that the Convergence Testing passes
-// with gamma_default_ = -1.
 template<class Scalar>
-class SDIRK2Stage3rdOrder_RKBT :
+class ExplicitTrapezoidal_RKBT :
   virtual public RKButcherTableauDefaultBase<Scalar>
 {
   public:
-    SDIRK2Stage3rdOrder_RKBT()
+    ExplicitTrapezoidal_RKBT()
     { 
       std::ostringstream myDescription;
-      myDescription << SDIRK2Stage3rdOrder_name() << "\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
-                  << "E. Hairer, S. P. Norsett, and G. Wanner\n"
-                  << "Table 7.2, pg 207\n"
-                  << "gamma = (3+-sqrt(3))/6\n"
-                  << "c = [  gamma     1-gamma  ]'\n"
-                  << "A = [  gamma     0        ]\n"
-                  << "    [ 1-2*gamma  gamma    ]\n"
-                  << "b = [ 1/2        1/2      ]'" << std::endl;
+      myDescription << ExplicitTrapezoidal_name() << "\n"
+                  << "c = [  0   1  ]'\n"
+                  << "A = [  0      ]\n"
+                  << "    [  1   0  ]\n"
+                  << "b = [ 1/2 1/2 ]'" << std::endl;
+      typedef ScalarTraits<Scalar> ST;
+      Scalar one = ST::one();
+      Scalar zero = ST::zero();
+      Scalar onehalf = ST::one()/(2*ST::one());
+
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
+
+      // Fill myA:
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+
+      myA(1,0) = one;
+      myA(1,1) = zero;
+
+      // Fill myb:
+      myb(0) = onehalf;
+      myb(1) = onehalf;
+      
+      // fill b_c_
+      myc(0) = zero;
+      myc(1) = one;
 
       this->setMyDescription(myDescription.str());
-      gamma_coeff_default_ = 1;
-      gamma_coeff_ = gamma_coeff_default_;
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
+      this->setMy_order(2);
+    }
+};
+
+
+template<class Scalar>
+class SDIRK2Stage2ndOrder_RKBT :
+  virtual public RKButcherTableauDefaultBase<Scalar>
+{
+  public:
+    SDIRK2Stage2ndOrder_RKBT()
+    { 
+      std::ostringstream myDescription;
+      myDescription << SDIRK2Stage2ndOrder_name() << "\n"
+                  << "Computer Methods for ODEs and DAEs\n"
+                  << "U. M. Ascher and L. R. Petzold\n"
+                  << "p. 106\n"
+                  << "gamma = (2+-sqrt(2))/2\n"
+                  << "c = [  gamma   1     ]'\n"
+                  << "A = [  gamma   0     ]\n"
+                  << "    [ 1-gamma  gamma ]\n"
+                  << "b = [ 1-gamma  gamma ]'" << std::endl;
+
+      this->setMyDescription(myDescription.str());
+      typedef ScalarTraits<Scalar> ST;
+      Scalar one = ST::one();
+      gamma_default_ = as<Scalar>( (2*one - ST::squareroot(2*one))/(2*one) );
+      gamma_ = gamma_default_;
       this->setupData();
 
       RCP<ParameterList> validPL = Teuchos::parameterList();
       validPL->set("Description","",this->getMyDescription());
-      validPL->set<int>("gamma coefficient",gamma_coeff_default_,"gamma = (3+[gamma coefficient]*sqrt(3))/6, [gamma coefficient] = +-1");
+      validPL->set<double>("gamma",gamma_default_,
+        "The default value is gamma = (2-sqrt(2))/2 = 0.29289321881345243. "
+        "This will produce an L-stable 2nd order method with the stage "
+        "times within the timestep.  Other values of gamma will still "
+        "produce an L-stable scheme, but will only be 1st order accurate.");
       Teuchos::setupVerboseObjectSublist(&*validPL);
       this->setMyValidParameterList(validPL);
     }
@@ -719,7 +843,100 @@ class SDIRK2Stage3rdOrder_RKBT :
       Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
       Scalar zero = ST::zero();
-      Scalar gamma = as<Scalar>( (3*one + as<Scalar>(gamma_coeff_)*ST::squareroot(3*one))/(6*one) );
+      myA(0,0) = gamma_;
+      myA(0,1) = zero;
+      myA(1,0) = as<Scalar>( one - gamma_ );
+      myA(1,1) = gamma_;
+      myb(0) = as<Scalar>( one - gamma_ );
+      myb(1) = gamma_;
+      myc(0) = gamma_;
+      myc(1) = one;
+
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
+      this->setMy_order(2);
+    }
+    void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
+    {
+      TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
+      paramList->validateParameters(*this->getValidParameters());
+      Teuchos::readVerboseObjectSublist(&*paramList,this);
+      gamma_ = paramList->get<double>("gamma",gamma_default_);
+      this->setupData();
+      this->setMyParamList(paramList);
+    }
+  private:
+    Scalar gamma_default_;
+    Scalar gamma_;
+};
+
+
+// 04/07/09 tscoffe:  I verified manually that the Convergence Testing passes
+// with gamma_default_ = -1.
+template<class Scalar>
+class SDIRK2Stage3rdOrder_RKBT :
+  virtual public RKButcherTableauDefaultBase<Scalar>
+{
+  public:
+    SDIRK2Stage3rdOrder_RKBT()
+    { 
+      std::ostringstream myDescription;
+      myDescription << SDIRK2Stage3rdOrder_name() << "\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+                  << "Table 7.2, pg 207\n"
+                  << "gamma = (3+-sqrt(3))/6 -> 3rd order and A-stable\n"
+                  << "gamma = (2+-sqrt(2))/2 -> 2nd order and L-stable\n"
+                  << "c = [  gamma     1-gamma  ]'\n"
+                  << "A = [  gamma     0        ]\n"
+                  << "    [ 1-2*gamma  gamma    ]\n"
+                  << "b = [ 1/2        1/2      ]'" << std::endl;
+
+      this->setMyDescription(myDescription.str());
+      thirdOrderAStable_default_ = true;
+      secondOrderLStable_default_ = false;
+      typedef ScalarTraits<Scalar> ST;
+      Scalar one = ST::one();
+      gamma_default_ = as<Scalar>( (3*one + ST::squareroot(3*one))/(6*one) );
+      gamma_ = gamma_default_;
+      this->setupData();
+
+      RCP<ParameterList> validPL = Teuchos::parameterList();
+      validPL->set("Description","",this->getMyDescription());
+      validPL->set("3rd Order A-stable",thirdOrderAStable_default_,
+        "If true, set gamma to gamma = (3+sqrt(3))/6 to obtain "
+        "a 3rd order A-stable scheme. '3rd Order A-stable' and "
+        "'2nd Order L-stable' can not both be true.");
+      validPL->set("2nd Order L-stable",secondOrderLStable_default_,
+        "If true, set gamma to gamma = (2+sqrt(2))/2 to obtain "
+        "a 2nd order L-stable scheme. '3rd Order A-stable' and "
+        "'2nd Order L-stable' can not both be true.");
+      validPL->set("gamma",gamma_default_,
+        "If both '3rd Order A-stable' and '2nd Order L-stable' "
+        "are false, gamma will be used. The default value is the "
+        "'3rd Order A-stable' gamma value, (3+sqrt(3))/6.");
+
+      Teuchos::setupVerboseObjectSublist(&*validPL);
+      this->setMyValidParameterList(validPL);
+    }
+    void setupData() 
+    {
+      typedef ScalarTraits<Scalar> ST;
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
+      Scalar one = ST::one();
+      Scalar zero = ST::zero();
+      Scalar gamma;
+      if (thirdOrderAStable_)
+        gamma = as<Scalar>( (3*one + ST::squareroot(3*one))/(6*one) );
+      else if (secondOrderLStable_)
+        gamma = as<Scalar>( (2*one + ST::squareroot(2*one))/(2*one) );
+      else
+        gamma = gamma_;
       myA(0,0) = gamma;
       myA(0,1) = zero;
       myA(1,0) = as<Scalar>( one - 2*gamma );
@@ -739,13 +956,25 @@ class SDIRK2Stage3rdOrder_RKBT :
       TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
       paramList->validateParameters(*this->getValidParameters());
       Teuchos::readVerboseObjectSublist(&*paramList,this);
-      gamma_coeff_ = paramList->get<int>("gamma coefficient",gamma_coeff_default_);
+      thirdOrderAStable_  = paramList->get("3rd Order A-stable",
+                                           thirdOrderAStable_default_);
+      secondOrderLStable_ = paramList->get("2nd Order L-stable",
+                                           secondOrderLStable_default_);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        thirdOrderAStable_ && secondOrderLStable_, std::logic_error,
+        "'3rd Order A-stable' and '2nd Order L-stable' can not both be true.");
+      gamma_ = paramList->get("gamma",gamma_default_);
+
       this->setupData();
       this->setMyParamList(paramList);
     }
   private:
-    int gamma_coeff_default_;
-    int gamma_coeff_;
+    bool thirdOrderAStable_default_;
+    bool thirdOrderAStable_;
+    bool secondOrderLStable_default_;
+    bool secondOrderLStable_;
+    Scalar gamma_default_;
+    Scalar gamma_;
 };
 
 
@@ -760,10 +989,11 @@ class DIRK2Stage3rdOrder_RKBT :
       std::ostringstream myDescription;
       myDescription << DIRK2Stage3rdOrder_name() << "\n"
                   << "Hammer & Hollingsworth method\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.1, pg 205\n"
-                  << "c = [  0    0  ]'\n"
+                  << "c = [  0   2/3 ]'\n"
                   << "A = [  0    0  ]\n"
                   << "    [ 1/3  1/3 ]\n"
                   << "b = [ 1/4  3/4 ]'" << std::endl;
@@ -802,7 +1032,8 @@ class Implicit3Stage6thOrderKuntzmannButcher_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit3Stage6thOrderKuntzmannButcher_name() << "\n"
                   << "Kuntzmann & Butcher method\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.4, pg 209\n"
                   << "c = [ 1/2-sqrt(15)/10   1/2              1/2-sqrt(15)/10  ]'\n"
@@ -851,7 +1082,8 @@ class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit4Stage8thOrderKuntzmannButcher_name() << "\n"
                   << "Kuntzmann & Butcher method\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.5, pg 209\n"
                   << "c = [ 1/2-w2     1/2-w2p     1/2+w2p     1/2+w2    ]'\n"
@@ -931,7 +1163,8 @@ class Implicit2Stage4thOrderHammerHollingsworth_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit2Stage4thOrderHammerHollingsworth_name() << "\n"
                   << "Hammer & Hollingsworth method\n"
-                  << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.3, pg 207\n"
                   << "c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'\n"
@@ -974,11 +1207,14 @@ class Implicit1Stage2ndOrderGauss_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit1Stage2ndOrderGauss_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.2, pg 72\n"
                   << "Also:  Implicit midpoint rule\n"
-                  << "Solving Ordinary Differential Equations I: Nonstiff Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations I:\n"
+                  << "Nonstiff Problems, 2nd Revided Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.1, pg 205\n"
                   << "c = [ 1/2 ]'\n"
@@ -1014,7 +1250,9 @@ class Implicit2Stage4thOrderGauss_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit2Stage4thOrderGauss_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.2, pg 72\n"
                   << "c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'\n"
@@ -1061,7 +1299,9 @@ class Implicit3Stage6thOrderGauss_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit3Stage6thOrderGauss_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.2, pg 72\n"
                   << "c = [ 1/2-sqrt(15)/10   1/2              1/2+sqrt(15)/10  ]'\n"
@@ -1119,7 +1359,9 @@ class Implicit1Stage1stOrderRadauA_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit1Stage1stOrderRadauA_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.3, pg 73\n"
                   << "c = [ 0 ]'\n"
@@ -1155,7 +1397,9 @@ class Implicit2Stage3rdOrderRadauA_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit2Stage3rdOrderRadauA_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.3, pg 73\n"
                   << "c = [  0    2/3 ]'\n"
@@ -1197,7 +1441,9 @@ class Implicit3Stage5thOrderRadauA_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit3Stage5thOrderRadauA_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.4, pg 73\n"
                   << "c = [  0   (6-sqrt(6))/10       (6+sqrt(6))/10      ]'\n"
@@ -1247,7 +1493,9 @@ class Implicit1Stage1stOrderRadauB_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit1Stage1stOrderRadauB_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.5, pg 74\n"
                   << "c = [ 1 ]'\n"
@@ -1282,7 +1530,9 @@ class Implicit2Stage3rdOrderRadauB_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit2Stage3rdOrderRadauB_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.5, pg 74\n"
                   << "c = [ 1/3     1   ]'\n"
@@ -1323,7 +1573,9 @@ class Implicit3Stage5thOrderRadauB_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit3Stage5thOrderRadauB_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.6, pg 74\n"
                   << "c = [ (4-sqrt(6))/10          (4+sqrt(6))/10                 1            ]'\n"
@@ -1372,7 +1624,9 @@ class Implicit2Stage2ndOrderLobattoA_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit2Stage2ndOrderLobattoA_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.7, pg 75\n"
                   << "c = [  0    1   ]'\n"
@@ -1414,7 +1668,9 @@ class Implicit3Stage4thOrderLobattoA_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit3Stage4thOrderLobattoA_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.7, pg 75\n"
                   << "c = [  0    1/2    1  ]'\n"
@@ -1467,7 +1723,9 @@ class Implicit4Stage6thOrderLobattoA_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit4Stage6thOrderLobattoA_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.8, pg 75\n"
                   << "c = [ 0               (5-sqrt(5))/10       (5+sqrt(5))/10       1                 ]'\n"
@@ -1527,7 +1785,9 @@ class Implicit2Stage2ndOrderLobattoB_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit2Stage2ndOrderLobattoB_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.9, pg 76\n"
                   << "c = [  0    1   ]'\n"
@@ -1569,7 +1829,9 @@ class Implicit3Stage4thOrderLobattoB_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit3Stage4thOrderLobattoB_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.9, pg 76\n"
                   << "c = [  0    1/2    1   ]'\n"
@@ -1619,7 +1881,9 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit4Stage6thOrderLobattoB_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.10, pg 76\n"
                   << "c = [ 0     (5-sqrt(5))/10       (5+sqrt(5))/10       1     ]'\n"
@@ -1679,7 +1943,9 @@ class Implicit2Stage2ndOrderLobattoC_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit2Stage2ndOrderLobattoC_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.11, pg 76\n"
                   << "c = [  0    1   ]'\n"
@@ -1721,7 +1987,9 @@ class Implicit3Stage4thOrderLobattoC_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit3Stage4thOrderLobattoC_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.11, pg 76\n"
                   << "c = [  0    1/2    1   ]'\n"
@@ -1771,7 +2039,9 @@ class Implicit4Stage6thOrderLobattoC_RKBT :
       std::ostringstream myDescription;
       myDescription << Implicit4Stage6thOrderLobattoC_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "Table 5.12, pg 76\n"
                   << "c = [ 0     (5-sqrt(5))/10       (5+sqrt(5))/10       1          ]'\n"
@@ -1832,7 +2102,9 @@ class SDIRK5Stage5thOrder_RKBT :
       std::ostringstream myDescription;
       myDescription << SDIRK5Stage5thOrder_name() << "\n"
         << "A-stable\n"
-        << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+        << "Solving Ordinary Differential Equations II:\n"
+        << "Stiff and Differential-Algebraic Problems,\n"
+        << "2nd Revised Edition\n"
         << "E. Hairer and G. Wanner\n"
         << "pg101 \n"
         << "c = [ (6-sqrt(6))/10                (6+9*sqrt(6))/35             1                        (4-sqrt(6))/10         (4+sqrt(6))/10  ]'\n"
@@ -1913,7 +2185,9 @@ class SDIRK5Stage4thOrder_RKBT :
       std::ostringstream myDescription;
       myDescription << SDIRK5Stage4thOrder_name() << "\n"
         << "L-stable\n"
-        << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+        << "Solving Ordinary Differential Equations II:\n"
+        << "Stiff and Differential-Algebraic Problems,\n"
+        << "2nd Revised Edition\n"
         << "E. Hairer and G. Wanner\n"
         << "pg100 \n"
         << "c  = [ 1/4       3/4        11/20   1/2     1   ]'\n"
@@ -2002,7 +2276,9 @@ class SDIRK3Stage4thOrder_RKBT :
       std::ostringstream myDescription;
       myDescription << SDIRK3Stage4thOrder_name() << "\n"
                   << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+                  << "Solving Ordinary Differential Equations II:\n"
+                  << "Stiff and Differential-Algebraic Problems,\n"
+                  << "2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
                   << "pg100 \n"
                   << "gamma = (1/sqrt(3))*cos(pi/18)+1/2\n"

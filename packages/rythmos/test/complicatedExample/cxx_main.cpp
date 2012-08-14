@@ -61,12 +61,12 @@
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Thyra_TestingTools.hpp"
 
-#ifdef HAVE_RYTHMOS_NOX
+#ifdef Rythmos_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
 // Includes for Stratimikos:
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
+#ifdef Rythmos_ENABLE_Stratimikos
 #  include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #endif
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.addOutputSetupOptions(true);
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
+#ifdef Rythmos_ENABLE_Stratimikos
     Stratimikos::DefaultLinearSolverBuilder lowsfCreator;
     lowsfCreator.setupCLP(&clp);
 #endif
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
+#ifdef Rythmos_ENABLE_Stratimikos
     lowsfCreator.readParameters(out.get());
     if(extraLSParamsFile.length())
       Teuchos::updateParametersFromXmlFile( "./"+extraLSParamsFile, &*lowsfCreator.getNonconstParameterList() );
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
     if((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
+#ifdef Rythmos_ENABLE_Stratimikos
       W_factory = lowsfCreator.createLinearSolveStrategy("");
       *out
         << "\nCreated a LinearOpWithSolveFactory described as:\n"
@@ -275,16 +275,16 @@ int main(int argc, char *argv[])
       RCP<Thyra::NonlinearSolverBase<double> >
         nonlinearSolverSlave;
       if (useNOX) {
-#ifdef HAVE_RYTHMOS_NOX
+#ifdef Rythmos_ENABLE_NOX
         RCP<Thyra::NOXNonlinearSolver>
           _nonlinearSolver = rcp(new Thyra::NOXNonlinearSolver);
         RCP<Thyra::NOXNonlinearSolver>
           _nonlinearSolverSlave = rcp(new Thyra::NOXNonlinearSolver);
         nonlinearSolver = _nonlinearSolver;
         nonlinearSolverSlave = _nonlinearSolverSlave;
-#else // HAVE_RYTHMOS_NOX
+#else // Rythmos_ENABLE_NOX
         TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: NOX is not enabled!");
-#endif // HAVE_RYTHMOS_NOX
+#endif // Rythmos_ENABLE_NOX
       } 
       else {
         RCP<Rythmos::TimeStepNonlinearSolver<double> >
@@ -758,7 +758,7 @@ int main(int argc, char *argv[])
       );
     if(!result) success = false;
 
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
+#ifdef Rythmos_ENABLE_Stratimikos
     // Write the final parameters to file
     if(W_factory.get())
       lowsfCreator.writeParamsFile(*W_factory);

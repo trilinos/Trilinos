@@ -1,0 +1,184 @@
+\documentclass[pdf,ps2pdf,11pt]{SANDreport}
+\usepackage{pslatex}
+
+%Local stuff
+\usepackage{graphicx}
+\usepackage{latexsym}
+\input{rab_commands}
+\newtheorem{theorem}{Theorem}
+\usepackage{makeidx}
+\makeindex
+
+% If you want to relax some of the SAND98-0730 requirements, use the "relax"
+% option. It adds spaces and boldface in the table of contents, and does not
+% force the page layout sizes.
+% e.g. \documentclass[relax,12pt]{SANDreport}
+%
+% You can also use the "strict" option, which applies even more of the
+% SAND98-0730 guidelines. It gets rid of section numbers which are often
+% useful; e.g. \documentclass[strict]{SANDreport}
+
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+
+\title{ Rythmos: Solution and Analysis Package for Differential-Algebraic Equations (DAEs) and Ordinary-Differential Equations (ODEs) }
+
+\author{
+Roscoe A. Bartlett \\ Oak Ridge National Laboratories \\ \\
+Todd S. Coffey \\ Simulation Modeling Sciences \\ \\
+Roger P. Pawlowski \\ Multiphysics Simulation Technology \\ \\
+Curtis C. Ober \\ Numerical Analysis and Applications \\ \\
+... \\ \\
+Sandia National Laboratories\footnote{
+Sandia is a multiprogram laboratory operated by Sandia Corporation, a
+Lockheed-Martin Company, for the United States Department of Energy
+under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
+}
+\date{}
+
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2012-xxxx}
+\SANDprintDate{April 26, 2012}
+\SANDauthor{
+Roscoe A. Bartlett \\ Oak Ridge National Laboratories \\ \\
+Todd S. Coffey \\ Simulation Modeling Sciences \\ \\
+Roger P. Pawlowski \\ Multiphysics Simulation Technology \\ \\
+Curtis C. Ober \\ Numerical Analysis and Applications \\ \\
+... \\ \\
+}
+
+% ---------------------------------------------------------------------------- %
+% The following definitions are optional. The values shown are the default
+% ones provided by SANDreport.cls
+%
+%\SANDreleaseType{Unlimited Release}
+\SANDreleaseType{Not approved for release outside Sandia}
+
+% ---------------------------------------------------------------------------- %
+% The following definition does not have a default value and will not
+% print anything, if not defined
+%
+%\SANDsupersed{SAND1901-0001}{January 1901}
+
+% ---------------------------------------------------------------------------- %
+%
+% Start the document
+%
+\begin{document}
+\raggedright
+
+\maketitle
+
+% ------------------------------------------------------------------------ %
+% An Abstract is required for SAND reports
+%
+
+%
+\begin{abstract}
+%
+This doucment contains the basic theory on the time integrators;
+examples and usage; and software design and developer's guide for Rythmos.
+%
+\end{abstract}
+%
+
+% ------------------------------------------------------------------------ %
+% An Acknowledgment section is optional but important, if someone made
+% contributions or helped beyond the normal part of a work assignment.
+% Use \section* since we don't want it in the table of context
+%
+\clearpage
+\section*{Acknowledgment}
+The authors would like to thank ...
+
+
+% ------------------------------------------------------------------------ %
+% The table of contents and list of figures and tables
+% Comment out \listoffigures and \listoftables if there are no
+% figures or tables. Make sure this starts on an odd numbered page
+%
+\clearpage
+\tableofcontents
+\listoffigures
+%\listoftables
+
+% ---------------------------------------------------------------------- %
+% An optional preface or Foreword
+%\clearpage
+%\section{Preface}
+%Although muggles usually have only limited experience with
+%magic, and many even dispute its existence, it is worthwhile
+%to be open minded and explore the possibilities.
+
+% ---------------------------------------------------------------------- %
+% An optional executive summary
+%\clearpage
+%\section{Summary}
+%Once a certain level of mistrust and scepticism has
+%been overcome, magic finds many uses in todays science
+%and engineering. In this report we explain some of the
+%fundamental spells and instruments of magic and wizardry. We
+%then conclude with a few examples on how they can be used
+%in daily activities at national Laboratories.
+
+% ---------------------------------------------------------------------- %
+% An optional glossary. We don't want it to be numbered
+%\clearpage
+%\section*{Nomenclature}
+%\addcontentsline{toc}{section}{Nomenclature}
+%\begin{itemize}
+%\item[alohomora]
+%spell to open locked doors and containers
+%\end{itemize}
+
+% ---------------------------------------------------------------------- %
+% This is where the body of the report begins; usually with an Introduction
+%
+\setcounter{secnumdepth}{3}
+\SANDmain % Start the main part of the report
+
+\newpage
+\part{Theory Manual}
+
+\include{RythmosTheoryIntroduction}
+\include{RythmosImplicitStepperFormulation}
+\include{RythmosTheoryBDF}
+
+\newpage
+\part{User's Manual}
+
+\include{RythmosUsersManualParameterList}
+
+\newpage
+\part{Developer's Guide}
+
+
+% ---------------------------------------------------------------------- %
+% References
+%
+\clearpage
+\printindex{}
+\addcontentsline{toc}{section}{Index}
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{../design_document/RythmosDesignSAND,RythmosTheory}
+\addcontentsline{toc}{section}{References}
+
+
+
+\begin{SANDdistribution}
+% External
+% Housekeeping copies necessary for every unclassified report:
+\SANDdistInternal{1}{9018}{Central Technical Files}{8945-1}
+\SANDdistInternal{2}{0899}{Technical Library}{9610}
+\SANDdistInternal{2}{0612}{Review \& Approval Desk}{4916}
+% If report has a Patent Caution or Patent Interest, add this:
+%\SANDdistInternal{3}{0161}{Patent and Licensing Office}{4916}
+\end{SANDdistribution}
+
+\end{document}

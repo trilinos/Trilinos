@@ -755,7 +755,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
       // Output to the observer we are starting a step
       if (!is_null(integrationObserver_))
-	integrationObserver_->observeStartTimeStep(
+        integrationObserver_->observeStartTimeStep(
             *stepper_, trialStepCtrlInfo, currTimeStepIndex_
             );
 

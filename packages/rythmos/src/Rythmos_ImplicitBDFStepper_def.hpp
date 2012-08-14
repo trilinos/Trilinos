@@ -41,7 +41,19 @@ namespace Rythmos {
 // Nonmember constructor
 template<class Scalar>
 RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper() {
-  RCP<ImplicitBDFStepper<Scalar> > stepper = rcp(new ImplicitBDFStepper<Scalar>() );
+  RCP<ImplicitBDFStepper<Scalar> >
+    stepper = rcp(new ImplicitBDFStepper<Scalar>() );
+  return stepper;
+}
+
+template<class Scalar>
+RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
+  )
+{
+  RCP<ImplicitBDFStepper<Scalar> >
+    stepper = Teuchos::rcp(new ImplicitBDFStepper<Scalar>(model, solver));
   return stepper;
 }
 
@@ -52,7 +64,10 @@ RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
   const RCP<Teuchos::ParameterList>& parameterList
   )
 {
-  RCP<ImplicitBDFStepper<Scalar> > stepper = Teuchos::rcp(new ImplicitBDFStepper<Scalar>(model,solver,parameterList));
+  RCP<ImplicitBDFStepper<Scalar> >
+    stepper = Teuchos::rcp(new ImplicitBDFStepper<Scalar>(model,
+                                                          solver,
+                                                          parameterList));
   return stepper;
 }
 
@@ -994,6 +1009,13 @@ void ImplicitBDFStepper<Scalar>::updateCoeffs_()
       *out << "psi_[" << i << "] = " << psi_[i] << std::endl;
       *out << "alpha_s_ = " << alpha_s_ << std::endl;
     }
+    //std::cout << "alpha_s_ = " << alpha_s_ << std::endl;
+    //for (int i=0;i<=maxOrder_;++i) {
+    //  std::cout << "  alpha_[" << i << "] = " << alpha_[i] << std::endl;
+    //  std::cout << "  beta_[" << i << "] = " << beta_[i] << std::endl;
+    //  std::cout << "  gamma_[" << i << "] = " << gamma_[i] << std::endl;
+    //  std::cout << "  psi_[" << i << "] = " << psi_[i] << std::endl;
+    //}
   }
 }
 

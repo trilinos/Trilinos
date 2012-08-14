@@ -1,0 +1,791 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Subsection
+Backward Difference Formulas
+\end_layout
+
+\begin_layout Standard
+Backward Difference Formulas (BDF) are popular methods for stiff problems,
+ and are derived by differentiating a polynomial representation of 
+\begin_inset Formula $s$
+\end_inset
+
+ past solutions, 
+\begin_inset Formula $x_{n-i}$
+\end_inset
+
+ for 
+\begin_inset Formula $i=1,\ldots,s$
+\end_inset
+
+, and setting the derivative 
+\begin_inset Formula $\dot{x}(t_{n})=f(t_{n},x_{n})$
+\end_inset
+
+.
+ For evenly spaced intervals, 
+\begin_inset Formula $\Delta t=t_{n}-t_{n-1}$
+\end_inset
+
+, an 
+\begin_inset Formula $s$
+\end_inset
+
+-step BDF method (BDF
+\begin_inset Formula $s$
+\end_inset
+
+) is given by
+\begin_inset Formula 
+\begin{equation}
+\dot{x}_{n}=\bar{f}(t_{n},x_{n})=\frac{1}{\Delta t\,\beta_{0}}\sum_{i=0}^{s}\alpha_{i}\, x_{n-i}\label{rythmos:eq:bdf_x_dot}
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $\alpha_{0}$
+\end_inset
+
+ is normally scaled to one, and the order is equal to the number of steps,
+ 
+\begin_inset Formula $s$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The nonlinear time step equation to advance the solution from 
+\begin_inset Formula $t_{n-1}$
+\end_inset
+
+ to 
+\begin_inset Formula $t_{n}$
+\end_inset
+
+ is then formed by substituting 
+\begin_inset Formula $\dot{x}=\dot{x}_{n}$
+\end_inset
+
+ in (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:bdf_x_dot"
+
+\end_inset
+
+), 
+\begin_inset Formula $x=x_{n}$
+\end_inset
+
+ and 
+\begin_inset Formula $t=t_{n}$
+\end_inset
+
+ into (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:dae"
+
+\end_inset
+
+) to obtain 
+\begin_inset Formula 
+\begin{equation}
+f\left(\left[\frac{1}{\Delta t\,\beta_{0}}\sum_{i=0}^{s}\alpha_{i}\, x_{n-i}\right],x_{n},t_{n}\right)=0.\label{rythmos:eq:bdf_dae_ne}
+\end{equation}
+
+\end_inset
+
+One can immediately identify the BDF time step equations (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:bdf_dae_ne"
+
+\end_inset
+
+) with the general form of the time step equations (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:r"
+
+\end_inset
+
+) and with unknown solution variables 
+\begin_inset Formula $z=x_{n}$
+\end_inset
+
+.
+ All of the other state variables 
+\begin_inset Formula $x_{n-i}$
+\end_inset
+
+, for 
+\begin_inset Formula $i=1\ldots s$
+\end_inset
+
+, are given.
+\end_layout
+
+\begin_layout Standard
+Note that the first-order BDF method with 
+\begin_inset Formula $p=1$
+\end_inset
+
+, 
+\begin_inset Formula $\alpha_{0}=1$
+\end_inset
+
+ and 
+\begin_inset Formula $\alpha_{1}=-1$
+\end_inset
+
+ is simply the standard backward Euler time integration method 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "AscherPetzold"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+When considering a general Newton-like method for solving (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:bdf_dae_ne"
+
+\end_inset
+
+), note that the Newton Jacobian of these equations is 
+\begin_inset Formula 
+\begin{equation}
+\Jac{r}{z}=\frac{\alpha_{0}}{\Delta t\,\beta_{0}}\Jac{f}{\dot{x}}+\Jac{f}{x},\label{rythmos:eq:W_bdf}
+\end{equation}
+
+\end_inset
+
+which is evaluated at the point 
+\begin_inset Formula $\dot{x}$
+\end_inset
+
+ in (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:bdf_x_dot"
+
+\end_inset
+
+), 
+\begin_inset Formula $x=x_{n}$
+\end_inset
+
+ and 
+\begin_inset Formula $t=t_{n}$
+\end_inset
+
+.
+ One can immediately identify (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:W_bdf"
+
+\end_inset
+
+) with the general form of the matrix 
+\begin_inset Formula $M$
+\end_inset
+
+ in (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:W"
+
+\end_inset
+
+) where 
+\begin_inset Formula $\alpha=\alpha_{0}/(\Delta t\,\beta_{0})$
+\end_inset
+
+ and 
+\begin_inset Formula $\beta=1$
+\end_inset
+
+.
+ Note that the Jacobian (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:W_bdf"
+
+\end_inset
+
+) is the exact Jacobian for the nonlinear time step equations; this will
+ not be true for some of the other methods.
+\end_layout
+
+\begin_layout Standard
+There are three major variations of BDFs for variable time-step methods:
+ fixed-coefficient formulas, variable-coefficient formulas, and fixed-leading-co
+efficient formulas.
+ The fixed-coefficient formulas assume evenly spaced intervals so that the
+ coefficients are fixed and can be precomputed for all orders
+\begin_inset CommandInset citation
+LatexCommand cite
+after "p. 130"
+key "AscherPetzold"
+
+\end_inset
+
+.
+ However when the time-step size changes the solution must be interpolated
+ to evenly spaced intervals, and the amount of work for the interpolation
+ is proportional to the number of equations in the system.
+ Jackson and Sacks-Davis
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Jackson1980"
+
+\end_inset
+
+ have noted that fixed-coefficient formulas have worse stability properties
+ than the other two variations.
+ Also there can be an additional computational savings if 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula $\jac{f}{x}$
+\end_inset
+
+ is constant and the time step and order are consistently updated, fewer
+ matrix factorizations and evaluations are possible.
+\end_layout
+
+\begin_layout Standard
+For variable-coefficient formulas, the coefficients need to be recalculated
+ if the time step has changed in the past 
+\begin_inset Formula $s$
+\end_inset
+
+ steps, which the amount of work depends on the number of steps but is independe
+nt of the number of equations.
+ As noted earlier, variable-coefficient formulas have better stability propertie
+s which allow larger changes in time step and order during the solution
+ of the problem.
+ This can reduce the overall computational costs through larger time steps.
+ It should be noted that the nonlinear matrix will need to be refactorized
+ even if 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula $\jac{f}{x}$
+\end_inset
+
+ is constant, when the time step has changed in the past 
+\begin_inset Formula $s$
+\end_inset
+
+ steps thus increasing the of variable-coefficient formulas.
+\end_layout
+
+\begin_layout Standard
+Variable-coefficient formulas would be the preferred approach except for
+ the when 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula $\jac{f}{x}$
+\end_inset
+
+ is constant, when the time step has changed in the past 
+\begin_inset Formula $s$
+\end_inset
+
+ steps.
+
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ Jackson and Sacks-Davis
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Jackson1980"
+
+\end_inset
+
+ noted that if the leading coefficient, 
+\begin_inset Formula $\alpha_{0}$
+\end_inset
+
+, is kept constant this exception can be removed, and these methods have
+ been termed fixed-leading-coefficient formulas.
+ thus is a hybrid between the two methods and tries to obtain the best of
+ both worlds.
+\end_layout
+
+\begin_layout Paragraph*
+Fixed-Leading-Coefficient Formula
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BDF-FLC"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+To begin, we need a predictor polynomial, 
+\begin_inset Formula $\phi_{p}(t)$
+\end_inset
+
+, that uses the past solution values (possiblity at uneven intervals)
+\begin_inset Formula 
+\[
+\phi_{p}(t_{n-i})=x_{n-i}\mbox{{\,\,\,\ for\,\,}}i=1,\ldots,s
+\]
+
+\end_inset
+
+and the time derivative
+\begin_inset Formula 
+\[
+\dot{\phi}_{p}(t_{n-i})=\dot{x}_{n-i}
+\]
+
+\end_inset
+
+A corrector polynomial, 
+\begin_inset Formula $\phi_{c}(t)$
+\end_inset
+
+, is constructed on even intervals of 
+\begin_inset Formula $\Delta t_{n}=t_{n}-t_{n-1}$
+\end_inset
+
+, and is equal to 
+\begin_inset Formula $\phi_{p}(t)$
+\end_inset
+
+ at those locations.
+ 
+\begin_inset Formula 
+\begin{eqnarray*}
+\phi_{c}(t_{n}) & = & x_{n}\\
+\phi_{c}(t_{n}-i\Delta t_{n}) & = & \phi_{p}(t_{n}-i\Delta t_{n})\mbox{{\,\,\,\ for\,\,} }i=1,\ldots,s
+\end{eqnarray*}
+
+\end_inset
+
+Thus 
+\begin_inset Formula $\phi_{c}$
+\end_inset
+
+ passes through the unknown solution at 
+\begin_inset Formula $t_{n}$
+\end_inset
+
+.
+ The schematic of these polynomials are shown in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:fig:BDF2-schematic"
+
+\end_inset
+
+ for a BDF2 method.
+ Note that in this illustration, the variable time stepping is increasing,
+ thus 
+\begin_inset Formula $t_{n}-2\Delta t_{n}$
+\end_inset
+
+ is further back in time than 
+\begin_inset Formula $t_{n-2}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/BDF2.png
+	lyxscale 75
+	width 4in
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Schematic of a BDF2 method with predictor and corrector polynomials when
+ the variable time stepping is increasing.
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:fig:BDF2-schematic"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+With 
+\begin_inset Formula $\phi_{p}$
+\end_inset
+
+ and 
+\begin_inset Formula $\phi_{c}$
+\end_inset
+
+ being 
+\begin_inset Formula $s$
+\end_inset
+
+-th order polynomials, they can be easily related through a new polynomial,
+ 
+\begin_inset Formula $w(t)$
+\end_inset
+
+, as
+\begin_inset Formula 
+\begin{equation}
+\phi_{c}(t)=\phi_{p}(t)+w(t)[\phi_{c}(t_{n})-\phi_{p}(t_{n})]\label{rythmos:eq:BDF-corrector}
+\end{equation}
+
+\end_inset
+
+where
+\begin_inset Formula 
+\begin{eqnarray*}
+w(t_{n}) & = & 1\\
+w(t_{n}-i\Delta t_{n}) & = & 0\mbox{{\,\,\,\ for\,\,} }i=1,\ldots,s
+\end{eqnarray*}
+
+\end_inset
+
+With these roots of a 
+\begin_inset Formula $s$
+\end_inset
+
+-th order polynomial, one can write
+\begin_inset Formula 
+\[
+w(t)=C\,\prod_{i=1}^{s}[t-(t_{n}-i\Delta t_{n})]
+\]
+
+\end_inset
+
+and with 
+\begin_inset Formula $w(t_{n})=1$
+\end_inset
+
+, the coefficient becomes 
+\begin_inset Formula $C=1/(s!\,\Delta t_{n}^{s})$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Plugging the corrector, Eq.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:BDF-corrector"
+
+\end_inset
+
+, into the ODE, Eq.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:bdf_x_dot"
+
+\end_inset
+
+, to generate the nonlinear equation to solve, and noting that 
+\begin_inset Formula $\phi_{c}(t_{n})=x_{n}$
+\end_inset
+
+ and 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula $\phi_{p}(t_{n})=x_{n(0)}$
+\end_inset
+
+
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+, one gets
+\begin_inset Formula 
+\[
+\dot{\phi}_{c}(t)=\dot{\phi}_{p}(t)+\dot{w}(t)[x{}_{n}-x_{n(0)}].
+\]
+
+\end_inset
+
+Evaluating at 
+\begin_inset Formula $t=t_{n}$
+\end_inset
+
+ to get the solution at the next time step and using 
+\begin_inset Formula $\dot{\phi}_{c}(t_{n})=\dot{x}_{n}$
+\end_inset
+
+, 
+\begin_inset Formula $\dot{\phi}_{p}(t_{n})=\dot{x}_{n(0)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\dot{w}(t_{n})=[1/1+1/2+\ldots+1/s]/\Delta t_{n}=1/(\beta_{0}\,\Delta t_{n})$
+\end_inset
+
+, one gets
+\begin_inset Formula 
+\[
+\dot{x}_{n}=\dot{x}_{n(0)}+\frac{1}{\beta_{0}\,\Delta t_{n}}[x{}_{n}-x_{n(0)}]
+\]
+
+\end_inset
+
+or
+\begin_inset Formula 
+\[
+x{}_{n}=x_{n(0)}+\beta_{0}\,\Delta t_{n}[\dot{x}_{n}-\dot{x}_{n(0)}]
+\]
+
+\end_inset
+
+or
+\begin_inset Formula 
+\[
+x{}_{n}-x_{n(0)}=\beta_{0}\,\Delta t_{n}[\dot{x}_{n}-\dot{x}_{n(0)}].
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Note that the predictor and corrector are interwined.
+ One should not try to use a different predictor as this will change the
+ predictor polynomial, 
+\begin_inset Formula $\phi_{p}(t)$
+\end_inset
+
+, and its presentation of past solution values.
+ Also the predictor is dependent on the time derivative at the last time
+ step, so one should be careful to keep the solution, 
+\begin_inset Formula $x_{n-1}$
+\end_inset
+
+, and its time derivative, 
+\begin_inset Formula $\dot{x}_{n-1}$
+\end_inset
+
+, used by the predictor in 
+\begin_inset Quotes eld
+\end_inset
+
+sync
+\begin_inset Quotes erd
+\end_inset
+
+ and consistent with previous time steps (e.g., clipping the solution between
+ time steps will cause issues).
+\end_layout
+
+\begin_layout Subsubsection
+Convergence Test for Implicit BDF
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/ImplicitBDF4.eps
+	lyxscale 150
+	scale 150
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Order of accuracy for the SinCos Problem (Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:SinCos-Problem"
+
+\end_inset
+
+) using Implicit BDF.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

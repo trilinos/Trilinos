@@ -555,7 +555,6 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK2Stage3rdOrder_RKBT ) {
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, SDIRK2Stage3rdOrder_RKBT_pl ) {
   RCP<RKButcherTableauBase<double> > rkbt = rcp(new SDIRK2Stage3rdOrder_RKBT<double>());
   RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->set<int>("gamma coefficient",-1);
   rkbt->setParameterList(pl);
 
   validateSDIRKButcherTableau(*rkbt);
@@ -563,7 +562,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, SDIRK2Stage3rdOrder_RKBT_pl ) {
   const Teuchos::SerialDenseMatrix<int,double> A = rkbt->A();
   const Teuchos::SerialDenseVector<int,double> b = rkbt->b();
   const Teuchos::SerialDenseVector<int,double> c = rkbt->c();
-  double gamma = (3.0-sqrt(3.0))/6.0; 
+  double gamma = (3.0+sqrt(3.0))/6.0; 
   double tol=1.0e-10;
   TEST_FLOATING_EQUALITY( A(0,0),  gamma, tol );
   TEST_FLOATING_EQUALITY( A(0,1),  0.0, tol );

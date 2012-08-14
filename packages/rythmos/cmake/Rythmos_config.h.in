@@ -1,4 +1,6 @@
 
+#cmakedefine HAVE_MPI
+
 #cmakedefine HAVE_RYTHMOS_EXPERIMENTAL
 
 #cmakedefine HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
@@ -6,5 +8,9 @@
 #cmakedefine HAVE_RYTHMOS_DEBUG
 
 #cmakedefine Rythmos_ENABLE_Sacado
+
+#cmakedefine Rythmos_ENABLE_NOX
+
+#cmakedefine Rythmos_ENABLE_Stratimikos
 
 @RYTHMOS_TEUCHOS_TIME_MONITOR_DECLARATIONS@

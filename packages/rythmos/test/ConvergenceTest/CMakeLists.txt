@@ -13,6 +13,7 @@ SET(TEST_NAMES
   ForwardEuler
   ImplicitBDF
   ExplicitRK
+  IntegratorBuilder
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos  AND ${PACKAGE_NAME}_ENABLE_Belos)

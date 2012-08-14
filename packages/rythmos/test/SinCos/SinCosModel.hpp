@@ -61,8 +61,8 @@ namespace Rythmos {
    *
    * With Initial conditions:
    *
-   * x0(t0) = gamma0 [0.0]
-   * x1(t0) = gamma1 [1.0]
+   * x0(t0=0) = gamma0 [0.0]
+   * x1(t0=0) = gamma1 [1.0]
    *
    * We can use gamma0 and gamma1 to solve for phi and b:
    *
@@ -75,7 +75,7 @@ namespace Rythmos {
    * p = (a, f, L)
    *
    * \dot{x}=F(x,t,p)
-   * F_0 = x0
+   * F_0 = x1
    * F_1 = (f/L)^2*(a-x0)
    *
    */

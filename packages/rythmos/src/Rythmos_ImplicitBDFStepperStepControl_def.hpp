@@ -263,8 +263,10 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
   const bool doTrace = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH));
   Teuchos::OSTab ostab(out,1,"getFirstTimeStep_");
 
-  const ImplicitBDFStepper<Scalar>& implicitBDFStepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
-  const Thyra::VectorBase<Scalar>& xHistory0 = implicitBDFStepper.getxHistory(0);
+  const ImplicitBDFStepper<Scalar>& implicitBDFStepper 
+              = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
+  const Thyra::VectorBase<Scalar>& xHistory0
+              = implicitBDFStepper.getxHistory(0);
   errWtVecCalc_->errWtVecSet(&*errWtVec_,xHistory0,relErrTol_,absErrTol_);
 
   // Choose initial step-size
@@ -275,11 +277,14 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
     //currentTimeStep = 0.1 * time_to_stop;
     //currentTimeStep = std::min(hh_, currentTimeStep);
   } else {
-    // compute an initial step-size based on rate of change in the solution initially
-    const Thyra::VectorBase<Scalar>& xHistory1 = implicitBDFStepper.getxHistory(1);
+    // compute an initial step-size based on rate of change 
+    // in the solution initially
+    const Thyra::VectorBase<Scalar>& xHistory1
+      = implicitBDFStepper.getxHistory(1);
     Scalar ypnorm = wRMSNorm_(*errWtVec_,xHistory1);
     if (ypnorm > zero) { // time-dependent DAE
-      currentTimeStep = std::min(h0_max_factor_*std::abs(time_to_stop),std::sqrt(2.0)/(h0_safety_*ypnorm));
+      currentTimeStep = std::min( h0_max_factor_*std::abs(time_to_stop),
+                                  std::sqrt(2.0)/(h0_safety_*ypnorm)    );
     } else { // non-time-dependent DAE
       currentTimeStep = h0_max_factor_*std::abs(time_to_stop);
     }
@@ -609,6 +614,7 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
       currentOrder_ = newOrder_;
     }
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+      *out << "newTimeStep = " << newTimeStep << std::endl;
       *out << "rr = " << rr << std::endl;
       *out << "newOrder_ = " << newOrder_ << std::endl;
       *out << "currentOrder_ = " << currentOrder_ << std::endl;

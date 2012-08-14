@@ -56,7 +56,8 @@ namespace Rythmos {
 using Teuchos::getParametersFromXmlString;
 using Thyra::VectorBase;
 
-TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ImplicitBDFStepperRampingStepControl )
+TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator,
+                   ImplicitBDFStepperRampingStepControl )
 {
   const RCP<SinCosModel> model = sinCosModel(true);
 
@@ -97,7 +98,8 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ImplicitBDFStepperRampingStepContr
   // not the best way to test, but will do for now
   TEST_EQUALITY(rscs->numberOfSteps(), 47);
   TEST_EQUALITY(rscs->numberOfFailedSteps(), 3);
-  TEST_FLOATING_EQUALITY(rscs->currentStepSize(), Teuchos::as<double>(0.07864277), 1.0e-7);
+  TEST_FLOATING_EQUALITY(rscs->currentStepSize(),
+                         Teuchos::as<double>(0.07864277), 1.0e-7);
   TEST_EQUALITY(rscs->currentOrder(), 5);
 
 }

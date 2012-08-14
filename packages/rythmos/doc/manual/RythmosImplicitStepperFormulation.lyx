@@ -1,0 +1,347 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package none
+\inputencoding auto
+\fontencoding default
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 0
+\use_mathdots 0
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Formulation for Implicit Time Steppers for ODEs and DAEs
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:sec:implicit-time-steppers"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Here we consider several different classes of implicit time stepping methods.
+ For each class of method we show the set of general nonlinear equations
+ that defines a single time step and then show how a linearized form of
+ the equations may be formed to be solved by a Newton-type nonlinear equation
+ solver.
+\end_layout
+
+\begin_layout Standard
+In particular, for each method, we will show how to define a set of nonlinear
+ equations of the form 
+\begin_inset Formula 
+\begin{equation}
+r(z)=0\label{rythmos:eq:r}
+\end{equation}
+
+\end_inset
+
+such that when solved will define an implicit time step from 
+\begin_inset Formula $t_{k}$
+\end_inset
+
+ to 
+\begin_inset Formula $t_{k+1}$
+\end_inset
+
+, where 
+\begin_inset Formula $\Delta t=t_{k+1}-t_{k}$
+\end_inset
+
+ denotes the time-step.
+ In addition, for each method, we will show how to use the DAE residual
+ evaluation 
+\begin_inset Formula $(\dot{x},x,t){}\rightarrow f$
+\end_inset
+
+ to define the nonlinear time step equation (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:r"
+
+\end_inset
+
+).
+ At the highest level, the time step method only requires very general convergen
+ce criteria for the time step equation (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:r"
+
+\end_inset
+
+) and therefore great flexibility is allowed in how the time step equation
+ is solved.
+ In general, the system in (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:r"
+
+\end_inset
+
+) must be solved such that 
+\begin_inset Formula $||x_{k+1}-x^{*}(t_{k+1})||<\eta$
+\end_inset
+
+, where 
+\begin_inset Formula $x_{k+1}\in\mathcal{X}$
+\end_inset
+
+ is the computed step for the state, 
+\begin_inset Formula $x^{*}(t_{k+1})\in\mathcal{X}$
+\end_inset
+
+ is the exact state solution at 
+\begin_inset Formula $t_{k+1}$
+\end_inset
+
+, and 
+\begin_inset Formula $\eta$
+\end_inset
+
+ is the maximum allowable local truncation error defined by the user.
+\end_layout
+
+\begin_layout Standard
+Even though the time step equation can be solved by a variety of means,
+ a large class of DAEs can also potentially provide support for a general
+ Newton-type method for solving these equations and can therefore leverage
+ general software for solving such problems (e.g.
+\begin_inset space \space{}
+\end_inset
+
+NOX).
+ The foundation of Newton-like methods is the ability to solve linear systems
+ similar to the Newton system 
+\begin_inset Formula 
+\begin{equation}
+\Jac{r}{z}\Delta z=-r(z_{l})
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $z_{l}$
+\end_inset
+
+ is the current candidate solution of the nonlinear equations (which also
+ defines the point where 
+\begin_inset Formula $\jac{r}{z}$
+\end_inset
+
+ is evaluated) and 
+\begin_inset Formula $\Delta z=r_{l+1}-r_{l}$
+\end_inset
+
+ is the update direction.
+ Line-search Newton methods then define an update to the solution along
+ the direction 
+\begin_inset Formula $\Delta z$
+\end_inset
+
+.
+ The essential functionality needed to perform a Newton-like method are
+ the the abilities to evaluate the nonlinear residual 
+\begin_inset Formula $z{}\rightarrow r$
+\end_inset
+
+ and to (approximately) solve linear systems involving the Jacobian matrix
+ 
+\begin_inset Formula $\jac{r}{z}$
+\end_inset
+
+.
+ For each type of implicit time integration method, we will show, if possible,
+ how to perform solves with 
+\begin_inset Formula $\jac{r}{z}$
+\end_inset
+
+ by performing solves with the matrix 
+\begin_inset Formula 
+\begin{equation}
+W=\alpha\Jac{f}{\dot{x}}+\beta\Jac{f}{x},\label{rythmos:eq:W}
+\end{equation}
+
+\end_inset
+
+evaluated at points 
+\begin_inset Formula $(\dot{x},x,t)$
+\end_inset
+
+ selected by the time integration method and where 
+\begin_inset Formula $\alpha\in\RE$
+\end_inset
+
+ and 
+\begin_inset Formula $\beta\in\RE$
+\end_inset
+
+ is some constants also defined by the time integration method.
+ Note that the matrix 
+\begin_inset Formula $W$
+\end_inset
+
+ above in (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:eq:W_bdf"
+
+\end_inset
+
+) may not necessarily exactly represent 
+\begin_inset Formula $\jac{r}{z}$
+\end_inset
+
+ and 
+\begin_inset Formula $z$
+\end_inset
+
+ and 
+\begin_inset Formula $r$
+\end_inset
+
+ may not simply lie in the vector spaces 
+\begin_inset Formula $\mathcal{X}$
+\end_inset
+
+ and 
+\begin_inset Formula $\mathcal{F}$
+\end_inset
+
+ respectively; but in many cases, they will.
+\end_layout
+
+\begin_layout Standard
+The iteration matrix, 
+\begin_inset Formula $W$
+\end_inset
+
+, is defined to be
+\begin_inset Formula 
+\[
+W\equiv\frac{df}{dx_{n}}=\frac{\partial\dot{x}}{\partial x_{n}}\Jac{f}{\dot{x}}+\frac{\partial x}{\partial x_{n}}\Jac{f}{x}=\alpha\Jac{f}{\dot{x}}+\beta\Jac{f}{x}
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $\alpha=\partial\dot{x}/\partial x_{n}$
+\end_inset
+
+ and 
+\begin_inset Formula $\beta=\partial x/\partial x_{n}$
+\end_inset
+
+, and recalling 
+\begin_inset Formula $f\left(\dot{x}(x_{n}),x(x_{n})\right)=0$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Backward Euler
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/BackwardEuler.eps
+	lyxscale 150
+	scale 150
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Order of accuracy for the SinCos Problem (Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:SinCos-Problem"
+
+\end_inset
+
+) using Backward Euler.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

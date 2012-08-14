@@ -1,0 +1,89 @@
+
+\section{Introduction}
+
+Here we design and describe a set of C++ interfaces and concrete implementations
+for the solution of a broad class of transient ordinary differential
+equations (ODEs) and differential algebraic equations (DAEs) in a
+consistent manner. 
+
+
+\section{Mathematical Formulation of DAEs/ODEs for Basic Time Steppers\label{rythmos:sec:mathformulation}}
+
+Here we describe the basic mathematical form of a general nonlinear
+DAE (or ODE) for the purpose of presenting it to a forward time integrator.
+At the most general level of abstraction, we will consider the solution
+of fully implicit DAEs of the form 
+\begin{eqnarray}
+f(\dot{x},x,t) & = & 0,\;\mbox{for}\; t\in[t_{0},t_{f}],\label{rythmos:eq:dae}\\
+x(t_{0}) & = & x_{0}\label{rythmos:eq:dae:ic}
+\end{eqnarray}
+\begin{tabbing} where\hspace{5ex}\= \\
+ \> $x\:\in\:\mathcal{X}$ is the vector of differential state variables,
+\\
+ \> $\dot{x}=d(x)/d(t)\:\in\:\mathcal{X}$ is the vector of temporal
+derivatives of $x$, \\
+ \> $t,t_{0},t_{f}\:\in\:\RE$ are the current, initial, and the
+final times respectively, \\
+ \> $f(\dot{x},x,t)\:\in\:\mathcal{X}^{2}\times\RE\rightarrow\mathcal{F}$
+defines the DAE vector function, \\
+ \> $\mathcal{X}\:\subseteq\:\RE^{n_{x}}$ is the vector space of
+the state variables $x$, and \\
+ \> $\mathcal{F}\:\subseteq\:\RE^{n_{x}}$ is the vector space of
+the output of the DAE function $f(\ldots)$. \end{tabbing}
+
+Here we have been careful to define the Hilbert vector spaces $\mathcal{X}$
+and $\mathcal{F}$ for the involved vectors and vector functions.
+The relevance of defining these vector spaces is that they come equipped
+with a definition of the space's scalar product (i.e.\ $<u,v>_{\mathcal{X}}$
+for $u,v\in\mathcal{X}$) which should be considered and used when
+designing the numerical algorithms.
+
+The above general DAE can be specialized to more specific types of
+problems based on the nature of Jacobian matrices $\jac{f}{\dot{x}}\in\mathcal{F}|\mathcal{X}$
+and $\jac{f}{x}\in\mathcal{F}|\mathcal{X}$. Here we use the notation
+$\mathcal{F}|\mathcal{X}$ to define a linear operator space that
+maps vectors from the vector space $\mathcal{X}$ to the vector space
+$\mathcal{F}$. Note that the adjoint of such linear operators are
+defined in terms of these vector spaces (i.e.\ $<Au,v>_{\mathcal{F}}=<A^{T}v,u>_{\mathcal{X}}$
+where $A\in\mathcal{F}|\mathcal{X}$ and $A^{T}$ denotes the adjoint
+operator for $A$). Here we assume that these first derivatives exist
+for the specific intervals of $t\in[t_{0},t_{f}]$ of which such an
+time integrator algorithm will be directly applied the the problem.
+
+The precise class of the problem is primarily determined by the nature
+of the Jacobian $\jac{f}{\dot{x}}$: 
+\begin{itemize}
+\item $\jac{f}{\dot{x}}=I\in\mathcal{F}|\mathcal{X}$ yields an explicit
+ODE 
+\item $\jac{f}{\dot{x}}$ full rank yields an implicit ODE 
+\item $\jac{f}{\dot{x}}$ rank deficient yields a general DAE. 
+\end{itemize}
+In addition, the ODE/DAE may be linear or nonlinear and DAEs are classified
+by their index \cite{BCP}. It is expected that a DAE will be able
+to tell a integrator what type of problem it is (\emph{i.e.}, explicit
+ODE, implicit ODE, general DAE) and which, if any, of the variables
+are linear in the problem. This type of information can be exploited
+in a time integration algorithm.
+
+Another formulation we will consider is the semi-explicit DAE formulation:
+\begin{equation}
+\begin{array}{rcl}
+\dot{y} & = & f(y,z,t)\;\mbox{for}\; t\in[t_{0},t_{f}],\\
+0 & = & g(y,z,t)\;\mbox{where}\; x=[y,z],\\
+x(t_{0}) & = & x_{0}.
+\end{array}\label{rythmos:eq:dae:semiexplicit}
+\end{equation}
+
+
+For each transient computation, the formulation will be cast into
+the general form in (\ref{rythmos:eq:dae})--(\ref{rythmos:eq:dae:ic})
+to demonstrate how this general formulation can be exploited in many
+different contexts. 
+
+It is important for DAE initial-value problems that the initial values
+of the solution, $x_{0}$, and time derivative, $\dot{x}_{0}$, satisfy
+the DAE residual\cite{Brown1998}
+\[
+f(\dot{x}_{0},x_{0},t_{0})=0
+\]
+

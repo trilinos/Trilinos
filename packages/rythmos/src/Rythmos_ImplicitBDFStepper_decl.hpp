@@ -315,6 +315,12 @@ RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper();
 template<class Scalar>
 RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
   const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
+  );
+
+template<class Scalar>
+RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   const RCP<Teuchos::ParameterList>& parameterList
   );
