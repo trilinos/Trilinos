@@ -1001,14 +1001,15 @@ private:
         this->loadDistributions[i] = fromString<float>(splittedStr[i]);
       }
       delete []splittedStr;
-    }
 
-    float sum = 0;
-    for(int i = 0; i < this->worldSize; ++i){
-      sum += this->loadDistributions[i];
-    }
-    if (fabs(sum - 1.0) > 10*std::numeric_limits<float>::epsilon()){
-      throw "Processor load ratios do not sum to 1.0.";
+
+      float sum = 0;
+      for(int i = 0; i < this->worldSize; ++i){
+        sum += this->loadDistributions[i];
+      }
+      if (fabs(sum - 1.0) > 10*std::numeric_limits<float>::epsilon()){
+        throw "Processor load ratios do not sum to 1.0.";
+      }
     }
 
   }

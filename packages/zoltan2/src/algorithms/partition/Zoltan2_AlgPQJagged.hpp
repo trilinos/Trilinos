@@ -404,7 +404,7 @@ inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,si
  */
 template <typename T>
 void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolerance,
-    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear){
+    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear, partId_t &k){
 
   bool isSet;
   string strChoice;
@@ -440,6 +440,7 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   getParameterValue<double>(pl, "partitioning",
       "imbalance_tolerance", isSet, tol);
 
+
   if (!isSet)
     imbalanceTolerance = .1;
   else
@@ -447,6 +448,14 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
 
   if (imbalanceTolerance <= 0)
     imbalanceTolerance = 10e-4;
+
+
+  getParameterValue<partId_t>(pl, "partitioning",
+      "parallel_part_calculation_count", isSet, k);
+
+  if (!isSet)
+    k = 1;
+
 
   ////////////////////////////////////////////////////////
   // Geometric partitioning problem parameters of interest:
@@ -2335,8 +2344,10 @@ void AlgPQJagged(
   bool ignoreWeights;
 
   bool allowNonRectelinearPart = true;
-  pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart);
+  int k = 0;
+  pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart,  k);
 
+  cout << "k:" << k << endl;
   int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
   lno_t numLocalCoords = nlc;
@@ -2620,8 +2631,8 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
       if(comm->getRank() == 0)
         cout << "i: " << i << " j:" << j << " ";
-      scalar_t used_imbalance = imbalanceTolerance * (LEAF_IMBALANCE_FACTOR + (1 - LEAF_IMBALANCE_FACTOR)   / leftPartitions) * 0.7;
-      //scalar_t used_imbalance = 0;
+      //scalar_t used_imbalance = imbalanceTolerance * (LEAF_IMBALANCE_FACTOR + (1 - LEAF_IMBALANCE_FACTOR)   / leftPartitions) * 0.7;
+      scalar_t used_imbalance = 0;
 
       coordinateEnd= inTotalCounts[currentIn];
       coordinateBegin = currentIn==0 ? 0: inTotalCounts[currentIn -1];
