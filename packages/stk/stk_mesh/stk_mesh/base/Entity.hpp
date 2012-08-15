@@ -172,7 +172,13 @@ public:
 
   //------------------------------------
   /** \brief  Parallel processor rank of the processor which owns this entity */
-  unsigned owner_rank() const { return m_entityImpl.owner_rank(); }
+  unsigned owner_rank() const {
+#ifdef SIERRA_MIGRATION
+    return 0;
+#else
+    return m_entityImpl.owner_rank();
+#endif
+  }
 
   /** \brief  Parallel processes which share this entity. */
   PairIterEntityComm sharing() const { return m_entityImpl.sharing(); }

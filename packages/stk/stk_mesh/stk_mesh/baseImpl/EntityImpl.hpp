@@ -71,7 +71,13 @@ public:
 
   bool is_bucket_valid() const { return m_bucket != NULL; }
   unsigned bucket_ordinal() const { return m_bucket_ord ; }
-  unsigned owner_rank() const { return m_owner_rank ; }
+  unsigned owner_rank() const {
+#ifdef SIERRA_MIGRATION
+    return 0;
+#else
+    return m_owner_rank ;
+#endif
+  }
   size_t synchronized_count() const { return m_sync_count ; }
 
   // The two relation methods below need to be called symmetically, ideally
@@ -102,12 +108,15 @@ public:
   bool set_owner_rank( unsigned in_owner_rank )
   {
     TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
-
+#ifdef SIERRA_MIGRATION
+    return false;
+#else
     if ( in_owner_rank != m_owner_rank ) {
       m_owner_rank = in_owner_rank;
       return true;
     }
     return false;
+#endif
   }
 
   void set_sync_count( size_t sync_count )
@@ -184,7 +193,9 @@ public:
   RelationVector          m_relation ;   ///< This entity's relationships
   Bucket                * m_bucket ;     ///< Bucket for the entity's field data
   unsigned                m_bucket_ord ; ///< Ordinal within the bucket
+#ifndef SIERRA_MIGRATION
   unsigned                m_owner_rank ; ///< Owner processors' rank
+#endif
   size_t                  m_sync_count ; ///< Last membership change
   EntityModificationLog   m_mod_log ;
 
@@ -198,7 +209,9 @@ EntityImpl::EntityImpl( const EntityKey & arg_key )
     m_relation(),
     m_bucket( NULL ),
     m_bucket_ord(0),
+#ifndef SIERRA_MIGRATION
     m_owner_rank(0),
+#endif
     m_sync_count(0),
     m_mod_log( EntityLogCreated )
 {
@@ -211,7 +224,9 @@ EntityImpl::EntityImpl()
     m_relation(),
     m_bucket( NULL ),
     m_bucket_ord(0),
+#ifndef SIERRA_MIGRATION
     m_owner_rank(0),
+#endif
     m_sync_count(0),
     m_mod_log( EntityLogCreated )
 {
