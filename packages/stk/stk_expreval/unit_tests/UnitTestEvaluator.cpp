@@ -453,6 +453,7 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(fail_syntax("cos(x"));
   STKUNIT_EXPECT_TRUE(fail_syntax("(x)y"));
   STKUNIT_EXPECT_TRUE(fail_syntax("()"));
+  STKUNIT_EXPECT_TRUE(fail_syntax("stress(1)"));
   STKUNIT_EXPECT_TRUE(syntax("rand()"));
   STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
   STKUNIT_EXPECT_TRUE(syntax("random()"));
