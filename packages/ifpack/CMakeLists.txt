@@ -50,6 +50,46 @@ IF(${PACKAGE_NAME}_ENABLE_SPARSKIT)
   SET(HAVE_IFPACK_SPARSKIT ON )
 ENDIF()
 
+# "Experimental" code lives in Ifpack, but is not quite ready for use
+# by a general audience.  You have to enable the CMake option below in
+# order to install experimental headers, include experimental source
+# files in the libraries, and build experimental tests.
+#
+# It's up to Ifpack developers to define what headers and source files
+# are experimental, and what tests depend on experimental code.  They
+# must use ${PACKAGE_NAME}_ENABLE_Experimental to conditionally
+# disable tests or examples that have a required dependency on
+# experimental code.  (${PACKAGE_NAME} evaluates to Ifpack, but we
+# write it out so you know what to look for in the file.)  Code that
+# _optionally_ depends on experimental code must be protected by
+# #ifdef HAVE_IFPACK_EXPERIMENTAL ... #endif.
+#
+# Ifpack developers must maintain the lists of experimental header
+# resp. source files in src/CMakeLists.txt, as
+# ${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
+# resp. ${PACKAGE_NAME}_EXPERIMENTAL_SOURCES.
+#
+# Note that some experimental files may be excluded from the release
+# tarball.  Ifpack uses the TRIBITS_EXCLUDE_FILES macro later in
+# this file to list the files and directories to exclude from the
+# release tarball.  That macro must NOT include conditional
+# expressions; it must evaluate to the same list, no matter how
+# Trilinos is configured.  We ensure this in Ifpack by listing
+# explicitly the files and directories to exclude from the release
+# tarball, rather than using variables or conditional CMake
+# expressions.
+#
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_IFPACK_EXPERIMENTAL
+  "Enable building and installation of experimental Ifpack features."
+  NO )
+
+# See above discussion of "experimental" Ifpack headers and source
+# files.  src/CMakeLists.txt may append to these lists.
+SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS "")
+SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES "")
+
 
 #
 # C) Add the libraries, tests, and examples

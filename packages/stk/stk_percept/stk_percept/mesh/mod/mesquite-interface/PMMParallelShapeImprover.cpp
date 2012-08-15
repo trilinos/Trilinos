@@ -4,6 +4,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother1.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother2.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
@@ -257,6 +258,7 @@ namespace stk {
           std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
           //PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper siw(innerIter, 0.0, gradNorm, parallelIterations);
           //PMMParallelReferenceMeshSmoother siw(innerIter, 0.0, gradNorm, parallelIterations);
+          //PMMParallelReferenceMeshSmoother1 siw(0.05, innerIter, 0.0, gradNorm, parallelIterations);
           PMMParallelReferenceMeshSmoother1 siw(0.05, innerIter, 0.0, gradNorm, parallelIterations);
           siw.m_do_untangle_only = do_untangle_only;
           siw.run_instructions(&mesh, domain, mErr);

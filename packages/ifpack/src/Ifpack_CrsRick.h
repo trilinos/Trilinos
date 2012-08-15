@@ -46,52 +46,52 @@ namespace Teuchos {
   class ParameterList;
 }
 
-//! Ifpack_CrsRick: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_CrsMatrix.
+//! Ifpack_CrsRick: A class for constructing and using an incomplete Cholesky (IC) factorization of a given Epetra_CrsMatrix.
 
-/*! The Ifpack_CrsRick class computes a "Relaxed" ILU factorization with level k fill 
+/*! The Ifpack_CrsRick class computes a "Relaxed" IC factorization with level k fill 
     of a given Epetra_CrsMatrix.  The factorization 
     that is produced is a function of several parameters:
 <ol>
   <li> The pattern of the matrix - All fill is derived from the original matrix nonzero structure.  Level zero fill
        is defined as the original matrix pattern (nonzero structure), even if the matrix value at an entry is stored
-       as a zero. (Thus it is possible to add entries to the ILU factors by adding zero entries the original matrix.)
+       as a zero. (Thus it is possible to add entries to the IC factors by adding zero entries the original matrix.)
 
   <li> Level of fill - Starting with the original matrix pattern as level fill of zero, the next level of fill is
        determined by analyzing the graph of the previous level and determining nonzero fill that is a result of combining
        entries that were from previous level only (not the current level).  This rule limits fill to entries that
        are direct decendents from the previous level graph.  Fill for level k is determined by applying this rule
-       recursively.  For sufficiently large values of k, the fill would eventually be complete and an exact LU
+       recursively.  For sufficiently large values of k, the fill would eventually be complete and an exact Cholesky
        factorization would be computed.  Level of fill is defined during the construction of the Ifpack_IlukGraph object.
 
   <li> Level of overlap - All Ifpack preconditioners work on parallel distributed memory computers by using
-       the row partitioning the user input matrix to determine the partitioning for local ILU factors.  If the level of
+       the row partitioning the user input matrix to determine the partitioning for local IC factors.  If the level of
        overlap is set to zero,
        the rows of the user matrix that are stored on a given processor are treated as a self-contained local matrix
        and all column entries that reach to off-processor entries are ignored.  Setting the level of overlap to one
        tells Ifpack to increase the size of the local matrix by adding rows that are reached to by rows owned by this
        processor.  Increasing levels of overlap are defined recursively in the same way.  For sufficiently large levels
-       of overlap, the entire matrix would be part of each processor's local ILU factorization process.
+       of overlap, the entire matrix would be part of each processor's local IC factorization process.
        Level of overlap is defined during the construction of the Ifpack_IlukGraph object.
 
-       Once the factorization is computed, applying the factorization \(LUy = x\) 
+       Once the factorization is computed, applying the factorization \(LL^{T}y = x\) 
        results in redundant approximations for any elements of y that correspond to 
-       rows that are part of more than one local ILU factor.  The OverlapMode (changed by calling SetOverlapMode())
+       rows that are part of more than one local IC factor.  The OverlapMode (changed by calling SetOverlapMode())
        defines how these redundancies are
        handled using the Epetra_CombineMode enum.  The default is to zero out all values of y for rows that
        were not part of the original matrix row distribution.
 
-  <li> Fraction of relaxation - Ifpack_CrsRick computes the ILU factorization row-by-row.  As entries at a given
+  <li> Fraction of relaxation - Ifpack_CrsRick computes the IC factorization row-by-row.  As entries at a given
        row are computed, some number of them will be dropped because they do match the prescribed sparsity pattern.
        The relaxation factor determines how these dropped values will be handled.  If the RelaxValue (changed by calling
-       SetRelaxValue()) is zero, then these extra entries will by dropped.  This is a classical ILU approach.
+       SetRelaxValue()) is zero, then these extra entries will by dropped.  This is a classical IC approach.
        If the RelaxValue is 1, then the sum
-       of the extra entries will be added to the diagonal.  This is a classical Modified ILU (MILU) approach.  If
+       of the extra entries will be added to the diagonal.  This is a classical Modified IC (MIC) approach.  If
        RelaxValue is between 0 and 1, then RelaxValue times the sum of extra entries will be added to the diagonal.
 
        For most situations, RelaxValue should be set to zero.  For certain kinds of problems, e.g., reservoir modeling,
-       there is a conservation principle involved such that any operator should obey a zero row-sum property.  MILU 
+       there is a conservation principle involved such that any operator should obey a zero row-sum property.  MIC 
        was designed for these cases and you should set the RelaxValue to 1.  For other situations, setting RelaxValue to
-       some nonzero value may improve the stability of factorization, and can be used if the computed ILU factors
+       some nonzero value may improve the stability of factorization, and can be used if the computed IC factors
        are poorly conditioned.
 
   <li> Diagonal perturbation - Prior to computing the factorization, it is possible to modify the diagonal entries of the matrix
@@ -220,7 +220,7 @@ class Ifpack_CrsRick: public Epetra_Object, public Epetra_CompObject, public vir
   //! If values have been initialized, this query returns true, otherwise it returns false.
   bool ValuesInitialized() const {return(ValuesInitialized_);};
 
-  //! Set RILU(k) relaxation parameter
+  //! Set RIC(k) relaxation parameter
   void SetRelaxValue( double RelaxValue) {RelaxValue_ = RelaxValue; return;}
 
   //! Set absolute threshold value
@@ -242,11 +242,11 @@ class Ifpack_CrsRick: public Epetra_Object, public Epetra_CompObject, public vir
   int SetParameters(const Teuchos::ParameterList& parameterlist,
                     bool cerr_warning_if_unused=false);
 
-  //! Compute ILU factors L and U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
-  /*! This function computes the RILU(k) factors L and U using the current:
+  //! Compute IC factor L using the specified graph, diagonal perturbation thresholds and relaxation parameters.
+  /*! This function computes the RIC(k) factor L using the current:
     <ol>
-    <li> Ifpack_IlukGraph specifying the structure of L and U.
-    <li> Value for the RILU(k) relaxation parameter.
+    <li> Ifpack_IlukGraph specifying the structure of L.
+    <li> Value for the RIC(k) relaxation parameter.
     <li> Value for the \e a \e priori diagonal threshold values.
     </ol>
     InitValues() must be called before the factorization can proceed.
@@ -299,7 +299,7 @@ class Ifpack_CrsRick: public Epetra_Object, public Epetra_CompObject, public vir
   */
   int Multiply(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-  //! Returns the maximum over all the condition number estimate for each local ILU set of factors.
+  //! Returns the maximum over all the condition number estimate for each local IC set of factors.
   /*! This functions computes a local condition number estimate on each processor and return the
       maximum over all processor of the estimate.
    \param In
@@ -312,7 +312,7 @@ class Ifpack_CrsRick: public Epetra_Object, public Epetra_CompObject, public vir
   // Attribute access functions
   
     
-  //! Get RILU(k) relaxation parameter
+  //! Get RIC(k) relaxation parameter
   double GetRelaxValue() {return RelaxValue_;}
 
   //! Get absolute threshold value

@@ -743,8 +743,8 @@ parseFunction(
   }
   function->m_right = parseFunctionArg(eval, lparen + 1, rparen);
 
-  //   if (!c_function)
-  //     throw std::runtime_error(std::string("Undefined function ") + function_name);
+     if (!c_function)
+       throw std::runtime_error(std::string("Undefined function ") + function_name);
 
   return function;
 }

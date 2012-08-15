@@ -97,6 +97,7 @@ public:
 
 private:
 
+
   enum {
     rank_digits = 8  ,
     id_digits   = 24 ,
@@ -359,7 +360,7 @@ bool Relation::operator == ( const Relation & rhs ) const
   return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity
 #ifdef SIERRA_MIGRATION
     // compared fmwk state too
-    && ( (getRelationType() == rhs.getRelationType() && getOrientation() == rhs.getOrientation()) )
+    && m_attribute == rhs.m_attribute
 #endif
     ;
 }
