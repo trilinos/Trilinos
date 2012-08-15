@@ -1004,11 +1004,19 @@ do_dimension_projection(
       if (dgdx_sg != Teuchos::null) {
 	Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdx_red = 
 	  reduced_outargs.get_DgDx_sg(i).getMultiVector();
-	red_basis->transformToOriginalBasis(
-	  (*dgdx_red)[0].Values(), 
-	  (*dgdx_sg)[0].Values(), 
-	  dgdx_red->coefficientMap()->NumMyElements()*dgdx_red->numVectors(), 
-	  true);
+
+	// transformToOriginalBasis() needs the entries for each pce
+	  // coefficient stored contiguously.  This isn't the case for the
+	  // full multivector (each column along with all of its pce
+	  // coefficients is stored in one contiguous chunk).  Thus we need
+	  // to transform each column individually
+	  int ncol = dgdx_red->numVectors();
+	  for (int col=0; col<ncol; col++)
+	    red_basis->transformToOriginalBasis(
+	      (*dgdx_red)[0](col)->Values(), 
+	      (*dgdx_sg)[0](col)->Values(), 
+	      dgdx_red->coefficientMap()->NumMyElements(), 
+	      true);
       }
     }
 
@@ -1020,11 +1028,19 @@ do_dimension_projection(
 	if (dgdp_sg != Teuchos::null) {
 	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdp_red = 
 	    reduced_outargs.get_DgDp_sg(i,j).getMultiVector();
-	  red_basis->transformToOriginalBasis(
-	    (*dgdp_red)[0].Values(), 
-	    (*dgdp_sg)[0].Values(), 
-	    dgdp_red->coefficientMap()->NumMyElements()*dgdp_red->numVectors(), 
-	    true);
+
+	  // transformToOriginalBasis() needs the entries for each pce
+	  // coefficient stored contiguously.  This isn't the case for the
+	  // full multivector (each column along with all of its pce
+	  // coefficients is stored in one contiguous chunk).  Thus we need
+	  // to transform each column individually
+	  int ncol = dgdp_red->numVectors();
+	  for (int col=0; col<ncol; col++)
+	    red_basis->transformToOriginalBasis(
+	      (*dgdp_red)[0](col)->Values(), 
+	      (*dgdp_sg)[0](col)->Values(), 
+	      dgdp_red->coefficientMap()->NumMyElements(), 
+	      true);
 	}
       }
     }
