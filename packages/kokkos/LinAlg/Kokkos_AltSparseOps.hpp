@@ -232,7 +232,7 @@ namespace Kokkos {
         {}
 
         void execute (const Ordinal r) {
-          for (size_t k = ptr_[r]; k < ptr_[r+1]; ++r) {
+          for (size_t k = ptr_[r]; k < ptr_[r+1]; ++k) {
             val_[k] = Teuchos::ScalarTraits<T>::zero ();
           }
         }
@@ -287,11 +287,11 @@ namespace Kokkos {
         // Node.  If the Kokkos Node's parallelization scheme respects
         // first-touch initialization, this should set the proper NUMA
         // affinity, at least at page boundaries.
-        typedef ZeroInitKernel<Ordinal, Ordinal> kernel_type;
+        typedef ZeroInitKernel<Ordinal, size_t> kernel_type;
         node->parallel_for (0, numRows+1, kernel_type (rawPtr));
 
         // Encapsulate the raw pointer in an (owning) ArrayRCP.
-        ArrayRCP<size_t> ptr = arcp<Ordinal> (rawPtr, 0, numRows+1, true);
+        ArrayRCP<size_t> ptr = arcp<size_t> (rawPtr, 0, numRows+1, true);
 
         if (numRows > 0) {
           // Fill in ptr sequentially for now.  We might parallelize
@@ -310,10 +310,24 @@ namespace Kokkos {
                    const Teuchos::ArrayView<const size_t>& rowPtrs)
       {
         using Teuchos::arcp;
-        const Ordinal numRows = rowPtrs.size () - 1;
+        using Teuchos::as;
 
-        // Don't force the compiler to inline ArrayView::operator[] in
-        // the loop below.
+        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
+          "AltSparseOpsFirstTouchAllocator::copyRowPtrs: "
+          "The input row offsets array rowPtrs must always have length at least one, "
+          "even if the graph or matrix to which it belongs has zero rows.");
+
+        // We require that the number of rows in the matrix fit in
+        // Ordinal.  In a debug build, as() may check for overflow
+        // when converting from size_t to Ordinal.
+        Ordinal numRows = Teuchos::OrdinalTraits<Ordinal>::zero ();
+        {
+          const size_t numRowsSizeT = as<size_t> (rowPtrs.size() - 1);
+          numRows = as<size_t> (numRowsSizeT);
+        }
+
+        // Extract the raw pointer, so that we don't have to make the
+        // compiler inline ArrayView::operator[] in the loop below.
         const size_t* const rawRowPtrs = rowPtrs.getRawPtr ();
 
         // Allocate raw, since arcp() might initialize in debug mode.
@@ -344,7 +358,6 @@ namespace Kokkos {
 
         const Ordinal numRows = rowPtrs.size() - 1;
         const size_t totalNumEntries = rowPtrs[numRows];
-        const T zero = Teuchos::ScalarTraits<T>::zero ();
 
         // Allocate raw, since arcp() might initialize in debug mode.
         T* const rawVal = new T [totalNumEntries];
@@ -359,7 +372,7 @@ namespace Kokkos {
         // the Kokkos Node parallelizes in a reproducible way, it will
         // initialize the values using the same affinity with which
         // the row pointers were initialized.
-        CsrInitKernel<Ordinal, T> kernel;
+        CsrInitKernel<Ordinal, T> kernel (rawRowPtrs, rawVal);
         node->parallel_for (0, numRows, kernel);
 
         // Encapsulate the raw pointer in an (owning) ArrayRCP.
@@ -869,24 +882,56 @@ namespace Kokkos {
   ///
   /// \tparam Scalar The type of entries of the sparse matrix.
   /// \tparam Ordinal The type of (local) indices of the sparse matrix.
-  /// \tparam Node The Kokkos Node type.
+  /// \tparam Node The Kokkos Node type.  This is used only for
+  ///   first-touch allocation; see discussion below.
   /// \tparam Allocator Class that defines static methods for
   ///   allocating the various arrays used by the compressed sparse
   ///   row format.  This is where first-touch allocation can be
-  ///   implemented, for example.
+  ///   implemented, for example.  We use first-touch allocation by
+  ///   default; if you don't want this, you should use
+  ///   details::AltSparseOpsDefaultAllocator<Ordinal, Node> as the
+  ///   Allocator type.
   ///
   /// This class is called AltSparseOps ("alternate sparse
   /// operations") because the default local sparse operations class
   /// on host-based Kokkos Nodes is DefaultHostSparseOps.
+  /// DefaultHostSparseOps relies on the Kokkos Node API for
+  /// (intranode) parallelism.  AltSparseOps provides an alternative
+  /// implementation which does not rely on the Kokkos Node API for
+  /// parallelizing the sparse kernels.  In case the Kokkos Node API
+  /// performs poorly on your platform (for example, if your C++
+  /// compiler does not inline well), you can always use AltSparseOps
+  /// to get good performance.  AltSparseOps will parallelize its
+  /// kernels with OpenMP if you specify Node=OpenMPNode; otherwise,
+  /// it will use sequential kernels.
   ///
-  /// While this class is templated on the Kokkos Node type, it does
-  /// not use any functionality of the Kokkos Node.
+  /// Note that, depending on the Allocator template parameter,
+  /// AltSparseOps may use the Kokkos Node API to do first-touch
+  /// allocation in parallel of the sparse graph and matrix data
+  /// structures.  It would be best in that case to use
+  /// Node=OpenMPNode, so that the first-touch allocation most closely
+  /// matches the parallelization scheme.  You may control OpenMP's
+  /// parallelization scheme at run time by using environment
+  /// variables; AltSparseOps will respect this.
   ///
-  /// This class uses the given Allocator by default.
+  /// For maximum compatibility with other implementations of local
+  /// sparse ops, given your Scalar and Ordinal types, you should
+  /// always access the local sparse ops type via the following
+  /// typedef:
+  ///
+  /// \code
+  /// typedef typename AltSparseOps<Scalar, Ordinal, Node, Allocator>::bind_scalar<Scalar>::other_type::typename bind_ordinal<Ordinal>::other_type sparse_ops_type;
+  /// \endcode
+  ///
+  /// The resulting sparse_ops_type typedef will always be a
+  /// functioning implementation of local sparse ops, whether or not
+  /// the "original" implementation of local sparse ops (in this case,
+  /// AltSparseOps) supports your given combination of Scalar and
+  /// Ordinal types.
   template <class Scalar,
             class Ordinal,
             class Node,
-            class Allocator = details::AltSparseOpsDefaultAllocator<Ordinal, Node> >
+            class Allocator = details::AltSparseOpsFirstTouchAllocator<Ordinal, Node> >
   class AltSparseOps : public Teuchos::Describable {
   public:
     //! \name Typedefs and structs
@@ -921,16 +966,41 @@ namespace Kokkos {
     /// operations for a scalar type S2, which may be different from
     /// \c Scalar.
     ///
-    /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar
-    /// type to the appropriate scalar.
+    /// This is used by Tpetra::CrsMatrix to "bind" a potentially
+    /// "void" scalar type to the appropriate scalar.  The other_type
+    /// typedef tells Tpetra::CrsMatrix which local sparse ops type to
+    /// use, as a function of Tpetra's Scalar template parameter.
     ///
-    /// This always specifies a specialization of AltSparseOps,
-    /// regardless of the scalar type S2.
+    /// For AltSparseOps, the other_type typedef always specifies a
+    /// specialization of AltSparseOps, regardless of the scalar type
+    /// S2.  This is not necessarily true for other implementations of
+    /// local sparse ops, so Tpetra developers should always get their
+    /// local sparse ops type from the other_type typedef.
     ///
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct bind_scalar {
       typedef AltSparseOps<S2, Ordinal, Node> other_type;
+    };
+
+    /// \brief Sparse operations type for a different ordinal type.
+    ///
+    /// The bind_ordinal struct defines the type responsible for sparse
+    /// operations for an ordinal type O2, which may be different from
+    /// \c Ordinal.
+    ///
+    /// This is used by Tpetra::CrsMatrix to "bind" the local sparse
+    /// ops type, given its own (Local)Ordinal type.  For
+    /// AltSparseOps, the other_type typedef always specifies a
+    /// specialization of AltSparseOps, regardless of the ordinal type
+    /// O2.  This is not necessarily true for other implementations of
+    /// local sparse ops, so Tpetra developers should always get their
+    /// local sparse ops type from the other_type typedef.
+    ///
+    /// \tparam O2 An ordinal type possibly different from \c Ordinal.
+    template <class O2>
+    struct bind_ordinal {
+      typedef DefaultHostSparseOps<Scalar,O2,Node,Allocator> other_type;
     };
 
     //@}
