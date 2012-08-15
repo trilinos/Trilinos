@@ -123,6 +123,9 @@ namespace stk {
       // shape-size-orient smooth
       PMMSmootherMetricShapeSizeOrient shape_metric(eMesh);
 
+      // scaled jacobian
+      PMMSmootherMetricScaledJacobian scaled_jac_metric(eMesh);
+
       //double omegas[] = {0.0, 0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
       //double omegas[] = {0.001, 1.0};
       //double omegas[] = { 0.001, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.4, 0.45,0.46,0.47,0.48,0.49,0.5,0.52,0.54,0.56,0.59, 0.6, 0.8, 1.0};
@@ -156,9 +159,15 @@ namespace stk {
             {
               m_stage = stage;
               if (stage==0) 
-                m_metric = &untangle_metric;
+                {
+                  m_metric = &untangle_metric;
+                  //m_metric = &scaled_jac_metric;
+                }
               else 
-                m_metric = &shape_metric;
+                {
+                  m_metric = &shape_metric;
+                  //m_metric = &scaled_jac_metric;
+                }
 
               for (int iter = 0; iter < innerIter; ++iter, ++iter_all)
                 {
@@ -184,7 +193,7 @@ namespace stk {
                               << std::endl;
                   }
 
-                  if (0)
+                  if (1)
                     {
                        eMesh->save_as("iter_"+toString(outer)+"_"+toString(stage)+"."+toString(iter)+".e");
                        if (iter_all % 8 == 0) eMesh->save_as("anim_all."+toString(iter_all)+".e");
@@ -196,6 +205,7 @@ namespace stk {
                     }
                   if (conv && m_untangled) break;
                   //if (iter == 5) break;
+                  //if (iter == 10) exit(1);
                 }
 
               eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");

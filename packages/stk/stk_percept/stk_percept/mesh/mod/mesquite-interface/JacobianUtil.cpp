@@ -34,13 +34,10 @@ namespace stk {
             {
               sum += A(ixyz, jvert)*A(ixyz, jvert);
             }
-          sum = std::sqrt(sum);
-          if (sum != 0.0)
+          sum = std::max(1.e-10, std::sqrt(sum));
+          for (int ixyz=0; ixyz < 3; ixyz++)
             {
-              for (int ixyz=0; ixyz < 3; ixyz++)
-                {
-                  A(ixyz, jvert) /= sum;
-                }
+              A(ixyz, jvert) /= sum;
             }
         }
     }
@@ -48,6 +45,7 @@ namespace stk {
     bool JacobianUtil::jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d)
     {
       /* Calculate A */
+      // x_xi, x_eta, x_zeta => A(ixyz, ixietazeta) = dx_i/dxi_j
       A(0,0) = d[0]*(x[1][0] - x[0][0]);  
       A(0,1) = d[1]*(x[2][0] - x[0][0]);
       A(0,2) = n[0];
@@ -126,7 +124,7 @@ namespace stk {
           mCoords[1] = VERTEX_2D(v_i[1]);
           mCoords[2] = VERTEX_2D(v_i[2]);
           metric_valid = jacobian_matrix_2D(m, J, mCoords, n, d_con);
-          for (i = 0; i < 4; i++) { mMetrics[i] = m; mJ[i] = J; }
+          for (i = 0; i < 4; i++) { m_detJ[i] = m; m_J[i] = J; }
           break;
     
         case shards::Quadrilateral<4>::key:
@@ -135,9 +133,9 @@ namespace stk {
             mCoords[0] = VERTEX_2D(v_i[locs_hex[i][0]]);
             mCoords[1] = VERTEX_2D(v_i[locs_hex[i][1]]);
             mCoords[2] = VERTEX_2D(v_i[locs_hex[i][2]]);
-            metric_valid = jacobian_matrix_2D(mMetrics[i], mJ[i], mCoords, n, d_con);
+            metric_valid = jacobian_matrix_2D(m_detJ[i], m_J[i], mCoords, n, d_con);
           }
-          m = average_metrics(mMetrics, 4, err); MSQ_ERRZERO(err);
+          m = average_metrics(m_detJ, 4, err); MSQ_ERRZERO(err);
           break;
 
         case shards::Tetrahedron<4>::key:
@@ -146,7 +144,7 @@ namespace stk {
           mCoords[2] = VERTEX_3D(v_i[2]);
           mCoords[3] = VERTEX_3D(v_i[3]);
           metric_valid = jacobian_matrix_3D(m, J, mCoords, n, d_con);
-          for (i = 0; i < 4; i++) { mMetrics[i] = m; mJ[i] = J; }
+          for (i = 0; i < 4; i++) { m_detJ[i] = m; m_J[i] = J; }
           break;
 
         case shards::Pyramid<5>::key:
@@ -155,13 +153,13 @@ namespace stk {
             mCoords[1] = VERTEX_3D(v_i[(i+1)%4]);
             mCoords[2] = VERTEX_3D(v_i[(i+3)%4]);
             mCoords[3] = VERTEX_3D(v_i[ 4     ]);
-            metric_valid = jacobian_matrix_3D(mMetrics[i], mJ[i], mCoords, n, d_con);
+            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], mCoords, n, d_con);
           }
           // FIXME
-          mJ[4] = (mJ[0]+mJ[1]+mJ[2]+mJ[3]);
-          mJ[4] *= 0.25;
-          mMetrics[4] = det(mJ[4]);
-          m = average_metrics(mMetrics, 5, err); MSQ_ERRZERO(err);
+          m_J[4] = (m_J[0]+m_J[1]+m_J[2]+m_J[3]);
+          m_J[4] *= 0.25;
+          m_detJ[4] = det(m_J[4]);
+          m = average_metrics(m_detJ, 5, err); MSQ_ERRZERO(err);
           break;
 
         case shards::Wedge<6>::key:
@@ -170,9 +168,9 @@ namespace stk {
             mCoords[1] = VERTEX_3D(v_i[locs_prism[i][1]]);
             mCoords[2] = VERTEX_3D(v_i[locs_prism[i][2]]);
             mCoords[3] = VERTEX_3D(v_i[locs_prism[i][3]]);
-            metric_valid = jacobian_matrix_3D(mMetrics[i], mJ[i], mCoords, n, d_con);
+            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], mCoords, n, d_con);
           }
-          m = average_metrics(mMetrics, 6, err); MSQ_ERRZERO(err);
+          m = average_metrics(m_detJ, 6, err); MSQ_ERRZERO(err);
           break;
 
         case shards::Hexahedron<8>::key:
@@ -181,9 +179,9 @@ namespace stk {
             mCoords[1] = VERTEX_3D(v_i[locs_hex[i][1]]);
             mCoords[2] = VERTEX_3D(v_i[locs_hex[i][2]]);
             mCoords[3] = VERTEX_3D(v_i[locs_hex[i][3]]);
-            metric_valid = jacobian_matrix_3D(mMetrics[i], mJ[i], mCoords, n, d_con);
+            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], mCoords, n, d_con);
           }
-          m = average_metrics(mMetrics, 8, err); MSQ_ERRZERO(err);
+          m = average_metrics(m_detJ, 8, err); MSQ_ERRZERO(err);
           break;
 
 

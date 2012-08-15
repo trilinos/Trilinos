@@ -199,6 +199,8 @@ namespace stk {
                             if ((pvalid && mvalid) || m_stage == 0)
                               dd = (mp - mm)/(2*eps1);
                             gsav[idim] = dd;
+                            //if (std::fabs(mp) > 1.e-10) std::cout << "tmp srk mp = " << mp << " mm= " << mm << " dd= " << dd << std::endl;
+
                             m_scale = std::max(m_scale, std::abs(dd)/edge_length_ave);
 
                             if (node_locally_owned)
@@ -494,7 +496,7 @@ namespace stk {
             if (std::fabs(den) > 1.e-10)
               {
                 double alpha_quadratic = num/den;
-                if (alpha_quadratic < 2*alpha)
+                if (alpha_quadratic > 1.e-10 && alpha_quadratic < 2*alpha)
                   {
                     double fm=total_metric(mesh, alpha_quadratic, 1.0, total_valid);
                     //if (fm < f2 && (!m_untangled || total_valid))
