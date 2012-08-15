@@ -1165,6 +1165,11 @@ namespace Kokkos {
     /// \warning This method is for debugging only.  It uses a lot of
     ///   memory.  Users should never call this method.  Do not rely
     ///   on this method continuing to exist in future releases.
+    ///
+    /// \warning SerialDenseMatrix currently requires Ordinal=int
+    ///   indices for BLAS and LAPACK compatibility.  We make no
+    ///   attempt to check whether Ordinal -> int conversions
+    ///   overflow.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, scalar_type> >
     asDenseMatrix () const
     {
@@ -1441,25 +1446,51 @@ namespace Kokkos {
 
     //! \name Raw compressed sparse row storage of the local sparse matrix.
     //@{
+
+    /// \brief Array of row offsets.
+    ///
+    /// The indices and values of row i (zero-based index) of the
+    /// sparse matrix live in ind_[k] resp. val_[k] for k = ptr_[i]
+    /// .. ptr_[i+1]-1 (inclusive).
+    ///
+    /// We currently make no attempt to optimize storage for the case
+    /// when the row offsets can fit in Ordinal.  This may change in
+    /// the future.  In that case, we would do what
+    /// DefaultHostSparseOps does: keep two arrays of row offsets, one
+    /// of Ordinal and the other of size_t.  Only one of them would be
+    /// allocated at a time.
     ArrayRCP<const size_t>  ptr_;
+    //! Array of column indices.
     ArrayRCP<const Ordinal> ind_;
+    //! Array of matrix values.
     ArrayRCP<const Scalar>  val_;
     //@}
 
+    //! Whether the matrix is lower or upper triangular, or neither.
     Teuchos::EUplo  tri_uplo_;
+    //! Whether the matrix has an implicitly stored unit diagonal.
     Teuchos::EDiag unit_diag_;
 
     //! \name Parameters set by the constructor's input ParameterList.
     //@{
+    //! Which variant of sparse mat-vec to use.
     EMatVecVariant matVecVariant_;
+    /// \brief Whether to use the sparse kernels that unroll loops
+    ///   across input and output multivectors.
     bool unroll_;
+    //! Whether to force first-touch allocation.
     bool firstTouchAllocation_;
     //@}
 
+    //! Number of rows in the matrix.
     Ordinal numRows_;
+    //! Number of columns in the matrix.
     Ordinal numCols_;
+    //! Whether the matrix has been initialized and is therefore ready for sparse kernels.
     bool isInitialized_;
+    //! Whether the matrix is empty (contains no entries).
     bool isEmpty_;
+    //! Whether the matrix has empty rows (i.e., rows containing no entries).
     bool hasEmptyRows_;
   };
 
