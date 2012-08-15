@@ -53,6 +53,8 @@ APPEND_SET(HEADERS
     Kokkos_DefaultSparseOps.hpp
     Kokkos_DefaultRelaxation.hpp
     Kokkos_AltSparseOps.hpp
+    # MKL helper class; doesn't depend on MKL library.
+    Kokkos_Mkl_MatrixDescriptor.hpp
     # raw sequential and OpenMP kernels
     Kokkos_Raw_SparseMatVec_decl.hpp
     Kokkos_Raw_SparseMatVec_def.hpp
@@ -62,6 +64,8 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES
     Kokkos_LinAlgVersion.cpp
+    # MKL helper class; doesn't depend on MKL library.
+    Kokkos_Mkl_MatrixDescriptor.cpp
   )
 
 IF (Kokkos_ENABLE_CUSPARSE)

@@ -77,6 +77,11 @@ namespace Kokkos {
     /// Ordinal is a 32-bit signed integer type (int, or int32_t in
     /// C99 terms).
     ///
+    /// \note We have only tested linking these interfaces to MKL
+    ///   version 10.3.  If you have trouble linking to future
+    ///   versions of MKL, please let us Trilinos developers know and
+    ///   we will fix the interfaces.
+    ///
     /// \tparam Scalar The type of entries in the sparse matrix and
     ///   dense (multi)vectors.  MKL requires that the entries in the
     ///   matrix and (multi)vectors all have the same type.
