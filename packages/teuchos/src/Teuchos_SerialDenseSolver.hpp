@@ -559,7 +559,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::factor() {
 
   if (ierr!=0) return(ierr);
   
-  if (IPIV_.size()!=Min_MN_) IPIV_.resize( Min_MN_ ); // Allocated Pivot vector if not already done.
+  if ((int)IPIV_.size()!=Min_MN_) IPIV_.resize( Min_MN_ ); // Allocated Pivot vector if not already done.
 
   INFO_ = 0;
   this->GETRF(M_, N_, AF_, LDAF_, &IPIV_[0], &INFO_);
