@@ -610,8 +610,10 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   else
   {
 #ifdef IFPACK_SUBCOMM_CODE
+#ifdef TIMING_OUTPUT_SUBCOMM
     Teuchos::Time subdomainFilterTimer("subdomain filter timer");
     subdomainFilterTimer.start(true);
+#endif
 
     if (NumMpiProcsPerSubdomain_ > 1) {
       LocalizedMatrix_ = Teuchos::rcp(new Ifpack_SubdomainFilter(Matrix_, SubdomainId_));
@@ -619,6 +621,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
       LocalizedMatrix_ = Teuchos::rcp(new Ifpack_LocalFilter(Matrix_));
     }
 
+#ifdef TIMING_OUTPUT_SUBCOMM
     subdomainFilterTimer.stop();
 
     if (Comm().MyPID() == 0) {
@@ -626,6 +629,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
                   << subdomainFilterTimer.totalElapsedTime()
                   << "\n";
     }
+#endif
 
 #else
 #   ifdef IFPACK_NODE_AWARE_CODE
@@ -688,8 +692,10 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   // The reindexing is done here because this feature is only implemented in Amesos_Klu,
   // and it is desired to have reindexing with other direct solvers in the Amesos package
 
+#ifdef TIMING_OUTPUT_SUBCOMM
   Teuchos::Time reindexingTimer("reindex timer");
   reindexingTimer.start(true);
+#endif
 
   SubdomainCrsMatrix_.reset(new Epetra_CrsMatrix(Copy, MatrixPtr->RowMatrixRowMap(), -1));
   Teuchos::RCP<Epetra_Import> tempImporter = Teuchos::rcp(new Epetra_Import(SubdomainCrsMatrix_->Map(), MatrixPtr->Map()));
@@ -712,11 +718,13 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
   ReindexedCrsMatrix_.reset(&((*SubdomainMatrixReindexer_)(*SubdomainCrsMatrix_)), false);
 
+#ifdef TIMING_OUTPUT_SUBCOMM
   reindexingTimer.stop();
   if (Comm().MyPID() == 0) {
       std::cout << "\nTIME TO REINDEX MATRIX: "
                 << reindexingTimer.totalElapsedTime() << "\n";
   }
+#endif
   
   MatrixPtr = &*ReindexedCrsMatrix_;
 
