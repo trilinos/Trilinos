@@ -219,11 +219,11 @@ namespace Sacado {
       }
 
       const value_type dx(int i) const {
-        return v_pos ? expr.dx(i) : -expr.dx(i);
+        return v_pos ? expr.dx(i) : value_type(-expr.dx(i));
       }
  
       const value_type fastAccessDx(int i) const {
-        return v_pos ? expr.fastAccessDx(i) : -expr.fastAccessDx(i);
+        return v_pos ? expr.fastAccessDx(i) : value_type(-expr.fastAccessDx(i));
       }
 
     protected:
@@ -282,11 +282,11 @@ namespace Sacado {
       }
 
       const value_type dx(int i) const {
-        return v_pos ? expr.dx(i) : -expr.dx(i);
+        return v_pos ? expr.dx(i) : value_type(-expr.dx(i));
       }
  
       const value_type fastAccessDx(int i) const {
-        return v_pos ? expr.fastAccessDx(i) : -expr.fastAccessDx(i);
+        return v_pos ? expr.fastAccessDx(i) : value_type(-expr.fastAccessDx(i));
       }
 
     protected:
