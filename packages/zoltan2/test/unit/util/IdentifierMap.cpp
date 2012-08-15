@@ -76,7 +76,7 @@ using Teuchos::Comm;
 
 template <typename T>
 struct UserIdTraits{
-  static std::string &stringify(T val) {return std::string("INVALID");}
+  static std::string stringify(T val) {return std::string("INVALID");}
 };
 
 template<>

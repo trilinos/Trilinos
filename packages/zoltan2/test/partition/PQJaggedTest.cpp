@@ -54,7 +54,7 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <GeometricGenerator.hpp>
-
+#include <vector>
 
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
 
@@ -156,34 +156,63 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   Teuchos::ParameterList geoparams("geo params");
 
   readGeoGenParams(paramFile, geoparams, comm);
+#ifdef HAVE_ZOLTAN2_OMP
+  double begin = omp_get_wtime();
+#endif
   GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
-  RCP<tMVector_t> coords = gg->getCoordinates();
-  RCP<tMVector_t> weight= gg->getWeights();
+#ifdef HAVE_ZOLTAN2_OMP
+  double end = omp_get_wtime();
+  cout << "GeometricGen Time:" << end - begin << endl;
+#endif
+  int coord_dim = gg->getCoordinateDimension();
+  int weight_dim = gg->getWeightDimension();
+  lno_t numLocalPoints = gg->getNumLocalCoords(); gno_t numGlobalPoints = gg->getNumGlobalCoords();
+  scalar_t **coords = new scalar_t * [coord_dim];
+  for(int i = 0; i < coord_dim; ++i){
+    coords[i] = new scalar_t[numLocalPoints];
+  }
+  gg->getLocalCoordinatesCopy(coords);
+  scalar_t **weight= new scalar_t * [weight_dim];
+  for(int i = 0; i < weight_dim; ++i){
+    weight[i] = new scalar_t[numLocalPoints];
+  }
+  gg->getLocalWeightsCopy(weight);
   delete gg;
-  RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(coords);
-  RCP<const tMVector_t> weightConst = Teuchos::rcp_const_cast<const tMVector_t>(weight);
 
+  RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
+      new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalPoints, numLocalPoints, 0, comm));
 
-  //size_t localCount = coords->getLocalLength();
-  int dim = coords->getNumVectors();
-
-  scalar_t *x=NULL, *y=NULL, *z=NULL;
-  x = coords->getDataNonConst(0).getRawPtr();
-
-  if (dim > 1){
-    y = coords->getDataNonConst(1).getRawPtr();
-    if (dim > 2)
-      z = coords->getDataNonConst(2).getRawPtr();
+  Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim);
+  for (int i=0; i < coord_dim; i++){
+    if(numLocalPoints > 0){
+      Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalPoints);
+      coordView[i] = a;
+    } else{
+      Teuchos::ArrayView<const scalar_t> a;
+      coordView[i] = a;
+    }
   }
 
-  //const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
+  RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
+      new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, coord_dim), coord_dim));
+
+
+  RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
+  vector<const scalar_t *> weights;
+  if(weight_dim){
+    for (int i = 0; i < weight_dim;++i){
+      weights.push_back(weight[i]);
+    }
+  }
+  vector <int> stride;
 
 #if 0
   typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 #else
   typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
-  inputAdapter_t ia(coordsConst);
+  //inputAdapter_t ia(coordsConst);
+  inputAdapter_t ia(coordsConst,weights, stride);
 #endif
 
 
@@ -225,6 +254,16 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
     cout << "testFromDataFile is done " << endl;
   }
   problem.printTimers();
+  if(weight_dim){
+    for(int i = 0; i < weight_dim; ++i)
+    delete [] weight[i];
+    delete [] weight;
+  }
+  if(coord_dim){
+    for(int i = 0; i < coord_dim; ++i)
+    delete [] coords[i];
+    delete [] coords;
+  }
 }
 
 void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts, float imbalance, std::string fname, std::string pqParts)
@@ -294,6 +333,8 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
   }
 
   problem.printTimers();
+
+
 }
 
 void serialTest(int numParts, int numCoords, float imbalance)

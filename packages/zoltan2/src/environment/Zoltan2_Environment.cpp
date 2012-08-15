@@ -50,6 +50,7 @@
 #define _ZOLTAN2_ENVIRONMENT_CPP_
 
 #include <Zoltan2_Environment.hpp>
+#include <Zoltan2_IntegerRangeList.hpp>
 #include <Zoltan2_Util.hpp>
 
 #include <Teuchos_StandardParameterEntryValidators.hpp>
