@@ -243,8 +243,8 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
 
   problem.solve();
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-      problem.getSolution();
+  //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  //    problem.getSolution();
 
 
   if (comm->getRank() == 0){
@@ -323,8 +323,8 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
 
   problem.solve();
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-      problem.getSolution();
+  //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  //    problem.getSolution();
 
   if (comm->getRank() == 0){
     problem.printMetrics(cout);
@@ -436,8 +436,8 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   problem.solve();
 
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-      problem.getSolution();
+  //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  //    problem.getSolution();
 
   if (comm->getRank()  == 0)
     problem.printMetrics(cout);
@@ -492,8 +492,8 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
   problem.solve();
 
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-      problem.getSolution();
+  //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  //    problem.getSolution();
 
   //const RCP<inputAdapter_t> rcpIa = RCP<inputAdapter_t>(&ia);
   //const RCP <const Zoltan2::PartitioningSolution<inputAdapter_t> > rcpsolution = RCP<const Zoltan2::PartitioningSolution<inputAdapter_t> >(&solution,false);

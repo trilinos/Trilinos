@@ -191,8 +191,8 @@ int main(int argc, char *argv[])
     fail=6;
       
   if (!fail && 
-        (nprocs>1 && solution->criteriaHasUniformPartSizes(0) ||
-         nprocs==1 && !solution->criteriaHasUniformPartSizes(0)) )
+        ((nprocs>1 && solution->criteriaHasUniformPartSizes(0)) ||
+         (nprocs==1 && !solution->criteriaHasUniformPartSizes(0))) )
     fail=8;
 
   if (!fail){
@@ -253,8 +253,6 @@ int main(int argc, char *argv[])
         fail = 13;
     }
   }
-
-  double epsilon = 10e-6;
 
   gfail = globalFail(comm, fail);
   if (gfail){
