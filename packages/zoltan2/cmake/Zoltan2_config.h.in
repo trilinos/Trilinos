@@ -1,5 +1,5 @@
 /* define if we want to include experimental code */
-#cmakedefine INCLUDE_ZOLTAN2_EXPERIMENTAL_CODE
+#cmakedefine INCLUDE_ZOLTAN2_EXPERIMENTAL
 
 /* define if we have MPI */
 #cmakedefine HAVE_ZOLTAN2_MPI
