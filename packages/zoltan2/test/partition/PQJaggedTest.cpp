@@ -177,6 +177,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
     weight[i] = new scalar_t[numLocalPoints];
   }
   gg->getLocalWeightsCopy(weight);
+
   delete gg;
 
   RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
@@ -226,6 +227,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
   parParams.set("algorithm", "PQJagged");
   parParams.set("compute_metrics", "true");
   parParams.set("imbalance_tolerance", double(imbalance));
+  params.set("parallel_part_calculation_count", 10);
 
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
   geoParams.set("bisection_num_test_cuts", 7);
@@ -243,7 +245,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, int numParts, flo
 
   problem.solve();
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =*/
       problem.getSolution();
 
 
@@ -302,8 +304,8 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
 
   Teuchos::ParameterList params("test params");
 
-  params.set("pqParts", pqParts);
 
+  params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("num_global_parts", numParts);
@@ -323,7 +325,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, int numParts,
 
   problem.solve();
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =*/
       problem.getSolution();
 
   if (comm->getRank() == 0){
@@ -384,7 +386,7 @@ void serialTest(int numParts, int numCoords, float imbalance)
 
   serialProblem.solve();
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &serialSolution = 
+  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &serialSolution =*/
       serialProblem.getSolution();
 
   serialProblem.printMetrics(cout);
@@ -436,7 +438,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   problem.solve();
 
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =*/
       problem.getSolution();
 
   if (comm->getRank()  == 0)
@@ -492,7 +494,7 @@ void meshCoordinatesTest2(const RCP<const Teuchos::Comm<int> > & comm, string pq
   problem.solve();
 
 
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =*/
       problem.getSolution();
 
   //const RCP<inputAdapter_t> rcpIa = RCP<inputAdapter_t>(&ia);

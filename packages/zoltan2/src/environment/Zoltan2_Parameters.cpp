@@ -448,7 +448,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
       "The number of parts whose cut coordinates will be calculated concurently.",
       docString);
 
-  pList.set<string>(parameterName, "0", docString.str(),
+  pList.set<string>(parameterName, "1", docString.str(),
     anyNumValidatorP);
   ///////////////////////////////////////////////////////////
   // LEVEL: top level, general problem parameters

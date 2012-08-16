@@ -1608,14 +1608,13 @@ public:
     }
   }
 
-  void **getLocalWeightsCopy(T **w){
+  void getLocalWeightsCopy(T **w){
     for(int ii = 0; ii < this->weight_dimension; ++ii){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
       for (lno_t i = 0; i < this->numLocalCoords; ++i){
         w[ii][i] = this->wghts[ii][i];
-        //cout << "i:" << i << "w:" << w[ii][i] << endl;
       }
     }
   }

@@ -456,18 +456,14 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
     imbalanceTolerance = 10e-4;
 
 
-  getParameterValue<partId_t>(pl, "partitioning",
-      "parallel_part_calculation_count", isSet, k);
-
-  if (!isSet)
-    k = 1;
-
-
-  ////////////////////////////////////////////////////////
-  // Geometric partitioning problem parameters of interest:
-  //    average_cuts
-  //    rectilinear_blocks
-  //    bisection_num_test_cuts (experimental)
+  //TODO: FIX ME.
+  double aa = 0;
+  getParameterValue<double>(pl,
+      "parallel_part_calculation_count", isSet, aa);
+  if (!isSet){
+    aa = 1;
+  }
+  k = partId_t(aa);
 
   getParameterValue<int>(pl, "partitioning", "geometric",
       "average_cuts", isSet, intChoice);
@@ -1480,7 +1476,7 @@ void accumulateThreadResults(
 #pragma omp for
 #endif
   for(size_t j = 0; j < total_part_count * k; ++j){
-    partId_t actualCutInd = (j % total_part_count);
+    size_t actualCutInd = (j % total_part_count);
     partId_t cutInd = actualCutInd / 2 + (j / total_part_count) * noCuts;
 
     //cout << "j:" << j << " cutInd:" << cutInd << " noCuts:" << noCuts << endl;
@@ -1703,7 +1699,7 @@ void pqJagged_1DPart_simple(
 
 
       //size_t tlrShift = (total_part_count + 2 * noCuts) * kk;
-      scalar_t *tlr = totalPartWeights_leftClosest_rightCloset ;
+      //scalar_t *tlr = totalPartWeights_leftClosest_rightCloset ;
 
       accumulateThreadResults<scalar_t>(
           noCuts, total_part_count, isDone,
@@ -1728,7 +1724,6 @@ void pqJagged_1DPart_simple(
 #pragma omp single
 #endif
       {
-
         try{
           reduceAll<int, scalar_t>(*comm, reductionOp,
               (total_part_count + 2 * noCuts) * k,
@@ -1746,7 +1741,7 @@ void pqJagged_1DPart_simple(
 
         if (globalMinMax[kk] > globalMinMax[kk + k]) continue;
         partId_t cutShift = noCuts * kk;
-        size_t totalPartShift = total_part_count * kk;
+        //size_t totalPartShift = total_part_count * kk;
         size_t tlrShift = (total_part_count + 2 * noCuts) * kk;
 
 
@@ -1839,7 +1834,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
     scalar_t *totalPartWeights, scalar_t *coordWeights, bool pqJagged_uniformWeights, int myRank, int worldSize, double **partWeights, float **nonRectelinearRatios,
     lno_t ** partPointCounts){
 
-  lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
+  //lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
   //++myRank;
 
   partId_t noCuts = partNo - 1;
@@ -2308,7 +2303,7 @@ void AlgPQJagged(
   int concurrentPartCount = 0;
   pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart,  concurrentPartCount);
 
-  concurrentPartCount = 20;//
+  //concurrentPartCount = 20;//
   cout << "k:" << concurrentPartCount << endl;
   int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
@@ -2355,7 +2350,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     cout << "numThreads=" << numThreads << endl;
     cout << "numLocalCoord:" << numLocalCoords << endl;
   }
-  scalar_t minCoordinate, maxCoordinate;
+  //scalar_t minCoordinate, maxCoordinate;
 
 
   partId_t totalDimensionCut = 0;
@@ -2629,7 +2624,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       for(int kk = 0; kk < concurrentPart; ++kk){
         scalar_t minCoordinate = globalMinMax[kk];
         scalar_t maxCoordinate = globalMinMax[kk + concurrentPart];
-        scalar_t globalTotalWeight = globalMinMax[kk + concurrentPart * 2];
+        //scalar_t globalTotalWeight = globalMinMax[kk + concurrentPart * 2];
 
         //cout << "min:" << minCoordinate << " max:" << maxCoordinate << " w:" << globalTotalWeight << endl;
         scalar_t *usedCutCoordinate = cutCoordinates + (partNo[i] - 1) * kk;
