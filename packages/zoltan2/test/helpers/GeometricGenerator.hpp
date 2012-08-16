@@ -1608,7 +1608,7 @@ public:
     }
   }
 
-  T **getLocalWeightsCopy(T **w){
+  void **getLocalWeightsCopy(T **w){
     for(int ii = 0; ii < this->weight_dimension; ++ii){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
