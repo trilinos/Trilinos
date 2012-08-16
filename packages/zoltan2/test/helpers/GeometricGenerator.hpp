@@ -880,7 +880,7 @@ private:
       coordinateDistributions = (CoordinateDistribution<T, lno_t,gno_t> **)realloc((void *)coordinateDistributions, (this->distributionCount + 1)* sizeof(CoordinateDistribution<T, lno_t,gno_t> *));
 
       std::string distName = splittedStr[i++];
-      lno_t np_ = 0;
+      gno_t np_ = 0;
       if(distName == "NORMAL"){
         int reqArg = 5;
         if (this->coordinate_dimension == 3){
