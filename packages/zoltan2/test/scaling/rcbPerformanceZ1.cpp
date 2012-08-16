@@ -50,9 +50,9 @@
     \todo  get the imbalance when done
 */
 
-#ifdef HAVE_ZOLTAN2_ZOLTAN
-
 #include <Zoltan2_TestHelpers.hpp>
+
+#ifdef HAVE_ZOLTAN2_ZOLTAN
 #include <zoltan.h>
 #include <Teuchos_CommandLineProcessor.hpp>
 
@@ -523,6 +523,7 @@ int main(int argc, char *argv[])
 #include <iostream>
 int main(int argc, char *argv[])
 {
+  std::cout << "Test did not run due to faulty configuration." << std::endl;
   std::cout << "PASS" << std::endl;
 }
 #endif

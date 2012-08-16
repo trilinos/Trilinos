@@ -56,6 +56,7 @@
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
+#include <Zoltan2_IntegerRangeList.hpp>
 
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
@@ -783,7 +784,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   getParameterValue(pl, "partitioning", "topology", isSet, valueList);
 
   if (isSet){
-    if (!Zoltan2::noValuesAreInRangeList(valueList)){
+    if (!Zoltan2::noValuesAreInRangeList<int>(valueList)){
       int *n = new int [valueList.size() + 1];
       levelNumberParts_ = arcp(n, 0, valueList.size() + 1, true);
       int procsPerNode = 1;

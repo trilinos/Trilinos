@@ -1200,8 +1200,8 @@ void getNewCoordinates_simple(
 
 #ifdef HAVE_ZOLTAN2_OMP
 #endif
-#pragma omp barrier
 #ifdef HAVE_ZOLTAN2_OMP
+#pragma omp barrier
 #pragma omp single
 #endif
   {
