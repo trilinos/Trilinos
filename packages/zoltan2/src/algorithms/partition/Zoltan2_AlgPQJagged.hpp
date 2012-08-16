@@ -994,14 +994,14 @@ void getNewCoordinates_simple(
   for (partId_t i = myCutStart; i < myCutEnd; i++){
     //if already determined at previous iterations, do nothing.
 
+    globalCutWeights[i] = 0;
+    cutWeights[i] = 0;
     if(isDone[i]) {
       cutCoordinatesWork[i] = cutCoordinates[i];
       continue;
     }
     //current weight of the part at the left of the cut line.
     seenW = totalPartWeights[i * 2];
-    globalCutWeights[i] = 0;
-    cutWeights[i] = 0;
 
     expected = cutPartRatios[i];
     leftImbalance = imbalanceOf(seenW, totalWeight, expected);
@@ -1187,6 +1187,7 @@ void getNewCoordinates_simple(
 #pragma omp single
 #endif
   {
+    //cout << "rec cnt:" << rectelinearCount << endl;
     if(*rectelinearCount > 0){
       try{
         Teuchos::scan<int,scalar_t>(
@@ -1216,12 +1217,17 @@ void getNewCoordinates_simple(
           else {
             nonRectelinearPart[i] = mine / myWeightOnLine;
           }
-          //cout << "nonrec:" << i << " : " << nonRectelinearPart[i] << endl;
         }
       }
       *rectelinearCount = 0;
     }
-
+/*
+    if(comm->getRank() == 0){
+      for (partId_t i = 0; i < noCuts; ++i)
+    cout << "nonrec:" << i << " : " << nonRectelinearPart[i] << endl;
+    cout << endl;
+    }
+*/
 
   }
 }
@@ -1698,11 +1704,6 @@ void pqJagged_1DPart_simple(
 
       //size_t tlrShift = (total_part_count + 2 * noCuts) * kk;
       scalar_t *tlr = totalPartWeights_leftClosest_rightCloset ;
-      scalar_t *tw = tlr;
-      scalar_t *lc = tlr + total_part_count;
-      scalar_t *rc = tlr + total_part_count + noCuts;
-
-
 
       accumulateThreadResults<scalar_t>(
           noCuts, total_part_count, isDone,
@@ -1887,10 +1888,12 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
             nonRectelinearRatios[ii][i] = 0;
           }
         }
-
-        //cout << "m:" << i << ":" <<  actual_ratios[i] << endl;
-        //cout << "m:" << i << ":" <<  myRatios[i]  << endl;
-
+/*
+        if(myRank == 0){
+          cout << "m:" << i << ":" <<  actual_ratios[i] << endl;
+          cout << "m:" << i << ":" <<  myRatios[i]  << endl;
+        }
+        */
       }
 
 
@@ -2305,7 +2308,7 @@ void AlgPQJagged(
   int concurrentPartCount = 0;
   pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart,  concurrentPartCount);
 
-  concurrentPartCount = 2;//
+  concurrentPartCount = 20;//
   cout << "k:" << concurrentPartCount << endl;
   int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
@@ -2802,13 +2805,13 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
 
-
+/*
   if(comm->getRank() == 0){
     for(size_t i = 0; i < totalPartCount - 1;++i){
       cout << "cut coordinate:" << allCutCoordinates[i] << endl;
     }
   }
-
+*/
 
   //freeArray<scalar_t> (global_min_max_coordinates);
   //freeArray<scalar_t> (local_min_max_coordinates);
