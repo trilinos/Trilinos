@@ -456,18 +456,14 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
     imbalanceTolerance = 10e-4;
 
 
-  getParameterValue<partId_t>(pl, "partitioning",
-      "parallel_part_calculation_count", isSet, k);
-
-  if (!isSet)
-    k = 1;
-
-
-  ////////////////////////////////////////////////////////
-  // Geometric partitioning problem parameters of interest:
-  //    average_cuts
-  //    rectilinear_blocks
-  //    bisection_num_test_cuts (experimental)
+  //TODO: FIX ME.
+  double aa = 0;
+  getParameterValue<double>(pl,
+      "parallel_part_calculation_count", isSet, aa);
+  if (!isSet){
+    aa = 1;
+  }
+  k = partId_t(aa);
 
   getParameterValue<int>(pl, "partitioning", "geometric",
       "average_cuts", isSet, intChoice);
@@ -994,14 +990,14 @@ void getNewCoordinates_simple(
   for (partId_t i = myCutStart; i < myCutEnd; i++){
     //if already determined at previous iterations, do nothing.
 
+    globalCutWeights[i] = 0;
+    cutWeights[i] = 0;
     if(isDone[i]) {
       cutCoordinatesWork[i] = cutCoordinates[i];
       continue;
     }
     //current weight of the part at the left of the cut line.
     seenW = totalPartWeights[i * 2];
-    globalCutWeights[i] = 0;
-    cutWeights[i] = 0;
 
     expected = cutPartRatios[i];
     leftImbalance = imbalanceOf(seenW, totalWeight, expected);
@@ -1015,9 +1011,6 @@ void getNewCoordinates_simple(
     bool isLeftValid = fabs(leftImbalance) - imbalanceTolerance < _EPSILON ;//* 10;
     bool isRightValid = fabs(rightImbalance) - imbalanceTolerance < _EPSILON; // * 10;
 
-    if(fabs(cutCoordinates[i] - 0.660788)  < _EPSILON){
-      cout << "i:" << i << " expected:" << expected << " left:" << leftImbalance << " right:" << rightImbalance << " seen:" << seenW << " tot:" << totalWeight<< endl;
-    }
 
     //if the cut line reaches to desired imbalance.
     if(isLeftValid && isRightValid){
@@ -1035,10 +1028,6 @@ void getNewCoordinates_simple(
     //if left imbalance is lower than 0, then cut line should be moved to right.
     else if(leftImbalance < 0){
       scalar_t ew = totalWeight * expected;
-      if(fabs(cutCoordinates[i] - 0.660788)  < _EPSILON){
-        cout << "eq:" << ew << endl;
-        cout << "line:" << totalPartWeights[i * 2 + 1] << endl;
-      }
 
 
       if(allowNonRectelinearPart){
@@ -1071,11 +1060,6 @@ void getNewCoordinates_simple(
           continue;
         }
       }
-      /*
-      if(fabs(cutCoordinates[i] - 0.660788)  < _EPSILON){
-        cout << "lb:" << cutLowerBounds[i] << " ub:" << cutUpperBounds[i]<< " uw:" << cutUpperWeight[i] << " lw:" << cutLowerWeight[i] << endl;
-      }
-      */
       //cout << "saga kay" << endl;
       //when moving left, and upper and lower are set.
       //set lower bound to current line.
@@ -1120,9 +1104,6 @@ void getNewCoordinates_simple(
           cutLowerBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii] ;
           cutLowerWeight[i] = pw;
         }
-      }
-      if(fabs(cutCoordinates[i] - 0.660788)  < _EPSILON){
-        cout << "lb:" << cutLowerBounds[i] << " ub:" << cutUpperBounds[i]<< " uw:" << cutUpperWeight[i] << " lw:" << cutLowerWeight[i] << endl;
       }
       scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
       //cout << "new:" << newPivot << endl;
@@ -1181,9 +1162,6 @@ void getNewCoordinates_simple(
 
       scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
 
-      if(fabs(cutCoordinates[i] - 0.660788)  < _EPSILON){
-        cout << "new:" << newPivot << " old:" << cutCoordinates[i] << " dif:" << fabs(cutCoordinates[i] - newPivot)  << endl;
-      }
       if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
         isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
@@ -1205,6 +1183,7 @@ void getNewCoordinates_simple(
 #pragma omp single
 #endif
   {
+    //cout << "rec cnt:" << rectelinearCount << endl;
     if(*rectelinearCount > 0){
       try{
         Teuchos::scan<int,scalar_t>(
@@ -1234,12 +1213,17 @@ void getNewCoordinates_simple(
           else {
             nonRectelinearPart[i] = mine / myWeightOnLine;
           }
-          //cout << "nonrec:" << i << " : " << nonRectelinearPart[i] << endl;
         }
       }
       *rectelinearCount = 0;
     }
-
+/*
+    if(comm->getRank() == 0){
+      for (partId_t i = 0; i < noCuts; ++i)
+    cout << "nonrec:" << i << " : " << nonRectelinearPart[i] << endl;
+    cout << endl;
+    }
+*/
 
   }
 }
@@ -1299,9 +1283,7 @@ void pqJagged_1DPart_getPartWeights(
       if(absdistance < _EPSILON){
 
         myPartWeights[j * 2 + 1] += w;
-        if(fabs(cutCoordinates_tmp[j] - 0.660788)  < _EPSILON){
-          cout << "i:" << j << " myPartWeights[2 * kk + 1]:" << myPartWeights[2 * j + 1] <<  endl;
-        }
+
         myLeftClosest[j] = 0;
         myRightClosest[j] = 0;
         partId_t kk = j + 1;
@@ -1309,9 +1291,7 @@ void pqJagged_1DPart_getPartWeights(
           scalar_t distance =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
           if(distance < _EPSILON){
             myPartWeights[2 * kk + 1] += w;
-            if(fabs(cutCoordinates_tmp[kk] - 0.660788)  < _EPSILON){
-              cout << "i:" << kk << " myPartWeights[2 * kk + 1]:" << myPartWeights[2 * kk + 1] <<  endl;
-            }
+
             myLeftClosest[kk] = 0;
             myRightClosest[kk] = 0;
             kk++;
@@ -1329,9 +1309,7 @@ void pqJagged_1DPart_getPartWeights(
           scalar_t distance =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
           if(distance < _EPSILON){
             myPartWeights[2 * kk + 1] += w;
-            if(fabs(cutCoordinates_tmp[kk] - 0.660788)  < _EPSILON){
-              cout << "i:" << kk << " myPartWeights[2 * kk + 1]:" << myPartWeights[2 * kk + 1] <<  endl;
-            }
+
             myLeftClosest[kk] = 0;
             myRightClosest[kk] = 0;
             kk--;
@@ -1498,9 +1476,12 @@ void accumulateThreadResults(
 #pragma omp for
 #endif
   for(size_t j = 0; j < total_part_count * k; ++j){
-    partId_t cutInd = (j % total_part_count) / 2 + (j / total_part_count) * noCuts;
-    //if(noCuts != 0 && partId_t(j/2) < noCuts* k && isDone[j/2]) continue;
-    if(isDone[cutInd]) continue;
+    size_t actualCutInd = (j % total_part_count);
+    partId_t cutInd = actualCutInd / 2 + (j / total_part_count) * noCuts;
+
+    //cout << "j:" << j << " cutInd:" << cutInd << " noCuts:" << noCuts << endl;
+     //if(noCuts != 0 && partId_t(j/2) < noCuts* k && isDone[j/2]) continue;
+    if(actualCutInd !=  total_part_count - 1 && isDone[cutInd]) continue;
     double pwj = 0;
     for (int i = 0; i < numThreads; ++i){
       pwj += partWeights[i][j];
@@ -1712,18 +1693,13 @@ void pqJagged_1DPart_simple(
         for(partId_t i = 0; i < total_part_count ; ++i){
           cout << "k:" << kk << " line:" << i << " " << myCurrentPartWeights[i] << endl;
         }
-  */
+*/
 
       }
 
 
       //size_t tlrShift = (total_part_count + 2 * noCuts) * kk;
-      scalar_t *tlr = totalPartWeights_leftClosest_rightCloset ;
-      scalar_t *tw = tlr;
-      scalar_t *lc = tlr + total_part_count;
-      scalar_t *rc = tlr + total_part_count + noCuts;
-
-
+      //scalar_t *tlr = totalPartWeights_leftClosest_rightCloset ;
 
       accumulateThreadResults<scalar_t>(
           noCuts, total_part_count, isDone,
@@ -1733,22 +1709,21 @@ void pqJagged_1DPart_simple(
           numThreads
       );
 
-      /*
+/*
       for (partId_t kk = 0; kk < k; ++kk){
 
         size_t totalPartShift = (total_part_count + 2 * noCuts) * kk;
         float *myCurrentPartWeights = totalPartWeights_leftClosest_rightCloset + totalPartShift;
         for(partId_t i = 0; i < total_part_count ; ++i){
-          cout << "k:" << kk <<  " line:" << i << " " << myCurrentPartWeights[i] << endl;
+          cout << "after accumulation k:" << kk <<  " line:" << i << " " << myCurrentPartWeights[i] << endl;
         }
       }
-      */
+*/
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
 #endif
       {
-
         try{
           reduceAll<int, scalar_t>(*comm, reductionOp,
               (total_part_count + 2 * noCuts) * k,
@@ -1766,7 +1741,7 @@ void pqJagged_1DPart_simple(
 
         if (globalMinMax[kk] > globalMinMax[kk + k]) continue;
         partId_t cutShift = noCuts * kk;
-        size_t totalPartShift = total_part_count * kk;
+        //size_t totalPartShift = total_part_count * kk;
         size_t tlrShift = (total_part_count + 2 * noCuts) * kk;
 
 
@@ -1891,12 +1866,13 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
       for (partId_t i = 0; i < noCuts; ++i){
         float r = actual_ratios[i];
         scalar_t leftWeight = r * (totalPartWeights[i * 2 + 1] - totalPartWeights[i * 2]);
-        cout << "cut:" << totalPartWeights[i * 2 + 1] << " before:" << totalPartWeights[i * 2] << endl;
-        cout <<"i:" << i << " left:" << leftWeight << endl;
+        //cout << "cut:" << totalPartWeights[i * 2 + 1] << " before:" << totalPartWeights[i * 2] << endl;
+        //cout <<"i:" << i << " left:" << leftWeight << endl;
         for(int ii = 0; ii < noThreads; ++ii){
           if(leftWeight > _EPSILON){
 
             scalar_t ithWeight = partWeights[ii][i * 2 + 1] - partWeights[ii][i * 2 ];
+            //cout << "ithWeight:" << ii << " is:" << ithWeight << endl;
             if(ithWeight < leftWeight){
               nonRectelinearRatios[ii][i] = ithWeight;
             }
@@ -1909,10 +1885,12 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
             nonRectelinearRatios[ii][i] = 0;
           }
         }
-
-        cout << "m:" << i << ":" <<  actual_ratios[i] << endl;
-        cout << "m:" << i << ":" <<  myRatios[i]  << endl;
-
+/*
+        if(myRank == 0){
+          cout << "m:" << i << ":" <<  actual_ratios[i] << endl;
+          cout << "m:" << i << ":" <<  myRatios[i]  << endl;
+        }
+        */
       }
 
 
@@ -2244,11 +2222,11 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
       }
     }
   }
-
+/*
   for(partId_t i = 0; i < partNo; ++i){
     cout << "p:" << i << " total_cnt:" <<  totalCounts[i] << endl;
   }
-
+*/
 
 }
 
@@ -2327,8 +2305,8 @@ void AlgPQJagged(
   int concurrentPartCount = 0;
   pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart,  concurrentPartCount);
 
+  //concurrentPartCount = 20;//
   cout << "k:" << concurrentPartCount << endl;
-  concurrentPartCount = 1;//
   int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
   lno_t numLocalCoords = nlc;
@@ -2374,7 +2352,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
     cout << "numThreads=" << numThreads << endl;
     cout << "numLocalCoord:" << numLocalCoords << endl;
   }
-  scalar_t minCoordinate, maxCoordinate;
+  //scalar_t minCoordinate, maxCoordinate;
 
 
   partId_t totalDimensionCut = 0;
@@ -2648,7 +2626,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
       for(int kk = 0; kk < concurrentPart; ++kk){
         scalar_t minCoordinate = globalMinMax[kk];
         scalar_t maxCoordinate = globalMinMax[kk + concurrentPart];
-        scalar_t globalTotalWeight = globalMinMax[kk + concurrentPart * 2];
+        //scalar_t globalTotalWeight = globalMinMax[kk + concurrentPart * 2];
 
         //cout << "min:" << minCoordinate << " max:" << maxCoordinate << " w:" << globalTotalWeight << endl;
         scalar_t *usedCutCoordinate = cutCoordinates + (partNo[i] - 1) * kk;
@@ -2709,8 +2687,18 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
         partId_t cutShift = (partNo[i] - 1) * kk;
         //partId_t partShift = (partNo[i]) * kk;
         scalar_t *usedCutCoordinate = cutCoordinates + cutShift;
-        scalar_t *usednonRectelinearPart = nonRectelinearPart + cutShift;
-        //cout << "used:" << usedCutCoordinate[0] << endl;
+        float *usednonRectelinearPart = nonRectelinearPart + cutShift;
+
+        scalar_t *tlr =  totalPartWeights_leftClosests_rightClosests + (4 *(partNo[i] - 1) + 1) * kk;
+        /*
+        for(int ii = 0; ii < partNo[i] - 1; ++ii){
+          cout << "r:" << ii << " is:" << usednonRectelinearPart[ii] << endl;
+        }
+        */
+        double **pws = allocMemory<double *>(numThreads);
+        for(int ii = 0; ii < numThreads; ++ii){
+          pws[ii] = partWeights[ii] +  (2 * (partNo[i] - 1) + 1) * kk;
+        }
 
         getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], numThreads,
             pqCoord, usedCutCoordinate, outTotalCounts + currentOut + kk * (partNo[i]),
@@ -2719,14 +2707,15 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
             coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords,
             usednonRectelinearPart, /*todo*/
             allowNonRectelinearPart,
-            totalPartWeights_leftClosests_rightClosests, /*todo*/
+            tlr, /*todo*/
             pqJagged_weights[0], pqJagged_uniformWeights[0],
             comm->getRank(),
             comm->getSize(),
-            partWeights, /*todo*/
+            pws, /*todo*/
             nonRectRatios,
             partPointCounts);
 
+        delete []pws;
       }
       env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_chunks");
 
@@ -2813,15 +2802,13 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
 
-
+/*
   if(comm->getRank() == 0){
     for(size_t i = 0; i < totalPartCount - 1;++i){
       cout << "cut coordinate:" << allCutCoordinates[i] << endl;
     }
   }
-
-
-
+*/
 
   //freeArray<scalar_t> (global_min_max_coordinates);
   //freeArray<scalar_t> (local_min_max_coordinates);

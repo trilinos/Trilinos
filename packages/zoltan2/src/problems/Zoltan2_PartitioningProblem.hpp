@@ -937,7 +937,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
           //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
           int arraySize = pl.getPtr<Array <int> >("pqParts")->size() - 1;
           exceptionThrow = arraySize > 0;
-          this->envConst_->localInputAssertion(__FILE__, __LINE__, "invalid length of cut lines. Size of cut lines should match with dimension of the input.",
+          this->envConst_->localInputAssertion(__FILE__, __LINE__, "invalid length of cut lines. Size of cut lines should be at least 1.",
                   		  exceptionThrow, BASIC_ASSERTION);
 
 
@@ -950,6 +950,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
           Teuchos::ParameterList &parParams = newParams.sublist("partitioning");
 
           parParams.set("num_global_parts", totalPartCount);
+
 
           //cout << endl;
           Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->envConst_->comm_;
