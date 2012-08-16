@@ -1880,7 +1880,9 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
     scalar_t *totalPartWeights, scalar_t *coordWeights, bool pqJagged_uniformWeights, int myRank, int worldSize, double **partWeights, float **nonRectelinearRatios,
     lno_t ** partPointCounts){
 
+#ifndef BINARYCUTSEARCH
   lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
+#endif
   //++myRank;
 
   partId_t noCuts = partNo - 1;

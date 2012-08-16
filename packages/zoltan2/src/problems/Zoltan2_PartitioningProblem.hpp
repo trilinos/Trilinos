@@ -932,7 +932,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       ////////////////////////////////////////////////////////////////////////////
 
       if(algorithm == string("PQJagged")){
-          int coordinateCnt = this->coordinateModel_->getCoordinateDim();
+          //int coordinateCnt = this->coordinateModel_->getCoordinateDim();
           //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
           //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
           int arraySize = pl.getPtr<Array <int> >("pqParts")->size() - 1;
