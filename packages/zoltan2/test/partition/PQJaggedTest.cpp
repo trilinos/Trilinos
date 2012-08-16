@@ -250,8 +250,8 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
 
   problem.solve();
 
-  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =*/
-      problem.getSolution();
+  //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  //    problem.getSolution();
 
 
   if (comm->getRank() == 0){
@@ -331,7 +331,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numP
 
   problem.solve();
 
-  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =*/
+  //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
       problem.getSolution();
 
   if (comm->getRank() == 0){
@@ -345,111 +345,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numP
 
 }
 
-void serialTest(int numParts, int numCoords, float imbalance)
-{
-  //int numCoords = 1000;
 
-
-  gno_t *ids = new gno_t [numCoords];
-  if (!ids)
-    throw std::bad_alloc();
-  for (lno_t i=0; i < numCoords; i++)
-    ids[i] = i;
-  ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
-
-  Array<ArrayRCP<scalar_t> > randomCoords(3);
-  UserInputForTests::getRandomData(555, numCoords, 0, 10, 
-      randomCoords.view(0,3));
-
-  typedef Zoltan2::BasicCoordinateInput<myTypes_t> inputAdapter_t;
-
-  inputAdapter_t ia(numCoords, ids, 
-      randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
-      randomCoords[2].getRawPtr(), 1,1,1);
-
-  Teuchos::ParameterList params("test params");
-  params.set("debug_level", "basic_status");
-
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("num_global_parts", numParts);
-  parParams.set("algorithm", "PQJagged");
-  parParams.set("imbalance_tolerance", double(imbalance));
-
-  //string algorithmss("dd");
-  //bool isSets;
-  //getParameterValue(parParams, "partitioning", "algorithm", isSets, algorithmss);
-  //cout << "algo:" << algorithmss << endl;
-
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 7);
-
-#ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(
-      &ia, &params, MPI_COMM_SELF);
-#else
-  Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(&ia, &params);
-#endif
-
-  serialProblem.solve();
-
-  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &serialSolution =*/
-      serialProblem.getSolution();
-
-  serialProblem.printMetrics(cout);
-
-
-}
-
-void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
-{
-  int xdim = 80;
-  int ydim = 60;
-  int zdim = 40;
-
-  UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm, true);
-
-  RCP<tMVector_t> coords = uinput.getCoordinates();
-
-  size_t localCount = coords->getLocalLength();
-
-  scalar_t *x=NULL, *y=NULL, *z=NULL;
-  x = coords->getDataNonConst(0).getRawPtr();
-  y = coords->getDataNonConst(1).getRawPtr();
-  z = coords->getDataNonConst(2).getRawPtr();
-
-  const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
-
-  inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
-
-  Teuchos::ParameterList params("test params");
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("algorithm", "PQJagged");
-
-  //parParams.set("algorithm", "rcb");
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 7);
-  geoParams.set("rectilinear_blocks", "no");
-
-  parParams.set("num_global_parts", 10);
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-      MPI_COMM_WORLD);
-#else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
-#endif
-
-  problem.solve();
-
-
-  /*const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =*/
-      problem.getSolution();
-
-  if (comm->getRank()  == 0)
-    problem.printMetrics(cout);
-}
 
 
 

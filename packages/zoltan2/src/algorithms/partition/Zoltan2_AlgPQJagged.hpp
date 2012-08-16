@@ -1843,6 +1843,7 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
     lno_t *coordinate_linked_list, lno_t **coordinate_starts, lno_t **coordinate_ends, lno_t numLocalCoord, float *actual_ratios, bool allowNonRectelinearPart,
     scalar_t *totalPartWeights, scalar_t *coordWeights, bool pqJagged_uniformWeights, int myRank, int worldSize, double **partWeights, float **nonRectelinearRatios,
     lno_t ** partPointCounts){
+
 #ifndef BINARYCUTSEARCH
   lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
 #endif
@@ -2737,6 +2738,7 @@ void AlgPQJagged(
 
       lno_t k = partitionedPointCoordinates[ii];
       partIds[k] = i;
+
       /*
       cout << "part of coordinate:";
       for(int iii = 0; iii < coordDim; ++iii){
@@ -2744,7 +2746,8 @@ void AlgPQJagged(
       }
       cout << i;
       cout << endl;
-       */
+      */
+
     }
     //cout << "begin:" << begin << " end:" << end << endl;
   }
@@ -2760,13 +2763,13 @@ void AlgPQJagged(
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
-/*
+
   if(comm->getRank() == 0){
     for(size_t i = 0; i < totalPartCount - 1;++i){
       cout << "cut coordinate:" << allCutCoordinates[i] << endl;
     }
   }
-*/
+
   //freeArray<scalar_t> (global_min_max_coordinates);
   //freeArray<scalar_t> (local_min_max_coordinates);
 

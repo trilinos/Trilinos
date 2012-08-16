@@ -1465,20 +1465,6 @@ public:
       }
     }
 
-
-
-
-
-    /*
-    this->points = new CoordinatePoint<T> [myPointCount];
-#pragma omp parallel for
-    for(lno_t cnt = 0; cnt < myPointCount; ++cnt){
-      this->points[cnt].x = 0;
-      this->points[cnt].y = 0;
-      this->points[cnt].z = 0;
-    }
-    */
-
     this->coords = new T *[this->coordinate_dimension];
     for(int i = 0; i < this->coordinate_dimension; ++i){
       this->coords[i] = new T[myPointCount];
