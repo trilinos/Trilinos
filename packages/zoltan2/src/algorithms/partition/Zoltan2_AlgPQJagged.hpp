@@ -1650,6 +1650,7 @@ void pqJagged_1DPart_simple(
               else cout << "i:" << i <<  " c:" << cutCoordinates_tmp[i] <<  " done" << endl; } }
         }
 */
+
       for (partId_t kk = 0; kk < k; ++kk){
 
         if (globalMinMax[kk] > globalMinMax[kk + k]) continue;
@@ -1689,12 +1690,16 @@ void pqJagged_1DPart_simple(
             _EPSILON,
             numThreads
         );
-/*
-        for(partId_t i = 0; i < total_part_count ; ++i){
-          cout << "k:" << kk << " line:" << i << " " << myCurrentPartWeights[i] << endl;
-        }
-*/
+        /*
+#pragma omp single
+        {
+          for(partId_t i = 0; i < total_part_count ; ++i){
+            cout << "k:" << kk << " line:" << i << " " << myCurrentPartWeights[i] << endl;
+          }
 
+
+        }
+        */
       }
 
 
@@ -1708,17 +1713,23 @@ void pqJagged_1DPart_simple(
           localMinMax, k,
           numThreads
       );
+      /*
+#pragma omp single
+      {
+        for (partId_t kk = 0; kk < k; ++kk){
 
-/*
-      for (partId_t kk = 0; kk < k; ++kk){
-
-        size_t totalPartShift = (total_part_count + 2 * noCuts) * kk;
-        float *myCurrentPartWeights = totalPartWeights_leftClosest_rightCloset + totalPartShift;
-        for(partId_t i = 0; i < total_part_count ; ++i){
-          cout << "after accumulation k:" << kk <<  " line:" << i << " " << myCurrentPartWeights[i] << endl;
+          size_t totalPartShift = (total_part_count + 2 * noCuts) * kk;
+          float *myCurrentPartWeights = totalPartWeights_leftClosest_rightCloset + totalPartShift;
+          for(partId_t i = 0; i < total_part_count ; ++i){
+            cout << "after accumulation k:" << kk <<  " line:" << i << " " << myCurrentPartWeights[i] << endl;
+          }
         }
+
       }
-*/
+      */
+
+
+
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
@@ -1734,7 +1745,6 @@ void pqJagged_1DPart_simple(
 
         Z2_THROW_OUTSIDE_ERROR(*env)
       }
-
 
       for (partId_t kk = 0; kk < k; ++kk){
 
@@ -1775,9 +1785,12 @@ void pqJagged_1DPart_simple(
             &recteLinearCount, cutWeights, globalCutWeights, 0, noCuts);
       }
 
+#pragma omp single
+      {
       scalar_t *t = cutCoordinates_tmp;
       cutCoordinates_tmp = cutCoordinatesWork;
       cutCoordinatesWork = t;
+      }
     }
 
     if(comm->getRank() == 0)
@@ -2599,16 +2612,6 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
         pqJagged_getLocalMinMaxTotalCoord<scalar_t, lno_t>(pqCoord, pqJagged_weights[0], pqJagged_uniformWeights,
             localMinMax[kk], localMinMax[kk + concurrentPart], localMinMax[kk + 2*concurrentPart],
             numThreads, partitionedPointCoordinates, coordinateBegin, coordinateEnd, max_min_array, maxScalar_t, minScalar_t);
-
-/*
-        //for (int i = 0; i < k; ++i){
-          cout << "localMinMaxTotal[" << kk <<"]:" << localMinMax[kk] << endl;
-
-          cout << "localMinMaxTotal[" << kk + concurrentPart<<"]:" << localMinMax[kk + concurrentPart] << endl;
-
-          cout << "localMinMaxTotal[" << kk + concurrentPart + concurrentPart <<"]:" << localMinMax[kk + concurrentPart + concurrentPart] << endl;
-        //}
-*/
       }
       pqJagged_getGlobalMinMaxTotalCoord<scalar_t>(comm,env, concurrentPart, localMinMax, globalMinMax);
 
@@ -2626,7 +2629,7 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
         scalar_t maxCoordinate = globalMinMax[kk + concurrentPart];
         //scalar_t globalTotalWeight = globalMinMax[kk + concurrentPart * 2];
 
-        //cout << "min:" << minCoordinate << " max:" << maxCoordinate << " w:" << globalTotalWeight << endl;
+
         scalar_t *usedCutCoordinate = cutCoordinates + (partNo[i] - 1) * kk;
         scalar_t *usedCutPartRatios = cutPartRatios + (partNo[i]) * kk;
         if(minCoordinate <= maxCoordinate){
