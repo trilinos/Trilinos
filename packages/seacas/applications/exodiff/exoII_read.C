@@ -312,7 +312,7 @@ Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Id(EXOTYPE type, size_t id) const
     }
     break;
   default:
-   return NULL;
+    return NULL;
   }
   return NULL;
 }
@@ -362,10 +362,9 @@ string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() const
   SMART_ASSERT(Check_State());
   if (!Open()) return "ERROR:  Must open file before loading blocks!";
   
-  for (int b = 0; b < num_elmt_blocks; ++b)
-  {
+  for (int b = 0; b < num_elmt_blocks; ++b) {
     eblocks[b].Load_Connectivity();
-//    eblocks[b].Load_Attributes();
+    //    eblocks[b].Load_Attributes();
   }
   
   return "";
@@ -380,8 +379,8 @@ string ExoII_Read<INT>::Free_Elmt_Block(int block_index) const
   
   eblocks[block_index].Free_Connectivity();
   eblocks[block_index].Free_Attributes();
-//  eblocks[idx].Free_Connectivity();
-//  eblocks[idx].Free_Attributes();
+  //  eblocks[idx].Free_Connectivity();
+  //  eblocks[idx].Free_Attributes();
   
   return "";
 }
@@ -391,8 +390,7 @@ string ExoII_Read<INT>::Free_Elmt_Blocks() const
 {
   SMART_ASSERT(Check_State());
   
-  for (int b = 0; b < num_elmt_blocks; ++b)
-  {
+  for (int b = 0; b < num_elmt_blocks; ++b) {
     eblocks[b].Free_Connectivity();
     eblocks[b].Free_Attributes();
   }
@@ -469,8 +467,8 @@ string ExoII_Read<INT>::Load_Node_Map()
   ex_opts(EX_VERBOSE);
   
   if (err < 0) {
-    std::cout << "ExoII_Read::Load_Node_Map()  ERROR: Unable to load node map; "
-         << "Exodus error = " << err << ".  Aborting..." << std::endl;
+    std::cout << "EXODIFF ERROR: Unable to load node map; "
+	      << "Exodus error = " << err << ".  Aborting..." << std::endl;
     exit(1);
   }
   else if (err > 0)
@@ -509,8 +507,8 @@ string ExoII_Read<INT>::Load_Elmt_Map()
   ex_opts(EX_VERBOSE);
   
   if (err < 0) {
-    std::cout << "ExoII_Read::Load_Elmt_Map()  ERROR: Unable to load element map; "
-         << "Exodus error = " << err << ".  Aborting..." << std::endl;
+    std::cout << "EXODIFF ERROR: Unable to load element map; "
+	      << "Exodus error = " << err << ".  Aborting..." << std::endl;
     exit(1);
   }
   else if (err > 0)
@@ -549,8 +547,8 @@ string ExoII_Read<INT>::Load_Elmt_Order()
   ex_opts(EX_VERBOSE);
   
   if (err < 0) {
-    std::cout << "ExoII_Read::Load_Elmt_Map()  ERROR: Unable to load element order; "
-         << "Exodus error = " << err << ".  Aborting..." << std::endl;
+    std::cout << "EXODIFF ERROR: Unable to load element order; "
+	      << "Exodus error = " << err << ".  Aborting..." << std::endl;
     exit(1);
   }
   else if (err > 0)
@@ -588,8 +586,7 @@ string ExoII_Read<INT>::Load_Nodal_Coordinates()
   
   if (!Open()) return "WARNING:  File not open!";
   
-  if (num_nodes)
-  {
+  if (num_nodes) {
     size_t count = num_nodes * dimension;
     nodes = new double[count];  SMART_ASSERT(nodes != 0);
     double *x = nodes, *y = nodes, *z = nodes;
@@ -598,18 +595,17 @@ string ExoII_Read<INT>::Load_Nodal_Coordinates()
     
     int err = ex_get_coord(file_id, x, y, z);
     if (err < 0) {
-        std::cout << "ExoII_Read::Fill_Nodal_Coordinates(): ERROR: Failed to get "
-             << "nodal coordinates!  Aborting..." << std::endl;
+      std::cout << "EXODIFF ERROR: Failed to get "
+		<< "nodal coordinates!  Aborting..." << std::endl;
       exit(1);
     }
-    else if (err > 0)
-    {
+    else if (err > 0) {
       delete [] nodes;  nodes = 0;
       ostringstream oss;
-      oss << "ExoII_Read::Fill_Nodal_Coordinates(): WARNING:  "
-          << "Exodus issued warning \"" << err
-          << "\" on call to ex_get_coord()!"
-          << "  I'm not going to keep what it gave me for coordinates.";
+      oss << "EXODIFF WARNING:  "
+	  << "Exodus issued warning \"" << err
+	  << "\" on call to ex_get_coord()!"
+	  << "  I'm not going to keep what it gave me for coordinates.";
       return oss.str();
     }
   }
@@ -635,8 +631,7 @@ string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
   
   if (!Open()) return "WARNING:  File not open!";
   
-  if (cur_time != time_step_num)
-  {
+  if (cur_time != time_step_num) {
     for (unsigned i = 0; i < nodal_vars.size(); ++i) {
       delete [] results[i];
       results[i] = 0;
@@ -644,8 +639,7 @@ string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
     cur_time = time_step_num;
   }
   
-  if (num_nodes)
-  {
+  if (num_nodes) {
     results[var_index] = new double[ num_nodes ];
     
     int err = ex_get_var(file_id,
@@ -655,12 +649,11 @@ string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
 			 0, num_nodes,
 			 results[var_index]);
     if (err < 0) {
-        std::cout << "ExoII_Read::Load_Nodal_Results(): ERROR: Failed to get "
-             << "nodal variable values!  Aborting..." << std::endl;
+      std::cout << "ExoII_Read::Load_Nodal_Results(): ERROR: Failed to get "
+		<< "nodal variable values!  Aborting..." << std::endl;
       exit(1);
     }
-    else if (err > 0)
-    {
+    else if (err > 0) {
       delete [] results[var_index];  results[var_index] = 0;
       ostringstream oss;
       oss << "ExoII_Read::Load_Nodal_Results(): WARNING:  "
@@ -935,47 +928,41 @@ void ExoII_Read<INT>::Display_Stats(std::ostream& s) const
     << "              number of nodes sets = " << num_node_sets << std::endl
     << "               number of side sets = " << num_side_sets << std::endl;
   
-  if (num_elmt_blocks)
-  {
+  if (num_elmt_blocks) {
     s << separator << std::endl;
     
     s << "                   ELEMENT BLOCKS" << std::endl;
     s << "\tIndex \tId     num elmts    nodes/elmt num attr  type" << std::endl;
-    for (int b = 0; b < num_elmt_blocks; ++b)
-    {
+    for (int b = 0; b < num_elmt_blocks; ++b) {
       s << "\t" << b << "   \t" << eblocks[b].Id()
-        << "  \t"    << eblocks[b].Size()
-        << "  \t\t"  << eblocks[b].num_nodes_per_elmt
-        << "  \t  "  << eblocks[b].attr_count()
-        << "  \t "   << eblocks[b].elmt_type << std::endl;
+	<< "  \t"    << eblocks[b].Size()
+	<< "  \t\t"  << eblocks[b].num_nodes_per_elmt
+	<< "  \t  "  << eblocks[b].attr_count()
+	<< "  \t "   << eblocks[b].elmt_type << std::endl;
     }
   }
   
-  if (num_node_sets)
-  {
+  if (num_node_sets) {
     s << separator << std::endl;
     
     s << "              NODE SETS " << std::endl
       << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (int nset = 0; nset < num_node_sets; ++nset)
-    {
+    for (int nset = 0; nset < num_node_sets; ++nset) {
       s << "\t"   << nset << "  \t" << nsets[nset].Id()
-        << "  \t" << nsets[nset].Size()
-        << "  \t" << nsets[nset].num_dist_factors << std::endl;
+	<< "  \t" << nsets[nset].Size()
+	<< "  \t" << nsets[nset].num_dist_factors << std::endl;
     }
   }
   
-  if (num_side_sets)
-  {
+  if (num_side_sets) {
     s << separator << std::endl;
     
     s << "              SIDE SETS " << std::endl
       << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (int sset = 0; sset < num_side_sets; ++sset)
-    {
+    for (int sset = 0; sset < num_side_sets; ++sset) {
       s << "\t"   << sset << "  \t" << ssets[sset].Id()
-        << "  \t" << ssets[sset].Size()
-        << "  \t" << ssets[sset].num_dist_factors << std::endl;
+	<< "  \t" << ssets[sset].Size()
+	<< "  \t" << ssets[sset].num_dist_factors << std::endl;
     }
   }
   
@@ -991,8 +978,7 @@ void ExoII_Read<INT>::Display_Stats(std::ostream& s) const
   
   s << separator << std::endl;
   
-  if (num_times)  // Use this to indicate whether results data exists.
-  {
+  if (num_times) {  // Use this to indicate whether results data exists.
     s << "\t\tRESULTS INFO" << std::endl << separator << std::endl;
     
     s << "           number global variables = " << global_vars.size() << std::endl
@@ -1000,12 +986,11 @@ void ExoII_Read<INT>::Display_Stats(std::ostream& s) const
       << "          number element variables = " << elmt_vars.size()   << std::endl;
     
     unsigned max = global_vars.size() > nodal_vars.size() ?
-                   global_vars.size(): nodal_vars.size();
+      global_vars.size(): nodal_vars.size();
     max = elmt_vars.size() > max ? elmt_vars.size(): max;
     
     if (max) s << "\t  GLOBAL    \t  NODAL    \t  ELEMENT" << std::endl;
-    for (unsigned i = 0; i < max; ++i)
-    {
+    for (unsigned i = 0; i < max; ++i) {
       if (i < global_vars.size()) s << "\t    " << global_vars[i];
       else s << "\t          ";
       if (i < nodal_vars.size()) s << "\t    " << nodal_vars[i];
@@ -1067,14 +1052,12 @@ void ExoII_Read<INT>::Display(std::ostream& s) const
     << "              number of nodes sets = " << num_node_sets << std::endl
     << "               number of side sets = " << num_side_sets << std::endl;
   
-  if (num_elmt_blocks)
-  {
+  if (num_elmt_blocks) {
     s << separator << std::endl;
     
     s << "                   ELEMENT BLOCKS" << std::endl;
     s << "\tIndex \tId     num elmts    nodes/elmt num attr  type" << std::endl;
-    for (int b = 0; b < num_elmt_blocks; ++b)
-    {
+    for (int b = 0; b < num_elmt_blocks; ++b) {
       s << "\t" << b << "   \t" << eblocks[b].Id()
         << "  \t"    << eblocks[b].Size()
         << "  \t\t"  << eblocks[b].num_nodes_per_elmt
@@ -1083,28 +1066,24 @@ void ExoII_Read<INT>::Display(std::ostream& s) const
     }
   }
   
-  if (num_node_sets)
-  {
+  if (num_node_sets) {
     s << separator << std::endl;
     
     s << "              NODE SETS " << std::endl
       << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (int nset = 0; nset < num_node_sets; ++nset)
-    {
+    for (int nset = 0; nset < num_node_sets; ++nset) {
       s << "\t"   << nset << "  \t" << nsets[nset].Id()
         << "  \t" << nsets[nset].Size()
         << "  \t" << nsets[nset].num_dist_factors << std::endl;
     }
   }
   
-  if (num_side_sets)
-  {
+  if (num_side_sets) {
     s << separator << std::endl;
     
     s << "              SIDE SETS " << std::endl
       << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (int sset = 0; sset < num_side_sets; ++sset)
-    {
+    for (int sset = 0; sset < num_side_sets; ++sset) {
       s << "\t"   << sset << "  \t" << ssets[sset].Id()
         << "  \t" << ssets[sset].Size()
         << "  \t" << ssets[sset].num_dist_factors << std::endl;
@@ -1123,11 +1102,9 @@ void ExoII_Read<INT>::Display(std::ostream& s) const
   
   s << separator << std::endl;
   
-  if (nodes)
-  {
+  if (nodes) {
     s << "\tNodal Coordinates:" << std::endl;
-    for (size_t n = 0; n < num_nodes; ++n)
-    {
+    for (size_t n = 0; n < num_nodes; ++n) {
       s << "\t" << (n+1) << "\t" << nodes[n];
       if (dimension > 1) s << "\t" << nodes[ num_nodes + n ];
       if (dimension > 2) s << "\t" << nodes[ num_nodes * 2 + n ];
@@ -1140,8 +1117,7 @@ void ExoII_Read<INT>::Display(std::ostream& s) const
     s << "         number element attributes = " << elmt_atts.size()   << std::endl;
   }
 
-  if (num_times)  // Use this to indicate whether results data exists.
-  {
+  if (num_times) {  // Use this to indicate whether results data exists.
     s << "\t\tRESULTS INFO" << std::endl << separator << std::endl;
     
     s << "           number global variables = " << global_vars.size() << std::endl
@@ -1149,12 +1125,11 @@ void ExoII_Read<INT>::Display(std::ostream& s) const
       << "          number element variables = " << elmt_vars.size()   << std::endl;
     
     unsigned max = global_vars.size() > nodal_vars.size() ?
-                   global_vars.size(): nodal_vars.size();
+      global_vars.size(): nodal_vars.size();
     max = elmt_vars.size() > max ? elmt_vars.size(): max;
     
     if (max) s << "\t  GLOBAL    \t  NODAL    \t  ELEMENT" << std::endl;
-    for (unsigned i = 0; i < max; ++i)
-    {
+    for (unsigned i = 0; i < max; ++i) {
       if (i < global_vars.size()) s << "\t    " << global_vars[i];
       else s << "\t          ";
       if (i < nodal_vars.size()) s << "\t    " << nodal_vars[i];
@@ -1183,13 +1158,11 @@ void ExoII_Read<INT>::Display_Maps(std::ostream& s) const
   if (elmt_map == 0)
     s << "                       (elmt map is not loaded)" << std::endl;
   
-  if (node_map != 0 || elmt_map != 0)
-  {
+  if (node_map != 0 || elmt_map != 0) {
     s << "\tNode Map\tElmt Map" << std::endl;
     
     size_t max = num_nodes > num_elmts ? num_nodes : num_elmts;
-    for (size_t i = 0; i < max; ++i)
-    {
+    for (size_t i = 0; i < max; ++i) {
       s << "   " << (i+1) << ")\t";
       if (i < num_nodes && node_map != 0) s << node_map[i];
       s << "\t";
@@ -1336,16 +1309,16 @@ void ExoII_Read<INT>::Get_Init_Data()
   num_elmts = num_elmts_t;
   
   if (err < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get init data!"
+    std::cout << "EXODIFF ERROR: Failed to get init data!"
 	      << " Error number = " << err << ".  Aborting..." << std::endl;
     exit(1);
   }
   title = title_buff;
   if (err > 0 && !interface.quiet_flag)
-    std::cout << "ExoII_Read::Get_Init_Data(): WARNING: was issued, number = "
+    std::cout << "EXODIFF WARNING: was issued, number = "
 	      << err << std::endl;
   if (dimension < 1 || dimension > 3 || num_elmt_blocks < 0 || num_node_sets < 0 || num_side_sets < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Init data appears corrupt:"
+    std::cout << "EXODIFF ERROR: Init data appears corrupt:"
 	      << std::endl
 	      << "         dimension = "       << dimension       << std::endl
 	      << "         num_nodes = "       << num_nodes       << std::endl
@@ -1361,7 +1334,7 @@ void ExoII_Read<INT>::Get_Init_Data()
   int num_info = ex_inquire_int(file_id,   EX_INQ_INFO);
   
   if (num_qa < 0 || num_info < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: inquire data appears corrupt:"
+    std::cout << "EXODIFF ERROR: inquire data appears corrupt:"
 	      << std::endl
 	      << "         num_qa = "      << num_qa      << std::endl
 	      << "         num_info = "    << num_info    << std::endl
@@ -1374,7 +1347,7 @@ void ExoII_Read<INT>::Get_Init_Data()
   char** coords = get_name_array(3, name_length);
   err = ex_get_coord_names(file_id, coords);
   if (err < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get coordinate"
+    std::cout << "EXODIFF ERROR: Failed to get coordinate"
 	      << " names!  Aborting..." << std::endl;
     exit(1);
   }
@@ -1395,7 +1368,7 @@ void ExoII_Read<INT>::Get_Init_Data()
     err = ex_get_ids(file_id, EX_ELEM_BLOCK, TOPTR(ids));
     
     if (err < 0) {
-      std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get element"
+      std::cout << "EXODIFF ERROR: Failed to get element"
 		<< " block ids!  Aborting..." << std::endl;
       exit(1);
     }
@@ -1403,7 +1376,7 @@ void ExoII_Read<INT>::Get_Init_Data()
     size_t e_count = 0;
     for (int b = 0; b < num_elmt_blocks; ++b) {
       if (ids[b] <= EX_INVALID_ID) {
-	std::cout << "ExoII_Read::Get_Init_Data()  WARNING:  Element block Id "
+	std::cout << "EXODIFF  WARNING:  Element block Id "
 		  << "for block index " << b << " is " << ids[b]
 		  << " which is negative. This was returned by call to ex_get_elem_blk_ids()."
 		  << std::endl;
@@ -1414,7 +1387,7 @@ void ExoII_Read<INT>::Get_Init_Data()
     }
     
     if (e_count != num_elmts && !interface.quiet_flag) {
-      std::cout << "ExoII_Read::Get_Init_Data(): WARNING: Total number of elements "
+      std::cout << "EXODIFF WARNING: Total number of elements "
 		<< num_elmts << " does not equal the sum of the number of elements "
 		<< "in each block " << e_count << std::endl;
     }
@@ -1440,14 +1413,14 @@ void ExoII_Read<INT>::Get_Init_Data()
     err = ex_get_ids(file_id, EX_NODE_SET, TOPTR(ids));
 
     if (err < 0) {
-      std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get "
+      std::cout << "EXODIFF ERROR: Failed to get "
 		<< "nodeset ids!  Aborting..." << std::endl;
       exit(1);
     }
 
     for (int nset = 0; nset < num_node_sets; ++nset) {
       if (ids[nset] <= EX_INVALID_ID) {
-	std::cout << "ExoII_Read::Get_Init_Data()  WARNING: Nodeset Id "
+	std::cout << "EXODIFF  WARNING: Nodeset Id "
 		  << "for nodeset index " << nset << " is " << ids[nset]
 		  << " which is negative.  This was returned by call to ex_get_ids()."
 		  << std::endl;
@@ -1465,14 +1438,14 @@ void ExoII_Read<INT>::Get_Init_Data()
     err = ex_get_ids(file_id, EX_SIDE_SET, TOPTR(ids));
 
     if (err < 0) {
-      std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get "
+      std::cout << "EXODIFF ERROR: Failed to get "
 		<< "sideset ids!  Aborting..." << std::endl;
       exit(1);
     }
 
     for (int sset = 0; sset < num_side_sets; ++sset) {
       if (ids[sset] <= EX_INVALID_ID) {
-	std::cout << "ExoII_Read::Get_Init_Data()  WARNING:  Sideset Id "
+	std::cout << "EXODIFF  WARNING:  Sideset Id "
 		  << "for sideset index " << sset << " is " << ids[sset]
 		  << " which is negative. This was returned by call to ex_get_ids()."
 		  << std::endl;
@@ -1488,42 +1461,42 @@ void ExoII_Read<INT>::Get_Init_Data()
   
   err = ex_get_variable_param(file_id, EX_GLOBAL, &num_global_vars);
   if (err < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get number of"
+    std::cout << "EXODIFF ERROR: Failed to get number of"
 	      << " global variables!  Aborting..." << std::endl;
     exit(1);
   }
   
   err = ex_get_variable_param(file_id, EX_NODAL, &num_nodal_vars);
   if (err < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get number of"
+    std::cout << "EXODIFF ERROR: Failed to get number of"
 	      << " nodal variables!  Aborting..." << std::endl;
     exit(1);
   }
   
   err = ex_get_variable_param(file_id, EX_ELEM_BLOCK, &num_elmt_vars);
   if (err < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get number of"
+    std::cout << "EXODIFF ERROR: Failed to get number of"
 	      << " element variables!  Aborting..." << std::endl;
     exit(1);
   }
   
   err = ex_get_variable_param(file_id, EX_NODE_SET, &num_ns_vars);
   if (err < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get number of"
+    std::cout << "EXODIFF ERROR: Failed to get number of"
 	      << " nodeset variables!  Aborting..." << std::endl;
     exit(1);
   }
   
   err = ex_get_variable_param(file_id, EX_SIDE_SET, &num_ss_vars);
   if (err < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get number of"
+    std::cout << "EXODIFF ERROR: Failed to get number of"
 	      << " sideset variables!  Aborting..." << std::endl;
     exit(1);
   }
   
   if (num_global_vars < 0 || num_nodal_vars < 0 || num_elmt_vars < 0 ||
       num_ns_vars < 0 || num_ss_vars < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Data appears corrupt for"
+    std::cout << "EXODIFF ERROR: Data appears corrupt for"
 	      << " number of variables !" << std::endl
 	      << "\tnum global vars  = " << num_global_vars  << std::endl
 	      << "\tnum nodal vars   = " << num_nodal_vars   << std::endl
@@ -1541,23 +1514,36 @@ void ExoII_Read<INT>::Get_Init_Data()
   // Times:
   num_times = ex_inquire_int(file_id, EX_INQ_TIME);
   if (num_times < 0) {
-    std::cout << "ExoII_Read::Get_Init_Data()  ERROR: Number of time steps came"
+    std::cout << "EXODIFF ERROR: Number of time steps came"
 	      << " back negative (" << num_times << ")!  Aborting..." << std::endl;
     exit(1);
   }
+
+  if ((num_global_vars > 0 || num_nodal_vars > 0 || num_elmt_vars > 0 ||
+       num_ns_vars > 0 || num_ss_vars > 0) && num_times == 0) {
+    std::cout << "EXODIFF Consistency error -- The database contains transient variables, but no timesteps!" << std::endl;
+    exit(1);
+  }
+
 
   if (num_times) {
     times = new double[num_times];  SMART_ASSERT(times != 0);
     err = ex_get_all_times(file_id, times);
   }
   
-  if (num_nodal_vars && num_times) {
-    results = new double*[ num_nodal_vars ];
-    for (int i = 0; i < num_nodal_vars; ++i)
-      results[i] = 0;
+  if (num_nodal_vars) {
+    if (num_times == 0) {
+      std::cout << "EXODIFF Consistency error--The database contains " << num_nodal_vars
+		<< " nodal variables, but there are no time steps defined." << std::endl;
+    }
+    if (num_times) {
+      results = new double*[ num_nodal_vars ];
+      for (int i = 0; i < num_nodal_vars; ++i)
+	results[i] = 0;
+    }
   }
   
-}  // End of ExoII_Read::Get_Init_Data()
+}  // End of EXODIFF
 
 
 // Simple check that a file can be opened.
@@ -1582,18 +1568,18 @@ namespace {
       int err = ex_get_variable_names(file_id, flag, num_vars, varnames);
 
       if (err < 0) {
-	std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get " << type 
+	std::cout << "EXODIFF ERROR: Failed to get " << type 
 		  << " variable names!  Aborting..." << std::endl;
 	exit(1);
       }
       else if (err > 0 && !interface.quiet_flag)
-	std::cout << "ExoII_Read::Get_Init_Data(): WARNING: Exodus issued warning "
+	std::cout << "EXODIFF WARNING: Exodus issued warning "
 		  << "\"" << err << "\" on call to ex_get_var_names()!" << std::endl;
       for (int vg = 0; vg < num_vars; ++vg) {
 	SMART_ASSERT(varnames[vg] != 0);
 	if (std::strlen(varnames[vg]) == 0 ||
 	    (int)std::strlen(varnames[vg]) > name_size) {
-	  std::cout << "exodiff: ERROR: " << type
+	  std::cout << "EXODIFF ERROR: " << type
 		    << " variable names appear corrupt\n"
 		    << "                A length is 0 or greater than "
 		    << "name_size(" << name_size << ")\n"
