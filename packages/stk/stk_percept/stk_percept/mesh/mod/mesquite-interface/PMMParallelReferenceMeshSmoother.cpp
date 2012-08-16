@@ -123,8 +123,14 @@ namespace stk {
       // shape-size-orient smooth
       PMMSmootherMetricShapeSizeOrient shape_metric(eMesh);
 
+      // shape
+      PMMSmootherMetricShapeB1 shape_b1_metric(eMesh);
+
       // scaled jacobian
       PMMSmootherMetricScaledJacobian scaled_jac_metric(eMesh);
+
+      // scaled jacobian - nodal
+      PMMSmootherMetricScaledJacobian0 scaled_jac_metric_nodal(eMesh);
 
       //double omegas[] = {0.0, 0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
       //double omegas[] = {0.001, 1.0};
@@ -161,12 +167,12 @@ namespace stk {
               if (stage==0) 
                 {
                   m_metric = &untangle_metric;
-                  //m_metric = &scaled_jac_metric;
+                  //m_metric = &scaled_jac_metric_nodal;
                 }
               else 
                 {
-                  m_metric = &shape_metric;
-                  //m_metric = &scaled_jac_metric;
+                  //m_metric = &shape_metric;
+                  m_metric = &shape_b1_metric;
                 }
 
               for (int iter = 0; iter < innerIter; ++iter, ++iter_all)
@@ -205,7 +211,7 @@ namespace stk {
                     }
                   if (conv && m_untangled) break;
                   //if (iter == 5) break;
-                  //if (iter == 10) exit(1);
+                  //if (iter == 0) exit(1);
                 }
 
               eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");

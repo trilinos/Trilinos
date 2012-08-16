@@ -71,7 +71,7 @@
 #define UNIFORM_REFINER UniformRefiner
 //#define UNIFORM_REFINER TestLocalRefiner
 
-#define DO_SMOOTHING_TEST 1
+#define DO_SMOOTHING_TEST 0
 
 namespace stk
 {

@@ -97,7 +97,7 @@ namespace stk
       Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
 
 
-#define DO_TESTS 1
+#define DO_TESTS 0
 #if DO_TESTS
 
 #define EXTRA_PRINT 0
