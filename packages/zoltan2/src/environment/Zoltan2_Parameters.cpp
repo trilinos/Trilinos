@@ -437,6 +437,19 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
 
+
+
+  parameterName = string("parallel_part_calculation_count");
+
+  anyNumValidatorP = rcp(new AnyNumberParameterEntryValidator);
+
+  docString.str("");
+  anyNumValidatorP->printDoc(
+      "The number of parts whose cut coordinates will be calculated concurently.",
+      docString);
+
+  pList.set<string>(parameterName, "0", docString.str(),
+    anyNumValidatorP);
   ///////////////////////////////////////////////////////////
   // LEVEL: top level, general problem parameters
   ///////////////////////////////////////////////////////////
@@ -598,6 +611,11 @@ void createAllParameters(Teuchos::ParameterList &pList)
   partitioning.set<string>(parameterName, "1.1", docString.str(), 
     anyNumValidatorP);
   
+
+
+
+
+
   ////////// topLevel/partitioning/num_global_parts
   parameterName = string("num_global_parts");
 
