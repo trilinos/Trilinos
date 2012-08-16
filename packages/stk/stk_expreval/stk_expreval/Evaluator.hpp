@@ -258,6 +258,16 @@ public:
    */
   double evaluate() const;
 
+  /**
+   * @brief Member function <b>undefinedFunction</b> checks if any allocated node
+   * represents an undefined (i.e. unknown at this point) function.
+   *
+   * @return			The returned <b>bool</b> is true if any allocated node
+   *                            is an undefined function, as indicated by bool in the 
+   *                            member union, which is set whenever a function is parsed.
+   */
+  bool undefinedFunction() const;
+
 private:
   VariableMap		m_variableMap;		///< Variable map
   UndefinedFunctionSet	m_undefinedFunctionSet;	///< Vector of undefined functions

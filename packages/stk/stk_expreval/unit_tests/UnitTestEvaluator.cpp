@@ -36,6 +36,51 @@ STKUNIT_UNIT_TEST( UnitTestEvaluator, testEvaluator)
   unit.testEvaluator();
 }
 
+bool
+checkUndefinedFunction(
+    const char *	expr)
+{
+  try {
+    stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
+    expr_eval.parse();
+    if (expr_eval.undefinedFunction()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  catch (std::runtime_error &x) {
+    return false;
+  }
+}
+
+bool
+notUndefinedFunction(
+    const char *	expr)
+{
+  std::cout << "Not an undefined function " << expr << " ... ";
+  if (checkUndefinedFunction(expr)) {
+    std::cout << "fail" << std::endl;
+    return false;
+  } else {
+    std::cout << "pass" << std::endl;
+    return true;
+  }
+}
+
+bool
+undefinedFunction(
+    const char *	expr)
+{
+  std::cout << "Undefined function " << expr << " ... ";
+  if (checkUndefinedFunction(expr)) {
+    std::cout << "pass" << std::endl;
+    return true;
+  } else {
+    std::cout << "fail" << std::endl;
+    return false;
+  }
+}
 
 bool
 syntax(
@@ -53,7 +98,6 @@ syntax(
   std::cout << "pass" << std::endl;
   return true;
 }
-
 
 bool
 fail_syntax(
@@ -453,7 +497,9 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(fail_syntax("cos(x"));
   STKUNIT_EXPECT_TRUE(fail_syntax("(x)y"));
   STKUNIT_EXPECT_TRUE(fail_syntax("()"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("stress(1)"));
+  STKUNIT_EXPECT_TRUE(undefinedFunction("stress(1)"));
+  STKUNIT_EXPECT_TRUE(notUndefinedFunction("sin(1)"));
+  STKUNIT_EXPECT_TRUE(notUndefinedFunction("0.01.02"));
   STKUNIT_EXPECT_TRUE(syntax("rand()"));
   STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
   STKUNIT_EXPECT_TRUE(syntax("random()"));
