@@ -142,6 +142,14 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   typedef ElementComputation< Scalar , Scalar , device_type > ElementFunctor ;
   typedef DirichletBoundary< Scalar , Scalar , device_type > BoundaryFunctor ;
 
+  typedef typename ElementFunctor::elem_matrices_type elem_matrices_type ;
+  typedef typename ElementFunctor::elem_vectors_type  elem_vectors_type ;
+
+  typedef GatherFill< matrix_type ,
+                      mesh_type ,
+                      elem_matrices_type ,
+                      elem_vectors_type > GatherFillFunctor ;
+
   //------------------------------------
 
   const Scalar elem_coeff_K = 2 ;
@@ -178,9 +186,6 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Fill linear system
   {
-    typedef KokkosArray::View< scalar_type[][ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
-    typedef KokkosArray::View< scalar_type[][ElementNodeCount] , device_type > elem_vectors_type ;
-
     elem_matrices_type elem_matrices ;
     elem_vectors_type  elem_vectors ;
 
@@ -206,8 +211,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
     wall_clock.reset();
 
-    GatherFill< matrix_type , mesh_type >
-      ::apply( linsys_matrix , linsys_rhs ,
+    GatherFillFunctor::apply( linsys_matrix , linsys_rhs ,
                mesh , element_map , elem_matrices , elem_vectors );
 
     device_type::fence();

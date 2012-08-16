@@ -49,10 +49,13 @@ namespace HybridFEM {
 
 template< typename ScalarType ,
           unsigned ElemNode ,
-          typename CoordScalarType >
+          typename CoordScalarType ,
+          class elem_matrices_type ,
+          class elem_vectors_type >
 struct GatherFill< 
   KokkosArray::CrsMatrix< ScalarType , KOKKOS_MACRO_DEVICE > ,
-  FEMesh< CoordScalarType , ElemNode , KOKKOS_MACRO_DEVICE > >
+  FEMesh< CoordScalarType , ElemNode , KOKKOS_MACRO_DEVICE > ,
+  elem_matrices_type , elem_vectors_type >
 {
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
@@ -62,8 +65,6 @@ struct GatherFill<
   typedef KokkosArray::CrsMatrix< ScalarType , device_type >    matrix_type ;
   typedef typename matrix_type::coefficients_type   coefficients_type ;
   typedef KokkosArray::View< ScalarType[] , device_type >  vector_type ;
-  typedef KokkosArray::View< ScalarType[][ElemNodeCount][ElemNodeCount] , device_type >      elem_matrices_type ;
-  typedef KokkosArray::View< ScalarType[][ElemNodeCount] , device_type >      elem_vectors_type ;
   typedef KokkosArray::View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >       elem_graph_type ;
 
   typedef FEMesh< CoordScalarType , ElemNodeCount , device_type > mesh_type ;
