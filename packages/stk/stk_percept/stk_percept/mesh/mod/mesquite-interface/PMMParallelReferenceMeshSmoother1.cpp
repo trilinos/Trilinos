@@ -9,6 +9,7 @@
 
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stdio.h>
+#include <limits>
 
 #include "mpi.h"
 #include <cstdio>
@@ -26,6 +27,8 @@ namespace MESQUITE_NS {
 namespace stk {
   namespace percept {
 
+    static double sqrt_eps = std::sqrt(std::numeric_limits<double>::epsilon());
+
     using namespace Mesquite;
     const bool do_tot_test = false;
     bool do_print_elem_val = false;
@@ -36,8 +39,9 @@ namespace stk {
       valid = true;
 
       double xc[3]={0,0,0};
-      double eps=1.e-6;
-      double eps1 = eps*nodal_edge_length_ave(node);
+      double edge_length_ave = nodal_edge_length_ave(node);
+      double eps1 = sqrt_eps*edge_length_ave;
+      //if (m_metric->length_scaling_power() != 1.0) eps1 = std::pow(eps1, 1.0/m_metric->length_scaling_power());
 
       for (int i=0; i < spatialDim; i++)
         {
@@ -45,7 +49,8 @@ namespace stk {
           double dt = eps1;
           coord_current[i] += dt;  
           double mp = nodal_metric(node, 0.0, coord_current, cg_d, valid);
-          if (0)
+          bool second_order = true;
+          if (second_order)
             {
               coord_current[i] -= 2.0*dt;
               double mm = nodal_metric(node, 0.0, coord_current, cg_d, valid);
@@ -113,7 +118,7 @@ namespace stk {
       for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
         {
           stk::mesh::Entity& element = *node_elems[i_elem].entity();
-          double elem_edge_len = m_eMesh->edge_length_ave(element);
+          double elem_edge_len = m_eMesh->edge_length_ave(element, m_coord_field_original);
           nm += elem_edge_len;
         }
       nm /= double(node_elems.size());
@@ -127,11 +132,11 @@ namespace stk {
         {
           return true; // for untangle
         }
-      if (m_stage == 0 && m_num_invalid == 0 && m_dmax < gradNorm)
+      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < gradNorm || m_scaled_grad_norm < gradNorm))
         {
           return true;
         }
-      if (m_num_invalid == 0 && (m_dnew < gradNorm*gradNorm*m_d0 && m_dmax < gradNorm))
+      if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
         {
           return true;
         }      
@@ -234,7 +239,7 @@ namespace stk {
                       const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
                       unsigned num_node = elem_nodes.size();
 
-                      double edge_length_ave = m_eMesh->edge_length_ave(element);
+                      double edge_length_ave = m_eMesh->edge_length_ave(element, m_coord_field_original);
 
                       for (unsigned inode=0; inode < num_node; inode++)
                         {
@@ -251,8 +256,9 @@ namespace stk {
                           double *coord_current = PerceptMesh::field_data(coord_field_current, node);
                           double *cg_g = PerceptMesh::field_data(cg_g_field, node);
                         
-                          double eps = 1.e-6;
-                          double eps1 = eps*edge_length_ave;
+                          //double eps = 1.e-6;
+                          double eps1 = sqrt_eps*edge_length_ave;
+                          //if (m_metric->length_scaling_power() != 1.0) eps1 = std::pow(eps1, 1.0/m_metric->length_scaling_power());
 
                           double gsav[3]={0,0,0};
 
@@ -266,8 +272,10 @@ namespace stk {
                               double mm = metric(element, mvalid);
                               coord_current[idim] = cc;
                               double dd = 0.0;
-                              if ((pvalid && mvalid) || m_stage == 0)
+                              //if ((pvalid && mvalid) || m_stage == 0)
+                              {
                                 dd = (mp - mm)/(2*eps1);
+                              }
                               gsav[idim] = dd;
                               //if (std::fabs(mp) > 1.e-10) std::cout << "tmp srk mp = " << mp << " mm= " << mm << " dd= " << dd << std::endl;
 
@@ -282,8 +290,9 @@ namespace stk {
                                   cg_g[idim] = 0.0;
                                 }
                             }
+
                           // FIXME 
-                          if (0)
+                          if (DEBUG_PRINT)
                             {
                               double gsn=0.0;
                               for (int idim=0; idim < spatialDim; idim++)
@@ -292,28 +301,34 @@ namespace stk {
                                 }
                               gsn = std::sqrt(gsn);
                               gsn = std::max(gsn,1.e-12);
-                              if (gsn > 1.e-4*edge_length_ave)
+                              if (gsn > 1.e-8*edge_length_ave)
                                 {
+                                  double xsv[3] = {0,0,0};
                                   for (int idim=0; idim < spatialDim; idim++)
                                     {
                                       double dd = gsav[idim]/gsn*edge_length_ave;
-                                      coord_current[idim] -= dd*eps;
+                                      xsv[idim] = coord_current[idim];
+                                      coord_current[idim] -= dd*sqrt_eps;
                                     }
                                   double m1=metric(element, valid);
                                   for (int idim=0; idim < spatialDim; idim++)
                                     {
                                       double dd = gsav[idim]/gsn*edge_length_ave;
-                                      coord_current[idim] += dd*eps;
+                                      coord_current[idim] += dd*sqrt_eps;
                                     }
                                   double metric_0 = metric(element, valid);
 
+                                  for (int idim=0; idim < spatialDim; idim++)
+                                    {
+                                      coord_current[idim] = xsv[idim];
+                                    }
                                   if (metric_0 > 1.e-6)
                                     {
-                                      if (!(m1 < metric_0*(1.0+eps)))
+                                      if (!(m1 < metric_0*(1.0+sqrt_eps)))
                                         {
                                           PRINT( "bad grad" << " m1-metric_0 = " << (m1-metric_0) << " gsav= " << gsav[0] << " " << gsav[1] << " " << gsav[2] );
                                         }
-                                      VERIFY_OP_ON(m1, <, metric_0*(1.0+eps), "bad gradient");
+                                      VERIFY_OP_ON(m1, <, metric_0*(1.0+sqrt_eps), "bad gradient");
                                     }
                                 }
                             }
@@ -344,10 +359,11 @@ namespace stk {
         PRINT("tmp srk m_scale= " << m_scale);
       }
         
-      //get_scale(mesh, domain);
+      get_scale(mesh, domain);
     }
 
-    /// fills cg_g_field with f'(x)
+    /// gets a global scale factor so that local gradient*scale is approximately the size of the local mesh edges
+    /// also uses the reference mesh to compute a local scaled gradient norm for convergence checks
     void PMMParallelReferenceMeshSmoother1::get_scale( Mesh* mesh, MeshDomain *domain)
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
@@ -378,7 +394,7 @@ namespace stk {
                     const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
                     unsigned num_node = elem_nodes.size();
 
-                    double edge_length_ave = m_eMesh->edge_length_ave(element);
+                    double edge_length_ave = m_eMesh->edge_length_ave(element, m_coord_field_original);
 
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
@@ -406,6 +422,64 @@ namespace stk {
         stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
         m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
         PRINT("tmp srk m_scale= " << m_scale);
+      }
+
+      // node loop
+      m_scaled_grad_norm = 0.0;
+      double gn=0.0;
+      double el=1.e+10, es1=0, es2=0;
+      //double pw=std::max(m_metric->length_scaling_power() - 1.0,0.0);
+
+      {
+        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
+
+        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          {
+            if (on_locally_owned_part(**k))
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                const unsigned num_nodes_in_bucket = bucket.size();
+
+                for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
+                  {
+                    stk::mesh::Entity& node = bucket[i_node];
+                    bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                    VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
+                    bool fixed = pmm->get_fixed_flag(&node);
+                    if (fixed || isGhostNode)
+                      continue;
+
+                    double edge_length_ave = nodal_edge_length_ave(node);
+                    double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                        
+                    double sum=0.0;
+                    for (int idim=0; idim < spatialDim; idim++)
+                      {
+                        sum += cg_g[idim]*cg_g[idim];
+                      }
+                    sum = std::sqrt(sum);
+                    gn = std::max(gn, sum);
+                    double s1 = sum;
+                    //sum = std::pow(sum, m_metric->length_scaling_power());
+                    double s2 = sum;
+                    sum /= edge_length_ave;
+                    //sum /= (pw != 0 ? std::pow(edge_length_ave, pw) : edge_length_ave);
+                    //m_scaled_grad_norm = std::max(m_scaled_grad_norm, sum);
+                    if (sum > m_scaled_grad_norm)
+                      {
+                        m_scaled_grad_norm = sum;
+                        el = edge_length_ave;
+                        es1 = s1;
+                        es2 = s2;
+                      }
+                  }
+              }
+          }
+      }
+
+      {
+        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scaled_grad_norm ) );
+        PRINT("tmp srk m_scaled_grad_norm= " << m_scaled_grad_norm << " gn= " << gn << " el= " << el << " es1= " << es1 << " es2=  " << es2);
       }
 
     }
@@ -451,41 +525,30 @@ namespace stk {
 
           /// d0 = dnew
           m_d0 = m_dnew;
+          m_grad_norm = std::sqrt(m_dnew);
         }
 
       double metric_check = total_metric(mesh, 0.0, 1.0, total_valid);
       m_total_metric = metric_check;
       if (check_convergence() || metric_check == 0.0)
         {
-          PRINT_1( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 );
+          PRINT_1( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_scaled_grad_norm= " << m_scaled_grad_norm);
           //update_node_positions
           return total_metric(mesh,0.0,1.0, total_valid);
         }
-
-      //m_dd = eMesh->nodal_field_dot(cg_d_field, cg_d_field);
-      //PRINT(" tmp srk m_dd= " << m_dd);
 
       /// line search
       bool restarted=false;
       double alpha = m_scale;
       {
-        //double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
-
         double metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
-        //double norm_gradient = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
-        //PRINT( "tmp srk norm_gradient= " << norm_gradient );
-        //PRINT( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
-        //metric_1 = total_metric(mesh, -1.e-6, 1.0, total_valid);
-        //PRINT( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
         double metric=0.0;
-        //double sigma=0.95;
         double tau = 0.5;
         double c0 = 1.e-4;
         double min_alpha_factor=1.e-12;
 
-        //PRINT_1("tmp srk get_gradient at linesearch");
-        //get_gradient(mesh, domain);
         double norm_gradient2 = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
+        m_grad_norm = std::sqrt(norm_gradient2);
 
         double armijo_offset_factor = c0*norm_gradient2;
         bool converged = false;
@@ -493,7 +556,6 @@ namespace stk {
           {
             metric = total_metric(mesh, alpha, 1.0, total_valid);
 
-            //converged = (metric > sigma*metric_0) && (alpha > 1.e-16);
             double mfac = alpha*armijo_offset_factor;
             converged = (metric < metric_0 + mfac);
             if (m_untangled) converged = converged && total_valid;
@@ -506,34 +568,37 @@ namespace stk {
               break;
           }
 
-        //if (metric > sigma*metric_0)
         if (!converged)
           {
+            get_gradient(mesh, domain);
+            norm_gradient2 = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
+            m_grad_norm = std::sqrt(norm_gradient2);
+
+            armijo_offset_factor = c0*norm_gradient2;
+
             alpha=m_scale;
             /// d = -g
             eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_d_field);
             restarted = true;
 
             PRINT_1( "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) );
-            double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
+
             metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
+            if (m_stage != 0) VERIFY_OP_ON(total_valid, ==, true, "bad mesh...");
+            double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
             PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
             metric_1 = total_metric(mesh, -1.e-6, 1.0, total_valid);
             PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
-
-            //throw std::runtime_error("can't reduce metric");
-
           }
 
         while (!converged)
           {
             metric = total_metric(mesh, alpha, 1.0, total_valid);
 
-            //converged = (metric > sigma*metric_0) && (alpha > 1.e-16);
             double mfac = alpha*armijo_offset_factor;
             converged = (metric < metric_0 + mfac);
             if (m_untangled) converged = converged && total_valid;
-            PRINT(  "tmp srk ### alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
+            PRINT_1(  "tmp srk ### alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
                     << " m_untangled = " << m_untangled
                     << " total_valid= " << total_valid );
             if (!converged)
@@ -542,14 +607,21 @@ namespace stk {
               break;
           }
 
-        //if (metric > sigma*metric_0)
         if (!converged)
           {
             PRINT_1( "can't reduce metric 2nd time = " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) << " m_scale= " << m_scale);
-            do_print_elem_val = true;
+            PRINT_1( "tmp srk 2nd m_dnew= " << m_dnew << " m_dmax= " << m_dmax << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_scaled_grad_norm= " << m_scaled_grad_norm);
+            if (check_convergence())
+              {
+                PRINT_1( "tmp srk 2nd already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_scaled_grad_norm= " << m_scaled_grad_norm);
+                return total_metric(mesh,0.0,1.0, total_valid);
+              }
+            debug_print(0);
+
+            //do_print_elem_val = true;
             double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
             metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
-            do_print_elem_val = false;
+            //do_print_elem_val = false;
             PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
             metric_1 = total_metric(mesh, -1.e-6, 1.0, total_valid);
             PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
@@ -570,11 +642,14 @@ namespace stk {
                 if (alpha_quadratic > 1.e-10 && alpha_quadratic < 2*alpha)
                   {
                     double fm=total_metric(mesh, alpha_quadratic, 1.0, total_valid);
-                    //if (fm < f2 && (!m_untangled || total_valid))
-                    if (fm < f2)
+                    if (fm < f2 && (m_stage==0 || total_valid))
                       {
                         alpha = alpha_quadratic;
                         PRINT( "tmp srk alpha_quadratic= " << alpha_quadratic << " alpha= " << a2 );
+                      }
+                    if (fm < f2 && (m_stage!=0 && !total_valid))
+                      {
+                        PRINT_1( "tmp srk WARNING !total_valid alpha_quadratic= " << alpha_quadratic << " alpha= " << a2 );
                       }
                   } 
               }
@@ -582,8 +657,17 @@ namespace stk {
       }
 
       /// x = x + alpha*d
+      m_alpha = alpha;
       update_node_positions(mesh, alpha);
       //PRINT_1( "tmp srk iter= "<< m_iter << " dmax= " << m_dmax << " alpha= " << alpha);
+
+      if (DEBUG_PRINT)
+        {
+          bool total_valid_0=true;
+          total_metric(mesh, 0.0, 1.0, total_valid_0);
+          if (m_stage != 0) VERIFY_OP_ON(total_valid_0, ==, true, "bad mesh after update_node_positions...");
+        }
+
       bool debug_par = false;
 
       // FIXME
@@ -591,10 +675,10 @@ namespace stk {
       if (debug_par) coord_mag= eMesh->nodal_field_dot(m_coord_field_current, m_coord_field_current);
 
       /// f'(x)
-      //PRINT_1("tmp srk get_gradient after update_node_positions");
       get_gradient(mesh, domain);
       double d_g = 0.0;
-      if (debug_par) d_g = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
+      d_g = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
+      m_grad_norm = std::sqrt(d_g);
       if (debug_par) debug_print(alpha);
 
       /// r = -g
@@ -625,6 +709,7 @@ namespace stk {
       PRINT("tmp srk beta = " << cg_beta);
 
 
+      // FIXME
       //int N = num_nodes;
       //if (m_iter == N || cg_beta <= 0.0) 
       if (cg_beta <= 0.0 || restarted) 
@@ -637,7 +722,6 @@ namespace stk {
           /// d = s + beta * d
           eMesh->nodal_field_axpby(1.0, cg_s_field, cg_beta, cg_d_field);
         }
-      //m_dd = eMesh->nodal_field_dot(cg_d_field, cg_d_field);
 
       double tm = total_metric(mesh,0.0,1.0, total_valid);
 

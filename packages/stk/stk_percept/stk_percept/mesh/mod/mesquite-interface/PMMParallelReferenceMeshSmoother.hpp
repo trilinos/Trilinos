@@ -73,6 +73,7 @@ namespace stk {
       NodeMap m_weight;
       NodeMap m_nweight;
       double m_dmax;
+      double m_dnew, m_dold, m_d0, m_dmid, m_dd, m_alpha, m_grad_norm, m_scaled_grad_norm;
       double m_total_metric;
       int m_stage;
       double m_omega;

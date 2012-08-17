@@ -54,7 +54,6 @@ namespace stk {
       void nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid, double *ng);
       double nodal_edge_length_ave(stk::mesh::Entity& node);
       
-      double m_dnew, m_dold, m_d0, m_dmid, m_dd;
       PerceptMesquiteMesh *m_pmm;
 
     };

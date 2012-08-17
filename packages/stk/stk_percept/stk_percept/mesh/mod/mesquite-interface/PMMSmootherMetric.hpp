@@ -33,7 +33,7 @@ namespace stk {
         m_coord_field_current   = eMesh->get_coordinates_field();
         m_coord_field_original  = eMesh->get_field("coordinates_NM1");
       }
-
+      virtual double length_scaling_power() { return 1.0; }
       virtual double metric(stk::mesh::Entity& element, bool& valid)=0;
 
       const CellTopologyData * m_topology_data ;
@@ -60,8 +60,10 @@ namespace stk {
     public:
       PMMSmootherMetricUntangle(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {
         //int spatialDim= eMesh->get_spatial_dim();
-        m_beta_mult = 0.05;
+        m_beta_mult = 0.05*2;
       }
+      virtual double length_scaling_power() { return 3.0; }
+
       virtual double metric(stk::mesh::Entity& element, bool& valid)
       {
         valid = true;
@@ -80,21 +82,6 @@ namespace stk {
               {
                 valid = false;
               }
-#if 0
-            double untangle_metric = 0.0;
-            double beta = m_beta_mult*detWi;
-            double temp_var = detAi - beta;
-
-            double fval=0.0;
-            if(temp_var<0.0){
-              fval = -temp_var;
-            }
-            else
-              {
-                //fval = -0.001*temp_var;
-              }
-
-#endif
             //fval = Math::my_max_hi(-temp_var,0.0,beta*0.001);
             val_untangle += std::max(-(detAi - m_beta_mult*detWi),0.0);
           }
@@ -107,6 +94,7 @@ namespace stk {
     {
     public:
       PMMSmootherMetricShapeSizeOrient(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
+      virtual double length_scaling_power() { return 1.0; }
       virtual double metric(stk::mesh::Entity& element, bool& valid)
       {
         valid = true;
@@ -118,7 +106,6 @@ namespace stk {
         jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_shape=0.0;
         MsqMatrix<3,3> Ident; 
-        //ident.identity();
         identity(Ident);
 
         MsqMatrix<3,3> AI, Atmp, WAI;
@@ -126,7 +113,6 @@ namespace stk {
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double detAi = jacA.m_detJ[i];
-            //double detWi = jacW.m_detJ[i];
             if (detAi < 0)
               {
                 valid = false;
@@ -134,16 +120,13 @@ namespace stk {
             double shape_metric = 0.0;
             if (std::fabs(detAi) > 1.e-10)
               {
-                //shape_metric = sqr_Frobenius(jacW.m_J[i]*inverse(jacA.m_J[i]) - Ident);
                 MsqMatrix<3,3>& W = jacW.m_J[i];
                 MsqMatrix<3,3>& A = jacA.m_J[i];
                 inverse(A, AI);
                 product(W, AI, WAI);
                 difference(WAI, Ident, Atmp);
                 shape_metric = my_sqr_Frobenius(Atmp);
-                //VERIFY_OP_ON(std::fabs(shape_metric_new - shape_metric), <, 1.e-5, "hmm");
               }
-            //val_shape += std::sqrt(shape_metric);
             val_shape += shape_metric;
           }
         val = val_shape;
@@ -156,6 +139,7 @@ namespace stk {
     public:
       PMMSmootherMetricScaledJacobian0(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) 
       { m_is_nodal=true; m_combine=COP_MAX; }
+      virtual double length_scaling_power() { return 1.0; }
 
       virtual double metric(stk::mesh::Entity& element, bool& valid)
       {
@@ -208,6 +192,7 @@ namespace stk {
     {
     public:
       PMMSmootherMetricScaledJacobian(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
+      virtual double length_scaling_power() { return 1.0; }
 
       virtual double metric(stk::mesh::Entity& element, bool& valid)
       {
@@ -253,18 +238,17 @@ namespace stk {
     public:
       PMMSmootherMetricShapeB1(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
 
+      virtual double length_scaling_power() { return 1.0; }
       virtual double metric(stk::mesh::Entity& element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacW;
-        //jacA.m_scale_to_unit = true;
 
         double A_ = 0.0, W_ = 0.0; // current and reference detJ
         jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
         jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_shape=0.0;
         MsqMatrix<3,3> Ident; 
-        //ident.identity();
         identity(Ident);
 
         MsqMatrix<3,3> WI, T;
@@ -272,25 +256,95 @@ namespace stk {
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double detAi = jacA.m_detJ[i];
-            //double detWi = jacW.m_detJ[i];
             if (detAi < 0)
               {
                 valid = false;
               }
+            MsqMatrix<3,3>& W = jacW.m_J[i];
+            MsqMatrix<3,3>& A = jacA.m_J[i];
+
             double shape_metric = 0.0;
-            if (detAi > 1.e-10)
+            if (std::fabs(detAi) > 1.e-15)
               {
-                //shape_metric = sqr_Frobenius(jacW.m_J[i]*inverse(jacA.m_J[i]) - Ident);
-                MsqMatrix<3,3>& W = jacW.m_J[i];
-                MsqMatrix<3,3>& A = jacA.m_J[i];
                 inverse(W, WI);
                 product(A, WI, T);
                 double f = Frobenius(T);
                 double d = det(T);
                 double den = 3 * MSQ_SQRT_THREE * d;
-                if (d > 1.e-8)
-                  shape_metric = (f*f*f)/den - 1.0;
+                shape_metric = (f*f*f)/den - 1.0;
+                //shape_metric = std::fabs(shape_metric);
+                //shape_metric = f/std::pow(den,1./3.) - 1.0;
               }
+            val_shape += shape_metric;
+          }
+        val = val_shape;
+        return val;
+      }
+
+    };
+
+    class PMMSmootherMetricLaplace : public PMMSmootherMetric
+    {
+    public:
+      PMMSmootherMetricLaplace(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
+
+      virtual double length_scaling_power() { return 2.0; }
+      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      {
+        valid = true;
+        JacobianUtil jacA;
+        //JacobianUtil jacW;
+
+        double A_ = 0.0;
+        //double W_ = 0.0;
+        jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
+        //jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
+        double val=0.0, val_shape=0.0;
+
+        for (int i=0; i < jacA.m_num_nodes; i++)
+          {
+            double detAi = jacA.m_detJ[i];
+            if (detAi < 0)
+              {
+                valid = false;
+              }
+            MsqMatrix<3,3>& A = jacA.m_J[i];
+            double shape_metric = 0.0;
+            shape_metric = sqr_Frobenius(A);
+            val_shape += shape_metric;
+          }
+        val = val_shape;
+        return val;
+      }
+
+    };
+
+    class PMMSmootherMetricVolumetricEnergy : public PMMSmootherMetric
+    {
+    public:
+      PMMSmootherMetricVolumetricEnergy(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
+
+      virtual double length_scaling_power() { return 6.0; }
+      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      {
+        valid = true;
+        JacobianUtil jacA;
+        //JacobianUtil jacW;
+
+        double A_ = 0.0;
+        //double W_ = 0.0;
+        jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
+        //jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
+        double val=0.0, val_shape=0.0;
+
+        for (int i=0; i < jacA.m_num_nodes; i++)
+          {
+            double detAi = jacA.m_detJ[i];
+            if (detAi < 0)
+              {
+                valid = false;
+              }
+            double shape_metric = detAi*detAi;
             val_shape += shape_metric;
           }
         val = val_shape;

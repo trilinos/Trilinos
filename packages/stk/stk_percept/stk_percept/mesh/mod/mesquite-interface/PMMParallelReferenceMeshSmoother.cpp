@@ -171,8 +171,8 @@ namespace stk {
                 }
               else 
                 {
-                  m_metric = &shape_metric;
-                  //m_metric = &shape_b1_metric;
+                  //m_metric = &shape_metric;
+                  m_metric = &shape_b1_metric;
                 }
 
               for (int iter = 0; iter < innerIter; ++iter, ++iter_all)
@@ -194,7 +194,9 @@ namespace stk {
                   bool conv = check_convergence();
                   if (!get_parallel_rank())
                   {
-                    std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid_0 
+                    std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " m_dnew= " << m_dnew 
+                              << " m_d0= " << m_d0 << " m_alpha= " << m_alpha << " m_grad_norm= " << m_grad_norm << " m_scaled_grad_norm = " << m_scaled_grad_norm
+                              << " num_invalid= " << num_invalid_0 
                               << " m_global_metric= " << m_global_metric << " m_untangled= " << m_untangled
                               << std::endl;
                   }

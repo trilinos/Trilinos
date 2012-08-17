@@ -1981,13 +1981,13 @@ namespace stk {
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
           if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
           {
-            if (!get_rank()) std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
+            //if (!get_rank()) std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity) 
               stk::io::remove_io_part_attribute(part);
             else if (!get_rank())
               {
-                std::cout << "tmp srk checkForPartsToAvoidWriting found part to omit but it's not a real part,  part= " << name << std::endl;
+                //std::cout << "tmp srk checkForPartsToAvoidWriting found part to omit but it's not a real part,  part= " << name << std::endl;
               }
 
           }
@@ -2002,13 +2002,13 @@ namespace stk {
           std::string name = part.name();
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() = " << name << " s_omit_part= " << s_omit_part << std::endl;
           {
-            std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() omitted part= " << name << std::endl;
+            //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity) 
               stk::io::remove_io_part_attribute(part);
             else if (!get_rank())
               {
-                std::cout << "tmp srk checkForPartsToAvoidWriting found part to omit from get_io_omitted_parts() but it's not a real part,  part= " << name << std::endl;
+                //std::cout << "tmp srk checkForPartsToAvoidWriting found part to omit from get_io_omitted_parts() but it's not a real part,  part= " << name << std::endl;
               }
               
           }
@@ -2532,9 +2532,9 @@ namespace stk {
 
 
 
-    double PerceptMesh::edge_length_ave(const stk::mesh::Entity &entity)
+    double PerceptMesh::edge_length_ave(const stk::mesh::Entity &entity, mesh::FieldBase* coord_field_in )
     {
-      stk::mesh::FieldBase &coord_field = *get_coordinates_field();
+      stk::mesh::FieldBase &coord_field = (coord_field_in ? *coord_field_in : *get_coordinates_field());
       const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(entity);
 
       shards::CellTopology cell_topo(cell_topo_data);
