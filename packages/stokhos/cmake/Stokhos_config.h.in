@@ -9,6 +9,9 @@
 /* Define if want to build stokhos-tests */
 #cmakedefine HAVE_STOKHOS_TESTS
 
+/* Define if explicit instantiation is turned on */
+#cmakedefine HAVE_STOKHOS_EXPLICIT_INSTANTIATION
+
 /* Define to enable extra debugging checks */
 #cmakedefine STOKHOS_DEBUG
 
@@ -59,3 +62,6 @@
 
 /* Define if Kokkos is enabled */
 #cmakedefine HAVE_STOKHOS_KOKKOS
+
+/* Define if MueLu is enabled */
+#cmakedefine HAVE_STOKHOS_MUELU
