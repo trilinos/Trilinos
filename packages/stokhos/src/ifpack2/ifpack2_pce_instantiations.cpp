@@ -26,13 +26,19 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_Sacado.hpp"
+
+typedef Stokhos::StandardStorage<int,double> Storage;
+typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
+typedef pce_type Scalar;
+typedef int LocalOrdinal;
+typedef int GlobalOrdinal;
+
 #include "Ifpack2_RILUK_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
 #include "Ifpack2_Chebyshev_decl.hpp"
 #include "Ifpack2_Diagonal_decl.hpp"
 #include "Ifpack2_Relaxation_decl.hpp"
-
-#include "linear2d_diffusion_scalar_types.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 #include "Ifpack2_RILUK_def.hpp"

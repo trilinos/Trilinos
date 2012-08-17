@@ -26,6 +26,14 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_Sacado.hpp"
+
+typedef Stokhos::StandardStorage<int,double> Storage;
+typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
+typedef pce_type Scalar;
+typedef int LocalOrdinal;
+typedef int GlobalOrdinal;
+
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -33,8 +41,6 @@
 
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
-
-#include "linear2d_diffusion_scalar_types.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 

@@ -332,6 +332,22 @@ IF (Stokhos_ENABLE_Sacado)
       APPEND_GLOB(SOURCES muelu/explicit_instantiation/*.cpp)
     ENDIF()
   ENDIF()
+  IF (Stokhos_ENABLE_Tpetra)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
+    IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+      SET(SOURCES ${SOURCES}
+	tpetra/tpetra_pce_instantiations.cpp
+	)
+    ENDIF()
+  ENDIF()
+  IF (Stokhos_ENABLE_Ifpack2)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ifpack2)
+    IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
+      SET(SOURCES ${SOURCES}
+	ifpack2/ifpack2_pce_instantiations.cpp
+	)
+    ENDIF()
+  ENDIF()
 ENDIF()
 
 # NOX
