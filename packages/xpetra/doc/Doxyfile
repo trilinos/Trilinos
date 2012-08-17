@@ -13,13 +13,13 @@ OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../src ./Xpetra_DoxygenDocumentation.hpp
+INPUT                  = ../src ./Xpetra_DoxygenDocumentation.hpp ../sup
 #FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATTERNS       =
-EXAMPLE_PATH           = ../examples
+EXAMPLE_PATH           = ../examples .
 IMAGE_PATH             = ./images
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES
