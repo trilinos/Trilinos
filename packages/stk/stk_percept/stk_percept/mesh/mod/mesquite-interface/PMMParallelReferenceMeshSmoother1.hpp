@@ -50,8 +50,8 @@ namespace stk {
       virtual void update_node_positions(Mesh* mesh, double alpha);
       virtual bool check_convergence();
 
-      double nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid );
-      double nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng );
+      double nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid );
+      void nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid, double *ng);
       double nodal_edge_length_ave(stk::mesh::Entity& node);
       
       double m_dnew, m_dold, m_d0, m_dmid, m_dd;

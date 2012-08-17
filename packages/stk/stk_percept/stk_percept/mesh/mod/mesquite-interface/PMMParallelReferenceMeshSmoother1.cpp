@@ -29,11 +29,10 @@ namespace stk {
     const bool do_tot_test = false;
     bool do_print_elem_val = false;
 
-    double PMMParallelReferenceMeshSmoother1::nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng )
+    void PMMParallelReferenceMeshSmoother1::nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng)
     {
       int spatialDim = m_eMesh->get_spatial_dim();
       valid = true;
-      double nm=0.0;
 
       double xc[3]={0,0,0};
       double eps=1.e-6;
@@ -45,20 +44,33 @@ namespace stk {
           double dt = eps1;
           coord_current[i] += dt;  
           double mp = nodal_metric(node, 0.0, coord_current, cg_d, valid);
-          coord_current[i] -= 2.0*dt;
-          double mm = nodal_metric(node, 0.0, coord_current, cg_d, valid);
+          if (0)
+            {
+              coord_current[i] -= 2.0*dt;
+              double mm = nodal_metric(node, 0.0, coord_current, cg_d, valid);
+              ng[i] = (mp-mm)/(2.0*eps1);
+              //if (std::fabs(mp) > 1.e-10) std::cout << "tmp srk i, mp = " << mp << " mm= " << mm << " ng= " << ng[i] << std::endl;
+            }
+          else
+            {
+              coord_current[i] = xc[i];
+              double mm = nodal_metric(node, 0.0, coord_current, cg_d, valid);
+              ng[i] = (mp-mm)/(eps1);
+              //if (std::fabs(mp) > 1.e-10) std::cout << "tmp srk i, mp = " << mp << " mm= " << mm << " ng= " << ng[i] << std::endl;
+            }
           coord_current[i] = xc[i];
-          ng[i] = (mp-mm)/(2.0*eps1);
         }
-
-      return nm;
     }
 
-    double PMMParallelReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid )
+    double PMMParallelReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid)
     {
       int spatialDim = m_eMesh->get_spatial_dim();
       valid = true;
       double nm=0.0;
+      CombineOp combine = m_metric->get_combine_op();
+      if (combine == COP_MIN) nm = std::numeric_limits<double>::max();
+      if (combine == COP_MAX) nm = -std::numeric_limits<double>::max();
+      m_metric->set_node(&node);
 
       double xc[3]={0,0,0};
 
@@ -75,7 +87,12 @@ namespace stk {
           stk::mesh::Entity& element = *node_elems[i_elem].entity();
           bool local_valid = true;
           double val = m_metric->metric(element, local_valid);
-          nm += val;
+          if (combine == COP_SUM)
+            nm += val;
+          else if (combine == COP_MAX)
+            nm = std::max(nm, val);
+          else if (combine == COP_MIN)
+            nm = std::min(nm, val);
           valid = valid && local_valid;
         }
       for (int i=0; i < spatialDim; i++)
@@ -133,6 +150,7 @@ namespace stk {
       stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
       stk::mesh::FieldBase *coord_field_current   = coord_field;
       stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
+      stk::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
@@ -144,112 +162,166 @@ namespace stk {
       // g=0
       eMesh->nodal_field_set_value(cg_g_field, 0.0);
 
-      // element loop: compute deltas
-      {
-        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
+      if (m_metric->is_nodal())
+        {
+          // node loop
+          const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              if (on_locally_owned_part(**k))
+                {
+                  stk::mesh::Bucket & bucket = **k ;
+                  const unsigned num_nodes_in_bucket = bucket.size();
 
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-          {
-            if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh))
-            //if (on_locally_owned_part(**k))  
-              {
-                stk::mesh::Bucket & bucket = **k ;
-                const unsigned num_elements_in_bucket = bucket.size();
-                m_metric->m_topology_data = m_eMesh->get_cell_topology(bucket);
-
-                for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
-                  {
-                    stk::mesh::Entity& element = bucket[i_element];
-
-                    const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
-                    unsigned num_node = elem_nodes.size();
-
-                    double edge_length_ave = m_eMesh->edge_length_ave(element);
-
-                    double metric_0 = metric(element, valid);
-
-                    for (unsigned inode=0; inode < num_node; inode++)
-                      {
-                        mesh::Entity & node = * elem_nodes[ inode ].entity();
-
-                        bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
-                        //VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
-                        bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
-                        bool fixed = pmm->get_fixed_flag(&node);
-                        if (fixed || isGhostNode)
+                  for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
+                    {
+                      stk::mesh::Entity& node = bucket[i_node];
+                      bool fixed = pmm->get_fixed_flag(&node);
+                      if (fixed)
+                        {
                           continue;
+                        }
 
-                        double *coord_current = PerceptMesh::field_data(coord_field_current, node);
-                        double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                      double edge_length_ave = nodal_edge_length_ave(node);
+
+                      double *coord_current = PerceptMesh::field_data(coord_field_current, node);
+                      double *cg_d = PerceptMesh::field_data(cg_d_field, node);
+                      double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+
+                      m_metric->set_node(&node);
+
+                      double gsav[3]={0,0,0};
+                      bool ng_valid = true;
+                      if (node.identifier() == 16)
+                        {
+                          //std::cout << "tmp srk " << std::endl;
+                        }
+                      nodal_gradient(node, 0.0, coord_current, cg_d, ng_valid, gsav);
+                      //std::cout << "tmp srk gsav = " << gsav[0] << " " << gsav[1] << std::endl;
+
+                      for (int idim=0; idim < spatialDim; idim++)
+                        {
+                          double dd = 0.0;
+                          if (ng_valid || m_stage == 0)
+                            dd = gsav[idim];
+                          m_scale = std::max(m_scale, std::abs(dd)/edge_length_ave);
+
+                          cg_g[idim] = dd;
+                        }
+                    }
+                }
+            }
+        }
+      else
+        {
+          // element loop: compute deltas
+          const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
+
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh))
+                //if (on_locally_owned_part(**k))  
+                {
+                  stk::mesh::Bucket & bucket = **k ;
+                  const unsigned num_elements_in_bucket = bucket.size();
+                  m_metric->m_topology_data = m_eMesh->get_cell_topology(bucket);
+
+                  for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
+                    {
+                      stk::mesh::Entity& element = bucket[i_element];
+
+                      const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+                      unsigned num_node = elem_nodes.size();
+
+                      double edge_length_ave = m_eMesh->edge_length_ave(element);
+
+                      for (unsigned inode=0; inode < num_node; inode++)
+                        {
+                          mesh::Entity & node = * elem_nodes[ inode ].entity();
+
+                          bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                          //VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
+                          bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
+                          bool fixed = pmm->get_fixed_flag(&node);
+                          if (fixed || isGhostNode)
+                            continue;
+
+                          m_metric->set_node(&node);
+                          double *coord_current = PerceptMesh::field_data(coord_field_current, node);
+                          double *cg_g = PerceptMesh::field_data(cg_g_field, node);
                         
-                        double eps = 1.e-6;
-                        double eps1 = eps*edge_length_ave;
+                          double eps = 1.e-6;
+                          double eps1 = eps*edge_length_ave;
 
-                        double gsav[3]={0,0,0};
-                        for (int idim=0; idim < spatialDim; idim++)
-                          {
-                            double cc = coord_current[idim];
-                            coord_current[idim] += eps1;
-                            bool pvalid=false, mvalid=false;
-                            double mp = metric(element, pvalid);
-                            coord_current[idim] -= 2.0*eps1;
-                            double mm = metric(element, mvalid);
-                            coord_current[idim] = cc;
-                            double dd = 0.0;
-                            if ((pvalid && mvalid) || m_stage == 0)
-                              dd = (mp - mm)/(2*eps1);
-                            gsav[idim] = dd;
-                            m_scale = std::max(m_scale, std::abs(dd)/edge_length_ave);
+                          double gsav[3]={0,0,0};
 
-                            if (node_locally_owned)
-                              {
-                                cg_g[idim] += dd;
-                              }
-                            else
-                              {
-                                cg_g[idim] = 0.0;
-                              }
-                          }
+                          for (int idim=0; idim < spatialDim; idim++)
+                            {
+                              double cc = coord_current[idim];
+                              coord_current[idim] += eps1;
+                              bool pvalid=false, mvalid=false;
+                              double mp = metric(element, pvalid);
+                              coord_current[idim] -= 2.0*eps1;
+                              double mm = metric(element, mvalid);
+                              coord_current[idim] = cc;
+                              double dd = 0.0;
+                              if ((pvalid && mvalid) || m_stage == 0)
+                                dd = (mp - mm)/(2*eps1);
+                              gsav[idim] = dd;
+                              //if (std::fabs(mp) > 1.e-10) std::cout << "tmp srk mp = " << mp << " mm= " << mm << " dd= " << dd << std::endl;
 
-                        // FIXME 
-                        if (0)
-                          {
-                            double gsn=0.0;
-                            for (int idim=0; idim < spatialDim; idim++)
-                              {
-                                gsn += gsav[idim]*gsav[idim];
-                              }
-                            gsn = std::sqrt(gsn);
-                            gsn = std::max(gsn,1.e-12);
-                            if (gsn > 1.e-4*edge_length_ave)
-                              {
-                                for (int idim=0; idim < spatialDim; idim++)
-                                  {
-                                    double dd = gsav[idim]/gsn*edge_length_ave;
-                                    coord_current[idim] -= dd*eps;
-                                  }
-                                double m1=metric(element, valid);
-                                for (int idim=0; idim < spatialDim; idim++)
-                                  {
-                                    double dd = gsav[idim]/gsn*edge_length_ave;
-                                    coord_current[idim] += dd*eps;
-                                  }
-                                if (metric_0 > 1.e-6)
-                                  {
-                                    if (!(m1 < metric_0*(1.0+eps)))
-                                      {
-                                        PRINT( "bad grad" << " m1-metric_0 = " << (m1-metric_0) << " gsav= " << gsav[0] << " " << gsav[1] << " " << gsav[2] );
-                                      }
-                                    VERIFY_OP_ON(m1, <, metric_0*(1.0+eps), "bad gradient");
-                                  }
-                              }
-                          }
+                              m_scale = std::max(m_scale, std::abs(dd)/edge_length_ave);
 
-                      } // inode...
-                  } // i_element
-              } // on_locally_owned_part...
-          } // buckets
-      } // element loop...
+                              if (node_locally_owned)
+                                {
+                                  cg_g[idim] += dd;
+                                }
+                              else
+                                {
+                                  cg_g[idim] = 0.0;
+                                }
+                            }
+                          // FIXME 
+                          if (0)
+                            {
+                              double gsn=0.0;
+                              for (int idim=0; idim < spatialDim; idim++)
+                                {
+                                  gsn += gsav[idim]*gsav[idim];
+                                }
+                              gsn = std::sqrt(gsn);
+                              gsn = std::max(gsn,1.e-12);
+                              if (gsn > 1.e-4*edge_length_ave)
+                                {
+                                  for (int idim=0; idim < spatialDim; idim++)
+                                    {
+                                      double dd = gsav[idim]/gsn*edge_length_ave;
+                                      coord_current[idim] -= dd*eps;
+                                    }
+                                  double m1=metric(element, valid);
+                                  for (int idim=0; idim < spatialDim; idim++)
+                                    {
+                                      double dd = gsav[idim]/gsn*edge_length_ave;
+                                      coord_current[idim] += dd*eps;
+                                    }
+                                  double metric_0 = metric(element, valid);
+
+                                  if (metric_0 > 1.e-6)
+                                    {
+                                      if (!(m1 < metric_0*(1.0+eps)))
+                                        {
+                                          PRINT( "bad grad" << " m1-metric_0 = " << (m1-metric_0) << " gsav= " << gsav[0] << " " << gsav[1] << " " << gsav[2] );
+                                        }
+                                      VERIFY_OP_ON(m1, <, metric_0*(1.0+eps), "bad gradient");
+                                    }
+                                }
+                            }
+
+                        } // inode...
+                    } // i_element
+                } // on_locally_owned_part...
+            } // buckets
+        } // element loop...
 
       VectorFieldType *cg_g_field_v = static_cast<VectorFieldType *>(cg_g_field);
       stk::mesh::parallel_reduce(*m_eMesh->get_bulk_data(), stk::mesh::sum(*cg_g_field_v));
@@ -494,7 +566,7 @@ namespace stk {
             if (std::fabs(den) > 1.e-10)
               {
                 double alpha_quadratic = num/den;
-                if (alpha_quadratic < 2*alpha)
+                if (alpha_quadratic > 1.e-10 && alpha_quadratic < 2*alpha)
                   {
                     double fm=total_metric(mesh, alpha_quadratic, 1.0, total_valid);
                     //if (fm < f2 && (!m_untangled || total_valid))
@@ -826,32 +898,64 @@ namespace stk {
       }
 
       valid = true;
-      // element loop
-      {
-        const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
+      if (m_metric->is_nodal())
+        {
+          // node loop
+          const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              if (on_locally_owned_part(**k))
+                {
+                  stk::mesh::Bucket & bucket = **k ;
+                  const unsigned num_nodes_in_bucket = bucket.size();
 
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-          {
-            if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh) && on_locally_owned_part(**k))
-              {
-                stk::mesh::Bucket & bucket = **k ;
-                m_metric->m_topology_data = m_eMesh->get_cell_topology(bucket);
+                  for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
+                    {
+                      stk::mesh::Entity& node = bucket[i_node];
+                      bool fixed = pmm->get_fixed_flag(&node);
+                      if (fixed)
+                        {
+                          continue;
+                        }
+
+                      double *coord_current = PerceptMesh::field_data(coord_field_current, node);
+                      double *cg_d = PerceptMesh::field_data(cg_d_field, node);
+
+                      bool local_valid = true;
+                      double nm = nodal_metric(node, 0.0, coord_current, cg_d, local_valid);
+                      valid = valid && local_valid;
+                      mtot += nm;
+                    }
+                }
+            }
+        }
+      else
+        {
+          // element loop
+          const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
+
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh) && on_locally_owned_part(**k))
+                {
+                  stk::mesh::Bucket & bucket = **k ;
+                  m_metric->m_topology_data = m_eMesh->get_cell_topology(bucket);
             
-                const unsigned num_elements_in_bucket = bucket.size();
+                  const unsigned num_elements_in_bucket = bucket.size();
 
-                for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
-                  {
-                    stk::mesh::Entity& element = bucket[i_element];
-                    bool local_valid=true;
-                    double mm = metric(element, local_valid);
-                    valid = valid && local_valid;
-                    if (do_print_elem_val) PRINT( "element= " << element.identifier() << " metric= " << mm );
-                    if (do_print_elem_val && element.identifier() == 13) { std::cout << element.identifier() << " iter= " << m_iter << " element= " << element.identifier() << " metric= " << mm << std::endl;}
-                    mtot += mm;
-                  }
-              }
-          }
-      }
+                  for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
+                    {
+                      stk::mesh::Entity& element = bucket[i_element];
+                      bool local_valid=true;
+                      double mm = metric(element, local_valid);
+                      valid = valid && local_valid;
+                      if (do_print_elem_val) PRINT( "element= " << element.identifier() << " metric= " << mm );
+                      if (do_print_elem_val && element.identifier() == 13) { std::cout << element.identifier() << " iter= " << m_iter << " element= " << element.identifier() << " metric= " << mm << std::endl;}
+                      mtot += mm;
+                    }
+                }
+            }
+        }
 
       // reset coordinates
       m_eMesh->copy_field(coord_field_current, coord_field_lagged);

@@ -227,6 +227,14 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   typedef DirichletSolution  < mesh_type , Scalar > DirichletSolutionFunctor ;
   typedef DirichletResidual  < mesh_type , Scalar > DirichletResidualFunctor ;
 
+  typedef typename ElementFunctor::elem_matrices_type elem_matrices_type ;
+  typedef typename ElementFunctor::elem_vectors_type  elem_vectors_type ;
+
+  typedef GatherFill< matrix_type ,
+                      mesh_type ,
+                      elem_matrices_type ,
+                      elem_vectors_type > GatherFillFunctor ;
+
   //------------------------------------
 
   matrix_type jacobian ;
@@ -272,9 +280,6 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
   //------------------------------------
   // Allocation of arrays to fill the linear system
-
-  typedef KokkosArray::View< scalar_type[][ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
-  typedef KokkosArray::View< scalar_type[][ElementNodeCount]                   , device_type >  elem_vectors_type ;
 
   elem_matrices_type elem_matrices ; // Jacobian matrices
   elem_vectors_type  elem_vectors ;  // Residual vectors
@@ -331,11 +336,11 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
     wall_clock.reset();
 
-    ElementFunctor::apply( mesh ,
-                           elem_matrices , 
-                           elem_vectors ,
-                           nodal_solution ,
-                           exact_solution.K );
+    ElementFunctor( mesh ,
+                    elem_matrices , 
+                    elem_vectors ,
+                    nodal_solution ,
+                    exact_solution.K );
 
     device_type::fence();
     perf_data.elem_time += comm::max( machine , wall_clock.seconds() );
@@ -348,12 +353,12 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
     fill( 0 , jacobian.coefficients );
     fill( 0 , residual );
 
-    GatherFill< matrix_type , mesh_type >::apply( jacobian , 
-                                                  residual ,
-                                                  mesh , 
-                                                  element_map , 
-                                                  elem_matrices , 
-                                                  elem_vectors );
+    GatherFillFunctor::apply( jacobian , 
+                              residual ,
+                              mesh , 
+                              element_map , 
+                              elem_matrices , 
+                              elem_vectors );
 
     device_type::fence();
     perf_data.matrix_gather_fill_time += comm::max( machine , wall_clock.seconds() );
@@ -497,7 +502,7 @@ void driver( const char * label , comm::Machine machine ,
     std::cout
       << "\"Size\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\" , \"CG-Iter\" , \"Newton-Iter\" , \"Max-node-error\"" 
       << std::endl
-      << "\"elems\" , , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
+      << "\"elems\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
       << std::endl ;
   }
 

@@ -61,5 +61,13 @@ typedef int MPI_Comm;
 #endif
 
 #include <complex>
+#if defined(FOUR_BYTE_REAL)
+//'FOUR_BYTE_REAL' is a sierra macro which may or may not be defined
+//when this header is compiled...
+//If FOUR_BYTE_REAL is defined then we know we need float, otherwise
+//stick with double.
+typedef std::complex<float> Complex;
+#else
 typedef std::complex<double> Complex;
+#endif
 #endif 

@@ -30,8 +30,8 @@ namespace stk {
       Vector3D mCoords[4];
 
     public:
-      double   mMetrics[8];  // detJ
-      MsqMatrix<3,3> mJ[8];  // J
+      double   m_detJ[8]; 
+      MsqMatrix<3,3> m_J[8];
       int m_num_nodes;
       bool m_scale_to_unit;
 

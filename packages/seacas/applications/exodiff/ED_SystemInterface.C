@@ -861,7 +861,7 @@ void SystemInterface::Parse_Command_File()
   SMART_ASSERT(cmd_file.good());
 
   char line[256];
-  std::string xline, tok1, tok2;
+  std::string xline, tok1, tok2, tok3;
   cmd_file.getline(line, 256);  xline = line;
   while (!cmd_file.eof())
     {
@@ -938,6 +938,20 @@ void SystemInterface::Parse_Command_File()
 		    "Aborting..." << std::endl;
 		  exit(1);
 		}
+	    }
+	  else if ( abbreviation(tok1, "final", 3) &&
+		    abbreviation(tok2, "time", 3) )
+	    {
+	      tok3 = extract_token(xline, " \t");  to_lower(tok3);
+	      if (!abbreviation(tok3, "tolerance", 3)) {
+		std::cout << "exodiff: ERROR:  expected \"TOLERANCE\" "
+			  << "after the \"FINAL TIME\" keyword. "
+			  <<  "Found \"" << tok3 << "\" instead. Aborting..." << std::endl;
+		exit(1);
+	      }
+	      std::string tok = extract_token( xline, " \n\t=," );
+	      if (tok == "") Parse_Die(line);
+	      final_time_tol.value = To_Double(tok);
 	    }
 	  else if ( abbreviation(tok1, "return", 3) &&
 		    abbreviation(tok2, "status", 3) )
@@ -1631,6 +1645,8 @@ namespace {
       << "           on with the STEP OFFSET MATCH keyword.\n"
       << "         - The interpolation option, \"-interpolate\", can be turned\n"
       << "           on with the INTERPOLATE keyword.\n"
+      << "         - The final time tolerance, \"-final_time_tolerance <tol>\", can be turned\n"
+      << "           on with the FINAL TIME TOLERANCE keyword.\n"
       << "         - The calculation of the L2 norm of differences \"-norms\", can be turned\n"
       << "           on with the CALCULATE NORMS keyword.\n"
       << "         - The exit status return option, \"-stat\", can be turned on with the \n"

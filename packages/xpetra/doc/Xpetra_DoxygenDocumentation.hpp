@@ -20,6 +20,7 @@
 
 \section xpetra_overview Overview
 
+
 Xpetra a lightweight wrapper to both Epetra and Tpetra.  The Xpetra syntax mirrors that of Tpetra.  Xpetra enables
 algorithm developers to write to a single interface but be able to use either Epetra or Tpetra.
 Xpetra can also be introduced into existing code to allow for gradual migration.
@@ -36,11 +37,9 @@ Xpetra is used by the MueLu and Zoltan2 projects.
   - Ray Tuminaro, Sandia National Labs
   - Tobias Wiesner, Technical University Munich
 
-\section xpetra_copyright Copyright
+\section xpetra_copyright Copyright and License
 
-Xpetra has not completed the Sandia copyright process.
-
-\verbinclude copyright.txt
+\verbinclude COPYRIGHT_AND_LICENSE
 
 \section xpetra_questions For All Questions and Comments...
   

@@ -55,7 +55,9 @@
 
 namespace HybridFEM {
 
-template< class MatrixType , class MeshType > struct GatherFill ;
+template< class MatrixType , class MeshType ,
+          class elem_matrices_type ,
+          class elem_vectors_type > struct GatherFill ;
 
 }
 

@@ -193,7 +193,7 @@ NECoupledModelEvaluator(
   // Build the Jacobian graph (currently dense)
   if (supports_W || supports_W_sg) {
     W_graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *f_map, nx));
-    int *indices = f_map->MyGlobalElements();
+    int *indices = f_overlap_map->MyGlobalElements();
     for (int i=0; i<f_map->NumMyElements(); i++) {
       int row = f_map->GID(i);
       W_graph->InsertGlobalIndices(row, nx, indices);
@@ -202,10 +202,9 @@ NECoupledModelEvaluator(
 
     W_overlap_graph = 
       Teuchos::rcp(new Epetra_CrsGraph(Copy, *f_overlap_map, nx));
-    int *overlap_indices = f_overlap_map->MyGlobalElements();
     for (int i=0; i<f_overlap_map->NumMyElements(); i++) {
       int row = f_overlap_map->GID(i);
-      W_overlap_graph->InsertGlobalIndices(row, nx, overlap_indices);
+      W_overlap_graph->InsertGlobalIndices(row, nx, indices);
     }
     W_overlap_graph->FillComplete();
     W_overlap = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *W_overlap_graph));

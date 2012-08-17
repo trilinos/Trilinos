@@ -22,6 +22,7 @@
 
 #include <Implicit_macros.hpp>
 #include <NonLinear_macros.hpp>
+#include <NonlinearElement_macros.hpp>
 #include <Explicit_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 

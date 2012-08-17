@@ -11,6 +11,7 @@ PROJECT_NUMBER         = "Version of the Day"
 #
 # What and how documentation is extracted
 #
+EXAMPLE_PATH           = ../examples .
 SUBGROUPING            = NO
 EXTRACT_ALL            = NO
 EXTRACT_PRIVATE        = NO

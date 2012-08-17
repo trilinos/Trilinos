@@ -91,7 +91,7 @@ public:
       m_left(0),
       m_right(0),
       m_other(0)
-  {}
+  {m_data.function.undefinedFunction = false;}
 
 private:
   explicit Node(const Node &);
@@ -120,6 +120,7 @@ public:
     struct _function
     {
       CFunctionBase* function[MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES];
+      bool undefinedFunction;
     } function;
   } m_data;
 
@@ -743,8 +744,9 @@ parseFunction(
   }
   function->m_right = parseFunctionArg(eval, lparen + 1, rparen);
 
-     if (!c_function)
-       throw std::runtime_error(std::string("Undefined function ") + function_name);
+  if (!c_function) {
+    function->m_data.function.undefinedFunction = true;
+  }
 
   return function;
 }
@@ -929,6 +931,16 @@ Eval::evaluate() const
     throw std::runtime_error(std::string("Expression '") + m_expression + "' did not parse successfully");
 
   return m_headNode->eval();
+}
+
+bool
+Eval::undefinedFunction() const
+{
+  /* Check for an undefined function in any allocated node */
+  for (unsigned int i=0; i<m_nodes.size(); i++) {
+    if (m_nodes[i]->m_data.function.undefinedFunction) return true;
+  }
+  return false;
 }
 
 } // namespace expreval
