@@ -178,7 +178,7 @@ void AlltoAllv(const Comm<int> &comm,
     if (recvCount[i] > maxMsg)
       maxMsg = recvCount[i];
     if (sendCount[i] > maxMsg)
-      maxMsg = recvCount[i];
+      maxMsg = sendCount[i];
 
     if (!offProc && (i != rank) && (recvCount[i] > 0 || sendCount[i] > 0))
       offProc = true;
