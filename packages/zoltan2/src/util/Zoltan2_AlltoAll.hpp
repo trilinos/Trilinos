@@ -169,7 +169,7 @@ void AlltoAllv(const Comm<int> &comm,
   
   offsetIn[0] = offsetOut[0] = 0;
 
-  size_t maxMsg=0;
+  int maxMsg=0;
   bool offProc = false;
 
   for (int i=0; i < nprocs; i++){

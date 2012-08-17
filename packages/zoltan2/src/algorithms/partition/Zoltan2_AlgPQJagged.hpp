@@ -2773,7 +2773,7 @@ void AlgPQJagged(
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
 
   if(comm->getRank() == 0){
-    for(size_t i = 0; i < totalPartCount - 1;++i){
+    for(partId_t i = 0; i < totalPartCount - 1;++i){
       cout << "cut coordinate:" << allCutCoordinates[i] << endl;
     }
   }
