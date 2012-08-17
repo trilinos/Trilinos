@@ -1782,7 +1782,9 @@ void pqJagged_1DPart_simple(
             &recteLinearCount, cutWeights, globalCutWeights, 0, noCuts);
       }
 
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
+#endif
       {
       scalar_t *t = cutCoordinates_tmp;
       cutCoordinates_tmp = cutCoordinatesWork;
