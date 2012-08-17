@@ -532,8 +532,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     else if (algorithm_ == string("PQJagged")){
     	AlgPQJagged<Adapter>(this->envConst_, problemComm_,
     	        this->coordinateModel_, solution_);
-//      AlgMehmet<Adapter>(this->envConst_, problemComm_,
-//        this->coordinateModel_, solution_);
     }
     else{
       throw std::logic_error("partitioning algorithm not supported yet");
@@ -544,6 +542,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 #ifdef HAVE_ZOLTAN2_MPI
 
   // The algorithm may have changed the communicator.  Change it back.
+  // KDD:  Why would the algorithm change the communicator? TODO
+  // KDD:  Should we allow such a side effect? TODO
 
   RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
   problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
