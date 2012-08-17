@@ -52,6 +52,8 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 /*!  \brief Throw an error returned from outside the Zoltan2 library.
  *
@@ -80,5 +82,24 @@
   catch (std::logic_error   &e) { throw e; } \
   catch (std::bad_alloc     &e) { throw e; } \
   catch (std::exception     &e) { throw e; } 
+
+/*! \brief Throw an error when experimental code is requested but not compiled.
+ *
+ *  Experimental code must be enabled with CMAKE Option
+ *  -D Zoltan2_ENABLE_Experimental:BOOL=ON
+ *  If it is not enabled but it is called, throw an exception.
+ *  The input string mystr is a use-specific message included in the throw
+ *  message.
+ */
+
+#define Z2_THROW_EXPERIMENTAL(mystr) \
+  { \
+  std::ostringstream oss; \
+  oss << (mystr) << std::endl \
+      << "To experiment with this software, configure with " \
+      << "-D Zoltan2_ENABLE_Experimental:BOOL=ON " \
+      << std::endl; \
+  throw std::runtime_error(oss.str()); \
+  }
 
 #endif

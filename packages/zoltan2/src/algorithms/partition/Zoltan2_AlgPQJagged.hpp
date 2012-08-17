@@ -2283,6 +2283,12 @@ void AlgPQJagged(
     RCP<PartitioningSolution<Adapter> > &solution
 )
 {
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+
+  Z2_THROW_EXPERIMENTAL("Zoltan2 PQJagged is strictly experimental software "
+                        "while it is being developed and tested.")
+
+#else
 
   env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
@@ -2934,6 +2940,8 @@ ignoreWeights,numGlobalParts, pqJagged_partSizes);
 
   env->timerStop(MACRO_TIMERS, "PQJagged Problem_Free");
   env->timerStop(MACRO_TIMERS, "PQJagged Total");
+
+#endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 } // namespace Zoltan2
 
