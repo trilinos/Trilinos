@@ -6,13 +6,10 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#if defined(STK_BUILT_IN_SIERRA) && !defined(__IBMCPP__)
-#define STK_ADAPT_HAS_GEOMETRY
-#else
-#undef STK_ADAPT_HAS_GEOMETRY
-#endif
 
-#if defined( STK_ADAPT_HAS_GEOMETRY )
+#include <stk_percept/Percept.hpp>
+
+#if defined( STK_PERCEPT_HAS_GEOMETRY ) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>

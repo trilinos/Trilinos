@@ -1,5 +1,6 @@
-#if !defined(__IBMCPP__)
-#ifdef STK_BUILT_IN_SIERRA
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
+
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
@@ -544,7 +545,7 @@ namespace stk {
         //if (metric > sigma*metric_0)
         if (!converged)
           {
-            PRINT_1( "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) );
+            PRINT_1( "can't reduce metric 2nd time = " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) << " m_scale= " << m_scale);
             do_print_elem_val = true;
             double metric_1 = total_metric(mesh, 1.e-6, 1.0, total_valid);
             metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
@@ -970,5 +971,4 @@ namespace stk {
 }
 
 
-#endif
 #endif

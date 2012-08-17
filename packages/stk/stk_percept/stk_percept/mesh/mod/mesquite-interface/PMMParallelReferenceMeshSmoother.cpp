@@ -1,5 +1,5 @@
-#if !defined(__IBMCPP__)
-#ifdef STK_BUILT_IN_SIERRA
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
@@ -171,8 +171,8 @@ namespace stk {
                 }
               else 
                 {
-                  //m_metric = &shape_metric;
-                  m_metric = &shape_b1_metric;
+                  m_metric = &shape_metric;
+                  //m_metric = &shape_b1_metric;
                 }
 
               for (int iter = 0; iter < innerIter; ++iter, ++iter_all)
@@ -199,7 +199,7 @@ namespace stk {
                               << std::endl;
                   }
 
-                  if (1)
+                  if (0)
                     {
                        eMesh->save_as("iter_"+toString(outer)+"_"+toString(stage)+"."+toString(iter)+".e");
                        if (iter_all % 8 == 0) eMesh->save_as("anim_all."+toString(iter_all)+".e");
@@ -234,5 +234,4 @@ namespace stk {
 }
 
 
-#endif
 #endif

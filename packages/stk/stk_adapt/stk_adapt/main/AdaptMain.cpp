@@ -509,6 +509,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
+      int remove_geometry_blocks = 0;
       int sync_io_regions = 1;
       int delete_parents = 1;
       int print_memory_usage = 0;
@@ -565,7 +566,8 @@ namespace stk {
 
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
-      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry snap to try to avoid bad meshes");
+      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
+      run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
       run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
@@ -828,6 +830,7 @@ namespace stk {
                                 PerceptMesh eMeshEmpty(0);
                                 eMeshEmpty.openEmpty();
                                 SerializeNodeRegistry snr(eMeshEmpty, some_nr, input_mesh_save, output_mesh_save, m_M, 0, m_W, m_iW, m_M_0, m_M_1);
+                                if (remove_geometry_blocks) snr.set_geometry_file(input_geometry);
                                 snr.pass3_new();
                               }
 #else
@@ -980,6 +983,7 @@ namespace stk {
                               {
                                 breaker.setGeometryFile(input_geometry);
                                 breaker.setSmoothGeometry(smooth_geometry == 1);
+                                //breaker.setRemoveGeometryBlocks(remove_geometry_blocks == 1);
                               }
                             breaker.setRemoveOldElements(remove_original_elements);
                             breaker.setQueryPassOnly(query_only == 1);
@@ -1054,6 +1058,7 @@ namespace stk {
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
                             if (streaming_size) eMesh.setStreamingSize(m_M);
+                            if (remove_geometry_blocks) eMesh.remove_geometry_blocks_on_output(input_geometry);
                             eMesh.save_as(output_mesh);
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;

@@ -8,8 +8,8 @@
 #ifndef PMMParallelReferenceMeshSmoother_hpp
 #define PMMParallelReferenceMeshSmoother_hpp
 
-#if !defined(__IBMCPP__)
-#ifdef STK_BUILT_IN_SIERRA
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
@@ -97,6 +97,5 @@ namespace stk {
   }
 }
 
-#endif
 #endif
 #endif

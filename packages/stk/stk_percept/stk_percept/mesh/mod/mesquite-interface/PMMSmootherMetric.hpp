@@ -8,7 +8,8 @@
 #ifndef PMMSmootherMetric_hpp
 #define PMMSmootherMetric_hpp
 
-#if !defined(__IBMCPP__) && defined(STK_BUILT_IN_SIERRA)
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/JacobianUtil.hpp>
@@ -277,7 +278,7 @@ namespace stk {
                 valid = false;
               }
             double shape_metric = 0.0;
-            if (std::fabs(detAi) > 1.e-10)
+            if (detAi > 1.e-10)
               {
                 //shape_metric = sqr_Frobenius(jacW.m_J[i]*inverse(jacA.m_J[i]) - Ident);
                 MsqMatrix<3,3>& W = jacW.m_J[i];
@@ -287,7 +288,8 @@ namespace stk {
                 double f = Frobenius(T);
                 double d = det(T);
                 double den = 3 * MSQ_SQRT_THREE * d;
-                shape_metric = (f*f*f)/den - 1.0;
+                if (d > 1.e-8)
+                  shape_metric = (f*f*f)/den - 1.0;
               }
             val_shape += shape_metric;
           }

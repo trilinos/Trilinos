@@ -13,14 +13,13 @@
 
 #include <stk_adapt/NodeRegistryDef.hpp>
 
-#if defined( STK_ADAPT_HAS_GEOMETRY )
-// #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
-// #include <stk_adapt/geometry/MeshGeometry.hpp>
-// #include <stk_adapt/geometry/GeometryFactory.hpp>
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
 #include <stk_percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
 #include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #include <stk_percept/mesh/geometry/kernel/GeometryFactory.hpp>
+#endif
 
+#if defined ( STK_PERCEPT_HAS_MESQUITE )
 #define StackTraceTmp StackTrace
 #undef StackTrace
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
@@ -1032,7 +1031,7 @@ namespace stk {
       //std::cout << "tmp dump_elements 3" << std::endl;
       //m_eMesh.dump_elements();
 
-#if defined( STK_ADAPT_HAS_GEOMETRY )
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
       if (m_geomSnap)
         {
 
@@ -1059,30 +1058,34 @@ namespace stk {
               if (doCheckMovement != 0.0) 
                 mesh_geometry.print_node_movement_summary();
 
-              // no need to smooth it a second time if using Mesquite
-              if (0 && m_doSmoothGeometry)
+#if defined (STK_PERCEPT_HAS_MESQUITE)
+              if (m_doSmoothGeometry)
                 {
                   smoothGeometry(mesh_geometry,option);
                   mesh_geometry.snap_points_to_geometry(&m_eMesh);
                 }
+#endif
             }
             break;
           case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
             {
               //VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
 
+#ifdef STK_PERCEPT_HAS_MESQUITE
               if (m_doSmoothGeometry)
                 {
                   // make a copy of current non-snapped state (dst,src)
                   m_eMesh.copy_field(m_eMesh.get_field("coordinates_NM1"), m_eMesh.get_coordinates_field() );
 
                 }
+#endif
 
               // do the snap
               mesh_geometry.snap_points_to_geometry(&m_eMesh);
               if (doCheckMovement != 0.0) 
                 mesh_geometry.print_node_movement_summary();
 
+#ifdef STK_PERCEPT_HAS_MESQUITE
               if (m_doSmoothGeometry)
                 {
                   // make a copy of current snapped state
@@ -1094,6 +1097,7 @@ namespace stk {
                   smoothGeometry(mesh_geometry,option);
                   //mesh_geometry.snap_points_to_geometry(&m_eMesh);
                 }
+#endif
               
             }
             break;
@@ -1256,7 +1260,7 @@ namespace stk {
             }
         }
 
-      if (1 && node_list.size()) std::cout << "P[" << m_eMesh.get_rank() << "] tmp number of dangling nodes = " << node_list.size() << " and pseudos= " << pseudos.size() << std::endl;
+      //if (1 && node_list.size()) std::cout << "P[" << m_eMesh.get_rank() << "] tmp number of dangling nodes = " << node_list.size() << " and pseudos= " << pseudos.size() << std::endl;
       //!srk
       getNodeRegistry().clear_dangling_nodes(&node_list);
 
@@ -1308,7 +1312,8 @@ namespace stk {
 
     }
 
-#if defined( STK_ADAPT_HAS_GEOMETRY )
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
+#if 0
     static stk::mesh::Selector getNodeWasSnappedSelector(MeshGeometry& mesh_geometry)
     {
       stk::mesh::Selector selector;
@@ -1320,48 +1325,10 @@ namespace stk {
         }
       return selector;
     }
-
-    // orthogonal corrections
-    static void move_quad_centroid_node_method1(int spatialDim, double *centroid_node_orig_pos, double *centroid_node_new_pos, double *edge_centroids[4])
-    {
-      double *edges[2][2] = {{edge_centroids[0], edge_centroids[2]}, {edge_centroids[1], edge_centroids[3]} };
-      double proposed_delta[3] = {0,0,0};
-
-      for (int idim=0; idim < spatialDim; idim++)
-        {
-          centroid_node_new_pos[idim] = centroid_node_orig_pos[idim];
-        }
-
-      for (int iedge=0; iedge < 2; iedge++)
-        {
-          double dxyz[3]={0,0,0};
-          double d=0;
-          for (int idim=0; idim < spatialDim; idim++)
-            {
-              //proposed_delta[idim] = (centroid_node_new_pos[idim] - centroid_node_orig_pos[idim]);
-              double midpoint= 0.5*(edges[iedge][1][idim] + edges[iedge][0][idim]);
-              proposed_delta[idim] = (midpoint - centroid_node_orig_pos[idim]);
-              
-              dxyz[idim] = edges[iedge][1][idim] - edges[iedge][0][idim];
-              d += dxyz[idim]*dxyz[idim];
-            }
-          double proj=0;
-          if (d<1.e-10) d=1;
-          d = std::sqrt(d);
-          for (int idim=0; idim < spatialDim; idim++)
-            {
-              dxyz[idim] /= d;
-              proj += dxyz[idim]*proposed_delta[idim];
-            }
-          for (int idim=0; idim < spatialDim; idim++)
-            {
-              centroid_node_new_pos[idim] += proj*dxyz[idim];
-            }
-        }
-    }
+#endif
 #endif
 
-#if defined( STK_ADAPT_HAS_GEOMETRY )
+#if defined( STK_PERCEPT_HAS_MESQUITE ) && defined(STK_PERCEPT_HAS_GEOMETRY)
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry, SMOOTHING_OPTIONS option)
     {
       bool do_mesquite_smoothing = true;
@@ -1421,354 +1388,6 @@ namespace stk {
             break;
           }
           return;
-        }
-      /**
-       *  0. cache set of nodes involved in moving/snapping to geometry
-       *  1. get parent elements touching the boundary - just the set of elements with a node in the set from (0)
-       *  2. for each elem, loop over its faces, create subDimEntity, find new node from NodeRegistry
-       *  3. if new node is not in set (0), compute new location as average of the face's edge mid-nodes
-       *  4. compute new element centroid by average of face centroids (or all edge centroids?)
-       *
-       *  alternative (avoids computing face centroids twice): 
-       *
-       *  0. cache set of nodes involved in moving/snapping to geometry
-       *  1. get parent elements touching the boundary - just the set of elements with a node in the set from (0)
-       *  2. for each face in NodeRegistry DB, if face has a node in set (0), move its centroid to the edge mid node average,
-       *       but only if its node is not in set (0)
-       *  4. loop over set (1), compute new element centroid by average of face centroids (or all edge centroids?)
-       *  
-       */
-      static SubDimCellData empty_SubDimCellData;
-
-      int debug = 1;  // or 2, 3,...
-
-      if (m_doRemove)
-        {
-          throw std::runtime_error("Refiner::smoothGeometry: to use this method, you must call setRemoveOldElements(false)\n"
-                                   "  or if using stk_adapt_exe, use option --remove_original_elements=0");
-        }
-
-      stk::mesh::Selector on_geometry_selector = getNodeWasSnappedSelector(mesh_geometry);
-
-      std::string oldPartName = m_breakPattern[0]->getOldElementsPartName()+toString(m_eMesh.element_rank());
-      mesh::Part *oldPart = m_eMesh.get_fem_meta_data()->get_part(oldPartName);
-      //std::cout << "oldPartName= " << oldPartName << std::endl;
-      if (!oldPart)
-        {
-          std::cout << "oldPartName= " << oldPartName << std::endl;
-          throw std::runtime_error("oldpart is null in smoothGeometry");
-        }
-      stk::mesh::Selector oldPartSelector(*oldPart);
-
-      int spatialDim = m_eMesh.get_spatial_dim();
-      int topoDim = -1;
-
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
-
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
-        {
-          stk::mesh::Bucket & bucket = **k ;
-
-          // only do "old" elements
-          //if (!oldPartSelector(bucket))
-          //  continue;
-
-          const unsigned num_elements_in_bucket = bucket.size();
-          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
-            {
-              stk::mesh::Entity& element = bucket[iElement];
-
-              const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                
-              CellTopology cell_topo(cell_topo_data);
-
-              if (m_eMesh.isParentElementLeaf(element, false))
-                {
-                  if (debug > 1) 
-                    std::cout << "tmp debug smoothGeometry: parent elem id= " << element.identifier() << std::endl;
-                  if (debug > 1)
-                    {
-                      std::cout << "tmp cell_topo = " << cell_topo.getName() << std::endl;
-                      m_eMesh.printParentChildInfo(element, false);
-                    }
-                }
-              else
-                {
-                  if (debug > 2) std::cout << "tmp debug smoothGeometry: child elem id= " << element.identifier() << std::endl;
-                  continue;
-                }
-
-
-              // avoid ghosts
-              if (m_eMesh.isGhostElement(element))
-                {
-                  continue;
-                }
-
-
-              // avoid elements that don't touch the boundary
-              bool element_touches_snapped_geometry = false;
-              stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
-              for (unsigned inode=0; inode < elem_nodes.size(); inode++)
-                {
-                  stk::mesh::Entity *node = elem_nodes[inode].entity();
-                  if (on_geometry_selector(*node))
-                    {
-                      element_touches_snapped_geometry = true;
-                      break;
-                    }
-                }
-              if (!element_touches_snapped_geometry)
-                continue;
-
-
-              // get sub-dim entities and look for centroid nodes
-              //const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
-
-              // loop from top rank downwards (m_ranks has ranks sorted in top-down order)
-              for (unsigned irank = 0; irank < m_ranks.size(); irank++)
-                {
-                  if (m_ranks[irank] != m_eMesh.element_rank())
-                    continue;
-
-                  vector<NeededEntityType> needed_entity_ranks;
-                  m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
-                  unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
-
-                  topoDim = m_breakPattern[irank]->getTopoDim(cell_topo);
-
-                  if (cell_topo.getKey() == elementType)
-                    {
-
-                      unsigned numFaces = 0;
-                      unsigned numEdges = 0;
-
-                      for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
-                        {
-                          stk::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
-
-                          if (needed_entity_rank == m_eMesh.edge_rank())
-                            {
-                              numEdges = cell_topo_data->edge_count;
-                            }
-                          else if (needed_entity_rank == m_eMesh.face_rank())
-                            {
-                              numFaces = cell_topo_data->side_count;
-                            }
-                        }
-
-                      if (debug > 3)  std::cout << "tmp debug Refiner:: irank = " << irank << " ranks[irank] = " << m_ranks[irank]
-                                       << " elementType= " << elementType
-                                       << " cell_topo= " << cell_topo.getName()
-                                       << " numFaces= " << numFaces 
-                                       << " numEdges= " << numEdges
-                                       << " topoDim= " << topoDim
-                                       << std::endl;
-
-                      if (topoDim == 3 && numFaces == 0)
-                        continue;
-                      if (topoDim == 2 && numEdges == 0)
-                        continue;
-
-                      // skip shells for now?
-                      if (topoDim == 2 && spatialDim == 3)
-                        continue;
-
-                      // do this for either 2d or 3d (operate on edges to average their values to the face centroid - if in 2D, then we're done,
-                      //   else in 3d have to average face centroids to element centroid as well)
-                      {
-                        EntityRank face_rank = (topoDim == 3? m_eMesh.face_rank() : m_eMesh.element_rank());
-                        if (topoDim == 2) numFaces = 1;
-                          
-                        for (unsigned iSubDimOrd = 0; iSubDimOrd < numFaces; iSubDimOrd++)
-                          {
-                            // get the face (or edge in 2d)
-                            SubDimCell_SDSEntityType subDimEntity;
-                            m_nodeRegistry->getSubDimEntity(subDimEntity, element, face_rank, iSubDimOrd);
-
-                            SubDimCellData* nodeId_elementOwnderId_ptr = m_nodeRegistry->getFromMapPtr(subDimEntity);
-                            SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
-                            bool is_empty = nodeId_elementOwnderId_ptr == 0;
-                            if (is_empty)
-                              {
-                                if (1) std::cout << "tmp debug error 1 Refiner:: irank = " << irank << " ranks[irank] = " << m_ranks[irank]
-                                                 << " elementType= " << elementType
-                                                 << " cell_topo= " << cell_topo.getName()
-                                                 << " numFaces= " << numFaces 
-                                                 << " numEdges= " << numEdges
-                                                 << " topoDim= " << topoDim
-                                                 << std::endl;
-
-                                throw std::logic_error("error1");
-                              }
-
-                            stk::mesh::Entity *node_at_centroid = 0;
-                            double centroid[3] = {0,0,0};
-
-                            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-                            node_at_centroid = nodeIds_onSE[0]; // FIXME for quadratic elements
-
-                            if (0 && on_geometry_selector(*node_at_centroid))
-                              {
-                                if (debug) std::cout << "tmp debug face centroid node is on geometry so we won't be moving it" << std::endl;
-                                continue;
-                              }
-                            //stk::mesh::EntityRank erank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-                            //stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-                                  
-                            //if (owning_elementId == element.identifier())  // possible performance enhancement, but at the expense of visiting elements twice
-                            {
-
-                              const CellTopologyData *  face_topo_data = (topoDim == 2 ? cell_topo_data : cell_topo_data->side[iSubDimOrd].topology);
-                              if (debug > 3) std::cout << "tmp debug face_topo_data->edge_count = " << face_topo_data->edge_count << std::endl;
-                              double *edge_centroids[4];
-                              for (unsigned ie=0; ie < face_topo_data->edge_count; ie++)
-                                {
-                                  SubDimCell_SDSEntityType edgeSubDim;
-                                  if (topoDim == 3)
-                                    {
-                                      edgeSubDim.insert( elem_nodes[ cell_topo_data->side[iSubDimOrd].node[ face_topo_data->edge[ie].node[0] ] ].entity() );
-                                      edgeSubDim.insert( elem_nodes[ cell_topo_data->side[iSubDimOrd].node[ face_topo_data->edge[ie].node[1] ] ].entity() );
-                                    }
-                                  else
-                                    {
-                                      edgeSubDim.insert( elem_nodes[  face_topo_data->edge[ie].node[0] ].entity() );
-                                      edgeSubDim.insert( elem_nodes[  face_topo_data->edge[ie].node[1] ].entity() );
-                                    }
-
-                                  SubDimCellData* edge_data_ptr = m_nodeRegistry->getFromMapPtr(edgeSubDim);
-                                  SubDimCellData& edge_data = (edge_data_ptr ? *edge_data_ptr : empty_SubDimCellData);
-                                  bool is_empty_edge = edge_data_ptr == 0;
-                                  if (is_empty_edge)
-                                    {
-                                      throw std::logic_error("couldn't find edge");
-                                    }
-                                  NodeIdsOnSubDimEntityType& nodeIds_onSE_edge = edge_data.get<SDC_DATA_GLOBAL_NODE_IDS>();
-
-                                  stk::mesh::Entity *edge_node = nodeIds_onSE_edge[0]; // FIXME for quadratic elements
-                                  double *fdata = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , *edge_node );
-                                  edge_centroids[ie] = fdata;
-                                  if (debug > 3) 
-                                    {
-                                      std::cout << "tmp debug found edge node: " ; 
-                                      m_eMesh.print_entity(std::cout, *edge_node);
-                                    }
-                                  for (int idim=0; idim < m_eMesh.get_spatial_dim(); idim++)
-                                    {
-                                      centroid[idim] += fdata[idim];
-                                    }
-                                }
-
-                              for (int idim=0; idim < m_eMesh.get_spatial_dim(); idim++)
-                                {
-                                  centroid[idim] /= ((double)face_topo_data->edge_count);
-                                }
-                              double *fdata = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , *node_at_centroid );
-
-                              double dist_moved = 0.0;
-
-                              // this can be commented out, which gives the original behavior (simple average all 4 edge nodes)
-                              if (1)
-                                move_quad_centroid_node_method1(spatialDim, fdata, centroid, edge_centroids);
-                              
-                              if (debug)
-                                std::cout << "tmp debug moving face node with coords: ";
-                              for (int idim=0; idim < m_eMesh.get_spatial_dim(); idim++)
-                                {
-                                  if (debug)
-                                    std::cout << fdata[idim] << " ";
-                                  dist_moved += (fdata[idim] - centroid[idim])*(fdata[idim] - centroid[idim]);
-                                  fdata[idim] = centroid[idim];
-                                }
-                              dist_moved = std::sqrt(dist_moved);
-                              if (debug)
-                                std::cout << " : a distance of " << dist_moved << std::endl;
-                              
-                            }
-                          }
-
-                        if (topoDim == 3)
-                          {
-                          
-                            double element_centroid[3] = {0,0,0};
-                            for (unsigned iSubDimOrd = 0; iSubDimOrd < numFaces; iSubDimOrd++)
-                              {
-                                SubDimCell_SDSEntityType subDimEntity;
-
-                                m_nodeRegistry->getSubDimEntity(subDimEntity, element, m_eMesh.face_rank(), iSubDimOrd);
-
-                                SubDimCellData* nodeId_elementOwnderId_ptr = m_nodeRegistry->getFromMapPtr(subDimEntity);
-                                SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
-                                bool is_empty = nodeId_elementOwnderId_ptr == 0;
-                                if (is_empty)
-                                  {
-                                    //continue;
-                                    throw std::logic_error("error2");
-                                  }
-
-                                NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-                                stk::mesh::Entity* face_node_at_centroid = nodeIds_onSE[0]; // FIXME for quadratic elements
-
-                                double *fdata = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , *face_node_at_centroid );
-                                for (int idim=0; idim < m_eMesh.get_spatial_dim(); idim++)
-                                  {
-                                    element_centroid[idim] += fdata[idim];
-                                  }
-                              }
-
-                            // get the element centroid node
-
-                            SubDimCell_SDSEntityType subDimEntity_element;
-                            m_nodeRegistry->getSubDimEntity(subDimEntity_element, element, m_eMesh.element_rank(), 0);
-
-                            SubDimCellData* nodeId_elementOwnderId_ptr = m_nodeRegistry->getFromMapPtr(subDimEntity_element);
-                            SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
-                            bool is_empty = nodeId_elementOwnderId_ptr == 0;
-                            if (is_empty)
-                              {
-                                if (1) std::cout << "tmp debug error3 Refiner:: irank = " << irank << " ranks[irank] = " << m_ranks[irank]
-                                                 << " elementType= " << elementType
-                                                 << " cell_topo= " << cell_topo.getName()
-                                                 << std::endl;
-
-                                throw std::logic_error("error3");
-                              }
-
-                            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-
-                            stk::mesh::Entity *element_node_at_centroid = nodeIds_onSE[0]; // FIXME for quadratic elements
-
-                            if (on_geometry_selector(*element_node_at_centroid))
-                              {
-                                std::cout << "tmp debug element centroid node is on geometry ... this is an error" << std::endl;
-                                throw std::logic_error("tmp debug element centroid node is on geometry, error...");
-                              }
-
-
-                            for (int idim=0; idim < m_eMesh.get_spatial_dim(); idim++)
-                              {
-                                element_centroid[idim] /= ((double)numFaces);
-                              }
-                            double *fdata = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , *element_node_at_centroid );
-                            double dist_moved = 0.0;
-                            if (debug)
-                              std::cout << "tmp debug moving element centroid node with coords: ";
-                            for (int idim=0; idim < m_eMesh.get_spatial_dim(); idim++)
-                              {
-                                if (debug)
-                                  std::cout << fdata[idim] << " ";
-                                dist_moved += (fdata[idim] - element_centroid[idim])*(fdata[idim] - element_centroid[idim]);
-                                fdata[idim] = element_centroid[idim];
-                              }
-                            dist_moved = std::sqrt(dist_moved);
-                            if (debug)
-                              std::cout << " : a distance of " << dist_moved << std::endl;
-                          }
-
-                        }
-                    }
-                }
-            }
         }
     }
 #endif
