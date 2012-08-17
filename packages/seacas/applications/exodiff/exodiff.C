@@ -82,7 +82,7 @@ struct TimeInterp
 }
 ;
 
-string Version() { return "2.56 (2012-08-16)"; }
+string Version() { return "2.57 (2012-08-17)"; }
 
 string Date() {
   char tbuf[32];
@@ -645,6 +645,10 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
       min_num_times = (file1.Num_Times() < file2.Num_Times()
 		       ? file1.Num_Times() : file2.Num_Times());
 
+      if (interface.interpolating) {
+	min_num_times = file1.Num_Times();
+      }
+
       if (interface.time_step_stop > 0 && interface.time_step_stop < min_num_times) {
 	min_num_times = interface.time_step_stop;
       }
@@ -726,9 +730,6 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
 	int time_step1 = time_step + interface.time_step_offset;
 	int time_step2 = time_step;
 	SMART_ASSERT(time_step1 <= file1.Num_Times());
-	if (!interface.summary_flag) {
-	  SMART_ASSERT(time_step2 <= file2.Num_Times());
-	}
 
 	TimeInterp t2;
 	if (!interface.summary_flag) {
@@ -739,6 +740,8 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
 	    t2.time  = file2.Time(time_step2);
 	    t2.proportion = 1.0;
 	  }
+	  SMART_ASSERT(t2.step1 <= file2.Num_Times());
+	  SMART_ASSERT(t2.step2 <= file2.Num_Times());
 	}
 	
 	if (interface.summary_flag) {
@@ -796,10 +799,10 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
 	  
 	  if (interface.interpolating && time_step == min_num_times) {
 	    // last time.  Check if final database times match within specified tolerance...
-	    if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(time_step2))) {
+	    if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(t2.step2))) {
 	      diff_flag = true;
 	      std::cout << "\t\tFinal database times differ by "
-			<< FileDiff(file1.Time(time_step1), file2.Time(time_step2), interface.final_time_tol.type)
+			<< FileDiff(file1.Time(time_step1), file2.Time(t2.step2), interface.final_time_tol.type)
 			<< " which is not within specified " << interface.final_time_tol.typestr() << " tolerance of "
 			<< interface.final_time_tol.value
 			<< " (FAILED)\n";
@@ -809,7 +812,7 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
     
 	if (out_file_id >= 0) {
 	  double t = file1.Time(time_step1);
-	  ex_put_time(out_file_id, time_step2, &t);
+	  ex_put_time(out_file_id, time_step1, &t);
 	}
     
 	if (interface.interpolating && (t2.step1 == -1 || t2.step2 == -1)) {
