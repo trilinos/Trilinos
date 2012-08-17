@@ -665,7 +665,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
  private: // These need to be accessible to derived map classes.
   
   void GlobalToLocalSetup();
-  bool DetermineIsOneToOne();
+  bool DetermineIsOneToOne() const;
   bool IsDistributedGlobal(long long NumGlobalElements, int NumMyElements) const;
   void CheckValidNGE(long long NumGlobalElements);
   void EndOfConstructorOps();

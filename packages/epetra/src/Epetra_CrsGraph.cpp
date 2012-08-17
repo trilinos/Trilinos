@@ -1714,10 +1714,10 @@ int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
 int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
         const Epetra_BlockMap& rangeMap)
 {
-  if(!domainMap.GlobalIndicesMatch(rangeMap))
+  if(!domainMap.GlobalIndicesTypeMatch(rangeMap))
     throw ReportError("Epetra_CrsGraph::MakeColMap: cannot be called with different indices types for domainMap and rangeMap", -1);
   
-  if(!RowMap().GlobalIndicesMatch(domainMap))
+  if(!RowMap().GlobalIndicesTypeMatch(domainMap))
     throw ReportError("Epetra_CrsGraph::MakeColMap: cannot be called with different indices types for row map and incoming rangeMap", -1);
   
   if(RowMap().GlobalIndicesInt())

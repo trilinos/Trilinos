@@ -241,7 +241,7 @@ namespace {
     tmv2.putScalar(0.0);
     matrix->apply(tmv1,tmv2);
 
-    Epetra_BlockMap emap(numImages*numLocal, 1, 0, ecomm);
+    Epetra_BlockMap emap(int(numImages*numLocal), 1, 0, ecomm);
     Epetra_MultiVector emv1(emap,numVecs), emv2(emap,numVecs);
     emv1.PutScalar(1.0);
     emv2.PutScalar(0.0);

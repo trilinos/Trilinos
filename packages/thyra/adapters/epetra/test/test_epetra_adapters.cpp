@@ -997,7 +997,7 @@ int main( int argc, char* argv[] )
       const RCP<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
       const RCP<const Epetra_MultiVector> eeV2 = get_Epetra_MultiVector(*epetra_map,eV2);
       
-      Epetra_LocalMap eT_map(T->range()->dim(),0,*epetra_comm);
+      Epetra_LocalMap eT_map((int) T->range()->dim(),0,*epetra_comm);
       Epetra_MultiVector eT(eT_map,T->domain()->dim());
       
       if(verbose)

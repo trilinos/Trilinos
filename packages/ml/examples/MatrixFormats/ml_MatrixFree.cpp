@@ -296,22 +296,34 @@ public:
 
   virtual int NumGlobalNonzeros() const
   {
-    return(NumGlobalNonzeros_);
+    if(RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalNonzeros_);
+    else
+      throw "Laplace3D::NumGlobalNonzeros: Global Indices not int";
   }
 
   virtual int NumGlobalRows() const
   {
-    return(NumGlobalRows_);
+    if(RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalRows_);
+    else
+      throw "Laplace3D::NumGlobalRows: Global Indices not int";
   }
 
   virtual int NumGlobalCols() const
   {
-    return(NumGlobalRows_);
+    if(RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalCols_);
+    else
+      throw "Laplace3D::NumGlobalCols: Global Indices not int";
   }
 
   virtual int NumGlobalDiagonals() const
   {
-    return(NumGlobalDiagonals_);
+    if(RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalDiagonals_);
+    else
+      throw "Laplace3D::NumGlobalDiagonals: Global Indices not int";
   }
 #endif
 

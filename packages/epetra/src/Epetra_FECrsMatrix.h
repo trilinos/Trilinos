@@ -809,7 +809,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    int GlobalAssemble(const Epetra_Map& domain_map,
                       const Epetra_Map& range_map,
                       bool callFillComplete=true,
-                      Epetra_CombineMode combineMode=Add);
+                      Epetra_CombineMode combineMode=Add,
+                      bool save_off_and_reuse_map_exporter=false);
+
 };//class Epetra_FECrsMatrix
 
 template<> inline std::vector<int>& Epetra_FECrsMatrix::nonlocalRows<int>()

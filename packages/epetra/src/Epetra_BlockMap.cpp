@@ -1048,7 +1048,6 @@ long long Epetra_BlockMap::GID64(int lid) const
   throw ReportError("Epetra_BlockMap::GID64 ERROR, GlobalIndices type unknown.",-1);
 }
 
-
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_BlockMap::GID(int lid) const
 {

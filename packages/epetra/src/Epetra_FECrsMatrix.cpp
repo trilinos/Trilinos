@@ -876,14 +876,14 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //First build a map that describes our nonlocal data.
     //We'll use the arbitrary distribution constructor of Map.
 
-    int_type* nlr_ptr = nonlocalRows_.size() > 0 ? &nonlocalRows_[0] : 0;
+    int_type* nlr_ptr = nonlocalRows_var.size() > 0 ? &nonlocalRows_var[0] : 0;
     if (sourceMap_ == NULL)
-      sourceMap_ = new Epetra_Map((int_type) -1, int) nonlocalRows_.size(), nlr_ptr,
+      sourceMap_ = new Epetra_Map((int_type) -1, (int) nonlocalRows_var.size(), nlr_ptr,
             Map().IndexBase(), Map().Comm());
 
     //If sourceMap has global size 0, then no nonlocal data exists and we can
     //skip most of this function.
-    if (sourceMap->NumGlobalElements64() < 1) {
+    if (sourceMap_->NumGlobalElements64() < 1) {
       if (callFillComplete) {
         EPETRA_CHK_ERR( FillComplete(domain_map, range_map) );
       }
@@ -910,12 +910,12 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
           cols.insert(it, col);
         }
       }
-
-      int_type* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
-
-      colMap_ = new Epetra_Map((int_type) -1, (int) cols.size(), cols_ptr,
-          Map().IndexBase(), Map().Comm());
     }
+
+    int_type* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
+
+    colMap_ = new Epetra_Map((int_type) -1, (int) cols.size(), cols_ptr,
+          Map().IndexBase(), Map().Comm());
 
     //now we need to create a matrix with sourceMap and colMap, and fill it with
     //our nonlocal data so we can then export it to the correct owning processors.
@@ -986,7 +986,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
                                        const Epetra_Map& range_map,
                                        bool callFillComplete,
-                                       Epetra_CombineMode combineMode)
+                                       Epetra_CombineMode combineMode,
+                                       bool save_off_and_reuse_map_exporter)
 {
   if(!domain_map.GlobalIndicesTypeMatch(range_map))
     throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for domainMap and rangeMap", -1);

@@ -145,7 +145,6 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
   // fix a couple of global integers
 
-//TODO: CJ
   long long NumMyNonzeros_tmp = NumMyNonzeros_;
   Comm().SumAll(&NumMyNonzeros_tmp,&NumGlobalNonzeros_,1);
   long long NumMyDiagonals_tmp = NumMyDiagonals_;
@@ -348,30 +347,41 @@ double ML_Epetra::RowMatrix::NormInf() const
   return(NormInf_);
 }
 
-//TODO: CJ correct the int returning functions.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 //==============================================================================
 int ML_Epetra::RowMatrix::NumGlobalNonzeros() const
 {
-  return(NumGlobalNonzeros_);
+  if(RowMatrixRowMap().GlobalIndicesInt())
+    return (int) (NumGlobalNonzeros_);
+  else
+    throw "ML_Epetra::RowMatrix::NumGlobalNonzeros: Global Indices not int";
 }
 
 //==============================================================================
 int ML_Epetra::RowMatrix::NumGlobalRows() const
 {
-  return(NumGlobalRows_);
+  if(RowMatrixRowMap().GlobalIndicesInt())
+    return (int) (NumGlobalRows_);
+  else
+    throw "ML_Epetra::RowMatrix::NumGlobalRows: Global Indices not int";
 }
 
 //==============================================================================
 int ML_Epetra::RowMatrix::NumGlobalCols() const
 {
-  return(NumGlobalCols_);
+  if(RowMatrixRowMap().GlobalIndicesInt())
+    return (int) (NumGlobalCols_);
+  else
+    throw "ML_Epetra::RowMatrix::NumGlobalCols: Global Indices not int";
 }
 
 //==============================================================================
 int ML_Epetra::RowMatrix::NumGlobalDiagonals() const
 {
-  return(NumGlobalDiagonals_);
+  if(RowMatrixRowMap().GlobalIndicesInt())
+    return (int) (NumGlobalDiagonals_);
+  else
+    throw "ML_Epetra::RowMatrix::NumGlobalDiagonals: Global Indices not int";
 }
 #endif
 
