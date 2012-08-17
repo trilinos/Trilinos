@@ -12,6 +12,8 @@ TRIBITS_PACKAGE(Stokhos)
 # B) Set up package-specific options
 #
 
+TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   STOKHOS_DEBUG
   "Enable debug code in stokhos"

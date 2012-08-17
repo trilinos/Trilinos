@@ -637,7 +637,7 @@
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="TO"/>
     <Dependency name="Galeri" type="ILO"/>
-    <Dependency name="Amesos2" type="ITO"/>
+    <Dependency name="Amesos2" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
@@ -648,8 +648,8 @@
     <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="LO"/>
     <Dependency name="NOX" type="LO"/>
-    <Dependency name="Xpetra" type="ITO"/>
-    <Dependency name="MueLu" type="TO"/>
+    <Dependency name="Xpetra" type="ILO"/>
+    <Dependency name="MueLu" type="LO"/>
     <EmailAddresses>
       <Email address="stokhos-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -671,10 +671,12 @@
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos2" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
     <Dependency name="Belos" type="ILO"/>
+    <Dependency name="Ifpack2" type="ILO"/>
     <Dependency name="Stratimikos" type="LR"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Teko" type="ILO"/>
@@ -682,6 +684,8 @@
     <Dependency name="NOX" type="LO"/>
     <Dependency name="Rythmos" type="LO"/>
     <Dependency name="MOOCHO" type="LO"/>
+    <Dependency name="Xpetra" type="ILO"/>
+    <Dependency name="MueLu" type="ILO"/>
     <Dependency name="Stokhos" type="LO"/>
     <EmailAddresses>
       <Email address="piro-regression@software.sandia.gov"/>
@@ -703,16 +707,20 @@
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos2" type="ILO"/>
     <Dependency name="Amesos" type="LR"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="LR"/>
+    <Dependency name="Ifpack2" type="ILO"/>
     <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="LR"/>
     <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Intrepid" type="LR"/>
     <Dependency name="NOX" type="LR"/>
+    <Dependency name="Xpetra" type="ILO"/>
+    <Dependency name="MueLu" type="ILO"/>
     <Dependency name="Stokhos" type="LO"/>
     <EmailAddresses>
       <Email address="sundance-regression@software.sandia.gov"/>
@@ -870,10 +878,12 @@
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos2" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
     <Dependency name="Belos" type="ILO"/>
+    <Dependency name="Ifpack2" type="ILO"/>
     <Dependency name="Stratimikos" type="ILR"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Teko" type="ILO"/>
@@ -881,6 +891,8 @@
     <Dependency name="NOX" type="LR"/>
     <Dependency name="Rythmos" type="ILO"/>
     <Dependency name="MOOCHO" type="ILO"/>
+    <Dependency name="Xpetra" type="ILO"/>
+    <Dependency name="MueLu" type="ILO"/>
     <Dependency name="Stokhos" type="LR"/>
     <Dependency name="Piro" type="LR"/>
     <EmailAddresses>

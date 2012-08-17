@@ -1,5 +1,6 @@
 
 INCLUDE(TribitsLibraryMacros)
+INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 #
 # A) Package-specific configuration options
@@ -203,8 +204,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_SchurPreconditioner.hpp
   Stokhos_InversePreconditioner.hpp
   Stokhos_BlockPreconditioner.hpp
-  Stokhos_MueLu_QR_Interface_decl.hpp
-  Stokhos_MueLu_QR_Interface_def.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -320,6 +319,18 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/impl/Sacado_MP_Vector_ops.hpp
       sacado/kokkos/impl/Stokhos_Sacado_Kokkos_MathFunctions_impl.hpp
     )
+  ENDIF()
+  IF (Stokhos_ENABLE_MueLu)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
+    TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
+    SET(HEADERS ${HEADERS}
+      muelu/Stokhos_MueLu.hpp
+      muelu/Stokhos_MueLu_QR_Interface_decl.hpp
+      muelu/Stokhos_MueLu_QR_Interface_def.hpp
+      )
+    IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
+      APPEND_GLOB(SOURCES muelu/explicit_instantiation/*.cpp)
+    ENDIF()
   ENDIF()
 ENDIF()
 

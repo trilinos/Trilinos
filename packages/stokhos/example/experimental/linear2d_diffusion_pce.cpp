@@ -57,9 +57,7 @@
 #include "linear2d_diffusion_scalar_types.hpp"
 
 // MueLu includes
-#include <MueLu.hpp>
-#include "Stokhos_MueLu_QR_Interface_decl.hpp"
-#include "Stokhos_MueLu_QR_Interface_def.hpp"
+#include "Stokhos_MueLu.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
