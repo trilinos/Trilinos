@@ -1030,17 +1030,17 @@ namespace Anasazi {
         }
         
         // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-        // om_->stream(Debug) << "V before ortho: " << std::endl; 
-        // MVT::MvPrint(*Vprev,om_->stream(Debug));
+        //om_->stream(Debug) << "V before ortho: " << std::endl; 
+        //MVT::MvPrint(*Vprev,om_->stream(Debug));
         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
           subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
                                ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
         int rank = orthman_->projectAndNormalize(*Vnext,AVprev,AsubH,subR);
-        // om_->stream(Debug) << "Vnext after ortho: " << std::endl;
-        // MVT::MvPrint(*Vnext,om_->stream(Debug));
-        // om_->stream(Debug) << "subH: " << std::endl << *subH << std::endl;
-        // om_->stream(Debug) << "subR: " << std::endl << *subR << std::endl;
-        // om_->stream(Debug) << "H:    " << std::endl << *H_ << std::endl;
+        //om_->stream(Debug) << "Vnext after ortho: " << std::endl;
+        //MVT::MvPrint(*Vnext,om_->stream(Debug));
+        //om_->stream(Debug) << "subH: " << std::endl << *subH << std::endl;
+        //om_->stream(Debug) << "subR: " << std::endl << *subR << std::endl;
+        //om_->stream(Debug) << "H:    " << std::endl << *H_ << std::endl;
         TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurOrthoFailure,
                            "Anasazi::BlockKrylovSchur::iterate(): couldn't generate basis of full rank.");
       }

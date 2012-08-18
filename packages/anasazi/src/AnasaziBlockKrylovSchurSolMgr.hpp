@@ -689,6 +689,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     _ritzValues = bks_solver->getRitzValues();
 
     sol.numVecs = ordertest->howMany();
+    printer->stream(Debug) << "ordertest->howMany() : " << sol.numVecs << std::endl;
     std::vector<int> whichVecs = ordertest->whichVecs();
 
     // Place any converged eigenpairs in the solution container.
@@ -696,18 +697,26 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
       // Next determine if there is a conjugate pair on the boundary and resize.
       std::vector<int> tmpIndex = bks_solver->getRitzIndex();
+      for (int i=0; i<(int)_ritzValues.size(); ++i) {
+        printer->stream(Debug) << _ritzValues[i].realpart << " + i " << _ritzValues[i].imagpart << ", Index = " << tmpIndex[i] << std::endl;
+      }
       printer->stream(Debug) << "Number of converged eigenpairs (before) = " << sol.numVecs << std::endl;
       for (int i=0; i<sol.numVecs; ++i) {
         printer->stream(Debug) << "whichVecs[" << i << "] = " << whichVecs[i] << ", tmpIndex[" << whichVecs[i] << "] = " << tmpIndex[whichVecs[i]] << std::endl;
       }
       if (tmpIndex[whichVecs[sol.numVecs-1]]==1) {
         printer->stream(Debug) << "There is a conjugate pair on the boundary, resizing sol.numVecs" << std::endl;
+        whichVecs.push_back(whichVecs[sol.numVecs-1]+1);
 	sol.numVecs++;
+        for (int i=0; i<sol.numVecs; ++i) {
+          printer->stream(Debug) << "whichVecs[" << i << "] = " << whichVecs[i] << ", tmpIndex[" << whichVecs[i] << "] = " << tmpIndex[whichVecs[i]] << std::endl;
+        }
       }
 
       bool keepMore = false;
       int numEvecs = sol.numVecs;
       printer->stream(Debug) << "Number of converged eigenpairs (after) = " << sol.numVecs << std::endl;
+      printer->stream(Debug) << "whichVecs[sol.numVecs-1] > sol.numVecs-1 : " << whichVecs[sol.numVecs-1] << " > " << sol.numVecs-1 << std::endl;
       if (whichVecs[sol.numVecs-1] > (sol.numVecs-1)) {
 	keepMore = true;
 	numEvecs = whichVecs[sol.numVecs-1]+1;  // Add 1 to fix zero-based indexing

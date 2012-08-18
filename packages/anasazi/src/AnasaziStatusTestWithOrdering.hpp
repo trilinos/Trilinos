@@ -250,8 +250,11 @@ TestStatus StatusTestWithOrdering<ScalarType,MV,OP>::checkStatus( Eigensolver<Sc
   // get the ritzvalues from solver
   std::vector<Value<ScalarType> > solval = solver->getRitzValues();
   int numsolval = solval.size();
+  std::cout << "Number of approximate Ritz values from solver: " << numsolval << std::endl;
   int numauxval = rvals_.size();
+  std::cout << "Number of auxiliary values from solver: " << numauxval << std::endl;
   int numallval = numsolval + numauxval;
+  std::cout << "Number of all Ritz values (solver + aux): " << numallval << std::endl;
 
   if (numallval == 0) {
     ind_.resize(0);
@@ -273,6 +276,12 @@ TestStatus StatusTestWithOrdering<ScalarType,MV,OP>::checkStatus( Eigensolver<Sc
   std::vector<int> perm(numallval);
   sorter_->sort(allvalr,allvali,Teuchos::rcpFromRef(perm),numallval);
 
+  std::cout << "After sorting allval: " << std::endl;
+  for (int i=0; i<numallval; i++)
+  {
+    std::cout << allvalr[i] << " + i " << allvali[i] << std::endl;
+  } 
+
   // make the set of passing values: allpass = {cwhch -1 ... -numauxval}
   std::vector<int> allpass(cwhch.size() + numauxval);
   std::copy(cwhch.begin(),cwhch.end(),allpass.begin());
@@ -281,13 +290,14 @@ TestStatus StatusTestWithOrdering<ScalarType,MV,OP>::checkStatus( Eigensolver<Sc
   }
 
   // make list, with length quorum, of most significant values, if there are that many
-  //  int numsig = quorum_ < numallval ? quorum_ : numallval;
-  int numsig = cwhch.size() + numauxval;
+  int numsig = quorum_ < numallval ? quorum_ : numallval;
+  // int numsig = cwhch.size() + numauxval;
+  std::cout << "Number of most significant values (quorum_ < numallvall ? quorum_ : numallvall : " << numsig << std::endl;
   std::vector<int> mostsig(numsig);
   for (int i=0; i<numsig; ++i) {
     mostsig[i] = perm[i];
     // if perm[i] >= numsolval, then it corresponds to the perm[i]-numsolval aux val
-    // the first aux val gets index -numauxval, the seonc -numauxval+1, and so forth
+    // the first aux val gets index -numauxval, the second -numauxval+1, and so forth
     if (mostsig[i] >= numsolval) {
       mostsig[i] = mostsig[i]-numsolval-numauxval;
     }
@@ -301,8 +311,16 @@ TestStatus StatusTestWithOrdering<ScalarType,MV,OP>::checkStatus( Eigensolver<Sc
   std::vector<int>::iterator end;
   std::sort(mostsig.begin(),mostsig.end());
   std::sort(allpass.begin(),allpass.end());
+  for (int i=0; i<(int)cwhch.size(); ++i) 
+  {
+    std::cout << "allpass[" << i << "] = " << allpass[i] << std::endl;
+    std::cout << "mostsig[" << i << "] = " << mostsig[i] << std::endl;
+  }
   end = std::set_intersection(mostsig.begin(),mostsig.end(),allpass.begin(),allpass.end(),ind_.begin());
+  std::cout << "Number of most significant values that have passed: " << (int)(end-ind_.begin()) << std::endl;
   ind_.resize(end - ind_.begin());
+  for (int i=0; i<(int)ind_.size(); ++i) 
+    std::cout << "ind_[" << i << "] = " << ind_[i] << std::endl;
 
   // did we pass, overall
   if (ind_.size() >= (unsigned int)quorum_) {
