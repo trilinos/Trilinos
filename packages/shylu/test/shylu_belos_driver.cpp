@@ -287,6 +287,7 @@ int main(int argc, char *argv[])
         // *******Construct a preconditioned linear problem********
         //
 
+        rcpx->PutScalar(0.0);
         RCP<Belos::LinearProblem<double,MV,OP> > problem
         = rcp( new Belos::LinearProblem<double,MV,OP>( rcpA, rcpx, rcpb ) );
         if (leftprec) {
