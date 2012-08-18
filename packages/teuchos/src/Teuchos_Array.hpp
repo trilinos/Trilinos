@@ -1241,7 +1241,7 @@ int Array<T>::length() const
 template<typename T> inline
 std::string Array<T>::toString() const
 {
-  return (*this)().toString();
+  return (*this)().toString(); // Use ArrayView<T>::toString()
 }
 
 

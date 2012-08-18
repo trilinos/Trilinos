@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -52,13 +52,15 @@
 
 namespace Tpetra {
 
-  /// \brief Communication plan for data redistribution from a (possibly) multiply-owned to a uniquely-owned distribution.
+  /// \brief Communication plan for data redistribution from a
+  ///   (possibly) multiply-owned to a uniquely-owned distribution.
   ///
   /// Tpetra users should use this class to construct a communication
   /// plan between two data distributions (i.e., two \c Map objects).
   /// The plan can be called repeatedly by computational classes to
   /// perform communication according to the same pattern.
-  /// Constructing the plan may be expensive, but it can be reused
+  /// Constructing the plan may be expensive, both in terms of
+  /// communication and computation.  However, it can be reused
   /// inexpensively.
   ///
   /// Tpetra has two classes for data redistribution: \c Import and \c
@@ -92,7 +94,7 @@ namespace Tpetra {
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     /// \brief Construct a Export object from the source and target Map.
     ///
@@ -101,10 +103,10 @@ namespace Tpetra {
     ///
     /// \param target [in] The target distribution.  This <i>must</i>
     ///   be a uniquely owned (nonoverlapping) distribution.
-    Export (const Teuchos::RCP<const map_type>& source, 
+    Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target);
 
-    /// \brief Constructor (with list of parameters)
+    /// \brief Constructor (with list of parameters).
     ///
     /// \param source [in] The source distribution.  This may be a
     ///   multiply owned (overlapping) distribution.
@@ -114,11 +116,13 @@ namespace Tpetra {
     ///
     /// \param plist [in/out] List of parameters.  Currently passed
     ///   directly to the Distributor that implements communication.
+    ///   If you don't know what this should be, you should use the
+    ///   two-argument constructor, listed above.
     Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
-    /// \brief Copy constructor. 
+    /// \brief Copy constructor.
     ///
     /// \note Currently this only makes a shallow copy of the Export's
     ///   underlying data.
@@ -130,7 +134,7 @@ namespace Tpetra {
     //@}
 
     //! @name Export Attribute Methods
-    //@{ 
+    //@{
 
 
     /// \brief Number of initial identical IDs.
@@ -181,13 +185,13 @@ namespace Tpetra {
     inline Distributor & getDistributor() const;
 
     //! Assignment operator
-    Export<LocalOrdinal,GlobalOrdinal,Node>& 
+    Export<LocalOrdinal,GlobalOrdinal,Node>&
     operator= (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
     //@}
 
     //! @name I/O Methods
-    //@{ 
+    //@{
 
     /// \brief Print the Export's data to the given output stream.
     ///
@@ -213,7 +217,7 @@ namespace Tpetra {
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ExportData_;
 
     //! @name Initialization helper functions (called by the constructor)
-    //@{ 
+    //@{
 
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and the export IDs
@@ -228,7 +232,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,   
+  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
   {
     using Teuchos::rcp;
@@ -243,7 +247,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,   
+  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
           const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
@@ -263,7 +267,7 @@ namespace Tpetra {
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::~Export() 
+  Export<LocalOrdinal,GlobalOrdinal,Node>::~Export()
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -277,7 +281,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal> 
+  ArrayView<const LocalOrdinal>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getPermuteFromLIDs() const {
     return ExportData_->permuteFromLIDs_();
   }
@@ -294,7 +298,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal> 
+  ArrayView<const LocalOrdinal>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getRemoteLIDs() const {
     return ExportData_->remoteLIDs_();
   }
@@ -305,37 +309,37 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal> 
+  ArrayView<const LocalOrdinal>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getExportLIDs() const {
     return ExportData_->exportLIDs_();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const int> 
+  ArrayView<const int>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getExportImageIDs() const {
     return ExportData_->exportImageIDs_();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
+  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
   Export<LocalOrdinal,GlobalOrdinal,Node>::getSourceMap() const {
     return ExportData_->source_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
+  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
   Export<LocalOrdinal,GlobalOrdinal,Node>::getTargetMap() const {
     return ExportData_->target_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Distributor & 
-  Export<LocalOrdinal,GlobalOrdinal,Node>::getDistributor() const { 
+  Distributor &
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getDistributor() const {
     return ExportData_->distributor_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Export<LocalOrdinal,GlobalOrdinal,Node>& 
+  Export<LocalOrdinal,GlobalOrdinal,Node>&
   Export<LocalOrdinal,GlobalOrdinal,Node>::operator=(const Export<LocalOrdinal,GlobalOrdinal,Node> & rhs) {
     if (&rhs != this) {
       // It's bad form to clobber your own data in a self-assignment.
@@ -384,14 +388,14 @@ namespace Tpetra {
       comm->barrier();
     }
     if (myImageID == 0) {
-      os << endl << endl << "Source Map:" << endl << std::flush; 
+      os << endl << endl << "Source Map:" << endl << std::flush;
     }
     comm->barrier();
     os << *getSourceMap();
     comm->barrier();
 
     if (myImageID == 0) {
-      os << endl << endl << "Target Map:" << endl << std::flush; 
+      os << endl << endl << "Target Map:" << endl << std::flush;
     }
     comm->barrier();
     os << *getTargetMap();
@@ -411,8 +415,8 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void 
-  Export<LocalOrdinal,GlobalOrdinal,Node>::setupSamePermuteExport() 
+  void
+  Export<LocalOrdinal,GlobalOrdinal,Node>::setupSamePermuteExport()
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node> & source = *getSourceMap();
     const Map<LocalOrdinal,GlobalOrdinal,Node> & target = *getTargetMap();
@@ -424,6 +428,11 @@ namespace Tpetra {
     // Iterate through the source and target GID lists.  If the i-th
     // GID of both is the same, increment numSameIDs_ and try the
     // next.  As soon as you come to a nonmatching pair, give up.
+    //
+    // The point of numSameIDs_ is for the common case of an Export
+    // where all the overlapping GIDs are at the end of the target
+    // Map, but otherwise the source and target Maps are the same.
+    // This allows a fast contiguous copy for the initial "same IDs."
     typename ArrayView<const GlobalOrdinal>::iterator sourceIter = sourceGIDs.begin(),
                                                       targetIter = targetGIDs.begin();
     while (sourceIter != sourceGIDs.end() && targetIter != targetGIDs.end() && *sourceIter == *targetIter) {
@@ -435,35 +444,50 @@ namespace Tpetra {
     // non-same entry in sourceGIDs, or to the end of sourceGIDs (if
     // all the entries were the same).
 
-    // -- compute numPermuteIDs --
-    // -- fill permuteToLIDs_, permuteFromLIDs_ --
+    // Compute IDs to be permuted, vs. IDs to be sent out ("exported";
+    // called "export" IDs).
     //
-    // Iterate through the remaining entries in sourceGIDs.  (There
-    // may not be any, if all pairs of entries in sourceGIDs and
-    // targetGIDs were the same.)  If target owns that GID, add
-    // entries to permuteToLIDs_ and permuteFromLIDs_.  Otherwise, add
-    // entries to exportGIDs_.
-    //
+    // IDs to permute are in both the source and target Maps, which
+    // means we don't have to send or receive them, but we do have to
+    // rearrange (permute) them in general.  (We've already identified
+    // an initial stretch of IDs which can be copied without
+    // rearrangement; the iterator sourceIter is past that point.)
+    // IDs to send out are in the source Map, but not the target Map.
     for (; sourceIter != sourceGIDs.end(); ++sourceIter) {
-      if (target.isNodeGlobalElement(*sourceIter)) {
+      const GlobalOrdinal curSourceGID = *sourceIter;
+      if (target.isNodeGlobalElement (curSourceGID)) {
         // The current process owns this GID, for both the source and
         // the target Maps.  Determine the LIDs for this GID on both
         // Maps and add them to the permutation lists.
-        ExportData_->permuteToLIDs_.push_back(  target.getLocalElement(*sourceIter));
-        ExportData_->permuteFromLIDs_.push_back(source.getLocalElement(*sourceIter));
+        ExportData_->permuteToLIDs_.push_back (target.getLocalElement (curSourceGID));
+        ExportData_->permuteFromLIDs_.push_back (source.getLocalElement (curSourceGID));
       }
       else {
         // The current GID is owned by this process in the source Map,
-        // but is not owned by this process in the target Map.  Store
-        // such GIDs.
-        ExportData_->exportGIDs_.push_back(*sourceIter);
+        // but is not owned by this process in the target Map.  That
+        // means the Export operation has to send it to another
+        // process.  Store such GIDs in the "export" (outgoing) list.
+        //
+        // QUESTION (mfh 18 Aug 2012) Import at this point computes
+        // remoteLIDs_.  Would it makes sense to compute them here,
+        // instead of passing over exportGIDs_ again below?  That
+        // would make the implementations of Export and Import look
+        // more alike.
+        ExportData_->exportGIDs_.push_back (curSourceGID);
       }
     }
 
-    // Above, we filled exportGIDs_ with all the GIDs which we own in
-    // the source Map, but not in the target Map.  Now allocate
-    // exportLIDs_, and fill it with the LIDs (from the source Map)
-    // corresponding to those GIDs.
+    // Above, we filled exportGIDs_ with all the "outgoing" GIDs (that
+    // is, the GIDs which we own in the source Map, but not in the
+    // target Map).  Now allocate exportLIDs_, and fill it with the
+    // LIDs (from the source Map) corresponding to those GIDs.
+    //
+    // exportLIDs_ is the list of this process' LIDs that it has to
+    // send out.  Since this is an Export, and therefore the target
+    // Map is nonoverlapping, we know that each export LID only needs
+    // to be sent to one process.  However, the source Map may be
+    // overlapping, so multiple processes might send to the same LID
+    // on a receiving process.
     if (ExportData_->exportGIDs_.size()) {
       ExportData_->exportLIDs_ = arcp<LocalOrdinal>(ExportData_->exportGIDs_.size());
     }
@@ -475,33 +499,43 @@ namespace Tpetra {
       }
     }
 
-    TPETRA_ABUSE_WARNING( (getNumExportIDs() > 0) && (!source.isDistributed()), std::runtime_error,
-        "::setupSamePermuteExport(): Source has export LIDs but Source is not distributed globally."
-        << std::endl << "Importing to a submap of the target map.");
+    TPETRA_ABUSE_WARNING(
+      getNumExportIDs() > 0 && ! source.isDistributed(),
+      std::runtime_error,
+      "::setupSamePermuteExport(): Source has export LIDs but Source is not "
+      "distributed globally." << std::endl
+      << "Importing to a submap of the target map.");
 
-    // -- compute exportImageIDs_ --
+    // Compute exportImageIDs_ ("outgoing" process IDs).
     //
-    // For each GID in exportGIDs_, find its corresponding owning
-    // image (a.k.a. "process," "node") ID in the target Map.  Store
-    // these image IDs in exportImageIDs_.  These are the image IDs to
-    // which the Export needs to send data.
+    // For each GID in exportGIDs_ (GIDs to which this process must
+    // send), find its corresponding owning process (a.k.a. "image")
+    // ID in the target Map.  Store these process IDs in
+    // exportImageIDs_.  These are the process IDs to which the Export
+    // needs to send data.
     //
     // We only need to do this if the source Map is distributed;
     // otherwise, the Export doesn't have to perform any
     // communication.
     if (source.isDistributed()) {
       ExportData_->exportImageIDs_ = arcp<int>(ExportData_->exportGIDs_.size());
+      // This call will assign any GID in the target Map with no
+      // corresponding process ID a fake process ID of -1.  We'll use
+      // this below to remove exports for processses that don't exist.
       const LookupStatus lookup = target.getRemoteIndexList(ExportData_->exportGIDs_(), ExportData_->exportImageIDs_());
-      TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error, 
+      TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error,
         "::setupSamePermuteExport(): The source Map has GIDs not found in the target Map.");
 
-      // Get rid of IDs not in the Target Map
+      // Get rid of process IDs not in the target Map.  This prevents
+      // exporting to GIDs which don't belong to any process in the
+      // target Map.
       typedef typename ArrayRCP<int>::difference_type size_type;
       if (lookup == IDNotPresent) {
-        const size_type numInvalidExports = std::count_if( ExportData_->exportImageIDs_().begin(), 
-                                                          ExportData_->exportImageIDs_().end(), 
-                                                          std::bind1st(std::equal_to<int>(),-1) 
-                                                        );
+        const size_type numInvalidExports =
+          std::count_if (ExportData_->exportImageIDs_().begin(),
+                         ExportData_->exportImageIDs_().end(),
+                         std::bind1st (std::equal_to<int>(), -1));
+
         // count number of valid and total number of exports
         const size_type totalNumExports = ExportData_->exportImageIDs_.size();
         if (numInvalidExports == totalNumExports) {
@@ -532,17 +566,18 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void 
-  Export<LocalOrdinal,GlobalOrdinal,Node>::setupRemote() 
+  void
+  Export<LocalOrdinal,GlobalOrdinal,Node>::setupRemote()
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node>& target = *getTargetMap();
 
-    // Make sure the export IDs are ordered by image.  Sort
-    // exportImageIDs_ in ascending order, and apply the same
-    // permutation to exportGIDs_ and exportLIDs_.
-    sort3 (ExportData_->exportImageIDs_.begin(), 
-           ExportData_->exportImageIDs_.end(), 
-           ExportData_->exportGIDs_.begin(), 
+    // Sort exportImageIDs_ in ascending order, and apply the same
+    // permutation to exportGIDs_ and exportLIDs_.  This ensures that
+    // exportImageIDs_[i], exportGIDs_[i], and exportLIDs_[i] all
+    // refer to the same thing.
+    sort3 (ExportData_->exportImageIDs_.begin(),
+           ExportData_->exportImageIDs_.end(),
+           ExportData_->exportGIDs_.begin(),
            ExportData_->exportLIDs_.begin());
 
     // Construct the list of entries that calling image needs to send
@@ -560,8 +595,8 @@ namespace Tpetra {
     Array<GlobalOrdinal> remoteGIDs(numRemoteIDs);
     ExportData_->distributor_.doPostsAndWaits (ExportData_->exportGIDs_().getConst(), 1, remoteGIDs());
 
-    // Remote IDs come in as GIDs; convert to LIDs.  LIDs tell us
-    // where to store the incoming remote data.
+    // Remote (incoming) IDs come in as GIDs; convert to LIDs.  LIDs
+    // tell this process where to store the incoming remote data.
     ExportData_->remoteLIDs_.resize(numRemoteIDs);
     {
       typename Array<GlobalOrdinal>::const_iterator i = remoteGIDs.begin();
@@ -577,13 +612,13 @@ namespace Tpetra {
       Creates a Export object from the given source and target maps.
       \pre <tt>src != null</tt>
       \pre <tt>tgt != null</tt>
-      \return Returns the Export object. If <tt>src == tgt</tt>, returns \c null. (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.) 
+      \return Returns the Export object. If <tt>src == tgt</tt>, returns \c null. (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
 
       \relatesalso Export
     */
-  template <class LO, class GO, class Node> 
+  template <class LO, class GO, class Node>
   RCP< const Export<LO,GO,Node> >
-  createExport( const RCP<const Map<LO,GO,Node> > & src, 
+  createExport( const RCP<const Map<LO,GO,Node> > & src,
                 const RCP<const Map<LO,GO,Node> > & tgt )
   {
     if (src == tgt) return null;

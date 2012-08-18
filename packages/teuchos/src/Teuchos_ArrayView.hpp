@@ -120,7 +120,7 @@ ArrayView<T>::~ArrayView()
 {}
 
 
-// General query functions 
+// General query functions
 
 
 template<class T>
@@ -149,16 +149,14 @@ std::string ArrayView<T>::toString() const
   debug_assert_valid_ptr();
 
   ss << "{";
-
-  for (int i=0; i < as<int>(size()); ++i)
-  {
-    ss << operator[](i);
-    if (i < size()-1) ss << ", ";
+  for (size_type i = 0; i < size (); ++i) {
+    ss << operator[] (i);
+    if (i + 1 < size ()) {
+      ss << ", ";
+    }
   }
   ss << "}";
-
-  return ss.str();
-
+  return ss.str ();
 }
 
 
@@ -200,7 +198,7 @@ T& ArrayView<T>::back() const
 }
 
 
-// Views 
+// Views
 
 
 template<class T> inline
@@ -270,7 +268,7 @@ void ArrayView<T>::assign(const ArrayView<const T>& array) const
 }
 
 
-// Standard Container-Like Functions 
+// Standard Container-Like Functions
 
 
 template<class T>
@@ -297,7 +295,7 @@ typename ArrayView<T>::iterator ArrayView<T>::end() const
 }
 
 
-// Assertion Functions. 
+// Assertion Functions.
 
 
 template<class T>
@@ -470,4 +468,4 @@ Teuchos::av_reinterpret_cast(const ArrayView<T1>& p1)
 }
 
 
-#endif	// TEUCHOS_ARRAY_VIEW_HPP
+#endif  // TEUCHOS_ARRAY_VIEW_HPP

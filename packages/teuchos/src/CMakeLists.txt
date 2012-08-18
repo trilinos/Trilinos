@@ -203,6 +203,7 @@ APPEND_SET(HEADERS
 # Set sources
 
 APPEND_SET(SOURCES
+  Teuchos_ArrayView.cpp
   Teuchos_BLAS.cpp
   Teuchos_CTimeMonitor.cpp
   Teuchos_CommandLineProcessor.cpp
