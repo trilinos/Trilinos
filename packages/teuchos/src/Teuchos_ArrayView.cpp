@@ -70,10 +70,64 @@ std::string ArrayView<float>::toString() const
   return ss.str ();
 }
 
+// Specialization for (const) float.  We use sufficient precision that no
+// digits are lost after writing to string and reading back in again.
+template<>
+std::string ArrayView<const float>::toString() const
+{
+  using Teuchos::as;
+  std::ostringstream ss;
+
+  debug_assert_valid_ptr();
+
+  ss.setf (std::ios::scientific);
+  // 8 = round(23 * log10(2)) + 1.  That's one decimal digit more
+  // than the binary precision justifies, which should be plenty.
+  // Guy Steele et al. have a better algorithm for floating-point
+  // I/O, but using a lot of digits is the lazy approach.
+  ss.precision (8);
+  ss << "{";
+  for (size_type i = 0; i < size (); ++i) {
+    ss << operator[] (i);
+    if (i + 1 < size ()) {
+      ss << ", ";
+    }
+  }
+  ss << "}";
+  return ss.str ();
+}
+
 // Specialization for double.  We use sufficient precision that no
 // digits are lost after writing to string and reading back in again.
 template<>
 std::string ArrayView<double>::toString() const
+{
+  using Teuchos::as;
+  std::ostringstream ss;
+
+  debug_assert_valid_ptr();
+
+  ss.setf (std::ios::scientific);
+  // 17 = round(52 * log10(2)) + 1.  That's one decimal digit more
+  // than the binary precision justifies, which should be plenty.  Guy
+  // Steele et al. have a better algorithm for floating-point I/O, but
+  // using a lot of digits is the lazy approach.
+  ss.precision (17);
+  ss << "{";
+  for (size_type i = 0; i < size (); ++i) {
+    ss << operator[] (i);
+    if (i + 1 < size ()) {
+      ss << ", ";
+    }
+  }
+  ss << "}";
+  return ss.str ();
+}
+
+// Specialization for (const) double.  We use sufficient precision that no
+// digits are lost after writing to string and reading back in again.
+template<>
+std::string ArrayView<const double>::toString() const
 {
   using Teuchos::as;
   std::ostringstream ss;
