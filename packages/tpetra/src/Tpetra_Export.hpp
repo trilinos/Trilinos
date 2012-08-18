@@ -52,13 +52,15 @@
 
 namespace Tpetra {
 
-  /// \brief Communication plan for data redistribution from a (possibly) multiply-owned to a uniquely-owned distribution.
+  /// \brief Communication plan for data redistribution from a
+  ///   (possibly) multiply-owned to a uniquely-owned distribution.
   ///
   /// Tpetra users should use this class to construct a communication
   /// plan between two data distributions (i.e., two \c Map objects).
   /// The plan can be called repeatedly by computational classes to
   /// perform communication according to the same pattern.
-  /// Constructing the plan may be expensive, but it can be reused
+  /// Constructing the plan may be expensive, both in terms of
+  /// communication and computation.  However, it can be reused
   /// inexpensively.
   ///
   /// Tpetra has two classes for data redistribution: \c Import and \c
@@ -104,7 +106,7 @@ namespace Tpetra {
     Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target);
 
-    /// \brief Constructor (with list of parameters)
+    /// \brief Constructor (with list of parameters).
     ///
     /// \param source [in] The source distribution.  This may be a
     ///   multiply owned (overlapping) distribution.
@@ -114,6 +116,8 @@ namespace Tpetra {
     ///
     /// \param plist [in/out] List of parameters.  Currently passed
     ///   directly to the Distributor that implements communication.
+    ///   If you don't know what this should be, you should use the
+    ///   two-argument constructor, listed above.
     Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
@@ -569,7 +573,7 @@ namespace Tpetra {
 
     // Sort exportImageIDs_ in ascending order, and apply the same
     // permutation to exportGIDs_ and exportLIDs_.  This ensures that
-    // exportImageIDs_[i], exportGIDs_[i], and remoteLIDs_[i] all
+    // exportImageIDs_[i], exportGIDs_[i], and exportLIDs_[i] all
     // refer to the same thing.
     sort3 (ExportData_->exportImageIDs_.begin(),
            ExportData_->exportImageIDs_.end(),
