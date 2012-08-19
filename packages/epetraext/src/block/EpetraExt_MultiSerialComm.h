@@ -131,11 +131,15 @@ class MultiSerialComm: public EpetraExt::MultiComm {
           { return myComm->GatherAll( MyVals, AllVals, Count); };
   virtual int GatherAll(long * MyVals, long * AllVals, int Count) const
           { return myComm->GatherAll( MyVals,  AllVals, Count); };
+  virtual int GatherAll(long long* MyVals, long long* AllVals, int Count) const
+          { return myComm->GatherAll( MyVals,  AllVals, Count); };
   virtual int SumAll(double * PartialSums, double * GlobalSums, int Count) const
           { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
   virtual int SumAll(int * PartialSums, int * GlobalSums, int Count) const
           { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
   virtual int SumAll(long * PartialSums, long * GlobalSums, int Count) const
+          { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
+  virtual int SumAll(long long* PartialSums, long long* GlobalSums, int Count) const
           { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
   virtual int MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const
           { return myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
@@ -143,17 +147,23 @@ class MultiSerialComm: public EpetraExt::MultiComm {
           { return myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
   virtual int MaxAll(long * PartialMaxs, long * GlobalMaxs, int Count) const
           { return myComm->MaxAll( PartialMaxs, GlobalMaxs, Count); };
+  virtual int MaxAll(long long* PartialMaxs, long long* GlobalMaxs, int Count) const
+          { return myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
   virtual int MinAll(double * PartialMins, double * GlobalMins, int Count) const
           { return myComm->MinAll( PartialMins, GlobalMins, Count); };
   virtual int MinAll(int * PartialMins, int * GlobalMins, int Count) const
           { return myComm->MinAll( PartialMins, GlobalMins, Count); };
   virtual int MinAll(long * PartialMins, long * GlobalMins, int Count)const
           { return myComm->MinAll( PartialMins, GlobalMins, Count); };
+  virtual int MinAll(long long* PartialMins, long long* GlobalMins, int Count) const
+          { return myComm->MinAll( PartialMins, GlobalMins, Count); };
   virtual int ScanSum(double * MyVals, double * ScanSums, int Count)const
           { return myComm->ScanSum( MyVals,  ScanSums, Count); };
   virtual int ScanSum(int * MyVals, int * ScanSums, int Count) const
           { return myComm->ScanSum(MyVals, ScanSums, Count); };
   virtual int ScanSum(long * MyVals, long * ScanSums, int Count) const
+          { return myComm->ScanSum(MyVals, ScanSums, Count); };
+  virtual int ScanSum(long long* MyVals, long long* ScanSums, int Count) const
           { return myComm->ScanSum(MyVals, ScanSums, Count); };
   virtual int MyPID() const { return myComm->MyPID(); };
   virtual int NumProc() const { return myComm->NumProc(); };
