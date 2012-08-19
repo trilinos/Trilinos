@@ -311,11 +311,11 @@ TestStatus StatusTestWithOrdering<ScalarType,MV,OP>::checkStatus( Eigensolver<Sc
   std::vector<int>::iterator end;
   std::sort(mostsig.begin(),mostsig.end());
   std::sort(allpass.begin(),allpass.end());
-  for (int i=0; i<(int)cwhch.size(); ++i) 
-  {
-    std::cout << "allpass[" << i << "] = " << allpass[i] << std::endl;
-    std::cout << "mostsig[" << i << "] = " << mostsig[i] << std::endl;
-  }
+  //for (int i=0; i<(int)cwhch.size(); ++i) 
+  //{
+  //  std::cout << "allpass[" << i << "] = " << allpass[i] << std::endl;
+  //  std::cout << "mostsig[" << i << "] = " << mostsig[i] << std::endl;
+  //}
   end = std::set_intersection(mostsig.begin(),mostsig.end(),allpass.begin(),allpass.end(),ind_.begin());
   std::cout << "Number of most significant values that have passed: " << (int)(end-ind_.begin()) << std::endl;
   ind_.resize(end - ind_.begin());
