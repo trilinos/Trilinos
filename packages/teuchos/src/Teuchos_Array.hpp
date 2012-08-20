@@ -715,14 +715,16 @@ std::string getArrayTypeNameTraitsFormat(){
 
 /** \brief TypeNameTraits specialization for Array.
  *
- * NOTE: Use of this class requires that either that the type T be defined or
- * that a TypeNameTraits<T> specialization exists.  In order to not restrict
- * the use of Array<T> for undefined pointer types (where T=U*), this
- * TypeNameTraits class specialization will not be used in core Array
- * functionality.  This might seem trivial except that some MPI
- * implementations use pointers to undefined structs and if you want to
- * portably story these undefined struct pointers in an Array, then you can't
- * use this traits class.  C++ is quite lacking in cases like this.
+ * NOTE: Use of this class requires that either that the type T be
+ * defined or that a TypeNameTraits<T> specialization exists.  In
+ * order not to restrict the use of Array<T> for undefined pointer
+ * types (where T=U*), this TypeNameTraits class specialization will
+ * not be used in core Array functionality.
+ *
+ * This matters because some MPI implementations use pointers to
+ * undefined structs.  If you want to portably store these undefined
+ * struct pointers in an Array, then you can't use this traits class.
+ * This is a limitation of the C++ language itself.
  *
  * \ingroup teuchos_mem_mng_grp
  */

@@ -55,6 +55,11 @@ namespace Teuchos {
     /// \author Mark Hoemmen
     /// \brief Parse a Matrix Market banner line
     ///
+    /// The "Matrix Market" (NIST) defines a standard human-readable
+    /// ASCII file format of the same name.  Matrix Market files may
+    /// store dense or sparse matrices, with entries of types real,
+    /// complex, integer, or pattern (no values, just the graph).
+    ///
     /// The first line of a Matrix Market - format file, the "banner
     /// line," contains information for interpreting the rest of the
     /// file.  This class parses the first line, canonicalizes the
@@ -71,23 +76,29 @@ namespace Teuchos {
       ///   for which we fill in some sensible defaults).
       Banner (const std::string& line, const bool tolerant=false);
 
-      //! The object type (currently just "matrix")
+      /// \brief The object type.
+      ///
+      /// The Matrix Market format specifies the "type of object"
+      /// stored in the file.  In the current version of the standard,
+      /// the object type is always "matrix" (without the quotes).
+      /// The standard leaves open the possibility of other types in
+      /// future versions of the standard.
       const std::string& objectType() const { return objectType_; }
 
-      /// \brief Storage type of the matrix
+      /// \brief Storage type of the matrix.
       ///
       /// "coordinate" means a sparse matrix, stored as (i,j,Aij)
       /// triples with one-based indices i and j.  "array" means a dense
       /// matrix, stored in column-major order with one entry per line.
       const std::string& matrixType() const { return matrixType_; }
 
-      /// \brief Data type of matrix entries
+      /// \brief Data type of matrix entries.
       ///
       /// Data type of the matrix entries: "real", "complex", "integer",
       /// or "pattern".
       const std::string& dataType() const { return dataType_; }
 
-      /// \brief Symmetric storage type
+      /// \brief Symmetric storage type.
       ///
       /// Describes whether and how symmetry is exploited when storing
       /// the matrix.  "general" means nonsymmetric: all the matrix
@@ -102,8 +113,12 @@ namespace Teuchos {
       /// (matrixType() == "coordinate"): If only the upper or lower
       /// triangle is supposed to be there, and entries from both the
       /// upper and lower triangle are stored, the resulting matrix is
-      /// undefined.  Users may choose to interpret this case as they
-      /// wish (for example, exclusively, or additively).
+      /// undefined.  Users of this class may choose to interpret this
+      /// case as they wish.  Besides simply reporting an error, one
+      /// reasonable possibility is to treat every A(i,j) value as an
+      /// indication to add that value (or its conjugate in the
+      /// Hermitian case, or its negative in the skew-symmetric case)
+      /// to the current value of A(j,i).
       const std::string& symmType() const { return symmType_; }
 
     private:
