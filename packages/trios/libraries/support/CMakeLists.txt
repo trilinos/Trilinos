@@ -1,10 +1,12 @@
 
+INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsAddTest)
 INCLUDE(TribitsAddOptionAndDefine)
 
-#
+TRIBITS_SUBPACKAGE(support)
+
 # A) Package-specific configuration options
 #
 
@@ -14,11 +16,21 @@ SET(NONINSTALLHEADERS "")
 SET(SOURCES "")
 SET(MODULES "")
 
+
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
+
+#INCLUDE_DIRECTORIES(BEFORE SYSTEM ${${PARENT_PACKAGE}_BINARY_DIR})
+
 #INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR})
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/..)
 
+message(STATUS "${${PARENT_PACKAGE_NAME}_BINARY_DIR}/Trios_config.h")
+
 APPEND_SET(HEADERS
-  ${PACKAGE_BINARY_DIR}/Trios_config.h
+  ${${PARENT_PACKAGE_NAME}_BINARY_DIR}/Trios_config.h
 )
 
 ############# LOGGER ##########################
@@ -115,3 +127,5 @@ TRIBITS_ADD_LIBRARY(
 ########### install targets ###############
 
 # INSTALL(FILES ${MODULES} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+
+TRIBITS_SUBPACKAGE_POSTPROCESS()

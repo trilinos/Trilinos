@@ -6,7 +6,7 @@ INCLUDE(TribitsAddOptionAndDefine)
 # A) Define the package
 #
 
-TRIBITS_PACKAGE( Trios ENABLE_SHADOWING_WARNINGS )
+TRIBITS_PACKAGE_DECL( Trios ENABLE_SHADOWING_WARNINGS )
 
 TRIBITS_ADD_DEBUG_OPTION()
 
@@ -86,22 +86,14 @@ CONFIGURE_FILE(
 # Need this include so codes can find the config file
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+TRIBITS_PROCESS_SUBPACKAGES()
 
-ADD_SUBDIRECTORY(libraries)
-ADD_SUBDIRECTORY(programs)
-ADD_SUBDIRECTORY(services)
-
-TRIBITS_ADD_TEST_DIRECTORIES(tests)
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
-
+TRIBITS_PACKAGE_DEF()
 
 
 ###########################################################
 # D) Do standard postprocessing
 #
-
-TRIBITS_PACKAGE_POSTPROCESS()
-
 
 # Install cmake scripts so others can use them
 INSTALL(FILES
@@ -111,3 +103,12 @@ INSTALL(FILES
 )
 
 MESSAGE(STATUS "Trios_TPL_LIBRARIES = ${TPL_LIBRARIES}")
+
+
+TRIBITS_PACKAGE_POSTPROCESS()
+
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
+

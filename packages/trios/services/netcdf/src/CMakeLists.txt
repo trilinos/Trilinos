@@ -1,8 +1,10 @@
+INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsAddTest)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TriosProcessXDR)
+
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
 
