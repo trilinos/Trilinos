@@ -2128,6 +2128,8 @@ namespace stk {
       double time = 0.0;
       stk::io::process_output_request(mesh_data, bulk_data, time);
 
+      if (mesh_data.m_input_region) mesh_data.m_input_region->get_database()->closeDatabase();
+      if (mesh_data.m_output_region) mesh_data.m_output_region->get_database()->closeDatabase();
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << " ... done" << std::endl;
     }
 

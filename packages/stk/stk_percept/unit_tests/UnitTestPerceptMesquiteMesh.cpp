@@ -94,7 +94,7 @@ namespace stk
       Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
 
 
-#define DO_TESTS 0
+#define DO_TESTS 1
 #if DO_TESTS
 
 #define EXTRA_PRINT 0
@@ -445,7 +445,7 @@ namespace stk
         const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
-        if (p_size <= par_size_max)
+        if (1 || p_size <= par_size_max)
           {
             const unsigned nele = 12;
             //const unsigned nx = nele , ny = nele , nz = p_size*nele ;
@@ -453,6 +453,7 @@ namespace stk
 
             bool sidesets=true;
             percept::QuadFixture<double> fixture( pm , nx , ny, sidesets);
+            fixture.set_bounding_box(0,1,0,1);
             fixture.meta_data.commit();
             fixture.generate_mesh();
 
@@ -463,7 +464,6 @@ namespace stk
             eMesh.reopen();
             eMesh.add_coordinate_state_fields();
             stk::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
-            //eMesh.addParallelInfoFields(true,true);
             eMesh.commit();
             eMesh.set_proc_rank_field(proc_rank_field);
 
@@ -472,8 +472,6 @@ namespace stk
             stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
             stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
-
-            //eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
@@ -489,9 +487,9 @@ namespace stk
                         stk::mesh::Entity& node = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
-                        double iy = data[1]/double(nele);
+                        double iy = data[1]; // /double(nele);
                         iy = iy*iy;
-                        data[1] = iy*double(nele);
+                        data[1] = iy; // *double(nele);
                       }
                   }
               }
@@ -515,10 +513,10 @@ namespace stk
                         stk::mesh::Entity& node = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
-                        double ix = data[0]/double(nele);
+                        double ix = data[0]; // /double(nele);
                         //double bump_size=2.8; // 0.8
                         double bump_size=2.8; // 0.8
-                        data[1] += (ix)*(1.0-ix)*bump_size*double(nele);
+                        data[1] += (ix)*(1.0-ix)*bump_size; //*double(nele);
                         //std::cout << "tmp srk surface 1 node = " << data[0] << " " << data[1] << std::endl;
                       }
                   }
@@ -578,6 +576,99 @@ namespace stk
               if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
             }
 
+          }
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      // run new parallel smoother on an interior-node perturbed domain
+      STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_4_1)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+        unsigned par_size_max = 1;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 2)
+        if (p_size <= par_size_max)
+          {
+            //const unsigned p_rank = stk::parallel_machine_rank( pm );
+            //const unsigned p_size = stk::parallel_machine_size( pm );
+
+            const unsigned n = 2;
+            //const unsigned nx = n , ny = n , nz = p_size*n ;
+            const unsigned nx = n , ny = n;
+
+            bool sidesets=true;
+            percept::QuadFixture<double> fixture( pm , nx , ny, sidesets);
+
+            fixture.meta_data.commit();
+            fixture.generate_mesh();
+
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
+
+            eMesh.reopen();
+            //eMesh.addParallelInfoFields(true,true);
+            eMesh.add_coordinate_state_fields();
+            stk::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
+            //eMesh.addParallelInfoFields(true,true);
+            eMesh.commit();
+            eMesh.set_proc_rank_field(proc_rank_field);
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+
+            //eMesh.populateParallelInfoFields(true,true,&boundarySelector);
+
+            //eMesh.print_info("quad fixture",  2);
+            eMesh.save_as(input_files_loc+"quad_4_1_smooth.0.e");
+
+            eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
+
+            unsigned center_node_id = 5;
+            stk::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, center_node_id);
+            double *data = 0;
+            if (node)
+              {
+                data = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node );
+                //std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
+                if (1)
+                  {
+                    data[0] += .2;
+                    data[1] += .3;
+                  }
+              }
+
+            eMesh.save_as(input_files_loc+"quad_4_1_smooth.0_perturbed.e");
+            eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
+
+            {
+              PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
+              //PerceptMesquiteMeshDomain pmd(&eMesh, 0);
+              PlanarDomain planar_domain(PlanarDomain::XY);
+              //PMMParallelShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
+              if (1)
+                {
+                  percept::PMMParallelShapeImprover pmmpsi(1001, 1.e-4, 1);
+                  //pmmpsi.run(pmm, &pmd, always_smooth, msq_debug);
+                  pmmpsi.run(pmm, &planar_domain, true, 0);
+                }
+            }
+
+            if (node)
+              {
+                STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
+                STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
+              }
+
+            eMesh.save_as(output_files_loc+"quad_4_1_smooth.1.e");
           }
       }
 

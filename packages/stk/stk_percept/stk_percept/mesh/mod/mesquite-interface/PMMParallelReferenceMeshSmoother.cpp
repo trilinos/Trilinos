@@ -127,10 +127,10 @@ namespace stk {
       PMMSmootherMetricShapeB1 shape_b1_metric(eMesh);
 
       // scaled jacobian
-      PMMSmootherMetricScaledJacobian scaled_jac_metric(eMesh);
+      PMMSmootherMetricScaledJacobianElemental scaled_jac_metric(eMesh);
 
       // scaled jacobian - nodal
-      PMMSmootherMetricScaledJacobian0 scaled_jac_metric_nodal(eMesh);
+      PMMSmootherMetricScaledJacobianNodal scaled_jac_metric_nodal(eMesh);
 
       //double omegas[] = {0.0, 0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
       //double omegas[] = {0.001, 1.0};
@@ -161,6 +161,13 @@ namespace stk {
           m_untangled = (m_num_invalid == 0);
 
           int iter_all=0;
+
+          int do_anim = 1; // = frequency of anim writes
+          if (do_anim)
+            {
+              eMesh->save_as("anim_all."+toString(iter_all)+".e");
+            }
+
           for (int stage = 0; stage < 2; stage++)
             {
               m_stage = stage;
@@ -173,6 +180,8 @@ namespace stk {
                 {
                   //m_metric = &shape_metric;
                   m_metric = &shape_b1_metric;
+                  //m_metric = &scaled_jac_metric;
+
                 }
 
               for (int iter = 0; iter < innerIter; ++iter, ++iter_all)
@@ -201,10 +210,10 @@ namespace stk {
                               << std::endl;
                   }
 
-                  if (0)
+                  if (do_anim)
                     {
-                       eMesh->save_as("iter_"+toString(outer)+"_"+toString(stage)+"."+toString(iter)+".e");
-                       if (iter_all % 8 == 0) eMesh->save_as("anim_all."+toString(iter_all)+".e");
+                       eMesh->save_as("iter_"+toString(outer)+"_"+toString(stage)+"."+toString(iter+1)+".e");
+                       if (iter_all % do_anim == 0) eMesh->save_as("anim_all."+toString(iter_all+1)+".e");
                     }
 
                   if (!m_untangled && m_num_invalid == 0)
