@@ -41,6 +41,10 @@ namespace Ioss {
   typedef std::vector<int64_t> Int64Vector;
 }
 
+#if defined(PARALLEL_AWARE_EXODUS)
+#define HAVE_MPI
+#endif
+
 #if !defined(HAVE_MPI) 
 #if defined(SIERRA_PARALLEL_MPI)
 #define HAVE_MPI

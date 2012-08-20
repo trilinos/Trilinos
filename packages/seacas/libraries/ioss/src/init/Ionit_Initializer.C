@@ -34,6 +34,7 @@
 
 #if !defined(NO_EXODUS_SUPPORT)
 #include <exodusII/Ioex_IOFactory.h>
+#include <par_exo/Iopx_IOFactory.h>
 #endif
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <generated/Iogn_DatabaseIO.h>
@@ -60,6 +61,7 @@ namespace Ioss {
     {
 #if !defined(NO_EXODUS_SUPPORT)
       Ioex::IOFactory::factory();    // ExodusII
+      Iopx::IOFactory::factory();    // ExodusII
 #endif
       Iohb::IOFactory::factory();   // HeartBeat
       Iogn::IOFactory::factory();  // Generated

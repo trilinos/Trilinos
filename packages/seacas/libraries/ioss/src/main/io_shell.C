@@ -358,11 +358,7 @@ namespace {
 		 const std::string& outfile, const std::string& output_type,
 		 Globals& globals)
   {
-    //========================================================================
-    // INPUT ...
-    // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
-    //========================================================================
-    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
+    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_MODEL,
 						    (MPI_Comm)MPI_COMM_WORLD);
     if (dbi == NULL || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);

@@ -33,8 +33,8 @@
 INCLUDES = -I..
 DEFINES = -DNO_XDMF_SUPPORT -DNO_MPI
 
-LIBS = -L.. -lIonit -lIoex   -lIogn -lIohb -lIotr -lIoss $(EXOIIV2C) $(NETCDF)  
-DEPLIBS = ../libIoex.a ../libIogn.a ../libIotr.a ../libIoss.a ../libIonit.a ../libIohb.a
+LIBS = -L.. -lIonit -lIoex -lIopx  -lIogn -lIohb -lIotr -lIoss -lexodus_par $(EXOIIV2C) $(NETCDF) -lzoltan -lparmetis
+DEPLIBS = ../libIoex.a ../libIopx.a ../libIogn.a ../libIotr.a ../libIoss.a ../libIonit.a ../libIohb.a
 
 PROGS = cth_pressure_map io_info io_shell shell_to_hex sphgen
 
