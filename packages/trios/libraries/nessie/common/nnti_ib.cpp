@@ -4614,7 +4614,12 @@ static NNTI_result_t poll_comp_channel(
     my_pollfd.events  = POLLIN;
     my_pollfd.revents = 0;
     log_debug(nnti_debug_level, "polling with timeout==%d", timeout);
-    poll_rc = poll(&my_pollfd, 1, timeout);
+
+    // TODO Put a check for errno==EINTR to deal with timing interrupts from HPCToolkit
+    do {
+        poll_rc = poll(&my_pollfd, 1, timeout);
+    } while ((poll_rc < 0) && (errno == EINTR));
+
     if (poll_rc == 0) {
         log_debug(nnti_debug_level, "poll timed out: %d", my_pollfd.revents);
         rc = NNTI_ETIMEDOUT;
