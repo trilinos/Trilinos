@@ -196,6 +196,7 @@ private:
   void* pt_[64];
 
   int iparm_[64];
+  double dparm_[64];
   int maxfct_; // Maximal number of factors with idential nonzero pattern (always 1)
   int mnum_; //! Actual matrix for solution phase (always 1)
   int msglvl_; //! Output level
