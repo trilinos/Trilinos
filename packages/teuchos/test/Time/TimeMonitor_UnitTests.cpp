@@ -122,7 +122,6 @@ namespace Teuchos {
     const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
     TEST_INEQUALITY(substr_i, std::string::npos);
 
-#ifdef HAVE_TEUCHOS_YAML_CPP
     { // Repeat test for YAML output.
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
@@ -142,8 +141,6 @@ namespace Teuchos {
       const size_t yaml_substr_i = yamlOss.str ().find ("FUNC_TIME_MONITOR1");
       TEST_INEQUALITY(yaml_substr_i, std::string::npos);
     }
-#endif // HAVE_TEUCHOS_YAML_CPP
-
 
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();
