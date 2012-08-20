@@ -43,21 +43,21 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *
  */
 
-#ifndef _FPRINT_UTIL_TYPES_H_
-#define _FPRINT_UTIL_TYPES_H_
+#ifndef _NSSI_FPRINT_UTIL_TYPES_H_
+#define _NSSI_FPRINT_UTIL_TYPES_H_
 
 #include <stdio.h>
+#include <ostream>
 #include "Trios_nssi_types.h"    /* types for LWFS */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
 
 
 #if defined(__STDC__) || defined(__cplusplus)
 
 extern const char* nssi_err_str(const int rc);
-extern const char* nnti_err_str(const int rc);
 
     /**
      * @brief Print out a return code.
@@ -69,6 +69,11 @@ extern const char* nnti_err_str(const int rc);
      */
     void fprint_nssi_return_code(
         FILE *fp,
+        const char *name,
+        const char *prefix,
+        const int rc);
+    void fprint_nssi_return_code(
+        std::ostream &out,
         const char *name,
         const char *prefix,
         const int rc);
@@ -87,6 +92,11 @@ extern const char* nnti_err_str(const int rc);
         const char *name,
         const char *prefix,
         const nssi_request_header *hdr);
+    extern void fprint_nssi_request_header(
+            std::ostream &out,
+        const char *name,
+        const char *prefix,
+        const nssi_request_header *hdr);
 
     /**
      * @brief Output the contents of a result header.
@@ -101,10 +111,20 @@ extern const char* nnti_err_str(const int rc);
         const char *name,
         const char *prefix,
         const nssi_result_header *hdr);
+    extern void fprint_nssi_result_header(
+            std::ostream &out,
+        const char *name,
+        const char *prefix,
+        const nssi_result_header *hdr);
 
 
     extern void fprint_nssi_rpc_encode(
         FILE *fp,
+        const char *name,
+        const char *prefix,
+        const nssi_rpc_encode *rpc_encode);
+    extern void fprint_nssi_rpc_encode(
+            std::ostream &out,
         const char *name,
         const char *prefix,
         const nssi_rpc_encode *rpc_encode);
@@ -114,45 +134,30 @@ extern const char* nnti_err_str(const int rc);
         const char *name,
         const char *prefix,
         const nssi_service *svc);
+    extern void fprint_nssi_service(
+            std::ostream &out,
+        const char *name,
+        const char *prefix,
+        const nssi_service *svc);
 
     extern void fprint_nssi_ssize(
         FILE *fp,
         const char *name,
         const char *prefix,
         const nssi_ssize *ssize);
-
-    extern void fprint_NNTI_remote_addr(
-                    FILE *fp,
-                    const char *name,
-                    const char *prefix,
-                    const NNTI_remote_addr_t *addr);
-
-    extern void fprint_NNTI_peer(
-                    FILE *fp,
-                    const char *name,
-                    const char *prefix,
-                    const NNTI_peer_t *addr);
-
-    extern void fprint_NNTI_buffer(
-                    FILE *fp,
-                    const char *name,
-                    const char *prefix,
-                    const NNTI_buffer_t *addr);
-
-    extern void fprint_NNTI_status(
-                    FILE *fp,
-                    const char *name,
-                    const char *prefix,
-                    const NNTI_status_t *addr);
-
+    extern void fprint_nssi_ssize(
+            std::ostream &out,
+        const char *name,
+        const char *prefix,
+        const nssi_ssize *ssize);
 
 #else /* K&R C */
 
 
 #endif /* K&R C */
 
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif
 
 #endif
