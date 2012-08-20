@@ -1588,7 +1588,6 @@ void pqJagged_1DPart_simple(
   scalar_t *cutCoordinates_tmp = cutCoordinates;
   partId_t noCuts = partNo - 1;
   size_t total_part_count = partNo + size_t (noCuts) ;
-  //partId_t allDone = noCuts;
 
 
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();

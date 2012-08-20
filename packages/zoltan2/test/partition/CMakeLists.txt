@@ -18,7 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS 
-    "I=1.03 P=2,2 D=64 O=0 C=4 F=simple"
+    "I=1.03 P=2,2 O=0 C=4 F=simple"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )

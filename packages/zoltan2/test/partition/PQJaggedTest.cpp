@@ -332,7 +332,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numP
   problem.solve();
 
   //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-      problem.getSolution();
+      //problem.getSolution();
 
   if (comm->getRank() == 0){
     problem.printMetrics(cout);
