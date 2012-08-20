@@ -1527,7 +1527,7 @@ public:
 		xmv.applyPartitioningSolution<Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(this->tmVector, &tmVector2, solution);
      */
 
-    this->wghts = new T *[this->coordinate_dimension];
+    this->wghts = new T *[this->weight_dimension];
     for(int i = 0; i < this->weight_dimension; ++i){
       this->wghts[i] = new T[this->numLocalCoords];
     }

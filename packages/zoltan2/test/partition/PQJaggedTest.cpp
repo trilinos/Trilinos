@@ -74,9 +74,6 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
 
 /*! \test PQJaggedTest.cpp
     An example of the use of the PQJagged algorithm to partition coordinate data.
-    \todo error handling
-    \todo write some examples that don't use teuchos
-    \todo check the solution, visualize it somehow
  */
 
 
@@ -177,11 +174,14 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
     coords[i] = new scalar_t[numLocalPoints];
   }
   gg->getLocalCoordinatesCopy(coords);
-  scalar_t **weight= new scalar_t * [weight_dim];
-  for(int i = 0; i < weight_dim; ++i){
-    weight[i] = new scalar_t[numLocalPoints];
+  scalar_t **weight = NULL;
+  if(weight_dim){
+    weight= new scalar_t * [weight_dim];
+    for(int i = 0; i < weight_dim; ++i){
+      weight[i] = new scalar_t[numLocalPoints];
+    }
+    gg->getLocalWeightsCopy(weight);
   }
-  gg->getLocalWeightsCopy(weight);
 
   delete gg;
 

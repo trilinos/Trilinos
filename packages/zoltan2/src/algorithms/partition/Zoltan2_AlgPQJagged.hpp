@@ -56,11 +56,7 @@
 #include <Zoltan2_GetParameter.hpp>
 
 #include <Teuchos_ParameterList.hpp>
-#include "stdio.h"
 
-#ifdef HAVE_ZOLTAN2_OMP
-#endif
-#define CACHE_LINE_SIZE 64
 #define EPS_SCALE 10
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
@@ -71,9 +67,9 @@
 //#define FIRST_TOUCH
 
 //#define BINARYCUTSEARCH
-//#define RCBCODE
-#define LEAF_IMBALANCE_FACTOR 0.1
 
+#define LEAF_IMBALANCE_FACTOR 0.1
+#define BINARYCUTOFF 32
 //imbalance calculation. Wreal / Wexpected - 1
 #define imbalanceOf(Wachieved, totalW, expectedRatio) \
     (Wachieved) / ((totalW) * (expectedRatio)) - 1
@@ -251,125 +247,6 @@ inline void firstTouch(T *arrayName, size_t arraySize){
   }
 }
 
-template <class lno_t,class scalar_t>
-class PQJagged_MaxPriorityQueue {
-private:
-    scalar_t *weights; //gains according to which the heap order is determined.
-    lno_t *real_indices;   //the vertex indices corresponding to the gains.
-    lno_t *inverse_vertex_positions; //points the position of each vertex
-    lno_t heap_size;    //the end of heap inclusive
-    lno_t max_size;    //max size of heap. --for addition
-
-    void push_down(lno_t i){
-      lno_t child1 = 2 * i + 1;
-      lno_t child2 = 2 * i + 2;
-      if((child1 >= heap_size || this->weights[i] >= this->weights[child1]) && (child2 >= heap_size || this->weights[i] >= this->weights[child2])){
-          return;
-      } else {
-        lno_t biggerchild = 0;
-          if(this->weights[child1] >= this->weights[child2]){
-              biggerchild = child1;
-          } else {
-              biggerchild = child2;
-          }
-          this->swap(i, biggerchild);
-          push_down(biggerchild);
-      }
-    }
-
-    void push_up(lno_t i){
-      if(i == 0 ) return;
-      lno_t parent = (i - 1) / 2;
-      //std::cout << "parent:" << parent << " child" << i << std::endl;
-      if(this->weights[parent] >= this->weights[i]){
-        return;
-      }
-      else {
-        this->swap(i, parent);
-        push_up(parent);
-      }
-    }
-
-    void swap(lno_t index1, lno_t index2){
-        scalar_t wtmp = this->weights[index1];
-        this->weights[index1] = this->weights[index2];
-        this->weights[index2] = wtmp;
-
-        lno_t itmp = this->inverse_vertex_positions[this->real_indices[index1]];
-        this->inverse_vertex_positions[this->real_indices[index1]] = this->inverse_vertex_positions[this->real_indices[index2]];
-        this->inverse_vertex_positions[this->real_indices[index2]] = itmp;
-
-        itmp = this->real_indices[index1];
-        this->real_indices[index1] = this->real_indices[index2];
-        this->real_indices[index2] = itmp;
-    }
-
-public:
-    //assumes indices starts from 1.
-    PQJagged_MaxPriorityQueue(lno_t max_size, scalar_t *gains, lno_t *real_indices, lno_t *positions){
-      this->set_Heap(max_size, gains, real_indices, positions);
-    }
-    PQJagged_MaxPriorityQueue(){}
-    ~PQJagged_MaxPriorityQueue(){}
-    void set_Heap(lno_t max_size_, scalar_t *weights_, lno_t *real_indices_, lno_t *positions_){
-        this->weights = weights_;
-        this->max_size = max_size_;
-        this->real_indices = real_indices_;
-        this->inverse_vertex_positions = positions_;
-        this->heap_size = max_size_;
-    }
-
-    void update(lno_t real_index, scalar_t weight_increase){
-      lno_t heap_index = this->inverse_vertex_positions[real_index];
-      if(heap_index == -1){
-        return;
-      }
-      this->weights[heap_index] += weight_increase;
-      if(weight_increase > 0){
-        this->push_up(heap_index);
-      }
-      else {
-        this->push_down(heap_index);
-      }
-    }
-
-    void top(lno_t *index, scalar_t *weight){
-      if(heap_size >= 0){
-          *index = this->real_indices[1];
-          *weight = this->weights[1];
-      } else {
-          *index = -1;
-          *weight = -1;
-      }
-    }
-
-    void pop(){
-      if(heap_size > 0){
-        this->inverse_vertex_positions[this->real_indices[0]] = -1;
-        this->weights[0] = this->weights[heap_size - 1];
-        this->real_indices[0] = this->real_indices[heap_size - 1];
-        this->inverse_vertex_positions[this->real_indices[heap_size - 1]] = 0;
-        --heap_size;
-        this->push_down(0);
-      }
-    }
-};
-
-template <typename lno_t, typename gno_t, typename scalar_t, typename partId_t>
-void getMigrationGroups(lno_t *totalPartPointCounts, gno_t totalCount, partId_t partNo, int worldSize, scalar_t *proc_work_array,
-    partId_t *part_real_indices_work, partId_t *part_positions_work
-    ){
-  scalar_t idealWeight = totalCount / double(worldSize);
-  partId_t maxGroupNo = partNo;
-
-  for (int i = 0; i < worldSize; ++i){
-    proc_work_array[i] = idealWeight;
-  }
-  //PQJagged_MaxPriorityQueue<lno_t, scalar_t> parts(partNo, totalPartPointCounts_work, part_real_indices_work, lno_t *part_positions_work);
-  //PQJagged_MaxPriorityQueue<lno_t, scalar_t> procs(worldSize, proc_work_array, part_real_indices_work, lno_t *part_positions_work);
-
-}
-
 /*! \brief
  * Function that calculates the next pivot position,
  * according to given coordinates of upper bound and lower bound, the weights at upper and lower bounds, and the expected weight.
@@ -407,10 +284,11 @@ inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,si
  *	\param  params holding the bits for objective problem description. An output of the function. //not used in pqJagged algorithm currently..
  *	\param numTestCuts. An output of the function. //not used in pqJagged algorithm currently.
  *	\param ignoreWeights is the boolean value to treat the each coordinate as uniform regardless of the given input weights. Output of the function.
+ * \param concurrentPartCount is the number of parts whose cut lines will be calculated concurrently.
  */
 template <typename T>
 void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolerance,
-    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear, partId_t &k){
+    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear, partId_t &concurrentPartCount){
 
   bool isSet;
   string strChoice;
@@ -463,7 +341,7 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   if (!isSet){
     aa = 1;
   }
-  k = partId_t(aa);
+  concurrentPartCount = partId_t(aa);
 
   getParameterValue<int>(pl, "partitioning", "geometric",
       "average_cuts", isSet, intChoice);
@@ -731,34 +609,46 @@ int pqJagged_getNumThreads(){
 }
 
 
-/*! \brief Function to determine the minimum and maximum coordinate
- * in the given set of points.
- * \param comm is the Comm object. //Pure mpi all reduce is used, therefore, it is not used currently.
- * \param pqJagged_coordinates float-like array representing the coordinates in a single dimension. Sized as numLocalCoords.
- * \param minCoordinate is the output to represent the minimumCoordinate in  given range of coordinates.
- * \param maxCoordinate is the output to represent the maximum coordinate in the given range of coordinates.
- * \param env environment object. //not used currently.
- * \param numThreads is the integer value to represent the number of threads available for each processor.
+/*! \brief Function to determine the local minimum and maximum coordinate, and local total weight
+ * in the given set of local points.
  * \param partitionedPointPermutations is the indices of coordinates in the given partition.
+ * \param pqJagged_coordinates float-like array representing the coordinates in a single dimension. Sized as numLocalCoords.
+ * \param pqJagged_uniformWeights boolean value whether each coordinate value has a uniform weight or not. If true, pqJagged_weights is not used.
+ * \param pqJagged_weights float-like array representing the weights of the coordinates in a single criteria dimension. Sized as numLocalCoords.
+ *
+ * \param numThreads is the integer value to represent the number of threads available for each processor.
  * \param coordinateBegin is the start index of the given partition on partitionedPointPermutations.
  * \param coordinateEnd is the end index of the given partition on partitionedPointPermutations.
+ *
  * \param max_min_array provided work array sized numThreads * 2.
+ * \param maxScalar to initialize minimum coordinate if there are no points in the given range.
+ * \param minScalar to initialize maximum coordinate if there are no points in the given range.
+ *
+ * \param minCoordinate is the output to represent the local minimumCoordinate in  given range of coordinates.
+ * \param maxCoordinate is the output to represent the local maximum coordinate in the given range of coordinates.
+ * \param totalWeight is the output to represent the local total weight in the coordinate in the given range of coordinates.
+ *
  */
 template <typename scalar_t, typename lno_t>
 void pqJagged_getLocalMinMaxTotalCoord(
-    scalar_t *pqJagged_coordinates,
-    scalar_t *pqJagged_weights,
-    bool pqJagged_uniformWeights,
-    scalar_t &minCoordinate,
-    scalar_t &maxCoordinate,
-    scalar_t &totalWeight,
-    int numThreads,
     lno_t *partitionedPointPermutations,
+    scalar_t *pqJagged_coordinates,
+    bool pqJagged_uniformWeights,
+    scalar_t *pqJagged_weights,
+
+
+    int numThreads,
     lno_t coordinateBegin,
     lno_t coordinateEnd,
+
     scalar_t *max_min_array /*sized nothreads * 2*/,
     scalar_t maxScalar,
-    scalar_t minScalar){
+    scalar_t minScalar,
+    scalar_t &minCoordinate,
+    scalar_t &maxCoordinate,
+    scalar_t &totalWeight
+
+    ){
 
 
   if(coordinateBegin >= coordinateEnd)
@@ -838,32 +728,58 @@ void pqJagged_getLocalMinMaxTotalCoord(
 }
 
 
-
+/*! \brief Function that reduces global minimum and maximum coordinates with global total weight from given local arrays.
+ * \param comm the communicator for the problem
+ * \param env   library configuration and problem parameters
+ * \param concurrentPartCount is the number of parts whose cut lines will be calculated concurrently.
+ * \param localMinMaxTotal is the array holding local min and max coordinate values with local total weight.
+ * First concurrentPartCount entries are minimums of the parts, next concurrentPartCount entries are max, and then the total weights.
+ * \param localMinMaxTotal is the output array holding global min and global coordinate values with global total weight.
+ * The structure is same as localMinMaxTotal.
+ */
 template <typename scalar_t>
-void pqJagged_getGlobalMinMaxTotalCoord(RCP<Comm<int> > &comm,
-    const RCP<const Environment> &env, partId_t k, scalar_t *localMinMaxTotal, scalar_t *globalMinMaxTotal){
+void pqJagged_getGlobalMinMaxTotalCoord(
+    RCP<Comm<int> > &comm,
+    const RCP<const Environment> &env,
+    partId_t concurrentPartCount,
+    scalar_t *localMinMaxTotal,
+    scalar_t *globalMinMaxTotal){
 
 
+  //reduce min for first concurrentPartCount elements, reduce max for next concurrentPartCount elements,
+  //reduce sum for the last concurrentPartCount elements.
   Teuchos::PQJaggedCombinedMinMaxTotalReductionOp<int, scalar_t> reductionOp(
-     k,   // number of left closest mins
-     k,
-     k);  // number of right closest max
+     concurrentPartCount,
+     concurrentPartCount,
+     concurrentPartCount);
+
 
   try{
 
     reduceAll<int, scalar_t>(*comm, reductionOp,
-        3 * k, localMinMaxTotal, globalMinMaxTotal
+        3 * concurrentPartCount, localMinMaxTotal, globalMinMaxTotal
       );
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 }
 
 
-
+/*! \brief Function that calculates the new coordinates for the cut lines. Function is called inside the parallel region.
+ * \param minCoordinate minimum coordinate in the range.
+ * \param maxCoordinate maximum coordinate in the range.
+ * \param pqJagged_uniformParts is a boolean value holding whether the desired partitioning is uniform.
+ * \param pqJagged_partSizes holds the desired parts sizes if desired partitioning is not uniform.
+ * \param cutCoordinates is the output array for the initial cut lines.
+ * \param cutPartRatios is the output array holding the cumulative ratios of parts in current partitioning.
+ * For partitioning to 4 uniformly, cutPartRatios will be (0.25, 0.5 , 0.75, 1).
+ * \param numThreads hold the number of threads available per mpi.
+ */
 template <typename scalar_t>
 void pqJagged_getCutCoord_Weights(
-    scalar_t minCoordinate, scalar_t maxCoordinate,
-    bool pqJagged_uniformParts, scalar_t *pqJagged_partSizes /*p sized, weight ratios of each part*/,
+    scalar_t minCoordinate,
+    scalar_t maxCoordinate,
+    bool pqJagged_uniformParts,
+    scalar_t *pqJagged_partSizes /*p sized, weight ratios of each part*/,
     partId_t noCuts/*p-1*/ ,
     scalar_t *cutCoordinates /*p - 1 sized, coordinate of each cut line*/,
     scalar_t *cutPartRatios /*cumulative weight ratios, at left side of each cut line. p-1 sized*/,
@@ -891,6 +807,7 @@ void pqJagged_getCutCoord_Weights(
     }
   }
   else {
+    //TODO fix here!!
     cutPartRatios[0] = pqJagged_partSizes[0];
     cutCoordinates[0] = coordinateRange * cutPartRatios[0];
     for(partId_t i = 1; i < noCuts; ++i){
@@ -902,52 +819,86 @@ void pqJagged_getCutCoord_Weights(
 
 
 /*! \brief Function that calculates the new coordinates for the cut lines. Function is called inside the parallel region.
+ *
+ * \param env library configuration and problem parameters
+ * \param comm the communicator for the problem
  * \param total_part_count is the sum of number of cutlines and number of parts. Simply it is 2*P - 1.
- * \param totalPartWeights is the array holding the weight of parts. Assumes there are 2*P - 1 parts.
- * \param isDone is the boolean array to determine if the correct position for a cut line is found.
- * \param cutPartRatios are the desired cumulative part ratios, sized P.
- * \param totalWeight is the global total weight in the current range of coordinates.
- * \param imbalanceTolerance is the maximum allowed imbalance ratio.
- * \param allDone is the number of cut lines that are not completed.
- * \param cutUpperBounds is the array holding the upper bound coordinate for each cut line. Sized P - 1.
- * \param cutLowerBounds is the array holding the lower bound coordinate for each cut line. Sized P - 1.
- * \param cutCoordinates is the array holding the coordinates of each cut line. Sized P - 1.
  * \param noCuts is the number of cut lines. P - 1.
  * \param maxCoordinate is the maximum coordinate in the current range of coordinates and in the current dimension.
  * \param minCoordinate is the maximum coordinate in the current range of coordinates and in the current dimension.
+ * \param globalTotalWeight is the global total weight in the current range of coordinates.
+ * \param imbalanceTolerance is the maximum allowed imbalance ratio.
+ * \param maxScalar is the maximum value that scalar_t can represent.
+ *
+ *
+ * \param globalPartWeights is the array holding the weight of parts. Assumes there are 2*P - 1 parts (cut lines are seperate parts).
+ * \param localPartWeights is the local totalweight of the processor.
+ * \param targetPartWeightRatios are the desired cumulative part ratios, sized P.
+ * \param isDone is the boolean array to determine if the correct position for a cut line is found.
+ *
+ * \param cutCoordinates is the array holding the coordinates of each cut line. Sized P - 1.
+ * \param cutUpperBounds is the array holding the upper bound coordinate for each cut line. Sized P - 1.
+ * \param cutLowerBounds is the array holding the lower bound coordinate for each cut line. Sized P - 1.
  * \param leftClosestDistance is the array holding the distances to the closest points to the cut lines from left.
  * \param rightClosestDistance is the array holding the distances to the closest points to the cut lines from right.
  * \param cutLowerWeight is the array holding the weight of the parts at the left of lower bound coordinates.
  * \param cutUpperWeight is the array holding the weight of the parts at the left of upper bound coordinates.
- * \param cutCoordinatesWork is the work array, sized P - 1.
+ * \param newCutCoordinates is the work array, sized P - 1.
+ *
+ * \param allowNonRectelinearPart is the boolean value whether partitioning should allow distributing the points on same coordinate to different parts.
+ * \param nonRectelinearPartRatios holds how much percentage of the coordinates on the cutline should be put on left side.
+ * \param rectelinearCutCount is the count of cut lines whose balance can be achived via distributing the points in same coordinate to different parts.
+ * \param localCutWeights is the local weight of coordinates on cut lines.
+ * \param globalCutWeights is the global weight of coordinates on cut lines.
+ *
+ * \param myNoneDoneCount is the number of cutlines whose position has not been determined yet. For K > 1 it is the count in a single part (whose cut lines are determined).
  */
 template <typename scalar_t>
-void getNewCoordinates_simple(
-    const size_t &total_part_count, const scalar_t * totalPartWeights,
-    bool *isDone, const scalar_t *cutPartRatios,
-    const scalar_t &totalWeight, const scalar_t &imbalanceTolerance,
-    partId_t &allDone, scalar_t *cutUpperBounds, scalar_t *cutLowerBounds,
-    scalar_t *cutCoordinates, const partId_t &noCuts,
-    const scalar_t &maxCoordinate, const scalar_t &minCoordinate,
-    scalar_t *leftClosestDistance, scalar_t *rightClosestDistance,
-    scalar_t * cutLowerWeight,scalar_t * cutUpperWeight, scalar_t *cutCoordinatesWork,
-    float *nonRectelinearPart,
-    bool allowNonRectelinearPart, scalar_t maxScalar, const scalar_t * localtw,
-    const RCP<const Environment> &env,RCP<Comm<int> > &comm,
-    partId_t *rectelinearCount, scalar_t *cutWeights, scalar_t *globalCutWeights,
-    partId_t myCutStart, partId_t myCutEnd){
+void getNewCoordinates(
+    const RCP<const Environment> &env,
+    RCP<Comm<int> > &comm,
+    const size_t &total_part_count,
+    const partId_t &noCuts,
+    const scalar_t &maxCoordinate,
+    const scalar_t &minCoordinate,
+    const scalar_t &globalTotalWeight,
+    const scalar_t &imbalanceTolerance,
+    scalar_t maxScalar,
+
+    const scalar_t * globalPartWeights,
+    const scalar_t * localPartWeights,
+    const scalar_t *targetPartWeightRatios,
+    bool *isDone,
+
+    scalar_t *cutCoordinates,
+    scalar_t *cutUpperBounds,
+    scalar_t *cutLowerBounds,
+    scalar_t *leftClosestDistance,
+    scalar_t *rightClosestDistance,
+    scalar_t * cutLowerWeight,
+    scalar_t * cutUpperWeight,
+    scalar_t *newCutCoordinates,
+
+    bool allowNonRectelinearPart,
+    float *nonRectelinearPartRatios,
+    partId_t *rectelinearCutCount,
+    scalar_t *localCutWeights,
+    scalar_t *globalCutWeights,
+
+    partId_t &myNoneDoneCount
+)
+    {
 
 
   scalar_t seenW = 0;
   float expected = 0;
   scalar_t leftImbalance = 0, rightImbalance = 0;
-
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-  for (partId_t i = myCutStart; i < myCutEnd; i++){
+  for (partId_t i = 0; i < noCuts; i++){
 
     //if a left and right closes point is not found, set the distance to 0.
     if(leftClosestDistance[i] == maxScalar)
@@ -956,113 +907,80 @@ void getNewCoordinates_simple(
       rightClosestDistance[i] = 0;
 
   }
-#ifdef HAVE_ZOLTAN2_OMP
-#endif
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-  for (partId_t i = myCutStart; i < myCutEnd; i++){
-    //if already determined at previous iterations, do nothing.
-
+  for (partId_t i = 0; i < noCuts; i++){
     globalCutWeights[i] = 0;
-    cutWeights[i] = 0;
+    localCutWeights[i] = 0;
+    //if already determined at previous iterations, do nothing.
     if(isDone[i]) {
-      cutCoordinatesWork[i] = cutCoordinates[i];
+      newCutCoordinates[i] = cutCoordinates[i];
       continue;
     }
     //current weight of the part at the left of the cut line.
-    seenW = totalPartWeights[i * 2];
+    seenW = globalPartWeights[i * 2];
 
-    expected = cutPartRatios[i];
-    leftImbalance = imbalanceOf(seenW, totalWeight, expected);
-    rightImbalance = imbalanceOf(totalWeight - seenW, totalWeight, 1 - expected);
+    //expected ratio
+    expected = targetPartWeightRatios[i];
+    leftImbalance = imbalanceOf(seenW, globalTotalWeight, expected);
+    rightImbalance = imbalanceOf(globalTotalWeight - seenW, globalTotalWeight, 1 - expected);
 
-/*
-    //if(fabs(cutCoordinates[i] -  (-99.4559)) < _EPSILON) {
-      cout << "cu:" << cutCoordinates[i] << endl;
-      cout << "left:" << leftImbalance << " right:" << rightImbalance << " t:" << imbalanceTolerance<< endl;
-      cout << "seenW:" << seenW << " total:" << totalWeight << " expected:" << expected << " line:" << totalPartWeights[i * 2 + 1] <<  endl;
-    //}
-*/
-    //bool isLeftValid = leftImbalance <= imbalanceTolerance && leftImbalance >= -imbalanceTolerance;
-    //bool isRightValid = rightImbalance <= imbalanceTolerance && rightImbalance >= -imbalanceTolerance;
-
-    bool isLeftValid = fabs(leftImbalance) - imbalanceTolerance < _EPSILON ;//* 10;
-    bool isRightValid = fabs(rightImbalance) - imbalanceTolerance < _EPSILON; // * 10;
-
+    bool isLeftValid = fabs(leftImbalance) - imbalanceTolerance < _EPSILON ;
+    bool isRightValid = fabs(rightImbalance) - imbalanceTolerance < _EPSILON;
 
     //if the cut line reaches to desired imbalance.
     if(isLeftValid && isRightValid){
-
-
       isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-      allDone -=1;
-      cutCoordinatesWork [i] = cutCoordinates[i];
+      myNoneDoneCount -= 1;
+      newCutCoordinates [i] = cutCoordinates[i];
       continue;
     }
-    //if upper bound and lower bound reaches to the same point.
-    //the imbalance cannot be satisfied. Accept as it is.
-    //if left imbalance is lower than 0, then cut line should be moved to right.
     else if(leftImbalance < 0){
-
-      scalar_t ew = totalWeight * expected;
-
-
+      scalar_t ew = globalTotalWeight * expected;
       if(allowNonRectelinearPart){
-
-
-        if (totalPartWeights[i * 2 + 1] == ew){
-
-          //cout << "line uzeri" << endl;
+        if (globalPartWeights[i * 2 + 1] == ew){
           isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-          allDone -=1;
-          cutCoordinatesWork [i] = cutCoordinates[i];
-          nonRectelinearPart[i] = 1;
+          myNoneDoneCount -= 1;
+          newCutCoordinates [i] = cutCoordinates[i];
+          nonRectelinearPartRatios[i] = 1;
           continue;
         }
-        else if (totalPartWeights[i * 2 + 1] > ew){
-
-
-          //cout << "line uzeri partial" << endl;
+        else if (globalPartWeights[i * 2 + 1] > ew){
           isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-          allDone -=1;
+          *rectelinearCutCount += 1;
+
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-          *rectelinearCount += 1;
-          cutCoordinatesWork [ i] = cutCoordinates[i];
-          scalar_t myWeightOnLine = localtw[i * 2 + 1] - localtw[i * 2];
-          cutWeights[i] = myWeightOnLine;
+          myNoneDoneCount -= 1;
+          newCutCoordinates [i] = cutCoordinates[i];
+          scalar_t myWeightOnLine = localPartWeights[i * 2 + 1] - localPartWeights[i * 2];
+          localCutWeights[i] = myWeightOnLine;
           continue;
         }
       }
-      //cout << "saga kay" << endl;
-      //when moving left, and upper and lower are set.
-      //set lower bound to current line.
-
+      //when moving right, set lower bound to current line.
       cutLowerBounds[i] = cutCoordinates[i] + rightClosestDistance[i];
       cutLowerWeight[i] = seenW;
 
-      //cout << "lower:" << cutLowerBounds[i] << endl;
-
       //compare the upper bound with the current lines.
       for (partId_t ii = i + 1; ii < noCuts ; ++ii){
-        scalar_t pw = totalPartWeights[ii * 2];
-        scalar_t lw = totalPartWeights[ii * 2 + 1];
+        scalar_t pw = globalPartWeights[ii * 2];
+        scalar_t lw = globalPartWeights[ii * 2 + 1];
         if(pw >= ew){
           if(pw == ew){
             cutUpperBounds[i] = cutCoordinates[ii];
-            //cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
             cutUpperWeight[i] = pw;
             cutLowerBounds[i] = cutCoordinates[ii];
             cutLowerWeight[i] = pw;
@@ -1070,7 +988,6 @@ void getNewCoordinates_simple(
             //if a cut line is more strict than the current upper bound,
             //update the upper bound.
             cutUpperBounds[i] = cutCoordinates[ii] - leftClosestDistance[ii];
-            //cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
             cutUpperWeight[i] = pw;
           }
           break;
@@ -1078,7 +995,6 @@ void getNewCoordinates_simple(
         //if comes here then pw < ew
         if(lw >= ew){
           cutUpperBounds[i] = cutCoordinates[ii];
-          //cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
           cutUpperWeight[i] = lw;
           cutLowerBounds[i] = cutCoordinates[ii];
           cutLowerWeight[i] = pw;
@@ -1091,54 +1007,41 @@ void getNewCoordinates_simple(
           cutLowerWeight[i] = pw;
         }
       }
-
-
-
       scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
-
-
-      //cout << "new:" << newPivot << endl;
+      //if cut line does not move significantly.
       if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
         isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-        allDone -=1;
-        cutCoordinatesWork [ i] = cutCoordinates[i];
+        myNoneDoneCount -= 1;
+        newCutCoordinates [i] = cutCoordinates[i];
       } else {
-        cutCoordinatesWork [ i] = newPivot;
+        newCutCoordinates [i] = newPivot;
       }
     } else {
-
       //moving to left.
-      scalar_t ew = totalWeight * expected;
-
-      //moving left, both upper and lower is set.
-      //set upper to current line.
+      scalar_t ew = globalTotalWeight * expected;
+      //moving left, set upper to current line.
       cutUpperBounds[i] = cutCoordinates[i] - leftClosestDistance[i];
       cutUpperWeight[i] = seenW;
 
       // compare the current cut line weights with previous upper and lower bounds.
       for (int ii = i - 1; ii >= 0; --ii){
-        scalar_t pw = totalPartWeights[ii * 2];
-        scalar_t lw = totalPartWeights[ii * 2 + 1];
-
-
+        scalar_t pw = globalPartWeights[ii * 2];
+        scalar_t lw = globalPartWeights[ii * 2 + 1];
         if(pw <= ew){
           if(pw == ew){
             cutUpperBounds[i] = cutCoordinates[ii];
-            //cutUpperWeight[i] = totalPartWeights [2 * ii + 1];
             cutUpperWeight[i] = pw;
             cutLowerBounds[i] = cutCoordinates[ii];
             cutLowerWeight[i] = pw;
           }
           else if (pw > cutLowerWeight[i]){
             cutLowerBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii];
-            //cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
             cutLowerWeight[i] = pw;
             if(lw > ew){
               cutUpperBounds[i] = cutCoordinates[ii] + rightClosestDistance[ii];
-              //cutLowerWeight[i] = totalPartWeights [2 * ii + 1];
               cutUpperWeight[i] = lw;
             }
           }
@@ -1150,36 +1053,35 @@ void getNewCoordinates_simple(
         }
       }
 
-
       scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew);
-
+      //if cut line does not move significantly.
       if (fabs(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE){
         isDone[i] = true;
+
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-        allDone -=1;
-        cutCoordinatesWork [ i] = cutCoordinates[i];
+        myNoneDoneCount -= 1;
+        newCutCoordinates [ i] = cutCoordinates[i];
       } else {
-        cutCoordinatesWork [ i] = newPivot;
+        newCutCoordinates [ i] = newPivot;
       }
     }
   }
 
 
+
+  //communication to determine the ratios of processors for the distribution of coordinates on the cut lines.
 #ifdef HAVE_ZOLTAN2_OMP
-#endif
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp barrier
+//#pragma omp barrier
 #pragma omp single
 #endif
   {
-    //cout << "rec cnt:" << rectelinearCount << endl;
-    if(*rectelinearCount > 0){
+    if(*rectelinearCutCount > 0){
       try{
         Teuchos::scan<int,scalar_t>(
             *comm, Teuchos::REDUCE_SUM,
-            noCuts,cutWeights, globalCutWeights
+            noCuts,localCutWeights, globalCutWeights
         );
       }
       Z2_THROW_OUTSIDE_ERROR(*env)
@@ -1188,265 +1090,316 @@ void getNewCoordinates_simple(
       for (partId_t i = 0; i < noCuts; ++i){
         //cout << "gw:" << globalCutWeights[i] << endl;
         if(globalCutWeights[i] > 0) {
-          scalar_t expected = cutPartRatios[i];
-          scalar_t ew = totalWeight * expected;
-          scalar_t expectedWeightOnLine = ew - totalPartWeights[i * 2];
-          scalar_t myWeightOnLine = cutWeights[i];
+          scalar_t expected = targetPartWeightRatios[i];
+          scalar_t ew = globalTotalWeight * expected;
+          scalar_t expectedWeightOnLine = ew - globalPartWeights[i * 2];
+          scalar_t myWeightOnLine = localCutWeights[i];
           scalar_t weightOnLineBefore = globalCutWeights[i];
           scalar_t incMe = expectedWeightOnLine - weightOnLineBefore;
           scalar_t mine = incMe + myWeightOnLine;
           if(mine < 0){
-            nonRectelinearPart[i] = 0;
+            nonRectelinearPartRatios[i] = 0;
           }
           else if(mine >= myWeightOnLine){
-            nonRectelinearPart[i] = 1;
+            nonRectelinearPartRatios[i] = 1;
           }
           else {
-            nonRectelinearPart[i] = mine / myWeightOnLine;
+            nonRectelinearPartRatios[i] = mine / myWeightOnLine;
           }
         }
       }
-      *rectelinearCount = 0;
+      *rectelinearCutCount = 0;
     }
-/*
-    if(comm->getRank() == 0){
-      for (partId_t i = 0; i < noCuts; ++i)
-    cout << "nonrec:" << i << " : " << nonRectelinearPart[i] << endl;
-    cout << endl;
-    }
-*/
-
   }
 }
 
+
+/*! \brief Function that calculates the new coordinates for the cut lines. Function is called inside the parallel region.
+ *
+ * \param total_part_count is the sum of number of cutlines and number of parts. Simply it is 2*P - 1.
+ * \param noCuts is the number of cut lines. P - 1.
+ * \param maxScalar is the maximum value that scalar_t can represent.
+ * \param _EPSILON is the smallest error value for scalar_t.
+ * \param numThreads hold the number of threads available per processor.
+ *
+ * \param coordinateBegin is the index of the first coordinate in current part.
+ * \param coordinateEnd is the index of the last coordinate in current part.
+ * \param partitionedPointPermutations is the indices of coordinates in the given partition.
+ * \param pqJagged_coordinates is 1 dimensional array holding coordinate values.
+ * \param pqJagged_uniformWeights is a boolean value if the points have uniform weights.
+ * \param pqJagged_weights is 1 dimensional array holding the weights of points.
+ *
+ * \param globalPartWeights is the array holding the weight of parts. Assumes there are 2*P - 1 parts (cut lines are seperate parts).
+ * \param localPartWeights is the local totalweight of the processor.
+ * \param targetPartWeightRatios are the desired cumulative part ratios, sized P.
+ *
+ * \param cutCoordinates_tmp is the array holding the coordinates of each cut line. Sized P - 1.
+ * \param isDone is the boolean array to determine if the correct position for a cut line is found.
+ * \param myPartWeights is the array holding the part weights for the calling thread.
+ * \param myLeftClosest is the array holding the distances to the closest points to the cut lines from left for the calling thread..
+ * \param myRightClosest is the array holding the distances to the closest points to the cut lines from right for the calling thread.
+ * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
+ */
 template <typename scalar_t, typename lno_t>
 void pqJagged_1DPart_getPartWeights(
     size_t total_part_count,
     partId_t noCuts,
+    scalar_t maxScalar,
+    scalar_t _EPSILON,
+    int numThreads,
+    lno_t coordinateBegin,
+    lno_t coordinateEnd,
+    lno_t *partitionedPointPermutations,
+    scalar_t *pqJagged_coordinates,
+    bool pqJagged_uniformWeights,
+    scalar_t *pqJagged_weights,
+
+    scalar_t *cutCoordinates_tmp, //TODO change name
     bool *isDone,
     double *myPartWeights,
     scalar_t *myLeftClosest,
     scalar_t *myRightClosest,
-    scalar_t maxScalar,
-    lno_t coordinateBegin,
-    lno_t coordinateEnd,
-    lno_t *partitionedPointPermutations,
-    bool pqJagged_uniformWeights,
-    scalar_t *pqJagged_weights,
-    scalar_t *pqJagged_coordinates,
-    scalar_t *cutCoordinates_tmp,
-    scalar_t _EPSILON,
-    int numThreads
+    bool useBinarySearch
 ){
-  for (size_t i = 0; i < total_part_count; ++i){
-#ifndef BINARYCUTSEARCH
-    if(i/2 < size_t(noCuts) && isDone[i/2]) continue;
-#endif
-    myPartWeights[i] = 0;
+
+  if(useBinarySearch){
+    for (size_t i = 0; i < total_part_count; ++i){
+      myPartWeights[i] = 0;
+    }
+  } else {
+    for (size_t i = 0; i < total_part_count; ++i){
+      if(i/2 < size_t(noCuts) && isDone[i/2]) continue;
+      myPartWeights[i] = 0;
+    }
   }
+
+
   for(partId_t i = 0; i < noCuts; ++i){
     if(isDone[i]) continue;
     myLeftClosest[i] = maxScalar;
     myRightClosest[i] = maxScalar;
   }
-#ifdef BINARYCUTSEARCH
+  if(useBinarySearch){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-  for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
-    int i = partitionedPointPermutations[ii];
-    partId_t lc = 0;
-    partId_t uc = noCuts - 1;
-    scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
-    bool isInserted = false;
-    bool onLeft = false;
-    bool onRight = false;
-    partId_t lastPart = -1;
-    while(uc >= lc)
-    {
-      lastPart = -1;
-      onLeft = false;
-      onRight = false;
-      partId_t j = (uc + lc) / 2;
-      scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
-      scalar_t absdistance = fabs(distance);
+    for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+      int i = partitionedPointPermutations[ii];
+      partId_t lc = 0;
+      partId_t uc = noCuts - 1;
+      scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
+      bool isInserted = false;
+      bool onLeft = false;
+      bool onRight = false;
+      partId_t lastPart = -1;
+      while(uc >= lc)
+      {
+        lastPart = -1;
+        onLeft = false;
+        onRight = false;
+        partId_t j = (uc + lc) / 2;
+        scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
+        scalar_t absdistance = fabs(distance);
 
-      if(absdistance < _EPSILON){
+        if(absdistance < _EPSILON){
 
-        myPartWeights[j * 2 + 1] += w;
+          myPartWeights[j * 2 + 1] += w;
 
-        myLeftClosest[j] = 0;
-        myRightClosest[j] = 0;
-        partId_t kk = j + 1;
-        while(kk < noCuts){
-          scalar_t distance =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
-          if(distance < _EPSILON){
-            myPartWeights[2 * kk + 1] += w;
+          myLeftClosest[j] = 0;
+          myRightClosest[j] = 0;
+          partId_t kk = j + 1;
+          while(kk < noCuts){
+            scalar_t distance =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
+            if(distance < _EPSILON){
+              myPartWeights[2 * kk + 1] += w;
 
-            myLeftClosest[kk] = 0;
-            myRightClosest[kk] = 0;
-            kk++;
-          }
-          else{
-            if(myLeftClosest[kk] > distance){
-              myLeftClosest[kk] = distance;
+              myLeftClosest[kk] = 0;
+              myRightClosest[kk] = 0;
+              kk++;
             }
-            break;
-          }
-        }
-
-        kk = j - 1;
-        while(kk >= 0){
-          scalar_t distance =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
-          if(distance < _EPSILON){
-            myPartWeights[2 * kk + 1] += w;
-
-            myLeftClosest[kk] = 0;
-            myRightClosest[kk] = 0;
-            kk--;
-          }
-          else{
-            if(myRightClosest[kk] > distance){
-              myRightClosest[kk] = distance;
-            }
-            break;
-          }
-        }
-        isInserted = true;
-        break;
-      }
-      else {
-        if (distance < 0) {
-
-          distance = -distance;
-          if (myLeftClosest[j] > distance){
-            myLeftClosest[j] = distance;
-          }
-          if(j > 0){
-            scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j - 1];
-            if(distance > _EPSILON){
-              if (myRightClosest[j - 1] > distance){
-                myRightClosest[j - 1] = distance;
+            else{
+              if(myLeftClosest[kk] > distance){
+                myLeftClosest[kk] = distance;
               }
-            } else if(distance < -_EPSILON){
-              distance = -distance;
-              if (myLeftClosest[j - 1] > distance){
-                myLeftClosest[j - 1] = distance;
-              }
-            }
-            else {
-              myLeftClosest[j - 1] = 0;
-              myRightClosest[j - 1 ] = 0;
+              break;
             }
           }
-          uc = j - 1;
-          onLeft = true;
-          lastPart = j;
-        }
-        else {
-          if (myRightClosest[j] > distance){
-            myRightClosest[j] = distance;
-          }
-          if(j < noCuts - 1){
-            scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j + 1];
-            if(distance > _EPSILON){
-              if (myRightClosest[j + 1] > distance){
-                myRightClosest[j + 1] = distance;
-              }
-            } else if(distance < -_EPSILON){
-              distance = -distance;
-              if (myLeftClosest[j + 1] > distance){
-                myLeftClosest[j + 1] = distance;
-              }
-            }
-            else {
-              myLeftClosest[j + 1] = 0;
-              myRightClosest[j + 1 ] = 0;
-            }
-          }
-          lc = j + 1;
-          onRight = true;
-          lastPart = j;
-        }
-      }
-    }
-    if(!isInserted){
-      if(onRight){
-        myPartWeights[2 * lastPart + 2] += w;
-      }
-      else if(onLeft){
-        myPartWeights[2 * lastPart] += w;
-      }
-    }
-  }
-  for (size_t i = 1; i < total_part_count; ++i){
-    if(i % 2 == 0 && i > 1 && i < total_part_count - 1 && fabs(cutCoordinates_tmp[i / 2] - cutCoordinates_tmp[i /2 - 1]) < _EPSILON){
-      myPartWeights[i] = myPartWeights[i-2];
-      continue;
-    }
-    myPartWeights[i] += myPartWeights[i-1];
-  }
 
-#endif
-#ifndef BINARYCUTSEARCH
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp for
-#endif
-  for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
-    int i = partitionedPointPermutations[ii];
+          kk = j - 1;
+          while(kk >= 0){
+            scalar_t distance =fabs(cutCoordinates_tmp[kk] - cutCoordinates_tmp[j]);
+            if(distance < _EPSILON){
+              myPartWeights[2 * kk + 1] += w;
 
-    scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
-    //get a coordinate and compare it with cut lines from left to right.
-    for(partId_t j = 0; j < noCuts; ++j){
-
-      if(isDone[j]) continue;
-      scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
-      scalar_t absdistance = fabs(distance);
-      if(absdistance < _EPSILON){
-        myPartWeights[j * 2] -= w;
-        //myPartWeights[j * 2] += w;
-        myLeftClosest[j] = 0;
-        myRightClosest[j] = 0;
-        //break;
-      }
-      else
-        if (distance < 0) {
-          distance = -distance;
-          if (myLeftClosest[j] > distance){
-            myLeftClosest[j] = distance;
+              myLeftClosest[kk] = 0;
+              myRightClosest[kk] = 0;
+              kk--;
+            }
+            else{
+              if(myRightClosest[kk] > distance){
+                myRightClosest[kk] = distance;
+              }
+              break;
+            }
           }
+          isInserted = true;
           break;
         }
-      //if it is on the left
         else {
-          //if on the right, continue with the next line.
-          myPartWeights[j * 2] -= w;
-          myPartWeights[j * 2 + 1] -= w;
-          //myPartWeights[j * 2] += w;
-          //myPartWeights[j * 2 + 1] += w;
+          if (distance < 0) {
 
-          if ( myRightClosest[j] > distance){
-            myRightClosest[j] = distance;
+            distance = -distance;
+            if (myLeftClosest[j] > distance){
+              myLeftClosest[j] = distance;
+            }
+            if(j > 0){
+              scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j - 1];
+              if(distance > _EPSILON){
+                if (myRightClosest[j - 1] > distance){
+                  myRightClosest[j - 1] = distance;
+                }
+              } else if(distance < -_EPSILON){
+                distance = -distance;
+                if (myLeftClosest[j - 1] > distance){
+                  myLeftClosest[j - 1] = distance;
+                }
+              }
+              else {
+                myLeftClosest[j - 1] = 0;
+                myRightClosest[j - 1 ] = 0;
+              }
+            }
+            uc = j - 1;
+            onLeft = true;
+            lastPart = j;
+          }
+          else {
+            if (myRightClosest[j] > distance){
+              myRightClosest[j] = distance;
+            }
+            if(j < noCuts - 1){
+              scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j + 1];
+              if(distance > _EPSILON){
+                if (myRightClosest[j + 1] > distance){
+                  myRightClosest[j + 1] = distance;
+                }
+              } else if(distance < -_EPSILON){
+                distance = -distance;
+                if (myLeftClosest[j + 1] > distance){
+                  myLeftClosest[j + 1] = distance;
+                }
+              }
+              else {
+                myLeftClosest[j + 1] = 0;
+                myRightClosest[j + 1 ] = 0;
+              }
+            }
+            lc = j + 1;
+            onRight = true;
+            lastPart = j;
           }
         }
+      }
+      if(!isInserted){
+        if(onRight){
+          myPartWeights[2 * lastPart + 2] += w;
+        }
+        else if(onLeft){
+          myPartWeights[2 * lastPart] += w;
+        }
+      }
+    }
+    for (size_t i = 1; i < total_part_count; ++i){
+      if(i % 2 == 0 && i > 1 && i < total_part_count - 1 && fabs(cutCoordinates_tmp[i / 2] - cutCoordinates_tmp[i /2 - 1]) < _EPSILON){
+        myPartWeights[i] = myPartWeights[i-2];
+        continue;
+      }
+      myPartWeights[i] += myPartWeights[i-1];
+    }
+
+  }
+  else {
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
+    for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+      int i = partitionedPointPermutations[ii];
+
+      scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
+      //get a coordinate and compare it with cut lines from left to right.
+      for(partId_t j = 0; j < noCuts; ++j){
+
+        if(isDone[j]) continue;
+        scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
+        scalar_t absdistance = fabs(distance);
+        if(absdistance < _EPSILON){
+          myPartWeights[j * 2] -= w;
+          //myPartWeights[j * 2] += w;
+          myLeftClosest[j] = 0;
+          myRightClosest[j] = 0;
+          //break;
+        }
+        else
+          if (distance < 0) {
+            distance = -distance;
+            if (myLeftClosest[j] > distance){
+              myLeftClosest[j] = distance;
+            }
+            break;
+          }
+        //if it is on the left
+          else {
+            //if on the right, continue with the next line.
+            myPartWeights[j * 2] -= w;
+            myPartWeights[j * 2 + 1] -= w;
+            //myPartWeights[j * 2] += w;
+            //myPartWeights[j * 2 + 1] += w;
+
+            if ( myRightClosest[j] > distance){
+              myRightClosest[j] = distance;
+            }
+          }
+      }
     }
   }
-#endif
 
 }
 
+
+/*! \brief Function that reduces the result of multiple threads for left and right closest points and part weights in a single mpi.
+ *
+ * \param noCuts is the number of cut lines. P - 1.
+ * \param total_part_count is the sum of number of cutlines and number of parts. Simply it is 2*P - 1.
+ * \param concurrentPartCount is the number of parts whose cut lines will be calculated concurrently.
+ * \param numThreads hold the number of threads available per processor.
+ * \param isDone is the boolean array to determine if the correct position for a cut line is found.
+ * \param leftClosestDistance is the 2 dimensional array holding the distances to the closest points to the cut lines from left for each thread.
+ * \param rightClosestDistance is the 2 dimensional array holding the distances to the closest points to the cut lines from right for each thread.
+ * \param partWeights is the array holding the weight of parts for each thread. Assumes there are 2*P - 1 parts (cut lines are seperate parts).
+ * \param localMinMaxTotal is the array holding the local minimum and maximum coordinate and local total weight of each part.
+ * \param totalPartWeights_leftClosest_rightCloset is the output array of accumulation, where total part weights (2P - 1),
+ * then left closest distances (P -1), then right closest distance (P -1) are stored.
+ * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
+ */
 template <typename scalar_t>
 void accumulateThreadResults(
-    partId_t noCuts, size_t total_part_count, bool *isDone,
-    scalar_t **leftClosestDistance, scalar_t **rightClosestDistance, double **partWeights,
+    partId_t noCuts,
+    size_t total_part_count,
+    partId_t concurrentPartCount,
+    int numThreads,
+    bool *isDone,
+    scalar_t **leftClosestDistance,
+    scalar_t **rightClosestDistance,
+    double **partWeights,
+    scalar_t *localMinMaxTotal,
     scalar_t *totalPartWeights_leftClosest_rightCloset,
-    scalar_t *localMinMax, partId_t k,
-    int numThreads
+    bool useBinarySearch
     ){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-  for(partId_t i = 0; i < noCuts * k; ++i){
+  for(partId_t i = 0; i < noCuts * concurrentPartCount; ++i){
     if(isDone[i]) continue;
     scalar_t minl = leftClosestDistance[0][i], minr = rightClosestDistance[0][i];
 
@@ -1463,128 +1416,136 @@ void accumulateThreadResults(
     totalPartWeights_leftClosest_rightCloset[total_part_count + noCuts + ishift] = minr;
   }
 
+  if(useBinarySearch){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-  for(size_t j = 0; j < total_part_count * k; ++j){
-    size_t actualCutInd = (j % total_part_count);
-    partId_t cutInd = actualCutInd / 2 + (j / total_part_count) * noCuts;
+    for(size_t j = 0; j < total_part_count * concurrentPartCount; ++j){
+      size_t actualCutInd = (j % total_part_count);
+      partId_t cutInd = actualCutInd / 2 + (j / total_part_count) * noCuts;
 
-    //cout << "j:" << j << " cutInd:" << cutInd << " noCuts:" << noCuts << endl;
-     //if(noCuts != 0 && partId_t(j/2) < noCuts* k && isDone[j/2]) continue;
-    if(actualCutInd !=  total_part_count - 1 && isDone[cutInd]) continue;
-    double pwj = 0;
-    for (int i = 0; i < numThreads; ++i){
-      pwj += partWeights[i][j];
+      if(actualCutInd !=  total_part_count - 1 && isDone[cutInd]) continue;
+      double pwj = 0;
+      for (int i = 0; i < numThreads; ++i){
+        pwj += partWeights[i][j];
+      }
+      size_t jshift = j % total_part_count + (j / total_part_count) * (total_part_count + 2 * noCuts);
+      totalPartWeights_leftClosest_rightCloset[jshift] = pwj;
     }
-#ifndef BINARYCUTSEARCH
-    scalar_t totalWeight = localMinMax[j / total_part_count + k * 2];
-
-    //cout << "j:" << j << " tw:" << totalWeight << endl;
-    size_t jshift = j % total_part_count + (j / total_part_count) * (total_part_count + 2 * noCuts);
-    totalPartWeights_leftClosest_rightCloset[jshift] = totalWeight + pwj;
-#endif
-#ifdef BINARYCUTSEARCH
-
-    size_t jshift = j % total_part_count + (j / total_part_count) * (total_part_count + 2 * noCuts);
-    //cout << "j:" << j << " pwj:" << pwj << " jshift:" << jshift << endl;
-    totalPartWeights_leftClosest_rightCloset[jshift] = pwj;
-#endif
-  }
-/*
-
+  } else {
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-  for(size_t j = 0; j < noCuts * k; ++j){
-    if(isDone[j/2]) continue;
-    double pwj = 0;
-    double pwl = 0;
-    for (int i = 0; i < numThreads; ++i){
-      pwj += partWeights[i][j * 2];
-      pwl += partWeights[i][j * 2 + 1];
+    for(size_t j = 0; j < total_part_count * concurrentPartCount; ++j){
+      size_t actualCutInd = (j % total_part_count);
+      partId_t cutInd = actualCutInd / 2 + (j / total_part_count) * noCuts;
+
+      if(actualCutInd !=  total_part_count - 1 && isDone[cutInd]) continue;
+      double pwj = 0;
+      for (int i = 0; i < numThreads; ++i){
+        pwj += partWeights[i][j];
+      }
+      scalar_t totalWeight = localMinMaxTotal[j / total_part_count + concurrentPartCount * 2];
+      size_t jshift = j % total_part_count + (j / total_part_count) * (total_part_count + 2 * noCuts);
+      totalPartWeights_leftClosest_rightCloset[jshift] = totalWeight + pwj;
+
     }
-#ifndef BINARYCUTSEARCH
-    scalar_t totalWeight = localMinMax[j % k + k * 2];
-
-    size_t jshift = j % total_part_count + (j / total_part_count) * (total_part_count + 2 * noCuts);
-    totalPartWeights_leftClosest_rightCloset[jshift] = totalWeight + pwj;
-#endif
-#ifdef BINARYCUTSEARCH
-
-    size_t jshift = j % noCuts + (j / noCuts) * (total_part_count + 2 * noCuts);
-    totalPartWeights_leftClosest_rightCloset[jshift] = pwj;
-    cout << "j:" << j << " pwj:" << pwj << " jshift:" << jshift << endl;
-    totalPartWeights_leftClosest_rightCloset[jshift + 1] = pwl;
-#endif
   }
-*/
+
 }
 
 
 
 
 /*! \brief Function that is responsible from 1D partitioning of the given range of coordinates.
- * \param pqJagged_coordinates is 1 dimensional array holding coordinate values.
- * \param pqJagged_weights is 1 dimensional array holding the weights of points.
- * \param pqJagged_uniformWeights is a boolean value if the points have uniform weights.
- * \param numLocalCoords is the number of local coordinates.
- * \param numGlobalCoords is the number of global coordinates.
- * \param minCoordinate is the minimum coordinate in the given dimension and in the given range of points.
- * \param maxCoordinate is the maximum coordinate in the given dimension and in the given range of points.
- * \param pqJagged_partSizes is the array holding the cumulative weight ratios of each part. Size P.
- * \param partNo is the total number of parts.
- * \param noThreads is the number of available threads by each processor.
- * \param imbalanceTolerance is the maximum allowed imbalance ratio.
- * \param cutCoordinates is the array holding the coordinates of the cut.
+ * \param env library configuration and problem parameters
+ * \param comm the communicator for the problem
+ *
  * \param partitionedPointPermutations is the indices of coordinates in the given partition.
- * \param coordinateBegin is the start index of the given partition on partitionedPointPermutations.
- * \param coordinateEnd is the end index of the given partition on partitionedPointPermutations.
+ * \param pqJagged_coordinates is 1 dimensional array holding coordinate values.
+ * \param pqJagged_uniformWeights is a boolean value if the points have uniform weights.
+ * \param pqJagged_weights is 1 dimensional array holding the weights of points.
+ *
+ * \param targetPartWeightRatios is the cumulative desired weight ratios for each part. Sized P.
+ * \param globalMinMaxTotal is the array holding the global min,max and total weight.
+ * minimum of part k is on k, maximum is on k + concurrentPartcount, totalweight is on k + 2*concurrentPartCount
+ * \param localMinMaxTotal is the array holding the local min,max and total weight. Structure is same with globalMinMaxTotal array.
+ *
+ * \param partNo is the total number of parts.
+ * \param numThreads is the number of available threads by each processor.
+ * \param maxScalar is the maximum value that scalar_t can represent.
+ * \param minScalar is the minimum value that scalar_t can represent.
+ * \param imbalanceTolerance is the maximum allowed imbalance ratio.
+ * \param currentPartBeginIndex is the beginning index of concurrentPartCount parts on inTotalCounts array.
+ * \param concurrentPartCount is the number of parts whose cut lines will be calculated concurrently.
+ * \param inTotalCounts is the array holding the beginning indices of the parts from previous dimension partitioning.
+ *
+ * \param cutCoordinates is the array holding the coordinates of the cut.
  * \param cutCoordinatesWork is a work array sized P - 1.
- * \param cutPartRatios is the cumulative desired weight ratios for each part. Sized P.
- * \param cutUpperBounds is the array holding the upper bound coordinate for each cut line. Sized P - 1.
- * \param cutLowerBounds is the array holding the lower bound coordinate for each cut line. Sized P - 1.
- * \param cutLowerWeight is the array holding the weight of the parts at the left of lower bound coordinates.
- * \param cutUpperWeight is the array holding the weight of the parts at the left of upper bound coordinates.
- * \param isDone is the boolean array to determine if the correct position for a cut line is found.
- * \param partWeights is the two dimensional array holding the part weights. One dimension for each thread.
  * \param leftClosestDistance is the two dimensional array holding the distances to the closest points to the cut lines from left. One dimension for each thread.
  * \param rightClosestDistance is the two dimensional array holding the distances to the closest points to the cut lines from right. One dimension for each thread.
- * \param totalPartWeights is one dimensional array holding the part weights. Sum of all threads.
+ * \param cutUpperBounds is the array holding the upper bound coordinate for each cut line. Sized P - 1.
+ * \param cutLowerBounds is the array holding the lower bound coordinate for each cut line. Sized P - 1.
+ * \param cutUpperWeight is the array holding the weight of the parts at the left of upper bound coordinates.
+ * \param cutLowerWeight is the array holding the weight of the parts at the left of lower bound coordinates.
+ * \param isDone is the boolean array to determine if the correct position for a cut line is found.
+ * \param partWeights is the two dimensional array holding the part weights. One dimension for each thread.
+ * \param local_totalPartWeights_leftClosest_rightCloset is one dimensional array holding the local part weights, left and right closest points. Convenient for mpi-reduction.
+ * \param global_totalPartWeights_leftClosest_rightCloset is one dimensional array holding the local part weights, left and right closest points. Convenient for mpi-reduction.
+ * \param allowNonRectelinearPart is whether to allow distribution of points on same coordinate to different parts or not.
+ * \param nonRectelinearPartRatios is one dimensional array holding the ratio of the points on cut lines representing how many of them will be put to left of the line.
+ * \param localCutWeights is one dimensional array holding the local part weights only on cut lines.
+ * \param globalCutWeights is one dimensional array holding the global part weights only on cut lines.
+ * \param allDone is the number of cut lines whose positions should be calculated.
+ * \param myNonDoneCounts is one dimensional array holding the number of cut lines in each part whose positions should be calculated.
+ * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
  */
 template <typename scalar_t, typename lno_t>
-void pqJagged_1DPart_simple(
-    const RCP<const Environment> &env,RCP<Comm<int> > &comm,
-    scalar_t *pqJagged_coordinates,	scalar_t *pqJagged_weights,	bool pqJagged_uniformWeights,
-    scalar_t *globalMinMax,
-    scalar_t *localMinMax,
-    partId_t partNo, int numThreads,
-    scalar_t imbalanceTolerance, scalar_t *cutCoordinates, lno_t *partitionedPointPermutations,
+void pqJagged_1D_Partition(
+    const RCP<const Environment> &env,
+    RCP<Comm<int> > &comm,
 
-    scalar_t *cutCoordinatesWork, 	// work array to manipulate coordinate of cutlines in different iterations.
-    scalar_t *cutPartRatios,		// the weight ratios at left side of the cuts. last is 1.
+    lno_t *partitionedPointPermutations,
+    scalar_t *pqJagged_coordinates,
+    bool pqJagged_uniformWeights,
+    scalar_t *pqJagged_weights,
 
-    scalar_t *cutUpperBounds,  //to determine the next cut line with binary search
-    scalar_t *cutLowerBounds,  //to determine the next cut line with binary search
+    scalar_t *targetPartWeightRatios,   // the weight ratios at left side of the cuts. last is 1.
+    scalar_t *globalMinMaxTotal,
+    scalar_t *localMinMaxTotal,
 
-    scalar_t *cutLowerWeight,  //to determine the next cut line with binary search
-    scalar_t *cutUpperWeight,   //to determine the next cut line with binary search
-    bool *isDone,
-    double **partWeights,
-    scalar_t **leftClosestDistance,
-    scalar_t **rightClosestDistance,
-    scalar_t *totalPartWeights_leftClosest_rightCloset,
-    scalar_t *global_totalPartWeights_leftClosest_rightCloset,
-    float *nonRectelinearPart,
-    bool allowNonRectelinearPart,
+    partId_t partNo,
+    int numThreads,
     scalar_t maxScalar,
     scalar_t minScalar,
-    scalar_t *cutWeights, scalar_t *globalCutWeights,
-    lno_t *inTotalCounts, partId_t curr, partId_t k,
-    partId_t allDone
+    scalar_t imbalanceTolerance,
+    partId_t currentPartBeginIndex,
+    partId_t concurrentPartCount,
+    lno_t *inTotalCounts,
+
+    scalar_t *cutCoordinates,
+    scalar_t *cutCoordinatesWork, 	// work array to manipulate coordinate of cutlines in different iterations.
+    scalar_t **leftClosestDistance,
+    scalar_t **rightClosestDistance,
+    scalar_t *cutUpperBounds,  //to determine the next cut line with binary search
+    scalar_t *cutLowerBounds,  //to determine the next cut line with binary search
+    scalar_t *cutUpperWeight,   //to determine the next cut line with binary search
+    scalar_t *cutLowerWeight,  //to determine the next cut line with binary search
+    bool *isDone,
+    double **partWeights,
+    scalar_t *local_totalPartWeights_leftClosest_rightCloset,
+    scalar_t *global_totalPartWeights_leftClosest_rightCloset,
+    bool allowNonRectelinearPart,
+    float *nonRectelinearPartRatios,
+    scalar_t *localCutWeights,
+    scalar_t *globalCutWeights,
+
+    partId_t allDone,
+    partId_t *myNonDoneCounts,
+    bool useBinarySearch
 ){
 
-  partId_t recteLinearCount = 0;
+  partId_t recteLinearCutCount = 0;
   scalar_t *cutCoordinates_tmp = cutCoordinates;
   partId_t noCuts = partNo - 1;
   size_t total_part_count = partNo + size_t (noCuts) ;
@@ -1593,10 +1554,10 @@ void pqJagged_1DPart_simple(
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 
   Teuchos::PQJaggedCombinedReductionOp<int, scalar_t> reductionOp(
-      total_part_count , noCuts  , noCuts , k);
+      total_part_count , noCuts  , noCuts , concurrentPartCount);
 
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel shared(allDone,  recteLinearCount)
+#pragma omp parallel shared(allDone,  recteLinearCutCount)
 #endif
   {
     int me = 0;
@@ -1610,17 +1571,15 @@ void pqJagged_1DPart_simple(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-    for(partId_t i = 0; i < noCuts * k; ++i){
+    for(partId_t i = 0; i < noCuts * concurrentPartCount; ++i){
       isDone[i] = false;
       partId_t ind = i / noCuts;
-      cutLowerBounds[i] = globalMinMax[ind];
-      //cout << "L:" << cutLowerBounds[i] << endl;
-      cutUpperBounds[i] = globalMinMax[ind + k];
-      //cout << "U:" << cutUpperBounds[i] << endl;
-      cutUpperWeight[i] = globalMinMax[ind + 2 * k];
+      cutLowerBounds[i] = globalMinMaxTotal[ind];
+      cutUpperBounds[i] = globalMinMaxTotal[ind + concurrentPartCount];
+      cutUpperWeight[i] = globalMinMaxTotal[ind + 2 * concurrentPartCount];
       cutLowerWeight[i] = 0;
       if(allowNonRectelinearPart){
-        nonRectelinearPart[i] = 0;
+        nonRectelinearPartRatios[i] = 0;
       }
     }
 
@@ -1642,10 +1601,8 @@ void pqJagged_1DPart_simple(
         }
 */
 
-      for (partId_t kk = 0; kk < k; ++kk){
-
-        if (globalMinMax[kk] > globalMinMax[kk + k]) continue;
-
+      for (partId_t kk = 0; kk < concurrentPartCount; ++kk){
+        if (/*globalMinMax[kk] > globalMinMax[kk + k] ||*/ myNonDoneCounts[kk] == 0) continue;
         partId_t cutShift = noCuts * kk;
         size_t totalPartShift = total_part_count * kk;
 
@@ -1654,73 +1611,39 @@ void pqJagged_1DPart_simple(
         scalar_t *myCurrentLeftClosest = myLeftClosest + cutShift;
         scalar_t *myCurrentRightClosest = myRightClosest + cutShift;
 
-
-
-        partId_t current = curr + kk;
+        partId_t current = currentPartBeginIndex + kk;
         lno_t coordinateBegin = current ==0 ? 0: inTotalCounts[current -1];
         lno_t coordinateEnd = inTotalCounts[current];
         scalar_t *cutCoordinates_ = cutCoordinates_tmp + kk * noCuts;
 
-
-
         pqJagged_1DPart_getPartWeights<scalar_t, lno_t>(
             total_part_count,
             noCuts,
+            maxScalar,
+            _EPSILON,
+            numThreads,
+            coordinateBegin,
+            coordinateEnd,
+            partitionedPointPermutations,
+            pqJagged_coordinates,
+            pqJagged_uniformWeights,
+            pqJagged_weights,
+            cutCoordinates_,
             currentDone,
             myCurrentPartWeights,
             myCurrentLeftClosest,
             myCurrentRightClosest,
-            maxScalar,
-            coordinateBegin,
-            coordinateEnd,
-            partitionedPointPermutations,
-            pqJagged_uniformWeights,
-            pqJagged_weights,
-            pqJagged_coordinates,
-            cutCoordinates_,
-            _EPSILON,
-            numThreads
-        );
-/*
-#pragma omp single
-        {
-          for(partId_t i = 0; i < total_part_count ; ++i){
-            cout << "k:" << kk << " line:" << i << " " << myCurrentPartWeights[i] << endl;
-          }
-
-        }
-        */
-
+            useBinarySearch);
       }
-
-
-      //size_t tlrShift = (total_part_count + 2 * noCuts) * kk;
-      //scalar_t *tlr = totalPartWeights_leftClosest_rightCloset ;
 
       accumulateThreadResults<scalar_t>(
-          noCuts, total_part_count, isDone,
+          noCuts, total_part_count, concurrentPartCount,
+          numThreads, isDone,
           leftClosestDistance, rightClosestDistance, partWeights,
-          totalPartWeights_leftClosest_rightCloset,
-          localMinMax, k,
-          numThreads
+          localMinMaxTotal,
+          local_totalPartWeights_leftClosest_rightCloset,
+          useBinarySearch
       );
-/*
-#pragma omp single
-      {
-        for (partId_t kk = 0; kk < k; ++kk){
-
-          size_t totalPartShift = (total_part_count + 2 * noCuts) * kk;
-          float *myCurrentPartWeights = totalPartWeights_leftClosest_rightCloset + totalPartShift;
-          for(partId_t i = 0; i < total_part_count ; ++i){
-            cout << "after accumulation k:" << kk <<  " line:" << i << " " << myCurrentPartWeights[i] << endl;
-          }
-        }
-
-      }
-*/
-
-
-
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
@@ -1728,8 +1651,8 @@ void pqJagged_1DPart_simple(
       {
         try{
           reduceAll<int, scalar_t>(*comm, reductionOp,
-              (total_part_count + 2 * noCuts) * k,
-              totalPartWeights_leftClosest_rightCloset,
+              (total_part_count + 2 * noCuts) * concurrentPartCount,
+              local_totalPartWeights_leftClosest_rightCloset,
               global_totalPartWeights_leftClosest_rightCloset
           );
         }
@@ -1737,71 +1660,76 @@ void pqJagged_1DPart_simple(
         Z2_THROW_OUTSIDE_ERROR(*env)
       }
 
-      for (partId_t kk = 0; kk < k; ++kk){
+      for (partId_t kk = 0; kk < concurrentPartCount; ++kk){
 
 
-        if (globalMinMax[kk] > globalMinMax[kk + k]) continue;
+        if (/*globalMinMax[kk] > globalMinMax[kk + k] || */myNonDoneCounts[kk] == 0) continue;
         partId_t cutShift = noCuts * kk;
-        //size_t totalPartShift = total_part_count * kk;
         size_t tlrShift = (total_part_count + 2 * noCuts) * kk;
 
-
-        scalar_t *tw = totalPartWeights_leftClosest_rightCloset  + tlrShift ;
-
+        scalar_t *localPartWeights = local_totalPartWeights_leftClosest_rightCloset  + tlrShift ;
         scalar_t *gtlr = global_totalPartWeights_leftClosest_rightCloset + tlrShift;
-
-        scalar_t *glc = gtlr + total_part_count;
-        scalar_t *grc = gtlr + total_part_count + noCuts;
-        scalar_t *gtw = gtlr;
-        /*
-        for (partId_t ss = 0; ss < total_part_count; ++ss){
-          cout << "ss:" << ss << " gtlr:" << gtlr[ss] << endl;
-        }
-        */
-
+        scalar_t *glc = gtlr + total_part_count; //left closest points
+        scalar_t *grc = gtlr + total_part_count + noCuts; //right closest points
+        scalar_t *globalPartWeights = gtlr;
         bool *currentDone = isDone + cutShift;
-        scalar_t *currentCutPartRatios = cutPartRatios + (noCuts + 1) * kk;
-        float *currentnonRectelinearPart = nonRectelinearPart + cutShift;
+        scalar_t *currentTargetPartWeightRatios = targetPartWeightRatios + (noCuts + 1) * kk;
+        float *currentnonRectelinearPartRatios = nonRectelinearPartRatios + cutShift;
 
-        scalar_t minCoordinate = globalMinMax[kk];
-        scalar_t maxCoordinate = globalMinMax[kk + k];
-        scalar_t globalTotalWeight = globalMinMax[kk + k * 2];
+        scalar_t minCoordinate = globalMinMaxTotal[kk];
+        scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPartCount];
+        scalar_t globalTotalWeight = globalMinMaxTotal[kk + concurrentPartCount * 2];
         scalar_t *currentcutLowerWeight = cutLowerWeight + cutShift;
         scalar_t *currentcutUpperWeight = cutUpperWeight + cutShift;
         scalar_t *currentcutUpperBounds = cutUpperBounds + cutShift;
         scalar_t *currentcutLowerBounds = cutLowerBounds + cutShift;
 
-        getNewCoordinates_simple<scalar_t>(total_part_count, gtw, currentDone, currentCutPartRatios,
-            globalTotalWeight, imbalanceTolerance, allDone, currentcutUpperBounds, currentcutLowerBounds,
-            cutCoordinates_tmp + cutShift, noCuts,maxCoordinate, minCoordinate, glc,
-            grc,currentcutLowerWeight, currentcutUpperWeight,cutCoordinatesWork +cutShift,
-            currentnonRectelinearPart,
-            allowNonRectelinearPart, maxScalar, tw,
-            env,comm,
-            &recteLinearCount, cutWeights, globalCutWeights, 0, noCuts);
-      }
+        partId_t prevDoneCount = myNonDoneCounts[kk];
+        getNewCoordinates<scalar_t>(
+            env, comm,
+            total_part_count, noCuts, maxCoordinate, minCoordinate, globalTotalWeight, imbalanceTolerance, maxScalar,
+            globalPartWeights, localPartWeights, currentTargetPartWeightRatios, currentDone,
 
+            cutCoordinates_tmp + cutShift, currentcutUpperBounds, currentcutLowerBounds,
+            glc, grc, currentcutLowerWeight, currentcutUpperWeight,
+            cutCoordinatesWork +cutShift, //new cut coordinates
+
+            allowNonRectelinearPart,
+            currentnonRectelinearPartRatios,
+            &recteLinearCutCount,
+            localCutWeights,
+            globalCutWeights,
+            myNonDoneCounts[kk]
+        );
+
+        partId_t reduction = prevDoneCount - myNonDoneCounts[kk];
+#ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
+#endif
+        {
+          allDone -= reduction;
+        }
+      }
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp single
+#endif
       {
       scalar_t *t = cutCoordinates_tmp;
       cutCoordinates_tmp = cutCoordinatesWork;
       cutCoordinatesWork = t;
       }
     }
-
+/*
     if(comm->getRank() == 0)
       if(me == 0) cout << "it:" << iteration << endl;
+*/
     if (cutCoordinates != cutCoordinates_tmp){
-
-
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-      for(partId_t i = 0; i < noCuts *k; ++i){
+      for(partId_t i = 0; i < noCuts *concurrentPartCount; ++i){
         cutCoordinates[i] = cutCoordinates_tmp[i];
       }
-
-
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
@@ -1820,38 +1748,68 @@ void pqJagged_1DPart_simple(
 
 /*! \brief Function that determines the permutation indices of the coordinates.
  * \param partNo is the number of parts.
- * \param numCoordsInPart is the number of points in the current part.
  * \param noThreads is the number of threads avaiable for each processor.
- * \param pqJagged_coordinates is 1 dimensional array holding the coordinate values.
- * \param cutCoordinates is 1 dimensional array holding the cut coordinates.
- * \param totalCounts are the number points in each output part.
+ *
  * \param partitionedPointPermutations is the indices of coordinates in the given partition.
- * \param newpartitionedPointPermutations is the indices of coordinates calculated for the partition on next dimension.
+ * \param pqJagged_coordinates is 1 dimensional array holding the coordinate values.
+ * \param pqJagged_uniformWeights is a boolean value if the points have uniform weights.
+ * \param pqJagged_weights is 1 dimensional array holding the weights of points.
+ *
+ * \param cutCoordinates is 1 dimensional array holding the cut coordinates.
  * \param coordinateBegin is the start index of the given partition on partitionedPointPermutations.
  * \param coordinateEnd is the end index of the given partition on partitionedPointPermutations.
+ * \param numLocalCoord is the number of local coordinates.
+ *
+ * \param allowNonRectelinearPart is the boolean value whether partitioning should allow distributing the points on same coordinate to different parts.
+ * \param actual_ratios holds how much percentage of the coordinates on the cutline should be put on left side.
+ * \param localPartWeights is the local totalweight of the processor.
+ * \param partWeights is the two dimensional array holding the weight of parts for each thread. Assumes there are 2*P - 1 parts (cut lines are seperate parts).
+ * \param nonRectelinearRatios is the two dimensional work array holding ratios of weights to be put left and right of the cut line.
+
  * \param coordinate_linked_list is the array with size as the number of coordinates.
  * \param coordinate_starts is the two dimensional array with size as the number of parts to be divided in current coordinate dimension. 1 dimension for each thread.
  * \param coordinate_ends is the two dimensional array with size as the number of parts to be divided in current coordinate dimension. 1 dimension for each thread.
- * \param numLocalCoord is the number of local coordinates.
+ * \param partPointCounts is the two dimensional array holding the number of points in each part for each thread.
+ *
+ * \param newpartitionedPointPermutations is the indices of coordinates calculated for the partition on next dimension.
+ * \param totalCounts are the number points in each output part.
+ * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
  */
 template <typename lno_t, typename scalar_t>
-void getChunksFromCoordinates(partId_t partNo, int noThreads,
-    scalar_t *pqJagged_coordinates, scalar_t *cutCoordinates, lno_t *totalCounts,
+void getChunksFromCoordinates(
+    partId_t partNo,
+    int noThreads,
+
     lno_t *partitionedPointPermutations,
-    lno_t *newpartitionedPointPermutations, lno_t coordinateBegin, lno_t coordinateEnd,
-    lno_t *coordinate_linked_list, lno_t **coordinate_starts, lno_t **coordinate_ends, lno_t numLocalCoord, float *actual_ratios, bool allowNonRectelinearPart,
-    scalar_t *totalPartWeights, scalar_t *coordWeights, bool pqJagged_uniformWeights, int myRank, int worldSize, double **partWeights, float **nonRectelinearRatios,
-    lno_t ** partPointCounts){
+    scalar_t *pqJagged_coordinates,
+    bool pqJagged_uniformWeights,
+    scalar_t *coordWeights,
+    scalar_t *cutCoordinates,
+    lno_t coordinateBegin,
+    lno_t coordinateEnd,
+    lno_t numLocalCoord, //TODO delete me.
 
-#ifndef BINARYCUTSEARCH
+
+    bool allowNonRectelinearPart,
+    float *actual_ratios,
+    scalar_t *localPartWeights,
+    double **partWeights,
+    float **nonRectelinearRatios,
+
+    lno_t *coordinate_linked_list,
+    lno_t **coordinate_starts,
+    lno_t **coordinate_ends,
+    lno_t ** partPointCounts,
+
+    lno_t *newpartitionedPointPermutations,
+    lno_t *totalCounts,
+    bool useBinarySearch
+    ){
+
   lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
-#endif
-  //++myRank;
-
   partId_t noCuts = partNo - 1;
-
-
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
+
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel
 #endif
@@ -1874,14 +1832,11 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 #endif
       for (partId_t i = 0; i < noCuts; ++i){
         float r = actual_ratios[i];
-        scalar_t leftWeight = r * (totalPartWeights[i * 2 + 1] - totalPartWeights[i * 2]);
-        //cout << "cut:" << totalPartWeights[i * 2 + 1] << " before:" << totalPartWeights[i * 2] << endl;
-        //cout <<"i:" << i << " left:" << leftWeight << endl;
+        scalar_t leftWeight = r * (localPartWeights[i * 2 + 1] - localPartWeights[i * 2]);
         for(int ii = 0; ii < noThreads; ++ii){
           if(leftWeight > _EPSILON){
 
             scalar_t ithWeight = partWeights[ii][i * 2 + 1] - partWeights[ii][i * 2 ];
-            //cout << "ithWeight:" << ii << " is:" << ithWeight << endl;
             if(ithWeight < leftWeight){
               nonRectelinearRatios[ii][i] = ithWeight;
             }
@@ -1894,12 +1849,6 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
             nonRectelinearRatios[ii][i] = 0;
           }
         }
-/*
-        if(myRank == 0){
-          cout << "m:" << i << ":" <<  actual_ratios[i] << endl;
-          cout << "m:" << i << ":" <<  myRatios[i]  << endl;
-        }
-        */
       }
 
 
@@ -1909,12 +1858,9 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
             myRatios[i] -= myRatios[i - 1] ;
           }
           myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
-
         }
       }
-
     }
-
 
     pqJagged_PartVertices <lno_t, partId_t> pqPV;
     pqPV.set(coordinate_linked_list, myStarts, myEnds);
@@ -1924,8 +1870,9 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-    for (lno_t i = 0; i < numLocalCoord; ++i){
-      coordinate_linked_list[i] = -1;
+    for (lno_t i = coordinateBegin; i < coordinateEnd; ++i){
+      int ii = partitionedPointPermutations[i];
+      coordinate_linked_list[ii] = -1;
     }
 
     for (partId_t i = 0; i < partNo; ++i){
@@ -1935,229 +1882,120 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 
 
     //determine part of each point
-#ifdef BINARYCUTSEARCH
+    if(useBinarySearch){
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-    for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+      for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 
-      int i = partitionedPointPermutations[ii];
-      partId_t lc = 0;
-      partId_t uc = noCuts - 1;
+        int i = partitionedPointPermutations[ii];
+        partId_t lc = 0;
+        partId_t uc = noCuts - 1;
 
+        //bool isInserted = false;
+        bool onLeft = false;
+        bool onRight = false;
+        partId_t lastPart = -1;
+        while(uc >= lc)
+        {
+          lastPart = -1;
+          onLeft = false;
+          onRight = false;
+          partId_t j = (uc + lc) / 2;
+          scalar_t distance = pqJagged_coordinates[i] - cutCoordinates[j];
+          scalar_t absdistance = fabs(distance);
 
-      //bool isInserted = false;
-      bool onLeft = false;
-      bool onRight = false;
-      partId_t lastPart = -1;
-      while(uc >= lc)
-      {
-
-        lastPart = -1;
-        onLeft = false;
-        onRight = false;
-        partId_t j = (uc + lc) / 2;
-        scalar_t distance = pqJagged_coordinates[i] - cutCoordinates[j];
-        scalar_t absdistance = fabs(distance);
-
-
-
-        //cout << "i:" << i << " abs:" << absdistance << endl;
-        if(allowNonRectelinearPart /*&& myRatios[j] > _EPSILON * EPS_SCALE * 10*/ /* myRatios[j] > fabs(myRatios[j] - w)*/ && absdistance < _EPSILON ){
-
-          scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
-
-          partId_t jj = j -1;
-
-          while(jj >= 0 && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON){
-            --jj;
-          }
-          ++jj;
-          for (;jj < noCuts && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON; ++jj){
-
-            if(myRatios[jj] > _EPSILON * EPS_SCALE * 10 ){
-              //cout << "jj:" << jj << "myR:" << myRatios[jj] << " n:" << myRatios[jj] - w << endl;
-              myRatios[jj] -= w;
-              if(myRatios[jj] < 0 && jj < noCuts - 1 && fabs(cutCoordinates[jj+1] - cutCoordinates[jj]) < _EPSILON){
-                myRatios[jj + 1] += myRatios[jj];
-              }
-
-              onLeft = true;
-              lastPart = jj;
-              break;
-            }
-          }
-          if(!onLeft){
-            onRight= true;
-            lastPart = jj -1;
-          }
-
-          break;
-/*
-          if(myRatios[j] > _EPSILON * EPS_SCALE * 10 ){
-
-          //cout << "i:" << i << " pqJagged_coordinates[i]:" << pqJagged_coordinates[i] << " coordWeights[i]:" << coordWeights[i] << endl;
-
-          scalar_t decrease = w;
-          myRatios[j] -= decrease;
-
-
-          if(myRatios[j] < 0 && j < noCuts - 1 && fabs(cutCoordinates[j+1] - cutCoordinates[j]) < _EPSILON){
-            myRatios[j + 1] += myRatios[j];
-          }
-          //isInserted = true;
-          onLeft = true;
-          lastPart = j;
-          //pqPV.inserToPart(j, i);
-          //myPartPointCounts[j] +=  1;
-          break;
-          }
-          else {
+          if(allowNonRectelinearPart /*&& myRatios[j] > _EPSILON * EPS_SCALE * 10*/ /* myRatios[j] > fabs(myRatios[j] - w)*/ && absdistance < _EPSILON ){
+            scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
             partId_t jj = j -1;
-            bool inserted = false;
             while(jj >= 0 && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON){
+              --jj;
+            }
+            ++jj;
+            for (;jj < noCuts && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON; ++jj){
               if(myRatios[jj] > _EPSILON * EPS_SCALE * 10 ){
-
-                //cout << "i:" << i << " pqJagged_coordinates[i]:" << pqJagged_coordinates[i] << " coordWeights[i]:" << coordWeights[i] << endl;
-
-                scalar_t decrease = w;
-                myRatios[jj] -= decrease;
-
+                myRatios[jj] -= w;
                 if(myRatios[jj] < 0 && jj < noCuts - 1 && fabs(cutCoordinates[jj+1] - cutCoordinates[jj]) < _EPSILON){
                   myRatios[jj + 1] += myRatios[jj];
                 }
-                //isInserted = true;
                 onLeft = true;
                 lastPart = jj;
-                //pqPV.inserToPart(j, i);
-                //myPartPointCounts[j] +=  1;
-                inserted = true;
                 break;
-              }
-              --jj;
-            }
-            if(inserted){
-              break;
-            } else {
-              jj = j + 1;
-
-              while(jj < noCuts && fabs(cutCoordinates[jj] - cutCoordinates[j]) < _EPSILON){
-                cout << "trying i:" << i << " to " << jj << endl;
-                if(myRatios[jj] > _EPSILON * EPS_SCALE * 10 ){
-                  cout << "w:" << w << endl;
-                  //cout << "i:" << i << " pqJagged_coordinates[i]:" << pqJagged_coordinates[i] << " coordWeights[i]:" << coordWeights[i] << endl;
-
-                  scalar_t decrease = w;
-                  myRatios[jj] -= decrease;
-                  cout << "j:"<<j<<" mm:" << myRatios[j] << endl;
-
-                  if(myRatios[jj] < 0 && jj < noCuts - 1 && fabs(cutCoordinates[jj+1] - cutCoordinates[jj]) < _EPSILON){
-                    myRatios[jj + 1] += myRatios[jj];
-                  }
-                  //isInserted = true;
-                  onLeft = true;
-                  lastPart = jj;
-                  inserted = true;
-                  //pqPV.inserToPart(j, i);
-                  //myPartPointCounts[j] +=  1;
-                  break;
-                }
-                ++jj;
-              }
-              if(inserted){
-                break;
-              }
-              else {
-                cout << "strying i:" << i << " to " << jj - 1 << endl;
-                onRight= true;
-                lastPart = jj - 1;
-                break;
-
               }
             }
-          }
-          */
-        }
-        else {
-          if (distance < 0) {
-            uc = j - 1;
-            onLeft = true;
-            lastPart = j;
+            if(!onLeft){
+              onRight= true;
+              lastPart = jj -1;
+            }
+
+            break;
           }
           else {
-            lc = j + 1;
-            onRight = true;
-            lastPart = j;
+            if (distance < 0) {
+              uc = j - 1;
+              onLeft = true;
+              lastPart = j;
+            }
+            else {
+              lc = j + 1;
+              onRight = true;
+              lastPart = j;
+            }
           }
         }
+        if(onRight){
+          pqPV.inserToPart(lastPart + 1, i);
+          myPartPointCounts[lastPart + 1] +=  1;
+        }
+        else if(onLeft){
+          pqPV.inserToPart(lastPart , i);
+          myPartPointCounts[lastPart] +=  1;
+        }
       }
-      //if(!isInserted){
-      if(onRight){
-        //cout << "inserting i:" << i << " to " << lastPart + 1 << endl;
-        pqPV.inserToPart(lastPart + 1, i);
-        myPartPointCounts[lastPart + 1] +=  1;
+      for(partId_t i = 1; i < partNo; ++i){
+        myPartPointCounts[i] += myPartPointCounts[i-1];
       }
-      else if(onLeft){
-        //cout << "inserting i:" << i << " to " << lastPart << endl;
-        pqPV.inserToPart(lastPart , i);
-        myPartPointCounts[lastPart] +=  1;
-      }
-      /*else {
-        cout << "ERROR" << endl;
-      }*/
-      //}
-    }
-    for(partId_t i = 1; i < partNo; ++i){
-      myPartPointCounts[i] += myPartPointCounts[i-1];
-    }
-#endif
-
-#ifndef BINARYCUTSEARCH
+    } else {
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-    for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+      for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 
-      lno_t i = partitionedPointPermutations[ii];
+        lno_t i = partitionedPointPermutations[ii];
 
-      bool inserted = false;
-      for(partId_t j = 0; j < noCuts; ++j){
-        scalar_t distance = pqJagged_coordinates[i] - cutCoordinates[j];
-        scalar_t absdistance = fabs(distance);
+        bool inserted = false;
+        for(partId_t j = 0; j < noCuts; ++j){
+          scalar_t distance = pqJagged_coordinates[i] - cutCoordinates[j];
+          scalar_t absdistance = fabs(distance);
 
-        if (allowNonRectelinearPart && myRatios[j] > _EPSILON * EPS_SCALE * 10 && absdistance < _EPSILON ){
-          /*
-          if(j == 5 || j == 6 || j ==7 ){
-            cout << "myRatios["<<j<<"]:" <<  myRatios[j] << endl;
+          if (allowNonRectelinearPart && myRatios[j] > _EPSILON * EPS_SCALE * 10 && absdistance < _EPSILON ){
+            scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+            scalar_t decrease = w;
+            myRatios[j] -= decrease;
+
+            if(myRatios[j] < 0 && j < noCuts - 1 && fabs(cutCoordinates[j+1] - cutCoordinates[j]) < _EPSILON){
+              myRatios[j + 1] += myRatios[j];
+            }
+            inserted = true;
+            pqPV.inserToPart(j, i);
+            break;
           }
-          */
-          scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
-          scalar_t decrease = w;
-          myRatios[j] -= decrease;
-
-          if(myRatios[j] < 0 && j < noCuts - 1 && fabs(cutCoordinates[j+1] - cutCoordinates[j]) < _EPSILON){
-            myRatios[j + 1] += myRatios[j];
+          else if (distance < 0 && absdistance > _EPSILON){
+            pqPV.inserToPart(j, i);
+            inserted = true;
+            break;
           }
-          inserted = true;
-          pqPV.inserToPart(j, i);
-          break;
-        }
-        else if (distance < 0 && absdistance > _EPSILON){
-          pqPV.inserToPart(j, i);
-          inserted = true;
-          break;
-        }
-        else {
-          myPartPointCounts[j] -=	 1;
-        }
+          else {
+            myPartPointCounts[j] -=	 1;
+          }
 
-      }
-      if(!inserted){
-        pqPV.inserToPart(noCuts, i);
+        }
+        if(!inserted){
+          pqPV.inserToPart(noCuts, i);
+        }
       }
     }
-#endif
     //accumulate the starts of each thread.
 
 #ifdef HAVE_ZOLTAN2_OMP
@@ -2191,23 +2029,29 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
       coordinate_starts[0][i] = firstHead >= noThreads ? -1:coordinate_starts[firstHead][i];
     }
 
-    //accumulate the count.
-
+    if(useBinarySearch){
+      //accumulate the count.
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-    for(partId_t j = 0; j < partNo; ++j){
-      lno_t pwj = 0;
-      for (int i = 0; i < noThreads; ++i){
-        pwj += partPointCounts[i][j];
+      for(partId_t j = 0; j < partNo; ++j){
+        lno_t pwj = 0;
+        for (int i = 0; i < noThreads; ++i){
+          pwj += partPointCounts[i][j];
+        }
+        totalCounts[j] = pwj;
       }
-#ifndef BINARYCUTSEARCH
-      totalCounts[j] = pwj + numCoordsInPart;
+    } else {
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
 #endif
-#ifdef BINARYCUTSEARCH
-      totalCounts[j] = pwj;
-#endif
-      //cout << "j:" << j << " cnt:"  << totalCounts[j] << endl;
+      for(partId_t j = 0; j < partNo; ++j){
+        lno_t pwj = 0;
+        for (int i = 0; i < noThreads; ++i){
+          pwj += partPointCounts[i][j];
+        }
+        totalCounts[j] = pwj + numCoordsInPart;
+      }
     }
 
 
@@ -2216,28 +2060,20 @@ void getChunksFromCoordinates(partId_t partNo, int noThreads,
 #pragma omp for
 #endif
     for(partId_t i = 0; i < partNo; ++i){
-      //cout << "starting part:" << i << endl;
       lno_t nextPoint = coordinate_starts[0][i];
       lno_t pcnt = 0;
 
       lno_t prevCount = coordinateBegin;
       if (i > 0) prevCount = totalCounts[i -1] + coordinateBegin;
 
-      //cout << "prevCount" << prevCount << endl;
       while(nextPoint != -1){
-        //cout << "next:" << nextPoint << " is in Part:" << i << endl;
         newpartitionedPointPermutations[prevCount + pcnt++] = nextPoint;
         nextPoint = coordinate_linked_list[nextPoint];
       }
     }
   }
-/*
-  for(partId_t i = 0; i < partNo; ++i){
-    cout << "p:" << i << " total_cnt:" <<  totalCounts[i] << endl;
-  }
-*/
-
 }
+
 
 template <typename T>
 T *allocMemory(size_t size){
@@ -2367,11 +2203,6 @@ void AlgPQJagged(
   scalar_t *allCutCoordinates = allocMemory< scalar_t>(totalDimensionCut);
   //scalar_t *allCutCoordinates = allocMemory< scalar_t>(maxCutNo * k);
 
-/*
-  for (partId_t i = 0; i < totalDimensionCut; ++i){
-    allCutCoordinates[i] = 0;
-  }
-*/
   lno_t *partitionedPointCoordinates =  allocMemory< lno_t>(numLocalCoords);
   lno_t *newpartitionedPointCoordinates = allocMemory< lno_t>(numLocalCoords);
   scalar_t *max_min_array =  allocMemory< scalar_t>(numThreads * 2);
@@ -2394,8 +2225,6 @@ void AlgPQJagged(
   //initially there is a single partition
   lno_t currentPartitionCount = 1;
   //single partition starts at index-0, and ends at numLocalCoords
-  //lno_t coordinateBegin = 0;
-  //lno_t coordinateEnd = numLocalCoords;
 
   //inTotalCounts array holds the end points in partitionedPointCoordinates array
   //for each partition. Initially sized 1, and single element is set to numLocalCoords.
@@ -2416,6 +2245,7 @@ void AlgPQJagged(
     coordinate_starts[i] = allocMemory<lno_t>(maxPartNo);
     coordinate_ends[i] = allocMemory<lno_t>(maxPartNo);
   }
+
 
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
@@ -2469,7 +2299,7 @@ void AlgPQJagged(
 #endif
 #endif
 
-  scalar_t *cutPartRatios = allocMemory<scalar_t>(maxPartNo * concurrentPartCount); // the weight ratios at left side of the cuts. First is 0, last is 1.
+  scalar_t *targetPartWeightRatios = allocMemory<scalar_t>(maxPartNo * concurrentPartCount); // the weight ratios at left side of the cuts. First is 0, last is 1.
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
   firstTouch<scalar_t>(cutPartRatios, maxCutNo);
@@ -2484,7 +2314,9 @@ void AlgPQJagged(
   scalar_t *globalMinMaxTotal = allocMemory<scalar_t>(3 * concurrentPartCount);
 
   bool *isDone = allocMemory<bool>(maxCutNo * concurrentPartCount);
+  partId_t *myNonDoneCount =  allocMemory<partId_t>(concurrentPartCount);
   double **partWeights = allocMemory<double *>(numThreads);
+  double **pws = allocMemory<double *>(numThreads);
 
   scalar_t **leftClosestDistance = allocMemory<scalar_t *>(numThreads);
   scalar_t **rightClosestDistance = allocMemory<scalar_t *>(numThreads);
@@ -2536,61 +2368,81 @@ void AlgPQJagged(
   env->timerStop(MACRO_TIMERS, "PQJagged Problem_Init");
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning");
+
+
+  int myRank = comm->getRank();
+  int worldSize = comm->getSize();
+
   for (int i = 0; i < partArraySize; ++i){
     if(partNo[i] == 1) continue;
     int coordInd = i % coordDim;
     string istring = toString<int>(i);
 
     env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring);
-
     outTotalCounts = allocMemory<lno_t>(currentPartitionCount * partNo[i]);
-    partId_t currentOut = 0;
-    //partId_t j = 0;
-    partId_t previousEnd = 0;
 
+    partId_t currentOut = 0;
+    partId_t previousEnd = 0;
     scalar_t * pqCoord = pqJagged_coordinates[coordInd];
     partId_t currentWorkPart = 0;
     partId_t concurrentPart = min(currentPartitionCount - currentWorkPart, concurrentPartCount);
+    bool useBinarySearch = false;
+    if(partNo[i] > BINARYCUTOFF){
+      useBinarySearch = true;
+    }
+
 
     for (; currentWorkPart < currentPartitionCount; currentWorkPart += concurrentPart){
 
       concurrentPart = min(currentPartitionCount - currentWorkPart, concurrentPartCount);
-      if(comm->getRank() == 0)
+      /*
+      if(myRank == 0)
         cout << "i: " << i << " j:" << currentWorkPart << " ";
+       */
       //scalar_t used_imbalance = imbalanceTolerance * (LEAF_IMBALANCE_FACTOR + (1 - LEAF_IMBALANCE_FACTOR)   / leftPartitions) * 0.7;
       scalar_t used_imbalance = 0;
 
       env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring +"_min_max");
-      for(int kk = 0; kk < concurrentPart; ++kk){
-        partId_t currentPart = currentWorkPart + kk;
 
+      for(int kk = 0; kk < concurrentPart; ++kk){
+
+        partId_t currentPart = currentWorkPart + kk;
         lno_t coordinateEnd= inTotalCounts[currentPart];
         lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
-        pqJagged_getLocalMinMaxTotalCoord<scalar_t, lno_t>(pqCoord, pqJagged_weights[0], pqJagged_uniformWeights,
-            localMinMaxTotal[kk], localMinMaxTotal[kk + concurrentPart], localMinMaxTotal[kk + 2*concurrentPart],
-            numThreads, partitionedPointCoordinates, coordinateBegin, coordinateEnd, max_min_array, maxScalar_t, minScalar_t);
+
+        pqJagged_getLocalMinMaxTotalCoord<scalar_t, lno_t>(
+            partitionedPointCoordinates,
+            pqCoord,
+            pqJagged_uniformWeights,
+            pqJagged_weights[0],
+            numThreads,
+            coordinateBegin,
+            coordinateEnd,
+            max_min_array,
+            maxScalar_t,
+            minScalar_t,
+            localMinMaxTotal[kk], //min coordinate
+            localMinMaxTotal[kk + concurrentPart], //max coordinate
+            localMinMaxTotal[kk + 2*concurrentPart] //total weight);
+                          );
       }
       pqJagged_getGlobalMinMaxTotalCoord<scalar_t>(comm,env, concurrentPart, localMinMaxTotal, globalMinMaxTotal);
 
       env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring +"_min_max");
 
 
-      partId_t pEnd = currentOut + partNo[i] * concurrentPart;
-      for (partId_t ii = currentOut; ii < pEnd; ++ii){
-        outTotalCounts[ii] = 0;
-      }
+
 
       partId_t allDone = 0;
       for(int kk = 0; kk < concurrentPart; ++kk){
         scalar_t minCoordinate = globalMinMaxTotal[kk];
         scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
-        //scalar_t globalTotalWeight = globalMinMax[kk + concurrentPart * 2];
-
-
         scalar_t *usedCutCoordinate = cutCoordinates + (partNo[i] - 1) * kk;
-        scalar_t *usedCutPartRatios = cutPartRatios + (partNo[i]) * kk;
+        scalar_t *usedCutPartRatios = targetPartWeightRatios + (partNo[i]) * kk;
+
         if(minCoordinate <= maxCoordinate){
           allDone += partNo[i] - 1;
+          myNonDoneCount[kk] = partNo[i] - 1;
           env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_cut_coord");
           pqJagged_getCutCoord_Weights<scalar_t>(
               minCoordinate, maxCoordinate,
@@ -2599,105 +2451,115 @@ void AlgPQJagged(
           );
           env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_cut_coord");
         }
+        else {
+          myNonDoneCount[kk] = 0;
+        }
       }
 
       env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_1d");
-      pqJagged_1DPart_simple<scalar_t, lno_t>(
-          env, comm, pqCoord, pqJagged_weights[0], pqJagged_uniformWeights[0],
+      pqJagged_1D_Partition<scalar_t, lno_t>(
+          env, comm,
+          partitionedPointCoordinates,
+          pqCoord, pqJagged_uniformWeights[0], pqJagged_weights[0],
+          targetPartWeightRatios,
           globalMinMaxTotal,localMinMaxTotal,
           partNo[i], numThreads,
-          used_imbalance, cutCoordinates,
-          partitionedPointCoordinates,
-          cutCoordinatesWork,
-          cutPartRatios,
-          cutUpperBounds,
-          cutLowerBounds,
-          cutLowerWeight,
-          cutUpperWeight,
-          isDone,
-          partWeights, /*todo*/
-          leftClosestDistance,
-          rightClosestDistance,
-          totalPartWeights_leftClosests_rightClosests,
-          global_totalPartWeights_leftClosests_rightClosests,
-          nonRectelinearPart,/*todo*/
-          allowNonRectelinearPart,
           maxScalar_t,
           minScalar_t,
-          cutWeights,
-          globalCutWeights,
-          inTotalCounts,
+          used_imbalance,
           currentWorkPart,
           concurrentPart,
-          allDone
-      );
+          inTotalCounts,
+          cutCoordinates,
+          cutCoordinatesWork,
+          leftClosestDistance,
+          rightClosestDistance,
+          cutUpperBounds,
+          cutLowerBounds,
+          cutUpperWeight,
+          cutLowerWeight,
+          isDone,
+          partWeights,
+          totalPartWeights_leftClosests_rightClosests,
+          global_totalPartWeights_leftClosests_rightClosests,
+          allowNonRectelinearPart,
+          nonRectelinearPart,
+          cutWeights,
+          globalCutWeights,
+          allDone,
+          myNonDoneCount,
+          useBinarySearch
+          );
 
       env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_1d");
+
+      partId_t pEnd = currentOut + partNo[i] * concurrentPart;
+      for (partId_t ii = currentOut; ii < pEnd; ++ii){
+        outTotalCounts[ii] = 0;
+      }
 
       env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_chunks");
       for(int kk = 0; kk < concurrentPart; ++kk){
 
         if(globalMinMaxTotal[kk] > globalMinMaxTotal[kk + concurrentPart]) continue;
-        //cout << "kk:" <<  kk << endl;
         partId_t curr = currentWorkPart + kk;
         lno_t coordinateEnd= inTotalCounts[curr];
         lno_t coordinateBegin = curr==0 ? 0: inTotalCounts[curr -1];
         partId_t cutShift = (partNo[i] - 1) * kk;
-        //partId_t partShift = (partNo[i]) * kk;
         scalar_t *usedCutCoordinate = cutCoordinates + cutShift;
         float *usednonRectelinearPart = nonRectelinearPart + cutShift;
 
         scalar_t *tlr =  totalPartWeights_leftClosests_rightClosests + (4 *(partNo[i] - 1) + 1) * kk;
-        /*
-        for(int ii = 0; ii < partNo[i] - 1; ++ii){
-          cout << "r:" << ii << " is:" << usednonRectelinearPart[ii] << endl;
-        }
-        */
-        double **pws = allocMemory<double *>(numThreads);
+
         for(int ii = 0; ii < numThreads; ++ii){
           pws[ii] = partWeights[ii] +  (2 * (partNo[i] - 1) + 1) * kk;
         }
 
-        getChunksFromCoordinates<lno_t,scalar_t>(partNo[i], numThreads,
-            pqCoord, usedCutCoordinate, outTotalCounts + currentOut + kk * (partNo[i]),
-            partitionedPointCoordinates, newpartitionedPointCoordinates,
-            coordinateBegin, coordinateEnd,
-            coordinate_linked_list, coordinate_starts, coordinate_ends, numLocalCoords,
-            usednonRectelinearPart, /*todo*/
+        getChunksFromCoordinates<lno_t,scalar_t>(
+            partNo[i],
+            numThreads,
+
+            partitionedPointCoordinates,
+            pqCoord,
+            pqJagged_uniformWeights[0],
+            pqJagged_weights[0],
+
+            usedCutCoordinate,
+            coordinateBegin,
+            coordinateEnd,
+            numLocalCoords,
+
             allowNonRectelinearPart,
-            tlr, /*todo*/
-            pqJagged_weights[0], pqJagged_uniformWeights[0],
-            comm->getRank(),
-            comm->getSize(),
-            pws, /*todo*/
+            usednonRectelinearPart,
+            tlr,
+            pws,
             nonRectRatios,
-            partPointCounts);
 
-        delete []pws;
+            coordinate_linked_list,
+            coordinate_starts,
+            coordinate_ends,
+            partPointCounts,
+
+            newpartitionedPointCoordinates,
+            outTotalCounts + currentOut + kk * (partNo[i]),
+            useBinarySearch
+        );
       }
+
       env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_chunks");
-
-
-
-
       cutCoordinates += (partNo[i] - 1) * concurrentPart;
-      //cout <<"shifted by:" <<  (partNo[i] - 1) * concurrentPart << endl;
-      //partitionCoordinateBegin += coordinateBegin - coordinateEnd;
 
       for(partId_t kk = 0; kk < concurrentPart; ++kk){
         for (partId_t ii = 0;ii < partNo[i] ; ++ii){
-          //cout << "again p:" << ii << " total_cnt2:" <<  *(outTotalCounts + currentOut + ii) << endl;
-          //cout << "outTotalCounts:" << outTotalCounts[currentOut+ii ] << endl;
           outTotalCounts[currentOut+ii] += previousEnd;
-          //cout << "outTotalCounts:" << outTotalCounts[currentOut+ii] << endl;
         }
         previousEnd = outTotalCounts[currentOut + partNo[i] - 1];
         currentOut += partNo[i] ;
       }
-
-      if(comm->getRank() == 0)
+/*
+      if(myRank == 0)
         cout << endl;
-
+*/
     }
 
     lno_t * tmp = partitionedPointCoordinates;
@@ -2748,7 +2610,6 @@ void AlgPQJagged(
       */
 
     }
-    //cout << "begin:" << begin << " end:" << end << endl;
   }
   env->timerStop(MACRO_TIMERS, "PQJagged Part_Assignment");
   ArrayRCP<const gno_t> gnoList;
@@ -2762,132 +2623,68 @@ void AlgPQJagged(
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
-
-  if(comm->getRank() == 0){
+/*
+  if(myRank == 0){
     for(size_t i = 0; i < totalPartCount - 1;++i){
       cout << "cut coordinate:" << allCutCoordinates[i] << endl;
     }
   }
-
-  //freeArray<scalar_t> (global_min_max_coordinates);
-  //freeArray<scalar_t> (local_min_max_coordinates);
+*/
 
   for(int i = 0; i < numThreads; ++i){
-    //delete []coordinate_starts[i];
     freeArray<lno_t>(coordinate_starts[i]);
-    //delete []coordinate_ends[i] ;
     freeArray<lno_t>(coordinate_ends[i]);
-    //delete [] partPointCounts[i];
     freeArray<lno_t>(partPointCounts[i]);
   }
 
-  //delete []partPointCounts;
   freeArray<lno_t *>(partPointCounts);
-
-  //delete [] imbalance_tolerances;
-  //delete []coordinate_linked_list;
   freeArray<lno_t>(coordinate_linked_list);
-  //the start and end coordinate of  each part.
-  //delete []coordinate_starts;
   freeArray<lno_t *>(coordinate_starts);
-
-  //delete []coordinate_ends;
   freeArray<lno_t *>(coordinate_ends);
+  freeArray<double *> (pws);
 
-  //assign the max size to starts, as it will be reused.
   if(allowNonRectelinearPart){
-    //delete []nonRectelinearPart;
     freeArray<float>(nonRectelinearPart);
-
     for(int i = 0; i < numThreads; ++i){
-      //delete [] nonRectRatios[i];
       freeArray<float>(nonRectRatios[i]);
     }
-    //delete [] nonRectRatios;
     freeArray<float *>(nonRectRatios);
   }
 
+  freeArray<partId_t>(myNonDoneCount);
   freeArray<scalar_t>(cutWeights);
   freeArray<scalar_t>(globalCutWeights);
-
-
-  //delete [] partNo;
-  //delete []max_min_array;
   freeArray<scalar_t>(max_min_array);
-
-  //delete [] outTotalCounts;
   freeArray<lno_t>(outTotalCounts);
-
-  //delete []partitionedPointCoordinates ;
   freeArray<lno_t>(partitionedPointCoordinates);
-
-  //delete []newpartitionedPointCoordinates ;
   freeArray<lno_t>(newpartitionedPointCoordinates);
-
-  //delete []allCutCoordinates;
   freeArray<scalar_t>(allCutCoordinates);
-
-  //delete []pqJagged_coordinates;
   freeArray<scalar_t *>(pqJagged_coordinates);
-
-  //delete []pqJagged_weights;
   freeArray<scalar_t *>(pqJagged_weights);
-
-  //delete []pqJagged_uniformParts;
   freeArray<bool>(pqJagged_uniformParts);
-
   freeArray<scalar_t> (localMinMaxTotal);
   freeArray<scalar_t> (globalMinMaxTotal);
-
-  //delete []pqJagged_partSizes;
   freeArray<scalar_t *>(pqJagged_partSizes);
-
-  //delete []pqJagged_uniformWeights;
   freeArray<bool>(pqJagged_uniformWeights);
-
-
-  //delete []cutCoordinatesWork; // work array to manipulate coordinate of cutlines in different iterations.
   freeArray<scalar_t>(cutCoordinatesWork);
-
-  //delete []cutPartRatios; // the weight ratios at left side of the cuts. First is 0, last is 1.
-  freeArray<scalar_t>(cutPartRatios);
-
-  //delete []cutUpperBounds;  //to determine the next cut line with binary search
+  freeArray<scalar_t>(targetPartWeightRatios);
   freeArray<scalar_t>(cutUpperBounds);
-
-  //delete []cutLowerBounds;  //to determine the next cut line with binary search
   freeArray<scalar_t>(cutLowerBounds);
-
-  //delete []cutLowerWeight;  //to determine the next cut line with binary search
   freeArray<scalar_t>(cutLowerWeight);
-
-  //delete []cutUpperWeight;  //to determine the next cut line with binary search
   freeArray<scalar_t>(cutUpperWeight);
-
-  //delete []isDone;
   freeArray<bool>(isDone);
-
-  //delete []totalPartWeights;
   freeArray<scalar_t>(totalPartWeights_leftClosests_rightClosests);
   freeArray<scalar_t>(global_totalPartWeights_leftClosests_rightClosests);
 
   for(int i = 0; i < numThreads; ++i){
-    //delete [] partWeights[i] ;
     freeArray<double>(partWeights[i]);//freeArray<scalar_t>(partWeights[i]);
-    //delete [] rightClosestDistance[i];
     freeArray<scalar_t>(rightClosestDistance[i]);
-    //delete [] leftClosestDistance[i];
     freeArray<scalar_t>(leftClosestDistance[i]);
   }
 
-  //delete [] partWeights;
   //freeArray<scalar_t *>(partWeights);
   freeArray<double *>(partWeights);
-
-  //delete [] leftClosestDistance ;
   freeArray<scalar_t *>(leftClosestDistance);
-
-  //delete [] rightClosestDistance;
   freeArray<scalar_t *>(rightClosestDistance);
 
 
