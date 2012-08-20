@@ -231,7 +231,7 @@ uint64_t trios_get_time_ns()
 #endif
 
 #ifdef USING_MPITIME
-    // MPI doesn't really have nanosecond resolution
+    /* MPI doesn't really have nanosecond resolution */
     result = (uint64_t) (MPI_Wtime() * 1000000000.0);
 #endif
 
