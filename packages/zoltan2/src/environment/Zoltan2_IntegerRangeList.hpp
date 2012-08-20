@@ -227,7 +227,7 @@ template <typename Integral>
       return false;
   }
   else{
-    for (size_t i=0; i < valList.size()-1; i++){
+    for (typename Teuchos::Array<Integral>::size_type i=0; i < valList.size()-1; i++){
       if (valList[i] == val)
         return true;
     }
