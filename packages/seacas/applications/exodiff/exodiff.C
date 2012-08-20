@@ -82,7 +82,7 @@ struct TimeInterp
 }
 ;
 
-string Version() { return "2.58 (2012-08-20)"; }
+string Version() { return "2.59 (2012-08-20)"; }
 
 string Date() {
   char tbuf[32];
@@ -799,10 +799,11 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
 	  
 	  if (interface.interpolating && time_step == min_num_times) {
 	    // last time.  Check if final database times match within specified tolerance...
-	    if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(t2.step2))) {
+	    int final2 = file2.Num_Times();
+	    if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(final2))) {
 	      diff_flag = true;
-	      std::cout << "\t\tFinal database times differ by "
-			<< FileDiff(file1.Time(time_step1), file2.Time(t2.step2), interface.final_time_tol.type)
+	      std::cout << "\tFinal database times differ by "
+			<< FileDiff(file1.Time(time_step1), file2.Time(final2), interface.final_time_tol.type)
 			<< " which is not within specified " << interface.final_time_tol.typestr() << " tolerance of "
 			<< interface.final_time_tol.value
 			<< " (FAILED)\n";
