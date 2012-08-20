@@ -9,7 +9,7 @@
 #include "Trios_threads.h"
 #include "Trios_timer.h"
 #include "Trios_signal.h"
-#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 
 // MPI is only used to increment the PID
 #ifdef HAVE_TRIOS_MPI

@@ -10,6 +10,13 @@
 
 
 #ifdef RPC_HDR
+%#include <rpc/types.h>
+%#include <rpc/xdr.h>
+%#include "Trios_config.h"
+%#include <sys/param.h>
+%#include <errno.h>
+
+%#include <Trios_nnti_xdr.h>
 #endif
 
 #ifdef RPC_XDR
