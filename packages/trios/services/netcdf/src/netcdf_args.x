@@ -13,6 +13,8 @@
 /* Extra stuff to put at the beginning of the header file */
 #ifdef RPC_HDR
 /*%#include <sys/syslimits.h>  /* NC_PATH_MAX, ... */
+%#include <rpc/types.h>
+%#include <rpc/xdr.h>
 #endif
 
 /* Extra stuff to put at the beginning of the C file */

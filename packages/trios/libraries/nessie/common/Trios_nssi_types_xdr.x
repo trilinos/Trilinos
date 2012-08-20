@@ -298,8 +298,4 @@ struct nssi_result_header {
     uint32_t rc;
 };
 
-#ifdef RPC_HDR
-%#include "Trios_nssi_fprint_types.h"
-#endif
-
 /** @} */

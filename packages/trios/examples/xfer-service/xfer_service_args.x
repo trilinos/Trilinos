@@ -73,6 +73,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 /* Extra stuff to put at the beginning of the header file */
 #ifdef RPC_HDR
+%#include <rpc/types.h>
+%#include <rpc/xdr.h>
 #endif
 
 /* Extra stuff to put at the beginning of the C file. */
@@ -83,7 +85,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 /**
- * @brief Opcodes for the types of transfer operations.  
+ * @brief Opcodes for the types of transfer operations.
  */
 enum xfer_op {
     /** Opcode for writing the data through the function arguments. */
@@ -160,7 +162,7 @@ typedef data_t data_array_t<>;
  * structures as an argument of the remote operation.  This will
  * cause the array to be sent to the server as part of the request.
  * The client encodes the data before sending it to the server, the server
- * decodes the data structure when it arrives. 
+ * decodes the data structure when it arrives.
  */
 struct xfer_write_encode_args {
         /** The length of the data array. */
@@ -210,11 +212,11 @@ struct xfer_read_encode_args {
 /**
  * @brief Results for the third transfer operation, XFER_READ_ENCODE.
  *
- * The result of the xfer_read_encode operation includes the 
- * array of \ref data_t structures.  If the size of array is large, 
- * the address of array will be sent as part of the result and the 
+ * The result of the xfer_read_encode operation includes the
+ * array of \ref data_t structures.  If the size of array is large,
+ * the address of array will be sent as part of the result and the
  * client will fetch array via RDMA.  In either case, the structures
- * are encoded by the server and decoded by the client. 
+ * are encoded by the server and decoded by the client.
  */
 struct xfer_read_encode_res {
         /** The array of \ref data_t structures, including length. */
