@@ -376,6 +376,7 @@ extern "C" {
 
   EXODUS_EXPORT int ex_create_int (const char *path, int cmode, int *comp_ws, int *io_ws, int my_version);
 
+ 
   EXODUS_EXPORT int ex_get_all_times (int   exoid,
 				      void *time_values);
 
@@ -520,6 +521,7 @@ extern "C" {
 					int *var_tab);
   
 #define ex_open(path, mode, comp_ws, io_ws, version) ex_open_int(path, mode, comp_ws, io_ws, version, EX_API_VERS_NODOT)  
+
   EXODUS_EXPORT int ex_open_int (const char  *path,
 				 int    mode,
 				 int   *comp_ws,
