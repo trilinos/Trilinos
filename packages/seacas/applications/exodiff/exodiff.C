@@ -82,7 +82,7 @@ struct TimeInterp
 }
 ;
 
-string Version() { return "2.57 (2012-08-17)"; }
+string Version() { return "2.58 (2012-08-20)"; }
 
 string Date() {
   char tbuf[32];
@@ -267,7 +267,7 @@ namespace {
     for (int i=2; i <= num_times; i++) {
       if (file.Time(i) <= time)
 	tbef = i;
-      else if (!interface.time_tol.Diff(time, file.Time(i)))
+      else if (interface.time_tol.type != IGNORE && !interface.time_tol.Diff(time, file.Time(i)))
 	tbef = i;
       else
 	break;

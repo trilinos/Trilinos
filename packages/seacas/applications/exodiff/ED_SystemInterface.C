@@ -853,10 +853,6 @@ void SystemInterface::Parse_Command_File()
 {
   int default_tol_specified = 0;
 
-  // Set all types to inactive (ignore) by default.
-  coord_tol.type = IGNORE;
-  time_tol.type  = IGNORE;
-
   std::ifstream cmd_file(command_file.c_str(), std::ios::in);
   SMART_ASSERT(cmd_file.good());
 
