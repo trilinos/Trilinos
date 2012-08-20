@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
   for (int i=1; i <= rank; i++)
     offset += 40*i;
 
-  for (localId_t i=0; i < localCount; i++)
+  for (size_t i=0; i < localCount; i++)
     globalIds[i] = offset++;
    
   ///////////////////////////////////////////////////////////////////////

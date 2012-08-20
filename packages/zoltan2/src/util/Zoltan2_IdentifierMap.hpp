@@ -512,7 +512,7 @@ template< typename User>
     ArrayView<gno_t> out_gno,
     ArrayView<int> out_proc) const
 {
-  size_t inLen=in_gid.size();
+  size_t inLen = in_gid.size();
 
   if (inLen == 0){
     return;
@@ -522,7 +522,8 @@ template< typename User>
 
   env_->localInputAssertion(__FILE__, __LINE__, 
     "Destination array is too small", 
-    (out_proc.size() >= inLen) && (skipGno || (out_gno.size() >= inLen)),
+    (static_cast<size_t>(out_proc.size()) >= inLen) && 
+    (skipGno || (static_cast<size_t>(out_gno.size()) >= inLen)),
     BASIC_ASSERTION);
 
   if (userGidsAreZoltan2Gnos_ && (gnoDist_.size() > 0)){
@@ -534,7 +535,7 @@ template< typename User>
     gno_t *gnos = gnoDist_.getRawPtr();
     gno_t *final = gnos + numProcs_ + 1;
 
-    for (gno_t i=0; i < inLen; i++){
+    for (size_t i=0; i < inLen; i++){
       gno_t gno = static_cast<gno_t>(in_gid[i]);
       if (!skipGno)
         out_gno[i] = gno;
@@ -691,7 +692,7 @@ template< typename User>
         false); 
     }
 
-    for (lno_t i=0; i < numberOfUniqueGids; i++){
+    for (size_t i=0; i < numberOfUniqueGids; i++){
       gid_t gid = in_gid[uniqueIndices[i]];
       int hashProc = IdentifierTraits<gid_t>::hashCode(gid) % numProcs_;
       countOutBuf[hashProc]++;
@@ -703,7 +704,7 @@ template< typename User>
       offsetBuf[p+1] = offsetBuf[p] + countOutBuf[p];
     }
   
-    for (lno_t i=0; i < numberOfUniqueGids; i++){
+    for (size_t i=0; i < numberOfUniqueGids; i++){
       gid_t gid = in_gid[uniqueIndices[i]];
       int hashProc = IdentifierTraits<gid_t>::hashCode(gid) % numProcs_;
       gno_t loc = offsetBuf[hashProc];

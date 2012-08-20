@@ -111,7 +111,7 @@ void getObjList(void *data, int numGid, int numLid,
 
   if (wgt_dim > 0){
     float *wgts = obj_wgts;
-    for (lno_t i=0; i < localLen; i++)
+    for (size_t i=0; i < localLen; i++)
       for (int w=0; w < wgt_dim; w++)
         *wgts++ = static_cast<float>(weights[w][i]);
   }

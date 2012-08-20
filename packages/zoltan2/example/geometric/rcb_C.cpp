@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
   srand(rank);
   scalar_t scalingFactor = 10.0 / RAND_MAX;
 
-  for (int i=0; i < localCount*dim; i++){
+  for (size_t i=0; i < localCount*dim; i++){
     coords[i] = scalar_t(rand()) * scalingFactor;
   }
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
   globalId_t *globalIds = new globalId_t [localCount];
   globalId_t offset = rank * localCount;
 
-  for (localId_t i=0; i < localCount; i++)
+  for (size_t i=0; i < localCount; i++)
     globalIds[i] = offset++;
    
   ///////////////////////////////////////////////////////////////////////
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
 
   scalar_t *weights = new scalar_t [localCount];
-  for (int i=0; i < localCount; i++){
+  for (size_t i=0; i < localCount; i++){
     weights[i] = 1.0 + scalar_t(rank) / scalar_t(nprocs);
   }
 
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
   weights = new scalar_t [localCount*3];
   srand(rank);
 
-  for (int i=0; i < localCount*3; i+=3){
+  for (size_t i=0; i < localCount*3; i+=3){
     weights[i] = 1.0 + rank / nprocs;      // weight dimension 1
     weights[i+1] = rank<nprocs/2 ? 1 : 2;  // weight dimension 2
     weights[i+2] = rand()/RAND_MAX +.5;    // weight dimension 3
@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
   const zoltan2_partId_t *partAssignments = solution4.getPartList();
 
   int numInEmptyParts = 0;
-  for (int i=0; i < localCount; i++){
+  for (size_t i=0; i < localCount; i++){
     if (partAssignments[i] % 2 == 0)
       numInEmptyParts++;
   }

@@ -67,6 +67,14 @@ int AlgSpectral(
   const RCP<const Teuchos::Comm<int> > &comm
 ) 
 {
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+
+  Z2_THROW_EXPERIMENTAL("Zoltan2 Spectral ordering is strictly "
+                        "experimental software "
+                        "while it is being developed and tested.")
+
+#else //INCLUDE_ZOLTAN2_EXPERIMENTAL
+
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::gid_t gid_t;
@@ -106,6 +114,7 @@ int AlgSpectral(
   // TODO: Sort Fiedler vector.
 
   return ierr;
+#endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 
 }

@@ -57,7 +57,7 @@ using std::endl;
 
 template <typename lno_t, typename gno_t>
  void printTpetraGraph(const Tpetra::CrsGraph<lno_t, gno_t> &graph, 
-   ostream &os, int maxSize, string info)
+   ostream &os, size_t maxSize, string info)
 {
   size_t nrows = graph.getNodeNumRows();
   if (nrows > maxSize)
@@ -77,7 +77,7 @@ template <typename lno_t, typename gno_t>
       gno_t gid = rowMap->getGlobalElement(i);
       graph.getGlobalRowView(gid, indices);
       os << "Row " << gid << ": ";
-      for (size_t j=0; j < indices.size(); j++){
+      for (gno_t j=0; j < indices.size(); j++){
         os << indices[j] << " ";
       }
       os << endl;
@@ -89,7 +89,7 @@ template <typename lno_t, typename gno_t>
       gno_t gid = rowMap->getGlobalElement(i);
       graph.getLocalRowView(i, indices);
       os << "Row " << gid << ": ";
-      for (size_t j=0; j < indices.size(); j++){
+      for (lno_t j=0; j < indices.size(); j++){
         os << colMap->getGlobalElement(indices[j]) << " ";
       }
       os << endl;
@@ -100,7 +100,7 @@ template <typename lno_t, typename gno_t>
 template <typename lno_t, typename gno_t>
   void printTpetraGraph(const RCP<const Comm<int> > &comm,
   const Tpetra::CrsGraph<lno_t, gno_t> &graph, ostream &os, 
-  int maxSize, string info)
+  size_t maxSize, string info)
 {
   int rank = comm->getRank();
   std::ostringstream oss;

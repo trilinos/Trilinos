@@ -586,8 +586,8 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
       
         xyz = Teuchos::arcp(new ArrayRCP<scalar_t> [coordDim], 0, coordDim);
       
-        for (int dim=0; !fail && dim < coordDim; dim++){
-          lno_t idx;
+        for (size_t dim=0; !fail && dim < coordDim; dim++){
+          size_t idx;
           scalar_t *tmp = new scalar_t [numGlobalCoords];
           if (!tmp)
             fail = 1;
@@ -607,7 +607,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 
         if (fail){
           ArrayRCP<scalar_t> emptyArray;
-          for (int dim=0; dim < coordDim; dim++)
+          for (size_t dim=0; dim < coordDim; dim++)
             xyz[dim] = emptyArray;   // free the memory
 
           coordDim = 0;
@@ -654,7 +654,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 
   if (tcomm_->getRank() == 0){
 
-    for (int dim=0; dim < coordDim; dim++)
+    for (size_t dim=0; dim < coordDim; dim++)
       coordLists[dim] = xyz[dim].view(0, numGlobalCoords);
 
     gno_t *tmp = new gno_t [numGlobalCoords];
@@ -663,7 +663,8 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 
     ArrayRCP<const gno_t> rowIds = Teuchos::arcp(tmp, 0, numGlobalCoords);
 
-    for (gno_t id=base; id < base+numGlobalCoords; id++)
+    gno_t basePlusNumGlobalCoords = base+numGlobalCoords;
+    for (gno_t id=base; id < basePlusNumGlobalCoords; id++)
       *tmp++ = id;
 
     RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords, 
@@ -854,12 +855,10 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
   int vwgt_dim=0, ewgt_dim=0;
   int *start = NULL, *adj = NULL;
   float *ewgts = NULL, *vwgts = NULL;
-  size_t *nzPerRow = NULL;  //FIX_LATER
-  //lno_t *nzPerRow = NULL;
-  int maxRowLen = 0;
+  size_t *nzPerRow = NULL;
+  size_t maxRowLen = 0;
   gno_t base = 0;
-  ArrayRCP<const size_t> rowSizes;   //FIX_LATER
-  //ArrayRCP<const lno_t> rowSizes;
+  ArrayRCP<const size_t> rowSizes;
   int fail = 0;
   bool haveEdges = true;
 
@@ -903,8 +902,7 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
     if (haveEdges)
       nedges = start[nvtxs];
 
-    nzPerRow = new size_t [nvtxs];   //FIX_LATER
-    //nzPerRow = new lno_t [nvtxs];
+    nzPerRow = new size_t [nvtxs];
     if (!nzPerRow)
       throw std::bad_alloc();
     rowSizes = arcp(nzPerRow, 0, nvtxs, true);
@@ -917,8 +915,7 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
       }
     }
     else{
-      memset(nzPerRow, 0, sizeof(size_t) * nvtxs);   //FIX_LATER
-      //memset(nzPerRow, 0, sizeof(lno_t) * nvtxs);
+      memset(nzPerRow, 0, sizeof(size_t) * nvtxs);
     }
 
     if (haveEdges){
@@ -944,7 +941,7 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
     graphCounts[1] = nedges;
     graphCounts[2] = vwgt_dim;
     graphCounts[3] = ewgt_dim;
-    graphCounts[4] = maxRowLen;
+    graphCounts[4] = maxRowLen;  // size_t maxRowLen will fit; it is <= (int-int)
   }
   
   Teuchos::broadcast<int, int>(*tcomm_, 0, 5, graphCounts);
@@ -1154,7 +1151,7 @@ void UserInputForTests::getChacoCoords(FILE *fptr, string fname)
         throw std::bad_alloc();
       coords[dim] = arcp<const scalar_t>(v, 0, globalNumVtx, true);
       float *val = (dim==0 ? x : (dim==1 ? y : z));
-      for (int i=0; i < globalNumVtx; i++)
+      for (size_t i=0; i < globalNumVtx; i++)
         v[i] = scalar_t(val[i]);
 
       free(val);

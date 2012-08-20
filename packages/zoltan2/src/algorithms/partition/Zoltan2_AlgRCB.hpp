@@ -53,6 +53,7 @@
 #include <Zoltan2_AlgRCB_methods.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_GetParameter.hpp>
+#include <Zoltan2_Exceptions.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -88,6 +89,13 @@ void AlgRCB(
   RCP<PartitioningSolution<Adapter> > &solution
 ) 
 {
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+
+  Z2_THROW_EXPERIMENTAL("Zoltan2 RCB is strictly experimental software "
+                        "due to performance problems in its use of Tpetra.")
+
+#else  // INCLUDE_ZOLTAN2_EXPERIMENTAL
+
   typedef typename Adapter::node_t node_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
@@ -555,6 +563,7 @@ void AlgRCB(
   }
 
   solution->setParts(gnoList, partId);
+#endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 
 } // namespace Zoltan2
