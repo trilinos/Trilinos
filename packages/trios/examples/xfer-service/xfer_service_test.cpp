@@ -452,6 +452,8 @@ int main(int argc, char *argv[])
     // If running as a client only, have to get the list of servers from the urlfile.
     else if (!args.server_flag && args.client_flag){
 
+        sleep(args.delay);  // give server time to get started
+
         std::vector< std::string > urlbuf;
         xfer_read_server_url_file(args.url_file.c_str(), urlbuf, comm);
         args.num_servers = urlbuf.size();
@@ -525,7 +527,6 @@ int main(int argc, char *argv[])
         //if (client_rank == 0) {
         {
 
-            sleep(args.delay);  // give server time to get started
 
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
