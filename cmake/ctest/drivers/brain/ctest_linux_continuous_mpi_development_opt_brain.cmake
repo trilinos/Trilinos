@@ -87,6 +87,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DHDF5_INCLUDE_DIRS=/home/trilinos/tpl/gcc/phdf5-1.8.6/include"
   "-DHDF5_LIBRARY_DIRS=/home/trilinos/tpl/gcc/phdf5-1.8.6/lib"
   "-DBoost_INCLUDE_DIRS=/home/trilinos/tpl/gcc/boost_1_49_0"
+  "-DZoltan2_ENABLE_Experimental=ON"
   )
 
 # Put MPI in the LD_LIBRARY_PATH for testing.

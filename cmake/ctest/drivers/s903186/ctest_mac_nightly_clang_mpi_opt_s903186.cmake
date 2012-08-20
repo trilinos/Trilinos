@@ -75,6 +75,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/include"
   "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/lib"
   "-DHDF5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/include"
+  "-DZoltan2_ENABLE_Experimental=ON"
   )
 
 #
