@@ -45,9 +45,6 @@
 #include "Teuchos_TableColumn.hpp"
 #include "Teuchos_TableFormat.hpp"
 #include <functional>
-#ifdef HAVE_TEUCHOS_YAML_CPP
-#  include <yaml-cpp/yaml.h>
-#endif // HAVE_TEUCHOS_YAML_CPP
 
 
 namespace Teuchos {
@@ -940,7 +937,15 @@ namespace Teuchos {
   void TimeMonitor::
   summarizeToYaml (Ptr<const Comm<int> > comm, std::ostream &out)
   {
-#ifdef HAVE_TEUCHOS_YAML_CPP
+    using Teuchos::FancyOStream;
+    using Teuchos::fancyOStream;
+    using Teuchos::getFancyOStream;
+    using Teuchos::OSTab;
+    using Teuchos::RCP;
+    using Teuchos::rcpFromRef;
+    using std::endl;
+    typedef std::vector<std::string>::size_type size_type;
+
     // const bool writeGlobalStats = true;
     // const bool writeZeroTimers = true;
     // const bool alwaysWriteLocal = false;
@@ -951,53 +956,149 @@ namespace Teuchos {
     computeGlobalTimerStatistics (statData, statNames, setOp);
 
     const int numProcs = comm->getSize();
-    const int myRank = comm->getRank();
+    //const int myRank = comm->getRank();
 
-    if (myRank == 0) {
-      YAML::Emitter emi;
-      emi << YAML::BeginDoc; // Begin YAML output
-      emi << "Teuchos::TimeMonitor timing results";
-      emi << YAML::BeginMap // Begin timing results map
-          << YAML::Key << "Number of processes"
-          << YAML::Value << numProcs
-          << YAML::Key << "Global timer statistics"
-          << YAML::Value;
-      // For each timer name, print all its statistics.
-      emi << YAML::BeginMap; // Begin timer names
-      for (stat_map_type::const_iterator statDataIter = statData.begin();
-           statDataIter != statData.end(); ++statDataIter) {
-        // Key: Timer's name
-        emi << YAML::Key << statDataIter->first;
-        // Value: The timer's statistics, as a map.
-        emi << YAML::Value << YAML::BeginMap; // Begin current timer's statistics
-        for (std::vector<std::string>::size_type statInd = 0;
-             statInd < statNames.size (); ++statInd) {
-          // Key: current statistic's name.
-          emi << YAML::Key << statNames[statInd]
-              << YAML::Value;
-          // Value is a map: "Time (s)" => time in seconds for current
-          // statistic, "Call count" => call count for current statistic.
-          const double curTime = (statDataIter->second)[statInd].first;
-          const double curCallCount = (statDataIter->second)[statInd].second;
-          emi << YAML::BeginMap
-              << YAML::Key << "Time (s)"
-              << YAML::Value << curTime
-              << YAML::Key << "Call count"
-              << YAML::Value << curCallCount
-              << YAML::EndMap;
+    RCP<FancyOStream> pfout = getFancyOStream (rcpFromRef (out));
+    FancyOStream& fout = *pfout;
+
+    // mfh 19 Aug 2012: An important goal of our chosen output format
+    // was to minimize the nesting depth.  We have managed to keep the
+    // nesting depth to 3, which is the limit that the current version
+    // of PylotDB imposes for its YAML input.
+
+    // We define "compact" output style as a mixture of flow style and
+    // standard style which is best suited for perusal by an informed
+    // human reader, when there are a small number of timers.  In
+    // particular, compact style uses flow style YAML output for lists
+    // whenever possible, except at the outermost level where it would
+    // hinder readability.  For an explanation of YAML flow style, see
+    // Chapter 7 of the YAML 1.2 spec:
+    //
+    // http://www.yaml.org/spec/1.2/spec.html#style/flow/
+    const bool compact = true;
+
+    // Omit document title.  Users may supply their own title as
+    // desired.  This reduces the nesting depth of YAML output.
+
+    // Outermost level is a list.  Begin with metadata.
+    OSTab tab0 (pfout, 1, "  - "); // Start a list
+    fout << "Output mode: " << (compact ? "compact" : "spacious") << endl
+         << "Number of processes: " << numProcs << endl
+         << "Time unit: s" << endl;
+    // Print names of all the kinds of statistics we collected.
+    fout << "Statistics collected:";
+    if (compact) {
+      fout << " [";
+      for (size_type i = 0; i < statNames.size (); ++i) {
+        fout << statNames[i];
+        if (i + 1 < statNames.size ()) {
+          fout << ", ";
         }
-        emi << YAML::EndMap; // End current timer's statistics
       }
-      emi << YAML::EndMap; // End timer names
-      emi << YAML::EndMap; // End timing results map
-      emi << YAML::EndDoc; // End YAML output
-
-      // Write YAML output to the given output stream.
-      out << emi.c_str ();
+      fout << "]" << endl;
     }
-#else  // Don't HAVE_TEUCHOS_YAML_CPP
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Teuchos::TimeMonitor: YAML output currently requires building Trilinos with the yaml-cpp library.  Please download and install yaml-cpp from http://code.google.com/p/yaml-cpp/.  Then, enable yaml-cpp support when building Trilinos: 1. Set the CMake Boolean option TPL_ENABLE_yaml-cpp to ON.  2. Set the CMake option yaml-cpp_INCLUDE_DIRS to the path of the yaml-cpp include files (not including the yaml-cpp directory in include/).  3. Set the CMake option yaml-cpp_LIBRARY_DIRS to the location of the yaml-cpp library.  4. Clear the CMake cache if necesssary.  5. Run CMake again and rebuild Trilinos.");
-#endif // HAVE_TEUCHOS_YAML_CPP
+    else {
+      fout << endl;
+      OSTab tab1 (pfout, 1, "  - ");
+      for (size_type i = 0; i < statNames.size (); ++i) {
+        fout << statNames[i] << endl;
+      }
+    }
+
+    // Print the timer names.
+    //
+    // It might be nicer instead to print a map from timer name to all
+    // of its data, but keeping the maximum nesting depth small
+    // ensures better compatibility with different parsing tools.
+    fout << "Timer names:";
+    if (compact) {
+      fout << " [";
+      size_type ind = 0;
+      for (stat_map_type::const_iterator it = statData.begin(); it != statData.end(); ++it, ++ind) {
+        fout << it->first;
+        if (ind + 1 < statData.size ()) {
+          fout << ", ";
+        }
+      }
+      fout << "]" << endl;
+    }
+    else {
+      fout << endl;
+      OSTab tab1 (pfout, 1, "  - ");
+      for (stat_map_type::const_iterator it = statData.begin(); it != statData.end(); ++it) {
+        fout << it->first << endl;
+      }
+    }
+
+    // Print times for each timer, as a map from statistic name to its time.
+    fout << "Total times:";
+    if (compact) {
+      fout << " [";
+      size_type outerInd = 0;
+      for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
+        const std::vector<std::pair<double, double> >& curData = outerIter->second;
+        fout << "{";
+        for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
+          fout << statNames[innerInd] << ": " << curData[innerInd].first;
+          if (innerInd + 1 < curData.size ()) {
+            fout << ", ";
+          }
+        }
+        fout << "}";
+        if (outerInd + 1 < statData.size ()) {
+          fout << ", ";
+        }
+      }
+      fout << "]" << endl;
+    }
+    else {
+      fout << endl;
+      OSTab tab1 (pfout, 1, "  - ");
+      size_type outerInd = 0;
+      for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
+        fout << outerIter->first << ": " << endl; // Print timer name
+        OSTab tab2 (pfout, 1, "  - ");
+        const std::vector<std::pair<double, double> >& curData = outerIter->second;
+        for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
+          fout << statNames[innerInd] << ": " << curData[innerInd].first << endl;
+        }
+      }
+    }
+
+    // Print call counts for each timer, for each statistic name.
+    fout << "Call counts:";
+    if (compact) {
+      fout << " [";
+      size_type outerInd = 0;
+      for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
+        const std::vector<std::pair<double, double> >& curData = outerIter->second;
+        fout << "{";
+        for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
+          fout << statNames[innerInd] << ": " << curData[innerInd].second;
+          if (innerInd + 1 < curData.size ()) {
+            fout << ", ";
+          }
+        }
+        fout << "}";
+        if (outerInd + 1 < statData.size ()) {
+          fout << ", ";
+        }
+      }
+      fout << "]" << endl;
+    }
+    else {
+      fout << endl;
+      OSTab tab1 (pfout, 1, "  - ");
+      size_type outerInd = 0;
+      for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
+        fout << outerIter->first << ": " << endl; // Print timer name
+        OSTab tab2 (pfout, 1, "  - ");
+        const std::vector<std::pair<double, double> >& curData = outerIter->second;
+        for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
+          fout << statNames[innerInd] << ": " << curData[innerInd].second << endl;
+        }
+      }
+    }
   }
 
   void TimeMonitor::

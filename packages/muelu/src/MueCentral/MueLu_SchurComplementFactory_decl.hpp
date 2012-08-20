@@ -124,11 +124,11 @@ namespace MueLu {
 
 
   private:
-    Teuchos::RCP<const FactoryBase>     AFact_;                 ///< generating factory of input variable (blocked A operator)
+    Teuchos::RCP<const FactoryBase>     AFact_;  ///< generating factory of input variable (blocked A operator)
 
-    Scalar                              omega_;         ///< damping parameter
+    Scalar                              omega_;  ///< damping parameter
 
-    bool switchRowOrder_;                                               ///< NOT USED YET
+    // bool switchRowOrder_;          ///< TODO NOT USED YET
 
   }; // class SchurComplementFactory
 
