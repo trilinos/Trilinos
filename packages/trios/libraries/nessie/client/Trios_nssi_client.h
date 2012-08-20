@@ -54,7 +54,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "Trios_nssi_request.h"
 #include "Trios_nssi_rpc.h"
-
+#include "Trios_nssi_xdr.h"
 
 /**
  * @defgroup rpc_client_api  Nessie Client API
