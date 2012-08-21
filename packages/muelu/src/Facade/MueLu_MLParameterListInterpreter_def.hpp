@@ -150,19 +150,21 @@ namespace MueLu {
     RCP<PFactory> PFact;
     RCP<RFactory> RFact;
 
+    RCP<PFactory> PtentFact = rcp(new TentativePFactory(UCAggFact));
+
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
-      PFact = rcp( new TentativePFactory() );
+      PFact = PtentFact; //rcp( new TentativePFactory() );
       RFact = rcp( new TransPFactory() );
     } else if(agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
-      RCP<SaPFactory> SaPFact =  rcp( new SaPFactory() );
+      RCP<SaPFactory> SaPFact =  rcp( new SaPFactory(PtentFact) );
       SaPFact->SetDampingFactor(agg_damping);
       PFact  = SaPFact;
       RFact  = rcp( new TransPFactory() );
     } else if(bEnergyMinimization == true) {
       // Petrov Galerkin PG-AMG smoothed aggregation (energy minimization in ML)
-      PFact  = rcp( new PgPFactory() );
+      PFact  = rcp( new PgPFactory(PtentFact) );
       RFact  = rcp( new GenericRFactory() );
     }
 
@@ -180,6 +182,7 @@ namespace MueLu {
 
     // Set fine level nullspace
     // extract pre-computed nullspace from ML parameter list
+    // store it in nullspace_ and nullspaceDim_
     if(paramList.isParameter("null space: type")) {
       std::string type = "";
       type = paramList.get<std::string>("null space: type");
@@ -202,6 +205,9 @@ namespace MueLu {
       nullspace_    = nsdata;
     }
 
+    // nullspace factory
+    Teuchos::RCP<NullspaceFactory> nspFact = Teuchos::rcp(new NullspaceFactory("Nullspace",PtentFact));
+
     //
     //
     //
@@ -223,7 +229,9 @@ namespace MueLu {
       manager->SetFactory("DofsPerNode", dropFact);
       manager->SetFactory("A", AcFact);                     // same RAP factory
       manager->SetFactory("P", PFact);                      // same prolongator and restrictor factories
+      manager->SetFactory("Ptent", PtentFact);              // same prolongator and restrictor factories
       manager->SetFactory("R", RFact);                      // same prolongator and restrictor factories
+      manager->SetFactory("Nullspace", nspFact);            // use same nullspace factory throughout all multigrid levels
 
       this->AddFactoryManager(levelID, 1, manager);
     }
@@ -233,6 +241,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupHierarchy(Hierarchy & H) const {
 
+    // if nullspace_ has already been extracted from ML parameter list
     if (nullspace_ != NULL) {
       RCP<Level> fineLevel = H.GetLevel(0);
       const RCP<const Map> rowMap = fineLevel->Get< RCP<Operator> >("A")->getRowMap();
