@@ -38,7 +38,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 *************************************************************************/
 /*-------------------------------------------------------------------------*/
 /**
- *   @file rpc_common.h
+ *   @file Trios_nssi_xdr.h
  *
  *   @brief Prototypes for the RPC methods used by both clients and servers.
  *
@@ -48,8 +48,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *   $Date: 2005-03-16 00:21:00 -0700 (Wed, 16 Mar 2005) $
  */
 
-#ifndef _NSSI_RPC_XDR_H_
-#define _NSSI_RPC_XDR_H_
+#ifndef _TRIOS_NSSI_XDR_H_
+#define _TRIOS_NSSI_XDR_H_
 
 #include "Trios_config.h"
 #include "Trios_xdr.h"

@@ -49,12 +49,11 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  */
 
 #ifdef RPC_HDR
-%#include "Trios_nssi_xdr.h"
+%#include "Trios_xdr.h"
 #endif
 
 #ifdef RPC_XDR
-%#include "Trios_nssi_xdr.h"
-%#include "nssi_service_args.h"
+%#include "Trios_xdr.h"
 #endif
 
 

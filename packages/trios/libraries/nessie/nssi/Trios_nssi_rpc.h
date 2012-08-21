@@ -48,8 +48,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *   $Date: 2007-11-28 11:59:53 -0700 (Wed, 28 Nov 2007) $
  */
 
-#ifndef _NSSI_RPC_COMMON_H_
-#define _NSSI_RPC_COMMON_H_
+#ifndef _TRIOS_NSSI_RPC_H_
+#define _TRIOS_NSSI_RPC_H_
 
 #include "Trios_config.h"
 #include "Trios_nssi_types.h"

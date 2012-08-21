@@ -46,8 +46,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *
  */
 
-#ifndef _RPC_DEBUG_H_
-#define _RPC_DEBUG_H_
+#ifndef _TRIOS_NSSI_DEBUG_H_
+#define _TRIOS_NSSI_DEBUG_H_
 
 #include "Trios_logger.h"
 
@@ -55,13 +55,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 extern "C" {
 #endif
 
-	extern log_level rpc_debug_level;
-
-#if defined(__STDC__) || defined(__cplusplus)
-
-#else /* K&R C */
-
-#endif /* K&R C */
+    extern log_level rpc_debug_level;
 
 #ifdef __cplusplus
 }

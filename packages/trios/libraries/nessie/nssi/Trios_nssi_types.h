@@ -37,7 +37,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /**
- *   @file nssi_types.h
+ *   @file Trios_nssi_types.h
  *
  *   @brief Type definitions and method prototypes for
  *   the LWFS.
@@ -51,8 +51,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *
  */
 
-#ifndef TRIOS_NSSI_TYPES_H_
-#define TRIOS_NSSI_TYPES_H_
+#ifndef _TRIOS_NSSI_TYPES_H_
+#define _TRIOS_NSSI_TYPES_H_
 
 #include "Trios_config.h"
 

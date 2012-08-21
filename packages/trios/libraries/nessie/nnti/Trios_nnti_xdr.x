@@ -7,8 +7,6 @@
  *
  */
 
-#include "Trios_config.h"
-
 #ifdef RPC_HDR
 %#include "Trios_xdr.h"
 #endif
@@ -21,10 +19,6 @@
 /** @addtogroup nnti_types
  *  @{
  */
-
-#ifdef HAVE_TRIOS_U_INT32_T
-typedef u_int32_t uint32_t
-#endif
 
 /**
  * @brief The <tt>\ref nssi_size</tt> type is used to for ``size'' variables.

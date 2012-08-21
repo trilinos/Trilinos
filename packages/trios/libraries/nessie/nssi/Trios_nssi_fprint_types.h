@@ -37,22 +37,18 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /**
- *   @file fprint_types.h
+ *   @file Trios_nssi_fprint_types.h
  *
  *   @brief Pretty print the different NSSI types.
  *
  */
 
-#ifndef _NSSI_FPRINT_UTIL_TYPES_H_
-#define _NSSI_FPRINT_UTIL_TYPES_H_
+#ifndef _TRIOS_NSSI_FPRINT_TYPES_H_
+#define _TRIOS_NSSI_FPRINT_TYPES_H_
 
 #include <stdio.h>
 #include <ostream>
-#include "Trios_nssi_types.h"    /* types for LWFS */
-
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
+#include "Trios_nssi_types.h"
 
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -155,9 +151,5 @@ extern const char* nssi_err_str(const int rc);
 
 
 #endif /* K&R C */
-
-//#ifdef __cplusplus
-//}
-//#endif
 
 #endif

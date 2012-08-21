@@ -8,13 +8,13 @@
  */
 
 #ifdef RPC_HDR
-%#include "Trios_nssi_xdr.h"
+%#include "Trios_xdr.h"
 %#include "Trios_nnti_xdr.h"
 #endif
 
 #ifdef RPC_XDR
-%#include "Trios_nssi_xdr.h"
-%#include "Trios_nssi_types_xdr.h"
+%#include "Trios_xdr.h"
+%#include "Trios_nnti_xdr.h"
 #endif
 
 /** @addtogroup base_types

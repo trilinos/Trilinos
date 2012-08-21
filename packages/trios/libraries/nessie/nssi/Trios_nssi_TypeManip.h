@@ -40,21 +40,21 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 // The Loki Library
 // Copyright (c) 2001 by Andrei Alexandrescu
 // This code accompanies the book:
-// Alexandrescu, Andrei. "Modern C++ Design: Generic Programming and Design 
+// Alexandrescu, Andrei. "Modern C++ Design: Generic Programming and Design
 //     Patterns Applied". Copyright (c) 2001. Addison-Wesley.
-// Permission to use, copy, modify, distribute and sell this software for any 
-//     purpose is hereby granted without fee, provided that the above copyright 
-//     notice appear in all copies and that both that copyright notice and this 
+// Permission to use, copy, modify, distribute and sell this software for any
+//     purpose is hereby granted without fee, provided that the above copyright
+//     notice appear in all copies and that both that copyright notice and this
 //     permission notice appear in supporting documentation.
-// The author or Addison-Welsey Longman make no representations about the 
-//     suitability of this software for any purpose. It is provided "as is" 
+// The author or Addison-Welsey Longman make no representations about the
+//     suitability of this software for any purpose. It is provided "as is"
 //     without express or implied warranty.
 ////////////////////////////////////////////////////////////////////////////////
 
 // Last update: November 22, 2001
 
-#ifndef NSSI_TYPEMANIP_INC_
-#define NSSI_TYPEMANIP_INC_
+#ifndef _TRIOS_NSSI_TYPEMANIP_H_
+#define _TRIOS_NSSI_TYPEMANIP_H_
 
 namespace Nessie
 {
@@ -199,8 +199,8 @@ struct Conversion<void, void>
 
 ////////////////////////////////////////////////////////////////////////////////
 // class template SuperSubclass
-// Invocation: SuperSubclass<B, D>::value where B and D are types. 
-// Returns true if B is a public base of D, or if B and D are aliases of the 
+// Invocation: SuperSubclass<B, D>::value where B and D are types.
+// Returns true if B is a public base of D, or if B and D are aliases of the
 // same type.
 //
 // Caveat: might not work if T and U are in a private inheritance hierarchy.
@@ -215,7 +215,7 @@ struct SuperSubclass
 
 ////////////////////////////////////////////////////////////////////////////////
 // class template SuperSubclassStrict
-// Invocation: SuperSubclassStrict<B, D>::value where B and D are types. 
+// Invocation: SuperSubclassStrict<B, D>::value where B and D are types.
 // Returns true if B is a public base of D.
 //
 // Caveat: might not work if T and U are in a private inheritance hierarchy.
@@ -250,8 +250,8 @@ class SizeOf
 
 ////////////////////////////////////////////////////////////////////////////////
 // macro SUPERSUBCLASS
-// Invocation: SUPERSUBCLASS(B, D) where B and D are types. 
-// Returns true if B is a public base of D, or if B and D are aliases of the 
+// Invocation: SUPERSUBCLASS(B, D) where B and D are types.
+// Returns true if B is a public base of D, or if B and D are aliases of the
 // same type.
 //
 // Caveat: might not work if T and U are in a private inheritance hierarchy.
@@ -263,7 +263,7 @@ class SizeOf
 
 ////////////////////////////////////////////////////////////////////////////////
 // macro SUPERSUBCLASS_STRICT
-// Invocation: SUPERSUBCLASS(B, D) where B and D are types. 
+// Invocation: SUPERSUBCLASS(B, D) where B and D are types.
 // Returns true if B is a public base of D.
 //
 // Caveat: might not work if T and U are in a private inheritance hierarchy.
@@ -289,4 +289,4 @@ class SizeOf
 //     call from function declaration. T.S.
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif // TYPEMANIP_INC_
+#endif // _TRIOS_NSSI_TYPEMANIP_H_
