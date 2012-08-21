@@ -24,6 +24,7 @@ TRIBITS_ADD_EXECUTABLE(
   GetServiceTest
   SOURCES getservice_server.cpp getservice_test.cpp getservice_client.cpp getservice_debug.cpp
   DEPLIBS ${DEPLIBS}
+  NOEXEPREFIX
 )
 
 SET(EXTRA_TEST_ARGS "")

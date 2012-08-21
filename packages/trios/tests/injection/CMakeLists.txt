@@ -28,6 +28,7 @@ TRIBITS_ADD_EXECUTABLE(
   InjectionTest
   SOURCES injection_service_args.c injection_server.cpp injection_test.cpp injection_client.cpp
   DEPLIBS ${DEPLIBS}
+  NOEXEPREFIX
 )
 
 SET(EXTRA_TEST_ARGS "")

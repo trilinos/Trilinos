@@ -25,6 +25,7 @@ TRIBITS_ADD_EXECUTABLE(
   XferMPITest
   SOURCES xfer_service_args.c xfer_util.cpp xfer_mpi_server.cpp xfer_mpi_test.cpp xfer_mpi_client.cpp
   DEPLIBS ${DEPLIBS}
+  NOEXEPREFIX
 )
 
 
@@ -32,6 +33,7 @@ TRIBITS_ADD_EXECUTABLE(
   XferServiceTest
   SOURCES xfer_service_args.c xfer_util.cpp xfer_server.cpp xfer_service_test.cpp xfer_client.cpp
   DEPLIBS ${DEPLIBS}
+  NOEXEPREFIX
 )
 
 SET(EXTRA_TEST_ARGS "")

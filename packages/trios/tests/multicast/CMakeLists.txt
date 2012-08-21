@@ -28,6 +28,7 @@ TRIBITS_ADD_EXECUTABLE(
   MulticastTest
   SOURCES multicast_service_args.c multicast_server.cpp multicast_test.cpp multicast_client.cpp multicast_buffer_util.cpp
   DEPLIBS ${DEPLIBS}
+  NOEXEPREFIX
 )
 
 SET(EXTRA_TEST_ARGS "")

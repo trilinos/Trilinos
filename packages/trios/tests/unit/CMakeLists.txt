@@ -32,6 +32,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LoggerTest
   SOURCES LoggerTest.cpp
   COMM serial mpi
+  NOEXEPREFIX
 )
 
 
@@ -39,12 +40,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TimerTest
   SOURCES TimerTest.c
   COMM serial mpi
+  NOEXEPREFIX
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SignalTest
   SOURCES SignalTest.c
   COMM serial mpi
+  NOEXEPREFIX
 )
 
 
@@ -53,6 +56,6 @@ IF (TRIOS_ENABLE_TRACING)
     TraceTest
     SOURCES TraceTest.c
     COMM serial mpi
+    NOEXEPREFIX
   )
 ENDIF (TRIOS_ENABLE_TRACING)
-

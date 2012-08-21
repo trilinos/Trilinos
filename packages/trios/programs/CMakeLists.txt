@@ -17,7 +17,7 @@ ENDIF (CMAKE_COMPILER_IS_GNUCXX)
     kill-service
     SOURCES nssi-kill.cpp
     DEPLIBS ${DEPLIBS}
-    # NOEXEPREFIX
+    NOEXEPREFIX
   )
 
 
@@ -25,7 +25,7 @@ ENDIF (CMAKE_COMPILER_IS_GNUCXX)
     ping-service
     SOURCES nssi-ping.cpp
     DEPLIBS ${DEPLIBS}
-    # NOEXEPREFIX
+    NOEXEPREFIX
   )
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
