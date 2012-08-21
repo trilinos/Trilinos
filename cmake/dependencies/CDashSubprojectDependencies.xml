@@ -641,6 +641,33 @@
       <Email address="muelu-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Zoltan2">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Kokkos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="TO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="LR"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Isorropia" type="ITO"/>
+    <Dependency name="AztecOO" type="ITO"/>
+    <Dependency name="Galeri" type="ITO"/>
+    <Dependency name="Amesos2" type="ITO"/>
+    <Dependency name="Amesos" type="ITO"/>
+    <Dependency name="Ifpack" type="ITO"/>
+    <Dependency name="ML" type="ITO"/>
+    <Dependency name="Belos" type="ITO"/>
+    <Dependency name="Ifpack2" type="ITO"/>
+    <Dependency name="Stratimikos" type="ITO"/>
+    <Dependency name="Anasazi" type="LO"/>
+    <Dependency name="Xpetra" type="LR"/>
+    <Dependency name="MueLu" type="TR"/>
+    <EmailAddresses>
+      <Email address="zoltan2-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Stokhos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>

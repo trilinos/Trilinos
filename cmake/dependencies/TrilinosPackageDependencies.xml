@@ -1245,6 +1245,20 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Zoltan2" dir="packages/zoltan2" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Tpetra,Kokkos,Epetra,Teuchos,Xpetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Tpetra,Kokkos,Epetra,Teuchos,Xpetra,MueLu"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Zoltan"/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="METIS,PaToH,ParMETIS,Scotch,AMD,CCOLAMD,OVIS"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="METIS,PaToH,ParMETIS,Scotch,AMD,CCOLAMD,OVIS"/>
+    <EmailAddresses>
+      <Regression address="zoltan2-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="Stokhos" dir="packages/stokhos" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia,Kokkos,Tpetra,Ifpack2,MueLu"/>

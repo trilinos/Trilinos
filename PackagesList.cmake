@@ -154,6 +154,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Aristos               packages/aristos                  EX
   Xpetra                packages/xpetra                   SS
   MueLu                 packages/muelu                    SS
+  Zoltan2               packages/zoltan2                  SS
   Stokhos               packages/stokhos                  SS
   Piro                  packages/piro                     SS
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)
