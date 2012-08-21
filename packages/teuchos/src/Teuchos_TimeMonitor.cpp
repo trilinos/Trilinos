@@ -1061,15 +1061,17 @@ namespace Teuchos {
 
     const int numProcs = comm->getSize();
 
-    // HACK (mfh 20 Aug 2012) For now, I convince the output stream to
-    // print a YAML sequence by manually prepending "- " to every line
-    // of output.  For some reason, creating OSTab with "- " as the
-    // line prefix does not work, else I would prefer that method.
-    // Also, I have to set the tab indent string here, because line
-    // prefix (which for some reason is what OSTab's constructor
-    // takes, rather than tab indent string) means something different
-    // from tab indent string, and turning on the line prefix prints
-    // all sorts of things including "|" for some reason.
+    // HACK (mfh 20 Aug 2012) For some reason, creating OSTab with "-
+    // " as the line prefix does not work, else I would prefer that
+    // method for printing each line of a YAML block sequence (see
+    // Section 8.2.1 of the YAML 1.2 spec).
+    //
+    // Also, I have to set the tab indent string here, rather than in
+    // OSTab's constructor.  This is because line prefix (which for
+    // some reason is what OSTab's constructor takes, rather than tab
+    // indent string) means something different from tab indent
+    // string, and turning on the line prefix prints all sorts of
+    // things including "|" for some reason.
     RCP<FancyOStream> pfout = getFancyOStream (rcpFromRef (out));
     pfout->setTabIndentStr ("  ");
     FancyOStream& fout = *pfout;
@@ -1082,15 +1084,18 @@ namespace Teuchos {
     // nesting depth to 3, which is the limit that the current version
     // of PylotDB imposes for its YAML input.
 
-    // Omit document title.  Users may supply their own title as
-    // desired.  This reduces the nesting depth of YAML output.
-
-    // Outermost level is a list.  Begin with metadata.
-    fout << "- Output mode: " << (compact ? "compact" : "spacious") << endl
-         << "- Number of processes: " << numProcs << endl
-         << "- Time unit: s" << endl;
-    // Print names of all the kinds of statistics we collected.
-    fout << "- Statistics collected:";
+    // Outermost level is a dictionary.  (Individual entries of a
+    // dictionary do _not_ begin with "- ".)  We always print the
+    // outermost level in standard style, not flow style, for better
+    // readability.  We begin the outermost level with metadata.
+    fout << "Output mode: " << (compact ? "compact" : "spacious") << endl
+         << "Number of processes: " << numProcs << endl
+         << "Time unit: s" << endl;
+    // For a key: value pair where the value is a sequence or
+    // dictionary on the following line, YAML requires a space after
+    // the colon.
+    fout << "Statistics collected: ";
+    // Print list of the names of all the statistics we collected.
     if (compact) {
       fout << " [";
       for (size_type i = 0; i < statNames.size (); ++i) {
@@ -1109,12 +1114,12 @@ namespace Teuchos {
       }
     }
 
-    // Print the timer names.
+    // Print the list of timer names.
     //
     // It might be nicer instead to print a map from timer name to all
     // of its data, but keeping the maximum nesting depth small
     // ensures better compatibility with different parsing tools.
-    fout << "- Timer names:";
+    fout << "Timer names: ";
     if (compact) {
       fout << " [";
       size_type ind = 0;
@@ -1137,7 +1142,7 @@ namespace Teuchos {
     }
 
     // Print times for each timer, as a map from statistic name to its time.
-    fout << "- Total times:";
+    fout << "Total times: ";
     if (compact) {
       fout << " [";
       size_type outerInd = 0;
@@ -1166,18 +1171,18 @@ namespace Teuchos {
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
         // Print timer name
-        fout << "- " << quoteLabelForYaml (outerIter->first) << ": " << endl;
+        fout << quoteLabelForYaml (outerIter->first) << ": " << endl;
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << "- " << quoteLabelForYaml (statNames[innerInd]) << ": "
+          fout << quoteLabelForYaml (statNames[innerInd]) << ": "
                << curData[innerInd].first << endl;
         }
       }
     }
 
     // Print call counts for each timer, for each statistic name.
-    fout << "- Call counts:";
+    fout << "Call counts:";
     if (compact) {
       fout << " [";
       size_type outerInd = 0;
@@ -1205,11 +1210,11 @@ namespace Teuchos {
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
-        fout << "- " << quoteLabelForYaml (outerIter->first) << ": " << endl;
+        fout << quoteLabelForYaml (outerIter->first) << ": " << endl;
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << "- " << quoteLabelForYaml (statNames[innerInd]) << ": "
+          fout << quoteLabelForYaml (statNames[innerInd]) << ": "
                << curData[innerInd].second << endl;
         }
       }
