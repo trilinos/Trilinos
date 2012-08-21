@@ -259,6 +259,26 @@
       <Email address="ifpack2-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="ShyLU">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILR"/>
+    <Dependency name="Triutils" type="ILR"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILR"/>
+    <Dependency name="Isorropia" type="LR"/>
+    <Dependency name="AztecOO" type="LR"/>
+    <Dependency name="Galeri" type="ITO"/>
+    <Dependency name="Amesos" type="LR"/>
+    <Dependency name="Ifpack" type="LR"/>
+    <Dependency name="ML" type="TR"/>
+    <Dependency name="Belos" type="LR"/>
+    <EmailAddresses>
+      <Email address="shylu-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Stratimikos">
     <Dependency name="Teuchos" type="ILR"/>
     <Dependency name="ThreadPool" type="ILO"/>

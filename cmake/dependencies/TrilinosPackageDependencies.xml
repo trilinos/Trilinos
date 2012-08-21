@@ -979,6 +979,20 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="ShyLU" dir="packages/shylu" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Isorropia,AztecOO,Belos,Ifpack,Amesos,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="ML"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="shylu-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="Stratimikos" dir="packages/stratimikos" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="ThyraEpetraAdapters"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Belos,Ifpack,ML"/>
