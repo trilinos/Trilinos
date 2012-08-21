@@ -15,8 +15,8 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 
-#include <adjacency_list.hpp>
-#include <kruskal_min_spanning_tree.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/kruskal_min_spanning_tree.hpp>
 
 
 
@@ -32,7 +32,7 @@ typedef graph_traits < Graph >::vertex_descriptor Vertex;
 
 
 //==============================================================================
-Ifpack_SupportGraph::Ifpack_SupportGraph(Epetra_RowMatrix* A) :
+Ifpack_SupportGraph::Ifpack_SupportGraph(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
   Comm_(A->Comm()),
   UseTranspose_(false),
@@ -47,8 +47,7 @@ Ifpack_SupportGraph::Ifpack_SupportGraph(Epetra_RowMatrix* A) :
   ComputeTime_(0),
   ApplyInverseTime_(0),
   ComputeFlops_(0.0),
-  ApplyInverseFlops_(0.0),
-
+  ApplyInverseFlops_(0.0)
 {
   Teuchos::ParameterList List;
   SetParameters(List);
@@ -141,7 +140,7 @@ int Ifpack_SupportGraph::Initialize()
            ei != spanning_tree.end(); ++ei)
         {
 	  NumNz[source(*ei,g)-1] = NumNz[source(*ei,g)-1] + 1;
-	  Numnz[target(*ei,g)-1] = NumNz[target(*ei,g)-1] + 1;
+	  NumNz[target(*ei,g)-1] = NumNz[target(*ei,g)-1] + 1;
 	}
 
 
@@ -159,22 +158,20 @@ int Ifpack_SupportGraph::Initialize()
 	  Values[i] = temp2;
 	}
       
-      
-
+     
       int *l = new int[num_verts];
       for(int i = 0; i < num_verts; i++)
 	{
 	  l[i] = 1;
 	}
 
-      
       for(int i = 0; i < NumForests_; i++)
 	{
 	  
-	  if(i > 1)
+	  if(i > 0)
 	    {
 	      spanning_tree.clear();
-	      kruskall_minimum_spanning_tree(g,std::back_inserter(spanning_tree));
+	      kruskal_minimum_spanning_tree(g,std::back_inserter(spanning_tree));
 	      for(std::vector < Edge >::iterator ei = spanning_tree.begin();
 		  ei != spanning_tree.end(); ++ei)
 		{
@@ -188,7 +185,7 @@ int Ifpack_SupportGraph::Initialize()
 		}
 
 	    }
-	
+
 	  for (std::vector < Edge >::iterator ei = spanning_tree.begin();
 	       ei != spanning_tree.end(); ++ei)
 	    {
@@ -205,12 +202,11 @@ int Ifpack_SupportGraph::Initialize()
 	      Indices[target(*ei,g)-1][l[target(*ei,g)-1]] = source(*ei,g)-1;
 	      Values[target(*ei,g)-1][l[target(*ei,g)-1]] = weight[*ei];
 	      l[target(*ei,g)-1] = l[target(*ei,g)-1] + 1;
-	      
-	      remove_edge(*ei,g);
 
+	      remove_edge(*ei,g);
 	    }
 	}
-      
+
       // Create the CrsMatrix for the support graph
       B_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
       
@@ -243,7 +239,7 @@ int Ifpack_SupportGraph::Initialize()
       if(Solver_ == Teuchos::null)
 	{
 	  //try to create KLU, it is generally enabled
-	  Solver_ = Teuchos::rcp(Factory.Create("Amesos_Klu",*Problem));
+	  Solver_ = Teuchos::rcp(Factory.Create("Amesos_Klu",*Problem_));
 	}
 
       if (Solver_ == Teuchos::null)
@@ -353,8 +349,8 @@ Ifpack_SupportGraph::Print(std::ostream& os) const
 {
   if (!Comm().MyPID()) {
     os << endl;
-    os << "================================================================================" <
-      os << "Ifpack_SupportGraph: " << Label () << endl << endl;
+    os << "================================================================================" << endl;
+    os << "Ifpack_SupportGraph: " << Label () << endl << endl;
     os << "Condition number estimate = " << Condest() << endl;
     os << "Global number of rows            = " << A_->NumGlobalRows() << endl;
     os << endl;
@@ -377,7 +373,7 @@ Ifpack_SupportGraph::Print(std::ostream& os) const
       os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "================================================================================" <
+    os << "================================================================================" << endl;
       os << endl;
   }
 

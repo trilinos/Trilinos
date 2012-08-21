@@ -263,6 +263,9 @@ class Ifpack_SupportGraph: public Ifpack_Preconditioner {
 
   //! Contains the estimated conditioner number.
   double Condest_;
+  
+  //! Contains the number of forests in the support graph.
+  int NumForests_;
 
   //! Contains the label of \c this object.
   string Label_;
