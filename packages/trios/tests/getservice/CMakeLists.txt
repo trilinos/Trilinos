@@ -42,6 +42,7 @@ SET(DEFAULT_ARGS "${DEFAULT_ARGS} --num-reqs=10 ")
 
 TRIBITS_ADD_TEST(
   GetServiceTest
+  NOEXEPREFIX
   NAME GetServiceTest ${testname}
   ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
   COMM serial mpi

@@ -57,13 +57,14 @@ SET(TESTNAMES
 
 foreach (testname ${TESTNAMES})
 
-  SET(DEFAULT_ARGS "--io-method=${testname} ")
+  SET(DEFAULT_ARGS "--io-method=${testname} --validate ")
   SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file=${testname}-result.out ")
   SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file-mode=a ")
   SET(DEFAULT_ARGS "${DEFAULT_ARGS} --num-trials=5 ")
 
   TRIBITS_ADD_TEST(
     XferServiceTest
+    NOEXEPREFIX
     NAME XferService_${testname}
     ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
     COMM serial mpi

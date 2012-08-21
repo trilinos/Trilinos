@@ -58,6 +58,7 @@ foreach (testname ${TESTNAMES})
 
   TRIBITS_ADD_TEST(
     MulticastTest
+    NOEXEPREFIX
     NAME MulticastTest_${testname}
     ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
     COMM serial mpi

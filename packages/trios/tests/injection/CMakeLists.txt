@@ -54,6 +54,7 @@ foreach (testname ${TESTNAMES})
 
   TRIBITS_ADD_TEST(
     InjectionTest
+    NOEXEPREFIX
     NAME InjectionTest_${testname}
     ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
     COMM serial mpi
