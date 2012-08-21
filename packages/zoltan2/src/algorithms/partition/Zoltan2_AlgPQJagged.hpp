@@ -2376,8 +2376,8 @@ void AlgPQJagged(
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning");
 
 
-  int myRank = comm->getRank();
-  int worldSize = comm->getSize();
+  //int myRank = comm->getRank();
+  //int worldSize = comm->getSize();
 
   for (int i = 0; i < partArraySize; ++i){
     if(partNo[i] == 1) continue;
