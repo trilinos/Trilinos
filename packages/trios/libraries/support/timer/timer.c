@@ -125,6 +125,7 @@ static void _timer_premain(void)
 static void init_timer() {
     static int initialized = 0;
     if (!initialized) {
+        int mpi_initialized=0;
 
 #ifdef USING_PAPI
         PAPI_library_init(PAPI_VER_CURRENT);
@@ -134,6 +135,10 @@ static void init_timer() {
 #endif
 
 #ifdef USING_MPITIME
+        MPI_Initialized(&mpi_initialized);
+        if (!mpi_initialized) {
+            MPI_Init(NULL, NULL);
+        }
         inittime = MPI_Wtime();
 #endif
 
