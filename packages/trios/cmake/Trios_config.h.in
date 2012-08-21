@@ -50,7 +50,6 @@
 /* ************************************************
  * Misc Config
  * ************************************************ */
-#cmakedefine HAVE_TRIOS_XDR_SIZEOF 1
 #cmakedefine TRIOS_HAVE_GETIFADDRS 1
 
 
@@ -80,4 +79,12 @@
  * ************************************************ */
 #cmakedefine TRIOS_ENABLE_TRACING 1
 #cmakedefine HAVE_TRIOS_PABLO 1
+
+/* ************************************************
+ * XDR configuration
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_XDR_U_INT16_T
+#cmakedefine HAVE_TRIOS_XDR_U_INT32_T
+#cmakedefine HAVE_TRIOS_XDR_U_INT64_T
+#cmakedefine HAVE_TRIOS_XDR_SIZEOF 1
 
