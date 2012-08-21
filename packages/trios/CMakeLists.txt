@@ -25,6 +25,8 @@ INCLUDE(TriosProbeTimers)
 INCLUDE(TriosProbeNetwork)
 # Checks for a POSIX semaphore implementation
 INCLUDE(TriosProbeSemaphores)
+# Check XDR implementation
+INCLUDE(TriosProbeXDR)
 
 IF (TPL_ENABLE_Netcdf)
   TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_NETCDF_SERVICE

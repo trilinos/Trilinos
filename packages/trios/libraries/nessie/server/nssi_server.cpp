@@ -52,6 +52,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_nssi_server.h"
 
 #include "Trios_nssi_types.h"
+#include "Trios_nssi_xdr.h"
 #include "nnti.h"
 
 #include <stdio.h>
@@ -85,6 +86,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "nssi_trace.h"
 #include "nssi_service_args.h"
 
+#include <rpc/xdr.h>
 
 
 
