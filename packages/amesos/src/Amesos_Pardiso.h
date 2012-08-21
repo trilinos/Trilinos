@@ -202,5 +202,7 @@ private:
   int msglvl_; //! Output level
   int nrhs_; // Number of RHS
 
+  Teuchos::ParameterList param_;
+
 };  // class Amesos_Pardiso  
 #endif

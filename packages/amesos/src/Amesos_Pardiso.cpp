@@ -222,49 +222,27 @@ int Amesos_Pardiso::SetParameters( Teuchos::ParameterList &ParameterList)
 
   SetControlParameters( ParameterList );
 
-  // retrive PARDISO's specific parameters
-
-  if (ParameterList.isSublist("pardiso")) 
+  // We fill iparm_ using named parameters
+  if (ParameterList.isSublist("Pardiso"))
   {
-    const Teuchos::ParameterList& PardisoList = ParameterList.sublist("Pardiso");
-
-    if (PardisoList.isParameter("MSGLVL"))
-      msglvl_ = PardisoList.get<int>("MSGLVL");
-    else
-      if ( debug_ ) msglvl_ = 1 ; //  msglvl prints statistical information, but is the closest 
-    //  thing I found to debug print statements - KSS
-
-    if (PardisoList.isParameter("IPARM(1)"))
-      iparm_[0] = PardisoList.get<int>("IPARM(1)");
-
-    if (PardisoList.isParameter("IPARM(2)"))
-      iparm_[1] = PardisoList.get<int>("IPARM(2)");
-
-    if (PardisoList.isParameter("IPARM(3)"))
-      iparm_[2] = PardisoList.get<int>("IPARM(3)");
-
-    if (PardisoList.isParameter("IPARM(4)"))
-      iparm_[3] = PardisoList.get<int>("IPARM(4)");
-
-    if (PardisoList.isParameter("IPARM(8)"))
-      iparm_[7] = PardisoList.get<int>("IPARM(8)");
-
-    if (PardisoList.isParameter("IPARM(10)"))
-      iparm_[9] = PardisoList.get<int>("IPARM(10)");
-
-    if (PardisoList.isParameter("IPARM(11)"))
-      iparm_[10] = PardisoList.get<int>("IPARM(11)");
-
-    if (PardisoList.isParameter("IPARM(18)"))
-      iparm_[17] = PardisoList.get<int>("IPARM(18)");
-
-    if (PardisoList.isParameter("IPARM(19)"))
-      iparm_[18] = PardisoList.get<int>("IPARM(19)");
-
-    if (PardisoList.isParameter("IPARM(21)"))
-      iparm_[20] = PardisoList.get<int>("IPARM(21)");
+	param_ = ParameterList.sublist("Pardiso");
   }
-  
+
+  msglvl_ = param_.get<int>("Message level", static_cast<int>(debug_));
+  iparm_[0] = param_.get<int>("No default parameters", 1);
+  iparm_[1] = param_.get<int>("Use METIS reordering" , 2);
+  iparm_[2] = param_.get<int>("Number of processors", 1);
+  iparm_[3] = param_.get<int>("Do preconditioned CGS iterations", 0);
+  iparm_[4] = param_.get<int>("Use user permutation", 0);
+  iparm_[5] = param_.get<int>("Solution on X/B", 0);
+  iparm_[7] = param_.get<int>("Max num of iterative refinement steps", 0);
+  iparm_[9] = param_.get<int>("Perturbation for pivot elements 10^-k", 13);
+  iparm_[10] = param_.get<int>("Use (non-)symmetric scaling vectors", 1);
+  iparm_[11] = param_.get<int>("Solve transposed", 0);
+  iparm_[12] = param_.get<int>("Use (non-)symmetric matchings", 0);
+  iparm_[17] = param_.get<int>("Number of non-zeros in LU; -1 to compute", -1);
+  iparm_[18] = param_.get<int>("Mflops for LU fact; -1 to compute", -1);
+
   return 0;
 }
 
