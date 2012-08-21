@@ -1144,10 +1144,13 @@ namespace Teuchos {
     // Print times for each timer, as a map from statistic name to its time.
     fout << "Total times: ";
     if (compact) {
-      fout << " [";
+      fout << " {";
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
+        // Print timer name.
+        fout << quoteLabelForYaml (outerIter->first) << ": ";
+        // Print that timer's data.
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         fout << "{";
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
@@ -1162,7 +1165,7 @@ namespace Teuchos {
           fout << ", ";
         }
       }
-      fout << "]" << endl;
+      fout << "}" << endl;
     }
     else {
       fout << endl;
@@ -1170,8 +1173,9 @@ namespace Teuchos {
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
-        // Print timer name
+        // Print timer name.
         fout << quoteLabelForYaml (outerIter->first) << ": " << endl;
+        // Print that timer's data.
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
@@ -1184,10 +1188,13 @@ namespace Teuchos {
     // Print call counts for each timer, for each statistic name.
     fout << "Call counts:";
     if (compact) {
-      fout << " [";
+      fout << " {";
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
+        // Print timer name.
+        fout << quoteLabelForYaml (outerIter->first) << ": ";
+        // Print that timer's data.
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         fout << "{";
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
@@ -1202,7 +1209,7 @@ namespace Teuchos {
           fout << ", ";
         }
       }
-      fout << "]" << endl;
+      fout << "}" << endl;
     }
     else {
       fout << endl;
@@ -1210,7 +1217,9 @@ namespace Teuchos {
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
+        // Print timer name.
         fout << quoteLabelForYaml (outerIter->first) << ": " << endl;
+        // Print that timer's data.
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
