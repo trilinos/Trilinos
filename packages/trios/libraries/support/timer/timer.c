@@ -135,11 +135,13 @@ static void init_timer() {
 #endif
 
 #ifdef USING_MPITIME
+/*
         MPI_Initialized(&mpi_initialized);
         if (!mpi_initialized) {
             MPI_Init(NULL, NULL);
         }
         inittime = MPI_Wtime();
+*/
 #endif
 
 #ifdef USING_CLOCK_GETTIME
