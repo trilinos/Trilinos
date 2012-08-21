@@ -2134,7 +2134,6 @@ void AlgPQJagged(
                         "while it is being developed and tested.")
 
 #else
-
   env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
 
@@ -2376,8 +2375,8 @@ void AlgPQJagged(
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning");
 
 
-  int myRank = comm->getRank();
-  int worldSize = comm->getSize();
+  //int myRank = comm->getRank();
+  //int worldSize = comm->getSize();
 
   for (int i = 0; i < partArraySize; ++i){
     if(partNo[i] == 1) continue;
