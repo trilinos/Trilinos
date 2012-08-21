@@ -10,6 +10,9 @@
 TRILINOS_SRCDIR=${HOME}/research/workspace/Trilinos
 TRIOS_SRCDIR=${TRILINOS_SRCDIR}/packages/trios
 
+# Path to MPI (these environment variables should be set by modules)
+MPI_HOME=${MPICH_DIR}
+
 rm -f CMakeCache.txt
 
 export TARGET_COMPILER=pgi
@@ -24,8 +27,11 @@ INSTALL_PATH=/home/raoldfi/research/support/cnl/lib/trilinos
 EXTRA_ARGS=$@
 
 cmake \
-    -D CMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
-    -D CMAKE_TOOLCHAIN_FILE=${TOOLCHAIN} \
+    -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+    -D CMAKE_C_COMPILER=cc \
+    -D CMAKE_CXX_COMPILER=CC \
+    -D CMAKE_Fortran_COMPILER=ftn \
+\
     -D BUILD_SHARED_LIBS:BOOL=OFF \
     -D TPL_FIND_SHARED_LIBS:BOOL=OFF \
     -D Trilinos_LINK_SEARCH_START_STATIC:BOOL=ON \
@@ -35,8 +41,18 @@ cmake \
     -D Trilinos_EXTRA_LINK_FLAGS:STRING="-lz" \
 \
     -D Trilinos_ENABLE_Trios:BOOL=ON \
+    -D Trilinos_ENABLE_Triossupport:BOOL=ON \
+	-D Trilinos_ENABLE_Triosnnti:BOOL=ON \
+	-D Trilinos_ENABLE_Triosnssi:BOOL=ON \
+	-D Trilinos_ENABLE_Triosprograms:BOOL=ON \
+	-D Trilinos_ENABLE_Triostests:BOOL=ON \
+	-D Trilinos_ENABLE_Triosexamples:BOOL=ON \
 \
    -D TPL_ENABLE_MPI:BOOL=ON \
+   -D MPI_LIBRARY=mpich \
+   -D MPI_EXEC=aprun \
+   -D MPI_EXEC_NUMPROCS_FLAG:STRING="-n" \
+   -D MPI_USE_COMPILER_WRAPPERS:BOOL=OFF \
 \
     -D TPL_ENABLE_BLAS:STRING=ON \
     -D BLAS_LIBRARY_DIRS:FILEPATH="/opt/pgi/default/linux86-64/default/lib" \

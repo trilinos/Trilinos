@@ -15,21 +15,14 @@ source ${TRIOS_SRCDIR}/sampleScripts/config/redsky/loadenv.sh
 
 rm -f CMakeCache.txt
 
-TARGET_COMPILER=pgi
-TOOLCHAIN=${TRIOS_SRCDIR}/sampleScripts/config/redsky/toolchain-redsky-${TARGET_COMPILER}.cmake
 
 EXTRA_ARGS=$@
 
 INSTALL_PATH=$HOME/projects/trilinos/install/${TARGET_COMPILER}
 
 cmake \
-    -D CMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
-    -D CMAKE_TOOLCHAIN_FILE=${TOOLCHAIN} \
 \
-    -D CMAKE_BUILD_TYPE:STRING=DEBUG \
-\
-    -D CMAKE_CXX_FLAGS:STRING="-pgf90libs" \
-    -D CMAKE_C_FLAGS:STRING="-pgcpplibs -pgf90libs" \
+    -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
 \
     -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
 \
@@ -39,6 +32,12 @@ cmake \
     -D Trilinos_ENABLE_TESTS:BOOL=ON \
 \
     -D Trilinos_ENABLE_Trios:BOOL=ON \
+    -D Trilinos_ENABLE_Triossupport:BOOL=ON \
+	-D Trilinos_ENABLE_Triosnnti:BOOL=ON \
+	-D Trilinos_ENABLE_Triosnssi:BOOL=ON \
+	-D Trilinos_ENABLE_Triosprograms:BOOL=ON \
+	-D Trilinos_ENABLE_Triostests:BOOL=ON \
+	-D Trilinos_ENABLE_Triosexamples:BOOL=ON \
 \
     -D TPL_ENABLE_InfiniBand:BOOL=ON \
     -D InfiniBand_INCLUDE_DIRS:FILEPATH="/usr/include/infiniband" \

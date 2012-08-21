@@ -5,7 +5,7 @@
 # Notes on the cmake variables
 #   - MPI details are in the toolchain file
 
-# Path to Trilinos source 
+# Path to Trilinos source
 TRILINOS_SRCDIR=${HOME}/research/workspace/Trilinos
 TRIOS_SRCDIR=${TRILINOS_SRCDIR}/packages/trios
 
@@ -14,15 +14,9 @@ source ${TRIOS_SRCDIR}/sampleScripts/config/redstorm/loadenv.sh
 
 rm -f CMakeCache.txt
 
-TARGET_COMPILER=pgi
-TOOLCHAIN=${TRIOS_SRCDIR}/sampleScripts/config/redstorm/toolchain-catamount-${TARGET_COMPILER}.cmake
-
-INSTALL_PATH=/home/raoldfi/research/support/cnl/lib/trilinos
-
 
 cmake \
     -D CMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
-    -D CMAKE_TOOLCHAIN_FILE=${TOOLCHAIN} \
     -D BUILD_SHARED_LIBS:BOOL=OFF \
     -D TPL_FIND_SHARED_LIBS:BOOL=OFF \
     -D Trilinos_LINK_SEARCH_START_STATIC:BOOL=ON \
@@ -35,6 +29,12 @@ cmake \
     -D CMAKE_CXX_FLAGS_RELEASE:STRING="-DMPICH_IGNORE_CXX_SEEK" \
 \
     -D Trilinos_ENABLE_Trios:BOOL=ON \
+    -D Trilinos_ENABLE_Triossupport:BOOL=ON \
+	-D Trilinos_ENABLE_Triosnnti:BOOL=ON \
+	-D Trilinos_ENABLE_Triosnssi:BOOL=ON \
+	-D Trilinos_ENABLE_Triosprograms:BOOL=ON \
+	-D Trilinos_ENABLE_Triostests:BOOL=ON \
+	-D Trilinos_ENABLE_Triosexamples:BOOL=ON \
 \
     -D TPL_ENABLE_MPI:BOOL=ON \
 \
