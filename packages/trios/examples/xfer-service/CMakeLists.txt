@@ -31,7 +31,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_EXECUTABLE(
   XferServiceTest
-  SOURCES xfer_service_args.c xfer_util.cpp xfer_server.cpp xfer_service_test.cpp xfer_client.cpp
+  SOURCES xfer_service_args.c xfer_util.cpp xfer_server.cpp xfer_threads.cpp xfer_service_test.cpp xfer_client.cpp
   DEPLIBS ${DEPLIBS}
   NOEXEPREFIX
 )

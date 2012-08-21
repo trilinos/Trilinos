@@ -72,7 +72,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <algorithm>
 
 // Prototypes for client and server codes
-int xfer_server_main(nssi_rpc_transport transport, MPI_Comm server_comm);
+int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm server_comm);
 int xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm client_comm);
 
 
@@ -503,7 +503,7 @@ int main(int argc, char *argv[])
      *  In this example, the server is a single process.
      */
     if (color == 0) {
-        rc = xfer_server_main((nssi_rpc_transport)args.transport, comm);
+        rc = xfer_server_main((nssi_rpc_transport)args.transport, args.num_threads, comm);
         log_debug(debug_level, "Server is finished");
     }
 

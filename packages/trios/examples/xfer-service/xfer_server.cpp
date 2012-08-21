@@ -70,6 +70,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <stdlib.h>
 
 #include "xfer_util.h"
+#include "xfer_threads.h"
 
 //#include <TPI.hpp>   // Thread Pool Interface (Trilinos Package)
 
@@ -353,7 +354,7 @@ void make_progress(bool is_idle)
  * service loop.   The client will send a request to kill the service upon completion.
  *
  */
-int xfer_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
+int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm server_comm)
 {
     int rc = NSSI_OK;
 
@@ -412,12 +413,29 @@ int xfer_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
     // Tell the NSSI server to output log data
     //rpc_debug_level = xfer_debug_level;
 
-    // start processing requests, the client will send a request to exit when done
-    rc = nssi_service_start(&xfer_svc);
-    if (rc != NSSI_OK) {
-        log_info(xfer_debug_level, "exited xfer_svc: %s",
-                nssi_err_str(rc));
+    // Start processing requests, the client will send a request to exit when done.
+    // If we're running multithreaded, we need to replace the process_request function with the
+    // enqueue_reqs function and start the process_queue_reqs thread.
+
+    if (num_threads > 0) {
+        log_debug(LOG_ALL, "Starting server threads");
+
+        rc = xfer_start_server_threads(num_threads, 1000);
+
+        // The main thread will execute unit it receives a "kill" request
+        rc = nssi_service_start_wfn(&xfer_svc, &xfer_enqueue_rpc_request);
+
+        xfer_cancel_server_threads();
     }
+    else {
+        rc = nssi_service_start(&xfer_svc);
+        if (rc != NSSI_OK) {
+            log_info(xfer_debug_level, "exited xfer_svc: %s",
+                    nssi_err_str(rc));
+        }
+    }
+
+
 
     sleep(5);
 
