@@ -175,6 +175,134 @@ namespace Teuchos {
     TimeMonitor::clearCounters ();
   }
 
+
+  //
+  // Test correct quoting of labels for TimeMonitor's YAML output.
+  //
+  TEUCHOS_UNIT_TEST( TimeMonitor, YamlLabelQuoting )
+  {
+    using Teuchos::Array;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::Time;
+    typedef Array<std::string>::size_type size_type;
+
+    Array<std::string> inputLabels, outputLabels;
+
+    // Make sure to exercise things that don't need quoting, like
+    // spaces and certain punctuation, as well as things that do need
+    // quoting, like colons, inner double quotes, and backslashes.
+    inputLabels.push_back ("NoQuotingNeeded");
+    inputLabels.push_back ("No quoting needed");
+    inputLabels.push_back ("\"AlreadyQuotedNoQuotingNeeded\"");
+    inputLabels.push_back ("\"Already quoted, no quoting needed\"");
+    inputLabels.push_back ("\"Already quoted: quoting needed\"");
+    inputLabels.push_back ("NotQuoted:QuotingNeeded");
+    inputLabels.push_back ("Not quoted: quoting needed");
+    // Test both individual double quotes, and pairs of double quotes.
+    inputLabels.push_back ("Not quoted \" quoting needed");
+    inputLabels.push_back ("Not quoted \" \" quoting needed");
+    inputLabels.push_back ("\"Already quoted \" quoting needed\"");
+    inputLabels.push_back ("\"Already quoted \" \" quoting needed\"");
+    // Remember that in C strings, a double backslash turns into a
+    // single backslash.  Our YAML output routine should turn each
+    // single backslash back into a double backslash.
+    inputLabels.push_back ("Not quoted \\ quoting needed");
+    inputLabels.push_back ("Not quoted \\\\ quoting needed");
+    inputLabels.push_back ("Not quoted \\ \\ quoting needed");
+    inputLabels.push_back ("\"Already quoted \\ quoting needed\"");
+    inputLabels.push_back ("\"Already quoted \\\\ quoting needed\"");
+    inputLabels.push_back ("\"Already quoted \\ \\ quoting needed\"");
+
+    outputLabels.push_back ("NoQuotingNeeded");
+    outputLabels.push_back ("No quoting needed");
+    outputLabels.push_back ("\"AlreadyQuotedNoQuotingNeeded\"");
+    outputLabels.push_back ("\"Already quoted, no quoting needed\"");
+    outputLabels.push_back ("\"Already quoted: quoting needed\"");
+    outputLabels.push_back ("\"NotQuoted:QuotingNeeded\"");
+    outputLabels.push_back ("\"Not quoted: quoting needed\"");
+    outputLabels.push_back ("\"Not quoted \\\" quoting needed\"");
+    outputLabels.push_back ("\"Not quoted \\\" \\\" quoting needed\"");
+    outputLabels.push_back ("\"Already quoted \\\" quoting needed\"");
+    outputLabels.push_back ("\"Already quoted \\\" \\\" quoting needed\"");
+    outputLabels.push_back ("\"Not quoted \\\\ quoting needed\"");
+    outputLabels.push_back ("\"Not quoted \\\\\\\\ quoting needed\"");
+    outputLabels.push_back ("\"Not quoted \\\\ \\\\ quoting needed\"");
+    outputLabels.push_back ("\"Already quoted \\\\ quoting needed\"");
+    outputLabels.push_back ("\"Already quoted \\\\\\\\ quoting needed\"");
+    outputLabels.push_back ("\"Already quoted \\\\ \\\\ quoting needed\"");
+
+    // Sanity check.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      inputLabels.size () != outputLabels.size (),
+      std::logic_error,
+      "The number of input labels is different than the number of output labels."
+      "  Please ask a Teuchos developer to make sure that every test input "
+      "label has a corresponding output label.");
+
+    Array<RCP<Time> > timers;
+    for (size_type i = 0; i < inputLabels.size (); ++i) {
+      timers.push_back (TimeMonitor::getNewCounter (inputLabels[i]));
+    }
+
+    // The actual number of operations in the loop is proportional to
+    // the cube of the loop length.  Adjust the quantities below as
+    // necessary to ensure the timer reports a nonzero elapsed time
+    // for each of the invocations.
+    const size_t loopLength = 25;
+    for (int k = 0; k < 3; ++k) {
+      for (size_type i = 0; i < timers.size (); ++i) {
+        TimeMonitor timeMon (* timers[i]);
+        slowLoop (loopLength);
+      }
+    }
+
+    { // YAML output, default format.
+      std::ostringstream oss;
+      RCP<ParameterList> reportParams =
+        parameterList (* (TimeMonitor::getValidReportParameters ()));
+      reportParams->set ("Report format", "YAML");
+      TimeMonitor::report (oss, reportParams);
+
+      // Echo output to the FancyOStream out (which is a standard unit
+      // test argument).  Output should only appear in "show all test
+      // details" mode.
+      out << oss.str () << std::endl;
+
+      // Make sure that all timer labels appear correctly in the output.
+      for (size_type i = 0; i < inputLabels.size(); ++i) {
+        const size_t pos = oss.str ().find (outputLabels[i]);
+        TEST_INEQUALITY(pos, std::string::npos);
+      }
+    }
+
+    { // YAML output, nondefault format.
+      std::ostringstream oss;
+      RCP<ParameterList> reportParams =
+        parameterList (* (TimeMonitor::getValidReportParameters ()));
+      reportParams->set ("Report format", "YAML");
+      // Set this to the opposite of whatever it was.
+      reportParams->set ("Compact YAML", ! reportParams->get<bool> ("Compact YAML"));
+      TimeMonitor::report (oss, reportParams);
+
+      // Echo output to the FancyOStream out (which is a standard unit
+      // test argument).  Output should only appear in "show all test
+      // details" mode.
+      out << oss.str () << std::endl;
+
+      // Make sure that all timer labels appear correctly in the output.
+      for (size_type i = 0; i < inputLabels.size(); ++i) {
+        const size_t pos = oss.str ().find (outputLabels[i]);
+        TEST_INEQUALITY(pos, std::string::npos);
+      }
+    }
+
+    // This sets up for the next unit test.
+    TimeMonitor::clearCounters ();
+  }
+
+
   //
   // TimeMonitor nested timers test: create two timers on all (MPI)
   // processes, use the second inside the scope of the first, and make
@@ -301,11 +429,11 @@ namespace Teuchos {
     // Timer A gets a call count of 3.
     for (size_t k = 0; k < 3; ++k) {
       TimeMonitor monitorA (*timerA);
-      slowLoop (size_t (timerA_loopLength));
+      slowLoop (timerA_loopLength);
     }
     if (myRank == 0) { // Timer B gets a call count of 1 on Proc 0.
       TimeMonitor monitorB (*timerB);
-      slowLoop (size_t (timerB_loopLength));
+      slowLoop (timerB_loopLength);
     }
 
     const bool alwaysWriteLocal = false; // the default

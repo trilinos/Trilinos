@@ -936,6 +936,81 @@ namespace Teuchos {
   }
 
 
+  namespace {
+    /// \brief Quote the given string for YAML output.
+    ///
+    /// TimeMonitor allows users to provide arbitrary strings as timer
+    /// labels.  It also allows developers to do the same for
+    /// statistics labels.  Since YAML has a particular syntax in
+    /// which certain characters indicate structure, and since we
+    /// include timer labels in YAML output, we have to modify timer
+    /// labels slightly in order for them not to violate YAML
+    /// requirements.
+    ///
+    /// We begin by quoting the string (if not already quoted) if it
+    /// contains a colon.  This is because YAML separates each key
+    /// from its value in a key: value pair using a colon.  That means
+    /// that if the key itself contains a colon, we need to quote the
+    /// whole key (which we do using double quotes).  We use double
+    /// quotes since YAML allows double-quoted strings to contain
+    /// anything, vs. just printable characters.
+    ///
+    /// We also quote the string if any characters in it need
+    /// escaping.  For now, we escape double quotes (not counting
+    /// those that quote whole string) and backslashes.  For an
+    /// example of quoting double quotes in a string, see Example 5.13
+    /// in the YAML 1.2 spec.
+    std::string
+    quoteLabelForYaml (const std::string& label)
+    {
+      // YAML allows empty keys in key: value pairs.  See Section 7.2
+      // of the YAML 1.2 spec.  We thus let an empty label pass
+      // through without quoting or other special treatment.
+      if (label.empty ()) {
+        return label;
+      }
+
+      // Check whether the label is already quoted.  If so, we don't
+      // need to quote it again.  However, we do need to quote any
+      // quote symbols in the string inside the outer quotes.
+      const bool alreadyQuoted = label.size () >= 2 &&
+        label[0] == '"' && label[label.size() - 1] == '"';
+
+      // We need to quote if there are any colons or (inner) quotes in
+      // the string.  We'll determine this as we read through the
+      // string and escape any characters that need escaping.
+      bool needToQuote = false;
+
+      std::string out; // To fill with the return value
+      out.reserve (label.size ());
+
+      const size_t startPos = alreadyQuoted ? 1 : 0;
+      const size_t endPos = alreadyQuoted ? label.size () - 1 : label.size ();
+      for (size_t i = startPos; i < endPos; ++i) {
+        const char c = label[i];
+        if (c == '"' || c == '\\') {
+          out.push_back ('\\'); // Escape the quote or backslash.
+          needToQuote = true;
+        }
+        else if (c == ':') {
+          needToQuote = true;
+        }
+        out.push_back (c);
+      }
+
+      if (needToQuote || alreadyQuoted) {
+        // If the input string was already quoted, then out doesn't
+        // include its quotes, so we have to add them back in.
+        return "\"" + out + "\"";
+      }
+      else {
+        return out;
+      }
+    }
+
+  } // namespace (anonymous)
+
+
   void TimeMonitor::
   summarizeToYaml (Ptr<const Comm<int> > comm,
                    std::ostream &out,
@@ -996,7 +1071,7 @@ namespace Teuchos {
     if (compact) {
       fout << " [";
       for (size_type i = 0; i < statNames.size (); ++i) {
-        fout << statNames[i];
+        fout << quoteLabelForYaml (statNames[i]);
         if (i + 1 < statNames.size ()) {
           fout << ", ";
         }
@@ -1007,7 +1082,7 @@ namespace Teuchos {
       fout << endl;
       OSTab tab1 (pfout);
       for (size_type i = 0; i < statNames.size (); ++i) {
-        fout << "- " << statNames[i] << endl;
+        fout << "- " << quoteLabelForYaml (statNames[i]) << endl;
       }
     }
 
@@ -1020,8 +1095,9 @@ namespace Teuchos {
     if (compact) {
       fout << " [";
       size_type ind = 0;
-      for (stat_map_type::const_iterator it = statData.begin(); it != statData.end(); ++it, ++ind) {
-        fout << it->first;
+      for (stat_map_type::const_iterator it = statData.begin();
+           it != statData.end(); ++it, ++ind) {
+        fout << quoteLabelForYaml (it->first);
         if (ind + 1 < statData.size ()) {
           fout << ", ";
         }
@@ -1031,8 +1107,9 @@ namespace Teuchos {
     else {
       fout << endl;
       OSTab tab1 (pfout);
-      for (stat_map_type::const_iterator it = statData.begin(); it != statData.end(); ++it) {
-        fout << "- " << it->first << endl;
+      for (stat_map_type::const_iterator it = statData.begin();
+           it != statData.end(); ++it) {
+        fout << "- " << quoteLabelForYaml (it->first) << endl;
       }
     }
 
@@ -1041,11 +1118,13 @@ namespace Teuchos {
     if (compact) {
       fout << " [";
       size_type outerInd = 0;
-      for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
+      for (stat_map_type::const_iterator outerIter = statData.begin();
+           outerIter != statData.end(); ++outerIter, ++outerInd) {
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         fout << "{";
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << statNames[innerInd] << ": " << curData[innerInd].first;
+          fout << quoteLabelForYaml (statNames[innerInd]) << ": "
+               << curData[innerInd].first;
           if (innerInd + 1 < curData.size ()) {
             fout << ", ";
           }
@@ -1061,12 +1140,15 @@ namespace Teuchos {
       fout << endl;
       OSTab tab1 (pfout);
       size_type outerInd = 0;
-      for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
-        fout << "- " << outerIter->first << ": " << endl; // Print timer name
+      for (stat_map_type::const_iterator outerIter = statData.begin();
+           outerIter != statData.end(); ++outerIter, ++outerInd) {
+        // Print timer name
+        fout << "- " << quoteLabelForYaml (outerIter->first) << ": " << endl;
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << "- " << statNames[innerInd] << ": " << curData[innerInd].first << endl;
+          fout << "- " << quoteLabelForYaml (statNames[innerInd]) << ": "
+               << curData[innerInd].first << endl;
         }
       }
     }
@@ -1076,11 +1158,13 @@ namespace Teuchos {
     if (compact) {
       fout << " [";
       size_type outerInd = 0;
-      for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
+      for (stat_map_type::const_iterator outerIter = statData.begin();
+           outerIter != statData.end(); ++outerIter, ++outerInd) {
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         fout << "{";
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << statNames[innerInd] << ": " << curData[innerInd].second;
+          fout << quoteLabelForYaml (statNames[innerInd]) << ": "
+               << curData[innerInd].second;
           if (innerInd + 1 < curData.size ()) {
             fout << ", ";
           }
@@ -1102,7 +1186,8 @@ namespace Teuchos {
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << "- " << statNames[innerInd] << ": " << curData[innerInd].second << endl;
+          fout << "- " << quoteLabelForYaml (statNames[innerInd]) << ": "
+               << curData[innerInd].second << endl;
         }
       }
     }
