@@ -269,13 +269,18 @@ namespace Teuchos {
     //
     // \param localCounters [in] Timers from which to extract data.
     //
+    // \param filter [in] Filter for timer labels.  If filter is not
+    //   empty, this method will only collect data for local timers
+    //   whose labels begin with this string.
+    //
     // Extract the total elapsed time and call count from each timer
     // in the given array.  Merge results for timers with duplicate
     // labels, by summing their total elapsed times and call counts
     // pairwise.
     void
     collectLocalTimerData (timer_map_t& localData,
-                           ArrayView<const RCP<Time> > localCounters)
+                           ArrayView<const RCP<Time> > localCounters,
+                           const std::string& filter="")
     {
       using std::make_pair;
       typedef timer_map_t::const_iterator const_iter_t;
@@ -285,19 +290,25 @@ namespace Teuchos {
       for (ArrayView<const RCP<Time> >::const_iterator it = localCounters.begin();
            it != localCounters.end(); ++it) {
         const std::string& name = (*it)->name();
-        const double timing = (*it)->totalElapsedTime();
-        const int numCalls = (*it)->numCalls();
 
-        // Merge timers with duplicate labels, by summing their
-        // total elapsed times and call counts.
-        iter_t loc = theLocalData.find (name);
-        if (loc == theLocalData.end()) {
-          // Use loc as an insertion location hint.
-          theLocalData.insert (loc, make_pair (name, make_pair (timing, numCalls)));
-        }
-        else {
-          loc->second.first += timing;
-          loc->second.second += numCalls;
+        // Filter current timer name, if provided filter is nonempty.
+        // Filter string must _start_ the timer label, not just be in it.
+        const bool skipThisOne = (filter != "" && name.find (filter) != 0);
+        if (! skipThisOne) {
+          const double timing = (*it)->totalElapsedTime();
+          const int numCalls = (*it)->numCalls();
+
+          // Merge timers with duplicate labels, by summing their
+          // total elapsed times and call counts.
+          iter_t loc = theLocalData.find (name);
+          if (loc == theLocalData.end()) {
+            // Use loc as an insertion location hint.
+            theLocalData.insert (loc, make_pair (name, make_pair (timing, numCalls)));
+          }
+          else {
+            loc->second.first += timing;
+            loc->second.second += numCalls;
+          }
         }
       }
       // This avoids copying the map, and also makes this method
@@ -338,14 +349,19 @@ namespace Teuchos {
     /// \param writeZeroTimers [in] If true, do not include timers
     ///   with zero call counts in the \c localTimerData and \c
     ///   localTimerNames output.
+    ///
+    /// \param filter [in] Filter for timer labels.  If filter is not
+    ///   empty, this method will only collect data for local timers
+    ///   whose labels begin with this string.
     void
     collectLocalTimerDataAndNames (timer_map_t& localTimerData,
                                    Array<std::string>& localTimerNames,
                                    ArrayView<const RCP<Time> > localTimers,
-                                   const bool writeZeroTimers)
+                                   const bool writeZeroTimers,
+                                   const std::string& filter="")
     {
       // Collect and sort local timer data by timer names.
-      collectLocalTimerData (localTimerData, localTimers);
+      collectLocalTimerData (localTimerData, localTimers, filter);
 
       // Filter out zero data locally first.  This ensures that if we
       // are writing global stats, and if a timer name exists in the
@@ -729,15 +745,18 @@ namespace Teuchos {
   TimeMonitor::computeGlobalTimerStatistics (stat_map_type& statData,
                                              std::vector<std::string>& statNames,
                                              Ptr<const Comm<int> > comm,
-                                             const ECounterSetOp setOp)
+                                             const ECounterSetOp setOp,
+                                             const std::string& filter)
   {
     // Collect local timer data and names.  Filter out timers with
-    // zero call counts if writeZeroTimers is false.
+    // zero call counts if writeZeroTimers is false.  Also, apply the
+    // timer label filter at this point, so we don't have to compute
+    // statistics on timers we don't want to display anyway.
     timer_map_t localTimerData;
     Array<std::string> localTimerNames;
     const bool writeZeroTimers = false;
     collectLocalTimerDataAndNames (localTimerData, localTimerNames,
-                                   counters(), writeZeroTimers);
+                                   counters(), writeZeroTimers, filter);
     // Merge the local timer data and names into global timer data and
     // names.
     timer_map_t globalTimerData;
@@ -757,7 +776,8 @@ namespace Teuchos {
                           const bool alwaysWriteLocal,
                           const bool writeGlobalStats,
                           const bool writeZeroTimers,
-                          const ECounterSetOp setOp)
+                          const ECounterSetOp setOp,
+                          const std::string& filter)
   {
     //
     // We can't just call computeGlobalTimerStatistics(), since
@@ -768,11 +788,13 @@ namespace Teuchos {
     const int myRank = comm->getRank();
 
     // Collect local timer data and names.  Filter out timers with
-    // zero call counts if writeZeroTimers is false.
+    // zero call counts if writeZeroTimers is false.  Also, apply the
+    // timer label filter at this point, so we don't have to compute
+    // statistics on timers we don't want to display anyway.
     timer_map_t localTimerData;
     Array<std::string> localTimerNames;
     collectLocalTimerDataAndNames (localTimerData, localTimerNames,
-                                   counters(), writeZeroTimers);
+                                   counters(), writeZeroTimers, filter);
 
     // If we're computing global statistics, merge the local timer
     // data and names into global timer data and names, and compute
@@ -911,7 +933,8 @@ namespace Teuchos {
                           const bool alwaysWriteLocal,
                           const bool writeGlobalStats,
                           const bool writeZeroTimers,
-                          const ECounterSetOp setOp)
+                          const ECounterSetOp setOp,
+                          const std::string& filter)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
@@ -919,20 +942,21 @@ namespace Teuchos {
     RCP<const Comm<int> > comm = getDefaultComm();
 
     summarize (comm.ptr(), out, alwaysWriteLocal,
-               writeGlobalStats, writeZeroTimers, setOp);
+               writeGlobalStats, writeZeroTimers, setOp, filter);
   }
 
   void
   TimeMonitor::computeGlobalTimerStatistics (stat_map_type& statData,
                                              std::vector<std::string>& statNames,
-                                             const ECounterSetOp setOp)
+                                             const ECounterSetOp setOp,
+                                             const std::string& filter)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
     // be a "serial" (no MPI, one "process") communicator.
     RCP<const Comm<int> > comm = getDefaultComm();
 
-    computeGlobalTimerStatistics (statData, statNames, comm.ptr(), setOp);
+    computeGlobalTimerStatistics (statData, statNames, comm.ptr(), setOp, filter);
   }
 
 
@@ -1014,7 +1038,8 @@ namespace Teuchos {
   void TimeMonitor::
   summarizeToYaml (Ptr<const Comm<int> > comm,
                    std::ostream &out,
-                   const bool compact)
+                   const bool compact,
+                   const std::string& filter)
   {
     using Teuchos::FancyOStream;
     using Teuchos::fancyOStream;
@@ -1032,11 +1057,9 @@ namespace Teuchos {
 
     stat_map_type statData;
     std::vector<std::string> statNames;
-    computeGlobalTimerStatistics (statData, statNames, setOp);
+    computeGlobalTimerStatistics (statData, statNames, comm, setOp, filter);
 
     const int numProcs = comm->getSize();
-
-    //RCP<FancyOStream> pfout = getFancyOStream (rcpFromRef (out));
 
     // HACK (mfh 20 Aug 2012) For now, I convince the output stream to
     // print a YAML sequence by manually prepending "- " to every line
@@ -1182,7 +1205,7 @@ namespace Teuchos {
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
-        fout << "- " << outerIter->first << ": " << endl; // Print timer name
+        fout << "- " << quoteLabelForYaml (outerIter->first) << ": " << endl;
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
@@ -1194,14 +1217,16 @@ namespace Teuchos {
   }
 
   void TimeMonitor::
-  summarizeToYaml (std::ostream &out, const bool compact)
+  summarizeToYaml (std::ostream &out,
+                   const bool compact,
+                   const std::string& filter)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
     // be a "serial" (no MPI, one "process") communicator.
     RCP<const Comm<int> > comm = getDefaultComm ();
 
-    summarizeToYaml (comm.ptr (), out, compact);
+    summarizeToYaml (comm.ptr (), out, compact, filter);
   }
 
   // Default value is false.  We'll set to true once
@@ -1336,16 +1361,17 @@ namespace Teuchos {
   void
   TimeMonitor::report (Ptr<const Comm<int> > comm,
                        std::ostream& out,
+                       const std::string& filter,
                        const RCP<ParameterList>& params)
   {
     setReportParameters (params);
 
     if (reportFormat_ == REPORT_FORMAT_YAML) {
-      summarizeToYaml (comm, out, reportCompact_);
+      summarizeToYaml (comm, out, reportCompact_, filter);
     }
     else if (reportFormat_ == REPORT_FORMAT_TABLE) {
       summarize (comm, out, alwaysWriteLocal_, writeGlobalStats_,
-                 writeZeroTimers_, setOp_);
+                 writeZeroTimers_, setOp_, filter);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TimeMonitor::report: "
@@ -1356,11 +1382,31 @@ namespace Teuchos {
   }
 
   void
+  TimeMonitor::report (Ptr<const Comm<int> > comm,
+                       std::ostream& out,
+                       const RCP<ParameterList>& params)
+  {
+    report (comm, out, "", params);
+  }
+
+  void
+  TimeMonitor::report (std::ostream& out,
+                       const std::string& filter,
+                       const RCP<ParameterList>& params)
+  {
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    report (comm.ptr (), out, filter, params);
+  }
+
+  void
   TimeMonitor::report (std::ostream& out,
                        const RCP<ParameterList>& params)
   {
     RCP<const Comm<int> > comm = getDefaultComm ();
-    report (comm.ptr (), out, params);
+    report (comm.ptr (), out, "", params);
   }
+
+
+
 
 } // namespace Teuchos

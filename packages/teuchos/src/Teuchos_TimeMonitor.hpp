@@ -294,13 +294,19 @@ public:
   ///   communicator.  If \c Union, compute statistics for the union
   ///   of all created timers over all processes in the communicator.
   ///
+  /// \param filter [in] Filter for timer labels.  If filter is not
+  ///   empty, this method will only print timers whose labels begin
+  ///   with this string.  Different Trilinos packages may use this to
+  ///   put their timers in a "namespace."
+  ///
   /// \note This method must called as a collective by all processes
   ///   in the communicator.
   static void
   computeGlobalTimerStatistics (stat_map_type& statData,
                                 std::vector<std::string>& statNames,
                                 Ptr<const Comm<int> > comm,
-                                const ECounterSetOp setOp=Intersection);
+                                const ECounterSetOp setOp=Intersection,
+                                const std::string& filter="");
 
   /// \brief Compute global timer statistics for all timers on all (MPI) processes.
   ///
@@ -333,7 +339,8 @@ public:
   static void
   computeGlobalTimerStatistics (stat_map_type& statData,
                                 std::vector<std::string>& statNames,
-                                const ECounterSetOp setOp=Intersection);
+                                const ECounterSetOp setOp=Intersection,
+                                const std::string& filter="");
 
   /// \brief Print summary statistics for all timers on the given communicator.
   ///
@@ -389,6 +396,11 @@ public:
   ///   communicator.  If \c Union, compute and display the union of
   ///   all created timers over all processes in the communicator.
   ///
+  /// \param filter [in] Filter for timer labels.  If filter is not
+  ///   empty, this method will only print timers whose labels begin
+  ///   with this string.  Different Trilinos packages may use this to
+  ///   put their timers in a "namespace."
+  ///
   /// \note If \c writeGlobalStats is true, this method <i>must</i> be
   ///   called as a collective by all processes in the communicator.
   ///   This method will <i>only</i> perform communication if \c
@@ -399,7 +411,8 @@ public:
              const bool alwaysWriteLocal=false,
              const bool writeGlobalStats=true,
              const bool writeZeroTimers=true,
-             const ECounterSetOp setOp=Intersection);
+             const ECounterSetOp setOp=Intersection,
+             const std::string& filter="");
 
   /// \brief Print summary statistics for all timers on all (MPI) processes.
   ///
@@ -422,7 +435,8 @@ public:
              const bool alwaysWriteLocal=false,
              const bool writeGlobalStats=true,
              const bool writeZeroTimers=true,
-             const ECounterSetOp setOp=Intersection);
+             const ECounterSetOp setOp=Intersection,
+             const std::string& filter="");
 
   /// \brief Report timer statistics to the given output stream.
   ///
@@ -447,6 +461,11 @@ public:
   /// \param out [out] Output stream to which to write.  This will
   ///   only be used on the process with rank 0 in the communicator.
   ///
+  /// \param filter [in] Filter for timer labels.  If filter is not
+  ///   empty, report() will only print timers whose labels begin with
+  ///   this string.  Different Trilinos packages may use this to put
+  ///   their timers in a "namespace."
+  ///
   /// \param params [in/out] Parameters to control output format and
   ///   which statistics to generate.  If null, we use default
   ///   parameters if this method was not yet called with params
@@ -457,12 +476,31 @@ public:
   static void
   report (Ptr<const Comm<int> > comm,
           std::ostream& out,
+          const std::string& filter,
           const RCP<ParameterList>& params=null);
 
   /// \brief Report timer statistics to the given output stream.
   ///
-  /// This is like the 3-argument version of report(), but with a
+  /// This is like the 4-argument version of report(), but with a
+  /// default filter.
+  static void
+  report (Ptr<const Comm<int> > comm,
+          std::ostream& out,
+          const RCP<ParameterList>& params=null);
+
+  /// \brief Report timer statistics to the given output stream.
+  ///
+  /// This is like the 4-argument version of report(), but with a
   /// default communicator.
+  static void
+  report (std::ostream& out,
+          const std::string& filter,
+          const RCP<ParameterList>& params=null);
+
+  /// \brief Report timer statistics to the given output stream.
+  ///
+  /// This is like the 4-argument version of report(), but with a
+  /// default communicator and a default filter.
   static void
   report (std::ostream& out,
           const RCP<ParameterList>& params=null);
@@ -483,6 +521,10 @@ public:
   ///   the given communicator only).
   /// \param compact [in] Whether to print YAML output in "compact"
   ///   style (see below).
+  /// \param filter [in] Filter for timer labels.  If filter is not
+  ///   empty, this method will only print timers whose labels begin
+  ///   with this string.  Different Trilinos packages may use this to
+  ///   put their timers in a "namespace."
   ///
   /// We define "compact" output style as a mixture of flow style and
   /// standard style which is best suited for perusal by an informed
@@ -499,13 +541,17 @@ public:
   static void
   summarizeToYaml (Ptr<const Comm<int> > comm,
                    std::ostream& out,
-                   const bool compact=true);
+                   const bool compact=true,
+                   const std::string& filter="");
 
   /// \brief Like summarize(), but with YAML-format output and default communicator.
   ///
   /// \warning This is an experimental interface.  It may change or
   ///   disappear without warning.
-  static void summarizeToYaml (std::ostream& out, const bool compact=true);
+  static void
+  summarizeToYaml (std::ostream& out,
+                   const bool compact=true,
+                   const std::string& filter="");
 
   /// \brief Valid output formats for report().
   ///

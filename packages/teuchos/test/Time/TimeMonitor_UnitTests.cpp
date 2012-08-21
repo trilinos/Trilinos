@@ -109,9 +109,13 @@ namespace Teuchos {
   //
   TEUCHOS_UNIT_TEST( TimeMonitor, FUNC_TIME_MONITOR  )
   {
-    func_time_monitor1 ();
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
 
-    {
+    func_time_monitor1 (); // Function to time.
+
+    { // Repeat test for default output format.
       std::ostringstream oss;
       TimeMonitor::summarize (oss);
 
@@ -126,10 +130,6 @@ namespace Teuchos {
     }
 
     { // Repeat test for YAML output, default format.
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
       std::ostringstream yamlOss;
       RCP<ParameterList> reportParams =
         parameterList (* (TimeMonitor::getValidReportParameters ()));
@@ -140,7 +140,6 @@ namespace Teuchos {
       // test argument).  Output should only appear in "show all test
       // details" mode.
       out << yamlOss.str () << std::endl;
-      //std::cerr << std::endl << yamlOss.str () << std::endl;
 
       // Make sure that the timer's name shows up in the output.
       const size_t substr_i = yamlOss.str ().find ("FUNC_TIME_MONITOR1");
@@ -164,7 +163,6 @@ namespace Teuchos {
       // test argument).  Output should only appear in "show all test
       // details" mode.
       out << yamlOss.str () << std::endl;
-      //std::cerr << std::endl << yamlOss.str () << std::endl;
 
       // Make sure that the timer's name shows up in the output.
       const size_t substr_i = yamlOss.str ().find ("FUNC_TIME_MONITOR1");
@@ -174,7 +172,6 @@ namespace Teuchos {
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();
   }
-
 
   //
   // Test correct quoting of labels for TimeMonitor's YAML output.
@@ -301,6 +298,213 @@ namespace Teuchos {
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();
   }
+
+
+  //
+  // Test filtering of timer labels.
+  //
+  TEUCHOS_UNIT_TEST( TimeMonitor, TimerLabelFiltering )
+  {
+    using Teuchos::Array;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::Time;
+    typedef Array<std::string>::size_type size_type;
+
+    // Filters to use in the test.
+    Array<std::string> filters;
+    filters.push_back ("Foo:");
+    filters.push_back ("Bar:");
+    filters.push_back ("Baz:");
+
+    // All the timer labels.
+    Array<std::string> labels;
+    labels.push_back ("Foo: timer 1");
+    labels.push_back ("Foo: timer 2");
+    labels.push_back ("Foo: timer 3");
+    labels.push_back ("Bar: timer 1");
+    labels.push_back ("Bar: timer 2");
+    labels.push_back ("Baz: timer 1");
+    labels.push_back ("Xyzzy");
+    labels.push_back ("This is not a pipe");
+    labels.push_back ("You should not see this");
+
+    Array<Array<std::string> > outLabels (3);
+    // Label(s) that should be printed for filters[0]
+    outLabels[0].push_back ("Foo: timer 1");
+    outLabels[0].push_back ("Foo: timer 2");
+    outLabels[0].push_back ("Foo: timer 3");
+    // Label(s) that should be printed for filters[1]
+    outLabels[1].push_back ("Bar: timer 1");
+    outLabels[1].push_back ("Bar: timer 2");
+    // Label(s) that should be printed for filters[2]
+    outLabels[2].push_back ("Baz: timer 1");
+
+    // Labels that should not be printed for any of the filters below.
+    Array<std::string> otherLabels;
+    otherLabels.push_back ("Xyzzy");
+    otherLabels.push_back ("This is not a pipe");
+    otherLabels.push_back ("You should not see this");
+
+    Array<RCP<Time> > timers;
+    for (size_type i = 0; i < labels.size (); ++i) {
+      timers.push_back (TimeMonitor::getNewCounter (labels[i]));
+    }
+
+    // The actual number of operations in the loop is proportional to
+    // the cube of the loop length.  Adjust the quantities below as
+    // necessary to ensure the timer reports a nonzero elapsed time
+    // for each of the invocations.
+    const size_t loopLength = 25;
+    for (int k = 0; k < 3; ++k) {
+      for (size_type i = 0; i < timers.size (); ++i) {
+        TimeMonitor timeMon (* timers[i]);
+        slowLoop (loopLength);
+      }
+    }
+
+    try {
+      // FIXME (mfh 21 Aug 2012) We don't yet have a test ensuring that
+      // the filter only selects at the beginning of the timer label.
+
+      // Test for each filter.
+      for (size_type i = 0; i < filters.size (); ++i) {
+        { // Default (tabular) output format.
+          std::ostringstream oss;
+          RCP<ParameterList> reportParams =
+            parameterList (* (TimeMonitor::getValidReportParameters ()));
+          TimeMonitor::report (oss, filters[i], reportParams);
+
+          // Echo output to the FancyOStream out (which is a standard unit
+          // test argument).  Output should only appear in "show all test
+          // details" mode.
+          out << oss.str () << std::endl;
+
+          // Check whether the labels that were supposed to be printed
+          // were actually printed.
+          for (size_type j = 0; j < outLabels[i].size(); ++j) {
+            const size_t pos = oss.str ().find (outLabels[i][j]);
+            TEST_INEQUALITY(pos, std::string::npos);
+          }
+
+          // Check whether the labels that were _not_ supposed to be
+          // printed were actually printed.
+          //
+          // First, check the labels that should only be printed with
+          // the other filters.
+          for (size_type ii = 0; ii < outLabels.size(); ++ii) {
+            if (ii != i) {
+              for (size_type j = 0; j < outLabels[ii].size(); ++j) {
+                const size_t pos = oss.str ().find (outLabels[ii][j]);
+                TEST_EQUALITY(pos, std::string::npos);
+              }
+            }
+          }
+          // Next, check the labels that should not be printed for any
+          // filters.
+          for (size_type j = 0; j < otherLabels.size(); ++j) {
+            const size_t pos = oss.str ().find (otherLabels[j]);
+            TEST_EQUALITY(pos, std::string::npos);
+          }
+        }
+
+        { // YAML output, default format.
+          std::ostringstream oss;
+          RCP<ParameterList> reportParams =
+            parameterList (* (TimeMonitor::getValidReportParameters ()));
+          reportParams->set ("Report format", "YAML");
+          TimeMonitor::report (oss, filters[i], reportParams);
+
+          // Echo output to the FancyOStream out (which is a standard unit
+          // test argument).  Output should only appear in "show all test
+          // details" mode.
+          out << oss.str () << std::endl;
+
+          // Check whether the labels that were supposed to be printed
+          // were actually printed.
+          for (size_type j = 0; j < outLabels[i].size(); ++j) {
+            const size_t pos = oss.str ().find (outLabels[i][j]);
+            TEST_INEQUALITY(pos, std::string::npos);
+          }
+
+          // Check whether the labels that were _not_ supposed to be
+          // printed were actually printed.
+          //
+          // First, check the labels that should only be printed with
+          // the other filters.
+          for (size_type ii = 0; ii < outLabels.size(); ++ii) {
+            if (ii != i) {
+              for (size_type j = 0; j < outLabels[ii].size(); ++j) {
+                const size_t pos = oss.str ().find (outLabels[ii][j]);
+                TEST_EQUALITY(pos, std::string::npos);
+              }
+            }
+          }
+          // Next, check the labels that should not be printed for any
+          // filters.
+          for (size_type j = 0; j < otherLabels.size(); ++j) {
+            const size_t pos = oss.str ().find (otherLabels[j]);
+            TEST_EQUALITY(pos, std::string::npos);
+          }
+        }
+
+        { // YAML output, nondefault format.
+          std::ostringstream oss;
+          RCP<ParameterList> reportParams =
+            parameterList (* (TimeMonitor::getValidReportParameters ()));
+          reportParams->set ("Report format", "YAML");
+          // Set this to the opposite of whatever it was.
+          reportParams->set ("Compact YAML", ! reportParams->get<bool> ("Compact YAML"));
+          TimeMonitor::report (oss, filters[i], reportParams);
+
+          // Echo output to the FancyOStream out (which is a standard unit
+          // test argument).  Output should only appear in "show all test
+          // details" mode.
+          out << oss.str () << std::endl;
+
+          // Check whether the labels that were supposed to be printed
+          // were actually printed.
+          for (size_type j = 0; j < outLabels[i].size(); ++j) {
+            const size_t pos = oss.str ().find (outLabels[i][j]);
+            TEST_INEQUALITY(pos, std::string::npos);
+          }
+
+          // Check whether the labels that were _not_ supposed to be
+          // printed were actually printed.
+          //
+          // First, check the labels that should only be printed with
+          // the other filters.
+          for (size_type ii = 0; ii < outLabels.size(); ++ii) {
+            if (ii != i) {
+              for (size_type j = 0; j < outLabels[ii].size(); ++j) {
+                const size_t pos = oss.str ().find (outLabels[ii][j]);
+                TEST_EQUALITY(pos, std::string::npos);
+              }
+            }
+          }
+          // Next, check the labels that should not be printed for any
+          // filters.
+          for (size_type j = 0; j < otherLabels.size(); ++j) {
+            const size_t pos = oss.str ().find (otherLabels[j]);
+            TEST_EQUALITY(pos, std::string::npos);
+          }
+        }
+      }
+    }
+    catch (...) {
+      // Make sure to clear the counters, so that they don't pollute
+      // the remaining tests.  (The Teuchos unit test framework may
+      // catch any exceptions that the above code throws, but allow
+      // the remaining tests to continue.)
+      TimeMonitor::clearCounters ();
+      throw;
+    }
+
+    // This sets up for the next unit test.
+    TimeMonitor::clearCounters ();
+  }
+
 
 
   //
