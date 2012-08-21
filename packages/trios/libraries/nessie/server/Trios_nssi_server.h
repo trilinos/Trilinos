@@ -195,7 +195,14 @@ extern "C" {
                 struct nssi_svc_op_list *next;
         } nssi_svc_op_list;
 
-
+        typedef struct rpc_request {
+            nssi_service *svc;
+            NNTI_peer_t caller;
+            char *req_buf;
+            nssi_size short_req_len;
+            int id;
+            double arrival_time;
+        } nssi_svc_rpc_request;
 
 #if defined(__STDC__) || defined(__cplusplus)
 
@@ -310,20 +317,41 @@ extern "C" {
         extern int nssi_exit_now();
 
 
+        /**
+         * @ingroup rpc_server_api
+         * @brief Process an encoded RPC request.
+         *
+         * This function processes an encoded RPC request by decoding the
+         * header, then calling a registered callback based on the opcode
+         * sent in the header.
+         */
+        extern int nssi_process_rpc_request(
+                nssi_svc_rpc_request *req);
+
 
         /**
          * @ingroup rpc_server_api
          * @brief Start an RPC service.
          *
-         * The \b nssi_service_start method waits for RPC requests
-         * and executes the appropriate callback function (a registered
-         * method) when a request arrives.
-         * arrives.
+         * The \b nssi_service_start implements a loop that waits for incoming
+         * RPC requests, then calls the nssi_process_rpc_request function to
+         * process those requests.
          *
          * @param service  The service descriptor.
          */
         extern int nssi_service_start(
                 nssi_service *service);
+
+        /**
+         * This function is essentially the same as nssi_start, but it allows
+         * the caller to pass in a different function to process encoded requests.
+         * This is useful, for example to implement a multithreaded service. The
+         * code could call an "enqueue_rpc_request" function and have a separate
+         * thread that pops requests off the queue and processes them.
+         */
+        extern int nssi_service_start_wfn(
+                nssi_service *svc,
+                int (*process_req)(nssi_svc_rpc_request *req));
 
 
         /*

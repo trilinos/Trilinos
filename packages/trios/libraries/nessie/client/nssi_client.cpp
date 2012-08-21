@@ -73,6 +73,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <inttypes.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <mpi.h>
 
 
 #include "nssi_opcodes.h"
@@ -429,7 +430,6 @@ int nssi_get_service(
 
     unsigned long len=0;
 
-
     log_debug(rpc_debug_level, "entered nssi_get_service");
 
     client_init();
@@ -462,7 +462,7 @@ int nssi_get_service(
         if (!buf)   {
             log_fatal(rpc_debug_level, "malloc() failed!");
             rc = NSSI_ENOMEM;
-            goto cleanup;
+            return rc;
         }
         memset(buf, 0, short_req_len);  // fixes uninitialized bytes error from valgrind
         rc=NNTI_register_memory(
@@ -483,7 +483,7 @@ int nssi_get_service(
         if (!buf)   {
             log_fatal(rpc_debug_level, "malloc() failed!");
             rc = NSSI_ENOMEM;
-            goto cleanup;
+            return rc;
         }
         rc=NNTI_register_memory(
                 &transports[rpc_transport],
@@ -527,53 +527,51 @@ int nssi_get_service(
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed sending get service request: %s",
                 nnti_err_str(rc));
-        goto cleanup;
     }
     rc=NNTI_wait(short_req_hdl, NNTI_SEND_SRC, timeout, &wait_status);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed waiting for get service send: %s",
-                nnti_err_str(rc));
-    } else {
+    if (rc == NNTI_OK) {
         rc=NNTI_wait(short_res_hdl, NNTI_RECV_DST, timeout, &wait_status);
         if (rc != NNTI_OK) {
             log_error(rpc_debug_level, "failed waiting for short result: %s",
                     nnti_err_str(rc));
         }
     }
-
-    if (rc == NNTI_ETIMEDOUT) {
+    else if (rc == NNTI_ETIMEDOUT) {
         log_info(rpc_debug_level, "put request timed out");
-        goto cleanup;
     }
-    if (rc != NNTI_OK) {
-        log_info(rpc_debug_level,""
-        "unable to PUT the short request");
-        goto cleanup;
-    }
-    log_debug(rpc_debug_level,"message sent");
-
-    xdrmem_create(
-            &res_xdrs,
-            NNTI_BUFFER_C_POINTER(short_res_hdl),
-            NNTI_BUFFER_SIZE(short_res_hdl),
-            XDR_DECODE);
-    log_debug(rpc_debug_level,"decoding result header");
-    memset(&res_header, 0, sizeof(nssi_result_header));
-    if (! xdr_nssi_result_header(&res_xdrs, &res_header)) {
-        log_fatal(rpc_debug_level,"failed to decode the result header");
-        return NSSI_EDECODE;
-    }
-    memset(result, 0, sizeof(nssi_service));
-    if (! xdr_nssi_service(&res_xdrs, result)) {
-        log_fatal(rpc_debug_level,"failed to decode the nssi_service");
-        return NSSI_EDECODE;
+    else  {
+        log_error(rpc_debug_level, "failed waiting for get_service: %s",
+                nnti_err_str(rc));
     }
 
-    if (logging_debug(rpc_debug_level)) {
-        fprint_nssi_service(logger_get_file(), "result", "end of nssi_get_service", result);
+
+    if (rc == NNTI_OK) {
+        log_debug(rpc_debug_level,"message sent");
+
+        xdrmem_create(
+                &res_xdrs,
+                NNTI_BUFFER_C_POINTER(short_res_hdl),
+                NNTI_BUFFER_SIZE(short_res_hdl),
+                XDR_DECODE);
+        log_debug(rpc_debug_level,"decoding result header");
+        memset(&res_header, 0, sizeof(nssi_result_header));
+        if (! xdr_nssi_result_header(&res_xdrs, &res_header)) {
+            log_fatal(rpc_debug_level,"failed to decode the result header");
+            return NSSI_EDECODE;
+        }
+        memset(result, 0, sizeof(nssi_service));
+        if (! xdr_nssi_service(&res_xdrs, result)) {
+            log_fatal(rpc_debug_level,"failed to decode the nssi_service");
+            return NSSI_EDECODE;
+        }
+
+        if (logging_debug(rpc_debug_level)) {
+            fprint_nssi_service(logger_get_file(), "result", "end of nssi_get_service", result);
+        }
     }
 
-cleanup:
+// Cleanup data structures
+
     if (nssi_config.use_buffer_queue) {
         trios_buffer_queue_push(&send_bq, short_req_hdl);
         short_req_hdl=NULL;

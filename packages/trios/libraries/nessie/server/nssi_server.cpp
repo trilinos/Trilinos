@@ -129,14 +129,6 @@ static nssi_service local_service;
 
 #undef USE_THREADED_SERVERS
 
-struct rpc_request {
-    nssi_service *svc;
-    NNTI_peer_t caller;
-    char *req_buf;
-    nssi_size short_req_len;
-    int id;
-    double arrival_time;
-};
 
 static std::map<int, struct nssi_svc_op> supported_ops;
 typedef std::map<int, struct nssi_svc_op>::iterator supported_ops_iterator_t;
@@ -930,8 +922,8 @@ int nssi_send_result(
  *
  * @param args The arguments (rpc_request *).
  */
-void *process_rpc_request(
-        void *args)
+
+int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
 {
     XDR xdrs;
     int rc;
@@ -943,7 +935,6 @@ void *process_rpc_request(
     void *op_args = NULL;
     void *op_res  = NULL;
 
-    struct rpc_request *rpc_req = (struct rpc_request *)args;
     nssi_request_header header;
     int req_count = 0;
     log_level debug_level = rpc_debug_level;
@@ -1144,10 +1135,13 @@ cleanup:
 
     request_args_del(&caller, header.id);
 
+    // release the data allocated for the rpc_req buffer (done in server_start)
+    delete [] rpc_req->req_buf;
+
+    // delete the actual request
     delete rpc_req;
 
-    intptr_t v = rc;
-    return (void *)v;
+    return rc;
 }
 
 
@@ -1527,20 +1521,28 @@ double nssi_get_request_age(const NNTI_peer_t *caller, const int req_id)
     return age;
 }
 
+
+/**
+ * @brief Start the RPC server using the default request processing function.
+ */
+int nssi_service_start(nssi_service *svc)
+{
+    return nssi_service_start_wfn(svc, &nssi_process_rpc_request);
+}
+
 /**
  * @brief Start the RPC server.
  *
- * This method never returns.  It waits for an RPC request, and
- * calls the appropriate function from the list of services.
+ * The \b nssi_service_start implements a loop that waits for incoming
+ * RPC requests, then calls the process_req function pointer to
+ * process those requests.
  *
- * This implementation allocates two buffers that can hold a fixed
- * number of incoming requests each and alternates between
- * processing requests from the two buffers.
- *
- * @param service  @input The service descriptor.
+ * @param service  The service descriptor.
+ * @param process_req  A function pointer that takes an nssi_svc_rpc_request.
  */
-int nssi_service_start(
-        nssi_service *svc)
+int nssi_service_start_wfn(
+        nssi_service *svc,
+        int (*process_req)(nssi_svc_rpc_request *))
 {
     int rc = NSSI_OK, rc2;
     int req_count = 0;
@@ -1570,7 +1572,7 @@ int nssi_service_start(
     NNTI_status_t status;
 
     progress_callback progress_cb       =NULL;
-    int64_t           progress_timeout  =-1;
+    int64_t           progress_timeout  = 2000; // needs to be reasonable (2 sec)
     uint64_t          progress_last_time=0;
     if (svc->progress_callback != 0) {
         progress_cb=(progress_callback)svc->progress_callback;
@@ -1641,7 +1643,10 @@ int nssi_service_start(
                 progress_timeout,
                 &status);
         trios_stop_timer("request queue wait", call_time);
-        if (rc != NNTI_OK) {
+        if (status.result == NNTI_ETIMEDOUT) {
+
+        }
+        else if (rc != NNTI_OK) {
             log_error(debug_level, "failed waiting for a request: %s",
                     nnti_err_str(rc));
         }
@@ -1672,20 +1677,27 @@ int nssi_service_start(
             /* increment the number of requests */
             req_count++;
 
+            // this structure gets freed in the process_rpc_request function
             struct rpc_request *rpc_req = new struct rpc_request();
             rpc_req->svc           = svc;
             rpc_req->caller        = status.src;
             rpc_req->id            = req_count;
             rpc_req->arrival_time  = trios_get_time();
-            rpc_req->req_buf       = req_buf;
+
+            // copy the short request buffer (in case of threaded servers)
+            rpc_req->req_buf       = new char[status.length];  // freed in process_rpc_request
+            std::memcpy(rpc_req->req_buf, req_buf, status.length);
             rpc_req->short_req_len = status.length;
 
 
             /* measure the processing time */
             t1 = trios_get_time();
 
+            // The process_req function is responsible for freeing the request and
+            // any memory associated with the request (this seems kind of risky).
+
             trios_start_timer(call_time);
-            process_rpc_request(rpc_req);
+            (*process_req)(rpc_req);    // call the function pointer
             trios_stop_timer("process_rpc_request", call_time);
             if (rc != NSSI_OK) {
                 /* warn only... we do not exit */
