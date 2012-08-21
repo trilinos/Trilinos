@@ -1,0 +1,42 @@
+/*! \page amdPage Approximate Minimum Degree Ordering
+
+\section amd_algorithm AMD algorithm
+
+AMD is a serial ordering algorithm for sparse matrices. The goal is to
+minimize the fill-in in a direct sparse LU factorization. Zoltan2
+uses the AMD package from University of Florida to compute this ordering.
+AMD package has to be enabled as a TPL in Trilinos. Note that AMD
+package depends on another package UFconfig from University of 
+Florida, for just a header file.
+See zoltan2/sampleScripts/configureAMD to enable AMD and set the path to
+UFconfig.
+
+AMD can be downloaded from http://www.cise.ufl.edu/research/sparse/amd/
+
+UFconfig can be downloaded from http://www.cise.ufl.edu/research/sparse/UFconfig/
+
+
+\subsection amd_input Input
+
+AMD expects a Zoltan2::GraphModel object.
+
+\subsection amd_parameters Parameters
+
+None supported yet.
+
+\subsection amd_solution Solution
+
+AMD solution is a permutation, currently given as a list of local ids.
+
+\subsection amd_quality_measures Quality measures
+
+None supported yet.
+
+\subsection amd_examples Examples
+
+See Zoltan2/test/order/orderingAMD.cpp
+
+\subsection amd_source Source
+Zoltan2_AlgAMD.hpp is the source file for AMD.
+
+*/

@@ -1,0 +1,28 @@
+It's possible that at this point unit tests could be simplified.
+
+It would be good to test with varying template parameters, maybe by using the Teuchos unit test framework.
+
+We have no unit test for:
+
+util/StridedInput
+util/Util
+
+problems/PartitioningProblem
+problems/PartitioningSolution
+
+input/InputTraits
+
+environment/DebugManager
+environment/MetricOutputManager
+environment/Environment
+environment/Exceptions
+
+algorithms/ScotchPartitioning
+algorithms/BlockPartitioning
+
+We have no unit test for the ordering algorithms, problem and solution,
+but these are in flux at the moment.
+
+We are not testing performance yet.  
+
+We are not testing for memory leaks or for amount of memory used.

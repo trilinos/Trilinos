@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# On hopper.nersc.gov:
+#
+# module swap PrgEnv-pgi PrgEnv-gnu
+# module unload xt-shmem
+# module load git
+# module load cmake
+#
+
+SRCDIR=/global/homes/l/lriesen/alt_scratch/projects/Trilinos
+BLASDIR=/global/homes/l/lriesen/software/lapack-3.4.1
+
+# Clean up the mess from previous configurations.
+/bin/rm -rf *.* CMakeFiles Testing packages preCopyrightTrilinos Makefile
+
+cmake \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D CMAKE_C_COMPILER:STRING="cc" \
+-D CMAKE_CXX_COMPILER:STRING="CC" \
+-D CMAKE_Fortran_COMPILER="ftn" \
+-D CMAKE_C_FLAGS:STRING="-m64 -O3" \
+-D CMAKE_CXX_FLAGS:STRING="-m64 -O3" \
+-D CMAKE_Fortran_FLAGS:STRING="-m64 -O3" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D CMAKE_BUILD_TYPE:STRING=RELEASE \
+-D TPL_ENABLE_BinUtils:BOOL=OFF \
+-D TPL_ENABLE_Pthread:BOOL=OFF \
+-D Teuchos_ENABLE_STACKTRACE=OFF \
+-D Tpetra_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Tpetra_INST_FLOAT:BOOL=ON \
+-D Tpetra_INST_INT_LONG:BOOL=ON  \
+-D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+-D TPL_BLAS_LIBRARIES:STRING="-L${BLASDIR} -ltmglib" \
+-D TPL_LAPACK_LIBRARIES:STRING="-L${BLASDIR} -llapack -ltmglib" \
+-D Trilinos_ENABLE_Zoltan:BOOL=ON \
+-D Zoltan_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+-D Zoltan2_ENABLE_EXAMPLES:BOOL=ON \
+-D Zoltan2_ENABLE_TESTS:BOOL=ON \
+$SRCDIR

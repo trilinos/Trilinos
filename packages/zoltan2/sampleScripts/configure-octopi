@@ -1,0 +1,36 @@
+#
+# A cmake configure script for octopi.sandia.gov:
+#   - Explicit instantiation (float/int/long)
+#   - Zoltan1 built with unsigned long global ids
+#   - MPI enabled
+#
+TOPDIR=/home/lriesen/projects/Trilinos
+
+rm -rf C* cmake* T* packages  preCopyrightTrilinos L* R* D* Make*
+
+cmake \
+-D CMAKE_CPP_FLAGS:STRING="-DTEUCHOS_SUPPRESS_PROC_STARTUP_BANNER" \
+-DTpetra_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF \
+-DTpetra_INST_FLOAT:BOOL=ON \
+-DTpetra_INST_INT_LONG:BOOL=ON \
+-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-DTrilinos_ENABLE_TESTS:BOOL=OFF \
+-DTrilinos_ENABLE_EXAMPLES:BOOL=OFF \
+-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING= \
+-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON \
+-DTrilinos_DEPS_XML_OUTPUT_FILE:FILEPATH= \
+-DTrilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
+-DMPI_EXEC_MAX_NUMPROCS:STRING=4 \
+-DTrilinos_EXTRAREPOS_FILE:STRING=$TOPDIR/cmake/ExtraRepositoriesList.cmake \
+-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
+-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON \
+-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Nightly \
+-DCMAKE_BUILD_TYPE:STRING=DEBUG \
+-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-DTPL_ENABLE_MPI:BOOL=ON \
+-DTrilinos_ENABLE_Zoltan2:BOOL=ON \
+-DZoltan2_ENABLE_TESTS:BOOL=ON \
+-DZoltan2_ENABLE_EXAMPLES:BOOL=ON \
+-DTrilinos_ENABLE_Zoltan:BOOL=ON \
+-DZoltan_ENABLE_ULONG_IDS:BOOL=ON \
+$TOPDIR 

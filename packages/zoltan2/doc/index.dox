@@ -1,0 +1,77 @@
+/*! \mainpage Trilinos/Zoltan2: Dynamic parallel partitioning and ordering.
+
+\section mainpage_contents Contents
+<ul>
+<li> \ref z2_main_intro
+<li> \ref z2_main_overview
+<li> \ref z2_main_examples
+</ul>
+
+Information specifically for developers can be found at \ref z2_developer.
+
+These pages are under construction...
+
+\section z2_main_intro Introduction to Zoltan2
+
+Zoltan2 is a refactoring of the <a href=http://www.cs.sandia.gov/Zoltan >
+Zoltan </a>
+library into C++ in order to support template programming,
+to scale to larger problems, and to support architecture aware partitioning.
+This library is currently under active development, and is still 
+in pre-copyright status.  
+
+Partitioning functionality that is available now is:
+
+<ul>
+<li> \ref blockPage for simple weighted identifiers.
+<li> \ref rcbPage for weighted geometric coordinates.
+<li> \ref scotchPartPage for undirected weighted graphs.
+</ul>
+
+
+Serial ordering available now is:
+
+<ul>
+<li> \ref rcmPage for RCM ordering.
+<li> \ref amdPage for AMD ordering.
+<li> Increasing degree
+<li> Natural (identity permutation)
+<li> Random
+</ul>
+
+\section z2_main_overview Overview of the Zoltan2 library
+
+\subsection Typical steps
+
+Here we describe the typical user interaction with Zoltan2.  We use partitioning as an example.
+
+1. Create a Zoltan2::InputAdapter object for your data.  This adapter provides a uniform interface to user data for the Zoltan2 library.  Adapter interfaces exist for the following classes of data:
+
+<ul>
+<li> Zoltan2::MatrixInput (a row oriented matrix with optional row weights)
+<li> Zoltan2::GraphInput (an undirected weighted graph)
+<li> Zoltan2::VectorInput (a single or multi-vector with optional weights)
+<li> Zoltan2::CoordinateInput (arbitrary-dimension geometric coordinates)
+<li> Zoltan2::IdentifierInput (simple collection of identifiers)
+</ul>
+
+Zoltan2::MeshInput will be available soon.
+
+2. Create a Teuchos::ParameterList with your Zoltan2 parameters.  If you are using a third party library (PT-Scotch, ParMetis) you can include a sublist of parameters for this library.  Parameters are listed here. (TODO - generate doxygen list from xml file of parameters.)
+
+3. Create a Zoltan2::PartitioningProblem.  It is templated on your Zoltan2::InputAdapter type.  The constructor arguments are your input adapter and your parameter list.
+
+4. Call Zoltan2::PartitioningProblem::solve().
+
+5. Obtain a Zoltan2::PartitioningSolution object from the Zoltan2::PartitioningProblem.
+
+\section z2_main_examples Examples of Zoltan2 usage
+
+Examples include the following:
+
+- Block partitioning (block.cpp)
+- RCB partitioning for a C++ novice (rcb_C.cpp)
+
+
+
+*/

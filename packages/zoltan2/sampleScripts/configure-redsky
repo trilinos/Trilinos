@@ -1,0 +1,43 @@
+#!/bin/bash
+# configure zoltan2 on redsky to include scotch
+#
+# using default modules:
+#  2) compilers/intel-11.1-f064-c064
+#  4) mpi/openmpi-1.4.3_oobpr_intel-11.1-f064-c064
+#
+SRCDIR=/home/lriesen/projects/Trilinos
+CMAKE=/home/lriesen/local/bin
+SCOTCH=/home/lriesen/software/scotch_5.1.12-64
+LAPACK=/home/lriesen/software/lapack-3.2
+
+# Clean up the mess from previous configurations.
+
+/bin/rm -rf C* cmake* D* last* Make* packages Testing Trilinos* *.txt preCopyrightTrilinos
+
+$CMAKE/cmake \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_CXX_COMPILER:FILEPATH="mpicxx" \
+-D CMAKE_C_COMPILER:FILEPATH="mpicc" \
+-D CMAKE_Fortran_COMPILER:FILEPATH="mpif77" \
+-D CMAKE_CXX_FLAGS:FILEPATH="-O2 -DHAVE_CONFIG_H" \
+-D CMAKE_C_FLAGS:FILEPATH="-O2 -DHAVE_CONFIG_H" \
+-D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+-D CMAKE_Fortran_FLAGS:FILEPATH="-O2 -fPIC" \
+-D CMAKE_CXX_FLAGS:STRING="-DTEUCHOS_SUPPRESS_PROC_STARTUP_BANNER" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D MPI_EXEC_MAX_NUMPROCS:STRING=11 \
+-D TPL_ENABLE_BinUtils:BOOL=OFF \
+-D TPL_ENABLE_Pthread:BOOL=OFF \
+-D Teuchos_ENABLE_STACKTRACE=OFF \
+-D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=OFF \
+-D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+-D Zoltan2_ENABLE_TESTS:BOOL=ON \
+-D Zoltan2_ENABLE_EXAMPLES:BOOL=OFF \
+-D Zoltan2_ENABLE_Scotch:BOOL=ON \
+-D Zoltan_ENABLE_Scotch:BOOL=ON \
+-D Scotch_LIBRARY_DIRS:FILEPATH=$SCOTCH/lib \
+-D Scotch_INCLUDE_DIRS:FILEPATH=$SCOTCH/include \
+$SRCDIR

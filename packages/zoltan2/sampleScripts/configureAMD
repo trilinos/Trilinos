@@ -1,0 +1,29 @@
+#!/bin/csh
+# Sample script for building Zoltan2 with AMD.
+# Install AMD and UFconfig (required by AMD)
+# Set the UFConfig directory in extra flags and enable AMD as TPL.
+# Clean up the mess from previous configurations.
+/bin/rm -r cmake* CMake* CPack* CTest* Dart* Trilinos* Testing packages Makefile
+
+cmake \
+-D CMAKE_INSTALL_PREFIX:FILEPATH="/home/srajama/proj/Trilinos/Trilinos_IPDPS/z2_build" \
+-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D MPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.4-gcc/ \
+-D CMAKE_C_FLAGS:STRING="-m64 -I/home/srajama/proj/UFconfig" \
+-D CMAKE_CXX_FLAGS:STRING="-m64 -I/home/srajama/proj/UFconfig" \
+-D CMAKE_Fortran_FLAGS:STRING="-m64" \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Zoltan2_ENABLE_AMD:BOOL=ON \
+-D AMD_BASE_DIR:PATH="/home/srajama/proj/AMD" \
+-D AMD_INCLUDE_DIRS:PATH="/home/srajama/proj/AMD/Include" \
+-D AMD_LIBRARY_DIRS:PATH="/home/srajama/proj/AMD/Lib" \
+-D TPL_LAPACK_LIBRARIES:FILEPATH=/home/srajama/lapack/lapack-3.2.1/lapack_LINUX.a \
+-D TPL_BLAS_LIBRARIES:FILEPATH=/home/srajama/lapack/lapack-3.2.1/blas_LINUX.a \
+.. |& tee OUTPUT.CMAKE
+
+make -j6 |& tee OUTPUT.MAKE
+make install |& tee OUTPUT.INSTALL

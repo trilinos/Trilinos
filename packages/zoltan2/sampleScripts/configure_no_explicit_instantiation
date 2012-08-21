@@ -1,0 +1,44 @@
+#!/bin/bash
+#
+
+SRCDIR=~/shared/projects/Trilinos
+
+# Clean up the mess from previous configurations.
+/bin/rm -rf *.* CMakeFiles Testing packages preCopyrightTrilinos Makefile
+
+cmake \
+-D Tpetra_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/local/lib -lmpichcxx -lmpichf90 -lmpich -lmpl -lopa -lpthread" \
+-D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_C_COMPILER:FILEPATH=/usr/local/bin/mpicc \
+-D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/bin/mpicxx \
+-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/local/bin/mpif77 \
+-D CMAKE_C_FLAGS:STRING="-m64 -g -O0" \
+-D CMAKE_CXX_FLAGS:STRING="-Wno-sign-compare -DTEUCHOS_SUPPRESS_PROC_STARTUP_BANNER -m64 -g -O0 -std=c++98" \
+-D CMAKE_Fortran_FLAGS:STRING="-m64 -g -O0" \
+-D TPL_ENABLE_BinUtils:BOOL=OFF \
+-D TPL_ENABLE_Pthread:BOOL=OFF \
+-D Teuchos_ENABLE_STACKTRACE=OFF \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D MPI_EXEC_MAX_NUMPROCS:STRING=11 \
+-D TPL_ENABLE_BinUtils:BOOL=OFF \
+-D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
+-D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+-D LAPACK_LIBRARY_DIRS:FILEPATH=/usr/local/lib \
+-D BLAS_LIBRARY_DIRS:FILEPATH=/usr/local/lib \
+-D TPL_LAPACK_LIBRARIES:STRING="-llapack -lblas -lgfortran" \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=OFF \
+-D Zoltan2_ENABLE_TESTS:BOOL=ON \
+-D Zoltan2_ENABLE_EXAMPLES:BOOL=OFF \
+-D Zoltan2_ENABLE_Scotch:BOOL=ON \
+-D Zoltan2_ENABLE_LINUX_MEMORY_REPORT:BOOL=ON \
+-D Zoltan2_ENABLE_SCOTCH_MEMORY_REPORT:BOOL=ON \
+-D Zoltan_ENABLE_Scotch:BOOL=ON \
+-D Scotch_INCLUDE_DIRS:FILEPATH="/home/lriesen/local/system/scotch_5.1.12-64/include" \
+-D Scotch_LIBRARY_DIRS:FILEPATH="/home/lriesen/local/system/scotch_5.1.12-64/lib" \
+-D Scotch_LIBRARY_NAMES:STRING="ptscotch;ptscotcherr;ptscotcherrexit" \
+$SRCDIR 

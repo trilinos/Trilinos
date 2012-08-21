@@ -1,0 +1,214 @@
+/*! \page z2_developer Developers' Notes
+
+\section z2_developer_contents Contents
+<ul>
+<li> \ref z2_developer_organization
+<li> \ref z2_developer_environment
+<li> \ref z2_developer_ids
+<li> \ref z2_developer_naming
+<li> \ref z2_developer_exceptions
+<li> \ref z2_developer_status_info 
+<li> \ref z2_developer_profiling
+<li> \ref z2_developer_rcp
+<li> \ref z2_developer_example
+</ul>
+
+\section z2_developer_organization Organization of an algorithm
+
+Algorithms in Zoltan2 are namespace methods.  They are called by a
+Zoltan2::Problem.  The Problem passes the following information to
+the algorithm:
+
+ -  A Zoltan2::Environment, described below.
+ -  A Teuchos::Comm, a wrapper for the MPI communicator for the problem.
+ -  A Zoltan2::Model, the computation model derived from the user's input data.
+ -  A Zoltan2::Solution.
+
+The Zoltan2::Environment contains the user's parameter settings, and
+methods for handling exceptions, profiling and status messages.
+
+Parallel communication is performed with the Teuchos::Comm object.
+Probably the easiest way to do this is by using the helper functions in 
+\ref z2_developer_teuchos_comm.
+
+The Zoltan2::Model is created by the Problem based on the type of
+input provided by the user and information in the user's parameters.
+The Model may represent one of the following objects:
+
+ -   A Zoltan2::IdentifierModel is simply a collection of global identifiers.
+ -   A Zoltan2::CoordinateModel is a collection of geometric coordinates of arbitrary dimension.
+ -   A Zoltan2::GraphModel is an undirected graph.
+
+A hypergraph model will be added eventually.
+
+The Zoltan2::Solution is created by the Problem.  When passed to the
+algorithm, it may already contain some information about the type
+of solution desired.  In particular, in the case of
+partitioning, the subclass Zoltan2::PartitioningSolution contains the
+global number of parts to be created, the number of parts to be created
+for each process, and the relative part sizes.  
+
+Prior to returning from the algorithm, the code writes the answer back
+to the Solution object.  In particular, a partitioning
+algorithm writes back the assignment of 
+part numbers to global identifiers.  The user can obtain the solution
+by way of the method Zoltan2::PartitioningProblem::getSolution().
+
+\section z2_developer_environment The Environment
+
+The Zoltan2::Environment object is created by the Zoltan2::Problem.  It is
+passed to almost every method in the library.  It serves the following roles:
+
+<ul>
+<li> It has the Teuchos::ParameterList that was set by the user, which has been processed by running the parameter list validators.
+<li> It enables the library behavior that was requested by the user via parameters such as:
+ - debug_level
+ - debug_output_stream
+ - error_check_level
+ - memory_output_stream
+ - timer_type
+</ul>
+
+The algorithm uses the Zoltan2::Environment to obtain algorithm-specific
+parameters that may have been set by the user.  It also uses Environment
+methods to print out warnings and status information, handle exceptions, 
+time algorithm steps, and display information about the amount of memory
+in use.
+
+\section z2_developer_ids Global identifiers and data types
+
+Zoltan2 is a package in the <a href=http://trilinos.org/ >
+Trilinos</a> framework and it uses the linear algebra classes in
+the templated Tpetra package.  The
+data types permitted for global identifiers in Tpetra are those for which
+specializations of the Teuchos::OrdinalTraits exist.  In particular
+we use \c int or \c long for the global identifiers of linear
+algebra objects.
+
+For historical reasons, Zoltan2 allows the user a broader range of data types
+for their identifiers.  In particular, any data type for which a
+specialization of Zoltan2::IdentifierTraits is defined is allowed.
+
+If the user's global identifiers are not teuchos ordinals, 
+the Zoltan2::Model maps them to new global identifiers which
+\e are teuchos ordinals. 
+
+By convention we use these typedef names:
+
+\li \b gid_t (global id) the data type of the user's global identifiers
+\li \b gno_t (global number) our internal global identifier
+
+It is more efficient if Zoltan2 can use the user's global identifiers without
+having to map them.  We have to map them only if:
+
+ - the \c gid_t is not a Teuchos ordinal or,
+ - the algorithm requires consecutive global ids and the user did not provide consecutive ids
+
+The Zoltan2::Solution object uses mapping information in the Zoltan2::Model
+to map the internal \c gno_t ids back to the user's \c gid_t ids if
+necessary.  In this way, the algorithm can give \c gno_t ids to the Solution, but the user can retrieve \c gid_t ids.
+
+\section z2_developer_naming Naming
+
+All Zoltan2 symbols are in the namespace \b Zoltan2.
+
+We follow the Trilinos naming conventions.  They are detailed in a document
+in directory Trilinos/doc/TrilinosCodingDocGuidelines.
+
+Templated code is in \b .hpp files and non-templated code is in \b .cpp files.
+
+\section z2_developer_exceptions Error handling
+
+We check for three types of errors:
+
+  \li \b bug which is an event that would not occur if the code had been written correctly (throws a std::logic_error)
+  \li \b input which is an error is due to bad user data or parameter values (throws a std::runtime_error)
+  \li \b memory which is when we are unable to allocate the needed memory (throws a std::bad_allc)
+
+In addition, a check can be local or global.  In a global check, all processes report an error if any process has an error.  Local checks are non-synchronizing.
+
+Each check also has a level of complexity.  Some can be done with one or two
+comparisons and some require more work. Also, there are some checks we
+only want to do in a special \e debug mode.
+
+The user specifies the level of error checking to do with the \c error_check_level parameter.  It can be set to one of these strings:
+
+  - \c no_assertions
+  - \c basic_assertions
+  - \c complex_assertions
+  - \c debug_mode_assertions
+
+The default is \c basic_assertions.  If the user requests \c complex_assertions, the lengthier checks will be done as well.  If the users requests
+\c debug_mode_assertions , all checking will be done.
+
+If the user sets \c error_check_level to \c no_assertions then none of the checks will be done.  In addition, if Zoltan2 is compiled with the Z2_OMIT_ALL_ERROR_CHECKING flag, the error check methods do nothing.  So in this case there is not even a comparison of the check level to the requested check level.
+
+The methods that perform the tests are in the Zoltan2::Environment.  They are:
+
+ - Zoltan2::Environment::localInputAssertion()
+ - Zoltan2::Environment::globalInputAssertion()
+ - Zoltan2::Environment::localBugAssertion()
+ - Zoltan2::Environment::globalBugAssertion()
+ - Zoltan2::Environment::localMemoryAssertion()
+ - Zoltan2::Environment::globalMemoryAssertion()
+
+The Zoltan2::AssertionLevel enumerator defines the levels that are provided in the calls.  
+
+
+
+
+
+
+\section z2_developer_status_info Status and debugging output
+
+The following parameters govern behavior of messages from Zoltan2:
+
+ - \c debug_level which is the amount of verbosity
+ - \c debug_procs which specifies the processes that will print output
+ - \c debug_output_file which is the name of a file to receive the output (the rank of the process doing the output is appended to the file name)
+ - \c debug_output_stream which can be \c cout or \c cerr
+
+The Zoltan2::Environment::debug() message is used for printing out debug and status information and warnings.  The call should specify the Zoltan2::MessageOutputLevel (the verbosity of the message). 
+
+The Zoltan2::Environment::getDebugLevel() call should  be checked before creating a lengthy message.  This will ensure that work is not done for a detailed message if the users \c debug_level parameter did not request it.
+
+
+\section z2_developer_profiling Profiling
+\section z2_developer_rcp Use of Teuchos smart pointers
+
+Smart pointers remove the need for the programmer to keep track of
+when memory must be freed.  Teucho smart pointers in addition can
+do array bounds checking when compiled with the cmake configuration flag
+\b Teuchos_ENABLE_ABC (automatic bounds check).
+
+We use the following Teuchos memory management classes in Zoltan2:
+
+\li Teuchos::RCP and Teuchos::ArrayRCP for pointers to a single object or an array that persists outside of a function.  We use these for class data.  They have reference counters that keep track of how many pointers to the memory exist.  When the reference counter returns to 0, the memory is automatically freed.
+
+\li Teuchos::Ptr and Teuchos::Array wrap pointers to a single object or to an array, but without reference counting.  The reason to use them is to be able to do bounds checking.  They are used for data that does not persist outside fo the scope in which it is created.  An \b Array is dynamic in size and implements much of the \b std::vector interface.
+
+Teuchos::RCP and Teuchos::ArrayRCP can also be used for non-persisting data if you want an easy way to ensure that the memory will be freed upon leaving the scope in which the memory was allocated.
+
+In addition, Teuchos::Tuple can be used for small fixed size arrays.
+Teuchos::ArrayView is used for function arguments that were passed as
+Teuchos::ArrayRCP (and will not be \e saved by the function) or Teuchos::Array.
+(If the function is a class method that will hold on to the array in the
+class instance, then the function argument should be a reference to a
+Teuchos::ArrayRCP so it will be counted.)
+
+Using Teuchos memory management classes can increase the time to write code, and make code a little harder to read, but once the code compiles it is very unlikely that a memory error will be found later on.
+
+A detailed report on Teuchos memory management classes can be found in the directory Trilinos/doc/TeuchosMemoryManagementSAND.
+
+\section z2_developer_example Example
+
+The block algorithm in Zoltan2_AlgBlock.cpp exists a simple example
+of a Zoltan2 algorithm.
+
+*/
+
+/*! \page z2_developer_teuchos_comm Teuchos_CommHelpers.hpp
+
+\include Teuchos_CommHelpers.hpp
+*/
+

@@ -1,0 +1,88 @@
+INCLUDE(TribitsLibraryMacros)
+
+#
+# A) Package-specific configuration options
+#
+
+SET(HAVE_ZOLTAN2_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
+
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+   
+#
+# B) Define the header files, the source files, and the include directories
+#
+
+SET(HEADERS "")
+SET(SOURCES "")
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+APPEND_GLOB(HEADERS ${DIR}/algorithms/order/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/algorithms/order/*.cpp)
+
+APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.cpp)
+
+APPEND_GLOB(HEADERS ${DIR}/environment/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/environment/*.cpp)
+
+APPEND_GLOB(HEADERS ${DIR}/input/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/input/*.cpp)
+
+APPEND_GLOB(HEADERS ${DIR}/models/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/models/*.cpp)
+
+APPEND_GLOB(HEADERS ${DIR}/problems/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/problems/*.cpp)
+
+APPEND_GLOB(HEADERS ${DIR}/util/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/util/*.cpp)
+
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  )
+
+# for Trilinos_version.h
+ASSERT_DEFINED(PROJECT_BINARY_DIR)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR})
+
+# for Zoltan2_config.h
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+# for zoltan2 header files
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/partition)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/order)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/environment)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/input)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/models)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/problems)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/util)
+
+# for header files of trilinos packages we may use
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/tpetra/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/teuchos/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/teuchos/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/kokkos/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/kokkos/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/kokkos/LinAlg)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/kokkos/NodeAPI)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/epetra/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/epetra/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/epetraext/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/epetraext/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/ThreadPool/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/ThreadPool/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/triutils/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/triutils/src)
+
+#
+# C) Define the targets for package's library(s)
+#
+
+TRIBITS_ADD_LIBRARY(
+  zoltan2
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )

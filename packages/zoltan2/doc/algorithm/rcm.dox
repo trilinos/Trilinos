@@ -1,0 +1,27 @@
+/*! \page rcmPage Reverse Cuthill-McKee ordering
+
+\section rcm_algorithm RCM algorithm
+
+RCM is a serial ordering algorithm for graphs or sparse matrices. The objective is to minimize the bandwidth. This is useful for solvers, e.g. band solvers or incomplete factorizations. The algorithm is based on breadth-first search from a root vertex. Currently, vertex 0 is the root, but a future enhancement is to start from a pseudo-peripheral vertex.  
+
+\subsection rcm_input Input
+
+RCM expects a Zoltan2::GraphModel object.  Weights are not yet supported.
+
+\subsection rcm_parameters Parameters
+
+\subsection rcm_solution Solution
+
+An RCM solution is a permutation, currently given as a list of local ids.
+
+\subsection rcm_quality_measures Quality measures
+
+RCM quality is measured by the bandwidth (not yet implemented)
+
+\subsection rcm_examples Examples
+Todo
+
+\subsection rcm_source Source
+Zoltan2_AlgRCM.hpp is the source file for RCM.
+
+*/

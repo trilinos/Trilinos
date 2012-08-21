@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+#   Doesn't work - we don't want this startup banner
+#-D CMAKE_CPP_FLAGS:STRING="-DTEUCHOS_SUPPRESS_PROC_STARTUP_BANNER" \
+#
+#-D Teuchos_ENABLE_TESTS:BOOL=ON \
+#
+
+SRCDIR=~/shared/projects/Trilinos
+
+# Clean up the mess from previous configurations.
+
+/bin/rm -rf C* cmake* D* last* Make* packages Testing Trilinos*
+
+cmake \
+-D TPL_ENABLE_MPI:BOOL=OFF\
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/local/lib -lmpichcxx -lmpichf90 -lmpich -lmpl -lopa -lpthread" \
+-D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_C_COMPILER:FILEPATH=/usr/local/bin/mpicc \
+-D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/bin/mpicxx \
+-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/local/bin/mpif77 \
+-D CMAKE_C_FLAGS:STRING="-m64 -g -O0" \
+-D CMAKE_CXX_FLAGS:STRING="-Wno-sign-compare -DTEUCHOS_SUPPRESS_PROC_STARTUP_BANNER -m64 -g -O0 -std=c++98" \
+-D CMAKE_Fortran_FLAGS:STRING="-m64 -g -O0" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D MPI_EXEC_MAX_NUMPROCS:STRING=11 \
+-D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
+-D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+-D LAPACK_LIBRARY_DIRS:FILEPATH=/usr/local/lib \
+-D BLAS_LIBRARY_DIRS:FILEPATH=/usr/local/lib \
+-D TPL_LAPACK_LIBRARIES:STRING="-llapack -lblas -lgfortran" \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=OFF \
+-D Zoltan2_ENABLE_TESTS:BOOL=ON \
+-D Zoltan2_ENABLE_EXAMPLES:BOOL=ON \
+$SRCDIR 
