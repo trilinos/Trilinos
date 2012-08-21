@@ -491,13 +491,13 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
       Teuchos::RCP<Epetra_Import> importer = i->get<2>();
       if (nonnull(importer))
 	i->get<3>()->Import(*global_vec,*importer,Insert);
-
-      // set in ae_inargs_ string lookup container
-      Teuchos::RCP<panzer::EpetraLinearObjContainer> container = 
-	Teuchos::rcp(new panzer::EpetraLinearObjContainer(p_map_[i->get<1>()],p_map_[i->get<1>()]));
-      container->set_x(i->get<3>());
-      ae_inargs.addGlobalEvaluationData(i->get<0>(),container);
     }
+
+    // set in ae_inargs_ string lookup container
+    Teuchos::RCP<panzer::EpetraLinearObjContainer> container = 
+      Teuchos::rcp(new panzer::EpetraLinearObjContainer(p_map_[i->get<1>()],p_map_[i->get<1>()]));
+    container->set_x(i->get<3>());
+    ae_inargs.addGlobalEvaluationData(i->get<0>(),container);
   }
 
   // here we are building a container, this operation is fast, simply allocating a struct
