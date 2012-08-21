@@ -110,25 +110,29 @@ namespace Teuchos {
   TEUCHOS_UNIT_TEST( TimeMonitor, FUNC_TIME_MONITOR  )
   {
     func_time_monitor1 ();
-    std::ostringstream oss;
-    TimeMonitor::summarize (oss);
 
-    // Echo summarize() output to the FancyOStream out (which is a
-    // standard unit test argument).  Output should only appear in
-    // show-all-test-details mode.
-    out << oss.str () << std::endl;
+    {
+      std::ostringstream oss;
+      TimeMonitor::summarize (oss);
 
-    // Make sure that the timer's name shows up in the output.
-    const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
-    TEST_INEQUALITY(substr_i, std::string::npos);
+      // Echo summarize() output to the FancyOStream out (which is a
+      // standard unit test argument).  Output should only appear in
+      // show-all-test-details mode.
+      out << oss.str () << std::endl;
 
-    { // Repeat test for YAML output.
+      // Make sure that the timer's name shows up in the output.
+      const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+    }
+
+    { // Repeat test for YAML output, default format.
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
       using Teuchos::RCP;
 
       std::ostringstream yamlOss;
-      RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
+      RCP<ParameterList> reportParams =
+        parameterList (* (TimeMonitor::getValidReportParameters ()));
       reportParams->set ("Report format", "YAML");
       TimeMonitor::report (yamlOss, reportParams);
 
@@ -136,10 +140,35 @@ namespace Teuchos {
       // test argument).  Output should only appear in "show all test
       // details" mode.
       out << yamlOss.str () << std::endl;
+      //std::cerr << std::endl << yamlOss.str () << std::endl;
 
       // Make sure that the timer's name shows up in the output.
-      const size_t yaml_substr_i = yamlOss.str ().find ("FUNC_TIME_MONITOR1");
-      TEST_INEQUALITY(yaml_substr_i, std::string::npos);
+      const size_t substr_i = yamlOss.str ().find ("FUNC_TIME_MONITOR1");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+    }
+
+    { // Repeat test for YAML output, nondefault format.
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      std::ostringstream yamlOss;
+      RCP<ParameterList> reportParams =
+        parameterList (* (TimeMonitor::getValidReportParameters ()));
+      reportParams->set ("Report format", "YAML");
+      // Set this to the opposite of whatever it was.
+      reportParams->set ("Compact YAML", ! reportParams->get<bool> ("Compact YAML"));
+      TimeMonitor::report (yamlOss, reportParams);
+
+      // Echo output to the FancyOStream out (which is a standard unit
+      // test argument).  Output should only appear in "show all test
+      // details" mode.
+      out << yamlOss.str () << std::endl;
+      //std::cerr << std::endl << yamlOss.str () << std::endl;
+
+      // Make sure that the timer's name shows up in the output.
+      const size_t substr_i = yamlOss.str ().find ("FUNC_TIME_MONITOR1");
+      TEST_INEQUALITY(substr_i, std::string::npos);
     }
 
     // This sets up for the next unit test.
@@ -154,18 +183,69 @@ namespace Teuchos {
   TEUCHOS_UNIT_TEST( TimeMonitor, FUNC_TIME_MONITOR_tested  )
   {
     func_time_monitor2 ();
-    std::ostringstream oss;
-    TimeMonitor::summarize (oss);
 
-    // Echo summarize() output to the FancyOStream out (which is a
-    // standard unit test argument).  Output should only appear in
-    // show-all-test-details mode.
-    out << oss.str() << std::endl;
+    {
+      std::ostringstream oss;
+      TimeMonitor::summarize (oss);
 
-    const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR2");
-    TEST_INEQUALITY(substr_i, std::string::npos);
-    const size_t substr_inner_i = oss.str().find ("FUNC_TIME_MONITOR2_inner");
-    TEST_INEQUALITY(substr_inner_i, std::string::npos);
+      // Echo summarize() output to the FancyOStream out (which is a
+      // standard unit test argument).  Output should only appear in
+      // show-all-test-details mode.
+      out << oss.str() << std::endl;
+
+      const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR2");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+      const size_t substr_inner_i = oss.str().find ("FUNC_TIME_MONITOR2_inner");
+      TEST_INEQUALITY(substr_inner_i, std::string::npos);
+    }
+
+    { // Repeat test for YAML output, default format.
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      std::ostringstream yamlOss;
+      RCP<ParameterList> reportParams =
+        parameterList (* (TimeMonitor::getValidReportParameters ()));
+      reportParams->set ("Report format", "YAML");
+      TimeMonitor::report (yamlOss, reportParams);
+
+      // Echo output to the FancyOStream out (which is a standard unit
+      // test argument).  Output should only appear in "show all test
+      // details" mode.
+      out << yamlOss.str () << std::endl;
+      //std::cerr << std::endl << yamlOss.str () << std::endl;
+
+      const size_t substr_i = yamlOss.str().find ("FUNC_TIME_MONITOR2");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+      const size_t substr_inner_i = yamlOss.str().find ("FUNC_TIME_MONITOR2_inner");
+      TEST_INEQUALITY(substr_inner_i, std::string::npos);
+    }
+
+    { // Repeat test for YAML output, nondefault format.
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      std::ostringstream yamlOss;
+      RCP<ParameterList> reportParams =
+        parameterList (* (TimeMonitor::getValidReportParameters ()));
+      reportParams->set ("Report format", "YAML");
+      // Set this to the opposite of whatever it was.
+      reportParams->set ("Compact YAML", ! reportParams->get<bool> ("Compact YAML"));
+      TimeMonitor::report (yamlOss, reportParams);
+
+      // Echo output to the FancyOStream out (which is a standard unit
+      // test argument).  Output should only appear in "show all test
+      // details" mode.
+      out << yamlOss.str () << std::endl;
+      //std::cerr << std::endl << yamlOss.str () << std::endl;
+
+      const size_t substr_i = yamlOss.str().find ("FUNC_TIME_MONITOR2");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+      const size_t substr_inner_i = yamlOss.str().find ("FUNC_TIME_MONITOR2_inner");
+      TEST_INEQUALITY(substr_inner_i, std::string::npos);
+    }
 
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();

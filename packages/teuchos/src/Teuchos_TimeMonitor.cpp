@@ -54,9 +54,8 @@ namespace Teuchos {
    * \author Mark Hoemmen
    *
    * \tparam Ordinal The template parameter of \c Comm.
-   *
-   * \tparam Packet A type with value semantics; the type on which to
-   *   reduce.
+   * \tparam ScalarType Type for which to find the maximum.
+   * \tparam IndexType Type indicating the index of the maximum.
    *
    * \c MPI_MAXLOC is a standard reduction operator provided by the
    * MPI standard.  According to the standard, \c MPI_MAXLOC combines
@@ -69,15 +68,19 @@ namespace Teuchos {
    *     j         & \text{if $u < v$}. \\
    * \end{cases}
    * \f]
+
    * This class implements the \c MPI_MAXLOC reduction operator for
-   * the Teuchos communication wrappers.
+   * the Teuchos communication wrappers.  We need to define this
+   * separately from MPI for two reasons.  First, the Teuchos comm
+   * wrappers do not currently expose taking an MPI_Op.  Second, we
+   * need MaxLoc to be templated on the scalar and index types, in
+   * order to match Teuchos' MPI interface.
    *
    * What happens to NaN ("Not a Number")?  A NaN is neither less
    * than, greater than, or equal to any floating-point number or any
    * NaN.  We can alter the above definition slightly so that a \c
    * MaxLoc reduction has a well-defined result in case the array
    * contains a NaN:
-   *
    * \f[
    *   w = \begin{cases}
    *     u     & \text{if $u > v$}, \\
@@ -138,9 +141,8 @@ namespace Teuchos {
    * \author Mark Hoemmen
    *
    * \tparam Ordinal The template parameter of \c Comm.
-   *
-   * \tparam Packet A type with value semantics; the type on which to
-   *   reduce.
+   * \tparam ScalarType Type for which to find the minimum.
+   * \tparam IndexType Type indicating the index of the minimum.
    *
    * \c MPI_MINLOC is a standard reduction operator provided by the
    * MPI standard.  According to the standard, \c MPI_MINLOC combines
@@ -935,7 +937,9 @@ namespace Teuchos {
 
 
   void TimeMonitor::
-  summarizeToYaml (Ptr<const Comm<int> > comm, std::ostream &out)
+  summarizeToYaml (Ptr<const Comm<int> > comm,
+                   std::ostream &out,
+                   const bool compact)
   {
     using Teuchos::FancyOStream;
     using Teuchos::fancyOStream;
@@ -956,37 +960,39 @@ namespace Teuchos {
     computeGlobalTimerStatistics (statData, statNames, setOp);
 
     const int numProcs = comm->getSize();
-    //const int myRank = comm->getRank();
 
+    //RCP<FancyOStream> pfout = getFancyOStream (rcpFromRef (out));
+
+    // HACK (mfh 20 Aug 2012) For now, I convince the output stream to
+    // print a YAML sequence by manually prepending "- " to every line
+    // of output.  For some reason, creating OSTab with "- " as the
+    // line prefix does not work, else I would prefer that method.
+    // Also, I have to set the tab indent string here, because line
+    // prefix (which for some reason is what OSTab's constructor
+    // takes, rather than tab indent string) means something different
+    // from tab indent string, and turning on the line prefix prints
+    // all sorts of things including "|" for some reason.
     RCP<FancyOStream> pfout = getFancyOStream (rcpFromRef (out));
+    pfout->setTabIndentStr ("  ");
     FancyOStream& fout = *pfout;
+
+    fout << "# Teuchos::TimeMonitor report" << endl
+         << "---" << endl;
 
     // mfh 19 Aug 2012: An important goal of our chosen output format
     // was to minimize the nesting depth.  We have managed to keep the
     // nesting depth to 3, which is the limit that the current version
     // of PylotDB imposes for its YAML input.
 
-    // We define "compact" output style as a mixture of flow style and
-    // standard style which is best suited for perusal by an informed
-    // human reader, when there are a small number of timers.  In
-    // particular, compact style uses flow style YAML output for lists
-    // whenever possible, except at the outermost level where it would
-    // hinder readability.  For an explanation of YAML flow style, see
-    // Chapter 7 of the YAML 1.2 spec:
-    //
-    // http://www.yaml.org/spec/1.2/spec.html#style/flow/
-    const bool compact = true;
-
     // Omit document title.  Users may supply their own title as
     // desired.  This reduces the nesting depth of YAML output.
 
     // Outermost level is a list.  Begin with metadata.
-    OSTab tab0 (pfout, 1, "  - "); // Start a list
-    fout << "Output mode: " << (compact ? "compact" : "spacious") << endl
-         << "Number of processes: " << numProcs << endl
-         << "Time unit: s" << endl;
+    fout << "- Output mode: " << (compact ? "compact" : "spacious") << endl
+         << "- Number of processes: " << numProcs << endl
+         << "- Time unit: s" << endl;
     // Print names of all the kinds of statistics we collected.
-    fout << "Statistics collected:";
+    fout << "- Statistics collected:";
     if (compact) {
       fout << " [";
       for (size_type i = 0; i < statNames.size (); ++i) {
@@ -999,9 +1005,9 @@ namespace Teuchos {
     }
     else {
       fout << endl;
-      OSTab tab1 (pfout, 1, "  - ");
+      OSTab tab1 (pfout);
       for (size_type i = 0; i < statNames.size (); ++i) {
-        fout << statNames[i] << endl;
+        fout << "- " << statNames[i] << endl;
       }
     }
 
@@ -1010,7 +1016,7 @@ namespace Teuchos {
     // It might be nicer instead to print a map from timer name to all
     // of its data, but keeping the maximum nesting depth small
     // ensures better compatibility with different parsing tools.
-    fout << "Timer names:";
+    fout << "- Timer names:";
     if (compact) {
       fout << " [";
       size_type ind = 0;
@@ -1024,14 +1030,14 @@ namespace Teuchos {
     }
     else {
       fout << endl;
-      OSTab tab1 (pfout, 1, "  - ");
+      OSTab tab1 (pfout);
       for (stat_map_type::const_iterator it = statData.begin(); it != statData.end(); ++it) {
-        fout << it->first << endl;
+        fout << "- " << it->first << endl;
       }
     }
 
     // Print times for each timer, as a map from statistic name to its time.
-    fout << "Total times:";
+    fout << "- Total times:";
     if (compact) {
       fout << " [";
       size_type outerInd = 0;
@@ -1053,20 +1059,20 @@ namespace Teuchos {
     }
     else {
       fout << endl;
-      OSTab tab1 (pfout, 1, "  - ");
+      OSTab tab1 (pfout);
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
-        fout << outerIter->first << ": " << endl; // Print timer name
-        OSTab tab2 (pfout, 1, "  - ");
+        fout << "- " << outerIter->first << ": " << endl; // Print timer name
+        OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << statNames[innerInd] << ": " << curData[innerInd].first << endl;
+          fout << "- " << statNames[innerInd] << ": " << curData[innerInd].first << endl;
         }
       }
     }
 
     // Print call counts for each timer, for each statistic name.
-    fout << "Call counts:";
+    fout << "- Call counts:";
     if (compact) {
       fout << " [";
       size_type outerInd = 0;
@@ -1088,28 +1094,29 @@ namespace Teuchos {
     }
     else {
       fout << endl;
-      OSTab tab1 (pfout, 1, "  - ");
+      OSTab tab1 (pfout);
       size_type outerInd = 0;
-      for (stat_map_type::const_iterator outerIter = statData.begin(); outerIter != statData.end(); ++outerIter, ++outerInd) {
-        fout << outerIter->first << ": " << endl; // Print timer name
-        OSTab tab2 (pfout, 1, "  - ");
+      for (stat_map_type::const_iterator outerIter = statData.begin();
+           outerIter != statData.end(); ++outerIter, ++outerInd) {
+        fout << "- " << outerIter->first << ": " << endl; // Print timer name
+        OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << statNames[innerInd] << ": " << curData[innerInd].second << endl;
+          fout << "- " << statNames[innerInd] << ": " << curData[innerInd].second << endl;
         }
       }
     }
   }
 
   void TimeMonitor::
-  summarizeToYaml (std::ostream &out)
+  summarizeToYaml (std::ostream &out, const bool compact)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
     // be a "serial" (no MPI, one "process") communicator.
     RCP<const Comm<int> > comm = getDefaultComm ();
 
-    summarizeToYaml (comm.ptr (), out);
+    summarizeToYaml (comm.ptr (), out, compact);
   }
 
   // Default value is false.  We'll set to true once
@@ -1123,6 +1130,7 @@ namespace Teuchos {
   bool TimeMonitor::alwaysWriteLocal_ = false;
   bool TimeMonitor::writeGlobalStats_ = true;
   bool TimeMonitor::writeZeroTimers_ = true;
+  bool TimeMonitor::reportCompact_ = true;
 
   void
   TimeMonitor::setReportFormatParameter (ParameterList& plist)
@@ -1181,6 +1189,7 @@ namespace Teuchos {
     const bool alwaysWriteLocal = false;
     const bool writeGlobalStats = true;
     const bool writeZeroTimers = true;
+    const bool reportCompact = true;
 
     setReportFormatParameter (*plist);
     setSetOpParameter (*plist);
@@ -1191,6 +1200,11 @@ namespace Teuchos {
                 "communicator");
     plist->set ("writeZeroTimers", writeZeroTimers, "Generate output for "
                 "timers that have never been called");
+    plist->set ("Compact YAML", reportCompact, "If writing output in YAML "
+                "format, whether to use the compact form of YAML output.  "
+                "This means preferring \"flow style\" (see the YAML 1.2 spec) "
+                "for all sequences except the outermost sequence.");
+
     return rcp_const_cast<const ParameterList> (plist);
   }
 
@@ -1202,6 +1216,7 @@ namespace Teuchos {
     bool alwaysWriteLocal = false;
     bool writeGlobalStats = true;
     bool writeZeroTimers = true;
+    bool reportCompact = true;
 
     if (params.is_null ()) {
       // If we've set parameters before, leave their current values.
@@ -1218,6 +1233,7 @@ namespace Teuchos {
       alwaysWriteLocal = params->get<bool> ("alwaysWriteLocal");
       writeGlobalStats = params->get<bool> ("writeGlobalStats");
       writeZeroTimers = params->get<bool> ("writeZeroTimers");
+      reportCompact = params->get<bool> ("Compact YAML");
     }
     // Defer setting state until here, to ensure the strong exception
     // guarantee for this method (either it throws with no externally
@@ -1227,6 +1243,7 @@ namespace Teuchos {
     alwaysWriteLocal_ = alwaysWriteLocal;
     writeGlobalStats_ = writeGlobalStats;
     writeZeroTimers_ = writeZeroTimers;
+    reportCompact_ = reportCompact;
 
     setParams_ = true; // Yay, we successfully set parameters!
   }
@@ -1239,7 +1256,7 @@ namespace Teuchos {
     setReportParameters (params);
 
     if (reportFormat_ == REPORT_FORMAT_YAML) {
-      summarizeToYaml (comm, out);
+      summarizeToYaml (comm, out, reportCompact_);
     }
     else if (reportFormat_ == REPORT_FORMAT_TABLE) {
       summarize (comm, out, alwaysWriteLocal_, writeGlobalStats_,

@@ -461,7 +461,7 @@ public:
 
   /// \brief Report timer statistics to the given output stream.
   ///
-  /// This is like the 3-argument version of report(), but with
+  /// This is like the 3-argument version of report(), but with a
   /// default communicator.
   static void
   report (std::ostream& out,
@@ -477,15 +477,35 @@ public:
   /// Language.  It is a standard format for human-readable,
   /// machine-parseable, hierarchically organized data.
   ///
+  /// \param comm [in] Communicator over which to compute timer
+  ///   statistics.
+  /// \param out [out] Output stream to which to write (on Proc 0 of
+  ///   the given communicator only).
+  /// \param compact [in] Whether to print YAML output in "compact"
+  ///   style (see below).
+  ///
+  /// We define "compact" output style as a mixture of flow style and
+  /// standard style which is best suited for perusal by an informed
+  /// human reader, when there are a small number of timers.  In
+  /// particular, compact style uses flow style YAML output for lists
+  /// whenever possible, except at the outermost level where it would
+  /// hinder readability.  For an explanation of YAML flow style, see
+  /// Chapter 7 of the YAML 1.2 spec:
+  ///
+  /// http://www.yaml.org/spec/1.2/spec.html#style/flow/
+  ///
   /// \warning This is an experimental interface.  It may change or
   ///   disappear without warning.
-  static void summarizeToYaml (Ptr<const Comm<int> > comm, std::ostream& out);
+  static void
+  summarizeToYaml (Ptr<const Comm<int> > comm,
+                   std::ostream& out,
+                   const bool compact=true);
 
   /// \brief Like summarize(), but with YAML-format output and default communicator.
   ///
   /// \warning This is an experimental interface.  It may change or
   ///   disappear without warning.
-  static void summarizeToYaml (std::ostream& out);
+  static void summarizeToYaml (std::ostream& out, const bool compact=true);
 
   /// \brief Valid output formats for report().
   ///
@@ -542,6 +562,12 @@ public:
 
   //! Whether report() should report timers with zero call counts.
   static bool writeZeroTimers_;
+
+  /// \brief Whether report()'s YAML output should use compact format.
+  ///
+  /// See the documentation of summarizeToYaml() for a definition of
+  /// "compact" format.
+  static bool reportCompact_;
   //@}
 
   /// \brief Whether setReportParameters() completed successfully.
