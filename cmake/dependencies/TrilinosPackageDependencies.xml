@@ -797,10 +797,108 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Triossupport" dir="packages/trios/libraries/support" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Pablo"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
+  <Package name="Triosnnti" dir="packages/trios/libraries/nessie/nnti" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="Triossupport"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="CrayPortals,Portals,Gemini,InfiniBand"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
+  <Package name="Triosnssi" dir="packages/trios/libraries/nessie/nssi" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnnti"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
+  <Package name="Triosprograms" dir="packages/trios/programs" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
+  <Package name="Triosexamples" dir="packages/trios/examples" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
+  <Package name="Triostests" dir="packages/trios/tests" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
+  <Package name="Triosnetcdf-service" dir="packages/trios/services/netcdf" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI,Pnetcdf,Netcdf"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
   <Package name="Trios" dir="packages/trios" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExodus"/>
-    <TEST_REQUIRED_DEP_PACKAGES value="ThreadPool"/>
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="MPI,Netcdf,Pnetcdf,Pthread,CrayPortals,Portals,Gemini,InfiniBand,Pablo"/>
