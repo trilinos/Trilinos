@@ -734,9 +734,8 @@ namespace stk {
 
 
       // FIXME
-      //int N = num_nodes;
-      //if (m_iter == N || cg_beta <= 0.0) 
-      if (cg_beta <= 0.0 || restarted) 
+      int N = m_num_nodes;
+      if (m_iter % N == 0 || cg_beta <= 0.0 || restarted) 
         {
           /// d = s
           eMesh->copy_field(cg_d_field, cg_s_field);

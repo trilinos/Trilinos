@@ -5,8 +5,8 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#ifndef PMMParallelReferenceMeshSmoother2_hpp
-#define PMMParallelReferenceMeshSmoother2_hpp
+#ifndef PMMParallelReferenceMeshSmoother3_hpp
+#define PMMParallelReferenceMeshSmoother3_hpp
 
 #include <stk_percept/Percept.hpp>
 #if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
@@ -18,14 +18,13 @@ namespace stk {
 
     using namespace Mesquite;
 
-    /// A Jacobian based optimization smoother, eg. 1/A - 1/W (A = local current Jacobian, W is for original mesh)
-    /// LOCAL patch version
-    class PMMParallelReferenceMeshSmoother2 : public PMMParallelReferenceMeshSmoother1 {
+    /// A Jacobian based optimization smoother - time-stepping approach, element-based metrics
+    class PMMParallelReferenceMeshSmoother3 : public PMMParallelReferenceMeshSmoother1 {
      
     public:  
         
       /// max_edge_length_factor: used for scaling gradients to approximately this value times local edge length 
-      PMMParallelReferenceMeshSmoother2(double max_edge_length_factor=1.0,
+      PMMParallelReferenceMeshSmoother3(double max_edge_length_factor=1.0,
                                         int inner_iterations = 100,
                                         double cpu_time = 0.0, 
                                         double grad_norm =1.e-8,
@@ -35,9 +34,9 @@ namespace stk {
 
 
     protected:
+      //virtual void get_scale( Mesh* mesh, MeshDomain *domain);
 
-      virtual double run_one_iteration( Mesh* mesh,  MeshDomain *domain,
-                                      MsqError& err );
+      virtual double run_one_iteration( Mesh* mesh,  MeshDomain *domain, MsqError& err );
 
     };
 

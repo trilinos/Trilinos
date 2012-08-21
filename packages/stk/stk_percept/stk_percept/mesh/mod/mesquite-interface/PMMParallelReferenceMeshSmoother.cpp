@@ -101,6 +101,7 @@ namespace stk {
       PerceptMesh *eMesh = pmm->getPerceptMesh();
       m_pmm= pmm;
       m_eMesh = eMesh;
+      m_num_nodes = m_eMesh->get_number_nodes();
 
       print_comm_list(*eMesh->get_bulk_data(), false);
 
@@ -162,7 +163,7 @@ namespace stk {
 
           int iter_all=0;
 
-          int do_anim = 1; // = frequency of anim writes
+          int do_anim = 0; // = frequency of anim writes
           if (do_anim)
             {
               eMesh->save_as("anim_all."+toString(iter_all)+".e");
@@ -178,6 +179,9 @@ namespace stk {
                 }
               else 
                 {
+                  int num_invalid_1 = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
+                  VERIFY_OP_ON(num_invalid_1, ==, 0, "Invalid elements exist for start of stage 2, aborting");
+
                   //m_metric = &shape_metric;
                   m_metric = &shape_b1_metric;
                   //m_metric = &scaled_jac_metric;

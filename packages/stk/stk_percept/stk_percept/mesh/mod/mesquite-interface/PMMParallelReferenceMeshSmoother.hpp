@@ -35,7 +35,7 @@ namespace stk {
                                        double grad_norm =1.e-8,
                                        int parallel_iterations = 20)
         : PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper(inner_iterations, cpu_time, grad_norm, parallel_iterations),
-          m_num_invalid(0), m_global_metric(std::numeric_limits<double>::max()), m_untangled(false)
+          m_num_invalid(0), m_global_metric(std::numeric_limits<double>::max()), m_untangled(false), m_num_nodes(0)
       {}
 
 
@@ -82,6 +82,7 @@ namespace stk {
       int m_num_invalid;
       double m_global_metric;
       bool m_untangled;
+      int m_num_nodes;
 
       PerceptMesquiteMesh *m_pmm;
       PerceptMesh *m_eMesh;
