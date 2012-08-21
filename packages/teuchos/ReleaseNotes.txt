@@ -2,8 +2,51 @@
 Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
-Trilinos 10.11 (dev): 
+Trilinos 10.13 (dev): 
 ----------------------
+
+(*) Filtering timer labels for global statistics and output
+
+The computeGlobalTimerStatistics(), report(), and summarize() class
+methods of TimeMonitor now support "filtering" timer labels.  See Bug
+5301:
+
+https://software.sandia.gov/bugzilla/show_bug.cgi?id=5301
+
+Both methods take an optional "filter" string.  If nonempty, the
+methods only print timers whose labels begin with that string.  
+
+This feature could be used to implement "namespaces" for timers.
+Trilinos packages may take advantage of this feature by prefixing the
+timer name with the package name.  For example: "Teuchos: Timer 1".
+Users may exploit this feature to reduce the volume of output.  The
+implementation does not compute global statistics for timers that are
+filtered out, so filtering could also reduce computation and
+communication.
+
+(*) YAML output option for timing results
+
+The report() class method of TimeMonitor now has a YAML output option.
+See Bug 5302:
+
+https://software.sandia.gov/bugzilla/show_bug.cgi?id=5302
+
+YAML (see yaml.org) is a recursive acronym for "YAML Ain't Markup
+Language."  It "is a human-friendly data serialization standard for
+all programming languages."  I've added YAML output on request of
+Daniel Barnette (SNL), so that timing results can serve as input data
+for his PylotDB (https://github.com/dwbarne/PYLOTDB) framework for
+database creation, management, and analysis.  
+
+YAML is not the default output format of report().  To specify YAML
+output, give report() a ParameterList with the "Report format"
+parameter set to "YAML".  I have provided two different variants of
+YAML output: "compact" and "spacious".  The default is "spacious".
+You may set this via the "YAML format" parameter.
+
+
+Trilinos 10.12:
+----------------
 
 (*) The current behavior of the Teuchos::XMLParameterListReader has been modified 
 to throw an exception (Teuchos::DuplicateParameterSublist) the event that a sublist

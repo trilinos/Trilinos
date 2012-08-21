@@ -1234,13 +1234,12 @@ namespace Teuchos {
   bool TimeMonitor::setParams_ = false;
 
   // We have to declare all of these here in order to avoid linker errors.
-  TimeMonitor::ETimeMonitorReportFormat TimeMonitor::reportFormat_ =
-             TimeMonitor::REPORT_FORMAT_TABLE;
+  TimeMonitor::ETimeMonitorReportFormat TimeMonitor::reportFormat_ = TimeMonitor::REPORT_FORMAT_TABLE;
+  TimeMonitor::ETimeMonitorYamlFormat TimeMonitor::yamlFormat_ = TimeMonitor::YAML_FORMAT_SPACIOUS;
   ECounterSetOp TimeMonitor::setOp_ = Intersection;
   bool TimeMonitor::alwaysWriteLocal_ = false;
   bool TimeMonitor::writeGlobalStats_ = true;
   bool TimeMonitor::writeZeroTimers_ = true;
-  bool TimeMonitor::reportCompact_ = true;
 
   void
   TimeMonitor::setReportFormatParameter (ParameterList& plist)
@@ -1263,6 +1262,31 @@ namespace Teuchos {
                                                             docString,
                                                             strings (), docs (),
                                                             values (), &plist);
+  }
+
+  void
+  TimeMonitor::setYamlFormatParameter (ParameterList& plist)
+  {
+    const std::string name ("YAML format");
+    const std::string defaultValue ("spacious");
+    const std::string docString ("YAML-specific output format");
+    Array<std::string> strings;
+    Array<std::string> docs;
+    Array<ETimeMonitorYamlFormat> values;
+
+    strings.push_back ("compact");
+    docs.push_back ("Compact format: use \"flow style\" (see YAML 1.2 spec at "
+                    "yaml.org) for most sequences except the outermost sequence");
+    values.push_back (YAML_FORMAT_COMPACT);
+
+    strings.push_back ("spacious");
+    docs.push_back ("Spacious format: avoid flow style");
+    values.push_back (YAML_FORMAT_SPACIOUS);
+
+    setStringToIntegralParameter<ETimeMonitorYamlFormat> (name, defaultValue,
+                                                          docString,
+                                                          strings (), docs (),
+                                                          values (), &plist);
   }
 
   void
@@ -1299,9 +1323,9 @@ namespace Teuchos {
     const bool alwaysWriteLocal = false;
     const bool writeGlobalStats = true;
     const bool writeZeroTimers = true;
-    const bool reportCompact = true;
 
     setReportFormatParameter (*plist);
+    setYamlFormatParameter (*plist);
     setSetOpParameter (*plist);
     plist->set ("alwaysWriteLocal", alwaysWriteLocal,
                 "Always output local timers' values on Proc 0");
@@ -1310,10 +1334,6 @@ namespace Teuchos {
                 "communicator");
     plist->set ("writeZeroTimers", writeZeroTimers, "Generate output for "
                 "timers that have never been called");
-    plist->set ("Compact YAML", reportCompact, "If writing output in YAML "
-                "format, whether to use the compact form of YAML output.  "
-                "This means preferring \"flow style\" (see the YAML 1.2 spec) "
-                "for all sequences except the outermost sequence.");
 
     return rcp_const_cast<const ParameterList> (plist);
   }
@@ -1322,11 +1342,11 @@ namespace Teuchos {
   TimeMonitor::setReportParameters (const RCP<ParameterList>& params)
   {
     ETimeMonitorReportFormat reportFormat = REPORT_FORMAT_TABLE;
+    ETimeMonitorYamlFormat yamlFormat = YAML_FORMAT_SPACIOUS;
     ECounterSetOp setOp = Intersection;
     bool alwaysWriteLocal = false;
     bool writeGlobalStats = true;
     bool writeZeroTimers = true;
-    bool reportCompact = true;
 
     if (params.is_null ()) {
       // If we've set parameters before, leave their current values.
@@ -1339,21 +1359,21 @@ namespace Teuchos {
       params->validateParametersAndSetDefaults (*getValidReportParameters ());
 
       reportFormat = getIntegralValue<ETimeMonitorReportFormat> (*params, "Report format");
+      yamlFormat = getIntegralValue<ETimeMonitorYamlFormat> (*params, "YAML format");
       setOp = getIntegralValue<ECounterSetOp> (*params, "How to merge timer sets");
       alwaysWriteLocal = params->get<bool> ("alwaysWriteLocal");
       writeGlobalStats = params->get<bool> ("writeGlobalStats");
       writeZeroTimers = params->get<bool> ("writeZeroTimers");
-      reportCompact = params->get<bool> ("Compact YAML");
     }
     // Defer setting state until here, to ensure the strong exception
     // guarantee for this method (either it throws with no externally
     // visible state changes, or it returns normally).
     reportFormat_ = reportFormat;
+    yamlFormat_ = yamlFormat;
     setOp_ = setOp;
     alwaysWriteLocal_ = alwaysWriteLocal;
     writeGlobalStats_ = writeGlobalStats;
     writeZeroTimers_ = writeZeroTimers;
-    reportCompact_ = reportCompact;
 
     setParams_ = true; // Yay, we successfully set parameters!
   }
@@ -1367,7 +1387,8 @@ namespace Teuchos {
     setReportParameters (params);
 
     if (reportFormat_ == REPORT_FORMAT_YAML) {
-      summarizeToYaml (comm, out, reportCompact_, filter);
+      const bool compact = (yamlFormat_ == YAML_FORMAT_COMPACT);
+      summarizeToYaml (comm, out, compact, filter);
     }
     else if (reportFormat_ == REPORT_FORMAT_TABLE) {
       summarize (comm, out, alwaysWriteLocal_, writeGlobalStats_,

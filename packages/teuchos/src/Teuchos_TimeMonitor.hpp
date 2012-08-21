@@ -562,11 +562,26 @@ public:
     REPORT_FORMAT_TABLE
   };
 
+  /// \brief Valid YAML output formats for report().
+  ///
+  /// \warning This is an implementation detail of TimeMonitor.  It is
+  ///   subject to change at any time without notice.
+  enum ETimeMonitorYamlFormat {
+    YAML_FORMAT_COMPACT,
+    YAML_FORMAT_SPACIOUS
+  };
+
   /// \brief Add the "Report format" parameter to plist.
   ///
   /// \note Call this in getValidReportParameters() to set a default
   ///   value and validator for this parameter.
   static void setReportFormatParameter (ParameterList& plist);
+
+  /// \brief Add the "YAML format" parameter to plist.
+  ///
+  /// \note Call this in getValidReportParameters() to set a default
+  ///   value and validator for this parameter.
+  static void setYamlFormatParameter (ParameterList& plist);
 
   /// \brief Add the "How to merge timer sets" parameter to plist.
   ///
@@ -596,6 +611,10 @@ public:
   //! Current output format for report().  Set via setReportParameters().
   static ETimeMonitorReportFormat reportFormat_;
 
+  /// Current output format for report(), when using YAML output.
+  /// Set via setReportParameters().
+  static ETimeMonitorYamlFormat yamlFormat_;
+
   //! Whether report() should use the intersection or union of timers over processes.
   static ECounterSetOp setOp_;
 
@@ -608,12 +627,6 @@ public:
 
   //! Whether report() should report timers with zero call counts.
   static bool writeZeroTimers_;
-
-  /// \brief Whether report()'s YAML output should use compact format.
-  ///
-  /// See the documentation of summarizeToYaml() for a definition of
-  /// "compact" format.
-  static bool reportCompact_;
   //@}
 
   /// \brief Whether setReportParameters() completed successfully.
