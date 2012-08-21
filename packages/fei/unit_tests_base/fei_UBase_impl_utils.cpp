@@ -237,15 +237,14 @@ TEUCHOS_UNIT_TEST(impl_utils, remove_couplings)
   //after remove_couplings, the matrix-row for 8 should have
   //2 column-indices, and they should be 0 and 10. Also, the
   //coefficients should be 0.25 and 0.75.
-  const fei::FillableVec* matrow = fm.getRow(8);
+  const fei::CSVec* matrow = fm.getRow(8);
 
   if (matrow->size() != 2) {
     throw std::runtime_error("matrow 8 has wrong length");
   }
 
-  fei::CSVec csrow(*matrow);
-  std::vector<int>& indices = csrow.indices();
-  std::vector<double>& coefs = csrow.coefs();
+  const std::vector<int>& indices = matrow->indices();
+  const std::vector<double>& coefs = matrow->coefs();
   if (indices[0] != 0 || indices[1] != 10 ||
       std::abs(coefs[0] -0.25) > 1.e-49 || std::abs(coefs[1] -0.75) > 1.e-49) {
     throw std::runtime_error("matrow 8 has wrong contents after remove_couplings");

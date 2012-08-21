@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST(CSRMatCSVec, FillableMat_1)
 
   test_passed = true;
   try {
-    const fei::FillableVec* row = fm.getRow(2);
+    const fei::CSVec* row = fm.getRow(2);
     if (row->size() != 1) test_passed = false;
   }
   catch(...) {test_passed = false;}
