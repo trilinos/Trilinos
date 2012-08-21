@@ -1,0 +1,46 @@
+<ParameterList name="ShyLU Driver Input">
+    <Parameter name="mm_file" type ="string" value="mat/XyceTest5_Matrix4.mm" />
+    <Parameter name="rhs_file" type ="string" value="mat/XyceTest5_RHS4.mm" />
+    <Parameter name="preconditioner" type ="string" value="ShyLU" />
+    <Parameter name="Outer Solver MaxIters" type ="int" value="1" />
+    <Parameter name="Outer Solver Tolerance" type ="double" value="1e-6" />
+
+    <ParameterList name="ShyLU Input">
+        <!--This is needed here because ShyLU needs to handle AztecOO /-->
+        <!-- outer solver as a special case /-->
+        <Parameter name="Outer Solver Library" type ="string" value="Belos" />
+
+        <Parameter name="Separator Type" type="string" value="Wide" />
+
+        <!--
+        Change the method to try different approximation of the Schur complement.
+        Method "A22AndBlockDiagonals uses" the parameter "Diagonal Factor"
+        Method "Threshold" uses the parameter "Relative Threshold"
+        -->
+        <!--%of the block diagonals to approximate the schur complement /-->
+        <!--
+        <Parameter name="Schur Approximation Method" type="string" value="A22AndBlockDiagonals" />
+        <Parameter name="Diagonal Factor" type="double" value="0.05" />
+        -->
+
+        <Parameter name="Schur Approximation Method" type="string" value="Threshold" />
+        <Parameter name="Relative Threshold" type="double" value="1e-3" />
+        <Parameter name="Schur Complement Solver" type="string" value="AztecOO-Exact"/>
+
+        <!--Please leave symmetry as it is " /-->
+        <Parameter name="Symmetry" type="int" value="1" />
+
+        <Parameter name="Inner Solver MaxIters" type ="int" value="30" />
+        <Parameter name="Inner Solver Tolerance" type ="double" value="1e-10" />
+
+    </ParameterList>
+
+    <ParameterList name="Isorropia Input">
+    <!--Parameter name="partitioning method" type="string" value="graph" /-->
+        <ParameterList name="Zoltan">
+        <!--Parameter name="phg_use_timers" type="string" value="2" /-->
+        <!--Parameter name="graph_package" type="string" value="Parmetis" /-->
+        <!--Parameter name="parmetis_output_level" type="string" value="7" /-->
+    </ParameterList>
+    </ParameterList>
+</ParameterList>
