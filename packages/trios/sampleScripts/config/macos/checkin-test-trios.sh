@@ -39,7 +39,7 @@ ${TRILINOS_SRC_DIR}/checkin-test.py \
    --trilinos-src-dir=${TRILINOS_SRC_DIR} \
    --enable-all-packages=off \
    --no-enable-fwd-packages \
-   --enable-packages=Trios \
+   --enable-packages=Trios,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triostests,Triosexamples \
    --extra-build=MPI_DEBUG \
    --pull \
    --configure \

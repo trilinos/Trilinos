@@ -26,7 +26,6 @@ cmake \
 	-D Trilinos_ENABLE_TESTS:BOOL=ON \
 \
 	-D Trilinos_ENABLE_Trios:BOOL=ON \
-    -D Trilinos_ENABLE_Trios:BOOL=ON \
     -D Trilinos_ENABLE_Triossupport:BOOL=ON \
 	-D Trilinos_ENABLE_Triosnnti:BOOL=ON \
 	-D Trilinos_ENABLE_Triosnssi:BOOL=ON \
