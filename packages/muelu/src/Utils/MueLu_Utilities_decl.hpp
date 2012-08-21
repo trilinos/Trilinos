@@ -48,6 +48,8 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include <Teuchos_ScalarTraits.hpp>
+
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_OperatorFactory_fwd.hpp>

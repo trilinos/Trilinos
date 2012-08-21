@@ -46,6 +46,9 @@
 #ifndef MUELU_TRILINOSSMOOTHER_DEF_HPP
 #define MUELU_TRILINOSSMOOTHER_DEF_HPP
 
+#include <Xpetra_Map.hpp>
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_TrilinosSmoother_decl.hpp"
 
 #include "MueLu_Level.hpp"

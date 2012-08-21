@@ -47,6 +47,7 @@
 #define MUELU_HIERARCHY_DEF_HPP
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_Hierarchy_decl.hpp"
 #include "MueLu_Level.hpp"

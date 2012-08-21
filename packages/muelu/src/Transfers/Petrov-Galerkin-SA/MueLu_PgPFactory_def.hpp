@@ -52,6 +52,7 @@
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Export.hpp>
 #include <Xpetra_ExportFactory.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_PgPFactory_decl.hpp"
 #include "MueLu_TentativePFactory.hpp"

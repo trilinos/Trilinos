@@ -53,6 +53,17 @@
 #ifndef MUELU_BLOCKEDPFACTORY_DEF_HPP_
 #define MUELU_BLOCKEDPFACTORY_DEF_HPP_
 
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_ExportFactory.hpp>
+#include <Xpetra_CrsOperator.hpp>
+
+#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MapExtractor.hpp>
+#include <Xpetra_MapExtractorFactory.hpp>
+
 #include "MueLu_BlockedPFactory_decl.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_FactoryBase.hpp"
@@ -61,16 +72,6 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_HierarchyHelpers.hpp"
-
-#include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_ImportFactory.hpp"
-#include "Xpetra_ExportFactory.hpp"
-
-#include <Xpetra_BlockedCrsOperator.hpp>
-#include <Xpetra_Map.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_MapExtractor.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
 
 namespace MueLu {
 

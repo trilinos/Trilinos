@@ -59,6 +59,7 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Xpetra_Operator.hpp>
+#include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_BlockedCrsOperator.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
