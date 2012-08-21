@@ -37,61 +37,66 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /*-------------------------------------------------------------------------*/
-/**  @file nssi_service_args.x
+/**
+ *   @file Trios_xdr.h
  *
- *   @brief XDR definitions for the argument structures for
- *   \ref generic service operations.
+ *   @brief Essential definitions and include files for code that uses XDR.
  *
- *   @author Ron Oldfield (raoldfi\@sandia.gov).
- *   $Revision: 969 $.
- *   $Date: 2006-08-28 15:40:44 -0600 (Mon, 28 Aug 2006) $.
- *
+ *   @author Ron Oldfield (raoldfi\@sandia.gov)
  */
 
-#ifdef RPC_HDR
-%#include "Trios_nssi_xdr.h"
+#ifndef _TRIOS_XDR_H_
+#define _TRIOS_XDR_H_
+
+#include "Trios_config.h"
+#include <stdint.h>
+#include <sys/param.h>
+#include <errno.h>
+
+#ifdef __MTA__
+#include <xdr.h>
+#else
+#include <rpc/types.h>
+#include <rpc/xdr.h>
 #endif
 
-#ifdef RPC_XDR
-%#include "Trios_nssi_xdr.h"
-%#include "nssi_service_args.h"
+/* Some systems do not have xdr functions for uint16_t, uint32_t, uint64_t.
+ * We should have checked for these in the cmake config.  To fix the problem,
+ * we redefine these function names.
+ */
+#ifdef HAVE_TRIOS_XDR_U_INT16_T
+#define xdr_uint16_t xdr_u_int16_t
+#endif
+#ifdef HAVE_TRIOS_XDR_U_INT32_T
+#define xdr_uint32_t xdr_u_int32_t
+#endif
+#ifdef HAVE_TRIOS_XDR_U_INT64_T
+#define xdr_uint64_t xdr_u_int64_t
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(__STDC__) || defined(__cplusplus)
+
+
+/* On some systems (mac) xdr_sizeof is not in header file,
+ * but it is in the library.
+ */
+#ifndef HAVE_TRIOS_XDR_SIZEOF
+extern unsigned long xdr_sizeof (xdrproc_t func, void *data);
+#endif
+
+
+#else /* K&R C */
 #endif
 
 
 
-/**
- * @brief Arguments for the \ref nssi_create_container method that
- * have to be passed to the authorization server.
- */
-struct nssi_get_service_args {
+#ifdef __cplusplus
+}
+#endif
 
-    /** @brief The ID of the service (unused). */
-    int id;
-};
-
-/**
- * @brief Arguments for the \ref nssi_kill_service method that
- * have to be passed to the authorization server.
- */
-struct nssi_kill_service_args {
-
-    /** @brief The signal to use when killing the service. */
-    int sig;
-};
-
-
-/**
- * @brief Arguments for the \ref nssi_reset_tracing method.
- */
-struct nssi_trace_reset_args {
-
-    /** @brief The file type for the new tracing file. */
-    int ftype;
-
-    /** @brief The name of the new tracing file. */
-    string fname<PATH_MAX>;
-
-    /** @brief Comma-separated list of traces to enable. */
-    string enable<512>;
-};
+#endif
 

@@ -8,17 +8,13 @@
  */
 
 #ifdef RPC_HDR
-%#include <rpc/types.h>
-%#include <rpc/xdr.h>
-%#include "Trios_config.h"
-%#include <sys/param.h>
-%#include <errno.h>
-
-%#include <Trios_nnti_xdr.h>
+%#include "Trios_nssi_xdr.h"
+%#include "Trios_nnti_xdr.h"
 #endif
 
 #ifdef RPC_XDR
-%#include <Trios_nssi_types_xdr.h>
+%#include "Trios_nssi_xdr.h"
+%#include "Trios_nssi_types_xdr.h"
 #endif
 
 /** @addtogroup base_types
@@ -88,19 +84,6 @@ enum nssi_return_codes {
 
 };
 
-/*
- * Apple does not have some of the uint types.
- */
-#if defined(__APPLE__)
-#ifdef RPC_HDR
-%#ifndef HAVE_XDR_UINT
-%#define HAVE_XDR_UINT
-%#endif
-#endif
-typedef u_int64_t uint64_t;
-typedef u_int32_t uint32_t;
-typedef u_int16_t uint16_t;
-#endif
 
 /**
  * @brief The <tt>\ref nssi_size</tt> type is used to for ``size'' variables.

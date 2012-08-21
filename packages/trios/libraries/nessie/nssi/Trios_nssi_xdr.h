@@ -52,14 +52,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #define _NSSI_RPC_XDR_H_
 
 #include "Trios_config.h"
-#include <stdint.h>
+#include "Trios_xdr.h"
 
-#ifdef __MTA__
-#include <xdr.h>
-#else
-#include <rpc/types.h>
-#include <rpc/xdr.h>
-#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,13 +62,6 @@ extern "C" {
 
 #if defined(__STDC__) || defined(__cplusplus)
 
-
-/* On some systems (mac) xdr_sizeof is not in header file,
- * but it is in the library.
- */
-#ifndef HAVE_TRIOS_XDR_SIZEOF
-extern unsigned long xdr_sizeof (xdrproc_t func, void *data);
-#endif
 
 /**
  * @brief Initialize the XDR encoding mechanism.

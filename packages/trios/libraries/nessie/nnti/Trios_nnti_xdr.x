@@ -10,28 +10,11 @@
 #include "Trios_config.h"
 
 #ifdef RPC_HDR
-%#include <rpc/types.h>
-%#include <rpc/xdr.h>
-%#include "Trios_config.h"
-%#include <sys/param.h>
-%#include <errno.h>
-%#include <stdint.h>
-
+%#include "Trios_xdr.h"
 #endif
 
 #ifdef RPC_XDR
-%#include "Trios_nnti_xdr.h"
-%#include "Trios_config.h"
-%#ifdef HAVE_TRIOS_XDR_U_INT16_T
-%#define xdr_uint16_t xdr_u_int16_t
-%#endif
-%#ifdef HAVE_TRIOS_XDR_U_INT32_T
-%#define xdr_uint32_t xdr_u_int32_t
-%#endif
-%#ifdef HAVE_TRIOS_XDR_U_INT64_T
-%#define xdr_uint64_t xdr_u_int64_t
-%#endif
-
+%#include "Trios_xdr.h"
 #endif
 
 

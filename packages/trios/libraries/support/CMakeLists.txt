@@ -112,6 +112,13 @@ IF (${PACKAGE_NAME}_ENABLE_Pablo)
 ENDIF (${PACKAGE_NAME}_ENABLE_Pablo)
 
 
+############# XDR ##########################
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/xdr)
+
+APPEND_SET(HEADERS
+  xdr/Trios_xdr.h
+)
 
 ########################### TRIOS SUPPORT LIBRARY ###############
 
