@@ -58,6 +58,7 @@
 #include "stringx.h"
 #include "FileInfo.h"
 #include "ED_SystemInterface.h"
+#include "ED_Version.h"
 
 #include "add_to_log.h"
 
@@ -81,8 +82,6 @@ struct TimeInterp
   double proportion; 
 }
 ;
-
-string Version() { return "2.59 (2012-08-20)"; }
 
 string Date() {
   char tbuf[32];
@@ -390,9 +389,8 @@ namespace {
     add_to_log(argv[0], 0);
 #else
     // Temporarily differentiate this version from previous version in logs.
-    ostringstream code;
-    code << "exodiff-" << Version();
-    add_to_log( code.str().c_str(), 0 );
+    std::string code = "exodiff-" + version;
+    add_to_log( code.c_str(), 0 );
 #endif
   
     if (interface.exit_status_switch && diff_flag)

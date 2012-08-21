@@ -32,11 +32,7 @@
 #ifndef SEACAS_Version_h
 #define SEACAS_Version_h
 
-static char const *qainfo[] =
-{
-  "EXODIFF",
-  "2012-06-04",
-  "2.58",
-};
+static std::string version("2.60");
+static std::string verdate("2012-08-21");
 
 #endif // SEACAS_Version_h

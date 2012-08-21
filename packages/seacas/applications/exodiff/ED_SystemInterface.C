@@ -301,7 +301,7 @@ SystemInterface::~SystemInterface() {}
 
 void SystemInterface::show_version()
 {
-  std::cout << qainfo[0] << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
+  std::cout << "EXODIFF\t(Version: " << version << ") Modified: " << verdate << '\n';
 }
 
 void SystemInterface::enroll_options()
