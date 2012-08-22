@@ -117,9 +117,15 @@ Amesos_Pardiso::~Amesos_Pardiso()
 
   if (pardiso_initialized_ ) {
     int n = SerialMatrix().NumMyRows();
+#ifdef HAVE_AMESOS_PARDISO_MKL
+    F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
+                &n, &ddum, &ia_[0], &ja_[0], &idum, &nrhs_,
+                iparm_, &msglvl_, &ddum, &ddum, &error);
+#else
     F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
                 &n, &ddum, &ia_[0], &ja_[0], &idum, &nrhs_,
                 iparm_, &msglvl_, &ddum, &ddum, &error, dparm_);
+#endif
   }
 
   AMESOS_CHK_ERRV(CheckError(error));
@@ -285,10 +291,15 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
     int idum;
     double ddum;
 
+#ifdef HAVE_AMESOS_PARDISO_MKL
+    F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
+                       &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
+                       iparm_, &msglvl_, &ddum, &ddum, &error);
+#else
     F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
                        &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
                        iparm_, &msglvl_, &ddum, &ddum, &error, dparm_);
-
+#endif
     AMESOS_CHK_ERR(CheckError(error));
   }
 
@@ -310,9 +321,15 @@ int Amesos_Pardiso::PerformNumericFactorization( )
     int idum;
     double ddum;
 
+#ifdef HAVE_AMESOS_PARDISO_MKL
+    F77_PARDISO (pt_, &maxfct_, &mnum_, &mtype_, &phase,
+                       &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
+                       iparm_, &msglvl_, &ddum, &ddum, &error);
+#else
     F77_PARDISO (pt_, &maxfct_, &mnum_, &mtype_, &phase,
                        &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
                        iparm_, &msglvl_, &ddum, &ddum, &error, dparm_);
+#endif
 
     AMESOS_CHK_ERR(CheckError(error));
   }
@@ -454,13 +471,21 @@ int Amesos_Pardiso::Solve()
     int phase = 33;
 
     for (int i = 0 ; i < NumVectors ; ++i)
+#ifdef HAVE_AMESOS_PARDISO_MKL
       F77_PARDISO (pt_, &maxfct_, &mnum_, &mtype_, &phase,
                          &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
                          iparm_, &msglvl_, 
                          SerialBValues + i * n,
                          SerialXValues + i * n,
-                         &error, dparm_);
-
+                         &error);
+#else
+    F77_PARDISO (pt_, &maxfct_, &mnum_, &mtype_, &phase,
+                       &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
+                       iparm_, &msglvl_,
+                       SerialBValues + i * n,
+                       SerialXValues + i * n,
+                       &error, dparm_);
+#endif
     AMESOS_CHK_ERR(CheckError(error));
   }
 
