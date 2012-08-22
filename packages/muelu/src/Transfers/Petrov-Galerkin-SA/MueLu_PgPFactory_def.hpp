@@ -310,24 +310,44 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
   Teuchos::ArrayRCP< const Scalar > Numerator_local = Numerator->getData(0);
   Teuchos::ArrayRCP< const Scalar > Denominator_local = Denominator->getData(0);
   Teuchos::ArrayRCP< Scalar >       ColBasedOmega_local = ColBasedOmega->getDataNonConst(0);
-  LocalOrdinal zero_local = 0;
+  GlobalOrdinal zero_local = 0;  // count negative colbased omegas
+  GlobalOrdinal nan_local = 0;   // count NaNs -> set them to zero
   Scalar min_local = 1000000; //Teuchos::ScalarTraits<Scalar>::one() * (Scalar) 1000000;
   Scalar max_local = Teuchos::ScalarTraits<Scalar>::zero();
   for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(Numerator->getLocalLength()); i++) {
-    ColBasedOmega_local[i] = Numerator_local[i] / Denominator_local[i];
+    if(std::abs(Denominator_local[i]) == 0.0)
+    {
+      ColBasedOmega_local[i] = 0.0; // fallback: nonsmoothed basis function since denominator == 0.0
+      nan_local++;
+    }
+    else
+    {
+      ColBasedOmega_local[i] = Numerator_local[i] / Denominator_local[i];  // default case
+    }
+
     if(std::abs(ColBasedOmega_local[i]) < std::abs(Teuchos::ScalarTraits<Scalar>::zero())) { // negative omegas are not valid. set them to zero
       ColBasedOmega_local[i] = Teuchos::ScalarTraits<Scalar>::zero();
       zero_local++; // count zero omegas
     }
+
+    // handle case that Nominator == Denominator -> Dirichlet bcs in A?
+    // fallback if ColBasedOmega == 1 -> very strong smoothing may lead to zero rows in P
+    // TAW: this is somewhat nonstandard and a rough fallback strategy to avoid problems
+    if(std::abs(ColBasedOmega_local[i]) == 1.0) {
+      ColBasedOmega_local[i] = 0.0;
+    }
+
     if(std::abs(ColBasedOmega_local[i]) < std::abs(min_local)) { min_local = std::abs(ColBasedOmega_local[i]); }
     if(std::abs(ColBasedOmega_local[i]) > std::abs(max_local)) { max_local = std::abs(ColBasedOmega_local[i]); }
   }
 
   { // be verbose
-    LocalOrdinal zero_all;
+    GlobalOrdinal zero_all;
+    GlobalOrdinal nan_all;
     Scalar min_all;
     Scalar max_all;
     sumAll(A->getRowMap()->getComm(),zero_local,zero_all);
+    sumAll(A->getRowMap()->getComm(),nan_local,nan_all);
     minAll(A->getRowMap()->getComm(),min_local, min_all);
     maxAll(A->getRowMap()->getComm(),max_local, max_all);
 
@@ -339,7 +359,9 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     case DINVANORM: { GetOStream(MueLu::Statistics1,0) << "DinvAnorm)" << std::endl;   }    break;
     default:          GetOStream(MueLu::Statistics1,0) << "unknown)" << std::endl;
     }
-    GetOStream(MueLu::Statistics1,0) << "Damping parameter: min = " << min_all << ", max = " << max_all << ", (" << zero_all << " zeros out of " << ColBasedOmega->getGlobalLength() << " column-based omegas)" << std::endl;
+    GetOStream(MueLu::Statistics1,0) << "Damping parameter: min = " << min_all << ", max = " << max_all << std::endl;
+    GetOStream(MueLu::Statistics, 0) << "# negative omegas: " << zero_all << " out of " << ColBasedOmega->getGlobalLength() << " column-based omegas" << std::endl;
+    GetOStream(MueLu::Statistics, 0) << "# NaNs: " << nan_all << " out of " << ColBasedOmega->getGlobalLength() << " column-based omegas" << std::endl;
   }
 
   if(coarseLevel.IsRequested("ColBasedOmega", this)) {
