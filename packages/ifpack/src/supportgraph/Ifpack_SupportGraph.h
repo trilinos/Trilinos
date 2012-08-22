@@ -287,6 +287,10 @@ class Ifpack_SupportGraph: public Ifpack_Preconditioner {
   //! Epetra_Comm associated with matrix to be preconditioned.
   const Epetra_Comm & Comm_;
 
+  //! Contains the perturbation to the diagonal of the support graph to ensure the matrix 
+  //  is non-singular
+  double Offset_;
+
   //! If true, the preconditioner solves for the transpose of the matrix.
   bool UseTranspose_;
 

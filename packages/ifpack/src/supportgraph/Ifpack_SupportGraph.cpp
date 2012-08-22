@@ -64,6 +64,7 @@ typedef graph_traits < Graph >::vertex_descriptor Vertex;
 Ifpack_SupportGraph::Ifpack_SupportGraph(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
   Comm_(A->Comm()),
+  Offset_(.001),
   UseTranspose_(false),
   Condest_(-1.0),
   NumForests_(1),
@@ -92,6 +93,7 @@ int Ifpack_SupportGraph::SetParameters(Teuchos::ParameterList& List_in)
   List_ = List_in;
   Label_ = List_in.get("amesos: solver type", Label_);
   NumForests_ = List_in.get("MST: forest number", NumForests_);
+  Offset_ = List_in.get("MST: diagonal offset", Offset_);
   return(0);
 }
 //==============================================================================
@@ -239,11 +241,12 @@ int Ifpack_SupportGraph::Initialize()
       // Create the CrsMatrix for the support graph
       B_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
       
-
+      
       // Fill in the matrix with the stl vectors for each row
       for(int i = 0; i < num_verts; i++)
 	{
-	  Values[i][0] = Values[i][0] + 1;
+	  Values[i][0] = Values[i][0] + Offset_;
+	  
 	  (*B_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
 	}
       
@@ -263,7 +266,7 @@ int Ifpack_SupportGraph::Initialize()
       Problem_->SetOperator(const_cast<Epetra_CrsMatrix*>(B_.get()));
       
       Amesos Factory;
-      Solver_ = Teuchos::rcp( Factory.Create("Amesos_Klu",*Problem_) );
+      Solver_ = Teuchos::rcp( Factory.Create((char*)Label_.c_str(),*Problem_) );
 
       if(Solver_ == Teuchos::null)
 	{
