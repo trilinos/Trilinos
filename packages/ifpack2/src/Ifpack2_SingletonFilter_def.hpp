@@ -514,8 +514,8 @@ void SingletonFilter<MatrixType>::UpdateLHS(const Tpetra::MultiVector<Scalar,Loc
 					    Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
   
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > LHS_ptr = LHS.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >       ReducedLHS_ptr = ReducedLHS.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >        LHS_ptr = LHS.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >  ReducedLHS_ptr = ReducedLHS.get2dView();
 
   for (size_t i = 0 ; i < NumRows_ ; ++i)
     for (size_t k = 0 ; k < LHS.getNumVectors() ; ++k)
