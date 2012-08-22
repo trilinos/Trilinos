@@ -133,7 +133,7 @@ namespace Teuchos {
 typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map_type;
 
 /// \class TimeMonitor
-/// \brief A scope-safe timer wrapper class.
+/// \brief A scope-safe timer wrapper class, that can compute global timer statistics.
 ///
 /// An instance of the \c TimeMonitor class wraps a nonconst reference
 /// to a \c Time timer object.  \c TimeMonitor's constructor starts
@@ -225,15 +225,14 @@ public:
   /// not exist on some processes will be given a zero timing and call
   /// count, so that statistics make sense.
   ///
-  /// Suppose there are \f$P\f$ processes in the communicator and
-  /// \f$N\f$ unique timers in the global union.  This method requires
-  /// \f$O(\log P)\f$ messages (\f$O(1)\f$ "reductions" and exactly 1
-  /// "broadcast") and \f$O(N)\f$ per-processor storage (in the worst
-  /// case) when computing either the intersection or the union of
-  /// timers (the algorithm is similar in either case).  The whole
-  /// algorithm takes at worst \f$O(N (\log N) (\log P))\f$ time along
-  /// the critical path (i.e., on the "slowest process" in the
-  /// communicator).
+  /// \note This method must called as a collective by all processes
+  ///   in the communicator.
+  ///
+  /// All output arguments are returned redundantly on all processes
+  /// in the communicator.  That makes this method an all-reduce.
+  ///
+  /// Statistics collected
+  /// --------------------
   ///
   /// The "MinOverProcs" and "MaxOverProcs" timings are cumulative:
   /// the reported timing is for all calls.  Along with the min resp.
@@ -264,8 +263,22 @@ public:
   /// reason why we report call counts as \c double rather than \c
   /// int.  It has no particular connection to the mean timing.
   ///
-  /// All output arguments are returned redundantly on all processes
-  /// in the communicator.  That makes this method an all-reduce.
+  /// Performance
+  /// -----------
+  ///
+  /// This operation requires interprocess communication.  Suppose
+  /// there are \f$P\f$ processes in the given communicator, and
+  /// \f$N\f$ unique timers in the global union of all processes'
+  /// timers.  Then, this method requires \f$O(\log P)\f$ messages
+  /// (\f$O(1)\f$ "reductions" and exactly 1 "broadcast") and
+  /// \f$O(N)\f$ per-processor storage (in the worst case) when
+  /// computing either the intersection or the union of timers (the
+  /// algorithm is similar in either case).  The whole algorithm takes
+  /// at worst \f$O(N (\log N) (\log P))\f$ time along the critical
+  /// path (i.e., on the "slowest process" in the communicator).  The
+  /// \f$N \log N\f$ term comes from sorting the timers by label at
+  /// each stage of the reduction in order to compute their union or
+  /// intersection.
   ///
   /// \param statData [out] On output: Global timer statistics, stored
   ///   as a map with key timer name, and with value the ordered list
@@ -302,9 +315,6 @@ public:
   /// \param filter [in] Filter for timer labels.  If filter is not
   ///   empty, this method will only compute statistics for timers
   ///   whose labels begin with this string.
-  ///
-  /// \note This method must called as a collective by all processes
-  ///   in the communicator.
   static void
   computeGlobalTimerStatistics (stat_map_type& statData,
                                 std::vector<std::string>& statNames,
