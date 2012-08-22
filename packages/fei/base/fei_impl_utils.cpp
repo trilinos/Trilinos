@@ -121,21 +121,29 @@ void pack_FillableMat(const fei::FillableMat& mat,
 }
 
 //----------------------------------------------------------------------------
-void pack_FillableMat(const fei::FillableMat& mat, 
-                      std::vector<char>& buffer,
-                      bool resize_buffer)
+size_t num_bytes_FillableMat(const fei::FillableMat& mat)
 {
   int nrows = mat.getNumRows();
   int nnz = fei::count_nnz(mat);
 
   int num_chars_int = (2 + nrows*2 + nnz)*sizeof(int);
   int num_chars_double = nnz*sizeof(double);
-  if (resize_buffer) {
-    buffer.resize(num_chars_int + num_chars_double);
-  }
 
-  int* intdata = reinterpret_cast<int*>(&buffer[0]);
-  double* doubledata = reinterpret_cast<double*>(&buffer[0]+num_chars_int);
+  return num_chars_int + num_chars_double;
+}
+
+//----------------------------------------------------------------------------
+void pack_FillableMat(const fei::FillableMat& mat, 
+                      char* buffer)
+{
+  int nrows = mat.getNumRows();
+  int nnz = fei::count_nnz(mat);
+
+  int num_chars_int = (2 + nrows*2 + nnz)*sizeof(int);
+  int num_chars_double = nnz*sizeof(double);
+
+  int* intdata = reinterpret_cast<int*>(buffer);
+  double* doubledata = reinterpret_cast<double*>(buffer+num_chars_int);
 
   int ioffset = 0;
   int doffset = 0;
@@ -296,6 +304,15 @@ bool unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat)
   }
   srg.rowOffsets[nrows] = nnz;
   return all_zeros;
+}
+
+size_t num_bytes_indices_coefs(const std::vector<int>& indices,
+                        const std::vector<double>& coefs)
+{
+  int num = indices.size();
+  int num_chars_int = (1+num)*sizeof(int);
+  int num_chars = num_chars_int + num*sizeof(double);
+  return num_chars;
 }
 
 void pack_indices_coefs(const std::vector<int>& indices,

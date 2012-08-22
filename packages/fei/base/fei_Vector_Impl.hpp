@@ -47,6 +47,7 @@
 #include <fei_macros.hpp>
 #include <fei_VectorTraits.hpp>
 
+#include <fei_VectorTraits_CSVec.hpp>
 #include <fei_VectorTraits_FillableVec.hpp>
 #include <fei_VectorTraits_LinSysCore.hpp>
 #include <fei_VectorTraits_LinProbMgr.hpp>

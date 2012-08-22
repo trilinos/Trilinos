@@ -245,9 +245,10 @@ void fei::Matrix_core::setCommSizes()
   for(size_t i=0; i<sendProcs_.size(); ++i) {
     int proc = sendProcs_[i];
 
-    bool resize_buffer = true;
-    fei::impl_utils::pack_FillableMat(*(remotelyOwned_[proc]),
-                                      send_chars_[i], resize_buffer);
+    int num_bytes = fei::impl_utils::num_bytes_FillableMat(*(remotelyOwned_[proc]));
+    send_chars_[i].resize(num_bytes);
+    char* buffer = &send_chars_[i][0];
+    fei::impl_utils::pack_FillableMat(*(remotelyOwned_[proc]), buffer);
 
     int bsize = send_chars_[i].size();
 
@@ -294,9 +295,9 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   //now pack and send our buffers.
   for(size_t i=0; i<sendProcs_.size(); ++i) {
     int proc = sendProcs_[i];
-    bool resize_buffer = false;
     fei::FillableMat* remoteMat = remotelyOwned_[proc];
-    fei::impl_utils::pack_FillableMat(*remoteMat, send_chars_[i], resize_buffer);
+    char* buffer = &send_chars_[i][0];
+    fei::impl_utils::pack_FillableMat(*remoteMat, buffer);
     remoteMat->setValues(0.0);
 
     MPI_Send(&(send_chars_[i][0]), send_chars_[i].size(), MPI_CHAR, proc, tag1, comm_);
