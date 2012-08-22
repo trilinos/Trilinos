@@ -237,10 +237,10 @@ ENDIF()
 #
 
 APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
-  #Ifpack_SupportGraph.hpp
+  supportgraph/Ifpack_SupportGraph.h
 )
 APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
-  #Ifpack_SupportGraph.cpp
+  supportgraph/Ifpack_SupportGraph.cpp
 )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)

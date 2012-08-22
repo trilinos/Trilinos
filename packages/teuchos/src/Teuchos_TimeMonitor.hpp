@@ -47,14 +47,16 @@
  *
  * \brief Scope protection wrapper for Teuchos::Time, with timer reporting functionality.
  *
- * The \c TimeMonitor class wraps a nonconst reference to a \c
- * Teuchos::Time timer object.  TimeMonitor's constructor starts the
- * timer, and its destructor stops the timer.  This ensures scope
- * safety of timers, so that no matter how a scope is exited (whether
- * the normal way or when an exception is thrown), a timer started in
- * the scope is stopped when the scope is left.  TimeMonitor also
- * tracks each process' set of timers, and can compute global timer
- * statistics.
+ * An instance of the \c TimeMonitor class wraps a nonconst reference
+ * to a \c Teuchos::Time timer object.  TimeMonitor's constructor
+ * starts the timer, and its destructor stops the timer.  This ensures
+ * scope safety of timers, so that no matter how a scope is exited
+ * (whether the normal way or when an exception is thrown), a timer
+ * started in the scope is stopped when the scope is left.
+ *
+ * TimeMonitor also has class methods that create or destroy timers
+ * (in such a way that it can track the complete set of created timers
+ * on each process) and compute global timer statistics.
  */
 
 /** \example TimeMonitor/cxx_main.cpp
@@ -133,19 +135,22 @@ typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map
 /// \class TimeMonitor
 /// \brief A scope-safe timer wrapper class.
 ///
-/// This class wraps a nonconst reference to a \c Teuchos::Time timer
-/// object.  The TimeMonitor's constructor starts the timer, and its
-/// destructor stops the timer.  This ensures scope safety of timers,
-/// so that no matter how a scope is exited (whether the normal way or
-/// when an exception is thrown), a timer started in the scope is
-/// stopped when the scope is left.
+/// An instance of the \c TimeMonitor class wraps a nonconst reference
+/// to a \c Time timer object.  \c TimeMonitor's constructor starts
+/// the timer, and its destructor stops the timer.  This ensures scope
+/// safety of timers, so that no matter how a scope is exited (whether
+/// the normal way or when an exception is thrown), a timer started in
+/// the scope is stopped when the scope is left.
 ///
-/// This class also keeps track of the set of all timers as class (not
-/// instance) data.  It has class methods, \c summarize() and \c
-/// report(), for printing out global statistics (like the min, mean,
-/// and max over all processes in the communicator).  These methods
-/// work correctly even if some processes have different timers than
-/// other processes.  You may also use \c
+/// \c TimeMonitor also has class methods that create or destroy
+/// timers and compute global timer statistics.  If you create a timer
+/// using getNewCounter() (or the deprecated getNewTimer()), it will
+/// add that timer to the set of timers for which to compute global
+/// statistics.  The summarize() and report() methods will print
+/// global statistics for these timers, like the minimum, mean, and
+/// maximum time over all processes in the communicator, for each
+/// timer.  These methods work correctly even if some processes have
+/// different timers than other processes.  You may also use \c
 /// computeGlobalTimerStatistics() to compute the same global
 /// statistics, if you wish to use them in your program or output them
 /// in a different format than that of these methods.
@@ -295,9 +300,8 @@ public:
   ///   of all created timers over all processes in the communicator.
   ///
   /// \param filter [in] Filter for timer labels.  If filter is not
-  ///   empty, this method will only print timers whose labels begin
-  ///   with this string.  Different Trilinos packages may use this to
-  ///   put their timers in a "namespace."
+  ///   empty, this method will only compute statistics for timers
+  ///   whose labels begin with this string.
   ///
   /// \note This method must called as a collective by all processes
   ///   in the communicator.
@@ -398,8 +402,7 @@ public:
   ///
   /// \param filter [in] Filter for timer labels.  If filter is not
   ///   empty, this method will only print timers whose labels begin
-  ///   with this string.  Different Trilinos packages may use this to
-  ///   put their timers in a "namespace."
+  ///   with this string.
   ///
   /// \note If \c writeGlobalStats is true, this method <i>must</i> be
   ///   called as a collective by all processes in the communicator.
@@ -462,9 +465,8 @@ public:
   ///   only be used on the process with rank 0 in the communicator.
   ///
   /// \param filter [in] Filter for timer labels.  If filter is not
-  ///   empty, report() will only print timers whose labels begin with
-  ///   this string.  Different Trilinos packages may use this to put
-  ///   their timers in a "namespace."
+  ///   empty, this method will only print timers whose labels begin
+  ///   with this string.
   ///
   /// \param params [in/out] Parameters to control output format and
   ///   which statistics to generate.  If null, we use default
@@ -473,6 +475,52 @@ public:
   ///   nonnull, we read the given parameters, filling in defaults,
   ///   and use the resulting parameters for all subsequent calls to
   ///   report() (until new parameters are set).
+  ///
+  /// Supported parameters
+  /// --------------------
+  ///
+  /// Here is the current set of supported parameters:
+  /// - "Report format": "Table" (default), "YAML"
+  /// - "YAML style": "spacious" (default), "compact"
+  /// - "How to merge timer sets": "Intersection" (default), "Union"
+  /// - "alwaysWriteLocal": true, false (default)
+  /// - "writeGlobalStats": true (default), false
+  /// - "writeZeroTimers": true (default), false
+  ///
+  /// This method currently supports two different output formats.
+  /// "Table" format is the same tabular format which summarize()
+  /// uses.  It displays times and call counts in a table that is easy
+  /// for humans to read, but hard to parse.  "YAML" format uses a
+  /// standard, structured, human-readable output format called YAML.
+  /// <a href="yaml.org">YAML</a> stands for YAML Ain't Markup
+  /// Language.
+  ///
+  /// "YAML style" refers to two variants of YAML output that report()
+  /// can generate.  The "compact" style attempts to put as much data
+  /// on each line as possible.  It may be more readable when there
+  /// are a small number of timers.  The "spacious" style prefers one
+  /// line per datum whenever possible.  Both styles have the same
+  /// schema, that is, their output has the same hierarchical
+  /// structure and thus the same parse tree.
+  ///
+  /// (In technical terms: compact style uses YAML's so-called "flow
+  /// style" for sequences and mappings whenever possible, except at
+  /// the outermost level where it would hinder readability.  Spacious
+  /// style does not use "flow style" for lists or mappings.  For an
+  /// explanation of YAML's flow style, see <a
+  /// href="http://www.yaml.org/spec/1.2/spec.html#style/flow/">Chapter
+  /// 7 of the YAML 1.2 spec</a>.)
+  ///
+  /// "How to merge timer sets" refers to the set operation by which
+  /// processors should combine their sets of timers in order to
+  /// compute global timer statistics.  This corresponds to the \c
+  /// setOp argument of summarize().
+  ///
+  /// The remaining Boolean parameters are the same as the eponymous
+  /// arguments of summarize(), to whose documentation one should
+  /// refer.  There are some wrinkles: in particular, YAML output
+  /// ignores the "alwaysWriteLocal" parameter and assumes
+  /// "writeGlobalStats" is true.
   static void
   report (Ptr<const Comm<int> > comm,
           std::ostream& out,
@@ -509,50 +557,6 @@ public:
   static RCP<const ParameterList> getValidReportParameters ();
 
  private:
-  /// \brief Like summarize(), but with YAML-format output.
-  ///
-  /// <a href="yaml.org">YAML</a> stands for YAML Ain't Markup
-  /// Language.  It is a standard format for human-readable,
-  /// machine-parseable, hierarchically organized data.
-  ///
-  /// \param comm [in] Communicator over which to compute timer
-  ///   statistics.
-  /// \param out [out] Output stream to which to write (on Proc 0 of
-  ///   the given communicator only).
-  /// \param compact [in] Whether to print YAML output in "compact"
-  ///   style (see below).
-  /// \param filter [in] Filter for timer labels.  If filter is not
-  ///   empty, this method will only print timers whose labels begin
-  ///   with this string.  Different Trilinos packages may use this to
-  ///   put their timers in a "namespace."
-  ///
-  /// We define "compact" output style as a mixture of flow style and
-  /// standard style which is best suited for perusal by an informed
-  /// human reader, when there are a small number of timers.  In
-  /// particular, compact style uses flow style YAML output for lists
-  /// whenever possible, except at the outermost level where it would
-  /// hinder readability.  For an explanation of YAML flow style, see
-  /// Chapter 7 of the YAML 1.2 spec:
-  ///
-  /// http://www.yaml.org/spec/1.2/spec.html#style/flow/
-  ///
-  /// \warning This is an experimental interface.  It may change or
-  ///   disappear without warning.
-  static void
-  summarizeToYaml (Ptr<const Comm<int> > comm,
-                   std::ostream& out,
-                   const bool compact=true,
-                   const std::string& filter="");
-
-  /// \brief Like summarize(), but with YAML-format output and default communicator.
-  ///
-  /// \warning This is an experimental interface.  It may change or
-  ///   disappear without warning.
-  static void
-  summarizeToYaml (std::ostream& out,
-                   const bool compact=true,
-                   const std::string& filter="");
-
   /// \brief Valid output formats for report().
   ///
   /// \warning This is an implementation detail of TimeMonitor.  It is
@@ -562,11 +566,55 @@ public:
     REPORT_FORMAT_TABLE
   };
 
+  /// \brief Valid YAML output formats for report().
+  ///
+  /// \warning This is an implementation detail of TimeMonitor.  It is
+  ///   subject to change at any time without notice.
+  enum ETimeMonitorYamlFormat {
+    YAML_FORMAT_COMPACT,
+    YAML_FORMAT_SPACIOUS
+  };
+
+  /// \brief Like summarize(), but with YAML-format output.
+  ///
+  /// \param comm [in] Communicator over which to compute timer
+  ///   statistics.
+  /// \param out [out] Output stream to which to write (on Proc 0 of
+  ///   the given communicator only).
+  /// \param yamlStyle [in] Whether to print YAML output in "compact"
+  ///   or "spacious" style.
+  /// \param filter [in] Filter for timer labels.  If filter is not
+  ///   empty, this method will only print timers whose labels begin
+  ///   with this string.
+  ///
+  /// \warning This is an experimental interface.  It may change or
+  ///   disappear without warning.
+  static void
+  summarizeToYaml (Ptr<const Comm<int> > comm,
+                   std::ostream& out,
+                   const ETimeMonitorYamlFormat yamlStyle,
+                   const std::string& filter="");
+
+  /// \brief Like summarize(), but with YAML-format output and default communicator.
+  ///
+  /// \warning This is an experimental interface.  It may change or
+  ///   disappear without warning.
+  static void
+  summarizeToYaml (std::ostream& out,
+                   const ETimeMonitorYamlFormat yamlStyle,
+                   const std::string& filter="");
+
   /// \brief Add the "Report format" parameter to plist.
   ///
   /// \note Call this in getValidReportParameters() to set a default
   ///   value and validator for this parameter.
   static void setReportFormatParameter (ParameterList& plist);
+
+  /// \brief Add the "YAML style" parameter to plist.
+  ///
+  /// \note Call this in getValidReportParameters() to set a default
+  ///   value and validator for this parameter.
+  static void setYamlFormatParameter (ParameterList& plist);
 
   /// \brief Add the "How to merge timer sets" parameter to plist.
   ///
@@ -596,6 +644,10 @@ public:
   //! Current output format for report().  Set via setReportParameters().
   static ETimeMonitorReportFormat reportFormat_;
 
+  /// Current output style for report(), when using YAML output.
+  /// Set via setReportParameters().
+  static ETimeMonitorYamlFormat yamlStyle_;
+
   //! Whether report() should use the intersection or union of timers over processes.
   static ECounterSetOp setOp_;
 
@@ -608,12 +660,6 @@ public:
 
   //! Whether report() should report timers with zero call counts.
   static bool writeZeroTimers_;
-
-  /// \brief Whether report()'s YAML output should use compact format.
-  ///
-  /// See the documentation of summarizeToYaml() for a definition of
-  /// "compact" format.
-  static bool reportCompact_;
   //@}
 
   /// \brief Whether setReportParameters() completed successfully.

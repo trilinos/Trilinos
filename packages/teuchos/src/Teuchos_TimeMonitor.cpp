@@ -1038,7 +1038,7 @@ namespace Teuchos {
   void TimeMonitor::
   summarizeToYaml (Ptr<const Comm<int> > comm,
                    std::ostream &out,
-                   const bool compact,
+                   const ETimeMonitorYamlFormat yamlStyle,
                    const std::string& filter)
   {
     using Teuchos::FancyOStream;
@@ -1049,6 +1049,8 @@ namespace Teuchos {
     using Teuchos::rcpFromRef;
     using std::endl;
     typedef std::vector<std::string>::size_type size_type;
+
+    const bool compact = (yamlStyle == YAML_FORMAT_COMPACT);
 
     // const bool writeGlobalStats = true;
     // const bool writeZeroTimers = true;
@@ -1061,15 +1063,17 @@ namespace Teuchos {
 
     const int numProcs = comm->getSize();
 
-    // HACK (mfh 20 Aug 2012) For now, I convince the output stream to
-    // print a YAML sequence by manually prepending "- " to every line
-    // of output.  For some reason, creating OSTab with "- " as the
-    // line prefix does not work, else I would prefer that method.
-    // Also, I have to set the tab indent string here, because line
-    // prefix (which for some reason is what OSTab's constructor
-    // takes, rather than tab indent string) means something different
-    // from tab indent string, and turning on the line prefix prints
-    // all sorts of things including "|" for some reason.
+    // HACK (mfh 20 Aug 2012) For some reason, creating OSTab with "-
+    // " as the line prefix does not work, else I would prefer that
+    // method for printing each line of a YAML block sequence (see
+    // Section 8.2.1 of the YAML 1.2 spec).
+    //
+    // Also, I have to set the tab indent string here, rather than in
+    // OSTab's constructor.  This is because line prefix (which for
+    // some reason is what OSTab's constructor takes, rather than tab
+    // indent string) means something different from tab indent
+    // string, and turning on the line prefix prints all sorts of
+    // things including "|" for some reason.
     RCP<FancyOStream> pfout = getFancyOStream (rcpFromRef (out));
     pfout->setTabIndentStr ("  ");
     FancyOStream& fout = *pfout;
@@ -1082,15 +1086,18 @@ namespace Teuchos {
     // nesting depth to 3, which is the limit that the current version
     // of PylotDB imposes for its YAML input.
 
-    // Omit document title.  Users may supply their own title as
-    // desired.  This reduces the nesting depth of YAML output.
-
-    // Outermost level is a list.  Begin with metadata.
-    fout << "- Output mode: " << (compact ? "compact" : "spacious") << endl
-         << "- Number of processes: " << numProcs << endl
-         << "- Time unit: s" << endl;
-    // Print names of all the kinds of statistics we collected.
-    fout << "- Statistics collected:";
+    // Outermost level is a dictionary.  (Individual entries of a
+    // dictionary do _not_ begin with "- ".)  We always print the
+    // outermost level in standard style, not flow style, for better
+    // readability.  We begin the outermost level with metadata.
+    fout << "Output mode: " << (compact ? "compact" : "spacious") << endl
+         << "Number of processes: " << numProcs << endl
+         << "Time unit: s" << endl;
+    // For a key: value pair where the value is a sequence or
+    // dictionary on the following line, YAML requires a space after
+    // the colon.
+    fout << "Statistics collected: ";
+    // Print list of the names of all the statistics we collected.
     if (compact) {
       fout << " [";
       for (size_type i = 0; i < statNames.size (); ++i) {
@@ -1109,12 +1116,12 @@ namespace Teuchos {
       }
     }
 
-    // Print the timer names.
+    // Print the list of timer names.
     //
     // It might be nicer instead to print a map from timer name to all
     // of its data, but keeping the maximum nesting depth small
     // ensures better compatibility with different parsing tools.
-    fout << "- Timer names:";
+    fout << "Timer names: ";
     if (compact) {
       fout << " [";
       size_type ind = 0;
@@ -1137,12 +1144,15 @@ namespace Teuchos {
     }
 
     // Print times for each timer, as a map from statistic name to its time.
-    fout << "- Total times:";
+    fout << "Total times: ";
     if (compact) {
-      fout << " [";
+      fout << " {";
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
+        // Print timer name.
+        fout << quoteLabelForYaml (outerIter->first) << ": ";
+        // Print that timer's data.
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         fout << "{";
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
@@ -1157,7 +1167,7 @@ namespace Teuchos {
           fout << ", ";
         }
       }
-      fout << "]" << endl;
+      fout << "}" << endl;
     }
     else {
       fout << endl;
@@ -1165,24 +1175,28 @@ namespace Teuchos {
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
-        // Print timer name
-        fout << "- " << quoteLabelForYaml (outerIter->first) << ": " << endl;
+        // Print timer name.
+        fout << quoteLabelForYaml (outerIter->first) << ": " << endl;
+        // Print that timer's data.
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << "- " << quoteLabelForYaml (statNames[innerInd]) << ": "
+          fout << quoteLabelForYaml (statNames[innerInd]) << ": "
                << curData[innerInd].first << endl;
         }
       }
     }
 
     // Print call counts for each timer, for each statistic name.
-    fout << "- Call counts:";
+    fout << "Call counts:";
     if (compact) {
-      fout << " [";
+      fout << " {";
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
+        // Print timer name.
+        fout << quoteLabelForYaml (outerIter->first) << ": ";
+        // Print that timer's data.
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         fout << "{";
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
@@ -1197,7 +1211,7 @@ namespace Teuchos {
           fout << ", ";
         }
       }
-      fout << "]" << endl;
+      fout << "}" << endl;
     }
     else {
       fout << endl;
@@ -1205,11 +1219,13 @@ namespace Teuchos {
       size_type outerInd = 0;
       for (stat_map_type::const_iterator outerIter = statData.begin();
            outerIter != statData.end(); ++outerIter, ++outerInd) {
-        fout << "- " << quoteLabelForYaml (outerIter->first) << ": " << endl;
+        // Print timer name.
+        fout << quoteLabelForYaml (outerIter->first) << ": " << endl;
+        // Print that timer's data.
         OSTab tab2 (pfout);
         const std::vector<std::pair<double, double> >& curData = outerIter->second;
         for (size_type innerInd = 0; innerInd < curData.size (); ++innerInd) {
-          fout << "- " << quoteLabelForYaml (statNames[innerInd]) << ": "
+          fout << quoteLabelForYaml (statNames[innerInd]) << ": "
                << curData[innerInd].second << endl;
         }
       }
@@ -1218,7 +1234,7 @@ namespace Teuchos {
 
   void TimeMonitor::
   summarizeToYaml (std::ostream &out,
-                   const bool compact,
+                   const ETimeMonitorYamlFormat yamlStyle,
                    const std::string& filter)
   {
     // The default communicator.  If Trilinos was built with MPI
@@ -1226,7 +1242,7 @@ namespace Teuchos {
     // be a "serial" (no MPI, one "process") communicator.
     RCP<const Comm<int> > comm = getDefaultComm ();
 
-    summarizeToYaml (comm.ptr (), out, compact, filter);
+    summarizeToYaml (comm.ptr (), out, yamlStyle, filter);
   }
 
   // Default value is false.  We'll set to true once
@@ -1234,13 +1250,12 @@ namespace Teuchos {
   bool TimeMonitor::setParams_ = false;
 
   // We have to declare all of these here in order to avoid linker errors.
-  TimeMonitor::ETimeMonitorReportFormat TimeMonitor::reportFormat_ =
-             TimeMonitor::REPORT_FORMAT_TABLE;
+  TimeMonitor::ETimeMonitorReportFormat TimeMonitor::reportFormat_ = TimeMonitor::REPORT_FORMAT_TABLE;
+  TimeMonitor::ETimeMonitorYamlFormat TimeMonitor::yamlStyle_ = TimeMonitor::YAML_FORMAT_SPACIOUS;
   ECounterSetOp TimeMonitor::setOp_ = Intersection;
   bool TimeMonitor::alwaysWriteLocal_ = false;
   bool TimeMonitor::writeGlobalStats_ = true;
   bool TimeMonitor::writeZeroTimers_ = true;
-  bool TimeMonitor::reportCompact_ = true;
 
   void
   TimeMonitor::setReportFormatParameter (ParameterList& plist)
@@ -1263,6 +1278,31 @@ namespace Teuchos {
                                                             docString,
                                                             strings (), docs (),
                                                             values (), &plist);
+  }
+
+  void
+  TimeMonitor::setYamlFormatParameter (ParameterList& plist)
+  {
+    const std::string name ("YAML style");
+    const std::string defaultValue ("spacious");
+    const std::string docString ("YAML-specific output format");
+    Array<std::string> strings;
+    Array<std::string> docs;
+    Array<ETimeMonitorYamlFormat> values;
+
+    strings.push_back ("compact");
+    docs.push_back ("Compact format: use \"flow style\" (see YAML 1.2 spec at "
+                    "yaml.org) for most sequences except the outermost sequence");
+    values.push_back (YAML_FORMAT_COMPACT);
+
+    strings.push_back ("spacious");
+    docs.push_back ("Spacious format: avoid flow style");
+    values.push_back (YAML_FORMAT_SPACIOUS);
+
+    setStringToIntegralParameter<ETimeMonitorYamlFormat> (name, defaultValue,
+                                                          docString,
+                                                          strings (), docs (),
+                                                          values (), &plist);
   }
 
   void
@@ -1299,9 +1339,9 @@ namespace Teuchos {
     const bool alwaysWriteLocal = false;
     const bool writeGlobalStats = true;
     const bool writeZeroTimers = true;
-    const bool reportCompact = true;
 
     setReportFormatParameter (*plist);
+    setYamlFormatParameter (*plist);
     setSetOpParameter (*plist);
     plist->set ("alwaysWriteLocal", alwaysWriteLocal,
                 "Always output local timers' values on Proc 0");
@@ -1310,10 +1350,6 @@ namespace Teuchos {
                 "communicator");
     plist->set ("writeZeroTimers", writeZeroTimers, "Generate output for "
                 "timers that have never been called");
-    plist->set ("Compact YAML", reportCompact, "If writing output in YAML "
-                "format, whether to use the compact form of YAML output.  "
-                "This means preferring \"flow style\" (see the YAML 1.2 spec) "
-                "for all sequences except the outermost sequence.");
 
     return rcp_const_cast<const ParameterList> (plist);
   }
@@ -1322,11 +1358,11 @@ namespace Teuchos {
   TimeMonitor::setReportParameters (const RCP<ParameterList>& params)
   {
     ETimeMonitorReportFormat reportFormat = REPORT_FORMAT_TABLE;
+    ETimeMonitorYamlFormat yamlStyle = YAML_FORMAT_SPACIOUS;
     ECounterSetOp setOp = Intersection;
     bool alwaysWriteLocal = false;
     bool writeGlobalStats = true;
     bool writeZeroTimers = true;
-    bool reportCompact = true;
 
     if (params.is_null ()) {
       // If we've set parameters before, leave their current values.
@@ -1339,21 +1375,21 @@ namespace Teuchos {
       params->validateParametersAndSetDefaults (*getValidReportParameters ());
 
       reportFormat = getIntegralValue<ETimeMonitorReportFormat> (*params, "Report format");
+      yamlStyle = getIntegralValue<ETimeMonitorYamlFormat> (*params, "YAML style");
       setOp = getIntegralValue<ECounterSetOp> (*params, "How to merge timer sets");
       alwaysWriteLocal = params->get<bool> ("alwaysWriteLocal");
       writeGlobalStats = params->get<bool> ("writeGlobalStats");
       writeZeroTimers = params->get<bool> ("writeZeroTimers");
-      reportCompact = params->get<bool> ("Compact YAML");
     }
     // Defer setting state until here, to ensure the strong exception
     // guarantee for this method (either it throws with no externally
     // visible state changes, or it returns normally).
     reportFormat_ = reportFormat;
+    yamlStyle_ = yamlStyle;
     setOp_ = setOp;
     alwaysWriteLocal_ = alwaysWriteLocal;
     writeGlobalStats_ = writeGlobalStats;
     writeZeroTimers_ = writeZeroTimers;
-    reportCompact_ = reportCompact;
 
     setParams_ = true; // Yay, we successfully set parameters!
   }
@@ -1367,7 +1403,7 @@ namespace Teuchos {
     setReportParameters (params);
 
     if (reportFormat_ == REPORT_FORMAT_YAML) {
-      summarizeToYaml (comm, out, reportCompact_, filter);
+      summarizeToYaml (comm, out, yamlStyle_, filter);
     }
     else if (reportFormat_ == REPORT_FORMAT_TABLE) {
       summarize (comm, out, alwaysWriteLocal_, writeGlobalStats_,
