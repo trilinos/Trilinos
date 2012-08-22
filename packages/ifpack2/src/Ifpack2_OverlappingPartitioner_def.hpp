@@ -300,7 +300,7 @@ std::string OverlappingPartitioner<GraphType>::description() const
     oss << "{status = computed";
   }
   else {
-    oss << "{status = inot computed";
+    oss << "{status = is not computed";
   }
   oss <<"}";
   return oss.str();
