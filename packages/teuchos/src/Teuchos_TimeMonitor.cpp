@@ -1038,7 +1038,7 @@ namespace Teuchos {
   void TimeMonitor::
   summarizeToYaml (Ptr<const Comm<int> > comm,
                    std::ostream &out,
-                   const bool compact,
+                   const ETimeMonitorYamlFormat yamlStyle,
                    const std::string& filter)
   {
     using Teuchos::FancyOStream;
@@ -1049,6 +1049,8 @@ namespace Teuchos {
     using Teuchos::rcpFromRef;
     using std::endl;
     typedef std::vector<std::string>::size_type size_type;
+
+    const bool compact = (yamlStyle == YAML_FORMAT_COMPACT);
 
     // const bool writeGlobalStats = true;
     // const bool writeZeroTimers = true;
@@ -1232,7 +1234,7 @@ namespace Teuchos {
 
   void TimeMonitor::
   summarizeToYaml (std::ostream &out,
-                   const bool compact,
+                   const ETimeMonitorYamlFormat yamlStyle,
                    const std::string& filter)
   {
     // The default communicator.  If Trilinos was built with MPI
@@ -1240,7 +1242,7 @@ namespace Teuchos {
     // be a "serial" (no MPI, one "process") communicator.
     RCP<const Comm<int> > comm = getDefaultComm ();
 
-    summarizeToYaml (comm.ptr (), out, compact, filter);
+    summarizeToYaml (comm.ptr (), out, yamlStyle, filter);
   }
 
   // Default value is false.  We'll set to true once
@@ -1249,7 +1251,7 @@ namespace Teuchos {
 
   // We have to declare all of these here in order to avoid linker errors.
   TimeMonitor::ETimeMonitorReportFormat TimeMonitor::reportFormat_ = TimeMonitor::REPORT_FORMAT_TABLE;
-  TimeMonitor::ETimeMonitorYamlFormat TimeMonitor::yamlFormat_ = TimeMonitor::YAML_FORMAT_SPACIOUS;
+  TimeMonitor::ETimeMonitorYamlFormat TimeMonitor::yamlStyle_ = TimeMonitor::YAML_FORMAT_SPACIOUS;
   ECounterSetOp TimeMonitor::setOp_ = Intersection;
   bool TimeMonitor::alwaysWriteLocal_ = false;
   bool TimeMonitor::writeGlobalStats_ = true;
@@ -1281,7 +1283,7 @@ namespace Teuchos {
   void
   TimeMonitor::setYamlFormatParameter (ParameterList& plist)
   {
-    const std::string name ("YAML format");
+    const std::string name ("YAML style");
     const std::string defaultValue ("spacious");
     const std::string docString ("YAML-specific output format");
     Array<std::string> strings;
@@ -1356,7 +1358,7 @@ namespace Teuchos {
   TimeMonitor::setReportParameters (const RCP<ParameterList>& params)
   {
     ETimeMonitorReportFormat reportFormat = REPORT_FORMAT_TABLE;
-    ETimeMonitorYamlFormat yamlFormat = YAML_FORMAT_SPACIOUS;
+    ETimeMonitorYamlFormat yamlStyle = YAML_FORMAT_SPACIOUS;
     ECounterSetOp setOp = Intersection;
     bool alwaysWriteLocal = false;
     bool writeGlobalStats = true;
@@ -1373,7 +1375,7 @@ namespace Teuchos {
       params->validateParametersAndSetDefaults (*getValidReportParameters ());
 
       reportFormat = getIntegralValue<ETimeMonitorReportFormat> (*params, "Report format");
-      yamlFormat = getIntegralValue<ETimeMonitorYamlFormat> (*params, "YAML format");
+      yamlStyle = getIntegralValue<ETimeMonitorYamlFormat> (*params, "YAML style");
       setOp = getIntegralValue<ECounterSetOp> (*params, "How to merge timer sets");
       alwaysWriteLocal = params->get<bool> ("alwaysWriteLocal");
       writeGlobalStats = params->get<bool> ("writeGlobalStats");
@@ -1383,7 +1385,7 @@ namespace Teuchos {
     // guarantee for this method (either it throws with no externally
     // visible state changes, or it returns normally).
     reportFormat_ = reportFormat;
-    yamlFormat_ = yamlFormat;
+    yamlStyle_ = yamlStyle;
     setOp_ = setOp;
     alwaysWriteLocal_ = alwaysWriteLocal;
     writeGlobalStats_ = writeGlobalStats;
@@ -1401,8 +1403,7 @@ namespace Teuchos {
     setReportParameters (params);
 
     if (reportFormat_ == REPORT_FORMAT_YAML) {
-      const bool compact = (yamlFormat_ == YAML_FORMAT_COMPACT);
-      summarizeToYaml (comm, out, compact, filter);
+      summarizeToYaml (comm, out, yamlStyle_, filter);
     }
     else if (reportFormat_ == REPORT_FORMAT_TABLE) {
       summarize (comm, out, alwaysWriteLocal_, writeGlobalStats_,

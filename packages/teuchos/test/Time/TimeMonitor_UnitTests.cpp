@@ -129,12 +129,12 @@ namespace Teuchos {
       TEST_INEQUALITY(substr_i, std::string::npos);
     }
 
-    { // Repeat test for YAML output, compact format.
+    { // Repeat test for YAML output, compact style.
       std::ostringstream oss;
       RCP<ParameterList> reportParams =
         parameterList (* (TimeMonitor::getValidReportParameters ()));
       reportParams->set ("Report format", "YAML");
-      reportParams->set ("YAML format", "compact");
+      reportParams->set ("YAML style", "compact");
       TimeMonitor::report (oss, reportParams);
 
       // Echo output to the FancyOStream out (which is a standard unit
@@ -147,12 +147,12 @@ namespace Teuchos {
       TEST_INEQUALITY(substr_i, std::string::npos);
     }
 
-    { // Repeat test for YAML output, spacious format.
+    { // Repeat test for YAML output, spacious style.
       std::ostringstream oss;
       RCP<ParameterList> reportParams =
         parameterList (* (TimeMonitor::getValidReportParameters ()));
       reportParams->set ("Report format", "YAML");
-      reportParams->set ("YAML format", "spacious");
+      reportParams->set ("YAML style", "spacious");
       TimeMonitor::report (oss, reportParams);
 
       // Echo output to the FancyOStream out (which is a standard unit
@@ -251,12 +251,12 @@ namespace Teuchos {
       }
     }
 
-    { // YAML output, compact format.
+    { // YAML output, compact style.
       std::ostringstream oss;
       RCP<ParameterList> reportParams =
         parameterList (* (TimeMonitor::getValidReportParameters ()));
       reportParams->set ("Report format", "YAML");
-      reportParams->set ("YAML format", "compact");
+      reportParams->set ("YAML style", "compact");
       TimeMonitor::report (oss, reportParams);
 
       // Echo output to the FancyOStream out (which is a standard unit
@@ -271,12 +271,12 @@ namespace Teuchos {
       }
     }
 
-    { // YAML output, spacious format.
+    { // YAML output, spacious style.
       std::ostringstream oss;
       RCP<ParameterList> reportParams =
         parameterList (* (TimeMonitor::getValidReportParameters ()));
       reportParams->set ("Report format", "YAML");
-      reportParams->set ("YAML format", "spacious");
+      reportParams->set ("YAML style", "spacious");
       TimeMonitor::report (oss, reportParams);
 
       // Echo output to the FancyOStream out (which is a standard unit
@@ -405,12 +405,12 @@ namespace Teuchos {
           }
         }
 
-        { // YAML output, compact format.
+        { // YAML output, compact style.
           std::ostringstream oss;
           RCP<ParameterList> reportParams =
             parameterList (* (TimeMonitor::getValidReportParameters ()));
           reportParams->set ("Report format", "YAML");
-          reportParams->set ("YAML format", "compact");
+          reportParams->set ("YAML style", "compact");
           TimeMonitor::report (oss, filters[i], reportParams);
 
           // Echo output to the FancyOStream out (which is a standard unit
@@ -446,12 +446,12 @@ namespace Teuchos {
           }
         }
 
-        { // YAML output, spacious format.
+        { // YAML output, spacious style.
           std::ostringstream oss;
           RCP<ParameterList> reportParams =
             parameterList (* (TimeMonitor::getValidReportParameters ()));
           reportParams->set ("Report format", "YAML");
-          reportParams->set ("YAML format", "spacious");
+          reportParams->set ("YAML style", "spacious");
           TimeMonitor::report (oss, filters[i], reportParams);
 
           // Echo output to the FancyOStream out (which is a standard unit
@@ -531,12 +531,12 @@ namespace Teuchos {
       TEST_INEQUALITY(substr_inner_i, std::string::npos);
     }
 
-    { // Repeat test for YAML output, compact format.
+    { // Repeat test for YAML output, compact style.
       std::ostringstream oss;
       RCP<ParameterList> reportParams =
         parameterList (* (TimeMonitor::getValidReportParameters ()));
       reportParams->set ("Report format", "YAML");
-      reportParams->set ("YAML format", "compact");
+      reportParams->set ("YAML style", "compact");
       TimeMonitor::report (oss, reportParams);
 
       // Echo output to the FancyOStream out (which is a standard unit
@@ -550,12 +550,12 @@ namespace Teuchos {
       TEST_INEQUALITY(substr_inner_i, std::string::npos);
     }
 
-    { // Repeat test for YAML output, spacious format.
+    { // Repeat test for YAML output, spacious style.
       std::ostringstream oss;
       RCP<ParameterList> reportParams =
         parameterList (* (TimeMonitor::getValidReportParameters ()));
       reportParams->set ("Report format", "YAML");
-      reportParams->set ("YAML format", "spacious");
+      reportParams->set ("YAML style", "spacious");
       TimeMonitor::report (oss, reportParams);
 
       // Echo output to the FancyOStream out (which is a standard unit
