@@ -75,11 +75,19 @@ public:
   
 
 public:
+  //! \name Constructor & destructor methods
+  //@{
+
   //! Constructor.
   explicit DropFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
 		      magnitudeType DropTol);
   //! Destructor.
   virtual ~DropFilter();
+
+  //@}
+
+  //! \name Matrix Query Methods
+  //@{
 
   //! Returns the communicator.
   virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;

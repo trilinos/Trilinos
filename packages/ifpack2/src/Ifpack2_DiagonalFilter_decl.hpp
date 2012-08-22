@@ -73,6 +73,9 @@ public:
   
 
 public:
+  //! \name Constructor & destructor methods
+  //@{
+
   //! Constructor.
   explicit DiagonalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
 			  magnitudeType AbsoluteThreshold,
@@ -80,6 +83,11 @@ public:
   
   //! Destructor.
   virtual ~DiagonalFilter();
+
+  //@}
+
+  //! \name Matrix Query Methods
+  //@{
 
   //! Returns the communicator.
   virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
