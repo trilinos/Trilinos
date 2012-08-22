@@ -72,7 +72,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <queue>
 #include <map>
 
-
 #include "Trios_logger.h"
 #include "Trios_timer.h"
 #include "Trios_signal.h"
@@ -85,8 +84,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "nssi_opcodes.h"
 #include "nssi_trace.h"
 #include "nssi_service_args.h"
-
-#include <rpc/xdr.h>
 
 
 
@@ -1686,7 +1683,7 @@ int nssi_service_start_wfn(
 
             // copy the short request buffer (in case of threaded servers)
             rpc_req->req_buf       = new char[status.length];  // freed in process_rpc_request
-            std::memcpy(rpc_req->req_buf, req_buf, status.length);
+            memcpy(rpc_req->req_buf, req_buf, status.length);
             rpc_req->short_req_len = status.length;
 
 
