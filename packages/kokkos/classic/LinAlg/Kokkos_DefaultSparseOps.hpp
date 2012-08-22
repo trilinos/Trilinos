@@ -336,7 +336,15 @@ namespace Kokkos {
   /// \tparam Scalar The type of entries of the sparse matrix.
   /// \tparam Ordinal The type of (local) indices of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
-  template <class Scalar, class Ordinal, class Node, class Allocator = details::DefaultCRSAllocator>
+  /// \tparam Allocator The allocator to use when allocating sparse
+  ///   matrix data.  Depending on the particular Allocator, this may
+  ///   or may not do first-touch initialization.  We use first-touch
+  ///   allocation by default; if you don't want this, you should use
+  ///   details::DefaultCRSAllocator as the Allocator type.
+  template <class Scalar,
+            class Ordinal,
+            class Node,
+            class Allocator = details::FirstTouchCRSAllocator>
   class DefaultHostSparseOps : public Teuchos::Describable {
   public:
     //! \name Typedefs and structs
@@ -351,13 +359,13 @@ namespace Kokkos {
     //! The type of this object, the sparse operator object
     typedef DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator> sparse_ops_type;
 
-    /** \brief Typedef for local graph class */
+    //! Typedef for local graph class
     template <class O, class N>
     struct graph {
       typedef DefaultCrsGraph<O,N> graph_type;
     };
 
-    /** \brief Typedef for local matrix class */
+    //! Typedef for local matrix class
     template <class S, class O, class N>
     struct matrix {
       typedef DefaultCrsMatrix<S,O,N> matrix_type;
@@ -370,17 +378,23 @@ namespace Kokkos {
     /// from \c Scalar.
     ///
     /// This class' typedef is used by Tpetra::CrsMatrix to bind a
-    /// potentially "void" scalar type to the appropriate scalar.
+    /// potentially "void" scalar type to the appropriate scalar.  The
+    /// other_type typedef tells Tpetra::CrsMatrix which local sparse
+    /// ops type to use, as a function of Tpetra's Scalar template
+    /// parameter.
+    ///
     /// Other local sparse ops implementations (especially those that
     /// wrap third-party libraries implementing sparse kernels) might
     /// use this to provide a "fall-back" sparse ops implementation of
     /// a possibly different type, if the third-party library does not
     /// support scalar type S2.
     ///
-    /// In the case of DefaultHostSparseOps, this class' typedef
+    /// In the case of DefaultHostSparseOps, the other_type typedef
     /// always specifies a specialization of \c DefaultHostSparseOps,
     /// regardless of the scalar type S2.  This is not necessarily
-    /// true of other implementations of local sparse ops.
+    /// true of other implementations of local sparse ops, so Tpetra
+    /// developers should always get their local sparse ops type from
+    /// the other_type typedef.
     ///
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
@@ -394,14 +408,19 @@ namespace Kokkos {
     /// sparse operations for an ordinal type O2, which may be
     /// different from \c Ordinal.
     ///
-    /// In the case of DefaultHostSparseOps, this class' typedef
-    /// always specifies a specialization of \c DefaultHostSparseOps,
-    /// regardless of the ordinal type S2.  This is not necessarily
-    /// true of other implementations of local sparse ops.  Other
-    /// local sparse ops implementations (especially those that wrap
-    /// third-party libraries implementing sparse kernels) might use
-    /// this to provide a "fall-back" sparse ops implementation of a
-    /// possibly different type, if the third-party library does not
+    /// This is used by Tpetra::CrsMatrix to "bind" the local sparse
+    /// ops type, given its own (Local)Ordinal type.  In the case of
+    /// DefaultHostSparseOps, the other_type typedef always specifies
+    /// a specialization of DefaultHostSparseOps, regardless of the
+    /// ordinal type S2.  This is not necessarily true of other
+    /// implementations of local sparse ops, so Tpetra developers
+    /// should always get their local sparse ops type from the
+    /// other_type typedef.
+    ///
+    /// Other local sparse ops implementations (especially those that
+    /// wrap third-party libraries implementing sparse kernels) might
+    /// use this to provide a "fall-back" sparse ops implementation of
+    /// a possibly different type, if the third-party library does not
     /// support ordinal type O2.
     ///
     /// \tparam O2 An ordinal type possibly different from \c Ordinal.
@@ -411,13 +430,34 @@ namespace Kokkos {
     };
 
     //@}
-    //! \name Constructors/Destructor
+    //! \name Constructors and destructor
     //@{
 
-    //! Constructor accepting and retaining a node object.
+    /// \brief Constructor, with default parameters.
+    ///
+    /// We syntactically forbid setting parameters after construction,
+    /// since setting parameters after calling setGraphAndMatrix()
+    /// would require reorganizing the already optimized sparse matrix
+    /// storage.  If you want to set nondefault values of parameters,
+    /// you must use the constructor that takes a ParameterList.
+    ///
+    /// \param node [in/out] Kokkos Node instance.
     DefaultHostSparseOps(const RCP<Node> &node);
 
-    //! Constructor accepting and retaining a node object, and taking parameters.
+    /// \brief Constructor, with custom parameters.
+    ///
+    /// Both this constructor and finalizeGraphAndMatrix() accept a
+    /// ParameterList.  However, those sets of parameters are
+    /// different.  The constructor's parameters concern the
+    /// algorithm, and the parameters for finalizeGraphAndMatrix()
+    /// concern the data structure.  It's possible to use different
+    /// algorithms with the same data structure.
+    ///
+    /// \param node [in/out] Kokkos Node instance.
+    ///
+    /// \param params [in/out] Parameters for the solve.  We fill in
+    ///   the given ParameterList with its default values, but we
+    ///   don't keep it around.  (This saves a bit of memory.)
     DefaultHostSparseOps(const RCP<Node> &node, Teuchos::ParameterList& params);
 
     //! Destructor
@@ -535,57 +575,13 @@ namespace Kokkos {
     /// \warning This method is for debugging only.  It uses a lot of
     ///   memory.  Users should never call this method.  Do not rely
     ///   on this method continuing to exist in future releases.
+    ///
+    /// \warning SerialDenseMatrix currently requires Ordinal=int
+    ///   indices for BLAS and LAPACK compatibility.  We make no
+    ///   attempt to check whether Ordinal -> int conversions
+    ///   overflow.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, scalar_type> >
-    asDenseMatrix () const
-    {
-      using Teuchos::ArrayRCP;
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-      typedef Teuchos::OrdinalTraits<ordinal_type> OTO;
-      typedef Teuchos::ScalarTraits<scalar_type> STS;
-      typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
-
-      RCP<dense_matrix_type> A_ptr =
-        rcp (new dense_matrix_type (numRows_, numCols_));
-      dense_matrix_type& A = *A_ptr; // for notational convenience
-
-      if (big_ptrs_.size() > 0) {
-        ArrayRCP<const size_t> ptr = big_ptrs_;
-        for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
-          for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
-            const ordinal_type j = inds_[k];
-            const scalar_type A_ij = vals_[k];
-            A(i,j) += A_ij;
-          }
-          if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            // Respect whatever is in the sparse matrix, even if it is wrong.
-            // This is helpful for debugging.
-            A(i,i) += STS::one ();
-          }
-        }
-      }
-      else if (sml_ptrs_.size() > 0) {
-        ArrayRCP<const ordinal_type> ptr = sml_ptrs_;
-        for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
-          for (ordinal_type k = ptr[i]; k < ptr[i+1]; ++k) {
-            const ordinal_type j = inds_[k];
-            const scalar_type A_ij = vals_[k];
-            A(i,j) += A_ij;
-          }
-          if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            // Respect whatever is in the sparse matrix, even if it is wrong.
-            // This is helpful for debugging.
-            A(i,i) += STS::one ();
-          }
-        }
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::DefaultHost"
-          "SparseOps::asDenseMatrix: both big_ptrs_ and sml_ptrs_ are empty.  "
-          "Please report this bug to the Kokkos developers.");
-      }
-      return A_ptr;
-    }
+    asDenseMatrix () const;
 
     //@}
     //! \name Accessor routines.
@@ -598,36 +594,80 @@ namespace Kokkos {
     //! @name Initialization of graph and matrix
     //@{
 
-    //! \brief Allocate and initialize the storage for the matrix values.
+    /// \brief Allocate and initialize the storage for the row pointers.
+    ///
+    /// \param node [in/out] Kokkos Node instance.
+    /// \param numEntriesPerRow [in] numEntriesPerRow[i] is the number
+    ///   of entries in row i, for all rows of the local sparse matrix.
     static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow)
     {
       return Allocator::allocRowPtrs(node,numEntriesPerRow);
     }
 
-    //! \brief Allocate and initialize the storage for a sparse graph.
+    /// \brief Allocate storage for column indices or matrix values.
+    ///
+    /// \param node [in/out] Kokkos Node instance.
+    /// \param rowPtrs [in] The array of row offsets; the 'ptr' array
+    ///   in the compressed sparse row storage format.  rowPtrs.size()
+    ///   is one plus the number of rows in the local sparse matrix.
     template <class T>
     static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
     {
       return Allocator::template allocStorage<T,size_t>(node,rowPtrs);
     }
 
-    //! Finalize a graph
+    /// \brief Finalize the graph.
+    ///
+    /// \param uplo [in] Whether the structure of the graph is lower
+    ///   triangular (Teuchos::LOWER_TRI), upper triangular
+    ///   (Teuchos::UPPER_TRI), or neither (Teuchos::UNDEF_TRI).
+    /// \param diag [in] Whether the graph has an implicitly stored
+    ///   diagonal (Teuchos::UNIT_DIAG) or does not
+    ///   (Teuchos::NON_UNIT_DIAG).  This currently only affects
+    ///   sparse triangular solve.
+    /// \param graph [in/out] The graph to finalize.
+    /// \param params [in/out] Parameters for finalization.
     static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params);
 
-    //! Finalize the matrix of an already-finalized graph.
+    /// \brief Finalize the matrix of an already-finalized graph.
+    ///
+    /// \param graph [in] The graph, which must have already been
+    ///   finalized using finalizeGraph().
+    /// \param matrix [in/out] The matrix to finalize.  It must have
+    ///   been created with the above graph as its graph.
+    /// \params [in/out] Parameters for finalization.
     static void finalizeMatrix(const DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
 
-    //! Finalize a graph and a matrix.
+    /// \brief Finalize a graph and a matrix at the same time.
+    ///
+    /// \param uplo [in] Whether the structure of the graph and matrix
+    ///   is lower triangular (Teuchos::LOWER_TRI), upper triangular
+    ///   (Teuchos::UPPER_TRI), or neither (Teuchos::UNDEF_TRI).
+    /// \param diag [in] Whether the matrix has an implicitly stored
+    ///   unit diagonal (Teuchos::UNIT_DIAG) or does not
+    ///   (Teuchos::NON_UNIT_DIAG).  This currently only affects
+    ///   sparse triangular solve.
+    /// \param graph [in/out] The graph to finalize.
+    /// \param matrix [in/out] The matrix to finalize.  It must have
+    ///   been created with the above graph as its graph.
+    /// \param params [in/out] Parameters for finalization.
+    ///
+    /// Both the constructor and this method accept a ParameterList.
+    /// However, those sets of parameters are different.  The
+    /// constructor's parameters concern the algorithm, and the
+    /// parameters for this method concern the data structure.  It's
+    /// possible to use different algorithms with the same data
+    /// structure.
     static void finalizeGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
 
-    //! Initialize sparse operations with a graph and matrix
+    /// \brief Initialize sparse operations with a graph and matrix.
     ///
-    /// \param uplo [in] UPPER_TRI if the matrix is upper triangular,
-    ///   else LOWER_TRI if the matrix is lower triangular.
-    ///
-    /// \param diag [in] UNIT_DIAG if the matrix has an implicit unit diagonal,
-    ///   else NON_UNIT_DIAG (diagonal entries are explicitly stored in the matrix).
-    ///
+    /// This is the point at which this object initializes its
+    /// internal representation of the local sparse matrix.  In some
+    /// cases, this merely involves asking the graph and matrix for
+    /// pointers to their data.  In other cases, this involves copying
+    /// the data into a completely different storage format.  Whatever
+    /// happens is an implementation detail of this object.
     void setGraphAndMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph,
                            const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix);
 
@@ -1172,6 +1212,62 @@ namespace Kokkos {
       multiplyPrivate<DomainScalar,RangeScalar,Ordinal>(trans,alpha,X,beta,Y);
     }
   }
+
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  Teuchos::RCP<Teuchos::SerialDenseMatrix<int, typename DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::scalar_type> >
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  asDenseMatrix () const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef Teuchos::OrdinalTraits<ordinal_type> OTO;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
+
+    RCP<dense_matrix_type> A_ptr =
+      rcp (new dense_matrix_type (numRows_, numCols_));
+    dense_matrix_type& A = *A_ptr; // for notational convenience
+
+    if (big_ptrs_.size() > 0) {
+      ArrayRCP<const size_t> ptr = big_ptrs_;
+      for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
+        for (size_t k = ptr[i]; k < ptr[i+1]; ++k) {
+          const ordinal_type j = inds_[k];
+          const scalar_type A_ij = vals_[k];
+          A(i,j) += A_ij;
+        }
+        if (unit_diag_ == Teuchos::UNIT_DIAG) {
+          // Respect whatever is in the sparse matrix, even if it is wrong.
+          // This is helpful for debugging.
+          A(i,i) += STS::one ();
+        }
+      }
+    }
+    else if (sml_ptrs_.size() > 0) {
+      ArrayRCP<const ordinal_type> ptr = sml_ptrs_;
+      for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
+        for (ordinal_type k = ptr[i]; k < ptr[i+1]; ++k) {
+          const ordinal_type j = inds_[k];
+          const scalar_type A_ij = vals_[k];
+          A(i,j) += A_ij;
+        }
+        if (unit_diag_ == Teuchos::UNIT_DIAG) {
+          // Respect whatever is in the sparse matrix, even if it is wrong.
+          // This is helpful for debugging.
+          A(i,i) += STS::one ();
+        }
+      }
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::DefaultHost"
+        "SparseOps::asDenseMatrix: both big_ptrs_ and sml_ptrs_ are empty.  "
+        "Please report this bug to the Kokkos developers.");
+    }
+    return A_ptr;
+  }
+
 
   /// \brief Partial specialization of DefaultHostSparseOps for Scalar=void.
   /// \ingroup kokkos_crs_ops

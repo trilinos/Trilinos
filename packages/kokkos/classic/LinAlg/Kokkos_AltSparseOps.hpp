@@ -67,6 +67,19 @@
 #endif // HAVE_KOKKOSCLASSIC_OPENMP
 #include "Kokkos_SerialNode.hpp"
 
+/// \file Kokkos_AltSparseOps.hpp
+/// \brief AltSparseOps: Implementation of local sparse kernels.
+/// \ingroup kokkos_crs_ops
+///
+/// The main point of this header is the declaration and definition of
+/// AltSparseOps.  This is an implementation of the "LocalMatOps"
+/// template parameter of Tpetra::CrsGraph and Tpetra::CrsMatrix.
+/// "Alt" refers to "alternate," because AltSparseOps is not the
+/// primary implementation; DefaultHostSparseOps is.  AltSparseOps is
+/// an alternative that relies on "raw" kernels, rather than the
+/// Kokkos Node API.  It may perform better than DefaultHostSparseOps
+/// if your compiler does not inline well or does not optimize
+/// effectively across inlining.
 
 namespace Kokkos {
 
@@ -892,27 +905,37 @@ namespace Kokkos {
   ///   details::AltSparseOpsDefaultAllocator<Ordinal, Node> as the
   ///   Allocator type.
   ///
-  /// This class is called AltSparseOps ("alternate sparse
-  /// operations") because the default local sparse operations class
-  /// on host-based Kokkos Nodes is DefaultHostSparseOps.
-  /// DefaultHostSparseOps relies on the Kokkos Node API for
-  /// (intranode) parallelism.  AltSparseOps provides an alternative
-  /// implementation which does not rely on the Kokkos Node API for
-  /// parallelizing the sparse kernels.  In case the Kokkos Node API
-  /// performs poorly on your platform (for example, if your C++
-  /// compiler does not inline well), you can always use AltSparseOps
-  /// to get good performance.  AltSparseOps will parallelize its
-  /// kernels with OpenMP if you specify Node=OpenMPNode; otherwise,
-  /// it will use sequential kernels.
+  /// This class is an implementation of the "LocalMatOps" template
+  /// parameter of Tpetra::CrsGraph and Tpetra::CrsMatrix.  Like all
+  /// such implementations, it provides local sparse
+  /// matrix-(multi)vector multiply and local sparse triangular solve.
+  /// It is intended only for host-based Kokkos Nodes, just like
+  /// DefaultHostSparseOps.
   ///
-  /// Note that, depending on the Allocator template parameter,
-  /// AltSparseOps may use the Kokkos Node API to do first-touch
-  /// allocation in parallel of the sparse graph and matrix data
-  /// structures.  It would be best in that case to use
-  /// Node=OpenMPNode, so that the first-touch allocation most closely
-  /// matches the parallelization scheme.  You may control OpenMP's
-  /// parallelization scheme at run time by using environment
-  /// variables; AltSparseOps will respect this.
+  /// "Alt" in this class' name refers to "alternate," because
+  /// AltSparseOps is not the primary implementation;
+  /// DefaultHostSparseOps is.  DefaultHostSparseOps relies on the
+  /// Kokkos Node API for (intranode) parallelism.  AltSparseOps
+  /// provides an alternative implementation which does not rely on
+  /// the Kokkos Node API for parallelizing the sparse kernels.  In
+  /// case the Kokkos Node API performs poorly on your platform (for
+  /// example, if your C++ compiler does not inline well), you can
+  /// always use AltSparseOps to get good performance.
+  ///
+  /// \warning AltSparseOps will parallelize its kernels with OpenMP
+  ///   if you specify Node=OpenMPNode; otherwise, it will use
+  ///   sequential kernels.  This means that even if Node refers to a
+  ///   parallel Kokkos Node type, AltSparseOps will _not_ use it to
+  ///   parallelize sparse kernels, unless Node=OpenMPNode.
+  ///
+  /// \note Depending on the Allocator template parameter,
+  ///   AltSparseOps may use the Kokkos Node API to do first-touch
+  ///   allocation in parallel of the sparse graph and matrix data
+  ///   structures.  It would be best in that case to use
+  ///   Node=OpenMPNode, so that the first-touch allocation most
+  ///   closely matches the parallelization scheme.  You may control
+  ///   OpenMP's parallelization scheme at run time by using
+  ///   environment variables; AltSparseOps will respect this.
   ///
   /// For maximum compatibility with other implementations of local
   /// sparse ops, given your Scalar and Ordinal types, you should
@@ -960,47 +983,61 @@ namespace Kokkos {
       typedef AltCrsMatrix<S,O,N> matrix_type;
     };
 
-    /// \brief Sparse operations type for a different scalar type.
+    /// \brief Local sparse operations type for a different scalar type.
     ///
-    /// The bind_scalar struct defines the type responsible for sparse
-    /// operations for a scalar type S2, which may be different from
-    /// \c Scalar.
+    /// The bind_scalar struct defines the type responsible for local
+    /// sparse operations for a scalar type S2, which may be different
+    /// from \c Scalar.
     ///
-    /// This is used by Tpetra::CrsMatrix to "bind" a potentially
-    /// "void" scalar type to the appropriate scalar.  The other_type
-    /// typedef tells Tpetra::CrsMatrix which local sparse ops type to
-    /// use, as a function of Tpetra's Scalar template parameter.
+    /// This class' typedef is used by Tpetra::CrsMatrix to bind a
+    /// potentially "void" scalar type to the appropriate scalar.  The
+    /// other_type typedef tells Tpetra::CrsMatrix which local sparse
+    /// ops type to use, as a function of Tpetra's Scalar template
+    /// parameter.
     ///
-    /// For AltSparseOps, the other_type typedef always specifies a
-    /// specialization of AltSparseOps, regardless of the scalar type
-    /// S2.  This is not necessarily true for other implementations of
-    /// local sparse ops, so Tpetra developers should always get their
-    /// local sparse ops type from the other_type typedef.
+    /// Other local sparse ops implementations (especially those that
+    /// wrap third-party libraries implementing sparse kernels) might
+    /// use this to provide a "fall-back" sparse ops implementation of
+    /// a possibly different type, if the third-party library does not
+    /// support scalar type S2.
+    ///
+    /// In the case of AltSparseOps, the other_type typedef always
+    /// specifies a specialization of AltSparseOps, regardless of the
+    /// scalar type S2.  This is not necessarily true for other
+    /// implementations of local sparse ops, so Tpetra developers
+    /// should always get their local sparse ops type from the
+    /// other_type typedef.
     ///
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct bind_scalar {
-      typedef AltSparseOps<S2, Ordinal, Node> other_type;
+      typedef AltSparseOps<S2, Ordinal, Node, Allocator> other_type;
     };
 
     /// \brief Sparse operations type for a different ordinal type.
     ///
-    /// The bind_ordinal struct defines the type responsible for sparse
-    /// operations for an ordinal type O2, which may be different from
-    /// \c Ordinal.
+    /// The bind_ordinal struct defines the type responsible for
+    /// sparse operations for an ordinal type O2, which may be
+    /// different from \c Ordinal.
     ///
     /// This is used by Tpetra::CrsMatrix to "bind" the local sparse
-    /// ops type, given its own (Local)Ordinal type.  For
+    /// ops type, given its own (Local)Ordinal type.  In the case of
     /// AltSparseOps, the other_type typedef always specifies a
     /// specialization of AltSparseOps, regardless of the ordinal type
     /// O2.  This is not necessarily true for other implementations of
     /// local sparse ops, so Tpetra developers should always get their
     /// local sparse ops type from the other_type typedef.
     ///
+    /// Other local sparse ops implementations (especially those that
+    /// wrap third-party libraries implementing sparse kernels) might
+    /// use this to provide a "fall-back" sparse ops implementation of
+    /// a possibly different type, if the third-party library does not
+    /// support ordinal type O2.
+    ///
     /// \tparam O2 An ordinal type possibly different from \c Ordinal.
     template <class O2>
     struct bind_ordinal {
-      typedef DefaultHostSparseOps<Scalar,O2,Node,Allocator> other_type;
+      typedef AltSparseOps<Scalar, O2, Node, Allocator> other_type;
     };
 
     //@}
@@ -1038,7 +1075,7 @@ namespace Kokkos {
     //! Destructor
     ~AltSparseOps();
 
-    /// \brief Get a default ParameterList.
+    /// \brief Get a default ParameterList for the constructor.
     ///
     /// The returned ParameterList has all accepted parameters, their
     /// default values, documentation, and validators (if applicable).
@@ -1046,119 +1083,20 @@ namespace Kokkos {
     /// This is a class (static) method so that you can get the
     /// default ParameterList (with built-in documentation) before
     /// constructing a AltSparseOps instance.
-    static Teuchos::RCP<const Teuchos::ParameterList>
-    getDefaultParameters ()
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-      using Teuchos::rcp_const_cast;
-
-      RCP<ParameterList> plist = parameterList ("AltSparseOps");
-      setDefaultParameters (*plist);
-      return rcp_const_cast<const ParameterList> (plist);
-    }
+    static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters ();
 
     //@}
     //! \name Implementation of Teuchos::Describable
     //@{
 
     //! One-line description of this instance.
-    std::string description () const {
-      using Teuchos::TypeNameTraits;
-      std::ostringstream os;
-      os <<  "Kokkos::AltSparseOps<"
-         << "Scalar=" << TypeNameTraits<Scalar>::name()
-         << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
-         << ", Node=" << TypeNameTraits<Node>::name()
-         << ">";
-      return os.str();
-    }
+    std::string description () const;
 
     //! Write a possibly more verbose description of this instance to out.
     void
     describe (Teuchos::FancyOStream& out,
-              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
-    {
-      using Teuchos::EVerbosityLevel;
-      using Teuchos::includesVerbLevel;
-      using Teuchos::OSTab;
-      using Teuchos::rcpFromRef;
-      using Teuchos::VERB_DEFAULT;
-      using Teuchos::VERB_NONE;
-      using Teuchos::VERB_LOW;
-      using Teuchos::VERB_MEDIUM;
-      using Teuchos::VERB_HIGH;
-      using Teuchos::VERB_EXTREME;
-      using std::endl;
-
-      // Interpret the default verbosity level as VERB_MEDIUM.
-      const EVerbosityLevel vl =
-        (verbLevel == VERB_DEFAULT) ? VERB_MEDIUM : verbLevel;
-
-      if (vl == VERB_NONE) {
-        return;
-      }
-      else if (includesVerbLevel (vl, VERB_LOW)) { // vl >= VERB_LOW
-        out << this->description();
-
-        if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
-          out << ":" << endl;
-          OSTab tab1 (rcpFromRef (out));
-
-          out << "matVecVariant_ = " << matVecVariant_ << endl
-              << "unroll_ = " << unroll_ << endl
-              << "isInitialized_ = " << isInitialized_ << endl;
-          if (isInitialized_) {
-            std::string triUplo ("INVALID");
-            if (tri_uplo_ == Teuchos::UNDEF_TRI) {
-              triUplo = "UNDEF_TRI";
-            }
-            else if (tri_uplo_ == Teuchos::LOWER_TRI) {
-              triUplo = "LOWER_TRI";
-            }
-            else if (tri_uplo_ == Teuchos::UPPER_TRI) {
-              triUplo = "UPPER_TRI";
-            }
-            std::string unitDiag ("INVALID");
-            if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
-              unitDiag = "NON_UNIT_DIAG";
-            }
-            else if (unit_diag_ == Teuchos::UNIT_DIAG) {
-              unitDiag = "UNIT_DIAG";
-            }
-
-            out << "numRows_ = " << numRows_ << endl
-                << "numCols_ = " << numCols_ << endl
-                << "isEmpty_ = " << isEmpty_ << endl
-                << "hasEmptyRows_ = " << hasEmptyRows_ << endl
-                << "tri_uplo_ = " << triUplo << endl
-                << "unit_diag_ = " << unitDiag << endl;
-            if (ptr_.size() > 0) {
-              out << "numEntries = " << ptr_[ptr_.size()-1] << endl;
-            }
-            else {
-              out << "numEntries = 0" << endl;
-            }
-
-            if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
-              // Only print out all the sparse matrix's data in
-              // extreme verbosity mode.
-              out << "ptr_ = [";
-              std::copy (ptr_.begin(), ptr_.end(),
-                         std::ostream_iterator<Ordinal> (out, " "));
-              out << "]" << endl << "ind_ = [";
-              std::copy (ind_.begin(), ind_.end(),
-                         std::ostream_iterator<Ordinal> (out, " "));
-              out << "]" << endl << "val_ = [";
-              std::copy (val_.begin(), val_.end(),
-                         std::ostream_iterator<Scalar> (out, " "));
-              out << "]" << endl;
-            } // vl >= VERB_EXTREME
-          } // if is initialized
-        } // vl >= VERB_MEDIUM
-      } // vl >= VERB_LOW
-    }
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
 
     /// \brief Convert to dense matrix and return.
     ///
@@ -1171,32 +1109,7 @@ namespace Kokkos {
     ///   attempt to check whether Ordinal -> int conversions
     ///   overflow.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, scalar_type> >
-    asDenseMatrix () const
-    {
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-      typedef Teuchos::OrdinalTraits<ordinal_type> OTO;
-      typedef Teuchos::ScalarTraits<scalar_type> STS;
-      typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
-
-      RCP<dense_matrix_type> A_ptr =
-        rcp (new dense_matrix_type (numRows_, numCols_));
-      dense_matrix_type& A = *A_ptr; // for notational convenience
-
-      for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
-        for (size_t k = ptr_[i]; k < ptr_[i+1]; ++k) {
-          const ordinal_type j = ind_[k];
-          const scalar_type A_ij = val_[k];
-          A(i,j) += A_ij;
-        }
-        if (unit_diag_ == Teuchos::UNIT_DIAG) {
-          // Respect whatever is in the sparse matrix, even if it is wrong.
-          // This is helpful for debugging.
-          A(i,i) += STS::one ();
-        }
-      }
-      return A_ptr;
-    }
+    asDenseMatrix () const;
 
     //@}
     //! \name Accessor routines
@@ -1230,7 +1143,7 @@ namespace Kokkos {
     copyRowPtrs (const Teuchos::RCP<Node>& node,
                  const Teuchos::ArrayView<const size_t>& rowPtrs);
 
-    /// \brief Allocate and initialize the storage for a sparse graph or matrix.
+    /// \brief Allocate storage for column indices or matrix values.
     ///
     /// \param node [in/out] Kokkos Node instance.
     /// \param rowPtrs [in] The array of row offsets; the 'ptr' array
@@ -1259,20 +1172,48 @@ namespace Kokkos {
                  const Teuchos::ArrayView<const size_t>& rowPtrs,
                  const Teuchos::ArrayView<const T>& inputVals);
 
-    //! Finalize the graph.
+    /// \brief Finalize the graph.
+    ///
+    /// \param uplo [in] Whether the structure of the graph is lower
+    ///   triangular (Teuchos::LOWER_TRI), upper triangular
+    ///   (Teuchos::UPPER_TRI), or neither (Teuchos::UNDEF_TRI).
+    /// \param diag [in] Whether the graph has an implicitly stored
+    ///   diagonal (Teuchos::UNIT_DIAG) or does not
+    ///   (Teuchos::NON_UNIT_DIAG).  This currently only affects
+    ///   sparse triangular solve.
+    /// \param graph [in/out] The graph to finalize.
+    /// \param params [in/out] Parameters for finalization.
     static void
     finalizeGraph (Teuchos::EUplo uplo,
                    Teuchos::EDiag diag,
                    AltCrsGraph<Ordinal, Node>& graph,
                    const Teuchos::RCP<Teuchos::ParameterList> &params);
 
-    //! Finalize the matrix of an already-finalized graph.
+    /// \brief Finalize the matrix of an already-finalized graph.
+    ///
+    /// \param graph [in] The graph, which must have already been
+    ///   finalized using finalizeGraph().
+    /// \param matrix [in/out] The matrix to finalize.  It must have
+    ///   been created with the above graph as its graph.
+    /// \params [in/out] Parameters for finalization.
     static void
     finalizeMatrix (const AltCrsGraph<Ordinal, Node>& graph,
                     AltCrsMatrix<Scalar, Ordinal, Node>& matrix,
                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-    /// \brief Finalize a graph and a matrix.
+    /// \brief Finalize a graph and a matrix at the same time.
+    ///
+    /// \param uplo [in] Whether the structure of the graph and matrix
+    ///   is lower triangular (Teuchos::LOWER_TRI), upper triangular
+    ///   (Teuchos::UPPER_TRI), or neither (Teuchos::UNDEF_TRI).
+    /// \param diag [in] Whether the matrix has an implicitly stored
+    ///   unit diagonal (Teuchos::UNIT_DIAG) or does not
+    ///   (Teuchos::NON_UNIT_DIAG).  This currently only affects
+    ///   sparse triangular solve.
+    /// \param graph [in/out] The graph to finalize.
+    /// \param matrix [in/out] The matrix to finalize.  It must have
+    ///   been created with the above graph as its graph.
+    /// \param params [in/out] Parameters for finalization.
     ///
     /// Both the constructor and this method accept a ParameterList.
     /// However, those sets of parameters are different.  The
@@ -1287,7 +1228,14 @@ namespace Kokkos {
                             AltCrsMatrix<Scalar, Ordinal, Node>& matrix,
                             const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-    //! Initialize sparse operations with a graph and matrix.
+    /// \brief Initialize sparse operations with a graph and matrix.
+    ///
+    /// This is the point at which this object initializes its
+    /// internal representation of the local sparse matrix.  In some
+    /// cases, this merely involves asking the graph and matrix for
+    /// pointers to their data.  In other cases, this involves copying
+    /// the data into a completely different storage format.  Whatever
+    /// happens is an implementation detail of this object.
     void
     setGraphAndMatrix (const Teuchos::RCP<const AltCrsGraph<Ordinal,Node> > &graph,
                        const Teuchos::RCP<const AltCrsMatrix<Scalar,Ordinal,Node> > &matrix);
@@ -2363,6 +2311,154 @@ namespace Kokkos {
                const Teuchos::ArrayView<const T>& inputVals)
   {
     return allocator_type::template allocStorage<T> (node, rowPtrs, inputVals);
+  }
+
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  Teuchos::RCP<Teuchos::SerialDenseMatrix<int, typename AltSparseOps<Scalar,Ordinal,Node,Allocator>::scalar_type> >
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  asDenseMatrix () const
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef Teuchos::OrdinalTraits<ordinal_type> OTO;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
+
+    RCP<dense_matrix_type> A_ptr =
+      rcp (new dense_matrix_type (numRows_, numCols_));
+    dense_matrix_type& A = *A_ptr; // for notational convenience
+
+    for (ordinal_type i = OTO::zero(); i < numRows_; ++i) {
+      for (size_t k = ptr_[i]; k < ptr_[i+1]; ++k) {
+        const ordinal_type j = ind_[k];
+        const scalar_type A_ij = val_[k];
+        A(i,j) += A_ij;
+      }
+      if (unit_diag_ == Teuchos::UNIT_DIAG) {
+        // Respect whatever is in the sparse matrix, even if it is wrong.
+        // This is helpful for debugging.
+        A(i,i) += STS::one ();
+      }
+    }
+    return A_ptr;
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  std::string
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  description () const
+  {
+    using Teuchos::TypeNameTraits;
+    std::ostringstream os;
+    os <<  "Kokkos::AltSparseOps<"
+       << "Scalar=" << TypeNameTraits<Scalar>::name()
+       << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
+       << ", Node=" << TypeNameTraits<Node>::name()
+       << ", Allocator=" << TypeNameTraits<Allocator>::name()
+       << ">";
+    return os.str();
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  void
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    using Teuchos::EVerbosityLevel;
+    using Teuchos::includesVerbLevel;
+    using Teuchos::OSTab;
+    using Teuchos::rcpFromRef;
+    using Teuchos::VERB_DEFAULT;
+    using Teuchos::VERB_NONE;
+    using Teuchos::VERB_LOW;
+    using Teuchos::VERB_MEDIUM;
+    using Teuchos::VERB_HIGH;
+    using Teuchos::VERB_EXTREME;
+    using std::endl;
+
+    // Interpret the default verbosity level as VERB_MEDIUM.
+    const EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_MEDIUM : verbLevel;
+
+    if (vl == VERB_NONE) {
+      return;
+    }
+    else if (includesVerbLevel (vl, VERB_LOW)) { // vl >= VERB_LOW
+      out << this->description();
+
+      if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
+        out << ":" << endl;
+        OSTab tab1 (rcpFromRef (out));
+
+        out << "matVecVariant_ = " << matVecVariant_ << endl
+            << "unroll_ = " << unroll_ << endl
+            << "isInitialized_ = " << isInitialized_ << endl;
+        if (isInitialized_) {
+          std::string triUplo ("INVALID");
+          if (tri_uplo_ == Teuchos::UNDEF_TRI) {
+            triUplo = "UNDEF_TRI";
+          }
+          else if (tri_uplo_ == Teuchos::LOWER_TRI) {
+            triUplo = "LOWER_TRI";
+          }
+          else if (tri_uplo_ == Teuchos::UPPER_TRI) {
+            triUplo = "UPPER_TRI";
+          }
+          std::string unitDiag ("INVALID");
+          if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
+            unitDiag = "NON_UNIT_DIAG";
+          }
+          else if (unit_diag_ == Teuchos::UNIT_DIAG) {
+            unitDiag = "UNIT_DIAG";
+          }
+
+          out << "numRows_ = " << numRows_ << endl
+              << "numCols_ = " << numCols_ << endl
+              << "isEmpty_ = " << isEmpty_ << endl
+              << "hasEmptyRows_ = " << hasEmptyRows_ << endl
+              << "tri_uplo_ = " << triUplo << endl
+              << "unit_diag_ = " << unitDiag << endl;
+          if (ptr_.size() > 0) {
+            out << "numEntries = " << ptr_[ptr_.size()-1] << endl;
+          }
+          else {
+            out << "numEntries = 0" << endl;
+          }
+
+          if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
+            // Only print out all the sparse matrix's data in
+            // extreme verbosity mode.
+            out << "ptr_ = [";
+            std::copy (ptr_.begin(), ptr_.end(),
+                       std::ostream_iterator<Ordinal> (out, " "));
+            out << "]" << endl << "ind_ = [";
+            std::copy (ind_.begin(), ind_.end(),
+                       std::ostream_iterator<Ordinal> (out, " "));
+            out << "]" << endl << "val_ = [";
+            std::copy (val_.begin(), val_.end(),
+                       std::ostream_iterator<Scalar> (out, " "));
+            out << "]" << endl;
+          } // vl >= VERB_EXTREME
+        } // if is initialized
+      } // vl >= VERB_MEDIUM
+    } // vl >= VERB_LOW
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  Teuchos::RCP<const Teuchos::ParameterList>
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  getDefaultParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp_const_cast;
+
+    RCP<ParameterList> plist = parameterList ("AltSparseOps");
+    setDefaultParameters (*plist);
+    return rcp_const_cast<const ParameterList> (plist);
   }
 
 } // namespace Kokkos
