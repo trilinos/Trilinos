@@ -71,6 +71,16 @@ int AlgIncDegree(
   const RCP<Teuchos::Comm<int> > &comm
 ) 
 {
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+
+  int ierr= 0;
+  Z2_THROW_EXPERIMENTAL("Zoltan2 IncreasingDegree ordering is strictly "
+                        "experimental software "
+                        "while it is being developed and tested.")
+  return ierr;
+
+#else //INCLUDE_ZOLTAN2_EXPERIMENTAL
+
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::gid_t gid_t;
@@ -105,6 +115,7 @@ int AlgIncDegree(
   }
 
   return ierr;
+#endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 
 }
