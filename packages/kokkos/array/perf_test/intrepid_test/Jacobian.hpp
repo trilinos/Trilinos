@@ -50,9 +50,9 @@ struct Jacobian;
 
 //Specialized for the hexahedron and case 2 multiple jacobian for a single set of reference points
 template<class Scalar >
-struct Jacobian<Scalar , KOKKOS_MACRO_DEVICE , shards::Hexahedron<8> >
+struct Jacobian<Scalar , KOKKOSARRAY_MACRO_DEVICE , shards::Hexahedron<8> >
 {
-	typedef KOKKOS_MACRO_DEVICE 		device_type;
+	typedef KOKKOSARRAY_MACRO_DEVICE 		device_type;
 	typedef device_type::size_type 		size_type;
 	
 	typedef typename KokkosArray::MDArrayView<Scalar,device_type> array_type;
@@ -98,7 +98,7 @@ struct Jacobian<Scalar , KOKKOS_MACRO_DEVICE , shards::Hexahedron<8> >
 
   	}
   	
-  	KOKKOS_MACRO_DEVICE_FUNCTION
+  	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   	void operator()(size_type ielem) const 
   	{
 		for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {

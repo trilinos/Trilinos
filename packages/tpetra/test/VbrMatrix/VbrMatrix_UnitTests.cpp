@@ -59,10 +59,10 @@
 #include "Tpetra_VbrMatrix.hpp"
 
 #include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
 
@@ -146,11 +146,11 @@ namespace {
 
   using Kokkos::SerialNode;
   RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
   using Kokkos::TBBNode;
   RCP<TBBNode> tbbnode;
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
@@ -212,7 +212,7 @@ namespace {
     return snode;
   }
 
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
   template <>
   RCP<TBBNode> getNode<TBBNode>() {
     if (tbbnode == null) {
@@ -224,7 +224,7 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   template <>
   RCP<TPINode> getNode<TPINode>() {
     if (tpinode == null) {
@@ -1427,14 +1427,14 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )
 
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #define UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TBBNode )
 #else
 #define UNIT_TEST_TBBNODE(LO, GO, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode )
 #else

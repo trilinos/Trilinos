@@ -108,7 +108,7 @@ namespace Tpetra {
       // multivectors used for import/export dest/source in apply()
       mutable Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importMV_, exportMV_;
 
-#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
     Teuchos::RCP<Teuchos::Time> importTimer_, exportTimer_;
 #endif
 

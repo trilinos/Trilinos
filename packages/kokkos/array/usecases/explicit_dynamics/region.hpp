@@ -45,9 +45,9 @@ template<typename Scalar , class DeviceType>
 struct Region;
 
 template<typename Scalar>
-struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
+struct Region<Scalar ,KOKKOSARRAY_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE       device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE       device_type;
   typedef device_type::size_type    size_type;
 
   typedef KokkosArray::MDArray<Scalar,device_type>   scalar_array;

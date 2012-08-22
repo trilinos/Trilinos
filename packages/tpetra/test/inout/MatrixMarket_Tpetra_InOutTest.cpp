@@ -45,9 +45,9 @@
 #include <Kokkos_ConfigDefs.hpp>
 #include <Kokkos_SerialNode.hpp>
 
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
-#endif // defined(HAVE_KOKKOS_TBB)
+#endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -77,7 +77,7 @@ namespace Tpetra {
 	return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
       }
 
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
       template<>
       Teuchos::RCP<Kokkos::TBBNode>
       getNode() {
@@ -86,7 +86,7 @@ namespace Tpetra {
 	Teuchos::ParameterList defaultParams;
 	return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
       }
-#endif // defined(HAVE_KOKKOS_TBB)
+#endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 
       /// Test Tpetra::MatrixMarket::Reader::readSparseFile()
       ///
@@ -122,11 +122,11 @@ namespace Tpetra {
 	typedef int local_ordinal_type;
 	typedef int global_ordinal_type;
 	// typedef size_t global_ordinal_type;
-	// #if defined(HAVE_KOKKOS_TBB)
+	// #if defined(HAVE_KOKKOSCLASSIC_TBB)
 	//       typedef Kokkos::TBBNode node_type;
 	// #else
 	typedef Kokkos::SerialNode node_type;
-	// #endif // defined(HAVE_KOKKOS_TBB)
+	// #endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 	typedef Teuchos::ScalarTraits<scalar_type> STS;
 
 	const bool callFillComplete = true;

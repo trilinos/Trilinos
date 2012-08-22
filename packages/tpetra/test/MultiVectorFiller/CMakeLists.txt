@@ -12,7 +12,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
-IF (Kokkos_ENABLE_TBB AND Tpetra_ENABLE_MPI)
+IF (KokkosClassic_ENABLE_TBB AND Tpetra_ENABLE_MPI)
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   MultiVectorFiller_TbbTest
   #   SOURCES MultiVectorFiller_TbbTest
@@ -22,7 +22,7 @@ IF (Kokkos_ENABLE_TBB AND Tpetra_ENABLE_MPI)
   #   )
 ENDIF()
 
-IF (Kokkos_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
+IF (KokkosClassic_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   MultiVectorFiller_ThreadPoolTest
   #   SOURCES MultiVectorFiller_ThreadPoolTest
@@ -32,7 +32,7 @@ IF (Kokkos_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
   #   )
 ENDIF()
 
-IF (Kokkos_ENABLE_Thrust AND Kokkos_ENABLE_CUDA_DOUBLE AND Tpetra_ENABLE_MPI)
+IF (KokkosClassic_ENABLE_Thrust AND KokkosClassic_ENABLE_CUDA_DOUBLE AND Tpetra_ENABLE_MPI)
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   MultiVectorFiller_ThrustTest
   #   SOURCES MultiVectorFiller_ThrustTest

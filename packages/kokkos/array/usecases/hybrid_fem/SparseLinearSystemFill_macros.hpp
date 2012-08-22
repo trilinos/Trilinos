@@ -53,11 +53,11 @@ template< typename ScalarType ,
           class elem_matrices_type ,
           class elem_vectors_type >
 struct GatherFill< 
-  KokkosArray::CrsMatrix< ScalarType , KOKKOS_MACRO_DEVICE > ,
-  FEMesh< CoordScalarType , ElemNode , KOKKOS_MACRO_DEVICE > ,
+  KokkosArray::CrsMatrix< ScalarType , KOKKOSARRAY_MACRO_DEVICE > ,
+  FEMesh< CoordScalarType , ElemNode , KOKKOSARRAY_MACRO_DEVICE > ,
   elem_matrices_type , elem_vectors_type >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
   static const size_type ElemNodeCount = ElemNode ;
@@ -81,7 +81,7 @@ private:
 
 public:
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( size_type irow ) const
   {
     const size_type node_elem_begin = node_elem_ids.row_map[irow];

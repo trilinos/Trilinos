@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_PRODUCTTENSOR_CREATE_HPP
-#define KOKKOS_PRODUCTTENSOR_CREATE_HPP
+#ifndef KOKKOSARRAY_PRODUCTTENSOR_CREATE_HPP
+#define KOKKOSARRAY_PRODUCTTENSOR_CREATE_HPP
 
 #include <iostream>
 
@@ -241,7 +241,7 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOS_PRODUCTTENSOR_CREATE_HPP */
+#endif /* #ifndef KOKKOSARRAY_PRODUCTTENSOR_CREATE_HPP */
 
 
 

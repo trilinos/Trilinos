@@ -48,16 +48,16 @@
 #include <cstdio> // for std::sscanf
 
 #include <Kokkos_SerialNode.hpp>
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include <Kokkos_TBBNode.hpp>
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #include <Kokkos_TPINode.hpp>
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #include <Kokkos_OpenMPNode.hpp>
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
@@ -106,31 +106,31 @@ namespace Tpetra {
       Teuchos::ParameterList instList_;
       Teuchos::RCP<Kokkos::SerialNode>    serialNode_;
       bool nodeCreated_;
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
       Teuchos::RCP<Kokkos::TBBNode>       tbbNode_;
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
       Teuchos::RCP<Kokkos::TPINode>       tpiNode_;
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
       Teuchos::RCP<Kokkos::OpenMPNode>    ompNode_;
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
       Teuchos::RCP<Kokkos::ThrustGPUNode> thrustNode_;
 #endif
 
       enum NodeType {
         SERIALNODE
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
         , TBBNODE
 #endif        
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
         , TPINODE
 #endif        
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
         , OMPNODE
 #endif        
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
         , THRUSTGPUNODE
 #endif        
       } nodeType_;
@@ -217,22 +217,22 @@ namespace Tpetra {
           if (desigNode == "Kokkos::SerialNode") {
             nodeType_ = SERIALNODE;
           }
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
           else if (desigNode == "Kokkos::TPINode") {
             nodeType_ = TPINODE;
           }
 #endif
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
           else if (desigNode == "Kokkos::TBBNode") {
             nodeType_ = TBBNODE;
           }
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
           else if (desigNode == "Kokkos::OpenMPNode") {
             nodeType_ = OMPNODE;
           }
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
           else if (desigNode == "Kokkos::ThrustGPUNode") {
             nodeType_ = THRUSTGPUNODE;
           }
@@ -268,22 +268,22 @@ namespace Tpetra {
       case SERIALNODE:
         serialNode_ = rcp(new Kokkos::SerialNode(instList_));
         break;
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
       case TBBNODE:
         tbbNode_ = rcp(new Kokkos::TBBNode(instList_));
         break;
 #endif        
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
       case OMPNODE:
         ompNode_ = rcp(new Kokkos::OpenMPNode(instList_));
         break;
 #endif        
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
       case TPINODE:
         tpiNode_  = rcp(new Kokkos::TPINode(instList_));
         break;
 #endif        
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
       case THRUSTGPUNODE:
         thrustNode_ = rcp(new Kokkos::ThrustGPUNode(instList_));
         break;
@@ -302,22 +302,22 @@ namespace Tpetra {
       case SERIALNODE:
         codeobj.template run<Kokkos::SerialNode>(instList_,comm_, serialNode_);
         break;
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
       case TBBNODE:
         codeobj.template run<Kokkos::TBBNode>(instList_,comm_, tbbNode_);
         break;
 #endif        
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
       case OMPNODE:
         codeobj.template run<Kokkos::OpenMPNode>(instList_,comm_, ompNode_);
         break;
 #endif        
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
       case TPINODE:
         codeobj.template run<Kokkos::TPINode>(instList_,comm_, tpiNode_);
         break;
 #endif        
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
       case THRUSTGPUNODE:
         codeobj.template run<Kokkos::ThrustGPUNode>(instList_,comm_, thrustNode_);
         break;
@@ -335,22 +335,22 @@ namespace Tpetra {
       case SERIALNODE:
         UserCode<Kokkos::SerialNode>::run(instList_,comm_, serialNode_);
         break;
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
       case TBBNODE:
         UserCode<Kokkos::TBBNode>::run(instList_,comm_, tbbNode_);
         break;
 #endif        
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
       case OMPNODE:
         UserCode<Kokkos::OpenMPNode>::run(instList_,comm_, ompNode_);
         break;
 #endif        
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
       case TPINODE:
         UserCode<Kokkos::TPINode>::run(instList_,comm_, tpiNode_);
         break;
 #endif        
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
       case THRUSTGPUNODE:
         UserCode<Kokkos::ThrustGPUNode>::run(instList_,comm_, thrustNode_);
         break;

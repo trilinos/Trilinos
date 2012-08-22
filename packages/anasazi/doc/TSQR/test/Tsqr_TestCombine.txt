@@ -30,7 +30,7 @@ entirely in place, and CombineDefault, which is a wrapper around
 LAPACK routines and works by copying data in and out of internally
 allocated and maintained scratch space.  If you build Trilinos with
 Fortran support and enable the CMake Boolean option
-TSQR_ENABLE_Fortran, a third back-end implementation, CombineFortran,
+KokkosClassic_ENABLE_TSQR_Fortran, a third back-end implementation, CombineFortran,
 will also be tested.  It is a Fortran 2003 version of CombineNative.
 (Note that you will need a Fortran 2003 - compliant compiler in order
 to build CombineFortran.)

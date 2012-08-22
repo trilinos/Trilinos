@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CUDA_INTERNAL_HPP
-#define KOKKOS_CUDA_INTERNAL_HPP
+#ifndef KOKKOSARRAY_CUDA_INTERNAL_HPP
+#define KOKKOSARRAY_CUDA_INTERNAL_HPP
 
 namespace KokkosArray {
 namespace Impl {
@@ -60,5 +60,5 @@ void cuda_internal_safe_call( cudaError e , const char * name )
 }
 }
 
-#endif /* #ifndef KOKKOS_CUDA_INTERNAL_HPP */
+#endif /* #ifndef KOKKOSARRAY_CUDA_INTERNAL_HPP */
 

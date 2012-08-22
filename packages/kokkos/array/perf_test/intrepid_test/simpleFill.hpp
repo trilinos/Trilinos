@@ -47,9 +47,9 @@ template< typename Scalar , class DeviceType>
 struct simpleFill;
 
 template<typename Scalar>
-struct simpleFill<Scalar, KOKKOS_MACRO_DEVICE>{
+struct simpleFill<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
-	typedef KOKKOS_MACRO_DEVICE     							device_type ;
+	typedef KOKKOSARRAY_MACRO_DEVICE     							device_type ;
   	typedef typename KokkosArray::MDArrayView<Scalar,device_type> 	array_type ;
 
 	array_type data;
@@ -57,7 +57,7 @@ struct simpleFill<Scalar, KOKKOS_MACRO_DEVICE>{
   	simpleFill(	array_type & arg_data):		data(arg_data)	{ ;} 
 
 
-	KOKKOS_MACRO_DEVICE_FUNCTION
+	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   	void operator()( int ielem )const {
 
 		for(unsigned int i = 0; i < data.dimension(1); i++){

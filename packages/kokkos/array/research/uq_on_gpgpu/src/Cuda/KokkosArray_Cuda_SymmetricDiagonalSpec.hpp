@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CUDA_SYMMETRICDIAGONALSPEC_HPP
-#define KOKKOS_CUDA_SYMMETRICDIAGONALSPEC_HPP
+#ifndef KOKKOSARRAY_CUDA_SYMMETRICDIAGONALSPEC_HPP
+#define KOKKOSARRAY_CUDA_SYMMETRICDIAGONALSPEC_HPP
 
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
 
@@ -174,4 +174,4 @@ public:
 
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_CUDA_SYMMETRICDIAGONALSPEC_HPP */
+#endif /* #ifndef KOKKOSARRAY_CUDA_SYMMETRICDIAGONALSPEC_HPP */

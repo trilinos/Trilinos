@@ -62,16 +62,16 @@
 #include "TpetraExt_MatrixMatrix.hpp"
 
 #include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #include "Kokkos_OpenMPNode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
@@ -168,19 +168,19 @@ namespace {
 
   using Kokkos::SerialNode;
   RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
   using Kokkos::TBBNode;
   RCP<TBBNode> tbbnode;
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
   using Kokkos::OpenMPNode;
   RCP<OpenMPNode> ompnode;
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
 #endif
@@ -260,7 +260,7 @@ namespace {
     return snode;
   }
 
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
   template <>
   RCP<TBBNode> getNode<TBBNode>() {
     if (tbbnode == null) {
@@ -272,7 +272,7 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   template <>
   RCP<TPINode> getNode<TPINode>() {
     if (tpinode == null) {
@@ -284,7 +284,7 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
   template <>
   RCP<OpenMPNode> getNode<OpenMPNode>() {
     if (ompnode == null) {
@@ -296,7 +296,7 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
   template <>
   RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
     if (thrustnode == null) {
@@ -2178,21 +2178,21 @@ typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
 #define UNIT_TEST_DEFAULTNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, DefaultNode )
 
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #define UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TBBNode )
 #else
 #define UNIT_TEST_TBBNODE(LO, GO, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode )
 #else
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #define UNIT_TEST_OMPNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, OpenMPNode )
 #else
@@ -2200,30 +2200,30 @@ typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
 #endif
 
 // don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-#if defined(HAVE_KOKKOS_CUSPARSE) && !defined(HAVE_TPETRA_MPI)
+#if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && !defined(HAVE_TPETRA_MPI)
 // float
-#if defined(HAVE_KOKKOS_CUDA_FLOAT)
+#if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
 #  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \
           UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, float, ThrustGPUNode )
 #else
 #  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
 #endif
 // double
-#if defined(HAVE_KOKKOS_CUDA_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
 #  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO) \
           UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, double, ThrustGPUNode )
 #else
 #  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
 #endif
 // complex<float>
-#if defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
+#if defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
 #  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO) \
           UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexFloat, ThrustGPUNode )
 #else
 #  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
 #endif
 // complex<double>
-#if defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
 #  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO) \
           UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexDouble, ThrustGPUNode )
 #else

@@ -41,10 +41,10 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_BOXMESHFIXTURE_HPP
-#define KOKKOS_BOXMESHFIXTURE_HPP
+#ifndef KOKKOSARRAY_BOXMESHFIXTURE_HPP
+#define KOKKOSARRAY_BOXMESHFIXTURE_HPP
 
-/* #define KOKKOS_ARRAY_BOUNDS_CHECK 1 */
+/* #define KOKKOSARRAY_BOUNDS_CHECK 1 */
 
 #include <cmath>
 #include <stdexcept>
@@ -526,6 +526,6 @@ struct BoxMeshFixture {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_BOXMESHFIXTURE_HPP */
+#endif /* #ifndef KOKKOSARRAY_BOXMESHFIXTURE_HPP */
 
 

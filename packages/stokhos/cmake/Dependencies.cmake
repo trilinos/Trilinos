@@ -1,5 +1,5 @@
 SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Epetra EpetraExt)
-SET(LIB_OPTIONAL_DEP_PACKAGES Ifpack ML TriKota Anasazi Sacado NOX Isorropia Kokkos Tpetra Ifpack2 MueLu)
+SET(LIB_OPTIONAL_DEP_PACKAGES Ifpack ML TriKota Anasazi Sacado NOX Isorropia KokkosClassic KokkosArray Tpetra Ifpack2 MueLu)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES AztecOO Stratimikos Belos)
 SET(LIB_REQUIRED_DEP_TPLS)

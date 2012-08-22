@@ -42,9 +42,9 @@ ENDIF()
 #-----------------------------------------------------------------------------
 
 TRIBITS_ADD_LIBRARY(
-  kokkosdevicehost
+  kokkosarray_devicehost
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS kokkos
+  DEPLIBS 
   )
 

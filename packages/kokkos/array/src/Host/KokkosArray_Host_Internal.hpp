@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_INTERNAL_HPP
-#define KOKKOS_HOST_INTERNAL_HPP
+#ifndef KOKKOSARRAY_HOST_INTERNAL_HPP
+#define KOKKOSARRAY_HOST_INTERNAL_HPP
 
 #include <KokkosArray_Host.hpp>
 #include <Host/KokkosArray_Host_Parallel.hpp>
@@ -167,5 +167,5 @@ public:
 } /* namespace Impl */
 } /* namespace KokkosArray */
 
-#endif /* #ifndef KOKKOS_HOST_INTERNAL_HPP */
+#endif /* #ifndef KOKKOSARRAY_HOST_INTERNAL_HPP */
 

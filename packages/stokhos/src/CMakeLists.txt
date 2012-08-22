@@ -291,7 +291,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_PCE_OrthogPoly.cpp
     sacado/Sacado_ETPCE_OrthogPoly.cpp
     )
-  IF (Stokhos_ENABLE_Kokkos AND Kokkos_ENABLE_Array)
+  IF (Stokhos_ENABLE_KokkosArray)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/impl)
     SET(HEADERS ${HEADERS}

@@ -46,16 +46,16 @@
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 #include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 #  include <Kokkos_TPINode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
 #  include <Kokkos_OpenMPNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THRUST)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
@@ -75,16 +75,16 @@ namespace Tpetra {
     createUniformContigMap<int,int>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
   TPETRA_MAP_INSTANT(int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
   TPETRA_MAP_INSTANT(int,int,Kokkos::TBBNode)
 #endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
     TPETRA_MAP_INSTANT(int,int,Kokkos::TPINode)
 #endif
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
     TPETRA_MAP_INSTANT(int,int,Kokkos::OpenMPNode)
 #endif
-#if defined(HAVE_KOKKOS_THRUST)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST)
     TPETRA_MAP_INSTANT(int,int,Kokkos::ThrustGPUNode)
 #endif
 
@@ -98,16 +98,16 @@ namespace Tpetra {
   template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
     createUniformContigMap<int,long>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
   TPETRA_MAP_INSTANT(int,long,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
   TPETRA_MAP_INSTANT(int,long,Kokkos::TBBNode)
 #endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
     TPETRA_MAP_INSTANT(int,long,Kokkos::TPINode)
 #endif
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
     TPETRA_MAP_INSTANT(int,long,Kokkos::OpenMPNode)
 #endif
-#if defined(HAVE_KOKKOS_THRUST)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST)
     TPETRA_MAP_INSTANT(int,long,Kokkos::ThrustGPUNode)
 #endif
 #endif // <int,long>

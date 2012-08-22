@@ -41,10 +41,10 @@
 //@HEADER
 */
 
-#if defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
-    defined( KOKKOS_MACRO_DEVICE ) || \
-    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
-    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
+    defined( KOKKOSARRAY_MACRO_DEVICE ) || \
+    defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) || \
+    defined( KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION )
 
 #error "Including <KokkosArray_Cuda_macros.hpp> with macros already defined"
 
@@ -54,12 +54,12 @@
  *  then pure-device functions are not available
  */
 
-#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
-#define KOKKOS_MACRO_DEVICE                      KokkosArray::Cuda
-/* #define KOKKOS_MACRO_DEVICE_FUNCTION */
-#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION      /* */
-#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr ) expr
-#define KOKKOS_MACRO_CHECK( expr )  expr
+#define KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOSARRAY_MACRO_DEVICE                      KokkosArray::Cuda
+/* #define KOKKOSARRAY_MACRO_DEVICE_FUNCTION */
+#define KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION      /* */
+#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr ) expr
+#define KOKKOSARRAY_MACRO_CHECK( expr )  expr
 
 #else
 
@@ -68,21 +68,21 @@
  *  versus available on both the device and host.
  */
 
-#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
-#define KOKKOS_MACRO_DEVICE                      KokkosArray::Cuda
-#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION    __device__ __host__
-#define KOKKOS_MACRO_DEVICE_FUNCTION             __device__
+#define KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOSARRAY_MACRO_DEVICE                      KokkosArray::Cuda
+#define KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION    __device__ __host__
+#define KOKKOSARRAY_MACRO_DEVICE_FUNCTION             __device__
 
 /* Device-only functions are not compiled unless compiling for the device. */
 #if defined( __CUDA_ARCH__ )
-#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  /* */
-#define KOKKOS_MACRO_CHECK( expr )             /* */
-#elif ! defined( KOKKOS_ARRAY_BOUNDS_CHECK )
-#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
-#define KOKKOS_MACRO_CHECK( expr )             /* */
+#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr )  /* */
+#define KOKKOSARRAY_MACRO_CHECK( expr )             /* */
+#elif ! defined( KOKKOSARRAY_BOUNDS_CHECK )
+#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr )  expr
+#define KOKKOSARRAY_MACRO_CHECK( expr )             /* */
 #else
-#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
-#define KOKKOS_MACRO_CHECK( expr )             expr
+#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr )  expr
+#define KOKKOSARRAY_MACRO_CHECK( expr )             expr
 #endif
 
 #endif

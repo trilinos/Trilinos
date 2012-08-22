@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_PARALLELFOR_HPP
-#define KOKKOS_PARALLELFOR_HPP
+#ifndef KOKKOSARRAY_PARALLELFOR_HPP
+#define KOKKOSARRAY_PARALLELFOR_HPP
 
 #include <cstddef>
 
@@ -84,5 +84,5 @@ class MultiFunctorParallelFor ;
 
 } // namespace KokkosArray
 
-#endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */
+#endif /* KOKKOSARRAY_DEVICEHOST_PARALLELFOR_HPP */
 

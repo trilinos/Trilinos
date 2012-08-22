@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_PARALLELDATAMAP_HPP
-#define KOKKOS_PARALLELDATAMAP_HPP
+#ifndef KOKKOSARRAY_PARALLELDATAMAP_HPP
+#define KOKKOSARRAY_PARALLELDATAMAP_HPP
 
 #include <utility>
 #include <limits>
@@ -356,6 +356,6 @@ public:
 
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_PARALLELDATAMAP_HPP */
+#endif /* #ifndef KOKKOSARRAY_PARALLELDATAMAP_HPP */
 
 

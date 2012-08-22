@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_PARALLELREDUCE_HPP
-#define KOKKOS_PARALLELREDUCE_HPP
+#ifndef KOKKOSARRAY_PARALLELREDUCE_HPP
+#define KOKKOSARRAY_PARALLELREDUCE_HPP
 
 #include <cstddef>
 
@@ -177,5 +177,5 @@ class MultiFunctorParallelReduceMember ;
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP */
+#endif /* KOKKOSARRAY_DEVICEHOST_PARALLELREDUCE_HPP */
 

@@ -45,9 +45,9 @@ template<typename Scalar , class DeviceType>
 struct finish_step;
 
 template<typename Scalar>
-struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
+struct finish_step<Scalar ,KOKKOSARRAY_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE       device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE       device_type;
   typedef device_type::size_type    size_type;
 
   typedef KokkosArray::MDArray<Scalar,device_type>   array_type;
@@ -82,7 +82,7 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
       }
 
 
-    KOKKOS_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void operator()(int inode) const {
 
       // Getting count as per 'CSR-like' data structure

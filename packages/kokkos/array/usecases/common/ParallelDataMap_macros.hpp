@@ -46,10 +46,10 @@ namespace KokkosArray {
 //----------------------------------------------------------------------------
 
 template< typename ValueType , unsigned N1 >
-struct PackArray< View< ValueType[][N1] , KOKKOS_MACRO_DEVICE > , void >
+struct PackArray< View< ValueType[][N1] , KOKKOSARRAY_MACRO_DEVICE > , void >
 {
-  typedef KOKKOS_MACRO_DEVICE                         device_type ;
-  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE                         device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE::size_type              size_type ;
   typedef View< ValueType[][N1] , device_type >       array_type ;
   typedef View< ValueType[] , device_type >           buffer_type ;
 
@@ -62,7 +62,7 @@ private:
 public:
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i ) const
   {
     for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
@@ -87,10 +87,10 @@ public:
 };
 
 template< typename ValueType , unsigned N1 >
-struct UnpackArray< View< ValueType[][N1] , KOKKOS_MACRO_DEVICE > , void >
+struct UnpackArray< View< ValueType[][N1] , KOKKOSARRAY_MACRO_DEVICE > , void >
 {
-  typedef KOKKOS_MACRO_DEVICE                         device_type ;
-  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE                         device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE::size_type              size_type ;
   typedef View< ValueType[] , device_type >           buffer_type ;
   typedef View< ValueType[][N1] , device_type >       array_type ;
 
@@ -103,7 +103,7 @@ private:
 public:
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i ) const
   {
     for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
@@ -131,10 +131,10 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-struct PackArray< View< ValueType[] , KOKKOS_MACRO_DEVICE > , void >
+struct PackArray< View< ValueType[] , KOKKOSARRAY_MACRO_DEVICE > , void >
 {
-  typedef KOKKOS_MACRO_DEVICE                device_type ;
-  typedef KOKKOS_MACRO_DEVICE::size_type     size_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE                device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE::size_type     size_type ;
   typedef View< ValueType[] , device_type >  array_type ;
   typedef View< ValueType[] , device_type >  buffer_type ;
 
@@ -147,7 +147,7 @@ private:
 public:
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i ) const
   { output[i] = input(base+i); }
 
@@ -167,10 +167,10 @@ public:
 };
 
 template< typename ValueType >
-struct UnpackArray< View< ValueType[] , KOKKOS_MACRO_DEVICE > , void >
+struct UnpackArray< View< ValueType[] , KOKKOSARRAY_MACRO_DEVICE > , void >
 {
-  typedef KOKKOS_MACRO_DEVICE                device_type ;
-  typedef KOKKOS_MACRO_DEVICE::size_type     size_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE                device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE::size_type     size_type ;
   typedef View< ValueType[] , device_type >  array_type ;
   typedef View< ValueType[] , device_type >  buffer_type ;
 
@@ -183,7 +183,7 @@ private:
 public:
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i ) const
   { output(base+i) = input[i]; }
 

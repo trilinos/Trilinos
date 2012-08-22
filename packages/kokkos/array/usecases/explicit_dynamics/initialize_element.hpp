@@ -45,9 +45,9 @@ template< typename Scalar , class DeviceType >
 struct initialize_element;
 
 template<typename Scalar>
-struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
+struct initialize_element<Scalar, KOKKOSARRAY_MACRO_DEVICE>
 {
-	typedef KOKKOS_MACRO_DEVICE     device_type ;
+	typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
 	typedef typename KokkosArray::MDArray<Scalar,device_type> array_type ;
   typedef typename KokkosArray::MDArray<int,device_type>    int_array_type ;
 
@@ -60,7 +60,7 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
   {}
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void get_nodes( int ielem, int * nodes) const
   {
     for( int i=0; i<NumNodePerElement; ++i) {
@@ -68,7 +68,7 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
     }
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int ielem )const {
     int nodes[NumNodePerElement];
     get_nodes(ielem,nodes);

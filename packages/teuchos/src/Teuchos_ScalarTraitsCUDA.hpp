@@ -93,13 +93,13 @@ struct ScalarTraits<long int>
   static inline __device__ __host__ long int pow(long int x, long int y) { return (long int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
 };
 
-#ifdef HAVE_KOKKOS_CUDA_FLOAT
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_FLOAT
 template<>
 struct ScalarTraits<float>
 {
   typedef float magnitudeType;
   typedef float halfPrecision; // should become IEEE754-2008 binary16 or fp16 later, perhaps specified at configure according to architectural support
-#ifdef HAVE_KOKKOS_CUDA_DOUBLE
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
   typedef double doublePrecision;
 #else
   typedef float  doublePrecision;
@@ -118,14 +118,14 @@ struct ScalarTraits<float>
   static inline __device__ __host__ float squareroot(float x) { return sqrtf(x); }
   static inline __device__ __host__ float pow(float x, float y) { return powf(x,y); }
 };
-#endif // HAVE_KOKKOS_CUDA_FLOAT
+#endif // HAVE_KOKKOSCLASSIC_CUDA_FLOAT
 
-#ifdef HAVE_KOKKOS_CUDA_DOUBLE
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
 template<>
 struct ScalarTraits<double>
 {
   typedef double magnitudeType;
-#ifdef HAVE_KOKKOS_CUDA_FLOAT
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_FLOAT
   typedef float  halfPrecision;
 #else
   typedef double halfPrecision;
@@ -145,7 +145,7 @@ struct ScalarTraits<double>
   static inline __device__ __host__ double squareroot(double x) { return sqrt(x); }
   static inline __device__ __host__ double pow(double x, double y) { return pow(x,y); }
 };
-#endif // HAVE_KOKKOS_CUDA_DOUBLE
+#endif // HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
 
 } // Teuchos namespace
 

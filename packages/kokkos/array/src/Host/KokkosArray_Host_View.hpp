@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_VIEW_HPP
-#define KOKKOS_HOST_VIEW_HPP
+#ifndef KOKKOSARRAY_HOST_VIEW_HPP
+#define KOKKOSARRAY_HOST_VIEW_HPP
 
 #include <KokkosArray_View.hpp>
 #include <Host/KokkosArray_Host_Parallel.hpp>
@@ -398,6 +398,6 @@ void deep_copy( const View< ValueType , LayoutDst , Host > & dst ,
 
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOS_HOST_VIEW_HPP */
+#endif /* #ifndef KOKKOSARRAY_HOST_VIEW_HPP */
 
 

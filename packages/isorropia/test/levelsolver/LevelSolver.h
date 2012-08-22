@@ -75,13 +75,13 @@
 #include "Kokkos_DefaultSparseMultiply.hpp"
 #include "Kokkos_Version.hpp"
 #include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 

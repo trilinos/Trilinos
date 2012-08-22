@@ -55,7 +55,7 @@
 #include <stdexcept>
 
 #include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
 
@@ -96,7 +96,7 @@ RCP< Kokkos::SerialNode > getNode< Kokkos::SerialNode >() {
   return serialnode;
 }
 
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 int tbb_nT = 0;
 RCP< Kokkos::TBBNode > tbbnode;
 template <>

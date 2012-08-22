@@ -26,7 +26,7 @@ case ${ARG} in
 #-------------------------------
 #----------- OPTIONS -----------
 OPT | opt | O3 | -O3 ) OPTFLAGS="${OPTFLAGS} -O3" ;;
-DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g -DKOKKOS_ARRAY_BOUNDS_CHECK" ;;
+DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g -DKOKKOSARRAY_BOUNDS_CHECK" ;;
 HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
 MPI | mpi )
   HAVE_MPI=${1} ; shift 1

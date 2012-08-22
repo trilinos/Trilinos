@@ -54,9 +54,9 @@ namespace NonLinear {
 
 template< typename ScalarCoordType , unsigned ElemNode , typename ScalarType >
 struct ElementComputation<
-  FEMesh< ScalarCoordType , ElemNode , KOKKOS_MACRO_DEVICE > , ScalarType >
+  FEMesh< ScalarCoordType , ElemNode , KOKKOSARRAY_MACRO_DEVICE > , ScalarType >
 {
-  typedef KOKKOS_MACRO_DEVICE  device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE  device_type;
   typedef ScalarType           scalar_type ;
 
   static const unsigned ElementNodeCount = ElemNode ;
@@ -112,7 +112,7 @@ public:
      /* Inverse jacobian */   TensorDim * 6 + 6 +
      /* Gradient transform */ FunctionCount * 15 ;
 
-  inline KOKKOS_MACRO_DEVICE_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   float transform_gradients(
     const float grad[][ FunctionCount ] , // Gradient of bases master element
     const double x[] ,
@@ -190,7 +190,7 @@ public:
     return detJ ;
   }
 
-  inline KOKKOS_MACRO_DEVICE_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void contributeResidualJacobian(
     const float coeff_k ,
     const double dof_values[] ,
@@ -244,7 +244,7 @@ public:
     }
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const unsigned ielem ) const
   {
     // Gather nodal coordinates and solution vector:

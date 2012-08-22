@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_VIEW_HPP
-#define KOKKOS_VIEW_HPP
+#ifndef KOKKOSARRAY_VIEW_HPP
+#define KOKKOSARRAY_VIEW_HPP
 
 #include <string>
 #include <impl/KokkosArray_StaticAssert.hpp>
@@ -309,5 +309,5 @@ struct DeepCopy ;
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_VIEW_HPP */
+#endif /* #ifndef KOKKOSARRAY_VIEW_HPP */
 

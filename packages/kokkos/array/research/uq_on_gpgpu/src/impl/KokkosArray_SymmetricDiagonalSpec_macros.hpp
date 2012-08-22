@@ -41,9 +41,9 @@
 //@HEADER
 */
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <impl/KokkosArray_SymmetricDiagonalSpec_macros.hpp> without macros defined"
 
@@ -55,15 +55,15 @@
 namespace KokkosArray {
 
 template<>
-class SymmetricDiagonalSpec< KOKKOS_MACRO_DEVICE > {
+class SymmetricDiagonalSpec< KOKKOSARRAY_MACRO_DEVICE > {
 public:
-  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE::size_type size_type ;
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension() const { return m_dimension ; }
 
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type matrix_offset( const size_type row , const size_type column ) const
     {
       const int diag_count = 1 + ( m_dimension >> 1 );
@@ -81,7 +81,7 @@ public:
       return offset ;
     }
 
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type matrix_size() const
     { return ( m_dimension * ( m_dimension + 1 ) ) >> 1 ; }
 

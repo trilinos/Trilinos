@@ -212,9 +212,9 @@ struct ShapeFunctionEvaluation {
 //----------------------------------------------------------------------------
 
 template< typename ScalarType , typename ScalarCoordType >
-struct ElementComputation< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
+struct ElementComputation< ScalarType , ScalarCoordType , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type;
   typedef ScalarType              scalar_type ;
   typedef device_type::size_type  size_type ;
 
@@ -272,7 +272,7 @@ public:
   static const unsigned FLOPS_jacobian =
     FunctionCount * SpatialDim * SpatialDim * 2 ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void jacobian( const ScalarCoordType * x, 
                  const ScalarCoordType * y, 
                  const ScalarCoordType * z, 
@@ -307,7 +307,7 @@ public:
 
   static const unsigned FLOPS_inverse_and_det = 46 ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   scalar_type inverse_and_determinant3x3( scalar_type * const J ) const
   {
     const scalar_type J00 = J[0];
@@ -346,7 +346,7 @@ public:
 
   //------------------------------------
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void matTransMat3x3_X_3xn( const scalar_type * A, int n,
                              const scalar_type * B,
                              scalar_type * C ) const
@@ -370,7 +370,7 @@ public:
 
   static const unsigned FLOPS_contributeDiffusionMatrix = FunctionCount * ( 3 * 5 + FunctionCount * 7 ) ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void contributeDiffusionMatrix(
     const scalar_type weight ,
     const scalar_type grad_vals[] ,
@@ -405,7 +405,7 @@ public:
 
   static const unsigned FLOPS_contributeSourceVector = FunctionCount * 2 ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void contributeSourceVector( const scalar_type term ,
                                const scalar_type psi[] ,
                                scalar_type elem_vec[] ) const
@@ -423,7 +423,7 @@ public:
              + FLOPS_contributeDiffusionMatrix
              + FLOPS_contributeSourceVector ) ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int ielem )const {
 
     scalar_type elem_vec[8] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
@@ -482,9 +482,9 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ScalarType , typename ScalarCoordType >
-struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
+struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type;
   typedef device_type::size_type  size_type ;
 
   static const size_type ElementNodeCount = 8 ;
@@ -502,7 +502,7 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
   ScalarType      bc_lower_value ;
   ScalarType      bc_upper_value ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( size_type inode ) const
   {
     //  Apply a dirichlet boundary condition to 'irow'

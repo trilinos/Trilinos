@@ -27,8 +27,8 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="Kokkos">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="LO"/>
+    <Dependency name="Teuchos" type="ILO"/>
+    <Dependency name="ThreadPool" type="ILO"/>
     <EmailAddresses>
       <Email address="kokkos-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -64,7 +64,6 @@
   <SubProject name="Tpetra">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="LR"/>
     <Dependency name="Epetra" type="LO"/>
     <EmailAddresses>
       <Email address="tpetra-regression@software.sandia.gov"/>
@@ -82,7 +81,6 @@
     <Dependency name="Teuchos" type="ILR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
@@ -95,7 +93,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="GlobiPack" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -109,7 +106,6 @@
   <SubProject name="Isorropia">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -152,7 +148,6 @@
   <SubProject name="Amesos2">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="ILR"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="LR"/>
@@ -213,7 +208,6 @@
   <SubProject name="ML">
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -231,7 +225,6 @@
   <SubProject name="Belos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="TO"/>
@@ -250,7 +243,6 @@
   <SubProject name="Ifpack2">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="LR"/>
     <Dependency name="Epetra" type="ITR"/>
     <Dependency name="Triutils" type="TR"/>
     <Dependency name="Tpetra" type="LR"/>
@@ -262,7 +254,6 @@
   <SubProject name="ShyLU">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILR"/>
     <Dependency name="Triutils" type="ILR"/>
@@ -283,7 +274,6 @@
     <Dependency name="Teuchos" type="ILR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
@@ -303,7 +293,6 @@
   <SubProject name="FEI">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -324,7 +313,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="LO"/>
@@ -341,7 +329,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
@@ -365,7 +352,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
@@ -379,7 +365,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
@@ -406,7 +391,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="LO"/>
     <Dependency name="Sacado" type="LO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Shards" type="LR"/>
@@ -431,7 +415,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="LR"/>
-    <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Shards" type="LR"/>
@@ -459,7 +442,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -483,7 +465,6 @@
   <SubProject name="Moertel">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
@@ -504,7 +485,6 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Shards" type="ILO"/>
@@ -536,7 +516,6 @@
     <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="Sacado" type="TO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ITO"/>
     <Dependency name="Epetra" type="ITO"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="ITO"/>
@@ -562,7 +541,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="LR"/>
-    <Dependency name="Kokkos" type="ITO"/>
     <Dependency name="Epetra" type="ITO"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="ITO"/>
@@ -585,7 +563,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="ITO"/>
-    <Dependency name="Kokkos" type="ITO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="ITO"/>
@@ -607,7 +584,6 @@
   <SubProject name="Xpetra">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="LO"/>
@@ -620,7 +596,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -645,7 +620,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="TO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -673,7 +647,6 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="LO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -705,7 +678,6 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="GlobiPack" type="ILO"/>
@@ -742,7 +714,6 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="ILR"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="ILR"/>
@@ -805,7 +776,6 @@
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="LO"/>
@@ -833,7 +803,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
@@ -862,7 +831,6 @@
     <Dependency name="Teuchos" type="TO"/>
     <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="ITO"/>
-    <Dependency name="Kokkos" type="ITO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="TO"/>
     <Dependency name="Triutils" type="TO"/>
@@ -912,7 +880,6 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="LR"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="GlobiPack" type="ILO"/>

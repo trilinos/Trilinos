@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CRSARRAY_HPP
-#define KOKKOS_CRSARRAY_HPP
+#ifndef KOKKOSARRAY_CRSARRAY_HPP
+#define KOKKOSARRAY_CRSARRAY_HPP
 
 #include <string>
 #include <vector>
@@ -156,5 +156,5 @@ create_mirror(
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_CRSARRAY_HPP */
+#endif /* #ifndef KOKKOSARRAY_CRSARRAY_HPP */
 

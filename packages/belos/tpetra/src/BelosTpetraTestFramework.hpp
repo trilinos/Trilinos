@@ -51,16 +51,16 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #include "Kokkos_OpenMPNode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
@@ -113,7 +113,7 @@ namespace Belos {
       return Teuchos::rcp (new Kokkos::SerialNode (*params));
     }
 
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
     // Specialization of getNode for Kokkos::TBBNode.
     template<>
     Teuchos::RCP<Kokkos::TBBNode>
@@ -125,9 +125,9 @@ namespace Belos {
       }
       return Teuchos::rcp (new Kokkos::TBBNode (*params));
     }
-#endif // defined(HAVE_KOKKOS_TBB)
+#endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
     // Specialization of getNode for Kokkos::TPINode.
     template<>
     Teuchos::RCP<Kokkos::TPINode>
@@ -156,9 +156,9 @@ namespace Belos {
 
       return Teuchos::rcp (new Kokkos::TPINode (*params));
     }
-#endif // defined(HAVE_KOKKOS_THREADPOOL)
+#endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
     // Specialization of getNode for Kokkos::OpenMPNode.
     template<>
     Teuchos::RCP<Kokkos::OpenMPNode>
@@ -168,9 +168,9 @@ namespace Belos {
       }
       return Teuchos::rcp (new Kokkos::OpenMPNode (*params));
     }
-#endif // defined(HAVE_KOKKOS_OPENMP)
+#endif // defined(HAVE_KOKKOSCLASSIC_OPENMP)
 
-#if defined(HAVE_KOKKOS_THRUST)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST)
     // Specialization of getNode for Kokkos::ThrustGPUNode.
     template<>
     Teuchos::RCP<Kokkos::ThrustGPUNode>
@@ -188,7 +188,7 @@ namespace Belos {
 
       return Teuchos::rcp (new Kokkos::ThrustGPUNode (*params));
     }
-#endif // defined(HAVE_KOKKOS_THRUST)
+#endif // defined(HAVE_KOKKOSCLASSIC_THRUST)
 
     /// \class HarwellBoeingReader
     /// \brief Read a Harwell-Boeing format file into a Tpetra::CrsMatrix.

@@ -7,8 +7,8 @@ INCLUDE(CombinedOption)
 # A) Define the package
 #
 
-ASSERT_DEFINED(Kokkos_ENABLE_TBB)
-IF (Kokkos_ENABLE_TBB)
+ASSERT_DEFINED(KokkosClassic_ENABLE_TBB)
+IF (KokkosClassic_ENABLE_TBB)
   # ENABLE_SHADOWING_WARNINGS not possible, because of TBB
   TRIBITS_PACKAGE( Tpetra CLEANED )
 ELSE()
@@ -19,7 +19,7 @@ ELSE()
 ENDIF()
 
 COMBINED_OPTION( Tpetra_ENABLE_Thrust
-  DEP_OPTIONS_NAMES Kokkos_ENABLE_Thrust
+  DEP_OPTIONS_NAMES KokkosClassic_ENABLE_Thrust
   DOCSTR "Enables CUDA GPU support in Tpetra.  Requires Kokkos/Thrust"
   )
 
@@ -46,10 +46,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_OpenMP
   HAVE_TPETRA_OPENMP
   "Enabling OpenMP in Tpetra"
-  ${Kokkos_ENABLE_OpenMP}
+  ${KokkosClassic_ENABLE_OpenMP}
   )
-IF(Tpetra_ENABLE_OpenMP AND NOT Kokkos_ENABLE_OpenMP)
-  MESSAGE(WARNING "Disabling OpenMP in Tpetra because Kokkos_ENABLE_OpenMP is ${Kokkos_ENABLE_OpenMP}")
+IF(Tpetra_ENABLE_OpenMP AND NOT KokkosClassic_ENABLE_OpenMP)
+  MESSAGE(WARNING "Disabling OpenMP in Tpetra because KokkosClassic_ENABLE_OpenMP is ${KokkosClassic_ENABLE_OpenMP}")
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -176,7 +176,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_TSQR
   HAVE_TPETRA_TSQR
   "Enable TSQR support in Tpetra."
-  ${Kokkos_ENABLE_TSQR}
+  ${KokkosClassic_ENABLE_TSQR}
   )
 
 

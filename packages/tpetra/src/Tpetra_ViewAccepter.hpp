@@ -46,13 +46,13 @@
 #include "Tpetra_ConfigDefs.hpp"
 
 #include <Kokkos_SerialNode.hpp>
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include <Kokkos_TBBNode.hpp>
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #include <Kokkos_TPINode.hpp>
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #include <Kokkos_OpenMPNode.hpp>
 #endif
 
@@ -88,15 +88,15 @@ namespace Tpetra {
 
   template <>
   class ViewAccepter<Kokkos::SerialNode> : public ViewAccepterSupportedNode {};
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
   template <>
   class ViewAccepter<Kokkos::TBBNode> : public ViewAccepterSupportedNode {};
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   template <>
   class ViewAccepter<Kokkos::TPINode> : public ViewAccepterSupportedNode {};
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
   template <>
   class ViewAccepter<Kokkos::OpenMPNode> : public ViewAccepterSupportedNode {};
 #endif

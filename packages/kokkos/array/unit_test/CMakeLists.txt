@@ -5,9 +5,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 
 SET(SOURCES UnitTestMain.cpp TestHost.cpp ../TPL/gtest/gtest-all.cc)
-SET(LIBRARIES kokkos kokkosdevicehost kokkosimpl)
+SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
 
-IF(Kokkos_ENABLE_DeviceCuda)
+IF(KokkosArray_ENABLE_DeviceCuda)
   PACKAGE_ADD_CUDA_LIBRARY(
     unit_cuda
     SOURCES TestCudaFunctions.cu
@@ -16,7 +16,7 @@ IF(Kokkos_ENABLE_DeviceCuda)
     TestCuda.cpp
   )
   LIST( APPEND LIBRARIES
-    kokkosdevicecuda unit_cuda
+    kokkosarray_devicecuda unit_cuda
   )
 ENDIF()
 

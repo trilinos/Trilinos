@@ -66,13 +66,13 @@
 #include "TpetraExt_BlockExtraction_def.hpp"
 // nodes
 #include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
 #  include <Kokkos_OpenMPNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 #  include <Kokkos_TPINode.hpp>
 #endif
 
@@ -90,13 +90,13 @@ namespace Tpetra {
   // int matrix support for CrsMatrix unit test
 #if defined(HAVE_TPETRA_INST_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
   TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::SerialNode)
-# if defined(HAVE_KOKKOS_TBB)
+# if defined(HAVE_KOKKOSCLASSIC_TBB)
     TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::TBBNode)
 # endif
-# if defined(HAVE_KOKKOS_OPENMP)
+# if defined(HAVE_KOKKOSCLASSIC_OPENMP)
     TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::OpenMPNode)
 # endif
-# if defined(HAVE_KOKKOS_THREADPOOL)
+# if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
     TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::TPINode)
 # endif
 #endif
@@ -105,15 +105,15 @@ namespace Tpetra {
 #if defined(HAVE_TPETRA_INST_DOUBLE) 
   TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,int,int,int,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,int,int,int,Kokkos::SerialNode)
-# if defined(HAVE_KOKKOS_OPENMP)
+# if defined(HAVE_KOKKOSCLASSIC_OPENMP)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,int,int,int,Kokkos::OpenMPNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,int,int,int,Kokkos::OpenMPNode)
 # endif
-# if defined(HAVE_KOKKOS_TBB)
+# if defined(HAVE_KOKKOSCLASSIC_TBB)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,int,int,int,Kokkos::TBBNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,int,int,int,Kokkos::TBBNode)
 # endif
-# if defined(HAVE_KOKKOS_THREADPOOL)
+# if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,int,int,int,Kokkos::TPINode)
 # endif
@@ -123,15 +123,15 @@ namespace Tpetra {
 #if defined(HAVE_TPETRA_INST_FLOAT) 
   TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::SerialNode)
-# if defined(HAVE_KOKKOS_OPENMP)
+# if defined(HAVE_KOKKOSCLASSIC_OPENMP)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::OpenMPNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::OpenMPNode)
 # endif
-# if defined(HAVE_KOKKOS_TBB)
+# if defined(HAVE_KOKKOSCLASSIC_TBB)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::TBBNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::TBBNode)
 # endif
-# if defined(HAVE_KOKKOS_THREADPOOL)
+# if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::TPINode)
 # endif
@@ -141,15 +141,15 @@ namespace Tpetra {
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
   TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,int,int,int,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,int,int,int,Kokkos::SerialNode)
-# if defined(HAVE_KOKKOS_OPENMP)
+# if defined(HAVE_KOKKOSCLASSIC_OPENMP)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,int,int,int,Kokkos::OpenMPNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,int,int,int,Kokkos::OpenMPNode)
 # endif
-# if defined(HAVE_KOKKOS_TBB)
+# if defined(HAVE_KOKKOSCLASSIC_TBB)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,int,int,int,Kokkos::TBBNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,int,int,int,Kokkos::TBBNode)
 # endif
-# if defined(HAVE_KOKKOS_THREADPOOL)
+# if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,int,int,int,Kokkos::TPINode)
 # endif
@@ -159,15 +159,15 @@ namespace Tpetra {
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
   TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::SerialNode)
-# if defined(HAVE_KOKKOS_OPENMP)
+# if defined(HAVE_KOKKOSCLASSIC_OPENMP)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::OpenMPNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::OpenMPNode)
 # endif
-# if defined(HAVE_KOKKOS_TBB)
+# if defined(HAVE_KOKKOSCLASSIC_TBB)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TBBNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TBBNode)
 # endif
-# if defined(HAVE_KOKKOS_THREADPOOL)
+# if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TPINode)
 # endif

@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_PARALLELFOR_HPP
-#define KOKKOS_HOST_PARALLELFOR_HPP
+#ifndef KOKKOSARRAY_HOST_PARALLELFOR_HPP
+#define KOKKOSARRAY_HOST_PARALLELFOR_HPP
 
 #include <KokkosArray_ParallelFor.hpp>
 
@@ -187,5 +187,5 @@ public:
 
 } // namespace KokkosArray
 
-#endif /* KOKKOS_HOST_PARALLELFOR_HPP */
+#endif /* KOKKOSARRAY_HOST_PARALLELFOR_HPP */
 

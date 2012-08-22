@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_IMPL_VIEW_FACTORY_HPP
-#define KOKKOS_IMPL_VIEW_FACTORY_HPP
+#ifndef KOKKOSARRAY_IMPL_VIEW_FACTORY_HPP
+#define KOKKOSARRAY_IMPL_VIEW_FACTORY_HPP
 
 #include <iostream>
 
@@ -93,7 +93,7 @@ create_mirror( const View<DataType,LayoutType,DeviceType> & input )
   typedef View< DataType , LayoutType , DeviceType > input_type ;
   typedef typename input_type::HostMirror            output_type ;
 
-#if KOKKOS_MIRROR_VIEW_OPTIMIZE
+#if KOKKOSARRAY_MIRROR_VIEW_OPTIMIZE
   return Impl::ViewCreateMirror< output_type >::create( input );
 #else
   return output_type( "mirror" , input.shape() );
@@ -198,5 +198,5 @@ struct SubviewAssignable< const Type , Memory , Type , Memory >
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_IMPL_VIEW_FACTORY_HPP */
+#endif /* #ifndef KOKKOSARRAY_IMPL_VIEW_FACTORY_HPP */
 

@@ -259,7 +259,7 @@ void explicit_dynamics_app( const size_t ex,
     perf.central_diff += wall_clock.seconds();
     wall_clock.reset();
 
-#ifdef KOKKOS_DEVICE_CUDA
+#ifdef KOKKOSARRAY_DEVICE_CUDA
     if (step%100 == 0 ) {
       KokkosArray::deep_copy(acceleration_h,region.acceleration);
       KokkosArray::deep_copy(velocity_h,region.velocity);

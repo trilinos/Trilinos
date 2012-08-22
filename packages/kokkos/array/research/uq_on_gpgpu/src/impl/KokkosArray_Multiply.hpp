@@ -1,6 +1,6 @@
 
-#ifndef KOKKOS_IMPL_MULTIPLY_HPP
-#define KOKKOS_IMPL_MULTIPLY_HPP
+#ifndef KOKKOSARRAY_IMPL_MULTIPLY_HPP
+#define KOKKOSARRAY_IMPL_MULTIPLY_HPP
 
 namespace KokkosArray {
 namespace Impl {

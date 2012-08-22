@@ -1,5 +1,5 @@
 
-/* #define KOKKOS_ARRAY_BOUNDS_CHECK 1 */
+/* #define KOKKOSARRAY_BOUNDS_CHECK 1 */
 
 #include <iostream>
 #include <stdexcept>

@@ -14,7 +14,7 @@ set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_MemorySpace.cpp"
 set LIB="-lpthread -L${HWLOC_PATH}/lib -lhwloc"
 
 
-export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
+export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOSARRAY_CUDA"
 export NVCC_SOURCES="../../src/DeviceCuda/*.cu testCudaProto.cu"
 export NVCC_PATH="/usr/local/cuda"
 export NVCC="${NVCC_PATH}/bin/nvcc -arch=sm_20 -lib -o libCuda.a"

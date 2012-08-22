@@ -74,7 +74,7 @@ namespace {
     return Teuchos::rcp (new Kokkos::SerialNode (*params));
   }
 
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
   // Specialization of getNode for TBBNode
   template<>
   Teuchos::RCP<Kokkos::TBBNode>
@@ -86,9 +86,9 @@ namespace {
 
     return Teuchos::rcp (new Kokkos::TBBNode (*params));
   }
-#endif // defined(HAVE_KOKKOS_TBB)
+#endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   // Specialization of getNode for TPINode
   template<>
   Teuchos::RCP<Kokkos::TPINode>
@@ -110,7 +110,7 @@ namespace {
 
     return Teuchos::rcp (new Kokkos::TPINode (*params));
   }
-#endif // defined(HAVE_KOKKOS_THREADPOOL)
+#endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 
   /// \brief Show MsgType as comma-delimited list of names.
   ///
@@ -484,15 +484,15 @@ main (int argc, char *argv[])
   typedef int global_ordinal_type;
 #endif // 0
 
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef Kokkos::TPINode node_type;
 #else
-#  if defined(HAVE_KOKKOS_TBB)
+#  if defined(HAVE_KOKKOSCLASSIC_TBB)
   typedef Kokkos::TBBNode node_type;
 #  else
   typedef Kokkos::SerialNode node_type;
-#  endif // HAVE_KOKKOS_TBB
-#endif // HAVE_KOKKOS_THREADPOOL
+#  endif // HAVE_KOKKOSCLASSIC_TBB
+#endif // HAVE_KOKKOSCLASSIC_THREADPOOL
 
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef STS::magnitudeType magnitude_type;

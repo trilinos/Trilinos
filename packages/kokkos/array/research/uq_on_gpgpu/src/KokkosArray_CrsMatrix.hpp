@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CRSMATRIX_HPP
-#define KOKKOS_CRSMATRIX_HPP
+#ifndef KOKKOSARRAY_CRSMATRIX_HPP
+#define KOKKOSARRAY_CRSMATRIX_HPP
 
 #include <KokkosArray_CrsArray.hpp>
 #include <impl/KokkosArray_Multiply.hpp>
@@ -100,5 +100,5 @@ void write_matrix_market(const CrsMatrix<MatrixValueType,Device> & A ,
 
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOS_CRSMATRIX_HPP */
+#endif /* #ifndef KOKKOSARRAY_CRSMATRIX_HPP */
 

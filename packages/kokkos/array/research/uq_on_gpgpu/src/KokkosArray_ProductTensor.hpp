@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_PRODUCTTENSOR_HPP
-#define KOKKOS_PRODUCTTENSOR_HPP
+#ifndef KOKKOSARRAY_PRODUCTTENSOR_HPP
+#define KOKKOSARRAY_PRODUCTTENSOR_HPP
 
 #include <map>
 #include <KokkosArray_CrsArray.hpp>
@@ -216,6 +216,6 @@ create_product_tensor( const Input & input )
 
 #include <impl/KokkosArray_ProductTensor_create.hpp>
 
-#endif /* #ifndef KOKKOS_PRODUCTTENSOR_HPP */
+#endif /* #ifndef KOKKOSARRAY_PRODUCTTENSOR_HPP */
 
 

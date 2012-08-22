@@ -42,8 +42,8 @@
 */
 
 
-#ifndef KOKKOS_HOST_SYMMETRICDIAGONALSPEC_HPP
-#define KOKKOS_HOST_SYMMETRICDIAGONALSPEC_HPP
+#ifndef KOKKOSARRAY_HOST_SYMMETRICDIAGONALSPEC_HPP
+#define KOKKOSARRAY_HOST_SYMMETRICDIAGONALSPEC_HPP
 
 namespace KokkosArray {
 namespace Impl {
@@ -105,5 +105,5 @@ public:
 
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_HOST_SYMMETRICDIAGONALSPEC_HPP */
+#endif /* #ifndef KOKKOSARRAY_HOST_SYMMETRICDIAGONALSPEC_HPP */
 

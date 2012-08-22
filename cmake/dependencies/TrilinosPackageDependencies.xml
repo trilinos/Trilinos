@@ -69,13 +69,41 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Kokkos" dir="packages/kokkos" type="PS">
+  <Package name="KokkosClassic" dir="packages/kokkos/classic" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="ThreadPool"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="TBB,CUDA,CUSPARSE,Thrust,Cusp,MKL"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="KokkosArray" dir="packages/kokkos/array" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Pthread,CUDA,HWLOC"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CUSPARSE,Pthread"/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="Kokkos" dir="packages/kokkos" type="PS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosClassic,KokkosArray"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -154,7 +182,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Tpetra" dir="packages/tpetra" type="PS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Kokkos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,KokkosClassic"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -267,9 +295,9 @@
   </Package>
   <Package name="Isorropia" dir="packages/isorropia" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Zoltan"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra,Kokkos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra,KokkosClassic"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Kokkos,Tpetra"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="KokkosClassic,Tpetra"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -966,7 +994,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Ifpack2" dir="packages/ifpack2" type="PS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra,Kokkos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra,KokkosClassic"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1107,7 +1135,7 @@
   </Package>
   <Package name="Phalanx" dir="packages/phalanx" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Kokkos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosClassic"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Belos,Epetra,Ifpack,Intrepid,ML,Amesos"/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
@@ -1219,7 +1247,7 @@
   </Package>
   <Package name="Xpetra" dir="packages/xpetra" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Kokkos,Tpetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,KokkosClassic,Tpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Tpetra"/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
@@ -1233,7 +1261,7 @@
   </Package>
   <Package name="MueLu" dir="packages/muelu" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Xpetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Belos,Epetra,EpetraExt,Kokkos,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Stratimikos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Belos,Epetra,EpetraExt,KokkosClassic,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Stratimikos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Tpetra"/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
@@ -1246,9 +1274,9 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Zoltan2" dir="packages/zoltan2" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Tpetra,Kokkos,Epetra,Teuchos,Xpetra"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Tpetra,KokkosClassic,Epetra,Teuchos,Xpetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Tpetra,Kokkos,Epetra,Teuchos,Xpetra,MueLu"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Tpetra,KokkosClassic,Epetra,Teuchos,Xpetra,MueLu"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Zoltan"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="METIS,PaToH,ParMETIS,Scotch,AMD,CCOLAMD,OVIS"/>
@@ -1261,7 +1289,7 @@
   </Package>
   <Package name="Stokhos" dir="packages/stokhos" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia,Kokkos,Tpetra,Ifpack2,MueLu"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia,KokkosClassic,KokkosArray,Tpetra,Ifpack2,MueLu"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos,Belos"/>
     <LIB_REQUIRED_DEP_TPLS/>

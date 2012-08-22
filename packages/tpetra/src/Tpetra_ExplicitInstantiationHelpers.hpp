@@ -60,15 +60,15 @@
 // only used once in the entire mostly empty file.
 //
 
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include <Kokkos_ThrustGPUNode.hpp>
-#  if defined(HAVE_KOKKOS_CUDA_FLOAT) && defined(HAVE_TPETRA_INST_FLOAT)
+#  if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT) && defined(HAVE_TPETRA_INST_FLOAT)
 #    define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_FLOAT(LO,GO,INSTANT_MACRO)\
        INSTANT_MACRO(float,LO,GO,Kokkos::ThrustGPUNode)
 #  else
 #    define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_FLOAT(LO,GO,INSTANT_MACRO)
 #  endif
-#  if defined(HAVE_KOKKOS_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+#  if defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
 #    define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_DOUBLE(LO,GO,INSTANT_MACRO)\
        INSTANT_MACRO(double,LO,GO,Kokkos::ThrustGPUNode)
 #  else
@@ -88,7 +88,7 @@
   TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_INT(LO,GO,MACRO)
 
 /** \brief Instantiate a macro template for the Kokkos::TBBNode */
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #  include <Kokkos_TBBNode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)\
      INSTANT_MACRO(SCALAR,LO,GO,Kokkos::TBBNode)
@@ -97,7 +97,7 @@
 #endif
 
 /** \brief Instantiate a macro template for the Kokkos::TPINode */
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #  include <Kokkos_TPINode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)\
      INSTANT_MACRO(SCALAR,LO,GO,Kokkos::TPINode)

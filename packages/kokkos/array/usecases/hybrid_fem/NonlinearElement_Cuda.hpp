@@ -11,7 +11,7 @@
 #include <HexElement.hpp>
 #include <FEMesh.hpp>
 
-#define  KOKKOS_MACRO_DEVICE_FUNCTION  __device__
+#define  KOKKOSARRAY_MACRO_DEVICE_FUNCTION  __device__
 
 namespace HybridFEM {
 namespace NonLinear {
@@ -129,7 +129,7 @@ public:
   // Sum among the threadIdx.x 
 
   template< typename Type >
-  static inline KOKKOS_MACRO_DEVICE_FUNCTION
+  static inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void sum_x( Type & result , const double value )
   {
     extern __shared__ WorkSpace work_data[] ;
@@ -152,7 +152,7 @@ public:
     }
   }
 
-  static inline KOKKOS_MACRO_DEVICE_FUNCTION
+  static inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void sum_x_clear()
   {
     extern __shared__ WorkSpace work_data[] ;
@@ -163,7 +163,7 @@ public:
   //------------------------------------
   //------------------------------------
 
-  inline KOKKOS_MACRO_DEVICE_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void evaluateFunctions( const unsigned ielem ) const
   {
     extern __shared__ WorkSpace work_data[] ;
@@ -275,7 +275,7 @@ public:
     __syncthreads(); // All shared data must be populated at return.
   }
 
-  inline KOKKOS_MACRO_DEVICE_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void contributeResidualJacobian( const unsigned ielem ) const
   {
     extern __shared__ WorkSpace work_data[] ;
@@ -332,7 +332,7 @@ public:
     __syncthreads(); // All warps finish before refilling shared data 
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void execute_on_device() const
   {
     extern __shared__ WorkSpace work_data[] ;

@@ -43,8 +43,8 @@
 
 #include <gtest/gtest.h>
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
+#ifndef KOKKOSARRAY_MACRO_DEVICE
+#error "KOKKOSARRAY_MACRO_DEVICE undefined"
 #endif
 
 #include <stdexcept>
@@ -61,10 +61,10 @@ template< typename ScalarType , class DeviceType >
 class ReduceFunctor ;
 
 template< typename ScalarType >
-class ReduceFunctor< ScalarType , KOKKOS_MACRO_DEVICE >
+class ReduceFunctor< ScalarType , KOKKOSARRAY_MACRO_DEVICE >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE    device_type ;
   typedef device_type::size_type size_type ;
 
   struct value_type {
@@ -78,10 +78,10 @@ public:
   ReduceFunctor( const ReduceFunctor & rhs )
     : nwork( rhs.nwork ) {}
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & dst )
   {
     dst.value[0] = 0 ;
@@ -90,7 +90,7 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & dst ,
                     const volatile value_type & src )
   {
@@ -99,7 +99,7 @@ public:
     dst.value[2] += src.value[2] ;
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( device_type :: size_type iwork , value_type & dst ) const
   {
     dst.value[0] += 1 ;
@@ -107,7 +107,7 @@ public:
     dst.value[2] += nwork - iwork ;
   }
 
-#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+#endif /* defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) */
 
 };
 
@@ -119,10 +119,10 @@ template< typename ScalarType , class DeviceType >
 class TestReduce ;
 
 template< typename ScalarType >
-class TestReduce< ScalarType , KOKKOS_MACRO_DEVICE >
+class TestReduce< ScalarType , KOKKOSARRAY_MACRO_DEVICE >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE    device_type ;
   typedef device_type::size_type size_type ;
 
   typedef Test::ReduceFunctor< ScalarType , device_type > functor_type ;

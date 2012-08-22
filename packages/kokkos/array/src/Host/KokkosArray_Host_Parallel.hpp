@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_PARALLEL_HPP
-#define KOKKOS_HOST_PARALLEL_HPP
+#ifndef KOKKOSARRAY_HOST_PARALLEL_HPP
+#define KOKKOSARRAY_HOST_PARALLEL_HPP
 
 namespace KokkosArray {
 namespace Impl {
@@ -307,5 +307,5 @@ public:
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #define KOKKOS_HOST_PARALLEL_HPP */
+#endif /* #define KOKKOSARRAY_HOST_PARALLEL_HPP */
 

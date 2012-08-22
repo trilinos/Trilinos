@@ -8,8 +8,8 @@ cmake \
       -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
       -D Trilinos_ENABLE_TESTS:BOOL=OFF \
       -D Trilinos_ENABLE_Kokkos:BOOL=ON \
-      -D Kokkos_ENABLE_LinAlg:BOOL=ON \
-      -D Kokkos_ENABLE_NodeAPI:BOOL=ON \
+      -D KokkosClassic_ENABLE_LinAlg:BOOL=ON \
+      -D KokkosClassic_ENABLE_NodeAPI:BOOL=ON \
       -D Phalanx_ENABLE_TESTS:BOOL=ON \
       -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \
       -D Phalanx_EXPLICIT_TEMPLATE_INSTANTIATION=ON \

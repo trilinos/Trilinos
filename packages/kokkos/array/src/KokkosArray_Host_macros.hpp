@@ -41,25 +41,25 @@
 //@HEADER
 */
 
-#if defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
-    defined( KOKKOS_MACRO_DEVICE ) || \
-    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
-    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
+    defined( KOKKOSARRAY_MACRO_DEVICE ) || \
+    defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) || \
+    defined( KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION )
 
 #error "Including <KokkosArray_Host_macros.hpp> with macros already defined"
 
 #else
 
-#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
-#define KOKKOS_MACRO_DEVICE                       KokkosArray::Host
-#define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
-#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
-#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
+#define KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOSARRAY_MACRO_DEVICE                       KokkosArray::Host
+#define KOKKOSARRAY_MACRO_DEVICE_FUNCTION              /* */
+#define KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
+#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr )  expr
 
-#if ! defined( KOKKOS_ARRAY_BOUNDS_CHECK )
-#define KOKKOS_MACRO_CHECK( expr )  /* */
+#if ! defined( KOKKOSARRAY_BOUNDS_CHECK )
+#define KOKKOSARRAY_MACRO_CHECK( expr )  /* */
 #else
-#define KOKKOS_MACRO_CHECK( expr )  expr
+#define KOKKOSARRAY_MACRO_CHECK( expr )  expr
 #endif
 
 #endif

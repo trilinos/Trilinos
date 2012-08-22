@@ -8,9 +8,9 @@ FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_LIBRARY(
-    kokkosimpl
+    kokkosarray_impl
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS kokkos
+    DEPLIBS 
     )
 

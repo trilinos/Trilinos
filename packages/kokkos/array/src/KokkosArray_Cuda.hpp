@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CUDA_HPP
-#define KOKKOS_CUDA_HPP
+#ifndef KOKKOSARRAY_CUDA_HPP
+#define KOKKOSARRAY_CUDA_HPP
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Layout.hpp>
@@ -142,7 +142,7 @@ public:
 #include <Cuda/KokkosArray_Cuda_ParallelFor.hpp>
 #include <Cuda/KokkosArray_Cuda_ParallelReduce.hpp>
 
-#endif /* #ifndef KOKKOS_CUDA_HPP */
+#endif /* #ifndef KOKKOSARRAY_CUDA_HPP */
 
 //----------------------------------------------------------------------------
 

@@ -1,0 +1,60 @@
+/* src/KokkosClassic_config.h.in.  Used by CMake to generate KokkosClassic_config.h. */
+
+/* Define if you want to build kokkos-examples */
+#cmakedefine HAVE_KOKKOSCLASSIC_EXAMPLES
+
+/* Define if you want to build kokkos-debug */
+#cmakedefine HAVE_KOKKOSCLASSIC_DEBUG
+
+/* Define if you want to build Kokkos with OpenMP */
+#cmakedefine HAVE_KOKKOSCLASSIC_OPENMP
+
+
+/* Define if you want to build kokkos-experimental */
+#cmakedefine HAVE_KOKKOSCLASSIC_EXPERIMENTAL
+
+/* Enable float type for CUDA nodes. */
+#cmakedefine HAVE_KOKKOSCLASSIC_CUDA_FLOAT
+
+/* Enable double type for CUDA nodes. */
+#cmakedefine HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
+
+#cmakedefine HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
+#cmakedefine HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_TRACE
+#cmakedefine HAVE_KOKKOSCLASSIC_TREAT_SERIALNODE_AS_DEVICE
+
+/* Enable complex<float> type for CUDA nodes. */
+#cmakedefine HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT
+
+/* Enable complex<double> type for CUDA nodes. */
+#cmakedefine HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE
+
+/* TSQR (Tall Skinny QR factorization) support */
+#cmakedefine HAVE_KOKKOSCLASSIC_TSQR
+/* Complex (via std::complex<T>) arithmetic support in TSQR */
+#cmakedefine HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+/* Enable TSQR::CombineFortran backend for TSQR::Combine */
+#cmakedefine HAVE_KOKKOSCLASSIC_TSQR_FORTRAN
+/* Enable Intel TBB paralleliation for intranode TSQR */
+#cmakedefine HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+
+/* Define if you want to build kokkos-tests */
+#cmakedefine HAVE_KOKKOSCLASSIC_TESTS
+
+/* Other package dependencies */
+#cmakedefine HAVE_KOKKOSCLASSIC_TEUCHOS
+#cmakedefine HAVE_KOKKOSCLASSIC_THREADPOOL
+
+/* TPL Dependencies */
+#cmakedefine HAVE_KOKKOSCLASSIC_TBB
+#cmakedefine HAVE_KOKKOSCLASSIC_CUDA
+#cmakedefine HAVE_KOKKOSCLASSIC_CUSPARSE
+#cmakedefine HAVE_KOKKOSCLASSIC_THRUST
+#cmakedefine HAVE_KOKKOSCLASSIC_CUSP
+#cmakedefine HAVE_KOKKOSCLASSIC_MKL
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#cmakedefine inline
+#endif

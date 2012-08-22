@@ -43,8 +43,8 @@
 
 #include <gtest/gtest.h>
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
+#ifndef KOKKOSARRAY_MACRO_DEVICE
+#error "KOKKOSARRAY_MACRO_DEVICE undefined"
 #endif
 
 #include <stdexcept>
@@ -58,10 +58,10 @@ namespace {
 template< class > class TestCrsArray ;
 
 template<>
-class TestCrsArray< KOKKOS_MACRO_DEVICE >
+class TestCrsArray< KOKKOSARRAY_MACRO_DEVICE >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE device ;
+  typedef KOKKOSARRAY_MACRO_DEVICE device ;
 
 
   TestCrsArray()

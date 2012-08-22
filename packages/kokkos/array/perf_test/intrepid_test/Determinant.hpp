@@ -48,9 +48,9 @@ template<class Scalar , class DeviceType >
 struct Determinant;
 
 template<class Scalar >
-struct Determinant<Scalar , KOKKOS_MACRO_DEVICE >
+struct Determinant<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-	typedef KOKKOS_MACRO_DEVICE 		device_type;
+	typedef KOKKOSARRAY_MACRO_DEVICE 		device_type;
 	typedef device_type::size_type 		size_type;
 	
 	typedef  KokkosArray::MDArrayView<Scalar,device_type> device_array;
@@ -70,7 +70,7 @@ struct Determinant<Scalar , KOKKOS_MACRO_DEVICE >
 		dim_i1 = in.dimension(1);
   	}
   	//Assuming 3 dimension
-  	KOKKOS_MACRO_DEVICE_FUNCTION
+  	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   	void operator()(size_type ielem) const {
         for (int i1=0; i1<dim_i1; i1++) {
           int i,j,rowID = 0;

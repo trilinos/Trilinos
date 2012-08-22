@@ -116,7 +116,7 @@ namespace Belos {
       return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
     }
 
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
     template<>
     Teuchos::RCP<Kokkos::TBBNode>
     getNode() {
@@ -125,7 +125,7 @@ namespace Belos {
       Teuchos::ParameterList defaultParams;
       return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
     }
-#endif // defined(HAVE_KOKKOS_TBB)
+#endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 
     /// \fn loadSparseMatrix
     /// \brief Load a sparse matrix from a Harwell-Boeing file

@@ -47,9 +47,9 @@ template< typename Scalar , class DeviceType>
 struct computeCellMeasure;
 
 template<typename Scalar>
-struct computeCellMeasure<Scalar, KOKKOS_MACRO_DEVICE>{
+struct computeCellMeasure<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
-	typedef KOKKOS_MACRO_DEVICE     							device_type ;
+	typedef KOKKOSARRAY_MACRO_DEVICE     							device_type ;
   	typedef typename KokkosArray::MDArrayView<Scalar,device_type> 	array_type ;
 
 	array_type inDet;
@@ -65,7 +65,7 @@ struct computeCellMeasure<Scalar, KOKKOS_MACRO_DEVICE>{
 	{}
 
 
-	KOKKOS_MACRO_DEVICE_FUNCTION
+	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   	void operator()( int ielem )const {
 
 		for(unsigned int point = 0; point < outVals.dimension(1); point++){

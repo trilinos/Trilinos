@@ -56,16 +56,16 @@
 #include "Tpetra_BlockCrsGraph.hpp"
 
 #include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #include "Kokkos_OpenMPNode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
@@ -116,19 +116,19 @@ namespace {
 
   using Kokkos::SerialNode;
   RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
   using Kokkos::TBBNode;
   RCP<TBBNode> tbbnode;
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
   using Kokkos::OpenMPNode;
   RCP<OpenMPNode> ompnode;
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
 #endif
@@ -178,7 +178,7 @@ namespace {
     return snode;
   }
 
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
   template <>
   RCP<TBBNode> getNode<TBBNode>() {
     if (tbbnode == null) {
@@ -190,7 +190,7 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   template <>
   RCP<TPINode> getNode<TPINode>() {
     if (tpinode == null) {
@@ -202,7 +202,7 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
   template <>
   RCP<OpenMPNode> getNode<OpenMPNode>() {
     if (ompnode == null) {
@@ -214,7 +214,7 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
   template <>
   RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
     if (thrustnode == null) {

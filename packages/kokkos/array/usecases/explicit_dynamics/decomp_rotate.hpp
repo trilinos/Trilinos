@@ -72,9 +72,9 @@ template< typename Scalar , class DeviceType >
 struct decomp_rotate;
 
 template<typename Scalar>
-struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
+struct decomp_rotate<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef typename KokkosArray::MDArray<Scalar,device_type> array_type ;
 
   typedef KokkosArray::Value<Scalar,device_type>     scalar;
@@ -106,7 +106,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void additive_decomp(int ielem, Scalar * v_gr, Scalar * str_ten)const {
 
   //  In addition to calculating stretching_tensor,
@@ -134,7 +134,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void polar_decomp(int ielem, Scalar * v_gr, Scalar * str_ten, Scalar * str, Scalar * vort, Scalar * rot_old, Scalar * rot_new)const {
 
     Scalar dt = *dt_value;
@@ -268,7 +268,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
   }
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void rotate_tensor(int ielem, Scalar * str_ten, Scalar * str, Scalar * rot_new)const {
 
     Scalar t[9];
@@ -300,7 +300,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int ielem )const {
 
     //   Local scratch space to avoid multiple

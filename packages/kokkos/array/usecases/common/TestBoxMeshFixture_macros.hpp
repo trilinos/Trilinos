@@ -44,9 +44,9 @@
 namespace TestFEMesh {
 
 template< typename T >
-struct VerifyUnpack< KokkosArray::View< T[][3] , KOKKOS_MACRO_DEVICE > >
+struct VerifyUnpack< KokkosArray::View< T[][3] , KOKKOSARRAY_MACRO_DEVICE > >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
   typedef size_type               value_type ;
 
@@ -62,18 +62,18 @@ private:
 public:
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     const size_type node_id = i + node_begin ;

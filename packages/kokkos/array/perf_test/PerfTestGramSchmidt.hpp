@@ -53,9 +53,9 @@ struct ModifiedGramSchmidt ;
 //----------------------------------------------------------------------------
 
 template< typename Scalar >
-struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
+struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
   typedef KokkosArray::View< Scalar[][0] ,
@@ -82,7 +82,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
       , inv( argInv )
       {}
 
-    KOKKOS_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void operator()( Scalar & result ) const
     {
       const Scalar value = sqrt( result );
@@ -103,7 +103,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
       , tmp( argTmp )
       {}
 
-    KOKKOS_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void operator()( Scalar & result ) const
     {
        *Rjk  = result ;

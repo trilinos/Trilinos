@@ -43,8 +43,8 @@
 
 #include <gtest/gtest.h>
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
+#ifndef KOKKOSARRAY_MACRO_DEVICE
+#error "KOKKOSARRAY_MACRO_DEVICE undefined"
 #endif
 
 #include <stdexcept>
@@ -68,10 +68,10 @@ public:
     ScalarType value[3] ;
   };
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & dst )
   {
     dst.value[0] = 0 ;
@@ -80,7 +80,7 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & dst ,
                     const volatile value_type & src )
   {
@@ -89,7 +89,7 @@ public:
     dst.value[2] += src.value[2] ;
   }
 
-#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+#endif /* defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) */
 
 };
 
@@ -98,10 +98,10 @@ template< typename ScalarType , class DeviceType >
 class ReduceMultiFunctor ;
 
 template< typename ScalarType >
-class ReduceMultiFunctor< ScalarType , KOKKOS_MACRO_DEVICE >
+class ReduceMultiFunctor< ScalarType , KOKKOSARRAY_MACRO_DEVICE >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE    device_type ;
   typedef device_type::size_type size_type ;
 
   typedef ReduceMultiFunctorTraits< ScalarType , device_type > reduce_traits ;
@@ -121,9 +121,9 @@ public:
     , work_begin( rhs.work_begin )
     {}
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( size_type iwork , value_type & dst ) const
   {
     const size_type ival = iwork + work_begin ;
@@ -132,7 +132,7 @@ public:
     dst.value[2] += work_total - ival ;
   }
 
-#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+#endif /* defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) */
 
 };
 
@@ -144,10 +144,10 @@ template< typename ScalarType , class DeviceType >
 class TestReduceMulti ;
 
 template< typename ScalarType >
-class TestReduceMulti< ScalarType , KOKKOS_MACRO_DEVICE >
+class TestReduceMulti< ScalarType , KOKKOSARRAY_MACRO_DEVICE >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE    device_type ;
   typedef device_type::size_type size_type ;
 
   typedef Test::ReduceMultiFunctorTraits< ScalarType , device_type > reduce_traits ;

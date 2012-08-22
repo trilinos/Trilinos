@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CUDA_VIEW_HPP
-#define KOKKOS_CUDA_VIEW_HPP
+#ifndef KOKKOSARRAY_CUDA_VIEW_HPP
+#define KOKKOSARRAY_CUDA_VIEW_HPP
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_View.hpp>
@@ -106,5 +106,5 @@ void deep_copy( const View< ValueType , LayoutDst , Cuda > & dst ,
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_CUDA_VIEW_HPP */
+#endif /* #ifndef KOKKOSARRAY_CUDA_VIEW_HPP */
 

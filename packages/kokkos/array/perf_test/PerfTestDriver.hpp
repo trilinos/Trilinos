@@ -44,8 +44,8 @@
 #include <iostream>
 #include <string>
 
-#define KOKKOS_MACRO_IMPL_TO_STRING( X ) #X
-#define KOKKOS_MACRO_TO_STRING( X )  KOKKOS_MACRO_IMPL_TO_STRING( X )
+#define KOKKOSARRAY_MACRO_IMPL_TO_STRING( X ) #X
+#define KOKKOSARRAY_MACRO_TO_STRING( X )  KOKKOSARRAY_MACRO_IMPL_TO_STRING( X )
 
 //------------------------------------------------------------------------
 
@@ -60,11 +60,11 @@ template< class DeviceType >
 void run_test_gramschmidt( int exp_beg , int exp_end );
 
 template<>
-void run_test_hexgrad< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
+void run_test_hexgrad< KOKKOSARRAY_MACRO_DEVICE >( int exp_beg , int exp_end )
 {
   std::string label_hexgrad ;
   label_hexgrad.append( "\"HexGrad< double , " );
-  label_hexgrad.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
+  label_hexgrad.append( KOKKOSARRAY_MACRO_TO_STRING( KOKKOSARRAY_MACRO_DEVICE ) );
   label_hexgrad.append( " >\"" );
 
   for (int i = exp_beg ; i < exp_end ; ++i) {
@@ -75,7 +75,7 @@ void run_test_hexgrad< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
     const int parallel_work_length = 1<<i;
 
     for ( int j = 0 ; j < NUMBER_OF_TRIALS ; ++j ) {
-      const double seconds = HexGrad< KOKKOS_MACRO_DEVICE >::test(parallel_work_length) ;
+      const double seconds = HexGrad< KOKKOSARRAY_MACRO_DEVICE >::test(parallel_work_length) ;
 
       if ( 0 == j ) {
         min_seconds = seconds ;
@@ -98,11 +98,11 @@ void run_test_hexgrad< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
 }
 
 template<>
-void run_test_gramschmidt< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
+void run_test_gramschmidt< KOKKOSARRAY_MACRO_DEVICE >( int exp_beg , int exp_end )
 {
   std::string label_gramschmidt ;
   label_gramschmidt.append( "\"GramSchmidt< double , " );
-  label_gramschmidt.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
+  label_gramschmidt.append( KOKKOSARRAY_MACRO_TO_STRING( KOKKOSARRAY_MACRO_DEVICE ) );
   label_gramschmidt.append( " >\"" );
 
   for (int i = exp_beg ; i < exp_end ; ++i) {
@@ -113,7 +113,7 @@ void run_test_gramschmidt< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
     const int parallel_work_length = 1<<i;
 
     for ( int j = 0 ; j < NUMBER_OF_TRIALS ; ++j ) {
-      const double seconds = ModifiedGramSchmidt< double , KOKKOS_MACRO_DEVICE >::test(parallel_work_length, 32 ) ;
+      const double seconds = ModifiedGramSchmidt< double , KOKKOSARRAY_MACRO_DEVICE >::test(parallel_work_length, 32 ) ;
 
       if ( 0 == j ) {
         min_seconds = seconds ;

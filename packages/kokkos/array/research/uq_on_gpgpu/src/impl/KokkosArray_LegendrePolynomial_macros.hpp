@@ -41,9 +41,9 @@
 //@HEADER
 */
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <impl/KokkosArray_LegendrePolynomial_macros.hpp> without macros defined"
 
@@ -66,11 +66,11 @@ namespace KokkosArray {
  *
  */
 template< unsigned MaximumDegree >
-class NormalizedLegendrePolynomialBases< MaximumDegree , KOKKOS_MACRO_DEVICE > {
+class NormalizedLegendrePolynomialBases< MaximumDegree , KOKKOSARRAY_MACRO_DEVICE > {
 public:
 
   template< typename Scalar >
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   void evaluate( unsigned N , Scalar x , Scalar value[] ) const
   {
     double vkm1 = 0 ;

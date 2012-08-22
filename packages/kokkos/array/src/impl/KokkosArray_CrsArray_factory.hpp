@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_IMPL_CRSARRAY_FACTORY_HPP
-#define KOKKOS_IMPL_CRSARRAY_FACTORY_HPP
+#ifndef KOKKOSARRAY_IMPL_CRSARRAY_FACTORY_HPP
+#define KOKKOSARRAY_IMPL_CRSARRAY_FACTORY_HPP
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ create_mirror( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input 
   typedef CrsArray< DataType , LayoutType , DeviceType , SizeType > input_type ;
   typedef typename input_type::HostMirror output_type ;
 
-#if KOKKOS_MIRROR_VIEW_OPTIMIZE
+#if KOKKOSARRAY_MIRROR_VIEW_OPTIMIZE
   // Allow choice via type:
   return Impl::CrsArrayCreateMirror< output_type >::create( input );
 #else
@@ -233,5 +233,5 @@ create_crsarray( const std::string & label ,
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_IMPL_CRSARRAY_FACTORY_HPP */
+#endif /* #ifndef KOKKOSARRAY_IMPL_CRSARRAY_FACTORY_HPP */
 

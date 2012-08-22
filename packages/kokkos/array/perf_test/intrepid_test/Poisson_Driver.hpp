@@ -49,9 +49,9 @@ template <typename Scalar , class DeviceType >
 struct HexFill;
 
 template< typename Scalar >
-struct HexFill< Scalar , KOKKOS_MACRO_DEVICE >
+struct HexFill< Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-	typedef KOKKOS_MACRO_DEVICE		 device_type ;
+	typedef KOKKOSARRAY_MACRO_DEVICE		 device_type ;
 	typedef device_type::size_type	 size_type ;
 	
 	typedef typename KokkosArray::MDArrayView<Scalar,device_type> array_type;
@@ -60,7 +60,7 @@ struct HexFill< Scalar , KOKKOS_MACRO_DEVICE >
 	
 	HexFill( const array_type & arg_coords) : coords(arg_coords) {}
 	
-	KOKKOS_MACRO_DEVICE_FUNCTION
+	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
 	void operator()( size_type ielem) const 
 	{
 		coords(ielem,0,0) = 0.;
@@ -102,13 +102,13 @@ template< class DeviceType>
 void poisson_run(int beg , int end);
 
 template<>
-void poisson_run< KOKKOS_MACRO_DEVICE>(int beg , int end)
+void poisson_run< KOKKOSARRAY_MACRO_DEVICE>(int beg , int end)
 {
 	std::ofstream outfile;
 	
 	std::string label_poisson;
 	label_poisson.append("\"Poisson< double , ");
-	label_poisson.append(KOKKOS_MACRO_TO_STRING(KOKKOS_MACRO_DEVICE) );
+	label_poisson.append(KOKKOSARRAY_MACRO_TO_STRING(KOKKOSARRAY_MACRO_DEVICE) );
 	label_poisson.append(" >\"");
 
 	double seconds = 0.0;
@@ -123,7 +123,7 @@ void poisson_run< KOKKOS_MACRO_DEVICE>(int beg , int end)
 	for(int j = 0 ; j < 5 ; j++) {
 	seconds = 0.0 ; temp = 0.0;
 	typedef double Scalar;
-	typedef KOKKOS_MACRO_DEVICE device_type;
+	typedef KOKKOSARRAY_MACRO_DEVICE device_type;
 	typedef device_type::size_type size_type;
 	typedef KokkosArray::MDArrayView<Scalar , device_type > array_type;
 	typedef KokkosArray::MDArrayView<Scalar , KokkosArray::DeviceHost > host_array;

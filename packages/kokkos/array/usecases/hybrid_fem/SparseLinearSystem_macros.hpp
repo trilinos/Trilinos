@@ -47,9 +47,9 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< typename Scalar >
-struct Dot< Scalar , KOKKOS_MACRO_DEVICE , Impl::unsigned_<2> >
+struct Dot< Scalar , KOKKOSARRAY_MACRO_DEVICE , Impl::unsigned_<2> >
 {
-  typedef KOKKOS_MACRO_DEVICE          device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE          device_type;
   typedef device_type::size_type       size_type;
   typedef View<Scalar[], device_type>  scalar_vector;  
   typedef double                       value_type;
@@ -61,16 +61,16 @@ private:
 
 public:
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int iwork , value_type & update ) const 
   { update += x(iwork) * y(iwork); }
     
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source;    }
     
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
@@ -87,9 +87,9 @@ public:
 }; //Dot
 
 template< typename Scalar >
-struct Dot< Scalar , KOKKOS_MACRO_DEVICE , Impl::unsigned_<1> >
+struct Dot< Scalar , KOKKOSARRAY_MACRO_DEVICE , Impl::unsigned_<1> >
 {
-  typedef KOKKOS_MACRO_DEVICE          device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE          device_type;
   typedef device_type::size_type       size_type;
   typedef View<Scalar[], device_type>  scalar_vector;  
   typedef View < double, device_type>  result_type ;  
@@ -101,16 +101,16 @@ private:
 
 public:
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int iwork , value_type & update ) const 
   { const Scalar xi = x(iwork); update += xi * xi ; }
     
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source ; }
     
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
@@ -128,9 +128,9 @@ public:
 //----------------------------------------------------------------------------
 
 template < typename Scalar >
-struct FILL<Scalar , KOKKOS_MACRO_DEVICE >
+struct FILL<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE          device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE          device_type ;
   typedef device_type::size_type       size_type ;
   typedef View<Scalar[], device_type>  scalar_vector ;
 
@@ -141,7 +141,7 @@ private:
 
 public:
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()(int inode) const
   {
     w(inode) = alpha ;
@@ -160,9 +160,9 @@ public:
 };
 
 template < typename Scalar >
-struct WAXPBY<Scalar , KOKKOS_MACRO_DEVICE >
+struct WAXPBY<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE          device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE          device_type ;
   typedef device_type::size_type       size_type ;
   typedef View<Scalar[], device_type>  scalar_vector ;
 
@@ -177,7 +177,7 @@ private:
 
 public:
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()(int inode) const
   {
     w(inode) = alpha * x(inode) + beta * y(inode);
@@ -202,9 +202,9 @@ public:
 }; // WAXPBY
 
 template < typename Scalar >
-struct AXPBY<Scalar , KOKKOS_MACRO_DEVICE >
+struct AXPBY<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE          device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE          device_type ;
   typedef device_type::size_type       size_type ;
   typedef View<Scalar[], device_type>  scalar_vector ;
 
@@ -218,7 +218,7 @@ private:
 
 public:
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()(int inode) const
   {
     Scalar & val = y(inode); val = alpha * x(inode) + beta * val ;

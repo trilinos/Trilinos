@@ -48,13 +48,13 @@ namespace Explicit {
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class DeviceType >
-KOKKOS_MACRO_DEVICE_FUNCTION
+KOKKOSARRAY_MACRO_DEVICE_FUNCTION
 Scalar dot8( const Scalar * a , const Scalar * b )
 { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3] +
          a[4] * b[4] + a[5] * b[5] + a[6] * b[6] + a[7] * b[7] ; }
 
 template< typename Scalar , class DeviceType >
-KOKKOS_MACRO_DEVICE_FUNCTION
+KOKKOSARRAY_MACRO_DEVICE_FUNCTION
 void comp_grad( const Scalar * const x ,
                 const Scalar * const y ,
                 const Scalar * const z,
@@ -177,9 +177,9 @@ void comp_grad( const Scalar * const x ,
 //----------------------------------------------------------------------------
 
 template<typename Scalar>
-struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
+struct initialize_element<Scalar, KOKKOSARRAY_MACRO_DEVICE>
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
 
   typedef Explicit::Fields< Scalar , device_type > Fields ;
 
@@ -200,7 +200,7 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
     , density(                mesh_fields.density )
     {}
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int ielem )const
   {
     const int K_XX = 0 ;
@@ -250,9 +250,9 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
 
 
 template<typename Scalar>
-struct initialize_node<Scalar, KOKKOS_MACRO_DEVICE>
+struct initialize_node<Scalar, KOKKOSARRAY_MACRO_DEVICE>
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
 
   typedef Explicit::Fields< Scalar , device_type > Fields ;
 
@@ -269,7 +269,7 @@ struct initialize_node<Scalar, KOKKOS_MACRO_DEVICE>
     {}
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int inode )const
   {
     const int begin = node_elem_connectivity.row_map[inode];
@@ -296,9 +296,9 @@ struct initialize_node<Scalar, KOKKOS_MACRO_DEVICE>
 
 
 template<typename Scalar>
-struct grad<Scalar, KOKKOS_MACRO_DEVICE>
+struct grad<Scalar, KOKKOSARRAY_MACRO_DEVICE>
 {
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
 
@@ -344,7 +344,7 @@ struct grad<Scalar, KOKKOS_MACRO_DEVICE>
   //--------------------------------------------------------------------------
 
     //   Calculate Velocity Gradients
-    KOKKOS_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void v_grad(  int ielem,
       Scalar * vx,       Scalar * vy,       Scalar * vz,
       Scalar * grad_x,     Scalar * grad_y,     Scalar * grad_z,
@@ -377,7 +377,7 @@ struct grad<Scalar, KOKKOS_MACRO_DEVICE>
   // Functor operator() which calls the three member functions.
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int ielem )const
   {
     const int X = 0 ;
@@ -442,9 +442,9 @@ struct grad<Scalar, KOKKOS_MACRO_DEVICE>
 //----------------------------------------------------------------------------
 
 template<typename Scalar>
-struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>
+struct decomp_rotate<Scalar, KOKKOSARRAY_MACRO_DEVICE>
 {
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
 
@@ -506,7 +506,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>
   }
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void additive_decomp(int ielem, Scalar * v_gr, Scalar * str_ten) const
   {
     //  In addition to calculating stretching_tensor,
@@ -528,7 +528,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>
     str_ten[K_S_ZX] = 0.5*(v_gr[K_F_ZX] + v_gr[K_F_XZ]);
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void polar_decomp(int ielem, Scalar * v_gr, Scalar * str_ten, Scalar * str, Scalar * vort, Scalar * rot_old, Scalar * rot_new)const
   {
     const Scalar dt = *dt_value;
@@ -671,7 +671,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>
   }
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void rotate_tensor(int ielem, Scalar * str_ten, Scalar * str, Scalar * rot_new)const {
 
     Scalar t[9];
@@ -743,7 +743,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>
     }
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int ielem )const {
 
     //   Local scratch space to avoid multiple
@@ -766,9 +766,9 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>
 //----------------------------------------------------------------------------
 
 template<typename Scalar>
-struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
+struct internal_force<Scalar, KOKKOSARRAY_MACRO_DEVICE>
 {
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
 
@@ -799,12 +799,12 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
 
   typedef Scalar value_type;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init(value_type &update) {
     update = 1.0e32;
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update,
                     const volatile value_type & source )
   {
@@ -813,7 +813,7 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
 
   struct SetNextTimeStep {
 
-    typedef KOKKOS_MACRO_DEVICE  device_type ;
+    typedef KOKKOSARRAY_MACRO_DEVICE  device_type ;
     typedef Scalar               value_type;
 
     const typename Fields::scalar_type  dt ;
@@ -824,7 +824,7 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
       , prev_dt( mesh_fields.prev_dt )
       {}
 
-    KOKKOS_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void operator()( const value_type & result ) const
     {
       *prev_dt = *dt ;
@@ -889,7 +889,7 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
 
   //--------------------------------------------------------------------------
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void rotate_tensor_backward(int ielem ,
     const Scalar * const s_n ,
     Scalar * const rot_stress )const
@@ -932,7 +932,7 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
 
   //--------------------------------------------------------------------------
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void comp_force(int ielem,
      const Scalar * const vx ,
      const Scalar * const vy ,
@@ -978,7 +978,7 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
 
   //----------------------------------------------------------------------------
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void get_stress(int ielem , Scalar * const s_n ) const
     {
       const int kxx = 0;
@@ -1002,7 +1002,7 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
   //----------------------------------------------------------------------------
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int ielem, value_type & update )const
   {
     const Scalar ONE12TH = 1.0 / 12.0 ;
@@ -1081,9 +1081,9 @@ struct internal_force<Scalar, KOKKOS_MACRO_DEVICE>
 //----------------------------------------------------------------------------
 
 template<typename Scalar>
-struct nodal_step<Scalar ,KOKKOS_MACRO_DEVICE>
+struct nodal_step<Scalar ,KOKKOSARRAY_MACRO_DEVICE>
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
@@ -1138,7 +1138,7 @@ struct nodal_step<Scalar ,KOKKOS_MACRO_DEVICE>
     KokkosArray::parallel_for( mesh_fields.num_nodes_owned , op );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()(int inode) const
     {
       // Getting count as per 'CSR-like' data structure
@@ -1220,9 +1220,9 @@ struct nodal_step<Scalar ,KOKKOS_MACRO_DEVICE>
 //----------------------------------------------------------------------------
 
 template< typename Scalar >
-struct pack_state< Scalar , KOKKOS_MACRO_DEVICE >
+struct pack_state< Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
@@ -1261,7 +1261,7 @@ struct pack_state< Scalar , KOKKOS_MACRO_DEVICE >
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i ) const
   {
     const size_type inode = inode_base + i ;
@@ -1278,9 +1278,9 @@ struct pack_state< Scalar , KOKKOS_MACRO_DEVICE >
 };
 
 template< typename Scalar >
-struct unpack_state< Scalar , KOKKOS_MACRO_DEVICE >
+struct unpack_state< Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
@@ -1319,7 +1319,7 @@ struct unpack_state< Scalar , KOKKOS_MACRO_DEVICE >
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i ) const
   {
     const size_type inode = inode_base + i ;

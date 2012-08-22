@@ -41,9 +41,9 @@
 //@HEADER
 */
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <impl/KokkosArray_ProductTensor_macros.hpp> without macros defined"
 
@@ -54,18 +54,18 @@ namespace KokkosArray {
 //----------------------------------------------------------------------------
 
 template<>
-class ProductTensorIndex< 3 , KOKKOS_MACRO_DEVICE > {
+class ProductTensorIndex< 3 , KOKKOSARRAY_MACRO_DEVICE > {
 public:
 
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE    device_type ;
   typedef device_type::size_type size_type ;
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ~ProductTensorIndex() {}
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ProductTensorIndex()
   {
     m_coord[0] = 0 ;
@@ -75,7 +75,7 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ProductTensorIndex( const ProductTensorIndex & rhs )
   {
     m_coord[0] = rhs.m_coord[0] ;
@@ -85,7 +85,7 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ProductTensorIndex & operator = ( const ProductTensorIndex & rhs )
   {
     m_coord[0] = rhs.m_coord[0] ;
@@ -99,7 +99,7 @@ private:
 
   template< unsigned I , unsigned J >
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   void order()
   {
     if ( m_coord[I] < m_coord[J] ) {
@@ -114,7 +114,7 @@ public:
   /** \brief  Construct with the dense symmetric compression map */
   template< typename iType , typename jType , typename kType >
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ProductTensorIndex( const iType & argI ,
                       const jType & argJ ,
                       const kType & argK )
@@ -134,7 +134,7 @@ public:
 
   template< class D >
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ProductTensorIndex( const ProductTensorIndex<3,D> & rhs )
   {
     m_coord[0] = rhs.coord(0) ;
@@ -145,7 +145,7 @@ public:
 
   template< class D >
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ProductTensorIndex & operator = ( const ProductTensorIndex<3,D> & rhs )
   {
     m_coord[0] = rhs.coord(0) ;
@@ -158,7 +158,7 @@ public:
   /*------------------------------------------------------------------------*/
   /** \brief  Initialize with dense symmetric compression map offset */
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   explicit ProductTensorIndex( size_type dense_offset )
   {
     unsigned long i , j ;
@@ -214,17 +214,17 @@ public:
   /*------------------------------------------------------------------------*/
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type coord( size_type c ) const { return m_coord[c]; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset() const { return m_coord[3]; }
 
   /*------------------------------------------------------------------------*/
   /** \brief  Increment in the dense map ordering */
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ProductTensorIndex & operator++()
   {
     if      ( m_coord[1] > m_coord[2] ) { ++m_coord[2] ; }
@@ -236,32 +236,32 @@ public:
   /*------------------------------------------------------------------------*/
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] == rhs.m_coord[3] ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator < ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] < rhs.m_coord[3] ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator > ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] > rhs.m_coord[3] ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] != rhs.m_coord[3] ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator <= ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] <= rhs.m_coord[3] ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator >= ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] >= rhs.m_coord[3] ; }
 
@@ -276,10 +276,10 @@ private:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class SparseProductTensor< 3 , ValueType , KOKKOS_MACRO_DEVICE > {
+class SparseProductTensor< 3 , ValueType , KOKKOSARRAY_MACRO_DEVICE > {
 public:
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
   typedef ValueType               value_type ;
 
@@ -310,21 +310,21 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension() const { return m_dimen ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type entry_count() const
   { return m_value.dimension_0(); }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   const value_type & value( const size_type entry ) const
   { return m_value( entry ); }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   size_type coord( const size_type entry , const size_type c ) const
   { return m_coord( entry , c ); }
 
@@ -341,10 +341,10 @@ private:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class CrsProductTensor< 3 , ValueType , KOKKOS_MACRO_DEVICE > {
+class CrsProductTensor< 3 , ValueType , KOKKOSARRAY_MACRO_DEVICE > {
 public:
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
   typedef ValueType               value_type ;
 
@@ -374,36 +374,36 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension() const { return m_coord.row_map.dimension(0) - 1 ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type entry_count() const
   { return m_coord.entries.dimension(0); }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type entry_maximum() const
   { return m_entry_max ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   size_type entry_begin( size_type i ) const
   { return m_coord.row_map[i]; }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   size_type entry_end( size_type i ) const
   { return m_coord.row_map[i+1]; }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   size_type coord( const size_type entry , const size_type c ) const
   { return m_coord.entries( entry , c ); }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   const value_type & value( const size_type entry ) const
   { return m_value( entry ); }
 

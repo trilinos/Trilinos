@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_HPP
-#define KOKKOS_HOST_HPP
+#ifndef KOKKOSARRAY_HOST_HPP
+#define KOKKOSARRAY_HOST_HPP
 
 #include <cstddef>
 #include <KokkosArray_Layout.hpp>
@@ -167,7 +167,7 @@ public:
 #include <Host/KokkosArray_Host_ParallelFor.hpp>
 #include <Host/KokkosArray_Host_ParallelReduce.hpp>
 
-#endif /* #define KOKKOS_HOST_HPP */
+#endif /* #define KOKKOSARRAY_HOST_HPP */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_FEMESH_HPP
-#define KOKKOS_FEMESH_HPP
+#ifndef KOKKOSARRAY_FEMESH_HPP
+#define KOKKOSARRAY_FEMESH_HPP
 
 #include <utility>
 #include <limits>
@@ -82,5 +82,5 @@ struct FEMesh {
 
 } /* namespace HybridFEM */
 
-#endif /* #ifndef KOKKOS_FEMESH_HPP */
+#endif /* #ifndef KOKKOSARRAY_FEMESH_HPP */
 

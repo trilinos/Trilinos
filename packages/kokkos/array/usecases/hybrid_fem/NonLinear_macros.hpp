@@ -54,9 +54,9 @@ namespace NonLinear {
 
 template< typename ScalarCoordType , unsigned ElemNode , typename ScalarType >
 struct DirichletSolution<
-  FEMesh< ScalarCoordType , ElemNode , KOKKOS_MACRO_DEVICE > , ScalarType >
+  FEMesh< ScalarCoordType , ElemNode , KOKKOSARRAY_MACRO_DEVICE > , ScalarType >
 {
-  typedef KOKKOS_MACRO_DEVICE  device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE  device_type;
 
   static const unsigned ElementNodeCount = ElemNode ;
 
@@ -72,7 +72,7 @@ struct DirichletSolution<
   ScalarType      bc_lower_value ;
   ScalarType      bc_upper_value ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const unsigned inode ) const
   {
    
@@ -113,9 +113,9 @@ struct DirichletSolution<
 
 template< typename ScalarCoordType , unsigned ElemNode , typename ScalarType >
 struct DirichletResidual<
-  FEMesh< ScalarCoordType , ElemNode , KOKKOS_MACRO_DEVICE > , ScalarType >
+  FEMesh< ScalarCoordType , ElemNode , KOKKOSARRAY_MACRO_DEVICE > , ScalarType >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type;
   typedef device_type::size_type  size_type ;
 
   static const unsigned ElementNodeCount = ElemNode ;
@@ -131,7 +131,7 @@ struct DirichletResidual<
   ScalarCoordType bc_lower_z ;
   ScalarCoordType bc_upper_z ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const unsigned inode ) const
   {
     //  Apply a dirichlet boundary condition to 'irow'

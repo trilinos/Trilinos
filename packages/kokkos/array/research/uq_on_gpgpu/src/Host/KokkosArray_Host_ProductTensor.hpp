@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_SPARSEPRODUCTTENSOR_HPP
-#define KOKKOS_HOST_SPARSEPRODUCTTENSOR_HPP
+#ifndef KOKKOSARRAY_HOST_SPARSEPRODUCTTENSOR_HPP
+#define KOKKOSARRAY_HOST_SPARSEPRODUCTTENSOR_HPP
 
 namespace KokkosArray {
 namespace Impl {
@@ -189,5 +189,5 @@ public:
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOS_HOST_SPARSEPRODUCTTENSOR_HPP */
+#endif /* #ifndef KOKKOSARRAY_HOST_SPARSEPRODUCTTENSOR_HPP */
 

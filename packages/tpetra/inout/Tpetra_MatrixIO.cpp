@@ -325,16 +325,16 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
 
 #include <Kokkos_ConfigDefs.hpp>
 #include <Kokkos_SerialNode.hpp>
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #  include <Kokkos_TBBNode.hpp>
 #endif
-#ifdef HAVE_KOKKOS_THREADPOOL
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #  include <Kokkos_TPINode.hpp>
 #endif
-#ifdef HAVE_KOKKOS_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
 #  include <Kokkos_OpenMPNode.hpp>
 #endif
 
@@ -343,32 +343,32 @@ namespace Tpetra {
 
 #if defined(HAVE_TPETRA_INST_FLOAT)
   TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::SerialNode)
-# ifdef HAVE_KOKKOS_TBB
+# ifdef HAVE_KOKKOSCLASSIC_TBB
     TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::TBBNode)
 # endif
-# ifdef HAVE_KOKKOS_OPENMP
+# ifdef HAVE_KOKKOSCLASSIC_OPENMP
     TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::OpenMPNode)
 # endif
-# ifdef HAVE_KOKKOS_THREADPOOL
+# ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
     TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::TPINode)
 # endif
-# if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+# if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
     TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
 # endif
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::SerialNode)
-# ifdef HAVE_KOKKOS_TBB
+# ifdef HAVE_KOKKOSCLASSIC_TBB
     TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::TBBNode)
 # endif
-# ifdef HAVE_KOKKOS_OPENMP
+# ifdef HAVE_KOKKOSCLASSIC_OPENMP
     TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::OpenMPNode)
 # endif
-# ifdef HAVE_KOKKOS_THREADPOOL
+# ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
     TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::TPINode)
 # endif
-# if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+# if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
     TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 # endif
 #endif

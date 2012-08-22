@@ -47,9 +47,9 @@ template< class DeviceType > struct HexSimpleFill ;
 
 //each element is a unit cube
 template<>
-struct HexSimpleFill< KOKKOS_MACRO_DEVICE >
+struct HexSimpleFill< KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
   // 3D array : ( ParallelWork , Space , Node )
@@ -64,7 +64,7 @@ struct HexSimpleFill< KOKKOS_MACRO_DEVICE >
   HexSimpleFill( const elem_coord_type & arg_coords )
     : coords( arg_coords ) {}
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( size_type ielem ) const
   {
     coords(ielem,0,0) = 0.;
@@ -109,9 +109,9 @@ template< class DeviceType > struct HexGrad ;
 #define TEST_HEXGRAD_NORMAL 0
 
 template<>
-struct HexGrad< KOKKOS_MACRO_DEVICE >
+struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
   // 3D array : ( ParallelWork , Space , Node )
@@ -133,7 +133,7 @@ struct HexGrad< KOKKOS_MACRO_DEVICE >
     , grad_op( arg_grad_op )
     {}
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( size_type ielem ) const
   {
     // Repeated re-use of nodal coordinates,

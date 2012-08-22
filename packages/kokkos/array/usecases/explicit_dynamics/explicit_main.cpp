@@ -79,7 +79,7 @@ std::cout << "\" " << argv[0]
     Test::test_Host(beg, end, runs, host_threads);
   }
 
-#ifdef TEST_KOKKOS_CUDA
+#ifdef TEST_KOKKOSARRAY_CUDA
   Test::test_Cuda(beg , end, runs);
 #endif
 

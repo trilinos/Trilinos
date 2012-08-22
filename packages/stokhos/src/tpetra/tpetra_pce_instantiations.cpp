@@ -45,16 +45,16 @@ typedef int GlobalOrdinal;
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 #include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 #  include <Kokkos_TPINode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
 #  include <Kokkos_OpenMPNode.hpp>
 #endif
-// #if defined(HAVE_KOKKOS_THRUST)
+// #if defined(HAVE_KOKKOSCLASSIC_THRUST)
 // #  include <Kokkos_ThrustGPUNode.hpp>
 // #endif
 
@@ -76,7 +76,7 @@ namespace Tpetra {
   TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::SerialNode)
   TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::SerialNode)
 
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
   TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
   TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
   TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
@@ -85,7 +85,7 @@ TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Kok
   TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
 #endif
 
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
   TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
   TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
@@ -94,7 +94,7 @@ TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Kok
   TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
 #endif
 
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
   TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
   TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
@@ -104,7 +104,7 @@ TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Kok
 #endif
 
   // Not sure if we support thrust yet
-// #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+// #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
 //   TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)
 //   TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)
 //   TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)

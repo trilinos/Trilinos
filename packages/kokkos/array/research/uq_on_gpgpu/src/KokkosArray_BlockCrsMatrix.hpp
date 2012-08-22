@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_BLOCKCRSMATRIX_HPP
-#define KOKKOS_BLOCKCRSMATRIX_HPP
+#ifndef KOKKOSARRAY_BLOCKCRSMATRIX_HPP
+#define KOKKOSARRAY_BLOCKCRSMATRIX_HPP
 
 #include <KokkosArray_CrsArray.hpp>
 #include <impl/KokkosArray_Multiply.hpp>
@@ -91,5 +91,5 @@ void multiply( const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
 
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOS_BLOCKCRSMATRIX_HPP */
+#endif /* #ifndef KOKKOSARRAY_BLOCKCRSMATRIX_HPP */
 

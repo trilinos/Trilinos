@@ -84,9 +84,9 @@ template< typename Scalar , class DeviceType >
 struct divergence;
 
 template<typename Scalar>
-struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
+struct divergence<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef typename KokkosArray::MDArray<Scalar,device_type> array_type ;
   typedef typename KokkosArray::MDArray<int,device_type>    int_array_type ;
 
@@ -173,17 +173,17 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
   {
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init(value_type &update) {
     update = 1.0e32;
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join(volatile value_type &update, const volatile value_type & source) {
     update = update < source ? update : source;
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void get_nodes( int ielem, int * nodes) const
     {
       nodes[0] = elem_node_connectivity(ielem,0);
@@ -196,7 +196,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
       nodes[7] = elem_node_connectivity(ielem,7);
     }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void comp_grad(int ielem, int *nodes, Scalar *x, Scalar *y, Scalar *z) const {
 
     const int X = 0;
@@ -356,7 +356,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void comp_hgop(  int ielem, Scalar *x, Scalar *y, Scalar *z) const {
 
   //   KHP: Alternatively, we could have
@@ -439,7 +439,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
     }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void rotate_tensor_backward(int ielem)const {
 
     //   t : temporary variables
@@ -484,7 +484,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   Scalar comp_aspect(int ielem)const {
 
     return 6.0 * 12.0 *  mid_vol(ielem) /
@@ -515,7 +515,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void comp_force(int ielem, int *nodes, Scalar fac1, Scalar fac2, Scalar * total_stress12th)const {
 
 
@@ -667,7 +667,7 @@ std::cout
     }
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void get_stress(int ielem) const
     {
       const int kxx = 0;
@@ -689,7 +689,7 @@ std::cout
 
     }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void operator()( int ielem, value_type & update )const {
 
     Scalar x[8], y[8], z[8];
@@ -751,9 +751,9 @@ template<typename Scalar , class DeviceType>
 struct set_next_time_step;
 
 template<typename Scalar>
-struct set_next_time_step<Scalar ,KOKKOS_MACRO_DEVICE>{
+struct set_next_time_step<Scalar ,KOKKOSARRAY_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE       device_type;
+  typedef KOKKOSARRAY_MACRO_DEVICE       device_type;
   typedef device_type::size_type    size_type;
 
   typedef Scalar value_type;
@@ -765,7 +765,7 @@ struct set_next_time_step<Scalar ,KOKKOS_MACRO_DEVICE>{
       {}
 
 
-    KOKKOS_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void operator()(Scalar & result) const {
       *(region.prev_dt) = *(region.dt);
       *(region.dt) = result;

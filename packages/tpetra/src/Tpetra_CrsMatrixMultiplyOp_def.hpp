@@ -63,7 +63,7 @@ namespace Tpetra {
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A) 
   : matrix_(A) {
     // we don't require that A is fill complete; we will query for the importer/exporter at apply()-time
-#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
     importTimer_ = Teuchos::TimeMonitor::getNewTimer( "CrsMatrixMultiplyOp::import" );
     exportTimer_ = Teuchos::TimeMonitor::getNewTimer( "CrsMatrixMultiplyOp::export" );
 #endif
@@ -166,7 +166,7 @@ namespace Tpetra {
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
     if (importer != null) {
       {
-#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
         Teuchos::TimeMonitor lcltimer(*importTimer_);
 #endif
         importMV_->doImport(X_in, *importer, INSERT);
@@ -193,7 +193,7 @@ namespace Tpetra {
       if (Y_is_overwritten) Y_in.putScalar(ST::zero());
       else                  Y_in.scale(beta);
       {
-#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
         Teuchos::TimeMonitor lcltimer(*exportTimer_);
 #endif
         Y_in.doExport(*exportMV_, *exporter, ADD);
@@ -298,7 +298,7 @@ namespace Tpetra {
     // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
     if (exporter != null) {
       {
-#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
         Teuchos::TimeMonitor lcltimer(*importTimer_);
 #endif
         exportMV_->doImport(X_in,*exporter,INSERT);
@@ -327,7 +327,7 @@ namespace Tpetra {
       else                  Y_in.scale(beta);
       //
       {
-#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
         Teuchos::TimeMonitor lcltimer(*importTimer_);
 #endif
         Y_in.doExport(*importMV_,*importer,ADD);

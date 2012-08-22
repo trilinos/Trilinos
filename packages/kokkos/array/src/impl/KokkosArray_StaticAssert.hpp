@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_STATICASSERT_HPP
-#define KOKKOS_STATICASSERT_HPP
+#ifndef KOKKOSARRAY_STATICASSERT_HPP
+#define KOKKOSARRAY_STATICASSERT_HPP
 
 namespace KokkosArray {
 namespace Impl {
@@ -74,6 +74,6 @@ struct StaticAssertAssignable< const A , A > { typedef const A type ; };
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* KOKKOS_STATICASSERT_HPP */
+#endif /* KOKKOSARRAY_STATICASSERT_HPP */
 
 

@@ -80,8 +80,8 @@ development branch repository.
 (*) Improvements to doxygen documentation.
 - added ifdefs to support profiling/tracing of host-to-device memory transfers 
   These are enable via cmake options
-  -D Kokkos_CUDA_NODE_MEMORY_PROFILING:BOOL=ON
-  -D Kokkos_CUDA_NODE_MEMORY_TRACE:BOOL=ON
+  -D KokkosClassic_ENABLE_CUDA_NODE_MEMORY_PROFILING:BOOL=ON
+  -D KokkosClassic_ENABLE_CUDA_NODE_MEMORY_TRACE:BOOL=ON
 
 (*) VBR capability (experimental)
 - added variable-block row matrix (VbrMatrix) and underlying support classes (BlockMap, BlockMultiVector)

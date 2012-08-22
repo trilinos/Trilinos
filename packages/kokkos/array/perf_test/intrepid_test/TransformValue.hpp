@@ -49,9 +49,9 @@ template <class Scalar , class DeviceType >
 struct TransformValue; 
 
 template<class Scalar >
-struct TransformValue<Scalar , KOKKOS_MACRO_DEVICE >
+struct TransformValue<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
-	typedef KOKKOS_MACRO_DEVICE 		device_type;
+	typedef KOKKOSARRAY_MACRO_DEVICE 		device_type;
 	typedef device_type::size_type 		size_type;
 	
 	typedef typename KokkosArray::MDArrayView<Scalar,device_type> array_type;
@@ -75,7 +75,7 @@ struct TransformValue<Scalar , KOKKOS_MACRO_DEVICE >
 	}
   	
   	//Assume fields is rank 3, input is rank 2
-  	KOKKOS_MACRO_DEVICE_FUNCTION
+  	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   	void operator()(size_type ielem) const 
   	{
 		for(int bf = 0; bf < numFields; bf++) {

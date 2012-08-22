@@ -55,13 +55,13 @@
 
 // nodes
 #include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 #  include <Kokkos_TPINode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
 #  include <Kokkos_OpenMPNode.hpp>
 #endif
 
@@ -75,13 +75,13 @@
 namespace Tpetra {
 
   INSTANT_ALL(Kokkos::SerialNode)
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
   INSTANT_ALL(Kokkos::TBBNode)
 #endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   INSTANT_ALL(Kokkos::TPINode)
 #endif
-#if defined(HAVE_KOKKOS_OPENMP)
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
   INSTANT_ALL(Kokkos::OpenMPNode)
 #endif
 

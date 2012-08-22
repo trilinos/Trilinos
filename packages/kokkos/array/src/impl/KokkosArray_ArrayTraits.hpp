@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_ARRAYTRAITS_HPP
-#define KOKKOS_ARRAYTRAITS_HPP
+#ifndef KOKKOSARRAYTRAITS_HPP
+#define KOKKOSARRAYTRAITS_HPP
 
 namespace KokkosArray {
 namespace Impl {
@@ -238,5 +238,5 @@ struct extent< T[N] , I , J >
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_ARRAYTRAITS_HPP */
+#endif /* #ifndef KOKKOSARRAYTRAITS_HPP */
 

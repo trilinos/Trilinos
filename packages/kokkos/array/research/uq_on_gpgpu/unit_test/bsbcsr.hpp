@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_BSBCSR_HPP
-#define KOKKOS_BSBCSR_HPP
+#ifndef KOKKOSARRAY_BSBCSR_HPP
+#define KOKKOSARRAY_BSBCSR_HPP
 
 namespace KokkosArray {
 
@@ -349,5 +349,5 @@ public:
 
 }
 
-#endif /* #ifndef KOKKOS_BSBCSR_HPP */
+#endif /* #ifndef KOKKOSARRAY_BSBCSR_HPP */
 

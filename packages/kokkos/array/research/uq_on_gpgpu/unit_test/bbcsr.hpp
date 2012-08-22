@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_BBCRS_HPP
-#define KOKKOS_BBCRS_HPP
+#ifndef KOKKOSARRAY_BBCRS_HPP
+#define KOKKOSARRAY_BBCRS_HPP
 
 #include <stdexcept>
 #include <sstream>
@@ -242,5 +242,5 @@ public:
 
 }
 
-#endif /* #ifndef KOKKOS_BBCRS_HPP */
+#endif /* #ifndef KOKKOSARRAY_BBCRS_HPP */
 

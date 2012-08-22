@@ -5,7 +5,7 @@
 
 #include <impl/KokkosArray_Timer.hpp>
 
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
@@ -686,7 +686,7 @@ test_product_flat_original_matrix(
 
 //----------------------------------------------------------------------------
 // Outer original matrix-free block algorithm
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
 template< typename ScalarType , class Device >
 std::vector<double>
 test_original_matrix_free_block(
@@ -953,7 +953,7 @@ void performance_test_driver_all( const int pdeg ,
             << "\"Original-Flat MXV-GFLOPS\" , "
 	    << "\"Commuted-Flat MXV-Speedup\" , "
             << "\"Commuted-Flat MXV-GFLOPS\" , "
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
             << "\"Original-Matrix-Free-Block MXV-Speedup\" , "
             << "\"Original-Matrix-Free-Block MXV-GFLOPS\" , "
 #endif
@@ -962,7 +962,7 @@ void performance_test_driver_all( const int pdeg ,
     //<< "\"Block-Coord-Tensor MXV-Speedup\" , "
 	    << "\"Block-Crs-Tensor MXV-Speedup\" , "
 	    << "\"Block-Crs-Tensor MXV-Time\" , "
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
 #endif
             << std::endl ;
@@ -987,7 +987,7 @@ void performance_test_driver_all( const int pdeg ,
     const std::vector<double> perf_flat_original =
       test_product_flat_original_matrix<double,Device>( var_degree , nGrid , nIter , print );
 
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
     const std::vector<double> perf_original_mat_free_block =
       test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print );
 #endif
@@ -1001,7 +1001,7 @@ void performance_test_driver_all( const int pdeg ,
               << perf_flat_original[2] << " , "
 	      << perf_flat_original[1] / perf_flat_commuted[1] << " , "
               << perf_flat_commuted[2] << " , "
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
 	      << perf_flat_original[1] / perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
 #endif
@@ -1010,7 +1010,7 @@ void performance_test_driver_all( const int pdeg ,
       //<< perf_flat_original.second / perf_tensor.second << " , "
 	      << perf_flat_original[1] / perf_crs_tensor.second << " , "
 	      << perf_crs_tensor.second << " , "
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
 	      << perf_original_mat_free_block[3] / perf_crs_tensor.second << " , "
 #endif
 	      << std::endl ;
@@ -1019,7 +1019,7 @@ void performance_test_driver_all( const int pdeg ,
   //------------------------------
 }
 
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
 template< class Device >
 void performance_test_driver_poly( const int pdeg ,
 				   const int minvar ,
@@ -1092,7 +1092,7 @@ void performance_test_driver()
   performance_test_driver_all<Device>( 3 , 1 , 12 , nGrid , nIter , print );
   performance_test_driver_all<Device>( 5 , 1 ,  6 , nGrid , nIter , print );
 
-#ifdef HAVE_KOKKOS_STOKHOS
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
   // Just polynomial methods compared against original
   nGrid = 32 ;
   nIter = 1 ; 

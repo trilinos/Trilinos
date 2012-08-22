@@ -41,9 +41,9 @@
 //@HEADER
 */
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <KokkosArray_ViewOperRight_macros.hpp> without macros defined"
 
@@ -57,7 +57,7 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , 0 , 0 > >
 {
 private:
@@ -68,15 +68,15 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator * () const
     { return *m_ptr_on_device ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const ValueType & v ) const
     { *m_ptr_on_device = v ; }
 
@@ -87,7 +87,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , RankDyn , 1 > >
 {
 private:
@@ -98,14 +98,14 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator()( const iType0 & i0 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0 ) );
 
       return m_ptr_on_device[ i0 ];
@@ -113,10 +113,10 @@ public:
 
   template< typename iType0 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator[]( const iType0 & i0 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0 ) );
 
       return m_ptr_on_device[ i0 ];
@@ -129,7 +129,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , RankDyn , 2 > >
 {
 private:
@@ -140,14 +140,14 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 , typename iType1 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1 ) );
 
       return m_ptr_on_device[ i1 + i0 * m_shape.Stride ];
@@ -160,7 +160,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , RankDyn , 3 > >
 {
 private:
@@ -171,15 +171,15 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2 ) );
 
       return m_ptr_on_device[ i2 + m_shape.N2 * (
@@ -193,7 +193,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , RankDyn , 4 > >
 {
 private:
@@ -204,16 +204,16 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3 ) );
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
@@ -228,7 +228,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , RankDyn , 5 > >
 {
 private:
@@ -239,17 +239,17 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ,
                           const iType4 & i4 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3, i4 ) );
 
       return m_ptr_on_device[ i4 + m_shape.N4 * (
@@ -265,7 +265,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , RankDyn , 6 > >
 {
 private:
@@ -276,17 +276,17 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ,
                           const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5 ) );
 
       return m_ptr_on_device[ i5 + m_shape.N5 * (
@@ -303,7 +303,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , RankDyn , 7 > >
 {
 private:
@@ -314,19 +314,19 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 ,
             typename iType6 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ,
                           const iType4 & i4 , const iType5 & i5 ,
                           const iType6 & i6 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6 ) );
 
       return m_ptr_on_device[ i6 + m_shape.N6 * (
@@ -344,7 +344,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOS_MACRO_DEVICE::memory_space ,
+class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape< LayoutRight , ShapeType , RankDyn , 8 > >
 {
 private:
@@ -355,19 +355,19 @@ private:
 
 public:
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 ,
             typename iType6 , typename iType7 >
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ,
                           const iType4 & i4 , const iType5 & i5 ,
                           const iType6 & i6 , const iType7 & i7 ) const
     {
-      KOKKOS_MACRO_CHECK(
+      KOKKOSARRAY_MACRO_CHECK(
         assert_shape_bounds( m_shape, i0, i1, i2, i3, i4, i5, i6, i7 ) );
 
       return m_ptr_on_device[ i7 + m_shape.N7 * (

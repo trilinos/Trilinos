@@ -70,7 +70,7 @@ then
     TEUCHOS_LIB="${TRILINOS_BUILD_PATH}/packages/teuchos/src"
     INC_PATH="${INC_PATH} ${TEUCHOS_INC} ${STOKHOS_INC}"
     LIB="${LIB} -L${TEUCHOS_LIB} -lteuchos /usr/lib64/liblapack.so.3 /usr/lib64/libblas.so.3 -lm"
-    CXXFLAGS="${CXXFLAGS} -DHAVE_KOKKOS_STOKHOS"
+    CXXFLAGS="${CXXFLAGS} -DHAVE_KOKKOSARRAY_STOKHOS"
 fi
 
 CXX_SOURCES="main.cpp TestHost.cpp"
@@ -118,7 +118,7 @@ fi
 
 if [ -n "${HAVE_CUDA}" ] ;
 then
-  TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
+  TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOSARRAY_CUDA"
   NVCC_PATH="/usr/local/cuda"
   NVCC_SOURCES="${SRC_PATH}/Cuda/*.cu TestCuda.cu"
   NVCC="${NVCC_PATH}/bin/nvcc -arch=sm_20 -lib -o libCuda.a"

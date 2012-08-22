@@ -10,17 +10,17 @@ SET(SOURCES "")
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cu)
 
-IF(Kokkos_ENABLE_CUDA)
+IF(KokkosArray_ENABLE_CUDA)
   PACKAGE_ADD_CUDA_LIBRARY(
     kokkosdevicecuda
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
   )
-  SET(CUDA_LIB kokkosdevicecuda)
+  SET(CUDA_LIB kokkosarray_devicecuda)
 ELSE()
   SET(CUDA_LIB "")
   TRIBITS_ADD_LIBRARY(
-    kokkosdevicecuda
+    kokkosarray_devicecuda
     HEADERS ${HEADERS}
     DEPLIBS ${CUDA_LIB}
     )

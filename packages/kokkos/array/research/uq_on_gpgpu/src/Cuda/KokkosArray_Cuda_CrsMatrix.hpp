@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CUDA_CRSMATRIX_HPP
-#define KOKKOS_CUDA_CRSMATRIX_HPP
+#ifndef KOKKOSARRAY_CUDA_CRSMATRIX_HPP
+#define KOKKOSARRAY_CUDA_CRSMATRIX_HPP
 
 #include <utility>
 #include <sstream>
@@ -260,5 +260,5 @@ public:
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOS_CUDA_CRSMATRIX_HPP */
+#endif /* #ifndef KOKKOSARRAY_CUDA_CRSMATRIX_HPP */
 

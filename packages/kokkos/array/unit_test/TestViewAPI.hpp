@@ -43,8 +43,8 @@
 
 #include <gtest/gtest.h>
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
+#ifndef KOKKOSARRAY_MACRO_DEVICE
+#error "KOKKOSARRAY_MACRO_DEVICE undefined"
 #endif
 
 #include <stdio.h>
@@ -62,9 +62,9 @@ template< typename T, class > class TestViewOperator ;
 /*--------------------------------------------------------------------------*/
 
 template< typename T >
-struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
+struct TestViewOperator< T , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE  device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE  device_type ;
 
   static const unsigned N = 100 ;
   static const unsigned D = 3 ;
@@ -90,7 +90,7 @@ struct TestViewOperator< T , KOKKOS_MACRO_DEVICE >
     KokkosArray::parallel_for( N , TestViewOperator() );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const unsigned i ) const
   {
     const unsigned X = 0 ;
@@ -119,12 +119,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
 
   typedef int value_type ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -168,7 +168,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -216,12 +216,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
 
   typedef int value_type ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -265,7 +265,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -311,12 +311,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
 
   typedef int value_type ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -360,7 +360,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -404,12 +404,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
 
   typedef int value_type ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -453,7 +453,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -495,12 +495,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
 
   typedef int value_type ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -544,7 +544,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -584,12 +584,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
 
   typedef int value_type ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -633,7 +633,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -671,12 +671,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
 
   typedef int value_type ;
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -720,7 +720,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -750,10 +750,10 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
 /*--------------------------------------------------------------------------*/
 
 template<typename T>
-class TestViewAPI< T, KOKKOS_MACRO_DEVICE >
+class TestViewAPI< T, KOKKOSARRAY_MACRO_DEVICE >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE  device ;
+  typedef KOKKOSARRAY_MACRO_DEVICE  device ;
   typedef KokkosArray::Host    host ;
 
   TestViewAPI()

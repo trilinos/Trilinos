@@ -41,9 +41,9 @@
 //@HEADER
 */
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <impl/KokkosArray_ProductTensor_macros.hpp> without macros defined"
 
@@ -56,11 +56,11 @@ namespace KokkosArray {
 
 template< typename ValueType , class PolynomialType ,
           template< unsigned , typename , class > class TensorType >
-class StochasticProductTensor< ValueType, PolynomialType, KOKKOS_MACRO_DEVICE , TensorType >
+class StochasticProductTensor< ValueType, PolynomialType, KOKKOSARRAY_MACRO_DEVICE , TensorType >
 {
 public:
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
   typedef ValueType               value_type ;
   typedef TensorType< 3 , value_type , device_type > tensor_type ;
@@ -92,26 +92,26 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   const tensor_type & tensor() const { return m_tensor ; }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension() const { return m_tensor.dimension(); }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type variable_count() const { return m_variable ; }
 
   template< typename iType >
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type variable_degree( const iType & iVariable ) const
     { return m_degree_map( 0 , iVariable ); }
 
   template< typename iType , typename jType >
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type bases_degree( const iType & iBasis , const jType & iVariable ) const
     { return m_degree_map( iBasis + 1 , iVariable ); }
 

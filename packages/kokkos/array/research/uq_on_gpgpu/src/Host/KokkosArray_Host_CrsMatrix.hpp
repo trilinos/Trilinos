@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_CRSMATRIX_HPP
-#define KOKKOS_HOST_CRSMATRIX_HPP
+#ifndef KOKKOSARRAY_HOST_CRSMATRIX_HPP
+#define KOKKOSARRAY_HOST_CRSMATRIX_HPP
 
 #include <fstream>
 #include <iomanip>
@@ -193,5 +193,5 @@ public:
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOS_HOST_CRSMATRIX_HPP */
+#endif /* #ifndef KOKKOSARRAY_HOST_CRSMATRIX_HPP */
 

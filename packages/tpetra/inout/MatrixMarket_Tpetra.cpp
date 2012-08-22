@@ -46,13 +46,13 @@
 // #include "Tpetra_ExplicitInstantiationHelpers.hpp"
 
 #include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOS_TBB)
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 #  include <Kokkos_TPINode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THRUST)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 

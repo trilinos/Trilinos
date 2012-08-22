@@ -69,9 +69,9 @@ template< typename Scalar , class DeviceType >
 struct grad_hgop;
 
 template<typename Scalar>
-struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
+struct grad_hgop<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef typename KokkosArray::MDArray<Scalar,device_type> array_type ;
   typedef typename KokkosArray::MDArray<int,device_type>    int_array_type ;
 
@@ -110,7 +110,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     {
     }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void get_nodes( int ielem, int * nodes) const
     {
       nodes[0] = elem_node_connectivity(ielem,0);
@@ -123,7 +123,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
       nodes[7] = elem_node_connectivity(ielem,7);
     }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void comp_grad( int * nodes,
                     Scalar * x,     Scalar * y,     Scalar * z,
                     Scalar * vx,     Scalar * vy,     Scalar * vz,
@@ -317,7 +317,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 
     }
 
-    KOKKOS_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void v_grad(  int ielem,
       Scalar * vx,       Scalar * vy,       Scalar * vz,
       Scalar * grad_x,     Scalar * grad_y,     Scalar * grad_z,
@@ -429,7 +429,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
   }
 
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void comp_hgop(    int ielem,
             Scalar * x,     Scalar * y,     Scalar * z,
             Scalar * grad_x,   Scalar * grad_y,   Scalar * grad_z,
@@ -515,7 +515,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 
   // Functor operator() which calls the three member functions.
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
     void operator()( int ielem )const {
 
     //  declare and reuse local data for frequently accessed data to

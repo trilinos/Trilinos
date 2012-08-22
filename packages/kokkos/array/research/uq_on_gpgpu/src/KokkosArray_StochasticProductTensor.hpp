@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_STOCHASTICPRODUCTTENSOR_HPP
-#define KOKKOS_STOCHASTICPRODUCTTENSOR_HPP
+#ifndef KOKKOSARRAY_STOCHASTICPRODUCTTENSOR_HPP
+#define KOKKOSARRAY_STOCHASTICPRODUCTTENSOR_HPP
 
 #include <KokkosArray_ProductTensor.hpp>
 
@@ -135,6 +135,6 @@ private:
 
 #include <impl/KokkosArray_StochasticProductTensor_create.hpp>
 
-#endif /* #ifndef KOKKOS_STOCHASTICPRODUCTTENSOR_HPP */
+#endif /* #ifndef KOKKOSARRAY_STOCHASTICPRODUCTTENSOR_HPP */
 
 

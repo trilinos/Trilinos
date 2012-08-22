@@ -43,9 +43,9 @@
 
 #include <iostream>
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <KokkosArray_View_macros.hpp> without macros defined"
 
@@ -56,32 +56,32 @@ namespace KokkosArray {
 #if 0
 
 template< class DataType , class LayoutType >
-class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
+class View< DataType , LayoutType , KOKKOSARRAY_MACRO_DEVICE >
   : public Impl::ViewOperator< DataType ,
                                typename LayoutType::array_layout ,
-                               KOKKOS_MACRO_DEVICE::memory_space >
+                               KOKKOSARRAY_MACRO_DEVICE::memory_space >
 {
 private:
   typedef Impl::ViewOperator< DataType ,
                               typename LayoutType::array_layout ,
-                              KOKKOS_MACRO_DEVICE::memory_space > oper_type ;
+                              KOKKOSARRAY_MACRO_DEVICE::memory_space > oper_type ;
 
 
 
 #else
 
 template< class DataType , class LayoutType >
-class View< DataType , LayoutType , KOKKOS_MACRO_DEVICE >
+class View< DataType , LayoutType , KOKKOSARRAY_MACRO_DEVICE >
   : public Impl::ViewOper<
       typename Impl::remove_all_extents<DataType>::type ,
-      KOKKOS_MACRO_DEVICE::memory_space ,
+      KOKKOSARRAY_MACRO_DEVICE::memory_space ,
       typename Impl::DefineShape< typename LayoutType::array_layout , DataType >::type >
 {
 private:
 
   typedef Impl::ViewOper<
       typename Impl::remove_all_extents<DataType>::type ,
-      KOKKOS_MACRO_DEVICE::memory_space ,
+      KOKKOSARRAY_MACRO_DEVICE::memory_space ,
       typename Impl::DefineShape<
         typename LayoutType::array_layout , DataType >::type > oper_type ;
 
@@ -93,7 +93,7 @@ public:
 
   typedef DataType             data_type ;
   typedef LayoutType           layout_type ;
-  typedef KOKKOS_MACRO_DEVICE  device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE  device_type ;
 
   typedef View< data_type , layout_type , device_type >  type ;
 
@@ -115,36 +115,36 @@ public:
   static const unsigned Rank = shape_type::rank ;
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type rank() const { return shape_type::rank ; }
 
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_0() const { return oper_type::m_shape.N0 ; }
 
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_1() const { return oper_type::m_shape.N1 ; }
 
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_2() const { return oper_type::m_shape.N2 ; }
 
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_3() const { return oper_type::m_shape.N3 ; }
 
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_4() const { return oper_type::m_shape.N4 ; }
 
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_5() const { return oper_type::m_shape.N5 ; }
 
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_6() const { return oper_type::m_shape.N6 ; }
 
-  inline KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  inline KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension_7() const { return oper_type::m_shape.N7 ; }
 
   template< typename iType >
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension( const iType & r ) const
     {
       return iType(0) == r ? oper_type::m_shape.N0 : (
@@ -159,22 +159,22 @@ public:
 
   /*------------------------------------------------------------------*/
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   value_type * ptr_on_device() const { return oper_type::m_ptr_on_device ; }
 
   /*------------------------------------------------------------------*/
   /** \brief Query shape */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   shape_type shape() const { return oper_type::m_shape ; }
 
   /*------------------------------------------------------------------*/
   /** \brief  Query if NULL view */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   operator bool () const
   { return 0 != oper_type::m_ptr_on_device ; }
 
   /** \brief  Query if view to same memory */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const View & rhs ) const
   {
     return oper_type::m_ptr_on_device == rhs.m_ptr_on_device &&
@@ -182,7 +182,7 @@ public:
   }
 
   /** \brief  Query if not view to same memory */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const View & rhs ) const
   {
     return oper_type::m_ptr_on_device != rhs.m_ptr_on_device ||
@@ -191,7 +191,7 @@ public:
 
   /** \brief  Query if view to same memory */
   template< class rhsDataType , class rhsLayout , class rhsMemory >
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const View<rhsDataType,rhsLayout,rhsMemory> & rhs ) const
   {
     return oper_type::m_ptr_on_device == rhs.m_ptr_on_device &&
@@ -200,7 +200,7 @@ public:
 
   /** \brief  Query if not view to same memory */
   template< class rhsDataType , class rhsLayout , class rhsMemory >
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const View<rhsDataType,rhsLayout,rhsMemory> & rhs ) const
   {
     return oper_type::m_ptr_on_device != rhs.m_ptr_on_device ||
@@ -212,7 +212,7 @@ public:
 private:
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   void internal_private_assign( const shape_type & shape , value_type * ptr )
   {
     oper_type::m_shape          = shape ;
@@ -221,7 +221,7 @@ private:
   }
 
   inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   void internal_private_clear()
   {
     memory_space::decrement( oper_type::m_ptr_on_device );
@@ -237,11 +237,11 @@ private:
 public:
 
   /** \brief  Construct a NULL view */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   View() { oper_type::m_ptr_on_device = 0 ; }
 
   /** \brief  Construct a view of the array */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   View( const View & rhs )
     {
       internal_private_assign( rhs.m_shape , rhs.m_ptr_on_device );
@@ -250,7 +250,7 @@ public:
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   ~View()
   {
     internal_private_clear();
@@ -260,7 +260,7 @@ public:
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
   View & operator = ( const View & rhs )
   {
     internal_private_clear();

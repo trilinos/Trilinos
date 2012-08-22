@@ -35,9 +35,9 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOSCLASSIC_TBB
 #include "Kokkos_TBBNode.hpp"
-#endif // HAVE_KOKKOS_TBB
+#endif // HAVE_KOKKOSCLASSIC_TBB
 
 #include "Teuchos_Time.hpp"
 #include "AnasaziTpetraAdapter.hpp" // sic (not "-or")

@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_IMPLWALLTIME_HPP
-#define KOKKOS_IMPLWALLTIME_HPP
+#ifndef KOKKOSARRAY_IMPLWALLTIME_HPP
+#define KOKKOSARRAY_IMPLWALLTIME_HPP
 
 #include <stddef.h>
 
@@ -88,5 +88,5 @@ public:
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOS_IMPLWALLTIME_HPP */
+#endif /* #ifndef KOKKOSARRAY_IMPLWALLTIME_HPP */
 

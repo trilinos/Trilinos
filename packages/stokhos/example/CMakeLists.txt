@@ -357,7 +357,7 @@ IF(Stokhos_ENABLE_Sacado)
     DEPLIBS stokhos
     )
 
-  IF(Stokhos_ENABLE_Kokkos AND Kokkos_ENABLE_Array)
+  IF(Stokhos_ENABLE_KokkosArray)
     
     SET(CUDA_SOURCES "")
     IF (Stokhos_ENABLE_CUDA)

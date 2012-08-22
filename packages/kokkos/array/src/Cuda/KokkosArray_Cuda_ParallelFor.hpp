@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CUDA_PARALLELFOR_HPP
-#define KOKKOS_CUDA_PARALLELFOR_HPP
+#ifndef KOKKOSARRAY_CUDA_PARALLELFOR_HPP
+#define KOKKOSARRAY_CUDA_PARALLELFOR_HPP
 
 #if defined( __CUDACC__ )
 
@@ -120,5 +120,5 @@ public:
 
 #endif /* defined( __CUDACC__ ) */
 
-#endif /* KOKKOS_CUDA_PARALLELFOR_HPP */
+#endif /* KOKKOSARRAY_CUDA_PARALLELFOR_HPP */
 

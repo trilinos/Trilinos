@@ -117,14 +117,14 @@ void dot( const ConstVectorType & X ,
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_MACRO_DEVICE ) && defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_MACRO_DEVICE ) && defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
 namespace KokkosArray {
 
 template< class Type >
-struct Dot< Type , KOKKOS_MACRO_DEVICE >
+struct Dot< Type , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
 
   typedef typename 
     Impl::StaticAssertSame< Impl::unsigned_< 1 > ,
@@ -148,24 +148,24 @@ struct Dot< Type , KOKKOS_MACRO_DEVICE >
   Dot( const Type & arg_x , const Type & arg_y )
     : X(arg_x) , Y(arg_y) { }
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int i , value_type & update ) const 
     { update += X[i] * Y[i]; }
     
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
     { update += source; }
     
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 };
 
 template< class Type >
-struct DotSingle< Type , KOKKOS_MACRO_DEVICE >
+struct DotSingle< Type , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
 
   typedef typename 
     Impl::StaticAssertSame< Impl::unsigned_< 1 > ,
@@ -185,27 +185,27 @@ struct DotSingle< Type , KOKKOS_MACRO_DEVICE >
 
   DotSingle( const Type & arg_x ) : X(arg_x) {}
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int i , value_type & update ) const 
     {
       const typename Type::value_type x = X[i]; update += x * x ;
     }
     
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
     { update += source; }
     
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 };
 
 
 template< class ScalarType , class VectorType >
-struct Scale< ScalarType , VectorType , KOKKOS_MACRO_DEVICE >
+struct Scale< ScalarType , VectorType , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
 
   typedef typename
     Impl::StaticAssertSame< device_type ,
@@ -238,7 +238,7 @@ struct Scale< ScalarType , VectorType , KOKKOS_MACRO_DEVICE >
   Scale( const ScalarType & arg_alpha , const VectorType & arg_Y )
     : alpha( arg_alpha ), Y( arg_Y ) {}
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int i ) const 
     {
       Y[i] *= *alpha ;
@@ -249,9 +249,9 @@ struct Scale< ScalarType , VectorType , KOKKOS_MACRO_DEVICE >
 template< class ScalarType ,
           class ConstVectorType ,
           class VectorType >
-struct AXPBY< ScalarType , ConstVectorType , VectorType , KOKKOS_MACRO_DEVICE >
+struct AXPBY< ScalarType , ConstVectorType , VectorType , KOKKOSARRAY_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
 
   typedef typename
     Impl::StaticAssertSame< device_type ,
@@ -299,7 +299,7 @@ struct AXPBY< ScalarType , ConstVectorType , VectorType , KOKKOS_MACRO_DEVICE >
          const VectorType      & arg_Y )
     : alpha( arg_alpha ), beta( arg_beta ), X( arg_X ), Y( arg_Y ) {}
 
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
   void operator()( int i ) const 
     {
       Y[i] = *alpha * X[i] + *beta * Y[i] ;
@@ -308,6 +308,6 @@ struct AXPBY< ScalarType , ConstVectorType , VectorType , KOKKOS_MACRO_DEVICE >
 
 } /* namespace KokkosArray */
 
-#endif /* #if defined( KOKKOS_MACRO_DEVICE ) &&
-              defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+#endif /* #if defined( KOKKOSARRAY_MACRO_DEVICE ) &&
+              defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) */
 
