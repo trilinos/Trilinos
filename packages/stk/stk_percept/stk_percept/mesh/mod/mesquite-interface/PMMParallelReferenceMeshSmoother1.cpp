@@ -136,7 +136,8 @@ namespace stk {
         {
           return true;
         }
-      if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
+      //if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
+      if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
           return true;
         }      
