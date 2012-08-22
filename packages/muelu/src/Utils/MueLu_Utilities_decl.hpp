@@ -46,6 +46,8 @@
 #ifndef MUELU_UTILITIES_DECL_HPP
 #define MUELU_UTILITIES_DECL_HPP
 
+#include <unistd.h> //necessary for "sleep" function in debugging methods
+
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
@@ -279,8 +281,6 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
      TODO Move this to Xpetra?
    */
    static void Write(std::string const & fileName, Operator const & Op); //Write
-
-#include <unistd.h>
 
    static void PauseForDebugger(); //PauseForDebugger
 
