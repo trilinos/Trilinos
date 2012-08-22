@@ -133,6 +133,18 @@ public:
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual std::ostream& print(std::ostream& os) const;
 
+
+  //! @name Overridden from Teuchos::Describable 
+  //@{
+
+  /** \brief Return a simple one-line description of this object. */
+  std::string description() const;
+
+  //! Print the object with some verbosity level to an FancyOStream object. 
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+
+  //@}
+ 
 protected:
 
   //! Number of local subgraphs.  This is an int because negatives mean something.

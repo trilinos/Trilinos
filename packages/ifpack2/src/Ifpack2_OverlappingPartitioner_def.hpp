@@ -290,6 +290,39 @@ std::ostream& OverlappingPartitioner<GraphType>::print(std::ostream& os) const
   return(os);
 }
 
+//==============================================================================
+template<class GraphType>
+std::string OverlappingPartitioner<GraphType>::description() const
+{
+  std::ostringstream oss;
+  oss << Teuchos::Describable::description();
+  if (isComputed()) {
+    oss << "{status = computed";
+  }
+  else {
+    oss << "{status = inot computed";
+  }
+  oss <<"}";
+  return oss.str();
+}
+
+//==============================================================================
+template<class GraphType>
+void  OverlappingPartitioner<GraphType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const
+{
+  using std::endl;
+  if(verbLevel==Teuchos::VERB_NONE) return;
+
+  os << "================================================================================" << endl;
+  os << "Ifpack2::OverlappingPartitioner" << endl;
+  os << "Number of local rows  = " << Graph_->getNodeNumRows() << endl;
+  os << "Number of global rows = " << Graph_->getGlobalNumRows() << endl;
+  os << "Number of local parts = " << NumLocalParts_ << endl;
+  os << "Overlapping level     = " << OverlappingLevel_ << endl;
+  os << "Is computed           = " << IsComputed_ << endl;
+  os << "================================================================================" << endl;
+}
+
 
 }// namespace Ifpack2
 
