@@ -110,8 +110,8 @@ the Gauss-Seidel preconditioner can be defined as
 \f[
 P_{GS}^{-1} = (D - E)^{-1}.
 \f]
-Clearly, the role of E and F can be interchanged. However,
-Ifpack2::GaussSeidel does not consider backward Gauss-Seidel methods.
+Clearly, the role of E and F can be interchanged. This is what the
+"relaxation: backward mode" option is for.
 
 <P>For a list of supported parameters, please refer to the Relaxation::setParameters method.
 
