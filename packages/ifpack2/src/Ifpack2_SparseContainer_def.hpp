@@ -96,7 +96,7 @@ void SparseContainer<MatrixType,InverseType>::setNumVectors(const size_t NumVect
 //==============================================================================
 // Get the Y vector
 template<class MatrixType, class InverseType>
-const Teuchos::RCP<Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > & SparseContainer<MatrixType,InverseType>::getY()
+const Teuchos::RCP<Tpetra::MultiVector<typename InverseType::scalar_type, typename InverseType::local_ordinal_type, typename InverseType::global_ordinal_type, typename InverseType::node_type> > & SparseContainer<MatrixType,InverseType>::getY()
 {
   return Y_;
 }
@@ -104,7 +104,7 @@ const Teuchos::RCP<Tpetra::MultiVector<typename MatrixType::scalar_type, typenam
 //==============================================================================
 // Get the X vector
 template<class MatrixType, class InverseType>
-const Teuchos::RCP<Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > & SparseContainer<MatrixType,InverseType>::getX()
+const Teuchos::RCP<Tpetra::MultiVector<typename InverseType::scalar_type, typename InverseType::local_ordinal_type, typename InverseType::global_ordinal_type, typename InverseType::node_type> > & SparseContainer<MatrixType,InverseType>::getX()
 {
   return X_;
 }
@@ -112,7 +112,7 @@ const Teuchos::RCP<Tpetra::MultiVector<typename MatrixType::scalar_type, typenam
 //==============================================================================
 // Returns the ID associated to local row i. 
 template<class MatrixType, class InverseType>
-typename MatrixType::local_ordinal_type & SparseContainer<MatrixType,InverseType>::ID(const LocalOrdinal i)
+typename MatrixType::local_ordinal_type & SparseContainer<MatrixType,InverseType>::ID(const size_t i)
 {
   return GID_[i];
 }
@@ -148,16 +148,12 @@ void SparseContainer<MatrixType,InverseType>::initialize()
   if(IsInitialized_) destroy();
   IsInitialized_=false;
 
-  // NTS: The use of LocalOrdinal/LocalOrdinal for the local matrices is somewhat dubious.
-  // We should find a more general approach by letting the InverseType pick the ordinals for the
-  // matrices I build.  Unfortunately Ifpack2::Preconditioner doesn't support that yet.
-
-  Map_ = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,LocalOrdinal,Node>(NumRows_,0,LocalComm_) );
-  X_ = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,LocalOrdinal,Node>(Map_,NumVectors_) );
-  Y_ = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,LocalOrdinal,Node>(Map_,NumVectors_) );
+  Map_ = Teuchos::rcp( new Tpetra::Map<InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(NumRows_,0,LocalComm_) );
+  X_ = Teuchos::rcp( new Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,NumVectors_) );
+  Y_ = Teuchos::rcp( new Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,NumVectors_) );
   GID_.resize(NumRows_);
 
-  Matrix_ = Teuchos::rcp( new Tpetra::CrsMatrix<Scalar,LocalOrdinal,LocalOrdinal,Node>(Map_,0) );
+  Matrix_ = Teuchos::rcp( new Tpetra::CrsMatrix<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,0) );
 
   // create the inverse
   Inverse_ = Teuchos::rcp( new InverseType(Matrix_) );
@@ -173,7 +169,7 @@ void SparseContainer<MatrixType,InverseType>::initialize()
 //==============================================================================
 // Finalizes the linear system matrix and prepares for the application of the inverse.
 template<class MatrixType, class InverseType>
-void SparseContainer<MatrixType,InverseType>::compute(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix)
+void SparseContainer<MatrixType,InverseType>::compute(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix)
 {
   IsComputed_=false;
   TEUCHOS_TEST_FOR_EXCEPTION( !IsInitialized_, std::runtime_error, "Ifpack2::SparseContainer::compute please call initialize first.");  
@@ -264,7 +260,7 @@ void SparseContainer<MatrixType,InverseType>::describe(Teuchos::FancyOStream &os
 //============================================================================== 
 // Extract the submatrices identified by the ID set int ID().
 template<class MatrixType, class InverseType>
-void SparseContainer<MatrixType,InverseType>::extract(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix_in) 
+void SparseContainer<MatrixType,InverseType>::extract(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix_in) 
 {
   size_t MatrixInNumRows= Matrix_in->getNodeNumRows();
 
@@ -274,10 +270,10 @@ void SparseContainer<MatrixType,InverseType>::extract(const Teuchos::RCP<const T
   }  
 
   int Length = Matrix_in->getNodeMaxNumRowEntries();
-  Teuchos::Array<Scalar>       Values;
-  Teuchos::Array<LocalOrdinal> Indices;
-  Teuchos::Array<Scalar>       Values_insert;
-  Teuchos::Array<LocalOrdinal> Indices_insert;
+  Teuchos::Array<MatrixScalar>         Values;
+  Teuchos::Array<MatrixLocalOrdinal>   Indices;
+  Teuchos::Array<InverseScalar>        Values_insert;
+  Teuchos::Array<InverseGlobalOrdinal> Indices_insert;
 
   Values.resize(Length);
   Indices.resize(Length);
@@ -285,14 +281,14 @@ void SparseContainer<MatrixType,InverseType>::extract(const Teuchos::RCP<const T
   Indices_insert.resize(Length);
 
   for (size_t j = 0 ; j < NumRows_ ; ++j) {
-    LocalOrdinal LRID = ID(j);
+    MatrixLocalOrdinal LRID = ID(j);
     size_t NumEntries;
 
     Matrix_in->getLocalRowCopy(LRID,Indices(),Values(),NumEntries);
 
     size_t num_entries_found=0;
     for (size_t k = 0 ; k < NumEntries ; ++k) {
-      LocalOrdinal LCID = Indices[k];
+      MatrixLocalOrdinal LCID = Indices[k];
 
       // skip off-processor elements
       if ((size_t)LCID >= MatrixInNumRows) 
@@ -301,13 +297,13 @@ void SparseContainer<MatrixType,InverseType>::extract(const Teuchos::RCP<const T
       // for local column IDs, look for each ID in the list
       // of columns hosted by this object
       // FIXME: use STL
-      int jj = -1;
+      InverseLocalOrdinal jj = -1;
       for (size_t kk = 0 ; kk < NumRows_ ; ++kk)
 	if (ID(kk) == LCID)
 	  jj = kk;
 
       if (jj != -1) {
-	Indices_insert[num_entries_found] = jj;
+	Indices_insert[num_entries_found] = Map_->getGlobalElement(jj);
 	Values_insert[num_entries_found]  = Values[k];
 	num_entries_found++;
       }

@@ -117,6 +117,10 @@ template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdi
 class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
+    typedef Scalar        scalar_type;
+    typedef LocalOrdinal  local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node          node_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
     //! Destructor.

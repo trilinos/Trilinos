@@ -75,6 +75,12 @@ Tpetra::CrsMatrix) and Ifpack2::DenseContainer
 (for relatively small matrices, as matrices are stored as
 Tpetra::SerialDenseMatrix's).
 
+Note: The MatrixType and InverseType can have different Scalars, ordinals (and even nodes).
+You can mix and match so long as implicit conversions are available.
+The most obvious use case for this are:
+1) MatrixGlobalOrdinal==long long and InverseGlobalOrdinal==short
+2) MatrixScalar=float and InverseScalar=double 
+
 \date Last update Aug-12.
   
 */
@@ -85,12 +91,15 @@ template<class MatrixType, class InverseType>
 class Container : public Teuchos::Describable {
 
 public:
+  typedef typename MatrixType::scalar_type          MatrixScalar;
+  typedef typename MatrixType::local_ordinal_type   MatrixLocalOrdinal;
+  typedef typename MatrixType::global_ordinal_type  MatrixGlobalOrdinal;
+  typedef typename MatrixType::node_type            MatrixNode;
 
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef typename InverseType::scalar_type         InverseScalar;
+  typedef typename InverseType::local_ordinal_type  InverseLocalOrdinal;
+  typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
+  typedef typename InverseType::node_type           InverseNode;
 
   //! Destructor.
   virtual ~Container() {};
@@ -105,10 +114,10 @@ public:
   virtual void setNumVectors(const size_t i) = 0;
 
   //! Get the X vector ( y = apply * x )
-  virtual const Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & getX() =0;
+  virtual const Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > & getX() =0;
 
   //! Get the Y vector ( y = apply * x )
-  virtual const Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & getY() =0;
+  virtual const Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > & getY() =0;
 
   //! Returns the ID associated to local row i. 
   /*!
@@ -120,13 +129,13 @@ public:
    * This is usually used to recorder the local row ID (on calling process)
    * of the i-th row in the container.
    */
-  virtual LocalOrdinal & ID(const LocalOrdinal i) = 0;
+  virtual MatrixLocalOrdinal & ID(const size_t i) = 0;
 
   //! Initializes the container, by performing all operations that only require matrix structure.
   virtual void initialize() = 0;
 
   //! Finalizes the linear system matrix and prepares for the application of the inverse.
-  virtual void compute(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix) = 0;
+  virtual void compute(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix) = 0;
 
   //! Sets all necessary parameters.
   virtual void setParameters(const Teuchos::ParameterList& List) = 0;
