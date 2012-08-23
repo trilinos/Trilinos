@@ -263,7 +263,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 
 //==============================================================================
 template<class GraphType>
-bool OverlappingPartitioner<GraphType>::isComputed()
+bool OverlappingPartitioner<GraphType>::isComputed() const
 {
   return(IsComputed_);
 }
@@ -272,21 +272,9 @@ bool OverlappingPartitioner<GraphType>::isComputed()
 template<class GraphType>
 std::ostream& OverlappingPartitioner<GraphType>::print(std::ostream& os) const
 {
-  using std::endl;
-  // NTS: Need to fix for FancyIO later
-
-  if (Graph_->getComm()->getRank()) 
-    return(os);
-
-  os << "================================================================================" << endl;
-  os << "Ifpack2::OverlappingPartitioner" << endl;
-  os << "Number of local rows  = " << Graph_->getNodeNumRows() << endl;
-  os << "Number of global rows = " << Graph_->getGlobalNumRows() << endl;
-  os << "Number of local parts = " << NumLocalParts_ << endl;
-  os << "Overlapping level     = " << OverlappingLevel_ << endl;
-  os << "Is computed           = " << IsComputed_ << endl;
-  os << "================================================================================" << endl;
-
+  Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
+  fos.setOutputToRootOnly(0);
+  describe(fos);
   return(os);
 }
 

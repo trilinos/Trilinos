@@ -128,7 +128,7 @@ public:
   virtual void computeOverlappingPartitions();
   
   //! Returns true if partitions have been computed successfully.
-  bool isComputed();
+  virtual bool isComputed() const;
 
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual std::ostream& print(std::ostream& os) const;

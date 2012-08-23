@@ -132,7 +132,7 @@ Ifpack2_BlockSymGaussSeidel.
 
 */  
 template <class GraphType>
-class Partitioner {
+class Partitioner : public Teuchos::Describable {
 public:
   typedef typename GraphType::local_ordinal_type LocalOrdinal;
   typedef typename GraphType::global_ordinal_type GlobalOrdinal;
@@ -176,7 +176,7 @@ public:
   virtual void compute() = 0;
 
   //! Returns true if partitions have been computed successfully.
-  virtual bool isComputed() = 0;
+  virtual bool isComputed() const = 0;
 
   //! Prints basic information about the partitioning object.
   virtual std::ostream& print(std::ostream& os) const = 0;
