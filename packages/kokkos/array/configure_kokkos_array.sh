@@ -16,13 +16,14 @@ rm -rf CMakeCache.txt
 # You will have to edit the paths below.
 cmake \
   -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
-  -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+  -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
   -D CMAKE_CXX_FLAGS:STRING="-Wall -O3" \
   -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="-Werror" \
   -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
   -D Trilinos_ENABLE_KokkosArray:BOOL=ON \
   -D Trilinos_ENABLE_TESTS:BOOL=ON \
   -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+  -D KokkosArray_ENABLE_DeviceCuda:BOOL=ON \
   -D TPL_ENABLE_CUDA:BOOL=ON \
   -D TPL_ENABLE_CUSPARSE:BOOL=ON \
   -D CUDA_VERBOSE_BUILD:BOOL=ON \

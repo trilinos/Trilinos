@@ -8,10 +8,12 @@ SET(SOURCES UnitTestMain.cpp TestHost.cpp ../TPL/gtest/gtest-all.cc)
 SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
 
 IF(KokkosArray_ENABLE_DeviceCuda)
-  PACKAGE_ADD_CUDA_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     unit_cuda
     SOURCES TestCudaFunctions.cu
-    )
+    DEPLIBS
+    CUDALIBRARY
+  )
   LIST( APPEND SOURCES
     TestCuda.cpp
   )

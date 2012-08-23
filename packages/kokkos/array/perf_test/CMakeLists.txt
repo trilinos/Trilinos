@@ -8,14 +8,16 @@ SET(SOURCES PerfTestMain.cpp PerfTestHost.cpp ../TPL/gtest/gtest-all.cc)
 SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
 
 IF(KokkosArray_ENABLE_DeviceCuda)
-  PACKAGE_ADD_CUDA_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     perf_cuda
     SOURCES PerfTestCuda.cu
+    DEPLIBS
+    CUDALIBRARY
   )
-  LIST(APPEND SOURCES
+  LIST( APPEND SOURCES
     PerfTestCuda.cpp
   )
-  LIST(APPEND LIBRARIES
+  LIST( APPEND LIBRARIES
     kokkosarray_devicecuda perf_cuda
   )
 ENDIF()
