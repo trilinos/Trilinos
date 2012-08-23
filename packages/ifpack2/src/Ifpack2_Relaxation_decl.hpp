@@ -335,7 +335,7 @@ private:
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
   //! Importer for parallel GS and SGS
-  Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
+  Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
   mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Diagonal_;
   //! Number of application of the preconditioner (should be greater than 0).
