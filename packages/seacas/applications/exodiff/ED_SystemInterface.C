@@ -362,6 +362,8 @@ void SystemInterface::enroll_options()
 		  "Default tolerance is relative differences of the absolute value of the values.", 0);
   options_.enroll("eigen_combined", GetLongOption::NoValue,
 		  "Default tolerance is combined differences of the absolute value of the values.", 0);
+  options_.enroll("ignore", GetLongOption::NoValue,
+		  "Default tolerance is ignored (turn off all checking by default).", 0);
 
   options_.enroll("show_all_diffs", GetLongOption::NoValue,
 		  "Show all differences for all variables, not just the maximum.", 0);
@@ -748,7 +750,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     default_tol.type = RELATIVE;
   }
   if (options_.retrieve("ignore")) {
-    output_type      = IGNORE;  // Change type to relative.
+    output_type      = IGNORE;  // Change type to ignored
     default_tol.type = IGNORE;
   }
   if (options_.retrieve("absolute")) {
