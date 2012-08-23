@@ -1551,8 +1551,15 @@ NNTI_result_t NNTI_ib_wait (
 
             check_listen_socket_for_new_connections();
 
+            if (is_buf_op_complete(reg_buf) == TRUE) {
+                log_debug(debug_level, "buffer op completed outside this thread (reg_buf=%p)", reg_buf);
+                nnti_rc = NNTI_OK;
+                break;
+            }
+
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
+nthread_lock(&nnti_ib_lock);
             ibv_rc = ibv_poll_cq(cq, 1, &wc);
             trios_stop_timer("NNTI_ib_wait - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
@@ -1577,20 +1584,28 @@ NNTI_result_t NNTI_ib_wait (
 
                 wait_buf=decode_event_buffer(reg_buf, &wc);
                 process_event(wait_buf, &wc);
+nthread_unlock(&nnti_ib_lock);
 
                 if (is_buf_op_complete(reg_buf) == TRUE) {
                     nnti_rc = NNTI_OK;
                     break;
                 }
             } else {
+nthread_unlock(&nnti_ib_lock);
 retry:
                 check_listen_socket_for_new_connections();
 
-//            nthread_lock(&nnti_ib_lock);
+                if (is_buf_op_complete(reg_buf) == TRUE) {
+                    log_debug(debug_level, "buffer op completed outside this thread (reg_buf=%p)", reg_buf);
+                    nnti_rc = NNTI_OK;
+                    break;
+                }
+
                 trios_start_timer(call_time);
+nthread_lock(&nnti_ib_lock);
                 rc = poll_comp_channel(comp_channel, cq, timeout_per_call);
+nthread_unlock(&nnti_ib_lock);
                 trios_stop_timer("NNTI_ib_wait - poll_comp_channel", call_time);
-//            nthread_unlock(&nnti_ib_lock);
                 /* case 1: success */
                 if (rc == NNTI_OK) {
                     logger_set_default_level(old_log_level);
@@ -1778,8 +1793,15 @@ NNTI_result_t NNTI_ib_waitany (
 
             check_listen_socket_for_new_connections();
 
+            if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
+                log_debug(debug_level, "buffer op already complete (which=%u, buf_list[%d]=%p)", *which, *which, buf_list[*which]);
+                nnti_rc = NNTI_OK;
+                break;
+            }
+
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
+            nthread_lock(&nnti_ib_lock);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
             trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
@@ -1804,20 +1826,28 @@ NNTI_result_t NNTI_ib_waitany (
 
                 wait_buf=decode_event_buffer(buf_list[0], &wc);
                 process_event(wait_buf, &wc);
+nthread_unlock(&nnti_ib_lock);
 
                 if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
                     nnti_rc = NNTI_OK;
                     break;
                 }
             } else {
+nthread_unlock(&nnti_ib_lock);
 retry:
                 check_listen_socket_for_new_connections();
 
-//            nthread_lock(&nnti_ib_lock);
+                if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
+                    log_debug(debug_level, "buffer op already complete (which=%u, buf_list[%d]=%p)", *which, *which, buf_list[*which]);
+                    nnti_rc = NNTI_OK;
+                    break;
+                }
+
                 trios_start_timer(call_time);
+nthread_lock(&nnti_ib_lock);
                 rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
+nthread_unlock(&nnti_ib_lock);
                 trios_stop_timer("NNTI_ib_waitany - poll_comp_channel", call_time);
-//            nthread_unlock(&nnti_ib_lock);
                 /* case 1: success */
                 if (rc == NNTI_OK) {
                     nnti_rc = NNTI_OK;
@@ -1998,8 +2028,15 @@ NNTI_result_t NNTI_ib_waitall (
 
             check_listen_socket_for_new_connections();
 
+            if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+                log_debug(debug_level, "all buffer ops already complete (buf_list=%p)", buf_list);
+                nnti_rc = NNTI_OK;
+                break;
+            }
+
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
+nthread_lock(&nnti_ib_lock);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
             trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
@@ -2024,20 +2061,28 @@ NNTI_result_t NNTI_ib_waitall (
 
                 wait_buf=decode_event_buffer(buf_list[0], &wc);
                 process_event(wait_buf, &wc);
+nthread_unlock(&nnti_ib_lock);
 
                 if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
                     nnti_rc = NNTI_OK;
                     break;
                 }
             } else {
+nthread_unlock(&nnti_ib_lock);
 retry:
                 check_listen_socket_for_new_connections();
 
-//            nthread_lock(&nnti_ib_lock);
+                if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+                    log_debug(debug_level, "all buffer ops already complete (buf_list=%p)", buf_list);
+                    nnti_rc = NNTI_OK;
+                    break;
+                }
+
                 trios_start_timer(call_time);
+nthread_lock(&nnti_ib_lock);
                 rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
+nthread_unlock(&nnti_ib_lock);
                 trios_stop_timer("NNTI_ib_waitany - poll_comp_channel", call_time);
-//            nthread_unlock(&nnti_ib_lock);
                 /* case 1: success */
                 if (rc == NNTI_OK) {
                     nnti_rc = NNTI_OK;
@@ -3949,7 +3994,6 @@ static ib_connection *del_conn_peer(const NNTI_peer_t *peer)
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
         conn = connections_by_peer[key];
     }
-    nthread_unlock(&nnti_conn_peer_lock);
 
     if (conn != NULL) {
         log_debug(nnti_debug_level, "connection found");
@@ -3959,6 +4003,7 @@ static ib_connection *del_conn_peer(const NNTI_peer_t *peer)
     } else {
         log_debug(nnti_debug_level, "connection NOT found");
     }
+    nthread_unlock(&nnti_conn_peer_lock);
 
     return(conn);
 }
@@ -3970,7 +4015,6 @@ static ib_connection *del_conn_qpn(const NNTI_qp_num qpn)
     if (connections_by_qpn.find(qpn) != connections_by_qpn.end()) {
         conn = connections_by_qpn[qpn];
     }
-    nthread_unlock(&nnti_conn_qpn_lock);
 
     if (conn != NULL) {
         log_debug(nnti_debug_level, "connection found");
@@ -3978,6 +4022,7 @@ static ib_connection *del_conn_qpn(const NNTI_qp_num qpn)
     } else {
         log_debug(nnti_debug_level, "connection NOT found");
     }
+    nthread_unlock(&nnti_conn_qpn_lock);
 
     return(conn);
 }
@@ -4047,7 +4092,6 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
     if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[h];
     }
-    nthread_unlock(&nnti_buf_bufhash_lock);
 
     if (buf != NULL) {
         log_debug(debug_level, "buffer found");
@@ -4055,6 +4099,7 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
     } else {
         log_debug(debug_level, "buffer NOT found");
     }
+    nthread_unlock(&nnti_buf_bufhash_lock);
 
     return(buf);
 }
@@ -4085,7 +4130,7 @@ static NNTI_result_t insert_wr_wrhash(ib_work_request *wr)
     wr_by_wrhash[h] = wr;
 //    nthread_unlock(&nnti_wr_wrhash_lock);
 
-    log_debug(nnti_debug_level, "wrhash work request added (wr=%p hash=%x)", wr, h);
+    log_debug(nnti_debug_level, "wrhash work request added (wrhash=%x, wr=%p)", h, wr);
 
     return(rc);
 }
@@ -4101,11 +4146,11 @@ static ib_work_request *get_wr_wrhash(const uint32_t wrhash)
     nthread_unlock(&nnti_wr_wrhash_lock);
 
     if (wr != NULL) {
-        log_debug(nnti_debug_level, "work request found (wr=%p)", wr);
+        log_debug(nnti_debug_level, "work request found (wrhash=%x, wr=%p)", (uint64_t)wrhash, wr);
         return wr;
     }
 
-    log_debug(nnti_debug_level, "work request NOT found");
+    log_debug(nnti_debug_level, "work request NOT found (wrhash=%x)", (uint64_t)wrhash);
 //    print_wrhash_map();
 
     return(NULL);
@@ -4119,14 +4164,14 @@ static ib_work_request *del_wr_wrhash(ib_work_request *wr)
     if (wr_by_wrhash.find(h) != wr_by_wrhash.end()) {
         wr = wr_by_wrhash[h];
     }
-    nthread_unlock(&nnti_wr_wrhash_lock);
 
     if (wr != NULL) {
-        log_debug(debug_level, "work request found");
+        log_debug(debug_level, "work request found (wrhash=%x, wr=%p)", h, wr);
         wr_by_wrhash.erase(h);
     } else {
-        log_debug(debug_level, "work request NOT found");
+        log_debug(debug_level, "work request NOT found (wrhash=%x)", h);
     }
+    nthread_unlock(&nnti_wr_wrhash_lock);
 
     return(wr);
 }
