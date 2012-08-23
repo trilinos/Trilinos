@@ -206,16 +206,10 @@ void SparseContainer<MatrixType,InverseType>::destroy()
 template<class MatrixType, class InverseType>
 std::ostream& SparseContainer<MatrixType,InverseType>::print(std::ostream& os) const
 {
-  using std::endl;
-  os << "================================================================================" << endl;
-  os << "Ifpack2_SparseContainer" << endl;
-  os << "Number of rows          = " << NumRows_ << endl;
-  os << "Number of vectors       = " << NumVectors_ << endl;
-  os << "isInitialized()         = " << IsInitialized_ << endl;
-  os << "isComputed()            = " << IsComputed_ << endl;
-  os << "================================================================================" << endl;
-  os << endl;
-  return os;
+  Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
+  fos.setOutputToRootOnly(0);
+  describe(fos);
+  return(os);
 }
 
 
