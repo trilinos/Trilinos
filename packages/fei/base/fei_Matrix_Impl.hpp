@@ -492,22 +492,24 @@ fei::Matrix_Impl<T>::Matrix_Impl(fei::SharedPtr<T> matrix,
     setBlockMatrix(false);
   }
 
-  if (zeroSharedRows) {
+  if (zeroSharedRows && matrixGraph->getGlobalNumSlaveConstraints() == 0) {
     std::vector<double> zeros;
     fei::SharedPtr<fei::SparseRowGraph> srg = matrixGraph->getRemotelyOwnedGraphRows();
-    for(size_t row=0; row<srg->rowNumbers.size(); ++row) {
-      int rowLength = srg->rowOffsets[row+1] - srg->rowOffsets[row];
-      if (rowLength == 0) continue;
-      zeros.resize(rowLength, 0.0);
-      const double* zerosPtr = &zeros[0];
-      const int* cols = &srg->packedColumnIndices[srg->rowOffsets[row]];
-      sumIn(1, &srg->rowNumbers[row], rowLength, cols, &zerosPtr);
-    }
-    setCommSizes();
-    std::map<int,FillableMat*>& remote = getRemotelyOwnedMatrices();
-    for(std::map<int,FillableMat*>::iterator iter=remote.begin(), end=remote.end(); iter!=end; ++iter)
-    {
-      iter->second->clear();
+    if (srg.get() != NULL) {
+      for(size_t row=0; row<srg->rowNumbers.size(); ++row) {
+        int rowLength = srg->rowOffsets[row+1] - srg->rowOffsets[row];
+        if (rowLength == 0) continue;
+        zeros.resize(rowLength, 0.0);
+        const double* zerosPtr = &zeros[0];
+        const int* cols = &srg->packedColumnIndices[srg->rowOffsets[row]];
+        sumIn(1, &srg->rowNumbers[row], rowLength, cols, &zerosPtr);
+      }
+      setCommSizes();
+      std::map<int,FillableMat*>& remote = getRemotelyOwnedMatrices();
+      for(std::map<int,FillableMat*>::iterator iter=remote.begin(), end=remote.end(); iter!=end; ++iter)
+      {
+        iter->second->clear();
+      }
     }
   }
 }

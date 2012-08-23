@@ -244,8 +244,9 @@ create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
       fei::SharedPtr<Epetra_VbrMatrix>
         epetraMatrix(new Epetra_VbrMatrix(Copy, egraph));
 
+      bool zeroSharedRows = false;
       tmpmat.reset(new fei::Matrix_Impl<Epetra_VbrMatrix>(epetraMatrix,
-                                                   matrixGraph, localSize));
+                                     matrixGraph, localSize, zeroSharedRows));
       zero_Epetra_VbrMatrix(epetraMatrix.get());
     }
     else {
