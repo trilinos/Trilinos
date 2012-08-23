@@ -107,6 +107,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
     inp[i] = 0;
   }
   if(comm->getRank() == 0){
+
     fstream inParam(paramFileName.c_str());
 
     std::string tmp = "";
@@ -153,11 +154,13 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
   }
 }
 
-void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, std::string paramFile, partId_t k){
+void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, std::string paramFile, partId_t k,
+    bool force_binary, bool force_linear){
 
   Teuchos::ParameterList geoparams("geo params");
 
   readGeoGenParams(paramFile, geoparams, comm);
+
 #ifdef HAVE_ZOLTAN2_OMP
   double begin = omp_get_wtime();
 #endif
@@ -233,7 +236,18 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   parParams.set("compute_metrics", "true");
   parParams.set("imbalance_tolerance", double(imbalance));
   params.set("parallel_part_calculation_count", k);
-
+  if(force_binary){
+    params.set("force_binary_search", "yes");
+  }
+  else {
+    params.set("force_binary_search", "no");
+  }
+  if(force_linear){
+    params.set("force_linear_search", "yes");
+  }
+  else {
+    params.set("force_linear_search", "no");
+  }
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
   geoParams.set("bisection_num_test_cuts", 7);
 
@@ -273,7 +287,8 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   }
 }
 
-void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, partId_t k)
+void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, partId_t k,
+    bool force_binary, bool force_linear)
 {
   //std::string fname("simple");
   cout << "running " << fname << endl;
@@ -313,11 +328,24 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numP
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
   params.set("parallel_part_calculation_count", k);
+  if(force_binary){
+    params.set("force_binary_search", "yes");
+  }
+  else {
+    params.set("force_binary_search", "no");
+  }
+  if(force_linear){
+    params.set("force_linear_search", "yes");
+  }
+  else {
+    params.set("force_linear_search", "no");
+  }
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("num_global_parts", numParts);
   parParams.set("algorithm", "PQJagged");
   parParams.set("compute_metrics", "true");
   parParams.set("imbalance_tolerance", double(imbalance));
+
 
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
   geoParams.set("bisection_num_test_cuts", 7);
@@ -368,7 +396,8 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
 }
 
 void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
-     string &pqParts, int &opt,std::string &fname, std::string &paramFile, partId_t &k){
+     string &pqParts, int &opt,std::string &fname, std::string &paramFile, partId_t &k,
+     bool &force_binary , bool &force_linear){
 
   for(int i = 0; i < argc; ++i){
     string tmp = convert_to_string(argv[i]);
@@ -413,6 +442,25 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
         stream << tmp;
         getline(stream, paramFile, '=');
         stream >> paramFile;
+
+      }
+      else if(identifier == "EL"){
+        if(value == 0){
+          force_linear = false;
+        } else if(value == 1){
+          force_linear = true;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
+      }
+      else if(identifier == "EB"){
+        if(value == 0){
+          force_binary = false;
+        } else if(value == 1){
+          force_binary = true;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
       }
       else if(identifier == "O"){
         if(value >= 0 && value <= 3){
@@ -450,17 +498,18 @@ int main(int argc, char *argv[])
   int opt = 3;
   std::string fname = "simple";
   std::string paramFile = "";
+  bool force_binary = false, force_linear = false;
 
   try{
     getArgVals(argc, argv,   numParts, imbalance ,
-        pqParts, opt,fname, paramFile, k);
+        pqParts, opt,fname, paramFile, k, force_binary, force_linear);
 
     switch (opt){
     case 0:
-      testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k);
+      testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear);
       break;
     default:
-      GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile, k);
+      GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile, k, force_binary, force_linear);
       break;
     }
 

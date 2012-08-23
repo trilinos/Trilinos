@@ -454,6 +454,36 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // LEVEL: top level, general problem parameters
   ///////////////////////////////////////////////////////////
 
+  //enforce binary search
+  parameterName = string("force_binary_search");
+
+  str2intValidatorP =
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "If true, then regardless of the part number, cut line will be searched "
+    "using binary search.\n",
+    docString);
+
+  pList.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
+
+  //enforce linear search
+  parameterName = string("force_linear_search");
+
+  str2intValidatorP =
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "If true, then regardless of the part number, cut line will be searched "
+    "using linear search.\n",
+    docString);
+
+  pList.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
+
   ////////// topLevel/speed_versus_quality
   parameterName = string("speed_versus_quality");
 

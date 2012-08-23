@@ -60,7 +60,7 @@
 #define EPS_SCALE 10
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
-
+#define INCLUDE_ZOLTAN2_EXPERIMENTAL
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
 #endif
@@ -288,7 +288,8 @@ inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,si
  */
 template <typename T>
 void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolerance,
-    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear, partId_t &concurrentPartCount){
+    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear, partId_t &concurrentPartCount,
+    bool &force_binary, bool &force_linear){
 
   bool isSet;
   string strChoice;
@@ -332,6 +333,24 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
 
   if (imbalanceTolerance <= 0)
     imbalanceTolerance = 10e-4;
+
+
+  int val = 0;
+  getParameterValue<int>(pl,
+      "force_binary_search", isSet, val);
+  if (!isSet || val == 0){
+    force_binary = false;
+  } else {
+    force_binary = true;
+  }
+
+  getParameterValue<int>(pl,
+      "force_linear_search", isSet, val);
+  if (!isSet || val == 0){
+    force_linear = false;
+  } else {
+    force_linear = true;
+  }
 
 
   //TODO: FIX ME.
@@ -2153,7 +2172,9 @@ void AlgPQJagged(
 
   bool allowNonRectelinearPart = true;
   int concurrentPartCount = 0;
-  pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart,  concurrentPartCount);
+  bool force_binary = false, force_linear = false;
+  pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart,  concurrentPartCount,
+      force_binary, force_linear);
 
   int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
@@ -2394,6 +2415,12 @@ void AlgPQJagged(
     bool useBinarySearch = false;
     if(partNo[i] > BINARYCUTOFF){
       useBinarySearch = true;
+    }
+    if(force_binary){
+      useBinarySearch = true;
+    }
+    if (force_linear){
+      useBinarySearch = false;
     }
 
 
