@@ -395,8 +395,8 @@ void fprint_NNTI_status(
     /* contents */
     out << subprefix << " op     = " << status->op << std::endl;
     out << subprefix << " result = " << status->result << std::endl;
-    out << subprefix << " start  = " << status->offset << std::endl;
-    out << subprefix << " offset = " << status->op << std::endl;
+    out << subprefix << " start  = " << status->start << std::endl;
+    out << subprefix << " offset = " << status->offset << std::endl;
     out << subprefix << " length = " << status->length << std::endl;
     fprint_NNTI_peer(out, "src", subprefix.c_str(), &status->src);
     fprint_NNTI_peer(out, "dest", subprefix.c_str(), &status->dest);
