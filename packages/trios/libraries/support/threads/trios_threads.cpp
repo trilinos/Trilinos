@@ -182,6 +182,9 @@ int nthread_unlock(
     fflush(stderr);
 #endif
 
+    /* yield to other threads */
+    usleep(0);
+
     return(rc);
 }
 
