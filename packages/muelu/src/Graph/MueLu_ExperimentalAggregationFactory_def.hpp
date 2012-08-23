@@ -103,10 +103,10 @@ namespace MueLu {
       if(currentLevel.GetLevelID() == 0 && currentLevel.IsAvailable("coarseAggStat",MueLu::NoFactory::get())) {
         aggStat = currentLevel.Get<Teuchos::ArrayRCP<NodeState> >("coarseAggStat",MueLu::NoFactory::get());
       } else if (currentLevel.IsAvailable("coarseAggStat", this)) {
-        std::cout << "coarseAggStat: found on level" << std::endl;
+        //std::cout << "coarseAggStat: found on level" << std::endl;
         aggStat = currentLevel.Get<Teuchos::ArrayRCP<NodeState> >("coarseAggStat",this);
       } else {
-        std::cout << "use default coarseAggStat" << std::endl;
+        //std::cout << "use default coarseAggStat" << std::endl;
         if(nRows > 0) aggStat = Teuchos::arcp<NodeState>(nRows);
         for(LocalOrdinal i=0; i<nRows; ++i) {
           aggStat[i] = READY;
