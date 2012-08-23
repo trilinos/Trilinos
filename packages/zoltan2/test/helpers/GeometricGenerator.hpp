@@ -817,7 +817,7 @@ private:
     tt tmp;
     ss >> tmp;
     if (ss.fail()){
-      throw "Cannot convert string " + obj + ".";
+      throw "Cannot convert string " + obj;
     }
     return tmp;
   }
@@ -890,7 +890,7 @@ private:
           std::string tmp = toString<int>(reqArg);
           throw INVALID_SHAPE_ARG(distName, tmp);
         }
-        np_ = fromString<lno_t>(splittedStr[i++]);
+        np_ = fromString<gno_t>(splittedStr[i++]);
         CoordinatePoint<T> pp;
 
         pp.x = fromString<T>(splittedStr[i++]);
@@ -917,7 +917,7 @@ private:
           std::string tmp = toString<int>(reqArg);
           throw INVALID_SHAPE_ARG(distName, tmp);
         }
-        np_ = fromString<lno_t>(splittedStr[i++]);
+        np_ = fromString<gno_t>(splittedStr[i++]);
         T l_x = fromString<T>(splittedStr[i++]);
         T r_x = fromString<T>(splittedStr[i++]);
         T l_y = fromString<T>(splittedStr[i++]);
@@ -941,13 +941,13 @@ private:
           throw INVALID_SHAPE_ARG(distName, tmp);
         }
 
-        lno_t np_x = fromString<lno_t>(splittedStr[i++]);
-        lno_t np_y = fromString<lno_t>(splittedStr[i++]);
-        lno_t np_z = 1;
+        gno_t np_x = fromString<gno_t>(splittedStr[i++]);
+        gno_t np_y = fromString<gno_t>(splittedStr[i++]);
+        gno_t np_z = 1;
 
 
         if(this->coordinate_dimension == 3){
-          np_z = fromString<lno_t>(splittedStr[i++]);
+          np_z = fromString<gno_t>(splittedStr[i++]);
         }
 
         np_ = np_x * np_y * np_z;
