@@ -14,5 +14,8 @@ for dirName in teuchos epetra kokkos tpetra xpetra ; do
   fi
 done
 
+cd ../scripts && python xml2dox.py && cd -
+cp ../scripts/parameters.dox .
+
 doxygen Doxyfile
 
