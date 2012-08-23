@@ -44,6 +44,7 @@ packages/capo capo-checkins@software.sandia.gov
 packages/isorropia isorropia-checkins@software.sandia.gov
 packages/zoltan2 zoltan2-checkins@software.sandia.gov
 packages/zoltan zoltan-checkins@software.sandia.gov
+packages/shylu shylu-checkins@software.sandia.gov
 packages/moertel moertel-checkins@software.sandia.gov
 packages/moocho moocho-checkins@software.sandia.gov
 packages/optipack optipack-checkins@software.sandia.gov
