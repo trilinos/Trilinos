@@ -97,6 +97,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
   }
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
+  const int myRank = graph.GetComm()->getRank();
 
   // vertex ids for output
   Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
@@ -192,20 +193,20 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
         aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
         ag.index = nLocalAggregates++;       // aggregate accepted, increment aggregate counter
         vertex2AggId[iNode1] = ag.index;
-        procWinner[iNode1] = graph.GetComm()->getRank();
-        std::cout << "build new aggregate of size " << ag.list.size() << " nodes" << std::endl;
-        std::cout << "nodes: ";
-        for (unsigned int k=0; k<ag.list.size(); k++)
-          std::cout << ag.list[k] << " ";
-        std::cout << std::endl;
+        procWinner[iNode1] = myRank; //graph.GetComm()->getRank();
+        //std::cout << "build new aggregate of size " << ag.list.size() << " nodes" << std::endl;
+        //std::cout << "nodes: ";
+        //for (unsigned int k=0; k<ag.list.size(); k++)
+        //  std::cout << ag.list[k] << " ";
+        //std::cout << std::endl;
 
-        if(ag.list.size() == 2) {
-          std::cout << "!!!!!!!!!!!!!!!!!!!!!! built a 1pt aggregate !!!!!!!!!!!!!!!!!!"<< std::endl;
-        }
+        //if(ag.list.size() == 2) {
+        //  std::cout << "!!!!!!!!!!!!!!!!!!!!!! built a 1pt aggregate !!!!!!!!!!!!!!!!!!"<< std::endl;
+        //}
         for (unsigned int k=0; k<ag.list.size(); k++) {
           aggStat[ag.list[k]] = SELECTED;
           vertex2AggId[ag.list[k]] = ag.index;
-          procWinner[ag.list[k]] = graph.GetComm()->getRank();
+          procWinner[ag.list[k]] = myRank; //graph.GetComm()->getRank();
           if(ordering_ == GRAPH) {
             Teuchos::ArrayView<const LocalOrdinal> neighOfJNode = graph.getNeighborVertices(ag.list[k]);
             for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfJNode.begin(); it!=neighOfJNode.end(); ++it) {
@@ -301,6 +302,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
   }
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
+  const int myRank = graph.GetComm()->getRank();
 
   // vertex ids for output
   Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
@@ -395,21 +397,21 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
         aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
         ag.index = nLocalAggregates++;       // aggregate accepted, increment aggregate counter
         vertex2AggId[iNode1] = ag.index;
-        procWinner[iNode1] = graph.GetComm()->getRank();
+        procWinner[iNode1] = myRank; //graph.GetComm()->getRank();
         /*std::cout << "build new aggregate of size " << ag.list.size() << " nodes" << std::endl;
         std::cout << "nodes: ";
         for (unsigned int k=0; k<ag.list.size(); k++)
           std::cout << ag.list[k] << " ";
         std::cout << std::endl;*/
 
-        if(ag.list.size() == 2) {
-          std::cout << "!!!!!!!!!!!!!!!!!!!!!! built a 1pt aggregate !!!!!!!!!!!!!!!!!!"<< std::endl;
-        }
+        //if(ag.list.size() == 2) {
+        //  std::cout << "!!!!!!!!!!!!!!!!!!!!!! built a 1pt aggregate !!!!!!!!!!!!!!!!!!"<< std::endl;
+        //}
         for (unsigned int k=0; k<ag.list.size(); k++) {
           aggStat[ag.list[k]] = SELECTED;
           coarse_aggStat[ag.index] = READY; // mark aggregate id to be a valid READY node on the next coarser grid
           vertex2AggId[ag.list[k]] = ag.index;
-          procWinner[ag.list[k]] = graph.GetComm()->getRank();
+          procWinner[ag.list[k]] = myRank; //graph.GetComm()->getRank();
           if(ordering_ == GRAPH) {
             Teuchos::ArrayView<const LocalOrdinal> neighOfJNode = graph.getNeighborVertices(ag.list[k]);
             for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfJNode.begin(); it!=neighOfJNode.end(); ++it) {
@@ -437,7 +439,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
       for(size_t k=0; k<ag.list.size(); k++) {
         aggStat[ag.list[k]] = SELECTED_1PT;
         vertex2AggId[ag.list[k]] = ag.index;
-        procWinner[ag.list[k]] = graph.GetComm()->getRank();
+        procWinner[ag.list[k]] = myRank; //graph.GetComm()->getRank();
       }
     }
 
@@ -508,6 +510,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
   Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
+  const int myRank = graph.GetComm()->getRank();
 
   // loop over all local rows
   for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
@@ -541,7 +544,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
       if(selected_aggregate != -1) {
         aggStat[iNode] = SELECTED;
         vertex2AggId[iNode] = selected_aggregate;
-        procWinner[iNode] = graph.GetComm()->getRank();
+        procWinner[iNode] = myRank; //graph.GetComm()->getRank();
       }
     } // end if aggState == NOTSEL...
   } // end loop over all local rows
@@ -602,6 +605,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates(); // return number of local aggregates on current proc
+  const int myRank = graph.GetComm()->getRank();
 
   // loop over all local rows
   for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
@@ -623,7 +627,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
       for(size_t k=0; k<ag.list.size(); k++) {
         aggStat[ag.list[k]] = SELECTED;
         vertex2AggId[ag.list[k]] = ag.index;
-        procWinner[ag.list[k]] = graph.GetComm()->getRank();
+        procWinner[ag.list[k]] = myRank; //graph.GetComm()->getRank();
       }
     } // end if NOTSEL
   }   // end for
@@ -688,6 +692,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates(); // return number of local aggregates on current proc
+  const int myRank = graph.GetComm()->getRank();
 
   // loop over all local rows
   for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
@@ -708,7 +713,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
       for(size_t k=0; k<ag.list.size(); k++) {
         aggStat[ag.list[k]] = SELECTED;
         vertex2AggId[ag.list[k]] = ag.index;
-        procWinner[ag.list[k]] = graph.GetComm()->getRank();
+        procWinner[ag.list[k]] = myRank; // graph.GetComm()->getRank();
       }
     } // end if BDRY
   }   // end for
