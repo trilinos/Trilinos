@@ -2,6 +2,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
         support         libraries/support              EX  OPTIONAL
         nnti            libraries/nessie/nnti          EX  OPTIONAL
         nssi            libraries/nessie/nssi          EX  OPTIONAL
+        commsplitter    libraries/commsplitter         EX  OPTIONAL
         programs        programs                       EX  OPTIONAL
         examples        examples                       EX  OPTIONAL
         tests           tests                          EX  OPTIONAL
