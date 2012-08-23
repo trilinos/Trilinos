@@ -109,18 +109,30 @@ create_mirror( const View<DataType,LayoutType,DeviceType> & input )
 namespace KokkosArray {
 namespace Impl {
 
-template< class DstType ,
-          class SrcType ,
-          class SameValue = typename
-            is_same< typename DstType::value_type ,
-                     typename remove_const<
-                       typename SrcType::value_type >::type
-                   >::type ,
+template< typename X , typename Y >
+struct ViewDeepCopyValueCompatible : public false_type {};
+
+template< typename X >
+struct ViewDeepCopyValueCompatible< const X , const X > : public false_type {};
+
+template< typename X >
+struct ViewDeepCopyValueCompatible< X , const X > : public true_type {};
+
+template< typename X >
+struct ViewDeepCopyValueCompatible< X , X > : public true_type {};
+
+
+template< class DstView ,
+          class SrcView ,
+          class SameValue =
+            typename ViewDeepCopyValueCompatible<
+              typename DstView::value_type ,
+              typename SrcView::value_type >::type ,
           class SameLayout = typename
-            is_same< typename DstType::array_layout ,
-                     typename SrcType::array_layout >::type ,
+            is_same< typename DstView::array_layout ,
+                     typename SrcView::array_layout >::type ,
           class SameRank = typename
-             bool_< DstType::Rank == SrcType::Rank >::type >
+             bool_< DstView::Rank == SrcView::Rank >::type >
 struct ViewDeepCopy ;
 
 // Deep copy compatible views:

@@ -65,7 +65,7 @@ public:
   typedef ValueType                           value_type ;
   typedef BlockSpec                           block_spec ;
   typedef CrsArray< size_type , device_type > graph_type ;
-  typedef View< value_type[0][0], LayoutLeft, device_type >  block_vector_type ;
+  typedef View< value_type**, LayoutLeft, device_type >  block_vector_type ;
 
   block_vector_type  values ;
   graph_type         graph ;
@@ -77,11 +77,11 @@ template< class BlockSpec ,
           typename VectorValueType ,
           class Device >
 void multiply( const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-               const View<VectorValueType[0][0],LayoutLeft,Device> & x ,
-               const View<VectorValueType[0][0],LayoutLeft,Device> & y )
+               const View<VectorValueType**,LayoutLeft,Device> & x ,
+               const View<VectorValueType**,LayoutLeft,Device> & y )
 {
   typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
-  typedef View<VectorValueType[0][0],LayoutLeft,Device>     block_vector_type ;
+  typedef View<VectorValueType**,LayoutLeft,Device>     block_vector_type ;
 
   Impl::Multiply<matrix_type,block_vector_type,block_vector_type>::apply( A , x , y );
 }

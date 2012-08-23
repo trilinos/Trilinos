@@ -50,13 +50,13 @@ namespace Impl {
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
   BlockCrsMatrix< BlockSpec , MatrixValue , Host > ,
-  KokkosArray::View< VectorValue[0][0] , LayoutLeft , Host > ,
-  KokkosArray::View< VectorValue[0][0] , LayoutLeft , Host > >
+  KokkosArray::View< VectorValue** , LayoutLeft , Host > ,
+  KokkosArray::View< VectorValue** , LayoutLeft , Host > >
 {
 public:
   typedef Host                                      device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef View< VectorValue[0][0] , LayoutLeft , Host > block_vector_type ;
+  typedef View< VectorValue** , LayoutLeft , Host > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
 
   const matrix_type  m_A ;

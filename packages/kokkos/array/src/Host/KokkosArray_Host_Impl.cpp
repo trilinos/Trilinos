@@ -104,7 +104,8 @@ HostInternal::HostInternal()
   , m_node_rank( -1 )
   , m_node_count( 1 )
   , m_node_pu_count( 0 )
-  , m_page_size( 16 /* default alignment */ )
+  , m_page_size( 0 )
+  , m_cache_line_size( 64 /* default alignment */ )
   , m_thread_count( 1 )
   , m_gang_count( 1 )
   , m_worker_count( 1 )
@@ -457,6 +458,9 @@ Host::size_type Host::detect_node_count()
 
 Host::size_type Host::detect_node_core_count()
 { return Impl::HostInternal::singleton().m_node_pu_count ; }
+
+Host::size_type Host::detect_cache_line_size()
+{ return Impl::HostInternal::singleton().m_cache_line_size ; }
 
 Host::size_type Host::detect_memory_page_size()
 { return Impl::HostInternal::singleton().m_page_size ; }

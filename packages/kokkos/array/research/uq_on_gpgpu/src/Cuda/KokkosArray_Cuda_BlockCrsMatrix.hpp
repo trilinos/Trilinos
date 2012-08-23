@@ -54,17 +54,17 @@ namespace Impl {
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
   BlockCrsMatrix< BlockSpec , MatrixValue , KokkosArray::Cuda > ,
-  KokkosArray::View< VectorValue[0][0] ,
+  KokkosArray::View< VectorValue** ,
                      KokkosArray::LayoutLeft ,
                      KokkosArray::Cuda > ,
-  KokkosArray::View< VectorValue[0][0] ,
+  KokkosArray::View< VectorValue** ,
                      KokkosArray::LayoutLeft ,
                      KokkosArray::Cuda > >
 {
 public:
   typedef KokkosArray::Cuda                              device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef View< VectorValue[0][0] , LayoutLeft , Cuda > block_vector_type ;
+  typedef View< VectorValue** , LayoutLeft , Cuda > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
   typedef Impl::Multiply< BlockSpec , void , void > block_matrix_type ;
 

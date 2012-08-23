@@ -140,7 +140,7 @@ void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print 
   const size_t length = N * N * N ;
 
   typedef IntType value_type ; // to avoid comparison round-off differences
-  typedef KokkosArray::View<value_type[0][0],KokkosArray::LayoutLeft,Device>
+  typedef KokkosArray::View<value_type**,KokkosArray::LayoutLeft,Device>
     block_vector_type ;
 
   typedef KokkosArray::SparseProductTensor< 3 , IntType , Device > block_spec ;

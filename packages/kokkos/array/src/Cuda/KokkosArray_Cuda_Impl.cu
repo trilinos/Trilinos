@@ -270,7 +270,7 @@ void CudaInternal::initialize( int cuda_device_id )
 
       m_maxBlock = 1 ;
       while ( m_maxBlock < minBlock &&
-              ( m_maxBlock << 1 ) <= cudaProp.maxGridSize[0] ) {
+              ( m_maxBlock << 1 ) <= (unsigned) cudaProp.maxGridSize[0] ) {
         m_maxBlock <<= 1 ;
       }
     }

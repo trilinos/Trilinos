@@ -151,7 +151,7 @@ test_product_tensor_matrix(
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
-  typedef KokkosArray::View< value_type[0][0] ,
+  typedef KokkosArray::View< value_type** ,
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
@@ -250,7 +250,7 @@ test_product_tensor_diagonal_matrix(
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
-  typedef KokkosArray::View< value_type[0][0],
+  typedef KokkosArray::View< value_type**,
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 

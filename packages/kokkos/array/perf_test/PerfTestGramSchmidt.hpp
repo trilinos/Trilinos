@@ -58,11 +58,11 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
   typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
-  typedef KokkosArray::View< Scalar[][0] ,
+  typedef KokkosArray::View< Scalar** ,
                              KokkosArray::LayoutLeft ,
                              device_type > multivector_type ;
 
-  typedef KokkosArray::View< Scalar[] ,
+  typedef KokkosArray::View< Scalar* ,
                              KokkosArray::LayoutLeft ,
                              device_type > vector_type ;
 

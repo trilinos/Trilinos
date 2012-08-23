@@ -53,62 +53,48 @@
 
 namespace KokkosArray {
 
-#if 0
-
-template< class DataType , class LayoutType >
-class View< DataType , LayoutType , KOKKOSARRAY_MACRO_DEVICE >
-  : public Impl::ViewOperator< DataType ,
-                               typename LayoutType::array_layout ,
-                               KOKKOSARRAY_MACRO_DEVICE::memory_space >
-{
-private:
-  typedef Impl::ViewOperator< DataType ,
-                              typename LayoutType::array_layout ,
-                              KOKKOSARRAY_MACRO_DEVICE::memory_space > oper_type ;
-
-
-
-#else
-
 template< class DataType , class LayoutType >
 class View< DataType , LayoutType , KOKKOSARRAY_MACRO_DEVICE >
   : public Impl::ViewOper<
-      typename Impl::remove_all_extents<DataType>::type ,
+      typename Impl::AnalyzeShape< DataType >::value_type ,
       KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-      typename Impl::DefineShape< typename LayoutType::array_layout , DataType >::type >
+      Impl::Shape< typename LayoutType::array_layout ,
+                   typename Impl::AnalyzeShape< DataType >::shape > >
 {
 private:
 
-  typedef Impl::ViewOper<
-      typename Impl::remove_all_extents<DataType>::type ,
-      KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-      typename Impl::DefineShape<
-        typename LayoutType::array_layout , DataType >::type > oper_type ;
+  typedef Impl::AnalyzeShape<DataType>       analysis ;
+  typedef typename analysis::const_type      const_data_type ;
+  typedef typename analysis::non_const_type  non_const_data_type ;
 
-#endif
+public:
+
+  typedef DataType                  data_type ;
+  typedef LayoutType                layout_type ;
+  typedef KOKKOSARRAY_MACRO_DEVICE  device_type ;
+
+  typedef View<           data_type, layout_type, device_type > type ;
+  typedef View<     const_data_type, layout_type, device_type > const_type ;
+//  typedef View< non_const_data_type, layout_type, device_type > non_const_type ;
+
+  typedef View< data_type , layout_type , Host >  HostMirror ;
+
+  typedef typename analysis::value_type       value_type ;
+  typedef typename LayoutType::array_layout   array_layout ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef Impl::Shape< array_layout, typename analysis::shape > shape_type ;
+
+private:
+
+  typedef Impl::ViewOper< value_type ,
+                          KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                          shape_type > oper_type ;
 
   template< class , class , class > friend class View ;
 
 public:
-
-  typedef DataType             data_type ;
-  typedef LayoutType           layout_type ;
-  typedef KOKKOSARRAY_MACRO_DEVICE  device_type ;
-
-  typedef View< data_type , layout_type , device_type >  type ;
-
-  typedef View< typename Impl::add_const< data_type >::type ,
-                layout_type , device_type > const_type ;
-
-  typedef View< data_type , layout_type , Host >  HostMirror ;
-
-  typedef typename Impl::remove_all_extents<data_type>::type  value_type ;
-  typedef typename LayoutType::array_layout                   array_layout ;
-  typedef typename device_type::memory_space                  memory_space ;
-  typedef typename device_type::size_type                     size_type ;
-  // typedef typename oper_type::shape_type                      shape_type ;
-  typedef typename
-    Impl::DefineShape< array_layout , data_type >::type shape_type ;
 
   /*------------------------------------------------------------------*/
 
