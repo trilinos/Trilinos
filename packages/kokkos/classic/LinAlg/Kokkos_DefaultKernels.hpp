@@ -133,6 +133,15 @@ namespace Kokkos {
   };
 #endif // HAVE_KOKKOSCLASSIC_OPENMP
 
+  //
+  // We don't have block sparse ops or relaxation kernels for GPUs
+  // yet.  (This means that compilation of Tpetra::VbrMatrix or
+  // anything that depends on the Relaxations typedef will fail if
+  // Node = ThrustGPUNode, if using the default fifth template
+  // parameter of Tpetra::VbrMatrix.)  Please plug them in here as
+  // they become available.
+  //
+
   class ThrustGPUNode;
 #if defined(HAVE_KOKKOSCLASSIC_CUSP)
   template <class Scalar, class Ordinal>
@@ -142,7 +151,12 @@ namespace Kokkos {
 #else
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
-    // empty == fail
+    // By default, if you don't have CUSP, you won't have any kernels
+    // for arbtrary Scalar and Ordinal types.  Compilation of
+    // DefaultKernels in that case will fail, since the SparseOps
+    // typedef will be missing.  However, cuSPARSE provides kernels
+    // for specific Scalar and Ordinal types, to which we refer in the
+    // specializations below.
   };
 #endif
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
