@@ -1,7 +1,7 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #SubPackageName       Directory         Class    Req/Opt
   Classic               classic           PS       OPTIONAL
-#  Array                 array             SS       OPTIONAL
+  Array                 array             EX       OPTIONAL
   )
 
 SET(LIB_REQUIRED_DEP_PACKAGES )
