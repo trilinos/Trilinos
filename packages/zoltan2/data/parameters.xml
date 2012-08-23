@@ -218,6 +218,21 @@
   an invalid neighbor identifier is considered an error.'
   />
 
+ <Parameter 
+  id="33" name="force_binary_search" type="string" validatorId="31" value="no"
+  docString="If true, then regardless of the part number, cut line will be searched using binary search.\n"
+  />
+
+ <Parameter 
+  id="34" name="force_linear_search" type="string" validatorId="32" value="no"
+  docString="If true, then regardless of the part number, cut line will be searched using linear search.\n"
+  />
+
+ <Parameter 
+  id="35" name="parallel_part_calculation_count" type="int" validatorId="33" value="1"
+  docString="The number of parts whose cut coordinates will be calculated concurently."
+  />
+
   <Validators>
 
     <Validator defaultParameterName="error_check_level" integralValue="int" type="StringIntegralValidator(int)" validatorId="0">
@@ -432,6 +447,31 @@
       <String integralValue="0" stringValue="0"/>
       <String integralValue="0" stringValue="off"/>
     </Validator>
+
+    <Validator defaultParameterName="force_binary_search" integralValue="int" type="StringIntegralValidator(int)" validatorId="31">
+      <String integralValue="1" stringValue="true"/>
+      <String integralValue="1" stringValue="yes"/>
+      <String integralValue="1" stringValue="1"/>
+      <String integralValue="1" stringValue="on"/>
+      <String integralValue="0" stringValue="false"/>
+      <String integralValue="0" stringValue="no"/>
+      <String integralValue="0" stringValue="0"/>
+      <String integralValue="0" stringValue="off"/>
+    </Validator>
+
+    <Validator defaultParameterName="force_linear_search" integralValue="int" type="StringIntegralValidator(int)" validatorId="32">
+      <String integralValue="1" stringValue="true"/>
+      <String integralValue="1" stringValue="yes"/>
+      <String integralValue="1" stringValue="1"/>
+      <String integralValue="1" stringValue="on"/>
+      <String integralValue="0" stringValue="false"/>
+      <String integralValue="0" stringValue="no"/>
+      <String integralValue="0" stringValue="0"/>
+      <String integralValue="0" stringValue="off"/>
+    </Validator>
+
+    <Validator defaultParameterName="parallel_part_calculation_count" allowDouble="false" allowInt="true" allowString="true" prefferedType="int" type="anynumberValidator" validatorId="33"/>
+
 
   </Validators>
 
