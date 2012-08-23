@@ -314,11 +314,8 @@ void Relaxation<MatrixType>::initialize() {
   TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
     "Ifpack2::Relaxation::Initialize ERROR, Matrix is NULL");
 
-//  size_t globalrows = A_->getGlobalNumRows();
-//  size_t globalcols = A_->getGlobalNumCols();
-//  TEUCHOS_TEST_FOR_EXCEPTION(globalrows != globalcols, std::runtime_error,
-//   "Ifpack2::Relaxation::Initialize ERROR, only square matrices are supported");
-
+  Time_->start(true);
+  
   NumMyRows_ = A_->getNodeNumRows();
   NumGlobalRows_ = A_->getGlobalNumRows();
   NumGlobalNonzeros_ = A_->getGlobalNumEntries();
