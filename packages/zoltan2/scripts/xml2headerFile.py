@@ -37,7 +37,7 @@ hppFile.write("#define ZOLTAN2_XML_PARAMETERS_HPP\n")
 
 paramFile = open("../data/parameters.xml", "r")
 
-xmlParameterDef = "\n#define XML_PARAMETER_STRING \\\n"
+xmlParameterDef = "\n#define ZOLTAN2_XML_PARAMETER_STRING \\\n"
 
 go = "no"
 for line in paramFile:
