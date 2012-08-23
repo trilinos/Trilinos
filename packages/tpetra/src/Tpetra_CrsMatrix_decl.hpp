@@ -93,21 +93,27 @@ namespace Tpetra {
 
    \tparam LocalOrdinal The type of local indices.  Same as the \c
      LocalOrdinal template parameter of \c Map objects used by this
-     matrix.  (In Epetra, this is just \c int.)
+     matrix.  (In Epetra, this is just \c int.)  The default type is
+     int, which should suffice for most users.
 
    \tparam GlobalOrdinal The type of global indices.  Same as the \c
      GlobalOrdinal template parameter of \c Map objects used by this
      matrix.  (In Epetra, this is just \c int.  One advantage of
      Tpetra over Epetra is that you can use a 64-bit integer type here
-     if you want to solve big problems.)
+     if you want to solve big problems.)  The default type is
+     LocalOrdinal, which is OK if you know that the global number of
+     rows and columns in the matrix fits.
 
    \tparam Node A class implementing on-node shared-memory parallel
      operations.  It must implement the
      \ref kokkos_node_api "Kokkos Node API."
-     The default \c Node type depends on your Trilinos build options.
+     The default \c Node type depends on your Trilinos build options,
+     and should suffice for most users.
 
    \tparam LocalMatOps A local sparse matrix operations class.  It
-     must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
+     must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."  The
+     default \c LocalMatOps type depends on your Trilinos build
+     options, and should suffice for most users.
 
    This class implements a distributed-memory parallel sparse matrix,
    and provides sparse matrix-vector multiply (including transpose)
@@ -330,8 +336,8 @@ namespace Tpetra {
        \note If the matrix row already contains entries at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
        \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
     */
-    void insertLocalValues(LocalOrdinal localRow, 
-                           const ArrayView<const LocalOrdinal> &cols, 
+    void insertLocalValues(LocalOrdinal localRow,
+                           const ArrayView<const LocalOrdinal> &cols,
                            const ArrayView<const Scalar> &vals);
 
     //! \brief Replace matrix entries, using global IDs.
