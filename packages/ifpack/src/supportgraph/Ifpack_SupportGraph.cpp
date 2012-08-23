@@ -55,7 +55,7 @@ typedef std::pair<int, int> E;
 using namespace boost;
 
 typedef adjacency_list < vecS, vecS, undirectedS,
-			 no_property, property < edge_weight_t, int > > Graph;
+			 no_property, property < edge_weight_t, double > > Graph;
 typedef graph_traits < Graph >::edge_descriptor Edge;
 typedef graph_traits < Graph >::vertex_descriptor Vertex;
 
@@ -64,7 +64,7 @@ typedef graph_traits < Graph >::vertex_descriptor Vertex;
 Ifpack_SupportGraph::Ifpack_SupportGraph(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
   Comm_(A->Comm()),
-  Offset_(.001),
+  Offset_(0.001),
   UseTranspose_(false),
   Condest_(-1.0),
   NumForests_(1),
@@ -99,63 +99,75 @@ int Ifpack_SupportGraph::SetParameters(Teuchos::ParameterList& List_in)
 //==============================================================================
 int Ifpack_SupportGraph::Initialize()
 {
+ 
   IsInitialized_ = false;
   if(Time_ == Teuchos::null)
     Time_ = Teuchos::rcp(new Epetra_Time(Comm()));
-    
+ 
   // Check #procs, won't work in parallel right now
   if(!Comm().MyPID())
     {
       // Extract matrix dimensions
       int rows = (*A_).NumGlobalRows();
       int cols = (*A_).NumGlobalCols();
-      int num_edges  = ((*A_).NumGlobalNonzeros() - (*A_).NumGlobalDiagonals())/2;
-      
+      int num_edges  = ((*A_).NumMyNonzeros() - (*A_).NumMyDiagonals())/2;
+ 
      
       // Assert square matrix
       IFPACK_CHK_ERR((rows == cols));
 
       // Rename for clarity
       int num_verts = rows;
-
+ 
       // Create data structures for the BGL code and temp data structures for extraction
       E *edge_array = new E[num_edges];
       double *weights = new double[num_edges];
-
+ 
       int num_entries;
-      double *values = new double[num_verts];
-      int *indices = new int[num_verts];
-      for(int i = 0; i < num_verts; i++)
+      int max_num_entries = (*A_).MaxNumEntries();
+      double *values = new double[max_num_entries];
+      int *indices = new int[max_num_entries];
+
+      double * diagonal = new double[num_verts];
+ 
+      for(int i = 0; i < max_num_entries; i++)
 	{
 	  values[i]=0;
 	  indices[i]=0;
 	}
       
+ 
       // Extract from the epetra matrix keeping only one edge per pair (assume symmetric)
       int k = 0;
       for(int i = 0; i < num_verts; i++)
 	{
-
-	  (*A_).ExtractMyRowCopy(i,num_verts,num_entries,values,indices);
-
+	 	  
+	  (*A_).ExtractMyRowCopy(i,max_num_entries,num_entries,values,indices);
+	  
 	  for(int j = 0; j < num_entries; j++)
 	    {
-	      if(i > indices[j])
+	     
+	      if(i == indices[j])
 		{
+		  diagonal[i] = values[j];
+		}
 
+	      if(i < indices[j])
+		{
+	
 		  edge_array[k] = E(i+1,indices[j]+1);
-		  double temp = values[j];
-		  weights[k] = temp;
-
+		  weights[k] = values[j];
+		  
 		  k++;
 		}
 	    }
+	  
 	}
-
+     
   
       // Create BGL graph
       Graph g(edge_array, edge_array + num_edges, weights, num_verts);
-
+      
       property_map < Graph, edge_weight_t >::type weight = get(edge_weight, g);
       
       std::vector < Edge > spanning_tree;
@@ -220,7 +232,7 @@ int Ifpack_SupportGraph::Initialize()
 	  for (std::vector < Edge >::iterator ei = spanning_tree.begin();
 	       ei != spanning_tree.end(); ++ei)
 	    {
-	 
+	 	 
 	      Values[source(*ei,g)-1][0] = Values[source(*ei,g)-1][0] - weight[*ei];
 	      Values[target(*ei,g)-1][0] = Values[target(*ei,g)-1][0] - weight[*ei];
 	      Indices[source(*ei,g)-1][0] = source(*ei,g)-1;
@@ -236,8 +248,14 @@ int Ifpack_SupportGraph::Initialize()
 
 	      remove_edge(*ei,g);
 	    }
+	 
 	}
 
+      for(int i = 0; i < num_verts; i++)
+	{
+	  Values[i][0] = diagonal[i];
+	}
+      
       // Create the CrsMatrix for the support graph
       B_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
       
@@ -253,14 +271,13 @@ int Ifpack_SupportGraph::Initialize()
       (*B_).FillComplete();
       
       //(*B_).Print(std::cout);
-
-
-      
+            
       delete edge_array;
       delete weights;
       delete values;
       delete indices;
       delete l;
+      delete diagonal;
 
       // Create the Amesos to factor the system
       Problem_->SetOperator(const_cast<Epetra_CrsMatrix*>(B_.get()));
@@ -385,6 +402,7 @@ Ifpack_SupportGraph::Print(std::ostream& os) const
     os << "Ifpack_SupportGraph: " << Label () << endl << endl;
     os << "Condition number estimate = " << Condest() << endl;
     os << "Global number of rows            = " << A_->NumGlobalRows() << endl;
+    os << "Number of edges in support graph         = " << B_->NumGlobalNonzeros()-B_->NumGlobalDiagonals();
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
@@ -413,3 +431,4 @@ Ifpack_SupportGraph::Print(std::ostream& os) const
  return(os);
 }
 //============================================================================== 
+
