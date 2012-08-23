@@ -10,6 +10,7 @@
 <li> \ref z2_developer_status_info 
 <li> \ref z2_developer_profiling
 <li> \ref z2_developer_rcp
+<li> \ref z2_developer_parameters
 <li> \ref z2_developer_example
 </ul>
 
@@ -21,7 +22,7 @@ the algorithm:
 
  -  A Zoltan2::Environment, described below.
  -  A Teuchos::Comm, a wrapper for the MPI communicator for the problem.
- -  A Zoltan2::Model, the computation model derived from the user's input data.
+ -  A Zoltan2::Model, the computational model derived from the user's input data.
  -  A Zoltan2::Solution.
 
 The Zoltan2::Environment contains the user's parameter settings, and
@@ -48,7 +49,7 @@ partitioning, the subclass Zoltan2::PartitioningSolution contains the
 global number of parts to be created, the number of parts to be created
 for each process, and the relative part sizes.  
 
-Prior to returning from the algorithm, the code writes the answer back
+The algorithm writes the computed answer back
 to the Solution object.  In particular, a partitioning
 algorithm writes back the assignment of 
 part numbers to global identifiers.  The user can obtain the solution
@@ -59,17 +60,15 @@ by way of the method Zoltan2::PartitioningProblem::getSolution().
 The Zoltan2::Environment object is created by the Zoltan2::Problem.  It is
 passed to almost every method in the library.  It serves the following roles:
 
-<ul>
-<li> It has the Teuchos::ParameterList that was set by the user, which has been processed by running the parameter list validators.
-<li> It enables the library behavior that was requested by the user via parameters such as:
- - debug_level
- - debug_output_stream
- - error_check_level
- - memory_output_stream
- - timer_type
-</ul>
+  - It has the Teuchos::ParameterList that was set by the user, which has been processed by running the parameter list validators.
+  - It enables the library behavior that was requested by the user via parameters such as:
+   - \ref debug_level
+   - \ref debug_output_stream
+   - \ref error_check_level
+   - \ref memory_output_stream
+   - \ref timer_type
 
-The algorithm uses the Zoltan2::Environment to obtain algorithm-specific
+The algorithm uses the Environment to obtain algorithm-specific
 parameters that may have been set by the user.  It also uses Environment
 methods to print out warnings and status information, handle exceptions, 
 time algorithm steps, and display information about the amount of memory
@@ -200,9 +199,55 @@ Using Teuchos memory management classes can increase the time to write code, and
 
 A detailed report on Teuchos memory management classes can be found in the directory Trilinos/doc/TeuchosMemoryManagementSAND.
 
+\section z2_developer_parameters How to add a parameter
+
+Zoltan2 uses Teuchos::ParameterList and Teuchos::ParameterEntryValidator. To
+add another parameter you add it to %XML definition of the ParameterList in
+zoltan2/data/parameters.xml.  
+
+At compile time, the script 
+zoltan2/scripts/xml2headerFile.py creates the header file 
+zoltan2_binary_directory/src/Zoltan2_XML_Parameters.hpp.  This header file
+contains a macro that has the %XML string defining the parameters.  It is
+used at run-time in the namespace method Zoltan2::createAllParameters().
+
+When building the Zoltan2 documentation with zoltan2/doc/build_docs, the
+script zoltan2/scripts/xml2dox.py creates the Doxygen page in
+zoltan2/doc/parameters.dox.
+
+The %XML formats for the validator are documented here:
+
+ - Teuchos::StringToIntegralValidatorXMLConverter
+ - Teuchos::AnyNumberValidatorXMLConverter
+ - Teuchos::EnhancedNumberValidatorXMLConverter
+ - Teuchos::FileNameValidatorXMLConverter
+ - Teuchos::StringValidatorXMLConverter
+ - Zoltan2::IntegerRangeListValidatorXMLConverter
+
+The %XML format for the parameter is:
+
+\code
+
+<Parameter
+  id="unique number for this parameter" 
+  name="name of this parameter" 
+  type="data type of value used to set parameter" 
+  validatorId="id number for validator for this parameter" 
+  value="any valid value for this parameter"
+  docString="description of parameter that will appear in documentation"
+  />
+
+\endcode
+
+The \c docString in the \c Parameter element
+does not need to include information (like a list of valid strings)
+that is included in the \c Validator element.  When parameter documentation
+is generated, either by Teuchos at run-time or by a script in \c doc/build_docs,
+it includes the validator information.
+
 \section z2_developer_example Example
 
-The block algorithm in Zoltan2_AlgBlock.cpp exists a simple example
+The block algorithm in Zoltan2_AlgBlock.hpp exists a simple example
 of a Zoltan2 algorithm.
 
 */

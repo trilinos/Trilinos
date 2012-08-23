@@ -5,14 +5,14 @@ esc = "\\"
 quo = '"'
 escquo = esc+quo
 
-def addLine(line, f):
+def addLine(line):
+  global xmlParameterDef
   line = line.strip()
-  if '"' in line:
-    parts = line.split('"')
+  if quo in line:
+    parts = line.split(quo)
     line = escquo.join(parts)
-  ln = 'xmlParameterDef.append("' + line + '");\n'
-  f.write(ln)
-  
+  newline = "  \""+line+"\" \\\n"
+  xmlParameterDef += newline
 
 hppFile = open("Zoltan2_XML_Parameters.hpp", "w")
 
@@ -35,26 +35,29 @@ hppFile.write("#define ZOLTAN2_XML_PARAMETERS_HPP\n")
 
 # The parameters
 
-hppFile.write("std::string xmlParameterDef;\n")
-
 paramFile = open("../data/parameters.xml", "r")
 
+xmlParameterDef = "\n#define XML_PARAMETER_STRING \\\n"
+
+go = "no"
 for line in paramFile:
   if "ParameterList" in line:
-    addLine(line, hppFile)
+    addLine(line)
+    go = "yes"
+  elif "/ParameterList" in line:
+    addLine(line)
     break
+  elif go == "yes":
+    if len(line) > 2:
+      addLine(line)
 
-for line in paramFile:
-  if len(line) > 2:
-    addLine(line, hppFile)
-  if "/ParameterList" in line:
-    break
-
-
-hppFile.write("#endif   // ZOLTAN2_XML_PARAMETERS_HPP\n")
-
-hppFile.close()
 paramFile.close()
 
+# remove the last continuation character
 
+xmlParameterDef = xmlParameterDef[0:-2] + "\n"
 
+hppFile.write(xmlParameterDef)
+hppFile.write("\n#endif   // ZOLTAN2_XML_PARAMETERS_HPP\n")
+hppFile.close()
+print "DONE"

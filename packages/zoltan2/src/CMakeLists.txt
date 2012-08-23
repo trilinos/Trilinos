@@ -7,6 +7,14 @@ INCLUDE(TribitsLibraryMacros)
 SET(HAVE_ZOLTAN2_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+
+SET(MAKE_PARAM_HEADER "python ./xml2headerFile.py && cp ./Zoltan2_XML_Parameters.hpp ${PACKAGE_BINARY_DIR}/src")
+
+EXECUTE_PROCESS(
+  WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/scripts
+  COMMAND ${MAKE_PARAM_HEADER}
+  TIMEOUT 3
+)
    
 #
 # B) Define the header files, the source files, and the include directories

@@ -708,10 +708,10 @@ template <typename Integral>
 // Parameter entry validator <-> XML conversion
 ////////////////////////////////////////////////////////////////////
 
-/*! \class XML conversion code for IntegerRangeListValidator
+/*! \brief XML conversion code for IntegerRangeListValidator
  *
  * The valid XML representation of an IntegerRangeListValidator is:
- * \code
+  \code
   <Validator type="IntegerRangeListValidator(template-arg)"
    min="optional minimum value"
    max="optional maximum value"

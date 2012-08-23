@@ -2,7 +2,7 @@
       XML definition of Zoltan2 parameters and their validators.
 
       This list is used to generate:
-        1. src/environment/Zoltan2_XML_Parameters.hpp
+        1. {zoltan2_build_directory}/src/Zoltan2_XML_Parameters.hpp
         2. doc/parameters.dox
 
       The first is a header file containing a string which is the
@@ -13,7 +13,12 @@
 
       New parameters should be added to this file.
 
-      TODO: how to add a parameter                                
+      In the Parameter elements, the "value" must be a valid value
+      for the parameter.  It is not a default. We don't have 
+      default values for our parameters.  If the user didn't
+      define a value for a parameter, then that parameter doesn't
+      appear in the parameter list and the library code at
+      run-time can decide what to do about that.
   -->
 
 <ParameterList name="zoltan2ValidatingParameters">
