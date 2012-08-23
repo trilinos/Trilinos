@@ -42,6 +42,7 @@ packages/galeri galeri-checkins@software.sandia.gov
 packages/globipack globipack-checkins@software.sandia.gov
 packages/capo capo-checkins@software.sandia.gov
 packages/isorropia isorropia-checkins@software.sandia.gov
+packages/zoltan2 zoltan2-checkins@software.sandia.gov
 packages/zoltan zoltan-checkins@software.sandia.gov
 packages/moertel moertel-checkins@software.sandia.gov
 packages/moocho moocho-checkins@software.sandia.gov
