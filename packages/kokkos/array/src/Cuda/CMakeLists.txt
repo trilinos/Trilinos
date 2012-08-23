@@ -10,20 +10,11 @@ SET(SOURCES "")
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cu)
 
-IF(KokkosArray_ENABLE_CUDA)
-  PACKAGE_ADD_CUDA_LIBRARY(
-    kokkosdevicecuda
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-  )
-  SET(CUDA_LIB kokkosarray_devicecuda)
-ELSE()
-  SET(CUDA_LIB "")
-  TRIBITS_ADD_LIBRARY(
-    kokkosarray_devicecuda
-    HEADERS ${HEADERS}
-    DEPLIBS ${CUDA_LIB}
-    )
-ENDIF()
+TRIBITS_ADD_LIBRARY(
+  kokkosarray_devicecuda
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  CUDALIBRARY
+)
 
 

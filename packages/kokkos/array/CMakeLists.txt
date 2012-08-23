@@ -31,7 +31,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable arrays using CUDA Device."
   OFF
   )
-IF (${KokkosArray_ENABLE_DeviceCuda})
+IF (KokkosArray_ENABLE_DeviceCuda)
   ADD_DEFINITIONS( -DHAVE_KOKKOSARRAY_DEVICE_CUDA )
 ENDIF()
 
