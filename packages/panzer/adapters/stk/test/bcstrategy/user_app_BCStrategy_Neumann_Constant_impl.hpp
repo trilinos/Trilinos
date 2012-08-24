@@ -77,7 +77,7 @@ setup(const panzer::PhysicsBlock& side_pb,
   const std::string residual_name = "Residual_" + this->m_bc.identifier();
   const std::string dof_name = this->m_bc.equationSetName();
   const std::string flux_name = "Constant_" + this->m_bc.equationSetName();
-  const int integration_order = this->m_bc.params()->get<int>("Integration Order");
+  const int integration_order = this->m_bc.params()->template get<int>("Integration Order");
 
   this->addResidualContribution(residual_name,dof_name,flux_name,integration_order,side_pb);
 }
