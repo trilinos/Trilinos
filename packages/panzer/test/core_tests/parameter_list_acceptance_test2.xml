@@ -1,0 +1,24 @@
+<ParameterList name="Drekar">
+
+    <ParameterList name="Boundary Conditions">
+
+        <ParameterList name="Z">
+            <Parameter name="order" type="int" value="0"/> 
+        </ParameterList>
+
+        <ParameterList>
+            <Parameter name="order" type="int" value="1"/> 
+        </ParameterList>
+
+        <ParameterList name="Z">
+            <Parameter name="order" type="int" value="2"/> 
+        </ParameterList>
+
+        <ParameterList>
+            <Parameter name="order" type="int" value="3"/> 
+        </ParameterList>
+
+    </ParameterList>
+
+</ParameterList>
+

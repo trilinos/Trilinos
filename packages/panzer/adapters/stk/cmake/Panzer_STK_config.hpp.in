@@ -1,0 +1,5 @@
+#cmakedefine HAVE_MPI
+
+#cmakedefine PANZER_STK_DEBUG
+
+#cmakedefine HAVE_IOSS

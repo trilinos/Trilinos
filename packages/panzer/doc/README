@@ -1,0 +1,14 @@
+To build to doxygen documentation:
+
+0) Install doxygen 1.6.3 and a compatible version of dot
+
+1) Build the main Trilinos doxygen documentation:
+
+  $ cd $TRILINOS_HOME/doc
+  $ ./build_docs.pl
+
+2) Build the doxygen documentation:
+
+  $ cd $TRILINOS_HOME/Panzer/panzer/doc
+  $ ./build_docs
+  

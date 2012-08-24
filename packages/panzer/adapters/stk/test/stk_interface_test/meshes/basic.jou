@@ -1,0 +1,51 @@
+set geometry engine acis
+set default element quad
+
+create vertex  0.00 0.00 0 # 1
+create vertex  1.00 0.00 0 # 2
+create vertex  1.00 1.00 0 # 3
+create vertex  0.00 1.00 0 # 4
+create vertex  2.00 0.00 0 # 5
+create vertex  2.00 1.00 0 # 6
+
+
+create curve vertex 1 vertex 2 # 1 
+create curve vertex 2 vertex 3 # 2
+create curve vertex 3 vertex 4 # 3
+create curve vertex 4 vertex 1 # 4
+
+create curve vertex 2 vertex 5 # 5
+create curve vertex 5 vertex 6 # 6
+create curve vertex 6 vertex 3 # 7
+
+create surface curve  1  2  3  4 # 1
+create surface curve  5  6  7  2 # 2
+
+# n = {n = 2}
+curve 1 2 3 4 5 6 7 interval {n} 
+curve 1 2 3 4 5 6 7 scheme equal
+mesh curve 1 2 3 4 5 6 7
+
+surface 1 2 scheme submap
+mesh surface 1 2
+
+merge all
+
+block 1 surface 1
+block 1 element type quad4 
+block 2 surface 2 
+block 2 element type quad4 
+
+sideset 1 curve 1
+sideset 2 curve 2 wrt Surface 1
+sideset 3 curve 3
+sideset 4 curve 4
+sideset 5 curve 5
+sideset 6 curve 6
+sideset 7 curve 7
+
+nodeset 1 Node 1
+nodeset 2 Node 6
+
+set large exodus file off 
+export mesh "basic.gen" dimension 2 overwrite
