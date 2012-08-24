@@ -617,9 +617,8 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
    Thyra::assign(ones.ptr(),1.0);
 
    // compute lumped diagonal
-   // Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
    Thyra::apply(*op,Thyra::NOTRANS,*ones,diag.ptr());
-   Thyra::reciprocal(diag.ptr(),*diag);
+   Thyra::reciprocal(*diag,diag.ptr());
 
    return rcp(new Thyra::DefaultDiagonalLinearOp<double>(diag));
 }
@@ -1036,7 +1035,7 @@ const LinearOp buildInvDiagonal(const MultiVector & src,const std::string & lbl)
 {
    const RCP<const Thyra::VectorBase<double> > srcV = src->col(0);
    RCP<Thyra::VectorBase<double> > dst = Thyra::createMember(srcV->range()); 
-   Thyra::reciprocal<double>(dst.ptr(),*srcV);
+   Thyra::reciprocal<double>(*srcV,dst.ptr());
 
    return Thyra::diagonal<double>(dst,lbl);
 }
@@ -1124,7 +1123,7 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
 
    // construct an initial guess
    const RCP<MV> ivec = Thyra::createMember(A->domain());
-   Thyra::randomize(-1.0,1.0,&*ivec);
+   Thyra::randomize(-1.0,1.0,ivec.ptr());
    
    RCP<Anasazi::BasicEigenproblem<double,MV,OP> > eigProb
          = rcp(new Anasazi::BasicEigenproblem<double,MV,OP>(A,ivec));
@@ -1214,7 +1213,7 @@ double computeSmallestMagEig(const RCP<const Thyra::LinearOpBase<double> > & A, 
 
    // construct an initial guess
    const RCP<MV> ivec = Thyra::createMember(A->domain());
-   Thyra::randomize(-1.0,1.0,&*ivec);
+   Thyra::randomize(-1.0,1.0,ivec.ptr());
    
    RCP<Anasazi::BasicEigenproblem<double,MV,OP> > eigProb
          = rcp(new Anasazi::BasicEigenproblem<double,MV,OP>(A,ivec));
@@ -1409,6 +1408,42 @@ void putScalar(const ModifiableLinearOp & op,double scalar)
       *out << "************************\n";
       
       throw e;
+   }
+}
+
+void clipLower(MultiVector & v,double lowerBound)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   // cast so entries are accessible
+   RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+      = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
+
+   Thyra::Ordinal i = 0;
+   Teuchos::ArrayRCP<double> values;
+   spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
+   for(Teuchos::ArrayRCP<double>::size_type j=0;j<values.size();j++) {
+      if(values[j]<lowerBound)
+         values[j] = lowerBound;
+   }
+}
+
+void clipUpper(MultiVector & v,double upperBound)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   // cast so entries are accessible
+   RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+      = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
+
+   Thyra::Ordinal i = 0;
+   Teuchos::ArrayRCP<double> values;
+   spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
+   for(Teuchos::ArrayRCP<double>::size_type j=0;j<values.size();j++) {
+      if(values[j]>upperBound)
+         values[j] = upperBound;
    }
 }
 
