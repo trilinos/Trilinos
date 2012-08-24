@@ -89,7 +89,6 @@ struct HierPartParamsStruct {
   int gen_files;                      /* call Zoltan_Generate_Files */
 
   int num_levels;                    /* number of levels I do */
-  int global_num_levels;             /* max number of levels */
   int level;                         /* level currently being processed */
   MPI_Comm hier_comm;                /* MPI communicator for each level */
  
@@ -115,6 +114,7 @@ struct HierPartParamsStruct {
 
   int ndims;                         /* number of dimensions for geom data */
   double *geom_vec;                  /* geometry of objects in intermediate */
+  int use_timers;                    /* control degree of timing done with hier*/
 
   zoltan_platform_specification *spec;   /* levels based on network topology */
 };

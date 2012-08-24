@@ -105,7 +105,7 @@ static void view_hierarchy_specification(zoltan_platform_specification *spec,
  *  zoltan_platform_specification
  */
 
-static enum zoltan_platform_names {
+enum zoltan_platform_names {
       GLORY,
       REDSKY,
       CTX,
@@ -212,7 +212,7 @@ static void Zoltan_Hier_Assist_Method(
     Zoltan_Filter_Params(to, from, RCB_params, from->Debug_Level, to->Proc, 0);
     Zoltan_Filter_Params(to, from, RIB_params, from->Debug_Level, to->Proc, 0);
     Zoltan_Filter_Params(to, from, HSFC_params, from->Debug_Level, to->Proc, 0);
-    Zoltan_Set_Param(to, "LB_METHOD", "RIB");   /* TODO figure out RIB, RCB or HSFC? */
+    Zoltan_Set_Param(to, "LB_METHOD", "RCB");   /* TODO figure out RIB, RCB or HSFC? */
   }
   else{
     *ierr = ZOLTAN_FATAL;
@@ -241,6 +241,7 @@ static PARAM_VARS Hier_params[] = {
           quad socket, each with 2 L3 caches, 3 cores per cache: "4,2,3"
       */
 
+  { "USE_TIMERS", NULL, "INT", 0 },
   {  NULL,              NULL,  NULL, 0 }};
 
 /* prototypes for static functions: */
@@ -914,7 +915,7 @@ int Zoltan_Hier(
                              the user data) */
   char msg[256];
   char *yo = "Zoltan_Hier";
-  int i, last_level;
+  int i;
   int num_obj, gno_size_for_dd, graph_type = 0;
   int userDataLen, hier_changes, hier_num_gid_entries, hier_num_lid_entries;
   int hier_num_import_objs, hier_num_export_objs;
@@ -934,6 +935,17 @@ int Zoltan_Hier(
   ZOLTAN_GNO_TYPE *gnoList = NULL, *vtxdist=NULL;
   ZOLTAN_GNO_TYPE localsize, globalsize, gno1;
 
+  /* Timers; should probably switch to Zoltan_Timer later */
+  double timeInitSetup = 0.;
+  double timeLevelSetup = 0.;
+  double timePartSetup = 0.;
+  double timePartition = 0.;
+  double timeMigDown = 0.;
+  double timeMigFinal = 0.;
+  double timeImpLists = 0.;
+  double timeStart = 0;
+  double timeEnd = 0;
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Initialize return arguments */
@@ -948,7 +960,6 @@ int Zoltan_Hier(
   hpp.checks=0;
   hpp.gen_files=0;
   hpp.num_levels=0;
-  hpp.global_num_levels=0;
   hpp.level=0;
   hpp.hier_comm=0;
   hpp.origzz=zz;
@@ -969,6 +980,7 @@ int Zoltan_Hier(
   hpp.ndims=0;
   hpp.geom_vec=NULL;
   hpp.spec=NULL;
+  hpp.use_timers=0;
 
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||
@@ -980,6 +992,11 @@ int Zoltan_Hier(
   ierr = Zoltan_Hier_Initialize_Params(zz, &hpp);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_HIER_ERROR(ierr, "Zoltan_Hier_Initialize_Params returned error");
+  }
+
+  if (hpp.use_timers) {
+    MPI_Barrier(zz->Communicator);
+    timeStart = Zoltan_Time(zz->Timer);
   }
 
   if (!hpp.spec){
@@ -1102,16 +1119,22 @@ int Zoltan_Hier(
     printf("HIER: Proc %d to compute %d levels\n", zz->Proc, hpp.num_levels);
   }
 
-  MPI_Allreduce(&hpp.num_levels, &hpp.global_num_levels, 1, MPI_INT, MPI_MAX,
-                zz->Communicator);
-
-  last_level = hpp.global_num_levels - 1;
-
   /* initialize our communicator to the "world" as seen by Zoltan */
   MPI_Comm_dup(zz->Communicator, &hpp.hier_comm);
 
+  if (hpp.use_timers) {
+    MPI_Barrier(zz->Communicator);
+    timeEnd = Zoltan_Time(zz->Timer);
+    timeInitSetup += timeEnd - timeStart;
+  }
+
   /* loop over levels of hierarchical balancing to be done */
   for (hpp.level = 0; hpp.level < hpp.num_levels; hpp.level++) {
+
+    if (hpp.use_timers) {
+      MPI_Barrier(hpp.hier_comm);
+      timeStart = Zoltan_Time(zz->Timer);
+    }
 
     /* determine parts to compute at this level */
     hpp.part_to_compute =
@@ -1142,7 +1165,18 @@ int Zoltan_Hier(
 
     hpp.hierzz = NULL;
 
+    if (hpp.use_timers) {
+      MPI_Barrier(hpp.hier_comm);
+      timeEnd = Zoltan_Time(zz->Timer);
+      timeLevelSetup += timeEnd - timeStart;
+    }
+
     if (hpp.num_parts > 1){
+
+      if (hpp.use_timers) {
+        MPI_Barrier(hpp.hier_comm);
+        timeStart = Zoltan_Time(zz->Timer);
+      }
 
       /* construct appropriate ZZ and input arrays */
       /* create a brand new one */
@@ -1175,47 +1209,29 @@ int Zoltan_Hier(
 
       /* specify the callbacks */
 
-      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_OBJ_FN_TYPE,
-                           (void (*)()) Zoltan_Hier_Num_Obj_Fn,
+      ierr = Zoltan_Set_Num_Obj_Fn(hpp.hierzz,
+                           Zoltan_Hier_Num_Obj_Fn,
                            (void *) &hpp);
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-      }
 
-      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_LIST_FN_TYPE,
-                           (void (*)()) Zoltan_Hier_Obj_List_Fn,
+      ierr = Zoltan_Set_Obj_List_Fn(hpp.hierzz,
+                           Zoltan_Hier_Obj_List_Fn,
                            (void *) &hpp);
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-      }
 
-      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_GEOM_FN_TYPE,
-                           (void (*)()) Zoltan_Hier_Num_Geom_Fn,
+      ierr = Zoltan_Set_Num_Geom_Fn(hpp.hierzz,
+                           Zoltan_Hier_Num_Geom_Fn,
                            (void *) &hpp);
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-      }
 
-      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_GEOM_MULTI_FN_TYPE,
-                           (void (*)()) Zoltan_Hier_Geom_Multi_Fn,
+      ierr = Zoltan_Set_Geom_Multi_Fn(hpp.hierzz,
+                           Zoltan_Hier_Geom_Multi_Fn,
                            (void *) &hpp);
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-      }
 
-      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_EDGES_MULTI_FN_TYPE,
-                           (void (*)()) Zoltan_Hier_Num_Edges_Multi_Fn,
+      ierr = Zoltan_Set_Num_Edges_Multi_Fn(hpp.hierzz,
+                           Zoltan_Hier_Num_Edges_Multi_Fn,
                            (void *) &hpp);
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-      }
 
-      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_EDGE_LIST_MULTI_FN_TYPE,
-                           (void (*)()) Zoltan_Hier_Edge_List_Multi_Fn,
+      ierr = Zoltan_Set_Edge_List_Multi_Fn(hpp.hierzz,
+                           Zoltan_Hier_Edge_List_Multi_Fn,
                            (void *) &hpp);
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-      }
 
       /* specify the GIDs (just the global numbering) */
       Zoltan_Set_Param(hpp.hierzz, "NUM_GID_ENTRIES", "1");
@@ -1240,6 +1256,14 @@ int Zoltan_Hier(
         }
       }
 
+      if (hpp.use_timers) {
+        MPI_Barrier(hpp.hier_comm);
+        timeEnd = Zoltan_Time(zz->Timer);
+        timePartSetup += timeEnd - timeStart;
+        MPI_Barrier(hpp.hier_comm);
+        timeStart = Zoltan_Time(zz->Timer);
+      }
+
       /* call partitioning method to compute the part at this level */
       ierr = Zoltan_LB_Partition(hpp.hierzz, &hier_changes,
                                  &hier_num_gid_entries, &hier_num_lid_entries,
@@ -1251,6 +1275,11 @@ int Zoltan_Hier(
                                  &hier_export_procs, &hier_export_to_part);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
         ZOLTAN_HIER_ERROR(ierr, "Zoltan_LB_Partition returned error.");
+      }
+      if (hpp.use_timers) {
+        MPI_Barrier(hpp.hier_comm);
+        timeEnd = Zoltan_Time(zz->Timer);
+        timePartition += timeEnd - timeStart;
       }
     }
     else{
@@ -1268,6 +1297,12 @@ int Zoltan_Hier(
        * Compute the next level of sub communicators, and migrate objects downward.
        */
       MPI_Comm next_comm;
+
+      if (hpp.use_timers) {
+        MPI_Barrier(hpp.hier_comm);
+        timeStart = Zoltan_Time(zz->Timer);
+      }
+
       MPI_Comm_split(hpp.hier_comm, hpp.part_to_compute, 0, &next_comm);
 
       ierr = migrate_to_next_subgroups(&hpp, hier_num_export_objs, hier_export_lids, hier_export_procs, next_comm);
@@ -1277,8 +1312,19 @@ int Zoltan_Hier(
 
       MPI_Comm_free(&hpp.hier_comm);
       hpp.hier_comm = next_comm;
+
+      if (hpp.use_timers) {
+        MPI_Barrier(hpp.hier_comm);
+        timeEnd = Zoltan_Time(zz->Timer);
+        timeMigDown += timeEnd - timeStart;
+      }
     }
     else{
+      if (hpp.use_timers) {
+        MPI_Barrier(hpp.hier_comm);
+        timeStart = Zoltan_Time(zz->Timer);
+      }
+
       /*
        * Migrate objects (without weights or adjacencies) their new owners.  Now
        * each process has a list representing the objects to be imported to it.
@@ -1288,6 +1334,11 @@ int Zoltan_Hier(
       if (ierr != ZOLTAN_OK)
         goto End;
 
+      if (hpp.use_timers) {
+        MPI_Barrier(hpp.hier_comm);
+        timeEnd = Zoltan_Time(zz->Timer);
+        timeMigFinal += timeEnd - timeStart;
+      }
       /* Still need hpp.gno to create our import list */
       ZOLTAN_FREE(&hpp.vwgt);
       ZOLTAN_FREE(&hpp.xadj);
@@ -1319,6 +1370,10 @@ int Zoltan_Hier(
    *    hpp.num_obj - the number of objects I'm left with after partitioning
    *    num_obj     - the number of objects I had before partitioning
    */
+  if (hpp.use_timers) {
+    MPI_Barrier(zz->Communicator);
+    timeStart = Zoltan_Time(zz->Timer);
+  }
 
   userDataLen = sizeof(ZOLTAN_ID_TYPE) * (zz->Num_GID + zz->Num_LID);
   gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
@@ -1444,7 +1499,23 @@ int Zoltan_Hier(
 
   ZOLTAN_FREE(&appids);
 
+  if (hpp.use_timers) {
+    MPI_Barrier(zz->Communicator);
+    timeEnd = Zoltan_Time(zz->Timer);
+    timeImpLists += timeEnd - timeStart;
+  }
+
 End:
+
+  if (hpp.use_timers && zz->Proc == 0) {
+    printf("HIER TIME InitSetup  %e\n", timeInitSetup);
+    printf("HIER TIME LevelSetup %e\n", timeLevelSetup);
+    printf("HIER TIME PartSetup  %e\n", timePartSetup);
+    printf("HIER TIME Partition  %e\n", timePartition);
+    printf("HIER TIME MigDown    %e\n", timeMigDown);
+    printf("HIER TIME MigFinal   %e\n", timeMigFinal);
+    printf("HIER TIME ImpLists   %e\n", timeImpLists);
+  }
   ZOLTAN_FREE(&vtxdist);
   ZOLTAN_FREE(&global_ids);
   ZOLTAN_FREE(&local_ids);
@@ -1488,6 +1559,7 @@ static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
   Zoltan_Bind_Param(Hier_params, "HIER_ASSIST", (void *) &assist);
   Zoltan_Bind_Param(Hier_params, "PLATFORM_NAME", (void *) platform);
   Zoltan_Bind_Param(Hier_params, "TOPOLOGY", (void *) topology);
+  Zoltan_Bind_Param(Hier_params, "USE_TIMERS", (void *) &hpp->use_timers);
 
   /* set default values */
   hpp->output_level = HIER_DEBUG_NONE;
@@ -1738,6 +1810,8 @@ static void Zoltan_Hier_Num_Edges_Multi_Fn(void *data, int num_gid_entries, int 
   HierPartParams *hpp = (HierPartParams *)data;
   int i, idx;
 
+printf("KDDKDD DEBUG WE SHOULD NOT BE HERE NUM_EDGES_MULTI\n");
+
   *ierr = ZOLTAN_OK;
 
   for (i=0; i < num_obj; i++){
@@ -1760,6 +1834,7 @@ static void Zoltan_Hier_Edge_List_Multi_Fn(void *data, int num_gid_entries, int 
   ZOLTAN_ID_TYPE *out_gid;
   float *out_weight, *wgts;
 
+printf("KDDKDD DEBUG WE SHOULD NOT BE HERE EDGE_LIST_MULTI\n");
   *ierr = ZOLTAN_OK;
 
   if (wgt_dim != hpp->edge_wgt_dim){
