@@ -309,7 +309,14 @@ namespace Kokkos {
     };
 
     /// \class CopyRowPtrs
-    /// \brief Kokkos kernel for copying a sparse matrix's row offsets array.
+    /// \brief Kokkos kernel for copying a sparse matrix's row offsets
+    ///   array from an array of size_t (the input format) to an array
+    ///   of MKL_INT (the internal storage format).
+    ///
+    /// This kernel makes no attempt to check for overflow when
+    /// converting from size_t to MKL_INT.  However, if the input row
+    /// offsets array is correct, this is easy to do: just check the
+    /// last entry (since the entries are nondecreasing).
     ///
     /// \note This class is _not_ meant for users.  It is an
     ///   implementation detail of MklSparseOps.
@@ -325,6 +332,13 @@ namespace Kokkos {
         inRowPtr_ (inRowPtr)
       {}
 
+      /// \brief Method for the Kokkos Node's parallel_for to execute
+      ///   in parallel.
+      ///
+      /// \param i [in] Current row index (0-based), over which
+      ///   parallel_for parallelizes.  0 <= i < M, where M is the
+      ///   number of rows.  (Here, the case i == M is _not_
+      ///   included.)
       void execute (const MKL_INT i) {
         outRowPtr_[i] = inRowPtr_[i];
       }
@@ -435,7 +449,6 @@ namespace Kokkos {
     struct matrix {
       typedef DefaultCrsMatrix<S,O,N> matrix_type;
     };
-
 
     /// \brief Local sparse operations type for a different scalar type.
     ///
