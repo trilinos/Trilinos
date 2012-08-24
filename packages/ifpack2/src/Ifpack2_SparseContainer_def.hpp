@@ -89,8 +89,13 @@ size_t SparseContainer<MatrixType,InverseType>::getNumVectors() const
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::setNumVectors(const size_t NumVectors_in)
 {
-  // NTS: We didn't implement this in Ifpack either.
-  throw std::runtime_error("Ifpack2::SparseContainer: does not support setNumVectors.");
+  TEUCHOS_TEST_FOR_EXCEPTION(NumVectors_in>0, std::runtime_error, "Ifpack2::SparseContainer::setNumVectors NumVectors cannot be negative.");  
+
+  if(NumVectors_!=NumVectors_in) {
+    NumVectors_=NumVectors_in;
+    X_ = Teuchos::rcp( new Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,NumVectors_) );
+    Y_ = Teuchos::rcp( new Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,NumVectors_) );
+  }
 }
 
 //==============================================================================
