@@ -1330,12 +1330,11 @@ int Zoltan_Hier(
 
 
   if (num_obj){
-    gnoList = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * num_obj);
+    gnoList = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE)*num_obj);
     if (!gnoList){
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
-
   }
 
   i = (hpp.num_obj > num_obj ? hpp.num_obj : num_obj);
@@ -1368,7 +1367,8 @@ int Zoltan_Hier(
   ZOLTAN_FREE(&global_ids);
   ZOLTAN_FREE(&local_ids);
 
-  ierr = Zoltan_DD_Update(dd, (ZOLTAN_ID_TYPE *)gnoList, NULL, (char *)appids, NULL, num_obj);
+  ierr = Zoltan_DD_Update(dd, (ZOLTAN_ID_TYPE *)gnoList, NULL,
+                          (char *)appids, NULL, num_obj);
 
   if (ierr != ZOLTAN_OK)
     goto End;
@@ -1383,7 +1383,8 @@ int Zoltan_Hier(
     }
   }
 
-  ierr = Zoltan_DD_Find(dd, (ZOLTAN_ID_TYPE *)hpp.gno, NULL, (char *)appids, NULL, hpp.num_obj, fromProc);
+  ierr = Zoltan_DD_Find(dd, (ZOLTAN_ID_TYPE *)hpp.gno, NULL,
+                        (char *)appids, NULL, hpp.num_obj, fromProc);
 
   if (ierr != ZOLTAN_OK)
     goto End;
@@ -1471,16 +1472,18 @@ End:
 /* Initialize the parameter structure for hierarchical */
 static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
 
-char *yo = "Zoltan_Hier_Initialize_Params";
-int assist, i=0, j, len;
-int num_cpus, num_siblings;
-char platform[MAX_PARAM_STRING_LEN+1];
-char topology[MAX_PARAM_STRING_LEN+1];
-char *msg=NULL, *pnames=NULL, *c=NULL;
-div_t result;
+  char *yo = "Zoltan_Hier_Initialize_Params";
+  int assist, i=0, j, len;
+  int num_cpus, num_siblings;
+  char platform[MAX_PARAM_STRING_LEN+1];
+  char topology[MAX_PARAM_STRING_LEN+1];
+  char *c=NULL;
+  div_t result;
 
-  Zoltan_Bind_Param(Hier_params, "HIER_DEBUG_LEVEL", (void *) &hpp->output_level);
-  Zoltan_Bind_Param(Hier_params, "HIER_GENERATE_FILES", (void *) &hpp->gen_files);
+  Zoltan_Bind_Param(Hier_params, "HIER_DEBUG_LEVEL",
+                    (void *) &hpp->output_level);
+  Zoltan_Bind_Param(Hier_params, "HIER_GENERATE_FILES",
+                    (void *) &hpp->gen_files);
   Zoltan_Bind_Param(Hier_params, "HIER_CHECKS", (void *) &hpp->checks);
   Zoltan_Bind_Param(Hier_params, "HIER_ASSIST", (void *) &assist);
   Zoltan_Bind_Param(Hier_params, "PLATFORM_NAME", (void *) platform);
@@ -1507,7 +1510,8 @@ div_t result;
     }
 
     for (i=0; i < ZOLTAN_HIER_LAST_PLATFORM; i++){
-      if (strcmp(platform, zoltan_hier_platform_specs[i].platform_name)) continue;
+      if (strcmp(platform, zoltan_hier_platform_specs[i].platform_name))
+        continue;
       hpp->spec = zoltan_hier_platform_specs + i;
       break;
     }
@@ -1525,7 +1529,7 @@ div_t result;
     hpp->spec->platform_name = NULL;
 
     if (topology[0]){
-      hpp->spec->num_siblings[0] = 1;            /* the node or machine itself is the first level */
+      hpp->spec->num_siblings[0] = 1; /* the node or machine itself is the first level */
       i = 1;
       c = topology;
     }
@@ -1543,7 +1547,8 @@ div_t result;
 
         sscanf(c, "%d", hpp->spec->num_siblings +  i);
 
-        if ((hpp->spec->num_siblings[i] < 1) || (hpp->spec->num_siblings[i] > ZOLTAN_MAX_SIBLINGS)){
+        if ((hpp->spec->num_siblings[i] < 1) ||
+            (hpp->spec->num_siblings[i] > ZOLTAN_MAX_SIBLINGS)){
           ZOLTAN_FREE(&(hpp->spec));
           break;
         }
@@ -1564,7 +1569,8 @@ div_t result;
 
   if (!hpp->spec){
     if (zz->Proc == 0){
-      pnames = make_platform_name_string();
+      char *pnames = make_platform_name_string();
+      char *msg = NULL;
       if (pnames == NULL){
         ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
         return ZOLTAN_MEMERR;
@@ -1576,16 +1582,23 @@ div_t result;
         return ZOLTAN_MEMERR;
       }
       strcpy(msg,"Error:\n");
-      strcat(msg, "HIER_ASSIST requested but insufficient topology information provided.\n\n"
-        "Specify PLATFORM_NAME or TOPOLOGY.\n\n");
+      strcat(msg, "HIER_ASSIST requested but insufficient topology "
+                  "information provided.\n\n"
+                  "Specify PLATFORM_NAME or TOPOLOGY.\n\n");
 
-      strcat(msg,"TOPOLOGY is the number of hardware siblings at each level in a topology.\n"
-        "  Ex. TOPOLOGY=\"2, 4\" describes a dual-socket quad-core computing cluster.\n"
-        "  Ex. TOPOLOGY=\"4\" describes a quad-core desktop computer.\n\n");
+      strcat(msg,"TOPOLOGY is the number of hardware siblings "
+                 "at each level in a topology.\n"
+                 "  Ex. TOPOLOGY=\"2, 4\" describes a dual-socket "
+                   "quad-core computing cluster.\n"
+                 "  Ex. TOPOLOGY=\"4\" describes a quad-core "
+                   "desktop computer.\n\n");
 
-      strcat(msg,"Zoltan assumes the run-time system has pinned each process to a CPU.\n");
-      strcat(msg,"It assumes MPI process ranks map to the topology.  (In the 2,4 example,\n");
-      strcat(msg,"this means ranks 0-7 are on the same node, and 0-3 on the same socket.)\n\n");
+      strcat(msg,"Zoltan assumes the run-time system has "
+                 "pinned each process to a CPU.\n");
+      strcat(msg,"It assumes MPI process ranks map to the topology.  "
+                 "(In the 2,4 example,\n");
+      strcat(msg,"this means ranks 0-7 are on the same node, "
+                 "and 0-3 on the same socket.)\n\n");
 
       strcat(msg, "PLATFORM_NAME can be one of the following:\n");
       strcat(msg, pnames);
