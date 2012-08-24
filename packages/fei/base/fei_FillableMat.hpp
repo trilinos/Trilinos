@@ -44,9 +44,11 @@
 #ifndef _fei_FillableMat_hpp_
 #define _fei_FillableMat_hpp_
 
-#include <vector>
 #include <fei_CSVec.hpp>
+#include <fei_Pool_alloc.hpp>
 #include <fei_EqnBuffer.hpp>
+#include <vector>
+#include <map>
 
 namespace fei {
 

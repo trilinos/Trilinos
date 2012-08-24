@@ -198,7 +198,7 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
   fei::impl_utils::find_offsets(rows, xind, offsets);
   const int* offsetsptr = &offsets[0];
 
-  fei::FillableVec fy;
+  fei::CSVec fy;
 
   int jbeg = *rowoffs++;
   for(unsigned i=0; i<nrows; ++i) {
@@ -213,7 +213,7 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
     double xcoeff = xcoef_ptr[xoff];
 
     while(jbeg<jend) {
-      fy.addEntry(colinds[jbeg],Acoef[jbeg]*xcoeff);
+      add_entry(fy, colinds[jbeg],Acoef[jbeg]*xcoeff);
       ++jbeg;
     }
   }

@@ -404,6 +404,7 @@ void fei::Vector_core::pack_send_buffers(const std::vector<int>& sendProcs,
 
 void fei::Vector_core::setCommSizes()
 {
+#ifndef FEI_SER
   sendProcs_.clear();
   //first create the list of procs we'll be sending to.
   for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
@@ -471,6 +472,7 @@ void fei::Vector_core::setCommSizes()
   }
 
   sendRecvProcsNeedUpdated_ = false;
+#endif
 }
 
 int fei::Vector_core::gatherFromOverlap(bool accumulate)

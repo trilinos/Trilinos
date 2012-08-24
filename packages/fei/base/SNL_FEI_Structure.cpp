@@ -3120,7 +3120,6 @@ int SNL_FEI_Structure::setNumNodesAndEqnsPerBlock()
    int numBlocks = blockIDs_.size();
    std::vector<int> nodesPerBlock(numBlocks);
    std::vector<int> eqnsPerBlock(numBlocks);
-   GlobalID* blockIDsPtr = &blockIDs_[0];
 
    int j;
    for(j=0; j<numBlocks; j++) {

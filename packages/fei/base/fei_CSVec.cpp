@@ -46,13 +46,6 @@
 
 namespace fei {
 
-CSVec::CSVec(const FillableVec& invec)
- : indices_(invec.size()),
-   coefs_(invec.size())
-{
-  operator=(invec);
-}
-
 CSVec::CSVec(unsigned sz)
  : indices_(sz, 0),
    coefs_(sz, 0.0)
@@ -68,23 +61,6 @@ CSVec::operator=(const CSVec& invec)
 {
   indices_ = invec.indices_;
   coefs_ = invec.coefs_;
-
-  return *this;
-}
-
-CSVec&
-CSVec::operator=(const FillableVec& invec)
-{
-  indices_.resize(invec.size());
-  coefs_.resize(invec.size());
-
-  FillableVec::const_iterator iter = invec.begin(), iter_end = invec.end();
-
-  unsigned i=0;
-  for(; iter != iter_end; ++iter, ++i) {
-    indices_[i] = iter->first;
-    coefs_[i] = iter->second;
-  }
 
   return *this;
 }

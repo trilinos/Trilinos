@@ -854,10 +854,10 @@ Reducer::addVectorValues(int numValues,
   for(int i=0; i<numValues; ++i) {
     if (isSlaveEqn(globalIndices[i])) {
       if (sum_into) {
-        if (!soln_vector) fd_.addEntry(globalIndices[i], values[i]);
+        if (!soln_vector) add_entry(fd_, globalIndices[i], values[i]);
       }
       else {
-        if (!soln_vector) fd_.putEntry(globalIndices[i], values[i]);
+        if (!soln_vector) put_entry(fd_, globalIndices[i], values[i]);
       }
       if (!soln_vector) ++rhs_vec_counter_;
     }
@@ -893,7 +893,7 @@ Reducer::assembleReducedVector(bool soln_vector,
     return;
   }
 
-  fei::FillableVec& vec = fd_;
+  fei::CSVec& vec = fd_;
 
   if (vec.size() > 0) {
     //form tmpVec1 = D^T*vec.
@@ -909,7 +909,7 @@ Reducer::assembleReducedVector(bool soln_vector,
                  &(tmpVec1_.coefs()[0]), which_vector);
   }
 
-  fei::FillableVec& vec_i = fi_;
+  fei::CSVec& vec_i = fi_;
 
   if (vec_i.size() > 0) {
     csvec_i = vec_i;

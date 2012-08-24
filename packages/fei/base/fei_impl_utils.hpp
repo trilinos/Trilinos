@@ -77,31 +77,19 @@ void find_offsets(const std::vector<int>& sources,
 
 size_t num_bytes_FillableMat(const fei::FillableMat& mat);
 
-/** pack an fei::FillableMat object into a pair of std::vector objects.
-*/
-void pack_FillableMat(const fei::FillableMat& mat,
-                      std::vector<int>& intdata,
-                      std::vector<double>& doubledata);
-
 void pack_FillableMat(const fei::FillableMat& mat, char* buffer);
 
 /** unpack a pair of std::vector objects into an fei::FillableMat object.
     The std::vector objects are assumed to have been produced by the
     function pack_FillableMat(...).
 */
-void unpack_FillableMat(const std::vector<int>& intdata,
-                        const std::vector<double>& doubledata,
-                        fei::FillableMat& mat,
-                        bool clear_mat_on_entry = true,
-                        bool overwrite_entries = true);
-
-void unpack_FillableMat(const std::vector<char>& intdata,
+void unpack_FillableMat(const char* data_begin, const char* data_end,
                         fei::FillableMat& mat,
                         bool clear_mat_on_entry = true,
                         bool overwrite_entries = true);
 
 /** return-value is true if the unpacked matrix contains nothing but zeros...*/
-bool unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat);
+bool unpack_CSRMat(const char* buffer_begin, const char* buffer_end, fei::CSRMat& mat);
 
 size_t num_bytes_indices_coefs(const std::vector<int>& indices,
                         const std::vector<double>& coefs);

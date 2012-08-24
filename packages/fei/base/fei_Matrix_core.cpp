@@ -205,6 +205,7 @@ void fei::Matrix_core::setRHS(fei::SharedPtr<fei::Vector> rhsvector)
 
 void fei::Matrix_core::setCommSizes()
 {
+#ifndef FEI_SER
   //iterate the remotelyOwned_ map and create a list of processors
   //that we will be sending data to. (processors which own matrix rows
   //that we share.)
@@ -247,7 +248,7 @@ void fei::Matrix_core::setCommSizes()
 
     int num_bytes = fei::impl_utils::num_bytes_FillableMat(*(remotelyOwned_[proc]));
     send_chars_[i].resize(num_bytes);
-    char* buffer = &send_chars_[i][0];
+    char* buffer = &(send_chars_[i][0]);
     fei::impl_utils::pack_FillableMat(*(remotelyOwned_[proc]), buffer);
 
     int bsize = send_chars_[i].size();
@@ -265,6 +266,7 @@ void fei::Matrix_core::setCommSizes()
   }
 
   sendRecvProcsNeedUpdated_ = false;
+#endif
 }
 
 int fei::Matrix_core::gatherFromOverlap(bool accumulate)
@@ -296,7 +298,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   for(size_t i=0; i<sendProcs_.size(); ++i) {
     int proc = sendProcs_[i];
     fei::FillableMat* remoteMat = remotelyOwned_[proc];
-    char* buffer = &send_chars_[i][0];
+    char* buffer = &(send_chars_[i][0]);
     fei::impl_utils::pack_FillableMat(*remoteMat, buffer);
     remoteMat->setValues(0.0);
 
@@ -312,7 +314,9 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   //and finally, unpack and store the received buffers.
   CSRMat recvMat;
   for(size_t ir=0; ir<recvProcs_.size(); ++ir) {
-    bool all_zeros = fei::impl_utils::unpack_CSRMat(recv_chars_[ir], recvMat);
+    size_t len = recv_chars_[ir].size();
+    const char* data = &(recv_chars_[ir][0]);
+    bool all_zeros = fei::impl_utils::unpack_CSRMat(data, data+len, recvMat);
 
     if (all_zeros) continue;
 

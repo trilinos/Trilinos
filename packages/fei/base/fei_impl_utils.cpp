@@ -84,43 +84,6 @@ void find_offsets(const std::vector<int>& sources,
 }
 
 //----------------------------------------------------------------------------
-void pack_FillableMat(const fei::FillableMat& mat,
-                      std::vector<int>& intdata,
-                      std::vector<double>& doubledata)
-{
-  int nrows = mat.getNumRows();
-  int nnz = fei::count_nnz(mat);
-
-  intdata.resize(1 + nrows*2 + nnz);
-  doubledata.resize(nnz);
-
-  int ioffset = 0;
-  int doffset = 0;
-
-  intdata[ioffset++] = nrows;
-
-  fei::FillableMat::const_iterator
-    r_iter = mat.begin(),
-    r_end = mat.end();
-
-  for(; r_iter!=r_end; ++r_iter) {
-    int rowNumber = r_iter->first;
-    const fei::CSVec* row = r_iter->second;
-
-    intdata[ioffset++] = rowNumber;
-    const int rowlen = row->size();
-    intdata[ioffset++] = rowlen;
-
-    const std::vector<int>& rowindices = row->indices();
-    const std::vector<double>& rowcoefs = row->coefs();
-    for(int i=0; i<rowlen; ++i) {
-      intdata[ioffset++] = rowindices[i];
-      doubledata[doffset++] = rowcoefs[i];
-    }
-  }
-}
-
-//----------------------------------------------------------------------------
 size_t num_bytes_FillableMat(const fei::FillableMat& mat)
 {
   int nrows = mat.getNumRows();
@@ -140,7 +103,6 @@ void pack_FillableMat(const fei::FillableMat& mat,
   int nnz = fei::count_nnz(mat);
 
   int num_chars_int = (2 + nrows*2 + nnz)*sizeof(int);
-  int num_chars_double = nnz*sizeof(double);
 
   int* intdata = reinterpret_cast<int*>(buffer);
   double* doubledata = reinterpret_cast<double*>(buffer+num_chars_int);
@@ -175,8 +137,7 @@ void pack_FillableMat(const fei::FillableMat& mat,
 }
 
 //----------------------------------------------------------------------------
-void unpack_FillableMat(const std::vector<int>& intdata,
-                        const std::vector<double>& doubledata,
+void unpack_FillableMat(const char* buffer_begin, const char* buffer_end,
                         fei::FillableMat& mat,
                         bool clear_mat_on_entry,
                         bool overwrite_entries)
@@ -185,48 +146,11 @@ void unpack_FillableMat(const std::vector<int>& intdata,
     mat.clear();
   }
 
-  if (intdata.size() < 1) {
+  if (buffer_end == buffer_begin) {
     return;
   }
 
-  int ioffset = 0;
-  int doffset = 0;
-
-  int nrows = intdata[ioffset++];
-
-  for(int i=0; i<nrows; ++i) {
-    int row = intdata[ioffset++];
-    int rowlen = intdata[ioffset++];
-
-    for(int j=0; j<rowlen; ++j) {
-      int col = intdata[ioffset++];
-      double coef = doubledata[doffset++];
-
-      if (overwrite_entries) {
-        mat.putCoef(row, col, coef);
-      }
-      else {
-        mat.sumInCoef(row, col, coef);
-      }
-    }
-  }
-}
-
-//----------------------------------------------------------------------------
-void unpack_FillableMat(const std::vector<char>& buffer,
-                        fei::FillableMat& mat,
-                        bool clear_mat_on_entry,
-                        bool overwrite_entries)
-{
-  if (clear_mat_on_entry) {
-    mat.clear();
-  }
-
-  if (buffer.size() < 1) {
-    return;
-  }
-
-  const int* intdata = reinterpret_cast<const int*>(&buffer[0]);
+  const int* intdata = reinterpret_cast<const int*>(buffer_begin);
   int ioffset = 0;
   int nrows = intdata[ioffset++];
   int nnz = intdata[ioffset++];
@@ -234,7 +158,7 @@ void unpack_FillableMat(const std::vector<char>& buffer,
   int ioffsetcols = 2+nrows*2;
 
   int num_chars_int = (2+nrows*2 + nnz)*sizeof(int);
-  const double* doubledata = reinterpret_cast<const double*>(&buffer[0]+num_chars_int);
+  const double* doubledata = reinterpret_cast<const double*>(buffer_begin+num_chars_int);
 
   int doffset = 0;
 
@@ -261,14 +185,14 @@ void unpack_FillableMat(const std::vector<char>& buffer,
 }
 
 //----------------------------------------------------------------------------
-bool unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat)
+bool unpack_CSRMat(const char* buffer_begin, const char* buffer_end, fei::CSRMat& mat)
 {
   bool all_zeros = true;
-  if (buffer.size() < 1) {
+  if (buffer_end == buffer_begin) {
     return all_zeros;
   }
 
-  const int* intdata = reinterpret_cast<const int*>(&buffer[0]);
+  const int* intdata = reinterpret_cast<const int*>(buffer_begin);
   int ioffset = 0;
   int nrows = intdata[ioffset++];
   int nnz = intdata[ioffset++];
@@ -283,7 +207,7 @@ bool unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat)
   int ioffsetcols = 2+nrows*2;
 
   int num_chars_int = (2+nrows*2 + nnz)*sizeof(int);
-  const double* doubledata = reinterpret_cast<const double*>(&buffer[0]+num_chars_int);
+  const double* doubledata = reinterpret_cast<const double*>(buffer_begin+num_chars_int);
 
   int doffset = 0;
 
@@ -497,9 +421,6 @@ void global_union(MPI_Comm comm,
 {
   globalUnionMatrix = localMatrix;
 
-  std::vector<int> localintdata;
-  std::vector<double> localdoubledata;
-
   int localProc = fei::localProc(comm);
   int numProcs = fei::numProcs(comm);
 
@@ -509,27 +430,19 @@ void global_union(MPI_Comm comm,
 
   //first pack the local matrix into a pair of std::vector objects
 
-  pack_FillableMat(localMatrix, localintdata, localdoubledata);
+  size_t num_bytes = num_bytes_FillableMat(localMatrix);
+  std::vector<char> localchardata(num_bytes);
+
+  pack_FillableMat(localMatrix, &localchardata[0]);
 
   //next use Allgatherv to place every processor's packed arrays onto every
   //other processor.
 
-  std::vector<int> recvintdatalengths;
-  std::vector<int> recvintdata;
-  int err = fei::Allgatherv(comm, localintdata, recvintdatalengths, recvintdata);
+  std::vector<int> recvdatalengths;
+  std::vector<char> recvdata;
+  int err = fei::Allgatherv(comm, localchardata, recvdatalengths, recvdata);
   if (err != 0) {
     throw std::runtime_error("fei::impl_utils::global_union: Allgatherv-int failed.");
-  }
-
-  std::vector<int> recvdoubledatalengths;
-  std::vector<double> recvdoubledata;
-  err = fei::Allgatherv(comm, localdoubledata, recvdoubledatalengths, recvdoubledata);
-  if (err != 0) {
-    throw std::runtime_error("fei::impl_utils::global_union: Allgatherv-double failed.");
-  }
-
-  if (recvintdatalengths.size() != recvdoubledatalengths.size()) {
-    throw std::runtime_error("fei::impl_utils::global_union: inconsistent lengths from Allgatherv");
   }
 
   //finally unpack the received arrays into matrix objects and combine them
@@ -538,21 +451,15 @@ void global_union(MPI_Comm comm,
   bool overwriteEntries = true;
 
   int ioffset = 0;
-  int doffset = 0;
-  for(size_t p=0; p<recvintdatalengths.size(); ++p) {
-    int intlen = recvintdatalengths[p];
-    int doublelen = recvdoubledatalengths[p];
+  for(size_t p=0; p<recvdatalengths.size(); ++p) {
+    int len = recvdatalengths[p];
 
-    if (intlen > 1 && (int)p != localProc) {
-      std::vector<int> intdata(&recvintdata[ioffset], &recvintdata[ioffset]+intlen);
-      std::vector<double> doubledata(&recvdoubledata[doffset], &recvdoubledata[doffset]+doublelen);
-
-      unpack_FillableMat(intdata, doubledata, globalUnionMatrix,
-                         clearMatOnEntry, overwriteEntries);
+    if (len > 1 && (int)p != localProc) {
+      unpack_FillableMat(&recvdata[ioffset], &recvdata[ioffset]+len,
+                globalUnionMatrix, clearMatOnEntry, overwriteEntries);
     }
 
-    ioffset += intlen;
-    doffset += doublelen;
+    ioffset += len;
   }
 }
 

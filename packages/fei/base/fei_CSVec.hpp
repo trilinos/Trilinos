@@ -45,7 +45,6 @@
 
 
 #include <fei_macros.hpp>
-#include <fei_FillableVec.hpp>
 #include <vector>
 #include <algorithm>
 
@@ -59,13 +58,10 @@ namespace fei {
 */
 class CSVec {
  public:
-  CSVec(const FillableVec& invec);
   CSVec(unsigned sz=0);
   virtual ~CSVec();
 
   CSVec& operator=(const CSVec& invec);
-
-  CSVec& operator=(const FillableVec& invec);
 
   std::vector<int>& indices() {return indices_;}
   const std::vector<int>& indices() const {return indices_;}

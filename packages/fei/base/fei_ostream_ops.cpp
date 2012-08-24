@@ -47,7 +47,6 @@
 #include <fei_Vector.hpp>
 #include <fei_Matrix.hpp>
 #include <fei_FillableMat.hpp>
-#include <fei_FillableVec.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_CSVec.hpp>
 
@@ -61,20 +60,6 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Vector& vec)
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Matrix& mat)
 {
   mat.writeToStream(os);
-  return(os);
-}
-
-FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableVec& vec)
-{
-  fei::FillableVec::iterator
-    iter = vec.begin(), iter_end = vec.end();
-
-  os << "   numEntries: " << vec.size() << FEI_ENDL;
-
-  for(; iter!=iter_end; ++iter) {
-    os << "     " << iter->first<< ": "<<iter->second << FEI_ENDL;
-  }
-
   return(os);
 }
 

@@ -130,12 +130,11 @@ TEUCHOS_UNIT_TEST(impl_utils, pack_unpack_FillableMat)
   fm.putCoef(2, 1, 2.1);
   fm.putCoef(2, 2, 2.2);
 
-  std::vector<int> intdata;
-  std::vector<double> doubledata;
+  std::vector<char> data(fei::impl_utils::num_bytes_FillableMat(fm));
 
-  fei::impl_utils::pack_FillableMat(fm, intdata, doubledata); 
+  fei::impl_utils::pack_FillableMat(fm, &data[0]); 
 
-  fei::impl_utils::unpack_FillableMat(intdata, doubledata, fm2);
+  fei::impl_utils::unpack_FillableMat(&data[0], &data[0]+data.size(), fm2);
 
   if (fm.getNumRows() != fm2.getNumRows()) {
     throw std::runtime_error("pack/unpack FillableMat, wrong number of rows");
