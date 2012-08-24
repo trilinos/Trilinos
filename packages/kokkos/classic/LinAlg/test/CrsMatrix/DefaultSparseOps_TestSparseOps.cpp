@@ -273,6 +273,9 @@ namespace {
     using Kokkos::MklSparseOps;
     typedef MklSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
 
+    // MKL correctly implements both sparse mat-vec and sparse
+    // triangular solve for the implicit unit diagonal triangular
+    // matrix case.
     const bool implicitUnitDiagTriMultCorrect = true;
 
     // A critical test for MklSparseOps is to exercise the on-demand
