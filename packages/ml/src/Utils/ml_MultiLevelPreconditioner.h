@@ -424,15 +424,13 @@ public:
   
   int ComputePreconditioner(const bool CheckFiltering = false);
 
-  //! Computes an empty multilevel hierarchy ignoring any aggregation specific information.
-  /*! Computes an empty multilevel hierarchy ignoring any aggregation specific information
-      that might be in the user defined parameters (as specified in the input ParameterList), 
-      or takes default values otherwise.  Allocated data can be freed used DestroyPreconditioner(),
-      or by the destructor.
-  */
+  /*! @brief Recompute the preconditioner (not implemented for Maxwell).
 
-  //! Recomputed the preconditioner (not implemented for Maxwell).
-  int ReComputePreconditioner();
+    @param[in] keepFineLevelSmoother : If true, the fine level smoother is not recomputed.  This is useful
+    if the smoother is expensive to create, e.g., an incomplete factorization, and the fine level matrix
+    has not changed.
+  */
+  int ReComputePreconditioner(bool keepFineLevelSmoother=false);
 
   //! Print the individual operators in the multigrid hierarchy.
   void Print(int level = -2);
@@ -610,8 +608,11 @@ private:
   //! Initializes object with defauls values.
   int Initialize();
 
-  //! Sets smoothers.
-  int SetSmoothers();
+  /*! Sets smoothers.
+    @param[in] skipFineLevelSmoother : If true, the fine level smoother is not set.  This is intended to be used in
+    combination with ReComputePreconditioner.
+  */
+  int SetSmoothers(bool skipFineLevelSmoother=false);
 
   //! Sets coarse level solvers.
   int SetCoarse();

@@ -1,0 +1,15 @@
+
+#cmakedefine HAVE_MPI
+
+#cmakedefine PANZER_DEBUG
+
+#cmakedefine PANZER_STK_DEBUG
+#cmakedefine HAVE_IOSS
+#cmakedefine HAVE_TEKO
+#cmakedefine HAVE_STOKHOS
+#cmakedefine HAVE_MUELU
+#cmakedefine HAVE_PANZER_EXPLICIT_INSTANTIATION
+#cmakedefine PANZER_EXPLICIT_INSTANTIATION
+#cmakedefine Panzer_BUILD_PAPI_SUPPORT
+
+@PANZER_TEUCHOS_TIME_MONITOR_DECLARATIONS@

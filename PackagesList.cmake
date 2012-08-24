@@ -157,6 +157,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Zoltan2               packages/zoltan2                  SS
   Stokhos               packages/stokhos                  SS
   Piro                  packages/piro                     SS
+  Panzer                packages/panzer                   SS
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)
   CTrilinos             packages/CTrilinos                SS # Switched to SS to speed up checkin testing
   ForTrilinos           packages/ForTrilinos              EX
@@ -197,3 +198,4 @@ PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Mesquite AIX)
 PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Xpetra Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(Panzer Windows)

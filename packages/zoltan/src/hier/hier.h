@@ -56,6 +56,32 @@ extern "C" {
 
 /* header file for hierarchical balancing */
 
+#define ZOLTAN_PLATFORM_MAX_LEVELS 8
+
+typedef struct _spec{
+  /*
+   * name of predefined topologies, or null if topology given by parameter
+   */
+  char *platform_name;
+
+  /*
+   * size of num_siblings and my_part arrays
+   */
+  int numLevels;
+
+  /*
+   * number of objects (cores, caches, sockets, etc), or number of
+   *  children of the parent, of this level
+   */
+  int num_siblings[ZOLTAN_PLATFORM_MAX_LEVELS];
+
+  /*
+   * the part computed by this process at this level
+   */
+  int my_part[ZOLTAN_PLATFORM_MAX_LEVELS];
+} zoltan_platform_specification;
+
+
 /* Parameters to hierarchical balancing */
 struct HierPartParamsStruct {
   int output_level;                  /* amount of debugging info */
