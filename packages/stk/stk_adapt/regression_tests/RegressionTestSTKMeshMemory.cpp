@@ -101,7 +101,7 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
   const unsigned p_size = stk::parallel_machine_size( pm );
   if (p_size == 1)
     {
-      const unsigned n = 200;
+      const unsigned n = 20;
       //const unsigned nx = n , ny = n , nz = p_size*n ;
       const unsigned nx = n , ny = n;
 
@@ -110,13 +110,15 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       fixture.generate_mesh();
 
       percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-      eMesh.print_info("quad mesh",2);
+      //eMesh.print_info("quad mesh",2);
 
       // see stk_samba/perf_test_tri_refine.cpp
-      const size_t num_new_tris = 100000;
+      //const size_t num_new_tris = 2000*2000;
+      const size_t num_new_tris = 20*20;
       const size_t num_nodes_per_tri = 3;
       const size_t num_new_nodes = num_new_tris*num_nodes_per_tri;
       MemoryInfo mem_delta_node;
+      double time = -stk::percept::Util::cpu_time();
 
       std::vector<stk::mesh::Entity *> new_nodes, new_elements;
 
@@ -126,7 +128,7 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
 
       mem_delta_node.get_increment();
       double mem_per_node = double(mem_delta_node.m_malloc_used)/double(num_new_nodes);
-      std::cout << "\nstk_mesh create mem_per_node = " << mem_per_node << "\n" << std::endl;
+      std::cout << "\nstk_mesh count_memory mem_per_node = " << mem_per_node << "\n" << std::endl;
 
       MemoryInfo mem_delta_elem_0, mem_delta_elem_1;
 
@@ -151,7 +153,10 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       mem_delta_elem_1.get_increment();
       double mem_per_elem_0 = double(mem_delta_elem_0.m_malloc_used)/double(num_new_tris);
       double mem_per_elem_1 = double(mem_delta_elem_1.m_malloc_used)/double(num_new_tris);
-      std::cout << "\nstk_mesh create mem_per_elem (no connectivity) = " << mem_per_elem_0 << " with connectivity= " << mem_per_elem_1 << "\n" << std::endl;
+
+      time += stk::percept::Util::cpu_time();
+
+      std::cout << "\nstk_mesh count_memory mem_per_elem (no connectivity) = " << mem_per_elem_0 << " with connectivity= " << mem_per_elem_1 << " cpu= " << time << std::endl;
 
     }
 }
