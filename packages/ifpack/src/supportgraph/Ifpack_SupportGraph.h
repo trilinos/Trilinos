@@ -33,6 +33,7 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Amesos.h"
+#include "Ifpack_Condest.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
