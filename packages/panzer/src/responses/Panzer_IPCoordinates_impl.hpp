@@ -107,13 +107,16 @@ evaluateFields(typename Traits::EvalData workset)
 
     Intrepid::FieldContainer<double>& workset_coords = (workset.int_rules[ir_index])->ip_coordinates;
 
+    if (tmp_coords.size() != Teuchos::as<std::size_t>(workset_coords.dimension(2)))
+      tmp_coords.resize(workset_coords.dimension(2));
+
     // This ordering is for the DataTransferKit.  It blocks all x
     // coordinates for a set of points, then all y coordinates and if
     // required all z coordinates.
     for (int dim = 0; dim < workset_coords.dimension(2); ++dim) {
       for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
 	for (int ip = 0; ip < workset_coords.dimension(1); ++ip) {
-	  coords->push_back(workset_coords(static_cast<int>(cell),ip,dim));
+	  tmp_coords[dim].push_back(workset_coords(static_cast<int>(cell),ip,dim));
 	}
       }
     }
@@ -125,7 +128,15 @@ evaluateFields(typename Traits::EvalData workset)
 template<typename EvalT, typename Traits>
 void IPCoordinates<EvalT, Traits>::postEvaluate(typename Traits::PostEvalData data)
 {
-  first_evaluation = false;
+  if (first_evaluation) {
+    coords->clear();
+    for (std::size_t dim = 0; dim < tmp_coords.size(); ++dim) {
+      for (typename std::vector<ScalarT>::const_iterator x=tmp_coords[dim].begin(); x != tmp_coords[dim].end(); ++ x)
+	coords->push_back(*x);
+    }
+    tmp_coords.clear();
+    first_evaluation = false;
+  }
 }
 
 //**********************************************************************

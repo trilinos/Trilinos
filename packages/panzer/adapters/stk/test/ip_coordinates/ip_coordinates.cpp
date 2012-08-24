@@ -101,7 +101,7 @@ namespace panzer {
     panzer_stk::SquareQuadMeshFactory mesh_factory;
     user_app::MyFactory eqset_factory;
     user_app::BCFactory bc_factory;
-    const std::size_t workset_size = 20;
+    const std::size_t workset_size = 1;
 
     panzer::FieldManagerBuilder<int,int> fmb;
 

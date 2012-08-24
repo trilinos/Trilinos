@@ -101,6 +101,9 @@ namespace panzer {
 
     //! Coordinate vector from ResponseData object
     Teuchos::RCP<std::vector<ScalarT> > coords;
+
+    //! Temporary coordinates blocked by dimension
+    std::vector<std::vector<ScalarT> > tmp_coords;
   };
   
 }
