@@ -808,6 +808,18 @@ public:
     ASSERT_FALSE(hx);
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
+    ASSERT_EQ( dx.dimension(0) , 0u );
+    ASSERT_EQ( dy.dimension(0) , 0u );
+    ASSERT_EQ( dz.dimension(0) , 0u );
+    ASSERT_EQ( hx.dimension(0) , 0u );
+    ASSERT_EQ( hy.dimension(0) , 0u );
+    ASSERT_EQ( hz.dimension(0) , 0u );
+    ASSERT_EQ( dx.dimension(1) , N1 );
+    ASSERT_EQ( dy.dimension(1) , N1 );
+    ASSERT_EQ( dz.dimension(1) , N1 );
+    ASSERT_EQ( hx.dimension(1) , N1 );
+    ASSERT_EQ( hy.dimension(1) , N1 );
+    ASSERT_EQ( hz.dimension(1) , N1 );
 
     dx = dView4( "dx" , N0 );
     dy = dView4( "dy" , N0 );

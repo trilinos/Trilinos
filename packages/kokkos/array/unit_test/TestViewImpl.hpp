@@ -176,8 +176,6 @@ void test_view_impl()
   ASSERT_TRUE( shape_22 != shape_36 );
 
   //------------------------------------------------------------------------
-
-  // KokkosArray::View< int , KokkosArray::LayoutLeft , DummyMemorySpace > compile_error ;
 }
 
 } /* namespace */

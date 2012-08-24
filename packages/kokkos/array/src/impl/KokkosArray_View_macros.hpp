@@ -224,7 +224,11 @@ public:
 
   /** \brief  Construct a NULL view */
   KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-  View() { oper_type::m_ptr_on_device = 0 ; }
+  View()
+    {
+      oper_type::m_ptr_on_device = 0 ;
+      oper_type::m_shape = shape_type();
+    }
 
   /** \brief  Construct a view of the array */
   KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION

@@ -41,19 +41,20 @@ CMAKE_HWLOC="${CMAKE_HWLOC} -D HWLOC_LIBRARY_DIRS:FILEPATH=${HWLOC_BASE_DIR}/lib
 #-----------------------------------------------------------------------------
 # Cuda cmake configuration:
 #
-# Note:  Options to CUDA_NVCC_FLAGS must be semi-colon delimited,
-#        this is different than the standard CMAKE_CXX_FLAGS syntax.
-#
 # Note:  Must turn off CUDA_PROPAGATE_HOST_FLAGS because the
 #        Tribits wrapper on cmake forces -pedantic, which results in
 #        a flood of warnings from nvcc compiler produced code.
+#        This means compiler options must be passed manually.
+#
+# Note:  Options to CUDA_NVCC_FLAGS must be semi-colon delimited,
+#        this is different than the standard CMAKE_CXX_FLAGS syntax.
 
 CMAKE_CUDA=""
 CMAKE_CUDA="${CMAKE_CUDA} -D TPL_ENABLE_CUDA:BOOL=ON"
 CMAKE_CUDA="${CMAKE_CUDA} -D TPL_ENABLE_CUSPARSE:BOOL=ON"
 CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_VERBOSE_BUILD:BOOL=OFF"
 CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_PROPAGATE_HOST_FLAGS:BOOL=OFF"
-CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_NVCC_FLAGS:STRING=-arch=sm_20;-O3;-Xcompiler;-Wall"
+CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_NVCC_FLAGS:STRING=-arch=sm_20;-Xcompiler;-Wall,-ansi;-O3"
 
 #-----------------------------------------------------------------------------
 # KokkosArray cmake configuration to use Pthreads, HWLOC, and Cuda
@@ -71,7 +72,6 @@ cmake \
   ${CMAKE_MPI} \
   -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
   -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
-  -D CMAKE_CXX_FLAGS:STRING="-Wall -O3" \
   -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="-Werror" \
   -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
   -D Trilinos_ENABLE_TESTS:BOOL=ON \
