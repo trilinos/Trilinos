@@ -273,9 +273,37 @@ namespace {
     using Kokkos::MklSparseOps;
     typedef MklSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
 
-    const bool implicitUnitDiagTriMultCorrect = false;
-    Tester<sparse_ops_type>::test ("DefaultSparseHostOps",
-                                   implicitUnitDiagTriMultCorrect);
+    const bool implicitUnitDiagTriMultCorrect = true;
+
+    // A critical test for MklSparseOps is to exercise the on-demand
+    // transition from 0-based indices to 1-based indices.  We can do
+    // this by starting with numVecs=1, then going to some numVecs > 1
+    // and back again.  In order not to spoil tests after these, we
+    // save the current numVecs value and restore it after the tests
+    // (with a try-catch, so it gets restored even if the tests throw.
+    const int curNumVecs = numVecs;
+    try {
+      numVecs = 1;
+      Tester<sparse_ops_type>::test ("MklSparseOps",
+                                     implicitUnitDiagTriMultCorrect);
+      numVecs = 3;
+      Tester<sparse_ops_type>::test ("MklSparseOps",
+                                     implicitUnitDiagTriMultCorrect);
+      numVecs = 1;
+      Tester<sparse_ops_type>::test ("MklSparseOps",
+                                     implicitUnitDiagTriMultCorrect);
+      // Also test the user's numVecs, if it's neither 1 nor 3.
+      if (curNumVecs != 1 && curNumVecs != 3) {
+        numVecs = curNumVecs;
+        Tester<sparse_ops_type>::test ("MklSparseOps",
+                                       implicitUnitDiagTriMultCorrect);
+      }
+    }
+    catch (...) {
+      numVecs = curNumVecs;
+      throw;
+    }
+    numVecs = curNumVecs; // "finally" block of the try-catch.
   }
 #endif // HAVE_KOKKOSCLASSIC_MKL
 
@@ -338,3 +366,4 @@ namespace {
     }
   }
 }
+

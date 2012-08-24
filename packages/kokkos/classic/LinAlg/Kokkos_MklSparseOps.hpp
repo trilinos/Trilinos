@@ -1046,7 +1046,7 @@ namespace Kokkos {
     // This is a logic error because users are not allowed to invoke
     // convertIndexBase(), and the only index bases we should be using
     // are 0 or 1.
-    TEUCHOS_TEST_FOR_EXCEPTION(newIndexBase != 0 || newIndexBase != 1,
+    TEUCHOS_TEST_FOR_EXCEPTION(newIndexBase != 0 && newIndexBase != 1,
       std::logic_error, "convertIndexBase only allows an index base of 0 or 1, "
       "but you provided an index base of " << newIndexBase << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(! isInitialized_, std::logic_error, "Converting "
