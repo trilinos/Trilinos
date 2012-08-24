@@ -96,7 +96,7 @@ void SparseContainer<MatrixType,InverseType>::setNumVectors(const size_t NumVect
     X_ = Teuchos::rcp( new Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,NumVectors_) );
     Y_ = Teuchos::rcp( new Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,NumVectors_) );
   }
-  // If we haven't been initialized, then we can let the new's happen there.  Otherwise, we need to clobber X_ and Y_
+  // If we haven't been initialized, then we can let the new's happen in initialize().  Otherwise, we need to clobber X_ and Y_ here.
 
 }
 
