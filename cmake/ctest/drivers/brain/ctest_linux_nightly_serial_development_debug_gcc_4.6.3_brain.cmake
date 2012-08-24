@@ -70,7 +70,7 @@ SET(CTEST_TEST_TYPE EXPERIMENTAL)
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
 #implicitly enabled.  Sundance depends on Stokhos.
-#SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance)
+#SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance Panzer)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"

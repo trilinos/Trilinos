@@ -70,7 +70,7 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
 SET(Trilinos_PACKAGES FEApp Mesquite Didasko MOOCHO Moertel NOX RBGen Stratimikos ML Komplex Ifpack Pamgen Amesos Galeri AztecOO Pliris OptiPack EpetraExt Triutils GlobiPack Shards Zoltan Kokkos RTOp ThreadPool TrilinosFramework)
 
-SET( EXTRA_EXCLUDE_PACKAGES Rythmos Piro)
+SET( EXTRA_EXCLUDE_PACKAGES Rythmos Piro Panzer)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"

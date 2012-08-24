@@ -88,6 +88,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCPPUNIT_LIBRARY:STRING=/Users/jmwille/install/cppunit-1.12.1/lib/libcppunit.a"
     "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
     "-DTPL_ENABLE_Matio=OFF"
+    "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.6.1")
