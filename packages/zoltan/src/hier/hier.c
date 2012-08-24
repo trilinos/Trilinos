@@ -405,7 +405,7 @@ End:
 /*****************************************************************************/
 /*****************************************************************************/
 
-int final_migrate(
+static int final_migrate(
   HierPartParams *hpp,
   int num_export,
   ZOLTAN_ID_TYPE *hier_export_gids,
@@ -488,7 +488,7 @@ End:
   return ierr;
 }
 
-int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
+static int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
   ZOLTAN_ID_TYPE *hier_export_lids, int *hier_export_procs, MPI_Comm next_comm)
 {
   MPI_Comm comm;
