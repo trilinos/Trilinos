@@ -1,0 +1,41 @@
+# Note: all relative paths are relative to package/doc!
+#
+@INCLUDE = Doxyfile.options
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/amesos.tag=$(TRILINOS_HOME)/packages/amesos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/aztecoo.tag=$(TRILINOS_HOME)/packages/aztecoo/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/belos.tag=$(TRILINOS_HOME)/packages/belos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/ifpack.tag=$(TRILINOS_HOME)/packages/ifpack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/ml.tag=$(TRILINOS_HOME)/packages/ml/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/nox.tag=$(TRILINOS_HOME)/packages/nox/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/ml.tag=$(TRILINOS_HOME)/packages/phalanx/doc/html
+#
+# Package options
+#
+PROJECT_NAME           = "Panzer"
+OUTPUT_DIRECTORY       = .
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src ../adapters/stk/src ./Panzer_DoxygenDocumentation.hpp ../adapters/stk/example/main_driver
+#FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATTERNS       =
+EXAMPLE_PATH           = ../example ../adapters/stk/example
+IMAGE_PATH             = 
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+#
+# Links to other packages
+#
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO
+GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/panzer.tag

@@ -1,0 +1,123 @@
+<ParameterList>
+  <Parameter name="Piro Solver" type="string" value="Rythmos"/>
+  <Parameter name="Compute Sensitivities" type="bool" value="0"/>
+  <ParameterList name="LOCA">
+    <ParameterList name="Bifurcation"/>
+    <ParameterList name="Constraints"/>
+    <ParameterList name="Predictor">
+      <Parameter  name="Method" type="string" value="Constant"/>
+    </ParameterList>
+    <ParameterList name="Stepper">
+      <Parameter  name="Continuation Method" type="string" value="Natural"/>
+      <Parameter  name="Initial Value" type="double" value="1.0"/>
+      <Parameter  name="Continuation Parameter" type="string" value="Parameter 0"/>
+      <Parameter  name="Max Steps" type="int" value="6"/>
+      <Parameter  name="Max Value" type="double" value="12.25"/>
+      <Parameter  name="Min Value" type="double" value="0.5"/>
+      <Parameter  name="Compute Eigenvalues" type="bool" value="1"/>
+      <ParameterList name="Eigensolver">
+        <Parameter name="Method" type="string" value="Anasazi"/>
+        <Parameter name="Operator" type="string" value="Shift-Invert"/>
+        <Parameter name="Num Blocks" type="int" value="3"/>
+        <Parameter name="Num Eigenvalues" type="int" value="1"/>
+        <Parameter name="Block Size" type="int" value="1"/>
+        <Parameter name="Maximum Restarts" type="int" value="0"/>
+        <Parameter name="Shift" type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Step Size">
+      <Parameter  name="Initial Step Size" type="double" value="0.5"/>
+      <Parameter  name="Aggressiveness" type="double" value="2.0"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="NOX">
+    <ParameterList name="Direction">
+      <Parameter name="Method" type="string" value="Newton"/>
+      <ParameterList name="Newton">
+        <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+        <ParameterList name="Linear Solver">
+          <Parameter name="Aztec Solver" type="string" value="GMRES"/>
+          <Parameter name="Compute Scaling Manually" type="bool" value="1"/>
+          <Parameter name="Convergence Test" type="string" value="r0"/>
+          <Parameter name="Max Age Of Prec" type="int" value="1"/>
+          <Parameter name="Max Iterations" type="int" value="100"/>
+          <Parameter name="Orthogonalization" type="string" value="Classical"/>
+          <Parameter name="Output Frequency" type="int" value="20"/>
+          <Parameter name="Output Solver Details" type="bool" value="1"/>
+          <Parameter name="Preconditioner" type="string" value="None"/>
+          <Parameter name="Preconditioner Operator" type="string" value="Use Jacobian"/>
+          <Parameter name="Preconditioner Reuse Policy" type="string" value="Rebuild"/>
+          <Parameter name="RCM Reordering" type="string" value="Disabled"/>
+          <Parameter name="Size of Krylov Subspace" type="int" value="300"/>
+          <Parameter name="Throw Error on Prec Failure" type="bool" value="1"/>
+          <Parameter name="Tolerance" type="double" value="0.0001"/>
+          <Parameter name="Zero Initial Guess" type="bool" value="0"/>
+          <Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/>
+        </ParameterList>
+        <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Line Search">
+      <ParameterList name="Full Step">
+        <Parameter name="Full Step" type="double" value="1"/>
+      </ParameterList>
+      <Parameter name="Method" type="string" value="Full Step"/>
+    </ParameterList>
+    <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+    <ParameterList name="Printing">
+      <Parameter name="Output Precision" type="int" value="3"/>
+      <Parameter name="Output Processor" type="int" value="0"/>
+      <ParameterList name="Output Information">
+        <Parameter name="Error" type="bool" value="1"/>
+        <Parameter name="Warning" type="bool" value="1"/>
+        <Parameter name="Outer Iteration" type="bool" value="1"/>
+        <Parameter name="Outer Iteration StatusTest" type="bool" value="1"/>
+        <Parameter name="Inner Iteration" type="bool" value="1"/>
+        <Parameter name="Parameters" type="bool" value="1"/>
+        <Parameter name="Details" type="bool" value="1"/>
+        <Parameter name="Linear Solver Details" type="bool" value="1"/>
+        <Parameter name="Stepper Iteration" type="bool" value="1"/>
+        <Parameter name="Stepper Details" type="bool" value="1"/>
+        <Parameter name="Stepper Parameters" type="bool" value="1"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Solver Options">
+      <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
+    </ParameterList>
+    <ParameterList name="Status Tests">
+      <Parameter name="Test Type" type="string" value="Combo"/>
+      <Parameter name="Combo Type" type="string" value="OR"/>
+      <Parameter name="Number of Tests" type="int" value="2"/>
+      <ParameterList name="Test 0">
+        <Parameter name="Test Type" type="string" value="NormF"/>
+        <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+      </ParameterList>
+      <ParameterList name="Test 1">
+        <Parameter name="Test Type" type="string" value="MaxIters"/>
+        <Parameter name="Maximum Iterations" type="int" value="10"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Rythmos">
+    <Parameter name="Nonlinear Solver Type" type="string" value='NOX'/>
+    <Parameter name="Final Time" type="double" value="0.1"/>
+    <Parameter name="Stepper Type" type="string" value="Explicit RK"/>
+    <ParameterList name="Rythmos Stepper">
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Stratimikos">
+    </ParameterList>
+    <ParameterList name="Rythmos Integration Control">
+      <Parameter name="Take Variable Steps" type="bool" value="false"/>
+      <Parameter name="Number of Time Steps" type="int" value="5"/>
+    </ParameterList>
+    <ParameterList name="Rythmos Integrator">
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

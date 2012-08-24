@@ -1,0 +1,4 @@
+To update the panzer headers to make sure all files have the header inserted, run the command from the main panzer directory:
+
+> cd Trilinos/Panzer/panzer
+> find . -name "*pp" -exec ../../commonTools/refactoring/update-copyright-header.py --copyright-header=$PWD/Copyright.txt --script-mode --file='{}' \;

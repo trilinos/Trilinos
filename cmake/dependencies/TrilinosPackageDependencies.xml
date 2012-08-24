@@ -1329,6 +1329,20 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Panzer" dir="packages/panzer" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Kokkos,Sacado,Phalanx,Intrepid,FEI,ThyraCore,ThyraTpetraAdapters,ThyraEpetraAdapters,Tpetra,Epetra,EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="STK,SEACASIoss,SEACASExodus,Teko,Stokhos,MueLu"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos,Piro,NOX,Rythmos"/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI,Boost"/>
+    <LIB_OPTIONAL_DEP_TPLS value="PAPI"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="panzer-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="Sundance" dir="packages/Sundance" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Amesos,AztecOO,Ifpack,ML,Anasazi,Belos,NOX,Intrepid"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExodus,Stokhos"/>
