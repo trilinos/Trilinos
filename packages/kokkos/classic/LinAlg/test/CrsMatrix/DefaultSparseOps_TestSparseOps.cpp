@@ -45,6 +45,9 @@
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_AltSparseOps.hpp"
+#ifdef HAVE_KOKKOSCLASSIC_MKL
+#  include "Kokkos_MklSparseOps.hpp"
+#endif // HAVE_KOKKOSCLASSIC_MKL
 #include "Kokkos_Version.hpp"
 #include "DefaultSparseOps_TestSparseOps.hpp"
 
@@ -261,6 +264,20 @@ namespace {
     Tester<sparse_ops_type>::test ("DefaultSparseHostOps",
                                    implicitUnitDiagTriMultCorrect);
   }
+
+#ifdef HAVE_KOKKOSCLASSIC_MKL
+  // Test sparse matrix-(multi)vector multiply and sparse triangular
+  // solve, using MklSparseOps.
+  TEUCHOS_UNIT_TEST( MklSparseOps, TestSparseOps )
+  {
+    using Kokkos::MklSparseOps;
+    typedef MklSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+
+    const bool implicitUnitDiagTriMultCorrect = false;
+    Tester<sparse_ops_type>::test ("DefaultSparseHostOps",
+                                   implicitUnitDiagTriMultCorrect);
+  }
+#endif // HAVE_KOKKOSCLASSIC_MKL
 
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
   // This test should work, but we omit it to save time.
