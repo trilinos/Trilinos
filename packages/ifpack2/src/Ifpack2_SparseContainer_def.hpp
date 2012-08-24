@@ -91,11 +91,13 @@ void SparseContainer<MatrixType,InverseType>::setNumVectors(const size_t NumVect
 {
   TEUCHOS_TEST_FOR_EXCEPTION(NumVectors_in>0, std::runtime_error, "Ifpack2::SparseContainer::setNumVectors NumVectors cannot be negative.");  
 
-  if(NumVectors_!=NumVectors_in) {
+  if(IsInitialized_ && NumVectors_!=NumVectors_in) {
     NumVectors_=NumVectors_in;
     X_ = Teuchos::rcp( new Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,NumVectors_) );
     Y_ = Teuchos::rcp( new Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,NumVectors_) );
   }
+  // If we haven't been initialized, then we can let the new's happen there.  Otherwise, we need to clobber X_ and Y_
+
 }
 
 //==============================================================================
