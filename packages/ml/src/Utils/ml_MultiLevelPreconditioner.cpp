@@ -366,9 +366,6 @@ MultiLevelPreconditioner(ML_Operator * Operator,
   // need to wrap an Epetra_RowMatrix around Operator.
   // This is quite not the best approach for small matrices
 
-  int MaxNumNonzeros;
-  double CPUTime;
-  
   if (NBlocks != 0) Comm_ = &(DiagOperators[0]->Comm());
   else Comm_ = NULL;
 
@@ -1716,7 +1713,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 // ================================================ ====== ==== ==== == =
 
 int ML_Epetra::MultiLevelPreconditioner::
-ReComputePreconditioner()
+ReComputePreconditioner(bool keepFineLevelSmoother)
 {
 
  try{
@@ -1749,12 +1746,14 @@ ReComputePreconditioner()
   
   for (int i = 0; i < ml_->ML_num_levels; i++)
   {
-    ML_Smoother_Clean(&(ml_->pre_smoother[i]));
-    ML_Smoother_Init(&(ml_->pre_smoother[i]), &(ml_->SingleLevel[i]));
-    ML_Smoother_Clean(&(ml_->post_smoother[i]));
-    ML_Smoother_Init(&(ml_->post_smoother[i]), &(ml_->SingleLevel[i]));
-    ML_CSolve_Clean(&(ml_->csolve[i]));
-    ML_CSolve_Init(&(ml_->csolve[i]));
+    if (i!=0 || keepFineLevelSmoother==false) {
+      ML_Smoother_Clean(&(ml_->pre_smoother[i]));
+      ML_Smoother_Init(&(ml_->pre_smoother[i]), &(ml_->SingleLevel[i]));
+      ML_Smoother_Clean(&(ml_->post_smoother[i]));
+      ML_Smoother_Init(&(ml_->post_smoother[i]), &(ml_->SingleLevel[i]));
+      ML_CSolve_Clean(&(ml_->csolve[i]));
+      ML_CSolve_Init(&(ml_->csolve[i]));
+    }
   }
 
   if( verbose_ ) 
@@ -1786,7 +1785,7 @@ ReComputePreconditioner()
   // Generate all smoothers and coarse grid solver.                         //
   // ====================================================================== //
 
-  try{SetSmoothers();}
+  try{SetSmoothers(keepFineLevelSmoother);}
   catch(...) {
     if (Comm().MyPID() == 0) {
       fprintf(stderr,"%s","\n**************************\n");
