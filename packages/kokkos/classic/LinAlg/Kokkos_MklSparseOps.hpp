@@ -75,50 +75,149 @@
 
 namespace Kokkos {
 
+  // Forward declaration, for MklBindScalar and MklBindOrdinal below.
   template <class Scalar, class Ordinal, class Node, class Allocator>
   struct MklSparseOps;
 
-  // Kokkos Kernels for first-touch conversion between 0-based and 1-based indices.
   namespace {
 
+    /// \struct MklBindScalar
+    /// \brief When using MKL, given a Scalar type, find the right local sparse ops.
+    ///
+    /// \note This class is _not_ meant for users.  It is an
+    ///   implementation detail of MklSparseOps (which is defined
+    ///   below in this header file).
+    ///
+    /// \tparam Scalar The type of entries in the sparse matrix; same
+    ///   as the Scalar template parameter of MklSparseOps.
+    /// \tparam Ordinal The type of column indices in the sparse
+    ///   matrix; same as the Ordinal template parameter of
+    ///   MklSparseOps.
+    /// \tparam Node The Kokkos Node type; same as the Node template
+    ///   parameter of MklSparseOps.
+    /// \tparam Allocator The type that implements allocation of
+    ///   sparse matrix arrays; same as the Allocator template
+    ///   parameter of MklSparseOps.
+    ///
+    /// Intel's Math Kernel Library (MKL) only provides local sparse
+    /// kernels (matrix-(multi)vector multiply and triangular solve)
+    /// for certain Scalar and Ordinal types.  In turn, our MKL
+    /// wrapper, MklSparseOps, only has valid specializations for
+    /// those types.  This means that if the user's combination of
+    /// Scalar and Ordinal types is not supported by MKL, we need a
+    /// fall-back.
+    ///
+    /// This struct provides the fall-back, given a Scalar type.  If
+    /// MKL provides kernels for that Scalar type, this struct's \c
+    /// other_type typedef is a partial specialization of
+    /// MklSparseOps.  Otherwise, if MKL does _not_ provide kernels
+    /// for that Scalar type, \c other_type is a specialization of
+    /// DefaultHostSparseOps.  We say that this struct "binds" the
+    /// given Scalar type to the appropriate local sparse ops
+    /// implementation, hence the name ("bind Scalar").
+    ///
+    /// This struct ignores the Ordinal type.  That is, even if MKL
+    /// does not support the given Ordinal type, as long as MKL
+    /// supports the given Scalar type, other_type will be a
+    /// specialization of MklSparseOps.  Use MklBindOrdinal (see
+    /// below) to bind the Ordinal type.
+    ///
+    /// \note To developers: MklBindScalar and MklBindOrdinal exist
+    ///   because it was either impossible or too hard to get the
+    ///   syntax right for partially specializing the bind_scalar and
+    ///   bind_ordinal template classes inside of MklSparseOps.
     template <class Scalar, class Ordinal, class Node, class Allocator>
     struct MklBindScalar {
       typedef DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator> other_type;
     };
 
+    // Partial specialization for Scalar=float.
     template <class Ordinal, class Node, class Allocator>
     struct MklBindScalar<float, Ordinal, Node, Allocator> {
       typedef MklSparseOps<float, Ordinal, Node, Allocator> other_type;
     };
 
+    // Partial specialization for Scalar=double.
     template <class Ordinal, class Node, class Allocator>
     struct MklBindScalar<double, Ordinal, Node, Allocator> {
       typedef MklSparseOps<double, Ordinal, Node, Allocator> other_type;
     };
 
+    // Partial specialization for Scalar=std::complex<float>.
     template <class Ordinal, class Node, class Allocator>
     struct MklBindScalar<std::complex<float>, Ordinal, Node, Allocator> {
       typedef MklSparseOps<std::complex<float>, Ordinal, Node, Allocator> other_type;
     };
 
+    // Partial specialization for Scalar=std::complex<double>.
     template <class Ordinal, class Node, class Allocator>
     struct MklBindScalar<std::complex<double>, Ordinal, Node, Allocator> {
       typedef MklSparseOps<std::complex<double>, Ordinal, Node, Allocator> other_type;
     };
 
-
+    /// \struct MklBindOrdinal
+    /// \brief When using MKL, given an Ordinal type, find the right local sparse ops.
+    ///
+    /// \note This class is _not_ meant for users.  It is an
+    ///   implementation detail of MklSparseOps (which is defined
+    ///   below in this header file).
+    ///
+    /// \tparam Scalar The type of entries in the sparse matrix; same
+    ///   as the Scalar template parameter of MklSparseOps.
+    /// \tparam Ordinal The type of column indices in the sparse
+    ///   matrix; same as the Ordinal template parameter of
+    ///   MklSparseOps.
+    /// \tparam Node The Kokkos Node type; same as the Node template
+    ///   parameter of MklSparseOps.
+    /// \tparam Allocator The type that implements allocation of
+    ///   sparse matrix arrays; same as the Allocator template
+    ///   parameter of MklSparseOps.
+    ///
+    /// Intel's Math Kernel Library (MKL) only provides local sparse
+    /// kernels (matrix-(multi)vector multiply and triangular solve)
+    /// for certain Scalar and Ordinal types.  In turn, our MKL
+    /// wrapper, MklSparseOps, only has valid specializations for
+    /// those types.  This means that if the user's combination of
+    /// Scalar and Ordinal types is not supported by MKL, we need a
+    /// fall-back.
+    ///
+    /// This struct provides the fall-back, given an Ordinal type.  If
+    /// MKL provides kernels for that Ordinal type, this struct's \c
+    /// other_type typedef is a partial specialization of
+    /// MklSparseOps.  Otherwise, if MKL does _not_ provide kernels
+    /// for that Ordinal type, \c other_type is a specialization of
+    /// DefaultHostSparseOps.  We say that this struct "binds" the
+    /// given Ordinal type to the appropriate local sparse ops
+    /// implementation, hence the name ("bind Ordinal").
+    ///
+    /// This struct ignores the Scalar type.  That is, even if MKL
+    /// does not support the given Scalar type, as long as MKL
+    /// supports the given Ordinal type, other_type will be a
+    /// specialization of MklSparseOps.  Use MklBindScalar (see above)
+    /// to bind the Scalar type.
+    ///
+    /// \note To developers: MklBindScalar and MklBindOrdinal exist
+    ///   because it was either impossible or too hard to get the
+    ///   syntax right for partially specializing the bind_scalar and
+    ///   bind_ordinal template classes inside of MklSparseOps.
     template <class Scalar, class Ordinal, class Node, class Allocator>
     struct MklBindOrdinal {
       typedef DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator> other_type;
     };
 
+    // Partial specialization for Ordinal=MKL_INT (supported by MKL, naturally).
     template <class Scalar, class Node, class Allocator>
     struct MklBindOrdinal<Scalar, MKL_INT, Node, Allocator> {
-      typedef DefaultHostSparseOps<Scalar, MKL_INT, Node, Allocator> other_type;
+      typedef MklSparseOps<Scalar, MKL_INT, Node, Allocator> other_type;
     };
 
 
-    // Convert row offsets between 0-based and 1-based.
+    /// \class ConvertRowPtrs
+    /// \brief Kokkos kernel for converting sparse matrix row offsets
+    ///   between 0-based and 1-based.
+    ///
+    /// \note This class is _not_ meant for users.  It is an
+    ///   implementation detail of MklSparseOps.
     class ConvertRowPtrs {
     private:
       MKL_INT* const outRowPtr_;
@@ -126,6 +225,15 @@ namespace Kokkos {
       const int newIndexBase_;
 
     public:
+      /// Constructor.
+      ///
+      /// \param outRowPtr [out] The output row offsets array, that
+      ///   uses the new index base.
+      /// \param inRowPtr [in] The input row offsets array, that uses
+      ///   the old index base.
+      /// \param newIndexBase [in] The new index base.  It must be
+      ///   either 0 or 1.  If 0, the old index base must have been 1;
+      ///   if 1, the old index base must have been 0.
       ConvertRowPtrs (MKL_INT* const outRowPtr,
                       const MKL_INT* const inRowPtr,
                       const int newIndexBase) :
@@ -134,6 +242,14 @@ namespace Kokkos {
         newIndexBase_ (newIndexBase)
       {}
 
+      /// \brief Method for the Kokkos Node's parallel_for to execute
+      ///   in parallel.
+      ///
+      /// \param i [in] Current row index (0-based), over which
+      ///   parallel_for parallelizes.  0 <= i <= M, where M is the
+      ///   number of rows.  (Yes, the case i == M is included.
+      ///   Remember that the row offsets array has one more entry
+      ///   than the number of rows in the matrix.)
       void execute (const MKL_INT i) {
         // base = 0: subtract 1 (converting from base = 1)
         // base = 1: add 1 (converting from base = 0)
@@ -141,7 +257,12 @@ namespace Kokkos {
       }
     };
 
-    // Convert column indices between 0-based and 1-based.
+    /// \class ConvertColInds
+    /// \brief Kokkos kernel for converting sparse matrix column
+    ///   indices between 0-based and 1-based.
+    ///
+    /// \note This class is _not_ meant for users.  It is an
+    ///   implementation detail of MklSparseOps.
     class ConvertColInds {
     private:
       MKL_INT* const newColInd_; // 1-based, on output
@@ -150,6 +271,15 @@ namespace Kokkos {
       const int newIndexBase_;
 
     public:
+      /// Constructor.
+      ///
+      /// \param outColInd [out] The output column indices array, that
+      ///   uses the new index base.
+      /// \param inColInd [in] The input column indices array, that
+      ///   uses the old index base.
+      /// \param newIndexBase [in] The new index base.  It must be
+      ///   either 0 or 1.  If 0, the old index base must have been 1;
+      ///   if 1, the old index base must have been 0.
       ConvertColInds (MKL_INT* const newColInd, // new index base, on output
                       const MKL_INT* const newRowPtr, // new index base
                       const MKL_INT* const oldColInd, // old index base
@@ -160,6 +290,13 @@ namespace Kokkos {
         newIndexBase_ (newIndexBase)
       {}
 
+      /// \brief Method for the Kokkos Node's parallel_for to execute
+      ///   in parallel.
+      ///
+      /// \param i [in] Current row index (0-based), over which
+      ///   parallel_for parallelizes.  0 <= i < M, where M is the
+      ///   number of rows.  (Here, the case i == M is _not_
+      ///   included.)
       void execute (const MKL_INT r) {
         const int baseShift = 2*newIndexBase_ - 1;
         const MKL_INT start = newRowPtr_[r] - baseShift;
@@ -171,6 +308,11 @@ namespace Kokkos {
       }
     };
 
+    /// \class CopyRowPtrs
+    /// \brief Kokkos kernel for copying a sparse matrix's row offsets array.
+    ///
+    /// \note This class is _not_ meant for users.  It is an
+    ///   implementation detail of MklSparseOps.
     class CopyRowPtrs {
     private:
       MKL_INT* const outRowPtr_;
@@ -316,9 +458,6 @@ namespace Kokkos {
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct bind_scalar {
-      // The default, for scalar (S2) and index (Ordinal) types that
-      // MKL does _not_ support, is DefaultHostSparseOps.  There are
-      // specializations elsewhere in this header file.
       typedef typename MklBindScalar<S2, Ordinal, Node, Allocator>::other_type other_type;
     };
 
@@ -339,10 +478,7 @@ namespace Kokkos {
     /// \tparam O2 An ordinal type possibly different from \c Ordinal.
     template <class O2>
     struct bind_ordinal {
-      // The default, for index (Ordinal) types that MKL does _not_
-      // support, is DefaultHostSparseOps.  There are specializations
-      // below in this header file.
-      typedef DefaultHostSparseOps<Scalar,O2,Node,Allocator> other_type;
+      typedef typename MklBindOrdinal<Scalar,O2,Node,Allocator> other_type;
     };
 
     //@}
