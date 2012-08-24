@@ -908,23 +908,16 @@ int i,p,j, k, nedges;
   }
 }
 
-extern zoltan_platform_specification zoltan_hier_platform_specs[ZOLTAN_HIER_LAST_PLATFORM];
-
 static void usage()
 {
   int i;
   printf( "\nUsage: --verbose\n");
   printf( "\n       --generate_files\n");
   printf( "\n       --graph_package={parmetis|scotch|phg}\n");
-  printf( "\n       --platform=desc | --topology=desc\n");
+  printf( "\n       --platform={glory|redsky|ctx|odin|octopi|s861036} "
+                 "| --topology=desc\n");
   printf( "\n       --size={approximate global number of vertices}\n");
 
-  printf( "\nPlatform Names that Zoltan knows about:");
-
-  for (i=0; i < ZOLTAN_HIER_LAST_PLATFORM; i++){
-    if (i%8 == 0) printf("\n");
-    printf( "  %s", zoltan_hier_platform_specs[i].platform_name );
-  }
   printf( "\n\nA topology description is a list of integers, for example\n");
   printf( "  Dual socket, quad core: 2, 4\n");
   printf( "  Quad socket, six cores with core pairs sharing a cache: 4, 3, 2\n");
