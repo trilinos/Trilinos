@@ -71,6 +71,8 @@
 
 #include "Kokkos_DefaultArithmetic.hpp"
 
+#include <boost/unordered_set.hpp> // a hash table
+
 namespace panzer {
 
 using Teuchos::RCP;
@@ -205,7 +207,8 @@ int DOFManager2<LO,GO>::getNumFields() const
 }
 
 template <typename LO, typename GO>
-const std::vector<int> & DOFManager2<LO,GO>::getGIDFieldOffsets(const std::string & blockID, int fieldNum) const{
+const std::vector<int> & DOFManager2<LO,GO>::getGIDFieldOffsets(const std::string & blockID, int fieldNum) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager2::getGIDFieldOffsets: cannot be called before buildGlobalUnknowns has been called");
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockID);
   if(bitr==blockNameToID_.end())
@@ -215,7 +218,8 @@ const std::vector<int> & DOFManager2<LO,GO>::getGIDFieldOffsets(const std::strin
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const {
+void DOFManager2<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const 
+{
   gids = elementGIDs_[localElementID];
 }
 
@@ -410,17 +414,8 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
       owned_.push_back(nvals[j]);
   }
 
-  //owned_and_ghosted_;in post import overlap map.
-  Teuchos::ArrayRCP<const GO> vals = overlap_mv->get1dView();
-  for (int j = 0; j < vals.size(); ++j) {
-    if(vals[j]!=-1)
-      owned_and_ghosted_.push_back(vals[j]);
-  }
-
-  ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv->get2dView();
-
-
   //To generate elementGIDs_ we need to go through all of the local elements.
+  ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv->get2dView();
   
   //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
   //we move from globalID to localID in the map and use our local value for something.
@@ -454,10 +449,48 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
   }
 
 
+  // build owned and ghosted array: The old simple way led to slow
+  // Jacobian assembly, the new way speeds up Jacobian assembly
+  {
+#if 0
+    std::vector<GO> owned_and_ghosted;
+    // owned_and_ghosted_;in post import overlap map.
+    Teuchos::ArrayRCP<const GO> vals = overlap_mv->get1dView();
+    for (int j = 0; j < vals.size(); ++j) {
+      if(vals[j]!=-1)
+        // owned_and_ghosted_.push_back(vals[j]);
+        owned_and_ghosted.push_back(vals[j]);
+    }
 
+#else
+    // loop over all elements. do greedy ordering of local values over elements for
+    // building owned_and_ghosted, hopefully this gives a better layout
+    // for element ordered assembly
+    typedef boost::unordered_set<GO> HashTable;
+    HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
+    for (size_t b = 0; b < blockOrder_.size(); ++b) {
+      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+
+      for (size_t l = 0; l < myElements.size(); ++l) {
+        const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
+
+        // add "novel" global ids into owned_and_ghosted_ vector.
+        for(std::size_t i=0;i<localOrdering.size();i++) { 
+          std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
+
+          // if insertion succeeds, then this is "novel" to owned_and_ghosted_
+          // vector so include it
+          if(insertResult.second)
+            owned_and_ghosted_.push_back(localOrdering[i]);
+        }
+      }
+    }
+#endif
+  }
 
   buildConnectivityRun_=true;
-//  This can be changed later.
+
+  // build orientations if required
   if(requireOrientations_)
     buildUnknownsOrientation();
 }
