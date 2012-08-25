@@ -403,16 +403,10 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
  /* 13. Import data back to the overlap MV using REPLACE.
    */
   overlap_mv->doImport(*non_overlap_mv,e,Tpetra::REPLACE);
+
  /* 14. Cross reference local element connectivity and overlap map to
    *     create final GID vectors.
    */
-  //owned_ is made up of owned_ids.
-
-  Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
-  for (int j = 0; j < nvals.size(); ++j) {
-    if(nvals[j]!=-1)
-      owned_.push_back(nvals[j]);
-  }
 
   //To generate elementGIDs_ we need to go through all of the local elements.
   ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv->get2dView();
@@ -446,6 +440,49 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
       }
       elementGIDs_[thisID]=localOrdering;
     }
+  }
+
+  // build owned vector
+  {
+#if 0
+    //owned_ is made up of owned_ids.
+    Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
+    for (int j = 0; j < nvals.size(); ++j) {
+      if(nvals[j]!=-1)
+        owned_.push_back(nvals[j]);
+    }
+#else
+    typedef boost::unordered_set<GO> HashTable;
+    HashTable isOwned; // use to detect if global ID has been added to owned_and_ghosted_
+    //owned_ is made up of owned_ids.
+    Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
+    for (int j = 0; j < nvals.size(); ++j) {
+      if(nvals[j]!=-1)
+        isOwned.insert(nvals[j]);
+    }
+
+    HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
+    for (size_t b = 0; b < blockOrder_.size(); ++b) {
+      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+
+      for (size_t l = 0; l < myElements.size(); ++l) {
+        const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
+
+        // add "novel" global ids that are also owned to owned array
+        for(std::size_t i=0;i<localOrdering.size();i++) { 
+          // don't try to add if ID is not owned
+          if(isOwned.find(localOrdering[i])==isOwned.end())
+            continue;
+
+          // only add a global ID if it has not been added
+          std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
+          if(insertResult.second)
+            owned_.push_back(localOrdering[i]);
+        }
+      }
+    }
+
+#endif
   }
 
 
@@ -488,7 +525,7 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
 #endif
   }
 
-  buildConnectivityRun_=true;
+  buildConnectivityRun_ = true;
 
   // build orientations if required
   if(requireOrientations_)
