@@ -96,8 +96,8 @@ struct HierPartParamsStruct {
   ZZ *hierzz;                        /* internal zoltan struct for balancing 
 					within the hierarchy */
 
-  int part_to_compute;               /* partition to compute at each level */
-  int num_parts;                     /* number of partitions to compute */
+  int part_to_compute;               /* part to compute at each level */
+  int num_parts;                     /* number of parts to compute */
 
   int use_geom, use_graph;           /* flags for whether methods to be
 					used will require geometric
