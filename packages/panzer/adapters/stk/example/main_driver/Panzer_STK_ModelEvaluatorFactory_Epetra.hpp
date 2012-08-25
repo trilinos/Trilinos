@@ -213,7 +213,9 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_global_indexer;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
     Teuchos::RCP<panzer::GlobalData> m_global_data;
+    #ifdef HAVE_TEKO 
     Teuchos::RCP<Teko::RequestHandler> m_req_handler;
+    #endif
   };
 
 }
