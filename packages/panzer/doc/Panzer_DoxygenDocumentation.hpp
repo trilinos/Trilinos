@@ -62,11 +62,14 @@
 
 \section overview Overview
 
-Panzer is a multiphysics assembly engine for solving large-scale systems of partial differential equations.
+Panzer is a toolkit that provides a multiphysics assembly engine for solving large-scale systems of partial differential equations.  
+
+NOTE: Panzer is a work in progress and is considered research stable code.  Do not expect backwards-compatible support.  External support is minimal at this point.  Use at your own risk.
 
 \section news News
 
 <ul>
+<li> 2012.08.24: We are now integrated into the Trilinos repository!
 <li> 2010.09.08: We are now building as a Trilinos package!
 </ul>
 
