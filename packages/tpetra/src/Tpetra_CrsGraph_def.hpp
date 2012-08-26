@@ -1587,7 +1587,6 @@ namespace Tpetra {
           TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
             "::insertLocalIndices():" << std::endl
             << "Pre-allocated space has been exceeded, requiring new allocation.  "
-            "(You might be seeing this message after calling Tpetra::CrsMatrix::insertLocalValues; the same advice applies.)  "
             "This is allowed but not efficient in terms of run time.  "
             "To improve efficiency, suggest a larger number of entries per row in the constructor.  "
             "You may either specify a maximum number of entries for all the rows, or a per-row maximum.  "
@@ -1655,7 +1654,6 @@ namespace Tpetra {
             TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
               "::insertGlobalIndices():" << std::endl
               << "Pre-allocated space has been exceeded, requiring new allocation.  "
-              "(You might be seeing this message after calling Tpetra::CrsMatrix::insertGlobalValues; the same advice applies.)  "
               "This is allowed but not efficient in terms of run time.  "
               "To improve efficiency, suggest a larger number of entries per row in the constructor.  "
               "You may either specify a maximum number of entries for all the rows, or a per-row maximum.  "
