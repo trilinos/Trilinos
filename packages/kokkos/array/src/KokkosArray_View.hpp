@@ -72,15 +72,16 @@ public:
 
   typedef View< data_type , layout_type , Host >  HostMirror ;
 
-  typedef typename Impl::remove_all_extents<data_type>::type  value_type ;
-  typedef typename LayoutType::array_layout                   array_layout ;
-  typedef typename device_type::memory_space                  memory_space ;
-  typedef typename device_type::size_type                     size_type ;
+  typedef typename Impl::AnalyzeShape<DataType>::value_type  value_type ;
+  typedef typename LayoutType::array_layout                  array_layout ;
+  typedef typename device_type::memory_space                 memory_space ;
+  typedef typename device_type::size_type                    size_type ;
 
 private:
 
-  typedef typename
-    Impl::DefineShape< array_layout , data_type >::type shape_type ;
+  typedef Impl::Shape< array_layout ,
+                       typename Impl::AnalyzeShape<DataType>::shape >
+      shape_type ;
 
 public:
 

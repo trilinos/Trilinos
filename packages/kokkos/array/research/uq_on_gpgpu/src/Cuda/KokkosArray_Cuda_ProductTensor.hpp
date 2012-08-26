@@ -188,8 +188,8 @@ template< typename TensorScalar ,
 class Multiply<
   BlockCrsMatrix< SparseProductTensor< 3 , TensorScalar , Cuda > ,
                   MatrixScalar , Cuda > ,
-  View< VectorScalar[0][0] , LayoutLeft , Cuda > ,
-  View< VectorScalar[0][0] , LayoutLeft , Cuda > >
+  View< VectorScalar** , LayoutLeft , Cuda > ,
+  View< VectorScalar** , LayoutLeft , Cuda > >
 {
 public:
 
@@ -198,7 +198,7 @@ public:
 
   typedef SparseProductTensor< 3 , TensorScalar , device_type >    tensor_type ;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef View< VectorScalar[0][0] , LayoutLeft , Cuda >           vector_type ;
+  typedef View< VectorScalar** , LayoutLeft , Cuda >           vector_type ;
 
   enum { WARP_SIZE = Impl::CudaTraits::WarpSize };
 
@@ -450,8 +450,8 @@ template< typename TensorScalar ,
 class Multiply<
   BlockCrsMatrix< CrsProductTensor< 3 , TensorScalar , Cuda > ,
                   MatrixScalar , Cuda > ,
-  View< VectorScalar[0][0] , LayoutLeft , Cuda > ,
-  View< VectorScalar[0][0] , LayoutLeft , Cuda > >
+  View< VectorScalar** , LayoutLeft , Cuda > ,
+  View< VectorScalar** , LayoutLeft , Cuda > >
 {
 public:
 
@@ -460,7 +460,7 @@ public:
 
   typedef CrsProductTensor< 3 , TensorScalar , device_type >       tensor_type ;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef View< VectorScalar[0][0] , LayoutLeft , Cuda >           vector_type ;
+  typedef View< VectorScalar** , LayoutLeft , Cuda >           vector_type ;
 
   // m_A.graph.row_map.length() == gridDim.y
   // m_A.block.dimension() <= gridDim.x * blockDim.y

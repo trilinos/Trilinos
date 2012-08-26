@@ -46,6 +46,9 @@
 #ifndef MUELU_REPARTITIONFACTORY_DECL_HPP
 #define MUELU_REPARTITIONFACTORY_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MPI
+
 // Some classes are only used in the definition (_def.hpp) of this class 
 // but forward declarations are needed here to enable the UseShortNames mechanism.
 #include <Xpetra_Map_fwd.hpp>
@@ -58,8 +61,6 @@
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_OperatorFactory_fwd.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MPI
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
  

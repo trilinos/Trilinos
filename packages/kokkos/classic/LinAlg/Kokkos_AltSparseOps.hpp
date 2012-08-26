@@ -1014,14 +1014,14 @@ namespace Kokkos {
       typedef AltSparseOps<S2, Ordinal, Node, Allocator> other_type;
     };
 
-    /// \brief Sparse operations type for a different ordinal type.
+    /// \brief Local sparse operations type for a different ordinal type.
     ///
     /// The bind_ordinal struct defines the type responsible for
     /// sparse operations for an ordinal type O2, which may be
     /// different from \c Ordinal.
     ///
-    /// This is used by Tpetra::CrsMatrix to "bind" the local sparse
-    /// ops type, given its own (Local)Ordinal type.  In the case of
+    /// This is used by Tpetra::CrsMatrix to bind the local sparse ops
+    /// type to use its own (Local)Ordinal type.  In the case of
     /// AltSparseOps, the other_type typedef always specifies a
     /// specialization of AltSparseOps, regardless of the ordinal type
     /// O2.  This is not necessarily true for other implementations of
@@ -1639,8 +1639,8 @@ namespace Kokkos {
 
     std::string tfecfFuncName("setGraphAndMatrix(uplo,diag,graph,matrix)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isInitialized_, std::runtime_error, " operators already initialized."
-    );
+      isInitialized_, std::runtime_error,
+      " The sparse kernels object is already initialized.");
 
     ArrayRCP<const  size_t> ptr = opgraph->getPointers ();
     ArrayRCP<const Ordinal> ind = opgraph->getIndices ();

@@ -141,7 +141,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Netcdf          "cmake/TPLs/"    SS
   y12m            "cmake/TPLs/"    SS
   SuperLUDist     "cmake/TPLs/"    SS
-  SuperLUMT	  "cmake/TPLs/"	SS
+  SuperLUMT	  "cmake/TPLs/"	   SS
   SuperLU         "cmake/TPLs/"    SS
   Zlib            "cmake/TPLs/"    SS
   UMFPACK         "cmake/TPLs/"    SS
@@ -176,6 +176,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Clp             "cmake/TPLs/"    EX
   GLPK            "cmake/TPLs/"    EX
   Matio           "cmake/TPLs/"    SS
+  PAPI            "cmake/TPLs/"    SS
   )
 
 # NOTES:

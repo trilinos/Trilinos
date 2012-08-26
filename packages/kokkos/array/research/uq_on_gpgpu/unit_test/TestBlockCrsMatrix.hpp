@@ -78,7 +78,7 @@ void generate_matrix(
   KokkosArray::BlockCrsMatrix<KokkosArray::SymmetricDiagonalSpec<Device>,long,Device> & matrix )
 {
   typedef KokkosArray::BlockCrsMatrix<KokkosArray::SymmetricDiagonalSpec<Device>,long,Device> matrix_type ;
-  typedef KokkosArray::View< long[0][0] , KokkosArray::LayoutLeft , Device >
+  typedef KokkosArray::View< long** , KokkosArray::LayoutLeft , Device >
      block_vector_type ;
 
   typedef typename matrix_type::graph_type  graph_type ;
@@ -153,7 +153,7 @@ void test_block_crs_matrix( const size_t M , const size_t N )
   const size_t outer_length = N * N * N ;
 
   typedef long value_type ; // to avoid comparison round-off differences
-  typedef KokkosArray::View<value_type[0][0],KokkosArray::LayoutLeft,Device> block_vector_type ;
+  typedef KokkosArray::View<value_type**,KokkosArray::LayoutLeft,Device> block_vector_type ;
 
   typedef KokkosArray::SymmetricDiagonalSpec< Device > block_spec ;
   typedef KokkosArray::BlockCrsMatrix< block_spec , value_type , Device > matrix_type ;

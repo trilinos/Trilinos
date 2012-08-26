@@ -301,7 +301,7 @@ public:
     //   scaling( bases-index )
     // };
 
-    typedef View< size_type[][0] , device_type > int_array_type ;
+    typedef View< size_type** , device_type > int_array_type ;
     typedef typename int_array_type  ::HostMirror host_int_array_type ;
 
     tmp.m_degree_map =

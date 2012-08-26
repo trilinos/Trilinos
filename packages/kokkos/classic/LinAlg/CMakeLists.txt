@@ -39,7 +39,7 @@ APPEND_SET(HEADERS
     Kokkos_CrsMatrixBase.hpp
     Kokkos_MultiVector.hpp
     Kokkos_VbrMatrix.hpp
-    # default template parameters
+    # Default LocalMapOps template parameters
     Kokkos_DefaultKernels.hpp
     # kernels
     Kokkos_DefaultBlockSparseKernelOps.hpp
@@ -102,6 +102,7 @@ ASSERT_DEFINED(KokkosClassic_ENABLE_MKL)
 IF (KokkosClassic_ENABLE_MKL)
   APPEND_SET(HEADERS
     Kokkos_Mkl_RawSparseKernels.hpp
+    Kokkos_MklSparseOps.hpp
     )
   APPEND_SET(SOURCES
     Kokkos_Mkl_RawSparseKernels.cpp

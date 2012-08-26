@@ -203,6 +203,8 @@ HostInternalHWLOC::HostInternalHWLOC()
 
     bool node_symmetry = true ;
     bool page_symmetry = true ;
+
+    size_t cache_line_size = 0 ;
     size_t page_size = 0 ;
     size_t node_core_count = 0 ;
     size_t node_core_pu_count = 0 ;
@@ -276,6 +278,18 @@ HostInternalHWLOC::HostInternalHWLOC()
         if ( 0 == node_core_pu_count ) { node_core_pu_count = pu_count ; }
 
         if ( pu_count != node_core_pu_count ) { node_symmetry = false ; }
+
+        // Use the largest cache line size
+        // assuming the largest will be a multiple of the smallest...
+
+        const hwloc_obj_t core_cache_info =
+          hwloc_get_shared_cache_covering_obj( m_host_topology , core );
+
+        if ( core_cache_info && core_cache_info->attr ) {
+          if ( cache_line_size < core_cache_info->attr->cache.linesize ) {
+            cache_line_size = core_cache_info->attr->cache.linesize ;
+          }
+        }
       }
 
       for ( unsigned j = 0 ; j < node->memory.page_types_len ; ++j ) {
@@ -304,6 +318,14 @@ HostInternalHWLOC::HostInternalHWLOC()
 
     if ( page_symmetry && page_size ) {
       HostInternal::m_page_size = page_size ;
+    }
+
+    if ( cache_line_size ) {
+      HostInternal::m_cache_line_size = cache_line_size ;
+    }
+    else {
+      // Make a guess at an upper bound ...
+      HostInternal::m_cache_line_size = 64 ;
     }
   }
 }

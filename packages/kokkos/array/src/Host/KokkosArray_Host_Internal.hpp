@@ -89,6 +89,7 @@ protected:
   unsigned         m_node_count ;    // Count of NUMA nodes
   unsigned         m_node_pu_count ; // Assuming all nodes are equivalent
   unsigned         m_page_size ;     //
+  unsigned         m_cache_line_size ; //
   unsigned         m_thread_count ;  // Number of threads
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node

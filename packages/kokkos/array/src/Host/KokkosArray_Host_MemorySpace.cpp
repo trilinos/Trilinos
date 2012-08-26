@@ -161,9 +161,14 @@ void HostMemorySpace::print_memory_view( std::ostream & o )
 size_t HostMemorySpace::preferred_alignment(
   size_t value_size , size_t value_count )
 {
-  const size_t page = Host::detect_memory_page_size();
-  if ( 0 == page % value_size ) {
-    const size_t align = page / value_size ;
+  const size_t alignment = Host::detect_cache_line_size();
+
+  // If the array count is larger than the cache line
+  // then align the count on cache line boundary.
+
+  if ( alignment < value_size * value_count &&
+       alignment % value_size ) {
+    const size_t align = alignment / value_size ;
     const size_t rem   = value_count % align ;
     if ( rem ) value_count += align - rem ;
   }

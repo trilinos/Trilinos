@@ -56,6 +56,32 @@ extern "C" {
 
 /* header file for hierarchical balancing */
 
+#define ZOLTAN_PLATFORM_MAX_LEVELS 8
+
+typedef struct _spec{
+  /*
+   * name of predefined topologies, or null if topology given by parameter
+   */
+  char *platform_name;
+
+  /*
+   * size of num_siblings and my_part arrays
+   */
+  int numLevels;
+
+  /*
+   * number of objects (cores, caches, sockets, etc), or number of
+   *  children of the parent, of this level
+   */
+  int num_siblings[ZOLTAN_PLATFORM_MAX_LEVELS];
+
+  /*
+   * the part computed by this process at this level
+   */
+  int my_part[ZOLTAN_PLATFORM_MAX_LEVELS];
+} zoltan_platform_specification;
+
+
 /* Parameters to hierarchical balancing */
 struct HierPartParamsStruct {
   int output_level;                  /* amount of debugging info */
@@ -63,7 +89,6 @@ struct HierPartParamsStruct {
   int gen_files;                      /* call Zoltan_Generate_Files */
 
   int num_levels;                    /* number of levels I do */
-  int global_num_levels;             /* max number of levels */
   int level;                         /* level currently being processed */
   MPI_Comm hier_comm;                /* MPI communicator for each level */
  
@@ -71,8 +96,8 @@ struct HierPartParamsStruct {
   ZZ *hierzz;                        /* internal zoltan struct for balancing 
 					within the hierarchy */
 
-  int part_to_compute;               /* partition to compute at each level */
-  int num_parts;                     /* number of partitions to compute */
+  int part_to_compute;               /* part to compute at each level */
+  int num_parts;                     /* number of parts to compute */
 
   int use_geom, use_graph;           /* flags for whether methods to be
 					used will require geometric
@@ -89,6 +114,7 @@ struct HierPartParamsStruct {
 
   int ndims;                         /* number of dimensions for geom data */
   double *geom_vec;                  /* geometry of objects in intermediate */
+  int use_timers;                    /* control degree of timing done with hier*/
 
   zoltan_platform_specification *spec;   /* levels based on network topology */
 };

@@ -70,7 +70,7 @@ SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 
 # Exclude Sundance because of strange segfault (see bug 4382)
-SET(EXTRA_EXCLUDE_PACKAGES Sundance)
+SET(EXTRA_EXCLUDE_PACKAGES Sundance Panzer)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"

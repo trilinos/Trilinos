@@ -71,7 +71,7 @@ SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 SET(CTEST_PARALLEL_LEVEL 8)
 
 # Exclude Sundance because of strange segfault (see bug 4382)
-SET(EXTRA_EXCLUDE_PACKAGES Sundance PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES Sundance PyTrilinos Panzer)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"

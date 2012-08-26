@@ -105,9 +105,17 @@ struct TestViewOperator< T , KOKKOSARRAY_MACRO_DEVICE >
 
 /*--------------------------------------------------------------------------*/
 
+template< class DataType >
+struct rank {
+private:
+  typedef typename KokkosArray::Impl::AnalyzeShape<DataType>::shape shape ;
+public:
+  static const unsigned value = shape::rank ;
+};
+
 template< class DataType ,
           class DeviceType ,
-          unsigned Rank = KokkosArray::Impl::rank< DataType >::value >
+          unsigned Rank = rank< DataType >::value >
 struct TestViewOperator_LeftAndRight ;
 
 template< class DataType , class DeviceType >
@@ -800,6 +808,18 @@ public:
     ASSERT_FALSE(hx);
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
+    ASSERT_EQ( dx.dimension(0) , 0u );
+    ASSERT_EQ( dy.dimension(0) , 0u );
+    ASSERT_EQ( dz.dimension(0) , 0u );
+    ASSERT_EQ( hx.dimension(0) , 0u );
+    ASSERT_EQ( hy.dimension(0) , 0u );
+    ASSERT_EQ( hz.dimension(0) , 0u );
+    ASSERT_EQ( dx.dimension(1) , N1 );
+    ASSERT_EQ( dy.dimension(1) , N1 );
+    ASSERT_EQ( dz.dimension(1) , N1 );
+    ASSERT_EQ( hx.dimension(1) , N1 );
+    ASSERT_EQ( hy.dimension(1) , N1 );
+    ASSERT_EQ( hz.dimension(1) , N1 );
 
     dx = dView4( "dx" , N0 );
     dy = dView4( "dy" , N0 );
@@ -907,10 +927,10 @@ public:
     enum { Length = 1000 , Count = 8 };
 
     typedef KokkosArray::View< T[] ,    KokkosArray::LayoutLeft , host > vector_type ;
-    typedef KokkosArray::View< T[][0] , KokkosArray::LayoutLeft , host > multivector_type ;
+    typedef KokkosArray::View< T** , KokkosArray::LayoutLeft , host > multivector_type ;
 
     typedef KokkosArray::View< const T[] ,    KokkosArray::LayoutLeft , host > const_vector_type ;
-    typedef KokkosArray::View< const T[][0] , KokkosArray::LayoutLeft , host > const_multivector_type ;
+    typedef KokkosArray::View< const T** , KokkosArray::LayoutLeft , host > const_multivector_type ;
 
     multivector_type mv = multivector_type( "mv" , Length , Count );
     vector_type v1( mv , 0 );

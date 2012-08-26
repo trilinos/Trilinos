@@ -240,7 +240,7 @@ APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
   supportgraph/Ifpack_SupportGraph.h
 )
 APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
-  supportgraph/Ifpack_SupportGraph.cpp
+
 )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)

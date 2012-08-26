@@ -67,10 +67,3 @@ template class MueLu::FactoryFactory<std::complex<double>, int, int, Kokkos::Def
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif
 #endif
-
-#ifdef HAVE_MUELU_INST_PCE_INT_INT
-#include "Stokhos_Sacado.hpp"
-typedef Stokhos::StandardStorage<int,double> Storage;
-typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
-template class MueLu::FactoryFactory<pce_type, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-#endif

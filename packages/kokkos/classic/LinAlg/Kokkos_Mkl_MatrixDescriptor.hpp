@@ -138,8 +138,6 @@ namespace Kokkos {
       ///   guarantee not to write to this stream or otherwise have
       ///   externally visible side effects unless the matrix descriptor
       ///   is valid.
-      /// \param descr [in] The MKL sparse matrix descriptor array, as
-      ///   would be created by fillMatrixDescriptor().
       ///
       /// \note We use FancyOStream instead of plain std::ostream because
       ///   FancyOStream lets us set tabs to indent each line of output.
