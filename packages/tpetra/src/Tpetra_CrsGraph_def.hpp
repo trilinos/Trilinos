@@ -76,6 +76,8 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , haveRowInfo_(true)
+  , insertGlobalIndicesWarnedEfficiency_(false)
+  , insertLocalIndicesWarnedEfficiency_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     staticAssertions();
@@ -106,6 +108,8 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , haveRowInfo_(true)
+  , insertGlobalIndicesWarnedEfficiency_(false)
+  , insertLocalIndicesWarnedEfficiency_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     staticAssertions();
@@ -135,6 +139,8 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , haveRowInfo_(true)
+  , insertGlobalIndicesWarnedEfficiency_(false)
+  , insertLocalIndicesWarnedEfficiency_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     std::string tfecfFuncName("CrsGraph(rowMap,NumEntriesPerRowToAlloc)");
@@ -172,6 +178,8 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , haveRowInfo_(true)
+  , insertGlobalIndicesWarnedEfficiency_(false)
+  , insertLocalIndicesWarnedEfficiency_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     std::string tfecfFuncName("CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc)");
@@ -1572,8 +1580,20 @@ namespace Tpetra {
       const size_t newNumEntries = curNumEntries + numFilteredEntries;
       if (newNumEntries > rowInfo.allocSize) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getProfileType() == StaticProfile, std::runtime_error, ": new indices exceed statically allocated graph structure.");
-        TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-            "::insertLocalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
+        // Only print an efficiency warning once per CrsGraph
+        // instance, per method name (insertLocalIndices() or
+        // insertGlobalIndices()).
+        if (! insertLocalIndicesWarnedEfficiency_) {
+          TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
+            "::insertLocalIndices():" << std::endl
+            << "Pre-allocated space has been exceeded, requiring new allocation.  "
+            "(You might be seeing this message after calling Tpetra::CrsMatrix::insertLocalValues; the same advice applies.)  "
+            "This is allowed but not efficient in terms of run time.  "
+            "To improve efficiency, suggest a larger number of entries per row in the constructor.  "
+            "You may either specify a maximum number of entries for all the rows, or a per-row maximum.  "
+            "This CrsGraph instance will not print further messages of this kind, in order not to clutter output.");
+          insertLocalIndicesWarnedEfficiency_ = true;
+        }
         // update allocation only as much as necessary
         rowInfo = updateAlloc<LocalIndices>(rowInfo, newNumEntries);
       }
@@ -1628,8 +1648,20 @@ namespace Tpetra {
         const size_t newNumEntries = curNumEntries + numFilteredEntries;
         if (newNumEntries > rowInfo.allocSize) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getProfileType() == StaticProfile, std::runtime_error, ": new indices exceed statically allocated graph structure.");
-          TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-              "::insertGlobalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
+          // Only print an efficiency warning once per CrsGraph
+          // instance, per method name (insertLocalIndices() or
+          // insertGlobalIndices()).
+          if (! insertGlobalIndicesWarnedEfficiency_) {
+            TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
+              "::insertGlobalIndices():" << std::endl
+              << "Pre-allocated space has been exceeded, requiring new allocation.  "
+              "(You might be seeing this message after calling Tpetra::CrsMatrix::insertGlobalValues; the same advice applies.)  "
+              "This is allowed but not efficient in terms of run time.  "
+              "To improve efficiency, suggest a larger number of entries per row in the constructor.  "
+              "You may either specify a maximum number of entries for all the rows, or a per-row maximum.  "
+              "This CrsGraph instance will not print further messages of this kind, in order not to clutter output.");
+            insertGlobalIndicesWarnedEfficiency_ = true;
+          }
           // update allocation only as much as necessary
           rowInfo = updateAlloc<GlobalIndices>(rowInfo, newNumEntries);
         }
