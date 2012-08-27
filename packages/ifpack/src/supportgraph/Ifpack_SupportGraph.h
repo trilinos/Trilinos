@@ -1,30 +1,30 @@
-/*@HEADER                                                                                           
-// ***********************************************************************                          
-//                                                                                                  
-//       Ifpack: Object-Oriented Algebraic Preconditioner Package                                   
-//                 Copyright (2002) Sandia Corporation                                              
-//                                                                                                  
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive                              
-// license for use of this work by or on behalf of the U.S. Government.                             
-//                                                                                                  
-// This library is free software; you can redistribute it and/or modify                             
-// it under the terms of the GNU Lesser General Public License as                                   
-// published by the Free Software Foundation; either version 2.1 of the                             
-// License, or (at your option) any later version.                                                  
-//                                                                                                  
-// This library is distributed in the hope that it will be useful, but                              
-// WITHOUT ANY WARRANTY; without even the implied warranty of                                       
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU                                
-// Lesser General Public License for more details.                                                  
-//                                                                                                  
-// You should have received a copy of the GNU Lesser General Public                                 
-// License along with this library; if not, write to the Free Software                              
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307                              
-// USA                                                                                              
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)                                        
-//                                                                                                  
-// ***********************************************************************                          
-//@HEADER                                                                                           
+/*@HEADER 
+// ***********************************************************************
+//
+//       Ifpack: Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2002) Sandia Corporation
+//                                        
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//                                                  
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of       
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU   
+// Lesser General Public License for more details.     
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//     
+// ***********************************************************************
+//@HEADER
 */
 
 #ifndef IFPACK_SUPPORTGRAPH_H
@@ -65,15 +65,15 @@ public virtual Ifpack_Preconditioner
  //@}
 
 
- //@{ \name Attribute set methods.                                                                 
- //! If set true, transpose of this operator will be applied (not implemented).                    
- /*! This flag allows the transpose of the given operator to be used                               
-  * implicitly.                                                                                    
-                                                                                                    
-   \param                                                                                           
-   UseTranspose_in - (In) If true, multiply by the transpose of operator,                           
-   otherwise just use operator.                                                                     
-                                                                                                    
+ //@{ \name Attribute set methods.
+ //! If set true, transpose of this operator will be applied (not implemented).
+ /*! This flag allows the transpose of the given operator to be used
+  * implicitly.
+  
+   \param       
+   UseTranspose_in - (In) If true, multiply by the transpose of operator,
+   otherwise just use operator.
+  
    \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does       
  */
  virtual int SetUseTranspose(bool UseTranspose_in);
@@ -81,30 +81,30 @@ public virtual Ifpack_Preconditioner
  //@}
  
 
- //@{ \name Mathematical functions.                                                                
+ //@{ \name Mathematical functions.
  
- //! Applies the matrix to an Epetra_MultiVector.                                                  
- /*!                                                                                               
-    \param                                                                                          
-    X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.                  
-    \param                                                                                          
-    Y - (Out) A Epetra_MultiVector of dimension NumVectors containing the result.                   
-                                                                                                    
-    \return Integer error code, set to 0 if successful.                                             
+ //! Applies the matrix to an Epetra_MultiVector.
+ /*!
+    \param     
+    X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param
+    Y - (Out) A Epetra_MultiVector of dimension NumVectors containing the result.
+                          
+    \return Integer error code, set to 0 if successful.  
  */
  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
- //! Applies the preconditioner to X, returns the result in Y.                                     
- /*!                                                                                               
-    \param                                                                                          
-    X - (In) A Epetra_MultiVector of dimension NumVectors to be preconditioned.                     
-    \param                                                                                          
-    Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.                       
-                                                                                                    
-    \return Integer error code, set to 0 if successful.                                             
-                                                                                                    
-    \warning In order to work with AztecOO, any implementation of this method                       
-    must support the case where X and Y are the same object.                                        
+ //! Applies the preconditioner to X, returns the result in Y.
+ /*!    
+    \param     
+    X - (In) A Epetra_MultiVector of dimension NumVectors to be preconditioned.
+    \param
+    Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
+                            
+    \return Integer error code, set to 0 if successful.    
+                                                 
+    \warning In order to work with AztecOO, any implementation of this method  
+    must support the case where X and Y are the same object.
  */
  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
@@ -151,13 +151,13 @@ public virtual Ifpack_Preconditioner
    return(IsComputed_);
  }
 
- //! Sets all the parameters for the preconditioner.                                               
+ //! Sets all the parameters for the preconditioner.
  /*! Parameters currently supported:
   * The input list will be copied, then passed                                       
-  * to the underlying preconditioner                                                        
-  *                                                                                                
-  * - \c "MST: forest number" : Specified the number of                                            
-  *   times Kruskal's algorithm adds another forest to                                             
+  * to the underlying preconditioner
+  *    
+  * - \c "MST: forest number" : Specified the number of 
+  *   times Kruskal's algorithm adds another forest to
   *   the preconditioner            
   *
   * - \c "MST: diagonal offset" : Specify the offset
@@ -166,15 +166,14 @@ public virtual Ifpack_Preconditioner
   */
  virtual int SetParameters(Teuchos::ParameterList& List);
 
- //! Initialize the preconditioner                                                                 
- /*! \return                                                                                       
-  * 0 if successful, 1 if problems occured.                                                        
+ //! Initialize the preconditioner    
+ /*! \return 
+  * 0 if successful, 1 if problems occured.
   */
  virtual int Initialize();
-
- //! Computes the preconditioners.                                                                 
- /*! \return                                                                                       
-  * 0 if successful, 1 if problems occurred.                                                       
+ //! Computes the preconditioners.
+ /*! \return
+  * 0 if successful, 1 if problems occurred.
   */
  virtual int Compute();
 
@@ -184,9 +183,9 @@ public virtual Ifpack_Preconditioner
  //@{ \name Query methods.
 
 
- //! Returns the estimated conditioner number, computes it if necessary.                           
- /*!                                                                                               
-  * not implemented                                                                                
+ //! Returns the estimated conditioner number, computes it if necessary.    
+ /*!
+  * not implemented    
   */
  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
 			const int MaxIters = 1550,
@@ -244,7 +243,7 @@ public virtual Ifpack_Preconditioner
    return(ApplyInverseTime_);
  }
 
- //! Returns the number of flops in the initialization phase.                                      
+ //! Returns the number of flops in the initialization phase.        
  virtual double InitializeFlops() const
  {
    return(InitializeFlops_);
@@ -333,6 +332,8 @@ public virtual Ifpack_Preconditioner
  //! Contains the Offset to add to the diagonal of the support graph
  double Offset_;
 
+ bool Augmentation_;
+
 }; // class Ifpack_SupportGraph<T>
 
 
@@ -365,7 +366,8 @@ Matrix_(rcp(Matrix_in,false)),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   NumForests_(1),
-  Offset_(1)
+  Offset_(1),
+  Augmentation_(false)
 {
   
   Teuchos::ParameterList List_in;
@@ -407,7 +409,6 @@ int Ifpack_SupportGraph<T>::FindSupport()
   int k = 0;
   for(int i = 0; i < num_verts; i++)
     {
-
       (*Matrix_).ExtractMyRowCopy(i,max_num_entries,num_entries,values,indices);
 
       for(int j = 0; j < num_entries; j++)
@@ -420,14 +421,12 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
 	  if(i < indices[j])
 	    {
-
 	      edge_array[k] = E(i+1,indices[j]+1);
 	      weights[k] = values[j];
 
 	      k++;
 	    }
 	}
-
     }
 
 
@@ -453,10 +452,8 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
 
   // Create an array of stl vectors to hold indices and values (neighbour edges)                
-
   std::vector<int> Indices[num_verts];
   std::vector<double> Values[num_verts];
-
 
   for(int i = 0; i < num_verts; i++)
     {
@@ -475,7 +472,6 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
   for(int i = 0; i < NumForests_; i++)
     {
-
       if(i > 0)
 	{
 	  spanning_tree.clear();
@@ -491,13 +487,11 @@ int Ifpack_SupportGraph<T>::FindSupport()
 	      Indices[i].resize(NumNz[i]);
 	      Values[i].resize(NumNz[i]);
 	    }
-
 	}
 
       for (std::vector < Edge >::iterator ei = spanning_tree.begin();
 	   ei != spanning_tree.end(); ++ei)
 	{
-
 	  Values[source(*ei,g)-1][0] = Values[source(*ei,g)-1][0] - weight[*ei];
 	  Values[target(*ei,g)-1][0] = Values[target(*ei,g)-1][0] - weight[*ei];
 	  Indices[source(*ei,g)-1][0] = source(*ei,g)-1;
@@ -516,6 +510,70 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
     }
 
+  /*
+  if(Augmentation_)
+    {
+      double fill = .5;
+
+      int t = fill*pow(num_verts,.5);
+
+      double extraweights [t][t];
+      E **between = 0;
+      between = new E *[t];
+
+      for(int i = 0; i < t; i++)
+	{
+	  between[i] = new E[t];
+	  for(int j = 0; j < t; j++)
+	    {
+	      extraweights[i][j]=0;
+	    }
+	}
+
+      int region1;
+      int region2;
+
+      graph_traits<Graph>::edge_iterator ei, ei_end;
+      for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
+	{
+
+	  region1 = source(*ei,g) % t;
+	  region2 = target(*ei,g) % t;
+
+	  if(region1 > region2)
+	    {
+	      std::swap(region1,region2);
+	    }
+
+	  if(weight[*ei] < extraweights[region1][region2])
+	    {
+	      extraweights[region1][region2] = weight[*ei];
+	      between[region1][region2] = E(source(*ei,g),target(*ei,g));
+	    }
+	}
+
+      for(int i = 0; i < t; i++)
+	{
+	  for(int j = i+1; j < t; j++)
+	    {
+	      if(i != j && (extraweights[i][j] != 0))
+		{
+		  Indices[between[i][j].first-1].push_back(between[i][j].second-1);
+		  Values[between[i][j].first-1].push_back(extraweights[i][j]);
+		  l[between[i][j].first-1] = l[between[i][j].first-1] + 1;
+
+		  Indices[between[i][j].second-1].push_back(between[i][j].first-1);
+		  Values[between[i][j].second-1].push_back(extraweights[i][j]);
+		  l[between[i][j].second-1] = l[between[i][j].second-1] + 1;
+		}
+	    }
+	}
+
+      delete between;
+
+    }
+  */
+  
   for(int i = 0; i < num_verts; i++)
     {
       Values[i][0] = diagonal[i];
@@ -554,6 +612,7 @@ int Ifpack_SupportGraph<T>::SetParameters(Teuchos::ParameterList& List_in)
   List_ = List_in;
   NumForests_ = List_in.get("MST: forest number", NumForests_);
   Offset_ = List_in.get("MST: diagonal offset", Offset_);
+  Augmentation_ = List_in.get("MST: augmentation", Augmentation_);
   return(0);
 }
 //==============================================================================    
@@ -574,7 +633,7 @@ int Ifpack_SupportGraph<T>::Initialize()
   Time_->ResetStartTime();
  
   FindSupport();
-
+ 
   Inverse_ = Teuchos::rcp(new T(Support_.get()));
 
   IFPACK_CHK_ERR(Inverse_->Initialize());
@@ -664,18 +723,18 @@ Print(std::ostream& os) const
   os << endl;
   os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
   os << "-----           -------   --------------       ------------     --------" << endl;
-  os << "Initialize()    "   << std::setw(5) << NumInitialize_
+  os << "Initialize()    "   << std::setw(10) << NumInitialize_
      << "  " << std::setw(15) << InitializeTime_
-     << "              0.0              0.0" << endl;
-  os << "Compute()       "   << std::setw(5) << NumCompute_
-     << "  " << std::setw(15) << ComputeTime_
+     << "        0.0              0.0" << endl;
+  os << "Compute()       "   << std::setw(10) << NumCompute_
+     << "  " << std::setw(22) << ComputeTime_
      << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
   if (ComputeTime_ != 0.0)
     os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
   else
-    os << "  " << std::setw(15) << 0.0 << endl;
-  os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_
-     << "  " << std::setw(15) << ApplyInverseTime_
+    os << "     " << std::setw(15) << 0.0 << endl;
+  os << "ApplyInverse()  "   << std::setw(10) << NumApplyInverse_
+     << "  " << std::setw(22) << ApplyInverseTime_
      << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
   if (ApplyInverseTime_ != 0.0)
     os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
