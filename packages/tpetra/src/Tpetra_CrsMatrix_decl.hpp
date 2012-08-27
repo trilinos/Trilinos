@@ -986,6 +986,10 @@ namespace Tpetra {
     // cached frobenius norm: -ST::one() means invalid
     mutable Magnitude frobNorm_;
 
+    //! Whether this instance's insertGlobalValues() method has triggered an efficiency warning yet.
+    bool insertGlobalValuesWarnedEfficiency_;
+    //! Whether this instance's insertLocalValues() method has triggered an efficiency warning yet.
+    bool insertLocalValuesWarnedEfficiency_;
   }; // class CrsMatrix
 
   /** \brief Non-member function to create an empty CrsMatrix given a row map and a non-zero profile.

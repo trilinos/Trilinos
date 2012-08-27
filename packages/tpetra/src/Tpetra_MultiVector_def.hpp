@@ -61,7 +61,9 @@ namespace Tpetra {
                size_t NumVectors,
                bool zeroOut) : /* default is true */
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -86,7 +88,9 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source) :
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (source),
-    lclMV_ (MVT::getNode (source.lclMV_))
+    lclMV_ (MVT::getNode (source.lclMV_)),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -124,7 +128,9 @@ namespace Tpetra {
                size_t NumVectors,
                EPrivateHostViewConstructor /* dummy */) :
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -152,7 +158,9 @@ namespace Tpetra {
                size_t NumVectors,
                EPrivateComputeViewConstructor /* dummy */) :
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -180,7 +188,9 @@ namespace Tpetra {
                EPrivateComputeViewConstructor /* dummy */) :
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
     lclMV_ (map->getNode ()),
-    whichVectors_ (WhichVectors)
+    whichVectors_ (WhichVectors),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -219,7 +229,9 @@ namespace Tpetra {
                size_t LDA,
                size_t NumVectors) :
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -264,7 +276,9 @@ namespace Tpetra {
                const Teuchos::ArrayView<const ArrayView<const Scalar> >& ArrayOfPtrs,
                size_t NumVectors) :
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -2203,15 +2217,20 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   createViews() const
   {
-    TPETRA_EFFICIENCY_WARNING(! cview_.is_null (), std::runtime_error,
-      "::createViews(): The const view "
-      "has already been created and is therefore not null.  (For"
-      "Tpetra developers: cview_.total_count() = " << cview_.total_count ()
-      << ".  This "
-      "means that MultiVector is either creating a view unnecessarily, or "
-      "hanging on to a view beyond its needed scope.  This "
-      "probably does not affect correctness, it but does affect total memory "
-      "use.  Please report this performance bug to the Tpetra developers.");
+    if (! createViewsRaisedEfficiencyWarning_) {
+      TPETRA_EFFICIENCY_WARNING(! cview_.is_null (), std::runtime_error,
+        "::createViews(): The const view "
+        "has already been created and is therefore not null.  (For"
+        "Tpetra developers: cview_.total_count() = " << cview_.total_count ()
+        << ".  This "
+        "means that MultiVector is either creating a view unnecessarily, or "
+        "hanging on to a view beyond its needed scope (since releaseViews() "
+        "should always releaseboth the const and nonconst views).  This probably "
+        "does not affect correctness, it but does affect total memory use.  "
+        "We will only report this warning once per (Multi)Vector instance.  "
+        "Please report this performance bug to the Tpetra developers.");
+      createViewsRaisedEfficiencyWarning_ = true;
+    }
 
     Teuchos::RCP<Node> node = this->getMap ()->getNode ();
     if (cview_.is_null () && getLocalLength () > 0) {
@@ -2257,15 +2276,24 @@ namespace Tpetra {
     (void) constViewCount;
     (void) nonconstViewCount;
 
-    TPETRA_EFFICIENCY_WARNING(constViewCount > 1 || nonconstViewCount > 1,
-      std::runtime_error, "::releaseViews(): Either the const view or the "
-      "nonconst view has a reference count greater than 1.  (For Tpetra "
-      "developers: cview_.total_count() = " << constViewCount << " and ncview_."
-      "total_count() = " << nonconstViewCount << ".  This means that release"
-      "Views() won't actually free memory.  This probably does not affect "
-      "correctness, it but does affect total memory use.  Please report this "
-      "performance bug to the Tpetra developers.");
+    const bool viewWontGetReleased = constViewCount > 1 || nonconstViewCount > 1;
+    if (viewWontGetReleased && ! releaseViewsRaisedEfficiencyWarning_) {
+      const bool both = constViewCount > 1 && nonconstViewCount > 1;
+      const char* const text = both ? "Both the const view and the nonconst view have" :
+        ((constViewCount > 1) ? "The const view has" : "The nonconst view has");
 
+      TPETRA_EFFICIENCY_WARNING(viewWontGetReleased, std::runtime_error,
+        "::releaseViews(): " << text << " a reference count greater than 1.  "
+        "For Tpetra developers: cview_.total_count() = " << constViewCount
+        << " and ncview_.total_count() = " << nonconstViewCount << ".  This "
+        "means that releaseViews() won't actually free memory.  This probably "
+        "does not affect correctness, it but does affect total memory use.  "
+        "We will only report this warning once per (Multi)Vector instance.  "
+        "Please report this performance bug to the Tpetra developers.");
+      releaseViewsRaisedEfficiencyWarning_ = true;
+    }
+
+    // Release the views.
     cview_ = Teuchos::null;
     ncview_ = Teuchos::null;
   }

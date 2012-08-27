@@ -612,6 +612,12 @@ namespace Tpetra {
     //! Const host view created in createViews().
     mutable ArrayRCP<const Scalar> cview_;
     //@}
+
+    //! Whether releaseViews() has yet raised an efficiency warning.
+    mutable bool releaseViewsRaisedEfficiencyWarning_;
+    //! Whether createViews() has yet raised an efficiency warning.
+    mutable bool createViewsRaisedEfficiencyWarning_;
+
   }; // class MultiVector
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
