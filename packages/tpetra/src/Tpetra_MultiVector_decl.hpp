@@ -611,13 +611,19 @@ namespace Tpetra {
 
     //! Const host view created in createViews().
     mutable ArrayRCP<const Scalar> cview_;
+
     //@}
+    //! @name Instance data for tracking efficiency warnings
+    //@{
 
     //! Whether releaseViews() has yet raised an efficiency warning.
     mutable bool releaseViewsRaisedEfficiencyWarning_;
     //! Whether createViews() has yet raised an efficiency warning.
     mutable bool createViewsRaisedEfficiencyWarning_;
+    //! Whether createViewsNonConst() has yet raised an efficiency warning.
+    mutable bool createViewsNonConstRaisedEfficiencyWarning_;
 
+    //@}
   }; // class MultiVector
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
@@ -645,7 +651,19 @@ namespace Tpetra {
   ///
   /// \warning This function is not supported for all Kokkos Node
   ///   types.  Specifically, it is not typically supported for
-  ///   accelerator-based nodes like Kokkos::ThrustGPUNode.
+  ///   GPU accelerator-based nodes like Kokkos::ThrustGPUNode.
+  ///
+  /// \param map [in] The Map describing the distribution of rows of
+  ///   the multivector.
+  /// \param view [in/out] A pointer to column-major dense matrix
+  ///   data.  This will be the multivector's data on the calling
+  ///   process.  The multivector will use the pointer directly,
+  ///   without copying.
+  /// \param LDA [in] The leading dimension (a.k.a. "stride") of the
+  ///   column-major input data.
+  /// \param numVectors [in] The number of columns in the input data.
+  ///   This will be the number of vectors in the returned
+  ///   multivector.
   ///
   /// \node To Kokkos and Tpetra developers: If you add a new Kokkos
   ///   Node type that is a host Node type (where memory lives in user

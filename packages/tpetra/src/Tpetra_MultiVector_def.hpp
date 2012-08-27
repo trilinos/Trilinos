@@ -63,7 +63,8 @@ namespace Tpetra {
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
     lclMV_ (map->getNode ()),
     releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false)
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -90,7 +91,8 @@ namespace Tpetra {
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (source),
     lclMV_ (MVT::getNode (source.lclMV_)),
     releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false)
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -130,7 +132,8 @@ namespace Tpetra {
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
     lclMV_ (map->getNode ()),
     releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false)
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -160,7 +163,8 @@ namespace Tpetra {
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
     lclMV_ (map->getNode ()),
     releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false)
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -190,7 +194,8 @@ namespace Tpetra {
     lclMV_ (map->getNode ()),
     whichVectors_ (WhichVectors),
     releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false)
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -231,7 +236,8 @@ namespace Tpetra {
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
     lclMV_ (map->getNode ()),
     releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false)
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -278,7 +284,8 @@ namespace Tpetra {
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
     lclMV_ (map->getNode ()),
     releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false)
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -2225,7 +2232,7 @@ namespace Tpetra {
         << ".  This "
         "means that MultiVector is either creating a view unnecessarily, or "
         "hanging on to a view beyond its needed scope (since releaseViews() "
-        "should always releaseboth the const and nonconst views).  This probably "
+        "should always release both the const and nonconst views).  This probably "
         "does not affect correctness, it but does affect total memory use.  "
         "We will only report this warning once per (Multi)Vector instance.  "
         "Please report this performance bug to the Tpetra developers.");
@@ -2245,16 +2252,19 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   createViewsNonConst (Kokkos::ReadWriteOption rwo)
   {
-
-    TPETRA_EFFICIENCY_WARNING(! ncview_.is_null (), std::runtime_error,
-      "::createViewsNonConst(): The nonconst view "
-      "has already been created and is therefore not null.  (For"
-      "Tpetra developers: ncview_.total_count() = " << ncview_.total_count ()
-      << ".  This "
-      "means that MultiVector is either creating a view unnecessarily, or "
-      "hanging on to a view beyond its needed scope.  This "
-      "probably does not affect correctness, it but does affect total memory "
-      "use.  Please report this performance bug to the Tpetra developers.");
+    if (! createViewsNonConstRaisedEfficiencyWarning_) {
+      TPETRA_EFFICIENCY_WARNING(! ncview_.is_null (), std::runtime_error,
+        "::createViewsNonConst(): The nonconst view "
+        "has already been created and is therefore not null.  (For"
+        "Tpetra developers: ncview_.total_count() = " << ncview_.total_count ()
+        << ".  This means that MultiVector is either creating a view "
+        "unnecessarily, or hanging on to a view beyond its needed scope (since "
+        "releaseViews() should always release both the const and nonconst "
+        "views).  This probably does not affect correctness, it but does affect "
+        "total memory use.  "
+        "Please report this performance bug to the Tpetra developers.");
+      createViewsNonConstRaisedEfficiencyWarning_ = true;
+    }
 
     Teuchos::RCP<Node> node = this->getMap ()->getNode ();
     if (ncview_.is_null () && getLocalLength () > 0) {
