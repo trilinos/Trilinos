@@ -1142,7 +1142,7 @@ materialTensor (Scalar material[][3],
 {
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
-  const bool illConditioned = true;
+  const bool illConditioned = false;
   if (illConditioned) {
     const Scalar zero = STS::zero ();
     const Scalar one = STS::one ();
