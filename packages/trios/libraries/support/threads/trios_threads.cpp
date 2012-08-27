@@ -83,8 +83,8 @@ int nthread_lock_init(
 #if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
     rc=sem_init(&lock->lock, 0, 1);
     if (rc == -1) {
-        fprintf(stderr, "nthread_lock_init: sem_init failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_lock_init: sem_init failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         lock->lock_ptr=NULL;
         return(-1);
     }
@@ -101,8 +101,8 @@ int nthread_lock_init(
     } while (!done);
 
     if (lock->lock_ptr == SEM_FAILED) {
-        fprintf(stderr, "nthread_lock_init: sem_open failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_lock_init: sem_open failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         lock->lock_ptr=NULL;
         return(-1);
     }
@@ -121,30 +121,30 @@ int nthread_lock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock: locking lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
-    fflush(stderr);
+    fprintf(logger_get_file(), "nthread_lock: locking lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
+    fflush(logger_get_file());
 #endif
 
 #if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
 
     if (lock->lock_ptr == NULL) {
-        fprintf(stderr, "nthread_lock: lock not initialized\n");
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_lock: lock not initialized\n");
+        fflush(logger_get_file());
         return(-1);
     }
 
     rc=sem_wait(lock->lock_ptr);
     if (rc == -1) {
-        fprintf(stderr, "nthread_lock: sem_wait failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_lock: sem_wait failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         return(-1);
     }
 
 #endif
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
-    fflush(stderr);
+    fprintf(logger_get_file(), "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
+    fflush(logger_get_file());
 #endif
 
     return(rc);
@@ -156,30 +156,30 @@ int nthread_unlock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
-    fflush(stderr);
+    fprintf(logger_get_file(), "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
+    fflush(logger_get_file());
 #endif
 
 #if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
 
     if (lock->lock_ptr == NULL) {
-        fprintf(stderr, "nthread_unlock: lock not initialized\n");
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_unlock: lock not initialized\n");
+        fflush(logger_get_file());
         return(-1);
     }
 
     rc=sem_post(lock->lock_ptr);
     if (rc == -1) {
-        fprintf(stderr, "nthread_unlock: sem_post failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_unlock: sem_post failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         return(-1);
     }
 
 #endif
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(stderr, "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
-    fflush(stderr);
+    fprintf(logger_get_file(), "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
+    fflush(logger_get_file());
 #endif
 
     /* yield to other threads */
@@ -199,8 +199,8 @@ int nthread_lock_fini(
 #if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
 
     if (lock->lock_ptr == NULL) {
-        fprintf(stderr, "nthread_lock_fini: lock not initialized\n");
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_lock_fini: lock not initialized\n");
+        fflush(logger_get_file());
         return(-1);
     }
 #endif
@@ -208,21 +208,21 @@ int nthread_lock_fini(
 #if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
     rc=sem_destroy(lock->lock_ptr);
     if (rc == -1) {
-        fprintf(stderr, "nthread_lock_fini: sem_destroy failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_lock_fini: sem_destroy failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         return(-1);
     }
 #elif defined(HAVE_TRIOS_NAMED_SEMAPHORES)
     rc=sem_close(lock->lock_ptr);
     if (rc == -1) {
-        fprintf(stderr, "nthread_lock_fini: sem_close failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_lock_fini: sem_close failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         return(-1);
     }
     rc=sem_unlink(lock->name+4);
     if (rc == -1) {
-        fprintf(stderr, "nthread_lock_fini: sem_unlink failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_lock_fini: sem_unlink failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         return(-1);
     }
 
@@ -245,8 +245,8 @@ int nthread_counter_init(
 //    log_debug(thread_debug_level, "nthread_counter_init(STUB)");
     rc=nthread_lock_init(&c->lock);
     if (rc == -1) {
-        fprintf(stderr, "nthread_counter_init: nthread_lock_init failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_counter_init: nthread_lock_init failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         return(-1);
     }
     c->value = 0;
@@ -263,8 +263,8 @@ int64_t nthread_counter_increment(
 //    log_debug(thread_debug_level, "nthread_counter_increment(STUB)");
 
     if (nthread_lock(&c->lock) != 0) {
-        fprintf(stderr, "nthread_counter_increment: failed to lock the counter lock: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_counter_increment: failed to lock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
         t = -1;
         goto cleanup;
     }
@@ -273,8 +273,8 @@ int64_t nthread_counter_increment(
     c->value++;
 
     if (nthread_unlock(&c->lock) != 0) {
-        fprintf(stderr, "nthread_counter_increment: failed to unlock the counter lock: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_counter_increment: failed to unlock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
     }
 
 cleanup:
@@ -289,8 +289,8 @@ int64_t nthread_counter_decrement(
 //    log_debug(thread_debug_level, "nthread_counter_decrement(STUB)");
 
     if (nthread_lock(&c->lock) != 0) {
-        fprintf(stderr, "nthread_counter_decrement: failed to lock the counter lock: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_counter_decrement: failed to lock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
         goto cleanup;
     }
 
@@ -298,8 +298,8 @@ int64_t nthread_counter_decrement(
     c->value--;
 
     if (nthread_unlock(&c->lock) != 0) {
-        fprintf(stderr, "nthread_counter_decrement: failed to unlock the counter lock: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_counter_decrement: failed to unlock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
     }
 
 cleanup:
@@ -315,8 +315,8 @@ int nthread_counter_fini(
 //    log_debug(thread_debug_level, "nthread_counter_fini(STUB)");
     rc=nthread_lock_fini(&c->lock);
     if (rc == -1) {
-        fprintf(stderr, "nthread_counter_fini: nthread_lock_fini failed: %s\n", strerror(errno));
-        fflush(stderr);
+        fprintf(logger_get_file(), "nthread_counter_fini: nthread_lock_fini failed: %s\n", strerror(errno));
+        fflush(logger_get_file());
         return(-1);
     }
     c->value = 0;
