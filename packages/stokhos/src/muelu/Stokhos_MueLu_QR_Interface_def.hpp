@@ -61,13 +61,16 @@ namespace MueLu {
 
   template <class Scalar, class Storage, class LocalOrdinal>
   void QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::Compute(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR) {
-        if (localQR.size() > localQR_.size())
-          localQR_.resize(localQR.size());
+        int pce_sz = localQR[0].size();
+        if (localQR.size()*pce_sz > localQR_.size())
+          localQR_.resize(localQR.size()*pce_sz);
         //convert pce to pod scalar
         for (int i=0; i<localQR.size(); ++i) {
-          localQR_[i] = (localQR[i]).coeff(0);
+	  for (int j=0; j<pce_sz; ++j) {
+	    localQR_[i*pce_sz+j] = (localQR[i]).coeff(j);
+	  }
         }
-        lapack_.GEQRF( myAggSize, Teuchos::as<int>(NSDim_), localQR_.getRawPtr(), myAggSize,
+        lapack_.GEQRF( myAggSize*pce_sz, Teuchos::as<int>(NSDim_), localQR_.getRawPtr(), myAggSize*pce_sz,
                       tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
         if (info_ != 0) {
           std::string msg = "QR_Interface: dgeqrf (LAPACK QR routine) returned error code " + Teuchos::toString(info_);
@@ -75,7 +78,11 @@ namespace MueLu {
         }
         //promote POD scalar back to pce
         for (int i=0; i<localQR.size(); ++i) {
-          localQR[i] = localQR_[i];
+	  localQR[i].copyForWrite();
+	  if (localQR[i].size() < pce_sz)
+	    localQR[i].reset(localQR[0].expansion());
+	  for (int j=0; j<pce_sz; ++j)
+	    localQR[i].fastAccessCoeff(j) = localQR_[i*pce_sz+j];
         }
         // LAPACK may have determined a better length for the work array.  Returns it in work[0],
         // so we cast to avoid compiler warnings.  Taking a look at the NETLIB reference implementation
@@ -92,14 +99,19 @@ namespace MueLu {
         //call nonmember function (perhaps specialized)
         //Note: localQR_ already contains the proper data because of prior call to Compute, so there is no need to resize or copy.
         //      If Compute is called twice in a row, all bets are off.
-        LapackQR( lapack_, myAggSize, Teuchos::as<int>(NSDim_), localQR_, tau_, work_, workSize_, info_ );
+        int pce_sz = localQR[0].size();
+        LapackQR( lapack_, myAggSize*pce_sz, Teuchos::as<int>(NSDim_), localQR_, tau_, work_, workSize_, info_ );
         if (info_ != 0) {
           std::string msg = "QR_Interface: dorgqr (LAPACK auxiliary QR routine) returned error code " + Teuchos::toString(info_);
           throw(Exceptions::RuntimeError(msg));
         }
         //promote POD scalar back to pce
         for (int i=0; i<localQR.size(); ++i) {
-          localQR[i] = localQR_[i];
+	  localQR[i].copyForWrite();
+	  if (localQR[i].size() < pce_sz)
+	    localQR[i].reset(localQR[0].expansion());
+	  for (int j=0; j<pce_sz; ++j)
+	    localQR[i].fastAccessCoeff(j) = localQR_[i*pce_sz+j];
         }
   
         // LAPACK may have determined a better length for the work array.  Returns it in work[0],

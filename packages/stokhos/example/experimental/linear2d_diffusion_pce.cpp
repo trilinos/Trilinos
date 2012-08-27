@@ -58,6 +58,8 @@
 
 // MueLu includes
 #include "Stokhos_MueLu.hpp"
+#include "Stokhos_MueLu_QR_Interface_decl.hpp"
+#include "Stokhos_MueLu_QR_Interface_def.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
@@ -121,7 +123,8 @@ const int num_prec_option = 2;
 const Prec_option Prec_option_values[] = { whole, linear };
 const char *prec_option_names[] = { "full", "linear"};
 
-
+#define _GNU_SOURCE 1
+#include <fenv.h>
 
 
 int main(int argc, char *argv[]) {
@@ -130,14 +133,17 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
-  double g_mean_exp = 1.906587e-01;      // expected response mean
-  double g_std_dev_exp = 8.680605e-02;  // expected response std. dev.
-  double g_tol = 1e-6;               // tolerance on determining success
+  //double g_mean_exp = 1.906587e-01;      // expected response mean
+  //double g_std_dev_exp = 8.680605e-02;  // expected response std. dev.
+  //double g_tol = 1e-6;               // tolerance on determining success
 
 
 
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::ParameterList;
 
 // Initialize MPI
@@ -237,7 +243,7 @@ int main(int argc, char *argv[]) {
     int max_it_div = 50;
     CLP.setOption("max_it_div", &max_it_div, "Maximum # of Iterations in Iterative Solver for Division");
 
-    bool equilibrate = false;
+    bool equilibrate = true; //JJH 8/26/12 changing to true to match ETP example
     CLP.setOption("equilibrate", "noequilibrate", &equilibrate,
                   "Equilibrate the linear system");
 
@@ -381,6 +387,8 @@ int main(int argc, char *argv[]) {
     typedef Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix> Writer;
     //Xpetra matrices
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsMatrix;
+    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Xpetra_MultiVector;
+    typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Xpetra_MultiVectorFactory;
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_Operator;
     typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_TpetraCrsMatrix;
     typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsOperator;
@@ -404,11 +412,13 @@ int main(int argc, char *argv[]) {
 
     // Set PCE expansion of p
     p->putScalar(0.0);
-    Teuchos::ArrayRCP<Scalar> p_view = p->get1dViewNonConst();
-    for (Teuchos::ArrayRCP<Scalar>::size_type i=0; i<p_view.size(); i++)
+    ArrayRCP<Scalar> p_view = p->get1dViewNonConst();
+    for (ArrayRCP<Scalar>::size_type i=0; i<p_view.size(); i++) {
       p_view[i].reset(expansion);
-    Teuchos::Array<double> point(num_KL, 1.0);
-    Teuchos::Array<double> basis_vals(sz);
+      p_view[i].copyForWrite();
+    }
+    Array<double> point(num_KL, 1.0);
+    Array<double> basis_vals(sz);
     basis->evaluateBases(point, basis_vals);
     if (order > 0) {
       for (int i=0; i<num_KL; i++) {
@@ -418,26 +428,39 @@ int main(int argc, char *argv[]) {
 
     // Create preconditioner
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
-    Teuchos::RCP<Belos_MueLuOperator> M;
+    RCP<Belos_MueLuOperator> M;
     RCP<MueLu_Hierarchy> H;
-    Teuchos::RCP<Xpetra_Operator> xopJ;
+    RCP<Xpetra_CrsMatrix> xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
+    RCP<Xpetra_Operator> xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
     if (prec_method != NONE) {
-      Teuchos::ParameterList precParams;
+      ParameterList precParams;
       std::string prec_name = "RILUK";
       precParams.set("fact: iluk level-of-fill", 1);
       precParams.set("fact: iluk level-of-overlap", 0);
       //Ifpack2::Factory factory;
-      RCP<Xpetra_CrsMatrix> xcrsJ;
-      if (prec_method == MEAN) 
-        xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J0));
+      RCP<Xpetra_Operator> xopJ0;
+      if (prec_method == MEAN) {
+        RCP<Xpetra_CrsMatrix> xcrsJ0 = rcp(new Xpetra_TpetraCrsMatrix(J0));
+        xopJ0 = rcp(new Xpetra_CrsOperator(xcrsJ0));
         //M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
-      else if (prec_method == STOCHASTIC)
-        xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
+      } else if (prec_method == STOCHASTIC) {
+        xopJ0 = xopJ;
         //M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
-      xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
-      H = rcp(new MueLu_Hierarchy(xopJ));
+      }
+      H = rcp(new MueLu_Hierarchy(xopJ0));
       M = rcp(new Belos_MueLuOperator(H));
       //M->setParameters(precParams);
+      RCP<Xpetra_MultiVector> Z = Xpetra_MultiVectorFactory::Build(xcrsJ->getDomainMap(), sz);
+      size_t n = Z->getLocalLength();
+      for (LocalOrdinal j=0; j<sz; ++j) {
+        ArrayRCP<Scalar> col = Z->getDataNonConst(j);
+        for (size_t i=0; i<n; ++i) {
+          col[i].reset(expansion);
+          col[i].copyForWrite();
+          col[i].fastAccessCoeff(j) = 1.0;
+        }
+      }
+      H->GetLevel(0)->Set("Nullspace", Z);
     }
 
     // Evaluate model
@@ -447,12 +470,12 @@ int main(int argc, char *argv[]) {
     // Compute mean for mean-based preconditioner
     if (prec_method == MEAN) {
       size_t nrows = J->getNodeNumRows();
-      Teuchos::ArrayView<const LocalOrdinal> indices;
-      Teuchos::ArrayView<const Scalar> values;
+      ArrayView<const LocalOrdinal> indices;
+      ArrayView<const Scalar> values;
       J0->resumeFill();
       for (size_t i=0; i<nrows; i++) {
         J->getLocalRowView(i, indices, values);
-        Teuchos::Array<Scalar> values0(values.size());
+        Array<Scalar> values0(values.size());
         for (LocalOrdinal j=0; j<values.size(); j++)
           values0[j] = values[j].coeff(0);
         J0->replaceLocalValues(i, indices, values0);
@@ -464,13 +487,21 @@ int main(int argc, char *argv[]) {
     if (prec_method != NONE) {
       //M->initialize();
       //M->compute();
-      Teuchos::ParameterList coarseParamList;
+      ParameterList coarseParamList;
       coarseParamList.set("fact: level-of-fill", 0);
       RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("ILUT", coarseParamList) );
+      RCP<FactoryManager> fm = rcp( new FactoryManager() );;
+      //override MueLu defaults via factory manager
       RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarsePrototype, Teuchos::null) );
-      FactoryManager fm;
-      fm.SetFactory("CoarseSolver", coarseSolverFact);
-      H->Setup(fm);
+      fm->SetFactory("CoarseSolver", coarseSolverFact);
+      //allow for larger aggregates
+      typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+      MueLu_UCAggregationFactory;
+      RCP<MueLu_UCAggregationFactory> aggFact = rcp(new MueLu_UCAggregationFactory());
+      aggFact->SetMinNodesPerAggregate(10);
+      fm->SetFactory("Aggregates", aggFact);
+
+      H->Setup(*fm);
     }
 
     // Setup Belos solver
@@ -557,6 +588,7 @@ int main(int argc, char *argv[]) {
 
 
 
+/*
     double g_mean = g->get1dView()[0].mean();
     double g_std_dev = g->get1dView()[0].standard_deviation();
     std::cout << "g mean = " << g_mean << std::endl;
@@ -575,6 +607,7 @@ int main(int argc, char *argv[]) {
         std::cout << "expected g_std_dev = "<< g_std_dev_exp << std::endl;
       }
     }
+*/
 
 
 
