@@ -70,9 +70,6 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Operator.h"
 
-// Ifpack includes
-#include "Ifpack_Preconditioner.h"
-
 // Amesos includes
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"

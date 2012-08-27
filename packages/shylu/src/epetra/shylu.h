@@ -54,7 +54,7 @@
 
 #include "shylu_symbolic.h"
 #include "shylu_probing_operator.h"
-#include "Ifpack_Amesos_Schur.h"
+#include "AmesosSchurOperator.h"
 
 //#include "shylu_debug_manager.hpp"
 
