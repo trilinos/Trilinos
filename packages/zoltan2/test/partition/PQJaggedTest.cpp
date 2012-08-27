@@ -106,35 +106,50 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
   for(int i = 0; i < 25000; ++i){
     inp[i] = 0;
   }
+
+  bool fail = false;
   if(comm->getRank() == 0){
 
     fstream inParam(paramFileName.c_str());
-
-    std::string tmp = "";
-    getline (inParam,tmp);
-    while (!inParam.eof()){
-      if(tmp != ""){
-        tmp = trim_copy(tmp);
-        if(tmp != ""){
-          input += tmp + "\n";
-        }
-      }
-      getline (inParam,tmp);
+    if (inParam.fail())
+    {
+      fail = true;
     }
-    inParam.close();
-    for (size_t i = 0; i < input.size(); ++i){
-      inp[i] = input[i];
+    if(!fail)
+    {
+      std::string tmp = "";
+      getline (inParam,tmp);
+      while (!inParam.eof()){
+        if(tmp != ""){
+          tmp = trim_copy(tmp);
+          if(tmp != ""){
+            input += tmp + "\n";
+          }
+        }
+        getline (inParam,tmp);
+      }
+      inParam.close();
+      for (size_t i = 0; i < input.size(); ++i){
+        inp[i] = input[i];
+      }
     }
   }
 
 
+
   int size = input.size();
+  if(fail){
+    size = -1;
+  }
 
   //MPI_Bcast(&size,1,MPI_INT, 0, MPI_COMM_WORLD);
   //MPI_Bcast(inp,size,MPI_CHAR, 0, MPI_COMM_WORLD);
   //Teuchos::broadcast<int, char>(comm, 0,inp);
 
   comm->broadcast(0, sizeof(int), (char*) &size);
+  if(size == -1){
+    throw "File " + paramFileName + " cannot be opened.";
+  }
   comm->broadcast(0, size, inp);
   //Teuchos::broadcast<int,string>(comm,0, &input);
   istringstream inParam(inp);
