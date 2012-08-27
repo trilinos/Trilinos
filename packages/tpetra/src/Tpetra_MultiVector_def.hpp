@@ -2281,6 +2281,9 @@ namespace Tpetra {
       const bool both = constViewCount > 1 && nonconstViewCount > 1;
       const char* const text = both ? "Both the const view and the nonconst view have" :
         ((constViewCount > 1) ? "The const view has" : "The nonconst view has");
+      // Prevent (unused variable) compiler warning, since the macro
+      // below doesn't exist unless efficiency warnings are enabled.
+      (void) text;
 
       TPETRA_EFFICIENCY_WARNING(viewWontGetReleased, std::runtime_error,
         "::releaseViews(): " << text << " a reference count greater than 1.  "
