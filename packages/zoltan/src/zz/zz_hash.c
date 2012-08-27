@@ -81,7 +81,7 @@ extern "C" {
 #endif
 
 #ifdef ZZ_MURMUR_HASH
-#include "murmur3.h"
+#include "murmur3.c"
 
 unsigned int Zoltan_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 {
