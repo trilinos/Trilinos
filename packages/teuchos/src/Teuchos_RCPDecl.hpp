@@ -1263,7 +1263,7 @@ template<class T> inline
 RCP<T> rcpFromUndefRef(T& r);
 
 
-/* \brief Create an RCP with and also put in an embedded object.
+/** \brief Create an RCP with and also put in an embedded object.
  *
  * In this case the embedded object is destroyed (by setting to Embedded())
  * before the object at <tt>*p</tt> is destroyed.
@@ -1278,7 +1278,7 @@ RCP<T>
 rcpWithEmbeddedObjPreDestroy( T* p, const Embedded &embedded, bool owns_mem = true );
 
 
-/* \brief Create an RCP with and also put in an embedded object.
+/** \brief Create an RCP with and also put in an embedded object.
  *
  * In this case the embedded object is destroyed (by setting to Embedded())
  * after the object at <tt>*p</tt> is destroyed.
@@ -1293,7 +1293,7 @@ RCP<T>
 rcpWithEmbeddedObjPostDestroy( T* p, const Embedded &embedded, bool owns_mem = true );
 
 
-/* \brief Create an RCP with and also put in an embedded object.
+/** \brief Create an RCP with and also put in an embedded object.
  *
  * This function should be called when it is not important when the embedded
  * object is destroyed (by setting to Embedded()) with respect to when
