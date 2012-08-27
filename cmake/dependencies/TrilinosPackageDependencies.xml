@@ -881,6 +881,20 @@
     </EmailAddresses>
     <ParentPackage value="Trios"/>
   </Package>
+  <Package name="Trioscommsplitter" dir="packages/trios/libraries/commsplitter" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
   <Package name="Triosprograms" dir="packages/trios/programs" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -939,7 +953,7 @@
   </Package>
   <Package name="Trios" dir="packages/trios" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Trioscommsplitter,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
