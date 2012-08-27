@@ -50,7 +50,7 @@ OverlappingPartitioner<GraphType>::OverlappingPartitioner(const Teuchos::RCP<con
 
 //==============================================================================
 template<class GraphType>
-OverlappingPartitioner<GraphType>::~Ifpack2_OverlappingPartitioner()
+OverlappingPartitioner<GraphType>::~OverlappingPartitioner()
 {
 }
 
