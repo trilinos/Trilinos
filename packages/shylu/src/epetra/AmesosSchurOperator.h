@@ -155,16 +155,10 @@ class AmesosSchurOperator: public Epetra_Operator
     */
     int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-    //! Computes the estimated condition number and returns the value.
-    double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
-                 const int MaxIters = 1550,
-                 const double Tol = 1e-9,
-         Epetra_RowMatrix* Matrix_in = 0);
-
     //! Returns the computed estimated condition number, or -1.0 if not computed
     double Condest() const
     {
-        return(Condest_);
+        return(-1.0);
     }
 
     // @}

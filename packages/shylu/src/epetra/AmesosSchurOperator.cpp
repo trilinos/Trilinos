@@ -122,13 +122,6 @@ int AmesosSchurOperator::ApplyInverse(const Epetra_MultiVector& X,
     return 0;
 }
 
-//! Computes the estimated condition number and returns the value.
-double AmesosSchurOperator::Condest(const Ifpack_CondestType CT,
-     const int MaxIters, const double Tol, Epetra_RowMatrix* Matrix_in)
-{
-    return -1.0;
-}
-
 //! Prints on stream basic information about \c this object.
 ostream& AmesosSchurOperator::Print(ostream& os) const
 {
