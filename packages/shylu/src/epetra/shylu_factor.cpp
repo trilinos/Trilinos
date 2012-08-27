@@ -86,7 +86,7 @@ int create_matrices
 
     /* --------------- Create the maps for the DBBD form ------------------- */
     // Create the local and distributed row map
-    Epetra_SerialComm LComm;
+    Epetra_MpiComm LComm(MPI_COMM_SELF);
 
 	// Use Serial Comm for the local blocks.
     Epetra_Map LocalDRowMap(-1, Dnr, DRowElems, 0, LComm);
@@ -682,7 +682,7 @@ int shylu_symbolic_factor
     delete[] SColElems;
 
     Amesos Factory;
-    char* SolverType = "Amesos_Klu";
+    const char* SolverType = config->diagonalBlockSolver.c_str();
     bool IsAvailable = Factory.Query(SolverType);
     assert(IsAvailable == true);
 

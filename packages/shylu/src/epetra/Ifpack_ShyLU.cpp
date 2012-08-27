@@ -58,7 +58,7 @@ Ifpack_ShyLU::Ifpack_ShyLU(Epetra_CrsMatrix* A):
     IsParallel_(true),
     IsInitialized_(false),
     IsComputed_(false),
-    Label_(),
+    Label_("Ifpack_ShyLU"),
     NumCompute_(0),
     NumApplyInverse_(0),
     Time_(A_->Comm())
@@ -141,6 +141,9 @@ int Ifpack_ShyLU::Initialize()
                                                 "Schur Approximation Method");
     slu_config_.schurSolver = Teuchos::getParameter<string>(List_,
                                                 "Schur Complement Solver");
+    slu_config_.diagonalBlockSolver =
+            Teuchos::getParameter<string>(List_, "Diagonal Block Solver");
+
     slu_config_.relative_threshold =  0.0;
     slu_config_.Sdiagfactor =  0.05;
     if (schurApproxMethod == "A22AndBlockDiagonals")
@@ -183,7 +186,9 @@ int Ifpack_ShyLU::Initialize()
     {
         slu_data_.LP2 = new Epetra_LinearProblem();
         Amesos Factory;
-        std::string SolverType = "Amesos_Klu";
+        std::string SolverType =
+                Teuchos::getParameter<string>(List_, "Schur Amesos Solver");
+
         bool IsAvailable = Factory.Query(SolverType);
         assert(IsAvailable == true);
         slu_data_.dsolver = Factory.Create(SolverType, *(slu_data_.LP2));
