@@ -369,6 +369,24 @@ namespace {
       exodus_error(exoid, __LINE__, -1);
     if (buffer[0] != '\0') {
       Ioss::Utils::fixup_name(TOPTR(buffer));
+      // Filter out names of the form "basename_id" if the name
+      // id doesn't match the id in the name...
+      size_t base_size = basename.size();
+      if (std::strncmp(basename.c_str(), TOPTR(buffer), base_size) == 0) {
+	int64_t name_id = extract_id(TOPTR(buffer));
+	if (name_id > 0 && name_id != id) {
+	  // See if name is truly of form "basename_name_id"
+	  std::string tmp_name =  Ioss::Utils::encode_entity_name(basename, name_id);
+	  if (tmp_name == TOPTR(buffer)) {
+	    std::string new_name =  Ioss::Utils::encode_entity_name(basename, id);
+	    IOSS_WARNING << "WARNING: The entity named '" << TOPTR(buffer) << "' has the id " << id
+			 << " which does not match the embedded id " << name_id
+			 << ".\n         This can cause issues later on; the entity will be renamed to '"
+			 << new_name << "' (IOSS)\n\n";
+	    return new_name;
+	  }
+	}
+      }
       return (std::string(TOPTR(buffer)));
     } else {
       return Ioss::Utils::encode_entity_name(basename, id);
@@ -787,10 +805,10 @@ namespace Iopx {
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
     spatialDimension = decomp.spatialDimension;
-    nodeCount = decomp.nodeGTL.size();
+    nodeCount = decomp.ioss_node_count();
     edgeCount = 0;
     faceCount = 0;
-    elementCount = decomp.local_element_map.size() + decomp.import_element_map.size();
+    elementCount = decomp.ioss_elem_count();
 
     m_groupCount[EX_NODE_BLOCK] = 1;
     m_groupCount[EX_EDGE_BLOCK] = info.num_edge_blk;
@@ -891,11 +909,6 @@ namespace Iopx {
     }
 
     if (exists) {
-      // Assume that if it exists on 1 processor, it exists on
-      // all... Sync value among processors since could have a
-      // corrupt step on only a single database.
-      last_time = util().global_minmax(last_time, Ioss::ParallelUtils::DO_MIN);
-
       // Increase value slightly in case there is some small
       // roundoff and to allow for floating point equality issues.
       last_time *= 1.0001;
@@ -2415,7 +2428,6 @@ namespace Iopx {
 	Ioss::SerializeIO	serializeIO__(this);
 
 	size_t num_to_get = field.verify(data_size);
-	if (num_to_get > 0) {
 
 #ifndef NDEBUG
 	  int64_t my_node_count = field.raw_count();
@@ -2424,68 +2436,11 @@ namespace Iopx {
 
 	  Ioss::Field::RoleType role = field.get_role();
 	  if (role == Ioss::Field::MESH) {
-	    if (field.get_name() == "mesh_model_coordinates_x") {
-	      std::vector<double> tmp(decomp.nodeCount);
-	      double *rdata = static_cast<double*>(data);
-	      int ierr = ex_get_n_coord(get_file_pointer(), decomp.nodeOffset+1, decomp.nodeCount,
-					TOPTR(tmp), NULL, NULL);
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      decomp.communicate_node_data(TOPTR(tmp), rdata, 1);
-	    }
-
-	    else if (field.get_name() == "mesh_model_coordinates_y") {
-	      std::vector<double> tmp(decomp.nodeCount);
-	      double *rdata = static_cast<double*>(data);
-	      int ierr = ex_get_n_coord(get_file_pointer(), decomp.nodeOffset+1, decomp.nodeCount,
-					NULL, TOPTR(tmp), NULL);
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      decomp.communicate_node_data(TOPTR(tmp), rdata, 1);
-	    }
-
-	    else if (field.get_name() == "mesh_model_coordinates_z") {
-	      std::vector<double> tmp(decomp.nodeCount);
-	      double *rdata = static_cast<double*>(data);
-	      int ierr = ex_get_n_coord(get_file_pointer(), decomp.nodeOffset+1, decomp.nodeCount,
-					NULL, NULL, TOPTR(tmp));
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      decomp.communicate_node_data(TOPTR(tmp), rdata, 1);
-	    }
-
-	    else if (field.get_name() == "mesh_model_coordinates") {
-	      // Data required by upper classes store x0, y0, z0, ... xn,
-	      // yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
-	      // ..., yn, z0, ..., zn so we have to allocate some scratch
-	      // memory to read in the data and then map into supplied
-	      // 'data'
-	      std::vector<double> x(decomp.nodeCount);
-	      std::vector<double> y;
-	      if (spatialDimension > 1)
-		y.resize(decomp.nodeCount);
-	      std::vector<double> z;
-	      if (spatialDimension == 3)
-		z.resize(decomp.nodeCount);
-
-	      // Cast 'data' to correct size -- double
-	      double *rdata = static_cast<double*>(data);
-
-	      int ierr = ex_get_n_coord(get_file_pointer(), decomp.nodeOffset+1, decomp.nodeCount,
-					TOPTR(x), TOPTR(y), TOPTR(z));
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	      size_t index = 0;
-	      std::vector<double> tmp(decomp.nodeCount*spatialDimension);
-	      for (size_t i=0; i < decomp.nodeCount; i++) {
-		tmp[index++] = x[i];
-		if (spatialDimension > 1)
-		  tmp[index++] = y[i];
-		if (spatialDimension == 3)
-		  tmp[index++] = z[i];
-	      }
-	      decomp.communicate_node_data(TOPTR(tmp), rdata, 3);
+	    if (field.get_name() == "mesh_model_coordinates_x" ||
+		field.get_name() == "mesh_model_coordinates_y" ||
+		field.get_name() == "mesh_model_coordinates_z" ||
+		field.get_name() == "mesh_model_coordinates") {
+	      decomp.get_node_coordinates(get_file_pointer(), (double*)data, field);
 	    }
 
 	    else if (field.get_name() == "ids") {
@@ -2524,7 +2479,6 @@ namespace Iopx {
 	  } else if (role == Ioss::Field::ATTRIBUTE) {
 	    num_to_get = read_attribute_field(EX_NODE_BLOCK, field, nb, data);
 	  }
-	}
 	return num_to_get;
       }
     }
@@ -3358,8 +3312,6 @@ namespace Iopx {
 					     void *data) const
     {
       int64_t num_entity = ge->get_property("entity_count").get_int();
-      if (num_entity == 0)
-	return 0;
     
       int attribute_count = ge->get_property("attribute_count").get_int();
       int64_t id = get_id(ge, type, &ids_);
@@ -3369,7 +3321,7 @@ namespace Iopx {
       assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
       if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
 	// Read all attributes in one big chunk...
-	int ierr = ex_get_attr(get_file_pointer(), type, id, static_cast<double*>(data));
+	int ierr = decomp.get_attr(get_file_pointer(), type, id, attribute_count, static_cast<double*>(data));
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -3378,8 +3330,8 @@ namespace Iopx {
 	// if higher-order (vector3d, ..) read each component and
 	// put into correct location...
 	if (field.raw_storage()->component_count() == 1) {
-	  int ierr = ex_get_one_attr(get_file_pointer(), type, id,
-				     offset, static_cast<double*>(data));
+	  int ierr = decomp.get_one_attr(get_file_pointer(), type, id,
+					 offset, static_cast<double*>(data));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	} else {
@@ -3390,8 +3342,8 @@ namespace Iopx {
 	  int comp_count = field.raw_storage()->component_count();
 	  double *rdata = static_cast<double*>(data);
 	  for (int i=0; i < comp_count; i++) {
-	    int ierr = ex_get_one_attr(get_file_pointer(), type, id,
-				       offset+i, TOPTR(local_data));
+	    int ierr = decomp.get_one_attr(get_file_pointer(), type, id,
+					   offset+i, TOPTR(local_data));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  
@@ -3703,7 +3655,7 @@ namespace Iopx {
       // that case, we only have to fill in the output array with that
       // value.
       {
-	double value = dist[0];
+	double value = number_distribution_factors > 0 ? dist[0] : 0.0;
 	bool constant = true;
 	for (int64_t i=1; i < number_distribution_factors; i++) {
 	  if (dist[i] != value) {
@@ -5972,16 +5924,6 @@ namespace Iopx {
 		exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	    }
 	  }
-
-	  // If parallel, then synchronize the truth table among all processors...
-	  // Need to know that block_X has variable_Y even if block_X is
-	  // empty on a specific processor...  The truth table contains 0
-	  // if the variable doesn't exist and 1 if it does, so we just
-	  // take the maximum at each location...
-	  // This is a collective call...
-	  if (isParallel) {
-	    util().global_array_minmax(truth_table, Ioss::ParallelUtils::DO_MAX);
-	  }
 	}
 
 	// Get the variable names and add as fields. Need to decode these
@@ -6464,27 +6406,11 @@ namespace Iopx {
 	int64_t id = block->get_property("id").get_int();
 	{
 	  Ioss::SerializeIO	serializeIO__(this);
-	  if (block->get_property("entity_count").get_int() != 0) {
-	    int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
-	    if (ierr < 0)
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
+	  int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
 
-	// Sync names across processors...
-	if (isParallel) {
-	  std::vector<char> cname(attribute_count * (maximumNameLength+1));
-	  if (block->get_property("entity_count").get_int() != 0) {
-	    for (int i=0; i < attribute_count; i++) {
-	      std::memcpy(&cname[i*(maximumNameLength+1)], names[i], maximumNameLength+1);
-	    }
-	  }
-	  util().attribute_reduction(attribute_count * (maximumNameLength+1), TOPTR(cname));
-	  for (int i=0; i < attribute_count; i++) {
-	    std::memcpy(names[i], &cname[i*(maximumNameLength+1)], maximumNameLength+1);
-	  }
-	}
-      
 	// Convert to lowercase.
 	for (int i=0; i < attribute_count; i++) {
 	  fix_bad_name(names[i]);
@@ -6615,7 +6541,7 @@ namespace Iopx {
 		index += 3;
 	      }
 	    }
-	    unknown_attributes = attribute_count - index;
+	    unknown_attributes = attribute_count - (index-1);
 	  }
 
 	  else {

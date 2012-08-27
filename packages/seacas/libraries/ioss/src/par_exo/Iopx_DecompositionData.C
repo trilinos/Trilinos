@@ -97,8 +97,8 @@ namespace {
     assert(ngid_ent = element_count);
     assert(nlid_ent = element_count);
     
-    std::copy(zdata->global_ids.begin(), zdata->global_ids.end(), &gids[0]);
     for (size_t i = 0; i < element_count; i++) {
+      gids[i] = zdata->elementOffset + i;
       if (lids) lids[i] = i;
       if (wdim) wgts[i] = 1.0;
     }
@@ -202,15 +202,6 @@ namespace Iopx {
 		    node_dist,    &nodeOffset,    &nodeCount);
 
     std::cout << "Processor " << myProcessor << " has " << elementCount << " elements.\n";
-    
-    // Get my portion of the element map -- global ids
-    global_ids.resize(elementCount);
-
-    // Global ids in this location are the local offset in the
-    // combined file.
-    for (size_t i=0; i < elementCount; i++) {
-      global_ids[i] = elementOffset + i;
-    }
     
     std::vector<MY_INT> pointer; // Index into adjacency, processor list for each element...
     std::vector<MY_INT> adjacency; // Size is sum of element connectivity sizes 
@@ -799,10 +790,10 @@ namespace Iopx {
     // decomposition nodal coordinates. The "nodeCount/2*2" is to
     // equalize the nodeCount among processors since some procs have 1
     // more node than others. For small models, assume we can handle
-    // at least 1000 nodes.
-    size_t max_size = max(1000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(MY_INT));
+    // at least 10000 nodes.
+    //    size_t max_size = max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(MY_INT));
     
-    bool subsetting = nodelist_size > max_size;
+    bool subsetting = false; // nodelist_size > max_size;
     
     if (subsetting) {
       assert(1==0);
@@ -942,10 +933,10 @@ namespace Iopx {
     // decomposition nodal coordinates. The "nodeCount/2*2" is to
     // equalize the nodeCount among processors since some procs have 1
     // more node than others. For small models, assume we can handle
-    // at least 1000 nodes.
-    size_t max_size = max(1000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(MY_INT));
+    // at least 10000 nodes.
+    //    size_t max_size = max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(MY_INT));
     
-    bool subsetting = elemlist_size > max_size;
+    bool subsetting = false; // elemlist_size > max_size;
     
     if (subsetting) {
       assert(1==0);
@@ -1188,10 +1179,14 @@ namespace Iopx {
     }
     
     // Get my coordinate data using direct exodus calls
-    // TODO: Check for 1-dim and 2-dim
-    std::vector<double> x(nodeCount);
-    std::vector<double> y(nodeCount);
-    std::vector<double> z(nodeCount);
+    std::vector<double> x(nodeCount);;
+    std::vector<double> y;
+    std::vector<double> z;
+    if (spatialDimension > 1)
+      y.resize(nodeCount);
+    if (spatialDimension > 2)
+      z.resize(nodeCount);
+    
     ex_get_n_coord(exodusId, nodeOffset+1, nodeCount, TOPTR(x), TOPTR(y), TOPTR(z));
 
     // The total vector size I need to send data in is node_comm_send.size()*3
@@ -1351,6 +1346,7 @@ namespace Iopx {
     std::vector<T> import_data(import_node_map.size() * comp_count);
     for (size_t i=0; i < export_node_map.size(); i++) {
       size_t index = export_node_map[i] - nodeOffset;
+      assert(index < nodeCount);
       for (size_t j=0; j < comp_count; j++) {
 	export_data[comp_count*i+j] = file_data[comp_count*index+j];
       }
@@ -1359,6 +1355,7 @@ namespace Iopx {
     // Transfer all local data from file_data to ioss_data...
     for (size_t i=0; i < local_node_map.size(); i++) {
       size_t index = local_node_map[i] - nodeOffset;
+      assert(index < nodeCount);
       for (size_t j=0; j < comp_count; j++) {
 	ioss_data[comp_count*(import_pre_local_node_index+i)+j] = file_data[comp_count*index+j];
       }
@@ -1383,6 +1380,7 @@ namespace Iopx {
     // Copy the imported data into ioss_data...
     for (size_t i=0; i < import_node_map.size(); i++) {
       size_t index = import_node_map[i];
+      assert(index < nodeGTL.size());
       for (size_t j=0; j < comp_count; j++) {
 	ioss_data[comp_count*index+j] = import_data[comp_count*i+j];
       }
@@ -1492,6 +1490,73 @@ namespace Iopx {
     }
   }
 
+  int DecompositionData::get_node_coordinates(int exodusId, double *ioss_data, const Ioss::Field &field) const
+  {
+    std::vector<double> tmp(nodeCount);
+	      
+    int ierr = 0;
+    if (field.get_name() == "mesh_model_coordinates_x") {
+      ierr = ex_get_n_coord(exodusId, nodeOffset+1, nodeCount,
+			    TOPTR(tmp), NULL, NULL);
+      if (ierr >= 0)
+	communicate_node_data(TOPTR(tmp), ioss_data, 1);
+    }
+
+    else if (field.get_name() == "mesh_model_coordinates_y") {
+      ierr = ex_get_n_coord(exodusId, nodeOffset+1, nodeCount,
+			    NULL, TOPTR(tmp), NULL);
+      if (ierr >= 0)
+	communicate_node_data(TOPTR(tmp), ioss_data, 1);
+    }
+
+    else if (field.get_name() == "mesh_model_coordinates_z") {
+      ierr = ex_get_n_coord(exodusId, nodeOffset+1, nodeCount,
+			    NULL, NULL, TOPTR(tmp));
+      if (ierr >= 0)
+	communicate_node_data(TOPTR(tmp), ioss_data, 1);
+    }
+
+    else if (field.get_name() == "mesh_model_coordinates") {
+      // Data required by upper classes store x0, y0, z0, ... xn,
+      // yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
+      // ..., yn, z0, ..., zn so we have to allocate some scratch
+      // memory to read in the data and then map into supplied
+      // 'data'
+      
+      std::vector<double> ioss_tmp(ioss_node_count());
+      
+      // This implementation trades off extra communication for
+      // reduced memory overhead.
+      // * This method uses 'ioss_node_count' extra memory; 3
+      // reads; and 3 communicate_node_data calls.
+      //
+      // * Other method uses 6*ioss_node_count extra memory; 1 read;
+      // and 1 communicate_node_data call.
+      //
+      // * NOTE: The read difference is not real since the ex_get_n_coord
+      // function does 3 reads internally.
+
+      for (size_t d = 0; d < spatialDimension; d++) {
+	double* coord[3];
+	coord[0] = coord[1] = coord[2] = NULL;
+	coord[d] = TOPTR(tmp);
+	ierr = ex_get_n_coord(exodusId, nodeOffset+1, nodeCount,
+			      coord[0], coord[1], coord[2]);
+	if (ierr < 0)
+	  return ierr;
+	
+	communicate_node_data(TOPTR(tmp), TOPTR(ioss_tmp), 1);
+
+	size_t index = d;
+	for (size_t i=0; i < ioss_node_count(); i++) {
+	  ioss_data[index] = ioss_tmp[i];
+	  index += spatialDimension;
+	}
+      }
+    }
+    return ierr;
+  }
+  
   template void DecompositionData::get_block_connectivity(int exodusId, int *data, int64_t id, size_t blk_seq, size_t nnpe) const;
   template void DecompositionData::get_block_connectivity(int exodusId, long *data, int64_t id, size_t blk_seq, size_t nnpe) const;
 
@@ -1601,56 +1666,75 @@ namespace Iopx {
     }
   }
 
-  template void DecompositionData::communicate_set_data(long *file_data,   long *ioss_data, const SetDecompositionData &set) const;
-  template void DecompositionData::communicate_set_data(int *file_data,    int *ioss_data,  const SetDecompositionData &set) const;
-  template void DecompositionData::communicate_set_data(double *file_data, double *ioss_data, const SetDecompositionData &set) const;
+  template void DecompositionData::communicate_set_data(long *file_data,   long *ioss_data,
+							const SetDecompositionData &set, size_t comp_count) const;
+  template void DecompositionData::communicate_set_data(int *file_data,    int *ioss_data,
+							const SetDecompositionData &set, size_t comp_count) const;
+  template void DecompositionData::communicate_set_data(double *file_data, double *ioss_data,
+							const SetDecompositionData &set, size_t comp_count) const;
 
   template <typename T>
-  void DecompositionData::communicate_set_data(T *file_data, T *ioss_data, const SetDecompositionData &set) const
+  void DecompositionData::communicate_set_data(T *file_data, T *ioss_data,
+					       const SetDecompositionData &set, size_t comp_count) const
   {
-    MPI_Request request_null = MPI_REQUEST_NULL;
-    std::vector<MPI_Request> request(1, request_null);
-    std::vector<MPI_Status>  status(1);
+    MPI_Status  status;
+
     std::vector<T> recv_data;
     int result = MPI_SUCCESS;
 
-    size_t size = sizeof(T) * set.file_count();
+    size_t size = sizeof(T) * set.file_count() * comp_count;
     if (myProcessor != set.root_ && set.hasEntities[myProcessor]) {
       recv_data.resize(size);
-      result = MPI_Irecv(TOPTR(recv_data), size, MPI_BYTE,
-			 set.root_, 111, comm_, &request[0]);
+      result = MPI_Recv(TOPTR(recv_data), size, MPI_BYTE,
+			set.root_, 111, comm_, &status);
+
+      if (result != MPI_SUCCESS) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: MPI_Recv error on processor " << myProcessor
+	       << " in Iopx::DecompositionData::communicate_set_data";
+	std::cerr << errmsg.str();
+      }
     }
 
-    MPI_Barrier(comm_);
-      
     if (set.root_ == myProcessor) {
       // Sending data to other processors...
       for (size_t i=myProcessor+1; i < processorCount; i++) {
 	if (set.hasEntities[i]) {
 	  // Send same data to all active processors...
-	  MPI_Rsend(file_data, size, MPI_BYTE, i, 111, comm_);
+	  MPI_Send(file_data, size, MPI_BYTE, i, 111, comm_);
 	}
       }
     }
 
-    result = MPI_Waitall(1, TOPTR(request), TOPTR(status));
-    if (result != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: MPI_Waitall error on processor " << myProcessor
-	     << " in Iopx::DatabaseIO::compute_block_adjacencies";
-      std::cerr << errmsg.str();
-    }
-
-    if (set.root_ == myProcessor) {
-      for (size_t i=0; i < set.ioss_count(); i++) {
-	size_t index = set.entitylist_map[i];
-	ioss_data[i] = file_data[index];
+    if (comp_count == 1) {
+      if (set.root_ == myProcessor) {
+	for (size_t i=0; i < set.ioss_count(); i++) {
+	  size_t index = set.entitylist_map[i];
+	  ioss_data[i] = file_data[index];
+	}
+      } else {
+	// Receiving data from root...
+	for (size_t i=0; i < set.ioss_count(); i++) {
+	  size_t index = set.entitylist_map[i];
+	  ioss_data[i] = recv_data[index];
+	}
       }
     } else {
-      // Receiving data from root...
-      for (size_t i=0; i < set.ioss_count(); i++) {
-	size_t index = set.entitylist_map[i];
-	ioss_data[i] = recv_data[index];
+      if (set.root_ == myProcessor) {
+	for (size_t i=0; i < set.ioss_count(); i++) {
+	  size_t index = set.entitylist_map[i];
+	  for (size_t j=0; j < comp_count; j++) {
+	    ioss_data[comp_count * i + j] = file_data[comp_count * index + j];
+	  }
+	}
+      } else {
+	// Receiving data from root...
+	for (size_t i=0; i < set.ioss_count(); i++) {
+	  size_t index = set.entitylist_map[i];
+	  for (size_t j=0; j < comp_count; j++) {
+	    ioss_data[comp_count * i + j] = recv_data[comp_count * index + j];
+	  }
+	}
       }
     }
   }
@@ -1664,6 +1748,38 @@ namespace Iopx {
       return get_node_var(exodusId, step, var_index, id, num_entity, data);
     } else if (type == EX_NODE_SET || type == EX_SIDE_SET) {
       return get_set_var(exodusId, step, var_index, type, id, num_entity, data);
+    } else {
+      assert(1==0);
+      return -1;
+    }
+  }
+
+  int DecompositionData::get_attr(int exodusId, ex_entity_type obj_type, ex_entity_id id, size_t attr_count, double* attrib) const
+  {
+    if (attr_count == 1) {
+      return get_one_attr(exodusId, obj_type, id, 1, attrib);
+    }
+
+    if (obj_type == EX_ELEM_BLOCK) {
+      return get_elem_attr(exodusId, id, attr_count, attrib);
+    } else if (obj_type == EX_NODAL) {
+      return get_node_attr(exodusId, id, attr_count, attrib);
+    } else if (obj_type == EX_NODE_SET || obj_type == EX_SIDE_SET) {
+      return get_set_attr(exodusId, obj_type, id, attr_count, attrib);
+    } else {
+      assert(1==0);
+      return -1;
+    }
+  }
+
+  int DecompositionData::get_one_attr(int exodusId, ex_entity_type obj_type, ex_entity_id id, int attrib_index, double* attrib) const
+  {
+    if (obj_type == EX_ELEM_BLOCK) {
+      return get_one_elem_attr(exodusId, id, attrib_index, attrib);
+    } else if (obj_type == EX_NODAL) {
+      return get_one_node_attr(exodusId, id, attrib_index, attrib);
+    } else if (obj_type == EX_NODE_SET || obj_type == EX_SIDE_SET) {
+      return get_one_set_attr(exodusId, obj_type, id, attrib_index, attrib);
     } else {
       assert(1==0);
       return -1;
@@ -1687,6 +1803,17 @@ namespace Iopx {
     }
   }
 
+  size_t DecompositionData::get_block_seq(ex_entity_type type, ex_entity_id id) const
+  {
+    if (type == EX_ELEM_BLOCK) {
+      for (size_t i=0; i < el_blocks.size(); i++) {
+	if (el_blocks[i].id_ == id) {
+	  return i;
+	}
+      }
+    }
+  }
+
   int DecompositionData::get_set_var(int exodusId, int step, int var_index,
 				     ex_entity_type type, ex_entity_id id,
 				     int64_t num_entity, std::vector<double> &ioss_data) const
@@ -1703,7 +1830,45 @@ namespace Iopx {
     }
 
     if (ierr >= 0)
-      communicate_set_data(TOPTR(file_data), TOPTR(ioss_data), set);
+      communicate_set_data(TOPTR(file_data), TOPTR(ioss_data), set, 1);
+
+    return ierr;
+  }
+  
+  int DecompositionData::get_set_attr(int exodusId, ex_entity_type type, ex_entity_id id, size_t comp_count, double *ioss_data) const
+  {
+    // Find set corresponding to the specified id...
+    const SetDecompositionData &set = get_decomp_set(type, id);
+    
+    std::vector<double> file_data;
+    int ierr = 0;
+    if (myProcessor == set.root_) {
+      // Read the set data from the file..
+      file_data.resize(set.file_count()*comp_count);
+      ierr = ex_get_attr(exodusId, type, id, TOPTR(file_data));
+    }
+
+    if (ierr >= 0)
+      communicate_set_data(TOPTR(file_data), ioss_data, set, comp_count);
+
+    return ierr;
+  }
+  
+  int DecompositionData::get_one_set_attr(int exodusId, ex_entity_type type, ex_entity_id id, int attr_index, double *ioss_data) const
+  {
+    // Find set corresponding to the specified id...
+    const SetDecompositionData &set = get_decomp_set(type, id);
+    
+    std::vector<double> file_data;
+    int ierr = 0;
+    if (myProcessor == set.root_) {
+      // Read the set data from the file..
+      file_data.resize(set.file_count());
+      ierr = ex_get_one_attr(exodusId, type, id, attr_index, TOPTR(file_data));
+    }
+
+    if (ierr >= 0)
+      communicate_set_data(TOPTR(file_data), ioss_data, set, 1);
 
     return ierr;
   }
@@ -1719,17 +1884,31 @@ namespace Iopx {
     return ierr;
   }
 
+  int DecompositionData::get_node_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const
+  {
+    std::vector<double> file_data(nodeCount*comp_count);
+    int ierr = ex_get_n_attr(exodusId, EX_NODAL, id, nodeOffset+1, nodeCount, TOPTR(file_data));
+    
+    if (ierr >= 0)
+      communicate_node_data(TOPTR(file_data), ioss_data, comp_count);
+    return ierr;
+  }
+
+  int DecompositionData::get_one_node_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const
+  {
+    std::vector<double> file_data(nodeCount);
+    int ierr = ex_get_n_one_attr(exodusId, EX_NODAL, id, nodeOffset+1, nodeCount, attr_index, TOPTR(file_data));
+    
+    if (ierr >= 0)
+      communicate_node_data(TOPTR(file_data), ioss_data, 1);
+    return ierr;
+  }
+
   int DecompositionData::get_elem_var(int exodusId, int step, int var_index, ex_entity_id id,
 				      int64_t num_entity, std::vector<double> &ioss_data) const 
   {
     // Find blk_seq corresponding to block the specified id...
-    size_t blk_seq = 0;
-    for (size_t i=0; i < el_blocks.size(); i++) {
-      if (el_blocks[i].id_ == id) {
-	blk_seq = i;
-	break;
-      }
-    }
+    size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
 
     // Determine number of file decomp elements are in this block and the offset into the block.
     size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
@@ -1746,6 +1925,54 @@ namespace Iopx {
 
     if (ierr >= 0)
       communicate_block_data(TOPTR(file_data), TOPTR(ioss_data), blk_seq, 1);
+
+    return ierr;
+  }
+
+  int DecompositionData::get_elem_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const 
+  {
+    // Find blk_seq corresponding to block the specified id...
+    size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
+
+    // Determine number of file decomp elements are in this block and the offset into the block.
+    size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
+    size_t bend = min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
+    size_t count = 0;
+    if (bend > bbeg)
+      count = bend - bbeg;
+    size_t offset = 0;
+    if (elementOffset > fileBlockIndex[blk_seq])
+      offset = elementOffset - fileBlockIndex[blk_seq];
+
+    std::vector<double> file_data(count*comp_count);
+    int ierr = ex_get_n_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_data)); 
+
+    if (ierr >= 0)
+      communicate_block_data(TOPTR(file_data), ioss_data, blk_seq, comp_count);
+
+    return ierr;
+  }
+
+  int DecompositionData::get_one_elem_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const 
+  {
+    // Find blk_seq corresponding to block the specified id...
+    size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
+
+    // Determine number of file decomp elements are in this block and the offset into the block.
+    size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
+    size_t bend = min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
+    size_t count = 0;
+    if (bend > bbeg)
+      count = bend - bbeg;
+    size_t offset = 0;
+    if (elementOffset > fileBlockIndex[blk_seq])
+      offset = elementOffset - fileBlockIndex[blk_seq];
+
+    std::vector<double> file_data(count);
+    int ierr = ex_get_n_one_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, attr_index, TOPTR(file_data));
+
+    if (ierr >= 0)
+      communicate_block_data(TOPTR(file_data), ioss_data, blk_seq, 1);
 
     return ierr;
   }
@@ -1858,7 +2085,7 @@ namespace Iopx {
     }
 
     if (ierr >= 0)
-      communicate_set_data(TOPTR(file_data), ioss_data, set);
+      communicate_set_data(TOPTR(file_data), ioss_data, set, 1);
 
     // Map global 0-based index to local 1-based index.
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
