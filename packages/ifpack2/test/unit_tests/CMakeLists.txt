@@ -35,6 +35,8 @@ Ifpack2_UnitTestRelaxation.cpp
 Ifpack2_UnitTestFiltering.cpp
 Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestContainer.cpp
+Ifpack2_UnitTestBlockRelaxation.cpp
+
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
