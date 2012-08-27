@@ -129,6 +129,19 @@ public:
    */
   bool modification_end();
 
+  bool final_modification_end()
+  {
+    const bool mod_flag =  modification_end();
+
+    //call modification_begin and end one last time to free deleted entities
+    modification_begin();
+    modification_end();
+
+    m_mesh_finalized = true;
+
+    return mod_flag;
+  }
+
   /** \brief  Give away ownership of entities to other parallel processes.
    *
    *  A parallel-synchronous operation while the mesh is in the
@@ -430,7 +443,7 @@ private:
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
 
   // Other information:
-  MetaData &   m_mesh_meta_data ;
+  MetaData &         m_mesh_meta_data ;
   ParallelMachine    m_parallel_machine ;
   unsigned           m_parallel_size ;
   unsigned           m_parallel_rank ;
@@ -438,6 +451,7 @@ private:
   BulkDataSyncState  m_sync_state ;
   bool               m_meta_data_verified ;
   bool               m_optimize_buckets;
+  bool               m_mesh_finalized;
   EntityComm         m_entity_comm_map;
 
   /**
