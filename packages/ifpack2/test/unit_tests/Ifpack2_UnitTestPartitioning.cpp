@@ -48,10 +48,8 @@
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#include <Ifpack2_OverlappingPartitioner_decl.hpp>
-//#include <Ifpack2_OverlappingPartitioner_def.hpp>
-#include <Ifpack2_LinearPartitioner_decl.hpp>
-//#include <Ifpack2_LinearPartitioner_def.hpp>
+#include <Ifpack2_OverlappingPartitioner.hpp>
+#include <Ifpack2_LinearPartitioner.hpp>
 
 
 

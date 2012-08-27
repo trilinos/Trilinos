@@ -44,6 +44,8 @@
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_BlockRelaxation.hpp>
 #include <Ifpack2_SparseContainer.hpp>
+#include <Ifpack2_OverlappingPartitioner.hpp>
+#include <Ifpack2_LinearPartitioner.hpp>
 #include <Ifpack2_ILUT.hpp>
 
 namespace {
