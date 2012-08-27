@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
   global_size_t num_rows_per_proc = 5;
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap), y(rowmap), z(rowmap);
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap), y(rowmap), z(rowmap), d(rowmap);
   Teuchos::ArrayRCP<Scalar> x_ptr = x.get1dViewNonConst();
   Teuchos::ArrayRCP<Scalar> y_ptr = y.get1dViewNonConst();
 
@@ -102,6 +102,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
   
   // Apply raw ILUT
   prec.apply(x,z);
+
+  // Diff
+  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+
+  // Weighted Apply the SparseContainer
+  d.putScalar(1.0);
+  MyContainer.weightedApply(x,y,d);
 
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());

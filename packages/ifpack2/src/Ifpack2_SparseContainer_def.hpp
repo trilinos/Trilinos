@@ -167,24 +167,21 @@ void SparseContainer<MatrixType,InverseType>::compute(const Teuchos::RCP<const T
 }
 
 //==============================================================================
-// Apply the inverse of the matrix to RHS, result is stored in LHS.
+// Computes Y = alpha * M^{-1} X + beta*Y
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::apply(const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
 						    Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-						    Tpetra::CombineMode mode,
+						    Teuchos::ETransp mode,
 						    MatrixScalar alpha,
 						    MatrixScalar beta)
 {
  TEUCHOS_TEST_FOR_EXCEPTION( !IsComputed_, std::runtime_error, "Ifpack2::SparseContainer::apply compute has not been called.");  
  TEUCHOS_TEST_FOR_EXCEPTION( X.getNumVectors() != Y.getNumVectors(), std::runtime_error, "Ifpack2::SparseContainer::apply X/Y have different numbers of vectors.");   
 
- // NTS: Remove this test later
- TEUCHOS_TEST_FOR_EXCEPTION( mode!=Tpetra::REPLACE, std::runtime_error, "Ifpack2::SparseContainer::apply combine modes besides Tpetra:REPLACE not yet supported.");   
-
  // This is a noop if our internal vectors are already the right size.
  setNumVectors(X.getNumVectors());
 
- // Pointers, pointers, pointers!
+ // Pull the Data Pointers
  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const MatrixScalar> >  global_x_ptr = X.get2dView();
  Teuchos::ArrayRCP<Teuchos::ArrayRCP<InverseScalar> >       local_x_ptr  = X_->get2dViewNonConst();
  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const InverseScalar> > local_y_ptr  = Y_->get2dView();
@@ -207,6 +204,48 @@ void SparseContainer<MatrixType,InverseType>::apply(const Tpetra::MultiVector<Ma
      global_y_ptr[k][LID] = alpha * local_y_ptr[k][j] + beta * global_y_ptr[k][LID];
  }
 
+}
+
+
+//==============================================================================
+// Computes Y = alpha * diag(D) * M^{-1} (diag(D) X) + beta*Y
+template<class MatrixType, class InverseType>
+void SparseContainer<MatrixType,InverseType>::weightedApply(const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
+							    Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+							    const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
+							    Teuchos::ETransp mode,
+							    MatrixScalar alpha,
+							    MatrixScalar beta)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( !IsComputed_, std::runtime_error, "Ifpack2::SparseContainer::apply compute has not been called.");  
+ TEUCHOS_TEST_FOR_EXCEPTION( X.getNumVectors() != Y.getNumVectors(), std::runtime_error, "Ifpack2::SparseContainer::apply X/Y have different numbers of vectors.");   
+
+ // This is a noop if our internal vectors are already the right size.
+ setNumVectors(X.getNumVectors());
+
+ // Pull the data pointers
+ Teuchos::ArrayRCP<const MatrixScalar >                     global_d_ptr = D.getData(0);
+ Teuchos::ArrayRCP<Teuchos::ArrayRCP<const MatrixScalar> >  global_x_ptr = X.get2dView();
+ Teuchos::ArrayRCP<Teuchos::ArrayRCP<InverseScalar> >       local_x_ptr  = X_->get2dViewNonConst();
+ Teuchos::ArrayRCP<Teuchos::ArrayRCP<const InverseScalar> > local_y_ptr  = Y_->get2dView();
+ Teuchos::ArrayRCP<Teuchos::ArrayRCP<MatrixScalar> >        global_y_ptr = Y.get2dViewNonConst();
+
+ // Copy in
+ for(size_t j=0; j < NumRows_; j++){
+   MatrixLocalOrdinal LID = ID(j);
+   for (size_t k = 0 ; k < NumVectors_ ; k++) 
+     local_x_ptr[k][j] = global_d_ptr[LID] * global_x_ptr[k][LID];   
+ }
+
+ // Apply inverse
+ Inverse_->apply(*X_, *Y_);
+ 
+ // copy out into solution vector Y
+ for (size_t j = 0 ; j < NumRows_ ; j++) {
+   MatrixLocalOrdinal LID = ID(j);
+   for (size_t k = 0 ; k < NumVectors_ ; k++) 
+     global_y_ptr[k][LID] = alpha * global_d_ptr[LID] * local_y_ptr[k][j] + beta * global_y_ptr[k][LID];
+ }
 }
 
 //==============================================================================

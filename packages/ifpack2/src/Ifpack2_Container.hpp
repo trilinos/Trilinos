@@ -139,9 +139,22 @@ public:
    */ 
   virtual void apply(const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
 		     Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-		     Tpetra::CombineMode mode=Tpetra::REPLACE,
+		     Teuchos::ETransp mode=Teuchos::NO_TRANS,
 		     MatrixScalar alpha=Teuchos::ScalarTraits< MatrixScalar >::one(),
 		     MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero())=0;
+
+  //! Computes Y = alpha * diag(D) * M^{-1} (diag(D) X) + beta*Y
+  /*! Here D, X and Y are the size of the global problem the container was extracted from to begin with.  D has to be 
+      a single Vector, while X and Y can be MultiVectors.  This function is designed to support techniques with overlap,
+      such as Schwarz methods.
+   */ 
+  virtual void weightedApply(const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
+			     Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+			     const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
+			     Teuchos::ETransp mode=Teuchos::NO_TRANS,
+			     MatrixScalar alpha=Teuchos::ScalarTraits< MatrixScalar >::one(),
+			     MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero())=0;
+
 
   //! Prints out basic information about the container.
   virtual std::ostream& print(std::ostream& os) const = 0;
