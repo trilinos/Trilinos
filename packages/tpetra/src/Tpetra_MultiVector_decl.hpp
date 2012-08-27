@@ -72,12 +72,160 @@ namespace Tpetra {
   //                          const ArrayRCP<Scalar> &view, size_t LDA, size_t numVectors);
 #endif
 
-  //! \brief A class for constructing and using dense, distributors multivectors.
-  /*!
-     This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal.
-     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal
-     type, if omitted, defaults to the \c LocalOrdinal type.
-   */
+  /// \class MultiVector
+  /// \brief One or more distributed dense vectors.
+  ///
+  /// A "multivector" contains one or more dense vectors.  All the
+  /// vectors in a multivector have the same distribution of rows in
+  /// parallel over the communicator used to create the multivector.
+  /// Multivectors containing more than one vector are useful for
+  /// algorithms that solve multiple linear systems at once, or that
+  /// solve for a cluster of eigenvalues and their corresponding
+  /// eigenvectors at once.  These "block" algorithms often have
+  /// accuracy or performance advantages over corresponding algorithms
+  /// that solve for only one vector at a time.  For example, working
+  /// with multiple vectors at a time allows Tpetra to use faster BLAS
+  /// 3 routines for local computations.  It may also reduce the
+  /// number of parallel reductions.
+  ///
+  /// The \c Vector class implements the MultiVector interface, so if
+  /// you only wish to work with a single vector at a time, you may
+  /// simply use \c Vector instead of MultiVector.  However, if you
+  /// are writing solvers or preconditioners, you would do better to
+  /// write to the MultiVector interface and always assume that each
+  /// MultiVector contains more than one vector.  This will make your
+  /// solver or preconditioner more compatible with other Trilinos
+  /// packages, and it will also let you exploit the performance
+  /// optimizations mentioned above.
+  ///
+  /// \tparam Scalar The type of the numerical entries of the vector(s).
+  ///  (You can use real-valued or complex-valued types here, unlike in
+  ///  Epetra, where the scalar type is always \c double.)
+  ///
+  /// \tparam LocalOrdinal The type of local indices.  Same as the \c
+  ///   LocalOrdinal template parameter of \c Map objects used by this
+  ///   matrix.  (In Epetra, this is just \c int.)  The default type is
+  ///   int, which should suffice for most users.
+  ///
+  /// \tparam GlobalOrdinal The type of global indices.  Same as the
+  ///   \c GlobalOrdinal template parameter of \c Map objects used by
+  ///   this matrix.  (In Epetra, this is just \c int.  One advantage
+  ///   of Tpetra over Epetra is that you can use a 64-bit integer
+  ///   type here if you want to solve big problems.)  The default
+  ///   type is LocalOrdinal, which is OK if you know that the global
+  ///   number of rows and columns in the matrix fits.
+  ///
+  /// \tparam Node A class implementing on-node shared-memory parallel
+  ///   operations.  It must implement the
+  ///   \ref kokkos_node_api "Kokkos Node API."
+  ///   The default \c Node type should suffice for most users.
+  ///   The actual default type depends on your Trilinos build options.
+  ///
+  /// \subsection Multivectors which view another multivector
+  ///
+  /// A multivector could be a _view_ of some subset of another
+  /// multivector's columns and rows.  A view is like a pointer; it
+  /// provides access to the original multivector's data without
+  /// copying the data.  There are no public constructors for creating
+  /// a view, but any instance method with "view" in the name that
+  /// returns an RCP<MultiVector> serves as a view constructor.
+  ///
+  /// The subset of columns in a view need not be contiguous.  For
+  /// example, given a multivector X with 43 columns, it is possible
+  /// to have a multivector Y which is a view of columns 1, 3, and 42
+  /// (zero-based indices) of X.  We call such multivectors
+  /// _noncontiguous_.  They have the the property that
+  /// isConstantStride() returns false.
+  ///
+  /// Noncontiguous multivectors lose some performance advantages.
+  /// For example, local computations may be slower, since Tpetra
+  /// cannot use BLAS 3 routines on a noncontiguous multivectors
+  /// without copying into temporary contiguous storage.
+  /// Noncontiguous multivectors also affect the ability to access the
+  /// data in certain ways, which we will explain below.
+  ///
+  /// \subsection Views of a multivector's data
+  ///
+  /// We have unfortunately overloaded the term "view."  In the
+  /// section above, we explained the idea of a "multivector which is
+  /// a view of another multivector."  This section is about "views of
+  /// a multivector's data."  If you want to read or write the actual
+  /// values in a multivector, this is what you want.  All the
+  /// instance methods which return an ArrayRCP of Scalar data, or an
+  /// ArrayRCP of ArrayRCP of Scalar data, return views to the data.
+  /// These data are always _local_ data, meaning that the
+  /// corresponding rows of the multivector are owned by the calling
+  /// process.  You can't use these methods to access remote data
+  /// (rows that do not belong to the calling process).
+  ///
+  /// Data views may be either one-dimensional (1-D) or
+  /// two-dimensional (2-D).  A 1-D view presents the data as a dense
+  /// matrix in column-major order, returned as a single array.  On
+  /// the calling process, the matrix has getLocalLength() rows,
+  /// getNumVectors() columns, and column stride getStride().  You may
+  /// not get a 1-D view of a noncontiguous multivector.  If you need
+  /// the data of a noncontiguous multivector in a 1-D format, you may
+  /// get a copy by calling get1dCopy().  A 2-D view presents the data
+  /// as an array of arrays, one array per column (i.e., vector in the
+  /// multivector).  The entries in each column are stored
+  /// contiguously.  You may get a 2-D view of _any_ multivector,
+  /// whether or not it is noncontiguous.
+  ///
+  /// Views are not necessarily just encapsulated pointers.  The
+  /// meaning of view depends in part on the Kokkos Node type (the
+  /// Node template parameter).  This matters in particular if you are
+  /// running on a Graphics Processing Unit (GPU) by setting the Node
+  /// template parameter to a GPU Node.  In that case, views currently
+  /// always reside in host (CPU) memory, rather than device (GPU)
+  /// memory.  When you ask for a view, it copies data from the device
+  /// to the host.  What happens next depends on whether the view is
+  /// const (read-only) or nonconst (read and write).  Const views
+  /// disappear (their host memory is allocated) when the
+  /// corresponding (ArrayRCP's) reference count goes to zero.  When a
+  /// nonconst view's reference count goes to zero, the view's data
+  /// are copied back to device memory.
+  ///
+  /// These device-host-device copy semantics on GPUs mean that we can
+  /// only promise that a view is a snapshot of the multivector's data
+  /// at the time the view was created.  If you create a const view,
+  /// then a nonconst view, then modify the nonconst view, the
+  /// contents of the const view are undefined.  For host-only (CPU
+  /// only, no GPU) Kokkos Nodes, views may be just encapsulated
+  /// pointers to the data, so modifying a nonconst view will change
+  /// the original data.  For GPU Nodes, modifying a nonconst view
+  /// will _not_ change the original data until the view's reference
+  /// count goes to zero.  Furthermore, if the nonconst view's
+  /// reference count never goes to zero, the nonconst view will
+  /// _never_ be copied back to device memory, and thus the original
+  /// data will never be changed.
+  ///
+  /// \subsection Why data views? Why not a raw pointer?
+  ///
+  /// Tpetra was designed to allow different data representations
+  /// underneath the same interface.  This lets Tpetra run correctly
+  /// and efficiently on many different kinds of hardware, including
+  /// single-core CPUs, multicore CPUs with Non-Uniform Memory Access
+  /// (NUMA), and even "discrete compute accelerators" like Graphics
+  /// Processing Units (GPUs).  These different kinds of hardware all
+  /// have in common the following:
+  ///
+  /// - Data layout matters a lot for performance
+  /// - The right layout for your data depends on the hardware
+  /// - Data may be distributed over different memory spaces in
+  ///   hardware, and efficient code must respect this, whether or not
+  ///   the programming model presents the different memories as a
+  ///   single address space
+  /// - Copying between different data layouts or memory spaces is
+  ///   expensive and should be avoided whenever possible
+  ///
+  /// These conclusions have practical consequences for the
+  /// MultiVector interface.  In particular, we have deliberately made
+  /// it difficult for you to access data directly by raw pointer.
+  /// This is because the underlying layout may not be what you
+  /// expect.  In some cases, you are not even allowed to dereference
+  /// the raw pointer (for example, if it resides in GPU device
+  /// memory, and you are working on the host CPU).  This is why we
+  /// require accessing the data through views.
   template<class Scalar,
            class LocalOrdinal=int,
            class GlobalOrdinal=LocalOrdinal,
@@ -87,9 +235,15 @@ namespace Tpetra {
   {
   public:
     //! @name Typedefs to facilitate template metaprogramming.
+    //@{
+
+    //! The type of entries in the vector(s).
     typedef Scalar        scalar_type;
+    //! The type of local indices.
     typedef LocalOrdinal  local_ordinal_type;
+    //! The type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
+    //! The Kokkos Node type.
     typedef Node          node_type;
 
     //@}
@@ -109,15 +263,39 @@ namespace Tpetra {
     //! Copy constructor (performs a deep copy).
     MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
-    //! Set multi-vector values from two-dimensional array (copy)
-    /*! \post constantStride() == true */
+    /// \brief Create multivector by copying two-dimensional array of local data.
+    ///
+    /// \param map [in] The Map describing the distribution of rows of
+    ///   the multivector.
+    /// \param view [in] A view of column-major dense matrix data.
+    ///   The calling process will make a deep copy of this data.
+    /// \param LDA [in] The leading dimension (a.k.a. "stride") of the
+    ///   column-major input data.
+    /// \param NumVectors [in] The number of columns in the input data.
+    ///   This will be the number of vectors in the returned
+    ///   multivector.
+    ///
+    /// \pre LDA >= A.size()
+    /// \pre NumVectors > 0
+    /// \post isConstantStride() == true
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const Teuchos::ArrayView<const Scalar>& A,
                  size_t LDA,
                  size_t NumVectors);
 
-    //! Set multi-vector values from array of pointers (copy)
-    /*! \post constantStride() == true */
+    /// \brief Create multivector by copying array of views of local data.
+    ///
+    /// \param map [in] The Map describing the distribution of rows of
+    ///   the multivector.
+    /// \param ArrayOfPtrs [in/out] Array of views of each column's data.
+    ///   The calling process will make a deep copy of this data.
+    /// \param NumVectors [in] The number of columns in the input
+    ///   data, and the number of elements in ArrayOfPtrs.  This will
+    ///   be the number of vectors in the returned multivector.
+    ///
+    /// \pre NumVectors > 0
+    /// \pre NumVectors == ArrayOfPtrs.size()
+    /// \post constantStride() == true
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  size_t NumVectors);
