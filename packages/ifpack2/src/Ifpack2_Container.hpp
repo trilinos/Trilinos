@@ -104,20 +104,8 @@ public:
   //! Destructor.
   virtual ~Container() {};
 
-  //! Returns the number of rows of the matrix and LHS/RHS.
+  //! Returns the number of rows of the matrix and X/Y.
   virtual size_t getNumRows() const = 0;
-
-  //! Returns the number of vectors in LHS/RHS.
-  virtual size_t getNumVectors() const = 0;
-
-  //! Sets the number of vectors for LHS/RHS.
-  virtual void setNumVectors(const size_t i) = 0;
-
-  //! Get the X vector ( y = apply * x )
-  virtual const Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > & getX() =0;
-
-  //! Get the Y vector ( y = apply * x )
-  virtual const Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > & getY() =0;
 
   //! Returns the ID associated to local row i. 
   /*!
@@ -146,8 +134,14 @@ public:
   //! Returns \c true is the container has been successfully computed.
   virtual bool isComputed() const = 0;
 
-  //! Apply the inverse of the matrix to RHS, results are stored in LHS.
-  virtual void apply() = 0;
+  //! Computes Y = alpha * M^{-1} X + beta*Y
+  /*! Here the X and Y are the size of the global problem the container was extracted from to begin with.
+   */ 
+  virtual void apply(const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
+		     Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+		     Tpetra::CombineMode mode=Tpetra::REPLACE,
+		     MatrixScalar alpha=Teuchos::ScalarTraits< MatrixScalar >::one(),
+		     MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero())=0;
 
   //! Prints out basic information about the container.
   virtual std::ostream& print(std::ostream& os) const = 0;

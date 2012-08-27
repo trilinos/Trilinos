@@ -98,11 +98,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
   prec.compute();
 
   // Apply the SparseContainer
-  Teuchos::ArrayRCP<Scalar> x_local = MyContainer.getX()->get1dViewNonConst();
-  Teuchos::ArrayRCP<Scalar> y_local = MyContainer.getY()->get1dViewNonConst();
-  for(size_t i=0; i <(size_t)num_rows_per_proc; i++) x_local[i] = x_ptr[i];
-  MyContainer.apply();
-  for(size_t i=0; i <(size_t)num_rows_per_proc; i++) y_ptr[i] = y_local[i];
+  MyContainer.apply(x,y);
   
   // Apply raw ILUT
   prec.apply(x,z);

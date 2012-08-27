@@ -91,20 +91,11 @@ public:
   //@}
 
   //@{ Get/Set methods.
-  //! Returns the number of rows of the matrix and LHS/RHS.
+  //! Returns the number of rows of the matrix and X/Y.
   virtual size_t getNumRows() const;
 
-  //! Returns the number of vectors in LHS/RHS.
-  virtual size_t getNumVectors() const;
-
-  //! Sets the number of vectors for LHS/RHS.
-  virtual void setNumVectors(const size_t NumVectors_in);
-
-  //! Get the X vector ( y = apply * x )
-  virtual const Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > & getX();
-
-  //! Get the Y vector ( y = apply * x )
-  virtual const Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > & getY();
+  // Returns the number of vectors in X/Y.
+  //  virtual size_t getNumVectors() const;
 
   //! Returns the ID associated to local row i. 
   /*!
@@ -124,7 +115,7 @@ public:
   //! Returns \c true is the container has been successfully computed.
   virtual bool isComputed() const;
 
-  //! Sets all necessary parameters.
+  //! Sets all necessary parameters.  
   virtual void setParameters(const Teuchos::ParameterList& List);
 
   //@}
@@ -141,8 +132,16 @@ public:
   //! Finalizes the linear system matrix and prepares for the application of the inverse.
   virtual void compute(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
 
-  //! Apply the inverse of the matrix to RHS, result is stored in LHS.
-  virtual void apply();
+  //! Computes Y = alpha * M^{-1} X + beta*Y
+  /*! Here the X and Y are the size of the global problem the container was extracted from to begin with.
+   *  How the values are added into Y are dependent on the "combine mode" parameter, which defaults to Tpetra::REPLACE.
+   *  If you want to use a Container for a Schwarz method, you should change that. 
+   */
+  virtual void apply(const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
+		     Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+		     Tpetra::CombineMode mode=Tpetra::REPLACE,
+		     MatrixScalar alpha=Teuchos::ScalarTraits< MatrixScalar >::one(),
+		     MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero());
 
   //@}
 
@@ -168,7 +167,10 @@ public:
 private:
   // private copy constructor
   SparseContainer(const SparseContainer<MatrixType,InverseType>& rhs);
-  
+
+  //! Sets the number of vectors for LHS/RHS.
+  virtual void setNumVectors(const size_t NumVectors);
+
   //! Extract the submatrices identified by the ID set int ID().
   virtual void extract(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
   
@@ -181,9 +183,9 @@ private:
   //! Pointer to the local matrix.
   Teuchos::RCP<Tpetra::CrsMatrix<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Matrix_;
   //! Solution vector.
-  Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Y_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Y_;
   //! Input vector for local problems
-  Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > X_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > X_;
   //! Contains the subrows/subcols of A that will be inserted in Matrix_.
   std::vector<MatrixLocalOrdinal> GID_;
   //! If \c true, the container has been successfully initialized.
