@@ -40,7 +40,7 @@
 // ************************************************************************
 //@HEADER
 
-/** \file Ifpack_Amesos_Schur.cpp
+/** \file AmesosSchurOperator.cpp
 
     \brief Use Amesos within IFPACK.
 
@@ -48,9 +48,9 @@
 
 */
 
-#include "Ifpack_Amesos_Schur.h"
+#include "AmesosSchurOperator.h"
 
-Ifpack_Amesos_Schur::Ifpack_Amesos_Schur(Epetra_CrsMatrix* A):
+AmesosSchurOperator::AmesosSchurOperator(Epetra_CrsMatrix* A):
     A_(A),
     IsParallel_(true),
     IsInitialized_(false),
@@ -61,7 +61,7 @@ Ifpack_Amesos_Schur::Ifpack_Amesos_Schur(Epetra_CrsMatrix* A):
 {
 }
 
-void Ifpack_Amesos_Schur::Destroy()
+void AmesosSchurOperator::Destroy()
 {
     if (IsInitialized_)
     {
@@ -71,7 +71,7 @@ void Ifpack_Amesos_Schur::Destroy()
     }
 }
 
-int Ifpack_Amesos_Schur::Initialize()
+int AmesosSchurOperator::Initialize()
 {
     if(Comm().NumProc() != 1) 
         IsParallel_ = true;
@@ -99,20 +99,20 @@ int Ifpack_Amesos_Schur::Initialize()
     return 0;
 }
 
-int Ifpack_Amesos_Schur::SetParameters(Teuchos::ParameterList& parameterlist)
+int AmesosSchurOperator::SetParameters(Teuchos::ParameterList& parameterlist)
 {
     List_ = parameterlist;
     return 0;
 }
 
-int Ifpack_Amesos_Schur::Compute()
+int AmesosSchurOperator::Compute()
 {
     IsComputed_ = true;
     Solver_->NumericFactorization();
     return 0;
 }
 
-int Ifpack_Amesos_Schur::ApplyInverse(const Epetra_MultiVector& X,
+int AmesosSchurOperator::ApplyInverse(const Epetra_MultiVector& X,
     Epetra_MultiVector& Y) const
 {
     NumApplyInverse_++;
@@ -123,14 +123,14 @@ int Ifpack_Amesos_Schur::ApplyInverse(const Epetra_MultiVector& X,
 }
 
 //! Computes the estimated condition number and returns the value.
-double Ifpack_Amesos_Schur::Condest(const Ifpack_CondestType CT,
+double AmesosSchurOperator::Condest(const Ifpack_CondestType CT,
      const int MaxIters, const double Tol, Epetra_RowMatrix* Matrix_in)
 {
     return -1.0;
 }
 
 //! Prints on stream basic information about \c this object.
-ostream& Ifpack_Amesos_Schur::Print(ostream& os) const
+ostream& AmesosSchurOperator::Print(ostream& os) const
 {
     os << " !!!!!!!!! " << endl;
     return os;

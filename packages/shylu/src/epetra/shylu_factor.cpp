@@ -893,8 +893,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     }
     else if (config->schurSolver == "AztecOO-Exact")
     {
-        data->schur_prec = Teuchos::RCP<Ifpack_Amesos_Schur> (new
-                                     Ifpack_Amesos_Schur(Sbar.getRawPtr()));
+        data->schur_prec = Teuchos::RCP<AmesosSchurOperator> (new
+                                     AmesosSchurOperator(Sbar.getRawPtr()));
         data->schur_prec->Initialize();
         data->schur_prec->Compute();
 

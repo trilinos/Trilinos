@@ -68,6 +68,7 @@
 #include "Epetra_CrsMatrix.h" 
 #include "Epetra_MultiVector.h" 
 #include "Epetra_LinearProblem.h"
+#include "Epetra_Operator.h"
 
 // Ifpack includes
 #include "Ifpack_Preconditioner.h"
@@ -78,15 +79,15 @@
 
 using namespace std;
 
-class Ifpack_Amesos_Schur: public Ifpack_Preconditioner
+class AmesosSchurOperator: public Epetra_Operator
 {
     public:
     // @{ Constructors and destructors.
     //! Constructor
-    Ifpack_Amesos_Schur(Epetra_CrsMatrix* A);
+    AmesosSchurOperator(Epetra_CrsMatrix* A);
 
     //! Destructor
-    ~Ifpack_Amesos_Schur()
+    ~AmesosSchurOperator()
     {
         Destroy();
     }
@@ -265,12 +266,12 @@ class Ifpack_Amesos_Schur: public Ifpack_Preconditioner
     // @{ Private methods
 
     //! Copy constructor (should never be used)
-    Ifpack_Amesos_Schur(const Ifpack_Amesos_Schur& RHS) :
+    AmesosSchurOperator(const AmesosSchurOperator& RHS) :
     Time_(RHS.Comm())
     {}
 
     //! operator= (should never be used)
-    Ifpack_Amesos_Schur& operator=(const Ifpack_Amesos_Schur& RHS)
+    AmesosSchurOperator& operator=(const AmesosSchurOperator& RHS)
     {
         return(*this);
     }
