@@ -30,7 +30,7 @@
 #include "BelosEpetraAdapter.hpp"
 
 // Include header for Ifpack incomplete Cholesky preconditioner
-#include "Ifpack_CrsIct.h"
+#include "Ifpack_IC.h"
 
 // Include header for Teuchos serial dense matrix
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   //*****Select the Preconditioner*****
   //
   if (MyPID==0) cout << endl << endl;
-  if (MyPID==0) cout << "Constructing ICT preconditioner" << endl;
+  if (MyPID==0) cout << "Constructing IC preconditioner" << endl;
   int Lfill = 0;
   if (argc > 1) Lfill = atoi(argv[1]);
   if (MyPID==0) cout << "Using Lfill = " << Lfill << endl;
@@ -98,28 +98,31 @@ int main(int argc, char *argv[]) {
   if (MyPID==0) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   double dropTol = 1.0e-6;
   //
-  Teuchos::RCP<Ifpack_CrsIct> ICT;
+  Teuchos::RCP<Ifpack_IC> IC;
   //
+   
   if (Lfill > -1) {
-    ICT = Teuchos::rcp( new Ifpack_CrsIct(*K, dropTol, Lfill) );
-    ICT->SetAbsoluteThreshold(Athresh);
-    ICT->SetRelativeThreshold(Rthresh);
-    int initerr = ICT->InitValues(*K);
-    if (initerr != 0) cout << "InitValues error = " << initerr;
-    info = ICT->Factor();
+    IC = Teuchos::rcp( new Ifpack_IC( K.get() ) );
+
+    Teuchos::ParameterList List;
+    List.set("fact: level-of-fill",Lfill);
+    List.set("fact: absolute threshold", Athresh);
+    List.set("fact: relative threshold", Rthresh);
+    List.set("fact: drop tolerance", dropTol);
+    int initerr = IC->Initialize();
+    if (initerr != 0) cout << "Initialize error = " << initerr;
+    info = IC->Compute();
     assert( info==0 );
   } 
   //
-  bool transA = false;
-  double Cond_Est;
-  ICT->Condest(transA, Cond_Est);
+  double Cond_Est = IC->Condest();
   if (MyPID==0) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
   } 
   //
   //*******************************************************/
-  // Set up Belos Block GMRES operator for inner iteration
+  // Set up Belos Block CG operator for inner iteration
   //*******************************************************/
   //
   int blockSize = 3; // block size used by linear solver and eigensolver [ not required to be the same ]
@@ -134,7 +137,7 @@ int main(int argc, char *argv[]) {
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
   // NOTE:  This is necessary because Belos expects an operator to apply the 
   //        preconditioner with Apply() NOT ApplyInverse().
-  Teuchos::RCP<Epetra_Operator> belosPrec = Teuchos::rcp( new Epetra_InvOperator( &*ICT ) );
+  Teuchos::RCP<Epetra_Operator> belosPrec = Teuchos::rcp( new Epetra_InvOperator( IC.get() ) );
   My_LP->setLeftPrec( belosPrec );
   //
   // Create the ParameterList for the Belos Operator
