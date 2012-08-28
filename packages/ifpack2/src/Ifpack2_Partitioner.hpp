@@ -31,6 +31,8 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+#include <iostream>
 
 namespace Ifpack2 {
 
@@ -46,7 +48,7 @@ namespace Ifpack2 {
   The overloaded operator (int i) can be used to extract the local partition
   ID of local row i.  
   
-  The partitions created by Ifpack2_Partitioner derived clased 
+  The partitions created by Ifpack2::Partitioner derived clased 
   are non-overlapping in graph sense. This means that each row
   (or, more approriately, vertex)
   of \c G is assigned to exactly one partition.
@@ -57,27 +59,15 @@ namespace Ifpack2 {
   amount of overlap, considering local nodes only (that is, this
   overlap do \e not modify the overlap among the processes).
 
-  Ifpack2_Partitioner is a pure virtual class. Concrete implementations
+  Ifpack2::Partitioner is a pure virtual class. Concrete implementations
   are:
   - Ifpack2_LinearPartitioner, which allows the decomposition of the
     rows of the graph in simple consecutive chunks;
-  - Ifpack2_METISPartitioner, which calls METIS to decompose the graph
-    (this requires the configuration option --enable-ifpack-metis);
-  - Ifpack2_GreedyPartitioner, a simple greedy algorith;
-  - Ifpack2_EquationPartitioner, which creates \c NumPDEEqns parts
-    (where \c NumPDEEqns is the number of equations in the linear
-    system). It is supposed that all the equations referring to the 
-    same grid node are ordered consecutively. Besides, the 
-    number of equations per node must be constant in the domain.
+  - Ifpack2_Zoltan2Partitioner, which calls Zoltan2 to decompose the graph
 
-  Generically, a constructor requires an Ifpack2_Graph object. 
-  Ifpack2_Graph is a pure virtual class. Concrete implentations are:
-  - Ifpack2_Graph_Tpetra_CrsGraph, a light-weight class to wrap 
-    Tpetra_CrsGraph objects as Ifpack2_Graph objects;
-  - Ifpack2_Graph_Tpetra_RowMatrix, a light-weight class to
-    wrap Tpetra_RowMatrix objects as Ifpack2_Graph objects.
+  Generically, a constructor requires a Tpetra::RowGraph object. 
   
-  <P>An example use of a Ifpack2_Partitioner derived class is as follows:  
+  <P>An example use of a Ifpack2::Partitioner derived class is as follows:  
   \code
 #include "Ifpack2_Partitioner.hpp"
 #include "Ifpack2_LinearPartitioner.hpp"
@@ -141,58 +131,64 @@ Ifpack2_BlockSymGaussSeidel.
 \date Last modified on Nov-04.
 
 */  
-class Ifpack2_Partitioner {
-
+template <class GraphType>
+class Partitioner : public Teuchos::Describable {
 public:
+  typedef typename GraphType::local_ordinal_type LocalOrdinal;
+  typedef typename GraphType::global_ordinal_type GlobalOrdinal;
+  typedef typename GraphType::node_type Node;
 
   //! Destructor.
-  virtual ~Ifpack2_Partitioner() {};
+  virtual ~Partitioner() {};
 
   //! Returns the number of computed local partitions.
-  virtual int NumLocalParts() const = 0;
+  virtual size_t numLocalParts() const = 0;
 
   //! Returns the overlapping level.
-  virtual int OverlappingLevel() const = 0;
+  virtual size_t overlappingLevel() const = 0;
 
   //! Returns the local non-overlapping partition ID of the specified row.
   /*! Returns the non-overlapping partition ID of the specified row.
    \param 
-   MyRow - (In) local row numbe
+   MyRow - (In) local row number
 
    \return
    Local ID of non-overlapping partition for \t MyRow.
    */
-  virtual int operator() (int MyRow) const = 0;
+  virtual LocalOrdinal operator() (LocalOrdinal MyRow) const = 0;
 
   //! Returns the local overlapping partition ID of the j-th node in partition i.
-  virtual int operator() (int i, int j) const = 0;
+  virtual LocalOrdinal operator() (LocalOrdinal i, LocalOrdinal j) const = 0;
 
   //! Returns the number of rows contained in specified partition.
-  virtual int NumRowsInPart(const int Part) const = 0;
+  virtual size_t numRowsInPart(const LocalOrdinal Part) const = 0;
     
   //! Copies into List the rows in the (overlapping) partition Part.
-  virtual int RowsInPart(const int Part, int* List) const = 0;
+  virtual void rowsInPart(const LocalOrdinal Part, Teuchos::ArrayRCP<LocalOrdinal> &List) const = 0;
   
-  //! Returns a pointer to the integer vector containing the non-overlapping partition ID of each local row.
-  virtual const int* NonOverlappingPartition() const = 0;
+  //! Returns an ArrayRCP to the integer vector containing the non-overlapping partition ID of each local row.
+  virtual Teuchos::ArrayView<const LocalOrdinal>  nonOverlappingPartition() const = 0;
 
   //! Sets all the parameters for the partitioner.
-  virtual int SetParameters(Teuchos::ParameterList& List) = 0;
+  virtual void setParameters(Teuchos::ParameterList& List) = 0;
 
   //! Computes the partitions. Returns 0 if successful.
-  virtual int Compute() = 0;
+  virtual void compute() = 0;
 
   //! Returns true if partitions have been computed successfully.
-  virtual bool IsComputed() = 0;
+  virtual bool isComputed() const = 0;
 
   //! Prints basic information about the partitioning object.
-  virtual ostream& Print(std::ostream& os) const = 0;
+  virtual std::ostream& print(std::ostream& os) const = 0;
 
-}; // class Ifpack2_Partitioner
+}; // class Ifpack2::Partitioner
 
-inline ostream& operator<<(ostream& os, const Ifpack2_Partitioner& obj)
+template <class GraphType>
+inline std::ostream& operator<<(std::ostream& os, const Ifpack2::Partitioner<GraphType>& obj)
 {
-  return(obj.Print(os));
+  return(obj.print(os));
 }
+
+} //namespace Ipack2
 
 #endif // IFPACK2_PARTITIONER_HPP

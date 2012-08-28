@@ -19,7 +19,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="BinUtils,Boost,MPI,ARPREC,QD,QT,yaml-cpp"/>
+    <LIB_OPTIONAL_DEP_TPLS value="BinUtils,Boost,MPI,ARPREC,QD,QT"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -825,6 +825,20 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Trioscommsplitter" dir="packages/trios/libraries/commsplitter" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
   <Package name="Triossupport" dir="packages/trios/libraries/support" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -841,7 +855,7 @@
   </Package>
   <Package name="Triosnnti" dir="packages/trios/libraries/nessie/nnti" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="Triossupport"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Trioscommsplitter"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -855,20 +869,6 @@
   </Package>
   <Package name="Triosnssi" dir="packages/trios/libraries/nessie/nssi" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="Triosnnti"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="Trios"/>
-  </Package>
-  <Package name="Trioscommsplitter" dir="packages/trios/libraries/commsplitter" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -939,7 +939,7 @@
   </Package>
   <Package name="Trios" dir="packages/trios" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Triossupport,Triosnnti,Triosnssi,Trioscommsplitter,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>

@@ -3,9 +3,9 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-INCLUDE_DIRECTORIES(${${PROJECT_NAME}_SOURCE_DIR}/packages/panzer/test/equation_set)
-INCLUDE_DIRECTORIES(${${PROJECT_NAME}_SOURCE_DIR}/packages/panzer/test/closure_model)
-INCLUDE_DIRECTORIES(${${PROJECT_NAME}_SOURCE_DIR}/packages/panzer/adapters/stk/test/bcstrategy)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/test/equation_set)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/test/closure_model)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/stk/test/bcstrategy)
 
 SET(UNIT_TEST_DRIVER
   ${TEUCHOS_STD_UNIT_TEST_MAIN})

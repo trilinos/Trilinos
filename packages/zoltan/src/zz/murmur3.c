@@ -7,14 +7,18 @@
 /* compile and run any of them on any platform, but your performance with the */
 /* non-native version will be less than optimal. */
 
-#include "murmur3.h"
-
 /*----------------------------------------------------------------------------*/
 /* Platform-specific functions and macros */
 
-#define FORCE_INLINE __attribute__((always_inline))
+#include <stdint.h>
 
-/* KDDKDD 
+#if __GNUC__ && __GNUC_STDC_INLINE__
+#define FORCE_INLINE inline __attribute__((always_inline))
+#else
+#define FORCE_INLINE __attribute__((always_inline))
+#endif
+
+/* KDDKDD
 inline uint32_t rotl32 ( uint32_t x, int8_t r )
 {
   return (x << r) | (x >> (32 - r));
@@ -42,7 +46,7 @@ inline uint64_t rotl64 ( uint64_t x, int8_t r )
 /*--------------------------------------------------------------------------- */
 /* Finalization mix - force all bits of a hash block to avalanche */
 
-FORCE_INLINE uint32_t fmix32 ( uint32_t h )
+static FORCE_INLINE uint32_t fmix32 ( uint32_t h )
 {
   h ^= h >> 16;
   h *= 0x85ebca6b;
@@ -55,7 +59,7 @@ FORCE_INLINE uint32_t fmix32 ( uint32_t h )
 
 /*---------- */
 
-FORCE_INLINE uint64_t fmix64 ( uint64_t k )
+static FORCE_INLINE uint64_t fmix64 ( uint64_t k )
 {
   k ^= k >> 33;
   k *= BIG_CONSTANT(0xff51afd7ed558ccd);
@@ -68,8 +72,8 @@ FORCE_INLINE uint64_t fmix64 ( uint64_t k )
 
 /*--------------------------------------------------------------------------- */
 
-void MurmurHash3_x86_32 ( const void * key, int len,
-                          uint32_t seed, void * out )
+static void MurmurHash3_x86_32 ( const void * key, int len,
+                                 uint32_t seed, void * out )
 {
   const uint8_t * data = (const uint8_t*)key;
   const int nblocks = len / 4;
@@ -92,7 +96,7 @@ void MurmurHash3_x86_32 ( const void * key, int len,
     k1 *= c1;
     k1 = ROTL32(k1,15);
     k1 *= c2;
-    
+
     h1 ^= k1;
     h1 = ROTL32(h1,13);
     h1 = h1*5+0xe6546b64;
@@ -125,8 +129,8 @@ void MurmurHash3_x86_32 ( const void * key, int len,
 
 /*--------------------------------------------------------------------------- */
 
-void MurmurHash3_x86_128 ( const void * key, const int len,
-                           uint32_t seed, void * out )
+static void MurmurHash3_x86_128 ( const void * key, const int len,
+                                  uint32_t seed, void * out )
 {
   const uint8_t * data = (const uint8_t*)key;
   const int nblocks = len / 16;
@@ -231,8 +235,8 @@ void MurmurHash3_x86_128 ( const void * key, const int len,
 
 /*--------------------------------------------------------------------------- */
 
-void MurmurHash3_x64_128 ( const void * key, const int len,
-                           const uint32_t seed, void * out )
+static void MurmurHash3_x64_128 ( const void * key, const int len,
+                                  const uint32_t seed, void * out )
 {
   const uint8_t * data = (const uint8_t*)key;
   const int nblocks = len / 16;

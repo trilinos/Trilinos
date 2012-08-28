@@ -77,12 +77,20 @@ public:
   
 
 public:
+  //! \name Constructor & destructor methods
+  //@{
+
   //! Constructor.
   explicit SparsityFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
 			  size_t AllowedNumEntries,
 			  LocalOrdinal AllowedBandwidth = -Teuchos::ScalarTraits<LocalOrdinal>::one());
   //! Destructor.
   virtual ~SparsityFilter();
+
+  //@}
+
+  //! \name Matrix Query Methods
+  //@{
 
   //! Returns the communicator.
   virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;

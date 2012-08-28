@@ -132,7 +132,7 @@ bool Thyra::test_single_belos_thyra_solver(
     linearOpTester.show_all_tests(showAllTests);
     linearOpTester.dump_all(dumpAll);
     Thyra::seed_randomize<double>(0);
-    result = linearOpTester.check(*nsA,out.get());
+    result = linearOpTester.check(*nsA,Teuchos::Ptr<Teuchos::FancyOStream>(out.get()));
     if(!result) success = false;
 
     if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";

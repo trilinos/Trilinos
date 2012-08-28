@@ -453,7 +453,7 @@ void SparsityFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrd
 template<class MatrixType> 
 bool SparsityFilter<MatrixType>::hasTransposeApply() const
 {
-  return A_->hasTransposeApply();
+  return true;
 }
 
 //==========================================================================  

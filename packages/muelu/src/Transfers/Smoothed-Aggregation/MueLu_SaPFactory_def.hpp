@@ -132,7 +132,7 @@ namespace MueLu {
     //FIXME Xpetra::Operator should calculate/stash max eigenvalue
     //FIXME SC lambdaMax = A->GetDinvALambda();
 
-    if (dampingFactor_ != Teuchos::ScalarTraits<Scalar>::one()) {
+    if (dampingFactor_ != Teuchos::ScalarTraits<Scalar>::zero()) {
 
       //Teuchos::ParameterList matrixList;
       //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.Get< RCP<Operator> >("A")->getRowMap(),matrixList);

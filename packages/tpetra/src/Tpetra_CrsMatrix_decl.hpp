@@ -107,13 +107,14 @@ namespace Tpetra {
    \tparam Node A class implementing on-node shared-memory parallel
      operations.  It must implement the
      \ref kokkos_node_api "Kokkos Node API."
-     The default \c Node type depends on your Trilinos build options,
-     and should suffice for most users.
+     The default \c Node type should suffice for most users.
+     The actual default type depends on your Trilinos build options.
 
-   \tparam LocalMatOps A local sparse matrix operations class.  It
-     must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."  The
-     default \c LocalMatOps type depends on your Trilinos build
-     options, and should suffice for most users.
+   \tparam LocalMatOps Type implementing local sparse
+     matrix-(multi)vector multiply and local sparse triangular solve.
+     It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
+     The default \c LocalMatOps type should suffice for most users.
+     The actual default type depends on your Trilinos build options.
 
    This class implements a distributed-memory parallel sparse matrix,
    and provides sparse matrix-vector multiply (including transpose)
@@ -124,7 +125,7 @@ namespace Tpetra {
    interface like that of \c Epetra_CrsMatrix, but also allows
    insertion of data into nonowned rows, much like \c Epetra_FECrsMatrix.
 
-   <b>Local vs. Global</b>
+   \subsection Local vs. global indices
 
    The distinction between local and global indices might confuse new
    Tpetra users.  _Global_ indices represent the rows and columns
@@ -986,6 +987,10 @@ namespace Tpetra {
     // cached frobenius norm: -ST::one() means invalid
     mutable Magnitude frobNorm_;
 
+    //! Whether this instance's insertGlobalValues() method has triggered an efficiency warning yet.
+    bool insertGlobalValuesWarnedEfficiency_;
+    //! Whether this instance's insertLocalValues() method has triggered an efficiency warning yet.
+    bool insertLocalValuesWarnedEfficiency_;
   }; // class CrsMatrix
 
   /** \brief Non-member function to create an empty CrsMatrix given a row map and a non-zero profile.

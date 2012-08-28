@@ -513,7 +513,6 @@ APPEND_SET(NOINSTALLHEADERS
   zz/zz_rand.h
   zz/zz_sort.h
   zz/zz_util_const.h
-  zz/murmur3.h
   )
 
 APPEND_SET(SOURCES
@@ -530,7 +529,6 @@ APPEND_SET(SOURCES
   zz/zz_struct.c
   zz/zz_back_trace.c
   zz/zz_util.c
-  zz/murmur3.c
   )
 
 

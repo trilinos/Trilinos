@@ -86,11 +86,19 @@ public:
   
 
 public:
+  //! \name Constructor & destructor methods
+  //@{
+
   //! Constructor.
   explicit LocalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
   
   //! Destructor.
   virtual ~LocalFilter();
+
+  //@}
+
+  //! \name Matrix Query Methods
+  //@{
 
   //! Returns the communicator.
   virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;

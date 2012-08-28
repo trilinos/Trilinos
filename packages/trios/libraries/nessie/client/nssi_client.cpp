@@ -412,6 +412,9 @@ int nssi_get_service(
     nssi_service svc;
     nssi_request req;
 
+    /* local count does not need protection */
+    static unsigned long local_count;
+
     /* xdrs for the header and the args. */
     XDR hdr_xdrs, res_xdrs;
 
@@ -501,10 +504,17 @@ int nssi_get_service(
 
     req_header.res_addr=*short_res_hdl;
 
+    /* increment global counter */
+    local_count = nthread_counter_increment(&request_count);
+    if (local_count == -1) {
+        log_error(rpc_debug_level, "Unable to increment counter");
+        return NNTI_EIO;
+    }
+
     /* set the opcode for the request header */
     req_header.opcode = NSSI_OP_GET_SERVICE;
     /* set the request ID for the header */
-    req_header.id = 0;
+    req_header.id = local_count;
     req_header.fetch_args = FALSE;
 
     /* create an xdr memory stream for the short request buffer */

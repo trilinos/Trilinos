@@ -101,8 +101,10 @@ namespace Tpetra {
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
              size_t maxNumEntriesPerRow,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& params)
-  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
+    insertGlobalValuesWarnedEfficiency_ (false),
+    insertLocalValuesWarnedEfficiency_ (false)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, maxNumEntriesPerRow, pftype, params));
@@ -133,8 +135,10 @@ namespace Tpetra {
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& params)
-  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
+    insertGlobalValuesWarnedEfficiency_ (false),
+    insertLocalValuesWarnedEfficiency_ (false)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, NumEntriesPerRowToAlloc, pftype, params));
@@ -161,8 +165,10 @@ namespace Tpetra {
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
              size_t maxNumEntriesPerRow,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& params)
-  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
+    insertGlobalValuesWarnedEfficiency_ (false),
+    insertLocalValuesWarnedEfficiency_ (false)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow, pftype, params));
@@ -189,8 +195,10 @@ namespace Tpetra {
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& params)
-  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
+    insertGlobalValuesWarnedEfficiency_ (false),
+    insertLocalValuesWarnedEfficiency_ (false)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, NumEntriesPerRowToAlloc,
@@ -219,6 +227,8 @@ namespace Tpetra {
              const RCP<Teuchos::ParameterList>& params)
   : DistObject<char, LocalOrdinal,GlobalOrdinal,Node> (graph->getRowMap ())
   , staticGraph_ (graph)
+  , insertGlobalValuesWarnedEfficiency_ (false)
+  , insertLocalValuesWarnedEfficiency_ (false)
   {
     const std::string tfecfFuncName("CrsMatrix(graph)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(staticGraph_.is_null (),
@@ -621,7 +631,7 @@ namespace Tpetra {
     if (requestOptimizedStorage) {
       // Free the old, unpacked, unoptimized allocations.
       // Change the graph from dynamic to static allocaiton profile
-      // 
+      //
       // delete old data
       lclInds2D_ = null;
       numRowEntries_ = null;
@@ -899,10 +909,20 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getProfileType() == StaticProfile,
           std::runtime_error, ": new indices exceed statically allocated graph "
           "structure.");
-        TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
-          "::insertLocalValues(): Pre-allocated space has been exceeded, "
-          "requiring new allocation. To improve efficiency, suggest a larger "
-          "allocation in CrsMatrix's constructor.");
+
+        // Only print an efficiency warning once per CrsMatrix
+        // instance, per method name (insertLocalValues() or
+        // insertGlobalValues()).
+        if (! insertLocalValuesWarnedEfficiency_) {
+          TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
+            "::insertLocalValues():" << std::endl
+            << "Pre-allocated space has been exceeded, requiring new allocation.  "
+            "This is allowed but not efficient in terms of run time.  "
+            "To improve efficiency, suggest a larger number of entries per row in the constructor.  "
+            "You may either specify a maximum number of entries for all the rows, or a per-row maximum.  "
+            "This CrsMatrix instance will not print further messages of this kind, in order not to clutter output.");
+          insertLocalValuesWarnedEfficiency_ = true;
+        }
         // Make space for the new matrix entries.
         rowInfo = myGraph_->template updateAllocAndValues<LocalIndices, Scalar> (rowInfo, newNumEntries, values2D_[localRow]);
       }
@@ -983,10 +1003,20 @@ namespace Tpetra {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
             getProfileType() == StaticProfile, std::runtime_error,
             ": new indices exceed statically allocated graph structure.");
-          TPETRA_EFFICIENCY_WARNING(true, std::runtime_error, "::insertGlobal"
-           "Values(): Preallocated space has been exceeded, requiring new "
-           "allocation. To improve efficiency, suggest a larger per-row "
-           "allocation in CrsMatrix's constructor.");
+
+          // Only print an efficiency warning once per CrsMatrix
+          // instance, per method name (insertLocalValues() or
+          // insertGlobalValues()).
+          if (! insertGlobalValuesWarnedEfficiency_) {
+            TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
+              "::insertGlobalValues():" << std::endl
+              << "Pre-allocated space has been exceeded, requiring new allocation.  "
+              "This is allowed but not efficient in terms of run time.  "
+              "To improve efficiency, suggest a larger number of entries per row in the constructor.  "
+              "You may either specify a maximum number of entries for all the rows, or a per-row maximum.  "
+              "This CrsMatrix instance will not print further messages of this kind, in order not to clutter output.");
+            insertGlobalValuesWarnedEfficiency_ = true;
+          }
           // Update allocation only as much as necessary
           rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
         }

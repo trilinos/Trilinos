@@ -27,42 +27,27 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_LINEARPARTITIONER_HPP
-#define IFPACK2_LINEARPARTITIONER_HPP
+#include "Ifpack2_SingletonFilter_decl.hpp"
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Partitioner.hpp"
-#include "Ifpack2_OverlappingPartitioner.hpp"
-#include "Teuchos_ParameterList.hpp"
-class Tpetra_Comm;
-class Ifpack2_Graph;
-class Tpetra_Map;
-class Tpetra_BlockMap;
-class Tpetra_Import;
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-//! Ifpack2_LinearPartitioner: A class to define linear partitions.
+#include "Ifpack2_SingletonFilter_def.hpp"
+#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 
-class Ifpack2_LinearPartitioner : public Ifpack2_OverlappingPartitioner {
+namespace Ifpack2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+IFPACK2_INST(SingletonFilter,float,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+IFPACK2_INST(SingletonFilter,double,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+IFPACK2_INST(SingletonFilter,std::complex<float>,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+IFPACK2_INST(SingletonFilter,std::complex<double>,int,int);
+#endif
+}
 
-public:
+#endif
 
-  //! Constructor.
-  Ifpack2_LinearPartitioner(const Ifpack2_Graph* Graph) :
-    Ifpack2_OverlappingPartitioner(Graph)
-  {}
-
-  //! Destructor.
-  virtual ~Ifpack2_LinearPartitioner() {};
-
-  //! Sets all the parameters for the partitioner (none for linear partioning).
-  int SetPartitionParameters(Teuchos::ParameterList& List)
-  {
-    return(0);
-  }
-
-  //! Computes the partitions. Returns 0 if successful.
-  int ComputePartitions();
-
-};
-
-#endif // IFPACK2_LINEARPARTITIONER_HPP

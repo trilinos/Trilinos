@@ -27,22 +27,17 @@
 //@HEADER
 */
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Partitioner.hpp"
-#include "Ifpack2_OverlappingPartitioner.hpp"
-#include "Ifpack2_LinearPartitioner.hpp"
-#include "Tpetra_CrsGraph.hpp"
+#include "Ifpack2_LinearPartitioner_decl.hpp"
 
-//==============================================================================
-int Ifpack2_LinearPartitioner::ComputePartitions()
-{
-  
-  int mod = NumMyRows() / NumLocalParts_;
-  for (int i = 0 ; i < NumMyRows() ; ++i) {
-    Partition_[i] = i / mod;
-    if (Partition_[i] >= NumLocalParts_)
-      Partition_[i] = NumLocalParts_ - 1;
-  }
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-  return(0);
+#include "Ifpack2_LinearPartitioner_def.hpp"
+#include "Ifpack2_OverlappingPartitioner_def.hpp"
+#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+
+namespace Ifpack2 {
+IFPACK2_INST_GRAPH(LinearPartitioner,int,int);
 }
+
+#endif
+

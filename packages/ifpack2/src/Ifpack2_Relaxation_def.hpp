@@ -314,11 +314,8 @@ void Relaxation<MatrixType>::initialize() {
   TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
     "Ifpack2::Relaxation::Initialize ERROR, Matrix is NULL");
 
-//  size_t globalrows = A_->getGlobalNumRows();
-//  size_t globalcols = A_->getGlobalNumCols();
-//  TEUCHOS_TEST_FOR_EXCEPTION(globalrows != globalcols, std::runtime_error,
-//   "Ifpack2::Relaxation::Initialize ERROR, only square matrices are supported");
-
+  Time_->start(true);
+  
   NumMyRows_ = A_->getNodeNumRows();
   NumGlobalRows_ = A_->getGlobalNumRows();
   NumGlobalNonzeros_ = A_->getGlobalNumEntries();
@@ -399,16 +396,18 @@ void Relaxation<MatrixType>::compute()
   }
   ComputeFlops_ += NumMyRows_;
 
-  //Marzio's comment:
+
   // We need to import data from external processors. Here I create a
-  // Tpetra::Import object because I cannot assume that A_ has one.
-  // This is a bit of waste of resources (but the code is more robust).
+  // Tpetra::Import object if needed (stealing from A_ if possible) 
+  // Marzio's comment:
   // Note that I am doing some strange stuff to set the components of Y
   // from Y2 (to save some time).
   //
   if (IsParallel_ && ((PrecType_ == Ifpack2::GS) || (PrecType_ == Ifpack2::SGS))) {
-    Importer_ = Teuchos::rcp( new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(A_->getDomainMap(),
-										  A_->getColMap()) );
+    Importer_=A_->getGraph()->getImporter();
+    if(Importer_==Teuchos::null)
+      Importer_ = Teuchos::rcp( new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(A_->getDomainMap(),
+										    A_->getColMap()) );
 
     TEUCHOS_TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,
       "Ifpack2::Relaxation::compute ERROR failed to create Importer_");

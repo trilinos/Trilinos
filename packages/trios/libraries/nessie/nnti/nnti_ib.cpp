@@ -1801,7 +1801,7 @@ NNTI_result_t NNTI_ib_waitany (
 
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
-            nthread_lock(&nnti_ib_lock);
+nthread_lock(&nnti_ib_lock);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
             trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
