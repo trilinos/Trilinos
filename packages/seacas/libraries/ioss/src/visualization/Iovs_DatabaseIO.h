@@ -17,6 +17,11 @@
 #include <Ioss_Map.h>
 #include <Ioss_Utils.h>
 
+// with introduction of paraview sierra catalyst plugin, the Iovs stuff is
+// always included and NO_PARAVIEWMESH_SUPPORT is never defined.  With the
+// plugin architecture, there is no overhead for sierra when the plugin is
+// not loaded.  The #define test is left here for now in case developers
+// need to use it.
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
 #include <iBase.h>
 #include <iMesh.h>
@@ -54,6 +59,7 @@ namespace Iovs {
      * does not exist in the map; otherwise, it must exist and will
      * throw an exception if not found.
      */
+    int64_t iovs_internal_node_global_to_local(int64_t global, bool must_exist) const;
     int64_t    node_global_to_local(int64_t global, bool must_exist) const;
     // this is unnecessary for vis
     int64_t element_global_to_local(int64_t global) const { return global; }
@@ -126,14 +132,14 @@ namespace Iovs {
 
     void write_meta_data();
 
-    int handle_node_ids(int* ids, size_t num_to_get);
-    int handle_element_ids(const Ioss::ElementBlock *eb, int* ids, size_t num_to_get);
+    int64_t handle_node_ids(void* ids, int64_t num_to_get);
+    int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
 
-    // void build_element_reorder_map(int start, int count);
-    // void build_node_reorder_map(int *new_ids, int count);
+    void build_element_reorder_map(int64_t start, int64_t count);
+    void build_node_reorder_map(void *new_ids, int64_t count);
 
-    // const Ioss::MapContainer& get_node_map()         const;
-    // const Ioss::MapContainer& get_element_map()         const;
+    const Ioss::MapContainer& get_node_map()         const;
+    const Ioss::MapContainer& get_element_map()         const;
 
     DatabaseIO(); // Do not implement
     DatabaseIO(const DatabaseIO&); // Do not implement
@@ -152,8 +158,9 @@ namespace Iovs {
 
     std::string databaseTitle;
     int spatialDimension;
-    int nodeCount;
-    int elementCount;
+
+    int64_t nodeCount;
+    int64_t elementCount;
 
     int nodeBlockCount;
     int elementBlockCount;
@@ -177,19 +184,18 @@ namespace Iovs {
     //               sierra side.   global = nodeMap[local]
     // nodeMap[0] contains: -1 if sequential, 0 if ordering unknown, 1
     // if nonsequential
-    // mutable Ioss::MapContainer        nodeMap;
-    // mutable Ioss::MapContainer        reorderNodeMap;
+    mutable Ioss::MapContainer        nodeMap;
+    mutable Ioss::MapContainer        reorderNodeMap;
     mutable Ioss::ReverseMapContainer reverseNodeMap;
-    mutable bool sequentialNG2L; // true if reverse node map is sequential
     // (local==global)
 
     //---Element Map -- Maps internal (1..NUMEL) ids to global ids used on the
     //               sierra side.   global = elementMap[local]
     // elementMap[0] contains: -1 if sequential, 0 if ordering unknown,
     // 1 if nonsequential
-    // mutable Ioss::MapContainer        elementMap;
-    // mutable Ioss::MapContainer        reorderElementMap;
-    // mutable Ioss::ReverseMapContainer reverseElementMap;
+     mutable Ioss::MapContainer        elementMap;
+     mutable Ioss::MapContainer        reorderElementMap;
+     mutable Ioss::ReverseMapContainer reverseElementMap;
     mutable bool sequentialEG2L; // true if reverse element map is
     // sequential (local==global)
 
@@ -235,11 +241,16 @@ namespace Iovs {
   // Sierra wants entities in a global system. These routines
   // take care of the mapping from local <-> global
 
-  typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
+  typedef std::vector<Ioss::IdPair>::iterator RMapI;
   inline int64_t DatabaseIO::node_global_to_local(int64_t global, bool must_exist) const
     {
-      int local = global;
-      if (!sequentialNG2L) {
+      return iovs_internal_node_global_to_local(global, must_exist);
+      /*
+      if (nodeMap.empty()) {
+	get_node_map();
+      }
+      int64_t local = global;
+      if (nodeMap[0] != -1) {
 	std::pair<RMapI, RMapI> iter = std::equal_range(reverseNodeMap.begin(),
 							reverseNodeMap.end(),
 							global,
@@ -265,34 +276,11 @@ namespace Iovs {
 	IOSS_ERROR(errmsg);
       }
       return local;
+      */
     }
 
   /*
     inline int DatabaseIO::element_global_to_local(int global) const
-    {
-    int local = global;
-    if (!sequentialEG2L) {
-    std::pair<RMapI, RMapI> iter = std::equal_range(reverseElementMap.begin(),
-    reverseElementMap.end(),
-    global,
-    Ioss::IdPairCompare());
-    if (iter.first == iter.second) {
-    std::ostringstream errmsg;
-    errmsg << "Element with global id equal to " << global
-    << " does not exist in this mesh on this processor\n";
-    IOSS_ERROR(errmsg);
-    }
-    local = (iter.first)->second;
-    }
-    if (local > elementCount || local <= 0) {
-    std::ostringstream errmsg;
-    errmsg << "Element with global id equal to " << global
-    << " returns a local id of " << local
-    << " which is invalid. This should not happen, please report.\n";
-    IOSS_ERROR(errmsg);
-    }
-    return local;
-    }
   */
 };
 
