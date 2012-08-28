@@ -85,7 +85,7 @@ using namespace Teuchos;
  * - \c user-defined
  * - \c do-nothing
  */
-int ML_Epetra::MultiLevelPreconditioner::SetSmoothers() 
+int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool skipFineLevelSmoother) 
 {
   Epetra_Time Time(Comm());
 
@@ -217,7 +217,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   // ===================== //
 
   char smListName[80];
-  for (int level = 0 ; level < SmootherLevels ; ++level) {
+  int startLevel=0;
+  if (skipFineLevelSmoother) startLevel=1;
+  for (int level = startLevel ; level < SmootherLevels ; ++level) {
 
     if (verbose_) cout << endl;
 

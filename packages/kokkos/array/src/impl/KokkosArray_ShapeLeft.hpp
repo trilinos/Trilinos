@@ -56,8 +56,8 @@ template< class T , unsigned RankDynamic , unsigned Rank >
 inline
 size_t allocation_count( const Shape<LayoutLeft,T,RankDynamic,Rank> & shape )
 {
-  return ( 0 == Rank ? 1 : (
-           1 == Rank ? shape.N0 : shape.Stride * shape.N1 * (
+  return ( 0 == Rank ? 1 : shape.Stride * (
+           1 == Rank ? 1 : shape.N1 * (
            2 == Rank ? 1 : shape.N2 * (
            3 == Rank ? 1 : shape.N3 * (
            4 == Rank ? 1 : shape.N4 * (
@@ -68,25 +68,15 @@ size_t allocation_count( const Shape<LayoutLeft,T,RankDynamic,Rank> & shape )
 
 //----------------------------------------------------------------------------
 
+template < class T , class MemorySpace >
+struct ShapeMap< Shape<LayoutLeft,T,0,0>, MemorySpace > {};
+
 template < class T , unsigned RankDynamic , unsigned Rank , class MemorySpace >
 struct ShapeMap< Shape<LayoutLeft,T,RankDynamic,Rank>, MemorySpace >
 {
   inline static
   size_t stride( const Shape<LayoutLeft,T,RankDynamic,Rank> shape )
-  {
-    const size_t right_block_count =
-      0 == Rank ? 1 : (
-      1 == Rank ? 1 : shape.N1 * (
-      2 == Rank ? 1 : shape.N2 * (
-      3 == Rank ? 1 : shape.N3 * (
-      4 == Rank ? 1 : shape.N4 * (
-      5 == Rank ? 1 : shape.N5 * (
-      6 == Rank ? 1 : shape.N6 * (
-      7 == Rank ? 1 : shape.N7 )))))));
-
-    return 1 == right_block_count ? shape.N0 :
-      MemorySpace::preferred_alignment( shape.value_size , shape.N0 );
-  }
+  { return MemorySpace::preferred_alignment( shape.value_size , shape.N0 ); }
 };
 
 //----------------------------------------------------------------------------
@@ -247,7 +237,8 @@ struct SubShape< Shape< LayoutLeft , DstDataType , 1 , 1 > ,
   {
     assert_shape_bounds( src , 0 , i1 );
     offset = ShapeOffset< SrcShape >::apply( src , 0 , i1 );
-    shape.N0 = src.N0 ;
+    shape.Stride = src.Stride ;
+    shape.N0     = src.N0 ;
   }
 };
 

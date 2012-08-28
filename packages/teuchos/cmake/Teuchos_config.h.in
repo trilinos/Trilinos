@@ -51,9 +51,6 @@
 /* Define if want to build teuchos-boost */
 #cmakedefine HAVE_TEUCHOS_BOOST
 
-/* Define if want to build Teuchos with yaml-cpp */
-#cmakedefine HAVE_TEUCHOS_YAML_CPP
-
 /* Define if you want to build teuchos-qt */
 #cmakedefine HAVE_TEUCHOS_QT
 

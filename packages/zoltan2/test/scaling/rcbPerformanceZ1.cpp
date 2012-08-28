@@ -453,7 +453,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "CHECK_GEOM", "0");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); // compiled with ULONG option
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
-  Zoltan_Set_Param(zz, "RETURN_LISTS", "NONE");
+  Zoltan_Set_Param(zz, "RETURN_LISTS", "PART");
   Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.1");
   std::ostringstream oss;
   oss << numGlobalParts;
@@ -506,6 +506,50 @@ int main(int argc, char *argv[])
         &exportToPart);  /* Partition to which each vertex will belong */
 
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
+
+  /* Print the load-balance stats here */
+
+  scalar_t *sumWgtPerPart = new scalar_t[numGlobalParts];
+  scalar_t *gsumWgtPerPart = new scalar_t[numGlobalParts];
+  for (int i = 0; i < numGlobalParts; i++) sumWgtPerPart[i] = 0.;
+
+  for (size_t i = 0; i < numLocalCoords; i++)
+    sumWgtPerPart[exportToPart[i]] += (weightDim ? weights[0][i]: 1.);
+
+  reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, numGlobalParts,
+                           sumWgtPerPart, gsumWgtPerPart);
+
+  scalar_t maxSumWgtPerPart = 0.;
+  scalar_t minSumWgtPerPart = std::numeric_limits<scalar_t>::max();
+  scalar_t totWgt = 0.;
+  int maxSumWgtPart, minSumWgtPart;
+  for (int i = 0; i < numGlobalParts; i++) {
+    if (gsumWgtPerPart[i] > maxSumWgtPerPart) {
+      maxSumWgtPerPart = gsumWgtPerPart[i];
+      maxSumWgtPart = i;
+    }
+    if (gsumWgtPerPart[i] < minSumWgtPerPart) {
+      minSumWgtPerPart = gsumWgtPerPart[i];
+      minSumWgtPart = i;
+    }
+    totWgt += gsumWgtPerPart[i];
+  }
+
+  if (rank == 0)
+    std::cout << std::endl << std::endl
+              << "Part loads (per part for " << numGlobalParts << " parts):"
+              << std::endl
+              << "   min = " << minSumWgtPerPart
+                             << " in part " << minSumWgtPart << std::endl
+              << "   max = " << maxSumWgtPerPart
+                             << " in part " << maxSumWgtPart << std::endl
+              << "   tot = " << totWgt << std::endl
+              << "   avg = " << totWgt / numGlobalParts 
+              << std::endl << std::endl << std::endl;
+
+  delete [] sumWgtPerPart;
+  delete [] gsumWgtPerPart;
+
   Zoltan_Destroy(&zz);
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
 

@@ -29,7 +29,6 @@
 void test_cuda_query( comm::Machine machine )
 {
   const size_t comm_rank = comm::rank( machine );
-  const size_t dev_count = KokkosArray::Cuda::detect_device_count();
   std::cout << "P" << comm_rank
             << ": Cuda device_count = "
             << KokkosArray::Cuda::detect_device_count()

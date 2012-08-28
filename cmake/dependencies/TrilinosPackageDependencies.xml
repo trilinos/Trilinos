@@ -19,7 +19,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="BinUtils,Boost,MPI,ARPREC,QD,QT,yaml-cpp"/>
+    <LIB_OPTIONAL_DEP_TPLS value="BinUtils,Boost,MPI,ARPREC,QD,QT"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -825,6 +825,20 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Trioscommsplitter" dir="packages/trios/libraries/commsplitter" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Trios"/>
+  </Package>
   <Package name="Triossupport" dir="packages/trios/libraries/support" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -841,7 +855,7 @@
   </Package>
   <Package name="Triosnnti" dir="packages/trios/libraries/nessie/nnti" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="Triossupport"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Trioscommsplitter"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -925,7 +939,7 @@
   </Package>
   <Package name="Trios" dir="packages/trios" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -1312,6 +1326,20 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Regression address="piro-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
+  <Package name="Panzer" dir="packages/panzer" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Kokkos,Sacado,Phalanx,Intrepid,FEI,ThyraCore,ThyraTpetraAdapters,ThyraEpetraAdapters,Tpetra,Epetra,EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="STK,SEACASIoss,SEACASExodus,Teko,Stokhos,MueLu"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos,Piro,NOX,Rythmos"/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI,Boost"/>
+    <LIB_OPTIONAL_DEP_TPLS value="PAPI"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="panzer-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>

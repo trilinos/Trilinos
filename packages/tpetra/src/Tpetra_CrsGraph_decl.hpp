@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -90,10 +90,10 @@ namespace Tpetra {
    \tparam LocalMatOps A local sparse matrix operations class,
      fulfiling the \ref kokkos_crs_ops "Kokkos CRS Ops API".
 
-   This class allows the construction of sparse graphs with row-access. 
-   
+   This class allows the construction of sparse graphs with row-access.
+
    <b>Local vs. Global</b>
-   
+
    Graph entries can be added using either local or global coordinates
    for the indices. The accessors isGloballyIndexed() and
    isLocallyIndexed() indicate whether the indices are currently
@@ -105,24 +105,24 @@ namespace Tpetra {
    getGlobalRowView() returns a View to the indices in global
    coordinates; if the indices are not in global coordinates, then no
    such View can be created.
-    
+
    The global/local distinction does distinguish between operation on
    the global/local graph. Almost all methods operate on the local
    graph, i.e., the rows of the graph associated with the local node,
    per the distribution specified by the row map. Access to non-local
    rows requires performing an explicit communication via the
    import/export capabilities of the CrsGraph object; see
-   DistObject. However, the method insertGlobalValues() is an
+   DistObject. However, the method insertGlobalIndices() is an
    exception to this rule, as non-local rows are allowed to be added
    via the local graph. These rows are stored in the local graph and
    communicated to the appropriate node on the next call to
    globalAssemble() or fillComplete() (the latter calls the former).
    */
-  template <class LocalOrdinal, 
-            class GlobalOrdinal = LocalOrdinal, 
+  template <class LocalOrdinal,
+            class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
-  class CrsGraph : 
+  class CrsGraph :
     public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>,
     public Teuchos::ParameterListAcceptorDefaultBase
@@ -130,14 +130,14 @@ namespace Tpetra {
     template <class S, class LO, class GO, class N, class SpMatOps>
     friend class CrsMatrix;
 
-  public: 
+  public:
     typedef LocalOrdinal                         local_ordinal_type;
     typedef GlobalOrdinal                        global_ordinal_type;
     typedef Node                                 node_type;
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     /// \brief Constructor specifying fixed number of entries for each row.
     ///
@@ -156,8 +156,8 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const map_type>& rowMap, 
-              size_t maxNumEntriesPerRow, 
+    CrsGraph (const RCP<const map_type>& rowMap,
+              size_t maxNumEntriesPerRow,
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
@@ -178,8 +178,8 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-              const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+              const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
@@ -205,9 +205,9 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
-              size_t maxNumEntriesPerRow, 
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+              size_t maxNumEntriesPerRow,
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
@@ -233,9 +233,9 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
-              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
@@ -245,7 +245,7 @@ namespace Tpetra {
     //@}
 
     //! @name Implementation of Teuchos::ParameterListAcceptor
-    //@{ 
+    //@{
 
     //! Set the given list of parameters (must be nonnull).
     void setParameterList (const RCP<ParameterList>& params);
@@ -256,10 +256,10 @@ namespace Tpetra {
     //@}
 
       //! @name Insertion/Removal Methods
-      //@{ 
+      //@{
 
       //! Insert graph indices, using global IDs.
-      /** All index values must be in the global space. 
+      /** All index values must be in the global space.
           \pre \c globalRow exists as an ID in the global row map
           \pre <tt>isLocallyIndexed() == false</tt>
           \pre <tt>isStorageOptimized() == false</tt>
@@ -267,7 +267,7 @@ namespace Tpetra {
           \post <tt>indicesAreAllocated() == true</tt>
           \post <tt>isGloballyIndexed() == true</tt>
 
-          \note If \c globalRow does not belong to the graph on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local graph. 
+          \note If \c globalRow does not belong to the graph on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local graph.
           \note If the graph row already contains entries at the indices corresponding to values in \c indices, then the redundant indices will be eliminated; this may happen at insertion or during the next call to fillComplete().
         */
       void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &indices);
@@ -301,12 +301,12 @@ namespace Tpetra {
       //@}
 
       //! @name Transformational Methods
-      /** 
+      /**
           Each of the methods in this group is a global collective. It is
           necessary to call these mehtods on all nodes participating in the
           communicator associated with this graph.
         */
-      //@{ 
+      //@{
 
       //! \brief Communicate non-local contributions to other nodes.
       void globalAssemble();
@@ -314,14 +314,14 @@ namespace Tpetra {
       /*! Resume fill operations.
           After calling fillComplete(), resumeFill() must be called before initiating any changes to the graph.
 
-          resumeFill() may be called repeatedly. 
+          resumeFill() may be called repeatedly.
 
           \post  <tt>isFillActive() == true<tt>
           \post  <tt>isFillComplete() == false<tt>
        */
       void resumeFill(const RCP<ParameterList> &params = null);
 
-      /*! \brief Signal that data entry is complete, specifying domain and range maps. 
+      /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
           Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
 
@@ -331,10 +331,10 @@ namespace Tpetra {
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
           \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
-       */ 
+       */
       void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, const RCP<ParameterList> &params = null);
 
-      /*! \brief Signal that data entry is complete. 
+      /*! \brief Signal that data entry is complete.
 
           Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
 
@@ -352,7 +352,7 @@ namespace Tpetra {
       //@}
 
       //! @name Methods implementing RowGraph.
-      //@{ 
+      //@{
 
       //! Returns the communicator.
       const RCP<const Comm<int> > & getComm() const;
@@ -397,7 +397,7 @@ namespace Tpetra {
         */
       size_t getNodeNumCols() const;
 
-      //! Returns the index base for global indices for this graph. 
+      //! Returns the index base for global indices for this graph.
       GlobalOrdinal getIndexBase() const;
 
       //! Returns the global number of entries in the graph.
@@ -417,9 +417,9 @@ namespace Tpetra {
       size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
       //! \brief Returns the total number of indices allocated for the graph, across all rows on this node.
-      /*! This is the allocation available to the user. Actual allocation may be larger, for example, after 
-          calling fillComplete(), and thus this does not necessarily reflect the memory consumption of the 
-          this graph.  
+      /*! This is the allocation available to the user. Actual allocation may be larger, for example, after
+          calling fillComplete(), and thus this does not necessarily reflect the memory consumption of the
+          this graph.
 
           This quantity is computed during the actual allocation. Therefore, if <tt>indicesAreAllocated() == false</tt>,
           this method returns <tt>OrdinalTraits<size_t>::invalid()</tt>.
@@ -434,28 +434,28 @@ namespace Tpetra {
       /** Throws exception std::runtime_error if the specified local row is not valid for this node. */
       size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const;
 
-      //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
+      //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
       /** Undefined if isFillActive().
         */
       global_size_t getGlobalNumDiags() const;
 
-      //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
+      //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
       /** Undefined if isFillActive().
         */
       size_t getNodeNumDiags() const;
 
-      //! \brief Returns the maximum number of entries across all rows/columns on all nodes. 
+      //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
       /** Undefined if isFillActive().
         */
       size_t getGlobalMaxNumRowEntries() const;
 
-      //! \brief Returns the maximum number of entries across all rows/columns on this node. 
+      //! \brief Returns the maximum number of entries across all rows/columns on this node.
       /** Undefined if isFillActive().
         */
       size_t getNodeMaxNumRowEntries() const;
 
-      //! \brief Indicates whether the graph has a well-defined column map. 
-      bool hasColMap() const; 
+      //! \brief Indicates whether the graph has a well-defined column map.
+      bool hasColMap() const;
 
       //! \brief Indicates whether the graph is lower triangular.
       /** Undefined if isFillActive().
@@ -480,7 +480,7 @@ namespace Tpetra {
       bool isFillActive() const;
 
       //! Indicates whether the graph indices in all rows are known to be sorted.
-      /** A fill-complete graph is always sorted, as is a newly constructed graph. A graph is sorted immediately after 
+      /** A fill-complete graph is always sorted, as is a newly constructed graph. A graph is sorted immediately after
          calling resumeFill(), but any changes to the graph may result in the sorting status becoming unknown (and therefore, presumed unsorted.)
          */
       bool isSorted() const;
@@ -504,11 +504,11 @@ namespace Tpetra {
         \param NumIndices - (Out) Number of indices.
 
          Note: A std::runtime_error exception is thrown indices is not large enough to hold the column indices associated
-         with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
+         with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is
          returned as OrdinalTraits<size_t>::invalid().
        */
-      void getGlobalRowCopy(GlobalOrdinal GlobalRow, 
-                            const ArrayView<GlobalOrdinal> &Indices, 
+      void getGlobalRowCopy(GlobalOrdinal GlobalRow,
+                            const ArrayView<GlobalOrdinal> &Indices,
                             size_t &NumIndices
                             ) const;
 
@@ -519,13 +519,13 @@ namespace Tpetra {
         \param NumIndices - (Out) Number of indices.
 
          Note: A std::runtime_error exception is thrown indices is not large enough to hold the column indices associated
-         with row \c LocalRow. If \c LocalRow is not valid for this node, then \c indices is unchanged and \c NumIndices is 
+         with row \c LocalRow. If \c LocalRow is not valid for this node, then \c indices is unchanged and \c NumIndices is
          returned as OrdinalTraits<size_t>::invalid().
 
         \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
        */
-      void getLocalRowCopy(LocalOrdinal LocalRow, 
-                           const ArrayView<LocalOrdinal> &indices, 
+      void getLocalRowCopy(LocalOrdinal LocalRow,
+                           const ArrayView<LocalOrdinal> &indices,
                            size_t &NumIndices
                            ) const;
 
@@ -553,7 +553,7 @@ namespace Tpetra {
 
       //@}
 
-      //! @name Overridden from Teuchos::Describable 
+      //! @name Overridden from Teuchos::Describable
       //@{
 
       /** \brief Return a simple one-line description of this object. */
@@ -593,7 +593,7 @@ namespace Tpetra {
       //@{
 
       //! Get an ArrayRCP of the row-offsets.
-      /*!  The returned buffer exists in host-memory. This method may return Teuchos::null 
+      /*!  The returned buffer exists in host-memory. This method may return Teuchos::null
            if "Delete Row Pointers" was \c true on fillComplete().
        */
       ArrayRCP<const size_t> getNodeRowPtrs() const;
@@ -612,12 +612,12 @@ namespace Tpetra {
 
       // We forbid assignment (operator=) by declaring this method
       // private and not implementing it.
-      CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& 
+      CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&
       operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &rhs);
 
     protected:
       typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;
-      
+
       // these structs are conveniences, to cut down on the number of
       // arguments to some of the methods below.
       struct SLocalGlobalViews {
@@ -642,7 +642,7 @@ namespace Tpetra {
 
       template <ELocalGlobal lg>
       RowInfo updateAlloc (RowInfo rowinfo, size_t allocSize);
-      template <ELocalGlobal lg, class T> 
+      template <ELocalGlobal lg, class T>
       RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, ArrayRCP<T> &rowVals);
       //
       // Local versus global indices
@@ -660,13 +660,13 @@ namespace Tpetra {
       template<ELocalGlobal lg, class T>
       size_t filterIndicesAndValues (const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const;
 
-      template<ELocalGlobal lg, ELocalGlobal I> 
+      template<ELocalGlobal lg, ELocalGlobal I>
       size_t insertIndices (RowInfo rowInfo, const SLocalGlobalViews &newInds);
 
-      template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN> 
+      template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
       void insertIndicesAndValues (RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
 
-      template<ELocalGlobal lg, class IterO, class IterN, class BinaryFunction> 
+      template<ELocalGlobal lg, class IterO, class IterN, class BinaryFunction>
       void transformValues (RowInfo rowInfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const;
       //
       // Sorting and merging
@@ -680,7 +680,7 @@ namespace Tpetra {
       void                                             mergeAllIndices();
       void                                             mergeRowIndices(RowInfo rowinfo);
       template <class Iter, class BinaryFunction> void mergeRowIndicesAndValues(RowInfo rowinfo, Iter rowValueIter, BinaryFunction f);
-      // 
+      //
       void setDomainRangeMaps(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap);
       void staticAssertions() const;
       // global consts
@@ -723,7 +723,7 @@ namespace Tpetra {
       // number of non-zeros to allocate for all row; either this or numAllocPerRow_ is used, but not both.
       size_t numAllocForAllRows_;
 
-      // graph indices. before allocation, all are null. 
+      // graph indices. before allocation, all are null.
       // after allocation, except during makeIndicesLocal(), one of local or global is null.
       // we will never have 1D and 2D structures being non-null
       // this is host memory
@@ -746,12 +746,12 @@ namespace Tpetra {
       ArrayRCP<size_t> rowPtrs_;
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //
-      // 2D/Dynamic structures. 
+      // 2D/Dynamic structures.
       //
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      //! <tt>lclInds2D_[r]</tt> are the indices for row \c r. 
+      //! <tt>lclInds2D_[r]</tt> are the indices for row \c r.
       ArrayRCP<ArrayRCP< LocalOrdinal> > lclInds2D_;
-      //! <tt>gblInds2D_[r]</tt> are the indices for row \c r. 
+      //! <tt>gblInds2D_[r]</tt> are the indices for row \c r.
       ArrayRCP<ArrayRCP<GlobalOrdinal> > gblInds2D_;
 
       //! The number valid entries in the row.
@@ -761,7 +761,7 @@ namespace Tpetra {
       bool indicesAreAllocated_,
            indicesAreLocal_,
            indicesAreGlobal_,
-           fillComplete_, 
+           fillComplete_,
            lowerTriangular_,
            upperTriangular_,
            indicesAreSorted_,
@@ -776,13 +776,18 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
         bool actuallyHasRowInfo = true;
         if (indicesAreAllocated() && getProfileType() == StaticProfile && rowPtrs_ == null) actuallyHasRowInfo = false;
-        TEUCHOS_TEST_FOR_EXCEPTION( 
-            actuallyHasRowInfo != haveRowInfo_, 
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            actuallyHasRowInfo != haveRowInfo_,
             std::logic_error, "Internal logic error. Please contact Tpetra team."
         )
 #endif
         return haveRowInfo_;
       }
+
+    //! Whether this instance's insertGlobalIndices() method has triggered an efficiency warning yet.
+    bool insertGlobalIndicesWarnedEfficiency_;
+    //! Whether this instance's insertLocalIndices() method has triggered an efficiency warning yet.
+    bool insertLocalIndicesWarnedEfficiency_;
 
   }; // class CrsGraph
 

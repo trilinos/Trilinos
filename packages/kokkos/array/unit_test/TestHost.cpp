@@ -118,15 +118,15 @@ TEST_F( host , view_remap )
 {
   enum { N0 = 3 , N1 = 2 , N2 = 8 , N3 = 9 };
 
-  typedef KokkosArray::View< double[0][N1][N2][N3] ,
+  typedef KokkosArray::View< double*[N1][N2][N3] ,
                              KokkosArray::LayoutRight ,
                              KokkosArray::Host > output_type ;
 
-  typedef KokkosArray::View< int[0][0][N2][N3] ,
+  typedef KokkosArray::View< int**[N2][N3] ,
                              KokkosArray::LayoutLeft ,
                              KokkosArray::Host > input_type ;
 
-  typedef KokkosArray::View< int[0][N0][N2][N3] ,
+  typedef KokkosArray::View< int*[N0][N2][N3] ,
                              KokkosArray::LayoutLeft ,
                              KokkosArray::Host > diff_type ;
 

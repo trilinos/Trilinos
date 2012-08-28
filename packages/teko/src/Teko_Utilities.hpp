@@ -807,6 +807,16 @@ double norm_1(const MultiVector & v,std::size_t col);
   */
 double norm_2(const MultiVector & v,std::size_t col);
 
+/** This replaces entries of a vector falling below a particular
+  * bound. Thus a an entry will be greater than or equal to \code{lowerBound}.
+  */
+void clipLower(MultiVector & v,double lowerBound);
+
+/** This replaces entries of a vector above a particular
+  * bound. Thus a an entry will be less than or equal to \code{upperBound}.
+  */
+void clipUpper(MultiVector & v,double upperBound);
+
 } // end namespace Teko
 
 #endif

@@ -1,4 +1,5 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+        commsplitter    libraries/commsplitter         EX  OPTIONAL
         support         libraries/support              EX  OPTIONAL
         nnti            libraries/nessie/nnti          EX  OPTIONAL
         nssi            libraries/nessie/nssi          EX  OPTIONAL

@@ -150,7 +150,9 @@ public:
   ///   region, and the CPU cores associated with that region.
   static size_type detect_node_core_count();
 
-  //! An alignment size for large arrays
+  //! An alignment size for arrays
+  static size_type detect_cache_line_size();
+
   static size_type detect_memory_page_size();
 
   //@}

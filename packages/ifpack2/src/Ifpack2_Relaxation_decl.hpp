@@ -110,8 +110,8 @@ the Gauss-Seidel preconditioner can be defined as
 \f[
 P_{GS}^{-1} = (D - E)^{-1}.
 \f]
-Clearly, the role of E and F can be interchanged. However,
-Ifpack2::GaussSeidel does not consider backward Gauss-Seidel methods.
+Clearly, the role of E and F can be interchanged. This is what the
+"relaxation: backward mode" option is for.
 
 <P>For a list of supported parameters, please refer to the Relaxation::setParameters method.
 
@@ -335,7 +335,7 @@ private:
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
   //! Importer for parallel GS and SGS
-  Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
+  Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
   mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Diagonal_;
   //! Number of application of the preconditioner (should be greater than 0).

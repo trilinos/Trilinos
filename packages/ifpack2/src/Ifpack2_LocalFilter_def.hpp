@@ -439,7 +439,7 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdina
 template<class MatrixType> 
 bool LocalFilter<MatrixType>::hasTransposeApply() const
 {
-  return false;
+  return true;
 }
 
 //==========================================================================  

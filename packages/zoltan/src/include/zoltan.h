@@ -3332,38 +3332,6 @@ extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *zz, int global_num,
  */
 extern int Zoltan_Generate_Files(struct Zoltan_Struct *zz, char *fname, int base_index, int gen_geom, int gen_graph, int gen_hg);
 
-#define PLATFORM_MAX_LEVELS 8
-
-enum {GLORY,
-      REDSKY,
-      CTX,
-      ODIN,
-      OCTOPI,
-      S861036,
-      ZOLTAN_HIER_LAST_PLATFORM};
-
-typedef struct _spec{
-  /*
-   * name of predefined topologies, or null if topology given by parameter
-   */
-  char *platform_name;
-
-  /*
-   * size of num_siblings and my_part arrays
-   */
-  int numLevels;
-
-  /*
-   * number of objects (cores, caches, sockets, etc), or number of
-   *  children of the parent, of this level
-   */
-  int num_siblings[PLATFORM_MAX_LEVELS];
-
-  /*
-   * the part computed by this process at this level
-   */
-  int my_part[PLATFORM_MAX_LEVELS];
-} zoltan_platform_specification;
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

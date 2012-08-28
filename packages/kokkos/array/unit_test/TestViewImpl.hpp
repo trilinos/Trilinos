@@ -71,105 +71,54 @@ struct DummyMemorySpace
 
 /*--------------------------------------------------------------------------*/
 
+template< class Layout , class Type >
+struct DefineShape {
+  typedef typename KokkosArray::Impl::AnalyzeShape<Type>::shape shape ;
+  typedef KokkosArray::Impl::Shape< Layout , shape > type ;
+};
+
+template< class Type >
+struct ExtractValueType {
+  typedef typename KokkosArray::Impl::AnalyzeShape<Type>::value_type type ;
+};
+
+template< class Type >
+struct ArrayType { typedef Type type ; };
+
 template < class Device >
 void test_view_impl()
 {
   typedef typename Device::memory_space memory_space ;
 
-  typedef int    type_01 [100];
-  typedef int    type_11 [0];
-  typedef int    type_03 [5][6][700];
-  typedef double type_14 [0][8][9][900];
-  typedef long   type_22 [0][0] ;
-  typedef short  type_36 [][0][0][5][6][7] ;
-  typedef const short  const_type_36 [][0][0][5][6][7] ;
-  typedef short  type_25 [0][0][5][6][7] ;
-  typedef const short  const_type_25 [0][0][5][6][7] ;
+  typedef ArrayType< int[100]                >::type type_01 ;
+  typedef ArrayType< int[]                   >::type type_11 ;
+  typedef ArrayType< int[5][6][700]          >::type type_03 ;
+  typedef ArrayType< double[][8][9][900]     >::type type_14 ;
+  typedef ArrayType< long**                  >::type type_22 ;
+  typedef ArrayType< short***[5][6][7]       >::type type_36 ;
+  typedef ArrayType< const short***[5][6][7] >::type const_type_36 ;
+  typedef ArrayType< short **[5][6][7]       >::type type_25 ;
+  typedef ArrayType< const short **[5][6][7] >::type const_type_25 ;
 
-  typedef typename KokkosArray::Impl::StaticAssertSame< typename KokkosArray::Impl::add_const<type_25>::type , const_type_25 >::type ok_add_const_25 ;
-  typedef typename KokkosArray::Impl::StaticAssertSame< typename KokkosArray::Impl::add_const<const_type_25>::type , const_type_25 >::type ok_add_const_c25 ;
+  typedef typename KokkosArray::Impl::StaticAssertSame<
+     typename KokkosArray::Impl::AnalyzeShape<type_25>::const_type ,
+     typename KokkosArray::Impl::AnalyzeShape<const_type_25>::type 
+       > ok_const_25 ;
 
-#if 0
+  ASSERT_TRUE( ( KokkosArray::Impl::is_same< ExtractValueType<type_03>::type , int >::value ) );
+  ASSERT_TRUE( ( KokkosArray::Impl::is_same< ExtractValueType<type_14>::type , double >::value ) );
+  ASSERT_TRUE( ( KokkosArray::Impl::is_same< ExtractValueType<type_22>::type , long >::value ) );
+  ASSERT_TRUE( ( KokkosArray::Impl::is_same< ExtractValueType<type_36>::type , short >::value ) );
 
-  typedef typename KokkosArray::Impl::StaticAssertSame< typename KokkosArray::Impl::add_const<type_36>::type , const_type_36 >::type ok_add_const_36 ;
-  typedef typename KokkosArray::Impl::StaticAssertSame< typename KokkosArray::Impl::add_const<const_type_36>::type , const_type_36 >::type ok_add_const_c36 ;
-
-#endif
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<int[]>::value == 1u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        int[]>::value == 1u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<int[][0][5]>::value == 2u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        int[][0][5]>::value == 3u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<int[0]>::value == 1u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        int[0]>::value == 1u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<int[0][0][5]>::value == 2u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        int[0][0][5]>::value == 3u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<type_01>::value == 0u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        type_01>::value == 1u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<type_11>::value == 1u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        type_11>::value == 1u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<type_03>::value == 0u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        type_03>::value == 3u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<type_14>::value == 1u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        type_14>::value == 4u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<type_22>::value == 2u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        type_22>::value == 2u >::value );
-
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank_dynamic<type_36>::value == 3u >::value );
-  ASSERT_TRUE( KokkosArray::Impl::StaticAssert< KokkosArray::Impl::rank<        type_36>::value == 6u >::value );
-
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,0>::value == 5u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,1>::value == 6u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,2>::value == 700u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,3>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,4>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,5>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,6>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,7>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_03,8>::value == 0u ) );
-
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_36,0>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_36,1>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_36,2>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_36,3>::value == 5u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_36,4>::value == 6u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_36,5>::value == 7u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_36,6>::value == 0u ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::extent<type_36,7>::value == 0u ) );
-
-  ASSERT_TRUE( ( KokkosArray::Impl::is_same< KokkosArray::Impl::remove_all_extents<type_03>::type , int >::value ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::is_same< KokkosArray::Impl::remove_all_extents<type_14>::type , double >::value ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::is_same< KokkosArray::Impl::remove_all_extents<type_22>::type , long >::value ) );
-  ASSERT_TRUE( ( KokkosArray::Impl::is_same< KokkosArray::Impl::remove_all_extents<type_36>::type , short >::value ) );
-
-  ASSERT_FALSE( ( KokkosArray::Impl::is_same< KokkosArray::Impl::remove_all_extents<type_36>::type , int >::value ) );
+  ASSERT_FALSE( ( KokkosArray::Impl::is_same< ExtractValueType<type_36>::type , int >::value ) );
 
 
-  typedef typename KokkosArray::Impl::DefineShape<
-      KokkosArray::LayoutLeft , type_01>::type  shape_01_type ;
-
-  typedef typename KokkosArray::Impl::DefineShape<
-      KokkosArray::LayoutLeft , type_11>::type  shape_11_type ;
-
-  typedef typename KokkosArray::Impl::DefineShape<
-      KokkosArray::LayoutLeft , type_03>::type  shape_03_type ;
-
-  typedef typename KokkosArray::Impl::DefineShape<
-      KokkosArray::LayoutRight , type_14>::type  shape_14_type ;
-
-  typedef typename KokkosArray::Impl::DefineShape<
-      KokkosArray::LayoutRight , type_22>::type  shape_22_type ;
-
-  typedef typename KokkosArray::Impl::DefineShape<
-      KokkosArray::LayoutRight , type_36>::type  shape_36_type ;
+  typedef typename DefineShape< KokkosArray::LayoutLeft , type_01>::type  shape_01_type ;
+  typedef typename DefineShape< KokkosArray::LayoutLeft , type_11>::type  shape_11_type ;
+  typedef typename DefineShape< KokkosArray::LayoutLeft , type_03>::type  shape_03_type ;
+  typedef typename DefineShape< KokkosArray::LayoutRight, type_14>::type  shape_14_type ;
+  typedef typename DefineShape< KokkosArray::LayoutRight, type_22>::type  shape_22_type ;
+  typedef typename DefineShape< KokkosArray::LayoutRight, type_36>::type  shape_36_type ;
 
   ASSERT_TRUE( ( KokkosArray::Impl::StaticAssert< shape_36_type::rank == 6 >::value ) );
   ASSERT_TRUE( ( KokkosArray::Impl::StaticAssert< shape_03_type::rank == 3 >::value ) );
@@ -227,8 +176,6 @@ void test_view_impl()
   ASSERT_TRUE( shape_22 != shape_36 );
 
   //------------------------------------------------------------------------
-
-  // KokkosArray::View< int , KokkosArray::LayoutLeft , DummyMemorySpace > compile_error ;
 }
 
 } /* namespace */

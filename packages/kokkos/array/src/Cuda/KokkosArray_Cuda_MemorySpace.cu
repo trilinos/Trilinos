@@ -192,9 +192,13 @@ void CudaMemorySpace::print_memory_view( std::ostream & o )
 size_t CudaMemorySpace::preferred_alignment(
   size_t value_size , size_t value_count )
 {
-  const size_t align = ( Impl::CudaTraits::WarpSize * value_size ) / sizeof(Cuda::size_type);
-  const size_t rem = value_count % align ;
-  if ( rem ) value_count += align - rem ;
+  const size_t alignment = Impl::CudaTraits::WarpSize * sizeof(Cuda::size_type);
+
+  if ( 0 == alignment % value_size ) {
+    const size_t align = alignment / value_size ;
+    const size_t rem   = value_count % align ;
+    if ( rem ) value_count += align - rem ;
+  }
   return value_count ;
 }
 

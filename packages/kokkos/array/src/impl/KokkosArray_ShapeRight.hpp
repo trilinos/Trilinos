@@ -56,30 +56,36 @@ template< class T , unsigned RankDynamic , unsigned Rank >
 inline
 size_t allocation_count( const Shape<LayoutRight,T,RankDynamic,Rank> & shape )
 {
-  return ( 0 == Rank ? 1 : shape.N0 * (
-           1 == Rank ? 1 : shape.Stride ));
+  return Rank < 1 ? 1 : shape.N0 * shape.Stride ;
 }
+
+template< class T , class MemorySpace >
+struct ShapeMap< Shape<LayoutRight,T,0,0> , MemorySpace > {};
+
+template< class T , unsigned RankDynamic , class MemorySpace >
+struct ShapeMap< Shape<LayoutRight,T,RankDynamic,1> , MemorySpace >
+{
+  inline static
+  size_t stride( const Shape<LayoutRight,T,RankDynamic,1> shape ) 
+  { return 1 ; }
+};
 
 template< class T , unsigned RankDynamic , unsigned Rank , class MemorySpace >
 struct ShapeMap< Shape<LayoutRight,T,RankDynamic,Rank> , MemorySpace >
 {
-  typedef Shape<LayoutRight,T,RankDynamic,Rank> shape_type ;
-
   inline static
-  size_t stride( const shape_type shape ) 
+  size_t stride( const Shape<LayoutRight,T,RankDynamic,Rank> shape ) 
   {
     const size_t block_count = 
-      0 == Rank ? 1 : (
-      1 == Rank ? 1 : shape.N1 * (
+                      shape.N1 * (
       2 == Rank ? 1 : shape.N2 * (
       3 == Rank ? 1 : shape.N3 * (
       4 == Rank ? 1 : shape.N4 * (
       5 == Rank ? 1 : shape.N5 * (
       6 == Rank ? 1 : shape.N6 * (
-      7 == Rank ? 1 : shape.N7 )))))));
+      7 == Rank ? 1 : shape.N7 ))))));
 
-    return 1 == block_count ? 1 :
-      MemorySpace::preferred_alignment( shape.value_size , block_count );
+    return MemorySpace::preferred_alignment( shape.value_size , block_count );
   }
 };
 

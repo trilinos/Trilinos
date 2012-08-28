@@ -427,7 +427,7 @@ void DropFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal
 template<class MatrixType> 
 bool DropFilter<MatrixType>::hasTransposeApply() const
 {
-  return A_->hasTransposeApply();
+  return true;
 }
 
 //==========================================================================  

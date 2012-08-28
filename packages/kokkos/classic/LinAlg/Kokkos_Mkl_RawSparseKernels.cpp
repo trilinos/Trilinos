@@ -1,6 +1,36 @@
 #include "Kokkos_Mkl_RawSparseKernels.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-#include <mkl.h>
+
+#ifdef HAVE_KOKKOSCLASSIC_MKL
+#  include <mkl.h>
+#else
+#  error "Compiling this file requires building Trilinos with the Intel MKL third-party library."
+#  include <Teuchos_StandardCatchMacros.hpp>
+#  ifdef MKL_INT
+#    undef MKL_INT
+#  endif // MKL_INT
+#  define MKL_INT int
+
+namespace {
+  const char missingMklMsg[] =
+    "Calling Intel MKL functions from Trilinos requires having built Trilinos "
+    "with the Intel MKL third-party library.  You will need to reconfigure "
+    "Trilinos to build with MKL, by setting the following CMake options:"
+    "\n"
+    "TPL_ENABLE_MKL:BOOL=ON\n"
+    "MKL_LIBRARY_DIRS:FILEPATH=<path-to-MKL-libraries>\n"
+    "MKL_LIBRARY_NAMES:STRING=\"<list-of-MKL-libraries>\"\n"
+    "MKL_INCLUDE_DIRS:FILEPATH=<path-to-MKL-headers>\n"
+    "\n"
+    "Replace <path-to-MKL-libraries> with the path to MKL libraries, "
+    "<list-of-MKL-libraries> with the list of MKL libraries with which "
+    "to link (separating library names with a semicolon, and not including "
+    "the -l or lib part of the name), and <path-to-MKL-headers> with the "
+    "path to MKL header files.";
+} // namespace (anonymous)
+
+#endif // HAVE_KOKKOSCLASSIC_MKL
+
 
 //////////////////////////////////////////////////////////////////////
 // Specializations for Scalar=float
@@ -24,10 +54,14 @@ namespace Kokkos {
            const float& beta,
            float* const y)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_scsrmv ((char*) transa, (MKL_INT*) &m, (MKL_INT*) &k,
                   (float*) &alpha, (char*) matdescra,
                   (float*) val, (MKL_INT*) ind, (MKL_INT*) ptrBegin, (MKL_INT*) ptrEnd,
                   (float*) x, (float*) &beta, y);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     template<>
@@ -48,10 +82,14 @@ namespace Kokkos {
            float* const C,
            const MKL_INT LDC)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_scsrmm ((char*) transa, (MKL_INT*) &m, (MKL_INT*) &n, (MKL_INT*) &k,
                   (float*) &alpha, (char*) matdescra,
                   (float*) val, (MKL_INT*) ind, (MKL_INT*) ptrBegin, (MKL_INT*) ptrEnd,
                   (float*) B, (MKL_INT*) &LDB, (float*) &beta, C, (MKL_INT*) &LDC);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     template<>
@@ -67,9 +105,13 @@ namespace Kokkos {
            const float* const x,
            float* const y)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_scsrsv ((char*) transa, (MKL_INT*) &m, (float*) &alpha, (char*) matdescra,
                   (float*) val, (MKL_INT*) ind, (MKL_INT*) ptrBegin, (MKL_INT*) ptrEnd,
                   (float*) x, y);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     template<>
@@ -88,10 +130,14 @@ namespace Kokkos {
            float* const C,
            const MKL_INT LDC)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_scsrsm ((char*) transa, (MKL_INT*) &m, (MKL_INT*) &n,
                   (float*) &alpha, (char*) matdescra,
                   (float*) val, (MKL_INT*) ind, (MKL_INT*) ptrBegin, (MKL_INT*) ptrEnd,
                   (float*) B, (MKL_INT*) &LDB, C, (MKL_INT*) &LDC);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -113,10 +159,14 @@ namespace Kokkos {
            const double& beta,
            double* const y)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_dcsrmv ((char*) transa, (MKL_INT*) &m, (MKL_INT*) &k,
                   (double*) &alpha, (char*) matdescra,
                   (double*) val, (MKL_INT*) ind, (MKL_INT*) ptrBegin, (MKL_INT*) ptrEnd,
                   (double*) x, (double*) &beta, y);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     template<>
@@ -137,10 +187,14 @@ namespace Kokkos {
            double* const C,
            const MKL_INT LDC)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_dcsrmm ((char*) transa, (MKL_INT*) &m, (MKL_INT*) &n, (MKL_INT*) &k,
                   (double*) &alpha, (char*) matdescra,
                   (double*) val, (MKL_INT*) ind, (MKL_INT*) ptrBegin, (MKL_INT*) ptrEnd,
                   (double*) B, (MKL_INT*) &LDB, (double*) &beta, C, (MKL_INT*) &LDC);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     template<>
@@ -156,9 +210,13 @@ namespace Kokkos {
            const double* const x,
            double* const y)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_dcsrsv ((char*) transa, (MKL_INT*) &m, (double*) &alpha, (char*) matdescra,
                   (double*) val, (MKL_INT*) ind, (MKL_INT*) ptrBegin, (MKL_INT*) ptrEnd,
                   (double*) x, y);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     template<>
@@ -177,10 +235,14 @@ namespace Kokkos {
            double* const C,
            const MKL_INT LDC)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_dcsrsm ((char*) transa, (MKL_INT*) &m, (MKL_INT*) &n,
                   (double*) &alpha, (char*) matdescra,
                   (double*) val, (MKL_INT*) ind, (MKL_INT*) ptrBegin, (MKL_INT*) ptrEnd,
                   (double*) B, (MKL_INT*) &LDB, C, (MKL_INT*) &LDC);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     // MKL always defines the complex-arithmetic routines, but only build
@@ -206,6 +268,7 @@ namespace Kokkos {
            const std::complex<float>& beta,
            std::complex<float>* const y)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_ccsrmv ((char*) transa,
                   (MKL_INT*) &m,
                   (MKL_INT*) &k,
@@ -218,6 +281,9 @@ namespace Kokkos {
                   reinterpret_cast<MKL_Complex8*> (const_cast<std::complex<float>* > (x)),
                   reinterpret_cast<MKL_Complex8*> (const_cast<std::complex<float>* > (&beta)),
                   reinterpret_cast<MKL_Complex8*> (y));
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
     }
 
     template<>
@@ -238,6 +304,7 @@ namespace Kokkos {
            std::complex<float>* const C,
            const MKL_INT LDC)
     {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
       mkl_ccsrmm ((char*) transa,
                   (MKL_INT*) &m,
                   (MKL_INT*) &n,
@@ -251,6 +318,9 @@ namespace Kokkos {
                   reinterpret_cast<MKL_Complex8*> (const_cast<std::complex<float>* > (B)), (MKL_INT*) &LDB,
                   reinterpret_cast<MKL_Complex8*> (const_cast<std::complex<float>* > (&beta)),
                   reinterpret_cast<MKL_Complex8*> (C), (MKL_INT*) &LDC);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
   }
 
   template<>
@@ -266,6 +336,7 @@ namespace Kokkos {
          const std::complex<float>* const x,
          std::complex<float>* const y)
   {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
     mkl_ccsrsv ((char*) transa,
                 (MKL_INT*) &m,
                 reinterpret_cast<MKL_Complex8*> (const_cast<std::complex<float>* > (&alpha)),
@@ -276,6 +347,9 @@ namespace Kokkos {
                 (MKL_INT*) ptrEnd,
                 reinterpret_cast<MKL_Complex8*> (const_cast<std::complex<float>* > (x)),
                 reinterpret_cast<MKL_Complex8*> (y));
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
   }
 
   template<>
@@ -294,6 +368,7 @@ namespace Kokkos {
          std::complex<float>* const C,
          const MKL_INT LDC)
   {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
     mkl_ccsrsm ((char*) transa,
                 (MKL_INT*) &m,
                 (MKL_INT*) &n,
@@ -305,6 +380,9 @@ namespace Kokkos {
                 (MKL_INT*) ptrEnd,
                 reinterpret_cast<MKL_Complex8*> (const_cast<std::complex<float>* > (B)), (MKL_INT*) &LDB,
                 reinterpret_cast<MKL_Complex8*> (C), (MKL_INT*) &LDC);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -326,6 +404,7 @@ namespace Kokkos {
          const std::complex<double>& beta,
          std::complex<double>* const y)
   {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
     mkl_zcsrmv ((char*) transa,
                 (MKL_INT*) &m,
                 (MKL_INT*) &k,
@@ -338,6 +417,9 @@ namespace Kokkos {
                 reinterpret_cast<MKL_Complex16*> (const_cast<std::complex<double>* > (x)),
                 reinterpret_cast<MKL_Complex16*> (const_cast<std::complex<double>* > (&beta)),
                 reinterpret_cast<MKL_Complex16*> (y));
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
   }
 
   template<>
@@ -358,6 +440,7 @@ namespace Kokkos {
          std::complex<double>* const C,
          const MKL_INT LDC)
   {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
     mkl_zcsrmm ((char*) transa,
                 (MKL_INT*) &m,
                 (MKL_INT*) &n,
@@ -371,6 +454,9 @@ namespace Kokkos {
                 reinterpret_cast<MKL_Complex16*> (const_cast<std::complex<double>* > (B)), (MKL_INT*) &LDB,
                 reinterpret_cast<MKL_Complex16*> (const_cast<std::complex<double>* > (&beta)),
                 reinterpret_cast<MKL_Complex16*> (C), (MKL_INT*) &LDC);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
   }
 
   template<>
@@ -386,6 +472,7 @@ namespace Kokkos {
          const std::complex<double>* const x,
          std::complex<double>* const y)
   {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
     mkl_zcsrsv ((char*) transa,
                 (MKL_INT*) &m,
                 reinterpret_cast<MKL_Complex16*> (const_cast<std::complex<double>* > (&alpha)),
@@ -396,6 +483,9 @@ namespace Kokkos {
                 (MKL_INT*) ptrEnd,
                 reinterpret_cast<MKL_Complex16*> (const_cast<std::complex<double>* > (x)),
                 reinterpret_cast<MKL_Complex16*> (y));
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
   }
 
   template<>
@@ -414,6 +504,7 @@ namespace Kokkos {
          std::complex<double>* const C,
          const MKL_INT LDC)
   {
+#ifdef HAVE_KOKKOSCLASSIC_MKL
     mkl_zcsrsm ((char*) transa,
                 (MKL_INT*) &m,
                 (MKL_INT*) &n,
@@ -425,6 +516,9 @@ namespace Kokkos {
                 (MKL_INT*) ptrEnd,
                 reinterpret_cast<MKL_Complex16*> (const_cast<std::complex<double>* > (B)), (MKL_INT*) &LDB,
                 reinterpret_cast<MKL_Complex16*> (C), (MKL_INT*) &LDC);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, missingMklMsg);
+#endif // HAVE_KOKKOSCLASSIC_MKL
   }
 
 } // namespace Mkl

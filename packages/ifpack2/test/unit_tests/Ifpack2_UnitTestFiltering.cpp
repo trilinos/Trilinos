@@ -46,8 +46,9 @@
 #include <Ifpack2_DiagonalFilter.hpp>
 #include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_DropFilter.hpp>
-//#include "Ifpack2_SparsityFilter.h"
-//#include "Ifpack2_SingletonFilter.h"
+#include <Ifpack2_SingletonFilter.hpp>
+#include <Ifpack2_SparsityFilter.hpp>
+
 #include <Teuchos_RefCountPtr.hpp>
 
 #include <Teuchos_FancyOStream.hpp>
@@ -75,6 +76,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap), y(rowmap), z(rowmap), a(rowmap),b(rowmap);
 
 
+  Matrix->describe(out,Teuchos::VERB_EXTREME);
+
   // Fill x for all time
   Teuchos::ScalarTraits<double>::seedrandom(24601);
   x.randomize();
@@ -98,7 +101,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
 
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
-
 
   // ====================================== //
   // create a new matrix, locally filtered  //
@@ -142,18 +144,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
 
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
-  
 
   // ========================================= //
   // create a new matrix, dropping by sparsity //
   // ========================================= //
   //
-  // Mantain 3 off-diagonal elements, which is pretty boring
-  //  Ifpack_SparsityFilter SparsityA(Matrix,3);
-  Ifpack2::DropFilter<CRS> SparsityA(RCP<ROW >(&LocalA,false),3);
+  // Mantain 3 off-diagonal elements & 3 bandwidth, which is pretty boring since this is a noop.
+  Ifpack2::SparsityFilter<CRS> SparsityA(RCP<ROW >(&LocalA,false),3,3);
 
   // Apply w/ filter
-  DropA.apply(x,y);
+  SparsityA.apply(x,y);
 
   // Apply via local matrix
   LocalA.apply(x,z);
@@ -161,20 +161,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
+
   // ======================================== //
   // create new matrices, dropping singletons //
   // ======================================== //
-  //
-  // If we apply this filter NumPoints - 1 times, 
-  // we end up with a one-row matrix
-  //  Ifpack_SingletonFilter Filter1(Matrix);
-  //  Ifpack_SingletonFilter Filter2(Teuchos::rcp(&Filter1, false));
-  //  Ifpack_SingletonFilter Filter3(Teuchos::rcp(&Filter2, false));
-  //  Ifpack_SingletonFilter Filter4(Teuchos::rcp(&Filter3, false));
+  
+  // This matrix should be the same after the singleton filter since it doesn't have singletons.
+  Ifpack2::SingletonFilter<CRS> SingletonA(RCP<ROW >(&LocalA,false));
 
-  //  cout << "Sparsity, dropping singletons 4 times" << endl;
-  //  Ifpack_PrintSparsity_Simple(Filter4);
-  //  assert (Filter4.NumMyRows() == 1);
+  // Apply w/ filter
+  SingletonA.apply(x,y);
+
+  // Apply via local matrix
+  LocalA.apply(x,z);
+
+  // Diff
+  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+
 }
 
 

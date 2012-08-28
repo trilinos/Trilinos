@@ -65,8 +65,8 @@ class Multiply<
   BlockCrsMatrix<
     StochasticProductTensor< TensorScalar, PolynomialType, Cuda , TensorType >,
     MatrixScalar , Cuda > ,
-  View< VectorScalar[0][0] , LayoutLeft , Cuda > ,
-  View< VectorScalar[0][0] , LayoutLeft , Cuda > >
+  View< VectorScalar** , LayoutLeft , Cuda > ,
+  View< VectorScalar** , LayoutLeft , Cuda > >
 {
 public:
 
@@ -75,7 +75,7 @@ public:
 
   typedef StochasticProductTensor< TensorScalar , PolynomialType , Cuda , TensorType > tensor_type ;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef View< VectorScalar[0][0] , LayoutLeft , Cuda >           vector_type ;
+  typedef View< VectorScalar** , LayoutLeft , Cuda >           vector_type ;
 
 
   static void apply( const matrix_type & A ,
