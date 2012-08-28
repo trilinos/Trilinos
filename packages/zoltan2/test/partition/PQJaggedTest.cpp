@@ -169,7 +169,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
   }
 }
 
-void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, std::string paramFile, partId_t k,
+void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string paramFile, std::string pqParts/*, std::string paramFile*/, partId_t k,
     bool force_binary, bool force_linear){
 
   Teuchos::ParameterList geoparams("geo params");
@@ -411,8 +411,12 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
 }
 
 void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
-     string &pqParts, int &opt,std::string &fname, std::string &paramFile, partId_t &k,
+     string &pqParts, int &opt,std::string &fname/*, std::string &paramFile*/, partId_t &k,
      bool &force_binary , bool &force_linear){
+
+  bool isCset = false;
+  bool isPset = false;
+  bool isFset = false;
 
   for(int i = 0; i < argc; ++i){
     string tmp = convert_to_string(argv[i]);
@@ -420,12 +424,14 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
     long long int value = -1; double fval = -1;
     if(!getArgumentValue(identifier, fval, tmp)) continue;
     value = (long long int) (fval);
+
     if(identifier == "C"){
 
       if(value > 0){
 
 
         numParts=value;
+        isCset = true;
       } else {
         throw  "Invalid argument at " + tmp;
       }
@@ -435,9 +441,10 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
         stringstream stream(stringstream::in | stringstream::out);
 
         stream << tmp;
-
-        getline(stream, fname, '=');
+        string ttmp;
+        getline(stream, ttmp, '=');
         stream >> pqParts;
+        isPset = true;
       }else if(identifier == "I"){
         if(fval > 0){
           imbalance=fval;
@@ -450,8 +457,9 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
         getline(stream, fname, '=');
 
         stream >> fname;
+        isFset = true;
       }
-
+/*
       else if(identifier == "PF"){
         stringstream stream(stringstream::in | stringstream::out);
         stream << tmp;
@@ -459,6 +467,7 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
         stream >> paramFile;
 
       }
+      */
       else if(identifier == "EL"){
         if(value == 0){
           force_linear = false;
@@ -495,7 +504,25 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
       }
 
   }
+  if(!(isCset && isPset && isFset)){
+    throw "P, C and F are mandatory arguments.";
+  }
 
+}
+
+void print_usage(char *executable){
+  cout << "\nUsage:" << endl;
+  cout << executable << " arglist" << endl;
+  cout << "arglist:" << endl;
+  cout << "\tC=numParts: numParts > 0" << endl;
+  cout << "\tP=pqJaggedPart: Example: P=512,512" << endl;
+  cout << "\tI=imbalance: Example I=1.03 (ignored for now.)" << endl;
+  cout << "\tF=filePath: When O=0 the path of the coordinate input file, for O>1 the path to the geometric generator parameter file." << endl;
+  cout << "\tEL=force linear search: EL=0 as default, EL=1 will force to do linear search regardless of the part number" << endl;
+  cout << "\tEB=force binary search: EB=0 as default, EB=1 will force to do binary search regardless of the part number" << endl;
+  cout << "\tO=input option: O=0 for reading coordinate from file, O>0 for generating coordinate from coordinate generator file. Default will run geometric generator." << endl;
+  cout << "\tK=concurrent part calculation input: K>0." << endl;
+  cout << "Example:\n" << executable << " P=2,2,2 C=8 F=simple O=0" << endl;
 }
 
 int main(int argc, char *argv[])
@@ -510,21 +537,29 @@ int main(int argc, char *argv[])
   partId_t k = 1;
 
   string pqParts = "";
-  int opt = 3;
-  std::string fname = "simple";
-  std::string paramFile = "";
+  int opt = 1;
+  std::string fname = "";
+  //std::string paramFile = "";
   bool force_binary = false, force_linear = false;
 
   try{
+    try {
     getArgVals(argc, argv,   numParts, imbalance ,
-        pqParts, opt,fname, paramFile, k, force_binary, force_linear);
+        pqParts, opt,fname/*, paramFile*/, k, force_binary, force_linear);
+    }
+    catch(std::string s){
+      if(tcomm->getRank() == 0){
+        print_usage(argv[0]);
+      }
+      throw s;
+    }
 
     switch (opt){
     case 0:
       testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear);
       break;
     default:
-      GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile, k, force_binary, force_linear);
+      GeometricGen(tcomm, numParts, imbalance, fname, pqParts/*, paramFile*/, k, force_binary, force_linear);
       break;
     }
 
