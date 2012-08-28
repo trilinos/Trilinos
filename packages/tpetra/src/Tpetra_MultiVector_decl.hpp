@@ -121,6 +121,8 @@ namespace Tpetra {
   ///   The default \c Node type should suffice for most users.
   ///   The actual default type depends on your Trilinos build options.
   ///
+  /// \section Data layout and access
+  ///
   /// \subsection Multivectors which view another multivector
   ///
   /// A multivector could be a _view_ of some subset of another
@@ -199,7 +201,7 @@ namespace Tpetra {
   /// _never_ be copied back to device memory, and thus the original
   /// data will never be changed.
   ///
-  /// \subsection Why data views? Why not a raw pointer?
+  /// \subsection Why data views? Why won't you give me a raw pointer?
   ///
   /// Tpetra was designed to allow different data representations
   /// underneath the same interface.  This lets Tpetra run correctly
@@ -217,6 +219,8 @@ namespace Tpetra {
   ///   single address space
   /// - Copying between different data layouts or memory spaces is
   ///   expensive and should be avoided whenever possible
+  /// - Optimal data layout may require control over initialization of
+  ///   storage
   ///
   /// These conclusions have practical consequences for the
   /// MultiVector interface.  In particular, we have deliberately made
@@ -226,6 +230,38 @@ namespace Tpetra {
   /// the raw pointer (for example, if it resides in GPU device
   /// memory, and you are working on the host CPU).  This is why we
   /// require accessing the data through views.
+  ///
+  /// \subsection Why no operator[]?
+  ///
+  /// The above section also explains why we do not offer a Scalar&
+  /// operator[] to access each entry of a vector directly.  Direct
+  /// access on GPUs would require implicitly creating an internal
+  /// host copy of the device data.  This would consume host memory,
+  /// and it would not be clear when to write the resulting host data
+  /// back to device memory.  The resulting operator would violate
+  /// users' performance expectations, since it would be much slower
+  /// than raw array access.  We have preferred in our design to
+  /// expose what is expensive, by exposing data views and letting
+  /// users control when to copy data between host and device.
+  ///
+  /// \section Parallel distribution of data
+  ///
+  /// A MultiVector is a DistObject; its rows are distributed over
+  /// processes in the input Map's communicator.  This means that you
+  /// may use Import and Export to migrate between different
+  /// distributions.  Please refer to the documentation of Map,
+  /// Import, and Export for more information.
+  ///
+  /// MultiVector includes methods that perform parallel all-reduces.
+  /// These include inner products and various kinds of norms.  All of
+  /// these methods have the same blocking semantics as MPI_Allreduce.
+  ///
+  /// \warning Some computational methods, such as inner products and
+  ///   norms, may return incorrect results if the MultiVector's Map
+  ///   is overlapping (not one-to-one) but not locally replicated.
+  ///   That is, if some but not all rows are shared by more than one
+  ///   process in the communicator, then inner products and norms may
+  ///   be wrong.  This behavior may change in future releases.
   template<class Scalar,
            class LocalOrdinal=int,
            class GlobalOrdinal=LocalOrdinal,
@@ -406,7 +442,12 @@ namespace Tpetra {
     ///   debug mode.
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
-    //! For a locally replicated multivector: sum values across all processes.
+    /// \brief Sum values of a locally replicated multivector across all processes.
+    ///
+    /// \warning This method may only be called for locally replicated
+    ///   MultiVectors.
+    ///
+    /// \pre isDistributed() == false
     void reduce();
 
     /// \brief Assign the contents of \c source to this multivector (deep copy).
