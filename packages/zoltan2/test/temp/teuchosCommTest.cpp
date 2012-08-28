@@ -3,19 +3,26 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_RCP.hpp"
 
-typedef int Ordinal;
 
 int main(int narg, char **arg)
 {
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);
 
-  Teuchos::RCP<const Teuchos::Comm<Ordinal> >
-    comm = Teuchos::DefaultComm<Ordinal>::getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> >
+    comm = Teuchos::DefaultComm<int>::getComm();
+  int me = comm->getRank();
+
+  if (me == 0) 
+    std::cout << std::endl
+              << "Usage:  Zoltan2_teuchosCommTest.exe [#_of_allreduces_to_do]" 
+              << std::endl
+              << "        default number is 4000" 
+              << std::endl
+              << std::endl;
 
   int niter = 4000;
   if (narg > 1) niter = atoi(arg[1]);
 
-  int me = comm->getRank();
   double tstart, tend;
 
   int iin = me, iout;
@@ -42,7 +49,7 @@ int main(int narg, char **arg)
               << tend - tstart << std::endl;
 
   if (me == 0)
-    std::cout << "PASS" << std::endl;
+    std::cout << std::endl << "PASS" << std::endl;
 
   return 0;
 }
