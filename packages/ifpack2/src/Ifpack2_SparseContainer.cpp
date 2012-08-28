@@ -27,22 +27,38 @@
 //@HEADER
 */
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Partitioner.hpp"
-#include "Ifpack2_OverlappingPartitioner.hpp"
-#include "Ifpack2_LinearPartitioner.hpp"
-#include "Tpetra_CrsGraph.hpp"
+#include "Ifpack2_SparseContainer_decl.hpp"
 
-//==============================================================================
-int Ifpack2_LinearPartitioner::ComputePartitions()
-{
-  
-  int mod = NumMyRows() / NumLocalParts_;
-  for (int i = 0 ; i < NumMyRows() ; ++i) {
-    Partition_[i] = i / mod;
-    if (Partition_[i] >= NumLocalParts_)
-      Partition_[i] = NumLocalParts_ - 1;
-  }
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-  return(0);
+#include "Ifpack2_SparseContainer_def.hpp"
+#include "Ifpack2_ILUT_decl.hpp"
+#include "Ifpack2_ILUT_def.hpp"
+#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+
+
+// Note: Add similar explicit instantiation for ILU when we get one of those.
+
+#define IFPACK2_INST_ILUT(CLASSNAME,S,LO,GO) \
+  template class CLASSNAME<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
+			   Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >
+
+
+
+namespace Ifpack2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+IFPACK2_INST_ILUT(SparseContainer,float,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+IFPACK2_INST_ILUT(SparseContainer,double,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+IFPACK2_INST_ILUT(SparseContainer,std::complex<float>,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+IFPACK2_INST_ILUT(SparseContainer,std::complex<double>,int,int);
+#endif
 }
+
+#endif
+

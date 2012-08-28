@@ -27,13 +27,14 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_RELAXATION_DECL_HPP
-#define IFPACK2_RELAXATION_DECL_HPP
+#ifndef IFPACK2_BLOCKRELAXATION_DECL_HPP
+#define IFPACK2_BLOCKRELAXATION_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Parameters.hpp"
+#include "Ifpack2_Partitioner.hpp"
 
 #include <Tpetra_Vector.hpp>
 
@@ -59,10 +60,10 @@ enum RelaxationType {
   SGS
 };
 
-//! Ifpack2::Relaxation: defines relaxation preconditioners for Tpetra::RowMatrix objects.
+//! Ifpack2::BlockRelaxation: defines relaxation preconditioners for Tpetra::RowMatrix objects.
 
 /*! 
-  The Ifpack2::Relaxation class enables the construction of relaxation
+  The Ifpack2::BlockRelaxation class enables the construction of relaxation
   preconditioners for Tpetra::RowMatrix. Ifpack2::Relaxation 
   is derived from Ifpack2::Preconditioner, which is itself derived
   from Tpetra::Operator.
@@ -113,30 +114,30 @@ P_{GS}^{-1} = (D - E)^{-1}.
 Clearly, the role of E and F can be interchanged. This is what the
 "relaxation: backward mode" option is for.
 
-<P>For a list of supported parameters, please refer to the Relaxation::setParameters method.
+<P>For a list of supported parameters, please refer to the BlockRelaxation::setParameters method.
 
     \author Michael Heroux, SNL 9214.
 
     \date Last modified on 22-Jan-05.
 */
-template<class MatrixType>
-class Relaxation : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
+template<class MatrixType,class ContainerType>
+class BlockRelaxation : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
 
 public:
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
+  typedef typename MatrixType::scalar_type         Scalar;
+  typedef typename MatrixType::local_ordinal_type  LocalOrdinal;
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
+  typedef typename MatrixType::node_type           Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   // \name Constructors and Destructors
   //@{
 
-  //! Relaxation constructor with given Tpetra::RowMatrix input.
-  explicit Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
+  //! BlockRelaxation constructor with given Tpetra::RowMatrix input.
+  explicit BlockRelaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
 
-  //! Relaxation Destructor.
-  virtual ~Relaxation();
+  //! BlockRelaxation Destructor.
+  virtual ~BlockRelaxation();
 
   //@}
 
@@ -197,8 +198,8 @@ public:
   void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+	     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+	     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
@@ -286,43 +287,31 @@ private:
   // @{ Internal methods
 
   //! Copy constructor (should never be used)
-  Relaxation(const Relaxation<MatrixType>& RHS);
+  BlockRelaxation(const BlockRelaxation<MatrixType,ContainerType> & RHS);
 
   //! operator= (should never be used)
-  Relaxation<MatrixType>& operator=(const Relaxation<MatrixType>& RHS);
+  BlockRelaxation<MatrixType,ContainerType>& operator=(const BlockRelaxation<MatrixType,ContainerType>& RHS);
 
-  //! Applies the Jacobi preconditioner to X, returns the result in Y.
-  void ApplyInverseJacobi(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+  virtual void ApplyInverseJacobi(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+				  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  //! Applies the Gauss-Seidel preconditioner to X, returns the result in Y.
-  void ApplyInverseGS(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+  virtual void DoJacobi(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  void ApplyInverseGS_RowMatrix(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+  virtual void ApplyInverseGS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  void ApplyInverseGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+  virtual void DoGaussSeidel(Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
-  void ApplyInverseSGS(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+  virtual void ApplyInverseSGS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  void ApplyInverseSGS_RowMatrix(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  void ApplyInverseSGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+  virtual void DoSGS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xtmp,
+		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+ 
+  void ExtractSubmatrices();
 
   //@}
 
@@ -330,16 +319,28 @@ private:
 
   //! reference to the matrix to be preconditioned
   const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
-  //! Reference to the communicator object
-  const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
   //! Importer for parallel GS and SGS
   Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
-  //! Contains the diagonal elements of \c Matrix.
-  mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Diagonal_;
+
+  //! Weights for overlapping overlapped Jacobi only.
+  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > W_;
+  // Level of overlap among blocks (for overlapped Jacobi only).
+  int OverlapLevel_;
+  //! Contains the (block) diagonal elements of \c Matrix.
+  mutable std::vector<Teuchos::RCP<ContainerType> > Containers_;
+  //! Contains information about non-overlapping partitions.
+  Teuchos::RCP<Ifpack2::Partitioner<Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > > Partitioner_;
+  std::string PartitionerType_;
+
+  //! Parameters list to be used to solve on each subblock
+  Teuchos::ParameterList List_;
+
   //! Number of application of the preconditioner (should be greater than 0).
   int NumSweeps_;
+  //! Number of local blocks
+  size_t NumLocalBlocks_;
   //! Which type of point relaxation approach to use
   int PrecType_;
   //! Minimum diagonal value
@@ -352,10 +353,6 @@ private:
   bool ZeroStartingSolution_;
   //! Backward-Mode Gauss Seidel 
   bool DoBackwardGS_;
-  //! Do L1 Jacobi/GS/SGS
-  bool DoL1Method_;
-  //! Eta parameter for modified L1 method
-  magnitudeType L1Eta_;
   //! Condition number estimate
   magnitudeType Condest_;
   //! If \c true, the preconditioner has been computed successfully.
@@ -387,9 +384,9 @@ private:
 
   //@}
 
-}; //class Relaxation
+}; //class BlockRelaxation
 
 }//namespace Ifpack2
 
-#endif // IFPACK2_RELAXATION_DECL_HPP
+#endif // IFPACK2_BLOCKRELAXATION_DECL_HPP
 

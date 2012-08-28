@@ -27,42 +27,22 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_DIAGONALFILTER_DECL_HPP
-#define IFPACK2_DIAGONALFILTER_DECL_HPP
+#ifndef IFPACK2_SINGLETONFILTER_DECL_HPP
+#define IFPACK2_SINGLETONFILTER_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include <vector>
+
 
 namespace Ifpack2 {
-
-//! Ifpack2_DiagonalFilter: Filter to modify the diagonal entries of a given Tpetra_RowMatrix.
-/*!
-
-Ifpack2_DiagonalFilter modifies the elements on the diagonal.
-
-A typical use is as follows:
-\code
-Teuchos::RCP<Tpetra::RowMatrix> A;
-// creates a matrix B such that
-// B(i,i) = AbsoluteThreshold * sgn(B(i,i)) + 
-//          RelativeThreshold * B(i,i)
-double AbsoluteThreshold = 1e-3;
-double RelativeThreshold = 1.01;
-
-Ifpack2_DiagonalFilter<Tpetra::RowMatrix> B(A, AbsoluteThreshold, RelativeThreshold);
-\endcode
-
-Note: This operation only really makes sense if the Thresholds are not complex.
-
-\data Last modified on 31-Aug-12.
-
-*/
-
+//! Ifpack2_SingletonFilter: Filter based on matrix entries.
 template<class MatrixType>
-class  DiagonalFilter : virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
+class  SingletonFilter : virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
   
 public:
   typedef typename MatrixType::scalar_type Scalar;
@@ -77,12 +57,10 @@ public:
   //@{
 
   //! Constructor.
-  explicit DiagonalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
-			  magnitudeType AbsoluteThreshold,
-			  magnitudeType RelativeThreshold);
+  explicit SingletonFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
   
   //! Destructor.
-  virtual ~DiagonalFilter();
+  virtual ~SingletonFilter();
 
   //@}
 
@@ -278,8 +256,6 @@ public:
     vary according to the values of \c alpha and \c beta. Specifically
     - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
     - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
-
-    This is analagous to the *Multiply* function in Ifpack, not the *Apply*
   */
   virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
 		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
@@ -290,6 +266,20 @@ public:
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const;
   
+  //! Solve the singleton components of the linear system
+  virtual void SolveSingletons(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
+		      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS);
+
+  //! Creates a RHS for the reduced singleton-free system
+  virtual void CreateReducedRHS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS,
+		       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
+		       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS);
+
+  //! Updates a full LHS from a reduces LHS
+  virtual void UpdateLHS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
+		Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS);
+  
+
   //@}
   
   //! \name Deprecated routines to be removed at some point in the future.
@@ -327,19 +317,36 @@ public:
   
 private:
 
-  //! Pointer to the matrix to be filtered
+  //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
-  //! This value (times the sgn(A(i,i)) is added to the diagonal elements
-  magnitudeType  AbsoluteThreshold_;
-  //! Multiplies A(i,i) by this value.
-  magnitudeType RelativeThreshold_;
-  //! Stores the position of the diagonal element, or -1 if not present.
-  std::vector<LocalOrdinal> pos_;
-  //! Stores as additional diagonal contribution due to the filter.
-  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > val_;
-
-};// class DiagonalFilter
+  //! Map containing the non-singleton rows only.
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ReducedMap_;
+  //! Reduced diagonal
+  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Diagonal_;
+  //! Number of Singletons
+  size_t NumSingletons_;
+  //! Indices of the singletons
+  std::vector<LocalOrdinal> SingletonIndex_;
+  //! Reordering vector
+  std::vector<LocalOrdinal> Reorder_;
+  //! Reverse reordering vector
+  std::vector<LocalOrdinal> InvReorder_; 
+  //! Number of rows in the local matrix.
+  size_t NumRows_;
+  //! Number of nonzeros in the local matrix.
+  size_t NumNonzeros_;
+  //! Maximum number of nonzero entries in a row for the filtered matrix.
+  size_t MaxNumEntries_;
+  //! Maximum number of nonzero entries in a row for the unfiltered matrix.
+  size_t MaxNumEntriesA_;
+  //! NumEntries_[i] contains the nonzero entries in row `i'.
+  std::vector<size_t> NumEntries_;
+  //! Used in ExtractMyRowCopy, to avoid allocation each time.
+  mutable Teuchos::Array<LocalOrdinal> Indices_;
+  //! Used in ExtractMyRowCopy, to avoid allocation each time.
+  mutable Teuchos::Array<Scalar> Values_;
+};// class SingletonFilter
 
 }// namespace Ifpack2
 
-#endif /* IFPACK2_DIAGONALFILTER_DECL_HPP */
+#endif /* IFPACK2_SINGLETONFILTER_DECL_HPP */

@@ -27,17 +27,12 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_OVERLAPPINGPARTITIONER_HPP
-#define IFPACK2_OVERLAPPINGPARTITIONER_HPP
+#ifndef IFPACK2_OVERLAPPINGPARTITIONER_DECL_HPP
+#define IFPACK2_OVERLAPPINGPARTITIONER_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Partitioner.hpp"
-#include "Teuchos_ParameterList.hpp"
-class Tpetra_Comm;
-class Ifpack2_Graph;
-class Tpetra_Map;
-class Tpetra_BlockMap;
-class Tpetra_Import;
+#include "Tpetra_RowGraph.hpp"
 
 /* \brief Ifpack2_OverlappingPartitioner: A class to create overlapping
     partitions of a local graph.
@@ -61,31 +56,30 @@ input to one of these classes are supposed to contain no singletons.
 Usually, this means that the graph is derived from an Tpetra_RowMatrix,
 that has been filtered using Ifpack2_SingletonFilter.
 
-\author Michael Heroux, SNL 9214.
-
-\date Last update: Oct-04.
+\date Last update: Aug-12.
 */  
-class Ifpack2_OverlappingPartitioner : public Ifpack2_Partitioner {
+
+namespace Ifpack2 {
+
+template<class GraphType>
+class OverlappingPartitioner : public Partitioner<GraphType> {
 
 public:
+  typedef typename GraphType::local_ordinal_type LocalOrdinal;
+  typedef typename GraphType::global_ordinal_type GlobalOrdinal;
+  typedef typename GraphType::node_type Node;
 
   //! Constructor.
-  Ifpack2_OverlappingPartitioner(const Ifpack2_Graph* Graph);
+  OverlappingPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph);
 
   //! Destructor.
-  virtual ~Ifpack2_OverlappingPartitioner();
+  virtual ~OverlappingPartitioner();
 
   //! Returns the number of computed local partitions.
-  int NumLocalParts() const 
-  {
-    return(NumLocalParts_);
-  }
+  size_t numLocalParts() const;
 
   //! Returns the overlapping level.
-  int OverlappingLevel() const 
-  {
-    return(OverlappingLevel_);
-  }
+  size_t overlappingLevel() const;
 
   //! Returns the local non-overlapping partition ID of the specified row.
   /*! Returns the non-overlapping partition ID of the specified row.
@@ -95,44 +89,19 @@ public:
    \return
    Local ID of non-overlapping partition for \t MyRow.
    */
-  int operator() (int MyRow) const
-  {
-    if ((MyRow < 0) || (MyRow > NumMyRows()))
-      IFPACK2_CHK_ERR(-1); // input value not valid
-
-    return(Partition_[MyRow]);
-  }
+  LocalOrdinal operator() (LocalOrdinal MyRow) const;
 
   //! Returns the local overlapping partition ID of the j-th node in partition i.
-  int operator() (int i, int j) const
-  {
-    if ((i < 0) || (i >= NumLocalParts()))
-      IFPACK2_CHK_ERR(-1);
-
-    if ((j < 0) || (j > (int)Parts_[i].size()))
-      IFPACK2_CHK_ERR(-2);
-
-    return(Parts_[i][j]);
-  }
+  LocalOrdinal operator() (LocalOrdinal i, LocalOrdinal j) const;
 
   //! Returns the number of rows contained in specified partition.
-  inline int NumRowsInPart(const int Part) const
-  {
-    return(Parts_[Part].size());
-  }
-    
-  int RowsInPart(const int Part, int* List) const
-  {
-    for (int i = 0 ; i < NumRowsInPart(Part) ; ++i)
-      List[i] = Parts_[Part][i];
+  size_t numRowsInPart(const LocalOrdinal Part) const;
 
-    return(0);
-  }
-  
-  const int* NonOverlappingPartition() const
-  {
-    return(&Partition_[0]);
-  }
+  //! Copies into List the rows in the (overlapping) partition Part.
+  void rowsInPart(const LocalOrdinal Part,  Teuchos::ArrayRCP<LocalOrdinal> & List) const;
+
+  //! Returns an ArrayRCP to the integer vector containing the non-overlapping partition ID of each local row.
+  virtual Teuchos::ArrayView<const LocalOrdinal>  nonOverlappingPartition() const;
 
   //! Sets all the parameters for the partitioner.
   /*! The supported parameters are:
@@ -140,61 +109,62 @@ public:
    * - \c "partitioner: local parts" (int, default = 1).
    * - \c "partitioner: print level" (int, default = 0).
    */
-  virtual int SetParameters(Teuchos::ParameterList& List);
+  virtual void setParameters(Teuchos::ParameterList& List);
 
   //! Sets all the parameters for the partitioner.
   /*! This function is used by derived classes to set their own
    * parameters. These classes should not derive SetParameters(),
    * so that common parameters can be set just once.
    */
-  virtual int SetPartitionParameters(Teuchos::ParameterList& List) = 0;
+  virtual void setPartitionParameters(Teuchos::ParameterList& List) = 0;
 
   //! Computes the partitions. Returns 0 if successful.
-  virtual int Compute();
+  virtual void compute();
 
   //! Computes the partitions. Returns 0 if successful.
-  virtual int ComputePartitions() = 0;
+  virtual void computePartitions() = 0;
 
   //! Computes the partitions. Returns 0 if successful.
-  virtual int ComputeOverlappingPartitions();
+  virtual void computeOverlappingPartitions();
   
   //! Returns true if partitions have been computed successfully.
-  bool IsComputed()
-  {
-    return(IsComputed_);
-  }
+  virtual bool isComputed() const;
 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& print(std::ostream& os) const;
 
+
+  //! @name Overridden from Teuchos::Describable 
+  //@{
+
+  /** \brief Return a simple one-line description of this object. */
+  std::string description() const;
+
+  //! Print the object with some verbosity level to an FancyOStream object. 
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+
+  //@}
+ 
 protected:
-   
-  //! Returns the number of local rows.
-  int NumMyRows() const;
-  //! Returns the number of local nonzero elements.
-  int NumMyNonzeros() const;
-  //! Returns the number of local rows.
-  int NumGlobalRows() const;
-  //! Returns the max number of local entries in a row.
-  int MaxNumEntries() const;
-  //! Returns the communicator object of Graph.
-  const Tpetra_Comm& Comm() const;
-  //! Number of local subgraphs
+
+  //! Number of local subgraphs.  This is an int because negatives mean something.
   int NumLocalParts_;
   //! Partition_[i] contains the ID of non-overlapping part it belongs to
-  std::vector<int> Partition_; 
+  Teuchos::Array<LocalOrdinal> Partition_; 
   //! Parts_[i][j] is the ID of the j-th row contained in the (overlapping) 
   // partition i
-  std::vector<std::vector<int> > Parts_;
+  Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> > Parts_;
   //! Reference to the graph to be partitioned
-  const Ifpack2_Graph* Graph_;
+  Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > Graph_;
   //! Overlapping level.
-  int OverlappingLevel_;
+  size_t OverlappingLevel_;
   //! If \c true,  the graph has been successfully partitioned.
   bool IsComputed_;
   //! If \c true, information are reported on cout.
   bool verbose_;
 
-}; // class Ifpack2_Partitioner
+}; // class Ifpack2::OverlappingPartitioner
 
-#endif // IFPACK2_OVERLAPPINGPARTITIONER_HPP
+}// namespace Ifpack2
+
+#endif // IFPACK2_OVERLAPPINGPARTITIONER_DECL_HPP

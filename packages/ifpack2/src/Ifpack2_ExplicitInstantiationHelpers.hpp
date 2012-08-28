@@ -3,6 +3,7 @@
 #define TPETRA_EXPLICITINSTANTIATIONHELPERS_HPP
 
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsGraph.hpp>
 
 #define IFPACK2_INST(CLASSNAME,S,LO,GO) \
   template class CLASSNAME<Tpetra::CrsMatrix<S,LO,GO, \
@@ -24,6 +25,16 @@
 #define IFPACK2_INSTANT_CRSMATRIX_COMPLEX_DEFAULTS(CLASSNAME) \
   IFPACK2_INST(CLASSNAME,std::complex<double>,int,int) \
   IFPACK2_INST(CLASSNAME,std::complex<float>,int,int) 
+
+
+
+#define IFPACK2_INST_GRAPH(CLASSNAME,S,LO,GO) \
+  template class CLASSNAME<Tpetra::CrsGraph<LO,GO, \
+                 Kokkos::DefaultNode::DefaultNodeType, \
+                 Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> >
+
+
+
 
 #endif
 
