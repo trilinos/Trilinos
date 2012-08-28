@@ -400,7 +400,7 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
     for (size_t i = 0 ; i < NumLocalBlocks_ ; ++i) {    
       for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
 	int LID = (*Partitioner_)(i,j);
-	w_ptr[LID]++;
+	w_ptr[LID]+= Teuchos::ScalarTraits<Scalar>::one();
       }
     }
     W_->reciprocal(*W_);
