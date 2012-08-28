@@ -12,6 +12,16 @@
 
 // Zoltan callback functions and pre-decompositon utility functions...
 namespace {
+  inline size_t min(size_t x, size_t y)
+  {
+    return y ^ ((x^y) & -(x<y));
+  }
+
+  inline size_t max(size_t x, size_t y)
+  {
+    return y ^ ((x^y) & -(x>y));
+  }
+
   template <typename T>
   void uniquify(std::vector<T> &vec)
   {
@@ -52,17 +62,31 @@ namespace {
     // 0-based node numbering
     // index[p] = first node (0-based) on processor p
     
-    // Need optimization -- this is O(n^2) on processor count...
+#if 1
+    // Assume data coherence.  I.e., a new search will be close to the
+    // previous search.
+    static size_t prev = 1;
+    
     size_t nproc = index.size();
+    if (prev < nproc && index[prev-1] <= node && index[prev] > node)
+      return prev-1;
+    
     for (size_t p = 1; p < nproc; p++) {
       if (index[p] > node) {
+	prev = p;
 	return p-1;
       }
     }
+
     assert(1==0); // Cannot happen...
     return -1;
+#else
+    return std::distance(index.begin(), std::upper_bound(index.begin(), index.end(), node))-1;
+#endif
   }
 
+  // ZOLTAN Callback functions...
+  
   int zoltan_num_dim(void *data, int *ierr)
   {
     // Return dimensionality of coordinate data.
@@ -115,7 +139,7 @@ namespace {
     // gids are array indices for coordinate arrays.
     Iopx::DecompositionData *zdata = (Iopx::DecompositionData *)(data);
   
-    std::copy(zdata->centroids.begin(), zdata->centroids.end(), &geom[0]);
+    std::copy(zdata->centroids_.begin(), zdata->centroids_.end(), &geom[0]);
      
     *ierr = ZOLTAN_OK;
     return;
@@ -149,16 +173,6 @@ namespace {
     dist[proc_count] = sum;
   }
   
-  inline size_t min(size_t x, size_t y)
-  {
-    return y ^ ((x^y) & -(x<y));
-  }
-
-  inline size_t max(size_t x, size_t y)
-  {
-    return y ^ ((x^y) & -(x>y));
-  }
-
 }
 
 namespace Iopx {
@@ -172,15 +186,37 @@ namespace Iopx {
   bool DecompositionData::i_own_node(size_t global_index) const
   {
     // global_index is 1-based index into global list of nodes [1..global_node_count]
-    return nodeGTL.find(global_index) != nodeGTL.end();
+    return std::binary_search(nodeGTL.begin(), nodeGTL.end(), global_index);
   }
 
   bool DecompositionData::i_own_elem(size_t global_index) const
   {
     // global_index is 1-based index into global list of nodes [1..global_node_count]
-    return elemGTL.find(global_index) != elemGTL.end();
+    return elemGTL.count(global_index) != 0;
   }
 
+  size_t DecompositionData::node_global_to_local(size_t global_index) const
+  {
+    // global_index is 1-based index into global list of nodes [1..global_node_count]
+    // return value is 1-based index into local list of nodes on this
+    // processor (ioss-decomposition)
+    // Note that for 'int', equivalence and equality are the same, so
+    // lower_bound is OK here (EffectiveSTL, Item 19)
+    std::vector<int>::const_iterator I = lower_bound(nodeGTL.begin(), nodeGTL.end(), global_index);
+    assert(I != nodeGTL.end());
+    return std::distance(nodeGTL.begin(), I)+1; // Convert to 1-based index.
+  }
+    
+  size_t DecompositionData::elem_global_to_local(size_t global_index) const
+  {
+    // global_index is 1-based index into global list of elements [1..global_node_count]
+    // return value is 1-based index into local list of elements on this
+    // processor (ioss-decomposition)
+    std::map<int,int>::const_iterator I = elemGTL.find(global_index);
+    assert(I != elemGTL.end());
+    return I->second;
+  }
+    
   void DecompositionData::decompose_model(int exodusId)
   {
     // Initial decomposition is linear where processor #p contains
@@ -209,6 +245,7 @@ namespace Iopx {
     
     calculate_element_centroids(exodusId, pointer, adjacency, node_dist);
     
+    //-------------ZOLTAN BEGIN-----------------
     float version = 0.0;
     Zoltan_Initialize(0, NULL, &version);
 
@@ -256,12 +293,12 @@ namespace Iopx {
 	      << num_export                  << " exported elements\n";
 
     // Don't need centroid data anymore... Free up space
-    std::vector<double>().swap(centroids);
+    std::vector<double>().swap(centroids_);
 
     // Find all elements that remain locally owned...
     get_local_element_list(export_global_ids, num_export);
     
-    // Build export_element_map...
+    // Build exportElementMap...
     std::vector<std::pair<int,int> > export_map;
     export_map.reserve(num_export);
     for (size_t i=0; i < num_export; i++) {
@@ -269,39 +306,44 @@ namespace Iopx {
     }
 
     std::sort(export_map.begin(), export_map.end());
-    export_element_map.reserve(num_export);
-    export_element_index.resize(processorCount+1);
-    export_element_count.resize(processorCount+1);
+    exportElementMap.reserve(num_export);
+    exportElementIndex.resize(processorCount+1);
+    exportElementCount.resize(processorCount+1);
     for (size_t i=0; i < num_export; i++) {
-      export_element_map.push_back(export_map[i].second);
-      export_element_count[export_map[i].first]++;
+      exportElementMap.push_back(export_map[i].second);
+      exportElementCount[export_map[i].first]++;
     }
     std::vector<std::pair<int,int> >().swap(export_map);
 
-    std::copy(export_element_count.begin(), export_element_count.end(), export_element_index.begin());
-    generate_index(export_element_index);
+    std::copy(exportElementCount.begin(), exportElementCount.end(), exportElementIndex.begin());
+    generate_index(exportElementIndex);
 
-    // Build import_element_map...
-    import_element_map.reserve(num_import);
-    import_element_index.resize(processorCount+1);
-    import_element_count.resize(processorCount+1);
+    // Build importElementMap...
+    importElementMap.reserve(num_import);
+    importElementIndex.resize(processorCount+1);
+    importElementCount.resize(processorCount+1);
     for (size_t i=0; i < num_import; i++) {
-      import_element_map.push_back(import_global_ids[i]);
-      import_element_count[import_procs[i]]++;
+      importElementMap.push_back(import_global_ids[i]);
+      importElementCount[import_procs[i]]++;
     }
     
-    std::sort(import_element_map.begin(), import_element_map.end());
+    zz->LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs, &import_to_part);
+    zz->LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
+    delete zz; // Done with zoltan interface...
+    //-------------ZOLTAN END-----------------
+    
+    std::sort(importElementMap.begin(), importElementMap.end());
 
-    std::copy(import_element_count.begin(), import_element_count.end(), import_element_index.begin());
-    generate_index(import_element_index);
+    std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
+    generate_index(importElementIndex);
 
     // Find the number of imported elements that precede the elements
     // that remain locally owned...
-    import_pre_local_elem_index = 0;
-    for (size_t i=0; i < import_element_map.size(); i++) {
-      if (import_element_map[i] >= elementOffset)
+    importPreLocalElemIndex = 0;
+    for (size_t i=0; i < importElementMap.size(); i++) {
+      if (importElementMap[i] >= elementOffset)
 	break;
-      import_pre_local_elem_index++;
+      importPreLocalElemIndex++;
     }
     
     // Determine size of this processors element blocks...
@@ -330,21 +372,21 @@ namespace Iopx {
   void DecompositionData::build_global_to_local_elem_map()
   {
     // global_index is 1-based index into global list of elems [1..global_elem_count]
-    for (size_t i=0; i < local_element_map.size(); i++) {
-      size_t global_index = local_element_map[i] + elementOffset + 1;
-      size_t local_index = i + import_pre_local_elem_index + 1;
+    for (size_t i=0; i < localElementMap.size(); i++) {
+      size_t global_index = localElementMap[i] + elementOffset + 1;
+      size_t local_index = i + importPreLocalElemIndex + 1;
       elemGTL[global_index] = local_index;
     }
     
-    for (size_t i=0; i < import_pre_local_elem_index; i++) {
-      size_t global_index = import_element_map[i]+1;
+    for (size_t i=0; i < importPreLocalElemIndex; i++) {
+      size_t global_index = importElementMap[i]+1;
       size_t local_index = i+1;
       elemGTL[global_index] = local_index;
     }
 
-    for (size_t i=import_pre_local_elem_index; i < import_element_map.size(); i++) {
-      size_t global_index = import_element_map[i]+1;
-      size_t local_index = local_element_map.size() + i + 1;
+    for (size_t i=importPreLocalElemIndex; i < importElementMap.size(); i++) {
+      size_t global_index = importElementMap[i]+1;
+      size_t local_index = localElementMap.size() + i + 1;
       elemGTL[global_index] = local_index;
     }
   }
@@ -360,10 +402,10 @@ namespace Iopx {
     std::vector<int> export_conn_size(processorCount);
     std::vector<int> import_conn_size(processorCount);
     for (size_t p=0; p < processorCount; p++) {
-      size_t el_begin = export_element_index[p];
-      size_t el_end = export_element_index[p+1];
+      size_t el_begin = exportElementIndex[p];
+      size_t el_end = exportElementIndex[p+1];
       for (size_t i=el_begin; i < el_end; i++) {
-	MY_INT elem = export_element_map[i] - elementOffset;
+	MY_INT elem = exportElementMap[i] - elementOffset;
 	size_t nnpe = pointer[elem+1] - pointer[elem];
 	export_conn_size[p] += nnpe;
       }
@@ -386,10 +428,10 @@ namespace Iopx {
     }
     
     for (size_t p=0; p < processorCount; p++) {
-      size_t el_begin = export_element_index[p];
-      size_t el_end = export_element_index[p+1];
+      size_t el_begin = exportElementIndex[p];
+      size_t el_end = exportElementIndex[p+1];
       for (size_t i=el_begin; i < el_end; i++) {
-	MY_INT elem = export_element_map[i] - elementOffset;
+	MY_INT elem = exportElementMap[i] - elementOffset;
 	for (size_t n = pointer[elem]; n < pointer[elem+1]; n++) {
 	  export_conn.push_back(adjacency[n]);
 	}
@@ -400,8 +442,8 @@ namespace Iopx {
 
     // Count number of nodes on local elements...
     size_t node_sum = 0;
-    for (size_t i=0; i < local_element_map.size(); i++) {
-      size_t elem = local_element_map[i];
+    for (size_t i=0; i < localElementMap.size(); i++) {
+      size_t elem = localElementMap[i];
       node_sum += pointer[elem+1] - pointer[elem];
     }
     // Also holds imported nodes...
@@ -429,8 +471,8 @@ namespace Iopx {
     }    
     
     // Nodes on local elements...
-    for (size_t i=0; i < local_element_map.size(); i++) {
-      size_t elem = local_element_map[i];
+    for (size_t i=0; i < localElementMap.size(); i++) {
+      size_t elem = localElementMap[i];
       for (size_t n = pointer[elem]; n < pointer[elem+1]; n++) {
 	nodes.push_back(adjacency[n]);
       }
@@ -440,65 +482,66 @@ namespace Iopx {
     uniquify(nodes);
     
     // Determine owning 'file' processor for each node...
-    node_index.resize(processorCount+1);
+    nodeIndex.resize(processorCount+1);
     
     for (size_t i=0; i < nodes.size(); i++) {
       MY_INT owning_processor = find_index_location(nodes[i], node_dist);
-      node_index[owning_processor]++;
+      nodeIndex[owning_processor]++;
     }
-    import_node_count.resize(node_index.size());
-    std::copy(node_index.begin(), node_index.end(), import_node_count.begin());
-    export_node_count.resize(processorCount);
-    generate_index(node_index);
+    importNodeCount.resize(nodeIndex.size());
+    std::copy(nodeIndex.begin(), nodeIndex.end(), importNodeCount.begin());
+    exportNodeCount.resize(processorCount);
+    generate_index(nodeIndex);
 
     // Tell other processors how many nodes I will be importing from
     // them...
-    import_node_count[myProcessor] = 0;
-    MPI_Alltoall(TOPTR(import_node_count), 1, MPI_INT,
-		 TOPTR(export_node_count), 1, MPI_INT, comm_);
+    importNodeCount[myProcessor] = 0;
+    MPI_Alltoall(TOPTR(importNodeCount), 1, MPI_INT,
+		 TOPTR(exportNodeCount), 1, MPI_INT, comm_);
 
-    size_t import_sum = std::accumulate(import_node_count.begin(), import_node_count.end(), 0);
-    size_t export_sum = std::accumulate(export_node_count.begin(), export_node_count.end(), 0);
+    size_t import_sum = std::accumulate(importNodeCount.begin(), importNodeCount.end(), 0);
+    size_t export_sum = std::accumulate(exportNodeCount.begin(), exportNodeCount.end(), 0);
 
     std::vector<int> import_nodes;
     import_nodes.reserve(import_sum);
-    import_node_map.reserve(import_sum);
+    importNodeMap.reserve(import_sum);
     for (size_t p=0; p < processorCount; p++) {
-      size_t beg = node_index[p];
-      size_t end = node_index[p+1];
+      size_t beg = nodeIndex[p];
+      size_t end = nodeIndex[p+1];
 
       if (p == myProcessor) {
-	import_pre_local_node_index = beg;
-	local_node_map.reserve(end-beg);
+	importPreLocalNodeIndex = beg;
+	localNodeMap.reserve(end-beg);
 	for (size_t n = beg; n < end; n++) {
-	  local_node_map.push_back(nodes[n]);
+	  localNodeMap.push_back(nodes[n]);
 	}
       } else {
 	for (size_t n = beg; n < end; n++) {
 	  import_nodes.push_back(nodes[n]);
-	  import_node_map.push_back(n);
+	  importNodeMap.push_back(n);
 	}
       }
     }
     assert(import_nodes.size() == import_sum);
-    export_node_map.resize(export_sum);
-    export_node_index.resize(processorCount+1);
-    std::copy(export_node_count.begin(), export_node_count.end(), export_node_index.begin());
-    generate_index(export_node_index);
+    exportNodeMap.resize(export_sum);
+    exportNodeIndex.resize(processorCount+1);
+    std::copy(exportNodeCount.begin(), exportNodeCount.end(), exportNodeIndex.begin());
+    generate_index(exportNodeIndex);
     
     // Now send the list of nodes that I need to import from each
     // processor...
-    import_node_index.resize(import_node_count.size());
-    std::copy(import_node_count.begin(), import_node_count.end(), import_node_index.begin());
-    generate_index(import_node_index);
+    importNodeIndex.resize(importNodeCount.size());
+    std::copy(importNodeCount.begin(), importNodeCount.end(), importNodeIndex.begin());
+    generate_index(importNodeIndex);
 
-    MPI_Alltoallv(TOPTR(import_nodes),    TOPTR(import_node_count), TOPTR(import_node_index), MPI_INT,
-		  TOPTR(export_node_map), TOPTR(export_node_count), TOPTR(export_node_index), MPI_INT,
+    MPI_Alltoallv(TOPTR(import_nodes),    TOPTR(importNodeCount), TOPTR(importNodeIndex), MPI_INT,
+		  TOPTR(exportNodeMap), TOPTR(exportNodeCount), TOPTR(exportNodeIndex), MPI_INT,
 		  comm_);
     
     // Map that converts nodes from the global index (1-based) to a local-per-processor index (1-based)
-    for (size_t i=0; i < nodes.size(); i++) {
-      nodeGTL[nodes[i]+1] = i+1;
+    nodeGTL.swap(nodes);
+    for (size_t i=0; i < nodeGTL.size(); i++) {
+      nodeGTL[i]++; // convert from 0-based index to 1-based index
     }
   }
 
@@ -513,23 +556,23 @@ namespace Iopx {
     // * put in a vector and sort on (id,proc).
     // * iterate and create a vector of all shared nodes and the
     //   processor they are on..
-    size_t local_node_count = node_index[myProcessor+1]-node_index[myProcessor];
+    size_t local_node_count = nodeIndex[myProcessor+1]-nodeIndex[myProcessor];
     std::vector<std::pair<MY_INT,int> > node_proc_list;
-    node_proc_list.reserve(local_node_count + export_node_map.size());
+    node_proc_list.reserve(local_node_count + exportNodeMap.size());
 
     {
-      for (size_t i=0; i < local_node_map.size(); i++) {
-	node_proc_list.push_back(std::make_pair(local_node_map[i], myProcessor));
+      for (size_t i=0; i < localNodeMap.size(); i++) {
+	node_proc_list.push_back(std::make_pair(localNodeMap[i], myProcessor));
       }
     }
     
     for (size_t p=0; p < processorCount; p++) {
       if (p == myProcessor)
 	continue;
-      size_t beg = export_node_index[p];
-      size_t end = export_node_index[p+1];
+      size_t beg = exportNodeIndex[p];
+      size_t end = exportNodeIndex[p+1];
       for (size_t i=beg; i < end; i++) {
-	node_proc_list.push_back(std::make_pair(export_node_map[i], p));
+	node_proc_list.push_back(std::make_pair(exportNodeMap[i], p));
       }
     }
     std::sort(node_proc_list.begin(), node_proc_list.end());
@@ -605,16 +648,14 @@ namespace Iopx {
 
     std::vector<int> recv_comm_map_disp(recv_comm_map_count);
     generate_index(recv_comm_map_disp);
-    node_comm_map.resize(recv_comm_map_disp[processorCount-1] + recv_comm_map_count[processorCount-1]);
+    nodeCommMap.resize(recv_comm_map_disp[processorCount-1] + recv_comm_map_count[processorCount-1]);
     MPI_Alltoallv(TOPTR(send_comm_map), TOPTR(send_comm_map_count), TOPTR(send_comm_map_disp), MPI_INT,
-		  TOPTR(node_comm_map), TOPTR(recv_comm_map_count), TOPTR(recv_comm_map_disp), MPI_INT,
+		  TOPTR(nodeCommMap), TOPTR(recv_comm_map_count), TOPTR(recv_comm_map_disp), MPI_INT,
 		  comm_);
     
     // Map global 0-based index to local 1-based index.
-    for (size_t i=0; i < node_comm_map.size(); i+=2) {
-      std::map<int,int>::const_iterator I = nodeGTL.find(node_comm_map[i]+1);
-      assert(I->second > 0);
-      node_comm_map[i] = I->second;
+    for (size_t i=0; i < nodeCommMap.size(); i+=2) {
+      nodeCommMap[i] = node_global_to_local(nodeCommMap[i]+1);
     }
   }
   
@@ -627,10 +668,10 @@ namespace Iopx {
       elements[elem-elementOffset] = 1;
     }
       
-    local_element_map.reserve(elementCount - export_count);
+    localElementMap.reserve(elementCount - export_count);
     for (size_t i=0; i < elementCount; i++) {
       if (elements[i] == 0) {
-	local_element_map.push_back(i);
+	localElementMap.push_back(i);
       }
     }
   }
@@ -1228,7 +1269,7 @@ namespace Iopx {
     // per element...
     
     // Calculate the centroid into the DecompositionData structure 'centroids'
-    centroids.reserve(elementCount*spatialDimension);
+    centroids_.reserve(elementCount*spatialDimension);
     std::vector<MY_INT> recv_tmp(processorCount);
 
     for (size_t i=0; i < elementCount; i++) {
@@ -1254,34 +1295,34 @@ namespace Iopx {
 	    cz += coord_recv[coffset+2];
 	}
       }
-      centroids.push_back(cx / nnpe);
+      centroids_.push_back(cx / nnpe);
       if (spatialDimension > 1)
-	centroids.push_back(cy / nnpe);
+	centroids_.push_back(cy / nnpe);
       if (spatialDimension > 2)
-	centroids.push_back(cz / nnpe);
+	centroids_.push_back(cz / nnpe);
     }
   }
 
   void DecompositionData::get_element_block_communication(size_t num_elem_block)
   {
     for (size_t b=0; b < num_elem_block; b++) {
-      el_blocks[b].export_count.resize(processorCount);
-      el_blocks[b].export_index.resize(processorCount);
-      el_blocks[b].import_count.resize(processorCount);
-      el_blocks[b].import_index.resize(processorCount);
+      el_blocks[b].exportCount.resize(processorCount);
+      el_blocks[b].exportIndex.resize(processorCount);
+      el_blocks[b].importCount.resize(processorCount);
+      el_blocks[b].importIndex.resize(processorCount);
     }
 
     // First iterate the local element indices and count number in
     // each block.
     size_t b = 0;
-    for (size_t i=0; i < local_element_map.size(); i++) {
-      size_t elem = local_element_map[i] + elementOffset;
+    for (size_t i=0; i < localElementMap.size(); i++) {
+      size_t elem = localElementMap[i] + elementOffset;
       
       b = find_index_location(elem, fileBlockIndex);
 
       assert(elem >= fileBlockIndex[b] && elem < fileBlockIndex[b+1]);
       size_t off = max(fileBlockIndex[b], elementOffset);
-      el_blocks[b].local_map.push_back(elem-off);
+      el_blocks[b].localMap.push_back(elem-off);
     }
 
 
@@ -1290,45 +1331,45 @@ namespace Iopx {
     b = 0;
     size_t proc = 0;
     std::vector<size_t> imp_index(num_elem_block); 
-    for (size_t i=0; i < import_element_map.size(); i++) {
-      size_t elem = import_element_map[i];
-      while (i >= import_element_index[proc+1])
+    for (size_t i=0; i < importElementMap.size(); i++) {
+      size_t elem = importElementMap[i];
+      while (i >= importElementIndex[proc+1])
 	proc++;
       
       b = find_index_location(elem, fileBlockIndex);
       size_t off = max(fileBlockIndex[b], elementOffset);
 
-      if (!el_blocks[b].local_map.empty() && elem < el_blocks[b].local_map[0]+off) {
-	el_blocks[b].local_ioss_offset++;
-	el_blocks[b].import_map.push_back(imp_index[b]++);
+      if (!el_blocks[b].localMap.empty() && elem < el_blocks[b].localMap[0]+off) {
+	el_blocks[b].localIossOffset++;
+	el_blocks[b].importMap.push_back(imp_index[b]++);
       } else {
-	el_blocks[b].import_map.push_back(el_blocks[b].local_map.size() + imp_index[b]++);
+	el_blocks[b].importMap.push_back(el_blocks[b].localMap.size() + imp_index[b]++);
       }
-      el_blocks[b].import_count[proc]++;
+      el_blocks[b].importCount[proc]++;
     }
 
     // Now for the exported data...
     proc = 0;
     b = 0;
-    for (size_t i=0; i < export_element_map.size(); i++) {
-      size_t elem = export_element_map[i];
-      while (i >= export_element_index[proc+1])
+    for (size_t i=0; i < exportElementMap.size(); i++) {
+      size_t elem = exportElementMap[i];
+      while (i >= exportElementIndex[proc+1])
 	proc++;
       
       b = find_index_location(elem, fileBlockIndex);
 
       size_t off = max(fileBlockIndex[b], elementOffset);
-      el_blocks[b].export_map.push_back(elem-off);
-      el_blocks[b].export_count[proc]++;
+      el_blocks[b].exportMap.push_back(elem-off);
+      el_blocks[b].exportCount[proc]++;
     }
 
     for (size_t bb=0; bb < num_elem_block; bb++) {
-      el_blocks[bb].iossCount = el_blocks[bb].local_map.size() + el_blocks[bb].import_map.size();
-      el_blocks[bb].fileCount = el_blocks[bb].local_map.size() + el_blocks[bb].export_map.size();
-      std::copy(el_blocks[bb].export_count.begin(), el_blocks[bb].export_count.end(), el_blocks[bb].export_index.begin());
-      std::copy(el_blocks[bb].import_count.begin(), el_blocks[bb].import_count.end(), el_blocks[bb].import_index.begin());
-      generate_index(el_blocks[bb].export_index);
-      generate_index(el_blocks[bb].import_index);
+      el_blocks[bb].iossCount = el_blocks[bb].localMap.size() + el_blocks[bb].importMap.size();
+      el_blocks[bb].fileCount = el_blocks[bb].localMap.size() + el_blocks[bb].exportMap.size();
+      std::copy(el_blocks[bb].exportCount.begin(), el_blocks[bb].exportCount.end(), el_blocks[bb].exportIndex.begin());
+      std::copy(el_blocks[bb].importCount.begin(), el_blocks[bb].importCount.end(), el_blocks[bb].importIndex.begin());
+      generate_index(el_blocks[bb].exportIndex);
+      generate_index(el_blocks[bb].importIndex);
     }
 
   }
@@ -1342,10 +1383,10 @@ namespace Iopx {
   {
     // Transfer the file-decomposition based data in 'file_data' to
     // the ioss-decomposition based data in 'ioss_data'
-    std::vector<T> export_data(export_node_map.size() * comp_count);
-    std::vector<T> import_data(import_node_map.size() * comp_count);
-    for (size_t i=0; i < export_node_map.size(); i++) {
-      size_t index = export_node_map[i] - nodeOffset;
+    std::vector<T> export_data(exportNodeMap.size() * comp_count);
+    std::vector<T> import_data(importNodeMap.size() * comp_count);
+    for (size_t i=0; i < exportNodeMap.size(); i++) {
+      size_t index = exportNodeMap[i] - nodeOffset;
       assert(index < nodeCount);
       for (size_t j=0; j < comp_count; j++) {
 	export_data[comp_count*i+j] = file_data[comp_count*index+j];
@@ -1353,18 +1394,18 @@ namespace Iopx {
     }
 
     // Transfer all local data from file_data to ioss_data...
-    for (size_t i=0; i < local_node_map.size(); i++) {
-      size_t index = local_node_map[i] - nodeOffset;
+    for (size_t i=0; i < localNodeMap.size(); i++) {
+      size_t index = localNodeMap[i] - nodeOffset;
       assert(index < nodeCount);
       for (size_t j=0; j < comp_count; j++) {
-	ioss_data[comp_count*(import_pre_local_node_index+i)+j] = file_data[comp_count*index+j];
+	ioss_data[comp_count*(importPreLocalNodeIndex+i)+j] = file_data[comp_count*index+j];
       }
     }
 
-    std::vector<int> export_count(export_node_count);
-    std::vector<int> export_disp(export_node_index);
-    std::vector<int> import_count(import_node_count);
-    std::vector<int> import_disp(import_node_index);
+    std::vector<int> export_count(exportNodeCount);
+    std::vector<int> export_disp(exportNodeIndex);
+    std::vector<int> import_count(importNodeCount);
+    std::vector<int> import_disp(importNodeIndex);
     
     for (size_t i=0; i < processorCount; i++) {
       export_count[i] *= sizeof(T) * comp_count;
@@ -1378,9 +1419,9 @@ namespace Iopx {
 		  TOPTR(import_data), TOPTR(import_count), TOPTR(import_disp), MPI_BYTE, comm_);
     
     // Copy the imported data into ioss_data...
-    for (size_t i=0; i < import_node_map.size(); i++) {
-      size_t index = import_node_map[i];
-      assert(index < nodeGTL.size());
+    for (size_t i=0; i < importNodeMap.size(); i++) {
+      size_t index = importNodeMap[i];
+      assert(index < ioss_node_count());
       for (size_t j=0; j < comp_count; j++) {
 	ioss_data[comp_count*index+j] = import_data[comp_count*i+j];
       }
@@ -1398,25 +1439,25 @@ namespace Iopx {
   {
     // Transfer the file-decomposition based data in 'file_data' to
     // the ioss-decomposition based data in 'ioss_data'
-    std::vector<T> export_data(export_element_map.size() * comp_count);
-    std::vector<T> import_data(import_element_map.size() * comp_count);
+    std::vector<T> export_data(exportElementMap.size() * comp_count);
+    std::vector<T> import_data(importElementMap.size() * comp_count);
 
     if (comp_count == 1) {
-      for (size_t i=0; i < export_element_map.size(); i++) {
-	size_t index = export_element_map[i] - elementOffset;
+      for (size_t i=0; i < exportElementMap.size(); i++) {
+	size_t index = exportElementMap[i] - elementOffset;
 	export_data[i] = file_data[index];
       }
 
       // Transfer all local data from file_data to ioss_data...
-      for (size_t i=0; i < local_element_map.size(); i++) {
-	size_t index = local_element_map[i];
-	ioss_data[import_pre_local_elem_index+i] = file_data[index];
+      for (size_t i=0; i < localElementMap.size(); i++) {
+	size_t index = localElementMap[i];
+	ioss_data[importPreLocalElemIndex+i] = file_data[index];
       }
 
-      std::vector<int> export_count(export_element_count);
-      std::vector<int> export_disp(export_element_index);
-      std::vector<int> import_count(import_element_count);
-      std::vector<int> import_disp(import_element_index);
+      std::vector<int> export_count(exportElementCount);
+      std::vector<int> export_disp(exportElementIndex);
+      std::vector<int> import_count(importElementCount);
+      std::vector<int> import_disp(importElementIndex);
     
       for (size_t i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T);
@@ -1431,35 +1472,35 @@ namespace Iopx {
     
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
-      for (size_t i=0; i < import_pre_local_elem_index; i++) {
+      for (size_t i=0; i < importPreLocalElemIndex; i++) {
 	ioss_data[i] = import_data[i];
       }
 
       // Some comes after the local data...
-      size_t offset = import_pre_local_elem_index + local_element_map.size();
-      for (size_t i=0; i < import_element_map.size() - import_pre_local_elem_index; i++) {
-	ioss_data[offset+i] = import_data[import_pre_local_elem_index+i];
+      size_t offset = importPreLocalElemIndex + localElementMap.size();
+      for (size_t i=0; i < importElementMap.size() - importPreLocalElemIndex; i++) {
+	ioss_data[offset+i] = import_data[importPreLocalElemIndex+i];
       }
     } else {
-      for (size_t i=0; i < export_element_map.size(); i++) {
-	size_t index = export_element_map[i] - elementOffset;
+      for (size_t i=0; i < exportElementMap.size(); i++) {
+	size_t index = exportElementMap[i] - elementOffset;
 	for (size_t j=0; j < comp_count; j++) {
 	  export_data[comp_count*i+j] = file_data[comp_count*index+j];
 	}
       }
 
       // Transfer all local data from file_data to ioss_data...
-      for (size_t i=0; i < local_element_map.size(); i++) {
-	size_t index = local_element_map[i];
+      for (size_t i=0; i < localElementMap.size(); i++) {
+	size_t index = localElementMap[i];
 	for (size_t j=0; j < comp_count; j++) {
-	  ioss_data[comp_count*(import_pre_local_elem_index+i)+j] = file_data[comp_count*index+j];
+	  ioss_data[comp_count*(importPreLocalElemIndex+i)+j] = file_data[comp_count*index+j];
 	}
       }
 
-      std::vector<int> export_count(export_element_count);
-      std::vector<int> export_disp(export_element_index);
-      std::vector<int> import_count(import_element_count);
-      std::vector<int> import_disp(import_element_index);
+      std::vector<int> export_count(exportElementCount);
+      std::vector<int> export_disp(exportElementIndex);
+      std::vector<int> import_count(importElementCount);
+      std::vector<int> import_disp(importElementIndex);
     
       for (size_t i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T) * comp_count;
@@ -1474,17 +1515,17 @@ namespace Iopx {
     
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
-      for (size_t i=0; i < import_pre_local_elem_index; i++) {
+      for (size_t i=0; i < importPreLocalElemIndex; i++) {
 	for (size_t j=0; j < comp_count; j++) {
 	  ioss_data[comp_count * i + j] = import_data[comp_count * i + j];
 	}
       }
 
       // Some comes after the local data...
-      size_t offset = import_pre_local_elem_index + local_element_map.size();
-      for (size_t i=0; i < import_element_map.size() - import_pre_local_elem_index; i++) {
+      size_t offset = importPreLocalElemIndex + localElementMap.size();
+      for (size_t i=0; i < importElementMap.size() - importPreLocalElemIndex; i++) {
 	for (size_t j=0; j < comp_count; j++) {
-	  ioss_data[comp_count*(offset+i) + j] = import_data[comp_count*(import_pre_local_elem_index+i)+j];
+	  ioss_data[comp_count*(offset+i) + j] = import_data[comp_count*(importPreLocalElemIndex+i)+j];
 	}
       }
     }
@@ -1580,9 +1621,7 @@ namespace Iopx {
     communicate_block_data(TOPTR(file_conn), data, blk_seq, nnpe);
 
     for (size_t i=0; i < blk.iossCount * nnpe; i++) {
-      std::map<int,int>::const_iterator I = nodeGTL.find(data[i]);
-      assert(I != nodeGTL.end());
-      data[i] = I->second;
+      data[i] = node_global_to_local(data[i]);
     }
   }
 
@@ -1596,18 +1635,18 @@ namespace Iopx {
     BlockDecompositionData blk = el_blocks[blk_seq];
 
     std::vector<T> exports;
-    exports.reserve(comp_count * blk.export_map.size());
-    std::vector<T> imports(comp_count * blk.import_map.size());
+    exports.reserve(comp_count * blk.exportMap.size());
+    std::vector<T> imports(comp_count * blk.importMap.size());
     
     if (comp_count == 1) {
-      for (size_t i=0; i < blk.export_map.size(); i++) {
-	exports.push_back(file_data[blk.export_map[i]]);
+      for (size_t i=0; i < blk.exportMap.size(); i++) {
+	exports.push_back(file_data[blk.exportMap[i]]);
       }
 
-      std::vector<int> export_count(blk.export_count);
-      std::vector<int> export_disp(blk.export_index);
-      std::vector<int> import_count(blk.import_count);
-      std::vector<int> import_disp(blk.import_index);
+      std::vector<int> export_count(blk.exportCount);
+      std::vector<int> export_disp(blk.exportIndex);
+      std::vector<int> import_count(blk.importCount);
+      std::vector<int> import_disp(blk.importIndex);
     
       for (size_t i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T);
@@ -1621,24 +1660,24 @@ namespace Iopx {
 		    TOPTR(imports), TOPTR(import_count), TOPTR(import_disp), MPI_BYTE, comm_);
     
       // Map local and imported data to ioss_data.
-      for (size_t i=0; i < blk.local_map.size(); i++) {
-	ioss_data[i+blk.local_ioss_offset] = file_data[blk.local_map[i]];
+      for (size_t i=0; i < blk.localMap.size(); i++) {
+	ioss_data[i+blk.localIossOffset] = file_data[blk.localMap[i]];
       }
 
-      for (size_t i=0; i < blk.import_map.size(); i++) {
-	ioss_data[blk.import_map[i]] = imports[i];
+      for (size_t i=0; i < blk.importMap.size(); i++) {
+	ioss_data[blk.importMap[i]] = imports[i];
       }
     } else {
-      for (size_t i=0; i < blk.export_map.size(); i++) {
+      for (size_t i=0; i < blk.exportMap.size(); i++) {
 	for (size_t j=0; j < comp_count; j++) {
-	  exports.push_back(file_data[blk.export_map[i]*comp_count + j]);
+	  exports.push_back(file_data[blk.exportMap[i]*comp_count + j]);
 	}
       }
 
-      std::vector<int> export_count(blk.export_count);
-      std::vector<int> export_disp(blk.export_index);
-      std::vector<int> import_count(blk.import_count);
-      std::vector<int> import_disp(blk.import_index);
+      std::vector<int> export_count(blk.exportCount);
+      std::vector<int> export_disp(blk.exportIndex);
+      std::vector<int> import_count(blk.importCount);
+      std::vector<int> import_disp(blk.importIndex);
     
       for (size_t i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T) * comp_count;
@@ -1652,15 +1691,15 @@ namespace Iopx {
 		    TOPTR(imports), TOPTR(import_count), TOPTR(import_disp), MPI_BYTE, comm_);
     
       // Map local and imported data to ioss_data.
-      for (size_t i=0; i < blk.local_map.size(); i++) {
+      for (size_t i=0; i < blk.localMap.size(); i++) {
 	for (size_t j=0; j < comp_count; j++) {
-	  ioss_data[(i+blk.local_ioss_offset)*comp_count+j] = file_data[blk.local_map[i]*comp_count+j];
+	  ioss_data[(i+blk.localIossOffset)*comp_count+j] = file_data[blk.localMap[i]*comp_count+j];
 	}
       }
 
-      for (size_t i=0; i < blk.import_map.size(); i++) {
+      for (size_t i=0; i < blk.importMap.size(); i++) {
 	for (size_t j=0; j < comp_count; j++) {
-	  ioss_data[blk.import_map[i]*comp_count+j] = imports[i*comp_count+j];
+	  ioss_data[blk.importMap[i]*comp_count+j] = imports[i*comp_count+j];
 	}
       }
     }
@@ -1683,6 +1722,8 @@ namespace Iopx {
     int result = MPI_SUCCESS;
 
     size_t size = sizeof(T) * set.file_count() * comp_count;
+    // NOTE That a processor either sends or receives, but never both,
+    // so this will not cause a deadlock...
     if (myProcessor != set.root_ && set.hasEntities[myProcessor]) {
       recv_data.resize(size);
       result = MPI_Recv(TOPTR(recv_data), size, MPI_BYTE,
@@ -1814,6 +1855,25 @@ namespace Iopx {
     }
   }
 
+  size_t DecompositionData::get_block_element_count(size_t blk_seq) const
+  {
+    // Determine number of file decomp elements are in this block;
+    size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
+    size_t bend = min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
+    size_t count = 0;
+    if (bend > bbeg)
+      count = bend - bbeg;
+    return count;
+  }
+
+  size_t DecompositionData::get_block_element_offset(size_t blk_seq) const
+  {
+    size_t offset = 0;
+    if (elementOffset > fileBlockIndex[blk_seq])
+      offset = elementOffset - fileBlockIndex[blk_seq];
+    return offset;
+  }
+
   int DecompositionData::get_set_var(int exodusId, int step, int var_index,
 				     ex_entity_type type, ex_entity_id id,
 				     int64_t num_entity, std::vector<double> &ioss_data) const
@@ -1909,16 +1969,8 @@ namespace Iopx {
   {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
-
-    // Determine number of file decomp elements are in this block and the offset into the block.
-    size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
-    size_t bend = min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
-    size_t count = 0;
-    if (bend > bbeg)
-      count = bend - bbeg;
-    size_t offset = 0;
-    if (elementOffset > fileBlockIndex[blk_seq])
-      offset = elementOffset - fileBlockIndex[blk_seq];
+    size_t count = get_block_element_count(blk_seq);
+    size_t offset = get_block_element_offset(blk_seq);
 
     std::vector<double> file_data(count);
     int ierr = ex_get_n_var(exodusId, step, EX_ELEM_BLOCK, var_index, id, offset+1, count, TOPTR(file_data));
@@ -1933,16 +1985,8 @@ namespace Iopx {
   {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
-
-    // Determine number of file decomp elements are in this block and the offset into the block.
-    size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
-    size_t bend = min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
-    size_t count = 0;
-    if (bend > bbeg)
-      count = bend - bbeg;
-    size_t offset = 0;
-    if (elementOffset > fileBlockIndex[blk_seq])
-      offset = elementOffset - fileBlockIndex[blk_seq];
+    size_t count = get_block_element_count(blk_seq);
+    size_t offset = get_block_element_offset(blk_seq);
 
     std::vector<double> file_data(count*comp_count);
     int ierr = ex_get_n_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_data)); 
@@ -1957,16 +2001,8 @@ namespace Iopx {
   {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
-
-    // Determine number of file decomp elements are in this block and the offset into the block.
-    size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
-    size_t bend = min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
-    size_t count = 0;
-    if (bend > bbeg)
-      count = bend - bbeg;
-    size_t offset = 0;
-    if (elementOffset > fileBlockIndex[blk_seq])
-      offset = elementOffset - fileBlockIndex[blk_seq];
+    size_t count = get_block_element_count(blk_seq);
+    size_t offset = get_block_element_offset(blk_seq);
 
     std::vector<double> file_data(count);
     int ierr = ex_get_n_one_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, attr_index, TOPTR(file_data));
@@ -2091,15 +2127,11 @@ namespace Iopx {
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
       if (type == EX_NODE_SET) {
 	for (size_t i=0; i < set.ioss_count(); i++) {
-	  std::map<int,int>::const_iterator I = nodeGTL.find(ioss_data[i]);
-	  assert(I != nodeGTL.end());
-	  ioss_data[i] = I->second;
+	  ioss_data[i] = node_global_to_local(ioss_data[i]);
 	}
       } else if (type == EX_SIDE_SET) {
 	for (size_t i=0; i < set.ioss_count(); i++) {
-	  std::map<int,int>::const_iterator I = elemGTL.find(ioss_data[i]);
-	  assert(I != elemGTL.end());
-	  ioss_data[i] = I->second;
+	  ioss_data[i] = elem_global_to_local(ioss_data[i]);
 	}
       } else {
 	assert(1==0);

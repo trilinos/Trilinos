@@ -19,7 +19,7 @@ namespace Iopx {
     friend class DecompositionData;
   public:
     BlockDecompositionData() :
-      id_(0), fileCount(0), iossCount(0), local_ioss_offset(0)
+      id_(0), fileCount(0), iossCount(0), localIossOffset(0)
       {}
       
       int64_t id() const {return id_;}
@@ -34,20 +34,21 @@ namespace Iopx {
       // maps from file-block data to ioss-block data
       // The local_map.size() elements starting at local_ioss_offset are local.
       // ioss[local_ioss_offset+i] = file[local_map[i]];
-      size_t local_ioss_offset;
-      std::vector<int> local_map;
+      size_t localIossOffset;
+      std::vector<int> localMap;
     
       // Maps from file-block data to export list.
       // export[i] = file[export_map[i]
-      std::vector<int> export_map;
-      std::vector<int> export_count;
-      std::vector<int> export_index;
+      std::vector<int> exportMap;
+      std::vector<int> exportCount;
+      std::vector<int> exportIndex;
+
 
       // Maps from import data to ioss-block data.
       // ioss[import_map[i] = local_map[i];
-      std::vector<int> import_map;
-      std::vector<int> import_count;
-      std::vector<int> import_index;
+      std::vector<int> importMap;
+      std::vector<int> importCount;
+      std::vector<int> importIndex;
   };
   
   class SetDecompositionData
@@ -83,7 +84,7 @@ namespace Iopx {
     void decompose_model(int exodusId);
       
     size_t ioss_node_count() const {return nodeGTL.size();}
-    size_t ioss_elem_count() const {return local_element_map.size() + import_element_map.size();}
+    size_t ioss_elem_count() const {return localElementMap.size() + importElementMap.size();}
     
     MPI_Comm comm_;
       
@@ -95,13 +96,13 @@ namespace Iopx {
     // Values for the file decomposition 
     size_t elementCount;
     size_t elementOffset;
-    size_t import_pre_local_elem_index;
+    size_t importPreLocalElemIndex;
 
     size_t nodeCount;
     size_t nodeOffset;
-    size_t import_pre_local_node_index;
+    size_t importPreLocalNodeIndex;
     
-    std::vector<double> centroids;
+    std::vector<double> centroids_;
 
     // This processor "manages" the elements on the exodus mesh file from
     // element_offset to element_offset+count (0-based). This is
@@ -143,31 +144,33 @@ namespace Iopx {
     // X_proc_disp[p+1])
     
     
-    std::vector<int> local_element_map;
+    std::vector<int> localElementMap;
 
-    std::vector<int> import_element_map;
-    std::vector<int> import_element_count;
-    std::vector<int> import_element_index;
+    std::vector<int> importElementMap;
+    std::vector<int> importElementCount;
+    std::vector<int> importElementIndex;
 
-    std::vector<int> export_element_map;
-    std::vector<int> export_element_count;
-    std::vector<int> export_element_index;
+    std::vector<int> exportElementMap;
+    std::vector<int> exportElementCount;
+    std::vector<int> exportElementIndex;
 
-    std::vector<int> node_index;
-    std::map<int,int> nodeGTL;  // Convert from global index to local index (1-based)
+    std::vector<int> nodeIndex;
+
+    // Note that nodeGTL is a sorted vector.
+    std::vector<int> nodeGTL;  // Convert from global index to local index (1-based)
     std::map<int,int> elemGTL;  // Convert from global index to local index (1-based)
 
-    std::vector<int> export_node_map;
-    std::vector<int> export_node_count;
-    std::vector<int> export_node_index;
+    std::vector<int> exportNodeMap;
+    std::vector<int> exportNodeCount;
+    std::vector<int> exportNodeIndex;
 
-    std::vector<int> import_node_map; // Where to put each imported nodes data in the list of all data...
-    std::vector<int> import_node_count;
-    std::vector<int> import_node_index;
+    std::vector<int> importNodeMap; // Where to put each imported nodes data in the list of all data...
+    std::vector<int> importNodeCount;
+    std::vector<int> importNodeIndex;
       
-    std::vector<int> local_node_map;
+    std::vector<int> localNodeMap;
       
-    std::vector<int> node_comm_map; // node/processor pair of the
+    std::vector<int> nodeCommMap; // node/processor pair of the
     // nodes I communicate with.  Stored node#,proc,node#,proc, ...
       
     // The global element at index 'I' (0-based) is on block B in the file decompositoin.
@@ -208,6 +211,9 @@ namespace Iopx {
 
 
     size_t get_block_seq(ex_entity_type type, ex_entity_id id) const;
+    size_t get_block_element_count(size_t blk_seq) const;
+    size_t get_block_element_offset(size_t blk_seq) const;
+    
     const SetDecompositionData &get_decomp_set(ex_entity_type type, ex_entity_id id) const;
 
   private:
@@ -234,6 +240,12 @@ namespace Iopx {
     bool i_own_node(size_t node) const; // T/F if node with global index node owned by this processors ioss-decomp.
     bool i_own_elem(size_t elem) const; // T/F if node with global index elem owned by this processors ioss-decomp.
       
+    // global_index is 1-based index into global list of nodes [1..global_node_count]
+    // return value is 1-based index into local list of nodes on this
+    // processor (ioss-decomposition)
+    size_t node_global_to_local(size_t global_index) const;
+    size_t elem_global_to_local(size_t global_index) const;
+
     void build_global_to_local_elem_map();
     void get_element_block_communication(size_t num_elem_block);
     void get_element_block_counts(size_t num_elem_block);
