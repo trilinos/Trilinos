@@ -1578,6 +1578,10 @@ NNTI_result_t NNTI_gni_put (
     assert(conn);
     ep_hdl=conn->ep_hdl;
 
+    nthread_lock(&gni_mem_hdl->wr_queue_lock);
+
+    nthread_lock(&nnti_gni_lock);
+
     GNI_EpSetEventData(
             ep_hdl,
             hash6432shift((uint64_t)wr),
@@ -1629,9 +1633,11 @@ NNTI_result_t NNTI_gni_put (
         send_rdma_wc(wr, src_buffer_hdl, dest_buffer_hdl);
     }
 
-    nthread_lock(&gni_mem_hdl->wr_queue_lock);
+    nthread_unlock(&nnti_gni_lock);
+
     gni_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
+
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     log_debug(nnti_ee_debug_level, "exit");
@@ -1688,6 +1694,10 @@ NNTI_result_t NNTI_gni_get (
     gni_connection *conn=get_conn_peer(&src_buffer_hdl->buffer_owner);
     assert(conn);
     ep_hdl=conn->ep_hdl;
+
+    nthread_lock(&gni_mem_hdl->wr_queue_lock);
+
+    nthread_lock(&nnti_gni_lock);
 
     GNI_EpSetEventData(
             ep_hdl,
@@ -1763,9 +1773,11 @@ NNTI_result_t NNTI_gni_get (
         send_rdma_wc(wr, dest_buffer_hdl, src_buffer_hdl);
     }
 
-    nthread_lock(&gni_mem_hdl->wr_queue_lock);
+    nthread_unlock(&nnti_gni_lock);
+
     gni_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
+
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     log_debug(nnti_ee_debug_level, "exit");
@@ -3175,10 +3187,13 @@ static const NNTI_buffer_t *decode_event_buffer(
         assert(event_buf);
 
         if (event_buf == wait_buf) {
-            log_debug(nnti_debug_level, "the ev_data.inst_id matches the wait buffer (ev_data.inst_id=%llu, waitbuf.buf.hash=%llu, wait_buf=%p)",
-                    (uint64_t)gni_cq_get_inst_id(*ev_data), (uint64_t)hash6432shift(wait_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf), wait_buf);
+            log_debug(nnti_debug_level, "the event buffer matches the wait buffer (ev_data.inst_id=%llu, waitbuf.buf.hash=%llu, wait_buf=%p, wr=%p, wr.hash==%llu)",
+                    (uint64_t)gni_cq_get_inst_id(*ev_data), (uint64_t)hash6432shift(wait_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf), wait_buf,
+                    wr, (uint64_t)hash6432shift((uint64_t)wr));
         } else {
-            log_debug(nnti_debug_level, "the ev_data.inst_id does NOT match the wait buffer");
+            log_debug(nnti_debug_level, "the event buffer does NOT match the wait buffer (ev_data.inst_id=%llu, waitbuf.buf.hash=%llu, wait_buf=%p, wr=%p, wr.hash==%llu)",
+                    (uint64_t)gni_cq_get_inst_id(*ev_data), (uint64_t)hash6432shift(wait_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf), wait_buf,
+                    wr, (uint64_t)hash6432shift((uint64_t)wr));
 //            log_debug(nnti_debug_level, "the ev_data.inst_id does NOT match the wait buffer (ev_data.inst_id=%lu, waitbuf.buf.hash=%lu, wait_buf=%p)",
 //                    (uint64_t)gni_cq_get_inst_id(*ev_data), (uint64_t)hash6432shift(wait_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf), wait_buf);
         }
@@ -3209,7 +3224,7 @@ static int process_event(
         return NNTI_EIO;
     }
 
-    log_debug(nnti_debug_level, "ev_data.inst_id==%llu, reg_buf.buf.hash==%llu",
+    log_debug(debug_level, "ev_data.inst_id==%llu, reg_buf.buf.hash==%llu",
             (uint64_t)gni_cq_get_inst_id(*ev_data),
             (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
 
@@ -3220,8 +3235,8 @@ static int process_event(
     wr=first_incomplete_wr(gni_mem_hdl);
     assert(wr);
 
-    log_debug(nnti_debug_level, "event_buf=%p; wr=%p; wr->last_op=%d", event_buf, wr, wr->last_op);
-    log_debug(nnti_debug_level, "gni_mem_hdl->type==%llu", (uint64_t)gni_mem_hdl->type);
+    log_debug(debug_level, "event_buf=%p; wr=%p; wr->last_op=%lld; wr.hash==%llu", event_buf, wr, (int64_t)wr->last_op, (uint64_t)hash6432shift((uint64_t)wr));
+    log_debug(debug_level, "gni_mem_hdl->type==%llu", (uint64_t)gni_mem_hdl->type);
 
 //    print_wc(&wr->wc);
 
@@ -3232,9 +3247,9 @@ static int process_event(
                 if (wr->op_state==RDMA_WRITE_INIT) {
                     log_debug(debug_level, "SEND request event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(fma put send request)");
+                    log_debug(debug_level, "calling GetComplete(fma put send request)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(fma send request post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send request post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     log_debug(debug_level, "SEND request completion - event_buf==%p", event_buf);
@@ -3242,9 +3257,9 @@ static int process_event(
                 } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(debug_level, "SEND request Work Completion completion - event_buf==%p", event_buf);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(send request)");
+                    log_debug(debug_level, "calling GetComplete(send request)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(fma send request post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send request post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
 //                    memcpy(wc, &gni_mem_hdl->wc, sizeof(nnti_gni_work_completion));
@@ -3257,9 +3272,9 @@ static int process_event(
                 if (wr->op_state==RDMA_WRITE_INIT) {
                     log_debug(debug_level, "SEND buffer event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(fma put send buffer)");
+                    log_debug(debug_level, "calling GetComplete(fma put send buffer)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(fma send buffer post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send buffer post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     log_debug(debug_level, "SEND buffer completion - event_buf==%p", event_buf);
@@ -3267,9 +3282,9 @@ static int process_event(
                 } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(debug_level, "SEND buffer Work Completion completion - event_buf==%p", event_buf);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(send buffer ACK)");
+                    log_debug(debug_level, "calling GetComplete(send buffer ACK)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(fma send buffer ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send buffer ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     wr->op_state = RDMA_WRITE_COMPLETE;
@@ -3280,9 +3295,9 @@ static int process_event(
                 if (wr->op_state==RDMA_WRITE_INIT) {
                     log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(fma put send)");
+                    log_debug(debug_level, "calling GetComplete(fma put send)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(fma put send post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma put send post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     log_debug(debug_level, "RDMA write (initiator) completion - event_buf==%p", event_buf);
@@ -3296,9 +3311,9 @@ static int process_event(
                 } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(fma put send ACK)");
+                    log_debug(debug_level, "calling GetComplete(fma put send ACK)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(fma put send ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma put send ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     wr->op_state = RDMA_WRITE_COMPLETE;
@@ -3313,9 +3328,9 @@ static int process_event(
                 if (wr->op_state==RDMA_WRITE_INIT) {
                     log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(rdma put src)");
+                    log_debug(debug_level, "calling GetComplete(rdma put src)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(put src post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     log_debug(debug_level, "RDMA write (initiator) completion - event_buf==%p", event_buf);
@@ -3329,9 +3344,9 @@ static int process_event(
                 } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(rdma put src ACK)");
+                    log_debug(debug_level, "calling GetComplete(rdma put src ACK)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(put src ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     wr->op_state = RDMA_WRITE_COMPLETE;
@@ -3341,9 +3356,9 @@ static int process_event(
             } else {
                 log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
-                log_debug(nnti_debug_level, "calling GetComplete(rdma put src ACK)");
+                log_debug(debug_level, "calling GetComplete(rdma put src ACK)");
                 rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(put src ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                 print_post_desc(wr->post_desc_ptr);
 
                 wr->op_state = RDMA_WRITE_COMPLETE;
@@ -3357,9 +3372,9 @@ static int process_event(
                 if (wr->op_state==RDMA_READ_INIT) {
                     log_debug(debug_level, "RDMA read event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(rdma get dst)");
+                    log_debug(debug_level, "calling GetComplete(rdma get dst)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(get dst post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     log_debug(debug_level, "RDMA read (initiator) completion - event_buf==%p", event_buf);
@@ -3373,9 +3388,9 @@ static int process_event(
                 } else if (wr->op_state==RDMA_READ_NEED_ACK) {
                     log_debug(debug_level, "RDMA read ACK (initiator) completion - event_buf==%p", event_buf);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(rdma get dst ACK)");
+                    log_debug(debug_level, "calling GetComplete(rdma get dst ACK)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(get dst ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     wr->op_state = RDMA_READ_COMPLETE;
@@ -3385,9 +3400,9 @@ static int process_event(
             } else {
                 log_debug(debug_level, "RDMA read ACK (initiator) completion - event_buf==%p", event_buf);
 
-                log_debug(nnti_debug_level, "calling GetComplete(rdma get dst ACK)");
+                log_debug(debug_level, "calling GetComplete(rdma get dst ACK)");
                 rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(get dst ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                 print_post_desc(wr->post_desc_ptr);
 
                 wr->op_state = RDMA_READ_COMPLETE;
@@ -3421,7 +3436,7 @@ static int process_event(
 
             } else {
                 index = (uint64_t)gni_cq_get_inst_id(*ev_data);
-                log_debug(nnti_debug_level, "wc_index(%llu)", index);
+                log_debug(debug_level, "wc_index(%llu)", index);
                 nnti_gni_work_completion *tmp_wc=&q->wc_buffer[index];
                 tmp_wc->ack_received=1;
                 GNI_CQ_SET_INST_ID(*ev_data, tmp_wc->inst_id);
@@ -3446,7 +3461,7 @@ static int process_event(
             }
 
             if (q->req_processed > q->req_count) {
-                log_error(nnti_debug_level, "req_processed(%llu) > req_count(%llu) fail",
+                log_error(debug_level, "req_processed(%llu) > req_count(%llu) fail",
                         q->req_processed, q->req_count);
             }
             if (q->req_processed == (q->req_count/2)) {
@@ -3567,9 +3582,9 @@ static int process_event(
                 if (wr->op_state==RDMA_TARGET_INIT) {
                     log_debug(debug_level, "RDMA target event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(rdma target (mem cq)");
+                    log_debug(debug_level, "calling GetComplete(rdma target (mem cq)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(post_desc_ptr) failed: %d", rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(post_desc_ptr) failed: %d", rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     if (config.use_rdma_target_ack) {
@@ -3583,9 +3598,9 @@ static int process_event(
 
                     log_debug(debug_level, "RDMA target ACK completion - event_buf==%p", event_buf);
 
-                    log_debug(nnti_debug_level, "calling GetComplete(rdma target ACK)");
+                    log_debug(debug_level, "calling GetComplete(rdma target ACK)");
                     rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
-                    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(rdma target ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
+                    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(rdma target ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
                     wr->op_state = RDMA_TARGET_COMPLETE;
