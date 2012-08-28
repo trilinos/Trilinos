@@ -28,10 +28,9 @@
 
 
 
-#define IFPACK2_INST_GRAPH(CLASSNAME,S,LO,GO) \
+#define IFPACK2_INST_GRAPH(CLASSNAME,LO,GO)	   \
   template class CLASSNAME<Tpetra::CrsGraph<LO,GO, \
-                 Kokkos::DefaultNode::DefaultNodeType, \
-                 Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> >
+                 Kokkos::DefaultNode::DefaultNodeType > >
 
 
 

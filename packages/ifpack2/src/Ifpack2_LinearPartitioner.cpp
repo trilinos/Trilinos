@@ -36,18 +36,7 @@
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 
 namespace Ifpack2 {
-#ifdef HAVE_TPETRA_INST_FLOAT
-IFPACK2_INST_GRAPH(LinearPartitioner,float,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_DOUBLE
-IFPACK2_INST_GRAPH(LinearPartitioner,double,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-IFPACK2_INST_GRAPH(LinearPartitioner,std::complex<float>,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-IFPACK2_INST_GRAPH(LinearPartitioner,std::complex<double>,int,int);
-#endif
+IFPACK2_INST_GRAPH(LinearPartitioner,int,int);
 }
 
 #endif
