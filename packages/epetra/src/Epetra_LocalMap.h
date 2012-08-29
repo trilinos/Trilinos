@@ -108,6 +108,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LocalMap : public Epetra_Map {
 
   */ 
 	Epetra_LocalMap(int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
+	Epetra_LocalMap(unsigned int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
 	Epetra_LocalMap(long long NumMyElements, int IndexBase, const Epetra_Comm& Comm);
 	
   //! Epetra_LocalMap copy constructor.

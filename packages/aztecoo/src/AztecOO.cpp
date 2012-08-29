@@ -908,7 +908,7 @@ int AztecOO::Iterate(long long MaxIters, double Tolerance)
 
   if (UserMatrixData_!=0)
     if (GetUserMatrix()!=0) {
-      long long nnz = GetUserMatrix()->NumGlobalNonzeros64();
+      int nnz = GetUserMatrix()->NumGlobalNonzeros();
       if (nnz==0) {
 	EPETRA_CHK_ERR(-12); // Matrix has no entries.
       }

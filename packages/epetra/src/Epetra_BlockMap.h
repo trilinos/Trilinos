@@ -223,9 +223,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   */ 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_BlockMap(unsigned int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_BlockMap(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_BlockMap(unsigned long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 
   //! Epetra_BlockMap constructor for a user-defined linear distribution of constant size elements.
@@ -261,9 +263,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements, 
      int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_BlockMap(unsigned int NumGlobalElements, int NumMyElements, 
+     int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements, 
+    int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_BlockMap(unsigned long long NumGlobalElements, int NumMyElements, 
     int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 
@@ -410,9 +416,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //! Returns local ID of global ID, return -1 if not found on this processor.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int  LID(int GID) const;
+  int  LID(unsigned int GID) const;
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int  LID(long long GID) const;
+  int  LID(unsigned long long GID) const;
 #endif
   
   //! Returns global ID of local ID, return IndexBase-1 if not found on this processor.
@@ -427,6 +435,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //! Returns true if the GID passed in belongs to the calling processor in this map, otherwise returns false.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   bool  MyGID(int GID_in) const {return(LID(GID_in)!=-1);};
+  bool  MyGID(unsigned int GID_in) const {return(LID(GID_in)!=-1);};
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   bool  MyGID(long long GID_in) const {return(LID(GID_in)!=-1);};

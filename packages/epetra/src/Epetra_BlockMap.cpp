@@ -45,7 +45,7 @@
 #include "Epetra_Directory.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_HashTable.h"
-#include <limits.h> // INT_MAX
+#include <limits.h> // INT_MAX, LLONG_MAX
 
 // Use the new LID hash table approach by default
 #define EPETRA_BLOCKMAP_NEW_LID
@@ -110,6 +110,15 @@ Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int Element_Size,
   const bool IsLongLong = true;
   ConstructAutoUniform(NumGlobal_Elements, Element_Size, Index_Base, comm, IsLongLong);
 }
+Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobal_Elements, int Element_Size, int Index_Base, const Epetra_Comm& comm)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = true;
+  assert(NumGlobal_Elements <= (unsigned long long) LLONG_MAX);
+  ConstructAutoUniform(static_cast<long long>(NumGlobal_Elements), Element_Size, Index_Base, comm, IsLongLong);
+}
+
 #endif
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -119,6 +128,15 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int Element_Size, int I
 {
   const bool IsLongLong = false;
   ConstructAutoUniform((long long)NumGlobal_Elements, Element_Size, Index_Base, comm, IsLongLong);
+}
+
+Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobal_Elements, int Element_Size, int Index_Base, const Epetra_Comm& comm)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = false;
+  assert(NumGlobal_Elements <= (unsigned int) INT_MAX);
+  ConstructAutoUniform(static_cast<long long>(NumGlobal_Elements), Element_Size, Index_Base, comm, IsLongLong);
 }
 #endif
 //==============================================================================
@@ -205,6 +223,16 @@ Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Element
   const bool IsLongLong = true;
   ConstructUserLinear(NumGlobal_Elements, NumMy_Elements, Element_Size,Index_Base, comm, IsLongLong);
 }
+
+Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobal_Elements, int NumMy_Elements, 
+      int Element_Size, int Index_Base, const Epetra_Comm& comm)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = true;
+  assert(NumGlobal_Elements <= (unsigned long long) LLONG_MAX);
+  ConstructUserLinear(static_cast<long long>(NumGlobal_Elements), NumMy_Elements, Element_Size,Index_Base, comm, IsLongLong);
+}
 #endif
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -215,6 +243,16 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 {
   const bool IsLongLong = false;
   ConstructUserLinear((long long)NumGlobal_Elements, NumMy_Elements, Element_Size,Index_Base, comm, IsLongLong);
+}
+
+Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobal_Elements, int NumMy_Elements, 
+      int Element_Size, int Index_Base, const Epetra_Comm& comm)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = false;
+  assert(NumGlobal_Elements <= (unsigned int) INT_MAX);
+  ConstructUserLinear(static_cast<long long>(NumGlobal_Elements), NumMy_Elements, Element_Size,Index_Base, comm, IsLongLong);
 }
 #endif
 
@@ -982,6 +1020,12 @@ int Epetra_BlockMap::LID(long long gid) const
   return(BlockMapData_->LID_[gid - BlockMapData_->MinMyGID_]); // Find it in LID array  
 #endif
 }
+
+int Epetra_BlockMap::LID(unsigned long long gid) const
+{
+  assert(gid <= (unsigned long long) LLONG_MAX);
+  return LID(static_cast<long long>(gid));
+}
 #endif
 
 //==============================================================================
@@ -1016,6 +1060,13 @@ int Epetra_BlockMap::LID(int gid) const
   return(BlockMapData_->LID_[gid - BlockMapData_->MinMyGID_]); // Find it in LID array  
 #endif
 }
+
+int Epetra_BlockMap::LID(unsigned int gid) const
+{
+  assert(gid <= (unsigned int) INT_MAX);
+  return LID(static_cast<int>(gid));
+}
+
 #endif
 
 //==============================================================================

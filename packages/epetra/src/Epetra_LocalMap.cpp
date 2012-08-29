@@ -42,6 +42,8 @@
 
 #include "Epetra_LocalMap.h"
 #include "Epetra_Comm.h"
+#include <limits.h> // INT_MAX
+#include <assert.h>
 
 //============================================================================
 Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase, 
@@ -49,6 +51,17 @@ Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase,
   // LocalMap is just a special case of Map
 	: Epetra_Map(numMyElements, numMyElements, indexBase, comm) 
 {
+  SetLabel("Epetra::LocalMap");
+  if (CheckInput()!=0)
+    throw ReportError("Replicated Local Map not the same size on all PEs",-1);
+}
+//============================================================================
+Epetra_LocalMap::Epetra_LocalMap(unsigned int numMyElements, int indexBase, 
+				 const Epetra_Comm& comm)
+  // LocalMap is just a special case of Map
+	: Epetra_Map(numMyElements, static_cast<int>(numMyElements), indexBase, comm) 
+{
+  assert(numMyElements <= (unsigned int) INT_MAX);
   SetLabel("Epetra::LocalMap");
   if (CheckInput()!=0)
     throw ReportError("Replicated Local Map not the same size on all PEs",-1);

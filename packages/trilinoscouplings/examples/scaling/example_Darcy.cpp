@@ -1697,7 +1697,7 @@ int main(int argc, char *argv[]) {
     // ********  Calculate Error in Solution ***************
    // Import solution onto current processor
 
-     Epetra_Map  solnMap(numFacesGlobal+numNodesGlobal, numFacesGlobal+numNodesGlobal, 0, Comm);
+     Epetra_Map  solnMap(static_cast<int>(numFacesGlobal+numNodesGlobal), static_cast<int>(numFacesGlobal+numNodesGlobal), 0, Comm);
      Epetra_Import  solnImporter(solnMap, globalMapJoint);
      Epetra_FEVector  uCoeff(solnMap);
      uCoeff.Import(globalSoln, solnImporter, Insert);
