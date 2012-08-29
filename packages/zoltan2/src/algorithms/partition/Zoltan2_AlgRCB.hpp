@@ -52,7 +52,6 @@
 
 #include <Zoltan2_AlgRCB_methods.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
-#include <Zoltan2_GetParameter.hpp>
 #include <Zoltan2_Exceptions.hpp>
 
 #include <Teuchos_ParameterList.hpp>

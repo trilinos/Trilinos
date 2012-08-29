@@ -47,7 +47,6 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
-#include <Zoltan2_GetParameter.hpp>
 
 #include <sstream>
 #include <string>
@@ -116,34 +115,31 @@ void AlgBlock(
   //    imbalance_tolerance
 
   std::bitset<NUM_BLOCK_PARAMS> params;
-  double imbalanceTolerance=0.0;
-  bool isSet;
-  string strChoice;
+  double imbalanceTolerance=1.1;
 
   const Teuchos::ParameterList &pl = env->getParameters();
 
-  getParameterValue<string>(pl, "partitioning",
-    "objective", isSet, strChoice);
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
 
-  if (isSet && strChoice == string("balance_object_count"))
-    params.set(block_balanceCount);
-  else if (isSet && strChoice ==
-    string("multicriteria_minimize_total_weight"))
-    params.set(block_minTotalWeight);
-  else if (isSet && strChoice ==
-    string("multicriteria_minimize_maximum_weight"))
-    params.set(block_minMaximumWeight);
-  else if (isSet && strChoice ==
-    string("multicriteria_balance_total_maximum"))
-    params.set(block_balanceTotalMaximum);
+  if (pe){
+    string po;
+    po = pe->getValue<string>(&po);
+    if (po == string("balance_object_count"))
+      params.set(block_balanceCount);
+    else if (po == string("multicriteria_minimize_total_weight"))
+      params.set(block_minTotalWeight);
+    else if (po == string("multicriteria_minimize_maximum_weight"))
+      params.set(block_minMaximumWeight);
+    else if (po == string("multicriteria_balance_total_maximum"))
+      params.set(block_balanceTotalMaximum);
+  }
   else
     params.set(block_balanceWeight);
 
-  getParameterValue<double>(pl, "partitioning",
-    "imbalance_tolerance", isSet, imbalanceTolerance);
+  pe = pl.getEntryPtr("imbalance_tolerance");
 
-  if (!isSet)
-    imbalanceTolerance = 1.1;
+  if (pe)
+    imbalanceTolerance = pe->getValue<double>(&imbalanceTolerance);
 
   ////////////////////////////////////////////////////////
   // From the IdentifierModel we need:

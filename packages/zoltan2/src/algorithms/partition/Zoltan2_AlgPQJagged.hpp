@@ -53,7 +53,6 @@
 #include <Zoltan2_AlgRCB_methods.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Metric.hpp>             // won't need this
-#include <Zoltan2_GetParameter.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -303,7 +302,7 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
     params.set(rcb_balanceWeight);
     mcnorm = normBalanceTotalMaximum;
   }
-  else (obj == string("balance_object_count"))}
+  else if (obj == string("balance_object_count")){
     params.set(rcb_balanceCount);
   }
   else if (obj == string("multicriteria_minimize_total_weight")){
@@ -360,7 +359,7 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   
   concurrentPartCount = partId_t(aa);
 
-  val = 0;
+  int val = 0;
   pe = pl.getEntryPtr("average_cuts");
   if (pe)
     val = pe->getValue(&val);
