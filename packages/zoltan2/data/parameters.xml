@@ -19,6 +19,10 @@
       define a value for a parameter, then that parameter doesn't
       appear in the parameter list and the library code at
       run-time can decide what to do about that.
+
+      NOTE: Do not use the string "P a r a m e t e r L i s t" in this file
+      before the beginning of the XML parameter list.  We search for that 
+      string to find the start of the XML definition.
   -->
 
 <ParameterList name="zoltan2ValidatingParameters">
