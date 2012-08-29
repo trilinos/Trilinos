@@ -100,9 +100,9 @@ void AlgBlock(
 {
   using std::string;
   using std::ostringstream;
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;     // local ids
+  typedef typename Adapter::gno_t gno_t;     // global ids
+  typedef typename Adapter::scalar_t scalar_t;   // scalars
 
   env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 
@@ -168,8 +168,10 @@ void AlgBlock(
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   size_t numLocalParts = solution->getLocalNumberOfParts();
-  if (numLocalParts != 1){
-  }
+
+  env->localInputAssertion(__FILE__, __LINE__, 
+    "can only compute one part per proc",
+    numLocalParts == 1, BASIC_ASSERTION);
   
   ////////////////////////////////////////////////////////
   // The algorithm

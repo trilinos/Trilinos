@@ -43,7 +43,7 @@
 //
 // @HEADER
 
-/*! \file ChacoReader.cpp
+/*! \file Zoltan2_ChacoReader.cpp
  *  \brief Reader for legacy zoltan1 files
  */
 

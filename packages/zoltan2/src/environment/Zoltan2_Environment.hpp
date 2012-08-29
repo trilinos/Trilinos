@@ -106,7 +106,8 @@ public:
    *
    *   Note that the communicator is for the application, not the problem.
    */
-  Environment(Teuchos::ParameterList &problemParams, const Comm_t &comm);
+  Environment(Teuchos::ParameterList &problemParams,
+    const Teuchos::RCP<const Teuchos::Comm<int> > &comm );
 
   /*! \brief Default Constructor
    *
