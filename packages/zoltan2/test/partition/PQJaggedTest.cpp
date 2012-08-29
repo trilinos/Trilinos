@@ -229,12 +229,10 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
 
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
-
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("num_global_parts", numParts);
-  parParams.set("algorithm", "PQJagged");
-  parParams.set("compute_metrics", "true");
-  parParams.set("imbalance_tolerance", double(imbalance));
+  params.set("num_global_parts", numParts);
+  params.set("algorithm", "PQJagged");
+  params.set("compute_metrics", "true");
+  params.set("imbalance_tolerance", double(imbalance));
   params.set("parallel_part_calculation_count", k);
   if(force_binary){
     params.set("force_binary_search", "yes");
@@ -248,8 +246,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   else {
     params.set("force_linear_search", "no");
   }
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 7);
+  params.set("bisection_num_test_cuts", 7);
 
 #ifdef HAVE_ZOLTAN2_MPI
 
@@ -340,15 +337,12 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numP
   else {
     params.set("force_linear_search", "no");
   }
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("num_global_parts", numParts);
-  parParams.set("algorithm", "PQJagged");
-  parParams.set("compute_metrics", "true");
-  parParams.set("imbalance_tolerance", double(imbalance));
 
-
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 7);
+  params.set("num_global_parts", numParts);
+  params.set("algorithm", "PQJagged");
+  params.set("compute_metrics", "true");
+  params.set("imbalance_tolerance", double(imbalance));
+  params.set("bisection_num_test_cuts", 7);
 
 #ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,

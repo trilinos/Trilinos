@@ -170,10 +170,9 @@ int main(int narg, char** arg)
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
-  Teuchos::ParameterList &partitioningParams = params.sublist("partitioning");
   
-  partitioningParams.set("approach", "partition");
-  partitioningParams.set("algorithm", "scotch");
+  params.set("partitioning_approach", "partition");
+  params.set("algorithm", "scotch");
 
   ////// Create an input adapter for the Tpetra matrix.
   SparseMatrixAdapter adapter(origMatrix);

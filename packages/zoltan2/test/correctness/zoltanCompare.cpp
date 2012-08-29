@@ -195,31 +195,29 @@ int runRCB(const RCP<const Comm<int> > &comm,
   params.set("timer_output_stream" , "std::cout");
   //params.set("debug_level" , "verbose_detailed_status");
 
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("algorithm", "rcb");
-  parParams.set("objective", "multicriteria_balance_total_maximum");
+  params.set("algorithm", "rcb");
+  params.set("partitioning_objective", "multicriteria_balance_total_maximum");
   if (rank == 0)
     std::cout << "algorithm = rcb" << std::endl;
 
   double tolerance = 1.1;
-  parParams.set("imbalance_tolerance", tolerance );
+  params.set("imbalance_tolerance", tolerance );
   if (rank == 0)
     std::cout << "imbalance_tolerance = " << tolerance << std::endl;
 
   if (nprocs == 1){
-    parParams.set("num_global_parts", numGlobalParts);
+    params.set("num_global_parts", numGlobalParts);
     std::cout << "num_global_parts = " << numGlobalParts << std::endl;
   }
 
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 1);
+  params.set("bisection_num_test_cuts", 1);
   if (rectilinear_blocks){
-    geoParams.set("rectilinear_blocks", "yes");
+    params.set("rectilinear_blocks", "yes");
     if (rank == 0)
       std::cout << "rectilinear_blocks = yes" << std::endl;
   }
   if (average_cuts){
-    geoParams.set("average_cuts", "yes");
+    params.set("average_cuts", "yes");
     if (rank == 0)
       std::cout << "average_cuts = yes" << std::endl;
   }

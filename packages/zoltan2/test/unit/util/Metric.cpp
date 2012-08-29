@@ -140,8 +140,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   // An environment.  This is usually created by the problem.
 
   Teuchos::ParameterList pl("test list");
-  Teuchos::ParameterList &partitioningParams = pl.sublist("partitioning");
-  partitioningParams.set("num_local_parts", double(numLocalParts));
+  pl.set("num_local_parts", double(numLocalParts));
   
   RCP<const Zoltan2::Environment> env = 
     rcp(new Zoltan2::Environment(pl, comm));

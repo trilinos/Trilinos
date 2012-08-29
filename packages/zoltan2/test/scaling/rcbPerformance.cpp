@@ -430,17 +430,15 @@ int main(int argc, char *argv[])
     params.set("debug_level" , debugLevel);
   }
 
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("algorithm", "rcb");
-  parParams.set("objective", objective);
+  params.set("algorithm", "rcb");
+  params.set("partitioning_objective", objective);
   double tolerance = 1.1;
-  parParams.set("imbalance_tolerance", tolerance );
+  params.set("imbalance_tolerance", tolerance );
 
   if (numGlobalParts != nprocs)
-    parParams.set("num_global_parts" , numGlobalParts);
+    params.set("num_global_parts" , numGlobalParts);
 
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", numTestCuts);
+  params.set("bisection_num_test_cuts", numTestCuts);
 
   if (rank==0){
     cout << "Number of parts: " << numGlobalParts << endl;

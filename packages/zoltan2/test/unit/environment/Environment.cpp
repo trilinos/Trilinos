@@ -156,12 +156,10 @@ int main(int argc, char *argv[])
   myParams.set("speed_versus_quality", "speed");
   myParams.set("memory_versus_speed", "memory");
 
-  Teuchos::ParameterList &parParams = myParams.sublist("partitioning");
-
-  parParams.set("topology", "2,6,6");
-  parParams.set("randomize_input", "true");
-  parParams.set("objective", "minimize_cut_edge_weight");
-  parParams.set("imbalance_tolerance", 1.2);
+  myParams.set("topology", "2,6,6");
+  myParams.set("randomize_input", "true");
+  myParams.set("partitioning_objective", "minimize_cut_edge_weight");
+  myParams.set("imbalance_tolerance", 1.2);
 
   Environment *env = NULL;
 
@@ -269,11 +267,9 @@ int main(int argc, char *argv[])
   newParams.set("error_check_level", "debug_mode_assertions");
   newParams.set("memory_versus_speed", "speed");
   newParams.remove("memory_output_file");
-  
-  Teuchos::ParameterList &newPartParams = newParams.sublist("partitioning");
-  newPartParams.set("imbalance_tolerance", "1.05");
-  newPartParams.set("algorithm", "phg");
-  newPartParams.set("objective", "minimize_cut_edge_weight");
+  newParams.set("imbalance_tolerance", "1.05");
+  newParams.set("algorithm", "phg");
+  newParams.set("partitioning_objective", "minimize_cut_edge_weight");
   
   RCP<Environment> newEnv;
 
