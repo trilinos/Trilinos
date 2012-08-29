@@ -120,18 +120,6 @@ int main(int argc, char *argv[])
   if (!fail && defEnv->errorCheckLevel_ != Zoltan2::BASIC_ASSERTION)
     fail = 1008;
 
-  if (!fail && defEnv->hasPartitioningParameters() != false)
-    fail = 1009;
-
-  if (!fail && defEnv->hasOrderingParameters() != false)
-    fail = 1010;
-
-  if (!fail && defEnv->hasColoringParameters() != false)
-    fail = 1011;
-
-  if (!fail && defEnv->hasMatchingParameters() != false)
-    fail = 1012;
-
   if (checkErrorCode(comm, fail))
     return 1;
 
@@ -226,18 +214,6 @@ int main(int argc, char *argv[])
   if (!fail && env->errorCheckLevel_ != Zoltan2::BASIC_ASSERTION)
     fail = 2008;
 
-  if (!fail && env->hasPartitioningParameters() != true)
-    fail = 2009;
-
-  if (!fail && env->hasOrderingParameters() != false)
-    fail = 2010;
-
-  if (!fail && env->hasColoringParameters() != false)
-    fail = 2011;
-
-  if (!fail && env->hasMatchingParameters() != false)
-    fail = 2012;
-
   if (checkErrorCode(comm, fail))
     return 1;
 
@@ -286,9 +262,6 @@ int main(int argc, char *argv[])
 
   if (!fail && newEnv->errorCheckLevel_ != Zoltan2::DEBUG_MODE_ASSERTION)
     fail = 3001;
-
-  if (!fail && !newEnv->hasPartitioningParameters())
-    fail = 3002;
 
   if (!fail && rank==0){
     std::cout << "\nA few changes/additions to the list" << std::endl;

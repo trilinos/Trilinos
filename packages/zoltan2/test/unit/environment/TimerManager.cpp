@@ -49,6 +49,7 @@
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_TimerManager.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
 #include <unistd.h>

@@ -262,10 +262,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 #endif
 
   ParameterList *general = &(this->env_->getParametersNonConst());
-  ParameterList *ordering = NULL;
-  if (this->env_->hasOrderingParameters()){
-    ordering = &(general->sublist("ordering"));
-  }
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:

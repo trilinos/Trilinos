@@ -43,7 +43,7 @@
 //
 // @HEADER
 //
-// Testing initialization of parameters.  Serial test.
+// Testing integer range list parameters.  Serial test.
 
 #include <Zoltan2_config.h>
 #include <Zoltan2_Environment.hpp>

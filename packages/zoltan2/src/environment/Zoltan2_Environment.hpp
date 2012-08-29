@@ -494,31 +494,6 @@ public:
       memoryOut_->print(msg, getProcessKilobytes());}
 #endif
 
-  /*! \brief Returns true if the parameter list has the named sublist.
-   */
-  bool hasSublist(const Teuchos::ParameterList &pl, 
-    const std::string &plname) const;
-
-  /*! \brief Returns true if the parameter list has a "partitioning" sublist.
-   */
-  bool hasPartitioningParameters() const { 
-   return hasSublist(params_, "partitioning"); }
-
-  /*! \brief Returns true if there is a "ordering" parameter sublist.
-   */
-  bool hasOrderingParameters() const {
-   return hasSublist(params_, "ordering"); }
-
-  /*! \brief Returns true if there is a "matching" parameter sublist.
-   */
-  bool hasMatchingParameters() const {
-   return hasSublist(params_, "matching"); }
-
-  /*! \brief Returns true if there is a "coloring" parameter sublist.
-   */
-  bool hasColoringParameters() const {
-   return hasSublist(params_, "coloring"); }
-
   /*! \brief Returns a reference to the user's parameter list.
    *
    *  This is the parameter list after validation and modification.

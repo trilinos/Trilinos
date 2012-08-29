@@ -99,9 +99,6 @@ int main(int argc, char *argv[])
 
 // Assumes numLocalObj is the same on every process.
 
-#include <Zoltan2_GetParameter.hpp>
-
-
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   int weightDim, int numLocalParts, bool givePartSizes)
 {

@@ -194,7 +194,11 @@ template <typename Adapter>
 {
   baseInputAdapter_ = dynamic_cast<base_adapter_t *>(inputAdapter_);
 
-  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
+  try{
+    env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
+  }
+  Z2_FORWARD_EXCEPTIONS
+
   envConst_ = rcp_const_cast<const Environment>(env_);
 
   ParameterList &processedParameters = env_->getParametersNonConst();

@@ -88,13 +88,35 @@ void createAllParameters(Teuchos::ParameterList &pList)
         converter);
 
   // Create a Teuchos::ParameterList from an XML string.
+  // To add a parameter to Zoltan2, edit zoltan2/data/parameters.xml.
 
   std::string xmlParameterString(ZOLTAN2_XML_PARAMETER_STRING);
   Teuchos::StringInputSource src(xmlParameterString);
+
+  Teuchos::XMLObject xmlObj;
+  ostringstream errMsg;
+
   Teuchos::XMLParser parser(src.stream());
-  Teuchos::XMLObject xmlObj = parser.parse();
-  Teuchos::XMLParameterListReader rdr;
-  pList = rdr.toParameterList(xmlObj);
+
+  try{
+    xmlObj = parser.parse();
+  }
+  catch (std::exception &e){
+    errMsg << e.what() << " invalid xml";
+  }
+
+  if (errMsg.str().size() == 0){
+    try{
+      Teuchos::XMLParameterListReader rdr;
+      pList = rdr.toParameterList(xmlObj);
+    }
+    catch (std::exception &e){
+      errMsg << e.what() << " invalid parameter list";
+    }
+  }
+
+  if (errMsg.str().size() > 0)
+    throw std::logic_error(errMsg.str().c_str());
 }
 
 /*! \brief  Create a parameter list that can validate a
@@ -159,7 +181,10 @@ void createValidatorList(
 {
   ParameterList allParameters;
 
-  createAllParameters(allParameters);
+  try{
+    createAllParameters(allParameters);
+  }
+  Z2_FORWARD_EXCEPTIONS
 
   setValidatorsInList(plIn, allParameters, plOut);
 }

@@ -106,7 +106,7 @@ int main(int argc, char **argv)
   params.set("compute_metrics", "true");
   params.set("num_local_parts", 1);
   params.set("algorithm", "block");
-  params.set("approach", "partition");
+  params.set("partitioning_approach", "partition");
   
   Zoltan2::PartitioningProblem<adapter_t> problem(&adapter, &params);
 

@@ -817,7 +817,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   string objectOfInterest(defString);
   pe = pl.getEntryPtr("objects_to_partition");
-  if (pe){
+  if (pe)
     objectOfInterest = pe->getValue<string>(&objectOfInterest);
 
   ///////////////////////////////////////////////////////////////////

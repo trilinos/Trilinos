@@ -350,7 +350,7 @@
       <String integralValue="0" stringValue="off"/>
     </Validator>
 
-    <Validator type="StringValidator" validatorId="16"/>
+    <Validator type="IntegerRangeListValidator(int)" unsorted="true" validatorId="16"/>
 
     <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="double" type="anynumberValidator" validatorId="19"/>
 

@@ -516,7 +516,7 @@ void StringValidator::validate(
       "Error: The value that was entered doesn't fall with in "
       "the range set by the validator." <<
       "Parameter: " << paramName << std::endl <<
-      "Acceptable Values: " << validStrings_ << std::endl <<
+      "Acceptable Values: " << *validStrings_ << std::endl <<
       "Value entered: " << getValue<std::string>(entry) << std::endl <<
       std::endl);
   }
