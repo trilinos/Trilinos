@@ -280,6 +280,7 @@ public:
       }
     }
 private:
+  //! Function (or function object) for freeing the handle.
   OpaqueFree opaqueFree_;
   OpaqueWrapperWithFree(); // Not defined
   OpaqueWrapperWithFree(const OpaqueWrapperWithFree&); // Not defined
@@ -287,8 +288,10 @@ private:
 };
 
 
-/** \brief Helper function created a new <tt>OpaqueWrapper</tt> object without
- * a free function.
+/** \brief Create a new <tt>OpaqueWrapper</tt> object without a free function.
+ *
+ * See the documentation of OpaqueWrapper for a detailed explanation
+ * of why and how to use this function.
  *
  * \relates OpaqueWrapper
  */
@@ -301,8 +304,10 @@ opaqueWrapper( Opaque opaque)
 }
 
 
-/** \brief Helper function created a new <tt>OpaqueWrapper</tt> object with a
- * free function.
+/** \brief Create a new <tt>OpaqueWrapper</tt> object with a free function.
+ *
+ * See the documentation of OpaqueWrapper for a detailed explanation
+ * of why and how to use this function.
  *
  * \relates OpaqueWrapper
  */
