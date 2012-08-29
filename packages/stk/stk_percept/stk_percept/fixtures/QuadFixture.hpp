@@ -34,6 +34,12 @@
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_io/IossBridge.hpp>
 
+#ifdef PERCEPT_QF_USE_COORD_GATHER_FIELD
+#undef PERCEPT_QF_USE_COORD_GATHER_FIELD
+#endif
+
+#define PERCEPT_QF_USE_COORD_GATHER_FIELD 0
+
 namespace stk {
   namespace percept {
 
@@ -72,7 +78,6 @@ namespace stk {
         ~QuadFixture()
         {}
 
-#define PERCEPT_QF_USE_COORD_GATHER_FIELD 0
         QuadFixture( stk::ParallelMachine pm ,
                      unsigned nx , unsigned ny, bool generate_sidesets_in, bool debug_geom_side_sets_as_blocks_in=false )
           : meta_data(2, get_entity_rank_names(2) ),
@@ -463,4 +468,6 @@ namespace stk {
 
   } // percept
 } // stk
+#undef PERCEPT_QF_USE_COORD_GATHER_FIELD
+
 #endif
