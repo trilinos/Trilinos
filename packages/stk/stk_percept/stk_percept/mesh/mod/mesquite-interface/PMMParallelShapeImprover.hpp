@@ -8,8 +8,8 @@
 #ifndef PMMParallelShapeImprover_hpp
 #define PMMParallelShapeImprover_hpp
 
-#if !defined(__IBMCPP__)
-#ifdef STK_BUILT_IN_SIERRA
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include <Mesquite.hpp>
 #include <MsqError.hpp>
@@ -136,6 +136,5 @@ namespace stk {
   }
 }
 
-#endif
 #endif
 #endif

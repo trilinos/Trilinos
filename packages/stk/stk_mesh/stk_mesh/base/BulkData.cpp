@@ -108,7 +108,8 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_sync_count( 0 ),
     m_sync_state( MODIFIABLE ),
     m_meta_data_verified( false ),
-    m_optimize_buckets(false)
+    m_optimize_buckets(false),
+    m_mesh_finalized(false)
 {
   create_ghosting( "shared" );
   create_ghosting( "shared_aura" );
@@ -174,7 +175,9 @@ bool BulkData::modification_begin()
 
   parallel_machine_barrier( m_parallel_machine );
 
-  if ( m_sync_state == MODIFIABLE ) return false ;
+  ThrowRequireMsg( m_mesh_finalized == false, "Unable to modifiy, BulkData has been finalized.");
+
+  if ( m_sync_state == MODIFIABLE && m_mesh_finalized == false ) return false ;
 
   if ( ! m_meta_data_verified ) {
     require_metadata_committed();

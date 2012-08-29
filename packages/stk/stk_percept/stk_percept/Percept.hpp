@@ -70,6 +70,25 @@
 #define BOOST_UBLAS_UNSUPPORTED_COMPILER 0
 #endif
 
+
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+//----- Geometry and Mesquite configuration
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+
+#if defined(STK_BUILT_IN_SIERRA) && !defined(STK_PERCEPT_HAS_GEOMETRY)
+#define STK_PERCEPT_HAS_GEOMETRY
+#endif
+
+#if defined(STK_BUILT_IN_SIERRA) && !defined(STK_PERCEPT_HAS_MESQUITE)
+#define STK_PERCEPT_HAS_MESQUITE
+#endif
+
+#if defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
+#undef STK_PERCEPT_HAS_MESQUITE
+#endif
+
 #include <stk_percept/ExceptionWatch.hpp>
 
 

@@ -59,12 +59,12 @@ public:
 
   /** copy constructor */
   Record(const Record<GlobalIDType>& src)
-    : isInLocalSubdomain_(src.isInLocalSubdomain_),
-      ID_(src.ID_),
+    : ID_(src.ID_),
       number_(src.number_),
       fieldMask_(src.fieldMask_),
       offsetIntoEqnNumbers_(src.offsetIntoEqnNumbers_),
       ownerProc_(src.ownerProc_),
+      isInLocalSubdomain_(src.isInLocalSubdomain_),
       hasSlaveDof_(src.hasSlaveDof_)
     {}
 
@@ -169,17 +169,14 @@ public:
   void hasSlaveDof(bool flag)
   { hasSlaveDof_ = flag; }
 
-  /** ugh, public data member... */
-  bool isInLocalSubdomain_;
-
   Record<GlobalIDType>& operator=(const Record<GlobalIDType>& src)
   {
-    isInLocalSubdomain_ = src.isInLocalSubdomain_;
     ID_ = src.ID_;
     number_ = src.number_;
     fieldMask_ = src.fieldMask_;
     offsetIntoEqnNumbers_ = src.offsetIntoEqnNumbers_;
     ownerProc_ = src.ownerProc_;
+    isInLocalSubdomain_ = src.isInLocalSubdomain_;
     hasSlaveDof_ = src.hasSlaveDof_;
     return *this;
   }
@@ -195,6 +192,11 @@ private:
 
   int ownerProc_;
 
+public:
+  /** ugh, public data member... */
+  bool isInLocalSubdomain_;
+
+private:
   bool hasSlaveDof_;
 };
 
@@ -212,12 +214,12 @@ class Record_Operator {
 
 template<class GlobalIDType>
 fei::Record<GlobalIDType>::Record()
-  : isInLocalSubdomain_(false),
-    ID_(-1),
+  : ID_(-1),
     number_(-1),
     fieldMask_(NULL),
     offsetIntoEqnNumbers_(0),
     ownerProc_(-1),
+    isInLocalSubdomain_(false),
     hasSlaveDof_(false)
 {
 }

@@ -48,7 +48,7 @@
 #include <fei_SharedPtr.hpp>
 #include <fei_mpi.h>
 #include <fei_Logger.hpp>
-#include <fei_FillableVec.hpp>
+#include <fei_CSVec.hpp>
 #include <fei_FillableMat.hpp>
 #include <fei_CSVec.hpp>
 #include <fei_CSRMat.hpp>
@@ -172,7 +172,7 @@ namespace fei {
     int* slavesPtr_;
     fei::FillableMat Kii_, Kid_, Kdi_, Kdd_;
     fei::CSRMat csrKii, csrKid, csrKdi, csrKdd;
-    fei::FillableVec fi_, fd_;
+    fei::CSVec fi_, fd_;
     fei::CSVec csfi, csvec, csvec_i;
     fei::CSRMat tmpMat1_, tmpMat2_;
     fei::CSVec tmpVec1_, tmpVec2_;

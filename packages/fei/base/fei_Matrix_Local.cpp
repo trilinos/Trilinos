@@ -306,6 +306,11 @@ Matrix_Local::multiply(fei::Vector* x,
   return(-1);
 }
 
+void
+Matrix_Local::setCommSizes()
+{
+}
+
 int
 Matrix_Local::gatherFromOverlap(bool accumulate)
 {

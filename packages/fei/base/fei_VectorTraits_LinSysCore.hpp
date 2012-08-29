@@ -82,27 +82,27 @@ namespace fei {
                      bool sum_into,
 		     bool isSolnVector=false,
 		     int vectorIndex=0)
-      {
-	int err = 0;
-	if (isSolnVector) {
-          if (sum_into) {
-            return(-1);//LinearSystemCore allows 'put' (overwrite) operations on
-	             //the soln-vector, but not 'sumInto'.
-          }
-          else {
-	    err = vec->putInitialGuess(indices, values, numValues);
-          }
-	}
-	else {
-          if (sum_into) {
-            err = vec->sumIntoRHSVector(numValues, values, indices);
-          }
-          else {
-	    err = vec->putIntoRHSVector(numValues, values, indices);
-          }
-	}
-	return(err);
+    {
+      int err = 0;
+      if (isSolnVector) {
+        if (sum_into) {
+          return(-97);//LinearSystemCore allows 'put' (overwrite) operations on
+          //the soln-vector, but not 'sumInto'.
+        }
+        else {
+          err = vec->putInitialGuess(indices, values, numValues);
+        }
       }
+      else {
+        if (sum_into) {
+          err = vec->sumIntoRHSVector(numValues, values, indices);
+        }
+        else {
+          err = vec->putIntoRHSVector(numValues, values, indices);
+        }
+      }
+      return(err);
+    }
 
    /** Copy values from the specified indices out into the user-allocated
           array 'values'.

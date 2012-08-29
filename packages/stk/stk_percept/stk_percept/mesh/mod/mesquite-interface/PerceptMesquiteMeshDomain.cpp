@@ -12,10 +12,8 @@
 // Owner         : Steve Kennon
 //-------------------------------------------------------------------------
 
-#ifdef STK_BUILT_IN_SIERRA
-
-// ibm can't compile mesquite
-#if !defined(__IBMCPP__)
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include "PerceptMesquiteMeshDomain.hpp"
 //#include <mesquite/MsqVertex.hpp>
@@ -316,5 +314,4 @@ namespace stk {
   } // namespace percept
 } // namespace stk
 
-#endif
 #endif // STK_BUILT_IN_SIERRA

@@ -8,8 +8,8 @@
 #ifndef PMMParallelReferenceMeshSmoother1_hpp
 #define PMMParallelReferenceMeshSmoother1_hpp
 
-#if !defined(__IBMCPP__)
-#ifdef STK_BUILT_IN_SIERRA
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 
@@ -54,7 +54,6 @@ namespace stk {
       void nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid, double *ng);
       double nodal_edge_length_ave(stk::mesh::Entity& node);
       
-      double m_dnew, m_dold, m_d0, m_dmid, m_dd;
       PerceptMesquiteMesh *m_pmm;
 
     };
@@ -65,4 +64,4 @@ namespace stk {
 
 #endif
 #endif
-#endif
+

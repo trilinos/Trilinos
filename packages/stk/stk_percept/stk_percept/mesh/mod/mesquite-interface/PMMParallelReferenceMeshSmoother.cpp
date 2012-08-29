@@ -1,5 +1,5 @@
-#if !defined(__IBMCPP__)
-#ifdef STK_BUILT_IN_SIERRA
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
@@ -194,12 +194,14 @@ namespace stk {
                   bool conv = check_convergence();
                   if (!get_parallel_rank())
                   {
-                    std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " num_invalid= " << num_invalid_0 
+                    std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " m_dnew= " << m_dnew 
+                              << " m_d0= " << m_d0 << " m_alpha= " << m_alpha << " m_grad_norm= " << m_grad_norm << " m_scaled_grad_norm = " << m_scaled_grad_norm
+                              << " num_invalid= " << num_invalid_0 
                               << " m_global_metric= " << m_global_metric << " m_untangled= " << m_untangled
                               << std::endl;
                   }
 
-                  if (1)
+                  if (0)
                     {
                        eMesh->save_as("iter_"+toString(outer)+"_"+toString(stage)+"."+toString(iter)+".e");
                        if (iter_all % 8 == 0) eMesh->save_as("anim_all."+toString(iter_all)+".e");
@@ -234,5 +236,4 @@ namespace stk {
 }
 
 
-#endif
 #endif

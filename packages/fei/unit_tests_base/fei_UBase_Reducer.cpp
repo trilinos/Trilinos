@@ -160,12 +160,12 @@ void addFillableMatToReducer(fei::FillableMat& mat, fei::Reducer& reducer,
     iter = mat.begin(), iter_end = mat.end();
   for(; iter!=iter_end; ++iter) {
     int row = iter->first;
-    fei::FillableVec* rowvec = iter->second;
-    fei::FillableVec::iterator
-      viter = rowvec->begin(), viter_end = rowvec->end();
-    for(; viter!=viter_end; ++viter) {
-      int col = viter->first;
-      double coef = viter->second;
+    fei::CSVec* rowvec = iter->second;
+    const std::vector<int>& cols = rowvec->indices();
+    const std::vector<double>& coefs = rowvec->coefs();
+    for(size_t i=0; i<cols.size(); ++i) {
+      int col = cols[i];
+      double coef = coefs[i];
       double* coefPtr = &coef;
       reducer.addMatrixValues(1, &row, 1, &col, &coefPtr, true, feimat, FEI_DENSE_ROW);
     }

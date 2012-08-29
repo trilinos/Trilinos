@@ -46,7 +46,6 @@
 #include "fei_iosfwd.hpp"
 namespace fei {
   class FillableMat;
-  class FillableVec;
   class CSRMat;
   class CSVec;
 }//namespace fei
@@ -60,8 +59,6 @@ namespace fei {
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Vector& vec);
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Matrix& mat);
-
-FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableVec& vec);
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableMat& mat);
 

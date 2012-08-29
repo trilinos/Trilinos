@@ -12,16 +12,6 @@
 #include <set>
 #include <vector>
 
-// ibm can't compile mesquite
-#if defined(STK_BUILT_IN_SIERRA) && !defined(__IBMCPP__)
-#define STK_ADAPT_HAS_GEOMETRY
-#else
-#undef STK_ADAPT_HAS_GEOMETRY
-#endif
-
-#if defined( STK_ADAPT_HAS_GEOMETRY )
-#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
-#endif
 
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
@@ -40,6 +30,10 @@
 #include <stk_adapt/SubDimCell.hpp>
 
 #include <stk_adapt/RefinementInfoByType.hpp>
+
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
+#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
+#endif
 
 #define UNIFORM_REF_REMOVE_OLD_STD_SET 1
 #define UNIFORM_REF_REMOVE_OLD_STD_VECTOR 0
@@ -128,6 +122,11 @@ namespace stk {
       getSmoothGeometry() { return m_doSmoothGeometry; }
 
       void
+      setRemoveGeometryBlocks(bool do_remove) { m_removeGeometryBlocks = do_remove; }
+      bool
+      getRemoveGeometryBlocks() { return m_removeGeometryBlocks; }
+
+      void
       setIgnoreSideSets(bool ignore_sidesets) ;
 
       bool
@@ -163,7 +162,7 @@ namespace stk {
       bool
       getAlwaysInitializeNodeRegistry() { return m_alwaysInitNodeRegistry; }
 
-#if defined( STK_ADAPT_HAS_GEOMETRY )
+#if defined( STK_PERCEPT_HAS_MESQUITE ) && defined(STK_PERCEPT_HAS_GEOMETRY)
 
       enum SMOOTHING_OPTIONS {
         // snaps and discards original coord field, tries to smooth
@@ -376,6 +375,9 @@ namespace stk {
       bool m_alwaysInitNodeRegistry;
       bool m_doSmoothGeometry;
       bool m_allocated;
+
+      bool m_removeGeometryBlocks;
+
     };
 
 

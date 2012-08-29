@@ -226,6 +226,13 @@ namespace fei {
     virtual int multiply(fei::Vector* x,
                          fei::Vector* y) = 0;
 
+    /** perform initial communication to establish message sizes that will
+      be needed for exchanging shared-node data.
+      Called from within gatherFromOverlap usually, doesn't usually need to
+      be explicitly called by client code. (Power users only...)
+    */
+    virtual void setCommSizes() = 0;
+
     /** After local overlapping data has been input, (e.g., element-data for a
         finite-element application) call this method to have data that 
         corresponds to shared identifiers be communicated from sharing-but-not-

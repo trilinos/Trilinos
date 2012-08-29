@@ -121,10 +121,14 @@ namespace snl_fei {
 
         if (setMatrixStructure() != 0) return(mptr);
 
+        bool zeroSharedRows = true;
+        if (reducer_.get() != NULL) {
+          zeroSharedRows = false;
+        }
+
         fei::SharedPtr<fei::Matrix> tmpmat;
-        tmpmat.reset(new fei::Matrix_Impl<LinearSystemCore>(linsyscore_,
-                                                         matrixGraph_,
-                                                           numLocalEqns_));
+        tmpmat.reset(new fei::Matrix_Impl<LinearSystemCore>(linsyscore_, matrixGraph_,
+                                                           numLocalEqns_, zeroSharedRows));
         fei::SharedPtr<fei::Matrix> matptr;
         if (reducer_.get() != NULL) {
           matptr.reset(new fei::MatrixReducer(reducer_, tmpmat));

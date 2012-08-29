@@ -350,7 +350,7 @@ namespace {
     // Do the following check(s) only if there are nodeset varibles...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
-    if (interface.ns_var_names.size() > 0) {
+    if (interface.ns_var_names.size() > 0 || interface.pedantic) {
       for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
 	Node_Set<INT>* set1 = file1.Get_Node_Set_by_Index(b);
 	Node_Set<INT>* set2 = file2.Get_Node_Set_by_Id(set1->Id());
@@ -360,7 +360,7 @@ namespace {
 	if (node_map != NULL)
 	  set1->apply_map(node_map);
 	
-	if (set1->var_count() > 0 && (set1->Size() == set2->Size())) {
+	if (interface.pedantic || (set1->var_count() > 0 && (set1->Size() == set2->Size()))) {
 	  size_t node_count = set1->Size();
 	  int diff = -1;
 	  for (size_t i=0; i < node_count; i++) {
@@ -372,7 +372,7 @@ namespace {
 	  if (diff >= 0) {
 	    std::cout << "exodiff: ERROR .. The nodelists for nodeset id " << set1->Id()
 		      << " are not the same in the two files.\n"
-		      << "\tThe first difference is at position " << set1->Node_Index(diff)+1
+		      << "\t\tThe first difference is at position " << set1->Node_Index(diff)+1
 		      << ": Node " << set1->Node_Id(diff) << " vs. Node " << set2->Node_Id(diff) <<".\n";
 	    if(interface.map_flag != PARTIAL){
 	      is_same = false;
@@ -431,10 +431,10 @@ namespace {
     }
 
 
-    // Do the following check(s) only if there are sideset varibles...
+    // Do the following check(s) only if there are sideset varibles... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
-    if (interface.ss_var_names.size() > 0) {
+    if (interface.ss_var_names.size() > 0 || interface.pedantic) {
       for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
 	Side_Set<INT>* set1 = file1.Get_Side_Set_by_Index(b);
 	Side_Set<INT>* set2 = file2.Get_Side_Set_by_Id(set1->Id());
@@ -445,7 +445,7 @@ namespace {
 	  set1->apply_map(elmt_map);
       
 	// Don't care if sidesets don't match if there are no variables...
-	if (set1->var_count() > 0 && (set1->Size() == set2->Size())) {
+	if (interface.pedantic || (set1->var_count() > 0 && (set1->Size() == set2->Size()))) {
 	  size_t side_count = set1->Size();
 	  int diff = -1;
 	  for (size_t i=0; i < side_count; i++) {
@@ -457,7 +457,7 @@ namespace {
 	  if (diff >= 0) {
 	    std::cout << "exodiff: ERROR .. The sidelists for sideset id " << set1->Id()
 		      << " are not the same in the two files.\n"
-		      << "\tThe first difference is at position " << set1->Side_Index(diff)+1
+		      << "\t\tThe first difference is at position " << set1->Side_Index(diff)+1
 		      << ": Side "
 		      << set1->Side_Id(diff).first << "." << set1->Side_Id(diff).second
 		      << " .vs. Side "

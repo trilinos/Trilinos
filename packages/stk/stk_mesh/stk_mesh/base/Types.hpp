@@ -118,7 +118,7 @@ typedef PairIter< std::vector< EntityProc >::const_iterator >
   PairIterEntityProc ;
 #ifndef SWIG
 	//NLM SWIG cannot handle this macro
-	
+
 NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , unsigned , proc )
 
 /** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs

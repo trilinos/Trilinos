@@ -203,7 +203,7 @@ namespace fei {
     /** Implementation of Lookup:: method */
     const int* getSharedNodeNumbers()
     {
-      fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs_private(nodeIDType_);
+      fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs(nodeIDType_);
 
       int numShared = sharedIDs.getSharedIDs().size();
       workspace_.resize(numShared*2);
@@ -232,7 +232,7 @@ namespace fei {
 
       fei::Record<int>* node = (*nnp_iter).second;
 
-      const fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs_private(nodeIDType_);
+      const fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs(nodeIDType_);
 
       int shID = node->getID();
 
@@ -256,7 +256,7 @@ namespace fei {
 
       fei::Record<int>* node = (*nnp_iter).second;
 
-      const fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs_private(nodeIDType_);
+      const fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs(nodeIDType_);
 
       int shID = node->getID();
 

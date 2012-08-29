@@ -257,7 +257,7 @@ int fei::Lookup_Impl::buildDatabases()
   bool noconstraints = numGlobalLagrangeConstraints<1 ? true : false;
 
   fei::SharedIDs<int> subdomainIDs;
-  fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs_private(nodeIDType_);
+  fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs(nodeIDType_);
 
   if (noconstraints == false) {
     snl_fei::SubdMsgHandler subdmsghndlr(collection, &sharedIDs, &subdomainIDs);

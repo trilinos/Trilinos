@@ -44,9 +44,11 @@
 #ifndef _fei_FillableMat_hpp_
 #define _fei_FillableMat_hpp_
 
-#include <vector>
-#include <fei_FillableVec.hpp>
+#include <fei_CSVec.hpp>
+#include <fei_Pool_alloc.hpp>
 #include <fei_EqnBuffer.hpp>
+#include <vector>
+#include <map>
 
 namespace fei {
 
@@ -72,11 +74,11 @@ class FillableMat {
 
   bool hasRow(int row) const;
 
-  const FillableVec* getRow(int row) const;
-  FillableVec* create_or_getRow(int row);
+  const CSVec* getRow(int row) const;
+  CSVec* create_or_getRow(int row);
 
-  typedef std::map<int, FillableVec*, std::less<int>,
-                fei_Pool_alloc<std::pair<const int,FillableVec*> > > feipoolmat;
+  typedef std::map<int, CSVec*, std::less<int>,
+                fei_Pool_alloc<std::pair<const int,CSVec*> > > feipoolmat;
 
   typedef feipoolmat::iterator iterator;
   typedef feipoolmat::const_iterator const_iterator;
@@ -95,7 +97,7 @@ class FillableMat {
 
  private:
   feipoolmat matdata_;
-  fei_Pool_alloc<FillableVec> vecpool_;
+  fei_Pool_alloc<CSVec> vecpool_;
 }; //class FillableMat
 
 /** Print the contents of a FillableMat to the given std::ostream. */

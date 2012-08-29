@@ -178,6 +178,17 @@ int main(int argc, char *argv[]) {
     int n = 32;
     CLP.setOption("num_mesh", &n, "Number of mesh points in each direction");
 
+    // multigrid specific options
+    int minAggSize = 1;
+    CLP.setOption("min_agg_size", &minAggSize, "multigrid aggregate size");
+    int smootherSweeps = 3;
+    CLP.setOption("smoother_sweeps", &smootherSweeps, "# multigrid smoother sweeps");
+    int plainAgg=1;
+    CLP.setOption("plain_aggregation", &plainAgg, "plain aggregation");
+    LocalOrdinal nsSize=-1;
+    CLP.setOption("nullspace_size", &nsSize, "nullspace dimension");
+
+
     bool symmetric = false;
     CLP.setOption("symmetric", "unsymmetric", &symmetric, 
                   "Symmetric discretization");
@@ -454,6 +465,7 @@ int main(int argc, char *argv[]) {
       H = rcp(new MueLu_Hierarchy(xopJ0));
       M = rcp(new Belos_MueLuOperator(H));
       //M->setParameters(precParams);
+      if (nsSize!=-1) sz=nsSize;
       RCP<Xpetra_MultiVector> Z = Xpetra_MultiVectorFactory::Build(xcrsJ->getDomainMap(), sz);
       size_t n = Z->getLocalLength();
       for (LocalOrdinal j=0; j<sz; ++j) {
@@ -465,6 +477,9 @@ int main(int argc, char *argv[]) {
         }
       }
       H->GetLevel(0)->Set("Nullspace", Z);
+      //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      //fos->setOutputToRootOnly(-1);
+      //Z->describe(*fos);
     }
 
     // Evaluate model
@@ -491,19 +506,48 @@ int main(int argc, char *argv[]) {
     if (prec_method != NONE) {
       //M->initialize();
       //M->compute();
+
+      //override MueLu defaults via factory manager
+      RCP<FactoryManager> fm = rcp( new FactoryManager() );;
+
+      //smoother
+      ParameterList smootherParamList;
+      /*
+      smootherParamList.set("chebyshev: degree", smootherSweeps);
+      smootherParamList.set("chebyshev: ratio eigenvalue", (double) 20);
+      smootherParamList.set("chebyshev: max eigenvalue", (double) -1.0);
+      smootherParamList.set("chebyshev: min eigenvalue", (double) 1.0);
+      smootherParamList.set("chebyshev: zero starting solution", true);
+      RCP<SmootherPrototype> smooPrototype     = rcp( new TrilinosSmoother("CHEBYSHEV", smootherParamList) );
+      */
+      smootherParamList.set("relaxation: sweeps", smootherSweeps);
+      smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
+      RCP<SmootherPrototype> smooPrototype     = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
+
+      RCP<SmootherFactory>   smooFact      = rcp( new SmootherFactory(smooPrototype) );
+      fm->SetFactory("Smoother", smooFact);
+
+      // coarse level solve
       ParameterList coarseParamList;
       coarseParamList.set("fact: level-of-fill", 0);
       RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("ILUT", coarseParamList) );
-      RCP<FactoryManager> fm = rcp( new FactoryManager() );;
-      //override MueLu defaults via factory manager
       RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarsePrototype, Teuchos::null) );
       fm->SetFactory("CoarseSolver", coarseSolverFact);
+
       //allow for larger aggregates
       typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
       MueLu_UCAggregationFactory;
       RCP<MueLu_UCAggregationFactory> aggFact = rcp(new MueLu_UCAggregationFactory());
-      aggFact->SetMinNodesPerAggregate(10);
+      aggFact->SetMinNodesPerAggregate(minAggSize);
       fm->SetFactory("Aggregates", aggFact);
+
+      //turn off damping
+      typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MueLu_SaPFactory;
+      if (plainAgg) {
+        RCP<MueLu_SaPFactory> sapFactory = rcp(new MueLu_SaPFactory);
+        sapFactory->SetDampingFactor( (Scalar) 0.0 );
+        fm->SetFactory("P", sapFactory);
+      }
 
       H->Setup(*fm);
     }

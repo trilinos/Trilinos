@@ -37,6 +37,14 @@
 
 #include <stk_mesh/base/FieldParallel.hpp>
 
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
+
+#include <stk_percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
+#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
+#include <stk_percept/mesh/geometry/kernel/GeometryFactory.hpp>
+
+#endif
+
 // FIXME
 
 #include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
@@ -1659,7 +1667,7 @@ namespace stk {
       stk::io::populate_bulk_data(bulk_data, mesh_data);
 
       int timestep_count = in_region.get_property("state_count").get_int();
-      //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
+      ///std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
       // FIXME
@@ -1744,7 +1752,7 @@ namespace stk {
       stk::io::populate_bulk_data(bulk_data, mesh_data);
 
       int timestep_count = in_region.get_property("state_count").get_int();
-      std::cout << "tmp timestep_count= " << timestep_count << std::endl;
+      //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
       if ((timestep_count > 0 && step <= 0) || (step > timestep_count))
@@ -1973,10 +1981,15 @@ namespace stk {
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
           if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
           {
-            std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
+            //if (!get_rank()) std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity) 
               stk::io::remove_io_part_attribute(part);
+            else if (!get_rank())
+              {
+                //std::cout << "tmp srk checkForPartsToAvoidWriting found part to omit but it's not a real part,  part= " << name << std::endl;
+              }
+
           }
         }
 
@@ -1989,11 +2002,15 @@ namespace stk {
           std::string name = part.name();
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() = " << name << " s_omit_part= " << s_omit_part << std::endl;
           {
-            std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() omitted part= " << name << std::endl;
-            exit(1);
+            //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity) 
               stk::io::remove_io_part_attribute(part);
+            else if (!get_rank())
+              {
+                //std::cout << "tmp srk checkForPartsToAvoidWriting found part to omit from get_io_omitted_parts() but it's not a real part,  part= " << name << std::endl;
+              }
+              
           }
         }
     }
@@ -2515,9 +2532,9 @@ namespace stk {
 
 
 
-    double PerceptMesh::edge_length_ave(const stk::mesh::Entity &entity)
+    double PerceptMesh::edge_length_ave(const stk::mesh::Entity &entity, mesh::FieldBase* coord_field_in )
     {
-      stk::mesh::FieldBase &coord_field = *get_coordinates_field();
+      stk::mesh::FieldBase &coord_field = (coord_field_in ? *coord_field_in : *get_coordinates_field());
       const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(entity);
 
       shards::CellTopology cell_topo(cell_topo_data);
@@ -3874,6 +3891,35 @@ namespace stk {
       
       // the shared part (just the shared boundary)
       //stk::mesh::communicate_field_data(*get_bulk_data()->ghostings()[0], fields);
+    }
+
+    void PerceptMesh::remove_geometry_blocks_on_output(std::string geometry_file_name)
+    {
+#if defined(STK_PERCEPT_HAS_GEOMETRY)      
+      GeometryKernelOpenNURBS gk;
+      // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
+      double doCheckMovement = 0.0; 
+
+      // anything exceeding a value > 0.0 will be printed
+      double doCheckCPUTime = 0.0;  
+      //double doCheckCPUTime = 0.1;
+
+      MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
+      GeometryFactory factory(&gk, &mesh_geometry);
+      factory.read_file(geometry_file_name, this);
+
+      const stk::mesh::PartVector& eMeshOmittedParts = get_io_omitted_parts();
+      stk::mesh::PartVector newOmittedParts = eMeshOmittedParts;
+      const std::vector<GeometryEvaluator*>& geomEvals = mesh_geometry.getGeomEvaluators();
+      for (unsigned i = 0; i < geomEvals.size(); i++)
+        {
+          //if (!m_eMesh.get_rank()) std::cout << " tmp srk adding geomEvals[i]->mPart->name()..." << geomEvals[i]->mPart->name() << std::endl;
+          newOmittedParts.push_back(geomEvals[i]->mPart);
+        }
+      set_io_omitted_parts(newOmittedParts);
+#else
+        throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
+#endif
     }
 
     //====================================================================================================================================

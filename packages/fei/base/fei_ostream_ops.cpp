@@ -47,7 +47,6 @@
 #include <fei_Vector.hpp>
 #include <fei_Matrix.hpp>
 #include <fei_FillableMat.hpp>
-#include <fei_FillableVec.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_CSVec.hpp>
 
@@ -64,20 +63,6 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Matrix& mat)
   return(os);
 }
 
-FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableVec& vec)
-{
-  fei::FillableVec::iterator
-    iter = vec.begin(), iter_end = vec.end();
-
-  os << "   numEntries: " << vec.size() << FEI_ENDL;
-
-  for(; iter!=iter_end; ++iter) {
-    os << "     " << iter->first<< ": "<<iter->second << FEI_ENDL;
-  }
-
-  return(os);
-}
-
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableMat& mat)
 {
   os << "num rows: " << mat.getNumRows() << FEI_ENDL;
@@ -86,12 +71,12 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableMat& mat)
 
   for(; iter!=iter_end; ++iter) {
     int row = iter->first;
-    fei::FillableVec::iterator
-     viter = iter->second->begin(), viter_end = iter->second->end();
-
+    const fei::CSVec* v = iter->second;
+    const std::vector<int>& v_ind = v->indices();
+    const std::vector<double>& v_coef = v->coefs();
     os << row << ": ";
-    for(; viter!=viter_end; ++viter) {
-      os << "("<<viter->first<<","<<viter->second<<") ";
+    for(size_t i=0; i<v_ind.size(); ++i) {
+      os << "("<<v_ind[i]<<","<<v_coef[i]<<") ";
     }
     os << FEI_ENDL;
   }

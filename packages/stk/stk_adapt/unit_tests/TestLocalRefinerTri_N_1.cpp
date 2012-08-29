@@ -11,9 +11,9 @@
 
 #include <unit_tests/TestLocalRefinerTri_N_1.hpp>
 
-//#define STK_ADAPT_HAS_GEOMETRY
-#undef STK_ADAPT_HAS_GEOMETRY
-#if defined( STK_ADAPT_HAS_GEOMETRY )
+
+#undef STK_PERCEPT_HAS_GEOMETRY
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
 #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
 #include <stk_adapt/geometry/MeshGeometry.hpp>
 #include <stk_adapt/geometry/GeometryFactory.hpp>
