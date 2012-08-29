@@ -98,9 +98,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
 #endif
    
   Teuchos::ParameterList params("test params");
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 7);
+  params.set("bisection_num_test_cuts", 7);
 
 #ifdef HAVE_ZOLTAN2_MPI                   
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
@@ -141,14 +139,10 @@ void serialTest()
 
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
-
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("num_global_parts", numParts);
-  parParams.set("algorithm", "rcb");
-  parParams.set("imbalance_tolerance", 1.1);
-
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 7);
+  params.set("num_global_parts", numParts);
+  params.set("algorithm", "rcb");
+  params.set("imbalance_tolerance", 1.1);
+  params.set("bisection_num_test_cuts", 7);
 
 #ifdef HAVE_ZOLTAN2_MPI                   
   Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(
@@ -184,10 +178,8 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 
   Teuchos::ParameterList params("test params");
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 7);
-  geoParams.set("rectilinear_blocks", "yes");
+  params.set("bisection_num_test_cuts", 7);
+  params.set("rectilinear_blocks", "yes");
 
 #ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,

@@ -157,14 +157,12 @@ int main(int argc, char *argv[])
   params.set("debug_procs", "0");
   params.set("error_check_level", "debug_mode_assertions");
 
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("compute_metrics", "true");
-  parParams.set("algorithm", "rcb");
-  parParams.set("imbalance_tolerance", tolerance );
-  parParams.set("num_global_parts", nprocs);
+  params.set("compute_metrics", "true");
+  params.set("algorithm", "rcb");
+  params.set("imbalance_tolerance", tolerance );
+  params.set("num_global_parts", nprocs);
 
-  Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 1);
+  params.set("bisection_num_test_cuts", 1);
    
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
@@ -272,7 +270,7 @@ int main(int argc, char *argv[])
 
   // Add to the parameters the multicriteria objective.
 
-  parParams.set("objective", "multicriteria_minimize_total_weight");
+  params.set("partitioning_objective", "multicriteria_minimize_total_weight");
 
   // Create the new weights.
 
@@ -331,7 +329,7 @@ int main(int argc, char *argv[])
 
   bool dataHasChanged = false;    // default is true
 
-  parParams.set("objective", "multicriteria_minimize_maximum_weight");
+  params.set("partitioning_objective", "multicriteria_minimize_maximum_weight");
   problem3.resetParameters(&params);
   problem3.solve(dataHasChanged);    
   if (rank == 0){
@@ -344,7 +342,7 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
   }
 
-  parParams.set("objective", "multicriteria_balance_total_maximum");
+  params.set("partitioning_objective", "multicriteria_balance_total_maximum");
   problem3.resetParameters(&params);
   problem3.solve(dataHasChanged);    
   if (rank == 0){
@@ -371,7 +369,7 @@ int main(int argc, char *argv[])
   // Change the number of parts to twice the number of processes to
   // ensure that we have more than one global part.
 
-  parParams.set("num_global_parts", nprocs*2);
+  params.set("num_global_parts", nprocs*2);
 
   // Using the initial problem that did not have any weights, reset
   // parameter list, and give it some part sizes.

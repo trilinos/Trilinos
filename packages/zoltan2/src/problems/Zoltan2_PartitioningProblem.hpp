@@ -623,20 +623,26 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   // Did the user ask for computation of quality metrics?
 
-  int yesNo;
-  getParameterValue(pl, "partitioning", "compute_metrics", isSet, yesNo);
-  if (isSet && yesNo)
+  int yesNo=0;
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("compute_metrics");
+  if (pe){
+    yesNo = pe->getValue<int>(&yesNo);
     metricsRequested_ = true;
+  }
 
   // Did the user specify a computational model?
 
   string model(defString);
-  getParameterValue(pl, "partitioning", "model", isSet, model);
+  pe = pl.getEntryPtr("model");
+  if (pe)
+    model = pe->getValue<string>(&model);
 
   // Did the user specify an algorithm?
 
   string algorithm(defString);
-  getParameterValue(pl, "partitioning", "algorithm", isSet, algorithm);
+  pe = pl.getEntryPtr("algorithm");
+  if (pe)
+    algorithm = pe->getValue<string>(&algorithm);
 
   // Possible algorithm requirements that must be conveyed to the model:
 
@@ -781,9 +787,11 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Hierarchical partitioning?
 
   Array<int> valueList;
-  getParameterValue(pl, "partitioning", "topology", isSet, valueList);
+  pe = pl.getEntryPtr("topology");
 
-  if (isSet){
+  if (pe){
+    valueList = pe->getValue<Array<int> >(&valueList);
+
     if (!Zoltan2::noValuesAreInRangeList<int>(valueList)){
       int *n = new int [valueList.size() + 1];
       levelNumberParts_ = arcp(n, 0, valueList.size() + 1, true);
@@ -808,7 +816,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Object to be partitioned? (rows, columns, etc)
 
   string objectOfInterest(defString);
-  getParameterValue(pl, "partitioning", "objects", isSet, objectOfInterest);
+  pe = pl.getEntryPtr("objects_to_partition");
+  if (pe){
+    objectOfInterest = pe->getValue<string>(&objectOfInterest);
 
   ///////////////////////////////////////////////////////////////////
   // Set model creation flags, if any.
@@ -818,10 +828,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // Any parameters in the graph sublist?
 
     string symParameter(defString);
-    getParameterValue(pl, "partitioning", "graph", "symmetrize_input",
-      isSet, symParameter);
-
-    if (isSet){
+    pe = pl.getEntryPtr("symmetrize_graph");
+    if (pe){
+      symParameter = pe->getValue<string>(&symParameter);
       if (symParameter == string("transpose"))
         graphFlags_.set(SYMMETRIZE_INPUT_TRANSPOSE);
       else if (symParameter == string("bipartite"))
@@ -829,8 +838,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     } 
 
     int sgParameter = 0;
-    getParameterValue(pl, "partitioning", "graph", "subset_graph",
-      isSet, sgParameter);
+    pe = pl.getEntryPtr("subset_graph");
+    if (pe)
+      sgParameter = pe->getValue<int>(&sgParameter);
 
     if (isSet && (sgParameter == 1))
         graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
@@ -891,9 +901,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // adapter, cast as the base input type.
 
     typedef typename Adapter::base_adapter_t base_adapter_t;
+    const Teuchos::ParameterList pl = this->envConst_->getParameters();
+    bool exceptionThrow = true;
 
-	const Teuchos::ParameterList pl = this->envConst_->getParameters();
-  	bool exceptionThrow = true;
     switch (modelType_) {
 
     case GraphModelType:

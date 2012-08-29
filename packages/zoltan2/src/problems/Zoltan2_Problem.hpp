@@ -205,18 +205,22 @@ template <typename Adapter>
 
   // Give a timer to the Environment if requested.
   bool haveType=false, haveStream=false, haveFile=false;
-  int choice;
+  int choice = MACRO_TIMERS;   // default timer type
 
-  getParameterValue<int>(pl, "timer_type", haveType, choice);
-  if (!haveType)
-    choice = MACRO_TIMERS;   // default timer type
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("timer_type");
+
+  if (pe){
+    choice = pe->getValue<int>(&choice);
+    haveType = true;
+  }
 
   TimerType tt = static_cast<TimerType>(choice);
 
   string fname;
-  getParameterValue<string>(pl, "timer_output_file", haveFile, fname);
-
-  if (haveFile){
+  pe = pl.getEntryPtr("timer_output_file");
+  if (pe){
+    haveFile = true;
+    fname = pe->getValue<string>(&fname);
     std::ofstream *dbgFile = new std::ofstream;
     if (comm_->getRank()==0){
       // Using Teuchos::TimeMonitor, node 0 prints global timing info.
@@ -230,10 +234,12 @@ template <typename Adapter>
     timer_ = rcp(new TimerManager(comm_, dbgFile, tt));
   }
   else{
-    getParameterValue<int>(pl, "timer_output_stream", haveStream, choice);
-
-    if (!haveStream)
-      choice = COUT_STREAM;  // default output stream
+    choice = COUT_STREAM;  // default output stream
+    pe = pl.getEntryPtr("timer_output_stream");
+    if (pe){
+      choice = pe->getValue<int>(&choice);
+      haveStream = true;
+    }
 
     OSType outputStream = static_cast<OSType>(choice);
 

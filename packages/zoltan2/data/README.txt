@@ -7,3 +7,6 @@ library containing the parameters.
 
 See zoltan2/doc/developer.dox for information on how to add
 a parameter.
+
+You can use the python script in this directory to do some basic
+checks on paramters.xml after you have edited it.

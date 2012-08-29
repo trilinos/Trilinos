@@ -153,7 +153,7 @@ int main(int argc, char  *argv[])
       
   iFile.close();
 
-  oFile << " \\\n  \"\n\n#endif  //ZOLTAN2_PARAMETER_DEFINITION_HEADER\n";
+  oFile << "\"\n\n#endif  //ZOLTAN2_PARAMETER_DEFINITION_HEADER\n";
 
   oFile.close();
 

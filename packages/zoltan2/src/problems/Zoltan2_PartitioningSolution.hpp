@@ -52,7 +52,6 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
-#include <Zoltan2_GetParameter.hpp>
 
 #include <cmath>
 #include <algorithm>
@@ -581,20 +580,21 @@ template <typename Adapter>
   const ParameterList &pl = env_->getParameters();
   size_t haveGlobalNumParts=0, haveLocalNumParts=0;
   int numLocal=0, numGlobal=0;
-  bool isSet;
   double val;
 
-  getParameterValue<double>(pl, "partitioning", "num_global_parts", isSet, val);
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("num_global_parts");
 
-  if (isSet){
+  if (pe){
+    val = pe->getValue<double>(&val);
     haveGlobalNumParts = 1;
     numGlobal = static_cast<int>(val);
     nGlobalParts_ = gno_t(numGlobal);
   }
 
-  getParameterValue<double>(pl, "partitioning", "num_local_parts", isSet, val);
+  pe = pl.getEntryPtr("num_local_parts");
 
-  if (isSet){
+  if (pe){
+    val = pe->getValue<double>(&val);
     haveLocalNumParts = 1;
     numLocal = static_cast<int>(val);
     nLocalParts_ = lno_t(numLocal);

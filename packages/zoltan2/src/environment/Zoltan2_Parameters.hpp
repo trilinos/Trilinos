@@ -76,7 +76,7 @@ void printListDocumentation( const Teuchos::ParameterList &pl, ostream &os,
 // Parameter-related enumerated types.
 //
 //  If you change these enumerators, change their documentation
-//  in Zoltan2_Parameters.cpp.
+//  in data/parameters.xml.
 //
 
 /*! \brief Level of error checking or assertions desired.
