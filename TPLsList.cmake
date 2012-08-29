@@ -175,6 +175,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Pnetcdf         "cmake/TPLs/"    SS
   Clp             "cmake/TPLs/"    EX
   GLPK            "cmake/TPLs/"    EX
+  qpOASES         "cmake/TPLs/"    EX
   Matio           "cmake/TPLs/"    SS
   PAPI            "cmake/TPLs/"    SS
   )

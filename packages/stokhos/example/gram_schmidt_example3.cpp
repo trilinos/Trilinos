@@ -217,10 +217,11 @@ int main(int argc, char **argv)
     params.set("Rank Threshold", rank_threshold);
     Teuchos::ParameterList& red_quad_params = 
       params.sublist("Reduced Quadrature");
-    red_quad_params.set("Reduced Quadrature Method", "Column-Pivoted QR");
+    //red_quad_params.set("Reduced Quadrature Method", "Column-Pivoted QR");
     //red_quad_params.set("Reduced Quadrature Method", "Pseudo-Inverse");
     //red_quad_params.set("Reduced Quadrature Method", "None");
-    //red_quad_params.set("Reduced Quadrature Method", "L1 Minimization");
+    red_quad_params.set("Reduced Quadrature Method", "L1 Minimization");
+    red_quad_params.set("LP Solver", "qpOASES");
     red_quad_params.set("Reduction Tolerance", reduction_tolerance);
     red_quad_params.set("Verbose", verbose);
     Stokhos::ReducedBasisFactory<int,double> factory(params);

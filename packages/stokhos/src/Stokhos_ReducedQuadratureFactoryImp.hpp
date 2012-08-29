@@ -37,6 +37,10 @@ extern "C" {
 }
 #endif
 
+#ifdef HAVE_STOKHOS_QPOASES
+#include "qpOASES.hpp"
+#endif
+
 template <typename ordinal_type, typename value_type>
 Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
 ReducedQuadratureFactory(
@@ -70,6 +74,9 @@ createReducedQuadrature(
     if (solver == "GLPK")
        reducedQuadrature_GLPK(Q, F, weights, 
 			      red_weights, red_points, red_values);
+    else if (solver == "qpOASES")
+       reducedQuadrature_qpOASES(Q, F, weights, 
+				 red_weights, red_points, red_values);
     else
       TEUCHOS_TEST_FOR_EXCEPTION(
 	true, std::logic_error, "Invalid LP solver method " << solver);
@@ -498,6 +505,118 @@ reducedQuadrature_GLPK(
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     "GLPK solver called but not enabled!");
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+reducedQuadrature_qpOASES(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+  const Teuchos::Array<value_type>& weights,
+  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
+  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
+  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
+  ) const
+{
+#ifdef HAVE_STOKHOS_QPOASES
+  //
+  // Find reduced quadrature weights by solving linear program
+  // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2p = Q2*R2
+  //
+  ordinal_type sz = Q.numCols();
+  ordinal_type sz2 = sz*(sz+1)/2;
+  ordinal_type nqp = Q.numRows();
+  ordinal_type d = F.numCols();
+
+  // Compute Q matrix with all possible products
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
+  ordinal_type jdx=0;
+  for (ordinal_type j=0; j<sz; j++) {
+    for (ordinal_type k=j; k<sz; k++) {
+      for (ordinal_type i=0; i<nqp; i++)
+	Q2(i,jdx) = Q(i,j)*Q(i,k);
+      jdx++;
+    }
+  }
+  TEUCHOS_ASSERT(jdx == sz2);
+
+  // Compute e_1 = Q2^T*w which is our constraint
+  Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz2);
+  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
+    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
+  e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
+
+  // Compute objective vector
+  Teuchos::SerialDenseVector<ordinal_type,value_type> c(nqp);
+  c.putScalar(1.0);
+
+  // Compute lower bounds
+  Teuchos::SerialDenseVector<ordinal_type,value_type> lb(nqp);
+  lb.putScalar(0.0);
+
+  // Setup linear program
+  int nWSR = 10000;
+  qpOASES::QProblem lp(nqp, sz2, qpOASES::HST_ZERO);
+  lp.init(NULL,         // zero Hessian
+	  c.values(),   // objective
+	  Q2.values(),  // constrait matrix -- qpOASES expects row-wise storage
+	  lb.values(),  // variable lower bounds
+	  NULL,         // no upper bounds
+	  e1.values(),  // constraint lower bounds
+	  e1.values(),  // constraint upper bounds
+	  nWSR,         // maximum number of working set recalculations
+	  NULL,         // maximum CPU time
+	  w.values(),   // initial guess for primal
+	  NULL,         // initial guess for dual
+	  NULL,         // guessed bounds
+	  NULL          // guessed constraints
+    );
+
+  // Get solution
+  Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
+  lp.getPrimalSolution(u.values());
+  if (verbose)
+    std::cout << "reduced weights = " << u << std::endl;
+  
+  ordinal_type rank = 0;
+  for (ordinal_type i=0; i<nqp; i++)
+    if (std::abs(u[i]) > reduction_tol) ++rank;
+
+  // Get reduced weights, points and values
+  reduced_weights =
+    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
+  reduced_points =
+    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
+  reduced_values =
+    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
+  ordinal_type idx = 0;
+  for (ordinal_type i=0; i<nqp; i++) {
+    if (std::abs(u[i]) > reduction_tol) {
+      (*reduced_weights)[idx] = u[i];
+      (*reduced_points)[idx].resize(d);
+      for (ordinal_type j=0; j<d; j++)
+	(*reduced_points)[idx][j] = F(i,j);
+      (*reduced_values)[idx].resize(sz);
+      for (ordinal_type j=0; j<sz; j++)
+	(*reduced_values)[idx][j] = Q(i,j);
+      idx++;
+    }
+  }
+  
+  // idx may be less than rank if we obtained zero weights in solving
+  // the least-squares problem
+  TEUCHOS_ASSERT(idx <= rank);
+  if (idx < rank) {
+    rank = idx;
+    reduced_weights->resize(rank);
+    reduced_points->resize(rank);
+    reduced_values->resize(rank);
+  }
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     "qpOASES solver called but not enabled!");
 #endif
 }
 
