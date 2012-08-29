@@ -124,26 +124,29 @@ void AlgRCB(
   //    objective
   //    imbalance_tolerance
 
-  scalar_t imbalanceTolerance;
   multiCriteriaNorm mcnorm;
+  string obj;
 
-  getParameterValue<string>(pl, "partitioning",
-    "objective", isSet, strChoice);
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
+  if (pe)
+    obj = pe->getValue(&obj);
 
-  if (isSet && strChoice == string("balance_object_count"))
+  if (!pe){
+    params.set(rcb_balanceWeight);
+    mcnorm = normBalanceTotalMaximum;
+  }
+  else (obj == string("balance_object_count"))}
     params.set(rcb_balanceCount);
-  else if (isSet && strChoice == 
-    string("multicriteria_minimize_total_weight")){
+  }
+  else if (obj == string("multicriteria_minimize_total_weight")){
     params.set(rcb_minTotalWeight);
     mcnorm = normMinimizeTotalWeight;
   }
-  else if (isSet && strChoice == 
-    string("multicriteria_minimize_maximum_weight")){
+  else if (obj == string("multicriteria_minimize_maximum_weight")){
     params.set(rcb_minMaximumWeight);
     mcnorm = normMinimizeMaximumWeight;
   }
-  else if (isSet && strChoice == 
-    string("multicriteria_balance_total_maximum")){
+  else if (obj == string("multicriteria_balance_total_maximum")){
     params.set(rcb_balanceTotalMaximum);
     mcnorm = normBalanceTotalMaximum;
   }
@@ -152,15 +155,13 @@ void AlgRCB(
     mcnorm = normBalanceTotalMaximum;
   }
 
-  double tol;
-
-  getParameterValue<double>(pl, "partitioning",
-    "imbalance_tolerance", isSet, tol);
-
-  if (!isSet)
-    imbalanceTolerance = .1;
-  else
+  scalar_t imbalanceTolerance = .1;
+  pe = pl.getEntryPtr("imbalance_tolerance");
+  if (pe){
+    double tol;
+    tol = pe->getValue(&tol);
     imbalanceTolerance = tol - 1.0;
+  }
 
   if (imbalanceTolerance <= 0)
     imbalanceTolerance = 10e-4;  // TODO - what's a good choice
@@ -171,24 +172,26 @@ void AlgRCB(
   //    rectilinear_blocks
   //    bisection_num_test_cuts (experimental)
 
-  getParameterValue<int>(pl, "partitioning", "geometric",
-    "average_cuts", isSet, intChoice);
+  int val = 0;
+  pe = pl.getEntryPtr("average_cuts");
+  if (pe)
+    val = pe->getValue(&val);
 
-  if (isSet && intChoice==1)
+  if (val == 1)
     params.set(rcb_averageCuts);
 
-  getParameterValue<int>(pl, "partitioning", "geometric",
-    "rectilinear_blocks", isSet, intChoice);
+  val = 0;
+  pe = pl.getEntryPtr("rectilinear_blocks");
+  if (pe)
+    val = pe->getValue(&val);
 
-  if (isSet && intChoice==1)
+  if (val == 1)
     params.set(rcb_rectilinearBlocks);
 
-  getParameterValue<int>(pl, "partitioning", "geometric",
-    "bisection_num_test_cuts", isSet, intChoice);
-
-  int numTestCuts = 5;
-  if (isSet)
-    numTestCuts = intChoice;
+  int numTestCuts = 3;
+  pe = pl.getEntryPtr("bisection_num_test_cuts");
+  if (pe)
+    numTestCuts = pe->getValue(&numTestCuts);
 
   ////////////////////////////////////////////////////////
   // From the CoordinateModel we need:

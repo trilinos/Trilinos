@@ -293,28 +293,28 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
     multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear, partId_t &concurrentPartCount,
     bool &force_binary, bool &force_linear){
 
-  bool isSet;
-  string strChoice;
-  int intChoice;
+  string obj;
 
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
+  if (pe)
+    obj = pe->getValue(&obj);
 
-  getParameterValue<string>(pl, "partitioning",
-      "objective", isSet, strChoice);
-
-  if (isSet && strChoice == string("balance_object_count"))
+  if (!pe){
+    params.set(rcb_balanceWeight);
+    mcnorm = normBalanceTotalMaximum;
+  }
+  else (obj == string("balance_object_count"))}
     params.set(rcb_balanceCount);
-  else if (isSet && strChoice ==
-      string("multicriteria_minimize_total_weight")){
+  }
+  else if (obj == string("multicriteria_minimize_total_weight")){
     params.set(rcb_minTotalWeight);
     mcnorm = normMinimizeTotalWeight;
   }
-  else if (isSet && strChoice ==
-      string("multicriteria_minimize_maximum_weight")){
+  else if (obj == string("multicriteria_minimize_maximum_weight")){
     params.set(rcb_minMaximumWeight);
     mcnorm = normMinimizeMaximumWeight;
   }
-  else if (isSet && strChoice ==
-      string("multicriteria_balance_total_maximum")){
+  else if (obj == string("multicriteria_balance_total_maximum")){
     params.set(rcb_balanceTotalMaximum);
     mcnorm = normBalanceTotalMaximum;
   }
@@ -323,70 +323,69 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
     mcnorm = normBalanceTotalMaximum;
   }
 
-  double tol;
-  getParameterValue<double>(pl, "partitioning",
-      "imbalance_tolerance", isSet, tol);
-
-
-  if (!isSet)
-    imbalanceTolerance = .1;
-  else
+  imbalanceTolerance = .1;
+  pe = pl.getEntryPtr("imbalance_tolerance");
+  if (pe){
+    double tol;
+    tol = pe->getValue(&tol);
     imbalanceTolerance = tol - 1.0;
+  }
 
   if (imbalanceTolerance <= 0)
     imbalanceTolerance = 10e-4;
 
-
-  int val = 0;
-  getParameterValue<int>(pl,
-      "force_binary_search", isSet, val);
-  if (!isSet || val == 0){
-    force_binary = false;
-  } else {
-    force_binary = true;
+  force_binary = false;
+  pe = pl.getEntryPtr("force_binary_search");
+  if (pe){
+    int val = 0;
+    val = pe->getValue(&val);
+    if (val == 1)
+      force_binary = true;
   }
 
-  getParameterValue<int>(pl,
-      "force_linear_search", isSet, val);
-  if (!isSet || val == 0){
-    force_linear = false;
-  } else {
-    force_linear = true;
+  force_linear = false;
+  pe = pl.getEntryPtr("force_linear_search");
+  if (pe){
+    int val;
+    val = pe->getValue(&val);
+    if (val == 1)
+      force_linear = true;
   }
-
 
   //TODO: FIX ME.
-  double aa = 0;
-  getParameterValue<double>(pl,
-      "parallel_part_calculation_count", isSet, aa);
-  if (!isSet){
-    aa = 1;
-  }
+  double aa = 1;
+  pe = pl.getEntryPtr("parallel_part_calculation_count");
+  if (pe)
+    aa = pe->getValue(&aa);
+  
   concurrentPartCount = partId_t(aa);
 
-  getParameterValue<int>(pl, "partitioning", "geometric",
-      "average_cuts", isSet, intChoice);
-
-  if (isSet && intChoice==1)
+  val = 0;
+  pe = pl.getEntryPtr("average_cuts");
+  if (pe)
+    val = pe->getValue(&val);
+   
+  if (val == 1)
     params.set(rcb_averageCuts);
 
-  getParameterValue<int>(pl, "partitioning", "geometric",
-      "rectilinear_blocks", isSet, intChoice);
-
-  if (isSet && intChoice==1){
+  val = 0;
+  pe = pl.getEntryPtr("rectilinear_blocks");
+  if (pe)
+    val = pe->getValue(&val);
+   
+  if (val == 1){
     params.set(rcb_rectilinearBlocks);
     allowNonrectelinear = false;
   } else {
     allowNonrectelinear = true;
   }
 
-  getParameterValue<int>(pl, "partitioning", "geometric",
-      "bisection_num_test_cuts", isSet, intChoice);
-  if (isSet)
-    numTestCuts = intChoice;
+  numTestCuts = 1;
+  pe = pl.getEntryPtr("bisection_num_test_cuts");
+  if (pe)
+    numTestCuts = pe->getValue(&numTestCuts);
+    
   ignoreWeights = params.test(rcb_balanceCount);
-
-
 }
 
 
