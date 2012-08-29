@@ -57,7 +57,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#define EPS_SCALE 10
+#define EPS_SCALE 1
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
 //#define INCLUDE_ZOLTAN2_EXPERIMENTAL
@@ -974,6 +974,7 @@ void getNewCoordinates(
     else if(leftImbalance < 0){
       scalar_t ew = globalTotalWeight * expected;
       if(allowNonRectelinearPart){
+
         if (globalPartWeights[i * 2 + 1] == ew){
           isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
@@ -1720,11 +1721,39 @@ void pqJagged_1D_Partition(
       {
         if(comm->getSize() > 1){
         try{
+
           reduceAll<int, scalar_t>(*comm, reductionOp,
               (total_part_count + 2 * noCuts) * concurrentPartCount,
               local_totalPartWeights_leftClosest_rightCloset,
               global_totalPartWeights_leftClosest_rightCloset
           );
+
+          //cout << "reducing" << endl;
+          /*
+          MPI_Allreduce (
+              local_totalPartWeights_leftClosest_rightCloset,
+              global_totalPartWeights_leftClosest_rightCloset,
+              total_part_count ,
+              MPI_DOUBLE,
+              MPI_SUM,
+              MPI_COMM_WORLD);
+
+          MPI_Allreduce (
+              local_totalPartWeights_leftClosest_rightCloset + total_part_count ,
+              global_totalPartWeights_leftClosest_rightCloset + total_part_count ,
+              noCuts,
+              MPI_DOUBLE,
+              MPI_MIN,
+              MPI_COMM_WORLD);
+
+          MPI_Allreduce (
+              local_totalPartWeights_leftClosest_rightCloset + total_part_count + noCuts,
+              global_totalPartWeights_leftClosest_rightCloset + total_part_count + noCuts,
+              noCuts,
+              MPI_DOUBLE,
+              MPI_MIN,
+              MPI_COMM_WORLD);
+        */
         }
 
         Z2_THROW_OUTSIDE_ERROR(*env)
@@ -2363,6 +2392,7 @@ void AlgPQJagged(
   float **nonRectRatios = NULL;
 
   if(allowNonRectelinearPart){
+    //cout << "allowing" << endl;
     nonRectelinearPart = allocMemory<float>(maxCutNo * concurrentPartCount);
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
@@ -2735,13 +2765,13 @@ void AlgPQJagged(
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
-/*
+
   if(comm->getRank() == 0){
     for(partId_t i = 0; i < totalPartCount - 1;++i){
       cout << "cut coordinate:" << allCutCoordinates[i] << endl;
     }
   }
-*/
+
 
   for(int i = 0; i < numThreads; ++i){
     freeArray<lno_t>(coordinate_starts[i]);
