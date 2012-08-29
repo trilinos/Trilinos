@@ -401,8 +401,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool skipFineLevelSmoother
       // symmetric Gauss-Seidel //
       // ====================== //
       if( verbose_ ) cout << msg << "symmetric Gauss-Seidel (sweeps="
-			  << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			  << MyPreOrPostSmoother << ")" << endl;
+                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
+                          << MyPreOrPostSmoother << ")" << endl;
 #ifdef HAVE_ML_IFPACK
       if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX) {
         if (verbose_)
@@ -420,7 +420,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool skipFineLevelSmoother
       else
 #endif
       ML_Gen_Smoother_SymGaussSeidel(ml_, currentLevel, pre_or_post,
-				     Mynum_smoother_steps, Myomega);
+                                     Mynum_smoother_steps, Myomega);
 
     } else if( MySmoother == "ML symmetric Gauss-Seidel" ) {
 
@@ -441,10 +441,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool skipFineLevelSmoother
       // ================== //
       
       if( verbose_ ) cout << msg << "block Gauss-Seidel (sweeps="
-			  << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			  << MyPreOrPostSmoother << ")" << endl;
+                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
+                          << MyPreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_BlockGaussSeidel(ml_, currentLevel, pre_or_post,
-				       Mynum_smoother_steps, Myomega, NumPDEEqns_);
+                       Mynum_smoother_steps, Myomega, NumPDEEqns_);
 
     } else if( MySmoother == "symmetric block Gauss-Seidel" ) {
 
@@ -453,10 +453,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool skipFineLevelSmoother
       // ============================ //
       
       if( verbose_ ) cout << msg << "symmetric block Gauss-Seidel (sweeps="
-			  << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			  << MyPreOrPostSmoother << ")" << endl;
+                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
+                          << MyPreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_SymBlockGaussSeidel(ml_, currentLevel, pre_or_post,
-				    Mynum_smoother_steps, Myomega, NumPDEEqns_);
+                                          Mynum_smoother_steps, Myomega, NumPDEEqns_);
 
     } else if( ( MySmoother == "MLS" ) || ( MySmoother == "Chebyshev" )
                || (MySmoother == "Block Chebyshev") ) {
@@ -546,74 +546,74 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       else                                  aztec_its = Mynum_smoother_steps;
       
       if( verbose_ ) {
-	cout << msg << "Aztec";
-	if( MyAztecSmootherAsASolver){
-	  switch (MySmootherOptionsPtr[AZ_solver]){
-	  case AZ_cg:
-	  case AZ_cg_condnum:
-	    cout<<"-CG";
-	    break;
-	  case AZ_gmres:
-	  case AZ_gmres_condnum:
-	    cout<<"-GMRES";
-	    break;
-	  case AZ_cgs:
-	    cout<<"-CGS";
-	    break;
-	  case AZ_tfqmr:
-	    cout<<"-TSQMR";
-	    break;
-	  case AZ_bicgstab:
-	    cout<<"-TSQMR";
-	    break;
-	  case AZ_GMRESR:
-	    cout<<"-GMRESR";
-	    break;	    
-	  }
-	  cout<<"("<<aztec_its<<")";
-	}
+        cout << msg << "Aztec";
+        if( MyAztecSmootherAsASolver){
+        switch (MySmootherOptionsPtr[AZ_solver]){
+          case AZ_cg:
+          case AZ_cg_condnum:
+            cout<<"-CG";
+            break;
+          case AZ_gmres:
+          case AZ_gmres_condnum:
+            cout<<"-GMRES";
+            break;
+          case AZ_cgs:
+            cout<<"-CGS";
+            break;
+          case AZ_tfqmr:
+            cout<<"-TSQMR";
+            break;
+          case AZ_bicgstab:
+            cout<<"-TSQMR";
+            break;
+          case AZ_GMRESR:
+            cout<<"-GMRESR";
+            break;        
+          }
+          cout<<"("<<aztec_its<<")";
+        }
 
-	if( MySmootherOptionsPtr[AZ_precond] == AZ_dom_decomp ) {
-	  cout << " DD, overlap=" << MySmootherOptionsPtr[AZ_overlap] << ", ";
-	  if( MySmootherOptionsPtr[AZ_reorder] == 1 ) cout << "reord, ";
-	  else cout << "no reord, ";
-	  switch( MySmootherOptionsPtr[AZ_subdomain_solve] ) {
-	  case AZ_lu: cout << " LU"; break;
-	  case AZ_ilu:
-	    cout << "ILU(fill="  << MySmootherOptionsPtr[AZ_graph_fill] << ")";
-	    break;
-	  case AZ_ilut:
-	    cout << "ILUT(fill=" << MySmootherParamsPtr[AZ_ilut_fill] << ",drop="
-		 << MySmootherParamsPtr[AZ_drop] << ")";
-	    break;
-	  case AZ_icc:
-	    cout << "ICC(fill="  << MySmootherOptionsPtr[AZ_graph_fill] << ")";
-	    break;
-	  case AZ_bilu:
-	    cout << "BILU(fill="  << MySmootherOptionsPtr[AZ_graph_fill] << ")";
-	    break;
-	  case AZ_rilu:
-	    cout << "RILU(fill="  << MySmootherOptionsPtr[AZ_graph_fill] << ",omega="
-		 << MySmootherParamsPtr[AZ_omega] << ")";
-	    break;
-	  }
-	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_Jacobi ) {
-	  cout << " Jacobi preconditioner, sweeps = " << MySmootherOptionsPtr[AZ_poly_ord];
-	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_Neumann ) {
-	  cout << " Neumann preconditioner, order = " << MySmootherOptionsPtr[AZ_poly_ord];
-	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_ls ) {
-	  cout << " LS preconditioner, order = " << MySmootherOptionsPtr[AZ_poly_ord];
-	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_sym_GS ) {
-	  cout << " symmetric Gauss-Seidel preconditioner, sweeps = " << MySmootherOptionsPtr[AZ_poly_ord];
-	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_none ) {
-	  cout << " No preconditioning";
-	}
-	cout << ", "  << MyPreOrPostSmoother << endl;
+        if( MySmootherOptionsPtr[AZ_precond] == AZ_dom_decomp ) {
+          cout << " DD, overlap=" << MySmootherOptionsPtr[AZ_overlap] << ", ";
+          if( MySmootherOptionsPtr[AZ_reorder] == 1 ) cout << "reord, ";
+          else cout << "no reord, ";
+          switch( MySmootherOptionsPtr[AZ_subdomain_solve] ) {
+          case AZ_lu: cout << " LU"; break;
+          case AZ_ilu:
+            cout << "ILU(fill="  << MySmootherOptionsPtr[AZ_graph_fill] << ")";
+            break;
+          case AZ_ilut:
+            cout << "ILUT(fill=" << MySmootherParamsPtr[AZ_ilut_fill] << ",drop="
+             << MySmootherParamsPtr[AZ_drop] << ")";
+            break;
+          case AZ_icc:
+            cout << "ICC(fill="  << MySmootherOptionsPtr[AZ_graph_fill] << ")";
+            break;
+          case AZ_bilu:
+            cout << "BILU(fill="  << MySmootherOptionsPtr[AZ_graph_fill] << ")";
+            break;
+          case AZ_rilu:
+            cout << "RILU(fill="  << MySmootherOptionsPtr[AZ_graph_fill] << ",omega="
+             << MySmootherParamsPtr[AZ_omega] << ")";
+            break;
+          }
+        } else if( MySmootherOptionsPtr[AZ_precond] == AZ_Jacobi ) {
+          cout << " Jacobi preconditioner, sweeps = " << MySmootherOptionsPtr[AZ_poly_ord];
+        } else if( MySmootherOptionsPtr[AZ_precond] == AZ_Neumann ) {
+          cout << " Neumann preconditioner, order = " << MySmootherOptionsPtr[AZ_poly_ord];
+        } else if( MySmootherOptionsPtr[AZ_precond] == AZ_ls ) {
+          cout << " LS preconditioner, order = " << MySmootherOptionsPtr[AZ_poly_ord];
+        } else if( MySmootherOptionsPtr[AZ_precond] == AZ_sym_GS ) {
+          cout << " symmetric Gauss-Seidel preconditioner, sweeps = " << MySmootherOptionsPtr[AZ_poly_ord];
+        } else if( MySmootherOptionsPtr[AZ_precond] == AZ_none ) {
+          cout << " No preconditioning";
+        }
+        cout << ", "  << MyPreOrPostSmoother << endl;
       }
       
       ML_Gen_SmootherAztec(ml_, currentLevel, MySmootherOptionsPtr, MySmootherParamsPtr,
-			   ProcConfig_, SmootherStatus_,
-			   aztec_its, pre_or_post, NULL);
+                           ProcConfig_, SmootherStatus_,
+                           aztec_its, pre_or_post, NULL);
       
 #else
       cerr << "Please configure ML with --enable-aztecoo to use" << endl;
@@ -662,46 +662,46 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       // Set the fact: LOF options, but only if they're not set already... All this sorcery is because level-of-fill
       // is an int for ILU and a double for ILUT.  Lovely.
       if(MyIfpackType=="ILUT" || MyIfpackType=="ICT"){
-	MyIfpackList.set("fact: level-of-fill", MyIfpackList.get("fact: level-of-fill",MyLOF));
-	MyIfpackList.set("fact: ilut level-of-fill", MyIfpackList.get("fact: ilut level-of-fill",MyLOF));
-	MyIfpackList.set("fact: ict level-of-fill", MyIfpackList.get("fact: ict level-of-fill",MyLOF));
-	MyLOF=MyIfpackList.get("fact: level-of-fill",MyLOF);
+        MyIfpackList.set("fact: level-of-fill", MyIfpackList.get("fact: level-of-fill",MyLOF));
+        MyIfpackList.set("fact: ilut level-of-fill", MyIfpackList.get("fact: ilut level-of-fill",MyLOF));
+        MyIfpackList.set("fact: ict level-of-fill", MyIfpackList.get("fact: ict level-of-fill",MyLOF));
+        MyLOF=MyIfpackList.get("fact: level-of-fill",MyLOF);
       }
       else{
-	MyIfpackList.set("fact: level-of-fill", (int) MyIfpackList.get("fact: level-of-fill",(int)MyLOF));
-	MyLOF=MyIfpackList.get("fact: level-of-fill",(int)MyLOF);
+        MyIfpackList.set("fact: level-of-fill", (int) MyIfpackList.get("fact: level-of-fill",(int)MyLOF));
+        MyLOF=MyIfpackList.get("fact: level-of-fill",(int)MyLOF);
       }
 
       MyIfpackList.set("fact: relative threshold", MyIfpackRT);
       MyIfpackList.set("fact: absolute threshold", MyIfpackAT);
 
       if( verbose_ ) {
-	// SORa needs special handling
-	if(MyIfpackType == "SORa"){
-	  cout << msg << "IFPACK/SORa("<<MyIfpackList.get("sora: alpha",1.5)<<","<<MyIfpackList.get("sora: gamma",1.0)<<")"
-	       << ", sweeps = " <<MyIfpackList.get("sora: sweeps",1)<<endl;
-	  if(MyIfpackList.get("sora: oaz boundaries",false))
-	    cout << msg << "oaz boundary handling enabled"<<endl;
-	  if(MyIfpackList.get("sora: use interproc damping",false))
-	    cout << msg << "interproc damping enabled"<<endl;
-	  if(MyIfpackList.get("sora: use global damping",false))
-	    cout << msg << "global damping enabled"<<endl;
-	}
-	else{
-	  cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
-	       << msg << MyPreOrPostSmoother
-	       << ",overlap=" << MyIfpackOverlap << endl;
-	  if (MyIfpackType != "Amesos") {
-	    if (MyIfpackType == "ILU" || MyIfpackType == "IC") {
-	      cout << msg << "level-of-fill=" << MyLOF;
-	    }
-	    else {
-            cout << msg << "level-of-fill=" << MyLOF;
-	    }
-	    cout << ",rel. threshold=" << MyIfpackRT
-		 << ",abs. threshold=" << MyIfpackAT << endl;
-	  }
-	}
+        // SORa needs special handling
+        if(MyIfpackType == "SORa"){
+            cout << msg << "IFPACK/SORa("<<MyIfpackList.get("sora: alpha",1.5)<<","<<MyIfpackList.get("sora: gamma",1.0)<<")"
+            << ", sweeps = " <<MyIfpackList.get("sora: sweeps",1)<<endl;
+            if(MyIfpackList.get("sora: oaz boundaries",false))
+              cout << msg << "oaz boundary handling enabled"<<endl;
+            if(MyIfpackList.get("sora: use interproc damping",false))
+              cout << msg << "interproc damping enabled"<<endl;
+            if(MyIfpackList.get("sora: use global damping",false))
+              cout << msg << "global damping enabled"<<endl;
+        }
+        else{
+          cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
+               << msg << MyPreOrPostSmoother
+               << ",overlap=" << MyIfpackOverlap << endl;
+          if (MyIfpackType != "Amesos") {
+            if (MyIfpackType == "ILU" || MyIfpackType == "IC") {
+              cout << msg << "level-of-fill=" << MyLOF;
+            }
+            else {
+              cout << msg << "level-of-fill=" << MyLOF;
+            }
+            cout << ",rel. threshold=" << MyIfpackRT
+                 << ",abs. threshold=" << MyIfpackAT << endl;
+          }
+        }
       }
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                              MyIfpackOverlap, currentLevel, pre_or_post,
@@ -709,9 +709,9 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
-	   << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
-	   << ErrorMsg_ << "to use IFPACK as a smoother" << endl
-	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
+           << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
+           << ErrorMsg_ << "to use IFPACK as a smoother" << endl
+           << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
 
     } else if( MySmoother == "IFPACK-Chebyshev"  || MySmoother == "IFPACK-Block Chebyshev" ) {
@@ -768,9 +768,9 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
         IFPACKList.set("chebyshev: use block mode",true);
         IFPACKList.set("chebyshev: block list",PermuteList);
         IFPACKList.set("chebyshev: eigenvalue max iterations",this_A->spectral_radius_max_iters);
-	
-	// EXPERIMENTAL: Cheby-NE
-	IFPACKList.set("chebyshev: solve normal equations",MyCheby_NE);
+    
+        // EXPERIMENTAL: Cheby-NE
+       IFPACKList.set("chebyshev: solve normal equations",MyCheby_NE);
       }
       else {
         // Regular Chebyshev needs an eigenvalue estimate
@@ -787,15 +787,15 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
                              pre_or_post, (void*)&IFPACKList, (void*)Comm_);
       
       if( verbose_ ) {
-	cout << msg << "lambda_min = " << this_A->lambda_min
-	     << ", lambda_max = " << this_A->lambda_max << endl;
+        cout << msg << "lambda_min = " << this_A->lambda_min
+             << ", lambda_max = " << this_A->lambda_max << endl;
       }
 
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
-	   << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
-	   << ErrorMsg_ << "to use IFPACK as a smoother" << endl
-	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
+           << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
+           << ErrorMsg_ << "to use IFPACK as a smoother" << endl
+           << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
     } else if( MySmoother == "self" ) {
 
@@ -840,9 +840,9 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
-	   << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
-	   << ErrorMsg_ << "to use ML as a smoother" << endl
-	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
+           << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
+           << ErrorMsg_ << "to use ML as a smoother" << endl
+           << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
 
     } else if( MySmoother == "ParaSails" ) {
@@ -864,28 +864,28 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       int MyParaSailsFactorized = smList.get("smoother: ParaSails factorized",ParaSailsFactorized);
 
       if( verbose_ ) 
-	cout << msg << "ParaSails "
-	     << "(n=" << MyParaSailsN
-	     << ",sym=" << MyParaSailsSym 
-	     << ",thresh=" << MyParaSailsThresh 
-	     << ",filter=" << MyParaSailsFilter 
-	     << ",lb=" << MyParaSailsLB
-	     << "fact=" << MyParaSailsFactorized
-	     << ")" << endl;
+        cout << msg << "ParaSails "
+             << "(n=" << MyParaSailsN
+             << ",sym=" << MyParaSailsSym 
+             << ",thresh=" << MyParaSailsThresh 
+             << ",filter=" << MyParaSailsFilter 
+             << ",lb=" << MyParaSailsLB
+             << "fact=" << MyParaSailsFactorized
+             << ")" << endl;
       
 #ifdef HAVE_ML_PARASAILS
       // I am not sure about the ending `0' and of ML
       ML_Gen_Smoother_ParaSails(ml_, currentLevel, 
-				pre_or_post, Mynum_smoother_steps,
-				MyParaSailsSym, MyParaSailsThresh,
-				MyParaSailsN,
-				MyParaSailsFilter, (int) MyParaSailsLB, 
-				MyParaSailsFactorized);
+                                pre_or_post, Mynum_smoother_steps,
+                                MyParaSailsSym, MyParaSailsThresh,
+                                MyParaSailsN,
+                                MyParaSailsFilter, (int) MyParaSailsLB, 
+                                MyParaSailsFactorized);
 #else
       cerr << ErrorMsg_ << "ParaSails not available." << endl
-	   << ErrorMsg_ << "ML must be configured with --with-ml_parasails" << endl
-	   << ErrorMsg_ << "to use ParaSails as a smoother" << endl
-	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
+           << ErrorMsg_ << "ML must be configured with --with-ml_parasails" << endl
+           << ErrorMsg_ << "to use ParaSails as a smoother" << endl
+           << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
 
     } else if( MySmoother == "Hiptmair" ) {
@@ -1185,9 +1185,9 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       int ierr = KSPGetPC(petscKSP,&petscPC);CHKERRQ(ierr);
       ierr = PCGetType(petscPC,&pcName);
       if( verbose_ ) cout << msg << "PETSc smoother (type="
-              << pcName
-			  << ",sweeps=" << Mynum_smoother_steps << ","
-			  << MyPreOrPostSmoother << ")" << endl;
+                          << pcName
+                          << ",sweeps=" << Mynum_smoother_steps << ","
+                          << MyPreOrPostSmoother << ")" << endl;
 
       ML_Gen_Smoother_Petsc(ml_, currentLevel, pre_or_post, Mynum_smoother_steps, petscKSP);
 
@@ -1309,13 +1309,13 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
               << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
               << ErrorMsg_
               << "You chose: " << MySmoother << ". It should be: " << endl
-	          << ErrorMsg_
+              << ErrorMsg_
               << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel>" << endl
-	          << ErrorMsg_
+              << ErrorMsg_
               << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl
-	          << ErrorMsg_
+              << ErrorMsg_
               << "<Chebyshev> / <ParaSails> / <Hiptmair>" << endl
-	          << ErrorMsg_ << "<user-defined>" << endl;
+              << ErrorMsg_ << "<user-defined>" << endl;
       ML_EXIT(-99); }
     
     perLevelTime = Time.ElapsedTime();
