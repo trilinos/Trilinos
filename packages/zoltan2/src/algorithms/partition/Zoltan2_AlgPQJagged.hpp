@@ -59,7 +59,7 @@
 #define EPS_SCALE 10
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
-#define INCLUDE_ZOLTAN2_EXPERIMENTAL
+//#define INCLUDE_ZOLTAN2_EXPERIMENTAL
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
 #endif
@@ -2454,6 +2454,14 @@ void AlgPQJagged(
   scalar_t *totalPartWeights_leftClosests_rightClosests = allocMemory<scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
   scalar_t *global_totalPartWeights_leftClosests_rightClosests = allocMemory<scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
 
+  partId_t *partIds = NULL;
+  ArrayRCP<partId_t> partId;
+  if(numLocalCoords > 0){
+    partIds = allocMemory<partId_t>(numLocalCoords);
+    partId = arcp(partIds, 0, numLocalCoords, true);
+  }
+
+
   scalar_t *cutCoordinates =  allCutCoordinates;
 
   //partId_t leftPartitions = totalPartCount;
@@ -2676,13 +2684,14 @@ void AlgPQJagged(
   env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning");
 
   env->timerStart(MACRO_TIMERS, "PQJagged Part_Assignment");
+/*
   partId_t *partIds = NULL;
   ArrayRCP<partId_t> partId;
   if(numLocalCoords > 0){
     partIds = allocMemory<partId_t>(numLocalCoords);
     partId = arcp(partIds, 0, numLocalCoords, true);
   }
-
+*/
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for

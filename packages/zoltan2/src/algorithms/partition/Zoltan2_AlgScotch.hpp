@@ -353,7 +353,7 @@ void AlgPTScotch(
 
   solution->setParts(gnos, partList);
 
-  env->memory("After creating solution", "Kbytes", getProcessKilobytes());
+  env->memory("Zoltan2-Scotch: After creating solution");
 
   //if (me == 0) cout << " done." << endl;
   // Clean up Zoltan2

@@ -43,8 +43,6 @@
 
 namespace Teuchos {
 
-// Specialization for float.  We use sufficient precision that no
-// digits are lost after writing to string and reading back in again.
 template<>
 TEUCHOS_LIB_DLL_EXPORT std::string
 ArrayView<float>::toString() const
@@ -71,8 +69,6 @@ ArrayView<float>::toString() const
   return ss.str ();
 }
 
-// Specialization for (const) float.  We use sufficient precision that no
-// digits are lost after writing to string and reading back in again.
 template<>
 TEUCHOS_LIB_DLL_EXPORT std::string
 ArrayView<const float>::toString() const
@@ -99,8 +95,6 @@ ArrayView<const float>::toString() const
   return ss.str ();
 }
 
-// Specialization for double.  We use sufficient precision that no
-// digits are lost after writing to string and reading back in again.
 template<>
 TEUCHOS_LIB_DLL_EXPORT std::string
 ArrayView<double>::toString() const
@@ -127,8 +121,6 @@ ArrayView<double>::toString() const
   return ss.str ();
 }
 
-// Specialization for (const) double.  We use sufficient precision that no
-// digits are lost after writing to string and reading back in again.
 template<>
 TEUCHOS_LIB_DLL_EXPORT std::string
 ArrayView<const double>::toString() const

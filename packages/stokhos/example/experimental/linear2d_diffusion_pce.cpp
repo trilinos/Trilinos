@@ -69,6 +69,10 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
+#include "Xpetra_MultiVectorFactory.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+
 
 // Random field types
 enum SG_RF { UNIFORM, LOGNORMAL };

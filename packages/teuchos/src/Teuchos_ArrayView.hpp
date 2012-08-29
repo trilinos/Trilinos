@@ -150,6 +150,7 @@ std::string ArrayView<T>::toString() const
 
   ss << "{";
   for (size_type i = 0; i < size (); ++i) {
+    // NOTE: This depends on std::ostream::operator<<(const T&).
     ss << operator[] (i);
     if (i + 1 < size ()) {
       ss << ", ";
@@ -158,6 +159,31 @@ std::string ArrayView<T>::toString() const
   ss << "}";
   return ss.str ();
 }
+
+
+// Specialization for float.  We use sufficient precision that no
+// digits are lost after writing to string and reading back in again.
+template<>
+TEUCHOS_LIB_DLL_EXPORT std::string
+ArrayView<float>::toString() const;
+
+// Specialization for (const) float.  We use sufficient precision that no
+// digits are lost after writing to string and reading back in again.
+template<>
+TEUCHOS_LIB_DLL_EXPORT std::string
+ArrayView<const float>::toString() const;
+
+// Specialization for double.  We use sufficient precision that no
+// digits are lost after writing to string and reading back in again.
+template<>
+TEUCHOS_LIB_DLL_EXPORT std::string
+ArrayView<double>::toString() const;
+
+// Specialization for (const) double.  We use sufficient precision that no
+// digits are lost after writing to string and reading back in again.
+template<>
+TEUCHOS_LIB_DLL_EXPORT std::string
+ArrayView<const double>::toString() const;
 
 
 // Element Access Functions

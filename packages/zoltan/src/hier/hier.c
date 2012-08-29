@@ -914,9 +914,9 @@ char *yo = "make_platform_name_string";
     ZOLTAN_PRINT_ERROR(-1, yo, "Out of memory");
     return NULL;
   }
-  msg[0] = 0;
+  msg[0] = '\0';
 
-  for (i=1; i <= ZOLTAN_HIER_LAST_PLATFORM; i++){
+  for (i=0; i < ZOLTAN_HIER_LAST_PLATFORM; i++){
     strcat(msg, zoltan_hier_platform_specs[i].platform_name);
     strcat(msg, " ");
     if (i % 5  == 0) strcat(msg, "\n");

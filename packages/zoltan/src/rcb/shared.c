@@ -2108,7 +2108,8 @@ ZOLTAN_ID_PTR current_candidate;
   dot_candidates = (ZOLTAN_ID_PTR) 
                    ZOLTAN_MALLOC(dotnum*num_gid_entries*sizeof(ZOLTAN_ID_TYPE));
   if (dindx) {
-    int prevpart = -1;
+    int prevpart = dotpt->Part[dindx[0]];
+    current_candidate = &(gidpt[dindx[0]*num_gid_entries]);
     /* there is more than one part on this proc. */
     /* use dindx to access dots grouped by part */
     for (i = 0; i < dotnum; i++) {
@@ -2118,7 +2119,8 @@ ZOLTAN_ID_PTR current_candidate;
         current_candidate = &(gidpt[dindx[i]*num_gid_entries]);
         prevpart = dotpt->Part[dindx[i]];
       }
-      ZOLTAN_SET_GID(zz, &(dot_candidates[dindx[i]*num_gid_entries]), current_candidate);
+      ZOLTAN_SET_GID(zz, &(dot_candidates[dindx[i]*num_gid_entries]),
+                         current_candidate);
     }
   }
   else {  

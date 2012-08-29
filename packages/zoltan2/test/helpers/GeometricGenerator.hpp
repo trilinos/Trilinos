@@ -1414,6 +1414,45 @@ public:
     //delete []this->points;
   }
 
+  void print_description(){
+    cout <<"\nGeometric Generator Parameter File Format:" << endl;
+    cout <<"- dim=Coordinate Dimension: 2 or 3" << endl;
+    cout <<"- Available distributions:" << endl;
+    cout <<"\tUNIFORM: -> distribution-1=UNIFORM,NUMCOORDINATES,XMIN,XMAX,YMIN,YMAX{,ZMIN,ZMAX}" << endl;
+    cout <<"\tGRID: -> distribution-2=GRID,XLENGTH,YLENGTH{,ZLENGTH},XMIN,XMAX,YMIN,YMAX{,ZMIN,ZMAX}" << endl;
+    cout <<"\tNORMAL: -> distribution-3=NORMAL,XCENTER,YCENTER{,ZCENTER},XSD,YSD,{,ZSD}" << endl;
+    cout <<"- wdim=weight_dimension: weight dimension >= 0. There should be as many weight function as weight dimension." << endl;
+    cout <<"- Weight Equation: w = (a1 * (x - x1)^b1) + (a2 * (y - y1)^b2) + (a3 * (z - z1)^b3) + c" << endl;
+    cout << "Parameter settings:" << endl;
+    cout << "\tWeightDistribution-1-a1=a1 " << endl;
+    cout << "\tWeightDistribution-1-a2=a2 " << endl;
+    cout << "\tWeightDistribution-1-a3=a3 " << endl;
+    cout << "\tWeightDistribution-1-b1=b1 " << endl;
+    cout << "\tWeightDistribution-1-b2=b2 " << endl;
+    cout << "\tWeightDistribution-1-b3=b3 " << endl;
+    cout << "\tWeightDistribution-1-x1=x1 " << endl;
+    cout << "\tWeightDistribution-1-y1=y1 " << endl;
+    cout << "\tWeightDistribution-1-z1=z1 " << endl;
+    cout << "\tWeightDistribution-1-c=c " << endl;
+    cout << "\tIt is possible to set step function to the result of weight equation." << endl;
+    cout << "\tWeightDistribution-1-steps=step1,step2,step3:increasing order" << endl;
+    cout << "\tWeightDistribution-1-values=val1,val2,val3,val4." << endl;
+    cout << "\t\tIf w < step1 -> w = val1" << endl;
+    cout << "\t\tElse if w < step2 -> w = val2" << endl;
+    cout << "\t\tElse if w < step3 -> w = val3" << endl;
+    cout << "\t\tElse  -> w = val4" << endl;
+    cout <<"- Holes:" << endl;
+    cout << "\thole-1:SPHERE,XCENTER,YCENTER,ZCENTER,RADIUS (only for dim=3)" << endl;
+    cout << "\thole-2:CUBE,XCENTER,YCENTER,ZCENTER,EDGE (only for dim=3)" << endl;
+    cout << "\thole-3:RECTANGULAR_PRISM,XCENTER,YCENTER,ZCENTER,XEDGE,YEDGE,ZEDGE (only for dim=3)" << endl;
+    cout << "\thole-4:SQUARE,XCENTER,YCENTER,EDGE (only for dim=2)" << endl;
+    cout << "\thole-5:RECTANGLE,XCENTER,YCENTER,XEDGE,YEDGE (only for dim=2)" << endl;
+    cout << "\thole-6:CIRCLE,XCENTER,YCENTER,RADIUS (only for dim=2)" << endl;
+    cout << "- out_file:out_file_path : if provided output will be written to files." << endl;
+    cout << "- proc_load_distributions:ratio_0, ratio_1, ratio_2....ratio_n. Loads of each processor, should be as many as MPI ranks and should sum up to 1." << endl;
+
+  }
+
   GeometricGenerator(Teuchos::ParameterList &params, const RCP<const Teuchos::Comm<int> > & comm_){
     this->wd = NULL;
     this->holes = NULL; //to represent if there is any hole in the input
@@ -1439,10 +1478,20 @@ public:
      */
     this->loadDistSet = false;
     this->distinctCoordSet = false;
-    this->parseParams(params);
-
-
     this->myRank = comm_->getRank();
+
+    try {
+      this->parseParams(params);
+    }
+    catch(std::string s){
+      if(myRank == 0){
+        print_description();
+      }
+      throw s;
+    }
+
+
+
 
     lno_t myPointCount = 0;
     this->numGlobalCoords = 0;
