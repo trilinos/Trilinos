@@ -47,6 +47,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <tokenize.h>
 
 #include "Ioss_DBUsage.h"
 #include "Ioss_Field.h"
@@ -103,6 +104,49 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
 {
   isParallel  = util_.parallel_size() > 1;
   myProcessor = util_.parallel_rank();
+
+  // Check environment variable IOSS_PROPERTIES. If it exists, parse
+  // the contents and add to the 'properties' map.
+  
+  std::string env_props;
+  if (util_.get_environment("IOSS_PROPERTIES", env_props, isParallel)) {
+    // env_props string should be of the form
+    // "PROP1=VALUE1:PROP2=VALUE2:..."
+    std::vector<std::string> prop_val;
+    Ioss::tokenize(env_props, ":", prop_val);
+    
+    for (size_t i=0; i < prop_val.size(); i++) {
+      std::vector<std::string> property;
+      Ioss::tokenize(prop_val[i], "=", property);
+      if (property.size() != 2) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
+	       << "       Found '" << prop_val[i] << "' which is not of the correct PROPERTY=VALUE form";
+	IOSS_ERROR(errmsg);
+      }
+      std::string prop = Ioss::Utils::uppercase(property[0]);
+      std::string value = property[1];
+      std::string up_value = Ioss::Utils::uppercase(value);
+      bool all_digit = value.find_first_not_of("0123456789") == std::string::npos;
+
+      if (myProcessor == 0) 
+	std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
+      
+      if (all_digit) {
+	int int_value = std::strtol(value.c_str(), NULL, 10);
+	properties.add(Ioss::Property(prop, int_value));
+      }
+      else if (up_value == "TRUE" || up_value == "YES") {
+	properties.add(Ioss::Property(prop, 1));
+      }
+      else if (up_value == "FALSE" || up_value == "NO") {
+	properties.add(Ioss::Property(prop, 0));
+      }
+      else {
+	properties.add(Ioss::Property(prop, value));
+      }
+    }
+  }
 }
 
 Ioss::DatabaseIO::~DatabaseIO()
