@@ -404,9 +404,9 @@ int main( int argc, char* argv[] )
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.size() == total_bytes) );
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.lowerOffset() == 0) );
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.upperOffset() == total_bytes-1) );
-#ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.strong_count() == 1) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.weak_count() == 0) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.total_count() == 1) );
     result = test_ArrayRCP(char_ptr1,*out);
     if (!result) success = false;
 
@@ -417,9 +417,9 @@ int main( int argc, char* argv[] )
 
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.size() == 0) );
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
-#ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.count() == 0) );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.strong_count() == 0) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.weak_count() == 0) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.total_count() == 0) );
 
     ArrayRCP<char>
       char_ptr2b(char_ptr1); // excplicitly test copy constructor
@@ -429,9 +429,9 @@ int main( int argc, char* argv[] )
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.size() == total_bytes) );
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.lowerOffset() == 0) );
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.upperOffset() == total_bytes-1) );
-#ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.count() == 2) );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.strong_count() == 2) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.weak_count() == 0) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.total_count() == 2) );
     result = test_ArrayRCP(char_ptr2b,*out);
     if (!result) success = false;
 
@@ -439,18 +439,14 @@ int main( int argc, char* argv[] )
 
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.size() == 0) );
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
-#ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.count() == 0) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.strong_count() == 0) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.strong_count() == 1) );
 
     ArrayRCP<char>
       char_ptr3 = char_ptr1.persistingView(total_bytes/2,total_bytes/2);
 
-#ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 2) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr3.count() == 2) );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.strong_count() == 2) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr3.strong_count() == 2) );
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr3.lowerOffset() == 0) );
     TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr3.upperOffset() == total_bytes/2-1) );
     result = test_ArrayRCP(char_ptr3,*out);
@@ -468,13 +464,8 @@ int main( int argc, char* argv[] )
 
     *out << "\ndouble_ptr1 = " << double_ptr1 << "\n";
 
-#ifndef __sun
-    // 2007/11/30: rabartl: Even to this day, the Sun compiler (version CC:
-    // Sun C++ 5.7 Patch 117830-07 2006/03/15 on sass9000) does not destroy
-    // objects as required by the C++ standard!  This is unbelievelable!
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 3) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(double_ptr1.count() == 3) );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.strong_count() == 3) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(double_ptr1.strong_count() == 3) );
     TEUCHOS_TEST_FOR_EXCEPT( !(double_ptr1.size() == num_doubles) );
 
     result = test_ArrayRCP(double_ptr1,*out);
@@ -488,11 +479,8 @@ int main( int argc, char* argv[] )
 
     *out << "\nint_ptr1 = " << int_ptr1 << "\n";
 
-#ifndef __sun
-    // 2007/11/30: rabartl: See comment above
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 4) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(int_ptr1.count() == 4) );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.strong_count() == 4) );
+    TEUCHOS_TEST_FOR_EXCEPT( !(int_ptr1.strong_count() == 4) );
     TEUCHOS_TEST_FOR_EXCEPT( !(int_ptr1.size() == num_ints) );
 
     result = test_ArrayRCP(int_ptr1,*out);

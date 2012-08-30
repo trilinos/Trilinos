@@ -737,11 +737,12 @@ public:
 
   //@}
 
+
   /** \name Deprecated */
   //@{
 
   /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
-  inline int count() const;
+  inline TEUCHOS_DEPRECATED int count() const;
 
   //@}
 
@@ -780,6 +781,8 @@ private:
 
 public:
 
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
+
   /** \name Deprecated. */
   //@{
 
@@ -788,6 +791,8 @@ public:
   TEUCHOS_DEPRECATED operator ArrayView<T>() const;
 
   //@}
+
+#endif // TEUCHOS_HIDE_DEPRECATED_CODE
 
 #ifndef DOXYGEN_COMPILE
   // These constructors should be private but I have not had good luck making

@@ -853,7 +853,7 @@ public:
   inline void reset(T2* p, bool has_ownership = true);
 
   /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
-  inline int count() const;
+  TEUCHOS_DEPRECATED inline int count() const;
 
   //@}
 
@@ -1216,7 +1216,7 @@ RCP<T> rcpWithDealloc(T* p, Dealloc_T dealloc, bool owns_mem=true);
 
 /** \brief Deprecated. */
 template<class T, class Dealloc_T> inline
-RCP<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem )
+TEUCHOS_DEPRECATED RCP<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem )
 {
   return rcpWithDealloc(p, dealloc, owns_mem);
 }

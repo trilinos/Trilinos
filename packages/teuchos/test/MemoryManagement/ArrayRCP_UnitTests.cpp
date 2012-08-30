@@ -368,37 +368,37 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcpCloneNode_basic )
 
   ECHO(ArrayRCP<int> arcp2 = arcpCloneNode(arcp1));
   TEST_ASSERT(nonnull(arcp2));
-  TEST_EQUALITY(arcp1.count(), 2);
-  TEST_EQUALITY(arcp2.count(), 1);
+  TEST_EQUALITY(arcp1.strong_count(), 2);
+  TEST_EQUALITY(arcp2.strong_count(), 1);
 
   ECHO(ArrayRCP<int> arcp3 = arcp2);
-  TEST_EQUALITY(arcp1.count(), 2);
-  TEST_EQUALITY(arcp2.count(), 2);
-  TEST_EQUALITY(arcp3.count(), 2);
+  TEST_EQUALITY(arcp1.strong_count(), 2);
+  TEST_EQUALITY(arcp2.strong_count(), 2);
+  TEST_EQUALITY(arcp3.strong_count(), 2);
 
   ECHO(ArrayRCP<int> arcp4 = arcp1);
-  TEST_EQUALITY(arcp1.count(), 3);
-  TEST_EQUALITY(arcp2.count(), 2);
-  TEST_EQUALITY(arcp3.count(), 2);
+  TEST_EQUALITY(arcp1.strong_count(), 3);
+  TEST_EQUALITY(arcp2.strong_count(), 2);
+  TEST_EQUALITY(arcp3.strong_count(), 2);
 
   ECHO(arcp4 = null);
-  TEST_EQUALITY(arcp1.count(), 2);
-  TEST_EQUALITY(arcp2.count(), 2);
-  TEST_EQUALITY(arcp3.count(), 2);
-  TEST_EQUALITY(arcp4.count(), 0);
+  TEST_EQUALITY(arcp1.strong_count(), 2);
+  TEST_EQUALITY(arcp2.strong_count(), 2);
+  TEST_EQUALITY(arcp3.strong_count(), 2);
+  TEST_EQUALITY(arcp4.strong_count(), 0);
 
   ECHO(arcp1 = null);
-  TEST_EQUALITY(arcp1.count(), 0);
-  TEST_EQUALITY(arcp2.count(), 2);
-  TEST_EQUALITY(arcp3.count(), 2);
-  TEST_EQUALITY(arcp4.count(), 0);
+  TEST_EQUALITY(arcp1.strong_count(), 0);
+  TEST_EQUALITY(arcp2.strong_count(), 2);
+  TEST_EQUALITY(arcp3.strong_count(), 2);
+  TEST_EQUALITY(arcp4.strong_count(), 0);
 
   ECHO(arcp2 = null);
-  TEST_EQUALITY(arcp2.count(), 0);
-  TEST_EQUALITY(arcp3.count(), 1);
+  TEST_EQUALITY(arcp2.strong_count(), 0);
+  TEST_EQUALITY(arcp3.strong_count(), 1);
 
   ECHO(arcp3 = null);
-  TEST_EQUALITY(arcp3.count(), 0);
+  TEST_EQUALITY(arcp3.strong_count(), 0);
 
 }
 
@@ -811,7 +811,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, weakDelete, T )
 
   TEST_EQUALITY_CONST( arcp_strong.strength(), RCP_STRENGTH_INVALID );
   TEST_EQUALITY_CONST( arcp_strong.is_null(), true );
-  TEST_EQUALITY_CONST( arcp_strong.count(), 0 );
+  TEST_EQUALITY_CONST( arcp_strong.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_strong.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_strong.weak_count(), 0 );
   TEST_EQUALITY_CONST( arcp_strong.total_count(), 0 );
@@ -821,14 +821,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, weakDelete, T )
   TEST_EQUALITY_CONST( arcp_strong.shares_resource(arcp_weak2), false );
 
   TEST_EQUALITY_CONST( arcp_weak1.has_ownership(), true );
-  TEST_EQUALITY_CONST( arcp_weak1.count(), 0 );
+  TEST_EQUALITY_CONST( arcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak1.weak_count(), 2 );
   TEST_EQUALITY_CONST( arcp_weak1.total_count(), 2 );
   TEST_EQUALITY_CONST( arcp_weak1.is_valid_ptr(), false );
 
   TEST_EQUALITY_CONST( arcp_weak2.has_ownership(), true );
-  TEST_EQUALITY_CONST( arcp_weak2.count(), 0 );
+  TEST_EQUALITY_CONST( arcp_weak2.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak2.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak2.weak_count(), 2 );
   TEST_EQUALITY_CONST( arcp_weak2.total_count(), 2 );
@@ -875,14 +875,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, weakDelete, T )
 
   TEST_EQUALITY_CONST( arcp_weak1.strength(), RCP_STRENGTH_INVALID );
   TEST_EQUALITY_CONST( arcp_weak1.is_null(), true );
-  TEST_EQUALITY_CONST( arcp_weak1.count(), 0 );
+  TEST_EQUALITY_CONST( arcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak1.weak_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak1.total_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak1.is_valid_ptr(), true );
 
   TEST_EQUALITY_CONST( arcp_weak2.has_ownership(), true );
-  TEST_EQUALITY_CONST( arcp_weak2.count(), 0 );
+  TEST_EQUALITY_CONST( arcp_weak2.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak2.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak2.weak_count(), 1 );
   TEST_EQUALITY_CONST( arcp_weak2.total_count(), 1 );

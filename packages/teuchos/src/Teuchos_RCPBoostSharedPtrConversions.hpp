@@ -67,7 +67,7 @@ Teuchos::rcp( const boost::shared_ptr<T> &sptr )
     }
 #endif
     // Lastly, we just create a new RCP and RCPNode ...
-    return rcp(sptr.get(), DeallocBoostSharedPtr<T>(sptr), true);
+    return rcpWithDealloc(sptr.get(), DeallocBoostSharedPtr<T>(sptr), true);
   }
   return null;
 }

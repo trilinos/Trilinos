@@ -74,7 +74,6 @@ APPEND_SET(HEADERS
   Teuchos_Describable.hpp
   Teuchos_DummyObjectGetter.hpp
   Teuchos_ENull.hpp
-  Teuchos_ErrorPolling.hpp
   Teuchos_Exceptions.hpp
   Teuchos_ExpandScalarTypeMacros.hpp
   Teuchos_ExplicitInstantiationHelpers.hpp
@@ -102,7 +101,6 @@ APPEND_SET(HEADERS
   Teuchos_MatrixMarket_SetScientific.hpp
   Teuchos_MatrixMarket_split.hpp
   Teuchos_MatrixMarket_SymmetrizingAdder.hpp
-  Teuchos_MPIComm.hpp
   Teuchos_MPISession.hpp
   Teuchos_MPITraits.hpp
   Teuchos_NullIteratorTraits.hpp
@@ -212,7 +210,6 @@ APPEND_SET(SOURCES
   Teuchos_Describable.cpp
   Teuchos_Dependency.cpp
   Teuchos_DependencySheet.cpp
-  Teuchos_ErrorPolling.cpp
   Teuchos_Flops.cpp
   Teuchos_GlobalMPISession.cpp
   Teuchos_LAPACK.cpp
@@ -220,7 +217,6 @@ APPEND_SET(SOURCES
   Teuchos_MatrixMarket_Banner.cpp
   Teuchos_MatrixMarket_generic.cpp
   Teuchos_MatrixMarket_split.cpp
-  Teuchos_MPIComm.cpp
   Teuchos_MPISession.cpp
   Teuchos_Object.cpp
   Teuchos_ParameterEntry.cpp
@@ -259,6 +255,17 @@ APPEND_SET(SOURCES
   Teuchos_dyn_cast.cpp
   Teuchos_stacktrace.cpp
   )
+
+IF (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
+  APPEND_SET(HEADERS
+    Teuchos_ErrorPolling.hpp
+    Teuchos_MPIComm.hpp
+    )
+  APPEND_SET(SOURCES
+    Teuchos_ErrorPolling.cpp
+    Teuchos_MPIComm.cpp
+    )
+ENDIF()
 
 # Set addition headers and source based on package-specific
 # configuration options

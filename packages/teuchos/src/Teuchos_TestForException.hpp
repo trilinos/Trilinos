@@ -359,6 +359,10 @@ catch(const std::exception &except) { \
 }
 
 
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
+
+
+
 //
 // Deprecated functions
 //
@@ -474,6 +478,9 @@ TEUCHOS_DEPRECATED inline void TEST_FOR_EXCEPT_PRINT_this_macro_is_deprecated() 
     TEST_FOR_EXCEPT_PRINT_this_macro_is_deprecated(); \
     TEUCHOS_TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr); \
   }
+
+
+#endif // TEUCHOS_HIDE_DEPRECATED_CODE
 
 
 #endif // TEUCHOS_TEST_FOR_EXCEPTION_H

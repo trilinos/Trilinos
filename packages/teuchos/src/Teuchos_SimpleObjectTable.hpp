@@ -137,7 +137,7 @@ int SimpleObjectTable<T>::removeRCP(int &index)
     throw RangeError("Item has already been deleted from SimpleObjectTable.");
   }
 
-  int cnt = tableOfObjects[index].count();
+  int cnt = tableOfObjects[index].strong_count();
 
   tableOfObjects[index] = Teuchos::null;
   freedIndices.push_back(index);
