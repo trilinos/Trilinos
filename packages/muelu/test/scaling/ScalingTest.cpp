@@ -100,11 +100,12 @@
 //
 typedef double Scalar;
 typedef int    LocalOrdinal;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-typedef long long int GlobalOrdinal;
-#else
+//FIXME we need a HAVE_MUELU_LONG_LONG_INT option
+// #ifdef HAVE_TEUCHOS_LONG_LONG_INT
+// typedef long long int GlobalOrdinal;
+// #else
 typedef int GlobalOrdinal;
-#endif
+//#endif
 //
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
@@ -127,9 +128,10 @@ int main(int argc, char *argv[]) {
   //out->setOutputToRootOnly(-1);
   //out->precision(12);
 
-#ifndef HAVE_TEUCHOS_LONG_LONG_INT
+//FIXME we need a HAVE_MUELU_LONG_LONG_INT option
+//#ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
-#endif
+//#endif
 
   /**********************************************************************************/
   /* SET TEST PARAMETERS                                                            */
@@ -298,10 +300,11 @@ int main(int argc, char *argv[]) {
     RCP<MultiVectorTransferFactory> mvTransFact;
     if (useExplicitR) {
 
-#if defined(HAVE_TEUCHOS_LONG_LONG_INT)
-      // for long long
-      AcfactFinal = Acfact;
-#else
+//FIXME we need a HAVE_MUELU_LONG_LONG_INT option
+// #if defined(HAVE_TEUCHOS_LONG_LONG_INT)
+//       // for long long
+//       AcfactFinal = Acfact;
+// #else
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       //Operator used to transfer coordinates to coarse grid
       RCP<RFactory> Rtentfact = rcp( new TransPFactory(PtentFact) ); //for projecting coordinates
@@ -318,7 +321,7 @@ int main(int argc, char *argv[]) {
 #else
       AcfactFinal = Acfact;
 #endif
-#endif // TEUCHOS_LONG_LONG_INT
+      //#endif // TEUCHOS_LONG_LONG_INT
     } else {
   
         H->SetImplicitTranspose(true);

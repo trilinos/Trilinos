@@ -33,7 +33,9 @@ namespace Iovs {
 				       Ioss::DatabaseUsage db_usage,
 				       MPI_Comm communicator,
 				       const Ioss::PropertyManager &properties) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator, properties); }
+  {
+    return new DatabaseIO(NULL, filename, db_usage, communicator, properties);
+  }
 
   /**
    * Call the sierra product registry and register all dependent third-party libraries
