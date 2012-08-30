@@ -134,7 +134,7 @@ void AlgRCB(
     params.set(rcb_balanceWeight);
     mcnorm = normBalanceTotalMaximum;
   }
-  else (obj == string("balance_object_count"))}
+  else if (obj == string("balance_object_count"))}
     params.set(rcb_balanceCount);
   }
   else if (obj == string("multicriteria_minimize_total_weight")){
@@ -187,7 +187,7 @@ void AlgRCB(
   if (val == 1)
     params.set(rcb_rectilinearBlocks);
 
-  int numTestCuts = 3;
+  int numTestCuts = 1;
   pe = pl.getEntryPtr("bisection_num_test_cuts");
   if (pe)
     numTestCuts = pe->getValue(&numTestCuts);
