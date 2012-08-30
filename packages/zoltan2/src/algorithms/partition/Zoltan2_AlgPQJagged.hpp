@@ -352,12 +352,13 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   }
 
   //TODO: FIX ME.
-  double aa = 1;
+  //double aa = 1;
   pe = pl.getEntryPtr("parallel_part_calculation_count");
   if (pe)
-    aa = pe->getValue(&aa);
+    //aa = pe->getValue(&aa);
+    concurrentPartCount = pe->getValue(&concurrentPartCount);
   
-  concurrentPartCount = partId_t(aa);
+  //concurrentPartCount = partId_t(aa);
 
   int val = 0;
   pe = pl.getEntryPtr("average_cuts");
