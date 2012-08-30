@@ -108,10 +108,6 @@ void AlgRCB(
 
   std::bitset<NUM_RCB_PARAMS> params;
 
-  bool isSet;
-  string strChoice;
-  int intChoice;
-
   env->debug(DETAILED_STATUS, string("Entering AlgPartRCB"));
 
   const Teuchos::ParameterList &pl = env->getParameters();

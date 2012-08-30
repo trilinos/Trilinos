@@ -61,6 +61,8 @@
 #include <ovis.h>
 #endif
 
+#include <bitset>
+
 using Teuchos::rcp_dynamic_cast;
 using namespace std;
 

@@ -61,9 +61,8 @@ using std::ofstream;
 using std::ifstream;
 using std::ostringstream;
 
-static string fixLine(char *inLine)
+static string fixLine(string oldLine)
 {
-  string oldLine(inLine);
   string quote("\"");
   
   size_t pos = oldLine.find(quote);
@@ -132,15 +131,15 @@ int main(int argc, char  *argv[])
     iFile.getline(lineBuf, 1024);
     if (!iFile.good())
       break;
-    if (go && (strlen(lineBuf) > 1)) {
-      oFile << " \\\n  " << fixLine(lineBuf);
+    string line(lineBuf);
+    if (go && (line.size() > 1)) {
+      oFile << " \\\n  " << fixLine(line);
     }
     else if (!go){
-      string line(lineBuf);
       size_t pos = line.find("ParameterList");
       if (pos == string::npos)
         continue;
-      oFile << " \\\n  " << fixLine(lineBuf);
+      oFile << " \\\n  " << fixLine(line);
       go = true;
     }
   }

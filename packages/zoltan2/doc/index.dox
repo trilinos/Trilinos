@@ -4,10 +4,16 @@
 <ul>
 <li> \ref z2_main_intro
 <li> \ref z2_main_overview
-<li> \ref z2_main_examples
+<li> \ref z2_main_examples_partitioning
+<li> \ref z2_main_building
 </ul>
 
+
+<hr>
+
 Information specifically for developers can be found at \ref z2_developer.
+
+<hr>
 
 \section z2_main_intro Introduction to Zoltan2
 
@@ -35,6 +41,8 @@ Serial ordering available now is:
 <li> Natural (identity permutation)
 <li> Random
 </ul>
+
+<hr>
 
 \section z2_main_overview Overview of the library usage
 
@@ -66,6 +74,8 @@ Zoltan2::MeshInput will be available soon.
 
 \subsection z2_main_overview_repartitioning Repartitioning
 
+<hr>
+
 \section z2_main_examples_partitioning Partitioning examples
 
 Examples include the following:
@@ -73,6 +83,31 @@ Examples include the following:
 - Block partitioning (block.cpp)
 - RCB partitioning for a C++ novice (rcb_C.cpp)
 
+<hr>
+
+\section z2_main_building Building Zoltan2
+
+Zoltan2 is part of the Trilinos framework and requires several of the other Trilinos libraries to build.  
+
+Zoltan2 configuration refers to these CMake directives:
+
+  \li \c Trilinos_ENABLE_OpenMP explain
+  \li \c Trilinos_ENABLE_Zoltan if enabled Zoltan2 will build a test that compares the performance of Zoltan1 and Zoltan2
+  \li \c Zoltan2_ENABLE_Experimental if enabled, code which is still under development will be available for use
+  \li \c Explicit Instantiation if explicit instantiation is on, all Zoltan2 tests will be compiled with the instantiated types
+  \li \c Zoltan2_ENABLE_METIS etc
+  \li \c Zoltan2_ENABLE_PaToH etc
+  \li \c Zoltan2_ENABLE_ParMETIS etc
+  \li \c Zoltan2_ENABLE_Scotch etc
+  \li \c Zoltan2_ENABLE_OVIS etc
+  \li \c Zoltan2_ENABLE_AMD etc etc
+  \li \c Zoltan2_ENABLE_ANASAZI etc
+
+These are some of the compilation flags used by Zoltan2:
+
+  \li \c Z2_OMIT_ALL_STATUS_MESSAGES The \ref debug_level parameter controls the verbosity of status messages.  When compiled with this option, the checks for \ref debug_level are bypassed and all status output code is ignored.
+  \li \c Z2_OMIT_ALL_PROFILING Checks are done at runtime to determine whether any of the memory or timer parameters were set, prior to checking memory in use or to start or stop a ttimer.  When compiled with this option, those checks are bypassed.
+  \li \c Z2_OMIT_ALL_ERROR_CHECKING  The \ref error_check_level parameter controls the amount of error checking done at runtime.  When this flag is set, all error checking code is compiled out.
 
 
 */

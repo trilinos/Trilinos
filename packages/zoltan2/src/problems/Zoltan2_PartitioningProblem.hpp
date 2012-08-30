@@ -618,7 +618,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   Environment &env = *(this->env_);
   ParameterList &pl = env.getParametersNonConst();
 
-  bool isSet;
   string defString("default");
 
   // Did the user ask for computation of quality metrics?
@@ -842,7 +841,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     if (pe)
       sgParameter = pe->getValue<int>(&sgParameter);
 
-    if (isSet && (sgParameter == 1))
+    if (sgParameter == 1)
         graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
 
     // Any special behaviors required by the algorithm?
