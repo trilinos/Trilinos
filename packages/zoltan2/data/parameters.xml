@@ -300,7 +300,7 @@
 
     <Validator type="IntegerRangeListValidator(int)" unsorted="false" validatorId="9"/>
 
-    <Validator type="IntegerRangeListValidator(int)" unsorted="false" validatorId="8"/>
+    <Validator type="IntegerRangeListValidator(int)" unsorted="true" validatorId="8"/>
 
     <Validator type="StringValidator" validatorId="10">
       <String value="speed"/>
