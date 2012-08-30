@@ -24,7 +24,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 # The name of the executable is changed to make sure that long int support is correctly 
 # set when we do scalability tests.
 IF(Teuchos_ENABLE_LONG_LONG_INT)
-  SET(MueLu_ScalingTestName ScalingTest-LongLongInt)
+  IF(NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) #FIXME
+    #FIXME no Tpetra instantiation for long long int
+    #FIXME we need a HAVE_MUELU_LONG_LONG_INT option
+    SET(MueLu_ScalingTestName ScalingTest-LongLongInt)
+  ELSE()
+    SET(MueLu_ScalingTestName ScalingTest-Int)
+  ENDIF()
 ELSE()
   SET(MueLu_ScalingTestName ScalingTest-Int)
 ENDIF()
