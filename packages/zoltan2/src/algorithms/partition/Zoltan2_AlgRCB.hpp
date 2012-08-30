@@ -108,10 +108,6 @@ void AlgRCB(
 
   std::bitset<NUM_RCB_PARAMS> params;
 
-  bool isSet;
-  string strChoice;
-  int intChoice;
-
   env->debug(DETAILED_STATUS, string("Entering AlgPartRCB"));
 
   const Teuchos::ParameterList &pl = env->getParameters();
@@ -134,7 +130,7 @@ void AlgRCB(
     params.set(rcb_balanceWeight);
     mcnorm = normBalanceTotalMaximum;
   }
-  else if (obj == string("balance_object_count"))}
+  else if (obj == string("balance_object_count")){
     params.set(rcb_balanceCount);
   }
   else if (obj == string("multicriteria_minimize_total_weight")){

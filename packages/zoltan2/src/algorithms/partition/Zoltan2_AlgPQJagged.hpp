@@ -56,6 +56,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <bitset>
+
 #define EPS_SCALE 1
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
