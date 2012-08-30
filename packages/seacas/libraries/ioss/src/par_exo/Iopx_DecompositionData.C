@@ -1,16 +1,20 @@
 #include <par_exo/Iopx_DecompositionData.h>
 #include <Ioss_Utils.h>
 #include <Ioss_Field.h>
+#include <Ioss_ElementTopology.h>
+#include <Ioss_ParallelUtils.h>
+
 #include <exodusII_par.h>
 #include <assert.h>
 #include <mpi.h>
+
+#include <parmetis.h>
 
 #include <algorithm>
 #include <numeric>
 #include <map>
 #include <set>
 
-// Zoltan callback functions and pre-decompositon utility functions...
 namespace {
   inline size_t min(size_t x, size_t y)
   {
@@ -173,11 +177,48 @@ namespace {
     dist[proc_count] = sum;
   }
   
+  int get_common_node_count(const std::vector<Iopx::BlockDecompositionData> &el_blocks,
+			    MPI_Comm comm)
+  {
+    // Determine number of nodes that elements must share to be
+    // considered connected.  A 8-node hex-only mesh would have 4
+    // A 3D shell mesh should have 2.  Basically, use the minimum
+    // number of nodes per side for all element blocks...  Omit sphere
+    // elements; ignore bars(?)...
+
+    int common_nodes = 999;
+
+    for (size_t i=0; i < el_blocks.size(); i++) {
+      std::string type = Ioss::Utils::lowercase(el_blocks[i].topologyType);
+      Ioss::ElementTopology *topology = Ioss::ElementTopology::factory(type, false);
+      if (topology != NULL) {
+	Ioss::ElementTopology *boundary = topology->boundary_type(0);
+	if (boundary != NULL) {
+	  common_nodes = min(common_nodes, boundary->number_boundaries());
+	} else {
+	  // Different topologies on some element faces...
+	  size_t nb = topology->number_boundaries();
+	  for (size_t b=1; b <= nb; b++) {
+	    boundary = topology->boundary_type(b);
+	    if (boundary != NULL) {
+	      common_nodes = min(common_nodes, boundary->number_boundaries());
+	    }
+	  }
+	}
+      }
+    }
+    common_nodes = max(1, common_nodes);
+    Ioss::ParallelUtils par_util(comm_);
+    common_nodes = par_util.global_minmax(common_nodes, Ioss::ParallelUtils::DO_MIN);
+    
+    std::cerr << "Setting common_nodes to " << common_nodes << "\n";
+    return common_nodes;
+  }
 }
 
 namespace Iopx {
-  DecompositionData::DecompositionData(MPI_Comm communicator)
-    : comm_(communicator)
+  DecompositionData::DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator)
+    : comm_(communicator), properties(props)
   {
     MPI_Comm_rank(comm_, &myProcessor);
     MPI_Comm_size(comm_, &processorCount);
@@ -243,29 +284,264 @@ namespace Iopx {
     std::vector<MY_INT> adjacency; // Size is sum of element connectivity sizes 
     generate_adjacency_list(exodusId, pointer, adjacency, info.num_elem_blk);
     
-    calculate_element_centroids(exodusId, pointer, adjacency, node_dist);
+    std::string method = "LINEAR";
+    if (properties.exists("DECOMPOSITION_METHOD")) {
+      method = properties.get("DECOMPOSITION_METHOD").get_string();
+      method = Ioss::Utils::uppercase(method);
+    }
+
+    if (method != "LINEAR" &&
+	method != "RCB" &&
+	method != "RIB" &&
+	method != "HSFC" &&
+	method != "BLOCK" &&
+	method != "CYCLIC" &&
+	method != "RANDOM" &&
+	method != "KWAY" &&
+	method != "GEOM_KWAY" &&
+	method != "METIS_SFC") {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Invalid decomposition method specified: '" << method << "\n"
+	     << "       Valid methods: LINEAR, RCB, RIB, HSFC, KWAY, GEOM_KWAY, METIS_SFC\n";
+      std::cerr << errmsg.str();
+      exit(EXIT_FAILURE);
+    }
+
+    if (myProcessor == 0)
+      std::cout << "\nUsing decomposition method " << method << "\n\n";
     
-    //-------------ZOLTAN BEGIN-----------------
+    if (method == "RCB" || method == "RIB" || method == "HSFC" ||
+	method == "GEOM_KWAY" || method == "METIS_SFC") {
+      calculate_element_centroids(exodusId, pointer, adjacency, node_dist);
+    }
+
+    if (method == "KWAY" || method == "GEOM_KWAY" || method == "METIS_SFC") {
+      metis_decompose(method, element_dist, pointer, adjacency);
+    } else if (method == "RCB" || method == "RIB" || method == "HSFC" ||
+	       method == "BLOCK" || method == "CYCLIC" || method == "RANDOM") {
+      zoltan_decompose(method);
+    } else if (method == "LINEAR") {
+      simple_decompose(method, element_dist);
+    }
+    
+    std::sort(importElementMap.begin(), importElementMap.end());
+
+    std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
+    generate_index(importElementIndex);
+
+    // Find the number of imported elements that precede the elements
+    // that remain locally owned...
+    importPreLocalElemIndex = 0;
+    for (size_t i=0; i < importElementMap.size(); i++) {
+      if (importElementMap[i] >= elementOffset)
+	break;
+      importPreLocalElemIndex++;
+    }
+    
+    // Determine size of this processors element blocks...
+    get_element_block_communication(info.num_elem_blk);
+    
+    // Now need to determine the nodes that are on this processor,
+    // both owned and shared...
+    get_local_node_list(pointer, adjacency, node_dist);
+    
+    get_shared_node_list();
+
+    get_nodeset_data(exodusId, info.num_node_sets);
+
+    if (info.num_side_sets > 0) {
+      // Create elemGTL map which is used for sidesets (also element sets)
+      build_global_to_local_elem_map();
+    }
+    
+    get_sideset_data(exodusId, info.num_side_sets);
+    
+    // Have all the decomposition data needed (except for boundary
+    // conditions...)
+    // Can now populate the Ioss metadata...
+  }
+
+  void DecompositionData::simple_decompose(const std::string &method,
+					   const std::vector<Iopx::MY_INT> &element_dist)
+  {
+    if (method == "LINEAR") {
+      // The "ioss_decomposition" is the same as the "file_decomposition"
+      // Nothing is imported or exported, everything stays "local"
+
+      size_t local = element_dist[myProcessor+1] - element_dist[myProcessor];
+      localElementMap.reserve(local);
+      for (size_t i=0; i < local; i++) {
+	localElementMap.push_back(i);
+      }
+
+      // All values are 0
+      exportElementCount.resize(processorCount+1);
+      exportElementIndex.resize(processorCount+1);
+      importElementCount.resize(processorCount+1);
+      importElementIndex.resize(processorCount+1);
+    }
+  }
+
+  void DecompositionData::metis_decompose(const std::string &method,
+					  const std::vector<Iopx::MY_INT> &element_dist,
+					  const std::vector<Iopx::MY_INT> &pointer,
+					  const std::vector<Iopx::MY_INT> &adjacency)
+  {
+    idx_t wgt_flag = 0; // No weights
+    idx_t *elm_wgt = NULL;
+    idx_t ncon = 1;
+    idx_t num_flag = 0; // Use C-based numbering
+    idx_t common_nodes = get_common_node_count(el_blocks, comm_);
+    
+    idx_t nparts = processorCount;
+    idx_t ndims = spatialDimension;
+    std::vector<real_t> tp_wgts(ncon*nparts, 1.0/nparts);
+    
+    std::vector<real_t> ub_vec(ncon, 1.01);
+    
+    idx_t edge_cuts = 0;
+    std::vector<idx_t> elem_partition(elementCount);
+    
+    std::vector<idx_t> options(3);
+    options[0] = 1; // Use my values instead of default
+    options[1] = PARMETIS_DBGLVL_TIME; 
+    options[2] = 1234567; // Random number seed
+    
+    if (method == "KWAY") {
+      int rc = ParMETIS_V3_PartMeshKway((idx_t*)TOPTR(element_dist), (idx_t*)TOPTR(pointer), (idx_t*)TOPTR(adjacency),
+					elm_wgt, &wgt_flag, &num_flag, &ncon, &common_nodes, &nparts,
+					TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, TOPTR(elem_partition),
+					&comm_);
+      std::cout << "Edge Cuts = " << edge_cuts << "\n";
+      if (rc != METIS_OK) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartMeshKWay decomposition\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      }
+    }
+    else if (method == "GEOM_KWAY") {
+
+      idx_t *dual_xadj = NULL;
+      idx_t *dual_adjacency = NULL;
+      int rc = ParMETIS_V3_Mesh2Dual((idx_t*)TOPTR(element_dist), (idx_t*)TOPTR(pointer), (idx_t*)TOPTR(adjacency),
+				     &num_flag, &common_nodes, &dual_xadj, &dual_adjacency, &comm_);
+
+      if (rc != METIS_OK) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem during call to ParMETIS_V3_Mesh2Dual graph conversion\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      }
+
+      ct_assert(sizeof(double) == sizeof(real_t));
+
+      rc = ParMETIS_V3_PartGeomKway((idx_t*)TOPTR(element_dist), dual_xadj, dual_adjacency,
+				    elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
+				    TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, TOPTR(elem_partition), &comm_);
+
+      std::cout << "Edge Cuts = " << edge_cuts << "\n";
+      METIS_Free(dual_xadj);
+      METIS_Free(dual_adjacency);
+      
+      if (rc != METIS_OK) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartGeomKWay decomposition\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      }
+    }
+    else if (method == "METIS_SFC") {
+      std::vector<real_t> flt_cent(centroids_.begin(), centroids_.end());
+      int rc = ParMETIS_V3_PartGeom((idx_t*)TOPTR(element_dist), &ndims, TOPTR(flt_cent),
+				TOPTR(elem_partition), &comm_);
+
+      if (rc != METIS_OK) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartGeom decomposition\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      }
+    }
+
+    // Determine how many elements I send to the other processors...
+    // and how many remain local (on this processor)
+    exportElementCount.resize(processorCount+1);
+    for (size_t i=0; i < elem_partition.size(); i++) {
+      exportElementCount[elem_partition[i]]++;
+    }
+
+    size_t local = exportElementCount[myProcessor];
+    localElementMap.reserve(local);
+    for (size_t i=0; i < elem_partition.size(); i++) {
+      if (elem_partition[i] == myProcessor) {
+	localElementMap.push_back(i);
+      }
+    }
+
+    // Zero out the local element count so local elements aren't communicated.
+    exportElementCount[myProcessor] = 0;
+    
+    importElementCount.resize(processorCount+1);
+    MPI_Alltoall(TOPTR(exportElementCount), 1, MPI_INT,
+		 TOPTR(importElementCount), 1, MPI_INT, comm_);
+
+    // Now fill the vectors with the elements ...
+    size_t exp_size = std::accumulate(exportElementCount.begin(), exportElementCount.end(), 0);
+    size_t imp_size = std::accumulate(importElementCount.begin(), importElementCount.end(), 0);
+
+    exportElementMap.resize(exp_size);
+    importElementMap.resize(imp_size);
+    
+    exportElementIndex.resize(processorCount+1);
+    importElementIndex.resize(processorCount+1);
+
+    std::copy(exportElementCount.begin(), exportElementCount.end(), exportElementIndex.begin());
+    generate_index(exportElementIndex);
+
+    std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
+    generate_index(importElementIndex);
+
+    {
+      std::vector<MY_INT> tmp_disp(exportElementIndex);
+      for (size_t i=0; i < elem_partition.size(); i++) {
+	if (elem_partition[i] != myProcessor) {
+	  exportElementMap[tmp_disp[elem_partition[i]]++] = elementOffset+i;
+	}
+      }
+    }
+
+    int err = MPI_Alltoallv(TOPTR(exportElementMap), TOPTR(exportElementCount), TOPTR(exportElementIndex), MPI_INT,
+			    TOPTR(importElementMap), TOPTR(importElementCount), TOPTR(importElementIndex), MPI_INT, comm_);
+    
+    std::cout << "Processor " << myProcessor << ":\t"
+	      << elementCount-exp_size << " local, "
+	      << imp_size             << " imported and "
+	      << exp_size            << " exported elements\n";
+  }
+
+  void DecompositionData::zoltan_decompose(const std::string &method)
+  {
     float version = 0.0;
     Zoltan_Initialize(0, NULL, &version);
 
-    Zoltan *zz = new Zoltan(comm_);
+    Zoltan zz(comm_);
 
     // Register Zoltan Callback functions...
 
-    zz->Set_Num_Obj_Fn(zoltan_num_obj, this);
-    zz->Set_Obj_List_Fn(zoltan_obj_list, this);
-    zz->Set_Num_Geom_Fn(zoltan_num_dim, this);
-    zz->Set_Geom_Multi_Fn(zoltan_geom, this);
+    zz.Set_Num_Obj_Fn(zoltan_num_obj, this);
+    zz.Set_Obj_List_Fn(zoltan_obj_list, this);
+    zz.Set_Num_Geom_Fn(zoltan_num_dim, this);
+    zz.Set_Geom_Multi_Fn(zoltan_geom, this);
     
     // Set Zoltan parameters
     std::string num_proc = Ioss::Utils::to_string(processorCount);
-    zz->Set_Param("NUM_GLOBAL_PARTS", num_proc);
-    zz->Set_Param("NUM_LID_ENTRIES", "0");
-    zz->Set_Param("LB_METHOD", "RCB");
-    zz->Set_Param("REMAP", "0");
-    zz->Set_Param("RETURN_LISTS", "ALL");
-    //    zz->Set_Param("RETURN_LISTS", "PARTS");
+    zz.Set_Param("NUM_GLOBAL_PARTS", num_proc);
+    zz.Set_Param("NUM_LID_ENTRIES", "0");
+    zz.Set_Param("LB_METHOD", method);
+    zz.Set_Param("REMAP", "0");
+    zz.Set_Param("RETURN_LISTS", "ALL");
+    //    zz.Set_Param("RETURN_LISTS", "PARTS");
 
     int changes = 0;
     int num_global = 1;
@@ -283,7 +559,7 @@ namespace Iopx {
 
     num_global = 1;
     num_local  = 1;
-    int rc = zz->LB_Partition(changes, num_global, num_local,
+    int rc = zz.LB_Partition(changes, num_global, num_local,
 			      num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
 			      num_export, export_global_ids, export_local_ids, export_procs, export_to_part);
 
@@ -327,46 +603,8 @@ namespace Iopx {
       importElementCount[import_procs[i]]++;
     }
     
-    zz->LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs, &import_to_part);
-    zz->LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
-    delete zz; // Done with zoltan interface...
-    //-------------ZOLTAN END-----------------
-    
-    std::sort(importElementMap.begin(), importElementMap.end());
-
-    std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
-    generate_index(importElementIndex);
-
-    // Find the number of imported elements that precede the elements
-    // that remain locally owned...
-    importPreLocalElemIndex = 0;
-    for (size_t i=0; i < importElementMap.size(); i++) {
-      if (importElementMap[i] >= elementOffset)
-	break;
-      importPreLocalElemIndex++;
-    }
-    
-    // Determine size of this processors element blocks...
-    get_element_block_communication(info.num_elem_blk);
-    
-    // Now need to determine the nodes that are on this processor,
-    // both owned and shared...
-    get_local_node_list(pointer, adjacency, node_dist);
-    
-    get_shared_node_list();
-
-    get_nodeset_data(exodusId, info.num_node_sets);
-
-    if (info.num_side_sets > 0) {
-      // Create elemGTL map which is used for sidesets (also element sets)
-      build_global_to_local_elem_map();
-    }
-    
-    get_sideset_data(exodusId, info.num_side_sets);
-    
-    // Have all the decomposition data needed (except for boundary
-    // conditions...)
-    // Can now populate the Ioss metadata...
+    zz.LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs, &import_to_part);
+    zz.LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
   }
 
   void DecompositionData::build_global_to_local_elem_map()
@@ -717,6 +955,7 @@ namespace Iopx {
 	sum += overlap * element_nodes;
       }
       fileBlockIndex[b+1] = fileBlockIndex[b] + ebs[b].num_entry;
+      el_blocks[b].topologyType = ebs[b].topology;
     }
 
     pointer.reserve(elementCount+1);

@@ -413,7 +413,7 @@ namespace Iopx {
 			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 			 const Ioss::PropertyManager &props) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
-    decomp(communicator),
+    decomp(properties, communicator),
     exodusFilePtr(-1), databaseTitle(""), exodusMode(EX_CLOBBER), dbRealWordSize(8),
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
@@ -971,6 +971,8 @@ namespace Iopx {
       if (is_input()) {
 	DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 	Ioss::SerializeIO	serializeIO__(this);
+	Ioss::MapContainer file_data(decomp.nodeCount);
+	int error = 0;
 	// Check whether there is a "original_global_id_map" map on
 	// the database. If so, use it instead of the "node_num_map".
 	bool map_read = false;
@@ -982,8 +984,6 @@ namespace Iopx {
 	    exodus_error(get_file_pointer(), __LINE__, -1);
 
 	  if (map_count == 1 && Ioss::Utils::case_strcmp(names[0], "original_global_id_map") == 0) {
-	    int error = 0;
-	    Ioss::MapContainer file_data(decomp.nodeCount);
 	    if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
 	      error = ex_get_partial_num_map(get_file_pointer(), EX_NODE_MAP, 1,
 					     decomp.nodeOffset+1, decomp.nodeCount, TOPTR(file_data));
@@ -995,21 +995,13 @@ namespace Iopx {
 	      std::copy(tmp_map.begin(), tmp_map.end(), file_data.begin());
 	    }
 	    if (error >= 0) {
-	      new_this->decomp.communicate_node_data(TOPTR(file_data), &nodeMap[1], 1);
 	      map_read = true;
-	    } else {
-	      // Clear out the vector...
-	      Ioss::MapContainer().swap(nodeMap);
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      map_read = false;
 	    }
 	  }
 	  delete_exodus_names(names, map_count);
 	}
 
 	if (!map_read) {
-	  int error = 0;
-	  Ioss::MapContainer file_data(decomp.nodeCount);
 	  if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
 	    error = ex_get_partial_id_map(get_file_pointer(), EX_NODE_MAP,
 					  decomp.nodeOffset+1, decomp.nodeCount, TOPTR(file_data));
@@ -1020,14 +1012,15 @@ namespace Iopx {
 					  decomp.nodeOffset+1, decomp.nodeCount, TOPTR(tmp_map));
 	    std::copy(tmp_map.begin(), tmp_map.end(), file_data.begin());
 	  }
-	  if (error >= 0) {
-	    new_this->decomp.communicate_node_data(TOPTR(file_data), &nodeMap[1], 1);
-	  }
-	  if (error < 0) {
-	    // Clear out the vector...
-	    Ioss::MapContainer().swap(nodeMap);
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
+	}
+
+	if (error >= 0) {
+	  new_this->decomp.communicate_node_data(TOPTR(file_data), &nodeMap[1], 1);
+	} else {
+	  // Clear out the vector...
+	  Ioss::MapContainer().swap(nodeMap);
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  map_read = false;
 	}
 
 	// Check for sequential node map.
@@ -1065,6 +1058,9 @@ namespace Iopx {
       elementMap.resize(elementCount+1);
 
       if (is_input()) {
+	int error = 0;
+	Ioss::MapContainer file_data(decomp.elementCount);
+
 	DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 	Ioss::SerializeIO	serializeIO__(this);
 	  
@@ -1080,8 +1076,6 @@ namespace Iopx {
 	    exodus_error(get_file_pointer(), __LINE__, -1);
 
 	  if (map_count == 1 && Ioss::Utils::case_strcmp(names[0], "original_global_id_map") == 0) {
-	    int error = 0;
-	    Ioss::MapContainer file_data(decomp.elementCount);
 	    if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
 	      error = ex_get_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 1,
 					     decomp.elementOffset+1, decomp.elementCount, TOPTR(file_data));
@@ -1094,21 +1088,13 @@ namespace Iopx {
 		std::copy(tmp_map.begin(), tmp_map.end(), file_data.begin());
 	    }
 	    if (error >= 0) {
-	      new_this->decomp.communicate_element_data(TOPTR(file_data), &elementMap[1], 1);
 	      map_read = true;
-	    } else {
-	      // Clear out the vector...
-	      Ioss::MapContainer().swap(elementMap);
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      map_read = false;
 	    }
 	  }
 	  delete_exodus_names(names, map_count);
 	}
 
 	if (!map_read) {
-	  int error = 0;
-	  Ioss::MapContainer file_data(decomp.elementCount);
 	  if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
 	    error = ex_get_partial_id_map(get_file_pointer(), EX_ELEM_MAP,
 					  decomp.elementOffset+1,decomp.elementCount, TOPTR(file_data));
@@ -1120,15 +1106,16 @@ namespace Iopx {
 	    if (error >= 0)
 	      std::copy(tmp_map.begin(), tmp_map.end(), file_data.begin());
 	  }
-	  if (error >= 0) {
-	    new_this->decomp.communicate_element_data(TOPTR(file_data), &elementMap[1], 1);
-	  }
-	  if (error < 0) {
-	    // Clear out the vector...
-	    Ioss::MapContainer().swap(elementMap);
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
 	}
+
+	if (error < 0) {
+	  // Clear out the vector...
+	  Ioss::MapContainer().swap(elementMap);
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	}
+
+	new_this->decomp.communicate_element_data(TOPTR(file_data), &elementMap[1], 1);
+	
 	// Check for sequential element map.
 	// If not, build the reverse G2L element map...
 	elementMap[0] = -1;
@@ -2905,7 +2892,7 @@ namespace Iopx {
 		const Ioss::MapContainer &map = get_node_map();
 
 		size_t j=0;
-		for (int64_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
+		for (size_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
 		  int local_id = decomp.nodeCommMap[i];
 		  entity_proc[j++] = map[local_id];
 		  entity_proc[j++] = decomp.nodeCommMap[i+1];
@@ -2915,7 +2902,7 @@ namespace Iopx {
 		const Ioss::MapContainer &map = get_node_map();
 
 		size_t j=0;
-		for (int64_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
+		for (size_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
 		  int64_t local_id = decomp.nodeCommMap[i];
 		  entity_proc[j++] = map[local_id];
 		  entity_proc[j++] = decomp.nodeCommMap[i+1];

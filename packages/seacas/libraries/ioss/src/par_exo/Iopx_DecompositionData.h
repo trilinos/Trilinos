@@ -6,6 +6,7 @@
 #undef MPICPP
 #include <zoltan_cpp.h>
 #include <exodusII_par.h>
+#include <Ioss_PropertyManager.h>
 
 namespace Ioss {
   class Field;
@@ -31,6 +32,8 @@ namespace Iopx {
       size_t fileCount;
       size_t iossCount;
 
+      std::string topologyType;
+	
       // maps from file-block data to ioss-block data
       // The local_map.size() elements starting at local_ioss_offset are local.
       // ioss[local_ioss_offset+i] = file[local_map[i]];
@@ -79,7 +82,7 @@ namespace Iopx {
   
   class DecompositionData {
   public:
-    DecompositionData(MPI_Comm communicator);
+    DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator);
 
     void decompose_model(int exodusId);
       
@@ -218,6 +221,29 @@ namespace Iopx {
 
   private:
 
+    /*! 
+     * The properties member data contains properties that can be used
+     * to set database-specific options.  By convention, the property
+     * name is all uppercase. Some existing properties recognized by
+     * the DecompositionData class are:
+     *
+     * | Property              | Value
+     * |-----------------------|-------------------
+     * | DECOMPOSITION_METHOD  | LINEAR, (internal)
+     * |                       | RCB, RIB, HSFC, BLOCK, CYCLIC, RANDOM, (zoltan)
+     * |                       | KWAY, GEOM_KWAY, METIS_SFC (metis)
+     */
+    Ioss::PropertyManager properties;
+
+    void zoltan_decompose(const std::string &method);
+    void metis_decompose(const std::string &method,
+			 const std::vector<Iopx::MY_INT> &element_dist,
+			 const std::vector<Iopx::MY_INT> &pointer,
+			 const std::vector<Iopx::MY_INT> &adjacency);
+
+    void simple_decompose(const std::string &method,
+			  const std::vector<Iopx::MY_INT> &element_dist);
+    
     int get_one_set_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index, double* attrib) const;
     int get_one_node_attr(int exoid, ex_entity_id obj_id, int attrib_index, double* attrib) const;
     int get_one_elem_attr(int exoid, ex_entity_id obj_id, int attrib_index, double* attrib) const;
