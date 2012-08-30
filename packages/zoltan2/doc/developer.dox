@@ -14,6 +14,8 @@
 <li> \ref z2_developer_example
 </ul>
 
+<hr>
+
 \section z2_developer_organization Organization of an algorithm
 
 Algorithms in Zoltan2 are namespace methods.  They are called by a
@@ -31,6 +33,12 @@ methods for handling exceptions, profiling and status messages.
 Parallel communication is performed with the Teuchos::Comm object.
 Probably the easiest way to do this is by using the helper functions in 
 \ref z2_developer_teuchos_comm.
+
+The Environment also has a communicator, which is the communicator for
+the entire application.  The communicator passed in as the 2nd
+argument of the algorithm is the communicator for the problem, which
+may be different if the problem is being solved over
+a subset of the entire application.
 
 The Zoltan2::Model is created by the Problem based on the type of
 input provided by the user and information in the user's parameters.
@@ -55,6 +63,34 @@ algorithm writes back the assignment of
 part numbers to global identifiers.  The user can obtain the solution
 by way of the method Zoltan2::PartitioningProblem::getSolution().
 
+\code 
+template <typename Adapter>
+void myAlgorithm(
+  const RCP<const Environment> &env,
+  const RCP<Comm<int> > &problemComm,
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
+  RCP<PartitioningSolution<Adapter> > &solution
+)
+{
+  typedef typename Adapter::lno_t lno_t;     // local ids
+  typedef typename Adapter::gno_t gno_t;     // global ids
+  typedef typename Adapter::scalar_t scalar_t;   // scalars
+
+  gno_t *globalNumbers=NULL;
+  partId_t *partNumbers=NULL;
+
+  size_t numGnos = callSolve(env, problemComm, graph,
+    globalNumbers, partNumbers);
+
+  ArrayRCP<const gno_t> gnos = arcp(globalNumbers, 0, numGnos, true);
+  ArrayRCP<const partId_t> gnoPart = arcp(partNumbers, 0, numGnos, true);
+
+  solution->setParts(gnos, gnoPart);
+}
+\endcode
+
+<hr>
+
 \section z2_developer_environment The Environment
 
 The Zoltan2::Environment object is created by the Zoltan2::Problem.  It is
@@ -74,6 +110,7 @@ methods to print out warnings and status information, handle exceptions,
 time algorithm steps, and display information about the amount of memory
 in use.
 
+<hr>
 \section z2_developer_ids Global identifiers and data types
 
 Zoltan2 is a package in the <a href=http://trilinos.org/ >
@@ -81,32 +118,40 @@ Trilinos</a> framework and it uses the linear algebra classes in
 the templated Tpetra package.  The
 data types permitted for global identifiers in Tpetra are those for which
 specializations of the Teuchos::OrdinalTraits exist.  In particular
-we use \c int or \c long for the global identifiers of linear
+we use \c int or \c long internally for the global identifiers of linear
 algebra objects.
 
 For historical reasons, Zoltan2 allows the user a broader range of data types
 for their identifiers.  In particular, any data type for which a
 specialization of Zoltan2::IdentifierTraits is defined is allowed.
+For example, a global identifier could be a std::pair<int, int>
+to represent matrix non-zeros <em> (i, j) </em>.  Or the global
+identifier could be an arbitrary string.
 
-If the user's global identifiers are not teuchos ordinals, 
+If the user's global identifiers are not Teuchos Ordinals, 
 the Zoltan2::Model maps them to new global identifiers which
-\e are teuchos ordinals. 
+\e are Teuchos Ordinals. 
 
 By convention we use these typedef names:
 
 \li \b gid_t (global id) the data type of the user's global identifiers
 \li \b gno_t (global number) our internal global identifier
 
-It is more efficient if Zoltan2 can use the user's global identifiers without
+It is obviously more efficient if Zoltan2 can use the user's global identifiers without
 having to map them.  We have to map them only if:
 
- - the \c gid_t is not a Teuchos ordinal or,
+ - the \c gid_t is not a Teuchos Ordinal or,
  - the algorithm requires consecutive global ids and the user did not provide consecutive ids
 
 The Zoltan2::Solution object uses mapping information in the Zoltan2::Model
 to map the internal \c gno_t ids back to the user's \c gid_t ids if
-necessary.  In this way, the algorithm can give \c gno_t ids to the Solution, but the user can retrieve \c gid_t ids.
+necessary.  In this way, the algorithm can work with \c gno_t ids and
+supply these to the Solution, but the user can retrieve \c gid_t ids.
 
+The complexity of mapping between user global identifiers and internal global
+identifiers is encapsulated in the Zoltan2::Model.
+
+<hr>
 \section z2_developer_naming Naming
 
 All Zoltan2 symbols are in the namespace \b Zoltan2.
@@ -116,13 +161,14 @@ in directory Trilinos/doc/TrilinosCodingDocGuidelines.
 
 Templated code is in \b .hpp files and non-templated code is in \b .cpp files.
 
+<hr>
 \section z2_developer_exceptions Error handling
 
 We check for three types of errors:
 
   \li \b bug which is an event that would not occur if the code had been written correctly (throws a std::logic_error)
   \li \b input which is an error is due to bad user data or parameter values (throws a std::runtime_error)
-  \li \b memory which is when we are unable to allocate the needed memory (throws a std::bad_allc)
+  \li \b memory which is when we are unable to allocate the needed memory (throws a std::bad_alloc)
 
 In addition, a check can be local or global.  In a global check, all processes report an error if any process has an error.  Local checks are non-synchronizing.
 
@@ -153,26 +199,41 @@ The methods that perform the tests are in the Zoltan2::Environment.  They are:
 
 The Zoltan2::AssertionLevel enumerator defines the levels that are provided in the calls.  
 
-
-
-
-
-
+<hr>
 \section z2_developer_status_info Status and debugging output
 
 The following parameters govern behavior of messages from Zoltan2:
 
- - \c debug_level which is the amount of verbosity
- - \c debug_procs which specifies the processes that will print output
- - \c debug_output_file which is the name of a file to receive the output (the rank of the process doing the output is appended to the file name)
- - \c debug_output_stream which can be \c cout or \c cerr
+ - \ref debug_level which is the amount of verbosity
+ - \ref debug_procs which specifies the processes that will print output
+ - \ref debug_output_file which is the name of a file to receive the output (the rank of the process doing the output is appended to the file name)
+ - \ref debug_output_stream which can be \c cout or \c cerr
 
 The Zoltan2::Environment::debug() message is used for printing out debug and status information and warnings.  The call should specify the Zoltan2::MessageOutputLevel (the verbosity of the message). 
 
 The Zoltan2::Environment::getDebugLevel() call should  be checked before creating a lengthy message.  This will ensure that work is not done for a detailed message if the users \c debug_level parameter did not request it.
 
-
+<hr>
 \section z2_developer_profiling Profiling
+
+The Zoltan2::Environment object which is passed to almost every function
+has methods that can be used to time sections of code and (on Linux
+systems) to print out the memory in use by the process.  The behavior of
+these methods depends on the how the user set these parameters:
+
+ - \ref memory_output_file
+ - \ref memory_output_stream
+ - \ref memory_procs
+ - \ref timer_output_file
+ - \ref timer_output_stream
+ - \ref timer_type
+
+The memory count is read from <tt> /proc/{pid}/statm </tt> and output to the designated file or stream while the application is running.  The timers are managed
+by a Teuchos::TimeMonitor object in the Problem.  The timer summary is output to the designated file or stream and timers are reset to zero when the application calls Zoltan2::Problem::printTimers().
+
+For timers, the concept of \ref timer_type refers to the concept of <tt> macro_timers </tt> and <tt> micro_timers </tt>.  In general, the micro timers time subsets of actions that are timed by the macro timers.  At run-time you can choose which timers to activate.  For developers, there are also <tt> test_timers </tt>  These are timers you may add while doing development or doing performance studies.  The expectation is that you will remove them when done.
+
+<hr>
 \section z2_developer_rcp Use of Teuchos smart pointers
 
 Smart pointers remove the need for the programmer to keep track of
@@ -199,14 +260,15 @@ Using Teuchos memory management classes can increase the time to write code, and
 
 A detailed report on Teuchos memory management classes can be found in the directory Trilinos/doc/TeuchosMemoryManagementSAND.
 
+<hr>
 \section z2_developer_parameters How to add a parameter
 
 Zoltan2 uses Teuchos::ParameterList and Teuchos::ParameterEntryValidator. To
 add another parameter you add it to %XML definition of the ParameterList in
 zoltan2/data/parameters.xml.  
 
-At compile time, the script 
-zoltan2/scripts/xml2headerFile.py creates the header file 
+At compile time, the program
+zoltan2/util/xmlToHeaderDefinition.cpp creates the header file 
 zoltan2_binary_directory/src/Zoltan2_XML_Parameters.hpp.  This header file
 contains a macro that has the %XML string defining the parameters.  It is
 used at run-time in the namespace method Zoltan2::createAllParameters().
@@ -245,6 +307,7 @@ that is included in the \c Validator element.  When parameter documentation
 is generated, either by Teuchos at run-time or by a script in \c doc/build_docs,
 it includes the validator information.
 
+<hr>
 \section z2_developer_example Example
 
 The block algorithm in Zoltan2_AlgBlock.hpp exists a simple example

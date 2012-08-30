@@ -9,21 +9,18 @@
 
 Information specifically for developers can be found at \ref z2_developer.
 
-These pages are under construction...
-
 \section z2_main_intro Introduction to Zoltan2
 
 Zoltan2 is a refactoring of the <a href=http://www.cs.sandia.gov/Zoltan >
 Zoltan </a>
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
-This library is currently under active development, and is still 
-in pre-copyright status.  
+This library is currently under active development.
 
 Partitioning functionality that is available now is:
 
 <ul>
-<li> \ref blockPage for simple weighted identifiers.
+<li> \ref blockPage for simple weighted identifiers (really created as a sample algorithm).
 <li> \ref rcbPage for weighted geometric coordinates.
 <li> \ref scotchPartPage for undirected weighted graphs.
 </ul>
@@ -39,9 +36,9 @@ Serial ordering available now is:
 <li> Random
 </ul>
 
-\section z2_main_overview Overview of the Zoltan2 library
+\section z2_main_overview Overview of the library usage
 
-\subsection Typical steps
+\subsection z2_main_overview_partitioning Basic partitioning
 
 Here we describe the typical user interaction with Zoltan2.  We use partitioning as an example.
 
@@ -57,15 +54,19 @@ Here we describe the typical user interaction with Zoltan2.  We use partitioning
 
 Zoltan2::MeshInput will be available soon.
 
-2. Create a Teuchos::ParameterList with your Zoltan2 parameters.  If you are using a third party library (PT-Scotch, ParMetis) you can include a sublist of parameters for this library.  Parameters are listed here. (TODO - generate doxygen list from xml file of parameters.)
+2. Create a Teuchos::ParameterList with your Zoltan2 parameters.  If you are using a third party library (PT-Scotch, ParMetis) you can include a sublist of parameters for this library.  See \ref z2_parameters for a detailed list of parameterse.
 
-3. Create a Zoltan2::PartitioningProblem.  It is templated on your Zoltan2::InputAdapter type.  The constructor arguments are your input adapter and your parameter list.
+3. Create a Zoltan2::PartitioningProblem.  It is templated on your Zoltan2::InputAdapter type.  The constructor arguments are typically your input adapter and your parameter list.
 
 4. Call Zoltan2::PartitioningProblem::solve().
 
 5. Obtain a Zoltan2::PartitioningSolution object from the Zoltan2::PartitioningProblem.
 
-\section z2_main_examples Examples of Zoltan2 usage
+\subsection z2_main_overview_metrics Obtaining partition quality 
+
+\subsection z2_main_overview_repartitioning Repartitioning
+
+\section z2_main_examples_partitioning Partitioning examples
 
 Examples include the following:
 
