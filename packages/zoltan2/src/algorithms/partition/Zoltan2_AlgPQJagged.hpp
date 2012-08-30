@@ -44,7 +44,7 @@
 // @HEADER
 
 /*! \file Zoltan2_AlgPQJagged.hpp
-\brief Contains the recursive coordinate bisection algorthm.
+\brief Contains the PQ-jagged algorthm.
  */
 
 #ifndef _ZOLTAN2_ALGPQJagged_HPP_
@@ -2289,7 +2289,7 @@ void AlgPQJagged(
   bool *pqJagged_uniformWeights = allocMemory< bool >(criteriaDim);
 
   ArrayView<const gno_t> pqJagged_gnos;
-  size_t numGlobalParts;
+  partId_t numGlobalParts;
   int pqJagged_multiVectorDim;
 
 
@@ -2326,8 +2326,10 @@ void AlgPQJagged(
   }
 
   // coordinates of the cut lines. First one is the min, last one is max coordinate.
+  // kddnote if (keep_cuts)
   scalar_t *allCutCoordinates = allocMemory< scalar_t>(totalDimensionCut);
-  //scalar_t *allCutCoordinates = allocMemory< scalar_t>(maxCutNo * k);
+  // kddnote else
+  //scalar_t *allCutCoordinates = allocMemory< scalar_t>(maxCutNo * concurrentPartCount);
 
   lno_t *partitionedPointCoordinates =  allocMemory< lno_t>(numLocalCoords);
   lno_t *newpartitionedPointCoordinates = allocMemory< lno_t>(numLocalCoords);
@@ -2478,7 +2480,7 @@ void AlgPQJagged(
   }
 #endif
 #endif
-
+  // kddnote  Needed only when non-rectilinear parts.
   scalar_t *cutWeights = allocMemory<scalar_t>(maxCutNo);
   scalar_t *globalCutWeights = allocMemory<scalar_t>(maxCutNo);
 
@@ -2533,6 +2535,7 @@ void AlgPQJagged(
     }
 
 
+    // kddnote ::  we got this far.
     for (; currentWorkPart < currentPartitionCount; currentWorkPart += concurrentPart){
 
       concurrentPart = min(currentPartitionCount - currentWorkPart, concurrentPartCount);
@@ -2575,6 +2578,9 @@ void AlgPQJagged(
 
 
       partId_t allDone = 0;
+      // Compute weight ratios for parts & cuts: 
+      //  e.g., 0.25  0.25  0.5    0.5  0.75 0.75  1
+      //       part0  cut0  part1 cut1 part2 cut2 part3
       for(int kk = 0; kk < concurrentPart; ++kk){
         scalar_t minCoordinate = globalMinMaxTotal[kk];
         scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
@@ -2842,8 +2848,3 @@ void AlgPQJagged(
 
 
 #endif
-
-
-
-
-
