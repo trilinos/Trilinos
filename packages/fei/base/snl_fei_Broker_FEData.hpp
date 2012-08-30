@@ -103,18 +103,19 @@ namespace snl_fei {
     /** Produce an instance of an fei::Matrix
      */
     virtual fei::SharedPtr<fei::Matrix> createMatrix()
-      {
-	fei::SharedPtr<fei::Matrix> mptr;
-	if (matrixGraph_.get() == NULL) return(mptr);
+    {
+      fei::SharedPtr<fei::Matrix> mptr;
+      if (matrixGraph_.get() == NULL) return(mptr);
 
-	if (setStructure() != 0) return(mptr);
-        int localsize = matrixGraph_->getRowSpace()->getNumIndices_Owned();
+      if (setStructure() != 0) return(mptr);
+      int localsize = matrixGraph_->getRowSpace()->getNumIndices_Owned();
 
-	fei::SharedPtr<fei::Matrix> matptr;
-        matptr.reset(new fei::Matrix_Impl<FiniteElementData>(feData_,
-						     matrixGraph_, localsize));
-	return(matptr);
-      }
+      bool zeroSharedRows = false;
+      fei::SharedPtr<fei::Matrix> matptr;
+      matptr.reset(new fei::Matrix_Impl<FiniteElementData>(feData_,
+            matrixGraph_, localsize, zeroSharedRows));
+      return(matptr);
+    }
 
     /** Produce an instance of an fei::LinearSystem
      */

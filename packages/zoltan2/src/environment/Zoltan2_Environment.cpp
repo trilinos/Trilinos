@@ -117,7 +117,10 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
   debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false),
   memoryOutputFile_()
 {
-  commitParameters();
+  try{
+    commitParameters();
+  }
+  Z2_FORWARD_EXCEPTIONS
 }
 
 Environment::Environment():
@@ -130,7 +133,10 @@ Environment::Environment():
   myRank_ = comm_->getRank();
   numProcs_ = comm_->getSize();
 
-  commitParameters();
+  try{
+    commitParameters();
+  }
+  Z2_FORWARD_EXCEPTIONS
 }
 
 Environment::~Environment()
@@ -152,7 +158,11 @@ void Environment::commitParameters()
   if (!emptyList){
 
     ParameterList validParams;
-    createValidatorList(params_, validParams);
+
+    try{
+      createValidatorList(params_, validParams);
+    }
+    Z2_FORWARD_EXCEPTIONS
   
     // Note that since validParams only contains parameters that
     // appear in params_, there are no defaults being set.  We
@@ -268,16 +278,6 @@ void Environment::commitParameters()
 #endif
 }
   
-bool Environment::hasSublist(const Teuchos::ParameterList &pl, 
-                             const std::string &listName) const
-{
-  const Teuchos::ParameterEntry *entry = pl.getEntryPtr(listName);
-  if (entry && entry->isList())
-    return true;
-
-  return false;
-}
-
 void Environment::convertStringToInt(Teuchos::ParameterList &params)
 {
   using Teuchos::ParameterList;

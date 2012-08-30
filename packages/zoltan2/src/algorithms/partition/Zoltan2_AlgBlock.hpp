@@ -47,7 +47,6 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
-#include <Zoltan2_GetParameter.hpp>
 
 #include <sstream>
 #include <string>
@@ -101,9 +100,9 @@ void AlgBlock(
 {
   using std::string;
   using std::ostringstream;
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;     // local ids
+  typedef typename Adapter::gno_t gno_t;     // global ids
+  typedef typename Adapter::scalar_t scalar_t;   // scalars
 
   env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 
@@ -116,34 +115,31 @@ void AlgBlock(
   //    imbalance_tolerance
 
   std::bitset<NUM_BLOCK_PARAMS> params;
-  double imbalanceTolerance=0.0;
-  bool isSet;
-  string strChoice;
+  double imbalanceTolerance=1.1;
 
   const Teuchos::ParameterList &pl = env->getParameters();
 
-  getParameterValue<string>(pl, "partitioning",
-    "objective", isSet, strChoice);
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
 
-  if (isSet && strChoice == string("balance_object_count"))
-    params.set(block_balanceCount);
-  else if (isSet && strChoice ==
-    string("multicriteria_minimize_total_weight"))
-    params.set(block_minTotalWeight);
-  else if (isSet && strChoice ==
-    string("multicriteria_minimize_maximum_weight"))
-    params.set(block_minMaximumWeight);
-  else if (isSet && strChoice ==
-    string("multicriteria_balance_total_maximum"))
-    params.set(block_balanceTotalMaximum);
+  if (pe){
+    string po;
+    po = pe->getValue<string>(&po);
+    if (po == string("balance_object_count"))
+      params.set(block_balanceCount);
+    else if (po == string("multicriteria_minimize_total_weight"))
+      params.set(block_minTotalWeight);
+    else if (po == string("multicriteria_minimize_maximum_weight"))
+      params.set(block_minMaximumWeight);
+    else if (po == string("multicriteria_balance_total_maximum"))
+      params.set(block_balanceTotalMaximum);
+  }
   else
     params.set(block_balanceWeight);
 
-  getParameterValue<double>(pl, "partitioning",
-    "imbalance_tolerance", isSet, imbalanceTolerance);
+  pe = pl.getEntryPtr("imbalance_tolerance");
 
-  if (!isSet)
-    imbalanceTolerance = 1.1;
+  if (pe)
+    imbalanceTolerance = pe->getValue<double>(&imbalanceTolerance);
 
   ////////////////////////////////////////////////////////
   // From the IdentifierModel we need:
@@ -172,8 +168,10 @@ void AlgBlock(
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   size_t numLocalParts = solution->getLocalNumberOfParts();
-  if (numLocalParts != 1){
-  }
+
+  env->localInputAssertion(__FILE__, __LINE__, 
+    "can only compute one part per proc",
+    numLocalParts == 1, BASIC_ASSERTION);
   
   ////////////////////////////////////////////////////////
   // The algorithm

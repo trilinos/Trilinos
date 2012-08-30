@@ -163,6 +163,13 @@ namespace fei {
     */
     virtual int scatterToOverlap() = 0;
 
+    /** perform initial communication to establish message sizes that will
+      be needed for exchanging shared-node data.
+      Called from within gatherFromOverlap usually, doesn't usually need to
+      be explicitly called by client code. (Power users only...)
+    */
+    virtual void setCommSizes() = 0;
+
     /** Gather data from the overlapping data decomposition into the underlying
 	non-overlapping data decomposition.
     */
@@ -199,6 +206,13 @@ namespace fei {
 				const int* IDs,
 				const double* data,
 				int vectorIndex=0) = 0;
+
+    virtual int copyInFieldDataLocalIDs(int fieldID,
+        int idType,
+        int numIDs,
+        const int* localIDs,
+        const double* data,
+        int vectorIndex=0) = 0;
 
     /** Copy field data out of the vector into the user-allocated data array.
       If the specified fieldID doesn't exist at one or more of the specified

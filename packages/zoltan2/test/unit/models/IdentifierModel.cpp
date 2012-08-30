@@ -53,6 +53,7 @@
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <set>
+#include <bitset>
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>

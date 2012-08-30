@@ -95,11 +95,11 @@ namespace Xpetra {
     TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source)))) {  }
 
-    //! Set multi-vector values from two-dimensional array (copy).
+    //! Create multivector by copying two-dimensional array of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Scalar > &A, size_t LDA, size_t NumVectors)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), A, LDA, NumVectors))) {  }
 
-    //! Set multi-vector values from array of pointers (copy).
+    //! Create multivector by copying array of views of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), ArrayOfPtrs, NumVectors))) {  }
 
@@ -126,7 +126,7 @@ namespace Xpetra {
     //! Set all values in the multivector with the given value.
     void putScalar(const Scalar &value) { XPETRA_MONITOR("TpetraMultiVector::putScalar"); vec_->putScalar(value); }
 
-    //! For a locally replicated multivector: sum values across all processes.
+    //! Sum values of a locally replicated multivector across all processes.
     void reduce() { XPETRA_MONITOR("TpetraMultiVector::reduce"); vec_->reduce(); }
 
     //@}

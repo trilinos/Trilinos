@@ -17,9 +17,10 @@ using namespace percept;
 
 struct GeometryEvaluator
 {
-    GeometryEvaluator(Part* part) : mMesh(*part) {}
+    GeometryEvaluator(Part* part) : mMesh(*part), mPart(part) {}
     GeometryHandle mGeometry;
     Selector mMesh;
+    Part *mPart;
 };
 
 class MeshGeometry

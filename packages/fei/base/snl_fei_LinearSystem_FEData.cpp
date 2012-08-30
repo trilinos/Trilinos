@@ -152,7 +152,8 @@ int snl_fei::LinearSystem_FEData::implementBCs(bool applyBCs)
   fei::SharedPtr<fei::FillableMat> localBCeqns(new fei::FillableMat);
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph_->getRowSpace();
   int localsize = vecSpace->getNumIndices_Owned();
-  fei::Matrix_Impl<fei::FillableMat> bcEqns(localBCeqns, matrixGraph_, localsize);
+  bool zeroSharedRows = false;
+  fei::Matrix_Impl<fei::FillableMat> bcEqns(localBCeqns, matrixGraph_, localsize, zeroSharedRows);
 
   CHK_ERR( dbcManager_->finalizeBCEqns(bcEqns) );
 

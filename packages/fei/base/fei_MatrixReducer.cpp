@@ -242,6 +242,7 @@ int MatrixReducer::multiply(fei::Vector* x, fei::Vector* y)
 int MatrixReducer::gatherFromOverlap(bool accumulate)
 {
   reducer_->assembleReducedMatrix(*target_);
+  target_->setCommSizes();
   return(target_->gatherFromOverlap(accumulate));
 }
 

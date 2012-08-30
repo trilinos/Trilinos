@@ -1440,3 +1440,20 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     mesh.modification_end();
   }
 }
+
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_final_modification_end)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const unsigned spatial_dim = 2;
+  FEMMetaData meta_data(spatial_dim);
+  meta_data.commit();
+
+  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+
+  mesh.modification_begin();
+  mesh.final_modification_end();
+
+  STKUNIT_ASSERT_THROW(mesh.modification_begin(), std::logic_error );
+
+}

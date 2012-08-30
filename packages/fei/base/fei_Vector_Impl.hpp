@@ -47,12 +47,13 @@
 #include <fei_macros.hpp>
 #include <fei_VectorTraits.hpp>
 
-#include <fei_VectorTraits_FillableVec.hpp>
+#include <fei_VectorTraits_CSVec.hpp>
 #include <fei_VectorTraits_LinSysCore.hpp>
 #include <fei_VectorTraits_LinProbMgr.hpp>
 #include <fei_VectorTraits_FEData.hpp>
 #include <snl_fei_FEVectorTraits.hpp>
 #include <snl_fei_FEVectorTraits_FED.hpp>
+#include <fei_SharedIDs.hpp>
 #include <fei_VectorSpace.hpp>
 #include <fei_Reducer.hpp>
 #include <fei_Logger.hpp>
@@ -119,6 +120,8 @@ namespace fei {
     */
     int scatterToOverlap();
 
+    void setCommSizes();
+
     /** Move any shared data from the overlapping decomposition to the
 	underlying non-overlapping decomposition.
     */
@@ -174,6 +177,13 @@ namespace fei {
 			int idType,
 			int numIDs,
 			const int* IDs,
+			const double* data,
+			int vectorIndex=0);
+
+    int copyInFieldDataLocalIDs(int fieldID,
+			int idType,
+			int numIDs,
+			const int* localIDs,
 			const double* data,
 			int vectorIndex=0);
 
@@ -279,6 +289,39 @@ fei::Vector_Impl<T>::Vector_Impl(fei::SharedPtr<fei::VectorSpace> vecSpace,
     os << dbgprefix_<<" ctor, numLocalEqns="<<numLocalEqns
        <<", typeName: "<<typeName()<<FEI_ENDL;
   }
+
+  std::vector<int> idTypes;
+  vecSpace->getIDTypes(idTypes);
+  std::vector<int> eqns;
+  std::vector<double> zeros;
+  for(size_t i=0; i<idTypes.size(); ++i) {
+    int idType = idTypes[i];
+    fei::SharedIDs<int>& sharedIDs = vecSpace->getSharedIDs(idType);
+    const fei::SharedIDs<int>::map_type& idMap = sharedIDs.getSharedIDs();
+    fei::SharedIDs<int>::map_type::const_iterator
+      iter = idMap.begin(), iterEnd = idMap.end();
+    for(; iter!=iterEnd; ++iter) {
+      int ID = iter->first;
+      int eqn;
+      vecSpace->getGlobalIndex(idType, ID, eqn);
+      int ndof = vecSpace->getNumDegreesOfFreedom(idType, ID);
+      eqns.resize(ndof);
+      zeros.resize(ndof, 0.0);
+      for(int j=0; j<ndof; ++j) eqns[j] = eqn+j;
+      if (!isSolutionVector) {
+        sumIn(ndof, &eqns[0], &zeros[0]);
+      }
+      else {
+        copyIn(ndof, &eqns[0], &zeros[0]);
+      }
+    }
+  }
+
+  setCommSizes();
+  std::vector<CSVec*>& remoteVecs = remotelyOwned();
+  for(size_t i=0; i<remoteVecs.size(); ++i) {
+    remoteVecs[i]->clear();
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -336,6 +379,18 @@ int fei::Vector_Impl<T>::scatterToOverlap()
   }
 
   return( Vector_core::scatterToOverlap() );
+}
+
+//----------------------------------------------------------------------------
+template<typename T>
+void fei::Vector_Impl<T>::setCommSizes()
+{
+  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
+    FEI_OSTREAM& os = *output_stream_;
+    os << dbgprefix_<<"setCommSizes"<<FEI_ENDL;
+  }
+
+  Vector_core::setCommSizes();
 }
 
 //----------------------------------------------------------------------------
@@ -453,6 +508,23 @@ int fei::Vector_Impl<T>::copyInFieldData(int fieldID,
   }
 
   return(assembleFieldData(fieldID, idType, numIDs, IDs, data, false, vectorIndex));
+}
+
+//----------------------------------------------------------------------------
+template<typename T>
+int fei::Vector_Impl<T>::copyInFieldDataLocalIDs(int fieldID,
+					int idType,
+					int numIDs,
+					const int* localIDs,
+					const double* data,
+					int vectorIndex)
+{
+  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
+    FEI_OSTREAM& os = *output_stream_;
+    os << dbgprefix_<<"copyInFieldDataLocalIDs(n="<<numIDs<<")"<<FEI_ENDL;
+  }
+
+  return(assembleFieldDataLocalIDs(fieldID, idType, numIDs, localIDs, data, false, vectorIndex));
 }
 
 //----------------------------------------------------------------------------

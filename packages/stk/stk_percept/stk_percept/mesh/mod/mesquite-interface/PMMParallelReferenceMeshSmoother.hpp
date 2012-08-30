@@ -8,8 +8,8 @@
 #ifndef PMMParallelReferenceMeshSmoother_hpp
 #define PMMParallelReferenceMeshSmoother_hpp
 
-#if !defined(__IBMCPP__)
-#ifdef STK_BUILT_IN_SIERRA
+#include <stk_percept/Percept.hpp>
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
@@ -73,6 +73,7 @@ namespace stk {
       NodeMap m_weight;
       NodeMap m_nweight;
       double m_dmax;
+      double m_dnew, m_dold, m_d0, m_dmid, m_dd, m_alpha, m_grad_norm, m_scaled_grad_norm;
       double m_total_metric;
       int m_stage;
       double m_omega;
@@ -97,6 +98,5 @@ namespace stk {
   }
 }
 
-#endif
 #endif
 #endif

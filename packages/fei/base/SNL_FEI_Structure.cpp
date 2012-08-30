@@ -67,7 +67,6 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 #include "fei_ProcEqns.hpp"
 #include "fei_EqnBuffer.hpp"
 #include <fei_FillableMat.hpp>
-#include <fei_FillableVec.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_CSVec.hpp>
 #include "fei_EqnCommMgr.hpp"
@@ -3121,7 +3120,6 @@ int SNL_FEI_Structure::setNumNodesAndEqnsPerBlock()
    int numBlocks = blockIDs_.size();
    std::vector<int> nodesPerBlock(numBlocks);
    std::vector<int> eqnsPerBlock(numBlocks);
-   GlobalID* blockIDsPtr = &blockIDs_[0];
 
    int j;
    for(j=0; j<numBlocks; j++) {

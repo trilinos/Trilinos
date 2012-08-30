@@ -218,6 +218,8 @@ namespace fei {
     int multiply(fei::Vector* x,
 		 fei::Vector* y);
 
+    void setCommSizes() { target_->setCommSizes(); }
+
     /** After local overlapping data has been input, (e.g., element-data for a
 	finite-element application) call this method to have data that 
 	corresponds to shared identifiers be communicated from sharing-but-not-

@@ -51,24 +51,9 @@ namespace Zoltan2{
 ////////////////////////////////////////////////////////////////////
 // Parameter-related namespace methods 
 
-/*! \brief Create a ParameterList suitable for validating another list.
- *
- *   \param  plIn   a ParameterList that has not been validated yet.
- *   \param  plOut  on return, plOut has exactly the same parameters are
- *                      plIn, but it also has a validator for each parameter.
- *
- *   The validating ParameterList is required to verify that the
- *   input ParameterList is valid.
- */
 void createValidatorList(
    const Teuchos::ParameterList &plIn, Teuchos::ParameterList &plOut);
 
-/*! \brief Print out the ParameterList's built in documenation.
- *
- *   \param  pl      a ParameterList
- *   \param  os      the output stream to which the documentation should go
- *   \param listNames  leave this unset - it is set in recursive calls
- */
 void printListDocumentation( const Teuchos::ParameterList &pl, ostream &os,
   string listNames=string(""));
 
@@ -76,7 +61,7 @@ void printListDocumentation( const Teuchos::ParameterList &pl, ostream &os,
 // Parameter-related enumerated types.
 //
 //  If you change these enumerators, change their documentation
-//  in Zoltan2_Parameters.cpp.
+//  in data/parameters.xml.
 //
 
 /*! \brief Level of error checking or assertions desired.

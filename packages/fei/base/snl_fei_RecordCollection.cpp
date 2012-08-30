@@ -82,6 +82,28 @@ snl_fei::RecordCollection::~RecordCollection()
 {
 }
 
+void snl_fei::RecordCollection::setIDMap(
+          const int* localIDs_begin, const int* localIDs_end,
+          const int* globalIDs_begin, const int* globalIDs_end)
+{
+  int numLocal = localIDs_end - localIDs_begin;
+  int numGlobal = globalIDs_end - globalIDs_begin;
+  if (numLocal != numGlobal) {
+    throw std::runtime_error("RecordCollection::setIDMap ERROR, num local IDs must match num global IDs.");
+  }
+  m_global_to_local.clear();
+  m_records.resize(numLocal);
+  const int* localID_iter = localIDs_begin;
+  const int* globalID_iter = globalIDs_begin;
+  for(int i=0; i<numLocal; ++i) {
+    int lid = *localID_iter++;
+    int gid = *globalID_iter++;
+    m_records[lid].setID(gid);
+    m_records[lid].setOwnerProc(localProc_);
+    m_global_to_local.insert(std::make_pair(gid, lid));
+  }
+}
+
 //----------------------------------------------------------------------------
 void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
                                             std::vector<fei::FieldMask*>& fieldMasks,
@@ -174,9 +196,13 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
         recordLocalIDs[i] = local_id;
       }
 
+      fei::FieldMask* thisMask = record.getFieldMask();
+      if (thisMask == NULL) {
+        record.setFieldMask(mask);
+      }
+
       int thisMaskID = record.getFieldMask()->getMaskID();
 
-      fei::FieldMask* thisMask = record.getFieldMask();
       if (maskID == thisMaskID || thisMask->hasFieldID(fieldID)) {
         continue;
       }
@@ -324,3 +350,49 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
   return(globalIndex);
 }
 
+//----------------------------------------------------------------------------
+int snl_fei::RecordCollection::getGlobalIndexLocalID(int localID,
+                                              int fieldID,
+                                              int fieldSize,
+                                              int fieldOffset,
+                                              int whichComponentOfField,
+                                              const int* eqnNumbers)
+{
+  fei::Record<int>* record = getRecordWithLocalID(localID);
+  if (record == NULL) {
+    FEI_OSTRINGSTREAM osstr;
+    osstr << "snl_fei::RecordCollection::getGlobalIndexLocalID ERROR, no record with "
+       << "localID=" << localID;
+    throw std::runtime_error(osstr.str());
+  }
+
+  fei::FieldMask* mask = record->getFieldMask();
+  int offset = 0;
+  try {
+    mask->getFieldEqnOffset(fieldID, offset);
+  }
+  catch (...) {
+    FEI_OSTRINGSTREAM osstr;
+    osstr << "failed to get eqn-offset for fieldID " << fieldID
+          << " on record with localID " << localID << ".";
+    throw std::runtime_error(osstr.str());
+  }
+
+  const int* eqnNums = eqnNumbers + record->getOffsetIntoEqnNumbers();
+  if (eqnNums == NULL) {
+    FEI_OSTRINGSTREAM osstr;
+    osstr << "snl_fei::RecordCollection::getGlobalIndex ERROR: null pointer,"
+         << " possibly because initComplete() hasn't been called yet?";
+    throw std::runtime_error(osstr.str());
+  }
+
+  int globalIndex = -1;
+  if (fieldOffset > 0) {
+    globalIndex = eqnNums[offset + fieldOffset*fieldSize + whichComponentOfField];
+  }
+  else {
+    globalIndex = eqnNums[offset + whichComponentOfField];
+  }
+
+  return(globalIndex);
+}

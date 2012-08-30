@@ -43,7 +43,7 @@
 //
 // @HEADER
 //
-// Testing initialization of parameters.  Serial test.
+// Testing integer range list parameters.  Serial test.
 
 #include <Zoltan2_config.h>
 #include <Zoltan2_Environment.hpp>
@@ -155,31 +155,27 @@ int main(int argc, char *argv[])
 
   all.set("random_seed", .12121212);
 
-  Teuchos::ParameterList &parParams = all.sublist("partitioning");
+  all.set("topology", "2,6,6");
 
-  parParams.set("topology", "2,6,6");
+  all.set("randomize_input", "true");
 
-  parParams.set("randomize_input", "true");
+  all.set("partitioning_objective", "minimize_cut_edge_weight");
 
-  parParams.set("objective", "minimize_cut_edge_weight");
+  all.set("imbalance_tolerance", 1.2);
 
-  parParams.set("imbalance_tolerance", 1.2);
+  all.set("num_global_parts", 12);
+  all.set("num_local_parts", 2);
 
-  parParams.set("num_global_parts", 12);
-  parParams.set("num_local_parts", 2);
+  all.set("partitioning_approach", "partition");
 
-  parParams.set("approach", "partition");
+  all.set("objects_to_partition", "graph_vertices");
 
-  parParams.set("objects", "graph_vertices");
+  all.set("model", "hypergraph");
 
-  parParams.set("model", "hypergraph");
+  all.set("algorithm", "phg");
 
-  parParams.set("algorithm", "phg");
-
-  Teuchos::ParameterList &graphParams = parParams.sublist("graph");
-
-  graphParams.set("symmetrize_input", "no");
-  graphParams.set("subset_graph", "false");
+  all.set("symmetrize_input", "no");
+  all.set("subset_graph", "false");
 
   try{
     Zoltan2::createValidatorList(all, validParameters);

@@ -76,6 +76,9 @@ namespace snl_fei {
     /** Destructor */
     virtual ~RecordCollection();
 
+    void setIDMap(const int* localIDs_begin, const int* localIDs_end,
+                  const int* globalIDs_begin, const int* globalIDs_end);
+
     /** initialize records for specified IDs */
     void initRecords(int numIDs,
 		     const int* IDs,
@@ -135,6 +138,14 @@ namespace snl_fei {
 
     /** Get global equation index for specified ID */
     int getGlobalIndex(int ID,
+        int fieldID,
+        int fieldSize,
+        int fieldOffset,
+        int whichComponentOfField,
+        const int* eqnNumbers);
+
+    /** Get global equation index for specified local ID */
+    int getGlobalIndexLocalID(int localID,
         int fieldID,
         int fieldSize,
         int fieldOffset,

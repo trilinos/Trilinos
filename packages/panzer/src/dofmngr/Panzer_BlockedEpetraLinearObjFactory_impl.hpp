@@ -66,9 +66,10 @@ namespace panzer {
 // ************************************************************
 
 template <typename Traits,typename LocalOrdinalT>
-BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                                                                                   const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > & blkProvider,
-                                                                                   const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > & gidProviders)
+BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
+                              const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > & blkProvider,
+                              const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > & gidProviders)
    : blockProvider_(blkProvider), blockedDOFManager_(Teuchos::null), comm_(comm)
 { 
    gidProviders_ = gidProviders;
@@ -81,8 +82,9 @@ BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFacto
 }
 
 template <typename Traits,typename LocalOrdinalT>
-BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                                                                                   const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
+BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
+                              const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
    : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(comm)
 { 
    for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
@@ -96,8 +98,9 @@ BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFacto
 }
 
 template <typename Traits,typename LocalOrdinalT>
-BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                                                                   const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
+BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
+                              const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
    : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(Teuchos::null)
 { 
    comm_ = Teuchos::rcp(new Epetra_MpiComm(*(comm->getRawMpiComm())));
@@ -245,9 +248,16 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       RCP<Epetra_Vector> e_f = get_Epetra_Vector(*getGhostedMap(i),th_f);
 
       for(std::size_t j=0;j<blockDim;j++) {
+
          // pull out epetra values
          RCP<LinearOpBase<double> > th_A = A->getNonconstBlock(i,j);
-         RCP<Epetra_CrsMatrix> e_A = rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*th_A),true);
+ 
+         // don't do anyting if opertor is null
+         RCP<Epetra_CrsMatrix> e_A;
+         if(th_A==Teuchos::null)
+            e_A = Teuchos::null;
+         else 
+            e_A = rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*th_A),true);
 
          // adjust Block operator
          adjustForDirichletConditions(*e_local_bcs,*e_global_bcs,e_f.ptr(),e_A.ptr());
@@ -378,6 +388,21 @@ initializeGhostedContainer(int mem,BlockedEpetraLinearObjContainer & loc) const
 }
 
 template <typename Traits,typename LocalOrdinalT>
+void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+addExcludedPair(int rowBlock,int colBlock)
+{
+   excludedPairs_.insert(std::make_pair(rowBlock,colBlock));
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs)
+{
+   for(std::size_t i=0;i<exPairs.size();i++)
+      excludedPairs_.insert(exPairs[i]);
+}
+
+template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGlobalIndexer(int i) const
 {
@@ -471,9 +496,11 @@ getThyraMatrix() const
    // loop over each block
    for(std::size_t i=0;i<blockDim;i++) { 
       for(std::size_t j=0;j<blockDim;j++) {
-         // build (i,j) block matrix and add it to blocked operator
-         Teuchos::RCP<Thyra::LinearOpBase<double> > block = Thyra::nonconstEpetraLinearOp(getEpetraMatrix(i,j));
-         blockedOp->setNonconstBlock(i,j,block);
+         if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
+            // build (i,j) block matrix and add it to blocked operator
+            Teuchos::RCP<Thyra::LinearOpBase<double> > block = Thyra::nonconstEpetraLinearOp(getEpetraMatrix(i,j));
+            blockedOp->setNonconstBlock(i,j,block);
+         }
       }
    }
 
@@ -552,9 +579,11 @@ getGhostedThyraMatrix() const
    // loop over each block
    for(std::size_t i=0;i<blockDim;i++) { 
       for(std::size_t j=0;j<blockDim;j++) {
-         // build (i,j) block matrix and add it to blocked operator
-         Teuchos::RCP<Thyra::LinearOpBase<double> > block = Thyra::nonconstEpetraLinearOp(getGhostedEpetraMatrix(i,j));
-         blockedOp->setNonconstBlock(i,j,block);
+         if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
+            // build (i,j) block matrix and add it to blocked operator
+            Teuchos::RCP<Thyra::LinearOpBase<double> > block = Thyra::nonconstEpetraLinearOp(getGhostedEpetraMatrix(i,j));
+            blockedOp->setNonconstBlock(i,j,block);
+         }
       }
    }
 
@@ -617,20 +646,22 @@ ghostToGlobalThyraMatrix(const Thyra::LinearOpBase<double> & in,Thyra::LinearOpB
 
    for(std::size_t i=0;i<blockDim;i++) {
       for(std::size_t j=0;j<blockDim;j++) {
-         // extract the blocks
-         RCP<const LinearOpBase<double> > th_in = prod_in.getBlock(i,j);
-         RCP<LinearOpBase<double> > th_out = prod_out.getNonconstBlock(i,j);
-
-         // sanity check
-         TEUCHOS_ASSERT(th_in!=Teuchos::null);
-         TEUCHOS_ASSERT(th_out!=Teuchos::null);
-
-         // get the epetra version of the blocks
-         RCP<const Epetra_CrsMatrix> ep_in = rcp_dynamic_cast<const Epetra_CrsMatrix>(get_Epetra_Operator(*th_in),true);
-         RCP<Epetra_CrsMatrix> ep_out      = rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*th_out),true);
-
-         // use Epetra to do global communication
-         ghostToGlobalEpetraMatrix(i,*ep_in,*ep_out);
+         if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
+            // extract the blocks
+            RCP<const LinearOpBase<double> > th_in = prod_in.getBlock(i,j);
+            RCP<LinearOpBase<double> > th_out = prod_out.getNonconstBlock(i,j);
+   
+            // sanity check
+            TEUCHOS_ASSERT(th_in!=Teuchos::null);
+            TEUCHOS_ASSERT(th_out!=Teuchos::null);
+   
+            // get the epetra version of the blocks
+            RCP<const Epetra_CrsMatrix> ep_in = rcp_dynamic_cast<const Epetra_CrsMatrix>(get_Epetra_Operator(*th_in),true);
+            RCP<Epetra_CrsMatrix> ep_out      = rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*th_out),true);
+   
+            // use Epetra to do global communication
+            ghostToGlobalEpetraMatrix(i,*ep_in,*ep_out);
+         }
       }
    }
 }

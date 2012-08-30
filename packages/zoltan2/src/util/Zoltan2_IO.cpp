@@ -53,15 +53,6 @@
 
 namespace Zoltan2{
 
-/*! \brief Helper method to add number to a file name.
- *    \param number the number (such as process rank) to add
- *    \param fname  the file name to modify
- *    \param newf   on return newf is fname with the rank added to the name.
- *
- *   If fname has no dot in it, then the rank is added to the end of the name.
- *   Otherwise the rank is added before the first dot in fname.
- */
-
 void addNumberToFileName(int number, std::string fname, std::string &newf)
 {
   std::ostringstream id;

@@ -242,6 +242,12 @@ public:
    Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > getGlobalIndexer() const
    { return blockedDOFManager_; }
 
+   //! exclude a block pair from the matrix
+   void addExcludedPair(int rowBlock,int colBlock);
+
+   //! exclude a vector of pairs from the matrix
+   void addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs);
+
 protected:
 /*************** Generic methods/members *******************/
 
@@ -255,6 +261,8 @@ protected:
    Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > blockedDOFManager_;
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > gidProviders_;
 
+   // which block entries are ignored
+   boost::unordered_set<std::pair<int,int> > excludedPairs_;
   
 /*************** Thyra based methods/members *******************/
 

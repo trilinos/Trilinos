@@ -8,19 +8,30 @@ SET(HAVE_ZOLTAN2_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
-SET(MAKE_PARAM_HEADER "python ./xml2headerFile.py && cp ./Zoltan2_XML_Parameters.hpp ${PACKAGE_BINARY_DIR}/src")
+# Generate the header file that contains the Zoltan2 parameters.
+# It is only used in compilation.  This header and the data that
+# generates it need not be installed.
 
-EXECUTE_PROCESS(
-  WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/scripts
-  COMMAND ${MAKE_PARAM_HEADER}
-  TIMEOUT 3
+SET(PARAM_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_XML_Parameters.hpp)
+SET(PARAM_DATA ${PACKAGE_SOURCE_DIR}/data/parameters.xml)
+SET(PARAM_BUILDER_NAME xmlToHeaderDefinition)
+SET(PARAM_BUILDER_SRC ${PACKAGE_SOURCE_DIR}/util/${PARAM_BUILDER_NAME}.cpp)
+SET(PARAM_BUILDER_BIN ${CMAKE_CURRENT_BINARY_DIR}/${PARAM_BUILDER_NAME})
+
+ADD_EXECUTABLE(${PARAM_BUILDER_NAME} ${PARAM_BUILDER_SRC})
+
+ADD_CUSTOM_COMMAND(
+  OUTPUT ${PARAM_HEADER}
+  DEPENDS ${PARAM_BUILDER_BIN} ${PARAM_DATA}
+  COMMAND ${PARAM_BUILDER_BIN}
+  ARGS ${PARAM_DATA} ${PARAM_HEADER}
 )
-   
+
 #
 # B) Define the header files, the source files, and the include directories
 #
 
-SET(HEADERS "")
+SET(HEADERS ${PARAM_HEADER})
 SET(SOURCES "")
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -48,6 +59,7 @@ APPEND_GLOB(SOURCES ${DIR}/util/*.cpp)
 
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  ${PARAM_HEADER}
   )
 
 # for Trilinos_version.h

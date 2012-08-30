@@ -145,10 +145,9 @@ int main(int argc, char *argv[])
   params.set("debug_procs", "0");
   params.set("error_check_level", "debug_mode_assertions");
 
-  Teuchos::ParameterList &parParams = params.sublist("partitioning");
-  parParams.set("algorithm", "block");
-  parParams.set("imbalance_tolerance", 1.1);
-  parParams.set("num_global_parts", nprocs);
+  params.set("algorithm", "block");
+  params.set("imbalance_tolerance", 1.1);
+  params.set("num_global_parts", nprocs);
    
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem

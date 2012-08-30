@@ -46,13 +46,6 @@
 
 namespace fei {
 
-CSVec::CSVec(const FillableVec& invec)
- : indices_(invec.size()),
-   coefs_(invec.size())
-{
-  operator=(invec);
-}
-
 CSVec::CSVec(unsigned sz)
  : indices_(sz, 0),
    coefs_(sz, 0.0)
@@ -72,40 +65,9 @@ CSVec::operator=(const CSVec& invec)
   return *this;
 }
 
-CSVec&
-CSVec::operator=(const FillableVec& invec)
+void add_entries(CSVec& vec, int num, const int* eqns, const double* coefs)
 {
-  indices_.resize(invec.size());
-  coefs_.resize(invec.size());
-
-  FillableVec::const_iterator iter = invec.begin(), iter_end = invec.end();
-
-  unsigned i=0;
-  for(; iter != iter_end; ++iter, ++i) {
-    indices_[i] = iter->first;
-    coefs_[i] = iter->second;
-  }
-
-  return *this;
-}
-
-void add_entry(CSVec& vec, int eqn, double coef)
-{
-  std::vector<int>& v_ind = vec.indices();
-  std::vector<double>& v_coef = vec.coefs();
-
-  std::vector<int>::iterator
-    iter = std::lower_bound(v_ind.begin(), v_ind.end(), eqn);
-
-  size_t offset = iter - v_ind.begin();
-
-  if (iter == v_ind.end() || *iter != eqn) {
-    v_ind.insert(iter, eqn);
-    v_coef.insert(v_coef.begin()+offset, coef);
-  }
-  else {
-    v_coef[offset] += coef;
-  }
+  for(int i=0; i<num; ++i) add_entry(vec, eqns[i], coefs[i]);
 }
 
 void put_entry(CSVec& vec, int eqn, double coef)
@@ -125,6 +87,25 @@ void put_entry(CSVec& vec, int eqn, double coef)
   else {
     v_coef[offset] = coef;
   }
+}
+
+double get_entry(const CSVec& vec, int eqn)
+{
+  const std::vector<int>& v_ind = vec.indices();
+  const std::vector<double>& v_coef = vec.coefs();
+
+  if (vec.size() == 0) {
+    throw std::runtime_error("get_entry error, CSVec is empty");
+  }
+
+  std::vector<int>::const_iterator
+    iter = std::lower_bound(v_ind.begin(), v_ind.end(), eqn);
+
+  if (iter == v_ind.end()) {
+    throw std::runtime_error("get_entry error, entry not found.");
+  }
+
+  return v_coef[iter - v_ind.begin()];
 }
 
 void remove_entry(CSVec& vec, int eqn)

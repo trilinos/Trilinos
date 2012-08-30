@@ -119,6 +119,7 @@ int VectorReducer::scatterToOverlap()
 int VectorReducer::gatherFromOverlap(bool accumulate)
 {
   reducer_->assembleReducedVector(isSolution_, *target_);
+  target_->setCommSizes();
   return(target_->gatherFromOverlap(accumulate));
 }
 
@@ -185,6 +186,26 @@ int VectorReducer::copyInFieldData(int fieldID,
   int numIndices = numIDs*fieldSize;
   std::vector<int> indices(numIndices);
   int err = vspace->getGlobalIndices(numIDs, IDs, idType, fieldID, &indices[0]);
+  if (err != 0) {
+    throw std::runtime_error("fei::VectorReducer::copyInFieldData ERROR in vspace->getGlobalIndices.");
+  }
+
+  return(copyIn(numIndices, &indices[0], data, vectorIndex));
+}
+
+//----------------------------------------------------------------------------
+int VectorReducer::copyInFieldDataLocalIDs(int fieldID,
+                                   int idType,
+                                   int numIDs,
+                                   const int* localIDs,
+                                   const double* data,
+                                   int vectorIndex)
+{
+  fei::SharedPtr<fei::VectorSpace> vspace = target_->getVectorSpace();
+  int fieldSize = vspace->getFieldSize(fieldID);
+  int numIndices = numIDs*fieldSize;
+  std::vector<int> indices(numIndices);
+  int err = vspace->getGlobalIndicesLocalIDs(numIDs, localIDs, idType, fieldID, &indices[0]);
   if (err != 0) {
     throw std::runtime_error("fei::VectorReducer::copyInFieldData ERROR in vspace->getGlobalIndices.");
   }

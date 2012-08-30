@@ -301,7 +301,7 @@ SystemInterface::~SystemInterface() {}
 
 void SystemInterface::show_version()
 {
-  std::cout << qainfo[0] << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
+  std::cout << "EXODIFF\t(Version: " << version << ") Modified: " << verdate << '\n';
 }
 
 void SystemInterface::enroll_options()
@@ -362,6 +362,8 @@ void SystemInterface::enroll_options()
 		  "Default tolerance is relative differences of the absolute value of the values.", 0);
   options_.enroll("eigen_combined", GetLongOption::NoValue,
 		  "Default tolerance is combined differences of the absolute value of the values.", 0);
+  options_.enroll("ignore", GetLongOption::NoValue,
+		  "Default tolerance is ignored (turn off all checking by default).", 0);
 
   options_.enroll("show_all_diffs", GetLongOption::NoValue,
 		  "Show all differences for all variables, not just the maximum.", 0);
@@ -747,6 +749,10 @@ bool SystemInterface::parse_options(int argc, char **argv)
     output_type      = RELATIVE;  // Change type to relative.
     default_tol.type = RELATIVE;
   }
+  if (options_.retrieve("ignore")) {
+    output_type      = IGNORE;  // Change type to ignored
+    default_tol.type = IGNORE;
+  }
   if (options_.retrieve("absolute")) {
     output_type      = ABSOLUTE;  // Change type to absolute
     default_tol.type = ABSOLUTE;
@@ -853,10 +859,6 @@ void SystemInterface::Parse_Command_File()
 {
   int default_tol_specified = 0;
 
-  // Set all types to inactive (ignore) by default.
-  coord_tol.type = IGNORE;
-  time_tol.type  = IGNORE;
-
   std::ifstream cmd_file(command_file.c_str(), std::ios::in);
   SMART_ASSERT(cmd_file.good());
 
@@ -906,6 +908,11 @@ void SystemInterface::Parse_Command_File()
 	      else if ( abbreviation(tok, "eigen_combine", 7) )
 		{
 		  default_tol.type = EIGEN_COM;
+		  tok = extract_token( xline, " \n\t=," );
+		}
+	      else if ( abbreviation(tok, "ignore", 3) )
+		{
+		  default_tol.type = IGNORE;
 		  tok = extract_token( xline, " \n\t=," );
 		}
 	      if (tok == "") Parse_Die(line);
@@ -1106,6 +1113,11 @@ void SystemInterface::Parse_Command_File()
 		      if (tok2 == "") Parse_Die(line);
 		      coord_tol.value = To_Double(tok2);
 		    }
+		  else if ( abbreviation(tok2, "ignore", 3) )
+		    {
+		      coord_tol.type = IGNORE;
+		      coord_tol.value = 0.0;
+		    }
 		  else if ( abbreviation(tok2, "floor", 3) )
 		    {
 		      tok2 = extract_token( xline, " \n\t=" );
@@ -1151,6 +1163,11 @@ void SystemInterface::Parse_Command_File()
 		      tok = extract_token( xline, " \n\t=" );
 		      if (tok == "") Parse_Die(line);
 		      time_tol.value = To_Double(tok);
+		    }
+		  else if ( abbreviation(tok, "ignore", 3) )
+		    {
+		      time_tol.type = IGNORE;
+		      time_tol.value = 0.0;
 		    }
 		  else if ( abbreviation(tok, "floor", 3) )
 		    {
@@ -1308,6 +1325,7 @@ namespace {
 	  !abbreviation(tok, "eigen_relative",    7) &&
 	  !abbreviation(tok, "eigen_absolute",    7) &&
 	  !abbreviation(tok, "eigen_combine", 7) &&
+	  !abbreviation(tok, "ignore", 3) &&
 	  !abbreviation(tok, "floor",       3) )
 	{
 	  std::cout << "exodiff: error in parsing command file: unrecognized "
@@ -1415,6 +1433,12 @@ namespace {
 	    exit(1);
 	  }
 	  def_tol.value = To_Double(tok);
+	  tok = extract_token( xline, " \n\t=," );  to_lower(tok);
+	}
+      else if ( abbreviation(tok, "ignore", 3) )
+	{
+	  def_tol.type = IGNORE;
+	  def_tol.value = 0.0;
 	  tok = extract_token( xline, " \n\t=," );  to_lower(tok);
 	}
 

@@ -168,13 +168,10 @@ template <typename Adapter>
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
   bool balanceCountOnly=false;
 
-  bool isSet;
-  string strChoice;
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
 
-  getParameterValue<string>(pl, "partitioning", "objective", 
-    isSet, strChoice);
-
-  if (isSet){
+  if (pe){
+    string strChoice = pe->getValue<string>(&strChoice);
     if (strChoice == string("balance_object_count"))
       balanceCountOnly=true;
     else if (strChoice == string("multicriteria_minimize_total_weight"))

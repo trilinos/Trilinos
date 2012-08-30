@@ -1617,7 +1617,7 @@ void upcase(char* S)
 
 void IOHBTerminate(const char* message) 
 {
-   std::fprintf(stderr,message);
+   std::fprintf(stderr,"%s",message);
    std::exit(1);
 }
 

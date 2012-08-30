@@ -402,7 +402,7 @@ void Exo_Entity::internal_load_params()
       SMART_ASSERT(names[vg] != 0);
       if (std::strlen(names[vg]) == 0) {
 	std::string name = "attribute_" + to_string(vg+1);
-	strncpy(names[vg], name.c_str(), name_size);
+	attributeNames.push_back(name);
       } else if ((int)std::strlen(names[vg]) > name_size) {
 	std::cout << "exodiff: ERROR: " << label()
 		  << " attribute names appear corrupt\n"
@@ -414,11 +414,11 @@ void Exo_Entity::internal_load_params()
 	  std::cout << "\t\t" << k << ") \"" << names[k-1] << "\"\n";
 	std::cout << "                 Aborting..." << std::endl;
 	exit(1);
+      } else {
+	string n(names[vg]);
+	to_lower(n);
+	attributeNames.push_back(n);
       }
-        
-      string n(names[vg]);
-      to_lower(n);
-      attributeNames.push_back(n);
     }
     free_name_array(names, numAttr);
   }

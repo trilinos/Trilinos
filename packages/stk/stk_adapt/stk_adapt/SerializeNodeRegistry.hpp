@@ -113,6 +113,7 @@ namespace stk {
       int m_spatialDim;
       PartMap *m_partMap;
       NodeMap *m_nodeMap;
+      std::string m_geomFile;
 
     public:
       enum { MaxPass = 3 };
@@ -123,7 +124,7 @@ namespace stk {
         m_M(M), m_iM(iM), m_W(W), m_iW(iW), m_M_0(M_0 >= 0 ? M_0 : 0), m_M_1(M_1 >= 0 ? M_1 : M-1),
         m_entity_rank_names(eMesh.get_fem_meta_data()->entity_rank_names()),
         m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(eMesh.element_rank() + 1u),
-        m_partMap(0), m_nodeMap(0)
+        m_partMap(0), m_nodeMap(0), m_geomFile("")
       {
         size_t pos = m_filePrefix.find(".");
         if (pos != std::string::npos)
@@ -139,6 +140,9 @@ namespace stk {
         if (m_partMap) delete m_partMap;
         if (m_nodeMap) delete m_nodeMap;
       }
+
+      void set_geometry_file(std::string geomFile) { m_geomFile = geomFile; }
+
       void pass(int streaming_pass)
       {
         std::cout << "\n\nM[" << m_iM << ", " << m_M << "] W[" << m_iW << ", " << m_W << "] ------ SerializeNodeRegistry ----- pass number " << streaming_pass << "\n\n" << std::endl;
@@ -1021,6 +1025,8 @@ namespace stk {
             SerializeNodeRegistry snr(eMesh, some_nr, m_input_mesh_name, m_output_mesh_name, m_M, jM,  m_W, m_iW, m_M_0, m_M_1);
             snr.pass(3);
             std::cout << "tmp srk debug SerializeNodeRegistry: " << PERCEPT_OUT(m_M) << PERCEPT_OUT(jM) << PERCEPT_OUT(m_W) << PERCEPT_OUT(m_iW) << PERCEPT_OUT(m_M_0) << PERCEPT_OUT(m_M_1) << " output_mesh_new= " << output_mesh_new << std::endl;
+            if (m_geomFile != "")
+              eMesh.remove_geometry_blocks_on_output(m_geomFile);
             eMesh.save_as(output_mesh_new);
           }
       }

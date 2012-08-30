@@ -58,6 +58,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <bitset>
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>

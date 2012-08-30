@@ -103,11 +103,10 @@ int main(int argc, char **argv)
   adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
 
   Teuchos::ParameterList params("test parameters");
-  Teuchos::ParameterList &partitioningParams = params.sublist("partitioning");
-  partitioningParams.set("compute_metrics", "true");
-  partitioningParams.set("num_local_parts", 1);
-  partitioningParams.set("algorithm", "block");
-  partitioningParams.set("approach", "partition");
+  params.set("compute_metrics", "true");
+  params.set("num_local_parts", 1);
+  params.set("algorithm", "block");
+  params.set("partitioning_approach", "partition");
   
   Zoltan2::PartitioningProblem<adapter_t> problem(&adapter, &params);
 

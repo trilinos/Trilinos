@@ -4,12 +4,16 @@
 <ul>
 <li> \ref z2_main_intro
 <li> \ref z2_main_overview
-<li> \ref z2_main_examples
+<li> \ref z2_main_examples_partitioning
+<li> \ref z2_main_building
 </ul>
+
+
+<hr>
 
 Information specifically for developers can be found at \ref z2_developer.
 
-These pages are under construction...
+<hr>
 
 \section z2_main_intro Introduction to Zoltan2
 
@@ -17,13 +21,12 @@ Zoltan2 is a refactoring of the <a href=http://www.cs.sandia.gov/Zoltan >
 Zoltan </a>
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
-This library is currently under active development, and is still 
-in pre-copyright status.  
+This library is currently under active development.
 
 Partitioning functionality that is available now is:
 
 <ul>
-<li> \ref blockPage for simple weighted identifiers.
+<li> \ref blockPage for simple weighted identifiers (really created as a sample algorithm).
 <li> \ref rcbPage for weighted geometric coordinates.
 <li> \ref scotchPartPage for undirected weighted graphs.
 </ul>
@@ -39,9 +42,11 @@ Serial ordering available now is:
 <li> Random
 </ul>
 
-\section z2_main_overview Overview of the Zoltan2 library
+<hr>
 
-\subsection Typical steps
+\section z2_main_overview Overview of the library usage
+
+\subsection z2_main_overview_partitioning Basic partitioning
 
 Here we describe the typical user interaction with Zoltan2.  We use partitioning as an example.
 
@@ -57,21 +62,52 @@ Here we describe the typical user interaction with Zoltan2.  We use partitioning
 
 Zoltan2::MeshInput will be available soon.
 
-2. Create a Teuchos::ParameterList with your Zoltan2 parameters.  If you are using a third party library (PT-Scotch, ParMetis) you can include a sublist of parameters for this library.  Parameters are listed here. (TODO - generate doxygen list from xml file of parameters.)
+2. Create a Teuchos::ParameterList with your Zoltan2 parameters.  If you are using a third party library (PT-Scotch, ParMetis) you can include a sublist of parameters for this library.  See \ref z2_parameters for a detailed list of parameterse.
 
-3. Create a Zoltan2::PartitioningProblem.  It is templated on your Zoltan2::InputAdapter type.  The constructor arguments are your input adapter and your parameter list.
+3. Create a Zoltan2::PartitioningProblem.  It is templated on your Zoltan2::InputAdapter type.  The constructor arguments are typically your input adapter and your parameter list.
 
 4. Call Zoltan2::PartitioningProblem::solve().
 
 5. Obtain a Zoltan2::PartitioningSolution object from the Zoltan2::PartitioningProblem.
 
-\section z2_main_examples Examples of Zoltan2 usage
+\subsection z2_main_overview_metrics Obtaining partition quality 
+
+\subsection z2_main_overview_repartitioning Repartitioning
+
+<hr>
+
+\section z2_main_examples_partitioning Partitioning examples
 
 Examples include the following:
 
 - Block partitioning (block.cpp)
 - RCB partitioning for a C++ novice (rcb_C.cpp)
 
+<hr>
+
+\section z2_main_building Building Zoltan2
+
+Zoltan2 is part of the Trilinos framework and requires several of the other Trilinos libraries to build.  
+
+Zoltan2 configuration refers to these CMake directives:
+
+  \li \c Trilinos_ENABLE_OpenMP explain
+  \li \c Trilinos_ENABLE_Zoltan if enabled Zoltan2 will build a test that compares the performance of Zoltan1 and Zoltan2
+  \li \c Zoltan2_ENABLE_Experimental if enabled, code which is still under development will be available for use
+  \li \c Explicit Instantiation if explicit instantiation is on, all Zoltan2 tests will be compiled with the instantiated types
+  \li \c Zoltan2_ENABLE_METIS etc
+  \li \c Zoltan2_ENABLE_PaToH etc
+  \li \c Zoltan2_ENABLE_ParMETIS etc
+  \li \c Zoltan2_ENABLE_Scotch etc
+  \li \c Zoltan2_ENABLE_OVIS etc
+  \li \c Zoltan2_ENABLE_AMD etc etc
+  \li \c Zoltan2_ENABLE_ANASAZI etc
+
+These are some of the compilation flags used by Zoltan2:
+
+  \li \c Z2_OMIT_ALL_STATUS_MESSAGES The \ref debug_level parameter controls the verbosity of status messages.  When compiled with this option, the checks for \ref debug_level are bypassed and all status output code is ignored.
+  \li \c Z2_OMIT_ALL_PROFILING Checks are done at runtime to determine whether any of the memory or timer parameters were set, prior to checking memory in use or to start or stop a ttimer.  When compiled with this option, those checks are bypassed.
+  \li \c Z2_OMIT_ALL_ERROR_CHECKING  The \ref error_check_level parameter controls the amount of error checking done at runtime.  When this flag is set, all error checking code is compiled out.
 
 
 */

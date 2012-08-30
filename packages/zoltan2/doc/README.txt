@@ -18,7 +18,7 @@ zoltan2/doc/html/index.html
 
 -------------
 Our Doxygen input files have the suffix "dox" rather than "doc".  This
-is because of complaints for users of software that thinks all .doc
+is because of complaints from users of software that thinks all .doc
 files are MS Word files and opens them with Word.
 
 

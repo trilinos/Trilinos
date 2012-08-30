@@ -3,8 +3,9 @@ from XpetraDoxygenVersion import checkDoxygenVersion
 
 #### GENERATE HEADER / FOOTER ####
 def buildHeader( className, script='', prefix='' ):
-    with open('../doc/COPYRIGHT_AND_LICENSE', 'r') as f:
-         headerStr = f.read()
+    # python 2.5: with open('../doc/COPYRIGHT_AND_LICENSE', 'r') as f:
+    f = open('../doc/COPYRIGHT_AND_LICENSE', 'r')
+    headerStr = f.read()
     upperClassName =  className.upper()
     headerStr += "#ifndef XPETRA_"   + prefix + upperClassName + "_HPP\n"
     headerStr += "#define XPETRA_"   + prefix + upperClassName + "_HPP\n\n"

@@ -1253,7 +1253,7 @@ void ML_print_mat(double * mat, int rows, int cols, char FileName[])
       for(int i = 0; i < rows; i++)
 	{
 	  sprintf(str, "%d   %d      %1.16e \n", i+1, j+1, mat[counter]);
-	  fprintf(fid, str);  
+	  fprintf(fid, "%s", str);
 	  counter++;
 	}
     }		

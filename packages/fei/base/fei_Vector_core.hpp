@@ -110,6 +110,15 @@ class Vector_core : protected fei::Logger {
 			bool sumInto=true,
 			int vectorIndex=0);
 
+  int assembleFieldDataLocalIDs(int fieldID,
+			int idType,
+			int numIDs,
+			const int* localIDs,
+			const double* data,
+			bool sumInto=true,
+			int vectorIndex=0);
+
+  void setCommSizes();
   /** Gather shared data from remote procs for eqns that are locally-owned. */
   virtual int gatherFromOverlap(bool accumulate = true);
 
@@ -174,11 +183,45 @@ class Vector_core : protected fei::Logger {
   /** remotelyOwned */
   std::vector<CSVec*>& remotelyOwned() { return( remotelyOwned_ ); }
   const std::vector<CSVec*>& remotelyOwned() const { return( remotelyOwned_ ); }
+  std::vector<int>& remotelyOwnedProcs() { return( remotelyOwnedProcs_ ); }
+  const std::vector<int>& remotelyOwnedProcs() const { return( remotelyOwnedProcs_ ); }
+
+  fei::CSVec* getRemotelyOwned(int proc) {
+    std::vector<int>::iterator iter = std::lower_bound(remotelyOwnedProcs_.begin(), remotelyOwnedProcs_.end(), proc);
+    fei::CSVec* return_vec = NULL;
+    size_t offset = iter - remotelyOwnedProcs_.begin();
+    if (iter == remotelyOwnedProcs_.end() || *iter != proc) {
+      remotelyOwnedProcs_.insert(iter, proc);
+      return_vec = new fei::CSVec;
+      remotelyOwned_.insert(remotelyOwned_.begin()+offset, return_vec);
+    }
+    else {
+      return_vec = remotelyOwned_[offset];
+    }
+ 
+    return return_vec;
+  }
+
+  const fei::CSVec* getRemotelyOwned(int proc) const {
+    std::vector<int>::const_iterator iter = std::lower_bound(remotelyOwnedProcs_.begin(), remotelyOwnedProcs_.end(), proc);
+    if (iter == remotelyOwnedProcs_.end() || *iter != proc) {
+      throw std::runtime_error("failed to find remote-vec for specified processor.");
+    }
+
+    size_t offset = iter - remotelyOwnedProcs_.begin();
+    return remotelyOwned_[offset];
+  }
 
  protected:
   fei::SharedPtr<fei::EqnComm> eqnComm_;
 
  private:
+  void pack_send_buffers(const std::vector<int>& sendProcs,
+                       const std::vector<fei::CSVec*>& remotelyOwned,
+                       std::vector<std::vector<char> >& send_chars,
+                       bool resize_buffer,
+                       bool zeroRemotelyOwnedAfterPacking);
+
   fei::SharedPtr<fei::VectorSpace> vecSpace_;
 
   MPI_Comm comm_;
@@ -190,10 +233,13 @@ class Vector_core : protected fei::Logger {
 
   bool haveFEVector_;
 
+  std::vector<int> remotelyOwnedProcs_;
   std::vector<CSVec*> remotelyOwned_;
   std::vector<int> sendProcs_;
   std::vector<int> recvProcs_;
   std::vector<int> recv_sizes_;
+  std::vector<std::vector<char> > recv_chars_;
+  std::vector<std::vector<char> > send_chars_;
   bool sendRecvProcsNeedUpdated_;
 
   bool overlapAlreadySet_;

@@ -6,6 +6,8 @@
 #include <string>
 #include <set>
 
+
+#include <stk_percept/Percept.hpp>
 #include <stk_percept/function/Function.hpp>
 #include <stk_percept/Name.hpp>
 
@@ -368,10 +370,18 @@ namespace stk {
       /// set field to constant value
       void nodal_field_set_value(stk::mesh::FieldBase* field_x, double value=0.0);
 
-      void set_sync_io_regions(bool val) { m_sync_io_regions = val; }
+      /// remove blocks in the mesh used solely for geometry association, during output of the mesh to Exodus.
+      /// @param geometry_file_name = name of the OpenNURBS file (*.3dm) containing the geometry info
+      /// @note Only available when Percept is configured with STK_PERCEPT_HAS_GEOMETRY
+      void remove_geometry_blocks_on_output(std::string geometry_file_name);
+
+
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces
+
+      void set_sync_io_regions(bool val) { m_sync_io_regions = val; }
+
 
       /// transform mesh by a given 3x3 matrix
       void transform_mesh(Math::Matrix& matrix);
@@ -559,7 +569,7 @@ namespace stk {
                                  mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
-      double edge_length_ave(const stk::mesh::Entity &entity);
+      double edge_length_ave(const stk::mesh::Entity &entity, mesh::FieldBase* coord_field = 0);
 
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                        Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
