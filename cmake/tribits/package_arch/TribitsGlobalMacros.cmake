@@ -183,6 +183,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     CACHE BOOL
     "Show warnings about deprecated code"
     )
+  
+  ADVANCED_SET(${PROJECT_NAME}_HIDE_DEPRECATED_CODE OFF
+    CACHE BOOL
+    "Show warnings about deprecated code"
+    )
 
   ADVANCED_SET(${PROJECT_NAME}_VERBOSE_CONFIGURE OFF
     CACHE BOOL
