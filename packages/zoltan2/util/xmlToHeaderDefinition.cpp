@@ -51,6 +51,7 @@
 #include <fstream>
 #include <exception>
 #include <string>
+#include <cstring>
 #include <sstream>
 
 using std::cout;
