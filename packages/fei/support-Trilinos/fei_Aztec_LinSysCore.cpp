@@ -3046,14 +3046,14 @@ void Aztec_LinSysCore::setDebugOutput(const char* path, const char* name){
    if (path != debugPath_) {
       delete [] debugPath_;
       debugPath_ = new char[pathLength + 1];
-      sprintf(debugPath_, path);
+      sprintf(debugPath_, "%s", path);
    }
 
    int nameLength = strlen(name);
    if (name != debugFileName_) {
       delete [] debugFileName_;
       debugFileName_ = new char[nameLength + 1];
-      sprintf(debugFileName_,name);
+      sprintf(debugFileName_,"%s",name);
    }
 
    char* dbFileName = new char[pathLength + nameLength + 3];
