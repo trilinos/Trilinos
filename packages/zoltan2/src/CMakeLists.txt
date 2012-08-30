@@ -9,7 +9,7 @@ SET(HAVE_ZOLTAN2_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 # Generate the header file that contains the Zoltan2 parameters.
-# It is only used it compilation.  This header and the data that
+# It is only used in compilation.  This header and the data that
 # generates it need not be installed.
 
 SET(PARAM_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_XML_Parameters.hpp)
@@ -18,7 +18,7 @@ SET(PARAM_BUILDER_NAME xmlToHeaderDefinition)
 SET(PARAM_BUILDER_SRC ${PACKAGE_SOURCE_DIR}/util/${PARAM_BUILDER_NAME}.cpp)
 SET(PARAM_BUILDER_BIN ${CMAKE_CURRENT_BINARY_DIR}/${PARAM_BUILDER_NAME})
 
-ADD_EXECUTABLE(${PARAM_BUILDER_NAME} ../util/${PARAM_BUILDER_NAME}.cpp)
+ADD_EXECUTABLE(${PARAM_BUILDER_NAME} ${PARAM_BUILDER_SRC})
 
 ADD_CUSTOM_COMMAND(
   OUTPUT ${PARAM_HEADER}
