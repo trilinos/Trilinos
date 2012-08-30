@@ -134,7 +134,7 @@ void AlgRCB(
     params.set(rcb_balanceWeight);
     mcnorm = normBalanceTotalMaximum;
   }
-  else if (obj == string("balance_object_count"))}
+  else if (obj == string("balance_object_count")){
     params.set(rcb_balanceCount);
   }
   else if (obj == string("multicriteria_minimize_total_weight")){
