@@ -397,9 +397,9 @@ int main(int argc, char *argv[]) {
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsMatrix;
     typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Xpetra_MultiVector;
     typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Xpetra_MultiVectorFactory;
-    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_Operator;
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_Matrix;
     typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_TpetraCrsMatrix;
-    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsOperator;
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsMatrixWrap;
     typedef Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Belos_MueLuOperator;
     //MueLu typedefs
     typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MueLu_Hierarchy;
@@ -442,17 +442,17 @@ int main(int argc, char *argv[]) {
     RCP<Belos_MueLuOperator> M;
     RCP<MueLu_Hierarchy> H;
     RCP<Xpetra_CrsMatrix> xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
-    RCP<Xpetra_Operator> xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
+    RCP<Xpetra_Matrix> xopJ = rcp(new Xpetra_CrsMatrixWrap(xcrsJ));
     if (prec_method != NONE) {
       ParameterList precParams;
       std::string prec_name = "RILUK";
       precParams.set("fact: iluk level-of-fill", 1);
       precParams.set("fact: iluk level-of-overlap", 0);
       //Ifpack2::Factory factory;
-      RCP<Xpetra_Operator> xopJ0;
+      RCP<Xpetra_Matrix> xopJ0;
       if (prec_method == MEAN) {
         RCP<Xpetra_CrsMatrix> xcrsJ0 = rcp(new Xpetra_TpetraCrsMatrix(J0));
-        xopJ0 = rcp(new Xpetra_CrsOperator(xcrsJ0));
+        xopJ0 = rcp(new Xpetra_CrsMatrixWrap(xcrsJ0));
         //M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
       } else if (prec_method == STOCHASTIC) {
         xopJ0 = xopJ;
@@ -567,7 +567,7 @@ int main(int argc, char *argv[]) {
     typedef Belos::MultiVecTraits<double,MV> BTMVT;
     typedef Belos::LinearProblem<double,MV,OP> BLinProb;
     typedef Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BXpetraOp;
-    RCP<OP> belosJ = rcp(new BXpetraOp(xopJ)); // Turns an Xpetra::Operator object into a Belos operator
+    RCP<OP> belosJ = rcp(new BXpetraOp(xopJ)); // Turns an Xpetra::Matrix object into a Belos operator
     RCP< BLinProb > problem = rcp(new BLinProb(belosJ, dx, f));
     if (prec_method != NONE)
       problem->setRightPrec(M);

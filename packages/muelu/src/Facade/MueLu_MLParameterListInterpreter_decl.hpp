@@ -55,7 +55,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -181,12 +181,12 @@ namespace MueLu {
     //! capabibilities of ML.
     std::vector<RCP<FactoryBase> > TransferFacts_;
 
-    //@{ Operator configuration
+    //@{ Matrix configuration
 
-    //! Setup Operator object
-    virtual void SetupOperator(Operator & Op) const;
+    //! Setup Matrix object
+    virtual void SetupMatrix(Matrix & Op) const;
 
-    //! Operator configuration storage
+    //! Matrix configuration storage
     int blksize_;
 
     //@}

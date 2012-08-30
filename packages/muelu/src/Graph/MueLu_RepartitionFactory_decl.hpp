@@ -58,8 +58,8 @@
 #include <Xpetra_Export_fwd.hpp>
 #include <Xpetra_ExportFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
-#include <Xpetra_OperatorFactory_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"

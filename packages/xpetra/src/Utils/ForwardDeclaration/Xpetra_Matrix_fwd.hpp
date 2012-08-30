@@ -43,67 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef XPETRA_MATRIX_FWD_HPP
+#define XPETRA_MATRIX_FWD_HPP
 
-// WARNING: This code is experimental. Backwards compatibility should not be expected.
+namespace Xpetra {       
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class Matrix;
+}
 
-#ifndef XPETRA_OPERATORVIEW_HPP
-#define XPETRA_OPERATORVIEW_HPP
+#ifndef XPETRA_MATRIX_SHORT
+#define XPETRA_MATRIX_SHORT
+#endif
 
-#include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
-
-#include "Xpetra_ConfigDefs.hpp"
-#include "Xpetra_Map.hpp"
-
-/** \file Xpetra_Operator.hpp
-
-Declarations for the class Xpetra::Operator.
-*/
-namespace Xpetra {
-
-  template <class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType>
-  class OperatorView { // TODO : virtual public Teuchos::Describable {
-    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-
-  public:
-  
-    //! @name Constructor/Destructor Methods
-    //@{
-
-    //! Constructor
-    OperatorView(const RCP<const Map> &rowMap, const RCP<const Map> &colMap) 
-      : rowMap_ (rowMap), colMap_(colMap)
-    { }
-  
-    //! Destructor
-    virtual ~OperatorView() {}
-    
-    //@}
-
-    //! @name Map access methods
-    //@{
-    //! Returns the Map that describes the row distribution in this matrix.
-    const RCP<const Map> & GetRowMap() const { return rowMap_; }
-  
-    //! \brief Returns the Map that describes the column distribution in this matrix.
-    const RCP<const Map> & GetColMap() const { return colMap_; }
-  
-    //! Returns the Map that describes the row distribution in this matrix.
-    void SetRowMap(const RCP<const Map> & rowMap) { rowMap_ = rowMap; }
-  
-    //! \brief Set the Map that describes the column distribution in this matrix.
-    void SetColMap(const RCP<const Map> & colMap) { colMap_ = colMap; }
-    //@}
-  
-  private:
-    RCP<const Map> rowMap_;
-    RCP<const Map> colMap_;
-
-  }; // class OperatorView
-
-} // namespace Xpetra
-
-#define XPETRA_OPERATORVIEW_SHORT
-#endif //XPETRA_OPERATOR_VIEW_DECL_HPP
+#endif // XPETRA_MATRIX_FWD_HPP

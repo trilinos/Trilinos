@@ -50,7 +50,7 @@
 #ifdef HAVE_MUELU_IFPACK
 
 #include <Teuchos_ParameterList.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
 
 class Ifpack_Preconditioner;
@@ -217,8 +217,8 @@ namespace MueLu {
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
 
-    //! Operator. Not used directly, but held inside of prec_. So we have to keep an RCP pointer to it!
-    RCP<Operator> A_;
+    //! Matrix. Not used directly, but held inside of prec_. So we have to keep an RCP pointer to it!
+    RCP<Matrix> A_;
 
     //! pointer to Ifpack solver object
     // Note: prec_ must be destroyed before A_, so declaration of prec_ appears after declaration of A_

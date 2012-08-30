@@ -47,7 +47,7 @@
 #define MUELU_GAUSSSEIDELSMOOTHER_DEF_HPP
 
 #include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_GaussSeidelSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
@@ -70,7 +70,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level & level) {
-    A_ = level.Get< RCP<Operator> >("A", NULL); //FIXME AFact_.get());
+    A_ = level.Get< RCP<Matrix> >("A", NULL); //FIXME AFact_.get());
     SmootherPrototype::IsSetup(true);
   }
 

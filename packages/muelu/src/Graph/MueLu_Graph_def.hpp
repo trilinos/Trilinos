@@ -70,7 +70,7 @@ namespace MueLu {
   size_t Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNodeNumGhost() const { 
     /*
       Ray's comments about nGhost:
-      Graph->NGhost == graph_->RowMatrixColMap()->NumMyElements() - graph_->OperatorDomainMap()->NumMyElements()
+      Graph->NGhost == graph_->RowMatrixColMap()->NumMyElements() - graph_->MatrixDomainMap()->NumMyElements()
       is basically right. But we've had some issues about how epetra handles empty columns.
       Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right. 
     */

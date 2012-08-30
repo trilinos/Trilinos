@@ -58,9 +58,9 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -129,10 +129,10 @@ namespace MueLu {
             this->GetOStream(Warnings0, 0) << "Warning: MueLu::BreaessSarazinSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
-    A_ = currentLevel.Get<RCP<Operator> > ("A", AFact_.get());
+    A_ = currentLevel.Get<RCP<Matrix> > ("A", AFact_.get());
 
-    RCP<BlockedCrsOperator> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperator>(A_);
-    TEUCHOS_TEST_FOR_EXCEPTION(bA == Teuchos::null, Exceptions::BadCast, "MueLu::BraessSarazinSmoother::Setup: input matrix A is not of type BlockedCrsOperator! error.");
+    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    TEUCHOS_TEST_FOR_EXCEPTION(bA == Teuchos::null, Exceptions::BadCast, "MueLu::BraessSarazinSmoother::Setup: input matrix A is not of type BlockedCrsMatrix! error.");
 
     // store map extractors
     rangeMapExtractor_ = bA->getRangeMapExtractor();
@@ -144,15 +144,15 @@ namespace MueLu {
     Teuchos::RCP<CrsMatrix> A10 = bA->getMatrix(1, 0);
     Teuchos::RCP<CrsMatrix> A11 = bA->getMatrix(1, 1);
 
-    Teuchos::RCP<CrsOperator> Op00 = Teuchos::rcp(new CrsOperator(A00));
-    Teuchos::RCP<CrsOperator> Op01 = Teuchos::rcp(new CrsOperator(A01));
-    Teuchos::RCP<CrsOperator> Op10 = Teuchos::rcp(new CrsOperator(A10));
-    Teuchos::RCP<CrsOperator> Op11 = Teuchos::rcp(new CrsOperator(A11));
+    Teuchos::RCP<CrsMatrixWrap> Op00 = Teuchos::rcp(new CrsMatrixWrap(A00));
+    Teuchos::RCP<CrsMatrixWrap> Op01 = Teuchos::rcp(new CrsMatrixWrap(A01));
+    Teuchos::RCP<CrsMatrixWrap> Op10 = Teuchos::rcp(new CrsMatrixWrap(A10));
+    Teuchos::RCP<CrsMatrixWrap> Op11 = Teuchos::rcp(new CrsMatrixWrap(A11));
 
-    F_ = Teuchos::rcp_dynamic_cast<Operator>(Op00);
-    G_ = Teuchos::rcp_dynamic_cast<Operator>(Op01);
-    D_ = Teuchos::rcp_dynamic_cast<Operator>(Op10);
-    Z_ = Teuchos::rcp_dynamic_cast<Operator>(Op11);
+    F_ = Teuchos::rcp_dynamic_cast<Matrix>(Op00);
+    G_ = Teuchos::rcp_dynamic_cast<Matrix>(Op01);
+    D_ = Teuchos::rcp_dynamic_cast<Matrix>(Op10);
+    Z_ = Teuchos::rcp_dynamic_cast<Matrix>(Op11);
 
     // Create the inverse of the diagonal of F
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());

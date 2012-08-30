@@ -43,16 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_CRSOPERATOR_FWD_HPP
-#define XPETRA_CRSOPERATOR_FWD_HPP
+#ifndef XPETRA_MATRIXFACTORY_FWD_HPP
+#define XPETRA_MATRIXFACTORY_FWD_HPP
 
 namespace Xpetra {       
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class CrsOperator;
+  class MatrixFactory;
 }
 
-#ifndef XPETRA_CRSOPERATOR_SHORT
-#define XPETRA_CRSOPERATOR_SHORT
+#ifndef XPETRA_MATRIXFACTORY_SHORT
+#define XPETRA_MATRIXFACTORY_SHORT
 #endif
 
-#endif // XPETRA_CRSOPERATOR_FWD_HPP
+#endif // XPETRA_MATRIXFACTORY_FWD_HPP

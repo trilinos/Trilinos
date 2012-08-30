@@ -49,7 +49,7 @@
 #include "MueLu_MultiVectorTransferFactory_decl.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 
-// #include <Xpetra_Operator.hpp>
+// #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
@@ -122,13 +122,13 @@ namespace MueLu {
 
     if (vectorName_ == "Coordinates") { // very elegant!
 
-      // Convert format to Xpetra::MultiVector + Expand coordinates (both are needed for projection because projection operator is not coalesce and is an Xpetra::Operator)
+      // Convert format to Xpetra::MultiVector + Expand coordinates (both are needed for projection because projection operator is not coalesce and is an Xpetra::Matrix)
       if (fineLevel.IsAvailable("XCoordinates") && !fineLevel.IsAvailable("Coordinates")) {
         GetOStream(Runtime0,0) << "Converting coordinates from 3xArrayRCP to MultiVector" << std::endl;
         
         TEUCHOS_TEST_FOR_EXCEPTION(fineLevel.GetLevelID() != 0, Exceptions::RuntimeError, "??" << fineLevel.GetLevelID());
 
-        RCP<Operator> A = fineLevel.Get<RCP<Operator> >("A", NULL/*default A*/);
+        RCP<Matrix> A = fineLevel.Get<RCP<Matrix> >("A", NULL/*default A*/);
         LocalOrdinal blksize = A->GetFixedBlockSize();
 
         Array< ArrayView<const SC> > arrayOfPtrs; /* This is the data format needed to call the MultiVector constructor */
@@ -164,7 +164,7 @@ namespace MueLu {
       //std::cout << "MultiVectorTransferFactory::Build -- requesting " << vectorName_ << " from factory " << MueLu::NoFactory::get() << std::endl;
     //FIXME JJH
 
-    RCP<Operator> transferOp = coarseLevel.Get<RCP<Operator> >(restrictionName_,restrictionFact_.get());
+    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_,restrictionFact_.get());
 
     //FIXME debugging output
 
@@ -187,7 +187,7 @@ namespace MueLu {
     /*
     //FIXME ThreeLevels unit test  dies
     RCP<MultiVector> vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,restrictionFact_.get());
-    RCP<Operator> transferOp = coarseLevel.Get<RCP<Operator> >(restrictionName_,restrictionFact_.get());
+    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_,restrictionFact_.get());
     */
 
     RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(),vector->getNumVectors());
@@ -245,7 +245,7 @@ namespace MueLu {
     return expandCoord;
   }
 
-  //TODO do we need methods to get name of MultiVector and or Transfer Operator?
+  //TODO do we need methods to get name of MultiVector and or Transfer Matrix?
 
 } // namespace MueLu
 

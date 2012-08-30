@@ -61,8 +61,8 @@
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Export.hpp>
 #include <Xpetra_ExportFactory.hpp>
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_OperatorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixFactory.hpp>
 
 #include <MueLu_UCAggregationCommHelper.hpp>
 
@@ -108,7 +108,7 @@ namespace MueLu {
     using Teuchos::ArrayRCP;
 
     //TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
-    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       
     { // scoping 
@@ -521,7 +521,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "DeterminePartitionPlacement", currentLevel);
 
     GO numPartitions = currentLevel.Get<GO>("number of partitions");
-    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A",AFact_.get());
+    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A",AFact_.get());
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     int mypid = comm->getRank();
 

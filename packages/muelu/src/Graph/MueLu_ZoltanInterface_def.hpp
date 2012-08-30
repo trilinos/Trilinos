@@ -88,7 +88,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "ZoltanInterface", level);
     RCP<SubFactoryMonitor> m1;
 
-    RCP<Operator> A = level.Get< RCP<Operator> >("A",AFact_.get());
+    RCP<Matrix> A = level.Get< RCP<Matrix> >("A",AFact_.get());
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
     // One can skip this step if the IDs are just single ints.
@@ -142,7 +142,7 @@ namespace MueLu {
 
     } else if (level.IsAvailable("Coordinates")) {
 
-      RCP<Operator> Aloc = level.Get<RCP<Operator> >("A", AFact_.get());
+      RCP<Matrix> Aloc = level.Get<RCP<Matrix> >("A", AFact_.get());
       LocalOrdinal blksize = Aloc->GetFixedBlockSize();
 
       RCP<MultiVector> multiVectorXYZ = level.Get< RCP<MultiVector> >("Coordinates");
@@ -231,10 +231,10 @@ namespace MueLu {
     }
     *ierr = ZOLTAN_OK;
     //TODO is there a safer way to cast?
-    //Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> *A = (Operator*) data;
-    Operator *A = (Operator*) data;
+    //Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> *A = (Matrix*) data;
+    Matrix *A = (Matrix*) data;
     LocalOrdinal blockSize = A->GetFixedBlockSize(); //FIXME
-    if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Operator has block size 0."));
+    if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Matrix has block size 0."));
     return (A->getRowMap()->getNodeNumElements() / blockSize); //FIXME
   } //GetLocalNumberOfRows()
 
@@ -255,12 +255,12 @@ namespace MueLu {
     }
 
     //TODO is there a safer way to cast?
-    Operator *A = (Operator*) data;
+    Matrix *A = (Matrix*) data;
     RCP<const Map> map = A->getRowMap();
     Teuchos::ArrayView<const LO> cols;
     Teuchos::ArrayView<const SC> vals;
     LocalOrdinal blockSize = A->GetFixedBlockSize(); //FIXME
-    if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Operator has block size 0."));
+    if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Matrix has block size 0."));
     if (blockSize == 1) {
       for (size_t i=0; i<map->getNodeNumElements(); ++i) {
         gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i);

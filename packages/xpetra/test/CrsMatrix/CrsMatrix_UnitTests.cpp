@@ -44,7 +44,7 @@
 //
 // @HEADER
 /*
- * BlockedCrsOperator_UnitTests.cpp
+ * BlockedCrsMatrix_UnitTests.cpp
  *
  *  Created on: Aug 22, 2011
  *      Author: wiesner
@@ -71,8 +71,8 @@
 #include <Teuchos_as.hpp>
 
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrix.hpp>
 #ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #endif
@@ -81,7 +81,7 @@
 #endif
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
 
 //#include <MueLu_Utilities.hpp> //TODO: Xpetra tests should not use MueLu
@@ -103,8 +103,8 @@ namespace {
   using Teuchos::Comm;
 
   using Xpetra::DefaultPlatform;
-  using Xpetra::Operator;
-  using Xpetra::CrsOperator;
+  using Xpetra::Matrix;
+  using Xpetra::CrsMatrix;
 #ifdef HAVE_XPETRA_TPETRA
   using Xpetra::TpetraCrsMatrix; //TMP
 #endif
@@ -150,8 +150,8 @@ namespace {
 #ifdef HAVE_XPETRA_EPETRA
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Operator<Scalar, LO, GO, Node> Operator;
-    typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
+    typedef Matrix<Scalar, LO, GO, Node> Matrix;
+    typedef CrsMatrix<Scalar, LO, GO, Node> CrsMatrix;
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 

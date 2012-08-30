@@ -46,7 +46,7 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -94,7 +94,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
   //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
-  RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+  RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 
 
   LocalOrdinal blockdim = 1;         // block dim for fixed size blocks

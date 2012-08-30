@@ -9,9 +9,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
-TRIBITS_ADD_EXECUTABLE(
-    BlockedTransferOperators
-    SOURCES BlockedTransferOperators.cpp
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BlockedTransfer
+    SOURCES BlockedTransfer.cpp
+    ARGS ""
     COMM serial mpi
     DEPLIBS muelu xpetra
   )
@@ -19,8 +20,8 @@ TRIBITS_ADD_EXECUTABLE(
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
 
     TRIBITS_ADD_TEST(
-        BlockedTransferOperators
-        NAME "BlockedTransferOperators_Epetra"
+        BlockedTransfer
+        NAME "BlockedTransfer_Epetra"
         ARGS "--linAlgebra=0"
         COMM serial mpi
       )
@@ -30,8 +31,8 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
 
     TRIBITS_ADD_TEST(
-        BlockedTransferOperators
-        NAME "BlockedTransferOperators_Tpetra"
+        BlockedTransfer
+        NAME "BlockedTransfer_Tpetra"
         ARGS "--linAlgebra=1"
         COMM serial mpi
       )

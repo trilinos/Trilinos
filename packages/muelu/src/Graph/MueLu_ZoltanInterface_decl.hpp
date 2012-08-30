@@ -54,7 +54,7 @@
 
 #include <zoltan_cpp.h>
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -112,7 +112,7 @@ namespace MueLu {
 
     In this case, the number of objects is the number of local rows.
      
-    @param data (in) void pointer to an Xpetra::Operator.
+    @param data (in) void pointer to an Xpetra::Matrix.
     @param ierr (out) error code.
     */
     static int GetLocalNumberOfRows(void *data, int *ierr);
@@ -121,7 +121,7 @@ namespace MueLu {
 
     FIXME: Note that this will not work properly for non-point matrices.
 
-    @param data (in) void pointer to an Xpetra::Operator
+    @param data (in) void pointer to an Xpetra::Matrix
     @param weights (out) array whose <tt>i</tt><sup>th</sup> entry is the number of nonzeros in local row \c i.
     @param ierr (out) error code
     */

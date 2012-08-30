@@ -46,8 +46,8 @@
 
 // WARNING: This code is experimental. Backwards compatibility should not be expected.
 
-#ifndef XPETRA_OPERATOR_HPP
-#define XPETRA_OPERATOR_HPP
+#ifndef XPETRA_MATRIX_HPP
+#define XPETRA_MATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
@@ -59,16 +59,16 @@
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
-#include "Xpetra_OperatorView.hpp"
+#include "Xpetra_MatrixView.hpp"
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_StridedMapFactory.hpp"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
 
-/** \file Xpetra_Operator.hpp
+/** \file Xpetra_Matrix.hpp
 
-Declarations for the class Xpetra::Operator.
+Declarations for the class Xpetra::Matrix.
 */
 namespace Xpetra {
 
@@ -79,7 +79,7 @@ namespace Xpetra {
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-  class Operator : virtual public Teuchos::Describable {
+  class Matrix : virtual public Teuchos::Describable {
     
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
@@ -88,29 +88,29 @@ namespace Xpetra {
     typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
     typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
-    typedef Xpetra::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
+    typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
   public:
   
     //! @name Constructor/Destructor Methods
     //@{
 
-    Operator() { }
+    Matrix() { }
 
     //! Destructor
-    virtual ~Operator() { }
+    virtual ~Matrix() { }
 
     //@}
 
     //! @name View management methods
     //@{
     void CreateView(viewLabel_t viewLabel, const RCP<const Map> & rowMap, const RCP<const Map> & colMap) {
-      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == true, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.CreateView(): a view labeled '" + viewLabel + "' already exist.");
-      RCP<OperatorView> view = rcp(new OperatorView(rowMap, colMap));
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == true, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.CreateView(): a view labeled '" + viewLabel + "' already exist.");
+      RCP<MatrixView> view = rcp(new MatrixView(rowMap, colMap));
       operatorViewTable_.put(viewLabel, view);
     }
     
-    void CreateView(const viewLabel_t viewLabel, const RCP<Operator> & A, bool transposeA = false, const RCP<Operator> & B = Teuchos::null, bool transposeB = false) {
+    void CreateView(const viewLabel_t viewLabel, const RCP<Matrix> & A, bool transposeA = false, const RCP<Matrix> & B = Teuchos::null, bool transposeB = false) {
             
       RCP<const Map> domainMap = Teuchos::null;
       RCP<const Map> rangeMap  = Teuchos::null;
@@ -138,13 +138,13 @@ namespace Xpetra {
       CreateView(viewLabel, rangeMap, domainMap);   
     }
 
-    //! Print all of the views associated with the Operator.
+    //! Print all of the views associated with the Matrix.
     void PrintViews(Teuchos::FancyOStream &out) const {
       int last = out.getOutputToRootOnly();
       Teuchos::OSTab tab(out);
       out.setOutputToRootOnly(0);
       Teuchos::Array<viewLabel_t> viewLabels;
-      Teuchos::Array<RCP<OperatorView> > viewList;
+      Teuchos::Array<RCP<MatrixView> > viewList;
       operatorViewTable_.arrayify(viewLabels,viewList);
       out << "views associated with this operator" << std::endl;
       for (int i=0; i<viewLabels.size(); ++i)
@@ -154,13 +154,13 @@ namespace Xpetra {
 
     
     void RemoveView(const viewLabel_t viewLabel) {
-      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' does not exist.");
-      TEUCHOS_TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.RemoveView(): view '" + viewLabel + "' does not exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
       operatorViewTable_.remove(viewLabel);
     }
     
     const viewLabel_t SwitchToView(const viewLabel_t viewLabel) {
-      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.SwitchToView(): view '" + viewLabel + "' does not exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.SwitchToView(): view '" + viewLabel + "' does not exist.");
       viewLabel_t oldViewLabel = GetCurrentViewLabel();
       currentViewLabel_ = viewLabel;
       return oldViewLabel;
@@ -249,7 +249,7 @@ namespace Xpetra {
 
     //! Returns the Map that describes the row distribution in this matrix.
     virtual const RCP<const Map> & getRowMap(viewLabel_t viewLabel) const { 
-      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetRowMap(): view '" + viewLabel + "' does not exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetRowMap(): view '" + viewLabel + "' does not exist.");
       return operatorViewTable_.get(viewLabel)->GetRowMap(); 
     }
 
@@ -259,7 +259,7 @@ namespace Xpetra {
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
     virtual const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
-      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetColMap(): view '" + viewLabel + "' does not exist.");
       return operatorViewTable_.get(viewLabel)->GetColMap(); 
     }
 
@@ -386,7 +386,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Methods implementing Operator
+    //! @name Methods implementing Matrix
     //@{ 
 
     //! \brief Computes the sparse matrix-multivector multiplication.
@@ -442,7 +442,7 @@ namespace Xpetra {
     // TODO: the view mechanism should be implemented as in MueMat.
     void SetFixedBlockSize(LocalOrdinal blksize) {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Exceptions::RuntimeError, "Xpetra::Operator::SetFixedBlockSize(): operator is not filled and completed."); // TODO: do we need this? we just wanna "copy" the domain and range map
+      TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Exceptions::RuntimeError, "Xpetra::Matrix::SetFixedBlockSize(): operator is not filled and completed."); // TODO: do we need this? we just wanna "copy" the domain and range map
 
       std::vector<size_t> stridingInfo;
       stridingInfo.push_back(Teuchos::as<size_t>(blksize));
@@ -469,26 +469,26 @@ namespace Xpetra {
       if(IsView("stridedMaps")==true) {
         Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > rangeMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getRowMap("stridedMaps"));
         Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > domainMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getColMap("stridedMaps"));
-        TEUCHOS_TEST_FOR_EXCEPTION(rangeMap  == Teuchos::null, Exceptions::BadCast, "Xpetra::Operator::GetFixedBlockSize(): rangeMap is not of type StridedMap");
-        TEUCHOS_TEST_FOR_EXCEPTION(domainMap == Teuchos::null, Exceptions::BadCast, "Xpetra::Operator::GetFixedBlockSize(): domainMap is not of type StridedMap");
-        TEUCHOS_TEST_FOR_EXCEPTION(domainMap->getFixedBlockSize() != rangeMap->getFixedBlockSize(), Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): block size of rangeMap and domainMap are different.");
+        TEUCHOS_TEST_FOR_EXCEPTION(rangeMap  == Teuchos::null, Exceptions::BadCast, "Xpetra::Matrix::GetFixedBlockSize(): rangeMap is not of type StridedMap");
+        TEUCHOS_TEST_FOR_EXCEPTION(domainMap == Teuchos::null, Exceptions::BadCast, "Xpetra::Matrix::GetFixedBlockSize(): domainMap is not of type StridedMap");
+        TEUCHOS_TEST_FOR_EXCEPTION(domainMap->getFixedBlockSize() != rangeMap->getFixedBlockSize(), Exceptions::RuntimeError, "Xpetra::Matrix::GetFixedBlockSize(): block size of rangeMap and domainMap are different.");
         return Teuchos::as<LocalOrdinal>(domainMap->getFixedBlockSize()); // TODO: why LocalOrdinal?
       } else
-        //TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): no strided maps available."); // TODO remove this
+        //TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Matrix::GetFixedBlockSize(): no strided maps available."); // TODO remove this
         return 1;
     }; //TODO: why LocalOrdinal?
 
     // ----------------------------------------------------------------------------------
 
     protected:
-      Teuchos::Hashtable<viewLabel_t, RCP<OperatorView> > operatorViewTable_; // hashtable storing the operator views (keys = view names, values = views).
+      Teuchos::Hashtable<viewLabel_t, RCP<MatrixView> > operatorViewTable_; // hashtable storing the operator views (keys = view names, values = views).
 
-      viewLabel_t defaultViewLabel_;  // label of the view associated with inital Operator construction
+      viewLabel_t defaultViewLabel_;  // label of the view associated with inital Matrix construction
       viewLabel_t currentViewLabel_;  // label of the current view
 
-  }; //class Operator
+  }; //class Matrix
 
 } //namespace Xpetra
 
-#define XPETRA_OPERATOR_SHORT
-#endif //XPETRA_OPERATOR_DECL_HPP
+#define XPETRA_MATRIX_SHORT
+#endif //XPETRA_MATRIX_DECL_HPP

@@ -99,7 +99,7 @@ namespace MueLu {
 
       // get map extractor and tentative variables from level classes
       RCP<const MapExtractorClass> fineMapExtractor = fineLevel.Get< RCP<const MapExtractorClass> >("SegAMapExtractor",MueLu::NoFactory::get());
-      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", PtentFact_.get());
+      RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", PtentFact_.get());
 
       // DEBUG //
       //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));

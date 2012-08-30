@@ -56,7 +56,7 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
@@ -213,13 +213,14 @@ int main(int argc, char *argv[]) {
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   RCP<const Map> map;
-  RCP<Operator> A;
+  RCP<Matrix> A;
+
   RCP<MultiVector> Coordinates;
   {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build"));
    
     map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
-    A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+    A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
 
     if (matrixParameters.GetMatrixType() == "Laplace1D") {
       Coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
@@ -306,7 +307,7 @@ int main(int argc, char *argv[]) {
 //       AcfactFinal = Acfact;
 // #else
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-      //Operator used to transfer coordinates to coarse grid
+      //Matrix used to transfer coordinates to coarse grid
       RCP<RFactory> Rtentfact = rcp( new TransPFactory(PtentFact) ); //for projecting coordinates
       //Factory that will invoke the coordinate transfer. This factory associates data and operator.
       mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R",Rtentfact));

@@ -112,7 +112,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called";
 
-    A_ = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+    A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
     linearProblem_ = rcp( new Epetra_LinearProblem() );

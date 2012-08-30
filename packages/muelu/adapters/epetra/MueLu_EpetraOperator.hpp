@@ -65,7 +65,7 @@ namespace MueLu {
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
     typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps LocalMatOps;
 
-    typedef Xpetra::Operator<double, int, int, Node, LocalMatOps> Operator;
+    typedef Xpetra::Matrix<double, int, int, Node, LocalMatOps> Matrix;
     typedef MueLu::Utils<double, int, int, Node, LocalMatOps>     Utils;
 
   public:

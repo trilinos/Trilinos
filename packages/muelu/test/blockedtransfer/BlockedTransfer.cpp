@@ -44,7 +44,7 @@
 //
 // @HEADER
 /*
- * BlockedTransferOperators.cpp
+ * BlockedTransfer.cpp
  *
  *  Created on: 01.01.2012
  *      Author: tobias
@@ -62,11 +62,11 @@
 
 // Xpetra
 #include <Xpetra_Map.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MapExtractor.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 
@@ -123,10 +123,9 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 /////////////////////////
 // helper function
 
-Teuchos::RCP<CrsOperator> GenerateProblemMatrix(const Teuchos::RCP<const Map> map, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
+Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> map, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
 
-
-  Teuchos::RCP<CrsOperator> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsOperator>::Build(map, 3);
+  Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
 
   LocalOrdinal NumMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -257,14 +256,14 @@ int main(int argc, char *argv[]) {
 
   Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LO, GO, Node> > mapExtractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(bigMap, maps);
 
-  RCP<CrsOperator> Op11 = GenerateProblemMatrix(map1,2,-1,-1);
-  RCP<CrsOperator> Op22 = GenerateProblemMatrix(map2,3,-2,-1);
+  RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix(map1,2,-1,-1);
+  RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix(map2,3,-2,-1);
 
   /*Op11->describe(*out,Teuchos::VERB_EXTREME);
   Op22->describe(*out,Teuchos::VERB_EXTREME);*/
 
   // build blocked operator
-  Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
+  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
 
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat11 = Op11->getCrsMatrix();
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat22 = Op22->getCrsMatrix();
@@ -276,7 +275,7 @@ int main(int argc, char *argv[]) {
   // build hierarchy
   Hierarchy H;
   RCP<Level> levelOne = H.GetLevel();
-  levelOne->Set("A", Teuchos::rcp_dynamic_cast<Operator>(bOp)); // set blocked operator
+  levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
   RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
   RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));

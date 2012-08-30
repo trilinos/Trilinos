@@ -43,16 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_OPERATORVIEW_FWD_HPP
-#define XPETRA_OPERATORVIEW_FWD_HPP
+#ifndef XPETRA_BLOCKEDCRSMATRIX_FWD_HPP
+#define XPETRA_BLOCKEDCRSMATRIX_FWD_HPP
 
-namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class OperatorView;
+namespace Xpetra {       
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class BlockedCrsMatrix;
 }
 
-#ifndef XPETRA_OPERATORVIEW_SHORT
-#define XPETRA_OPERATORVIEW_SHORT
+#ifndef XPETRA_BLOCKEDCRSMATRIX_SHORT
+#define XPETRA_BLOCKEDCRSMATRIX_SHORT
 #endif
 
-#endif // XPETRA_OPERATORVIEW_FWD_HPP
+#endif // XPETRA_BLOCKEDCRSMATRIX_FWD_HPP

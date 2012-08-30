@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   RCP<const Map> map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
 
   // Matrix
-  RCP<Operator> A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Matrix> A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
   // User defined nullspace
   RCP<MultiVector> nullSpace = VectorFactory::Build(map,1); nullSpace->putScalar((SC) 1.0);

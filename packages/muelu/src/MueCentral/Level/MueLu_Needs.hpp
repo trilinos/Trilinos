@@ -141,7 +141,7 @@ namespace MueLu {
     //@{
 
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
-    // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
+    // Usage: Level->Get< RCP<Matrix> >("A", factoryPtr)
     template <class T>
     const T & Get(const std::string & ename, const FactoryBase* factory) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory, ename), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
@@ -150,7 +150,7 @@ namespace MueLu {
     }
     
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
-    // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
+    // Usage: Level->Get< RCP<Matrix> >("A", factoryPtr)
     template <class T>
     T & Get(const std::string & ename, const FactoryBase* factory) {
       return const_cast<T &>(const_cast<const Needs &>(*this).Get<T>(ename, factory)); // Valid cast. See Effective C++, Item 3.

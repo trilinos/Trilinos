@@ -62,7 +62,7 @@
 
 // Xpetra
 #include <Xpetra_Map.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
@@ -109,12 +109,12 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
-Teuchos::RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> > TriDiag(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > & map,
+Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > TriDiag(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > & map,
         const GlobalOrdinal nx, // note: nx unused
         const Scalar a, const Scalar b, const Scalar c)
 {
 
-  Teuchos::RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> > mtx = Galeri::Xpetra::MatrixTraits<Xpetra::Map<LocalOrdinal, GlobalOrdinal>,Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> >::Build(map, 3);
+  Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > mtx = Galeri::Xpetra::OperatorTraits<Xpetra::Map<LocalOrdinal, GlobalOrdinal>,Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> >::Build(map, 3);
 
   LocalOrdinal NumMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  //MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+  //Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
   mtime.push_back(M.getNewTimer("Matrix Build"));
   (mtime.back())->start();
   const RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
-  RCP<Operator> Op = TriDiag<SC,LO,GO>(map,0, 1.0, 0.0, -1.0);
+  RCP<Matrix> Op = TriDiag<SC,LO,GO>(map,0, 1.0, 0.0, -1.0);
   Op->fillComplete();
   mtime.back()->stop();
 

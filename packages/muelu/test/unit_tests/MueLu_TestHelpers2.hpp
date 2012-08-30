@@ -61,7 +61,7 @@
 
 // Xpetra
 #include <Xpetra_Map.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -149,7 +149,7 @@ namespace MueLuTests {
 
       virtual ~TestProblem() { }
 
-      RCP<Operator>    & GetA()   { Init(); return A_; }
+      RCP<Matrix>    & GetA()   { Init(); return A_; }
       RCP<Hierarchy>   & GetH()   { Init(); return H_; }
       RCP<MultiVector> & GetRHS() { Init(); return B_; }
 
@@ -157,7 +157,7 @@ namespace MueLuTests {
 
     private:
       Xpetra::UnderlyingLib lib_;
-      RCP<Operator>    A_;
+      RCP<Matrix>    A_;
       RCP<Hierarchy>   H_;
       RCP<MultiVector> B_;
     };

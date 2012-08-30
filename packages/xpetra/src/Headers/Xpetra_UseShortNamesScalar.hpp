@@ -61,16 +61,16 @@ typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
 typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
 #endif
 
-#ifdef XPETRA_OPERATOR_SHORT
-typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
+#ifdef XPETRA_MATRIX_SHORT
+typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
 #endif
 
-#ifdef XPETRA_BLOCKEDCRSOPERATOR_SHORT
-typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperator;
+#ifdef XPETRA_BLOCKEDCRSMATRIX_SHORT
+typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsMatrix;
 #endif
 
-#ifdef XPETRA_CRSOPERATOR_SHORT
-typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
+#ifdef XPETRA_CRSMATRIXWRAP_SHORT
+typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixWrap;
 #endif
 
 #ifdef XPETRA_VECTORFACTORY_SHORT
@@ -85,8 +85,8 @@ typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, Loca
 typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
 #endif
 
-#ifdef XPETRA_OPERATORFACTORY_SHORT
-typedef Xpetra::OperatorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorFactory;
+#ifdef XPETRA_MATRIXFACTORY_SHORT
+typedef Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixFactory;
 #endif
 
 #ifdef XPETRA_TPETRACRSMATRIX_SHORT

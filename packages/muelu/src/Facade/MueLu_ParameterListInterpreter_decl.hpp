@@ -93,16 +93,16 @@ namespace MueLu {
 
     void BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut) const;
 
-    //@{ Operator configuration
+    //@{ Matrix configuration
 
-    //! Setup Operator object
-    virtual void SetupOperator(Operator & Op) const;
+    //! Setup Matrix object
+    virtual void SetupMatrix(Matrix & Op) const;
 
     //! Setup extra data
     virtual void SetupExtra(Hierarchy & H) const;
 
-    // Operator configuration storage
-    Teuchos::ParameterList operatorList_; //TODO: should it be stored in another format to avoid xml parsing in SetupOperator()?
+    // Matrix configuration storage
+    Teuchos::ParameterList operatorList_; //TODO: should it be stored in another format to avoid xml parsing in SetupMatrix()?
 
     //@}
 

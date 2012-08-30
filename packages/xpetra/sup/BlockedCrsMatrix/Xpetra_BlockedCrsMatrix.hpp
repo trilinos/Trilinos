@@ -44,7 +44,7 @@
 //
 // @HEADER
 /*
- * Xpetra_BlockedCrsOperator.hpp
+ * Xpetra_BlockedCrsMatrix.hpp
  *
  *  Created on: Aug 17, 2011
  *      Author: wiesner
@@ -52,8 +52,8 @@
 
 // WARNING: This code is experimental. Backwards compatibility should not be expected.
 
-#ifndef XPETRA_BLOCKEDCRSOPERATOR_HPP_
-#define XPETRA_BLOCKEDCRSOPERATOR_HPP_
+#ifndef XPETRA_BLOCKEDCRSMATRIX_HPP
+#define XPETRA_BLOCKEDCRSMATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
@@ -73,14 +73,14 @@
 
 #include "Xpetra_MapExtractor.hpp"
 
-#include "Xpetra_Operator.hpp"
+#include "Xpetra_Matrix.hpp"
 
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 
-/** \file Xpetra_Operator.hpp
+/** \file Xpetra_Matrix.hpp
 
-  Declarations for the class Xpetra::Operator.
+  Declarations for the class Xpetra::Matrix.
 */
 namespace Xpetra {
 
@@ -91,18 +91,18 @@ template <class Scalar,
           class GlobalOrdinal = LocalOrdinal,
           class Node          = Kokkos::DefaultNode::DefaultNodeType,
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-class BlockedCrsOperator : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+class BlockedCrsMatrix : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;
   typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
   typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixClass;
-  typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
   typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #ifdef HAVE_CTHULHU_TPETRA
   typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
-  typedef Xpetra::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
+  typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
 public:
 
@@ -116,7 +116,7 @@ public:
    * \param npr extimated number of entries per row in each block(!)
    * \param pftype Xpetra profile type
    */
-  BlockedCrsOperator(Teuchos::RCP<const MapExtractorClass>& rangeMaps,
+  BlockedCrsMatrix(Teuchos::RCP<const MapExtractorClass>& rangeMaps,
                      Teuchos::RCP<const MapExtractorClass>& domainMaps,
                      size_t npr,
                      Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
@@ -143,7 +143,7 @@ public:
   }
 
   //! Destructor
-  virtual ~BlockedCrsOperator() {}
+  virtual ~BlockedCrsMatrix() {}
 
   //@}
 
@@ -166,7 +166,7 @@ public:
   void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals)
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "insertGlobalValues not supported by BlockedCrsOperator!" );
+        "insertGlobalValues not supported by BlockedCrsMatrix!" );
   }
 
   //! Insert matrix entries, using local IDs.
@@ -179,7 +179,7 @@ public:
   */
   void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "insertLocalValues not supported by BlockedCrsOperator!" );
+        "insertLocalValues not supported by BlockedCrsMatrix!" );
   }
 
   //@}
@@ -342,7 +342,7 @@ public:
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getNumEntriesInLocalRow not supported by BlockedCrsOperator!" );
+        "getNumEntriesInLocalRow not supported by BlockedCrsMatrix!" );
     return 0;
   }
 
@@ -352,7 +352,7 @@ public:
   global_size_t getGlobalNumDiags() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getGlobalNumDiags() not supported by BlockedCrsOperator!" );
+        "getGlobalNumDiags() not supported by BlockedCrsMatrix!" );
     return 0;
   }
 
@@ -362,7 +362,7 @@ public:
   size_t getNodeNumDiags() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getNodeNumDiags() not supported by BlockedCrsOperator!" );
+        "getNodeNumDiags() not supported by BlockedCrsMatrix!" );
     return 0;
   }
 
@@ -372,7 +372,7 @@ public:
   size_t getGlobalMaxNumRowEntries() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getGlobalMaxNumRowEntries() not supported by BlockedCrsOperator!" );
+        "getGlobalMaxNumRowEntries() not supported by BlockedCrsMatrix!" );
     return 0;
   }
 
@@ -382,7 +382,7 @@ public:
   size_t getNodeMaxNumRowEntries() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getNodeMaxNumRowEntries() not supported by BlockedCrsOperator!" );
+        "getNodeMaxNumRowEntries() not supported by BlockedCrsMatrix!" );
     return 0;
   }
 
@@ -439,7 +439,7 @@ public:
                                  ) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-          "getLocalRowCopy not supported by BlockedCrsOperator!" );
+          "getLocalRowCopy not supported by BlockedCrsMatrix!" );
     }
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
@@ -455,7 +455,7 @@ public:
   void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getGlobalRowView not supported by BlockedCrsOperator!" );
+        "getGlobalRowView not supported by BlockedCrsMatrix!" );
   }
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
@@ -471,7 +471,7 @@ public:
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getLocalRowView not supported by BlockedCrsOperator!" );
+        "getLocalRowView not supported by BlockedCrsMatrix!" );
   }
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
@@ -480,14 +480,14 @@ public:
   void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getLocalDiagCopy not supported by BlockedCrsOperator!" );
+        "getLocalDiagCopy not supported by BlockedCrsMatrix!" );
   }
 
   //! Get Frobenius norm of the matrix
   virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getFrobeniusNorm() not supported by BlockedCrsOperator, yet!" );
+        "getFrobeniusNorm() not supported by BlockedCrsMatrix, yet!" );
   }
 
   //@}
@@ -512,7 +512,7 @@ public:
 
   //@}
 
-  //! @name Methods implementing Operator
+  //! @name Methods implementing Matrix
   //@{
 
   //! \brief Computes the sparse matrix-multivector multiplication.
@@ -618,7 +618,7 @@ public:
   /** \brief Return a simple one-line description of this object. */
   std::string description() const {
     std::ostringstream oss;
-    oss << "Xpetra_BlockedCrsOperator.description()" << std::endl;
+    oss << "Xpetra_BlockedCrsMatrix.description()" << std::endl;
     return oss.str();
   }
 
@@ -632,18 +632,18 @@ public:
 
     //     if (myImageID == 0) out << this->description() << std::endl;
 
-    out << "Xpetra::BlockedCrsOperator: " << Rows() << " x " << Cols() << std::endl;
+    out << "Xpetra::BlockedCrsMatrix: " << Rows() << " x " << Cols() << std::endl;
 
     if(isFillComplete())
     {
-      out << "BlockOperator is filled" << std::endl;
+      out << "BlockMatrix is filled" << std::endl;
       out << "fullRowMap" << std::endl;
       fullrowmap_->describe(out,verbLevel);
       out << "fullColMap" << std::endl;
       fullcolmap_->describe(out,verbLevel);
     }
     else
-      out << "BlockOperator is NOT filled" << std::endl;
+      out << "BlockMatrix is NOT filled" << std::endl;
 
     for (size_t r=0; r<Rows(); ++r)
     {
@@ -666,7 +666,7 @@ public:
   RCP<const CrsGraph> getCrsGraph() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getCrsGraph() not supported by BlockedCrsOperator!" );
+        "getCrsGraph() not supported by BlockedCrsMatrix!" );
     return Teuchos::null;
   }
 
@@ -700,7 +700,7 @@ public:
     blocks_[r*Cols()+c] = mat;
   }
 
-  /// merge BlockedCrsOperator blocks in a CrsMatrix
+  /// merge BlockedCrsMatrix blocks in a CrsMatrix
   /*
    * This is a rather expensive operation, since all blocks are copied into a new big CrsMatrix
    */
@@ -731,8 +731,8 @@ private:
    * Here we need something to catch the exceptions of a future implementation of sumIntoGlobalValues that
    * then adds the remaining new entries with insertGlobal Values.
    *
-   * This routine is private and used only by Merge. Since the blocks in BlockedCrsOperator are seperated,
-   * this routine works for merging a BlockedCrsOperator.
+   * This routine is private and used only by Merge. Since the blocks in BlockedCrsMatrix are seperated,
+   * this routine works for merging a BlockedCrsMatrix.
    */
   void Add(Teuchos::RCP<CrsMatrixClass>& A, const Scalar scalarA, Teuchos::RCP<CrsMatrixClass>& B, const Scalar scalarB) const
   {
@@ -827,9 +827,9 @@ private:
   Teuchos::RCP<MapClass> fullcolmap_;
 
 
-}; //class BlockedCrsOperator
+}; //class BlockedCrsMatrix
 
 } //namespace Xpetra
 
-#define XPETRA_BLOCKEDCRSOPERATOR_SHORT
-#endif /* XPETRA_BLOCKEDCRSOPERATOR_HPP_ */
+#define XPETRA_BLOCKEDCRSMATRIX_SHORT
+#endif /* XPETRA_BLOCKEDCRSMATRIX_HPP */

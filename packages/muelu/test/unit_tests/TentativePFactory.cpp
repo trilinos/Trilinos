@@ -104,7 +104,7 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(/*199*/29);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(/*199*/29);
     A->SetFixedBlockSize(1);
     fineLevel.Set("A",A);
 
@@ -128,7 +128,7 @@ namespace MueLuTests {
       coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
-      RCP<Operator> Ptent; 
+      RCP<Matrix> Ptent; 
       coarseLevel.Get("P",Ptent,TentativePFact.get());
 
       RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace", TentativePFact.get());
@@ -169,7 +169,7 @@ namespace MueLuTests {
       fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
       coarseLevel.SetFactoryManager(Teuchos::null);
 
-      RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
+      RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
       fineLevel.Request("A");
       fineLevel.Set("A",A);
 
@@ -194,7 +194,7 @@ namespace MueLuTests {
       coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
-      RCP<Operator> Ptent;
+      RCP<Matrix> Ptent;
       coarseLevel.Get("P",Ptent,TentativePFact.get());
 
       RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",TentativePFact.get());
@@ -220,7 +220,7 @@ namespace MueLuTests {
       }
 
       // check normalization and orthogonality of prolongator columns
-      Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(Ptent,true,Ptent,false);
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(Ptent,true,Ptent,false);
       Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO> > diagVec = Xpetra::VectorFactory<Scalar,LO,GO>::Build(PtentTPtent->getRowMap());
       PtentTPtent->getLocalDiagCopy(*diagVec);
       //std::cout << diagVec->norm1() << " " << diagVec->normInf() << " " << diagVec->meanValue() << std::endl;
@@ -238,7 +238,7 @@ namespace MueLuTests {
 
     Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
 
     fineLevel.Set("A", A);
 
@@ -255,7 +255,7 @@ namespace MueLuTests {
     coarseLevel.Request(*tentativePFact);
     tentativePFact->Build(fineLevel,coarseLevel);
 
-    RCP<Operator> Ptent; 
+    RCP<Matrix> Ptent; 
     coarseLevel.Get("P",Ptent,tentativePFact.get());
 
     RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",tentativePFact.get());
@@ -302,9 +302,7 @@ namespace MueLuTests {
     GO nEle = 63;
     GO nIndexBase = 10;
     const RCP<const Map> map = MapFactory::Build(lib, nEle, nIndexBase, comm);
-
-
-    RCP<CrsOperator> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsOperator>::Build(map, 3);
+    RCP<Matrix> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
 
     LocalOrdinal NumMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -364,7 +362,7 @@ namespace MueLuTests {
 
     std::cout << map->getIndexBase() << std::endl;
 
-    RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(mtx);
+    RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(mtx);
 
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -497,7 +495,7 @@ namespace MueLuTests {
             const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
             Teuchos::ParameterList matrixParameters;
             matrixParameters.set("nx",nEle);
-            RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, matrixParameters);
+            RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, matrixParameters);
 
             // build nullspace
             RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -552,21 +550,21 @@ namespace MueLuTests {
 
             // test some basic multgrid data
             RCP<Level> coarseLevel = H->GetLevel(1);
-            RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-            RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+            RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+            RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
             TEST_EQUALITY(P1->getGlobalNumRows(), 63);
             TEST_EQUALITY(P1->getGlobalNumCols(), 21);
             TEST_EQUALITY(R1->getGlobalNumRows(), 21);
             TEST_EQUALITY(R1->getGlobalNumCols(), 63);
             RCP<Level> coarseLevel2 = H->GetLevel(2);
-            RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-            RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+            RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+            RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
             TEST_EQUALITY(P2->getGlobalNumRows(), 21);
             TEST_EQUALITY(P2->getGlobalNumCols(), 7);
             TEST_EQUALITY(R2->getGlobalNumRows(), 7);
             TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-            Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+            Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
             Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO> > diagVec = Xpetra::VectorFactory<Scalar,LO,GO>::Build(PtentTPtent->getRowMap());
             PtentTPtent->getLocalDiagCopy(*diagVec);
             TEST_EQUALITY(diagVec->norm1()-diagVec->getGlobalLength() < 1e-12, true);

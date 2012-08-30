@@ -48,7 +48,7 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
@@ -116,7 +116,7 @@ namespace MueLu {
     //if(paramList.isParameter("aggregation: nodes per aggregate")) minPerAgg        = paramList.get<int>("aggregation: nodes per aggregate");
     if(paramList.isParameter("energy minimization: enable"))     bEnergyMinimization = paramList.get<bool>("energy minimization: enable");
 
-    // Operator option
+    // Matrix option
     blksize_ = nDofsPerNode;
 
     // Translate verbosity parameter
@@ -244,7 +244,7 @@ namespace MueLu {
     // if nullspace_ has already been extracted from ML parameter list
     if (nullspace_ != NULL) {
       RCP<Level> fineLevel = H.GetLevel(0);
-      const RCP<const Map> rowMap = fineLevel->Get< RCP<Operator> >("A")->getRowMap();
+      const RCP<const Map> rowMap = fineLevel->Get< RCP<Matrix> >("A")->getRowMap();
       RCP<MultiVector> nullspace = MultiVectorFactory::Build(rowMap, nullspaceDim_, true);
       
       for ( size_t i=0; i < Teuchos::as<size_t>(nullspaceDim_); i++) {
@@ -464,7 +464,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupOperator(Operator & Op) const {
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix & Op) const {
       Op.SetFixedBlockSize(blksize_);
   }
 

@@ -95,7 +95,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (this->IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
 
-    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 
     if (type_ == "CHEBYSHEV") {
       Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue",(Scalar)-1.0);

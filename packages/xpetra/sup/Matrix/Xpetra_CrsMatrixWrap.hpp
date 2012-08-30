@@ -46,8 +46,8 @@
 
 // WARNING: This code is experimental. Backwards compatibility should not be expected.
 
-#ifndef XPETRA_CRSOPERATOR_HPP
-#define XPETRA_CRSOPERATOR_HPP
+#ifndef XPETRA_CRSMATRIXWRAP_HPP
+#define XPETRA_CRSMATRIXWRAP_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
@@ -60,39 +60,39 @@
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
 
-#include "Xpetra_Operator.hpp"
+#include "Xpetra_Matrix.hpp"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
 
-/** \file Xpetra_CrsOperator.hpp
+/** \file Xpetra_CrsMatrixWrap.hpp
 
-  Declarations for the class Xpetra::CrsOperator.
+  Declarations for the class Xpetra::CrsMatrixWrap.
 */
 namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
 /*!
-  @class CrsOperator
-  @brief Concrete implementation of Xpetra::Operator.
+  @class CrsMatrixWrap
+  @brief Concrete implementation of Xpetra::Matrix.
 */
 template <class Scalar, 
           class LocalOrdinal  = int, 
           class GlobalOrdinal = LocalOrdinal, 
           class Node          = Kokkos::DefaultNode::DefaultNodeType, 
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-class CrsOperator : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
-  typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
   typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #ifdef HAVE_XPETRA_TPETRA
   typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
-  typedef Xpetra::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
+  typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
 public:
   
@@ -100,7 +100,7 @@ public:
   //@{
 
   //! Constructor specifying fixed number of entries for each row.
-  CrsOperator(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+  CrsMatrixWrap(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
     : finalDefaultView_(false)
   {
     // Set matrix data
@@ -111,7 +111,7 @@ public:
   }
 
   //! Constructor specifying (possibly different) number of entries in each row.
-  CrsOperator(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile)
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile)
     : finalDefaultView_(false)
   {
     // Set matrix data
@@ -121,7 +121,7 @@ public:
     CreateDefaultView();
   }
   
-  CrsOperator(RCP<CrsMatrix> &matrix)
+  CrsMatrixWrap(RCP<CrsMatrix> &matrix)
     : finalDefaultView_(matrix->isFillComplete())
   {
     // Set matrix data
@@ -132,7 +132,7 @@ public:
   }
   
   //! Destructor
-  virtual ~CrsOperator() {}
+  virtual ~CrsMatrixWrap() {}
 
   //@}
 
@@ -375,7 +375,7 @@ public:
 
   //@}
 
-  //! @name Methods implementing Operator
+  //! @name Methods implementing Matrix
   //@{ 
 
   //! \brief Computes the sparse matrix-multivector multiplication.
@@ -404,13 +404,13 @@ public:
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
   //! This might be <tt>null</tt> until fillComplete() is called.
-  const RCP<const Map> & getColMap() const { return getColMap(Operator::GetCurrentViewLabel()); }
+  const RCP<const Map> & getColMap() const { return getColMap(Matrix::GetCurrentViewLabel()); }
   
   //! \brief Returns the Map that describes the column distribution in this matrix.
   const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
-    TEUCHOS_TEST_FOR_EXCEPTION(Operator::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
-    updateDefaultView(); // If CrsMatrix::fillComplete() have been used instead of CrsOperator::fillComplete(), the default view is updated.
-    return Operator::operatorViewTable_.get(viewLabel)->GetColMap(); 
+    TEUCHOS_TEST_FOR_EXCEPTION(Matrix::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetColMap(): view '" + viewLabel + "' does not exist.");
+    updateDefaultView(); // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated.
+    return Matrix::operatorViewTable_.get(viewLabel)->GetColMap(); 
   }
   
   //@}
@@ -420,7 +420,7 @@ public:
   
   /** \brief Return a simple one-line description of this object. */
   std::string description() const {
-    return "Xpetra_CrsOperator.description()";
+    return "Xpetra_CrsMatrixWrap.description()";
   }
   
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
@@ -464,28 +464,28 @@ private:
 
 private:
 
-  // The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Operator have to be updated when fillComplete() is called. 
-  // If CrsMatrix::fillComplete() have been used instead of CrsOperator::fillComplete(), the default view is updated when getColMap() is called.
+  // The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called. 
+  // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated when getColMap() is called.
   void updateDefaultView() const {
     if ((finalDefaultView_ == false) &&  matrixData_->isFillComplete() ) {
       // Update default view with the colMap
-      Operator::operatorViewTable_.get(Operator::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
+      Matrix::operatorViewTable_.get(Matrix::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
       finalDefaultView_ = true;
     }
   }
   // The boolean finalDefaultView_ keep track of the status of the default view (= already updated or not)
-  // See also CrsOperator::updateDefaultView()
+  // See also CrsMatrixWrap::updateDefaultView()
   mutable bool finalDefaultView_;
 
 
   RCP<CrsMatrix> matrixData_;
 
-}; //class Operator
+}; //class Matrix
 
 } //namespace Xpetra
 
-#define XPETRA_CRSOPERATOR_SHORT
-#endif //XPETRA_CRSOPERATOR_DECL_HPP
+#define XPETRA_CRSMATRIXWRAP_SHORT
+#endif //XPETRA_CRSMATRIXWRAP_DECL_HPP
 
-//NOTE: if CrsMatrix and VbrMatrix share a common interface for fillComplete() etc, I can move some stuff in Xpetra_Operator.hpp
+//NOTE: if CrsMatrix and VbrMatrix share a common interface for fillComplete() etc, I can move some stuff in Xpetra_Matrix.hpp
 //TODO: getUnderlyingMatrix() method

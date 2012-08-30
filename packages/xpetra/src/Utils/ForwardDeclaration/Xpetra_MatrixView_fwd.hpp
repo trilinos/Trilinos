@@ -43,16 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_OPERATOR_FWD_HPP
-#define XPETRA_OPERATOR_FWD_HPP
+#ifndef XPETRA_MATRIXVIEW_FWD_HPP
+#define XPETRA_MATRIXVIEW_FWD_HPP
 
-namespace Xpetra {       
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class Operator;
+namespace Xpetra {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  class MatrixView;
 }
 
-#ifndef XPETRA_OPERATOR_SHORT
-#define XPETRA_OPERATOR_SHORT
+#ifndef XPETRA_MATRIXVIEW_SHORT
+#define XPETRA_MATRIXVIEW_SHORT
 #endif
 
-#endif // XPETRA_OPERATOR_FWD_HPP
+#endif // XPETRA_MATRIXVIEW_FWD_HPP

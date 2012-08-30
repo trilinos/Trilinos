@@ -46,7 +46,7 @@
 #ifndef MUELU_NULLSPACEFACTORY_DEF_HPP
 #define MUELU_NULLSPACEFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
@@ -110,7 +110,7 @@ namespace MueLu {
       
       } else {
         // "Nullspace" (nspName_) is not available
-        RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get()); // no request since given by user
+        RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get()); // no request since given by user
         
         // determine numPDEs
         LocalOrdinal numPDEs = 1;

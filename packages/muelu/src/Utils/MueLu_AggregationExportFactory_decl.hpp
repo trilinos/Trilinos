@@ -53,8 +53,8 @@
 #ifndef MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
 #define MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
 
-#include <Xpetra_Operator_fwd.hpp>
-#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"

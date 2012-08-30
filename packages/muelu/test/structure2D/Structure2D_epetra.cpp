@@ -69,7 +69,7 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
@@ -167,10 +167,10 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
-  // Epetra_CrsMatrix -> Xpetra::Operator
+  // Epetra_CrsMatrix -> Xpetra::Matrix
   RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<CrsOperator> crsOp = Teuchos::rcp(new CrsOperator(exA));
-  RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(crsOp);
+  RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
+  RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
   Op->SetFixedBlockSize(nDofsPerNode);
 
   // Epetra_Vector -> Xpetra::Vector

@@ -78,10 +78,10 @@ namespace MueLu {
     // Parameter List Parsing:
     // ---------
     //   <ParameterList name="MueLu">
-    //    <ParameterList name="Operator">
+    //    <ParameterList name="Matrix">
     //   </ParameterList>
-    if (paramList.isSublist("Operator")) {
-      operatorList_ = paramList.sublist("Operator");
+    if (paramList.isSublist("Matrix")) {
+      operatorList_ = paramList.sublist("Matrix");
       //TODO: should be validate here.
     }
 
@@ -183,7 +183,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupOperator(Operator & Op) const {
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix & Op) const {
     if(operatorList_.isParameter("PDE equations")) {
       int nPDE = operatorList_.get<int>("PDE equations");
       Op.SetFixedBlockSize(nPDE);
@@ -217,7 +217,7 @@ namespace MueLu {
     if (arrayOfPtrs.size() != 0) {
       std::cout << "ParameterListInterpreter:: Coordinates found! (dim=" << arrayOfPtrs.size() << ")" << std::endl;
       RCP<Level>     lvl0 = H.GetLevel(0);
-      RCP<const Map> map  = lvl0->Get<RCP<Operator> >("A")->getRowMap();
+      RCP<const Map> map  = lvl0->Get<RCP<Matrix> >("A")->getRowMap();
       RCP<MultiVector> coordinates = MultiVectorFactory::Build(map, arrayOfPtrs, arrayOfPtrs.size());
       
       lvl0->Set("Coordinates", coordinates);

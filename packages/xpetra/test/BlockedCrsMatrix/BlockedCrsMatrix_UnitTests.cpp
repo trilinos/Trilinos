@@ -44,7 +44,7 @@
 //
 // @HEADER
 /*
- * BlockedCrsOperator_UnitTests.cpp
+ * BlockedCrsMatrix_UnitTests.cpp
  *
  *  Created on: Aug 22, 2011
  *      Author: wiesner
@@ -77,8 +77,8 @@
 #include <Teuchos_as.hpp>
 
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrix.hpp>
 #ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #endif
@@ -87,7 +87,7 @@
 #endif
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
 
 #include <MueLu_Utilities.hpp> //TODO: Xpetra tests should not use MueLu
@@ -109,8 +109,8 @@ namespace {
   using Teuchos::Comm;
 
   using Xpetra::DefaultPlatform;
-  using Xpetra::Operator;
-  using Xpetra::CrsOperator;
+  using Xpetra::Matrix;
+  using Xpetra::CrsMatrix;
 #ifdef HAVE_XPETRA_TPETRA
   using Xpetra::TpetraCrsMatrix; //TMP
 #endif
@@ -614,8 +614,8 @@ namespace {
   //
 
 
-  /// simple test routine for the apply function of BlockedCrsOperator
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraApply, Scalar, LO, GO, Node )
+  /// simple test routine for the apply function of BlockedCrsMatrix
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraApply, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_EPETRAEXT
 
@@ -702,7 +702,7 @@ namespace {
     Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xfullmap,xmaps);
 
     // build blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(map_extractor,map_extractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
     bOp->setMatrix(0,0,xA11);
     bOp->setMatrix(0,1,xA12);
     bOp->setMatrix(1,0,xA21);
@@ -733,7 +733,7 @@ namespace {
   }
 
   /// simple test for matrix-matrix multiplication for two 2x2 blocked matrices
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
   {
 #ifdef HAVE_XPETRA_EPETRAEXT
 
@@ -821,7 +821,7 @@ namespace {
     Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xfullmap,xmaps);
 
     // build blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(map_extractor,map_extractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
     bOp->setMatrix(0,0,xA11);
     bOp->setMatrix(0,1,xA12);
     bOp->setMatrix(1,0,xA21);
@@ -862,7 +862,7 @@ namespace {
     Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO> > map_extractor_2 = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xfullmap_2,xmaps_2);
 
     // build blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bOp_2 = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(map_extractor_2,map_extractor_2,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO> > bOp_2 = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor_2,map_extractor_2,10));
     bOp_2->setMatrix(0,0,xA11_2);
     bOp_2->setMatrix(0,1,xA12_2);
     bOp_2->setMatrix(1,0,xA21_2);
@@ -871,13 +871,13 @@ namespace {
     bOp_2->fillComplete();
     //////////////////////////////
 
-    RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bOpbOp_2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiplyBlock(bOp,false,bOp_2,false);
+    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO> > bOpbOp_2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiplyBlock(bOp,false,bOp_2,false);
 
     //////////////////////////////
     // matrix-matrix multiplication of standard matrices
-    RCP<Xpetra::CrsOperator<Scalar,LO,GO> > xfuAop   = rcp(new Xpetra::CrsOperator<Scalar,LO,GO>(xfuA));
-    RCP<Xpetra::CrsOperator<Scalar,LO,GO> > xfuAop_2 = rcp(new Xpetra::CrsOperator<Scalar,LO,GO>(xfuA_2));
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > fuAfuA_2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(xfuAop,false,xfuAop_2,false);
+    RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xfuAop   = rcp(new Xpetra::CrsMatrix<Scalar,LO,GO>(xfuA));
+    RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xfuAop_2 = rcp(new Xpetra::CrsMatrix<Scalar,LO,GO>(xfuA_2));
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > fuAfuA_2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(xfuAop,false,xfuAop_2,false);
 
     /////////////////////////////
     // build vector
@@ -909,7 +909,7 @@ namespace {
   }
 
   /// simple test for matrix-matrix multiplication for a 2x2 blocked matrix with a 2x1 blocked matrix
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult2x1, Scalar, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, Scalar, LO, GO, Node)
   {
 #ifdef HAVE_XPETRA_EPETRAEXT
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -983,7 +983,7 @@ namespace {
     // build blocked operators
 
     // build 2x2 blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bA = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(map_extractor,map_extractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO> > bA = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
     bA->setMatrix(0,0,xA11);
     bA->setMatrix(0,1,xA12);
     bA->setMatrix(1,0,xA21);
@@ -991,12 +991,12 @@ namespace {
     bA->fillComplete();
 
     // build 2x1 blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bP = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(map_extractor,map_domextractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO> > bP = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_domextractor,10));
     bP->setMatrix(0,0,xP1);
     bP->setMatrix(1,0,xP2);
     bP->fillComplete();
 
-    RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bAbP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiplyBlock(bA,false,bP,false);
+    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO> > bAbP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiplyBlock(bA,false,bP,false);
 
     TEUCHOS_TEST_EQUALITY(bAbP->Rows(), 2, out, success );
     TEUCHOS_TEST_EQUALITY(bAbP->Cols(), 1, out, success );
@@ -1021,9 +1021,9 @@ namespace {
   //
 
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraApply, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraMatrixMatrixMult, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraApply, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
 
   typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
   

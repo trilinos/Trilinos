@@ -133,7 +133,7 @@ int main(int argc,char * argv[])
   //
   //   // read in the RHS vector
   //   Epetra_Vector * ptrb = 0;
-  //   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->OperatorRangeMap(),ptrb);
+  //   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->MatrixRangeMap(),ptrb);
   //   RCP<const Epetra_Vector> b = rcp(ptrb);
   
   RCP<const Map> map = MapFactory::createUniformContigMap(lib, matrixParameters.GetNumGlobalElements(), comm);

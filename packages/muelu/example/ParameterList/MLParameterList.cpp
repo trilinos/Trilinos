@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   //
 
   RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator>  A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Matrix>  A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
   //
   // Preconditionner configuration
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     //
 
     // Multigrid Hierarchy
-    RCP<CrsOperator>      crsOp         = Teuchos::rcp_dynamic_cast<CrsOperator>(A, true);
+    RCP<CrsMatrixWrap>      crsOp         = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
     RCP<CrsMatrix>        crsMtx        = crsOp->getCrsMatrix();
     RCP<EpetraCrsMatrix>  epetraCrsMtx  = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(crsMtx, true);
     RCP<const Epetra_CrsMatrix> epetra_CrsMtx = epetraCrsMtx->getEpetra_CrsMatrix();

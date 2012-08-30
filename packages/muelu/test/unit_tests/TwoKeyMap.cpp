@@ -70,18 +70,18 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    // build Operator
+    // build Matrix
     Teuchos::ParameterList params;
     const RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), 20, 0, comm);
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, params);
+    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, params);
 
     // a TwoKeyMap
     //TODO    RCP<MueLu::UTILS::TwoKeyMap> exh = Teuchos::rcp(new MueLu::UTILS::TwoKeyMap());
 
     //TODO
-//     exh->Set<RCP<Operator> >("op", sapFactory.get(), Op);
-//     RCP<Operator> test = Teuchos::null;
-//     test = exh->Get<RCP<Operator> >("op", sapFactory.get());
+//     exh->Set<RCP<Matrix> >("op", sapFactory.get(), Op);
+//     RCP<Matrix> test = Teuchos::null;
+//     test = exh->Get<RCP<Matrix> >("op", sapFactory.get());
 //     TEST_EQUALITY_CONST( test, Op );
 
 //     exh->Set("op", sapFactory.get(), 22);
@@ -89,7 +89,7 @@ namespace MueLuTests {
 //     TEST_EQUALITY_CONST( test2, 22 );
 
 //     exh->Set("op", sapFactory2.get(), Op);
-//     RCP<Operator> test3 = exh->Get<RCP<Operator> > ("op", sapFactory2.get());
+//     RCP<Matrix> test3 = exh->Get<RCP<Matrix> > ("op", sapFactory2.get());
 //     TEST_EQUALITY_CONST( test3, Op );
 //     TEST_EQUALITY_CONST( exh->GetType("op", sapFactory.get()), "int" );
 

@@ -56,8 +56,8 @@
 //#include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapFactory.hpp"
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_CrsOperator.hpp"
+#include "Xpetra_Matrix.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
@@ -80,8 +80,8 @@ namespace {
   using Teuchos::Comm;
 
   using Xpetra::DefaultPlatform;
-  using Xpetra::Operator;
-  using Xpetra::CrsOperator;
+  using Xpetra::Matrix;
+  using Xpetra::CrsMatrixWrap;
 #ifdef HAVE_XPETRA_TPETRA
   using Xpetra::TpetraCrsMatrix; //TMP
 #endif
@@ -123,12 +123,12 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Operator, ViewSwitching, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Matrix, ViewSwitching, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
   {
 #ifdef HAVE_XPETRA_TPETRA
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Operator<Scalar, LO, GO, Node> Operator;
-    typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
+    typedef Matrix<Scalar, LO, GO, Node> Matrix;
+    typedef CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     RCP<const Comm<int> > comm = getDefaultComm();
 
     const size_t numLocal = 10;
@@ -138,7 +138,7 @@ namespace {
        TpetraCrsMatrix<Scalar, LO, GO, Node> t =  TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
 
        // Test of constructor
-       CrsOperator op(map,1);
+       CrsMatrixWrap op(map,1);
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
 
@@ -175,7 +175,7 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Operator, StridedMaps, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Matrix, StridedMaps, Scalar, LO, GO, Node )
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const size_t numLocal = 10;
@@ -183,8 +183,8 @@ namespace {
 
 #ifdef HAVE_XPETRA_TPETRA
     //typedef Teuchos::ScalarTraits<Scalar> ST;
-    //typedef Operator<Scalar, LO, GO, Node> Operator;
-    typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
+    //typedef Matrix<Scalar, LO, GO, Node> Matrix;
+    typedef CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
 
 
     RCP<const Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
@@ -192,7 +192,7 @@ namespace {
        TpetraCrsMatrix<Scalar, LO, GO, Node> t =  TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
 
        // Test of constructor
-       CrsOperator op(map,1);
+       CrsMatrixWrap op(map,1);
        op.fillComplete();
 
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
@@ -207,14 +207,14 @@ namespace {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    typedef Xpetra::CrsOperator<double, int, int, Node> EpCrsOperator;
+    typedef Xpetra::CrsMatrixWrap<double, int, int, Node> EpCrsMatrix;
 
     RCP<const Map<int,int,Node> > epmap = Xpetra::MapFactory<int,int,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
      {
        EpetraCrsMatrix t =  EpetraCrsMatrix(epmap, numLocal);
 
        // Test of constructor
-       EpCrsOperator op(epmap,1);
+       EpCrsMatrix op(epmap,1);
        op.fillComplete();
 
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
@@ -234,8 +234,8 @@ namespace {
   //
 
 #   define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                       \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Operator, ViewSwitching, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Operator, StridedMaps, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Matrix, ViewSwitching, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Matrix, StridedMaps, SC, LO, GO, Node )
   
   typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)

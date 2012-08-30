@@ -46,7 +46,7 @@
 #ifndef MUELU_NULLSPACEFACTORY_DECL_HPP
 #define MUELU_NULLSPACEFACTORY_DECL_HPP
 
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 

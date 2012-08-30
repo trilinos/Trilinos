@@ -31,14 +31,14 @@ IF (NOT Trilinos_ENABLE_Kokkos)
   APPEND_GLOB(HEADERS FakeKokkos/*.hpp)
 ENDIF()
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Operator)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Matrix)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/StridedMap)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/BlockedCrsOperator)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/BlockedCrsMatrix)
 
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 #Note: Do not use */*.hpp. Append FakeKokkos/*.hpp only if Kokkos is disabled.
-APPEND_GLOB(HEADERS Operator/*.hpp)
-APPEND_GLOB(HEADERS BlockedCrsOperator/*.hpp)
+APPEND_GLOB(HEADERS Matrix/*.hpp)
+APPEND_GLOB(HEADERS BlockedCrsMatrix/*.hpp)
 APPEND_GLOB(HEADERS StridedMap/*.hpp)
 
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})

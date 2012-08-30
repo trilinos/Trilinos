@@ -48,7 +48,7 @@
 #include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_ExportFactory.hpp"
-#include "Xpetra_OperatorFactory.hpp"
+#include "Xpetra_MatrixFactory.hpp"
 
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
@@ -129,8 +129,9 @@ namespace MueLuTests {
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
     matrixList.set("keepBCs",true); //keeps Dirichlet rows
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
-    level.Set<RCP<Operator> >("A",Op);
+
+    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
     if (decomposition->getLocalLength() > 0)
@@ -264,8 +265,8 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
-    level.Set<RCP<Operator> >("A",Op);
+    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
     if (decomposition->getLocalLength() > 0)
@@ -400,8 +401,9 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
-    level.Set<RCP<Operator> >("A",Op);
+
+    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
     if (decomposition->getLocalLength() > 0)
@@ -527,8 +529,9 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
-    level.Set<RCP<Operator> >("A",Op);
+
+    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
     if (decomposition->getLocalLength() > 0)
@@ -655,8 +658,9 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
-    level.Set<RCP<Operator> >("A",Op);
+
+    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
     if (decomposition->getLocalLength() > 0)
@@ -820,8 +824,9 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
-    level.Set<RCP<Operator> >("A",Op);
+
+    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
     if (decomposition->getLocalLength() > 0)
@@ -896,11 +901,11 @@ namespace MueLuTests {
 
     RCP<const Import> importer;
     level.Get("Importer",importer,repart.get());
-    //TODO this next bit needs to be put into Xpetra::Operator or Xpetra::Utils
-    RCP<Operator> PermTimesA = OperatorFactory::Build(importer->getTargetMap(), Op->getGlobalMaxNumRowEntries());
-    RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(PermTimesA);
+    //TODO this next bit needs to be put into Xpetra::Matrix or Xpetra::Utils
+    RCP<Matrix> PermTimesA = MatrixFactory::Build(importer->getTargetMap(), Op->getGlobalMaxNumRowEntries());
+    RCP<CrsMatrixWrap> crsOp = rcp_dynamic_cast<CrsMatrixWrap>(PermTimesA);
     RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
-    RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(Op);
+    RCP<CrsMatrixWrap> origOp = rcp_dynamic_cast<CrsMatrixWrap>(Op);
     RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
     crsMtx->doImport(*origMtx, *importer,Xpetra::INSERT);
     crsMtx = Teuchos::null;

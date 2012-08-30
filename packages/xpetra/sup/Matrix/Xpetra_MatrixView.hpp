@@ -43,16 +43,67 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_OPERATORFACTORY_FWD_HPP
-#define XPETRA_OPERATORFACTORY_FWD_HPP
 
-namespace Xpetra {       
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class OperatorFactory;
-}
+// WARNING: This code is experimental. Backwards compatibility should not be expected.
 
-#ifndef XPETRA_OPERATORFACTORY_SHORT
-#define XPETRA_OPERATORFACTORY_SHORT
-#endif
+#ifndef XPETRA_MATRIXVIEW_HPP
+#define XPETRA_MATRIXVIEW_HPP
 
-#endif // XPETRA_OPERATORFACTORY_FWD_HPP
+#include <Teuchos_Describable.hpp>
+#include <Kokkos_DefaultNode.hpp>
+
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Map.hpp"
+
+/** \file Xpetra_MatrixView.hpp
+
+Declarations for the class Xpetra::MatrixView.
+*/
+namespace Xpetra {
+
+  template <class LocalOrdinal  = int, 
+            class GlobalOrdinal = LocalOrdinal, 
+            class Node          = Kokkos::DefaultNode::DefaultNodeType>
+  class MatrixView { // TODO : virtual public Teuchos::Describable {
+    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+
+  public:
+  
+    //! @name Constructor/Destructor Methods
+    //@{
+
+    //! Constructor
+    MatrixView(const RCP<const Map> &rowMap, const RCP<const Map> &colMap) 
+      : rowMap_ (rowMap), colMap_(colMap)
+    { }
+  
+    //! Destructor
+    virtual ~MatrixView() {}
+    
+    //@}
+
+    //! @name Map access methods
+    //@{
+    //! Returns the Map that describes the row distribution in this matrix.
+    const RCP<const Map> & GetRowMap() const { return rowMap_; }
+  
+    //! \brief Returns the Map that describes the column distribution in this matrix.
+    const RCP<const Map> & GetColMap() const { return colMap_; }
+  
+    //! Returns the Map that describes the row distribution in this matrix.
+    void SetRowMap(const RCP<const Map> & rowMap) { rowMap_ = rowMap; }
+  
+    //! \brief Set the Map that describes the column distribution in this matrix.
+    void SetColMap(const RCP<const Map> & colMap) { colMap_ = colMap; }
+    //@}
+  
+  private:
+    RCP<const Map> rowMap_;
+    RCP<const Map> colMap_;
+
+  }; // class MatrixView
+
+} // namespace Xpetra
+
+#define XPETRA_MATRIXVIEW_SHORT
+#endif //XPETRA_MATRIX_VIEW_DECL_HPP

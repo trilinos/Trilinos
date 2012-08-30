@@ -48,12 +48,12 @@
 
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_StridedMap.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
@@ -104,14 +104,14 @@ namespace MueLu {
 
     FactoryMonitor m(*this, "Tentative prolongator", coarseLevel);
 
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
+    RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A", AFact_.get());
 
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
     RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", amalgFact_.get());
     RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
     // Build
-    RCP<MultiVector> coarseNullspace; RCP<Operator> Ptentative; // output of MakeTentative()
+    RCP<MultiVector> coarseNullspace; RCP<Matrix> Ptentative; // output of MakeTentative()
 
     MakeTentative(*A, *aggregates, *amalgInfo, *nullspace, coarseNullspace, Ptentative);
 
@@ -133,8 +133,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeTentative(
-                     const Operator& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace,
-                     RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const
+                     const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace,
+                     RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
 
@@ -223,7 +223,7 @@ namespace MueLu {
     //because aggregates can span processors.
     RCP<const Map > rowMapForPtent = fineA.getRowMap();
 
-    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+    Ptentative = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
 
     // prerequisites: rowMapForPtent, NSDim
 

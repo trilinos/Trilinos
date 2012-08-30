@@ -118,7 +118,8 @@ namespace MueLuTests {
             const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
             Teuchos::ParameterList matrixParameters;
             matrixParameters.set("nx",nEle);
-            RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, matrixParameters);
+
+            RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, matrixParameters);
 
             // build nullspace
             RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -207,8 +208,8 @@ namespace MueLuTests {
             TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
             TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
             TEST_EQUALITY(coarseLevel->GetKeepFlag("A",Acfact.get()), 0);
-            RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-            RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+            RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+            RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
             TEST_EQUALITY(P1->getGlobalNumRows(), 63);
             TEST_EQUALITY(P1->getGlobalNumCols(), 21);
             TEST_EQUALITY(R1->getGlobalNumRows(), 21);
@@ -242,14 +243,14 @@ namespace MueLuTests {
             TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
             TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
             TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",Rfact.get()), 0);
-            RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-            RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+            RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+            RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
             TEST_EQUALITY(P2->getGlobalNumRows(), 21);
             TEST_EQUALITY(P2->getGlobalNumCols(), 7);
             TEST_EQUALITY(R2->getGlobalNumRows(), 7);
             TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-            Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+            Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
             TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
             TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
             TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);

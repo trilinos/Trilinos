@@ -54,7 +54,7 @@
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Export.hpp>
 #include <Xpetra_ExportFactory.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_PgPFactory_decl.hpp"
 #include "MueLu_TentativePFactory.hpp"
@@ -130,14 +130,14 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
   FactoryMonitor m(*this, "Prolongator smoothing (PG-AMG)", coarseLevel);
 
   // Level Get
-  RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
+  RCP<Matrix> A     = fineLevel.  Get< RCP<Matrix> >("A", AFact_.get());
 
   // Get default tentative prolongator factory
   // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
   // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
   RCP<const FactoryBase> initialPFact = initialPFact_;
   if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
-  RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact.get());
+  RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", initialPFact.get());
 
   /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
   if(restrictionMode_) {
@@ -148,7 +148,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
   /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
   bool doFillComplete=true;
   bool optimizeStorage=false;
-  RCP<Operator> DinvAP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+  RCP<Matrix> DinvAP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
 
   doFillComplete=true;
   optimizeStorage=false;
@@ -195,7 +195,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
   Teuchos::ArrayRCP< Scalar > RowBasedOmega_local = RowBasedOmega->getDataNonConst(0);
 
   /////////////////// prolongator smoothing using local damping parameters omega
-  RCP<Operator> P_smoothed = Teuchos::null;
+  RCP<Matrix> P_smoothed = Teuchos::null;
   Utils::MyOldScaleMatrix(DinvAP0,RowBasedOmega_local,false,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
   Utils2::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
@@ -218,7 +218,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
   else
   {
     // prolongation factory is in restriction mode
-    RCP<Operator> R = Utils2::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
+    RCP<Matrix> R = Utils2::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
     coarseLevel.Set("R", R, this);
     
     ///////////////////////// EXPERIMENTAL
@@ -229,7 +229,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P0, const RCP<Operator>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
+void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
   FactoryMonitor m(*this, "PgPFactory::ComputeRowBasedOmega", coarseLevel);
 
   Teuchos::RCP<Vector > Numerator = Teuchos::null;
@@ -251,10 +251,10 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     // calculate A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Operator> AP0 = Utils::TwoMatrixMultiply(A,false,P0,false,doFillComplete,optimizeStorage);
+    RCP<Matrix> AP0 = Utils::TwoMatrixMultiply(A,false,P0,false,doFillComplete,optimizeStorage);
 
     // compute A * D^{-1} * A * P0
-    RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
+    RCP<Matrix> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
 
     Numerator =   VectorFactory::Build(ADinvAP0->getColMap(),true);
     Denominator = VectorFactory::Build(ADinvAP0->getColMap(),true);
@@ -290,7 +290,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     bool doFillComplete=true;
     bool optimizeStorage=false;
     Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(A);
-    RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
+    RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
     Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
     Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(),true);
@@ -405,7 +405,8 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplySelfAll(const RCP<Operator>& Op, Teuchos::RCP<Vector >& InnerProdVec) const {
+void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplySelfAll(const RCP<Matrix>& Op, Teuchos::RCP<Vector >& InnerProdVec) const {
+
   // note: InnerProdVec is based on column map of Op
   TEUCHOS_TEST_FOR_EXCEPTION(!InnerProdVec->getMap()->isSameAs(*Op->getColMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplySelfAll: map of InnerProdVec must be same as column map of operator. error");
 
@@ -442,7 +443,8 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, Teuchos::RCP<Vector >& InnerProdVec) const {
+void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Vector >& InnerProdVec) const {
+
   TEUCHOS_TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
   TEUCHOS_TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
 #if 1 // 1=new "fast code, 0=old "slow", but safe code
@@ -691,10 +693,10 @@ case ANORM: {
   // calculate A * Ptent
   bool doFillComplete=true;
   bool optimizeStorage=false;
-  RCP<Operator> AP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+  RCP<Matrix> AP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
 
   // compute A * D^{-1} * A * P0
-  RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
+  RCP<Matrix> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
 
   Numerator = MultiplyAll(AP0, ADinvAP0, GID2localgid);
   Denominator = MultiplySelfAll(ADinvAP0, GID2localgid);
@@ -724,7 +726,7 @@ case DINVANORM: {
   // compute D^{-1} * A * D^{-1} * A * P0
   bool doFillComplete=true;
   bool optimizeStorage=false;
-  RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
+  RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
   Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
   Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, GID2localgid);
@@ -746,7 +748,7 @@ case ATDINVTPLUSDINVANORM: {
   // compute D^{-1} * A * D^{-1} * A * P0
   bool doFillComplete=true;
   bool optimizeStorage=false;
-  RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
+  RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
   Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
   Numerator = MultiplyAll(Ptent, DinvADinvAP0, GID2localgid);

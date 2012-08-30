@@ -141,7 +141,7 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_AMESOS  // TODO: remove
 #ifdef HAVE_MUELU_AMESOS2 // TODO: remove
   // TEST:
-  // - OP: Xpetra::Operator
+  // - OP: Xpetra::Matrix
   // - MV: Xpetra::MultiVector
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_XpetraMV) {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
@@ -168,7 +168,7 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_EPETRA
 #ifdef HAVE_MUELU_AMESOS // TODO: remove
   // TEST:
-  // - OP: Xpetra::Operator
+  // - OP: Xpetra::Matrix
   // - MV: Epetra::MultiVector
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_EpetraMV) {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
@@ -196,9 +196,9 @@ namespace MueLuTests {
   }
 
   // TEST:
-  // - OP: Belos::MultiVec<double>
-  // - MV: Belos::Operator<double>
-  TEUCHOS_UNIT_TEST(BelosAdapters, BelosMultiVec_BelosOperator) {
+  // - OP: Belos::Operator<double>
+  // - MV: Belos::MultiVec<double>
+  TEUCHOS_UNIT_TEST(BelosAdapters, BelosMultiVec_BelosMatrix) {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     if (lib == Xpetra::UseEpetra) {  // Epetra specific test: run only once.
 
@@ -235,7 +235,7 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_TPETRA
 #ifdef HAVE_MUELU_AMESOS2 // TODO: remove
   // TEST:
-  // - OP: Xpetra::Operator
+  // - OP: Xpetra::Matrix
   // - MV: Tpetra::MultiVector
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_TpetraMV) {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
@@ -268,7 +268,7 @@ namespace MueLuTests {
 #ifdef MUELU_DISABLED
 
   // TEST: Compare Epetra and Tpetra results for:
-  // - OP: Xpetra::Operator
+  // - OP: Xpetra::Matrix
   // - MV: Xpetra::MultiVector
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA)
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_XpetraMV_EpetraVsTpetra) {

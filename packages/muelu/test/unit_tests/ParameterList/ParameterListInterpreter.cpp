@@ -75,7 +75,7 @@ namespace MueLuTests {
     }
 #endif
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
 
     std::string  hierarchyConfigurationFiles[] = {"Smoothed-Aggregation.xml", "Smoothed-Aggregation2.xml", "Smoothed-Aggregation3.xml"};
     int         nHierarchyConfigurationFiles = 3;
@@ -85,7 +85,7 @@ namespace MueLuTests {
       ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + hierarchyConfigurationFiles[i]);
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
-      H->GetLevel(0)->Set<RCP<Operator> >("A", A);
+      H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
      
       mueluFactory.SetupHierarchy(*H);
 

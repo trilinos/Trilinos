@@ -33,4 +33,4 @@ Dependencies:
  firstly cited packages is not available.
 
 Notes:
- This examples are not using MueLu::Gallery in a attempt to demonstrate how to use the linear algebra package interface.
+ This examples are not using Galeri::Xpetra in a attempt to demonstrate how to use the linear algebra package interface.

@@ -46,9 +46,9 @@
 #ifndef MUELU_RAPFACTORY_DECL_HPP
 #define MUELU_RAPFACTORY_DECL_HPP
 
-#include <Xpetra_Operator_fwd.hpp>
-#include <Xpetra_CrsOperator_fwd.hpp>
-#include <Xpetra_OperatorFactory_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 
@@ -135,18 +135,18 @@ namespace MueLu {
 
     //! @name internal Build methods.
     //@{
-    RCP<Operator> BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const; //TODO: remove RCP for input args. TODO: static
-    RCP<Operator> BuildRAPImplicit(const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const;
-    RCP<Operator> BuildRAPBlock   (const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const;
+    RCP<Matrix> BuildRAPExplicit(const RCP<Matrix>& R, const RCP<Matrix>& A, const RCP<Matrix>& P, int levelID) const; //TODO: remove RCP for input args. TODO: static
+    RCP<Matrix> BuildRAPImplicit(const RCP<Matrix>& A, const RCP<Matrix>& P, int levelID) const;
+    RCP<Matrix> BuildRAPBlock   (const RCP<Matrix>& R, const RCP<Matrix>& A, const RCP<Matrix>& P, int levelID) const;
     //@}
 
     //! @name internal print methods.
-    void PrintMatrixInfo(const Operator & Ac, const std::string & msgTag) const; //TODO: static
-    void PrintLoadBalancingInfo(const Operator & Ac, const std::string & msgTag) const;
+    void PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) const; //TODO: static
+    void PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag) const;
     //@}
     
     //! @name internal plausibility check methods
-    void CheckMainDiagonal(RCP<Operator> & Ac) const;
+    void CheckMainDiagonal(RCP<Matrix> & Ac) const;
     //@}
 
     //! P Factory

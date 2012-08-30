@@ -48,7 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MUELU_AMESOS2
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
@@ -98,7 +98,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called";
 
-    RCP<Operator> A_ = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+    RCP<Matrix> A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 
     RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
   

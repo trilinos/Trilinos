@@ -53,11 +53,11 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
-#include <Xpetra_OperatorFactory_fwd.hpp>
-#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_BlockedCrsOperator_fwd.hpp>
+#include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
@@ -72,7 +72,7 @@ namespace Xpetra {
 // needed because of inlined function
 //TODO: remove inline function?
 #include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 
 #endif
 
@@ -107,7 +107,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_EPETRA
 //defined after Utils class
 template<typename SC,typename LO,typename GO,typename NO, typename LMO>
-RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB);
+RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
 #endif
 
 /*!
@@ -139,11 +139,11 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
     static Epetra_MultiVector const& MV2EpetraMV(MultiVector const &Vec); //MV2EpetraMV
 
-    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Operator.
-   static RCP<const Epetra_CrsMatrix> Op2EpetraCrs(RCP<Operator> Op); //Op2EpetraCrs
+    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Matrix.
+   static RCP<const Epetra_CrsMatrix> Op2EpetraCrs(RCP<Matrix> Op); //Op2EpetraCrs
 
-    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Operator.
-   static RCP<Epetra_CrsMatrix> Op2NonConstEpetraCrs(RCP<Operator> Op); //Op2NonConstEpetraCrs
+    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Matrix.
+   static RCP<Epetra_CrsMatrix> Op2NonConstEpetraCrs(RCP<Matrix> Op); //Op2NonConstEpetraCrs
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
@@ -160,17 +160,17 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
     static RCP<Tpetra::MultiVector<SC,LO,GO,NO> > MV2NonConstTpetraMV2(MultiVector &Vec); //MV2TpetraMV
 
     static Tpetra::MultiVector<SC,LO,GO,NO>  const& MV2TpetraMV(MultiVector const &Vec); //MV2TpetraMV
-    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Xpetra::Operator.
-    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2TpetraCrs(RCP<Operator> Op); //Op2TpetraCrs
+    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Xpetra::Matrix.
+    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2TpetraCrs(RCP<Matrix> Op); //Op2TpetraCrs
 
-    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Xpetra::Operator.
-   static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2NonConstTpetraCrs(RCP<Operator> Op); //Op2NonConstTpetraCrs
+    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Xpetra::Matrix.
+   static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2NonConstTpetraCrs(RCP<Matrix> Op); //Op2NonConstTpetraCrs
 
 #endif
 
     /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
-      Returns RCP to non-constant Xpetra::Operator.
+      Returns RCP to non-constant Xpetra::Matrix.
 
       @param A left matrix
       @param transposeA if true, use the transpose of A
@@ -178,8 +178,8 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       @param transposeB if true, use the transpose of B
       @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
     */
-   static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, bool transposeA,
-                                          RCP<Operator> const &B, bool transposeB,
+   static RCP<Matrix> TwoMatrixMultiply(RCP<Matrix> const &A, bool transposeA,
+                                          RCP<Matrix> const &B, bool transposeB,
                                           bool doFillComplete=true,
                                           bool doOptimizeStorage=true); //TwoMatrixMultiply()
 
@@ -192,7 +192,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
    /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
-     Returns RCP to non-constant Xpetra::BlockedCrsOperator.
+     Returns RCP to non-constant Xpetra::BlockedCrsMatrix.
 
      @param A left matrix
      @param transposeA if true, use the transpose of A
@@ -200,8 +200,8 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
      @param transposeB if true, use the transpose of B
      @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
    */
-  static RCP<BlockedCrsOperator> TwoMatrixMultiplyBlock(RCP<BlockedCrsOperator> const &A, bool transposeA,
-                                         RCP<BlockedCrsOperator> const &B, bool transposeB,
+  static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(RCP<BlockedCrsMatrix> const &A, bool transposeA,
+                                         RCP<BlockedCrsMatrix> const &B, bool transposeB,
                                          bool doFillComplete=true,
                                          bool doOptimizeStorage=true); // TwoMatrixMultiplyBlock
 
@@ -231,21 +231,21 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
     */
 
-    static void MatrixPrint(RCP<Operator> const &Op);
+    static void MatrixPrint(RCP<Matrix> const &Op);
 
-    static void MatrixPrint(RCP<Operator> const &Op, std::string const &label);
+    static void MatrixPrint(RCP<Matrix> const &Op, std::string const &label);
 
-    /*! @brief Get Operator Diagonal
+    /*! @brief Get Matrix Diagonal
      */
-    static RCP<Operator> BuildMatrixDiagonal(RCP<Operator> const &A); //BuildMatrixDiagonal()
+    static RCP<Matrix> BuildMatrixDiagonal(RCP<Matrix> const &A); //BuildMatrixDiagonal()
 
-    /*! @brief Extract Operator Diagonal
+    /*! @brief Extract Matrix Diagonal
 
-        Returns Operator diagonal in ArrayRCP.
+        Returns Matrix diagonal in ArrayRCP.
 
         Note -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(RCP<Operator> const &A); //GetMatrixDiagonal
+    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(RCP<Matrix> const &A); //GetMatrixDiagonal
 
     /*! @brief Left scale matrix by an arbitrary vector.
 
@@ -256,31 +256,31 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
        @param scalingVector vector that represents diagonal matrix
        @doInverse Indicates whether the inverse of the diagonal matrix should be applied.  (Default is to use inverse.)
      */
-   static void ScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true); //ScaleMatrix()
+   static void ScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true); //ScaleMatrix()
 
 #ifdef UNUSED // and does not work with SC=complex
-    /*! @brief Get reciprocal of Operator diagonal
+    /*! @brief Get reciprocal of Matrix diagonal
      */
 
-   static RCP<Operator> BuildMatrixInverseDiagonal(RCP<Operator> const &A); //BuildMatrixInverseDiagonal()
+   static RCP<Matrix> BuildMatrixInverseDiagonal(RCP<Matrix> const &A); //BuildMatrixInverseDiagonal()
 #endif
 
    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
     // TODO: should NOT return an Array. Definition must be changed to:
-    // - ArrayRCP<> ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+    // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
     // or
-    // - void ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
+    // - void ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
    static Teuchos::Array<Magnitude>
-   ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS);
+   ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS);
     
-    static RCP<MultiVector> Residual(Operator const &Op, MultiVector const &X, MultiVector const &RHS);
+    static RCP<MultiVector> Residual(Matrix const &Op, MultiVector const &X, MultiVector const &RHS);
 
    /*! @brief Save matrix to file in Matrix Market format.
 
      TODO Move this to Xpetra?
    */
-   static void Write(std::string const & fileName, Operator const & Op); //Write
+   static void Write(std::string const & fileName, Matrix const & Op); //Write
 
    static void PauseForDebugger(); //PauseForDebugger
 
@@ -311,14 +311,14 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       
       (Shamelessly grabbed from tpetra/examples.)
     */
-    static Scalar PowerMethod(Operator const &A, bool scaleByDiag=true,
+    static Scalar PowerMethod(Matrix const &A, bool scaleByDiag=true,
                               LO niters=10, Magnitude tolerance=1e-2, bool verbose=false, unsigned int seed = 123); //PowerMethod
 
-   static void MyOldScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true,
+   static void MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true,
                                 bool doFillComplete=true,
                                 bool doOptimizeStorage=true); //ScaleMatrix()
 
-   static void MyOldScaleMatrix_Tpetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
+   static void MyOldScaleMatrix_Tpetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
                                bool doFillComplete, bool doOptimizeStorage);
 
    static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream & os);
@@ -328,8 +328,8 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 #ifdef HAVE_MUELU_EPETRA
 //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
 template<class SC,class LO,class GO,class NO, class LMO>
-RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB) {
-   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB) {
+   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
    return Teuchos::null;
 }
 
@@ -338,10 +338,10 @@ typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::S
 
 //specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
 template<>
-inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
+inline RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
   RCP<Xpetra::EpetraCrsMatrix> tmpC1 = rcp(new Xpetra::EpetraCrsMatrix(epAB));
   RCP<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> >(tmpC1);
-  RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsOperator<double,int,int,KDNT,KDKSO>(tmpC2));
+  RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO>(tmpC2));
   return tmpC3;
 }
 #endif
@@ -353,7 +353,7 @@ std::string toString(T const &what) {
   return buf.str();
 }
 
-//RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB)
+//RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB)
 
 
 /*!
@@ -373,23 +373,23 @@ std::string toString(T const &what) {
 
 public:
 
-    /*! @brief Transpose a Xpetra::Operator
+    /*! @brief Transpose a Xpetra::Matrix
 
       Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
       In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
     */
-   static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false); //Transpose
+   static RCP<Matrix> Transpose(RCP<Matrix> const &Op, bool const & optimizeTranspose=false); //Transpose
 
    //! Scale an Epetra matrix.
-   static void MyOldScaleMatrix_Epetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
+   static void MyOldScaleMatrix_Epetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
 
-   //! @brief Add two Operators.
-   static void TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta);
+   //! @brief Add two .
+   static void TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
 
-   //! Add two Operators.
-   static void TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
-                                     RCP<Operator> const &B, bool const &transposeB, SC const &beta,
-                                     RCP<Operator> &C); //TwoMatrixAdd()
+   //! Add two .
+   static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
+                                     RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
+                                     RCP<Matrix> &C); //TwoMatrixAdd()
   }; // class Utils2
 
   // specialization Utils2 for SC=double, LO=GO=int
@@ -402,16 +402,16 @@ public:
    typedef int GO;
    typedef Kokkos::DefaultNode::DefaultNodeType NO;
    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
-   typedef Xpetra::Operator<double,int,int,NO,LMO> Operator;
+   typedef Xpetra::Matrix<double,int,int,NO,LMO> Matrix;
 
 public:
 
-   static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false); //Transpose
-   static void MyOldScaleMatrix_Epetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
-   static void TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta);
-   static void TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
-                                     RCP<Operator> const &B, bool const &transposeB, SC const &beta,
-                                     RCP<Operator> &C);
+   static RCP<Matrix> Transpose(RCP<Matrix> const &Op, bool const & optimizeTranspose=false); //Transpose
+   static void MyOldScaleMatrix_Epetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
+   static void TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
+   static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
+                                     RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
+                                     RCP<Matrix> &C);
   }; //specialization to Scalar=double
 
 

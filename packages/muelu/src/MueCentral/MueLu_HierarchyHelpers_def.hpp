@@ -46,7 +46,7 @@
 #ifndef MUELU_HIERARCHYHELPERS_DEF_HPP
 #define MUELU_HIERARCHYHELPERS_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_HierarchyHelpers_decl.hpp"
 
@@ -79,21 +79,21 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
     if (PFact_ != Teuchos::null) {
-      RCP<Operator> P = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
+      RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact_.get());
       coarseLevel.Set("P", P, NoFactory::get());
       coarseLevel.AddKeepFlag("P", NoFactory::get(), MueLu::Final);       // FIXME2: Order of Remove/Add matter (data removed otherwise). Should do something about this
       coarseLevel.RemoveKeepFlag("P", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack, I should change behavior of Level::Set() instead. FIXME3: Should not be removed if flag was there already
     }
 
     if (RFact_ != Teuchos::null) {
-      RCP<Operator> R = coarseLevel.Get<RCP<Operator> >("R", RFact_.get());
+      RCP<Matrix> R = coarseLevel.Get<RCP<Matrix> >("R", RFact_.get());
       coarseLevel.Set("R", R, NoFactory::get());
       coarseLevel.AddKeepFlag("R", NoFactory::get(), MueLu::Final);
       coarseLevel.RemoveKeepFlag("R", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
 
     if ((AcFact_ != Teuchos::null) && (AcFact_ != NoFactory::getRCP())) {
-      RCP<Operator> Ac = coarseLevel.Get<RCP<Operator> >("A", AcFact_.get());
+      RCP<Matrix> Ac = coarseLevel.Get<RCP<Matrix> >("A", AcFact_.get());
       coarseLevel.Set("A", Ac, NoFactory::get());
       coarseLevel.AddKeepFlag("A", NoFactory::get(), MueLu::Final);
       coarseLevel.RemoveKeepFlag("A", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack

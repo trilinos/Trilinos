@@ -43,16 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_BLOCKEDCRSOPERATOR_FWD_HPP
-#define XPETRA_BLOCKEDCRSOPERATOR_FWD_HPP
+#ifndef XPETRA_CRSMATRIXWRAP_FWD_HPP
+#define XPETRA_CRSMATRIXWRAP_FWD_HPP
 
 namespace Xpetra {       
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class BlockedCrsOperator;
+  class CrsMatrixWrap;
 }
 
-#ifndef XPETRA_BLOCKEDCRSOPERATOR_SHORT
-#define XPETRA_BLOCKEDCRSOPERATOR_SHORT
+#ifndef XPETRA_CRSMATRIXWRAP_SHORT
+#define XPETRA_CRSMATRIXWRAP_SHORT
 #endif
 
-#endif // XPETRA_BLOCKEDCRSOPERATOR_FWD_HPP
+#endif // XPETRA_CRSMATRIXWRAP_FWD_HPP

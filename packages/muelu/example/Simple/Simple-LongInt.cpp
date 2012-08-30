@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<Operator> A = rcp(new CrsOperator(map, 3));
+  RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 3));
 
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {

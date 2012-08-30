@@ -46,7 +46,7 @@
 #ifndef MUELU_SAPFACTORY_DEF_HPP
 #define MUELU_SAPFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_SaPFactory_decl.hpp"
 
@@ -118,8 +118,8 @@ namespace MueLu {
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
 
     // Level Get
-    RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
-    RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact.get());
+    RCP<Matrix> A     = fineLevel.  Get< RCP<Matrix> >("A", AFact_.get());
+    RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", initialPFact.get());
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
@@ -127,19 +127,19 @@ namespace MueLu {
     }
 
     //Build final prolongator
-    RCP<Operator> finalP; // output
+    RCP<Matrix> finalP; // output
 
-    //FIXME Xpetra::Operator should calculate/stash max eigenvalue
+    //FIXME Xpetra::Matrix should calculate/stash max eigenvalue
     //FIXME SC lambdaMax = A->GetDinvALambda();
 
     if (dampingFactor_ != Teuchos::ScalarTraits<Scalar>::zero()) {
 
       //Teuchos::ParameterList matrixList;
-      //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.Get< RCP<Operator> >("A")->getRowMap(),matrixList);
-      //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
+      //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsMatrixWrap>("Identity",fineLevel.Get< RCP<Matrix> >("A")->getRowMap(),matrixList);
+      //RCP<Matrix> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
       //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
 
-      RCP<Operator> AP;
+      RCP<Matrix> AP;
       {
         SubFactoryMonitor m2(*this, "MxM: A x Ptentative", coarseLevel);
         //JJH -- If I switch doFillComplete to false, the resulting matrix seems weird when printed with describe.
@@ -201,7 +201,7 @@ namespace MueLu {
     else
       {
         // prolongation factory is in restriction mode
-        RCP<Operator> R = Utils2::Transpose(finalP,true); // use Utils2 -> specialization for double
+        RCP<Matrix> R = Utils2::Transpose(finalP,true); // use Utils2 -> specialization for double
         coarseLevel.Set("R", R, this);
 	
         ///////////////////////// EXPERIMENTAL

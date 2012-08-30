@@ -47,9 +47,9 @@
 
 namespace MueLu {
 
-  RCP<Xpetra::Operator<double, int, int> > Utils2<double, int, int>::Transpose(RCP<Xpetra::Operator<double, int, int> > const &Op, bool const & optimizeTranspose)
+  RCP<Xpetra::Matrix<double, int, int> > Utils2<double, int, int>::Transpose(RCP<Xpetra::Matrix<double, int, int> > const &Op, bool const & optimizeTranspose)
   {
-   typedef Xpetra::Operator<double,int,int> Operator;
+   typedef Xpetra::Matrix<double,int,int> Matrix;
    typedef double Scalar;
    typedef int LocalOrdinal;
    typedef int GlobalOrdinal;
@@ -91,7 +91,7 @@ namespace MueLu {
       RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
       RCP<Xpetra::TpetraCrsMatrix<SC> > AA = rcp(new Xpetra::TpetraCrsMatrix<SC>(A) );
       RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
-      RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC> (AAA) );
+      RCP<Xpetra::CrsMatrixWrap<SC> > AAAA = rcp( new Xpetra::CrsMatrixWrap<SC> (AAA) );
       AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
       return AAAA;
 #else
@@ -114,7 +114,7 @@ namespace MueLu {
       //RCP<Epetra_CrsMatrix> rcpA = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::simple_EpetraTranspose(epetraOp);
       RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
       RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
-      RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC>(AAA) );
+      RCP<Xpetra::CrsMatrixWrap<SC> > AAAA = rcp( new Xpetra::CrsMatrixWrap<SC>(AAA) );
       AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
       return AAAA;
 #else
@@ -126,7 +126,7 @@ namespace MueLu {
 
   // -- ------------------------------------------------------- --
 
-  void Utils2<double,int,int>::MyOldScaleMatrix_Epetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
+  void Utils2<double,int,int>::MyOldScaleMatrix_Epetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
@@ -156,7 +156,7 @@ namespace MueLu {
 
   // -- ------------------------------------------------------- --
 
-  void Utils2<double, int, int>::TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta)
+  void Utils2<double, int, int>::TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta)
   {
     if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
       throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
@@ -194,16 +194,16 @@ namespace MueLu {
 
   // -- ------------------------------------------------------- --
 
-  void Utils2<double,int,int>::TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
-                           RCP<Operator> const &B, bool const &transposeB, SC const &beta,
-                           RCP<Operator> &C)
+  void Utils2<double,int,int>::TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
+                           RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
+                           RCP<Matrix> &C)
   {
     if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
       throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
     }
     if (C==Teuchos::null)
       //FIXME 5 is a complete guess as to the #nonzeros per row
-      C = rcp( new Xpetra::CrsOperator<double,int,int>(A->getRowMap(), 5) );
+      C = rcp( new Xpetra::CrsMatrixWrap<double,int,int>(A->getRowMap(), 5) );
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRAEXT

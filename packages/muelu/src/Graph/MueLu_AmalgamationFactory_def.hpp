@@ -46,8 +46,8 @@
 #ifndef MUELU_AMALGAMATIONFACTORY_DEF_HPP
 #define MUELU_AMALGAMATIONFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 
 #include "MueLu_AmalgamationFactory.hpp"
 
@@ -77,7 +77,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 {
   FactoryMonitor m(*this, "AmalgamationFactory", currentLevel);
 
-  RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+  RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 
   LocalOrdinal  fullblocksize = 1;         // block dim for fixed size blocks
   GlobalOrdinal offset = 0;          // global offset of dof gids
@@ -168,7 +168,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Operator>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) {
+const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) {
   GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize;
   return globalblockid;
 }

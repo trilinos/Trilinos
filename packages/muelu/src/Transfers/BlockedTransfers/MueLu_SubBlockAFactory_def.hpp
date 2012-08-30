@@ -56,9 +56,9 @@
 
 #include "MueLu_SubBlockAFactory_decl.hpp"
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
@@ -80,16 +80,16 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
-    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OOperator; //TODO
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OMatrix; //TODO
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixClass; //TODO
-    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperatorClass; //TODO
-    typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOOperator; //TODO
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixWrapClass; //TODO
+    typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOMatrix; //TODO
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
 
-    RCP<OOperator> Ain = currentLevel.Get< RCP<OOperator> >("A", Afact_.get());
-    RCP<BlockedCrsOOperator> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOOperator>(Ain);
+    RCP<OMatrix> Ain = currentLevel.Get< RCP<OMatrix> >("A", Afact_.get());
+    RCP<BlockedCrsOMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOMatrix>(Ain);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: input matrix A is not of type BlockedCrsOperator! error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
     TEUCHOS_TEST_FOR_EXCEPTION(row_>bA->Rows(), Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: A.Rows() > rows_! error.");
     TEUCHOS_TEST_FOR_EXCEPTION(col_>bA->Cols(), Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: A.Cols() > cols_! error.");
     TEUCHOS_TEST_FOR_EXCEPTION(row_<0, Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: row_<0 error.");
@@ -97,8 +97,8 @@ namespace MueLu {
 
     Teuchos::RCP<CrsMatrixClass> A = bA->getMatrix(row_, col_);
 
-    Teuchos::RCP<CrsOperatorClass> Op = Teuchos::rcp(new CrsOperatorClass(A));
-    //Op->SetFixedBlockSize(blksize_); // store block size information in Operator TODO: implement View mechanism as in MueMat
+    Teuchos::RCP<CrsMatrixWrapClass> Op = Teuchos::rcp(new CrsMatrixWrapClass(A));
+    //Op->SetFixedBlockSize(blksize_); // store block size information in Matrix TODO: implement View mechanism as in MueMat
 
     //////////////// EXPERIMENTAL
     // extract striding information from RangeMapExtractor
@@ -122,7 +122,7 @@ namespace MueLu {
 
     //////////////// EXPERIMENTAL
 
-    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<OOperator>(Op), this);
+    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<OMatrix>(Op), this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

@@ -64,7 +64,7 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
     RCP<Matrix>
-    CreateCrsMatrix(const std::string &MatrixType, const RCP<const Map> & map, Teuchos::ParameterList& list) //TODO: rename CreateCrsMatrix to CreateMatrix or CreateOperator ?
+    CreateCrsMatrix(const std::string &MatrixType, const RCP<const Map> & map, Teuchos::ParameterList& list) //TODO: rename CreateCrsMatrix to CreateMatrix or CreateMatrix ?
     {
       RCP<Matrix> returnMatrix;
       if (MatrixType == "Laplace1D") {

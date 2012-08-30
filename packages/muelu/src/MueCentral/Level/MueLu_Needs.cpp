@@ -220,8 +220,8 @@ namespace MueLu {
         else outputter.outputField("false");
         // variable type
         std::string strType = GetType(*it, *kt);
-        if (strType.find("Xpetra::Operator") != std::string::npos) {
-          outputter.outputField("Operator" );
+        if (strType.find("Xpetra::Matrix") != std::string::npos) {
+          outputter.outputField("Matrix" );
           outputter.outputField("");
         } else if (strType.find("Xpetra::MultiVector") != std::string::npos) {
           outputter.outputField("Vector");

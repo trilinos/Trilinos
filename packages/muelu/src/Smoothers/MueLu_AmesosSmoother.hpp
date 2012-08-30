@@ -50,7 +50,7 @@
 #ifdef HAVE_MUELU_AMESOS
 
 #include <Teuchos_ParameterList.hpp>
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 
 class Epetra_LinearProblem;
 class Amesos_BaseSolver;
@@ -168,7 +168,7 @@ namespace MueLu {
     // linearProblem_ must be destroyed before A_, because destructor of linearProblem_ is using A_.
     // In C++, destructor of member objects are called in the reverse order they appear within the declaration for the class. 
     // ==18029== Invalid read of size 8
-    // ==18029==    at 0xC0780A: Epetra_LinearProblem::GetOperator() const (Epetra_LinearProblem.h:173)
+    // ==18029==    at 0xC0780A: Epetra_LinearProblem::GetMatrix() const (Epetra_LinearProblem.h:173)
     // ==18029==    by 0xC5EC27: Amesos_Superlu::PrintTiming() const (Amesos_Superlu.cpp:664)
     // ==18029==    by 0xC628C6: Amesos_Superlu::~Amesos_Superlu() (Amesos_Superlu.cpp:108)
 
@@ -178,8 +178,8 @@ namespace MueLu {
     //! parameter list that is used by Amesos internally
     Teuchos::ParameterList paramList_;
 
-    //! Operator. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
-    RCP<Operator> A_;
+    //! Matrix. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
+    RCP<Matrix> A_;
 
     //! Problem that Amesos uses internally.
     RCP<Epetra_LinearProblem> linearProblem_;

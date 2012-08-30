@@ -53,7 +53,7 @@
 #ifndef MUELU_BLOCKEDPFACTORY_DECL_HPP_
 #define MUELU_BLOCKEDPFACTORY_DECL_HPP_
 
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"

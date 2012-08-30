@@ -60,8 +60,8 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_OperatorFactory.hpp"
+#include "Xpetra_Matrix.hpp"
+#include "Xpetra_MatrixFactory.hpp"
 #endif
 
 namespace Galeri {
@@ -129,14 +129,14 @@ namespace Galeri {
     };
 
     /* Specialized traits for:
-       - Map = Xpetra::Map<...>, Matrix = Xpetra::Operator<...> */
+       - Map = Xpetra::Map<...>, Matrix = Xpetra::Matrix<...> */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MatrixTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
+    class MatrixTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
     {
     public:
-      static Teuchos::RCP< ::Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
+      static Teuchos::RCP< ::Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
       // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
-      { return ::Xpetra::OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap, maxNumEntriesPerRow); };
+      { return ::Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap, maxNumEntriesPerRow); };
     };
 
 #endif
@@ -297,6 +297,7 @@ namespace Galeri {
             const Scalar a, const Scalar b, const Scalar c, 
             const Scalar d, const Scalar e, const bool keepBCs=false)
     {
+
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 5);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
@@ -397,6 +398,7 @@ namespace Galeri {
            const Scalar z1, const Scalar z2,
            const Scalar z3, const Scalar z4)
     {
+
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 9);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
@@ -502,6 +504,7 @@ namespace Galeri {
               const Scalar z3, const Scalar z4,
               const Scalar bb, const Scalar cc, const Scalar dd, const Scalar ee)
     {
+
       Teuchos::RCP<Matrix> mtx= MatrixTraits<Map,Matrix>::Build(map, 13);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
@@ -622,6 +625,7 @@ namespace Galeri {
             const Scalar d, const Scalar e,
             const Scalar f, const Scalar g)
     {
+
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 7);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
@@ -704,6 +708,7 @@ namespace Galeri {
             const Scalar d, const Scalar e,
             const Scalar f, const Scalar g)
     {
+
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 27);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
