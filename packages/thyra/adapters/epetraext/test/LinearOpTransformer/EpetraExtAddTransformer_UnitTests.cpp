@@ -53,6 +53,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -125,6 +126,194 @@ buildAddOperator(int scenario,const Teuchos::RCP<const Thyra::LinearOpBase<doubl
    }
 
    return M;
+}
+
+TEUCHOS_UNIT_TEST( EpetraExtAddTransformer, diag_mat_Add )
+{
+  
+  //
+  // A) Read in problem matrices
+  //
+  
+  out << "\nReading linear system in Epetra format from the file \'"<<matrixFile<<"\' ...\n";
+    
+#ifdef HAVE_MPI
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
+  RCP<Epetra_CrsMatrix> crsMat;
+  EpetraExt::readEpetraLinearSystem( matrixFile, comm, &crsMat, NULL, NULL, NULL );
+  
+  //
+  // B) Create the Thyra wrapped version
+  //
+  double scaleMat=3.7;
+  double scaleDiag=-2.9;
+
+ 
+  const RCP<const Thyra::LinearOpBase<double> > A = Thyra::scale<double>(scaleMat,Thyra::epetraLinearOp(crsMat));
+  RCP<VectorBase<double> > d = createMember(A->domain(), "d");
+  V_S( d.ptr(), 3.0 ); // ToDo: Set ton != 1.0 and generalize
+  const RCP<const Thyra::LinearOpBase<double> > B = diagonal(d);
+
+  out << "\nA = " << *A;
+  out << "\nB = " << *B;
+
+  for(int scenario=0;scenario<4;scenario++) {
+     //
+     // C) Create implicit A+B operator
+     //
+   
+     const RCP<const Thyra::LinearOpBase<double> > M = buildAddOperator(scenario,A,B);
+   
+     //
+     // D) Do the transformation
+     //
+   
+     const RCP<EpetraExtAddTransformer> ApB_transformer = epetraExtAddTransformer();
+   
+     TEST_ASSERT(ApB_transformer != null);
+   
+     const RCP<LinearOpBase<double> > M_explicit = ApB_transformer->createOutputOp();
+     ApB_transformer->transform( *M, M_explicit.ptr() );
+   
+     out << "\nM_explicit = " << *M_explicit;
+   
+     //
+     // E) Check the explicit operator
+     //
+   
+     LinearOpTester<double> M_explicit_tester;
+     M_explicit_tester.show_all_tests(true);;
+   
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, Teuchos::inOutArg(out) );
+     if (!result) success = false;
+  }
+
+  for(int scenario=0;scenario<4;scenario++) {
+     //
+     // C) Create implicit A+B operator
+     //
+   
+     const RCP<const Thyra::LinearOpBase<double> > M = buildAddOperator(scenario,B,A);
+   
+     //
+     // D) Do the transformation
+     //
+   
+     const RCP<EpetraExtAddTransformer> ApB_transformer = epetraExtAddTransformer();
+   
+     TEST_ASSERT(ApB_transformer != null);
+   
+     const RCP<LinearOpBase<double> > M_explicit = ApB_transformer->createOutputOp();
+     ApB_transformer->transform( *M, M_explicit.ptr() );
+   
+     out << "\nM_explicit = " << *M_explicit;
+   
+     //
+     // E) Check the explicit operator
+     //
+   
+     LinearOpTester<double> M_explicit_tester;
+     M_explicit_tester.show_all_tests(true);;
+   
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, Teuchos::inOutArg(out) );
+     if (!result) success = false;
+  }
+}
+
+TEUCHOS_UNIT_TEST( EpetraExtAddTransformer, id_mat_Add )
+{
+  
+  //
+  // A) Read in problem matrices
+  //
+  
+  out << "\nReading linear system in Epetra format from the file \'"<<matrixFile<<"\' ...\n";
+    
+#ifdef HAVE_MPI
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
+  RCP<Epetra_CrsMatrix> crsMat;
+  EpetraExt::readEpetraLinearSystem( matrixFile, comm, &crsMat, NULL, NULL, NULL );
+  
+  //
+  // B) Create the Thyra wrapped version
+  //
+  double scaleMat=3.7;
+  double scaleDiag=-2.9;
+
+ 
+  const RCP<const Thyra::LinearOpBase<double> > A = Thyra::scale<double>(scaleMat,Thyra::epetraLinearOp(crsMat));
+  const RCP<const Thyra::LinearOpBase<double> > B = identity(A->domain(),"id");
+
+  out << "\nA = " << *A;
+  out << "\nB = " << *B;
+
+  for(int scenario=0;scenario<4;scenario++) {
+     //
+     // C) Create implicit A+B operator
+     //
+   
+     const RCP<const Thyra::LinearOpBase<double> > M = buildAddOperator(scenario,A,B);
+   
+     //
+     // D) Do the transformation
+     //
+   
+     const RCP<EpetraExtAddTransformer> ApB_transformer = epetraExtAddTransformer();
+   
+     TEST_ASSERT(ApB_transformer != null);
+   
+     const RCP<LinearOpBase<double> > M_explicit = ApB_transformer->createOutputOp();
+     ApB_transformer->transform( *M, M_explicit.ptr() );
+   
+     out << "\nM_explicit = " << *M_explicit;
+   
+     //
+     // E) Check the explicit operator
+     //
+   
+     LinearOpTester<double> M_explicit_tester;
+     M_explicit_tester.show_all_tests(true);;
+   
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, Teuchos::inOutArg(out) );
+     if (!result) success = false;
+  }
+
+  for(int scenario=0;scenario<4;scenario++) {
+     //
+     // C) Create implicit A+B operator
+     //
+   
+     const RCP<const Thyra::LinearOpBase<double> > M = buildAddOperator(scenario,B,A);
+   
+     //
+     // D) Do the transformation
+     //
+   
+     const RCP<EpetraExtAddTransformer> ApB_transformer = epetraExtAddTransformer();
+   
+     TEST_ASSERT(ApB_transformer != null);
+   
+     const RCP<LinearOpBase<double> > M_explicit = ApB_transformer->createOutputOp();
+     ApB_transformer->transform( *M, M_explicit.ptr() );
+   
+     out << "\nM_explicit = " << *M_explicit;
+   
+     //
+     // E) Check the explicit operator
+     //
+   
+     LinearOpTester<double> M_explicit_tester;
+     M_explicit_tester.show_all_tests(true);;
+   
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, Teuchos::inOutArg(out) );
+     if (!result) success = false;
+  }
 }
 
 TEUCHOS_UNIT_TEST( EpetraExtAddTransformer, basic_Add )
