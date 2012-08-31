@@ -106,6 +106,9 @@ namespace MueLu {
     if(varName_ == "coarseAggStat") {
       Teuchos::ArrayRCP<NodeState> data = fineLevel.Get<Teuchos::ArrayRCP<NodeState> >(varName_,genFact_.get());
       coarseLevel.Set<Teuchos::ArrayRCP<NodeState> >(varName_, data, genFact_.get());
+    } else if (varName_ == "coarseAggStat2") {
+      Teuchos::ArrayRCP<unsigned int> data = fineLevel.Get<Teuchos::ArrayRCP<unsigned int> >(varName_,genFact_.get());
+      coarseLevel.Set<Teuchos::ArrayRCP<unsigned int> >(varName_, data, genFact_.get());
     }
 
   } //Build
