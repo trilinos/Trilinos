@@ -448,7 +448,7 @@ void pqJagged_getInputValues(
     std::bitset<NUM_RCB_PARAMS> &params,
     const int &coordDim,
     const int &weightDim,
-    const size_t &numLocalCoords, size_t &numGlobalParts, int &pqJagged_multiVectorDim,
+    const size_t &numLocalCoords, partId_t &numGlobalParts, int &pqJagged_multiVectorDim,
     scalar_t **pqJagged_values, const int &criteriaDim, scalar_t **pqJagged_weights, ArrayView<const gno_t> &pqJagged_gnos, bool &ignoreWeights,
     bool *pqJagged_uniformWeights, bool *pqJagged_uniformParts, scalar_t **pqJagged_partSizes
 ){
@@ -508,7 +508,7 @@ void pqJagged_getInputValues(
     else{
       scalar_t *tmp = new scalar_t [numGlobalParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numGlobalParts, tmp) ;
-      for (size_t i=0; i < numGlobalParts; i++){
+      for (partId_t i=0; i < numGlobalParts; i++){
         tmp[i] = solution->getCriteriaPartSize(wdim, i);
       }
       pqJagged_partSizes[wdim] = tmp;
@@ -556,7 +556,7 @@ template <typename scalar_t, typename gno_t>
 void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, global_size_t numGlobalCoords,
     int criteriaDim, scalar_t **pqJagged_values, scalar_t **pqJagged_weights,
     bool *pqJagged_uniformParts, bool *pqJagged_uniformWeights, gno_t *pqJagged_gnos,
-    bool ignoreWeights,size_t numGlobalParts, scalar_t **pqJagged_partSizes){
+    bool ignoreWeights,partId_t numGlobalParts, scalar_t **pqJagged_partSizes){
 
   std::cout << "numLocalCoords:" << numLocalCoords << std::endl;
   std::cout << "coordDim:" << coordDim << std::endl;
@@ -604,7 +604,7 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
   std::cout << "numGlobalParts:" << numGlobalParts << std::endl;
   for(int i = 0; i < criteriaDim; ++i){
     if(!pqJagged_uniformParts[i])
-      for(int ii = 0; ii < numGlobalParts; ++ii){
+      for(partId_t ii = 0; ii < numGlobalParts; ++ii){
         std::cout << pqJagged_partSizes[i][ii] << " ";
       }
     std::cout << std::endl;
