@@ -53,6 +53,7 @@
 #ifndef MUELU_CHEAPAGGREGATIONALGORITHM_DECL_HPP_
 #define MUELU_CHEAPAGGREGATIONALGORITHM_DECL_HPP_
 
+#include <bitset>
 #include <vector>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -123,6 +124,13 @@ namespace MueLu {
     SELECTED_1PT = -17 /* indicates that a 1pt aggregate node is already aggregated */
   };
 
+  enum NodeState2 {
+	NODEAGGREGATED = 0x01,
+	NODENOTSEL     = 0x02,
+	NODEONEPT      = 0x04,
+	NODESELECTED   = (NODENOTSEL) | (NODEAGGREGATED)
+  };
+
   /*!
     @class CheapAggregationAlgorithm class.
     @brief Algorithm for coarsening a graph with uncoupled aggregation.
@@ -166,12 +174,16 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
+    LocalOrdinal PhaseOnePt(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const;
 
     LocalOrdinal Phase1(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 1)
     LocalOrdinal Phase1a(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat, Teuchos::ArrayRCP<NodeState> & coarse_aggStat) const; // local uncoupled coarsening (Phase 1a)
+    LocalOrdinal Phase1b(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const; // local uncoupled coarsening (Phase 1b)
     LocalOrdinal Phase2_maxlink(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 2 [max_link])
+    LocalOrdinal Phase2b_maxlink(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const;
 
     LocalOrdinal Phase3(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 3)
+    LocalOrdinal Phase3b(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const; // local uncoupled coarsening (Phase 3)
     LocalOrdinal Phase4(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 4)
 
   private:
