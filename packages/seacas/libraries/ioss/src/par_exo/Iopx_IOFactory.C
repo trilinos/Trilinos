@@ -54,6 +54,7 @@ namespace Iopx {
     : Ioss::IOFactory("parallel_exodus")
   {
     Ioss::IOFactory::alias("parallel_exodus", "dof_exodus");
+    Ioss::IOFactory::alias("parallel_exodus", "dof");
   }
 
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
