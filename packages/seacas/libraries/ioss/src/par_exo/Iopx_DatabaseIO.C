@@ -3018,7 +3018,8 @@ namespace Iopx {
 	    }
 	  }
 
-	} else if (field.get_name() == "element_side") {
+	} else if (field.get_name() == "element_side" ||
+		   field.get_name() == "element_side_raw") {
 	  // In exodusII, the 'side set' is stored as a sideset.  A sideset
 	  // has a list of elements and a corresponding local element side
 	  // (1-based)
@@ -3038,24 +3039,20 @@ namespace Iopx {
 	  int64_t side_offset = get_side_offset(fb);
 
 
-	  if (number_sides == entity_count) {
-	    ssize_t index = 0;
+	  if (fb->owner()->block_count() == 1) {
 	    if (int_byte_size_api() == 4) {
 	      int     *element_side = static_cast<int*>(data);
 	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
-	      for (ssize_t iel = 0; iel < entity_count; iel++) {
-		element_side[index] = map[element_side[index]];	   index++;
-		element_side[index] = element_side[index] - side_offset; index++;
+	      for (ssize_t iel = 1; iel < 2*entity_count; iel+=2) {
+		element_side[iel] = element_side[iel] - side_offset;
 	      }
 	    } else {
 	      int64_t *element_side = static_cast<int64_t*>(data);
 	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
-	      for (ssize_t iel = 0; iel < entity_count; iel++) {
-		element_side[index] = map[element_side[index]];	   index++;
-		element_side[index] = element_side[index] - side_offset; index++;
+	      for (ssize_t iel = 1; iel < 2*entity_count; iel+=2) {
+		element_side[iel] = element_side[iel] - side_offset;
 	      }
 	    }
-	    assert(index/2 == entity_count);
 	  } else {
 	    Ioss::IntVector is_valid_side(number_sides);
 	    // Need a larger vector to get the entire sideset and then filter down to the correct size...
@@ -3085,80 +3082,6 @@ namespace Iopx {
 	      for (int64_t iel = 0; iel < number_sides; iel++) {
 		if (is_valid_side[iel] == 1) {
 		  // This side  belongs in the side block
-		  element_side[index++] = map[element32[iel]];
-		  element_side[index++] = sides32[iel] - side_offset;
-		}
-	      }
-	    } else {
-	      int64_t *element_side = static_cast<int64_t*>(data);
-	      int64_t *element64 = (int64_t*)TOPTR(element);
-	      int64_t *sides64 = (int64_t*)TOPTR(sides);
-	      for (int64_t iel = 0; iel < number_sides; iel++) {
-		if (is_valid_side[iel] == 1) {
-		  // This side  belongs in the side block
-		  element_side[index++] = map[element64[iel]];
-		  element_side[index++] = sides64[iel] - side_offset;
-		}
-	      }
-	    }
-	    assert(index/2 == entity_count);
-	  }
-
-	} else if (field.get_name() == "element_side_raw") {
-	  // In exodusII, the 'side set' is stored as a sideset.  A sideset
-	  // has a list of elements and a corresponding local element side
-	  // (1-based)
-
-	  // Since we only have a single array, we need to allocate an extra
-	  // array to store all of the data.  Note also that the
-	  // element_id for the "raw" field is the local id, not the
-	  // global id. 
-
-	  // See if edges or faces...
-	  int64_t side_offset = get_side_offset(fb);
-
-	  if (number_sides == entity_count) {
-	    ssize_t index = 0;
-	    if (int_byte_size_api() == 4) {
-	      int     *element_side = static_cast<int*>(data);
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
-	      for (ssize_t iel = 0; iel < entity_count; iel++) {
-		element_side[2*iel+1] = element_side[2*iel+1] - side_offset;
-	      }
-	    } else {
-	      int64_t *element_side = static_cast<int64_t*>(data);
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
-	      for (ssize_t iel = 0; iel < entity_count; iel++) {
-		element_side[2*iel+1] = element_side[2*iel+1] - side_offset;
-	      }
-	    }
-	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
-	    // Need a larger vector to get the entire sideset and then filter down to the correct size...
-	    std::vector<char> element(number_sides * int_byte_size_api());
-	    std::vector<char> sides(number_sides * int_byte_size_api());
-	    if (int_byte_size_api() == 4) {
-	      Ioss::Field elem_field("ids",   Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
-	      Ioss::Field side_field("sides", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(sides));
-	    } else {
-	      Ioss::Field elem_field("ids",   Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
-	      Ioss::Field side_field("sides", Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(sides));
-	    }
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
-							TOPTR(element), TOPTR(sides),
-							number_sides, get_region());
-	    ssize_t index = 0;
-	    if (int_byte_size_api() == 4) {
-	      int     *element_side = static_cast<int*>(data);
-	      int     *element32 = (int*)TOPTR(element);
-	      int     *sides32 = (int*)TOPTR(sides);
-	      for (int64_t iel = 0; iel < number_sides; iel++) {
-		if (is_valid_side[iel] == 1) {
-		  // This side  belongs in the side block
 		  element_side[index++] = element32[iel];
 		  element_side[index++] = sides32[iel] - side_offset;
 		}
@@ -3176,6 +3099,19 @@ namespace Iopx {
 	      }
 	    }
 	    assert(index/2 == entity_count);
+	  }
+	  if (field.get_name() == "element_side") {
+	    if (int_byte_size_api() == 4) {
+	      int     *element_side = static_cast<int*>(data);
+	      for (ssize_t iel = 0; iel < 2*entity_count; iel+=2) {
+		element_side[iel] = map[element_side[iel]];
+	      }
+	    } else {
+	      int64_t *element_side = static_cast<int64_t*>(data);
+	      for (ssize_t iel = 0; iel < 2*entity_count; iel+=2) {
+		element_side[iel] = map[element_side[iel]];
+	      }
+	    }
 	  }
 
 	} else if (field.get_name() == "connectivity") {
@@ -3210,7 +3146,7 @@ namespace Iopx {
 	// exist on the database as scalars with the appropriate
 	// extensions.
 
-	if (number_sides == entity_count) {
+	if (fb->owner()->block_count() == 1) {
 	  num_to_get = read_transient_field(EX_SIDE_SET, m_variables[EX_SIDE_SET], field, fb, data);
 	} else {
 	  // Need to read all values for the specified field and then
@@ -3629,7 +3565,7 @@ namespace Iopx {
       // 'number_sides' then the sideset is stored in a single sideblock
       // and all distribution factors on the database are transferred
       // 1-to-1 into 'dist_fact' array.
-      if (my_side_count == number_sides) {
+      if (fb->owner()->block_count() == 1) {
 	assert(number_sides == 0 || number_distribution_factors % number_sides == 0);
 	assert(number_sides == 0 || number_distribution_factors / number_sides == nfnodes);
 	std::string storage = "Real["+Ioss::Utils::to_string(nfnodes)+"]";
