@@ -85,7 +85,7 @@ using namespace Teuchos;
  * - \c user-defined
  * - \c do-nothing
  */
-int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool skipFineLevelSmoother) 
+int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother) 
 {
   Epetra_Time Time(Comm());
 
@@ -218,7 +218,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool skipFineLevelSmoother
 
   char smListName[80];
   int startLevel=0;
-  if (skipFineLevelSmoother) startLevel=1;
+  int issueSmootherReuseWarning = keepFineLevelSmoother;
   for (int level = startLevel ; level < SmootherLevels ; ++level) {
 
     if (verbose_) cout << endl;
@@ -648,6 +648,9 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       double MyIfpackAT = smList.get("smoother: ifpack absolute threshold", IfpackAbsThreshold);
 
       Teuchos::ParameterList& MyIfpackList=smList.sublist("smoother: ifpack list");
+      issueSmootherReuseWarning = 2;
+      if ( MyIfpackList.isParameter("reuse symbolic factorization") || MyIfpackList.isParameter("reuse numeric factorization") )
+        issueSmootherReuseWarning = 0;
       int NumAggr = ML_Aggregate_Get_AggrCount(agg_,level);
       int* AggrMap = 0;
       ML_CHK_ERR(ML_Aggregate_Get_AggrMap(agg_,level,&AggrMap));
@@ -1326,6 +1329,28 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
     }
     else
       coarseTime = perLevelTime;
+
+    if (level > 0) issueSmootherReuseWarning = 0;
+
+    if (verbose_) {
+      if (issueSmootherReuseWarning == 1) {
+        std::cout << std::endl;
+        std::cout << "WARNING **********************************************************************" << std::endl
+                  << "You have requested to keep the finest level smoother from a previous" << std::endl
+                  << "solve.  This option is fragile and intended for reusing part or all of" << std::endl
+                  << "an incomplete factorization smoother only. You are attempting to reuse the" << std::endl
+                  << "\"" << MySmoother << "\" smoother, which may result in memory leaks or crashes." << std::endl;
+      }
+      if (issueSmootherReuseWarning == 2) {
+        std::cout << std::endl;
+        std::cout << "WARNING **********************************************************************" << std::endl
+                  << "You have requested to keep the finest level smoother from a previous" << std::endl
+                  << "solve.  In order to reuse part or all of the incomplete factorization" << std::endl
+                  << "from smoother \"" << MySmoother << "\", you must also specify the smoother options" << std::endl
+                  << "\"reuse numeric factorization\" and/or \"reuse symbolic factorization\"." << std::endl
+                  << "Not doing so  may result in memory leaks or crashes." << std::endl;
+      }
+    } //if (verbose_)
     
   } /* for (int level = 0 ; level < SmootherLevels ; ++level) */
 

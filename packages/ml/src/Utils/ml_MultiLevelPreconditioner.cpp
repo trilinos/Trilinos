@@ -1786,6 +1786,7 @@ ReComputePreconditioner(bool keepFineLevelSmoother)
   // ====================================================================== //
 
   try{SetSmoothers(keepFineLevelSmoother);}
+  //try{SetSmoothers();}
   catch(...) {
     if (Comm().MyPID() == 0) {
       fprintf(stderr,"%s","\n**************************\n");
