@@ -187,6 +187,9 @@ namespace MueLu {
     LocalOrdinal Phase4(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 4)
 
   private:
+
+    void PrintAggregationInformation(const std::string phase, Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
+
     //! Aggregation options (TODO: Teuchos::ParameterList?)
     Ordering ordering_;                /**<  natural, random, graph           */
     int      minNodesPerAggregate_;    /**<  aggregate size control           */
