@@ -83,9 +83,6 @@ namespace MueLu {
     if (currentLevel.GetLevelID() == 0) currentLevel.DeclareInput("coarseAggStat", MueLu::NoFactory::get(), this);
     else                                currentLevel.DeclareInput("coarseAggStat", this, this);
 
-    if (currentLevel.GetLevelID() == 0) currentLevel.DeclareInput("coarseAggStat2", MueLu::NoFactory::get(), this);
-    else                                currentLevel.DeclareInput("coarseAggStat2", this, this);
-
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -105,71 +102,31 @@ namespace MueLu {
 
       const LocalOrdinal nRows = graph->GetNodeNumVertices();
 
-      //////////////////////////////////// EXPERIMENTAL
-#if 1
-      Teuchos::ArrayRCP<unsigned int> aggStat2;
-      if(currentLevel.GetLevelID() == 0 && currentLevel.IsAvailable("coarseAggStat2",MueLu::NoFactory::get())) {
-        aggStat2 = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat2",MueLu::NoFactory::get());
-      } else if (currentLevel.IsAvailable("coarseAggStat2", this)) {
-        aggStat2 = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat2",this);
-      } else {
-        if(nRows > 0) aggStat2 = Teuchos::arcp<unsigned int>(nRows);
-        for(LocalOrdinal i=0; i<nRows; ++i) {
-          aggStat2[i] = (unsigned int) 0;
-        }
-      }
-
-      Teuchos::ArrayRCP<unsigned int> coarse_aggStat2 = Teuchos::arcp<unsigned int>(nRows);
-      for(LocalOrdinal i=0; i<nRows; ++i) {
-        coarse_aggStat2[i] = (unsigned int) 0;
-      }
-
-      algo1_->PhaseOnePt(*graph,*aggregates,aggStat2, coarse_aggStat2);
-      algo1_->Phase1b(*graph,*aggregates,aggStat2, coarse_aggStat2);
-      algo1_->Phase2b_maxlink(*graph,*aggregates,aggStat2, coarse_aggStat2);
-      algo1_->Phase3b(*graph,*aggregates,aggStat2, coarse_aggStat2);
-
-      LocalOrdinal numAggs = aggregates->GetNumAggregates();
-      coarse_aggStat2.resize(Teuchos::as<int>(numAggs));
-      currentLevel.Set("coarseAggStat2", coarse_aggStat2, this); // TODO remove me
-      //////////////////////////////////// EXPERIMENTAL
-
-#else
-      Teuchos::ArrayRCP<NodeState> aggStat;
-
+      Teuchos::ArrayRCP<unsigned int> aggStat;
       if(currentLevel.GetLevelID() == 0 && currentLevel.IsAvailable("coarseAggStat",MueLu::NoFactory::get())) {
-        aggStat = currentLevel.Get<Teuchos::ArrayRCP<NodeState> >("coarseAggStat",MueLu::NoFactory::get());
+        aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat",MueLu::NoFactory::get());
       } else if (currentLevel.IsAvailable("coarseAggStat", this)) {
-        //std::cout << "coarseAggStat: found on level" << std::endl;
-        aggStat = currentLevel.Get<Teuchos::ArrayRCP<NodeState> >("coarseAggStat",this);
+        aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat",this);
       } else {
-        //std::cout << "use default coarseAggStat" << std::endl;
-        if(nRows > 0) aggStat = Teuchos::arcp<NodeState>(nRows);
+        if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
         for(LocalOrdinal i=0; i<nRows; ++i) {
-          aggStat[i] = READY;
+          aggStat[i] = (unsigned int) 0;
         }
       }
 
-      // we cannot have more aggregates than nodes on the current proc
-      Teuchos::ArrayRCP<NodeState> coarse_aggStat = Teuchos::arcp<NodeState>(nRows);
+      Teuchos::ArrayRCP<unsigned int> coarse_aggStat = Teuchos::arcp<unsigned int>(nRows);
+      for(LocalOrdinal i=0; i<nRows; ++i) {
+        coarse_aggStat[i] = (unsigned int) 0;
+      }
 
-      LocalOrdinal ret = -1;
-      ret = algo1_->Phase1a(*graph,*aggregates,aggStat, coarse_aggStat);
-      ret = algo1_->Phase2_maxlink(*graph,*aggregates,aggStat);
-      ret = algo1_->Phase3(*graph,*aggregates,aggStat);
-      if(ret>0) ret=0; // TODO remove me
-
+      algo1_->PhaseOnePt(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase1b(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase2b_maxlink(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase3b(*graph,*aggregates,aggStat, coarse_aggStat);
 
       LocalOrdinal numAggs = aggregates->GetNumAggregates();
       coarse_aggStat.resize(Teuchos::as<int>(numAggs));
-
       currentLevel.Set("coarseAggStat", coarse_aggStat, this);
-#endif
-
-
-
-      //ret = algo1_->Phase4(*graph,*aggregates,aggStat);
-
     }
 
     // Level Set
