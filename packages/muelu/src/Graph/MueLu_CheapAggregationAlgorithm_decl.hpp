@@ -88,15 +88,6 @@ namespace MueLu {
   /* ************************************************************************* */
   /* definition of the structure from ML for holding aggregate information     */
   /* ------------------------------------------------------------------------- */
-  typedef struct MueLu_SuperNode_Struct
-  {
-    int    length;
-    int    maxLength;
-    int    index;
-    Teuchos::ArrayRCP<int> list;
-    struct MueLu_SuperNode_Struct *next;
-  } MueLu_SuperNode;
-
   class Aggregate {
   public:
     int length;                   // current size of aggregate
@@ -105,26 +96,7 @@ namespace MueLu {
     std::vector<int> list;  // list of node ids in aggregate
   };
 
-  /* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggregated. */
   enum NodeState {
-    READY   = -11,   /* indicates that a node is available to be */
-    /* selected as a root node of an aggregate  */
-
-    NOTSEL  = -12,   /* indicates that a node has been rejected  */
-    /* as a root node. This could perhaps be    */
-    /* because if this node had been selected a */
-    /* small aggregate would have resulted.     */
-
-    SELECTED = -13,  /* indicates that a node has been assigned  */
-    /* to an aggregate.                         */
-
-    BDRY = -15, /* indicates that a node is a Dirichlet bdry node */
-
-    READY_1PT = -16, /* indicates that a node is ready to be aggregates (as a single point aggregate only) */
-    SELECTED_1PT = -17 /* indicates that a 1pt aggregate node is already aggregated */
-  };
-
-  enum NodeState2 {
 	NODEAGGREGATED = 0x01,
 	NODENOTSEL     = 0x02,
 	NODEONEPT      = 0x04,
