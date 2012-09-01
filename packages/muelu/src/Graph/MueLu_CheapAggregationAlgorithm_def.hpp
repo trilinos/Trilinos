@@ -121,38 +121,8 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
   // update aggregate object
   aggregates.SetNumAggregates(nLocalAggregates);
 
-#if 0
-  // verbose
-  {
-    const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
-
-    if(IsPrint(Warnings0)) {
-      GO localNotAggregated  = 0;
-      GO globalNotAggregated = 0;
-      for(LO i=0; i<nRows; ++i)
-        if((aggStat[i] & NODEAGGREGATED) == false) localNotAggregated++;
-      sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
-      if(globalNotAggregated > 0)
-        GetOStream(Warnings0,0) << "Aggregation (UC): Phase 1b (WARNING) " << globalNotAggregated << " unaggregated nodes left (status READY)" << std::endl;
-    }
-
-    if(IsPrint(Statistics1)) {
-      LO localAggregated  = 0;
-      GO globalAggregated = 0;
-      GO globalNRows    = 0;
-      for(LO i=0; i<nRows; ++i)
-      if(aggStat[i] & NODEAGGREGATED) localAggregated++;
-      sumAll(comm, (GO)localAggregated, globalAggregated);
-      sumAll(comm, (GO)nRows, globalNRows);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 1b: Nodes aggregated = " << globalAggregated << " out of " << globalNRows << " nodes" << std::endl;
-      GO nAggregatesGlobal = 0;
-      sumAll(comm, (GO)nLocalAggregates, nAggregatesGlobal);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 1b: Total aggregates = " << nAggregatesGlobal << std::endl;
-    }
-  }
-#else
+  // print aggregation information
   PrintAggregationInformation("Phase 0 (1pt aggregates):", graph, aggregates, aggStat);
-#endif
 
   // collect some local information
   LO nLocalAggregated    = 0;
@@ -166,7 +136,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase1b(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
+LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase1(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
   Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase 1b");
 
   RCP<const Map> gBoundaryNodeMap = graph.GetBoundaryNodeMap();
@@ -311,38 +281,8 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
       graph_ordering_inodes.pop();
   }
 
-#if 0
-  // verbose
-  {
-    const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
-
-    if(IsPrint(Warnings0)) {
-      GO localNotAggregated  = 0;
-      GO globalNotAggregated = 0;
-      for(LO i=0; i<nRows; ++i)
-    	  if((aggStat[i] & NODEAGGREGATED) == false) localNotAggregated++;
-      sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
-      if(globalNotAggregated > 0)
-        GetOStream(Warnings0,0) << "Aggregation (UC): Phase 1b (WARNING) " << globalNotAggregated << " unaggregated nodes left (status READY)" << std::endl;
-    }
-
-    if(IsPrint(Statistics1)) {
-      LO localAggregated  = 0;
-      GO globalAggregated = 0;
-      GO globalNRows    = 0;
-      for(LO i=0; i<nRows; ++i)
-    	if(aggStat[i] & NODEAGGREGATED) localAggregated++;
-      sumAll(comm, (GO)localAggregated, globalAggregated);
-      sumAll(comm, (GO)nRows, globalNRows);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 1b: Nodes aggregated = " << globalAggregated << " out of " << globalNRows << " nodes" << std::endl;
-      GO nAggregatesGlobal = 0;
-      sumAll(comm, (GO)nLocalAggregates, nAggregatesGlobal);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 1b: Total aggregates = " << nAggregatesGlobal << std::endl;
-    }
-  }
-#else
+  // print aggregation information
   PrintAggregationInformation("Phase 1 (build aggregates):", graph, aggregates, aggStat);
-#endif
 
   // collect some local information
   LO nLocalAggregated    = 0;
@@ -356,7 +296,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase2b_maxlink(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
+LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase2_maxlink(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
   Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase 2b [max_link]");
 
   // vertex ids for output
@@ -408,38 +348,8 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
     } // end if aggState == NOTSEL...
   } // end loop over all local rows
 
-#if 0
-  // verbose
-  {
-    const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
-
-    if(IsPrint(Warnings0)) {
-      GO localNotAggregated  = 0;
-      GO globalNotAggregated = 0;
-      for(LO i=0; i<nRows; ++i)
-    	  if((aggStat[i] & NODEAGGREGATED) == false) localNotAggregated++;
-      sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
-      if(globalNotAggregated > 0)
-        GetOStream(Warnings0,0) << "Aggregation (UC): Phase 2b (WARNING) " << globalNotAggregated << " unaggregated nodes left (status READY)" << std::endl;
-    }
-
-    if(IsPrint(Statistics1)) {
-      LO localAggregated  = 0;
-      GO globalAggregated = 0;
-      GO globalNRows    = 0;
-      for(LO i=0; i<nRows; ++i)
-    	if(aggStat[i] & NODEAGGREGATED) localAggregated++;
-      sumAll(comm, (GO)localAggregated, globalAggregated);
-      sumAll(comm, (GO)nRows, globalNRows);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 2b [maxlink]: Nodes aggregated = " << globalAggregated << " out of " << globalNRows << " nodes" << std::endl;
-      //GO nAggregatesGlobal = 0;
-      //sumAll(comm, (GO)nLocalAggregates, nAggregatesGlobal);
-      //GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 2b [maxlink]: Total aggregates = " << nAggregatesGlobal << std::endl;
-    }
-  }
-#else
+  // print aggregation information
   PrintAggregationInformation("Phase 2 (max_link, extend aggregates):", graph, aggregates, aggStat);
-#endif
 
   // collect some local information
   LO nLocalAggregated    = 0;
@@ -453,7 +363,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase3b(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
+LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase3(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
   Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase 3b");
 
   // form new aggregates from non-aggregated nodes
@@ -468,9 +378,7 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 
   // loop over all local rows
   for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
-    //if(aggStat[iNode] == NOTSEL ||  // this is a non-aggregated node
-    //    aggStat[iNode] == READY) {  // this is not good. There should be no ready nodes any more
-	if((aggStat[iNode] & NODEAGGREGATED) == false) {
+    if((aggStat[iNode] & NODEAGGREGATED) == false) {
       Aggregate ag;
       ag.list.push_back(iNode);
       ag.index = nLocalAggregates++;
@@ -496,38 +404,9 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 
   // update aggregate object
   aggregates.SetNumAggregates(nLocalAggregates);
-#if 0
-  // verbose
-  {
-    const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
 
-    if(IsPrint(Warnings0)) {
-      GO localNotAggregated  = 0;
-      GO globalNotAggregated = 0;
-      for(LO i=0; i<nRows; ++i)
-    	  if((aggStat[i] & NODEAGGREGATED) == false) localNotAggregated++;
-      sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
-      if(globalNotAggregated > 0)
-        GetOStream(Warnings0,0) << "Aggregation (UC): Phase 3b (WARNING) " << globalNotAggregated << " unaggregated nodes left (status READY)" << std::endl;
-    }
-
-    if(IsPrint(Statistics1)) {
-      LO localAggregated  = 0;
-      GO globalAggregated = 0;
-      GO globalNRows    = 0;
-      for(LO i=0; i<nRows; ++i)
-    	if(aggStat[i] & NODEAGGREGATED) localAggregated++;
-      sumAll(comm, (GO)localAggregated, globalAggregated);
-      sumAll(comm, (GO)nRows, globalNRows);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 3b: Nodes aggregated = " << globalAggregated << " out of " << globalNRows << " nodes" << std::endl;
-      GO nAggregatesGlobal = 0;
-      sumAll(comm, (GO)nLocalAggregates, nAggregatesGlobal);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): Phase 3b: Total aggregates = " << nAggregatesGlobal << std::endl;
-    }
-  }
-#else
+  // print aggregation information
   PrintAggregationInformation("Phase 3 (emergency aggregation):", graph, aggregates, aggStat);
-#endif
 
   // collect some local information
   LO nLocalAggregated    = 0;

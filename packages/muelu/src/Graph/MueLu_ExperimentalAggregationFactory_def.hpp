@@ -119,10 +119,11 @@ namespace MueLu {
         coarse_aggStat[i] = (unsigned int) 0;
       }
 
+      // TODO: check return values of functions
       algo1_->PhaseOnePt(*graph,*aggregates,aggStat, coarse_aggStat);
-      algo1_->Phase1b(*graph,*aggregates,aggStat, coarse_aggStat);
-      algo1_->Phase2b_maxlink(*graph,*aggregates,aggStat, coarse_aggStat);
-      algo1_->Phase3b(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase1(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase2_maxlink(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase3(*graph,*aggregates,aggStat, coarse_aggStat);
 
       LocalOrdinal numAggs = aggregates->GetNumAggregates();
       coarse_aggStat.resize(Teuchos::as<int>(numAggs));
