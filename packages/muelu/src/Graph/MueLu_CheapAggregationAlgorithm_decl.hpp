@@ -175,16 +175,10 @@ namespace MueLu {
     /*! @brief Local aggregation. */
 
     LocalOrdinal PhaseOnePt(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const;
-
-    LocalOrdinal Phase1(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 1)
-    LocalOrdinal Phase1a(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat, Teuchos::ArrayRCP<NodeState> & coarse_aggStat) const; // local uncoupled coarsening (Phase 1a)
     LocalOrdinal Phase1b(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const; // local uncoupled coarsening (Phase 1b)
-    LocalOrdinal Phase2_maxlink(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 2 [max_link])
     LocalOrdinal Phase2b_maxlink(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const;
-
-    LocalOrdinal Phase3(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 3)
     LocalOrdinal Phase3b(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const; // local uncoupled coarsening (Phase 3)
-    LocalOrdinal Phase4(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<NodeState> & aggStat) const; // local uncoupled coarsening (Phase 4)
+
 
   private:
 
