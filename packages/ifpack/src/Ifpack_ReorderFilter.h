@@ -161,6 +161,8 @@ public:
     return(-1.0);
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
   //! Returns the number of global nonzero elements.
   virtual int NumGlobalNonzeros() const
   {
@@ -183,6 +185,31 @@ public:
   virtual int NumGlobalDiagonals() const
   {
     return(Matrix()->NumGlobalDiagonals());
+  }
+#endif
+
+  //! Returns the number of global nonzero elements.
+  virtual long long NumGlobalNonzeros64() const
+  {
+    return(Matrix()->NumGlobalNonzeros64());
+  }
+
+  //! Returns the number of global rows.
+  virtual long long NumGlobalRows64() const
+  {
+    return(Matrix()->NumGlobalRows64());
+  }
+
+  //! Returns the number of global columns.
+  virtual long long NumGlobalCols64() const
+  {
+    return(Matrix()->NumGlobalCols64());
+  }
+
+  //! Returns the number of global diagonals.
+  virtual long long NumGlobalDiagonals64() const
+  {
+    return(Matrix()->NumGlobalDiagonals64());
   }
 
   //! Returns the number of local nonzero elements.

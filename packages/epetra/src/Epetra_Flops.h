@@ -95,6 +95,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Flops {
   void UpdateFlops(int Flops_in) const {Flops_ += (double) Flops_in;};
   //! Increment Flop count for \e this object from a long int
   void UpdateFlops(long int Flops_in) const {Flops_ += (double) Flops_in;};
+  //! Increment Flop count for \e this object from a long int
+  void UpdateFlops(long long int Flops_in) const {Flops_ += (double) Flops_in;};
   //! Increment Flop count for \e this object from a double
   void UpdateFlops(double Flops_in) const {Flops_ += Flops_in;};
   //! Increment Flop count for \e this object from a float

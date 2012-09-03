@@ -37,11 +37,11 @@ int main(int argCount, char **argValue)
       values[0] = 3.2 + globalRowIdx*0.01;
 
       if (globalRowIdx % 10000 == 0) {
-	cerr << "About to insert row " << globalRowIdx << "\n";
+  cerr << "About to insert row " << globalRowIdx << "\n";
       }
 
       ierr = b.ReplaceGlobalValues(1, (const int *)&indices[0], 
-				   (const double *)&values[0]);
+           (const double *)&values[0]);
       assert(ierr==0);
     }
   }

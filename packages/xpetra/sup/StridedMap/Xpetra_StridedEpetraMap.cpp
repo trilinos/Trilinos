@@ -75,7 +75,7 @@ namespace Xpetra {
     
     // build an equally distributed node map
     RCP<Epetra_Map> nodeMap = Teuchos::null;
-    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((nodeMap = (rcp(new Epetra_Map(numGlobalNodes, indexBase, *toEpetra(comm))))));
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((nodeMap = (rcp(new Epetra_Map(static_cast<int>(numGlobalNodes), indexBase, *toEpetra(comm))))));
     
      // translate local node ids to local dofs
     int nStridedOffset = 0;
@@ -136,7 +136,7 @@ namespace Xpetra {
     
     // build an equally distributed node map
     RCP<Epetra_Map> nodeMap = Teuchos::null;
-    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((nodeMap = (rcp(new Epetra_Map(numGlobalNodes, numLocalNodes, indexBase, *toEpetra(comm))))));
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((nodeMap = (rcp(new Epetra_Map(static_cast<int>(numGlobalNodes), numLocalNodes, indexBase, *toEpetra(comm))))));
     
     // translate local node ids to local dofs
     int nStridedOffset = 0;

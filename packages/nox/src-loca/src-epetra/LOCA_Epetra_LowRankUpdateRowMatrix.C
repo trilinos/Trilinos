@@ -356,6 +356,7 @@ NormOne() const
   return val;
 }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int
 LOCA::Epetra::LowRankUpdateRowMatrix::
 NumGlobalNonzeros() const
@@ -382,6 +383,35 @@ LOCA::Epetra::LowRankUpdateRowMatrix::
 NumGlobalDiagonals() const
 {
   return J_rowMatrix->NumGlobalDiagonals();
+}
+#endif
+
+long long
+LOCA::Epetra::LowRankUpdateRowMatrix::
+NumGlobalNonzeros64() const
+{
+  return J_rowMatrix->NumGlobalNonzeros64();
+}
+
+long long
+LOCA::Epetra::LowRankUpdateRowMatrix::
+NumGlobalRows64() const
+{
+  return J_rowMatrix->NumGlobalRows64();
+}
+
+long long
+LOCA::Epetra::LowRankUpdateRowMatrix::
+NumGlobalCols64() const
+{
+  return J_rowMatrix->NumGlobalCols64();
+}
+
+long long
+LOCA::Epetra::LowRankUpdateRowMatrix::
+NumGlobalDiagonals64() const
+{
+  return J_rowMatrix->NumGlobalDiagonals64();
 }
 
 int

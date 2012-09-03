@@ -46,10 +46,11 @@
 
 #include "Epetra_Data.h"
 #include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_LongLongSerialDenseVector.h"
 
 class Epetra_Comm;
 class Epetra_Directory;
-class Epetra_HashTable;
+template<typename value_type> class Epetra_HashTable;
 
 //! Epetra_BlockMapData:  The Epetra BlockMap Data Class.
 /*! The Epetra_BlockMapData class is an implementation detail of Epetra_BlockMap.
@@ -66,7 +67,7 @@ class Epetra_BlockMapData : public Epetra_Data {
   //@{ 
 
   //! Epetra_BlockMapData Default Constructor.
-  Epetra_BlockMapData(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm);
+  Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm, bool IsLongLong);
 
   //! Epetra_BlockMapData Destructor.
   ~Epetra_BlockMapData();
@@ -78,12 +79,15 @@ class Epetra_BlockMapData : public Epetra_Data {
   mutable Epetra_Directory* Directory_;
 
   Epetra_IntSerialDenseVector LID_;
-  Epetra_IntSerialDenseVector MyGlobalElements_;
+  Epetra_IntSerialDenseVector MyGlobalElements_int_;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_LongLongSerialDenseVector MyGlobalElements_LL_;
+#endif
   Epetra_IntSerialDenseVector FirstPointInElementList_;
   Epetra_IntSerialDenseVector ElementSizeList_;
   Epetra_IntSerialDenseVector PointToElementList_;
   
-  int NumGlobalElements_;
+  long long NumGlobalElements_;
   int NumMyElements_;
   int IndexBase_;
   int ElementSize_;
@@ -91,13 +95,13 @@ class Epetra_BlockMapData : public Epetra_Data {
   int MaxMyElementSize_;
   int MinElementSize_;
   int MaxElementSize_;
-  int MinAllGID_;
-  int MaxAllGID_;
-  int MinMyGID_;
-  int MaxMyGID_;
+  long long MinAllGID_;
+  long long MaxAllGID_;
+  long long MinMyGID_;
+  long long MaxMyGID_;
   int MinLID_;
   int MaxLID_;
-  int NumGlobalPoints_;
+  long long NumGlobalPoints_;
   int NumMyPoints_;
   
   bool ConstantElementSize_;
@@ -105,14 +109,16 @@ class Epetra_BlockMapData : public Epetra_Data {
   bool DistributedGlobal_;
   mutable bool OneToOneIsDetermined_;
   mutable bool OneToOne_;
+  bool GlobalIndicesInt_;
+  bool GlobalIndicesLongLong_;
 
-  int LastContiguousGID_;
+  long long LastContiguousGID_;
   int LastContiguousGIDLoc_;
-  Epetra_HashTable * LIDHash_;
+  Epetra_HashTable<int> * LIDHash_;
 
-	// these are intentionally declared but not defined. See Epetra Developer's Guide for details.
+  // these are intentionally declared but not defined. See Epetra Developer's Guide for details.
   Epetra_BlockMapData(const Epetra_BlockMapData & BlockMapData);
-	Epetra_BlockMapData& operator=(const Epetra_BlockMapData & BlockMapData);
+  Epetra_BlockMapData& operator=(const Epetra_BlockMapData & BlockMapData);
 
 };
 #endif /* EPETRA_BLOCKMAPDATA_H */

@@ -1119,7 +1119,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MPI
   // Import solution onto current processor
   //int numNodesGlobal = globalMapG.NumGlobalElements();
-  Epetra_Map     solnMap(numNodesGlobal, numNodesGlobal, 0, Comm);
+  Epetra_Map     solnMap(static_cast<int>(numNodesGlobal), static_cast<int>(numNodesGlobal), 0, Comm);
   Epetra_Import  solnImporter(solnMap, globalMapG);
   Epetra_Vector  uCoeff(solnMap);
   uCoeff.Import(femCoefficients, solnImporter, Insert);

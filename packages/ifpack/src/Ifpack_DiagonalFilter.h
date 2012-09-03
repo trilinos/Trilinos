@@ -154,6 +154,7 @@ public:
     return(-1.0);
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   virtual int NumGlobalNonzeros() const
   {
     return(A_->NumGlobalNonzeros());
@@ -172,6 +173,27 @@ public:
   virtual int NumGlobalDiagonals() const
   {
     return(A_->NumGlobalDiagonals());
+  }
+#endif
+
+  virtual long long NumGlobalNonzeros64() const
+  {
+    return(A_->NumGlobalNonzeros64());
+  }
+
+  virtual long long NumGlobalRows64() const
+  {
+    return(A_->NumGlobalRows64());
+  }
+
+  virtual long long NumGlobalCols64() const
+  {
+    return(A_->NumGlobalCols64());
+  }
+
+  virtual long long NumGlobalDiagonals64() const
+  {
+    return(A_->NumGlobalDiagonals64());
   }
 
   virtual int NumMyNonzeros() const

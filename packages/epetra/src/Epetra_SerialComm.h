@@ -196,6 +196,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   */
 
   int GatherAll(long * MyVals, long * AllVals, int Count) const;
+
+  //! Epetra_SerialComm All Gather function.
+  /*! A copy for a serial communicator.
+    \param MyVals In
+           On entry, contains the list of values, to be sent to all processors.
+    \param AllVals Out
+           On exit, contains the list of values from all processors. Must by of size NumProc*Count.
+    \param Count In
+           On entry, contains the length of the list of MyVals.
+  */
+
+  int GatherAll(long long * MyVals, long long * AllVals, int Count) const;
   //@}
 
   //! @name Sum Methods
@@ -236,6 +248,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
            On entry, contains the length of the list of values.
   */
   int SumAll(long * PartialSums, long * GlobalSums, int Count) const;
+
+  //! Epetra_SerialComm Global Sum function.
+  /*! A copy for a serial communicator.
+    \param PartialSums In
+           On entry, contains the list of values, usually partial sums computed locally,
+	   to be summed across all processors.
+    \param GlobalSums Out
+           On exit, contains the list of values summed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int SumAll(long long * PartialSums, long long * GlobalSums, int Count) const;
   //@}
 
   //! @name Max/Min Methods
@@ -276,6 +300,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   */
   int MaxAll(long * PartialMaxs, long * GlobalMaxs, int Count) const;
 
+  //! Epetra_SerialComm Global Max function.
+  /*! A copy for a serial communicator.
+    \param PartialMaxs In
+           On entry, contains the list of values, usually partial maxs computed locally;
+					 using these Partial Maxs, the max across all processors will be computed.
+    \param GlobalMaxs Out
+           On exit, contains the list of maxs computed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int MaxAll(long long * PartialMaxs, long long * GlobalMaxs, int Count) const;
+
   //! Epetra_SerialComm Global Min function.
   /*! A copy for a serial communicator.
     \param PartialMins In
@@ -311,6 +347,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
            On entry, contains the length of the list of values.
   */
   int MinAll(long * PartialMins, long * GlobalMins, int Count) const;
+
+  //! Epetra_SerialComm Global Min function.
+  /*! A copy for a serial communicator.
+    \param PartialMins In
+           On entry, contains the list of values, usually partial mins computed locally;
+					 using these Partial Mins, the min across all processors will be computed.
+    \param GlobalMins Out
+           On exit, contains the list of mins computed across all processors.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int MinAll(long long * PartialMins, long long * GlobalMins, int Count) const;
   //@}
 
   //! @name Parallel Prefix Methods
@@ -347,6 +395,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
            On entry, contains the length of the list of values.
   */
   int ScanSum(long * MyVals, long * ScanSums, int Count) const;
+
+  //! Epetra_SerialComm Scan Sum function.
+  /*! A copy for a serial communicator.
+    \param MyVals In
+           On entry, contains the list of values to be summed across all processors.
+    \param ScanSums Out
+           On exit, contains the list of values summed across processors 0 through i.
+    \param Count In
+           On entry, contains the length of the list of values.
+  */
+  int ScanSum(long long * MyVals, long long * ScanSums, int Count) const;
   //@}
 
   //! @name Attribute Accessor Methods

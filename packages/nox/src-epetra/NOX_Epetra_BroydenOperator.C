@@ -242,6 +242,7 @@ double BroydenOperator::NormOne() const
   return crsMatrix->NormOne();
 }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int BroydenOperator::NumGlobalNonzeros() const
 {
   return crsMatrix->NumGlobalNonzeros();
@@ -260,6 +261,27 @@ int BroydenOperator::NumGlobalCols() const
 int BroydenOperator::NumGlobalDiagonals() const
 {
   return crsMatrix->NumGlobalDiagonals();
+}
+#endif
+
+long long BroydenOperator::NumGlobalNonzeros64() const
+{
+  return crsMatrix->NumGlobalNonzeros64();
+}
+
+long long BroydenOperator::NumGlobalRows64() const
+{
+  return crsMatrix->NumGlobalRows64();
+}
+
+long long BroydenOperator::NumGlobalCols64() const
+{
+  return crsMatrix->NumGlobalCols64();
+}
+
+long long BroydenOperator::NumGlobalDiagonals64() const
+{
+  return crsMatrix->NumGlobalDiagonals64();
 }
 
 int BroydenOperator::NumMyNonzeros() const

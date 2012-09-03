@@ -284,7 +284,7 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpNewShared1 )
   ECHO(RCP<A> rcpA = sot.getRCP(id));
   TEST_EQUALITY(rcpA.get(), &a);
   TEST_EQUALITY_CONST(rcpA.has_ownership(), false);
-  TEST_EQUALITY_CONST(rcpA.count(), 2);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 2);
 
   ECHO(rcpA = null);
   ECHO(int cnt = sot.removeRCP(id));
@@ -300,11 +300,11 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpNewShared2 )
   ECHO(RCP<A> rcpA = sot.getRCP(id));
   TEST_EQUALITY(rcpA.get(), &a);
   TEST_EQUALITY_CONST(rcpA.has_ownership(), false);
-  TEST_EQUALITY_CONST(rcpA.count(), 2);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 2);
 
   ECHO(int cnt = sot.removeRCP(id));
   TEST_EQUALITY_CONST(cnt, 1);
-  TEST_EQUALITY_CONST(rcpA.count(), 1);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 1);
 }
 
 TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpNewOwned1 )
@@ -314,7 +314,7 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpNewOwned1 )
 
   ECHO(RCP<A> rcpA = sot.getRCP(id));
   TEST_EQUALITY_CONST(rcpA.has_ownership(), true);
-  TEST_EQUALITY_CONST(rcpA.count(), 2);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 2);
 
   ECHO(rcpA = null);
   ECHO(int cnt = sot.removeRCP(id));
@@ -328,11 +328,11 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpNewOwned2 )
 
   ECHO(RCP<A> rcpA = sot.getRCP(id));
   TEST_EQUALITY_CONST(rcpA.has_ownership(), true);
-  TEST_EQUALITY_CONST(rcpA.count(), 2);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 2);
 
   ECHO(int cnt = sot.removeRCP(id));
   TEST_EQUALITY_CONST(cnt, 1);
-  TEST_EQUALITY_CONST(rcpA.count(), 1);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 1);
 }
 
 TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpRCPOwned1 )
@@ -340,16 +340,16 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpRCPOwned1 )
   ECHO(SimpleObjectTable<A> sot);
   ECHO(RCP<A> rcpA = rcp(new A));
   TEST_EQUALITY_CONST(rcpA.has_ownership(), true);
-  TEST_EQUALITY_CONST(rcpA.count(), 1);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 1);
 
   ECHO(int id = sot.storeRCP(rcpA));
   TEST_EQUALITY_CONST(rcpA.has_ownership(), true);
-  TEST_EQUALITY_CONST(rcpA.count(), 2);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 2);
 
   ECHO(RCP<A> rcpA2 = sot.getRCP(id));
   TEST_EQUALITY(rcpA2.get(), rcpA.get());
   TEST_EQUALITY_CONST(rcpA2.has_ownership(), true);
-  TEST_EQUALITY_CONST(rcpA2.count(), 3);
+  TEST_EQUALITY_CONST(rcpA2.strong_count(), 3);
 }
 
 TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpRCPOwned2 )
@@ -357,10 +357,10 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpRCPOwned2 )
   ECHO(SimpleObjectTable<A> sot);
   ECHO(RCP<A> rcpA = rcp(new A));
   TEST_EQUALITY_CONST(rcpA.has_ownership(), true);
-  TEST_EQUALITY_CONST(rcpA.count(), 1);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 1);
 
   ECHO(int id = sot.storeRCP(rcpA));
-  TEST_EQUALITY_CONST(rcpA.count(), 2);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 2);
 
   ECHO(rcpA = null);
   ECHO(int cnt = sot.removeRCP(id));
@@ -372,14 +372,14 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpRCPOwned3 )
   ECHO(SimpleObjectTable<A> sot);
   ECHO(RCP<A> rcpA = rcp(new A));
   TEST_EQUALITY_CONST(rcpA.has_ownership(), true);
-  TEST_EQUALITY_CONST(rcpA.count(), 1);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 1);
 
   ECHO(int id = sot.storeRCP(rcpA));
-  TEST_EQUALITY_CONST(rcpA.count(), 2);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 2);
 
   ECHO(int cnt = sot.removeRCP(id));
   TEST_EQUALITY_CONST(cnt, 1);
-  TEST_EQUALITY_CONST(rcpA.count(), 1);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 1);
 }
 
 TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpDestructTable )
@@ -389,11 +389,11 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, rcpDestructTable )
   ECHO(int id = psot->storeNew(pA));
 
   ECHO(RCP<A> rcpA = psot->getRCP(id));
-  TEST_EQUALITY_CONST(rcpA.count(), 2);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 2);
   TEST_EQUALITY(rcpA.get(), pA);
 
   ECHO(delete psot);
-  TEST_EQUALITY_CONST(rcpA.count(), 1);
+  TEST_EQUALITY_CONST(rcpA.strong_count(), 1);
   TEST_EQUALITY(rcpA.get(), pA);
 }
 

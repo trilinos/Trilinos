@@ -36,6 +36,7 @@
 #include "Epetra_CombineMode.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_Import.h"
+#include "Epetra_Map.h"
 #ifdef IFPACK_SUBCOMM_CODE
 #include "Epetra_IntVector.h"
 #else
@@ -212,10 +213,14 @@ public:
     IFPACK_RETURN(A().NormOne());
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of nonzero entries in the global matrix.
   virtual int NumGlobalNonzeros() const
   {
-    return(NumGlobalNonzeros_);
+    if(A().RowMatrixRowMap().GlobalIndicesInt())
+       return (int) NumGlobalNonzeros_;
+    else
+       throw "Ifpack_OverlappingRowMatrix::NumGlobalNonzeros: Global indices not int";
   }
 
   //! Returns the number of global matrix rows.
@@ -234,6 +239,30 @@ public:
   virtual int NumGlobalDiagonals() const
   {
     return(A().NumGlobalDiagonals());
+  }
+#endif
+  //! Returns the number of nonzero entries in the global matrix.
+  virtual long long NumGlobalNonzeros64() const
+  {
+    return(NumGlobalNonzeros_);
+  }
+
+  //! Returns the number of global matrix rows.
+  virtual long long NumGlobalRows64() const
+  {
+    return(A().NumGlobalRows64());
+  }
+
+  //! Returns the number of global matrix columns.
+  virtual long long NumGlobalCols64() const
+  {
+    return(A().NumGlobalCols64());
+  }
+
+  //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
+  virtual long long NumGlobalDiagonals64() const
+  {
+    return(A().NumGlobalDiagonals64());
   }
 
   //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
@@ -404,7 +433,7 @@ private:
   int NumMyDiagonals_;
   int NumMyNonzeros_;
 
-  int NumGlobalNonzeros_;
+  long long NumGlobalNonzeros_;
   int MaxNumEntries_;
 
   int NumMyRowsA_;

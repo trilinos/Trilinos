@@ -116,6 +116,7 @@ public:
     return(Matrix_->NormOne());
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   virtual int NumGlobalNonzeros() const
   {
     return(Matrix_->NumGlobalNonzeros());
@@ -134,6 +135,27 @@ public:
   virtual int NumGlobalDiagonals() const
   {
     return(Matrix_->NumGlobalDiagonals());
+  }
+#endif
+
+  virtual long long NumGlobalNonzeros64() const
+  {
+    return(Matrix_->NumGlobalNonzeros64());
+  }
+
+  virtual long long NumGlobalRows64() const
+  {
+    return(Matrix_->NumGlobalRows64());
+  }
+
+  virtual long long NumGlobalCols64() const
+  {
+    return(Matrix_->NumGlobalCols64());
+  }
+
+  virtual long long NumGlobalDiagonals64() const
+  {
+    return(Matrix_->NumGlobalDiagonals64());
   }
 
   virtual int NumMyNonzeros() const

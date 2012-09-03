@@ -108,6 +108,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 
     \return Integer error code, set to 0 if successful.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int GetDirectoryEntries( const Epetra_BlockMap& Map,
 			   const int NumEntries,
 			   const int * GlobalEntries,
@@ -115,6 +116,17 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 			   int * LocalEntries,
 			   int * EntrySizes,
 			   bool high_rank_sharing_procs=false) const;
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int GetDirectoryEntries( const Epetra_BlockMap& Map,
+			   const int NumEntries,
+			   const long long * GlobalEntries,
+			   int * Procs,
+			   int * LocalEntries,
+			   int * EntrySizes,
+			   bool high_rank_sharing_procs=false) const;
+#endif
 
   //!GIDsAllUniquelyOwned: returns true if all GIDs appear on just one processor.
   /*! If any GIDs are owned by multiple processors, returns false.
@@ -136,6 +148,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   void addProcToList(int proc, int LID);
 
   //! Generate: Sets up Directory tables.
+  template<typename int_type>
   int Generate(const Epetra_BlockMap& Map);
 
   //! Returns the Epetra_Map containing the directory
@@ -180,9 +193,31 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   int * SizeList_;
   bool SizeIsConst_;
 
-  int * AllMinGIDs_;
+  int * AllMinGIDs_int_;
+  long long * AllMinGIDs_LL_;
   
+  template<typename int_type>
+  const int_type * AllMinGIDs() const;
+
+	template<typename int_type>
+	int	GetDirectoryEntries( const Epetra_BlockMap& Map,
+						const int NumEntries,
+						const int_type * GlobalEntries,
+						int * Procs,
+						int * LocalEntries,
+						int * EntrySizes,
+						bool high_rank_sharing_procs) const;
 
 };
+
+template<> inline const int * Epetra_BasicDirectory::AllMinGIDs() const
+{
+  return AllMinGIDs_int_;
+}
+
+template<> inline const long long * Epetra_BasicDirectory::AllMinGIDs() const
+{
+  return AllMinGIDs_LL_;
+}
 
 #endif /* EPETRA_BASICDIRECTORY_H */

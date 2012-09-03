@@ -671,7 +671,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
     ArrayOfIntPointers[0] =  &sortable_positions[0];
     //    ArrayOfDoublePointers[0] =  &sortable_values[0];
     Utils.Sort( true, NumGlobalElements_*2, &sortable_values[0], 
-		0, 0, 1, &ArrayOfIntPointers[0] );
+		0, (double**)0, 1, &ArrayOfIntPointers[0] );
 
     for( int i =0 ; i < NumGlobalElements_; i++ ) { 
       MapMap_[i] = sortable_positions[i];

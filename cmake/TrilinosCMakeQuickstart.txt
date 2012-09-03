@@ -27,6 +27,7 @@ Section C: Configuring Trilinos
   --  Getting verbose output
   --  Enabling/disabling time monitors
   --  Enabling/disabling deprecated warnings
+  --  Disabling deprecated code
   --  Disable update of package dependency information
   --  Enable coverage testing
   --  Viewing configure options and documentation
@@ -755,7 +756,25 @@ C) Configuring (Makefile Generator)
 
   This will override the global behavior set by
   Trilinos_SHOW_DEPRECATED_WARNINGS for individual packages <TRIBITS_PACKAGE>
-  (e.g. <TRIBITS_PACKAGE> = Teuchos, Thyra, etc.)
+  (e.g. <TRIBITS_PACKAGE> = Teuchos, Thyra, etc.).
+
+
+(*) Disabling deprecated code:
+
+    -D Trilinos_HIDE_DEPRECATED_CODE:BOOL=ON
+
+  Above, a subset of deprecated code will actually be removed from the build.
+  This is to allow testing of downstream client code that might otherwise
+  ignore deprecated warnings and to certify that a downstream client code is
+  free of calling deprecated coee.
+
+  To hide deprecated code or not for a single Trilinos package use:
+
+    -D <TRIBITS_PACKAGE>_HIDE_DEPRECATED_CODE:BOOL=ON
+
+  This will override the global behavior set by Trilinos_HIDE_DEPRECATED_CODE
+  for individual packages <TRIBITS_PACKAGE> (e.g. <TRIBITS_PACKAGE> = Teuchos,
+  Thyra, etc.).
 
 
 (*) Disable update of package dependency information:

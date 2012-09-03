@@ -752,7 +752,7 @@ int main(int argc, char *argv[])
 	
 	const std::vector<int>& node_list = mb.topNodeSetGlobalIds();
 	for (std::size_t node = 0; node < node_list.size(); ++node) {
-	  int lid = owned_x->Map().LID(node_list[node] * num_eq);
+	  int lid = owned_x->Map().LID(static_cast<int>(node_list[node] * num_eq));
 	  for (std::size_t eq = 0; eq < num_eq; ++eq) {
 	    int dof_index = lid + eq;
 	    *(files[eq]) << coordinates[node_list[node]][0] << "   " 
@@ -773,7 +773,7 @@ int main(int argc, char *argv[])
 	
 	const std::vector<int>& node_list = mb.bottomNodeSetGlobalIds();
 	for (std::size_t node = 0; node < node_list.size(); ++node) {
-	  int lid = owned_x->Map().LID(node_list[node] * num_eq);
+	  int lid = owned_x->Map().LID(static_cast<int>(node_list[node] * num_eq));
 	  for (std::size_t eq = 0; eq < num_eq; ++eq) {
 	    int dof_index = lid + eq;
 	    *(files[eq]) << coordinates[node_list[node]][0] << "   " 

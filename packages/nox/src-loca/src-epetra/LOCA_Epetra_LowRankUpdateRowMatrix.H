@@ -181,19 +181,31 @@ namespace LOCA {
       virtual double NormOne() const;
 
       //! Returns the number of nonzero entries in the global matrix.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       virtual int NumGlobalNonzeros() const;
+#endif
+      virtual long long NumGlobalNonzeros64() const;
 
       //! Returns the number of global matrix rows.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       virtual int NumGlobalRows() const;
+#endif
+      virtual long long NumGlobalRows64() const;
 
       //! Returns the number of global matrix columns.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       virtual int NumGlobalCols() const;
+#endif
+      virtual long long NumGlobalCols64() const;
 
       /*! 
        * \brief Returns the number of global nonzero diagonal entries, 
        * based on global row/column index comparisons.
        */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       virtual int NumGlobalDiagonals() const;
+#endif
+      virtual long long NumGlobalDiagonals64() const;
     
       /*! 
        * \brief Returns the number of nonzero entries in the calling 

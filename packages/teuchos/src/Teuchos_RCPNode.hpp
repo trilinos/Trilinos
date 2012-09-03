@@ -169,12 +169,6 @@ public:
       return count_[RCP_WEAK];
     }
   /** \brief . */
-  int count( const ERCPStrength strength )
-    {
-      debugAssertStrength(strength);
-      return count_[strength];
-    }
-  /** \brief . */
   int incr_count( const ERCPStrength strength )
     {
       debugAssertStrength(strength);

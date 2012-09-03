@@ -78,7 +78,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     // ints
     IndexBase_(RowMap.IndexBase()),
     NumGlobalEntries_(0),
-    NumGlobalBlockRows_(RowMap.NumGlobalElements()),
+    NumGlobalBlockRows_(RowMap.NumGlobalElements64()),
     NumGlobalBlockCols_(NumGlobalBlockRows_),
     NumGlobalBlockDiagonals_(0),
     NumMyEntries_(0),
@@ -92,32 +92,39 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     MaxNumNonzeros_(0),
     GlobalMaxNumNonzeros_(0),
     NumGlobalNonzeros_(0),
-    NumGlobalRows_(RowMap.NumGlobalPoints()),
+    NumGlobalRows_(RowMap.NumGlobalPoints64()),
     NumGlobalCols_(NumGlobalRows_),
     NumGlobalDiagonals_(0),
     NumMyNonzeros_(0),
     NumMyRows_(RowMap.NumMyPoints()),
     NumMyCols_(NumMyRows_),
-    NumMyDiagonals_(0),	
+    NumMyDiagonals_(0),  
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
-    Indices_(new int *[NumMyBlockRows_]),
-    SortedEntries_(StaticProfile ? 0 : NumMyBlockRows_),
-    TempColIndices_(NULL),
     NumTempColIndices_(0),
     NumAllocatedIndicesPerRow_(0),
     NumIndicesPerRow_(0),
     IndexOffset_(0),
-    All_Indices_(0),
-    CV_(CV)
+    CV_(CV),
+    data(0)
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  ,LL_data(0)
+#endif
 {
+  if(RowMap.GlobalIndicesInt() == false && RowMap.GlobalIndicesLongLong() == false)
+    throw "Epetra_CrsGraphData::Epetra_CrsGraphData: cannot be called without any index type for RowMap";
+
+  data = new IndexData<int>(NumMyBlockRows_, ! StaticProfile);
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  LL_data = new IndexData<long long>(RowMap.GlobalIndicesLongLong() ? NumMyBlockRows_ : 0, ! StaticProfile);
+#endif
   //cout << "--CRSGD created(rowmap ctr), addr: " << this << endl; //DATA_DEBUG
 }
 
 //=============================================================================
 Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, 
-					 const Epetra_BlockMap& RowMap, 
-					 const Epetra_BlockMap& ColMap, bool StaticProfile)
+           const Epetra_BlockMap& RowMap, 
+           const Epetra_BlockMap& ColMap, bool StaticProfile)
   // maps
   : RowMap_(RowMap),
     ColMap_(ColMap),
@@ -145,8 +152,8 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     // ints
     IndexBase_(RowMap.IndexBase()),
     NumGlobalEntries_(0),
-    NumGlobalBlockRows_(RowMap.NumGlobalElements()),
-    NumGlobalBlockCols_(ColMap.NumGlobalElements()),
+    NumGlobalBlockRows_(RowMap.NumGlobalElements64()),
+    NumGlobalBlockCols_(ColMap.NumGlobalElements64()),
     NumGlobalBlockDiagonals_(0),
     NumMyEntries_(0),
     NumMyBlockRows_(RowMap.NumMyElements()),
@@ -159,43 +166,75 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     MaxNumNonzeros_(0),
     GlobalMaxNumNonzeros_(0),
     NumGlobalNonzeros_(0),
-    NumGlobalRows_(RowMap.NumGlobalPoints()),
-    NumGlobalCols_(ColMap.NumGlobalPoints()),
+    NumGlobalRows_(RowMap.NumGlobalPoints64()),
+    NumGlobalCols_(ColMap.NumGlobalPoints64()),
     NumGlobalDiagonals_(0),
     NumMyNonzeros_(0),
     NumMyRows_(RowMap.NumMyPoints()),
     NumMyCols_(ColMap.NumMyPoints()),
-    NumMyDiagonals_(0),	
+    NumMyDiagonals_(0),  
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
-    Indices_(new int *[NumMyBlockRows_]),
-    SortedEntries_(StaticProfile ? 0 : NumMyBlockRows_),
-    TempColIndices_(NULL),
     NumTempColIndices_(0),
     NumAllocatedIndicesPerRow_(0),
     NumIndicesPerRow_(0),
     IndexOffset_(0),
-    All_Indices_(0),
-    CV_(CV)
+    CV_(CV),
+    data(0)
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  ,LL_data(0)
+#endif
 {
+  if(RowMap.GlobalIndicesInt() == false && RowMap.GlobalIndicesLongLong() == false)
+    throw "Epetra_CrsGraphData::Epetra_CrsGraphData: cannot be called without any index type for RowMap";
+
+  if(!RowMap.GlobalIndicesTypeMatch(ColMap))
+    throw "Epetra_CrsGraphData::Epetra_CrsGraphData: cannot be called with different indices types for RowMap and ColMap";
+
+  data = new IndexData<int>(NumMyBlockRows_, ! StaticProfile);
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  LL_data = new IndexData<long long>(RowMap.GlobalIndicesLongLong() ? NumMyBlockRows_ : 0, ! StaticProfile);
+#endif
   //cout << "--CRSGD created(rowmap&colmap ctr), addr: " << this << endl; //DATA_DEBUG
 }
 
 //=============================================================================
 Epetra_CrsGraphData::~Epetra_CrsGraphData() {
 
-  if(Indices_ != 0 && !StorageOptimized_) {
+  if(data->Indices_ != 0 && !StorageOptimized_) {
     for (int i=0; i<NumMyBlockRows_; i++) {
-      Indices_[i] = 0;
+      data->Indices_[i] = 0;
     } 
-    delete[] Indices_;
-    Indices_ = 0;
+    delete[] data->Indices_;
+    data->Indices_ = 0;
   }
 
-  if (TempColIndices_ != 0) {
-    delete [] TempColIndices_;
-    TempColIndices_ = 0;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(LL_data->Indices_ != 0 && !StorageOptimized_) {
+    for (int i=0; i<NumMyBlockRows_; i++) {
+      LL_data->Indices_[i] = 0;
+    } 
+    delete[] LL_data->Indices_;
+    LL_data->Indices_ = 0;
   }
+#endif
+
+  if (data->TempColIndices_ != 0) {
+    delete [] data->TempColIndices_;
+    data->TempColIndices_ = 0;
+  }
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if (LL_data->TempColIndices_ != 0) {
+    delete [] LL_data->TempColIndices_;
+    LL_data->TempColIndices_ = 0;
+  }
+#endif
+
+  delete data;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  delete LL_data;
+#endif
 
   if(Importer_ != 0) {
     delete Importer_;
@@ -206,7 +245,7 @@ Epetra_CrsGraphData::~Epetra_CrsGraphData() {
     Importer_ = 0;
   }
 
-  NumMyBlockRows_ = 0;	// are these needed?
+  NumMyBlockRows_ = 0;  // are these needed?
   Filled_ = false;      // they're about to go out of scope, after all
   Allocated_ = false;
 
@@ -262,7 +301,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os << "DomainMap_:\n" << DomainMap_ << endl;
     os << "RangeMap_:\n" << RangeMap_ << endl;
   }
-	
+  
   if(one_bit) {
     os.width(26); os << "HaveColMap_: "              << HaveColMap_;
     os.width(25); os << "Filled_: "                  << Filled_;
@@ -279,7 +318,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os.width(25); os << "NoDiagonal_: "              << NoDiagonal_ << endl;
     os.width(25); os << "GlobalConstantsComputed_: " << GlobalConstantsComputed_ << endl;
     os.width(25); os << "StaticProfile_: " << StaticProfile_ << endl << endl;
-		
+    
     os.width(10); os << "NGBR_: " << NumGlobalBlockRows_;
     os.width(10); os << "NGBC_: " << NumGlobalBlockCols_;
     os.width(10); os << "NGBD_: " << NumGlobalBlockDiagonals_;
@@ -307,34 +346,65 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os.width(11); os << "MNN_: "  << MaxNumNonzeros_;
     os.width(11); os << "GMNN_: " << GlobalMaxNumNonzeros_;
     os.width(11); os << "RC: " << ReferenceCount() << endl << endl;
-		
+    
     os << "NIPR_: " << NumIndicesPerRow_ << endl;
     os << "NAIPR_: " << NumAllocatedIndicesPerRow_ << endl;
     os << "IndexOffset_: " << IndexOffset_ << endl;
-    os << "All_Indices_: " << All_Indices_ << endl;
+  if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && IndicesAreLocal_))
+      os << "All_Indices_: " << data->All_Indices_ << endl;
+
+  if(RowMap_.GlobalIndicesLongLong() && IndicesAreGlobal_)
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      os << "All_Indices_: " << LL_data->All_Indices_ << endl;
+#else
+      throw "Epetra_CrsGraphData::Print: GlobalIndicesLongLong but no long long API";
+#endif
   }
-		
+    
   if(two_bit) {
-    os << "Indices_: " << Indices_ << endl;
-    if(Indices_ != 0) {
-      for(int i = 0; i < NumMyBlockRows_; i++) {
-	os << "Indices_[" << i << "]: (" << Indices_[i] << ") ";
-	if(Indices_[i] != 0) {
-	  for(int j = 0; j < NumAllocatedIndicesPerRow_[i]; j++)
-	    os << Indices_[i][j] << " ";
-	}
-	os << endl;
-      }
+  if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && IndicesAreLocal_))
+  {
+      os << "Indices_: " << data->Indices_ << endl;
+    if(data->Indices_ != 0) {
+        for(int i = 0; i < NumMyBlockRows_; i++) {
+    os << "Indices_[" << i << "]: (" << data->Indices_[i] << ") ";
+    if(data->Indices_[i] != 0) {
+      for(int j = 0; j < NumAllocatedIndicesPerRow_[i]; j++)
+        os << data->Indices_[i][j] << " ";
     }
+    os << endl;
+      }
+   }
   }
-	
+
+  if(RowMap_.GlobalIndicesLongLong() && IndicesAreGlobal_)
+  {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      os << "Indices_: " << LL_data->Indices_ << endl;
+    if(LL_data->Indices_ != 0) {
+        for(int i = 0; i < NumMyBlockRows_; i++) {
+    os << "Indices_[" << i << "]: (" << LL_data->Indices_[i] << ") ";
+    if(LL_data->Indices_[i] != 0) {
+      for(int j = 0; j < NumAllocatedIndicesPerRow_[i]; j++)
+        os << LL_data->Indices_[i][j] << " ";
+    }
+    os << endl;
+      }
+  }
+#else
+      throw "Epetra_CrsGraphData::Print: GlobalIndicesLongLong but no long long API";
+#endif
+   }
+  }
+  
   os << "***** End CrsGraphData *****" << endl;
 }
 
 
 //==========================================================================
+template<typename int_type>
 void
-Epetra_CrsGraphData::EntriesInOneRow::AddEntry (const int Col)
+Epetra_CrsGraphData::EntriesInOneRow<int_type>::AddEntry (const int_type Col)
 {
   // first check the last element (or if line is still empty)
   if ( (entries_.size()==0) || ( entries_.back() < Col) )
@@ -344,7 +414,7 @@ Epetra_CrsGraphData::EntriesInOneRow::AddEntry (const int Col)
     }
  
   // do a binary search to find the place where to insert:
-  std::vector<int>::iterator it = std::lower_bound(entries_.begin(),
+  typename std::vector<int_type>::iterator it = std::lower_bound(entries_.begin(),
                 entries_.end(),
                 Col);
  
@@ -359,9 +429,10 @@ Epetra_CrsGraphData::EntriesInOneRow::AddEntry (const int Col)
 
 
 //==========================================================================
+template<typename int_type>
 void
-Epetra_CrsGraphData::EntriesInOneRow::AddEntries (const int  numCols,
-             const int *Indices)
+Epetra_CrsGraphData::EntriesInOneRow<int_type>::AddEntries (const int  numCols,
+             const int_type *Indices)
 {
   if (numCols == 0)
     return;
@@ -375,9 +446,9 @@ Epetra_CrsGraphData::EntriesInOneRow::AddEntries (const int  numCols,
     }
 
   if (indicesAreSorted && numCols > 3) {
-    const int * curInput = &Indices[0];
-    int col = *curInput;
-    const int * endInput = &Indices[numCols];
+    const int_type * curInput = &Indices[0];
+    int_type col = *curInput;
+    const int_type * endInput = &Indices[numCols];
 
     // easy case: list of entries is empty or all entries are smaller than
     // the ones to be inserted
@@ -389,7 +460,7 @@ Epetra_CrsGraphData::EntriesInOneRow::AddEntries (const int  numCols,
 
     // find a possible insertion point for the first entry. check whether
     // the first entry is a duplicate before actually doing something.
-    std::vector<int>::iterator it = 
+    typename std::vector<int_type>::iterator it = 
       std::lower_bound(entries_.begin(), entries_.end(), col);
     while (*it == col) {
       ++curInput;
@@ -421,12 +492,12 @@ Epetra_CrsGraphData::EntriesInOneRow::AddEntries (const int  numCols,
     // that the list will not yet be sorted, but rather have the insert
     // indices in the middle and the old indices from the list on the
     // end. Next we will have to merge the two lists.
-    const int pos1 = it - entries_.begin();
+    const int pos1 = (int) (it - entries_.begin());
     entries_.insert (it, curInput, endInput);
     it = entries_.begin() + pos1;
 
     // Now merge the two lists...
-    std::vector<int>::iterator it2 = it + (endInput - curInput);
+    typename std::vector<int_type>::iterator it2 = it + (endInput - curInput);
 
     // As long as there are indices both in the end of the entries list and
     // in the input list, always continue with the smaller index.
@@ -452,7 +523,7 @@ Epetra_CrsGraphData::EntriesInOneRow::AddEntries (const int  numCols,
       *it++ = *it2++;
 
     // resize and return
-    const int new_size = it - entries_.begin();
+    const int new_size = (int) (it - entries_.begin());
     entries_.resize (new_size);
     return;
   }
@@ -462,3 +533,10 @@ Epetra_CrsGraphData::EntriesInOneRow::AddEntries (const int  numCols,
   for (int i=0; i<numCols; ++i)
     AddEntry(Indices[i]);
 }
+
+// explicit instantiation.
+template void Epetra_CrsGraphData::EntriesInOneRow<int      >::AddEntry(const int Col);
+template void Epetra_CrsGraphData::EntriesInOneRow<long long>::AddEntry(const long long Col);
+
+template void Epetra_CrsGraphData::EntriesInOneRow<int      >::AddEntries(const int numCols, const int *Indices);
+template void Epetra_CrsGraphData::EntriesInOneRow<long long>::AddEntries(const int numCols, const long long *Indices);

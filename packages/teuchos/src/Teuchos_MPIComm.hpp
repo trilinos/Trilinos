@@ -59,6 +59,9 @@
 
 namespace Teuchos
 {
+
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
+
   /**
    * \class MPIComm
    * \brief Object-oriented wrapper for an MPI communicator.
@@ -198,6 +201,10 @@ namespace Teuchos
     //! Indicate whether MPI is currently running.
     int mpiIsRunning() const ;
   };
-}
+
+#endif // TEUCHOS_HIDE_DEPRECATED_CODE
+
+} // namespace Teuchos
+
 #endif
 

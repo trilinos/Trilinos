@@ -64,48 +64,115 @@ double Epetra_Util::Chop(const double & Value){
 unsigned int Epetra_Util::RandomInt() {
 
   const int a = 16807;
-	const int m = 2147483647;
-	const int q = 127773;
-	const int r = 2836;
+  const int m = 2147483647;
+  const int q = 127773;
+  const int r = 2836;
 
-	int hi = Seed_ / q;
-	int lo = Seed_ % q;
-	int test = a * lo - r * hi;
-	if (test > 0)
-		Seed_ = test;
-	else
-		Seed_ = test + m;
-	
-	return(Seed_);
+  int hi = Seed_ / q;
+  int lo = Seed_ % q;
+  int test = a * lo - r * hi;
+  if (test > 0)
+    Seed_ = test;
+  else
+    Seed_ = test + m;
+  
+  return(Seed_);
 }
 
 //=========================================================================
 double Epetra_Util::RandomDouble() {
-	const double Modulus = 2147483647.0;
-	const double DbleOne = 1.0;
-	const double DbleTwo = 2.0;
+  const double Modulus = 2147483647.0;
+  const double DbleOne = 1.0;
+  const double DbleTwo = 2.0;
 
-	double randdouble = RandomInt(); // implicit conversion from int to double
-	randdouble = DbleTwo * (randdouble / Modulus) - DbleOne; // scale to (-1.0, 1.0)
+  double randdouble = RandomInt(); // implicit conversion from int to double
+  randdouble = DbleTwo * (randdouble / Modulus) - DbleOne; // scale to (-1.0, 1.0)
 
-	return(randdouble);
+  return(randdouble);
 }
 
 //=========================================================================
 unsigned int Epetra_Util::Seed() const {
-	return(Seed_);
+  return(Seed_);
 }
 
 //=========================================================================
 int Epetra_Util::SetSeed(unsigned int Seed_in) {
-	Seed_ = Seed_in;
-	return(0);
+  Seed_ = Seed_in;
+  return(0);
 }
 
 //=============================================================================
+template<typename T>
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, T * Keys, 
+           int NumDoubleCompanions,double ** DoubleCompanions, 
+           int NumIntCompanions, int ** IntCompanions,
+           int NumLongLongCompanions, long long ** LongLongCompanions)
+{
+  int i;
+
+  int n = NumKeys;
+  T * const list = Keys;
+  int m = n/2;
+  
+  while (m > 0) {
+    int max = n - m;
+    for (int j=0; j<max; j++)
+      {
+  for (int k=j; k>=0; k-=m)
+    {
+      if ((SortAscending && list[k+m] >= list[k]) || 
+    ( !SortAscending && list[k+m] <= list[k]))
+        break;
+      T temp = list[k+m];
+      list[k+m] = list[k];
+      list[k] = temp;
+      for (i=0; i<NumDoubleCompanions; i++) {
+        double dtemp = DoubleCompanions[i][k+m];
+      DoubleCompanions[i][k+m] = DoubleCompanions[i][k];
+      DoubleCompanions[i][k] = dtemp;
+      }
+      for (i=0; i<NumIntCompanions; i++) {
+        int itemp = IntCompanions[i][k+m];
+      IntCompanions[i][k+m] = IntCompanions[i][k];
+      IntCompanions[i][k] = itemp;
+      }
+      for (i=0; i<NumLongLongCompanions; i++) {
+        long long LLtemp = LongLongCompanions[i][k+m];
+      LongLongCompanions[i][k+m] = LongLongCompanions[i][k];
+      LongLongCompanions[i][k] = LLtemp;
+      }
+    }
+      }
+    m = m/2;
+  }
+}
+
 void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
-		       int NumDoubleCompanions,double ** DoubleCompanions, 
-		       int NumIntCompanions, int ** IntCompanions)
+           int NumDoubleCompanions,double ** DoubleCompanions, 
+           int NumIntCompanions, int ** IntCompanions,
+           int NumLongLongCompanions, long long ** LongLongCompanions)
+{
+  return Sort<int>(SortAscending, NumKeys, Keys, 
+           NumDoubleCompanions, DoubleCompanions, 
+           NumIntCompanions, IntCompanions,
+           NumLongLongCompanions, LongLongCompanions);
+}
+
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, long long * Keys, 
+           int NumDoubleCompanions,double ** DoubleCompanions, 
+           int NumIntCompanions, int ** IntCompanions,
+           int NumLongLongCompanions, long long ** LongLongCompanions)
+{
+  return Sort<long long>(SortAscending, NumKeys, Keys, 
+           NumDoubleCompanions, DoubleCompanions, 
+           NumIntCompanions, IntCompanions,
+           NumLongLongCompanions, LongLongCompanions);
+}
+
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
+           int NumDoubleCompanions,double ** DoubleCompanions, 
+           int NumIntCompanions, int ** IntCompanions)
 {
   int i;
 
@@ -117,34 +184,36 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
     int max = n - m;
     for (int j=0; j<max; j++)
       {
-	for (int k=j; k>=0; k-=m)
-	  {
-	    if ((SortAscending && list[k+m] >= list[k]) || 
-		( !SortAscending && list[k+m] <= list[k]))
-	      break;
-	    int temp = list[k+m];
-	    list[k+m] = list[k];
-	    list[k] = temp;
-	    for (i=0; i<NumDoubleCompanions; i++) {
-	      double dtemp = DoubleCompanions[i][k+m];
-	    DoubleCompanions[i][k+m] = DoubleCompanions[i][k];
-	    DoubleCompanions[i][k] = dtemp;
-	    }
-	    for (i=0; i<NumIntCompanions; i++) {
-	      int itemp = IntCompanions[i][k+m];
-	    IntCompanions[i][k+m] = IntCompanions[i][k];
-	    IntCompanions[i][k] = itemp;
-	    }
-	  }
+  for (int k=j; k>=0; k-=m)
+    {
+      if ((SortAscending && list[k+m] >= list[k]) || 
+    ( !SortAscending && list[k+m] <= list[k]))
+        break;
+      int temp = list[k+m];
+      list[k+m] = list[k];
+      list[k] = temp;
+      for (i=0; i<NumDoubleCompanions; i++) {
+        double dtemp = DoubleCompanions[i][k+m];
+      DoubleCompanions[i][k+m] = DoubleCompanions[i][k];
+      DoubleCompanions[i][k] = dtemp;
+      }
+      for (i=0; i<NumIntCompanions; i++) {
+        int itemp = IntCompanions[i][k+m];
+      IntCompanions[i][k+m] = IntCompanions[i][k];
+      IntCompanions[i][k] = itemp;
+      }
+    }
       }
     m = m/2;
   }
 }
 
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
+// FIXME long long
 Epetra_Map
 Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
-				 bool high_rank_proc_owns_shared)
+         bool high_rank_proc_owns_shared)
 {
   //if usermap is already 1-to-1 then we'll just return a copy of it.
   if (usermap.IsOneToOne()) {
@@ -161,7 +230,7 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
   int* owner_procs = new int[numMyElems];
 
   directory->GetDirectoryEntries(usermap, numMyElems, myElems, owner_procs,
-				 0, 0, high_rank_proc_owns_shared);
+         0, 0, high_rank_proc_owns_shared);
 
   //we'll fill a list of map-elements which belong on this processor
 
@@ -178,7 +247,7 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
   }
 
   Epetra_Map one_to_one_map(-1, numMyOwnedElems, myOwnedElems,
-			 usermap.IndexBase(), usermap.Comm());
+       usermap.IndexBase(), usermap.Comm());
 
   delete [] myOwnedElems;
   delete [] owner_procs;
@@ -186,13 +255,14 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
 
   return(one_to_one_map);
 }
-
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
+// FIXME long long
 Epetra_Map
 Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
-				 int root)
+         int root)
 {
-
   int numProc = usermap.Comm().NumProc();
   if (numProc==1) {
     Epetra_Map newmap(usermap);
@@ -207,7 +277,7 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   int globalquickreturn = 0;
 
   if (isRoot) {
-    if (usermap.NumMyElements()==usermap.NumGlobalElements()) quickreturn = 1;
+    if (usermap.NumMyElements()==usermap.NumGlobalElements64()) quickreturn = 1;
   }
   else {
     if (usermap.NumMyElements()==0) quickreturn = 1;
@@ -222,7 +292,7 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   // Linear map: Simple case, just put all GIDs linearly on root processor
   if (usermap.LinearMap() && root!=-1) {
     int numMyElements = 0;
-    if (isRoot) numMyElements = usermap.MaxAllGID()+1;
+    if (isRoot) numMyElements = usermap.MaxAllGID64()+1; // FIXME long long
     Epetra_Map newmap(-1, numMyElements, usermap.IndexBase(), comm);
     return(newmap);
   }
@@ -236,9 +306,9 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   int numMyElements = usermap.NumMyElements();
   Epetra_Map allGidsMap(-1, numMyElements, 0, comm);
   Epetra_IntVector allGids(allGidsMap);
-  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID(i);
+  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID64(i);
   
-  int numGlobalElements = usermap.NumGlobalElements();
+  int numGlobalElements = usermap.NumGlobalElements64();
   if (root!=-1) {
     int n1 = 0; if (isRoot) n1 = numGlobalElements;
     Epetra_Map allGidsOnRootMap(-1, n1, 0, comm);
@@ -261,12 +331,16 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
     return(rootMap);
   }
 }
-
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 //----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
+// FIXME long long
 Epetra_BlockMap
 Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
-				      bool high_rank_proc_owns_shared)
+              bool high_rank_proc_owns_shared)
 {
+// FIXME long long
+
   //if usermap is already 1-to-1 then we'll just return a copy of it.
   if (usermap.IsOneToOne()) {
     Epetra_BlockMap newmap(usermap);
@@ -283,7 +357,7 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
   int* sizes = owner_procs+numMyElems;
 
   directory->GetDirectoryEntries(usermap, numMyElems, myElems, owner_procs,
-				 0, sizes, high_rank_proc_owns_shared);
+         0, sizes, high_rank_proc_owns_shared);
 
   //we'll fill a list of map-elements which belong on this processor
 
@@ -302,7 +376,7 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
   }
 
   Epetra_BlockMap one_to_one_map(-1, numMyOwnedElems, myOwnedElems,
-				 sizes, usermap.IndexBase(), usermap.Comm());
+         sizes, usermap.IndexBase(), usermap.Comm());
 
   delete [] myOwnedElems;
   delete [] owner_procs;
@@ -310,10 +384,12 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 
   return(one_to_one_map);
 }
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 
 //----------------------------------------------------------------------------
-int Epetra_Util_binary_search(int item,
-                              const int* list,
+template<typename T>
+int Epetra_Util_binary_search(T item,
+                              const T* list,
                               int len,
                               int& insertPoint)
 {
@@ -344,13 +420,30 @@ int Epetra_Util_binary_search(int item,
   return(-1);
 }
 
+int Epetra_Util_binary_search(int item,
+                              const int* list,
+                              int len,
+                              int& insertPoint)
+{
+  return Epetra_Util_binary_search<int>(item, list, len, insertPoint);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util_binary_search(long long item,
+                              const long long* list,
+                              int len,
+                              int& insertPoint)
+{
+  return Epetra_Util_binary_search<long long>(item, list, len, insertPoint);
+}
+
 //=========================================================================
 int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
-			      Epetra_MultiVector * RHS,
-			      int & M, int & N, int & nz, int * & ptr,
-			      int * & ind, double * & val, int & Nrhs,
-			      double * & rhs, int & ldrhs,
-			      double * & lhs, int & ldlhs) {
+            Epetra_MultiVector * RHS,
+            int & M, int & N, int & nz, int * & ptr,
+            int * & ind, double * & val, int & Nrhs,
+            double * & rhs, int & ldrhs,
+            double * & lhs, int & ldlhs) {
 
   int ierr = 0;
   if (A==0) EPETRA_CHK_ERR(-1); // This matrix is defined

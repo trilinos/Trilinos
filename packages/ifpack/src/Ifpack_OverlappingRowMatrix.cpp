@@ -174,7 +174,8 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   NumMyDiagonals_ = A().NumMyDiagonals() + B().NumMyDiagonals();
   
   NumMyNonzeros_ = A().NumMyNonzeros() + B().NumMyNonzeros();
-  Comm().SumAll(&NumMyNonzeros_,&NumGlobalNonzeros_,1);
+  long long NumMyNonzeros_tmp = NumMyNonzeros_;
+  Comm().SumAll(&NumMyNonzeros_tmp,&NumGlobalNonzeros_,1);
   MaxNumEntries_ = A().MaxNumEntries();
   
   if (MaxNumEntries_ < B().MaxNumEntries())

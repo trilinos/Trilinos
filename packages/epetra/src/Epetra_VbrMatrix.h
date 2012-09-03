@@ -44,6 +44,8 @@
 #ifndef EPETRA_VBRMATRIX_H
 #define EPETRA_VBRMATRIX_H
 
+// FIXME long long : whole file
+
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_DistObject.h> 
 #include <Epetra_CompObject.h> 
@@ -168,9 +170,9 @@ numbers.  The ResetFlops() function resets the floating point counter.
 */    
 
 class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
-		      public Epetra_CompObject,
-		      public Epetra_BLAS,
-		      public virtual Epetra_RowMatrix {
+          public Epetra_CompObject,
+          public Epetra_BLAS,
+          public virtual Epetra_RowMatrix {
  public:
 
    //! @name Constructors/Destructor
@@ -184,7 +186,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
            RowMap - A Epetra_BlockMap listing the block rows that this processor will contribute to.
     \param In
            NumBlockEntriesPerRow - An integer array of length NumRows
-	   such that NumBlockEntriesPerRow[i] indicates the (approximate) number of Block entries in the ith row.
+     such that NumBlockEntriesPerRow[i] indicates the (approximate) number of Block entries in the ith row.
   */
   Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int *NumBlockEntriesPerRow);
   
@@ -197,8 +199,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
            RowMap - An Epetra_BlockMap listing the block rows that this processor will contribute to.
     \param In
            NumBlockEntriesPerRow - An integer that indicates the (approximate) number of Block entries in the each Block row.
-	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
-	   
+     Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+     
   */
   Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumBlockEntriesPerRow);
 
@@ -213,7 +215,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
            ColMap - A Epetra_BlockMap.
     \param In
            NumBlockEntriesPerRow - An integer array of length NumRows
-	   such that NumBlockEntriesPerRow[i] indicates the (approximate) number of Block entries in the ith row.
+     such that NumBlockEntriesPerRow[i] indicates the (approximate) number of Block entries in the ith row.
   */
   Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const Epetra_BlockMap& ColMap, int *NumBlockEntriesPerRow);
   
@@ -228,8 +230,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
            ColMap - An Epetra_BlockMap listing the block columns that this processor will contribute to.
     \param In
            NumBlockEntriesPerRow - An integer that indicates the (approximate) number of Block entries in the each Block row.
-	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
-	   
+     Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+     
   */
   Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const Epetra_BlockMap& ColMap, int NumBlockEntriesPerRow);
 
@@ -240,7 +242,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
     \param In
            Graph - A Epetra_CrsGraph object, extracted from another Epetra matrix object or constructed directly from
-	   using the Epetra_CrsGraph constructors.
+     using the Epetra_CrsGraph constructors.
   */
 
   Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & Graph);
@@ -297,8 +299,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     \return Integer error code, set to 0 if successful.
   */
     int BeginInsertGlobalValues(int BlockRow,
-				int NumBlockEntries,
-				int * BlockIndices);
+        int NumBlockEntries,
+        int * BlockIndices);
 
   //! Initiate insertion of a list of elements in a given local row of the matrix, values are inserted via SubmitEntry().
   /*!
@@ -416,7 +418,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Completes processing of all data passed in for the current block row.
     /*! This function completes the processing of all block entries submitted via SubmitBlockEntry().  
         It also checks to make sure that SubmitBlockEntry was called the correct number of times as
-	specified by the Begin routine that initiated the entry process.
+  specified by the Begin routine that initiated the entry process.
     */
 
     int EndSubmitEntries();
@@ -424,10 +426,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Replaces diagonal values of the with those in the user-provided vector.
     /*! This routine is meant to allow replacement of {\bf existing} diagonal values.
         If a diagonal value does not exist for a given row, the corresponding value in
-	the input Epetra_Vector will be ignored and the return code will be set to 1.
+  the input Epetra_Vector will be ignored and the return code will be set to 1.
 
-	The Epetra_Map associated with the input Epetra_Vector must be compatible with
-	the RowMap of the matrix.
+  The Epetra_Map associated with the input Epetra_Vector must be compatible with
+  the RowMap of the matrix.
 
     \param Diagonal (In) - New values to be placed in the main diagonal.
 
@@ -453,10 +455,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
        of the vector x and the RangeMap as the distribution of the vector y.
     \param In
            DomainMap - Map that describes the distribution of vector and multi-vectors in the
-	               matrix domain.
+                 matrix domain.
     \param In
            RangeMap - Map that describes the distribution of vector and multi-vectors in the
-	               matrix range.
+                 matrix range.
 
     \return error code, 0 if successful. positive warning code of 2 if it is detected that the
     matrix-graph got out of sync since this matrix was constructed (for instance if
@@ -482,22 +484,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     \param In
            BlockRow - Global block row to extract.
     \param In
-	   MaxNumBlockEntries - Length of user-provided BlockIndices array.
+     MaxNumBlockEntries - Length of user-provided BlockIndices array.
     \param Out
-	   RowDim - Number of equations in the requested block row.
+     RowDim - Number of equations in the requested block row.
     \param Out
-	   NumBlockEntries - Number of nonzero entries actually extracted.
+     NumBlockEntries - Number of nonzero entries actually extracted.
     \param Out
-	   BlockIndices - Extracted global column indices for the corresponding block entries.
+     BlockIndices - Extracted global column indices for the corresponding block entries.
     \param Out
-	   Values - Pointer to list of pointers to block entries. Note that the actual values are not copied.
-	  
+     Values - Pointer to list of pointers to block entries. Note that the actual values are not copied.
+    
     \return Integer error code, set to 0 if successful.
   */
     int ExtractGlobalBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
-				      int & RowDim,  int & NumBlockEntries, 
-				      int * BlockIndices,
-				      Epetra_SerialDenseMatrix ** & Values) const;
+              int & RowDim,  int & NumBlockEntries, 
+              int * BlockIndices,
+              Epetra_SerialDenseMatrix ** & Values) const;
 
     //! Copy the block indices into user-provided array, set pointers for rest of data for specified local block row.
     /*! 
@@ -510,73 +512,73 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     \param In
            BlockRow - Local block row to extract.
     \param In
-	   MaxNumBlockEntries - Length of user-provided BlockIndices array.
+     MaxNumBlockEntries - Length of user-provided BlockIndices array.
     \param Out
-	   RowDim - Number of equations in the requested block row.
+     RowDim - Number of equations in the requested block row.
     \param Out
-	   NumBlockEntries - Number of nonzero entries actually extracted.
+     NumBlockEntries - Number of nonzero entries actually extracted.
     \param Out
-	   BlockIndices - Extracted local column indices for the corresponding block entries.
+     BlockIndices - Extracted local column indices for the corresponding block entries.
     \param Out
-	   Values - Pointer to list of pointers to block entries. Note that the actual values are not copied.
-	  
+     Values - Pointer to list of pointers to block entries. Note that the actual values are not copied.
+    
     \return Integer error code, set to 0 if successful.
   */
     int ExtractMyBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
-				  int & RowDim, int & NumBlockEntries, 
-				  int * BlockIndices,
-				  Epetra_SerialDenseMatrix** & Values) const;
+          int & RowDim, int & NumBlockEntries, 
+          int * BlockIndices,
+          Epetra_SerialDenseMatrix** & Values) const;
 
     //! Initiates a copy of the specified global row in user-provided arrays.
     /*! 
     \param In
            BlockRow - Global block row to extract.
     \param In
-	   MaxNumBlockEntries - Length of user-provided BlockIndices, ColDims, and LDAs arrays.
+     MaxNumBlockEntries - Length of user-provided BlockIndices, ColDims, and LDAs arrays.
     \param Out
-	   RowDim - Number of equations in the requested block row.
+     RowDim - Number of equations in the requested block row.
     \param Out
-	   NumBlockEntries - Number of nonzero entries actually extracted.
+     NumBlockEntries - Number of nonzero entries actually extracted.
     \param Out
-	   BlockIndices - Extracted global column indices for the corresponding block entries.
+     BlockIndices - Extracted global column indices for the corresponding block entries.
     \param Out
-	   ColDim - List of column dimensions for each corresponding block entry that will be extracted.
-	  
+     ColDim - List of column dimensions for each corresponding block entry that will be extracted.
+    
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractGlobalBlockRowCopy(int BlockRow, int MaxNumBlockEntries, 
-				       int & RowDim,  int & NumBlockEntries, 
-				       int * BlockIndices, int * ColDims) const;
+               int & RowDim,  int & NumBlockEntries, 
+               int * BlockIndices, int * ColDims) const;
 
     //! Initiates a copy of the specified local row in user-provided arrays.
     /*! 
     \param In
            BlockRow - Local block row to extract.
     \param In
-	   MaxNumBlockEntries - Length of user-provided BlockIndices, ColDims, and LDAs arrays.
+     MaxNumBlockEntries - Length of user-provided BlockIndices, ColDims, and LDAs arrays.
     \param Out
-	   RowDim - Number of equations in the requested block row.
+     RowDim - Number of equations in the requested block row.
     \param Out
-	   NumBlockEntries - Number of nonzero entries actually extracted.
+     NumBlockEntries - Number of nonzero entries actually extracted.
     \param Out
-	   BlockIndices - Extracted local column indices for the corresponding block entries.
+     BlockIndices - Extracted local column indices for the corresponding block entries.
     \param Out
-	   ColDim - List of column dimensions for each corresponding block entry that will be extracted.
-	  
+     ColDim - List of column dimensions for each corresponding block entry that will be extracted.
+    
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractMyBlockRowCopy(int BlockRow, int MaxNumBlockEntries, 
-				   int & RowDim, int & NumBlockEntries, 
-				   int * BlockIndices, int * ColDims) const;
+           int & RowDim, int & NumBlockEntries, 
+           int * BlockIndices, int * ColDims) const;
 
     //! Extract a copy of an entry from the block row specified by one of the BeginExtract routines.
     /*! Once BeginExtractGlobalBlockRowCopy() or BeginExtractMyBlockRowCopy() is called, you can extract
         the block entries of specified block row one-entry-at-a-time.  The entries will be extracted
-	in an order corresponding to the BlockIndices list that was returned by the BeginExtract routine.
+  in an order corresponding to the BlockIndices list that was returned by the BeginExtract routine.
 
     \param In
            SizeOfValues - Amount of memory associated with Values.  This must be at least as big as
-	                  LDA*NumCol, where NumCol is the column dimension of the block entry being copied
+                    LDA*NumCol, where NumCol is the column dimension of the block entry being copied
     \param InOut
            Values - Starting location where the block entry will be copied.  
     \param In
@@ -592,38 +594,38 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     \param In
            BlockRow - Global block row to view.
     \param Out
-	   RowDim - Number of equations in the requested block row.
+     RowDim - Number of equations in the requested block row.
     \param Out
-	   NumBlockEntries - Number of nonzero entries to be viewed.
+     NumBlockEntries - Number of nonzero entries to be viewed.
     \param Out
-	   BlockIndices - Pointer to global column indices for the corresponding block entries.
-	  
+     BlockIndices - Pointer to global column indices for the corresponding block entries.
+    
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractGlobalBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-				       int * & BlockIndices) const;
+               int * & BlockIndices) const;
 
     //! Initiates a view of the specified local row, only works if matrix indices are in local mode.
     /*! 
     \param In
            BlockRow - Local block row to view.
     \param Out
-	   RowDim - Number of equations in the requested block row.
+     RowDim - Number of equations in the requested block row.
     \param Out
-	   NumBlockEntries - Number of nonzero entries to be viewed.
+     NumBlockEntries - Number of nonzero entries to be viewed.
     \param Out
-	   BlockIndices - Pointer to local column indices for the corresponding block entries.
-	  
+     BlockIndices - Pointer to local column indices for the corresponding block entries.
+    
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractMyBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-				   int * & BlockIndices) const;
+           int * & BlockIndices) const;
 
 
     //! Returns a pointer to the current block entry.
     /*! After a call to BeginExtractGlobal() or BlockRowViewBeginExtractMyBlockRowView(),
         ExtractEntryView() can be called up to NumBlockEntries times to get each block entry in the
-	specified block row.
+  specified block row.
     \param InOut
            entry - A pointer that will be set to the current block entry.
     */
@@ -635,44 +637,44 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     \param In
            BlockRow - Global block row to view.
     \param Out
-	   RowDim - Number of equations in the requested block row.
+     RowDim - Number of equations in the requested block row.
     \param Out
-	   NumBlockEntries - Number of nonzero entries to be viewed.
+     NumBlockEntries - Number of nonzero entries to be viewed.
     \param Out
-	   BlockIndices - Pointer to global column indices for the corresponding block entries.
+     BlockIndices - Pointer to global column indices for the corresponding block entries.
     \param Out
-	   Values - Pointer to an array of pointers to the block entries in the specified block row.
-	  
+     Values - Pointer to an array of pointers to the block entries in the specified block row.
+    
     \return Integer error code, set to 0 if successful.
   */
     int ExtractGlobalBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-				  int * & BlockIndices,
-				  Epetra_SerialDenseMatrix** & Values) const;
+          int * & BlockIndices,
+          Epetra_SerialDenseMatrix** & Values) const;
 
     //! Initiates a view of the specified local row, only works if matrix indices are in local mode.
     /*! 
     \param In
            BlockRow - Local block row to view.
     \param Out
-	   RowDim - Number of equations in the requested block row.
+     RowDim - Number of equations in the requested block row.
     \param Out
-	   NumBlockEntries - Number of nonzero entries to be viewed.
+     NumBlockEntries - Number of nonzero entries to be viewed.
     \param Out
-	   BlockIndices - Pointer to local column indices for the corresponding block entries.
+     BlockIndices - Pointer to local column indices for the corresponding block entries.
     \param Out
-	   Values - Pointer to an array of pointers to the block entries in the specified block row.
-	  
+     Values - Pointer to an array of pointers to the block entries in the specified block row.
+    
     \return Integer error code, set to 0 if successful.
   */
     int ExtractMyBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-			      int * & BlockIndices,
-			      Epetra_SerialDenseMatrix** & Values) const;
+            int * & BlockIndices,
+            Epetra_SerialDenseMatrix** & Values) const;
 
 
     //! Returns a copy of the main diagonal in a user-provided vector.
     /*! 
     \param Out
-	   Diagonal - Extracted main diagonal.
+     Diagonal - Extracted main diagonal.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -681,24 +683,24 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Initiates a copy of the block diagonal entries to user-provided arrays.
     /*! 
     \param In
-	   MaxNumBlockDiagonalEntries - Length of user-provided RowColDims array.
+     MaxNumBlockDiagonalEntries - Length of user-provided RowColDims array.
     \param Out
-	   NumBlockDiagonalEntries - Number of block diagonal entries that can actually be extracted.
+     NumBlockDiagonalEntries - Number of block diagonal entries that can actually be extracted.
     \param Out
-	   RowColDim - List  of row and column dimension for corresponding block diagonal entries.
-	  
+     RowColDim - List  of row and column dimension for corresponding block diagonal entries.
+    
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractBlockDiagonalCopy(int MaxNumBlockDiagonalEntries, 
-				      int & NumBlockDiagonalEntries, int * RowColDims ) const;
+              int & NumBlockDiagonalEntries, int * RowColDims ) const;
     //! Extract a copy of a block diagonal entry from the matrix.
     /*! Once BeginExtractBlockDiagonalCopy() is called, you can extract
         the block diagonal entries one-entry-at-a-time.  The entries will be extracted
-	in ascending order.
+  in ascending order.
 
     \param In
            SizeOfValues - Amount of memory associated with Values.  This must be at least as big as
-	                  LDA*NumCol, where NumCol is the column dimension of the block entry being copied
+                    LDA*NumCol, where NumCol is the column dimension of the block entry being copied
     \param InOut
            Values - Starting location where the block entry will be copied.  
     \param In
@@ -712,10 +714,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Initiates a view of the block diagonal entries.
     /*! 
     \param Out
-	   NumBlockDiagonalEntries - Number of block diagonal entries that can be viewed.
+     NumBlockDiagonalEntries - Number of block diagonal entries that can be viewed.
     \param Out
-	   RowColDim - Pointer to list  of row and column dimension for corresponding block diagonal entries.
-	  
+     RowColDim - Pointer to list  of row and column dimension for corresponding block diagonal entries.
+    
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractBlockDiagonalView(int & NumBlockDiagonalEntries, int * & RowColDims ) const;
@@ -723,7 +725,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Extract a view of a block diagonal entry from the matrix.
     /*! Once BeginExtractBlockDiagonalView() is called, you can extract a view of
         the block diagonal entries one-entry-at-a-time.  The views will be extracted
-	in ascending order.
+  in ascending order.
 
     \param Out
            Values - Pointer to internal copy of block entry.  
@@ -741,11 +743,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the result of a Epetra_VbrMatrix multiplied by a Epetra_Vector x in y.
     /*! 
     \param In
-	   TransA - If true, multiply by the transpose of matrix, otherwise just use matrix.
+     TransA - If true, multiply by the transpose of matrix, otherwise just use matrix.
     \param In
-	   x - A Epetra_Vector to multiply by.
+     x - A Epetra_Vector to multiply by.
     \param Out
-	   y - A Epetra_Vector containing result.
+     y - A Epetra_Vector containing result.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -754,11 +756,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the result of a Epetra_VbrMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
     \param In
-	   TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
+     TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+     X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
+     Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -767,15 +769,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the result of a solve using the Epetra_VbrMatrix on a Epetra_Vector x in y.
     /*! 
     \param In
-	   Upper -If true, solve Ux = y, otherwise solve Lx = y.
+     Upper -If true, solve Ux = y, otherwise solve Lx = y.
     \param In
-	   Trans -If true, solve transpose problem.
+     Trans -If true, solve transpose problem.
     \param In
-	   UnitDiagonal -If true, assume diagonal is unit (whether it's stored or not).
+     UnitDiagonal -If true, assume diagonal is unit (whether it's stored or not).
     \param In
-	   x -A Epetra_Vector to solve for.
+     x -A Epetra_Vector to solve for.
     \param Out
-	   y -A Epetra_Vector containing result.
+     y -A Epetra_Vector containing result.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -784,15 +786,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the result of a Epetra_VbrMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
     \param In
-	   Upper -If true, solve Ux = y, otherwise solve Lx = y.
+     Upper -If true, solve Ux = y, otherwise solve Lx = y.
     \param In
-	   Trans -If true, solve transpose problem.
+     Trans -If true, solve transpose problem.
     \param In
-	   UnitDiagonal -If true, assume diagonal is unit (whether it's stored or not).
+     UnitDiagonal -If true, assume diagonal is unit (whether it's stored or not).
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
+     X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+     Y -A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -803,10 +805,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     /*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the 
         \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
-	will make the infinity norm of the resulting matrix exactly 1.
+  will make the infinity norm of the resulting matrix exactly 1.
     \param Out
-	   x -A Epetra_Vector containing the row sums of the \e this matrix. 
-	   \warning It is assumed that the distribution of x is the same as the rows of \e this.
+     x -A Epetra_Vector containing the row sums of the \e this matrix. 
+     \warning It is assumed that the distribution of x is the same as the rows of \e this.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -816,7 +818,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     /*! The \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the row number of A
         and j denotes the column number of A.
     \param In
-	   x -A Epetra_Vector to solve for.
+     x -A Epetra_Vector to solve for.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -826,10 +828,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     /*! The vector x will return such that x[j] will contain the inverse of sum of the absolute values of the 
         \e this matrix will be sca such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.  Using the resulting vector from this function as input to 
-	RighttScale() will make the one norm of the resulting matrix exactly 1.
+  RighttScale() will make the one norm of the resulting matrix exactly 1.
     \param Out
-	   x -A Epetra_Vector containing the column sums of the \e this matrix. 
-	   \warning It is assumed that the distribution of x is the same as the rows of \e this.
+     x -A Epetra_Vector containing the column sums of the \e this matrix. 
+     \warning It is assumed that the distribution of x is the same as the rows of \e this.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -839,7 +841,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     /*! The \e this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.
     \param In
-	   x -The Epetra_Vector used for scaling \e this.
+     x -The Epetra_Vector used for scaling \e this.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -882,7 +884,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
        \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
      \warning The NormInf() method will not properly calculate the infinity norm for a matrix that has entries that are
-     replicated on multiple processors.	*/ 
+     replicated on multiple processors.  */ 
     double NormInf() const;
 
     //! Returns the one norm of the global matrix.
@@ -921,10 +923,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int NumMyNonzeros() const {return(Graph_->NumMyNonzeros());};
 
     //! Returns the number of global matrix rows.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int NumGlobalRows() const {return(Graph_->NumGlobalRows());};
+#endif
+    long long NumGlobalRows64() const {return(Graph_->NumGlobalRows64());};
 
     //! Returns the number of global matrix columns.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int NumGlobalCols() const {return(Graph_->NumGlobalCols());};
+#endif
+    long long NumGlobalCols64() const {return(Graph_->NumGlobalCols64());};
 
     //! Returns the number of nonzero entries in the global matrix.
     /*
@@ -933,7 +941,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
      times. If the user wishes to assemble a matrix from overlapping
      submatrices, they can use Epetra_FEVbrMatrix.
     */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int NumGlobalNonzeros() const {return(Graph_->NumGlobalNonzeros());};
+#endif
+    long long NumGlobalNonzeros64() const {return(Graph_->NumGlobalNonzeros64());};
 
     //! Returns the number of Block matrix rows owned by the calling processor.
     int NumMyBlockRows() const {return(Graph_->NumMyBlockRows());};
@@ -951,19 +962,34 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int NumMyDiagonals() const {return(Graph_->NumMyDiagonals());};
     
     //! Returns the number of global Block matrix rows.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int NumGlobalBlockRows() const {return(Graph_->NumGlobalBlockRows());};
+#endif
+    long long NumGlobalBlockRows64() const {return(Graph_->NumGlobalBlockRows64());};
     
     //! Returns the number of global Block matrix columns.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int NumGlobalBlockCols() const {return(Graph_->NumGlobalBlockCols());};
+#endif
+    long long NumGlobalBlockCols64() const {return(Graph_->NumGlobalBlockCols64());};
     
     //! Returns the number of nonzero block entries in the global matrix.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int NumGlobalBlockEntries() const {return(Graph_->NumGlobalEntries());};
+#endif
+    long long NumGlobalBlockEntries64() const {return(Graph_->NumGlobalEntries64());};
     
     //! Returns the number of global nonzero block diagonal entries, based on global row/column index comparisions.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int NumGlobalBlockDiagonals() const {return(Graph_->NumGlobalBlockDiagonals());};
+#endif
+    long long NumGlobalBlockDiagonals64() const {return(Graph_->NumGlobalBlockDiagonals64());};
     
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisions.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int NumGlobalDiagonals() const {return(Graph_->NumGlobalDiagonals());};
+#endif
+    long long NumGlobalDiagonals64() const {return(Graph_->NumGlobalDiagonals64());};
 
     //! Returns the current number of nonzero Block entries in specified global row on this processor.
     int NumGlobalBlockEntries(int Row) const {return(Graph_->NumGlobalIndices(Row));};
@@ -986,7 +1012,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the maximum number of nonzero entries across all block rows on this processor.
     /*! Let ki = the number of nonzero values in the ith block row of the VbrMatrix object.  For example,
         if the ith block row had 5 block entries and the size of each entry was 4-by-4, ki would be 80.
-	Then this function return the max over all ki for all row on this processor.
+  Then this function return the max over all ki for all row on this processor.
     */
     int MaxNumNonzeros() const {return(Graph_->MaxNumNonzeros());};
 
@@ -1029,31 +1055,62 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
   //! @name Local/Global ID methods
   //@{ 
     //! Returns the local row index for given global row index, returns -1 if no local row for this global row.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int LRID( int GRID_in) const {return(Graph_->LRID(GRID_in));};
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    int LRID( long long GRID_in) const {return(Graph_->LRID(GRID_in));};
+#endif
 
     //! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-    int GRID( int LRID_in) const {return(Graph_->GRID(LRID_in));};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    int GRID(int LRID_in) const {return(Graph_->GRID(LRID_in));};
+#endif
+    long long GRID64( int LRID_in) const {return(Graph_->GRID64(LRID_in));};
 
     //! Returns the local column index for given global column index, returns -1 if no local column for this global column.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int LCID( int GCID_in) const {return(Graph_->LCID(GCID_in));};
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    int LCID( long long GCID_in) const {return(Graph_->LCID(GCID_in));};
+#endif
 
     //! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
-    int GCID( int LCID_in) const {return(Graph_->GCID(LCID_in));};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    int GCID(int LCID_in) const {return(Graph_->GCID(LCID_in));};
+#endif
+    long long GCID64( int LCID_in) const {return(Graph_->GCID64(LCID_in));};
  
     //! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     bool  MyGRID(int GRID_in) const {return(Graph_->MyGRID(GRID_in));};
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    bool  MyGRID(long long GRID_in) const {return(Graph_->MyGRID(GRID_in));};
+#endif
    
     //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
     bool  MyLRID(int LRID_in) const {return(Graph_->MyLRID(LRID_in));};
 
     //! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     bool  MyGCID(int GCID_in) const {return(Graph_->MyGCID(GCID_in));};
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    bool  MyGCID(long long GCID_in) const {return(Graph_->MyGCID(GCID_in));};
+#endif
    
     //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
     bool  MyLCID(int LCID_in) const {return(Graph_->MyLCID(LCID_in));};
 
     //! Returns true of GID is owned by the calling processor, otherwise it returns false.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     bool MyGlobalBlockRow(int GID) const {return(Graph_->MyGlobalRow(GID));};
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    bool MyGlobalBlockRow(long long GID) const {return(Graph_->MyGlobalRow(GID));};
+#endif
   //@}
   
   //! @name I/O Methods
@@ -1072,10 +1129,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
         affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
-	does not support transpose use, this method should return a value of -1.
+  does not support transpose use, this method should return a value of -1.
       
     \param In
-	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+     UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Always returns 0.
   */
@@ -1084,9 +1141,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
     /*! 
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+     X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+     Y -A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -1095,14 +1152,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
     /*! In this implementation, we use several existing attributes to determine how virtual
         method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
-	the Epetra_VbrMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
-	if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
-	be accounted for when doing a triangular solve.
+  the Epetra_VbrMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
+  if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
+  be accounted for when doing a triangular solve.
 
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
+     X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+     Y -A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -1112,7 +1169,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     bool HasNormInf() const {return(true);};
 
     //! Returns the current UseTranspose setting.
-		bool UseTranspose() const {return(UseTranspose_);};
+    bool UseTranspose() const {return(UseTranspose_);};
 
     //! Returns the Epetra_Map object associated with the domain of this matrix operator.
     const Epetra_Map & OperatorDomainMap() const 
@@ -1139,14 +1196,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     \param In
            GlobalRow - Global row to extract.
     \param In
-	   Length - Length of Values and Indices.
+     Length - Length of Values and Indices.
     \param Out
-	   NumEntries - Number of nonzero entries extracted.
+     NumEntries - Number of nonzero entries extracted.
     \param Out
-	   Values - Extracted values for this row.
+     Values - Extracted values for this row.
     \param Out
-	   Indices - Extracted global column indices for the corresponding values.
-	  
+     Indices - Extracted global column indices for the corresponding values.
+    
     \return Integer error code, set to 0 if successful.
   */
     int ExtractGlobalRowCopy(int GlobalRow, int Length, int & NumEntries, double *Values, int * Indices) const;
@@ -1156,14 +1213,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     \param In
            MyRow - Local row to extract.
     \param In
-	   Length - Length of Values and Indices.
+     Length - Length of Values and Indices.
     \param Out
-	   NumEntries - Number of nonzero entries extracted.
+     NumEntries - Number of nonzero entries extracted.
     \param Out
-	   Values - Extracted values for this row.
+     Values - Extracted values for this row.
     \param Out
-	   Indices - Extracted local column indices for the corresponding values.
-	  
+     Indices - Extracted local column indices for the corresponding values.
+    
     \return Integer error code, set to 0 if successful.
   */
     int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
@@ -1173,8 +1230,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     \param In
            MyRow - Local row.
     \param Out
-	   NumEntries - Number of nonzero values.
-	  
+     NumEntries - Number of nonzero values.
+    
     \return Integer error code, set to 0 if successful.
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
@@ -1187,15 +1244,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
 
     //! Returns the EpetraMap object associated with the rows of this matrix.
     const Epetra_Map & RowMatrixRowMap() const 
-			{ if (!HavePointObjects_) GeneratePointObjects(); return(*RowMatrixRowMap_); };
+      { if (!HavePointObjects_) GeneratePointObjects(); return(*RowMatrixRowMap_); };
 
     //! Returns the Epetra_Map object associated with columns of this matrix.
     const Epetra_Map & RowMatrixColMap() const 
-			{ if (!HavePointObjects_) GeneratePointObjects(); return(*RowMatrixColMap_); };
+      { if (!HavePointObjects_) GeneratePointObjects(); return(*RowMatrixColMap_); };
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
     const Epetra_Import * RowMatrixImporter() const 
-			{ if (!HavePointObjects_) GeneratePointObjects(); return(RowMatrixImporter_); };
+      { if (!HavePointObjects_) GeneratePointObjects(); return(RowMatrixImporter_); };
 
   //@}
 
@@ -1207,7 +1264,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
 
     //! Use FillComplete() instead.
     int TransformToLocal();
-		
+    
     //! Use FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap) instead.
     int TransformToLocal(const Epetra_BlockMap* DomainMap, const Epetra_BlockMap* RangeMap);
     //@}
@@ -1225,73 +1282,73 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
   void InitializeDefaults();
   int Allocate();
   int BeginInsertValues(int BlockRow, int NumBlockEntries, 
-			int * BlockIndices, bool IndicesAreLocal);
+      int * BlockIndices, bool IndicesAreLocal);
   int BeginReplaceValues(int BlockRow, int NumBlockEntries, 
-			 int *BlockIndices, bool IndicesAreLocal);
+       int *BlockIndices, bool IndicesAreLocal);
   int BeginSumIntoValues(int BlockRow, int NumBlockEntries, 
-			 int *BlockIndices, bool IndicesAreLocal);
+       int *BlockIndices, bool IndicesAreLocal);
   int SetupForSubmits(int BlockRow, int NumBlockEntries, int * BlockIndices, 
-		      bool IndicesAreLocal, Epetra_CombineMode SubmitMode);
+          bool IndicesAreLocal, Epetra_CombineMode SubmitMode);
   int EndReplaceSumIntoValues();
   int EndInsertValues();
 
   int CopyMat(double * A, int LDA, int NumRows, int NumCols, 
-	      double * B, int LDB, bool SumInto) const;
+        double * B, int LDB, bool SumInto) const;
   int BeginExtractBlockRowCopy(int BlockRow, int MaxNumBlockEntries, 
-			       int & RowDim, int & NumBlockEntries, 
-			       int * BlockIndices, int * ColDims, 
-			       bool IndicesAreLocal) const;
+             int & RowDim, int & NumBlockEntries, 
+             int * BlockIndices, int * ColDims, 
+             bool IndicesAreLocal) const;
   int SetupForExtracts(int BlockRow, int & RowDim, int NumBlockEntries,
-		       bool ExtractView, bool IndicesAreLocal) const;
+           bool ExtractView, bool IndicesAreLocal) const;
   int ExtractBlockDimsCopy(int NumBlockEntries, int * ColDims) const;
   int ExtractBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
-			      int & RowDim, int & NumBlockEntries, 
-			      int * BlockIndices, 
-			      Epetra_SerialDenseMatrix ** & Values,
-			      bool IndicesAreLocal) const;
+            int & RowDim, int & NumBlockEntries, 
+            int * BlockIndices, 
+            Epetra_SerialDenseMatrix ** & Values,
+            bool IndicesAreLocal) const;
   int BeginExtractBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-			       int * & BlockIndices, 
-			       bool IndicesAreLocal) const;
+             int * & BlockIndices, 
+             bool IndicesAreLocal) const;
   int CopyMatDiag(double * A, int LDA, int NumRows, int NumCols, 
-		  double * Diagonal) const;
+      double * Diagonal) const;
   int ReplaceMatDiag(double * A, int LDA, int NumRows, int NumCols, 
-		     double * Diagonal);
+         double * Diagonal);
 
   //This BlockRowMultiply accepts Alpha and Beta arguments. It is called
   //from within the 'solve' methods.
   void BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
-			int * BlockIndices, int RowOff,
-			int * FirstPointInElementList, int * ElementSizeList,
-			double Alpha, Epetra_SerialDenseMatrix** As,
-			double ** X, double Beta, double ** Y, int NumVectors) const;
+      int * BlockIndices, int RowOff,
+      int * FirstPointInElementList, int * ElementSizeList,
+      double Alpha, Epetra_SerialDenseMatrix** As,
+      double ** X, double Beta, double ** Y, int NumVectors) const;
 
   //This BlockRowMultiply doesn't accept Alpha and Beta arguments, instead it
   //assumes that they are both 1.0. It is called from within the 'Multiply'
   //methods.
   void BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
-			int * BlockIndices, int RowOff,
-			int * FirstPointInElementList,
-			int * ElementSizeList,
-			Epetra_SerialDenseMatrix** As,
-			double ** X, double ** Y, int NumVectors) const;
+      int * BlockIndices, int RowOff,
+      int * FirstPointInElementList,
+      int * ElementSizeList,
+      Epetra_SerialDenseMatrix** As,
+      double ** X, double ** Y, int NumVectors) const;
   //
   // Assumes Alpha=Beta=1 and works only on storage optimized matrices
   //
   void FastBlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
-			    int * BlockIndices, int RowOff,
-			    int * FirstPointInElementList,
-			    int * ElementSizeList,
-			    Epetra_SerialDenseMatrix** As,
-			    double ** X, double ** Y, int NumVectors) const;
+          int * BlockIndices, int RowOff,
+          int * FirstPointInElementList,
+          int * ElementSizeList,
+          Epetra_SerialDenseMatrix** As,
+          double ** X, double ** Y, int NumVectors) const;
 
   int InverseSums(bool DoRows, Epetra_Vector& x) const;
   int Scale(bool DoRows, const Epetra_Vector& x);
   void BlockRowNormInf(int RowDim, int NumEntries, 
-		       Epetra_SerialDenseMatrix** As, 
-		       double * Y) const;
+           Epetra_SerialDenseMatrix** As, 
+           double * Y) const;
   void BlockRowNormOne(int RowDim, int NumEntries, int * BlockRowIndices,
-		       Epetra_SerialDenseMatrix** As, 
-		       int * ColFirstPointInElementList, double * x) const;
+           Epetra_SerialDenseMatrix** As, 
+           int * ColFirstPointInElementList, double * x) const;
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
 
   int CheckSizes(const Epetra_SrcDistObject& A);
@@ -1337,9 +1394,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
 
   bool StaticGraph() const {return(StaticGraph_);};
 
-	int GeneratePointObjects() const;
-	int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap) const;
-	int UpdateOperatorXY(const Epetra_MultiVector& X, const Epetra_MultiVector& Y) const;
+  int GeneratePointObjects() const;
+  int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap) const;
+  int UpdateOperatorXY(const Epetra_MultiVector& X, const Epetra_MultiVector& Y) const;
 
   Epetra_CrsGraph * Graph_;
   bool Allocated_;

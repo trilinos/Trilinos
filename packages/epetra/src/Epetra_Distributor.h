@@ -112,6 +112,14 @@ class Epetra_Distributor {
 			       int & NumExportIDs,
 			       int *& ExportGIDs,
 			       int *& ExportPIDs) = 0;
+
+  virtual int CreateFromRecvs( const int & NumRemoteIDs,
+                               const long long * RemoteGIDs,
+			       const int * RemotePIDs,
+			       bool Deterministic,
+			       int & NumExportIDs,
+			       long long *& ExportGIDs,
+			       int *& ExportPIDs) = 0;
   //@}
 
   //! @name Execute Gather/Scatter Operations (Constant size objects)

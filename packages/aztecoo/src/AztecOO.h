@@ -498,7 +498,7 @@ class AztecOO {
   //! AztecOO iteration function.
   /*! Iterates on the current problem until MaxIters or Tolerance is reached.
    */
-  int Iterate(int MaxIters, double Tolerance);
+  int Iterate(long long MaxIters, double Tolerance);
 
   //! AztecOO iteration function.
   /*! Iterates on the specified matrix and vectors until MaxIters or Tolerance

@@ -333,7 +333,8 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     // handle case that Nominator == Denominator -> Dirichlet bcs in A?
     // fallback if ColBasedOmega == 1 -> very strong smoothing may lead to zero rows in P
     // TAW: this is somewhat nonstandard and a rough fallback strategy to avoid problems
-    if(std::abs(ColBasedOmega_local[i]) == 1.0) {
+    // also avoid "overshooting" with omega > 0.8
+    if(std::abs(ColBasedOmega_local[i]) >= 0.8) {
       ColBasedOmega_local[i] = 0.0;
     }
 

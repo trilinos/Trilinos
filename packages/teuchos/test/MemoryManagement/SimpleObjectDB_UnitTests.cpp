@@ -413,7 +413,7 @@ TEUCHOS_UNIT_TEST( SimpleObjectDB, purge )
   TEST_EQUALITY_CONST(sot.numFreeIndexes(), 0);
   TEST_EQUALITY_CONST(sot.numObjects(), 0);
   TEST_THROW(sot.getNonconstObjRCP(id), RangeError);
-  TEST_EQUALITY_CONST(a.count(), 1); // sot gave up its RCP?
+  TEST_EQUALITY_CONST(a.strong_count(), 1); // sot gave up its RCP?
 }
 
 

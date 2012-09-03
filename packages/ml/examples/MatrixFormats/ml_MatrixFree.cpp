@@ -291,22 +291,58 @@ public:
     return(14.0);
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+//TODO:CJ:  change data type for class members. check if changing is needed.
+
   virtual int NumGlobalNonzeros() const
   {
-    return(NumGlobalNonzeros_);
+    if(RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalNonzeros_);
+    else
+      throw "Laplace3D::NumGlobalNonzeros: Global Indices not int";
   }
 
   virtual int NumGlobalRows() const
   {
-    return(NumGlobalRows_);
+    if(RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalRows_);
+    else
+      throw "Laplace3D::NumGlobalRows: Global Indices not int";
   }
 
   virtual int NumGlobalCols() const
   {
-    return(NumGlobalRows_);
+    if(RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalCols_);
+    else
+      throw "Laplace3D::NumGlobalCols: Global Indices not int";
   }
 
   virtual int NumGlobalDiagonals() const
+  {
+    if(RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalDiagonals_);
+    else
+      throw "Laplace3D::NumGlobalDiagonals: Global Indices not int";
+  }
+#endif
+
+  virtual long long NumGlobalNonzeros64() const
+  {
+    return(NumGlobalNonzeros_);
+  }
+
+  virtual long long NumGlobalRows64() const
+  {
+    return(NumGlobalRows_);
+  }
+
+  virtual long long NumGlobalCols64() const
+  {
+    return(NumGlobalRows_);
+  }
+
+  virtual long long NumGlobalDiagonals64() const
   {
     return(NumGlobalDiagonals_);
   }

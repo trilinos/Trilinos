@@ -105,7 +105,7 @@ namespace Xpetra {
      
     // Note: validity of numGlobalElements checked by Epetra.
 
-    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, 1, indexBase, *toEpetra(comm))))));
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(static_cast<int>(numGlobalElements), 1, indexBase, *toEpetra(comm))))));
   }
 
   EpetraMap::EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, int indexBase,
@@ -205,7 +205,7 @@ namespace Xpetra {
     if (numGlobalElements == GSTI) {
       numGlobalElements = global_sum;}
 
-    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, numLocalElements, 1, indexBase, *toEpetra(comm))))));
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(static_cast<int>(numGlobalElements), numLocalElements, 1, indexBase, *toEpetra(comm))))));
   }
        
   // TODO: UnitTest FAILED

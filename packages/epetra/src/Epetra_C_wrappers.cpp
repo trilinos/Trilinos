@@ -107,50 +107,93 @@
   //                  Epetra_Map                     //
   ///////////////////////////////////////////////////
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_INT numGlobalElements,
-					       EPETRA_INT indexBase,
-					       EPETRA_OBJECT_REF comm) {
+                 EPETRA_INT indexBase,
+                 EPETRA_OBJECT_REF comm) {
     Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
     Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(indexBase), comm_);
     return((EPETRA_OBJECT_PTR ) map);
   }
 
   EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_INT numGlobalElements,
-					       EPETRA_INT numMyElements,
-					       EPETRA_INT indexBase,
-					       EPETRA_OBJECT_REF comm) {
+                 EPETRA_INT numMyElements,
+                 EPETRA_INT indexBase,
+                 EPETRA_OBJECT_REF comm) {
     Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
     Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numMyElements), 
-				     EPETRA_DEREF(indexBase), comm_);
+             EPETRA_DEREF(indexBase), comm_);
     return((EPETRA_OBJECT_PTR ) map);
   }
 
   EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_INT numGlobalElements,
-					       EPETRA_INT numLocalElements,
-					       int *updateList, 
-					       EPETRA_INT indexBase,
-					       EPETRA_OBJECT_REF comm) {
+                 EPETRA_INT numLocalElements,
+                 int *updateList, 
+                 EPETRA_INT indexBase,
+                 EPETRA_OBJECT_REF comm) {
     Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
     Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numLocalElements),
-				     updateList, EPETRA_DEREF(indexBase), comm_);
+             updateList, EPETRA_DEREF(indexBase), comm_);
     return((EPETRA_OBJECT_PTR ) map);
   }
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1_64)(EPETRA_LONG_LONG numGlobalElements,
+                 EPETRA_INT indexBase,
+                 EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2_64)(EPETRA_LONG_LONG numGlobalElements,
+                 EPETRA_INT numMyElements,
+                 EPETRA_INT indexBase,
+                 EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numMyElements), 
+             EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3_64)(EPETRA_LONG_LONG numGlobalElements,
+                 EPETRA_INT numLocalElements,
+                 long long *updateList, 
+                 EPETRA_INT indexBase,
+                 EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numLocalElements),
+             updateList, EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
+#endif
 
   int MANGLE(epetra_map_nummyelements)(EPETRA_OBJECT_REF map) {
     Epetra_Map * map_ = (Epetra_Map *) map;
     return(map_->NumMyElements());
   }
 
-  int MANGLE(epetra_map_numglobalelements)(EPETRA_OBJECT_REF map) {
+  long long MANGLE(epetra_map_numglobalelements)(EPETRA_OBJECT_REF map) {
     Epetra_Map * map_ = (Epetra_Map *) map;
-    return(map_->NumGlobalElements());
+    return(map_->NumGlobalElements64());
   }
 #ifndef EPETRA_FORTRAN  /* Fortran cannot receive a pointer to int */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int * MANGLE(epetra_map_myglobalelements)(EPETRA_OBJECT_REF map) {
     Epetra_Map * map_ = (Epetra_Map *) map;
     return(map_->MyGlobalElements());
   }
 #endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  long long * MANGLE(epetra_map_myglobalelements_64)(EPETRA_OBJECT_REF map) {
+    Epetra_Map * map_ = (Epetra_Map *) map;
+    return(map_->MyGlobalElements64());
+  }
+#endif
+#endif
+
   EPETRA_OBJECT_PTR MANGLE(epetra_map_comm)(EPETRA_OBJECT_REF map) {
     Epetra_Map * map_ = (Epetra_Map *) map;
     return((EPETRA_OBJECT_PTR) &(map_->Comm()));
@@ -172,7 +215,7 @@
   }
 
   EPETRA_OBJECT_PTR MANGLE(epetra_vector_create2)(EPETRA_INT CopyValues, EPETRA_OBJECT_REF map,
-						  double * V) {
+              double * V) {
     Epetra_DataAccess CV = View;
     if (EPETRA_DEREF(CopyValues)==1) CV = Copy;
     Epetra_Map& map_ = *(Epetra_Map *) map;
@@ -201,7 +244,7 @@
   }
 
   int MANGLE(epetra_vector_update)(EPETRA_OBJECT_REF x, EPETRA_DOUBLE scalara, EPETRA_OBJECT_REF a, 
-				   EPETRA_DOUBLE scalarb, EPETRA_OBJECT_REF b, EPETRA_DOUBLE scalarx) {
+           EPETRA_DOUBLE scalarb, EPETRA_OBJECT_REF b, EPETRA_DOUBLE scalarx) {
     Epetra_Vector *x_ = (Epetra_Vector *) x;
     Epetra_Vector& a_ = *(Epetra_Vector *) a;
     Epetra_Vector& b_ = *(Epetra_Vector *) b;
@@ -243,7 +286,7 @@
   {
     Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
     return(B->putBlockRow( EPETRA_DEREF(blk_row), EPETRA_DEREF(num_nz_blocks), vals, 
-			   blk_col_inds));
+         blk_col_inds));
   }
 
   int MANGLE(epetra_rdp_dvbr_matrix_fillcomplete)(EPETRA_MATRIX A)
@@ -253,7 +296,7 @@
   }
 
   int MANGLE(epetra_rdp_dvbr_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x,
-					    EPETRA_VECTOR y)
+              EPETRA_VECTOR y)
   {
     Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
     const Epetra_Vector& x1 = *(Epetra_Vector *) x;
@@ -262,8 +305,8 @@
   }
 
   int MANGLE(epetra_rdp_dvbr_matrix_matmultivec)(EPETRA_MATRIX A,
-						 EPETRA_MULTIVECTOR x,
-						 EPETRA_MULTIVECTOR y)
+             EPETRA_MULTIVECTOR x,
+             EPETRA_MULTIVECTOR y)
   {
     Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
     const Epetra_MultiVector& x1 = *(Epetra_MultiVector *) x;
@@ -295,8 +338,8 @@
     return(B->allocate(rowLengths));
   }
   int MANGLE(epetra_rdp_dcrs_matrix_putrow)(EPETRA_MATRIX A, EPETRA_INT row,
-					    EPETRA_INT num_nz, 
-					    double* vals, int* col_inds)
+              EPETRA_INT num_nz, 
+              double* vals, int* col_inds)
   {
     Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
     return(B->putRow( EPETRA_DEREF(row), EPETRA_DEREF(num_nz), vals, col_inds));
@@ -316,7 +359,7 @@
   }
 
   int MANGLE(epetra_rdp_dcrs_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x,
-					    EPETRA_VECTOR y)
+              EPETRA_VECTOR y)
   {
     Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
     const Epetra_Vector& x1 = *(Epetra_Vector *) x;
@@ -325,8 +368,8 @@
   }
 
   int MANGLE(epetra_rdp_dcrs_matrix_matmultivec)(EPETRA_MATRIX A,
-						 EPETRA_MULTIVECTOR x,
-						 EPETRA_MULTIVECTOR y)
+             EPETRA_MULTIVECTOR x,
+             EPETRA_MULTIVECTOR y)
   {
     Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
     const Epetra_MultiVector& x1 = *(Epetra_MultiVector *) x;
@@ -358,20 +401,20 @@
   }
 
   EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create2)(EPETRA_MAP map, 
-								    double *A, EPETRA_INT lda, EPETRA_INT numVectors)
+                    double *A, EPETRA_INT lda, EPETRA_INT numVectors)
   {
     Epetra_Map& map_ = *(Epetra_Map *) map;
     Epetra_MultiVector *vector = new Epetra_MultiVector(map_, A, EPETRA_DEREF(lda),
-							EPETRA_DEREF(numVectors));
+              EPETRA_DEREF(numVectors));
     return((EPETRA_OBJECT_PTR) vector);
   }
 
   EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create3)(EPETRA_MAP map, 
-								    double **in_multiVector, EPETRA_INT numVectors)
+                    double **in_multiVector, EPETRA_INT numVectors)
   {
     Epetra_Map& map_ = *(Epetra_Map *) map;
     Epetra_MultiVector *vector = new Epetra_MultiVector(map_, in_multiVector,
-							EPETRA_DEREF(numVectors));
+              EPETRA_DEREF(numVectors));
     return((EPETRA_OBJECT_PTR) vector);
   }
 
@@ -384,20 +427,20 @@
   }
 
   EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create5)(EPETRA_MULTIVECTOR 
-								    in_multiVector, EPETRA_INT numVectors, int *vecIndices)
+                    in_multiVector, EPETRA_INT numVectors, int *vecIndices)
   {
     Epetra_MultiVector & in_multiVector_ = *(Epetra_MultiVector *) in_multiVector;
     Epetra_MultiVector *vector = new Epetra_MultiVector(in_multiVector_,
-							EPETRA_DEREF(numVectors), vecIndices));
+              EPETRA_DEREF(numVectors), vecIndices));
   return((EPETRA_OBJECT_PTR) vector);
 }
 
 EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create6)(EPETRA_MULTIVECTOR
-								  in_multiVector, EPETRA_INT startindex, EPETRA_INT numvectors)
+                  in_multiVector, EPETRA_INT startindex, EPETRA_INT numvectors)
 {
   Epetra_MultiVector & in_multiVector_ = *(Epetra_MultiVector *) in_multiVector;
   Epetra_MultiVector *vector = new Epetra_MultiVector(in_multiVector_, EPETRA_DEREF(startindex),
-						      EPETRA_DEREF(numvectors));
+                  EPETRA_DEREF(numvectors));
   return((EPETRA_OBJECT_PTR) vector);
 }
 
@@ -411,7 +454,7 @@ int MANGLE(epetra_rdp_multivector_putmultivector)
 }
 
 int MANGLE(epetra_rdp_multivector_allocate)(EPETRA_MULTIVECTOR multiVector, 
-					    EPETRA_MAP map, EPETRA_INT numVectors)
+              EPETRA_MAP map, EPETRA_INT numVectors)
 {
   Epetra_Map& map_ = *(Epetra_Map *) map;
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
@@ -474,8 +517,8 @@ int MANGLE(epetra_rdp_multivector_norm2)
 }
 
 int MANGLE(epetra_rdp_multivector_lincomb)(EPETRA_MULTIVECTOR multiVector,
-					   EPETRA_MULTIVECTOR b, 
-					   EPETRA_DOUBLE scalar, EPETRA_MULTIVECTOR c)
+             EPETRA_MULTIVECTOR b, 
+             EPETRA_DOUBLE scalar, EPETRA_MULTIVECTOR c)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   Epetra_MultiVector& b_ = *(Epetra_MultiVector *) b;
@@ -503,9 +546,9 @@ int MANGLE(epetra_rdp_multivector_numvectors)(EPETRA_MULTIVECTOR multiVector)
 }
 
 int MANGLE(epetra_rdp_multivector_gemm)(EPETRA_MULTIVECTOR multiVector,
-					EPETRA_INT transa, EPETRA_INT transb, EPETRA_DOUBLE alpha,
-					EPETRA_MULTIVECTOR A, EPETRA_MULTIVECTOR B,
-					EPETRA_DOUBLE beta )
+          EPETRA_INT transa, EPETRA_INT transb, EPETRA_DOUBLE alpha,
+          EPETRA_MULTIVECTOR A, EPETRA_MULTIVECTOR B,
+          EPETRA_DOUBLE beta )
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   Epetra_MultiVector& A_ = *(Epetra_MultiVector *) A;
@@ -525,30 +568,30 @@ void MANGLE(epetra_rdp_multivector_destroy)(EPETRA_MULTIVECTOR multiVector)
 ///////////////////////////////////////////////////
 
 EPETRA_OBJECT_PTR MANGLE(epetra_blockmap_create1)(
-							EPETRA_INT numGlobalElements, EPETRA_INT numLocalElements, int *updateList,
-							EPETRA_INT numGlobalBlocks, EPETRA_INT numLocalBlocks, 
-							int *blockUpdateList,
-							int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm)
+              EPETRA_INT numGlobalElements, EPETRA_INT numLocalElements, int *updateList,
+              EPETRA_INT numGlobalBlocks, EPETRA_INT numLocalBlocks, 
+              int *blockUpdateList,
+              int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_BlockMap *blockmap = new Epetra_BlockMap(EPETRA_DEREF(numGlobalElements),
-						  EPETRA_DEREF(numLocalElements), updateList,
-						  EPETRA_DEREF(numGlobalBlocks), EPETRA_DEREF(numLocalBlocks),
-						  blockUpdateList,
-						  blockSizes, EPETRA_DEREF(indexBase), comm_);
+              EPETRA_DEREF(numLocalElements), updateList,
+              EPETRA_DEREF(numGlobalBlocks), EPETRA_DEREF(numLocalBlocks),
+              blockUpdateList,
+              blockSizes, EPETRA_DEREF(indexBase), comm_);
   return((EPETRA_OBJECT_PTR ) blockmap);
 }
 
 EPETRA_OBJECT_PTR MANGLE(epetra_blockmap_create2)(
-							EPETRA_INT numGlobalBlocks, EPETRA_INT numLocalBlocks, 
-							int *blockUpdateList,
-							int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm)
+              EPETRA_INT numGlobalBlocks, EPETRA_INT numLocalBlocks, 
+              int *blockUpdateList,
+              int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_BlockMap *blockmap = new Epetra_BlockMap(
-						  EPETRA_DEREF(numGlobalBlocks), EPETRA_DEREF(numLocalBlocks), 
-						  blockUpdateList,
-						  blockSizes, EPETRA_DEREF(indexBase), comm_);
+              EPETRA_DEREF(numGlobalBlocks), EPETRA_DEREF(numLocalBlocks), 
+              blockUpdateList,
+              blockSizes, EPETRA_DEREF(indexBase), comm_);
   return((EPETRA_OBJECT_PTR ) blockmap);
 }
 
@@ -562,11 +605,11 @@ void MANGLE(epetra_blockmap_destroy)(EPETRA_BLOCKMAP blockmap)
 ///////////////////////////////////////////////////
 
 EPETRA_OBJECT_PTR MANGLE(epetra_localmap_create)(EPETRA_INT numLocalElements,
-						       EPETRA_INT indexBase, EPETRA_COMM comm)
+                   EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_LocalMap *localmap = new Epetra_LocalMap(EPETRA_DEREF(numLocalElements),
-						  EPETRA_DEREF(indexBase), comm_);
+              EPETRA_DEREF(indexBase), comm_);
   return((EPETRA_OBJECT_PTR ) localmap);
 }
 
@@ -580,30 +623,30 @@ void MANGLE(epetra_localmap_destroy)(EPETRA_LOCALMAP localmap)
 ///////////////////////////////////////////////////
 
 EPETRA_OBJECT_PTR MANGLE(epetra_localblockmap_create1)(
-								  EPETRA_INT numLocalElements,
-								  EPETRA_INT numLocalBlocks,
-								  int* blockSizes,
-								  EPETRA_INT indexBase, EPETRA_COMM comm)
+                  EPETRA_INT numLocalElements,
+                  EPETRA_INT numLocalBlocks,
+                  int* blockSizes,
+                  EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_LocalBlockMap *localblockmap = new
     Epetra_LocalBlockMap(EPETRA_DEREF(numLocalElements),
-			 EPETRA_DEREF(numLocalBlocks),
-			 blockSizes,
-			 EPETRA_DEREF(indexBase), comm_);
+       EPETRA_DEREF(numLocalBlocks),
+       blockSizes,
+       EPETRA_DEREF(indexBase), comm_);
   return((EPETRA_OBJECT_PTR ) localblockmap);
 }
 
 EPETRA_OBJECT_PTR MANGLE(epetra_localblockmap_create2)(
-								  EPETRA_INT numLocalBlocks,
-								  int* blockSizes,
-								  EPETRA_INT indexBase, EPETRA_COMM comm)
+                  EPETRA_INT numLocalBlocks,
+                  int* blockSizes,
+                  EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_LocalBlockMap *localblockmap = new
     Epetra_LocalBlockMap(EPETRA_DEREF(numLocalBlocks),
-			 blockSizes,
-			 EPETRA_DEREF(indexBase), comm_);
+       blockSizes,
+       EPETRA_DEREF(indexBase), comm_);
   return((EPETRA_OBJECT_PTR ) localblockmap);
 }
 

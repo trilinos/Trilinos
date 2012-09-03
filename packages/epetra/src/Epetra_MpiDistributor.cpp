@@ -366,6 +366,35 @@ int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 
 //==============================================================================
 //---------------------------------------------------------------------------
+//CreateFromRecvs Method
+// - create communication plan given a known list of procs to recv from
+//---------------------------------------------------------------------------
+int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
+				   const long long * RemoteGIDs,
+			           const int * RemotePIDs,
+				   bool Deterministic,
+			           int & NumExportIDs,
+				   long long *& ExportGIDs,
+				   int *& ExportPIDs )
+{
+  int my_proc;
+  MPI_Comm_rank( comm_, &my_proc );
+
+  int nprocs;
+  MPI_Comm_size( comm_, &nprocs );
+
+  EPETRA_CHK_ERR( ComputeSends_( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
+				 ExportGIDs, ExportPIDs, my_proc) );
+
+  int testNumRemoteIDs;
+  EPETRA_CHK_ERR( CreateFromSends( NumExportIDs, ExportPIDs,
+				   Deterministic, testNumRemoteIDs ) );
+
+  return(0);
+}
+
+//==============================================================================
+//---------------------------------------------------------------------------
 //ComputeRecvs Method
 //---------------------------------------------------------------------------
 int Epetra_MpiDistributor::ComputeRecvs_( int my_proc, 
@@ -493,11 +522,12 @@ int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
 //---------------------------------------------------------------------------
 //ComputeSends Method
 //---------------------------------------------------------------------------
+template<typename id_type>
 int Epetra_MpiDistributor::ComputeSends_( int num_imports,
-				const int *& import_ids,
+				const id_type *& import_ids,
 				const int *& import_procs,
 				int & num_exports,
-				int *& export_ids,
+				id_type *& export_ids,
 				int *& export_procs,
 				int my_proc ) {
  
@@ -507,18 +537,19 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
   int * proc_list = 0;
   int * import_objs = 0;
   char * c_export_objs = 0;
+  const int pack_size = (1 + sizeof(id_type)/sizeof(int));
 
   if( num_imports > 0 )
   {
     proc_list = new int[ num_imports ];
-    import_objs = new int[ 2 * num_imports ];
+    import_objs = new int[ num_imports * pack_size];
 
     for( i = 0; i < num_imports; i++ )
     {
       proc_list[i] = import_procs[i];
 
-      import_objs[2*i] = import_ids[i];
-      import_objs[2*i+1] = my_proc;
+      *(id_type*)(import_objs + pack_size*i) = import_ids[i];
+      *(import_objs + pack_size*i + (pack_size-1)) = my_proc;
     }
   }
 
@@ -527,7 +558,7 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
   if( num_exports > 0 )
   {
     //export_objs = new int[ 2 * num_exports ];
-    export_ids = new int[ num_exports ];
+    export_ids = new id_type[ num_exports ];
     export_procs = new int[ num_exports ];
   }
   else
@@ -538,14 +569,14 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
 
   int len_c_export_objs = 0;
   EPETRA_CHK_ERR( tmp_plan.Do(reinterpret_cast<char *> (import_objs),
-			      2 * (int)sizeof( int ), 
+			      pack_size * (int)sizeof( int ), 
 			      len_c_export_objs,
 			      c_export_objs) );
   int * export_objs = reinterpret_cast<int *>(c_export_objs);
 
   for( i = 0; i < num_exports; i++ ) {
-    export_ids[i] = export_objs[2*i];
-    export_procs[i] = export_objs[2*i+1];
+    export_ids[i] = *(id_type*)(export_objs + pack_size*i);
+    export_procs[i] = *(export_objs + pack_size*i + (pack_size-1));
   }
 
   if( proc_list != 0 ) delete [] proc_list;

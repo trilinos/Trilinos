@@ -53,6 +53,8 @@
 #ifndef MUELU_EXPERIMENTALAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_EXPERIMENTALAGGREGATIONFACTORY_DEF_HPP_
 
+#include <bitset>
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -80,6 +82,7 @@ namespace MueLu {
 
     if (currentLevel.GetLevelID() == 0) currentLevel.DeclareInput("coarseAggStat", MueLu::NoFactory::get(), this);
     else                                currentLevel.DeclareInput("coarseAggStat", this, this);
+
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -98,37 +101,33 @@ namespace MueLu {
 
 
       const LocalOrdinal nRows = graph->GetNodeNumVertices();
-      Teuchos::ArrayRCP<NodeState> aggStat;
 
+      Teuchos::ArrayRCP<unsigned int> aggStat;
       if(currentLevel.GetLevelID() == 0 && currentLevel.IsAvailable("coarseAggStat",MueLu::NoFactory::get())) {
-        aggStat = currentLevel.Get<Teuchos::ArrayRCP<NodeState> >("coarseAggStat",MueLu::NoFactory::get());
+        aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat",MueLu::NoFactory::get());
       } else if (currentLevel.IsAvailable("coarseAggStat", this)) {
-        //std::cout << "coarseAggStat: found on level" << std::endl;
-        aggStat = currentLevel.Get<Teuchos::ArrayRCP<NodeState> >("coarseAggStat",this);
+        aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat",this);
       } else {
-        //std::cout << "use default coarseAggStat" << std::endl;
-        if(nRows > 0) aggStat = Teuchos::arcp<NodeState>(nRows);
+        if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
         for(LocalOrdinal i=0; i<nRows; ++i) {
-          aggStat[i] = READY;
+          aggStat[i] = (unsigned int) 0;
         }
       }
 
-      // we cannot have more aggregates than nodes on the current proc
-      Teuchos::ArrayRCP<NodeState> coarse_aggStat = Teuchos::arcp<NodeState>(nRows);
+      Teuchos::ArrayRCP<unsigned int> coarse_aggStat = Teuchos::arcp<unsigned int>(nRows);
+      for(LocalOrdinal i=0; i<nRows; ++i) {
+        coarse_aggStat[i] = (unsigned int) 0;
+      }
 
-      LocalOrdinal ret = -1;
-      ret = algo1_->Phase1a(*graph,*aggregates,aggStat, coarse_aggStat);
-      ret = algo1_->Phase2_maxlink(*graph,*aggregates,aggStat);
-      ret = algo1_->Phase3(*graph,*aggregates,aggStat);
-
+      // TODO: check return values of functions
+      algo1_->PhaseOnePt(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase1(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase2_maxlink(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase3(*graph,*aggregates,aggStat, coarse_aggStat);
 
       LocalOrdinal numAggs = aggregates->GetNumAggregates();
       coarse_aggStat.resize(Teuchos::as<int>(numAggs));
-
       currentLevel.Set("coarseAggStat", coarse_aggStat, this);
-
-      //ret = algo1_->Phase4(*graph,*aggregates,aggStat);
-
     }
 
     // Level Set
