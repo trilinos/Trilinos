@@ -61,6 +61,7 @@
 #include <iostream>
 
 #include <Teuchos_as.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 namespace Zoltan2
 {
@@ -216,17 +217,19 @@ public:
                     ArrayView<gno_t> gno,
                     TranslationType tt) const;
 
-  /*! \brief Map application global IDs to internal global numbers.
+  /*! \brief Map application global IDs to internal global numbers
+                 and/or process owners.
 
       \param in_gid input, an array of the global IDs
       \param out_gno output, an optional array of the corresponding 
           global numbers used by Zoltan2.  If out_gno.size() is zero,
           we assume global numbers are not needed.
-      \param out_proc output, an array of the process ranks corresponding with
-                         the in_gid and out_gno, out_proc[i] is the process
-                         that supplied in_gid[i] to Zoltan2.  
+      \param out_proc output, an optional array of the corresponding 
+          process ranks owning the global Ids.  If out_proc.size() is zero,
+          we assume process ranks are not needed.
 
-      If in_gid[i] is not one of the global Ids supplied, then
+      If in_gid[i] is not one of the global Ids supplied in this
+      problem, then
       out_proc[i] will be -1, and out_gno[i] (if requested) is undefined.
       This behavior supports graph subsetting.
 
@@ -244,9 +247,13 @@ public:
       \param out_gid output, an optional array of the corresponding 
           user global Ids.  If out_gid.size() is zero,
           we assume global Ids are not desired.
-      \param out_proc output, an array of the process ranks corresponding with
-                         the in_gno and out_gid, out_proc[i] is the process
-                         that supplied out_gid[i] to Zoltan2.  
+      \param out_proc output, an optional array of the corresponding 
+          process ranks owning the global numbers.  If out_proc.size() is zero,
+          we assume process ranks are not needed.
+
+      Global numbers are always consecutive numbers beginning with
+      zero.  If the global number is out of range, a std::runtime_error()
+      is thrown.
 
       All processes must call this.  The global numbers
       supplied may belong to another process.  
@@ -514,43 +521,63 @@ template< typename User>
 {
   size_t inLen = in_gid.size();
 
-  if (inLen == 0){
-    return;
-  }
+  // It's faster in loops to user raw pointers.
+  const gid_t *gids = in_gid.getRawPtr();
+  gno_t *gnos = out_gno.getRawPtr();
+  int *pids = out_proc.getRawPtr();
 
-  bool skipGno = (out_gno.size() == 0);
+  bool needGnos = false;
 
-  env_->localInputAssertion(__FILE__, __LINE__, 
-    "Destination array is too small", 
-    (static_cast<size_t>(out_proc.size()) >= inLen) && 
-    (skipGno || (static_cast<size_t>(out_gno.size()) >= inLen)),
-    BASIC_ASSERTION);
+  if (out_gno.size() > 0){
+    env_->localInputAssertion(__FILE__, __LINE__, "array too small", 
+      out_gno.size()>=inLen, BASIC_ASSERTION);
 
-  if (userGidsAreZoltan2Gnos_ && (gnoDist_.size() > 0)){
-
-    // Easy case - communication is not needed.
-    // Global numbers are the application global IDs and
-    // they are increasing consecutively with rank.
-
-    gno_t *gnos = gnoDist_.getRawPtr();
-    gno_t *final = gnos + numProcs_ + 1;
-
-    for (size_t i=0; i < inLen; i++){
-      gno_t gno = static_cast<gno_t>(in_gid[i]);
-      if (!skipGno)
-        out_gno[i] = gno;
-
-      gno_t *ub = std::upper_bound(gnos, final, gno);
-      if (ub !=final)
-        out_proc[i] = (ub - gnos - 1);
-      else
-        out_proc[i] = -1;   // globally not one of our gids
+    if (userGidsAreZoltan2Gnos_){
+      // Global numbers are the application global IDs
+      for (size_t i=0; i < inLen; i++)
+        gnos[i] = static_cast<gno_t>(gids[i]);
     }
-
-    return;
+    else
+      needGnos = true;
   }
 
-  bool needGnoInfo = !userGidsAreZoltan2Gnos_;
+  bool needProcs = false;
+
+  if (out_proc.size() > 0){
+    env_->localInputAssertion(__FILE__, __LINE__, "array too small", 
+      out_proc.size()>=inLen, BASIC_ASSERTION);
+
+    if (userGidsAreZoltan2Gnos_ && (gnoDist_.size() > 0)){
+
+      // The gids are the gnos, which are consecutive
+      // increasing with rank.
+
+      gno_t *gnoDist = gnoDist_.getRawPtr();
+      gno_t *gnoEnd = gnoDist + numProcs_ + 1;
+
+      for (size_t i=0; i < inLen; i++){
+        gno_t gno = static_cast<gno_t>(gids[i]);
+        // pointer to first entry greater than gno
+        gno_t *ub = std::upper_bound(gnoDist, gnoEnd, gno);
+
+        if (ub == gnoDist || ub == gnoEnd)
+          pids[i] = -1;   // globally not one of our gids
+        else
+          pids[i] = (ub - gnoDist - 1);
+      }
+    }
+    else
+      needProcs = true;
+  }
+
+  int haveWork = ((needProcs || needGnos) ? 1 : 0);
+  int someHaveWork = 0;
+
+  Teuchos::reduceAll<int, int>(*comm_, Teuchos::REDUCE_MAX, 1,
+    &haveWork, &someHaveWork);
+
+  if (!someHaveWork)
+    return;
 
   ///////////////////////////////////////////////////////////////////////
   // First: Hash each of my local gids to a process that will answer
@@ -588,7 +615,7 @@ template< typename User>
       offsetBuf[p] = offsetBuf[p-1] + countOutBuf[p-1];
     }
 
-    if (needGnoInfo){   
+    if (needGnos){   
       // The gnos are not the gids, which also implies that
       // gnos are consecutive numbers given by gnoDist_.
       gnoOutBuf.resize(localNumberOfIds_, 0);
@@ -598,7 +625,7 @@ template< typename User>
       int hashProc = IdentifierTraits<gid_t>::hashCode(myGids_[i]) % numProcs_;
       gno_t offset = offsetBuf[hashProc];
       gidOutBuf[offset] = myGids_[i];
-      if (needGnoInfo)
+      if (needGnos)
         gnoOutBuf[offset] = gnoDist_[myRank_] + i;
       offsetBuf[hashProc] = offset + 1;
     }
@@ -615,7 +642,7 @@ template< typename User>
 
   gidOutBuf.clear();
 
-  if (needGnoInfo){
+  if (needGnos){
     ArrayView<const gno_t> gnoView = gnoOutBuf();
     try{
       AlltoAllv<gno_t>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
@@ -630,8 +657,9 @@ template< typename User>
   // This is a lookup from gid to its position in gidInBuf.
   // (The list of gids hashed to me is unique.)
 
-  RCP<GidLookupHelper<gid_t, lno_t> > lookupMine =
-    rcp(new GidLookupHelper<gid_t, lno_t>(env_, gidInBuf));
+  typedef GidLookupHelper<gid_t, lno_t> lookup_t;
+
+  RCP<lookup_t> lookupMine = rcp(new lookup_t(env_, gidInBuf));
 
   // Use a vector to find process that sent gid.
 
@@ -639,23 +667,17 @@ template< typename User>
   std::vector<int> sendProc;
   gno_t indexTotal = 0;
 
-  for (int p=0; p < numProcs_; p++){
-    int bufLen = countInBuf[p];
-    if (bufLen > 0){
-      firstIndex.push_back(indexTotal);
-      sendProc.push_back(p);
-      indexTotal += bufLen;
+  if (needProcs){
+    for (int p=0; p < numProcs_; p++){
+      int bufLen = countInBuf[p];
+      if (bufLen > 0){
+        firstIndex.push_back(indexTotal);
+        sendProc.push_back(p);
+        indexTotal += bufLen;
+      }
     }
+    firstIndex.push_back(indexTotal);
   }
-  firstIndex.push_back(indexTotal);
-
-  // Keep gnoInBuf.  We're done with the others.
-
-  // KDDKDD Release causes memory leaks; doesn't deallocate memory; just changes
-  // KDDKDD ownership to false.  We want ownership to be true so that the
-  // KDDKDD memory is freed when the pointers are reassigned.  7/26/2012
-  // KDDKDD gidInBuf.release();
-  // KDDKDD countInBuf.release();
 
   ///////////////////////////////////////////////////////////////////////
   // Send a request for information to the "answer process" for each 
@@ -671,8 +693,7 @@ template< typename User>
 
   ArrayRCP<const gid_t> in_gidArray = 
     arcp(in_gid.getRawPtr(), 0, inLen, false);
-  RCP<GidLookupHelper<gid_t, lno_t> > lookupRequested =
-    rcp(new GidLookupHelper<gid_t, lno_t>(env_, in_gidArray));
+  RCP<lookup_t> lookupRequested = rcp(new lookup_t(env_, in_gidArray));
 
   size_t numberOfUniqueGids = lookupRequested->size();
 
@@ -736,10 +757,17 @@ template< typename User>
     total += countOutBuf[p];
   }
 
-  Array<int> procOutBuf(total);
+  ArrayRCP<int> procOutBuf;
   ArrayRCP<int> procInBuf;
 
-  if (needGnoInfo){
+  if (needProcs){
+    int *tmp = new int [total];
+    env_->localMemoryAssertion(__FILE__, __LINE__, total, tmp);
+    procOutBuf = arcp(tmp, 0, total, true);
+    
+  }
+
+  if (needGnos){
     try{ 
       gnoOutBuf.resize(total, 0);
     }
@@ -769,17 +797,20 @@ template< typename User>
         env_->localBugAssertion(__FILE__, __LINE__, "gidToIndex table", 
           badGid || ((index >= 0)&&(index<=indexTotal)), BASIC_ASSERTION);
 
-        
         if (!badGid){
-          indexFound = upper_bound(firstIndex.begin(), firstIndex.end(), index);
-          int sendingProc = indexFound - firstIndex.begin() - 1;
-          procOutBuf[total] = sendProc[sendingProc];
+
+          if (needProcs){
+            indexFound = 
+              upper_bound(firstIndex.begin(), firstIndex.end(), index);
+            int sendingProc = indexFound - firstIndex.begin() - 1;
+            procOutBuf[total] = sendProc[sendingProc];
+          }
     
-          if (needGnoInfo){
+          if (needGnos){
             gnoOutBuf[total] = gnoInBuf[index];
           }
         }
-        else{
+        else if (needProcs){
           // globally not one of our gids, can happen in subsetting
           procOutBuf[total] = -1; 
         }
@@ -787,28 +818,22 @@ template< typename User>
     }
   }
 
-  // KDDKDD Release causes memory leaks; doesn't deallocate memory; just changes
-  // KDDKDD ownership to false.  We want ownership to be true so that the
-  // KDDKDD memory is freed when the pointers are reassigned.  7/26/2012
-  // KDDKDD gidInBuf.release();
-  // KDDKDD if (needGnoInfo){
-  // KDDKDD     gnoInBuf.release();
-  // KDDKDD   }
+  gidInBuf.clear();
+  gnoInBuf.clear();
+  lookupMine.~RCP<lookup_t>();
 
-  // Done with lookupMine.
+  if (needProcs){
+    try{
+      ArrayView<const int> procView = procOutBuf.view(0, total);
+      ArrayView<const int> countView = countOutBuf();
+      AlltoAllv<int>(*comm_, *env_, procView, countView, procInBuf, countInBuf);
+    }
+    Z2_FORWARD_EXCEPTIONS;
 
-  // KDDKDD lookupMine.release();
-
-  try{
-    ArrayView<const int> procView = procOutBuf();
-    ArrayView<const int> countView = countOutBuf();
-    AlltoAllv<int>(*comm_, *env_, procView, countView, procInBuf, countInBuf);
+    procOutBuf.clear();
   }
-  Z2_FORWARD_EXCEPTIONS;
 
-  procOutBuf.clear();
-
-  if (needGnoInfo){
+  if (needGnos){
     try{
       ArrayView<const gno_t> gnoView = gnoOutBuf();
       ArrayView<const int> countView = countOutBuf();
@@ -827,8 +852,9 @@ template< typename User>
 
   for (size_t i=0; i < inLen; i++){
     lno_t loc = answerMap[in_gid[i]];
-    out_proc[i] = procInBuf[loc];
-    if (needGnoInfo)
+    if (needProcs)
+      out_proc[i] = procInBuf[loc];
+    if (needGnos)
       out_gno[i] = gnoInBuf[loc];
   }
 }
@@ -839,18 +865,7 @@ template< typename User>
     ArrayView<gid_t> out_gid,
     ArrayView<int> out_proc) const
 {
-  gno_t inLen=in_gno.size();
-
-  if (inLen == 0){
-    return;
-  }
-
-  bool skipGid = (out_gid.size() == 0);
-
-  env_->localInputAssertion(__FILE__, __LINE__, 
-    "Destination array is too small", 
-    (out_proc.size() >= inLen) && (skipGid || (out_gid.size() >= inLen)),
-    BASIC_ASSERTION);
+  size_t inLen = in_gno.size();
 
   if (userGidsAreZoltan2Gnos_){
 
@@ -865,42 +880,67 @@ template< typename User>
     }
     Z2_FORWARD_EXCEPTIONS;
 
-    if (!skipGid)
+    if (out_gid.size() == inLen)
       for (gno_t i=0; i < inLen; i++)
         out_gid[i] = gids[i];
 
     return;
   }
 
-  // Since user global IDs were mapped to internal global numbers,
-  // and since internal global numbers are consecutive, we know the
-  // process owning each global number.
+  bool needProcs = out_proc.size() > 0;
+  bool needGids = out_gid.size() > 0;
+
+  int haveWork = ((needProcs || needGids) ? 1 : 0);
+  int someHaveWork = 0;
+
+  Teuchos::reduceAll<int, int>(*comm_, Teuchos::REDUCE_MAX, 1,
+    &haveWork, &someHaveWork);
+
+  if (!someHaveWork)
+    return;
+
+  env_->localInputAssertion(__FILE__, __LINE__, "array too small", 
+    (!needProcs || out_proc.size()>=inLen) && 
+      (!needGids || out_gid.size()>=inLen), BASIC_ASSERTION);
+
+  // Get process owning each gno.  We need it to get the gid.
+
+  ArrayRCP<int> procArray;
+
+  if (out_proc.size() == inLen)
+    procArray = arcp(out_proc.getRawPtr(), 0, inLen, false);
+  else{
+    int *tmp = new int [inLen];
+    env_->localMemoryAssertion(__FILE__, __LINE__, inLen, tmp);
+    procArray = arcp(tmp, 0, inLen, true);
+  }
+
+  // The fact that global Ids and global Numbers are different
+  // means that the user's global Ids were mapped to consecutive increasing
+  // global numbers, so we know the process owning each global number.
 
   gno_t *gnos = gnoDist_.getRawPtr();
   gno_t *final = gnos + numProcs_ + 1;
-  bool remote = false;
-  int rank = comm_->getRank();
+  bool remoteGno = false;
+  int *pids = procArray.getRawPtr();  // in loops it's faster to use raw ptr
 
-  for (gno_t i=0; i < inLen; i++){
-
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid global number", 
-      in_gno[i] < gno_t(globalNumberOfIds_), BASIC_ASSERTION);
+  for (size_t i=0; i < inLen; i++){
 
     gno_t *ub = std::upper_bound(gnos, final, in_gno[i]);
 
-    env_->localBugAssertion(__FILE__, __LINE__, "finding gno", ub != final, 
-      BASIC_ASSERTION);
-   
-    out_proc[i] = (ub - gnos - 1);
+    pids[i] = (ub - gnos - 1);
 
-    if (!remote && out_proc[i] != rank)
-      remote = true;
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid global number", 
+      (pids[i] >= 0) && (pids[i] < env_->numProcs_), BASIC_ASSERTION);
+
+    if (!remoteGno && (pids[i] != myRank_))
+      remoteGno = true;
   }
 
-  if (skipGid)
+  if (!needGids)
     return;
 
-  if (!remote){
+  if (!remoteGno){
 
     // Make a local call to get the gids
 
@@ -920,19 +960,21 @@ template< typename User>
   //   avoid duplicate requests.  (Because that may be used
   //   to identify owners of neighbors, which would likely
   //   include many duplicates.)  Any reason to go to this
-  //   trouble here?
+  //   trouble here?  Could the list of gnos have many duplicates?
 
   ArrayRCP<gno_t> gnoOutBuf;
   ArrayRCP<gno_t> offsetBuf;
+  gno_t *tmpGno = NULL;
 
   if (inLen){
-    gno_t *tmpGno = new gno_t [inLen];
+    tmpGno = new gno_t [inLen];
     env_->localMemoryAssertion(__FILE__, __LINE__, inLen, tmpGno);
     gnoOutBuf = arcp(tmpGno, 0, inLen, true);
   }
 
   int *tmpCount = new int [numProcs_];
   env_->localMemoryAssertion(__FILE__, __LINE__, numProcs_, tmpCount);
+  memset(tmpCount, 0, sizeof(int) * numProcs_);
   ArrayRCP<int> countOutBuf(tmpCount, 0, numProcs_, true);
 
   gno_t *tmpOff = new gno_t [numProcs_+1];
@@ -940,24 +982,24 @@ template< typename User>
   offsetBuf = arcp(tmpOff, 0, numProcs_+1, true);
 
   for (gno_t i=0; i < inLen; i++)
-    countOutBuf[out_proc[i]]++;
+    tmpCount[pids[i]]++;
 
+  offsetBuf[0] = 0;
   for (int i=0; i < numProcs_; i++)
-    offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
+    tmpOff[i+1] = tmpOff[i] + tmpCount[i];
 
   for (gno_t i=0; i < inLen; i++){
-    int p = out_proc[i];
-    gno_t off = offsetBuf[p];
-    gnoOutBuf[off] = in_gno[i];
-    offsetBuf[p]++;
+    int p = pids[i];
+    gno_t off = tmpOff[p];
+    tmpGno[off] = in_gno[i];
+    tmpOff[p]++;
   }
 
   // Reset offsetBuf so we can find replies later.
 
-  offsetBuf[0] = 0;
+  tmpOff[0] = 0;
   for (int i=0; i < numProcs_; i++)
-    offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
-
+    tmpOff[i+1] = tmpOff[i] + tmpCount[i];
 
   ArrayRCP<gno_t> gnoInBuf;
   ArrayRCP<int> countInBuf;
@@ -1005,11 +1047,13 @@ template< typename User>
 
   // copy the replies into the output gid list
 
+  gid_t *gidInfo = gidInBuf.getRawPtr();  // faster in a loop
+
   for (gno_t i=0; i < inLen; i++){
-    int p = out_proc[i];
-    gno_t off = offsetBuf[p];
-    out_gid[i] = gidInBuf[off];
-    offsetBuf[p]++;
+    int p = pids[i];
+    gno_t off = tmpOff[p];
+    out_gid[i] = gidInfo[off];
+    tmpOff[p]++;
   }
 }
 
@@ -1060,9 +1104,11 @@ template< typename User>
   // If user global IDs are not consecutive ordinals, create a lookup table
   // mapping the global IDs to their location in myGids_.
 
+  typedef GidLookupHelper<gid_t, lno_t> lookup_t;
+
   if (!userGidsAreConsecutive_){
     try{
-      gidLookup_ = rcp(new GidLookupHelper<gid_t, lno_t>(env_, myGids_));
+      gidLookup_ = rcp(new lookup_t(env_, myGids_));
     }
     Z2_FORWARD_EXCEPTIONS;
   }
