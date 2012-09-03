@@ -329,9 +329,7 @@ template <typename Integral>
  *  \brief A ParameterList validator for integer range lists
  *
  * An integer range list is a concise way to provide a list of
- * identifiers.  It is set as a string.  Valid values are:
- *
- * The template parameter is the data type of the values in the list.
+ * integers.  It is set as a string.  Valid values are:
  *
  * \li an integer
  * \li a range of integers given as two integers separated by a dash
@@ -342,15 +340,24 @@ template <typename Integral>
  *    \li "1,5,12,30-39,101"
  *    \li "all"
  *
- * Redundant specifiers are and'ed:  "1,5,all" is just "all".
- *
+ * A constructor flag determines how the list is processed at
+ * validateAndModify() time.  Either the list is sorted and duplicates
+ * are removed, or the list remains as it was entered by the user.
+ * For example, if the list is to be modified:
+
+        - "1,5,2,1" becomes "1,2,5"
+        - "1-10,9-15" becomes 1-15"
+
  * Typical use cases for an integer range list are:
- *   \li the list of processes that are to output debugging information
- *   \li the list of fixed vertex IDs in a partitioning operation
+
+ *   - the list of processes that print status information
+ *   - the list of fixed vertex IDs in a partitioning operation
  *
  * At the call to validateAndModify(), the integer range list parameter 
  * value is changed from a string to an Array<Integral> which encodes
- * the meaning of the string.
+ * the meaning of the string. (The last value in the array specifies 
+ * whether the values are listed, whether the user requested "all",
+ * or whether the first and last value of a range is provided.)
  *
  * Helper functions for interpreting the integer range list after it has
  * been validated are:
@@ -365,13 +372,16 @@ template <typename Integral>
  *
  *\li noValuesAreInRangeList(const Teuchos::ParameterEntry &e)
  *
- *\li IsInRangeList(const Integral val, const Teuchos::Array<Integral> &valList)
+ *\li IsInRangeList(const Integral val, const Teuchos::Array<Integral> &valList,
+ *      bool sorted=true)
  *
  *\li IsInRangeList(const Integral val, const Teuchos::ParameterEntry &e)
  *
  *\li Teuchos::ArrayView<Integral> getList(Teuchos::Array<Integral> &irl)
  *
  *\li printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl)
+ *
+ * The template parameter is the data type of the values in the list.
  */
 
 template <typename Integral>
@@ -398,7 +408,7 @@ private:
 public:
   /*! \brief Constructor: any Integral is valid
    *   \param unsorted normally the input integers will be sorted and
-   *       duplicates will be removed..  If
+   *       duplicates will be removed.  If
    *        this is not the desired behavior, then set \c unsorted to true.
    */
   IntegerRangeListValidator(bool unsorted=false);

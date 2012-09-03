@@ -45,11 +45,12 @@
 //
 // Testing of GraphModel built from Xpetra matrix input adapters.
 //
-//    TODO test GraphModel for a matrix that is not Xpetra, that
-//         that global IDs that are not Teuchos::Ordinals.
-//    TODO test for input with gids that are not consecutive, but
-//              ask graph model to map them to consecutive
-//    TODO test Epetra inputs
+
+/*! \brief Test of GraphModel interface.
+ *
+ *  \todo test all methods of GraphModel
+ *  \todo test with GraphInput
+ */
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
@@ -70,6 +71,8 @@ using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
+
+typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
 
 using std::string;
 using std::vector;
@@ -181,23 +184,23 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
       fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
 
-    if (model->getLocalNumEdges() > size_t(nLocalNonZeros))
+    if (model->getLocalNumGlobalEdges() > size_t(nLocalNonZeros))
       fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
   }
   else{
     if (model->getGlobalNumEdges() !=  size_t(nGlobalNonZeros))
       fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
 
-    if (model->getLocalNumEdges() != size_t(nLocalNonZeros))
+    if (model->getLocalNumGlobalEdges() != size_t(nLocalNonZeros))
       fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
   }
 
   ArrayView<const gno_t> vertexGids;
-  ArrayView<const scalar_t> coords;  // not implemented yet
-  ArrayView<const scalar_t> wgts;    // not implemented yet
+  ArrayView<input_t> coords;  // not implemented yet
+  ArrayView<input_t> wgts;    // not implemented yet
 
   try{
     model->getVertexList(vertexGids, coords, wgts);
@@ -232,7 +235,7 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
       numLocalEdges++;
   }
 
-  if (numEdges != model->getLocalNumEdges())
+  if (numEdges != model->getLocalNumGlobalEdges())
     fail = 1;
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeList size", 1)
@@ -267,8 +270,14 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList size", 1)
 
   if (nGlobalRows < 200){
-    printGraph(nLocalRows, vertexGids.getRawPtr(), 
-      localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
+    if (numLocalEdges == 0){
+      if (rank == 0)
+        std::cout << "  Graph of local edges is empty" << std::endl; 
+    }
+    else{
+      printGraph(nLocalRows, vertexGids.getRawPtr(), 
+        localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
+    }
   }
 
   // Get graph restricted to this process

@@ -440,6 +440,7 @@ void pqJagged_getCoordinateValues( const RCP<const CoordinateModel<
  * \param pqJagged_partSizes is the two dimensional float-like array output that represents the ratio of each part.
  *
  */
+
 template <typename Adapter, typename scalar_t, typename gno_t>
 void pqJagged_getInputValues(
     const RCP<const Environment> &env, const RCP<const CoordinateModel<
@@ -560,7 +561,7 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
 
   std::cout << "numLocalCoords:" << numLocalCoords << std::endl;
   std::cout << "coordDim:" << coordDim << std::endl;
-  for(int i = 0; i < numLocalCoords; ++i){
+  for(size_t i = 0; i < numLocalCoords; ++i){
     for (int ii = 0; ii < coordDim; ++ii){
       std::cout <<  pqJagged_values[ii][i] << " ";
     }
@@ -571,7 +572,7 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
   std::cout << "criteriaDim:" << criteriaDim << std::endl;
   std::cout << "weightDim:" << weightDim << std::endl;
   if(weightDim){
-    for(int i = 0; i < numLocalCoords; ++i){
+    for(size_t i = 0; i < numLocalCoords; ++i){
       for (int ii = 0; ii < weightDim; ++ii){
         std::cout <<  pqJagged_weights[ii][i] << " ";
       }
@@ -587,7 +588,7 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
 
 
   std::cout << "gnos" << std::endl;
-  for(int i = 0; i < numLocalCoords; ++i){
+  for(size_t i = 0; i < numLocalCoords; ++i){
     std::cout <<  pqJagged_gnos[i] << " ";
   }
   std::cout << std::endl;
@@ -1928,8 +1929,6 @@ void getChunksFromCoordinates(
     scalar_t *cutCoordinates,
     lno_t coordinateBegin,
     lno_t coordinateEnd,
-    lno_t numLocalCoord, //TODO delete me.
-
 
     bool allowNonRectelinearPart,
     float *actual_ratios,
@@ -2300,9 +2299,7 @@ void AlgPQJagged(
 
   int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
-  lno_t numLocalCoords = nlc;
-
-
+  size_t numLocalCoords = nlc;
 
   //allocate only two dimensional pointer.
   //raw pointer addresess will be obtained from multivector.
@@ -2313,9 +2310,8 @@ void AlgPQJagged(
   bool *pqJagged_uniformWeights = allocMemory< bool >(criteriaDim); //if the weights of coordinates are uniform in a criteria dimension.
 
   ArrayView<const gno_t> pqJagged_gnos;
-  partId_t numGlobalParts;
+  size_t numGlobalParts;
   int pqJagged_multiVectorDim;
-
 
   pqJagged_getInputValues<Adapter, scalar_t, gno_t>(
       env, coords, solution,params,coordDim,weightDim,numLocalCoords,
@@ -2369,7 +2365,7 @@ void AlgPQJagged(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-  for(lno_t i = 0; i < numLocalCoords; ++i){
+  for(size_t i = 0; i < numLocalCoords; ++i){
     partitionedPointCoordinates[i] = i;
   }
 
@@ -2386,7 +2382,7 @@ void AlgPQJagged(
   //inTotalCounts array holds the end points in partitionedPointCoordinates array
   //for each partition. Initially sized 1, and single element is set to numLocalCoords.
   lno_t *inTotalCounts = allocMemory<lno_t>(1);
-  inTotalCounts[0] = numLocalCoords;//the end of the initial partition is the end of coordinates.
+  inTotalCounts[0] = static_cast<lno_t>(numLocalCoords);//the end of the initial partition is the end of coordinates.
 
   //the ends points of the output.
   lno_t *outTotalCounts = NULL;
@@ -2725,7 +2721,6 @@ void AlgPQJagged(
             usedCutCoordinate,
             coordinateBegin,
             coordinateEnd,
-            numLocalCoords,
 
             allowNonRectelinearPart,
             usednonRectelinearPart,
