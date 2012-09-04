@@ -104,6 +104,7 @@ typedef struct
     double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver
     string schurSolver;         // Solver for the Schur complement
+    string schurAmesosSolver;   // Amesos solver for the Schur complement
     string diagonalBlockSolver; // Solver to use to factorize the diagonal blocks
     int sep_type;
     int debug_level;
