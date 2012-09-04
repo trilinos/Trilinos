@@ -201,16 +201,28 @@ class BroydenOperator : public Epetra_RowMatrix,
   virtual double NormOne() const;
 
   //! See Epetra_RowMatrix documentation.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   virtual int NumGlobalNonzeros() const;
+#endif
+  virtual long long NumGlobalNonzeros64() const;
 
   //! See Epetra_RowMatrix documentation.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   virtual int NumGlobalRows() const;
+#endif
+  virtual long long NumGlobalRows64() const;
 
   //! See Epetra_RowMatrix documentation.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   virtual int NumGlobalCols() const;
+#endif
+  virtual long long NumGlobalCols64() const;
 
   //! See Epetra_RowMatrix documentation.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   virtual int NumGlobalDiagonals() const;
+#endif
+  virtual long long NumGlobalDiagonals64() const;
 
   //! See Epetra_RowMatrix documentation.
   virtual int NumMyNonzeros() const;

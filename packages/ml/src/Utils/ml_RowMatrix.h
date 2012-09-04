@@ -238,6 +238,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
       return(-1.0);
     }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     //! Returns the number of nonzero entries in the global matrix.
     virtual int NumGlobalNonzeros() const;
 
@@ -249,6 +250,19 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
     virtual int NumGlobalDiagonals() const;
+#endif
+
+     //! Returns the number of nonzero entries in the global matrix.
+    virtual long long NumGlobalNonzeros64() const;
+
+    //! Returns the number of global matrix rows.
+    virtual long long NumGlobalRows64() const;
+
+    //! Returns the number of global matrix columns.
+    virtual long long NumGlobalCols64() const;
+
+    //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
+    virtual long long NumGlobalDiagonals64() const;
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     virtual int NumMyNonzeros() const;
@@ -331,11 +345,11 @@ private:
   //! Number of local rows.
   int NumMyRows_;
   //! Number of global rows.
-  int NumGlobalRows_;
+  long long NumGlobalRows_;
   //! Number of local columns.
   int NumMyCols_;
   //! Number of global columns.j
-  int NumGlobalCols_;
+  long long NumGlobalCols_;
   //! Map for row distribution.
   Epetra_Map* DomainMap_;
   //! Map for row distribution.
@@ -359,11 +373,11 @@ private:
   //! Number of local nonzeros.
   int NumMyNonzeros_;
   //! Number of global nonzeros.
-  int NumGlobalNonzeros_;
+  long long NumGlobalNonzeros_;
   //! Number of nonzero local diagonal elements.
   int NumMyDiagonals_;
   //! Number of nonzero global diagonal elements.
-  int NumGlobalDiagonals_;
+  long long NumGlobalDiagonals_;
   //! Importer.
   mutable Epetra_Import* Importer_;
   //! Label of \c this object.

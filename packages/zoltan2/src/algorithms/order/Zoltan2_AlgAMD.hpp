@@ -118,7 +118,7 @@ int AlgAMD(
   ArrayView<const gno_t> edgeIds;
   ArrayView<const int> procIds;
   ArrayView<const lno_t> offsets;
-  ArrayView<const scalar_t> wgts;
+  ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
   //const size_t nEdgs = model->getEdgeList( edgeIds,
   //                      procIds, offsets, wgts);

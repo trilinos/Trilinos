@@ -275,6 +275,7 @@ double FiniteDifference::NormOne() const
   return jacobian->NormOne();
 }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int FiniteDifference::NumGlobalNonzeros() const
 {
   return jacobian->NumGlobalNonzeros();
@@ -293,6 +294,27 @@ int FiniteDifference::NumGlobalCols() const
 int FiniteDifference::NumGlobalDiagonals() const
 {
   return jacobian->NumGlobalDiagonals();
+}
+#endif
+
+long long FiniteDifference::NumGlobalNonzeros64() const
+{
+  return jacobian->NumGlobalNonzeros64();
+}
+
+long long FiniteDifference::NumGlobalRows64() const
+{
+  return jacobian->NumGlobalRows64();
+}
+
+long long FiniteDifference::NumGlobalCols64() const
+{
+  return jacobian->NumGlobalCols64();
+}
+
+long long FiniteDifference::NumGlobalDiagonals64() const
+{
+  return jacobian->NumGlobalDiagonals64();
 }
 
 int FiniteDifference::NumMyNonzeros() const

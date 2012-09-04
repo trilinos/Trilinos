@@ -135,7 +135,6 @@ int main( int argc, char* argv[] ) {
 
     RCP<A> a_ptr1 = rcp(new C);
     out << "\na_ptr1 = " << a_ptr1 << "\n";
-#ifndef __sun
     // RAB: 2003/11/24: The Sun compiler ("Forte Developer 7 C++
     // 5.4 2002/03/09" returned from CC -V) does not seem to be
     // following the standard when it comes to the handling of
@@ -146,18 +145,15 @@ int main( int argc, char* argv[] ) {
     // lifetime of temprary objects must not extend past the
     // statement in which it was created (see section 10.4.10 in
     // Stroustroup, 3ed edition). This compiler stinks!!!!!
-    TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 1 );
+    TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.strong_count() != 1 );
     TEUCHOS_TEST_FOR_EXCEPT( !a_ptr1.shares_resource(a_ptr1) );
-#endif // __sun
     TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.ptr() == null );
     TEUCHOS_TEST_FOR_EXCEPT( a_ptr1 == null );
     TEUCHOS_TEST_FOR_EXCEPT( !(a_ptr1 != null) );
     TEUCHOS_TEST_FOR_EXCEPT( is_null(a_ptr1) );
     RCP<D> d_ptr1 = rcp(new E);
     TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.shares_resource(a_ptr1) );
-#ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.strong_count() != 1 );
     TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.get() == NULL);
     TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.getRawPtr() == NULL);
 
@@ -169,21 +165,13 @@ int main( int argc, char* argv[] ) {
       TEUCHOS_TEST_FOR_EXCEPT( !(ca_ptr1 == a_ptr1) );
       TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1 != a_ptr1 );
       TEUCHOS_TEST_FOR_EXCEPT( !ca_ptr1.shares_resource(a_ptr1) );
-#ifndef __sun
-      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 2 );
-#endif
+      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.strong_count() != 2 );
       TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.ptr() == null );
-#ifndef __sun
-      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.count() != 2 );
-#endif
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.strong_count() != 2 );
       const RCP<const D> cd_ptr1 = rcp_const_cast<const D>(d_ptr1);
-#ifndef __sun
-      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.count() != 2 );
-#endif
+      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.strong_count() != 2 );
       TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1.ptr() == null );
-#ifndef __sun
-      TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1.count() != 2 );
-#endif
+      TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1.strong_count() != 2 );
 
 #ifdef SHOW_RUN_TIME_ERROR_1
       // Conversion using get() is a no no! When a_ptr2 is deleted so will the allocated
@@ -223,11 +211,9 @@ int main( int argc, char* argv[] ) {
       // Cast down the inheritance hiearchy (const A -> const B1)
       const RCP<const B1> cb1_ptr1 = rcp_dynamic_cast<const B1>(ca_ptr1);
       TEUCHOS_TEST_FOR_EXCEPT( cb1_ptr1.ptr() == null );
-#ifndef __sun
-      TEUCHOS_TEST_FOR_EXCEPT( cb1_ptr1.count() != 3 );
-      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.count() != 3 );
-      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 3 );
-#endif
+      TEUCHOS_TEST_FOR_EXCEPT( cb1_ptr1.strong_count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.strong_count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.strong_count() != 3 );
 
       // Cast up the inheritance hiearchy (const B1 -> const A)
       TEUCHOS_TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(cb1_ptr1)->A_f() != A_f_return );
@@ -246,21 +232,17 @@ int main( int argc, char* argv[] ) {
       const RCP<C>
         c_ptr1 = rcp_const_cast<C>(rcp_dynamic_cast<const C>(ca_ptr1));
       TEUCHOS_TEST_FOR_EXCEPT( c_ptr1.ptr() == null );
-#ifndef __sun
-      TEUCHOS_TEST_FOR_EXCEPT( c_ptr1.count() != 4 );
-      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.count() != 4 );
-      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 4 );
-#endif
+      TEUCHOS_TEST_FOR_EXCEPT( c_ptr1.strong_count() != 4 );
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.strong_count() != 4 );
+      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.strong_count() != 4 );
 
       // Cast down the inheritance hiearchy using static_cast<...> (const D -> const E)
       const RCP<const E>
         ce_ptr1 = rcp_static_cast<const E>(cd_ptr1); // This is not checked at runtime!
       TEUCHOS_TEST_FOR_EXCEPT( ce_ptr1.ptr() == null);
-#ifndef __sun
-      TEUCHOS_TEST_FOR_EXCEPT( ce_ptr1.count() != 3 );
-      TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1.count() != 3 );
-      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.count() != 3 );
-#endif
+      TEUCHOS_TEST_FOR_EXCEPT( ce_ptr1.strong_count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1.strong_count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.strong_count() != 3 );
 
       // Cast up the inheritance hiearchy (const E -> const D)
       TEUCHOS_TEST_FOR_EXCEPT( rcp_implicit_cast<const D>(ce_ptr1)->D_f() != D_f_return ); 
@@ -314,10 +296,8 @@ int main( int argc, char* argv[] ) {
       // Here at the end of the block, all of the other smart pointers are deleted!
     }
     // Check that all of the other references where removed but these
-#ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 1 );
-    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.strong_count() != 1 );
+    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.strong_count() != 1 );
 
     // Assign some other dynamically created objects.
   
@@ -367,7 +347,7 @@ int main( int argc, char* argv[] ) {
 #endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
   
     // Test out getting the deallocator object
-    a_ptr1 = rcp( new C, DeallocDelete<C>(), true );
+    a_ptr1 = rcpWithDealloc( new C, DeallocDelete<C>() );
     get_dealloc<DeallocDelete<C> >(a_ptr1);
     get_nonconst_dealloc<DeallocDelete<C> >(a_ptr1);
     TEUCHOS_TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<C> >(a_ptr1)==null );
@@ -428,19 +408,17 @@ int main( int argc, char* argv[] ) {
     a_ptr1 = null;
     d_ptr1 = null;
 
-#ifndef __sun
     // RAB: 2004/08/12: It appears that SUN compiler is not deleting the piece of extra
     // data properly and therefore the destructor of the above Get_A_f_return object
     // is not being called (which sets the value of af_return). This compiler stinks!
     TEUCHOS_TEST_FOR_EXCEPT( a_f_return != A_f_return ); // Should be been called in destructor of a_ptr1 but before the A object is destroyed!
-#endif
 
     // Testing the deallocFunctorDelete function and DeallocFunctorDelete class
-    a_ptr1 = rcp( new C, deallocFunctorDelete<A>(deallocA), true );
+    a_ptr1 = rcpWithDealloc( new C, deallocFunctorDelete<A>(deallocA) );
     a_ptr1 = null;
 
     // Testing the deallocFunctorHandleDelete function and DeallocFunctorHandleDelete class
-    a_ptr1 = rcp( new C, deallocFunctorHandleDelete<A>(deallocHandleA), true );
+    a_ptr1 = rcpWithDealloc( new C, deallocFunctorHandleDelete<A>(deallocHandleA) );
     a_ptr1 = null;
 
 #ifdef TEUCHOS_DEBUG

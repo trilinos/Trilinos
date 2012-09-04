@@ -1064,7 +1064,16 @@ int* ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(const Epetra_CrsMatrix & 
 Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix){
   const Epetra_Map & ColMap = Matrix.ColMap();
   int indexBase = ColMap.IndexBase();
-  Epetra_Map globalMap(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
+  Epetra_Map* mapPtr = 0;
+  
+  if(Matrix.RowMap().GlobalIndicesInt())
+    mapPtr = new Epetra_Map((int) Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
+  else if(Matrix.RowMap().GlobalIndicesLongLong())
+    mapPtr = new Epetra_Map(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
+  else
+    assert(false);
+  
+  Epetra_Map& globalMap = *mapPtr;
 
   // create the exporter from this proc's column map to global 1-1 column map
   Epetra_Export Exporter(ColMap,globalMap);
@@ -1090,6 +1099,8 @@ Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *diric
   // now import from the global column map to the local column map
   myColsToZero->Import(globColsToZero,Exporter,Insert);
 
+  delete mapPtr;
+
   return myColsToZero;
 }/*end FindLocalDirichletColumnsFromRows*/
 
@@ -1098,7 +1109,16 @@ Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *diric
 Epetra_IntVector * ML_Epetra::LocalRowstoColumns(int *Rows, int numRows,const Epetra_CrsMatrix & Matrix){
   const Epetra_Map & ColMap = Matrix.ColMap();
   int indexBase = ColMap.IndexBase();
-  Epetra_Map globalMap(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
+  Epetra_Map* mapPtr = 0;
+  
+  if(Matrix.RowMap().GlobalIndicesInt())
+    mapPtr = new Epetra_Map((int) Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
+  else if(Matrix.RowMap().GlobalIndicesLongLong())
+    mapPtr = new Epetra_Map(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
+  else
+    assert(false);
+  
+  Epetra_Map& globalMap = *mapPtr;
 
   // create the exporter from this proc's column map to global 1-1 column map
   Epetra_Export Exporter(ColMap,globalMap);
@@ -1117,6 +1137,8 @@ Epetra_IntVector * ML_Epetra::LocalRowstoColumns(int *Rows, int numRows,const Ep
   globColsToZero.Export(*myColsToZero,Exporter,Add);
   // now import from the global column map to the local column map
   myColsToZero->Import(globColsToZero,Exporter,Insert);
+
+  delete mapPtr;
 
   return myColsToZero;
 }/*end LocalRowstoColumns*/

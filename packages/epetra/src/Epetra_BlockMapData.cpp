@@ -49,11 +49,14 @@
 #define EPETRA_BLOCKMAP_NEW_LID
 
 //=============================================================================
-Epetra_BlockMapData::Epetra_BlockMapData(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm) 
+Epetra_BlockMapData::Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm, bool IsLongLong) 
   : Comm_(Comm.Clone()),
     Directory_(0),
     LID_(0),
-    MyGlobalElements_(0),
+    MyGlobalElements_int_(0),
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    MyGlobalElements_LL_(0),
+#endif
     FirstPointInElementList_(0),
     ElementSizeList_(0),
     PointToElementList_(0),
@@ -78,6 +81,8 @@ Epetra_BlockMapData::Epetra_BlockMapData(int NumGlobalElements, int ElementSize,
     DistributedGlobal_(false),
     OneToOneIsDetermined_(false),
     OneToOne_(false),
+    GlobalIndicesInt_(!IsLongLong),
+    GlobalIndicesLongLong_(IsLongLong),
     LastContiguousGID_(0),
     LastContiguousGIDLoc_(0),
     LIDHash_(0)

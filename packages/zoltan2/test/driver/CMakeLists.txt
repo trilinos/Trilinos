@@ -1,0 +1,15 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
+
+TRIBITS_ADD_EXECUTABLE(driver 
+  SOURCES ${HEADERS} driver.cpp
+  COMM mpi serial
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Zoltan2_copy_test_options
+  SOURCE_FILES basic.xml
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  NOEXEPREFIX
+)
+

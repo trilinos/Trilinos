@@ -331,6 +331,9 @@ evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
    preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
    ae_in.fillGlobalEvaluationDataContainer(preEvalData);
 
+   typedef panzer::LinearObjContainer LOC;
+   linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
+
    // std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
    typename std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
    for(fm_itr=volFieldManagers_.begin();fm_itr!=volFieldManagers_.end();fm_itr++) {
@@ -379,6 +382,9 @@ evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<
   GlobalEvaluationDataContainer preEvalData;
   preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
   ae_in.fillGlobalEvaluationDataContainer(preEvalData);
+
+  typedef panzer::LinearObjContainer LOC;
+  linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
 
   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >::const_iterator itr;
   for(itr=worksets.begin();itr!=worksets.end();++itr) {

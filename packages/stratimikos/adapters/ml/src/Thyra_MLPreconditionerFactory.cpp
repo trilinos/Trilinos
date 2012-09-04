@@ -80,6 +80,9 @@ Teuchos::RCP<
   Teuchos::StringToIntegralParameterEntryValidator<EMLProblemType>
   >
 BaseMethodDefaults_validator;
+
+const std::string ReuseFineLevelSmoother_name = "Reuse Fine Level Smoother";
+const bool ReuseFineLevelSmoother_default = false;
   
 const std::string MLSettings_name = "ML Settings";
 
@@ -276,7 +279,7 @@ void MLPreconditionerFactory::initializePrec(
     TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ReComputePreconditioner());
+    TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ReComputePreconditioner(paramList_->get<bool>(ReuseFineLevelSmoother_name)));
   }
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
@@ -338,6 +341,11 @@ void MLPreconditionerFactory::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),0);
   paramList_ = paramList;
+
+  // set default for reuse of fine level smoother
+  if(!paramList_->isType<bool>(ReuseFineLevelSmoother_name))
+    paramList_->set<bool>(ReuseFineLevelSmoother_name,ReuseFineLevelSmoother_default);
+
   const EMLProblemType
     defaultType = BaseMethodDefaults_validator->getIntegralValue(
       *paramList_,BaseMethodDefaults_name,BaseMethodDefaults_default
@@ -436,6 +444,9 @@ MLPreconditionerFactory::getValidParameters() const
       "in the sublist \"" + MLSettings_name + "\"!",
       rcp_implicit_cast<const PEV>(BaseMethodDefaults_validator)
       );
+
+    pl->set(ReuseFineLevelSmoother_name,ReuseFineLevelSmoother_default,
+      "Enables/disables the reuse of the fine level smoother.");
 
 /* 2007/07/02: rabartl:  The statement below should be the correct way to
  * get the list of valid parameters but it seems to be causing problems so

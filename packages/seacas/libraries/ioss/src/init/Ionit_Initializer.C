@@ -41,6 +41,11 @@
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
 
+// with introduction of paraview sierra catalyst plugin, the Iovs stuff is
+// always included and NO_PARAVIEWMESH_SUPPORT is never defined.  With the
+// plugin architecture, there is no overhead for sierra when the plugin is
+// not loaded.  The #define test is left here for now in case developers
+// need to use it.
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
 #include <visualization/Iovs_IOFactory.h>
 #endif

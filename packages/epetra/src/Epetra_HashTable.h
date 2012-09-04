@@ -46,15 +46,16 @@
 
 #include "Epetra_Object.h"
 
+template<typename value_type>
 class Epetra_HashTable : public Epetra_Object
 {
   struct Node
   {
-     int Key;
-     int Value;
+     long long Key;
+     value_type Value;
      Node * Ptr;
 
-     Node( const int key = 0, const int value = 0, Node * ptr = 0 )
+     Node( const long long key = 0, const value_type value = 0, Node * ptr = 0 )
      : Key(key), Value(value), Ptr(ptr) {}
 
     private:
@@ -66,10 +67,13 @@ class Epetra_HashTable : public Epetra_Object
   };
 
   Node ** Container_;
-  int Size_;
+  long long Size_;
   unsigned int Seed_;
 
-  int Func( const int key ) { return (Seed_ ^ key)%Size_; }
+  int Func( const long long key ) { 
+    int intkey = (int) ((key & 0x000000007fffffffLL) + ((key & 0x7fffffff80000000LL) >> 31));
+    return (int) ((Seed_ ^ intkey)%Size_);
+  } 
      
  public:
 
@@ -112,14 +116,14 @@ class Epetra_HashTable : public Epetra_Object
     delete [] Container_;
   }
 
-  void Add( const int key, const int value )
+  void Add( const long long key, const value_type value )
   {
     int v = Func(key);
     Node * n1 = Container_[v];
     Container_[v] = new Node(key,value,n1);
   }
 
-  int Get( const int key )
+  value_type Get( const long long key )
   {
     Node * n = Container_[ Func(key) ];
     while( n && (n->Key != key) ) n = n->Ptr;

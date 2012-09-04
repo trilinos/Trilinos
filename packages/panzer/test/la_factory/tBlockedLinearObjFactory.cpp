@@ -787,4 +787,84 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       TEUCHOS_ASSERT(false);
 }
 
+TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, exclusion)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
+
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   // pauseToAttach();
+
+   typedef LinearObjContainer LOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   int numBlocks = 3;
+   int myRank = eComm->MyPID();
+   int numProc = eComm->NumProc();
+
+   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
+         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int>(numBlocks,myRank,numProc));
+
+   std::vector<int> ownedIndices, ownedAndSharedIndices;
+   indexer->getOwnedIndices(ownedIndices);
+   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
+
+   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
+   for(int i=0;i<numBlocks;i++)
+      indexers.push_back(indexer); // 3x3 square blocks
+
+   BlockedEpetraLinearObjFactory<panzer::Traits,int> factory(eComm,blkIndexer,indexers);
+ 
+   // exclude some pairs
+   std::vector<std::pair<int,int> > exPairs;
+   exPairs.push_back(std::make_pair(0,2));
+   exPairs.push_back(std::make_pair(2,1));
+   factory.addExcludedPairs(exPairs);
+   factory.addExcludedPair(1,2);
+
+   RCP<LinearObjContainer> container = factory.buildLinearObjContainer();
+   RCP<LinearObjContainer> ghosted = factory.buildGhostedLinearObjContainer();
+   TEST_ASSERT(container!=Teuchos::null);
+   TEST_ASSERT(ghosted!=Teuchos::null);
+
+   RCP<BLOC> bContainer = rcp_dynamic_cast<BLOC>(container);
+   RCP<BLOC> b_ghosted = rcp_dynamic_cast<BLOC>(ghosted);
+   TEST_ASSERT(bContainer!=Teuchos::null);
+   TEST_ASSERT(b_ghosted!=Teuchos::null);
+
+   // tests global initialize
+   {
+      // Generic code
+      /////////////////////////////////////////////////////////////
+      factory.initializeContainer(LOC::Mat,*container);
+      TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
+      TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
+      TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
+      TEST_ASSERT(bContainer->get_A()!=Teuchos::null);
+
+      RCP<Thyra::BlockedLinearOpBase<double> > blo 
+         = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(bContainer->get_A());
+
+      TEST_ASSERT(!blo->getNonconstBlock(0,0).is_null());
+      TEST_ASSERT(!blo->getNonconstBlock(0,1).is_null());
+      TEST_ASSERT(blo->getNonconstBlock(0,2).is_null());
+
+      TEST_ASSERT(!blo->getNonconstBlock(1,0).is_null());
+      TEST_ASSERT(!blo->getNonconstBlock(1,1).is_null());
+      TEST_ASSERT(blo->getNonconstBlock(1,2).is_null());
+
+      TEST_ASSERT(!blo->getNonconstBlock(2,0).is_null());
+      TEST_ASSERT(blo->getNonconstBlock(2,1).is_null());
+      TEST_ASSERT(!blo->getNonconstBlock(2,2).is_null());
+   }
+}
+
 }

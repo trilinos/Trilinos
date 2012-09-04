@@ -46,7 +46,8 @@
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"
-class Epetra_HashTable;
+
+template<typename value_type> class Epetra_HashTable;
 class Epetra_Map;
 
 //! Epetra_MapColoring: A class for coloring Epetra_Map and Epetra_BlockMap objects.
@@ -298,7 +299,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
   };
   
   int DefaultColor_;
-  mutable Epetra_HashTable * ColorIDs_;
+  mutable Epetra_HashTable<int> * ColorIDs_;
   mutable ListItem * FirstColor_;
   mutable int NumColors_;
   mutable int * ListOfColors_;

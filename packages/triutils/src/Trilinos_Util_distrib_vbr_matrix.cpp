@@ -129,7 +129,11 @@ void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
   Epetra_Map map(*N_blk_global, 0, Comm);
   *N_update = map.NumMyElements();
   (*update) = (int *) calloc(*N_update,sizeof(int)) ;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   map.MyGlobalElements(*update);
+#else
+#error code not converted yet in Trilinos_Util_distrib_vbr_matrix.cpp
+#endif
 
   printf("Processor %d of %d has %d rows of %d total block rows.\n",
 	 MyPID,NumProc,*N_update,*N_blk_global) ;

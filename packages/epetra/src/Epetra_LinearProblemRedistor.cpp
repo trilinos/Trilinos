@@ -135,7 +135,7 @@ int Epetra_LinearProblemRedistor::GenerateRedistMap() {
 
 	// Build a list of contiguous GIDs that will be used in either case below.
 	int NumMyRedistElements = 0;
-	if ((Comm.MyPID()==0) || Replicate_) NumMyRedistElements = SourceMap.NumGlobalElements();
+	if ((Comm.MyPID()==0) || Replicate_) NumMyRedistElements = SourceMap.NumGlobalElements64();
 	
 	// Now build the GID list to broadcast SourceMapGIDs to all processors that need it (or just to PE 0).
 	int * ContigIDs = 0;
@@ -161,13 +161,13 @@ int Epetra_LinearProblemRedistor::GenerateRedistMap() {
 		EPETRA_CHK_ERR(TargetMapGIDs.Import(SourceMapGIDs, GIDsImporter, Insert));
 
 		// Finally, create RedistMap containing all GIDs of SourceMap on PE 0, or all PEs of Replicate is true
-		RedistMap_ = new Epetra_Map(-1, NumMyRedistElements, TargetMapGIDs.Values(), IndexBase, Comm);
+		RedistMap_ = new Epetra_Map(-1, NumMyRedistElements, TargetMapGIDs.Values(), IndexBase, Comm);// FIXME long long
 
 	}
 	// Case 2: If the map has contiguous IDs then we can simply build the map right away using the list
 	// of contiguous GIDs directly
 	else
-		RedistMap_ = new Epetra_Map(-1, NumMyRedistElements, ContigIDs, IndexBase, Comm);
+		RedistMap_ = new Epetra_Map(-1, NumMyRedistElements, ContigIDs, IndexBase, Comm);// FIXME long long
 
 	MapGenerated_ = true;
 

@@ -175,8 +175,17 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
 
   if ( distribute ) { 
     // Create uniform distributed map
-    Epetra_Map DistMap(readMap->NumGlobalElements(), 0, Comm);
-
+    Epetra_Map* mapPtr = 0;
+    
+    if(readMap->GlobalIndicesInt())
+      mapPtr = new Epetra_Map((int) readMap->NumGlobalElements(), 0, Comm);
+    else if(readMap->GlobalIndicesLongLong())
+      mapPtr = new Epetra_Map(readMap->NumGlobalElements(), 0, Comm);
+    else
+      assert(false);
+    
+    Epetra_Map& DistMap = *mapPtr;
+    
     // Create Exporter to distribute read-in matrix and vectors
     Epetra_Export exporter( *readMap, DistMap );
     
@@ -196,6 +205,7 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
     delete readMap; 
     readMap = 0 ; 
     delete serialA; 
+    delete mapPtr;
   } else { 
 
     Matrix = serialA; 

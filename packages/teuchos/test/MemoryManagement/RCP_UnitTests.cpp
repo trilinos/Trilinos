@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST( RCP, explicit_null )
 
 TEUCHOS_UNIT_TEST( RCP, explicit_dealloc_null )
 {
-  RCP<A> a_rcp = rcp<A>(0, Teuchos::DeallocNull<A>(), false);
+  RCP<A> a_rcp = rcpWithDealloc(static_cast<A*>(0), Teuchos::DeallocNull<A>(), false);
   TEST_ASSERT(is_null(a_rcp));
 }
 
@@ -199,37 +199,37 @@ TEUCHOS_UNIT_TEST( RCP, rcpCloneNode_basic )
 
   ECHO(RCP<int> rcp2 = rcpCloneNode(rcp1));
   TEST_ASSERT(nonnull(rcp2));
-  TEST_EQUALITY(rcp1.count(), 2);
-  TEST_EQUALITY(rcp2.count(), 1);
+  TEST_EQUALITY(rcp1.strong_count(), 2);
+  TEST_EQUALITY(rcp2.strong_count(), 1);
 
   ECHO(RCP<int> rcp3 = rcp2);
-  TEST_EQUALITY(rcp1.count(), 2);
-  TEST_EQUALITY(rcp2.count(), 2);
-  TEST_EQUALITY(rcp3.count(), 2);
+  TEST_EQUALITY(rcp1.strong_count(), 2);
+  TEST_EQUALITY(rcp2.strong_count(), 2);
+  TEST_EQUALITY(rcp3.strong_count(), 2);
 
   ECHO(RCP <int> rcp4 = rcp1);
-  TEST_EQUALITY(rcp1.count(), 3);
-  TEST_EQUALITY(rcp2.count(), 2);
-  TEST_EQUALITY(rcp3.count(), 2);
+  TEST_EQUALITY(rcp1.strong_count(), 3);
+  TEST_EQUALITY(rcp2.strong_count(), 2);
+  TEST_EQUALITY(rcp3.strong_count(), 2);
 
   ECHO(rcp4 = null);
-  TEST_EQUALITY(rcp1.count(), 2);
-  TEST_EQUALITY(rcp2.count(), 2);
-  TEST_EQUALITY(rcp3.count(), 2);
-  TEST_EQUALITY(rcp4.count(), 0);
+  TEST_EQUALITY(rcp1.strong_count(), 2);
+  TEST_EQUALITY(rcp2.strong_count(), 2);
+  TEST_EQUALITY(rcp3.strong_count(), 2);
+  TEST_EQUALITY(rcp4.strong_count(), 0);
 
   ECHO(rcp1 = null);
-  TEST_EQUALITY(rcp1.count(), 0);
-  TEST_EQUALITY(rcp2.count(), 2);
-  TEST_EQUALITY(rcp3.count(), 2);
-  TEST_EQUALITY(rcp4.count(), 0);
+  TEST_EQUALITY(rcp1.strong_count(), 0);
+  TEST_EQUALITY(rcp2.strong_count(), 2);
+  TEST_EQUALITY(rcp3.strong_count(), 2);
+  TEST_EQUALITY(rcp4.strong_count(), 0);
 
   ECHO(rcp2 = null);
-  TEST_EQUALITY(rcp2.count(), 0);
-  TEST_EQUALITY(rcp3.count(), 1);
+  TEST_EQUALITY(rcp2.strong_count(), 0);
+  TEST_EQUALITY(rcp3.strong_count(), 1);
 
   ECHO(rcp3 = null);
-  TEST_EQUALITY(rcp3.count(), 0);
+  TEST_EQUALITY(rcp3.strong_count(), 0);
 
 }
 
@@ -571,7 +571,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
 
   TEST_EQUALITY_CONST( rcp_strong.strength(), RCP_STRENGTH_INVALID );
   TEST_EQUALITY_CONST( rcp_strong.is_null(), true );
-  TEST_EQUALITY_CONST( rcp_strong.count(), 0 );
+  TEST_EQUALITY_CONST( rcp_strong.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_strong.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_strong.weak_count(), 0 );
   TEST_EQUALITY_CONST( rcp_strong.total_count(), 0 );
@@ -581,14 +581,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
   TEST_EQUALITY_CONST( rcp_strong.shares_resource(rcp_weak2), false );
 
   TEST_EQUALITY_CONST( rcp_weak1.has_ownership(), true );
-  TEST_EQUALITY_CONST( rcp_weak1.count(), 0 );
+  TEST_EQUALITY_CONST( rcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak1.weak_count(), 2 );
   TEST_EQUALITY_CONST( rcp_weak1.total_count(), 2 );
   TEST_EQUALITY_CONST( rcp_weak1.is_valid_ptr(), false );
 
   TEST_EQUALITY_CONST( rcp_weak2.has_ownership(), true );
-  TEST_EQUALITY_CONST( rcp_weak2.count(), 0 );
+  TEST_EQUALITY_CONST( rcp_weak2.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak2.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak2.weak_count(), 2 );
   TEST_EQUALITY_CONST( rcp_weak2.total_count(), 2 );
@@ -614,14 +614,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
 
   TEST_EQUALITY_CONST( rcp_weak1.strength(), RCP_STRENGTH_INVALID );
   TEST_EQUALITY_CONST( rcp_weak1.is_null(), true );
-  TEST_EQUALITY_CONST( rcp_weak1.count(), 0 );
+  TEST_EQUALITY_CONST( rcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak1.weak_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak1.total_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak1.is_valid_ptr(), true );
 
   TEST_EQUALITY_CONST( rcp_weak2.has_ownership(), true );
-  TEST_EQUALITY_CONST( rcp_weak2.count(), 0 );
+  TEST_EQUALITY_CONST( rcp_weak2.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak2.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak2.weak_count(), 1 );
   TEST_EQUALITY_CONST( rcp_weak2.total_count(), 1 );

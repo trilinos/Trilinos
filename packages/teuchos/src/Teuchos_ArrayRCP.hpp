@@ -490,6 +490,7 @@ ArrayView<T> ArrayRCP<T>::operator()() const
 
 // Implicit conversions
 
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
 
 template<class T> inline
 ArrayRCP<T>::operator ArrayView<T>() const
@@ -497,6 +498,7 @@ ArrayRCP<T>::operator ArrayView<T>() const
   return this->operator()();
 }
 
+#endif // TEUCHOS_HIDE_DEPRECATED_CODE
 
 template<class T> inline
 ArrayRCP<T>::operator ArrayRCP<const T>() const
@@ -1260,7 +1262,8 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayRCP<T>& p )
     <<",upperOffset="<<p.upperOffset()
     <<",size="<<p.size()
     <<",node="<<p.access_private_node()
-    <<",count="<<p.count()
+    <<",strong_count="<<p.strong_count()
+    <<",weak_count="<<p.weak_count()
     <<"}";
   return out;
   // NOTES:

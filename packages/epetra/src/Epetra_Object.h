@@ -147,6 +147,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
      sprintf(s, "%d", x);
      return string(s);
 }
+  string toString(const long long& x) const {
+     char s[100];
+     sprintf(s, "%lld", x);
+     return string(s);
+}
 
   string toString(const double& x) const {
      char s[100];

@@ -77,7 +77,8 @@ class EPETRA_LIB_DLL_EXPORT matrix_data {
       the locally-owned rows of A, will be copied into A. A.FillComplete()
       will NOT be called.
   */
-  void copy_local_data_to_matrix(Epetra_CrsMatrix& A);
+  //Not used.
+  //void copy_local_data_to_matrix(Epetra_CrsMatrix& A);
 
   /** Compare the local rows of A to the corresponding rows of this
       matrix_data object's data.

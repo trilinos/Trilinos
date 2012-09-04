@@ -51,6 +51,8 @@ namespace Zoltan2{
 ////////////////////////////////////////////////////////////////////
 // Parameter-related namespace methods 
 
+void createAllParameters(Teuchos::ParameterList &pList);
+
 void createValidatorList(
    const Teuchos::ParameterList &plIn, Teuchos::ParameterList &plOut);
 

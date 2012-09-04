@@ -126,8 +126,17 @@ int main(int argc, char *argv[])
   // Create uniform distributed map.
   // Note that linear map are used for simplicity only!
   // Amesos (through Epetra) can support *any* map.
-  Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
-
+  Epetra_Map* mapPtr = 0;
+  
+  if(readMap->GlobalIndicesInt())
+    mapPtr = new Epetra_Map((int) readMap->NumGlobalElements(), 0, Comm);
+  else if(readMap->GlobalIndicesLongLong())
+    mapPtr = new Epetra_Map(readMap->NumGlobalElements(), 0, Comm);
+  else
+    assert(false);
+  
+  Epetra_Map& map = *mapPtr;
+  
   // Create the distributed matrix, based on Map.
   Epetra_CrsMatrix A(Copy, map, 0);
 
@@ -152,6 +161,7 @@ int main(int argc, char *argv[])
   delete readx; 
   delete readb;
   delete readxexact;
+  delete mapPtr;
 
   // Creates an epetra linear problem, contaning matrix
   // A, solution x and rhs b.

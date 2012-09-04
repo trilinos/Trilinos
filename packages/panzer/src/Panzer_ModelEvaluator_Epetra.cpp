@@ -208,7 +208,7 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::EpetraLinearObj
   // setup parameters
   for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::const_iterator p = p_names_.begin(); 
        p != p_names_.end(); ++p) {
-    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap((*p)->size(), 0, map_x_->Comm())) ;
+    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap(static_cast<int>((*p)->size()), 0, map_x_->Comm())) ;
     p_map_.push_back(local_map);
     RCP<Epetra_Vector> ep_vec = rcp(new Epetra_Vector(*local_map));
     ep_vec->PutScalar(0.0);

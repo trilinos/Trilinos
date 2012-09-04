@@ -132,9 +132,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
     \param In 
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
 
-	   \warning Note that, because Epetra_LocalMap
-	   derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
-	   for all three types of Epetra map classes.
+     \warning Note that, because Epetra_LocalMap
+     derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
+     for all three types of Epetra map classes.
   \param In
   zeroOut - If <tt>true</tt> then the allocated memory will be zeroed
             out initialy.  If <tt>false</tt> then this memory will not
@@ -160,7 +160,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
 
     \return Integer error code, set to 0 if successful.
 
-	   See Detailed Description section for further discussion.
+     See Detailed Description section for further discussion.
   */
   Epetra_IntVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, int *V);
 
@@ -249,7 +249,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
   int MyLength() const {return(Map().NumMyPoints());};
 
   //! Returns the global vector length of vectors in the multi-vector.
-  int GlobalLength() const {return(Map().NumGlobalPoints());};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int GlobalLength() const {return (Map().NumGlobalPoints());};
+#endif
+
+  long long GlobalLength64() const {return (Map().NumGlobalPoints64());};
   //@}
 
   //! @name I/O methods

@@ -80,6 +80,9 @@ SET(HEADERS ${HEADERS}
   Epetra_LinearProblem.h
 #  Epetra_LinearProblemRedistor.h
   Epetra_LocalMap.h
+  Epetra_LongLongSerialDenseMatrix.h
+  Epetra_LongLongSerialDenseVector.h
+  Epetra_LongLongVector.h
   Epetra_Map.h
   Epetra_MapColoring.h
   Epetra_MultiVector.h
@@ -140,6 +143,9 @@ SET(SOURCES ${SOURCES}
   Epetra_LinearProblem.cpp
 #  Epetra_LinearProblemRedistor.cpp
   Epetra_LocalMap.cpp
+  Epetra_LongLongSerialDenseMatrix.cpp
+  Epetra_LongLongSerialDenseVector.cpp
+  Epetra_LongLongVector.cpp
   Epetra_Map.cpp
   Epetra_MapColoring.cpp
   Epetra_MultiVector.cpp

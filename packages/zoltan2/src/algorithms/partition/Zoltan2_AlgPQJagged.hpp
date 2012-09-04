@@ -44,7 +44,7 @@
 // @HEADER
 
 /*! \file Zoltan2_AlgPQJagged.hpp
-\brief Contains the recursive coordinate bisection algorthm.
+\brief Contains the PQ-jagged algorthm.
  */
 
 #ifndef _ZOLTAN2_ALGPQJagged_HPP_
@@ -440,6 +440,7 @@ void pqJagged_getCoordinateValues( const RCP<const CoordinateModel<
  * \param pqJagged_partSizes is the two dimensional float-like array output that represents the ratio of each part.
  *
  */
+
 template <typename Adapter, typename scalar_t, typename gno_t>
 void pqJagged_getInputValues(
     const RCP<const Environment> &env, const RCP<const CoordinateModel<
@@ -560,7 +561,7 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
 
   std::cout << "numLocalCoords:" << numLocalCoords << std::endl;
   std::cout << "coordDim:" << coordDim << std::endl;
-  for(int i = 0; i < numLocalCoords; ++i){
+  for(size_t i = 0; i < numLocalCoords; ++i){
     for (int ii = 0; ii < coordDim; ++ii){
       std::cout <<  pqJagged_values[ii][i] << " ";
     }
@@ -571,7 +572,7 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
   std::cout << "criteriaDim:" << criteriaDim << std::endl;
   std::cout << "weightDim:" << weightDim << std::endl;
   if(weightDim){
-    for(int i = 0; i < numLocalCoords; ++i){
+    for(size_t i = 0; i < numLocalCoords; ++i){
       for (int ii = 0; ii < weightDim; ++ii){
         std::cout <<  pqJagged_weights[ii][i] << " ";
       }
@@ -587,7 +588,7 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
 
 
   std::cout << "gnos" << std::endl;
-  for(int i = 0; i < numLocalCoords; ++i){
+  for(size_t i = 0; i < numLocalCoords; ++i){
     std::cout <<  pqJagged_gnos[i] << " ";
   }
   std::cout << std::endl;
@@ -604,7 +605,7 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
   std::cout << "numGlobalParts:" << numGlobalParts << std::endl;
   for(int i = 0; i < criteriaDim; ++i){
     if(!pqJagged_uniformParts[i])
-      for(int ii = 0; ii < numGlobalParts; ++ii){
+      for(size_t ii = 0; ii < numGlobalParts; ++ii){
         std::cout << pqJagged_partSizes[i][ii] << " ";
       }
     std::cout << std::endl;
@@ -1172,6 +1173,10 @@ void getNewCoordinates(
  * \param myLeftClosest is the array holding the distances to the closest points to the cut lines from left for the calling thread..
  * \param myRightClosest is the array holding the distances to the closest points to the cut lines from right for the calling thread.
  * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
+ *
+ * kddnote:  The output of this function myPartWeights differs depending on whether 
+ * kddnote:  binary or linear search is used.  Values in myPartWeights should be the
+ * kddnote:  same only after accumulateThreadResults is done.
  */
 template <typename scalar_t, typename lno_t>
 void pqJagged_1DPart_getPartWeights(
@@ -1195,12 +1200,15 @@ void pqJagged_1DPart_getPartWeights(
     bool useBinarySearch
 ){
 
+  // initializations for part weights, left/right closest
   if(useBinarySearch){
     for (size_t i = 0; i < total_part_count; ++i){
       myPartWeights[i] = 0;
     }
   } else {
     for (size_t i = 0; i < total_part_count; ++i){
+      // Don't need reinitialize when a part's cuts are already done.
+      // i/2 is needed because array contains pair (part, cut)
       if(i/2 < size_t(noCuts) && isDone[i/2]) continue;
       myPartWeights[i] = 0;
     }
@@ -1245,7 +1253,9 @@ void pqJagged_1DPart_getPartWeights(
           myLeftClosest[j] = 0;
           myRightClosest[j] = 0;
           partId_t kk = j + 1;
-          while(kk < noCuts){
+          while(kk < noCuts){  // Needed when cuts shared the same position
+                               // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
+                               // kddnote Mehmet says it is probably needed anyway.
             scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
@@ -1353,8 +1363,14 @@ void pqJagged_1DPart_getPartWeights(
         }
       }
     }
+
+    // prefix sum computation.
     for (size_t i = 1; i < total_part_count; ++i){
-      if(i % 2 == 0 && i > 1 && i < total_part_count - 1 && ABS(cutCoordinates_tmp[i / 2] - cutCoordinates_tmp[i /2 - 1]) < _EPSILON){
+      // if check for cuts sharing the same position; all cuts sharing a position
+      // have the same weight == total weight for all cuts sharing the position.  
+      // don't want to accumulate that total weight more than once.
+      if(i % 2 == 0 && i > 1 && i < total_part_count - 1 && 
+         ABS(cutCoordinates_tmp[i / 2] - cutCoordinates_tmp[i /2 - 1]) < _EPSILON){
         myPartWeights[i] = myPartWeights[i-2];
         continue;
       }
@@ -1674,6 +1690,7 @@ void pqJagged_1D_Partition(
         lno_t coordinateEnd = inTotalCounts[current];
         scalar_t *cutCoordinates_ = cutCoordinates_tmp + kk * noCuts;
 
+        // compute part weights using existing cuts
         pqJagged_1DPart_getPartWeights<scalar_t, lno_t>(
             total_part_count,
             noCuts,
@@ -1799,6 +1816,7 @@ void pqJagged_1D_Partition(
         scalar_t *currentcutLowerBounds = cutLowerBounds + cutShift;
 
         partId_t prevDoneCount = myNonDoneCounts[kk];
+        // Now compute the new cut coordinates.
         getNewCoordinates<scalar_t>(
             env, comm,
             total_part_count, noCuts, maxCoordinate, minCoordinate, globalTotalWeight, imbalanceTolerance, maxScalar,
@@ -1843,6 +1861,10 @@ void pqJagged_1D_Partition(
     if(comm->getRank() == 0)
       if(me == 0) cout << "it:" << iteration << endl;
 */
+    // Needed only if keep_cuts; otherwise can simply swap array pointers 
+    // cutCoordinates and cutCoordinatesWork.  
+    // (at first iteration, cutCoordinates == cutCoorindates_tmp).
+    // computed cuts must be in cutCoordinates.
     if (cutCoordinates != cutCoordinates_tmp){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
@@ -1907,8 +1929,6 @@ void getChunksFromCoordinates(
     scalar_t *cutCoordinates,
     lno_t coordinateBegin,
     lno_t coordinateEnd,
-    lno_t numLocalCoord, //TODO delete me.
-
 
     bool allowNonRectelinearPart,
     float *actual_ratios,
@@ -2269,7 +2289,7 @@ void AlgPQJagged(
   scalar_t imbalanceTolerance;
 
   multiCriteriaNorm mcnorm;
-  bool ignoreWeights;
+  bool ignoreWeights=false;
 
   bool allowNonRectelinearPart = false;
   int concurrentPartCount = 0;
@@ -2279,9 +2299,7 @@ void AlgPQJagged(
 
   int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
-  lno_t numLocalCoords = nlc;
-
-
+  size_t numLocalCoords = nlc;
 
   //allocate only two dimensional pointer.
   //raw pointer addresess will be obtained from multivector.
@@ -2294,7 +2312,6 @@ void AlgPQJagged(
   ArrayView<const gno_t> pqJagged_gnos;
   size_t numGlobalParts;
   int pqJagged_multiVectorDim;
-
 
   pqJagged_getInputValues<Adapter, scalar_t, gno_t>(
       env, coords, solution,params,coordDim,weightDim,numLocalCoords,
@@ -2329,10 +2346,13 @@ void AlgPQJagged(
     concurrentPartCount = maxTotalCumulativePartCount;
   }
 
+  // coordinates of the cut lines. First one is the min, last one is max coordinate.
+  // kddnote if (keep_cuts)
   // coordinates of the cut lines.
   //only store this much if cuts are needed to be stored.
   scalar_t *allCutCoordinates = allocMemory< scalar_t>(totalDimensionCut);
-  //scalar_t *allCutCoordinates = allocMemory< scalar_t>(maxCutNo * k);
+  // kddnote else
+  //scalar_t *allCutCoordinates = allocMemory< scalar_t>(maxCutNo * concurrentPartCount);
 
   //as input indices.
   lno_t *partitionedPointCoordinates =  allocMemory< lno_t>(numLocalCoords);
@@ -2345,7 +2365,7 @@ void AlgPQJagged(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-  for(lno_t i = 0; i < numLocalCoords; ++i){
+  for(size_t i = 0; i < numLocalCoords; ++i){
     partitionedPointCoordinates[i] = i;
   }
 
@@ -2362,7 +2382,7 @@ void AlgPQJagged(
   //inTotalCounts array holds the end points in partitionedPointCoordinates array
   //for each partition. Initially sized 1, and single element is set to numLocalCoords.
   lno_t *inTotalCounts = allocMemory<lno_t>(1);
-  inTotalCounts[0] = numLocalCoords;//the end of the initial partition is the end of coordinates.
+  inTotalCounts[0] = static_cast<lno_t>(numLocalCoords);//the end of the initial partition is the end of coordinates.
 
   //the ends points of the output.
   lno_t *outTotalCounts = NULL;
@@ -2499,7 +2519,7 @@ void AlgPQJagged(
   }
 #endif
 #endif
-
+  // kddnote  Needed only when non-rectilinear parts.
   scalar_t *cutWeights = allocMemory<scalar_t>(maxCutNo);
   scalar_t *globalCutWeights = allocMemory<scalar_t>(maxCutNo);
 
@@ -2602,6 +2622,9 @@ void AlgPQJagged(
 
 
       partId_t allDone = 0;
+      // Compute weight ratios for parts & cuts: 
+      //  e.g., 0.25  0.25  0.5    0.5  0.75 0.75  1
+      //       part0  cut0  part1 cut1 part2 cut2 part3
       for(int kk = 0; kk < concurrentPart; ++kk){
         scalar_t minCoordinate = globalMinMaxTotal[kk];
         scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
@@ -2620,11 +2643,13 @@ void AlgPQJagged(
           //env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_cut_coord");
         }
         else {
+          // e.g., if have fewer coordinates than parts, don't need to do next dim.
           myNonDoneCount[kk] = 0;
         }
       }
 
       //env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_1d");
+      // Determine cut lines for k parts here.
       pqJagged_1D_Partition<scalar_t, lno_t>(
           env, comm,
           partitionedPointCoordinates,
@@ -2683,6 +2708,7 @@ void AlgPQJagged(
           pws[ii] = partWeights[ii] +  (2 * (partNo[i] - 1) + 1) * kk;
         }
 
+        // Rewrite the indices based on the computed cuts.
         getChunksFromCoordinates<lno_t,scalar_t>(
             partNo[i],
             numThreads,
@@ -2695,7 +2721,6 @@ void AlgPQJagged(
             usedCutCoordinate,
             coordinateBegin,
             coordinateEnd,
-            numLocalCoords,
 
             allowNonRectelinearPart,
             usednonRectelinearPart,
@@ -2728,8 +2753,9 @@ void AlgPQJagged(
       if(myRank == 0)
         cout << endl;
 */
-    }
+    } // end of this partitioning dimension
 
+    // swap the indices' memory
     lno_t * tmp = partitionedPointCoordinates;
     partitionedPointCoordinates = newpartitionedPointCoordinates;
     newpartitionedPointCoordinates = tmp;
@@ -2738,7 +2764,7 @@ void AlgPQJagged(
     freeArray<lno_t>(inTotalCounts);
     inTotalCounts = outTotalCounts;
     env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring);
-  }
+  } // Partitioning is done
 
   env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning");
 
@@ -2871,8 +2897,3 @@ void AlgPQJagged(
 
 
 #endif
-
-
-
-
-

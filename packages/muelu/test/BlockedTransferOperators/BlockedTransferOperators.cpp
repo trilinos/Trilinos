@@ -109,11 +109,12 @@
 //
 typedef double Scalar;
 typedef int    LocalOrdinal;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-typedef long long int GlobalOrdinal;
-#else
+// FIXME
+// #ifdef HAVE_TEUCHOS_LONG_LONG_INT
+// typedef long long int GlobalOrdinal;
+// #else
 typedef int GlobalOrdinal;
-#endif
+// #endif
 
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
@@ -198,9 +199,9 @@ int main(int argc, char *argv[]) {
   out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
-#ifndef HAVE_TEUCHOS_LONG_LONG_INT
+  //#ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
-#endif
+  //#endif
 
   /**********************************************************************************/
   /* SET TEST PARAMETERS                                                            */

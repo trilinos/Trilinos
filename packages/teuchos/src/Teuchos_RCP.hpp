@@ -615,7 +615,7 @@ Teuchos::rcpWithEmbeddedObjPreDestroy(
   T* p, const Embedded &embedded, bool owns_mem
   )
 {
-  return rcp(
+  return rcpWithDealloc(
     p, embeddedObjDeallocDelete<T>(embedded,PRE_DESTROY), owns_mem
     );
 }
@@ -627,7 +627,7 @@ Teuchos::rcpWithEmbeddedObjPostDestroy(
   T* p, const Embedded &embedded, bool owns_mem
   )
 {
-  return rcp( p, embeddedObjDeallocDelete<T>(embedded,POST_DESTROY), owns_mem );
+  return rcpWithDealloc( p, embeddedObjDeallocDelete<T>(embedded,POST_DESTROY), owns_mem );
 }
 
 
@@ -941,7 +941,8 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const RCP<T>& p )
     << typeName(p) << "{"
     << "ptr="<<(const void*)(p.get()) // I can't find any alternative to this C cast :-(
     <<",node="<<p.access_private_node()
-    <<",count="<<p.count()
+    <<",strong_count="<<p.strong_count()
+    <<",weak_count="<<p.weak_count()
     <<"}";
   return out;
 }

@@ -72,7 +72,9 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * a_mat)
   int NumExternal = a_mat->data_org[AZ_N_external];
   NumMyCols_ = NumMyRows_ + NumExternal;
   NumMyNonzeros_ = bindx[NumMyRows_] - bindx[0] + NumMyRows_;
-  Comm_->SumAll(&NumMyNonzeros_, &NumGlobalNonzeros_, 1);
+  //Comm_->SumAll(&NumMyNonzeros_, &NumGlobalNonzeros_, 1);
+  long long NumMyNonzerosLL_ = (long long) NumMyNonzeros_;
+  Comm_->SumAll(&NumMyNonzerosLL_, &NumGlobalNonzeros_, 1);
 
   int * MyGlobalElements = a_mat->update;
   if (MyGlobalElements==0) 

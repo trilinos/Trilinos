@@ -45,6 +45,7 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include <iostream>
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Map.h"
@@ -54,6 +55,7 @@
 #include "Epetra_Export.h"
 int main(int argc, char *argv[])
 {
+  using namespace std;
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 

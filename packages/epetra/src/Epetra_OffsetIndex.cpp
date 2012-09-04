@@ -72,12 +72,34 @@ Epetra_OffsetIndex::Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
   NumRemote_ = Importer.NumRemoteIDs();
   int * RemoteLIDs = Importer.RemoteLIDs();
 
-  GenerateLocalOffsets_( SourceGraph, TargetGraph,
-                         PermuteLIDs );
+  if(!SourceGraph.RowMap().GlobalIndicesTypeMatch(TargetGraph.RowMap()))
+     throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph and TargetGraph global indices type mismatch", -1);
+  if(SourceGraph.RowMap().GlobalIndicesInt()) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+     GenerateLocalOffsets_<int>( SourceGraph, TargetGraph,
+                            PermuteLIDs );
 
-  GenerateRemoteOffsets_( SourceGraph, TargetGraph,
-                          ExportLIDs, RemoteLIDs,
-                          Importer.Distributor() );
+     GenerateRemoteOffsets_<int>( SourceGraph, TargetGraph,
+                             ExportLIDs, RemoteLIDs,
+                             Importer.Distributor() );
+#else
+    throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
+  }
+  else if(SourceGraph.RowMap().GlobalIndicesLongLong()) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+     GenerateLocalOffsets_<long long>( SourceGraph, TargetGraph,
+                            PermuteLIDs );
+
+     GenerateRemoteOffsets_<long long>( SourceGraph, TargetGraph,
+                             ExportLIDs, RemoteLIDs,
+                             Importer.Distributor() );
+#else
+    throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
+  }
+  else
+     throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph global indices type unknown", -1);
 }
 
 //==============================================================================
@@ -106,12 +128,34 @@ Epetra_OffsetIndex::Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
   NumRemote_ = Exporter.NumRemoteIDs();
   int * RemoteLIDs = Exporter.RemoteLIDs();
 
-  GenerateLocalOffsets_( SourceGraph, TargetGraph,
-                         PermuteLIDs );
+  if(!SourceGraph.RowMap().GlobalIndicesTypeMatch(TargetGraph.RowMap()))
+     throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph and TargetGraph global indices type mismatch", -1);
+  if(SourceGraph.RowMap().GlobalIndicesInt()) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+     GenerateLocalOffsets_<int>( SourceGraph, TargetGraph,
+                            PermuteLIDs );
 
-  GenerateRemoteOffsets_( SourceGraph, TargetGraph,
-                          ExportLIDs, RemoteLIDs,
-                          Exporter.Distributor() );
+     GenerateRemoteOffsets_<int>( SourceGraph, TargetGraph,
+                             ExportLIDs, RemoteLIDs,
+                             Exporter.Distributor() );
+#else
+    throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
+  }
+  else if(SourceGraph.RowMap().GlobalIndicesLongLong()) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+     GenerateLocalOffsets_<long long>( SourceGraph, TargetGraph,
+                            PermuteLIDs );
+
+     GenerateRemoteOffsets_<long long>( SourceGraph, TargetGraph,
+                             ExportLIDs, RemoteLIDs,
+                             Exporter.Distributor() );
+#else
+    throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
+  }
+  else
+     throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph global indices type unknown", -1);
 }
 
 //==============================================================================
@@ -148,6 +192,7 @@ Epetra_OffsetIndex::~Epetra_OffsetIndex()
 }
 
 //==============================================================================
+template<typename int_type>
 void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGraph,
                                                 const Epetra_CrsGraph & TargetGraph,
                                                 const int * PermuteLIDs )
@@ -155,15 +200,15 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
   const int GlobalMaxNumSourceIndices = SourceGraph.GlobalMaxNumIndices();
 
   int NumSourceIndices;
-  int * SourceIndices = 0;
-  if( GlobalMaxNumSourceIndices>0 ) SourceIndices = new int[GlobalMaxNumSourceIndices];
+  int_type * SourceIndices = 0;
+  if( GlobalMaxNumSourceIndices>0 ) SourceIndices = new int_type[GlobalMaxNumSourceIndices];
 
   //setup Same Offsets
   SameOffsets_ = new int*[NumSame_];
   for( int i = 0; i < NumSame_; ++i ) SameOffsets_[i] = 0;
 
   for( int i = 0; i < NumSame_; ++i ) {
-    int GID = SourceGraph.GRID(i);
+    int_type GID = (int_type) SourceGraph.GRID64(i);
     SourceGraph.ExtractGlobalRowCopy( GID,
                                       GlobalMaxNumSourceIndices,
                                       NumSourceIndices,
@@ -187,7 +232,7 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
   for( int i = 0; i < NumPermute_; ++i ) PermuteOffsets_[i] = 0;
 
   for( int i = 0; i < NumPermute_; ++i ) {
-    int GID = SourceGraph.GRID(PermuteLIDs[i]);
+    int_type GID = (int_type) SourceGraph.GRID64(PermuteLIDs[i]);
     SourceGraph.ExtractGlobalRowCopy( GID,
                                       GlobalMaxNumSourceIndices,
                                       NumSourceIndices,
@@ -210,6 +255,7 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
 }
 
 //==============================================================================
+template<typename int_type>
 void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceGraph,
                                                  const Epetra_CrsGraph & TargetGraph,
                                                  const int * ExportLIDs,
@@ -224,8 +270,10 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
   const int GlobalMaxNumIndices = SourceGraph.GlobalMaxNumIndices();
 
   int NumIndices;
+  /* "Indices" appears to be unused -- jhurani@txcorp.com
   int * Indices = 0;
   if( GlobalMaxNumIndices>0 ) Indices = new int[GlobalMaxNumIndices];
+  */
 
   //Pack Source Rows
   int * Sizes = 0;
@@ -236,10 +284,10 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
     TotalSize += Sizes[i];
   }
 
-  int * SourceArray = new int[TotalSize+1];
+  int_type * SourceArray = new int_type[TotalSize+1];
   int Loc = 0;
   for( int i = 0; i < NumExport_; ++i ) {
-    int GID = SourceGraph.GRID(ExportLIDs[i]);
+    int_type GID = (int_type) SourceGraph.GRID64(ExportLIDs[i]);
     SourceArray[Loc] = Sizes[i]-1;
     SourceGraph.ExtractGlobalRowCopy( GID,
                                       GlobalMaxNumIndices,
@@ -250,14 +298,15 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
 
   //Push to Target
   char * cRecvArray = 0;
-  int * RecvArray = 0;
+  int_type * RecvArray = 0;
   int RecvArraySize = 0;
+
   Distor.Do( reinterpret_cast<char *>(SourceArray),
-             (int)sizeof(int),
+             (int)sizeof(int_type),
              Sizes,
              RecvArraySize,
              cRecvArray );
-  RecvArray = reinterpret_cast<int*>(cRecvArray);
+  RecvArray = reinterpret_cast<int_type*>(cRecvArray);
 
   //Construct RemoteOffsets
   if( NumRemote_ > 0 ) RemoteOffsets_ = new int*[NumRemote_];
@@ -265,7 +314,7 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
 
   Loc = 0;
   for( int i = 0; i < NumRemote_; ++i ) {
-    NumIndices = RecvArray[Loc];
+    NumIndices = (int) RecvArray[Loc];
     RemoteOffsets_[i] = new int[NumIndices];
     ++Loc;
     int FLoc = 0;
@@ -280,7 +329,10 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
     }
   }
 
+  /* "Indices" appears to be unused -- jhurani@txcorp.com
   if( GlobalMaxNumIndices>0 ) delete [] Indices;
+  */
+
   if( Sizes ) delete [] Sizes;
   if( SourceArray ) delete [] SourceArray;
   if( RecvArraySize ) delete [] cRecvArray;

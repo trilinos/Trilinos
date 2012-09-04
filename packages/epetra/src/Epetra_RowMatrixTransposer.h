@@ -156,7 +156,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
 	int * Indices_;
 	double * Values_;
 	int * TransNumNz_;
-	int ** TransIndices_;
+	int ** TransIndices_; // FIXME long long
 	double ** TransValues_;
 	int * TransMyGlobalEquations_;
 	bool OrigMatrixIsCrsMatrix_;

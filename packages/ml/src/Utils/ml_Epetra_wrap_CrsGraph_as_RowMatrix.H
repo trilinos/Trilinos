@@ -232,16 +232,16 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     }
 
     //! Returns the number of nonzero entries in the global matrix.
-    int NumGlobalNonzeros() const {return(graph_.NumGlobalNonzeros()); }
+    long long NumGlobalNonzeros() const {return(graph_.NumGlobalNonzeros()); }
 
     //! Returns the number of global matrix rows.
-    int NumGlobalRows() const {return(graph_.NumGlobalRows()); }
+    long long NumGlobalRows() const {return(graph_.NumGlobalRows()); }
 
     //! Returns the number of global matrix columns.
-    int NumGlobalCols() const {return(graph_.NumGlobalCols()); }
+    long long NumGlobalCols() const {return(graph_.NumGlobalCols()); }
 
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-    int NumGlobalDiagonals() const {return(graph_.NumGlobalDiagonals()); }
+    long long NumGlobalDiagonals() const {return(graph_.NumGlobalDiagonals()); }
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     int NumMyNonzeros() const {return(graph_.NumMyNonzeros()); }

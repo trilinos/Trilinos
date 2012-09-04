@@ -155,9 +155,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
                      out initialy.  If <tt>false</tt> then this memory will not
                      be touched which can be significantly faster.
 
-	   \warning Note that, because Epetra_LocalMap
-	   derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
-	   for all three types of Epetra map classes.
+     \warning Note that, because Epetra_LocalMap
+     derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
+     for all three types of Epetra map classes.
 
     \return Pointer to a Epetra_Vector.
 
@@ -179,7 +179,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful.
 
-	   See Detailed Description section for further discussion.
+     See Detailed Description section for further discussion.
   */
   Epetra_Vector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, double *V);
 
@@ -196,7 +196,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful.
 
-	   See Detailed Description section for further discussion.
+     See Detailed Description section for further discussion.
   */
   Epetra_Vector(Epetra_DataAccess CV, const Epetra_MultiVector& Source, int Index);
 
@@ -221,7 +221,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int ReplaceGlobalValues(int NumEntries, const double * Values, const int * Indices);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int ReplaceGlobalValues(int NumEntries, const double * Values, const long long * Indices);
+#endif
 
   //! Replace values in a vector with a given indexed list of values, indices are in local index space.
   /*!
@@ -433,31 +438,36 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   using Epetra_MultiVector::ResetView;
 
   //! Reset the view of an existing vector to point to new user data.
-	/*! Allows the (very) light-weight replacement of multivector values for an
-		  existing vector that was constructed using an Epetra_DataAccess mode of View.
-			No checking is performed to see if the values passed in contain valid 
-			data.  It is assumed that the user has verified the integrity of data before calling
-			this method. This method is useful for situations where a vector is needed
-			for use with an Epetra operator or matrix and the user is not passing in a multivector,
-			or the multivector is being passed in with another map that is not exactly compatible
-			with the operator, but has the correct number of entries.
+  /*! Allows the (very) light-weight replacement of multivector values for an
+      existing vector that was constructed using an Epetra_DataAccess mode of View.
+      No checking is performed to see if the values passed in contain valid 
+      data.  It is assumed that the user has verified the integrity of data before calling
+      this method. This method is useful for situations where a vector is needed
+      for use with an Epetra operator or matrix and the user is not passing in a multivector,
+      or the multivector is being passed in with another map that is not exactly compatible
+      with the operator, but has the correct number of entries.
 
-			This method is used by AztecOO and Ifpack in the matvec and solve methods to improve
-			performance and reduce repeated calls to constructors and destructors.
+      This method is used by AztecOO and Ifpack in the matvec and solve methods to improve
+      performance and reduce repeated calls to constructors and destructors.
 
-			@param Values Vector data.
+      @param Values Vector data.
 
-			\return Integer error code, set to 0 if successful, -1 if the multivector was not created as a View.
+      \return Integer error code, set to 0 if successful, -1 if the multivector was not created as a View.
 
-			\warning This method is extremely dangerous and should only be used by experts.
-	*/
+      \warning This method is extremely dangerous and should only be used by experts.
+  */
 
-	int ResetView(double * Values_in) {EPETRA_CHK_ERR(Epetra_MultiVector::ResetView(&Values_in)); return(0);};
-	//@}
+  int ResetView(double * Values_in) {EPETRA_CHK_ERR(Epetra_MultiVector::ResetView(&Values_in)); return(0);};
+  //@}
  private:
 
     int ChangeValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices, bool IndicesGlobal, bool SumInto);
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    int ChangeValues(int NumEntries, int BlockOffset, const double * Values, const long long * Indices, bool IndicesGlobal, bool SumInto);
+#endif
 
+  template<typename int_type>
+    int TChangeValues(int NumEntries, int BlockOffset, const double * Values, const int_type * Indices, bool IndicesGlobal, bool SumInto);
 };
 
 #endif /* EPETRA_VECTOR_H */

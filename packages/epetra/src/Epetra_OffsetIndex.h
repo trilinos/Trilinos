@@ -93,10 +93,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_OffsetIndex: public Epetra_Object {
  
  private:
 
+  template<typename int_type>
   void GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGraph,
                               const Epetra_CrsGraph & TargetGraph,
                               const int * PermuteLIDs );
 
+  template<typename int_type>
   void GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceGraph,
                                const Epetra_CrsGraph & TargetGraph,
                                const int * ExportLIDs,

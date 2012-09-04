@@ -315,6 +315,8 @@ in the above example to do an export operation to y, adding the contributions th
   Epetra_Distributor * Distor_;
   
 
+  template<typename int_type>
+  void Construct( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap );
 };
 
 #endif /* EPETRA_IMPORT_H */

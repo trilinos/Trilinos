@@ -102,6 +102,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CompObject {
   void UpdateFlops(long int Flops_in) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops_in); return;}
 
   //! Increment Flop count for \e this object
+  void UpdateFlops(long long Flops_in) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops_in); return;}
+
+  //! Increment Flop count for \e this object
   void UpdateFlops(double Flops_in) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops_in); return;}
 
   //! Increment Flop count for \e this object

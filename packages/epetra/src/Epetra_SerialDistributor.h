@@ -89,6 +89,13 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
                        int *& ExportGIDs,
                        int *& ExportPIDs);
 
+  int CreateFromRecvs( const int & NumRemoteIDs,
+                       const long long * RemoteGIDs,
+                       const int * RemotePIDs,
+		       bool Deterministic,
+                       int & NumExportIDs,
+                       long long *& ExportGIDs,
+                       int *& ExportPIDs);
 
   int Do       (char * export_objs,
                 int obj_size,

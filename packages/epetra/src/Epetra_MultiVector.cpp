@@ -62,20 +62,20 @@ Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap& map, int numVector
     Values_(0),
     Pointers_(0),
     MyLength_(map.NumMyPoints()),
-    GlobalLength_(map.NumGlobalPoints()),
+    GlobalLength_(map.NumGlobalPoints64()),
     NumVectors_(numVectors),
     UserAllocated_(false),
     ConstantStride_(true),
     Stride_(map.NumMyPoints()),
     Allocated_(false)
 {
-	Util_.SetSeed(1);
+  Util_.SetSeed(1);
 
     AllocateForCopy();
     
     for (int i = 0; i< NumVectors_; i++) Pointers_[i] = Values_+i*Stride_;
 
-	if(zeroOut) PutScalar(0.0); // Fill all vectors with zero.
+  if(zeroOut) PutScalar(0.0); // Fill all vectors with zero.
 }
 //==========================================================================
 
@@ -108,20 +108,20 @@ Epetra_MultiVector::Epetra_MultiVector(const Epetra_MultiVector& Source)
 // This constructor copies in or makes view of a standard Fortran array
 
 Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockMap& map, 
-					     double *A, int MyLDA, int numVectors)
+               double *A, int MyLDA, int numVectors)
   : Epetra_DistObject(map, "Epetra::MultiVector"),
     Epetra_CompObject(),
     Values_(0),
     Pointers_(0),
     MyLength_(map.NumMyPoints()),
-    GlobalLength_(map.NumGlobalPoints()),
+    GlobalLength_(map.NumGlobalPoints64()),
     NumVectors_(numVectors),
     UserAllocated_(false),
     ConstantStride_(true),
     Stride_(map.NumMyPoints()),
     Allocated_(false)
 {
-	Util_.SetSeed(1);  
+  Util_.SetSeed(1);  
 
   if (CV==Copy) AllocateForCopy();
   else AllocateForView();
@@ -138,20 +138,20 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockM
 // This constructor copies in or makes view of a C/C++ array of pointer
 
 Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockMap& map, 
-					      double **ArrayOfPointers, int numVectors)
+                double **ArrayOfPointers, int numVectors)
   : Epetra_DistObject(map, "Epetra::MultiVector"),
     Epetra_CompObject(),
     Values_(0),
     Pointers_(0),
     MyLength_(map.NumMyPoints()),
-    GlobalLength_(map.NumGlobalPoints()),
+    GlobalLength_(map.NumGlobalPoints64()),
     NumVectors_(numVectors),
     UserAllocated_(false),
     ConstantStride_(true),
     Stride_(map.NumMyPoints()),
     Allocated_(false)
 {
-	Util_.SetSeed(1);
+  Util_.SetSeed(1);
 
   if (CV==Copy) AllocateForCopy();
   else AllocateForView();
@@ -169,7 +169,7 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockM
 // from an existing MultiVector
 
 Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiVector& Source, 
-					     int *Indices, int numVectors)
+               int *Indices, int numVectors)
   : Epetra_DistObject(Source.Map(), "Epetra::MultiVector"),
     Epetra_CompObject(),
     Values_(0),
@@ -182,7 +182,7 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiV
     Stride_(0),
     Allocated_(false)
 {
-	Util_.SetSeed(1);
+  Util_.SetSeed(1);
 
   if (CV==Copy) AllocateForCopy();
   else AllocateForView();
@@ -200,7 +200,7 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiV
 // This interface copies or makes view of a range of vectors from an existing MultiVector
 
 Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiVector& Source, 
-					     int StartIndex, int numVectors)
+               int StartIndex, int numVectors)
   : Epetra_DistObject(Source.Map(), "Epetra::MultiVector"),
     Epetra_CompObject(),
     Values_(0),
@@ -213,7 +213,7 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiV
     Stride_(0),
     Allocated_(false)
 {
-	Util_.SetSeed(1);  
+  Util_.SetSeed(1);  
 
   if (CV==Copy) AllocateForCopy();
   else AllocateForView();
@@ -356,33 +356,77 @@ int Epetra_MultiVector::DoView(void)
   return(0);
 }
 //=========================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_MultiVector::ReplaceGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
 
  // Use the more general method below
-  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, false));
+  EPETRA_CHK_ERR(ChangeGlobalValue<int>(GlobalRow, 0, VectorIndex, ScalarValue, false));
   return(0);
 }
+#endif
 //=========================================================================
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Epetra_MultiVector::ReplaceGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue) {
+
+ // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue<long long>(GlobalRow, 0, VectorIndex, ScalarValue, false));
+  return(0);
+}
+#endif
+//=========================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_MultiVector::ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
-					   int VectorIndex, double ScalarValue) {
+             int VectorIndex, double ScalarValue) {
   // Use the more general method below
-  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
+  EPETRA_CHK_ERR(ChangeGlobalValue<int>(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
   return(0);
 }
+#endif
 //=========================================================================
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Epetra_MultiVector::ReplaceGlobalValue(long long GlobalBlockRow, int BlockRowOffset, 
+             int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue<long long>(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
+  return(0);
+}
+#endif
+//=========================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_MultiVector::SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
 
   // Use the more general method below
-  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, true)); 
+  EPETRA_CHK_ERR(ChangeGlobalValue<int>(GlobalRow, 0, VectorIndex, ScalarValue, true)); 
   return(0);
 }
+#endif
 //=========================================================================
-int Epetra_MultiVector::SumIntoGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
-					   int VectorIndex, double ScalarValue) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Epetra_MultiVector::SumIntoGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue) {
+
   // Use the more general method below
-  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
+  EPETRA_CHK_ERR(ChangeGlobalValue<long long>(GlobalRow, 0, VectorIndex, ScalarValue, true)); 
   return(0);
 }
+#endif
+//=========================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+int Epetra_MultiVector::SumIntoGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
+             int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue<int>(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
+  return(0);
+}
+#endif
+//=========================================================================
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Epetra_MultiVector::SumIntoGlobalValue(long long GlobalBlockRow, int BlockRowOffset, 
+             int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue<long long>(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
+  return(0);
+}
+#endif
 //=========================================================================
 int Epetra_MultiVector::ReplaceMyValue(int MyRow, int VectorIndex, double ScalarValue) {
 
@@ -392,7 +436,7 @@ int Epetra_MultiVector::ReplaceMyValue(int MyRow, int VectorIndex, double Scalar
 }
 //=========================================================================
 int Epetra_MultiVector::ReplaceMyValue(int MyBlockRow, int BlockRowOffset, 
-					   int VectorIndex, double ScalarValue) {
+             int VectorIndex, double ScalarValue) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeMyValue(MyBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
   return(0);
@@ -405,14 +449,18 @@ int Epetra_MultiVector::SumIntoMyValue(int MyRow, int VectorIndex, double Scalar
 }
 //=========================================================================
 int Epetra_MultiVector::SumIntoMyValue(int MyBlockRow, int BlockRowOffset, 
-					   int VectorIndex, double ScalarValue) {
+             int VectorIndex, double ScalarValue) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeMyValue(MyBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
   return(0);
 }
 //=========================================================================
-int Epetra_MultiVector::ChangeGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
-				     int VectorIndex, double ScalarValue, bool SumInto) {
+template<typename int_type>
+int Epetra_MultiVector::ChangeGlobalValue(int_type GlobalBlockRow, int BlockRowOffset, 
+             int VectorIndex, double ScalarValue, bool SumInto) {
+
+  if(!Map().GlobalIndicesIsType<int_type>())
+  throw ReportError("Epetra_MultiVector::ChangeGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   // Convert GID to LID and call LID version
   EPETRA_CHK_ERR(ChangeMyValue(Map().LID(GlobalBlockRow), BlockRowOffset, VectorIndex, ScalarValue, SumInto));
@@ -420,7 +468,7 @@ int Epetra_MultiVector::ChangeGlobalValue(int GlobalBlockRow, int BlockRowOffset
 }
 //=========================================================================
 int Epetra_MultiVector::ChangeMyValue(int MyBlockRow, int BlockRowOffset, 
-				     int VectorIndex, double ScalarValue, bool SumInto) {
+             int VectorIndex, double ScalarValue, bool SumInto) {
   
   if (!Map().MyLID(MyBlockRow)) EPETRA_CHK_ERR(1); // I don't own this one, return a warning flag
   if (VectorIndex>= NumVectors_) EPETRA_CHK_ERR(-1); // Consider this a real error
@@ -440,7 +488,7 @@ int Epetra_MultiVector::Random() {
   // Generate random numbers drawn from a uniform distribution on
   // the interval (-1,1) using a multiplicative congruential generator
   // with modulus 2^31 - 1.
-	/*  
+  /*  
   const double a = 16807.0, BigInt=2147483647.0, DbleOne=1.0, DbleTwo=2.0;
   
   for(int i=0; i < NumVectors_; i++)
@@ -448,16 +496,16 @@ int Epetra_MultiVector::Random() {
       Seed_ = fmod( a*Seed_, BigInt );
       Pointers_[i][j] = DbleTwo*(Seed_/BigInt)-DbleOne;
     }
-	*/
+  */
 
    const int myLength = MyLength_;
-	for(int i = 0; i < NumVectors_; i++) {
+  for(int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for default(none)
 #endif
-		for(int j = 0; j < myLength; j++)
-			to[j] = Util_.RandomDouble();
+    for(int j = 0; j < myLength; j++)
+      to[j] = Util_.RandomDouble();
         }
 
   return(0);
@@ -613,8 +661,8 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   if (NumSameIDs>0)
     if (To!=From) {
       for (int i=0; i < numVectors; i++)
-	for (int j=0; j<NumSameEntries; j++)
-	  To[i][j] = From[i][j];
+  for (int j=0; j<NumSameEntries; j++)
+    To[i][j] = From[i][j];
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
@@ -623,27 +671,27 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     if (Case1) {
       
       if (numVectors==1)
-	for (int j=0; j<NumPermuteIDs; j++) 
-	  To[0][PermuteToLIDs[j]] = From[0][PermuteFromLIDs[j]];
+  for (int j=0; j<NumPermuteIDs; j++) 
+    To[0][PermuteToLIDs[j]] = From[0][PermuteFromLIDs[j]];
       
       else {
-	for (int j=0; j<NumPermuteIDs; j++) {
-	  jj = PermuteToLIDs[j];
-	  jjj = PermuteFromLIDs[j];
-	  for (int i=0; i<numVectors; i++)
-	    To[i][jj] = From[i][jjj];
-	}
+  for (int j=0; j<NumPermuteIDs; j++) {
+    jj = PermuteToLIDs[j];
+    jjj = PermuteFromLIDs[j];
+    for (int i=0; i<numVectors; i++)
+      To[i][jj] = From[i][jjj];
+  }
       }
     }
     // constant element size case
     else if (Case2) {
       
       for (int j=0; j<NumPermuteIDs; j++) {
-	jj = MaxElementSize*PermuteToLIDs[j];
-	jjj = MaxElementSize*PermuteFromLIDs[j];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<MaxElementSize; k++)
-	    To[i][jj+k] = From[i][jjj+k];
+  jj = MaxElementSize*PermuteToLIDs[j];
+  jjj = MaxElementSize*PermuteFromLIDs[j];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++)
+      To[i][jj+k] = From[i][jjj+k];
       }
     }
     
@@ -651,12 +699,12 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     else {
       
       for (int j=0; j<NumPermuteIDs; j++) {
-	jj = ToFirstPointInElementList[PermuteToLIDs[j]];
-	jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
-	int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<ElementSize; k++)
-	    To[i][jj+k] = From[i][jjj+k];
+  jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+  jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
+  int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++)
+      To[i][jj+k] = From[i][jjj+k];
       }
     }
   }
@@ -718,11 +766,11 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
           *ptr++ = From[0][ExportLIDs[j]];
 
       else {
-	for (int j=0; j<NumExportIDs; j++) {
-	  jj = ExportLIDs[j];
-	  for (int i=0; i<numVectors; i++)
-	    *ptr++ = From[i][jj];
-	}
+  for (int j=0; j<NumExportIDs; j++) {
+    jj = ExportLIDs[j];
+    for (int i=0; i<numVectors; i++)
+      *ptr++ = From[i][jj];
+  }
       }
     }
 
@@ -730,10 +778,10 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
     else if (ConstantElementSize) {
       
       for (int j=0; j<NumExportIDs; j++) {
-	jj = MaxElementSize*ExportLIDs[j];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<MaxElementSize; k++)
-	    *ptr++ = From[i][jj+k];
+  jj = MaxElementSize*ExportLIDs[j];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++)
+      *ptr++ = From[i][jj+k];
       }
     }
     
@@ -742,12 +790,12 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
       
       int thisSizeOfPacket = numVectors*MaxElementSize;
       for (int j=0; j<NumExportIDs; j++) {
-	ptr = (double *) Exports + j*thisSizeOfPacket;
-	jj = FromFirstPointInElementList[ExportLIDs[j]];
-	int ElementSize = FromElementSizeList[ExportLIDs[j]];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<ElementSize; k++)
-	    *ptr++ = From[i][jj+k];
+  ptr = (double *) Exports + j*thisSizeOfPacket;
+  jj = FromFirstPointInElementList[ExportLIDs[j]];
+  int ElementSize = FromElementSizeList[ExportLIDs[j]];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++)
+      *ptr++ = From[i][jj+k];
       }
     }
   }
@@ -782,7 +830,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       && CombineMode != Epetra_Min
       && CombineMode != AbsMin
       && CombineMode != AbsMax )
-	    EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
+      EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
 
   if (NumImportIDs<=0) return(0);
 
@@ -820,22 +868,22 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       //        This might be an issue in the future, but we leave this way for now.
 /*
       if (CombineMode==Add)
-	for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++; // Add to existing value
+  for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++; // Add to existing value
       else if(CombineMode==Insert)
-	for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = *ptr++;
+  for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = *ptr++;
       else if(CombineMode==InsertAdd) {
-	for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = 0.0;
-	for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++;
+  for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = 0.0;
+  for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++;
       }
       else if(CombineMode==AbsMax)
         for (int j=0; j<NumImportIDs; j++) {
-	  To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],std::abs(*ptr));
-	  ptr++;
-	}
+    To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],std::abs(*ptr));
+    ptr++;
+  }
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
       else if(CombineMode==Average)
-	for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] += *ptr++; To[0][ImportLIDs[j]] *= 0.5;}
+  for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] += *ptr++; To[0][ImportLIDs[j]] *= 0.5;}
 */
     }
 
@@ -856,48 +904,48 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       }
 /*
       if (CombineMode==Add) {
-	for (int j=0; j<NumImportIDs; j++) {
-	  jj = ImportLIDs[j];
-	  for (int i=0; i<numVectors; i++)
-	    To[i][jj] += *ptr++; // Add to existing value
-	}
+  for (int j=0; j<NumImportIDs; j++) {
+    jj = ImportLIDs[j];
+    for (int i=0; i<numVectors; i++)
+      To[i][jj] += *ptr++; // Add to existing value
+  }
       }
       else if(CombineMode==Insert) {
-	for (int j=0; j<NumImportIDs; j++) {
-	  jj = ImportLIDs[j];
-	  for (int i=0; i<numVectors; i++)
-	    To[i][jj] = *ptr++;
-	}
+  for (int j=0; j<NumImportIDs; j++) {
+    jj = ImportLIDs[j];
+    for (int i=0; i<numVectors; i++)
+      To[i][jj] = *ptr++;
+  }
       }
       else if(CombineMode==InsertAdd) {
-	for (int j=0; j<NumImportIDs; j++) {
-	  jj = ImportLIDs[j];
-	  for (int i=0; i<numVectors; i++)
-	    To[i][jj] = 0.0;
-	}
-	for (int j=0; j<NumImportIDs; j++) {
-	  jj = ImportLIDs[j];
-	  for (int i=0; i<numVectors; i++)
-	    To[i][jj] += *ptr++;
-	}
+  for (int j=0; j<NumImportIDs; j++) {
+    jj = ImportLIDs[j];
+    for (int i=0; i<numVectors; i++)
+      To[i][jj] = 0.0;
+  }
+  for (int j=0; j<NumImportIDs; j++) {
+    jj = ImportLIDs[j];
+    for (int i=0; i<numVectors; i++)
+      To[i][jj] += *ptr++;
+  }
       }
       else if(CombineMode==AbsMax) {
         for (int j=0; j<NumImportIDs; j++) {
           jj = ImportLIDs[j];
           for (int i=0; i<numVectors; i++) {
             To[i][jj] = EPETRA_MAX( To[i][jj], std::abs(*ptr) );
-	    ptr++;
-	  }
+      ptr++;
+    }
         }
       }
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
       else if(CombineMode==Average) {
-	for (int j=0; j<NumImportIDs; j++) {
-	  jj = ImportLIDs[j];
-	  for (int i=0; i<numVectors; i++)
-	    { To[i][jj] += *ptr++;  To[i][jj] *= 0.5;}
-	}
+  for (int j=0; j<NumImportIDs; j++) {
+    jj = ImportLIDs[j];
+    for (int i=0; i<numVectors; i++)
+      { To[i][jj] += *ptr++;  To[i][jj] *= 0.5;}
+  }
       }
 */
     }
@@ -923,52 +971,52 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 /*   
     if (CombineMode==Add) {
       for (int j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<MaxElementSize; k++)
-	    To[i][jj+k] += *ptr++; // Add to existing value
+  jj = MaxElementSize*ImportLIDs[j];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++)
+      To[i][jj+k] += *ptr++; // Add to existing value
       }
     }
     else if(CombineMode==Insert) {
       for (int j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<MaxElementSize; k++)
-	    To[i][jj+k] = *ptr++;
+  jj = MaxElementSize*ImportLIDs[j];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++)
+      To[i][jj+k] = *ptr++;
       }
     }
     else if(CombineMode==InsertAdd) {
       for (int j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<MaxElementSize; k++)
-	    To[i][jj+k] = 0.0;
+  jj = MaxElementSize*ImportLIDs[j];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++)
+      To[i][jj+k] = 0.0;
       }
       for (int j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<MaxElementSize; k++)
-	    To[i][jj+k] += *ptr++;
+  jj = MaxElementSize*ImportLIDs[j];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++)
+      To[i][jj+k] += *ptr++;
       }
     }
     else if(CombineMode==AbsMax) {
       for (int j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<MaxElementSize; k++) {
-	    To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr) );
-	    ptr++;
-	  }
+  jj = MaxElementSize*ImportLIDs[j];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++) {
+      To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr) );
+      ptr++;
+    }
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
     //        This might be an issue in the future, but we leave this way for now.
     else if(CombineMode==Average) {
       for (int j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<MaxElementSize; k++)
-	    { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}
+  jj = MaxElementSize*ImportLIDs[j];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++)
+      { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}
       }
     }
 */
@@ -996,64 +1044,64 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 /*
     if (CombineMode==Add) {
       for (int j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*thisSizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<ElementSize; k++)
-	    To[i][jj+k] += *ptr++; // Add to existing value
+  ptr = (double *) Imports + j*thisSizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++)
+      To[i][jj+k] += *ptr++; // Add to existing value
       }
     }
     else  if(CombineMode==Insert){
       for (int j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*thisSizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<ElementSize; k++)
-	    To[i][jj+k] = *ptr++;
+  ptr = (double *) Imports + j*thisSizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++)
+      To[i][jj+k] = *ptr++;
       }
     }
     else  if(CombineMode==InsertAdd){
       for (int j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*thisSizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<ElementSize; k++)
-	    To[i][jj+k] = 0.0;
+  ptr = (double *) Imports + j*thisSizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++)
+      To[i][jj+k] = 0.0;
       }
       for (int j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*thisSizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<ElementSize; k++)
-	    To[i][jj+k] += *ptr++;
+  ptr = (double *) Imports + j*thisSizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++)
+      To[i][jj+k] += *ptr++;
       }
     }
     else  if(CombineMode==AbsMax){
       for (int j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*thisSizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<ElementSize; k++) {
-	    To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr));
-	    ptr++;
-	  }
+  ptr = (double *) Imports + j*thisSizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++) {
+      To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr));
+      ptr++;
+    }
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
     //        This might be an issue in the future, but we leave this way for now.
     else if(CombineMode==Average) {
       for (int j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*thisSizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	for (int i=0; i<numVectors; i++)
-	  for (k=0; k<ElementSize; k++)
-	    { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}
+  ptr = (double *) Imports + j*thisSizeOfPacket;
+  jj = ToFirstPointInElementList[ImportLIDs[j]];
+  int ElementSize = ToElementSizeList[ImportLIDs[j]];
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++)
+      { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}
       }
     }
 */
@@ -1229,52 +1277,52 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
 
     if (ScalarThis==0.0)
       {
-	for (int i = 0; i < NumVectors_; i++) {
+  for (int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
           const double * const from = A_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
-	  for (int j = 0; j < myLength; j++) to[j] = ScalarA * from[j];
+    for (int j = 0; j < myLength; j++) to[j] = ScalarA * from[j];
         }
-	UpdateFlops(GlobalLength_*NumVectors_);
+  UpdateFlops(GlobalLength_*NumVectors_);
       }
     else if (ScalarThis==1.0)
       {
-	for (int i = 0; i < NumVectors_; i++) {
+  for (int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
           const double * const from = A_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
-	  for (int j = 0; j < myLength; j++) to[j] = to[j] + ScalarA * from[j];
+    for (int j = 0; j < myLength; j++) to[j] = to[j] + ScalarA * from[j];
         }
-	UpdateFlops(2*GlobalLength_*NumVectors_);
+  UpdateFlops(2*GlobalLength_*NumVectors_);
       }
     else if (ScalarA==1.0)
       {
-	for (int i = 0; i < NumVectors_; i++) {
+  for (int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
           const double * const from = A_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarThis)
 #endif
-	  for (int j = 0; j < myLength; j++) to[j] = ScalarThis * to[j] + from[j];
+    for (int j = 0; j < myLength; j++) to[j] = ScalarThis * to[j] + from[j];
         }
-	UpdateFlops(2*GlobalLength_*NumVectors_);
+  UpdateFlops(2*GlobalLength_*NumVectors_);
       }
     else
       {
-	for (int i = 0; i < NumVectors_; i++) {
+  for (int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
           const double * const from = A_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarThis)
 #endif
-	  for (int j = 0; j < myLength; j++) to[j] = ScalarThis * to[j] +
-					                    ScalarA *  from[j];
+    for (int j = 0; j < myLength; j++) to[j] = ScalarThis * to[j] +
+                              ScalarA *  from[j];
         }
-	UpdateFlops(3*GlobalLength_*NumVectors_);
+  UpdateFlops(3*GlobalLength_*NumVectors_);
       }
 
     return(0);
@@ -1282,7 +1330,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
 
 //=========================================================================
 int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A, 
-				  double ScalarB, const Epetra_MultiVector& B, double ScalarThis) {
+          double ScalarB, const Epetra_MultiVector& B, double ScalarThis) {
   
   
   // linear combination of three MultiVectors: 
@@ -1296,7 +1344,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
     EPETRA_CHK_ERR(Update(ScalarA, A, ScalarThis));
     return(0);
   }
-			   
+         
   const int myLength = MyLength_;
   if (NumVectors_ != A.NumVectors() || NumVectors_ != B.NumVectors()) EPETRA_CHK_ERR(-1);
   if (myLength != A.MyLength() || myLength != B.MyLength()) EPETRA_CHK_ERR(-2);
@@ -1306,141 +1354,141 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
 
     if (ScalarThis==0.0)
       {
-	if (ScalarA==1.0)
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+  if (ScalarA==1.0)
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarB)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] =           fromA[j] + 
-						                ScalarB * fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] =           fromA[j] + 
+                            ScalarB * fromB[j];
             }
-	    UpdateFlops(2*GlobalLength_*NumVectors_);
-	  }
-	else if (ScalarB==1.0)
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+      UpdateFlops(2*GlobalLength_*NumVectors_);
+    }
+  else if (ScalarB==1.0)
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] = ScalarA * fromA[j] +
-						                          fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] = ScalarA * fromA[j] +
+                                      fromB[j];
             }
-	    UpdateFlops(2*GlobalLength_*NumVectors_);
-	  }
-	else
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+      UpdateFlops(2*GlobalLength_*NumVectors_);
+    }
+  else
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarB)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] = ScalarA * fromA[j] + 
-						                ScalarB * fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] = ScalarA * fromA[j] + 
+                            ScalarB * fromB[j];
             }
-	    UpdateFlops(3*GlobalLength_*NumVectors_);
-	  }
+      UpdateFlops(3*GlobalLength_*NumVectors_);
+    }
       }
     else if (ScalarThis==1.0)
       {
-	if (ScalarA==1.0)
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+  if (ScalarA==1.0)
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarB)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] +=           fromA[j] + 
-						                 ScalarB * fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] +=           fromA[j] + 
+                             ScalarB * fromB[j];
             }
-	    UpdateFlops(3*GlobalLength_*NumVectors_);
-	  }
-	else if (ScalarB==1.0)
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+      UpdateFlops(3*GlobalLength_*NumVectors_);
+    }
+  else if (ScalarB==1.0)
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] += ScalarA * fromA[j] +
-						                           fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] += ScalarA * fromA[j] +
+                                       fromB[j];
             }
-	    UpdateFlops(3*GlobalLength_*NumVectors_);
-	  }
-	else
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+      UpdateFlops(3*GlobalLength_*NumVectors_);
+    }
+  else
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarB)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] += ScalarA * fromA[j] + 
-						                 ScalarB * fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] += ScalarA * fromA[j] + 
+                             ScalarB * fromB[j];
             }
-	    UpdateFlops(4*GlobalLength_*NumVectors_);
-	  }
+      UpdateFlops(4*GlobalLength_*NumVectors_);
+    }
       }
     else
       {
-	if (ScalarA==1.0)
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+  if (ScalarA==1.0)
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarB,ScalarThis)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
-						                           fromA[j] + 
-						                 ScalarB * fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
+                                       fromA[j] + 
+                             ScalarB * fromB[j];
             }
-	    UpdateFlops(4*GlobalLength_*NumVectors_);
-	  }
-	else if (ScalarB==1.0)
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+      UpdateFlops(4*GlobalLength_*NumVectors_);
+    }
+  else if (ScalarB==1.0)
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarThis)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
-						                 ScalarA * fromA[j] +
-						                           fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
+                             ScalarA * fromA[j] +
+                                       fromB[j];
             }
-	    UpdateFlops(4*GlobalLength_*NumVectors_);
-	  }
-	else
-	  {
-	    for (int i = 0; i < NumVectors_; i++) {
+      UpdateFlops(4*GlobalLength_*NumVectors_);
+    }
+  else
+    {
+      for (int i = 0; i < NumVectors_; i++) {
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarB,ScalarThis)
 #endif
-	      for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
-						                 ScalarA * fromA[j] + 
-						                 ScalarB * fromB[j];
+        for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
+                             ScalarA * fromA[j] + 
+                             ScalarB * fromB[j];
             }
-	    UpdateFlops(5*GlobalLength_*NumVectors_);
-	  }
+      UpdateFlops(5*GlobalLength_*NumVectors_);
+    }
       }
 
 
@@ -1876,9 +1924,9 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 
   //=========================================================================
   int  Epetra_MultiVector::Multiply (char TransA, char TransB, double ScalarAB, 
-					const Epetra_MultiVector& A, 
-					const Epetra_MultiVector& B,
-					double ScalarThis ) {
+          const Epetra_MultiVector& A, 
+          const Epetra_MultiVector& B,
+          double ScalarThis ) {
 
     // This routine performs a variety of matrix-matrix multiply operations, interpreting
     // the Epetra_MultiVector (this-aka C , A and B) as 2D matrices.  Variations are due to
@@ -1922,9 +1970,9 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
   const int myLength = MyLength_;
 
     if( myLength      != A_nrows     ||   // RAB: 2002/01/25: Minor reformat to allow
-		A_ncols        != B_nrows     ||   //   setting breakpoint at error return.
-		NumVectors_    != B_ncols  )
-		EPETRA_CHK_ERR(-2); // Return error
+    A_ncols        != B_nrows     ||   //   setting breakpoint at error return.
+    NumVectors_    != B_ncols  )
+    EPETRA_CHK_ERR(-2); // Return error
 
     bool A_is_local = (!A.DistributedGlobal());
     bool B_is_local = (!B.DistributedGlobal());
@@ -1940,11 +1988,11 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 
     if (Case1 || Case2 || Case3)
       {
-	if (ScalarThis!=0.0 && Case2)
-	  {
-	    const int MyPID = Comm_->MyPID();
-	    if (MyPID!=0) Scalar_local = 0.0;
-	  }
+  if (ScalarThis!=0.0 && Case2)
+    {
+      const int MyPID = Comm_->MyPID();
+      if (MyPID!=0) Scalar_local = 0.0;
+    }
 
         // Check if A, B, C have constant stride, if not then make temp copy (strided)
 
@@ -1957,66 +2005,66 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
     
         if (!B.ConstantStride()) B_tmp = new Epetra_MultiVector(B);
         else B_tmp = (Epetra_MultiVector *) &B;
-    	
-    
-	int m = myLength;
-	int n = NumVectors_;
-	int k = A_ncols;
-	int lda = EPETRA_MAX(A_tmp->Stride(),1); // The reference BLAS implementation requires lda, ldb, ldc > 0 even if m, n, or k = 0
-	int ldb = EPETRA_MAX(B_tmp->Stride(),1);
-	int ldc = EPETRA_MAX(C_tmp->Stride(),1);
-	double *Ap = A_tmp->Values();
-	double *Bp = B_tmp->Values();
-	double *Cp = C_tmp->Values();
-   
-	GEMM(TransA, TransB,  m, n, k, ScalarAB,
-	     Ap, lda, Bp, ldb, Scalar_local, Cp, ldc);
       
-	// FLOP Counts
-	//                                       Num
-	//     OPERATIONS                        case  Notes 
-	// 1) C(local) = A^X(local) * B^X(local)  4   (X=Trans or Not, No comm needed)
-	// 2) C(local) = A^T(distr) * B  (distr)  1   (2D dot product, replicate C)      
-	// 3) C(distr) = A  (distr) * B^X(local)  2   (2D vector update, no comm needed)
+    
+  int m = myLength;
+  int n = NumVectors_;
+  int k = A_ncols;
+  int lda = EPETRA_MAX(A_tmp->Stride(),1); // The reference BLAS implementation requires lda, ldb, ldc > 0 even if m, n, or k = 0
+  int ldb = EPETRA_MAX(B_tmp->Stride(),1);
+  int ldc = EPETRA_MAX(C_tmp->Stride(),1);
+  double *Ap = A_tmp->Values();
+  double *Bp = B_tmp->Values();
+  double *Cp = C_tmp->Values();
+   
+  GEMM(TransA, TransB,  m, n, k, ScalarAB,
+       Ap, lda, Bp, ldb, Scalar_local, Cp, ldc);
+      
+  // FLOP Counts
+  //                                       Num
+  //     OPERATIONS                        case  Notes 
+  // 1) C(local) = A^X(local) * B^X(local)  4   (X=Trans or Not, No comm needed)
+  // 2) C(local) = A^T(distr) * B  (distr)  1   (2D dot product, replicate C)      
+  // 3) C(distr) = A  (distr) * B^X(local)  2   (2D vector update, no comm needed)
 
-	// For Case 1 we only count the local operations, since we are interested in serial
-	// cost.  Computation on other processors is redundant.
-	if (Case1)
-	  {	    
-	    UpdateFlops(2*m*n*k);
-	    if (ScalarAB!=1.0) UpdateFlops(m*n);
-	    if (ScalarThis==1.0) UpdateFlops(m*n); else if (ScalarThis!=0.0) UpdateFlops(2*m*n);
-	  }
-	else if (Case2)
-	  {	    
-	    UpdateFlops(2*m*n*A.GlobalLength());
-	    if (ScalarAB!=1.0) UpdateFlops(m*n);
-	    if (ScalarThis==1.0) UpdateFlops(m*n); else if (ScalarThis!=0.0) UpdateFlops(2*m*n);
-	  }
-	else
-	  {
-	    UpdateFlops(2*GlobalLength_*n*k);
-	    if (ScalarAB!=1.0) UpdateFlops(GlobalLength_*n);
-	    if (ScalarThis==1.0) UpdateFlops(GlobalLength_*n);
-	    else if (ScalarThis!=0.0) UpdateFlops(2*GlobalLength_*n);
-	  }
+  // For Case 1 we only count the local operations, since we are interested in serial
+  // cost.  Computation on other processors is redundant.
+  if (Case1)
+    {      
+      UpdateFlops(2*m*n*k);
+      if (ScalarAB!=1.0) UpdateFlops(m*n);
+      if (ScalarThis==1.0) UpdateFlops(m*n); else if (ScalarThis!=0.0) UpdateFlops(2*m*n);
+    }
+  else if (Case2)
+    {      
+      UpdateFlops(2*m*n*A.GlobalLength64());
+      if (ScalarAB!=1.0) UpdateFlops(m*n);
+      if (ScalarThis==1.0) UpdateFlops(m*n); else if (ScalarThis!=0.0) UpdateFlops(2*m*n);
+    }
+  else
+    {
+      UpdateFlops(2*GlobalLength_*n*k);
+      if (ScalarAB!=1.0) UpdateFlops(GlobalLength_*n);
+      if (ScalarThis==1.0) UpdateFlops(GlobalLength_*n);
+      else if (ScalarThis!=0.0) UpdateFlops(2*GlobalLength_*n);
+    }
 
-	// If A or B were not strided, dispose of extra copies.
-	if (!A.ConstantStride()) delete A_tmp;
-	if (!B.ConstantStride()) delete B_tmp;
+  // If A or B were not strided, dispose of extra copies.
+  if (!A.ConstantStride()) delete A_tmp;
+  if (!B.ConstantStride()) delete B_tmp;
 
-	// If C was not strided, copy from strided version and delete
-	if (!ConstantStride_) 
-	  {
-	    C_tmp->ExtractCopy(Pointers_);
-	    delete C_tmp;
-	  }
+  // If C was not strided, copy from strided version and delete
+  if (!ConstantStride_) 
+    {
+      C_tmp->ExtractCopy(Pointers_);
+      delete C_tmp;
+    }
 
-	// If Case 2 then sum up C and distribute it to all processors.
+  // If Case 2 then sum up C and distribute it to all processors.
 
-	if (Case2) {EPETRA_CHK_ERR(Reduce());}
+  if (Case2) {EPETRA_CHK_ERR(Reduce());}
 
-	return(0);
+  return(0);
 
       }
     else {EPETRA_CHK_ERR(-3)}; // Return error: not a supported operation
@@ -2027,7 +2075,7 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 
 //=========================================================================
 int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-		       double ScalarThis) {
+           double ScalarThis) {
   
   
   // Hadamard product of two MultiVectors: 
@@ -2038,7 +2086,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
     return(0);
   }
   const int myLength = MyLength_;
-			   
+         
   if (A.NumVectors() != 1 && A.NumVectors() != B.NumVectors()) EPETRA_CHK_ERR(-1); // A must have one column or be the same as B.
   if (NumVectors_ != B.NumVectors()) EPETRA_CHK_ERR(-2);
   if (myLength != A.MyLength() || myLength != B.MyLength()) EPETRA_CHK_ERR(-3);
@@ -2051,61 +2099,61 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 
     if (ScalarThis==0.0) {
       if (ScalarAB==1.0)
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] =  Aptr[j] * Bptr[j];
             }
-	  }
-	  UpdateFlops(GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(GlobalLength_*NumVectors_);
+  }
       else
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] = ScalarAB * Aptr[j] * Bptr[j];
             }
-	  }
-	  UpdateFlops(2*GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(2*GlobalLength_*NumVectors_);
+  }
     }
     else if (ScalarThis==1.0) {
       if (ScalarAB==1.0)
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] +=  Aptr[j] * Bptr[j];
             }
-	  }
-	  UpdateFlops(2*GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(2*GlobalLength_*NumVectors_);
+  }
       else {
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] += ScalarAB * Aptr[j] * Bptr[j];
             }
           }
@@ -2114,43 +2162,43 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
     }
     else { // if (ScalarThis!=1.0 && ScalarThis !=0 ) 
       if (ScalarAB==1.0)
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarThis)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] =  ScalarThis * to[j] +
                   Aptr[j] * Bptr[j];
             }
-	  }
-	  UpdateFlops(3*GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(3*GlobalLength_*NumVectors_);
+  }
       else
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarThis,ScalarAB)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] = ScalarThis * to[j] +
                      ScalarAB * Aptr[j] * Bptr[j];
             }
-	  }
-	  UpdateFlops(4*GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(4*GlobalLength_*NumVectors_);
+  }
     }
   return(0);
 }
 //=========================================================================
 int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-		       double ScalarThis) {
+           double ScalarThis) {
   
   
   // Hadamard product of two MultiVectors: 
@@ -2161,7 +2209,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
     return(0);
   }
   const int myLength = MyLength_;
-			   
+         
   if (A.NumVectors() != 1 && A.NumVectors() != B.NumVectors()) EPETRA_CHK_ERR(-1); // A must have one column or be the same as B.
   if (NumVectors_ != B.NumVectors()) EPETRA_CHK_ERR(-2);
   if (myLength != A.MyLength() || myLength != B.MyLength()) EPETRA_CHK_ERR(-3);
@@ -2174,98 +2222,98 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 
     if (ScalarThis==0.0) {
       if (ScalarAB==1.0)
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] = Bptr[j] / Aptr[j];
             }
-	  }
-	  UpdateFlops(GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(GlobalLength_*NumVectors_);
+  }
       else
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] = ScalarAB * Bptr[j] / Aptr[j];
             }
-	  }
-	  UpdateFlops(2*GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(2*GlobalLength_*NumVectors_);
+  }
     }
     else if (ScalarThis==1.0) {
       if (ScalarAB==1.0)
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] +=  Bptr[j] / Aptr[j];
             }
-	  }
-	  UpdateFlops(2*GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(2*GlobalLength_*NumVectors_);
+  }
       else
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] += ScalarAB * Bptr[j] / Aptr[j];
             }
-	  }
-	  UpdateFlops(3*GlobalLength_*NumVectors_);
+    }
+    UpdateFlops(3*GlobalLength_*NumVectors_);
         }
     }
     else { // if (ScalarThis!=1.0 && ScalarThis !=0 ) 
       if (ScalarAB==1.0)
-	{
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+  {
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarThis)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] =  ScalarThis * to[j] +
                    Bptr[j] / Aptr[j];
             }
-	  }
-	  UpdateFlops(3*GlobalLength_*NumVectors_);
-	}
+    }
+    UpdateFlops(3*GlobalLength_*NumVectors_);
+  }
       else {
-	  for (int i = 0; i < NumVectors_; i++) {
-	    const double * const Aptr = A_Pointers[i*IncA];
+    for (int i = 0; i < NumVectors_; i++) {
+      const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB,ScalarThis)
 #endif
-	    for (int j = 0; j < myLength; j++) {
+      for (int j = 0; j < myLength; j++) {
               to[j] = ScalarThis * to[j] + ScalarAB * 
-					      Bptr[j] / Aptr[j];
+                Bptr[j] / Aptr[j];
             }
-	  }
+    }
           UpdateFlops(4*GlobalLength_*NumVectors_);
       }
     }
@@ -2321,10 +2369,10 @@ void Epetra_MultiVector::Assign(const Epetra_MultiVector& A) {
   const int myLength = MyLength_;
   if (NumVectors_ != A.NumVectors())
     throw ReportError("Number of vectors incompatible in Assign.  The this MultiVector has NumVectors = " + toString(NumVectors_)
-		      + ".  The A MultiVector has NumVectors = " + toString(A.NumVectors()), -3);
+          + ".  The A MultiVector has NumVectors = " + toString(A.NumVectors()), -3);
   if (myLength != A.MyLength())
     throw ReportError("Length of MultiVectors incompatible in Assign.  The this MultiVector has MyLength = " + toString(myLength)
-		      + ".  The A MultiVector has MyLength = " + toString(A.MyLength()), -4);
+          + ".  The A MultiVector has MyLength = " + toString(A.MyLength()), -4);
   
   double ** A_Pointers = A.Pointers();
   for (int i = 0; i< NumVectors_; i++) {
@@ -2375,15 +2423,15 @@ void Epetra_MultiVector::Assign(const Epetra_MultiVector& A) {
   }
 //=======================================================================
 int Epetra_MultiVector::ResetView(double ** ArrayOfPointers) {
-	
-	if (!UserAllocated_) {
-		EPETRA_CHK_ERR(-1); // Can't reset view if multivector was not allocated as a view
-	}
+  
+  if (!UserAllocated_) {
+    EPETRA_CHK_ERR(-1); // Can't reset view if multivector was not allocated as a view
+  }
 
   for (int i = 0; i< NumVectors_; i++) Pointers_[i] = ArrayOfPointers[i];
   DoView();
   
-	return(0);
+  return(0);
   }
 //=======================================================================
 void Epetra_MultiVector::Print(ostream& os) const {
@@ -2395,47 +2443,86 @@ void Epetra_MultiVector::Print(ostream& os) const {
       int NumVectors1 = NumVectors();
       int NumMyElements1 =Map(). NumMyElements();
       int MaxElementSize1 = Map().MaxElementSize();
-      int * MyGlobalElements1 = Map().MyGlobalElements();
       int * FirstPointInElementList1 = NULL;
       if (MaxElementSize1!=1) FirstPointInElementList1 = Map().FirstPointInElementList();
       double ** A_Pointers = Pointers();
 
       if (MyPID==0) {
-	os.width(8);
-	os <<  "     MyPID"; os << "    ";
-	os.width(12);
-	if (MaxElementSize1==1)
-	  os <<  "GID  ";
-	else
-	  os <<  "     GID/Point";
-	for (int j = 0; j < NumVectors1 ; j++)
-	  {   
-	    os.width(20);
-	    os <<  "Value  ";
-	  }
-	os << endl;
+  os.width(8);
+  os <<  "     MyPID"; os << "    ";
+  os.width(12);
+  if (MaxElementSize1==1)
+    os <<  "GID  ";
+  else
+    os <<  "     GID/Point";
+  for (int j = 0; j < NumVectors1 ; j++)
+    {   
+      os.width(20);
+      os <<  "Value  ";
+    }
+  os << endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
-	for (int ii=0; ii< Map().ElementSize(i); ii++) {
+  for (int ii=0; ii< Map().ElementSize(i); ii++) {
        int iii;
-	  os.width(10);
-	  os <<  MyPID; os << "    ";
-	  os.width(10);
-	  if (MaxElementSize1==1) {
-	    os << MyGlobalElements1[i] << "    ";
+    os.width(10);
+    os <<  MyPID; os << "    ";
+    os.width(10);
+    if (MaxElementSize1==1) {
+      if(Map().GlobalIndicesInt())
+      {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+      int * MyGlobalElements1 = Map().MyGlobalElements();
+      os << MyGlobalElements1[i] << "    ";
+#else
+            throw ReportError("Epetra_MultiVector::Print: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
+      }
+      else if(Map().GlobalIndicesLongLong())
+      {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      long long * MyGlobalElements1 = Map().MyGlobalElements64();
+      os << MyGlobalElements1[i] << "    ";
+#else
+            throw ReportError("Epetra_MultiVector::Print: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
+      }
+      else
+        throw ReportError("Epetra_MultiVector::Print ERROR, Don't know map global index type.",-1);
+
        iii = i;
        }
-	  else {
-	    os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+    else {
+      if(Map().GlobalIndicesInt())
+      {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+      int * MyGlobalElements1 = Map().MyGlobalElements();
+      os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+#else
+            throw ReportError("Epetra_MultiVector::Print: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
+      }
+      else if(Map().GlobalIndicesLongLong())
+      {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      long long * MyGlobalElements1 = Map().MyGlobalElements64();
+      os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+#else
+            throw ReportError("Epetra_MultiVector::Print: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
+      }
+      else
+        throw ReportError("Epetra_MultiVector::Print ERROR, Don't know map global index type.",-1);
+
          iii = FirstPointInElementList1[i]+ii;
        }
-	  for (int j = 0; j < NumVectors1 ; j++)
-	    {   
-	      os.width(20);
-	      os <<  A_Pointers[j][iii];
-	    }
-	  os << endl;
-	}
+    for (int j = 0; j < NumVectors1 ; j++)
+      {   
+        os.width(20);
+        os <<  A_Pointers[j][iii];
+      }
+    os << endl;
+  }
       }
       os << flush; 
     }

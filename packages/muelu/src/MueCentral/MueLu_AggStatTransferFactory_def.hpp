@@ -103,9 +103,9 @@ namespace MueLu {
     // for example one could use the underlaying type of the variable
     // Therefor we have to add the functionality to the Level class.
     // not sure we wanna do this. -> do decided later
-    if(varName_ == "coarseAggStat") {
-      Teuchos::ArrayRCP<NodeState> data = fineLevel.Get<Teuchos::ArrayRCP<NodeState> >(varName_,genFact_.get());
-      coarseLevel.Set<Teuchos::ArrayRCP<NodeState> >(varName_, data, genFact_.get());
+    if (varName_ == "coarseAggStat") {
+      Teuchos::ArrayRCP<unsigned int> data = fineLevel.Get<Teuchos::ArrayRCP<unsigned int> >(varName_,genFact_.get());
+      coarseLevel.Set<Teuchos::ArrayRCP<unsigned int> >(varName_, data, genFact_.get());
     }
 
   } //Build

@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
     RCP<Epetra_VbrRowMatrix> Jac;
     {
       Epetra_SerialComm comm;
-      Epetra_BlockMap map(num_nodes, num_eq, 0, comm);
+      Epetra_BlockMap map(static_cast<int>(num_nodes), static_cast<int>(num_eq), 0, comm);
       Epetra_DataAccess copy = ::Copy;
       Epetra_CrsGraph graph(copy, map, 3);
 
