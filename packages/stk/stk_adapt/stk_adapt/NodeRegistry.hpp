@@ -1231,11 +1231,58 @@ namespace stk {
 
       }
 
+      static void normalize_spacing(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
+      {
+        //double m_min_spacing_factor = 0.5;
+        double m_min_spacing_factor = 0.0;
+        for (unsigned isp = 0; isp < nsp; isp++)
+          {
+            double den = 0.0;
+            unsigned ipts=0;
+            for (ipts=0; ipts < nsz; ipts++)
+              {
+                spc[ipts][isp] = 1.0/spc[ipts][isp]; 
+                den += spc[ipts][isp];
+              }
+            for (ipts=0; ipts < nsz; ipts++)
+              {
+                spc[ipts][isp] /= den;
+              }
+            // now it's a fraction [0,1], check if it's too big
+            for (ipts=0; ipts < nsz; ipts++)
+              {
+                if ( spc[ipts][isp] > 1.0 - m_min_spacing_factor)
+                  {
+                    spc[ipts][isp] = 1.0 - m_min_spacing_factor;
+                    for (unsigned jpts=0; jpts < nsz; jpts++)
+                      {
+                        if (ipts != jpts) 
+                          spc[ipts][isp] = m_min_spacing_factor/((double)(nsz-1));
+                      }
+
+                    break;
+                  }
+              }         
+            // now renormalize it
+            den = 0.0;
+            for (ipts=0; ipts < nsz; ipts++)
+              {
+                den += spc[ipts][isp];
+              }
+            for (ipts=0; ipts < nsz; ipts++)
+              {
+                spc[ipts][isp] /= den;
+              }
+
+          }
+      }
+
       /// makes coordinates of this new node be the centroid of its sub entity - this version does it for all new nodes
       void makeCentroid(stk::mesh::FieldBase *field)
       {
         EXCEPTWATCH;
         //unsigned *null_u = 0;
+        stk::mesh::FieldBase *spacing_field    = m_eMesh.get_field("ref_spacing_field");
 
         int spatialDim = m_eMesh.get_spatial_dim();
         stk::mesh::EntityRank field_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
@@ -1310,6 +1357,8 @@ namespace stk {
 
             double c_p[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             bool doPrint = false;
+            stk::mesh::Entity * nodes[8] = {0,0,0,0,0,0,0,0};
+            unsigned nsz = 0;
 
             if (needed_entity_rank == m_eMesh.element_rank())
               {
@@ -1335,8 +1384,9 @@ namespace stk {
                   {
                     const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
                     unsigned npts = elem_nodes.size();
+                    nsz = npts;
                     //if (npts == 2) doPrint=true;
-                    double dnpts = elem_nodes.size();
+                    //double dnpts = elem_nodes.size();
                     for (unsigned ipts = 0; ipts < npts; ipts++)
                       {
                         stk::mesh::Entity * node = elem_nodes[ipts].entity();
@@ -1344,65 +1394,123 @@ namespace stk {
                           {
                             throw std::runtime_error("makeCentroid(field): bad node found 1.0");
                           }
-
-                        //double *  coord = m_eMesh.field_data(field, *node, null_u);
-                        double *  coord = m_eMesh.field_data_inlined(field, *node);
-
-                        if (doPrint && coord)
-                          {
-                            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                            shards::CellTopology cell_topo(cell_topo_data);
-
-                            std::cout << "tmp NodeRegistry::makeCentroid(field) cell_topo = " << cell_topo.getName() << " ipts= " << ipts
-                                      << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
-                          }
-
-                        if (coord)
-                          {
-                            for (int isp = 0; isp < spatialDim; isp++)
-                              {
-                                c_p[isp] += coord[isp]/dnpts;
-                              }
-                          }
+                        nodes[ipts] = node;
                       }
                   }
               }
             else
               {
-                EXCEPTWATCH;
-                double dnpts = subDimEntity.size();
                 unsigned ipts=0;
+                nsz = subDimEntity.size();
+
                 for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids, ++ipts)
                   {
                     SDSEntityType nodeId = *ids;
-
-                    //!!stk::mesh::Entity * node = get_entity_node_II(*m_eMesh.get_bulk_data(), mesh::Node, nodeId);
                     stk::mesh::Entity * node = nodeId;
-                    if (!node)
-                      {
-                        throw std::runtime_error("makeCentroid(field): bad node found 2.0");
-                      }
-                    //double *  coord = m_eMesh.field_data(field, *node, null_u);
-                    double *  coord = m_eMesh.field_data_inlined(field, *node);
-
-                    if (doPrint && coord)
-                      {
-                        //const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                        //CellTopology cell_topo(cell_topo_data);
-
-                        std::cout << "tmp NodeRegistry::makeCentroid(field) npts= " << subDimEntity.size() << " ipts= " << ipts
-                                  << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
-                      }
-
-                    if (coord)
-                      {
-                        for (int isp = 0; isp < spatialDim; isp++)
-                          {
-                            c_p[isp] += coord[isp]/dnpts;
-                          }
-                      }
+                    nodes[ipts]=node;
                   }
               }
+
+            {
+              //if ( (spacing_field && (spacing_field != field) && subDimEntity.size() == 2))
+              bool do_spacing=false;
+              if (do_spacing && (spacing_field && (spacing_field != field) ) )
+                {
+                  EXCEPTWATCH;
+                  unsigned ipts=0;
+
+                  double * coord[8] = {0,0,0,0,0,0,0,0};
+                  double * spacing[8] = {0,0,0,0,0,0,0,0};
+
+                  for (ipts=0; ipts < nsz; ipts++)
+                    {
+                      coord[ipts] = m_eMesh.field_data_inlined(field, *nodes[ipts]);
+                      spacing[ipts] = m_eMesh.field_data_inlined(spacing_field, *nodes[ipts]);
+                    }
+
+                  double spc[8][3] = {{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}};
+                  double den = 0.0;
+                  double den_xyz[3] = {0,0,0};
+                  if (nsz == 2) 
+                    {
+                      den = 0.0;
+                      for (ipts=0; ipts < nsz; ipts++)
+                        {
+                          for (int isp = 0; isp < spatialDim; isp++)
+                            {
+                              spc[ipts][0] += (coord[1][isp] - coord[0][isp])*spacing[ipts][isp];
+                            }                            
+                        }
+                      for (ipts=0; ipts < nsz; ipts++)
+                        {
+                          for (int isp = 1; isp < spatialDim; isp++)
+                            {
+                              spc[ipts][isp] = spc[ipts][0];
+                            }                            
+                        }
+                    }
+                  else
+                    {
+                      for (ipts=0; ipts < nsz; ipts++)
+                        {
+                          for (int isp = 0; isp < spatialDim; isp++)
+                            {
+                              spc[ipts][isp] = spacing[ipts][isp];
+                            }
+                        }
+                    }
+                  normalize_spacing(nsz, spatialDim, spc, den_xyz);
+                  if (nsz==2 && (coord[1][0] < 1.e-3 && coord[0][0] < 1.e-3))
+                    for (ipts=0; ipts < nsz; ipts++)
+                      for (int isp = 0; isp < spatialDim; isp++)
+                        {
+                          std::cout << "y = " << coord[ipts][1] << " new spc[" << ipts << "]= " << spc[ipts][1] << std::endl;
+                        }
+
+
+                  for (ipts=0; ipts < nsz; ipts++)
+                    {
+                      for (int isp = 0; isp < spatialDim; isp++)
+                        {
+                          c_p[isp] += coord[ipts][isp]*spc[ipts][isp];
+                        }
+                    }
+
+                }
+              else
+                {
+                  EXCEPTWATCH;
+                  double dnpts = nsz;
+                  unsigned ipts=0;
+                  for (ipts=0; ipts < nsz; ipts++)
+                    {
+                      stk::mesh::Entity * node = nodes[ipts];
+                      if (!node)
+                        {
+                          throw std::runtime_error("makeCentroid(field): bad node found 2.0");
+                        }
+                      //double *  coord = m_eMesh.field_data(field, *node, null_u);
+                      double *  coord = m_eMesh.field_data_inlined(field, *node);
+
+                      if (doPrint && coord)
+                        {
+                          //const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+                          //CellTopology cell_topo(cell_topo_data);
+
+                          std::cout << "tmp NodeRegistry::makeCentroid(field) npts= " << subDimEntity.size() << " ipts= " << ipts
+                                    << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
+                        }
+
+                      if (coord)
+                        {
+                          for (int isp = 0; isp < spatialDim; isp++)
+                            {
+                              c_p[isp] += coord[isp]/dnpts;
+                            }
+                        }
+                    }
+                }
+            }
 
             // set coords
             {

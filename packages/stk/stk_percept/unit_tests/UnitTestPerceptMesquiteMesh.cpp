@@ -44,6 +44,9 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
+
+#include <stk_percept/mesh/mod/mesquite-interface/SpacingFieldUtil.hpp>
+
 #include <MsqDebug.hpp>
 
 #include "MeshImpl.hpp"
@@ -463,6 +466,7 @@ namespace stk
 
             eMesh.reopen();
             eMesh.add_coordinate_state_fields();
+            eMesh.add_spacing_fields();
             stk::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
             eMesh.commit();
             eMesh.set_proc_rank_field(proc_rank_field);
@@ -493,7 +497,8 @@ namespace stk
                       }
                   }
               }
-
+            SpacingFieldUtil sfu(eMesh);
+            sfu.compute_spacing_field();
             eMesh.save_as(input_files_loc+"quad_4_smooth.1.e");
 
             // save state of original mesh

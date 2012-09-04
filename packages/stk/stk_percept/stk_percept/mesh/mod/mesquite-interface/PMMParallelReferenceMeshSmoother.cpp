@@ -5,6 +5,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/SpacingFieldUtil.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>

@@ -3626,6 +3626,14 @@ namespace stk {
       add_field("cg_r", node_rank(), scalarDimension);
       add_field("cg_d", node_rank(), scalarDimension);
       add_field("cg_s", node_rank(), scalarDimension);
+
+    }
+
+    void PerceptMesh::add_spacing_fields()
+    {
+      int scalarDimension = get_spatial_dim(); // a scalar
+      add_field("ref_spacing_field", node_rank(), scalarDimension);
+      add_field("ref_spacing_field_counter", node_rank(), 1);
     }
 
     void PerceptMesh::set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field)
