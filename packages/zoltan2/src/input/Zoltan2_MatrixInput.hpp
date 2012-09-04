@@ -92,11 +92,12 @@ namespace Zoltan2 {
      \todo Create BasicCrsMatrixInput subclass
      \todo Do we want to require input adapters to give us the global
                number of rows, columns etc?  We can figure that out.
-     \todo Do we want to add the ability for the user to supply row
-             or column weights, or is this something the algorithm
-             will add?
       \todo  This is a row-oriented matrix.  Do we need a column-oriented
               matrix?  In particular - we assumed coordinates are for rows.
+      \todo  If the user can tell us there are no diagonal entries
+        in a square matrix, it can save time if we have to remove
+        them for the algorithm.  Should we have a set method in 
+        subclasses for setMatrixHasDiagonalEntries yes, no and maybe?
 */
 
 template <typename User>
@@ -127,11 +128,6 @@ public:
   /*! \brief Returns the number columns on this process.
    */
   virtual size_t getLocalNumColumns() const = 0;
-
-  /*! \brief Return true if the sparse square matrix may globally have
-   *  diagonal entries.  Return false otherwise.
-   */
-  virtual bool diagonalEntriesMayBePresent() const = 0;
 
   /*! \brief Sets pointers to this process' matrix entries.
       If this optional call is defined in the adapter, it can save a memory

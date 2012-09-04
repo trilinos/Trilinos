@@ -196,11 +196,6 @@ public:
     return matrix_->getGlobalNumCols();
   }
 
-  bool diagonalEntriesMayBePresent() const {
-    return ((matrix_->getGlobalNumCols() == matrix_->getGlobalNumRows()) && 
-            (matrix_->getGlobalNumDiags() > 0));
-  }
-
   size_t getRowListView(const gid_t *&rowIds,
     const lno_t *&offsets, const gid_t *& colIds) const
   {
@@ -272,6 +267,8 @@ private:
   int weightDim_;
   ArrayRCP<StridedData<lno_t, scalar_t> > rowWeights_;
   ArrayRCP<bool> numNzWeight_;
+
+  bool mayHaveDiagonalEntries;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -285,7 +282,8 @@ template <typename User>
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
       offset_(), columnIds_(),
       coordinateDim_(coordDim), rowCoords_(),
-      weightDim_(weightDim), rowWeights_(), numNzWeight_()
+      weightDim_(weightDim), rowWeights_(), numNzWeight_(),
+      mayHaveDiagonalEntries(true)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
   matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
