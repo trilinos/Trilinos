@@ -38,13 +38,53 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
-// storage options
-enum Basis_Reduction_Method { LANCZOS, MONOMIAL_GS, LANCZOS_GS };
-static const int num_basis_reduction_method = 3;
-static const Basis_Reduction_Method basis_reduction_method_values[] = { 
+// quadrature methods
+enum Quadrature_Method { TENSOR, SPARSE };
+static const int num_quadrature_method = 2;
+static const Quadrature_Method quadrature_method_values[] = { 
+  TENSOR, SPARSE };
+static const char *quadrature_method_names[] = { 
+  "Tensor", "Sparse" };
+
+// reduced basis methods
+enum Reduced_Basis_Method { LANCZOS, MONOMIAL_GS, LANCZOS_GS };
+static const int num_reduced_basis_method = 3;
+static const Reduced_Basis_Method reduced_basis_method_values[] = { 
   LANCZOS, MONOMIAL_GS, LANCZOS_GS };
-static const char *basis_reduction_method_names[] = { 
+static const char *reduced_basis_method_names[] = { 
   "Lanczos", "Monomial-GS", "Lanczos-GS" };
+
+// basis reduction methods
+enum Basis_Reduction_Method { BR_CPQR, SVD };
+static const int num_basis_reduction_method = 2;
+static const Basis_Reduction_Method basis_reduction_method_values[] = { 
+  BR_CPQR, SVD };
+static const char *basis_reduction_method_names[] = { 
+  "Column-Pivoted QR", "SVD" };
+
+// orthogonalization methods
+enum Orthogonalization_Method { HOUSEHOLDER, CGS, MGS };
+static const int num_orthogonalization_method = 3;
+static const Orthogonalization_Method orthogonalization_method_values[] = { 
+  HOUSEHOLDER, CGS, MGS };
+static const char *orthogonalization_method_names[] = { 
+  "Householder", "Classical Gram-Schmidt", "Modified Gram-Schmidt" };
+
+// quadrature reduction methods
+enum Quadrature_Reduction_Method { NONE, CPQR, L1_MINIMIZATION };
+static const int num_quad_reduction_method = 3;
+static const Quadrature_Reduction_Method quad_reduction_method_values[] = { 
+  NONE, CPQR, L1_MINIMIZATION };
+static const char *quad_reduction_method_names[] = { 
+  "None", "Column-Pivoted QR", "L1 Minimization" };
+
+// L1 solver methods
+enum L1_Solver_Method { GLPK, CLP, QPOASES, GLPK_CPQR, CLP_CPQR, QPOASES_CPQR };
+static const int num_l1_solver_method = 6;
+static const L1_Solver_Method l1_solver_method_values[] = { 
+  GLPK, CLP, QPOASES, GLPK_CPQR, CLP_CPQR, QPOASES_CPQR };
+static const char *l1_solver_method_names[] = { 
+  "GLPK", "CLP", "qpOASES", "GLPK-CPQR", "CLP-CPQR", "qpOASES-CPQR" };
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
 typedef Sacado::ETPCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > pce_type;
@@ -118,10 +158,39 @@ int main(int argc, char **argv)
     bool verbose = false;
     CLP.setOption("verbose", "quiet", &verbose, "Verbose output");
 
-    Basis_Reduction_Method basis_reduction_method = MONOMIAL_GS;
+    Quadrature_Method quad_method = TENSOR;
+    CLP.setOption("quadrature_method", &quad_method, 
+		  num_quadrature_method, quadrature_method_values, 
+		  quadrature_method_names, "Quadrature method");
+
+    int level = -1;
+    CLP.setOption("level", &level, 
+		  "Sparse grid level (set to -1 to use default)");
+
+    Reduced_Basis_Method reduced_basis_method = MONOMIAL_GS;
+    CLP.setOption("reduced_basis_method", &reduced_basis_method, 
+		  num_reduced_basis_method, reduced_basis_method_values, 
+		  reduced_basis_method_names, "Reduced basis method");
+
+    Basis_Reduction_Method basis_reduction_method = BR_CPQR;
     CLP.setOption("basis_reduction_method", &basis_reduction_method, 
 		  num_basis_reduction_method, basis_reduction_method_values, 
 		  basis_reduction_method_names, "Basis reduction method");
+
+    Orthogonalization_Method orthogonalization_method = HOUSEHOLDER;
+    CLP.setOption("orthogonalization_method", &orthogonalization_method, 
+		  num_orthogonalization_method, orthogonalization_method_values, 
+		  orthogonalization_method_names, "Orthogonalization method");
+
+    Quadrature_Reduction_Method quad_reduction_method = CPQR;
+    CLP.setOption("quadrature_reduction_method", &quad_reduction_method, 
+		  num_quad_reduction_method, quad_reduction_method_values, 
+		  quad_reduction_method_names, "Quadrature reduction method");
+
+    L1_Solver_Method l1_solver_method = CLP_CPQR;
+    CLP.setOption("L1_solver_method", &l1_solver_method, 
+		  num_l1_solver_method, l1_solver_method_values, 
+		  l1_solver_method_names, "L1 solver method");
 
     bool project = true;
     CLP.setOption("project", "no-project", &project, "Use Projected Lanczos Method");
@@ -132,21 +201,37 @@ int main(int argc, char **argv)
     CLP.parse( argc, argv );
 
     std::cout << "Summary of command line options:" << std::endl
-	      << "\tbasis_reduction_method = " 
+	      << "\tquadrature_method           = " 
+	      << quadrature_method_names[quad_method] 
+	      << std::endl
+	      << "\tlevel                       = " << level << std::endl
+	      << "\treduced_basis_method        = " 
+	      << reduced_basis_method_names[reduced_basis_method] 
+	      << std::endl
+	      << "\tbasis_reduction_method      = " 
 	      << basis_reduction_method_names[basis_reduction_method] 
 	      << std::endl
-	      << "\tproject                = " << project << std::endl
-	      << "\tstieljtes              = " << use_stieltjes << std::endl
-	      << "\tp                      = " << p << std::endl
-	      << "\tp2                     = " << p2 << std::endl
-	      << "\td                      = " << d << std::endl
-	      << "\td2                     = " << d2 << std::endl
-	      << "\tpole                   = " << pole << std::endl
-	      << "\tshift                  = " << shift << std::endl
-	      << "\trank_threshold         = " << rank_threshold << std::endl
-	      << "\treduction_tolerance    = " << reduction_tolerance 
+	      << "\torthogonalization_method    = " 
+	      << orthogonalization_method_names[orthogonalization_method] 
 	      << std::endl
-	      << "\tverbose                = " << verbose << std::endl
+	      << "\tquadrature_reduction_method = " 
+	      << quad_reduction_method_names[quad_reduction_method] 
+	      << std::endl
+	      << "\tL1_solver_method            = " 
+	      << l1_solver_method_names[l1_solver_method] 
+	      << std::endl
+	      << "\tproject                     = " << project << std::endl
+	      << "\tstieljtes                   = " << use_stieltjes << std::endl
+	      << "\tp                           = " << p << std::endl
+	      << "\tp2                          = " << p2 << std::endl
+	      << "\td                           = " << d << std::endl
+	      << "\td2                          = " << d2 << std::endl
+	      << "\tpole                        = " << pole << std::endl
+	      << "\tshift                       = " << shift << std::endl
+	      << "\trank_threshold              = " << rank_threshold << std::endl
+	      << "\treduction_tolerance         = " << reduction_tolerance 
+	      << std::endl
+	      << "\tverbose                     = " << verbose << std::endl
 	      << std::endl << std::endl;
 
     // Create product basis
@@ -158,12 +243,24 @@ int main(int argc, char **argv)
 
     std::cout << "original basis size = " << basis->size() << std::endl;
 
-    // Tensor product quadrature
-    Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
-    // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-    //   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis,
-    // 								 p+1));
+    // Quadrature
+    Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad;
+    if (quad_method == TENSOR)
+      quad = 
+	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    else if (quad_method == SPARSE) {
+#ifdef HAVE_STOKHOS_DAKOTA
+      if (level == -1)
+	quad = 
+	  Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis));
+      else
+	quad = 
+	  Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, 
+								     level));
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Sparse grid quadrature only supported when compiled with Dakota!");
+#endif
+    }
 
     std::cout << "original quadrature size = " << quad->size() << std::endl;
 
@@ -199,29 +296,34 @@ int main(int argc, char **argv)
       pces[i] = x2[i].getOrthogPolyApprox();
     pces[d2] = y.getOrthogPolyApprox();
     Teuchos::ParameterList params;
-    if (basis_reduction_method == MONOMIAL_GS)
+    if (reduced_basis_method == MONOMIAL_GS)
       params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt");
-    else if (basis_reduction_method == LANCZOS)
+    else if (reduced_basis_method == LANCZOS)
       params.set("Reduced Basis Method", "Product Lanczos");
-    else if (basis_reduction_method == LANCZOS_GS)
+    else if (reduced_basis_method == LANCZOS_GS)
       params.set("Reduced Basis Method", "Product Lanczos Gram-Schmidt");
     params.set("Verbose", verbose);
     params.set("Project", project);
     //params.set("Normalize", false);
     params.set("Use Old Stieltjes Method", use_stieltjes);
-    params.set("Basis Reduction Method", "Column-pivoted QR");
-    //params.set("Basis Reduction Method", "SVD");
-    params.set("Orthogonalization Method", "Householder");
-    //params.set("Orthogonalization Method", "Classical Gram-Schmidt");
-    //params.set("Orthogonalization Method", "Modified Gram-Schmidt");
+    if (basis_reduction_method == BR_CPQR)
+      params.set("Basis Reduction Method", "Column-pivoted QR");
+    else if (basis_reduction_method == SVD)
+      params.set("Basis Reduction Method", "SVD");
+    if (orthogonalization_method == HOUSEHOLDER)
+      params.set("Orthogonalization Method", "Householder");
+    else if (orthogonalization_method == CGS)
+      params.set("Orthogonalization Method", "Classical Gram-Schmidt");
+    else if (orthogonalization_method == MGS)
+      params.set("Orthogonalization Method", "Modified Gram-Schmidt");
     params.set("Rank Threshold", rank_threshold);
     Teuchos::ParameterList& red_quad_params = 
       params.sublist("Reduced Quadrature");
-    //red_quad_params.set("Reduced Quadrature Method", "Column-Pivoted QR");
-    //red_quad_params.set("Reduced Quadrature Method", "Pseudo-Inverse");
-    //red_quad_params.set("Reduced Quadrature Method", "None");
-    red_quad_params.set("Reduced Quadrature Method", "L1 Minimization");
-    red_quad_params.set("LP Solver", "qpOASES");
+    red_quad_params.set("Reduced Quadrature Method", 
+			quad_reduction_method_names[quad_reduction_method]);
+    red_quad_params.set("LP Solver", 
+			l1_solver_method_names[l1_solver_method]);
+    red_quad_params.set("Write MPS File", false);
     red_quad_params.set("Reduction Tolerance", reduction_tolerance);
     red_quad_params.set("Verbose", verbose);
     Stokhos::ReducedBasisFactory<int,double> factory(params);
@@ -237,7 +339,7 @@ int main(int argc, char **argv)
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > gs_Cijk;
     Teuchos::RCP< Teuchos::ParameterList > gs_exp_params = 
       Teuchos::rcp(new Teuchos::ParameterList);
-    if (basis_reduction_method == LANCZOS)
+    if (reduced_basis_method == LANCZOS)
       gs_Cijk = gs_basis->computeTripleProductTensor(gs_basis->size());
     else {
       gs_Cijk = Teuchos::null;

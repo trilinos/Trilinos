@@ -242,6 +242,8 @@ namespace Stokhos {
    * columns of A to be included in P by setting the corresponding entries
    * of piv to be nonzero on input.
    *
+   * If \c make_R_square is \c false then R is k-by-n.
+   *
    * This ultimately uses the LAPACK column-pivoted QR function which
    * does a full QR factorization.  This then extracts the parts of Q, R, and P
    * determined by the threshold as described above.  As such, this function
@@ -256,7 +258,8 @@ namespace Stokhos {
     const Teuchos::Array<scalar_type>& w,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
-    Teuchos::Array<ordinal_type>& piv) 
+    Teuchos::Array<ordinal_type>& piv,
+    bool make_R_square = true) 
   {
     // Check that each component of w is 1
     for (ordinal_type i=0; i<w.size(); i++)
@@ -282,7 +285,10 @@ namespace Stokhos {
     }
 
     // Extract blocks from Q and R
-    R.reshape(rank,rank);
+    if (make_R_square)
+      R.reshape(rank,rank);
+    else
+      R.reshape(rank, R.numCols());
     Q.reshape(Q.numRows(), rank);
 
     return rank;

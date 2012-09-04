@@ -99,7 +99,43 @@ namespace Stokhos {
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
       ) const;
 
+    void reducedQuadrature_CLP(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+      const Teuchos::Array<value_type>& weights,
+      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
+      ) const;
+
     void reducedQuadrature_qpOASES(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+      const Teuchos::Array<value_type>& weights,
+      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
+      ) const;
+
+    void reducedQuadrature_GLPK_CPQR(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+      const Teuchos::Array<value_type>& weights,
+      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
+      ) const;
+
+    void reducedQuadrature_CLP_CPQR(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+      const Teuchos::Array<value_type>& weights,
+      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
+      ) const;
+
+    void reducedQuadrature_qpOASES_CPQR(
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
       const Teuchos::Array<value_type>& weights,
