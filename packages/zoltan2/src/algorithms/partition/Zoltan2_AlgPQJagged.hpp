@@ -426,7 +426,7 @@ void pqJagged_getCoordinateValues( const RCP<const CoordinateModel<
  * \param coordDim is an integer value to represent the count of coordinate dimensions.
  * \param weightDim is an integer value to represent the count of weight dimensions.
  * \param numLocalCoords is a size_t value to represent the count of local coordinates.
- * \param numGlobalParts is a size_t value to represent the total part count. //not used currently inside the pqJagged algorithm.
+ * \param numGlobalParts is a partId_t value to represent the total part count. //not used currently inside the pqJagged algorithm.
  * \param pqJagged_multiVectorDim  ...//not used by pqJagged algorithm.
  * \param pqJagged_values is the output representing the coordinates of local points.
  *  Its size is coordDim x numLocalCoords and allocated before the function.
@@ -2289,7 +2289,7 @@ void AlgPQJagged(
   scalar_t imbalanceTolerance;
 
   multiCriteriaNorm mcnorm;
-  bool ignoreWeights;
+  bool ignoreWeights=false;
 
   bool allowNonRectelinearPart = false;
   int concurrentPartCount = 0;
@@ -2310,7 +2310,7 @@ void AlgPQJagged(
   bool *pqJagged_uniformWeights = allocMemory< bool >(criteriaDim); //if the weights of coordinates are uniform in a criteria dimension.
 
   ArrayView<const gno_t> pqJagged_gnos;
-  size_t numGlobalParts;
+  partId_t numGlobalParts;
   int pqJagged_multiVectorDim;
 
   pqJagged_getInputValues<Adapter, scalar_t, gno_t>(
