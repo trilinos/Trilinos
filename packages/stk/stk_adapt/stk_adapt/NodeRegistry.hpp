@@ -1355,9 +1355,9 @@ namespace stk {
                 throw std::runtime_error("makeCentroid(field): bad node found 0.0");
               }
 
-            double c_p[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+            double c_p[] = {0.0, 0.0, 0.0};
             bool doPrint = false;
-            stk::mesh::Entity * nodes[8] = {0,0,0,0,0,0,0,0};
+            std::vector<stk::mesh::Entity *> nodes(8,(stk::mesh::Entity *)0);
             unsigned nsz = 0;
 
             if (needed_entity_rank == m_eMesh.element_rank())
@@ -1385,6 +1385,7 @@ namespace stk {
                     const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
                     unsigned npts = elem_nodes.size();
                     nsz = npts;
+                    nodes.resize(nsz, (stk::mesh::Entity *)0);
                     //if (npts == 2) doPrint=true;
                     //double dnpts = elem_nodes.size();
                     for (unsigned ipts = 0; ipts < npts; ipts++)
@@ -1402,6 +1403,7 @@ namespace stk {
               {
                 unsigned ipts=0;
                 nsz = subDimEntity.size();
+                nodes.resize(nsz, (stk::mesh::Entity *)0);
 
                 for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids, ++ipts)
                   {

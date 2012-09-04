@@ -510,7 +510,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
-      int refine_to_spacing = 1;
+      int refine_to_spacing = 0;
       //double min_spacing_factor = 0.25; // range [0,0.5]
       int remove_geometry_blocks = 0;
       int sync_io_regions = 1;
