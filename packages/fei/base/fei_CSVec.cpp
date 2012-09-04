@@ -117,9 +117,9 @@ void remove_entry(CSVec& vec, int eqn)
     iter = std::lower_bound(v_ind.begin(), v_ind.end(), eqn);
 
   if (iter != v_ind.end() && *iter == eqn) {
+    size_t offset = iter - v_ind.begin();
     v_ind.erase(iter);
 
-    size_t offset = iter - v_ind.begin();
     std::vector<double>::iterator coef_iter = v_coef.begin()+offset;
     v_coef.erase(coef_iter);
   }
