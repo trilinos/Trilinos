@@ -11,6 +11,7 @@
 <li> \ref z2_developer_profiling
 <li> \ref z2_developer_rcp
 <li> \ref z2_developer_parameters
+<li> \ref z2_developer_documentation
 <li> \ref z2_developer_example
 </ul>
 
@@ -76,16 +77,27 @@ void myAlgorithm(
   typedef typename Adapter::gno_t gno_t;     // global ids
   typedef typename Adapter::scalar_t scalar_t;   // scalars
 
+  env->debug(DETAILED_STATUS, string("Entering myAlgorithm");
+
+  const Teuchos::ParameterList &pl = env->getParameters();
+
+  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
+  size_t numLocalParts = solution->getLocalNumberOfParts();
+
+  size_t numGlobalVtx = graph->getGlobalNumVertices();
+  size_t numLocalVtx = graph->getLocalNumVertices();
+
   gno_t *globalNumbers=NULL;
   partId_t *partNumbers=NULL;
 
-  size_t numGnos = callSolve(env, problemComm, graph,
-    globalNumbers, partNumbers);
+  // ... (Allocate storage for solution, and solve the problem.)
 
   ArrayRCP<const gno_t> gnos = arcp(globalNumbers, 0, numGnos, true);
   ArrayRCP<const partId_t> gnoPart = arcp(partNumbers, 0, numGnos, true);
 
   solution->setParts(gnos, gnoPart);
+
+  env->debug(DETAILED_STATUS, string("Exiting myAlgorithm");
 }
 \endcode
 
@@ -269,13 +281,15 @@ zoltan2/data/parameters.xml.
 
 At compile time, the program
 zoltan2/util/xmlToHeaderDefinition.cpp creates the header file 
-zoltan2_binary_directory/src/Zoltan2_XML_Parameters.hpp.  This header file
+<tt>{zoltan2_binary_directory}/src/Zoltan2_XML_Parameters.hpp</tt>.  
+This header file
 contains a macro that has the %XML string defining the parameters.  It is
 used at run-time in the namespace method Zoltan2::createAllParameters().
 
 When building the Zoltan2 documentation with zoltan2/doc/build_docs, the
 script zoltan2/scripts/xml2dox.py creates the Doxygen page in
-zoltan2/doc/parameters.dox.
+zoltan2/doc/parameters.dox.  A link appears at the <em>Related Pages</em>
+tab.
 
 The %XML formats for the validator are documented here:
 
@@ -308,9 +322,18 @@ is generated, either by Teuchos at run-time or by a script in \c doc/build_docs,
 it includes the validator information.
 
 <hr>
+\section z2_developer_documentation Documenting an algorithm
+
+Each algorithm that can be chosen by a user with the \ref algorithm
+parameter should be completely documented for users with a file
+in zoltan2/doc/algorithms.  Follow the pattern of the other
+documentation files in that directory.  Then add a link to your
+page on the introductory page at zoltan2/doc/index.dox.
+
+<hr>
 \section z2_developer_example Example
 
-The block algorithm in Zoltan2_AlgBlock.hpp exists a simple example
+The block algorithm in Zoltan2_AlgBlock.hpp is a simple example
 of a Zoltan2 algorithm.
 
 */
