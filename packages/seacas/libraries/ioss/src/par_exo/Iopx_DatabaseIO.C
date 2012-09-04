@@ -1335,27 +1335,22 @@ namespace Iopx {
       }
 
       for (int iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
-	int64_t id = X_block_ids[iblk];
-
-	ex_block block;
-	block.id = id;
-	block.type = entity_type;
-	error = ex_get_block_param(get_file_pointer(), &block);
-	if (error < 0) {exodus_error(get_file_pointer(), __LINE__, myProcessor);}
-	
-	block.num_entry = decomp.el_blocks[iblk].ioss_count();
+	int64_t id = decomp.el_blocks[iblk].id();
 
 	std::string alias = Ioss::Utils::encode_entity_name(basename, id);
 	std::string block_name = get_entity_name(get_file_pointer(), entity_type, id, basename, maximumNameLength);
 
-	std::string save_type = block.topology;
-	std::string type = Ioss::Utils::fixup_type(block.topology, block.num_nodes_per_entry, spatialDimension-rank_offset);
+	std::string save_type = decomp.el_blocks[iblk].topologyType;
+	std::string type = Ioss::Utils::fixup_type(decomp.el_blocks[iblk].topologyType,
+						   decomp.el_blocks[iblk].nodesPerEntity,
+						   spatialDimension-rank_offset);
 
 	Ioss::EntityBlock *io_block = NULL;
 	if (entity_type == EX_ELEM_BLOCK) {
-	  Ioss::ElementBlock *eblock = new Ioss::ElementBlock(this, block_name, type, block.num_entry);
+	  Ioss::ElementBlock *eblock = new Ioss::ElementBlock(this, block_name, type, decomp.el_blocks[iblk].ioss_count());
 	  io_block = eblock;
 	  get_region()->add(eblock);
+#if 0
 	} else if (entity_type == EX_FACE_BLOCK) {
 	  Ioss::FaceBlock *fblock = new Ioss::FaceBlock(this, block_name, type, block.num_entry);
 	  get_region()->add(fblock);
@@ -1364,12 +1359,14 @@ namespace Iopx {
 	  Ioss::EdgeBlock *eblock = new Ioss::EdgeBlock(this, block_name, type, block.num_entry);
 	  get_region()->add(eblock);
 	  io_block = eblock;
+#endif
 	} else {
 	  std::ostringstream errmsg;
 	  errmsg << "ERROR: Invalid type in get_blocks()";
 	  IOSS_ERROR(errmsg);
 	}
 	
+#if 0
 	// See which connectivity options were defined for this block.
 	// X -> Node is always defined.
 	// X -> Face?
@@ -1386,7 +1383,7 @@ namespace Iopx {
 					  io_block->field_int_type(), storage, Ioss::Field::MESH,
 					  block.num_entry));
 	}
-	
+#endif	
 	io_block->property_add(Ioss::Property("id", id));
 	
 	// Maintain block order on output database...
@@ -1406,7 +1403,7 @@ namespace Iopx {
 	  }
 	}
 	
-	io_block->property_add(Ioss::Property("global_entity_count", block.num_entry));
+	io_block->property_add(Ioss::Property("global_entity_count", (int64_t)decomp.el_blocks[iblk].ioss_count()));
 	
 	// See if this block is "omitted" by the calling code.
 	// This only affects the generation of surfaces...
@@ -1423,12 +1420,12 @@ namespace Iopx {
 	}
 	
 	// Check for additional variables.
-	add_attribute_fields(entity_type, io_block, block.num_attribute, type);
+	add_attribute_fields(entity_type, io_block, decomp.el_blocks[iblk].attributeCount, type);
 	add_results_fields(entity_type, io_block, iblk);
 	
 	if (entity_type == EX_ELEM_BLOCK) {
 	  Ioss::SerializeIO	serializeIO__(this);
-	  add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block, block.num_entry);
+	  add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block, decomp.el_blocks[iblk].ioss_count());
 	}
       }
     }

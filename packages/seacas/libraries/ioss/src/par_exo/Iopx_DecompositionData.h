@@ -20,7 +20,7 @@ namespace Iopx {
     friend class DecompositionData;
   public:
     BlockDecompositionData() :
-      id_(0), fileCount(0), iossCount(0), localIossOffset(0)
+      id_(0), fileCount(0), iossCount(0), nodesPerEntity(0), attributeCount(0), localIossOffset(0)
       {}
       
       int64_t id() const {return id_;}
@@ -32,8 +32,12 @@ namespace Iopx {
       size_t fileCount;
       size_t iossCount;
 
+  public:
       std::string topologyType;
-	
+      int nodesPerEntity;
+      int attributeCount;
+      
+  private:
       // maps from file-block data to ioss-block data
       // The local_map.size() elements starting at local_ioss_offset are local.
       // ioss[local_ioss_offset+i] = file[local_map[i]];

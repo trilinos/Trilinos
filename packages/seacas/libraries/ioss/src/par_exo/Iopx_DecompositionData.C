@@ -208,7 +208,7 @@ namespace {
       }
     }
     common_nodes = max(1, common_nodes);
-    Ioss::ParallelUtils par_util(comm_);
+    Ioss::ParallelUtils par_util(comm);
     common_nodes = par_util.global_minmax(common_nodes, Ioss::ParallelUtils::DO_MIN);
     
     std::cerr << "Setting common_nodes to " << common_nodes << "\n";
@@ -284,7 +284,8 @@ namespace Iopx {
     std::vector<MY_INT> adjacency; // Size is sum of element connectivity sizes 
     generate_adjacency_list(exodusId, pointer, adjacency, info.num_elem_blk);
     
-    std::string method = "LINEAR";
+    std::string method = "RCB";
+
     if (properties.exists("DECOMPOSITION_METHOD")) {
       method = properties.get("DECOMPOSITION_METHOD").get_string();
       method = Ioss::Utils::uppercase(method);
@@ -435,6 +436,7 @@ namespace Iopx {
       }
 
       ct_assert(sizeof(double) == sizeof(real_t));
+      ct_assert(sizeof(MY_INT) == sizeof(idx_t));
 
       rc = ParMETIS_V3_PartGeomKway((idx_t*)TOPTR(element_dist), dual_xadj, dual_adjacency,
 				    elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
@@ -956,6 +958,8 @@ namespace Iopx {
       }
       fileBlockIndex[b+1] = fileBlockIndex[b] + ebs[b].num_entry;
       el_blocks[b].topologyType = ebs[b].topology;
+      el_blocks[b].nodesPerEntity = ebs[b].num_nodes_per_entry;
+      el_blocks[b].attributeCount = ebs[b].num_attribute;
     }
 
     pointer.reserve(elementCount+1);
@@ -1291,6 +1295,12 @@ namespace Iopx {
       // be communicated.  If constant or empty, then they can be
       // "read" with no communication.
       std::vector<double> df_valcon(3*set_count);
+      // df_valcon[3*i + 0] = if df constant, this is the constant value
+      // df_valcon[3*i + 0] = 1 if df constant, 0 if variable
+      // df_valcon[3*i + 0] = value = nodecount if all faces have same node count;
+      //                    = -1 if variable
+      //                      (0 if df values are constant)
+	
       if (myProcessor == root) {
 	for (size_t i=0; i < set_count; i++) {
 	  df_valcon[3*i+0] = 1.0;
@@ -1304,26 +1314,31 @@ namespace Iopx {
 	    for (size_t j=1; j < sets[i].num_distribution_factor; j++) {
 	      if (val != df[j]) {
 		df_valcon[3*i+1] = 0;
-	      }
-	    }
-	    std::vector<double>().swap(df);
-
-	    // To determine the size of the df field on the
-	    // ioss-decomp sidesets, need to know how many nodes per
-	    // side there are for all sides in the sideset.  Here we
-	    // check to see if it is a constant number to avoid
-	    // communicating the entire list for all sidesets.  If not
-	    // constant, then we will have to communicate.
-	    std::vector<int> nodes_per_face(side_sets[i].file_count());
-	    ex_get_side_set_node_count(exodusId, sets[i].id, TOPTR(nodes_per_face));
-	    int nod_per_face = nodes_per_face[0];
-	    for (size_t j=1; j < nodes_per_face.size(); j++) {
-	      if (nodes_per_face[j] != nod_per_face) {
-		nod_per_face = -1;
 		break;
 	      }
 	    }
-	    df_valcon[3*i+2] = (double)nod_per_face;
+	    std::vector<double>().swap(df);
+	    if (df_valcon[3*i+1] == 1.0) {
+	      df_valcon[3*i+2] = 0.0;
+	    } else {
+
+	      // To determine the size of the df field on the
+	      // ioss-decomp sidesets, need to know how many nodes per
+	      // side there are for all sides in the sideset.  Here we
+	      // check to see if it is a constant number to avoid
+	      // communicating the entire list for all sidesets.  If not
+	      // constant, then we will have to communicate.
+	      std::vector<int> nodes_per_face(side_sets[i].file_count());
+	      ex_get_side_set_node_count(exodusId, sets[i].id, TOPTR(nodes_per_face));
+	      int nod_per_face = nodes_per_face[0];
+	      for (size_t j=1; j < nodes_per_face.size(); j++) {
+		if (nodes_per_face[j] != nod_per_face) {
+		  nod_per_face = -1;
+		  break;
+		}
+	      }
+	      df_valcon[3*i+2] = (double)nod_per_face;
+	    }
 	  }
 	}
       }
