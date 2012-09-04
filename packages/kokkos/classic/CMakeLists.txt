@@ -119,7 +119,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_TSQR
   HAVE_KOKKOSCLASSIC_TSQR
   "Enable TSQR (Tall Skinny QR factorization) in Kokkos"
-  OFF
+  ON
   )
 
 # Whether to enable TSQR's complex arithmetic (std::complex<T>)
@@ -142,7 +142,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_TSQR_Fortran
   HAVE_KOKKOSCLASSIC_TSQR_FORTRAN
-  "For TSQR: Enable the CombineFortran backend option for Combine.  This requires Fortran 2003 support, so it is disabled by default, even if you have enabled Fortran in your build.  TSQR will work fine without CombineFortran; this option is only of interest to performance tuners."
+  "For TSQR: Enable the Fortran back end option for local kernels.  This requires Fortran 90 support, so it is disabled by default, even if you have enabled Fortran in your build.  TSQR will work fine without the Fortran back end, though it may perform better on some platforms.  This option is mainly only of interest to performance tuners."
   OFF
   )
 
@@ -154,7 +154,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_TSQR_Intel_TBB
   HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
-  "For TSQR: enable Intel Threading Building Blocks intranode parallelization.  This option is enabled by default if you are building Trilinos with TBB enabled as a 'third-party library' (TPL), so you should not have to enable this option manually.  TSQR will work without this, but enabling it will make TSQR go faster on multicore CPU nodes."
+  "For TSQR: enable Intel Threading Building Blocks (TBB) intranode parallelization.  This option is enabled by default if you are building Trilinos with TBB enabled as a 'third-party library' (TPL), so you should not have to enable this option manually.  TSQR will work without this, but enabling it will make TSQR go faster on multicore CPU nodes."
   "${TPL_ENABLE_TBB}" 
   )
 
