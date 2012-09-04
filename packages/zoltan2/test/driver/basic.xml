@@ -1,0 +1,33 @@
+<!--
+   Comments can go here.
+-->
+
+<Tests   name="testDriverTest" >
+
+  <Test  name="basic" >
+
+     <TestParameters >
+        <inputFile name="simple.mtx"  />
+        <weights  objectWeightDimension="0"
+                   edgeWeightDimension="0" />
+        <coordinates  coordinateDimension="0" />
+        <inputAdapter name="BasicCoordinateInput" />
+
+        <passingCriteria >
+           <imbalance  lessThan="1.2" />
+        </passingCriteria>
+        
+     </TestParameters>
+
+     <Zoltan2Parameters >
+       <algorithm value="rcb" />
+       <average_cuts value="off" />
+       <rectilinear_blocks value="off" />
+       <bisection_num_test_cuts value="1" />
+       <imbalance_tolerance value="1.2" />
+       <num_global_parts value="4" />
+     </Zoltan2Parameters>
+
+   </Test> 
+
+</Tests>
