@@ -89,6 +89,10 @@
 #undef STK_PERCEPT_HAS_MESQUITE
 #endif
 
+#if defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_GEOMETRY)
+#undef STK_PERCEPT_HAS_GEOMETRY
+#endif
+
 #include <stk_percept/ExceptionWatch.hpp>
 
 
