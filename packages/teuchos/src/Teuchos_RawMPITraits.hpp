@@ -39,22 +39,22 @@
 // ***********************************************************************
 // @HEADER
 
-// ////////////////////////////////////////////////////////////////////////
-// Teuchos_RawMPITraits.hpp
-
 #ifndef TEUCHOS_RAW_MPI_TRAITS_H
 #define TEUCHOS_RAW_MPI_TRAITS_H
 
 #include "Teuchos_ConfigDefs.hpp"
 
-/** \file Teuchos_RawMPITraits.hpp
- *  \brief Declaration of a templated traits class that returns raw MPI data types.
- */
+/// \file Teuchos_RawMPITraits.hpp
+/// \brief Declaration of a templated traits class that returns raw MPI data types.
+/// \warning The template class RawMPITraits implemented in this file is DEPRECATED.
 
 namespace Teuchos {
 
-/** \brief Templated traits class that allows a datatype to be used with MPI
- * that MPI can directly handle.
+/** \class RawMPITraits
+ * \brief Templated traits class that allows a datatype to be used with MPI
+ *   that MPI can directly handle.
+ * \warning This class is DEPRECATED.  It may disappear or change
+ *   completely at any time.
  *
  * A specialization of this traits class should only be created for datatypes
  * that can be directly handled by MPI in some way.  Note that this traits
@@ -63,13 +63,13 @@ namespace Teuchos {
  * specializations to create user-defined <tt>MPI_Datatype</tt> and
  * <tt>MPI_Op</tt> objects to be returned from their static functions.
  *
- * \note 
- * <ul> <li> This class should not compile if it is instantiated by accident.  
- * 	<li> It should only be included if MPI is available and the MPI header 
- *		<b>must</b> be included before this header file.
- *	<li> Template specializations exist for datatypes: <tt>char</tt>, <tt>int</tt>,
- *		<tt>float</tt>, and <tt>double</tt>.
- *	<li> A partial template specialization exists for <tt>std::complex<T></tt>
+ * \note
+ * <ul> <li> This class should not compile if it is instantiated by accident.
+ *      <li> It should only be included if MPI is available and the MPI header
+ *              <b>must</b> be included before this header file.
+ *      <li> Template specializations exist for datatypes: <tt>char</tt>, <tt>int</tt>,
+ *              <tt>float</tt>, and <tt>double</tt>.
+ *      <li> A partial template specialization exists for <tt>std::complex<T></tt>
  *    where it is assumed that the real type <tt>T</tt> is directly handlable
  *   with MPI.
  *  <li> Only sum reductions are supported for all data types.
@@ -78,101 +78,104 @@ namespace Teuchos {
  *    boolean that can be used in template metaprogramming techniques.
  * </ul>
  */
-template <class T> class RawMPITraits {
+template <class T> class TEUCHOS_DEPRECATED RawMPITraits {
 public:
   /** \brief Return the adjusted std::cout of items. */
   static int adjustCount(const int count) { bool *junk1; T *junk2 = &junk1; return 0; } // Should not compile!
-	/** \brief Return the raw MPI data type of the template argument. */
-	static MPI_Datatype type() { bool *junk1; T *junk2 = &junk1; return MPI_DATATYPE_NULL; } // Should not compile!
-	/** \brief Return the MPI_Op object for a sum reduction */
-	static MPI_Op sumOp() { bool *junk1; T *junk2 = &junk1; return MPI_OP_NULL; } // Should not compile!
-	/** \brief Return the MPI_Op object for a max reduction */
-	static MPI_Op maxOp() { bool *junk1; T *junk2 = &junk1; return MPI_OP_NULL; } // Should not compile!
-	/** \brief Return the MPI_Op object for a min reduction */
-	static MPI_Op minOp() { bool *junk1; T *junk2 = &junk1; return MPI_OP_NULL; } // Should not compile!
+        /** \brief Return the raw MPI data type of the template argument. */
+        static MPI_Datatype type() { bool *junk1; T *junk2 = &junk1; return MPI_DATATYPE_NULL; } // Should not compile!
+        /** \brief Return the MPI_Op object for a sum reduction */
+        static MPI_Op sumOp() { bool *junk1; T *junk2 = &junk1; return MPI_OP_NULL; } // Should not compile!
+        /** \brief Return the MPI_Op object for a max reduction */
+        static MPI_Op maxOp() { bool *junk1; T *junk2 = &junk1; return MPI_OP_NULL; } // Should not compile!
+        /** \brief Return the MPI_Op object for a min reduction */
+        static MPI_Op minOp() { bool *junk1; T *junk2 = &junk1; return MPI_OP_NULL; } // Should not compile!
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-/** \brief Specialization of <tt>RawMPITraits</tt> for <tt>char</tt>
- */
-template <> class RawMPITraits<char> {
+/// \brief Specialization of RawMPITraits for T=char
+/// \warning This class is DEPRECATED.
+template <> class TEUCHOS_DEPRECATED RawMPITraits<char> {
 public:
   /** \brief . */
   static int adjustCount(const int count) { return count; }
-	/** \brief . */
-	static MPI_Datatype type() { return MPI_CHAR; }
-	/** \brief . */
-	static MPI_Op sumOp() { return MPI_SUM; }
-	/** \brief . */
-	static MPI_Op maxOp() { return MPI_MAX; }
-	/** \brief . */
-	static MPI_Op minOp() { return MPI_MIN; }
+        /** \brief . */
+        static MPI_Datatype type() { return MPI_CHAR; }
+        /** \brief . */
+        static MPI_Op sumOp() { return MPI_SUM; }
+        /** \brief . */
+        static MPI_Op maxOp() { return MPI_MAX; }
+        /** \brief . */
+        static MPI_Op minOp() { return MPI_MIN; }
 };
 
-/** \brief Specialization of <tt>RawMPITraits</tt> for <tt>int</tt>
- */
-template <> class RawMPITraits<int> {
+/// \brief Specialization of RawMPITraits for T=int
+/// \warning This class is DEPRECATED.
+template <> class TEUCHOS_DEPRECATED RawMPITraits<int> {
 public:
   /** \brief . */
   static int adjustCount(const int count) { return count; }
-	/** \brief . */
-	static MPI_Datatype type() { return MPI_INT; }
-	/** \brief . */
-	static MPI_Op sumOp() { return MPI_SUM; }
-	/** \brief . */
-	static MPI_Op maxOp() { return MPI_MAX; }
-	/** \brief . */
-	static MPI_Op minOp() { return MPI_MIN; }
+        /** \brief . */
+        static MPI_Datatype type() { return MPI_INT; }
+        /** \brief . */
+        static MPI_Op sumOp() { return MPI_SUM; }
+        /** \brief . */
+        static MPI_Op maxOp() { return MPI_MAX; }
+        /** \brief . */
+        static MPI_Op minOp() { return MPI_MIN; }
 };
 
-/** \brief Specialization of <tt>RawMPITraits</tt> for <tt>float</tt>
- */
-template <> class RawMPITraits<float> {
+/// \brief Specialization of RawMPITraits for T=float
+/// \warning This class is DEPRECATED.
+template <> class TEUCHOS_DEPRECATED RawMPITraits<float> {
 public:
   /** \brief . */
   static int adjustCount(const int count) { return count; }
-	/** \brief . */
-	static MPI_Datatype type() { return MPI_FLOAT; }
-	/** \brief . */
-	static MPI_Op sumOp() { return MPI_SUM; }
-	/** \brief . */
-	static MPI_Op maxOp() { return MPI_MAX; }
-	/** \brief . */
-	static MPI_Op minOp() { return MPI_MIN; }
+        /** \brief . */
+        static MPI_Datatype type() { return MPI_FLOAT; }
+        /** \brief . */
+        static MPI_Op sumOp() { return MPI_SUM; }
+        /** \brief . */
+        static MPI_Op maxOp() { return MPI_MAX; }
+        /** \brief . */
+        static MPI_Op minOp() { return MPI_MIN; }
 };
 
-/** \brief Specialization of <tt>RawMPITraits</tt> for <tt>double</tt>
- */
-template <> class RawMPITraits<double> {
+/// \brief Specialization of RawMPITraits for T=double
+/// \warning This class is DEPRECATED.
+template <> class TEUCHOS_DEPRECATED RawMPITraits<double> {
 public:
   /** \brief . */
   static int adjustCount(const int count) { return count; }
-	/** \brief . */
-	static MPI_Datatype type() { return MPI_DOUBLE; }
-	/** \brief . */
-	static MPI_Op sumOp() { return MPI_SUM; }
-	/** \brief . */
-	static MPI_Op maxOp() { return MPI_MAX; }
-	/** \brief . */
-	static MPI_Op minOp() { return MPI_MIN; }
+        /** \brief . */
+        static MPI_Datatype type() { return MPI_DOUBLE; }
+        /** \brief . */
+        static MPI_Op sumOp() { return MPI_SUM; }
+        /** \brief . */
+        static MPI_Op maxOp() { return MPI_MAX; }
+        /** \brief . */
+        static MPI_Op minOp() { return MPI_MIN; }
 };
 
 /** \brief Partial specialization of <tt>RawMPITraits</tt> for <tt>std::complex<T></tt>.
+ * \warning This class is DEPRECATED.
  *
- * Note, <tt>maxOp()</tt> and <tt>minOp()</tt> are not supported by std::complex
- * numbers.
+ * \note This class does not include the maxOp() or minOp() methods,
+ *   since max and min do not make sense for complex numbers.
  *
- * ToDo: If a platform is found where this simple implementation does not work
- * then something else will have to be considered.
+ * FIXME (mfh 04 Sep 2012) The MPI standard defines perfectly good
+ * basic MPI_Datatypes for complex numbers, that are bitwise
+ * compatible with std::complex<T> for T=float, double, or long
+ * double.  We should use those instead of "adjusting the count."
  */
-template <class T> class RawMPITraits< std::complex<T> > {
+template <class T> class TEUCHOS_DEPRECATED RawMPITraits< std::complex<T> > {
 public:
   /** \brief . */
   static int adjustCount(const int count) { return (2*count); }
-	/** \brief . */
-	static MPI_Datatype type() { return RawMPITraits<T>::type(); }
-	/** \brief . */
-	static MPI_Op sumOp() { return MPI_SUM; }
+        /** \brief . */
+        static MPI_Datatype type() { return RawMPITraits<T>::type(); }
+        /** \brief . */
+        static MPI_Op sumOp() { return MPI_SUM; }
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
