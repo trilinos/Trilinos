@@ -90,7 +90,8 @@ SET_DEFAULT( CTEST_PARALLEL_LEVEL "1" )
 #SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
 # Only turn on PyTrilinos for shared libraries
-SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES TriKota Optika)
+#SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES TriKota Optika)
+SET(Trilinos_PACKAGES ShyLU)
 
 # Output of "mpicc --showme:compile" and "mpiCC --showme:compile"
 SET(MY_CFLAGS   "-m64")
@@ -110,10 +111,11 @@ SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF "
     "-DTrilinos_ENABLE_EXAMPLES:BOOL=ON "
     "-DTrilinos_VERBOSE_CONFIGURE:BOOL=ON "
-    "-DTrilinos_ENABLE_ShyLU:BOOL=ON "
     "-DShyLU_ENABLE_TESTS:BOOL=ON "
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
+    "-D TPL_LAPACK_LIBRARIES:FILEPATH=/home/srajama/lapack/lapack-3.2.1/lapack_LINUX.a"
+    "-D TPL_BLAS_LIBRARIES:FILEPATH=/home/srajama/lapack/lapack-3.2.1/blas_LINUX.a"
   )
 
 TRILINOS_CTEST_DRIVER()
