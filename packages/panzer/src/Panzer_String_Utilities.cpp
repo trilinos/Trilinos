@@ -86,4 +86,17 @@ namespace panzer {
         values.push_back(value);
      }
   }
+
+  void TokensToInts(std::vector<int> & values,const std::vector<std::string> & tokens)
+  {
+     // turn tokens into doubles (its a miracle!)
+     for(std::size_t i=0;i<tokens.size();i++) {
+        int value = 0;
+        std::stringstream ss;
+        ss << tokens[i];
+        ss >> value; 
+      
+        values.push_back(value);
+     }
+  }
 }
