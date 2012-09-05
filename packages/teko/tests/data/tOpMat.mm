@@ -1,0 +1,23 @@
+%%MatrixMarket matrix coordinate real general
+% Generated 01-Jul-2011
+8 8 20
+1 1  1
+2 2  1
+3 3  1
+4 4  2
+5 5  2
+6 6  2
+7 7  3
+8 8  4
+1 7  1
+2 8  1
+3 7  1
+4 8  1
+5 7  1
+6 8  1
+7 1  2
+7 3  2
+7 5  2
+8 2  2
+8 4  2
+8 6  2

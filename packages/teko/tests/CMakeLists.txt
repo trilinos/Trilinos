@@ -50,6 +50,9 @@ SET(TEST_DRIVER_DATA_FILES
   lsc_Qu_2.mm
   lsc_exact_2.mm
   lsc_rhs.mm
+  tOpMat.mm
+  tOpMp.mm
+  tOpRhs.mm
   )
 
 IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
@@ -166,10 +169,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ALOperator 
+  SOURCES
+    unit_tests/tALOperator.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  ALOperator 
+#  ModALPreconditioner
 #  SOURCES
-#    unit_tests/tALOperator.cpp
+#    unit_tests/tModALPreconditioner.cpp
 #  #  ${TEUCHOS_STD_UNIT_TEST_MAIN}
 #  COMM serial mpi
 #  NUM_MPI_PROCS 1
