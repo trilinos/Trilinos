@@ -258,8 +258,7 @@ namespace Stokhos {
     const Teuchos::Array<scalar_type>& w,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
-    Teuchos::Array<ordinal_type>& piv,
-    bool make_R_square = true) 
+    Teuchos::Array<ordinal_type>& piv) 
   {
     // Check that each component of w is 1
     for (ordinal_type i=0; i<w.size(); i++)
@@ -285,10 +284,7 @@ namespace Stokhos {
     }
 
     // Extract blocks from Q and R
-    if (make_R_square)
-      R.reshape(rank,rank);
-    else
-      R.reshape(rank, R.numCols());
+    R.reshape(rank,rank);
     Q.reshape(Q.numRows(), rank);
 
     return rank;
