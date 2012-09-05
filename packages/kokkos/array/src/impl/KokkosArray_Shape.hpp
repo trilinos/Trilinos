@@ -1125,7 +1125,7 @@ struct SubShape< Shape< Layout, ValueSize, 1, 0 > ,
     }
     else {
       shape.N0     = 0 ;
-      shape.Stride = 0 ;
+      shape.Stride = src.Stride ;
       offset       = 0 ;
     }
   }
