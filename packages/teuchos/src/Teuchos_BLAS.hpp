@@ -163,10 +163,10 @@ namespace Teuchos
     //! Applies a Givens plane rotation.
     void ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const;
 
-    //! Scale the std::vector \c x by the constant \c alpha.
+    //! Scale the vector \c x by the constant \c alpha.
     void SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx) const;
 
-    //! Copy the std::vector \c x to the std::vector \c y.
+    //! Copy the vector \c x to the vector \c y.
     void COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const;
 
     //! Perform the operation: \c y \c <- \c y+alpha*x.
@@ -180,7 +180,7 @@ namespace Teuchos
     template <typename x_type, typename y_type>
     ScalarType DOT(const OrdinalType n, const x_type* x, const OrdinalType incx, const y_type* y, const OrdinalType incy) const;
 
-    //! Compute the 2-norm of the std::vector \c x.
+    //! Compute the 2-norm of the vector \c x.
     typename ScalarTraits<ScalarType>::magnitudeType NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
 
     //! Return the index of the element of \c x with the maximum magnitude.
@@ -190,17 +190,18 @@ namespace Teuchos
     //! @name Level 2 BLAS Routines.
     //@{
 
-    //! Performs the matrix-std::vector operation:  \c y \c <- \c alpha*A*x+beta*y or \c y \c <- \c alpha*A'*x+beta*y where \c A is a general \c m by \c n matrix.
+    //! Performs the matrix-vector operation:  \c y \c <- \c alpha*A*x+beta*y or \c y \c <- \c alpha*A'*x+beta*y where \c A is a general \c m by \c n matrix.
     template <typename alpha_type, typename A_type, typename x_type, typename beta_type>
     void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A,
               const OrdinalType lda, const x_type* x, const OrdinalType incx, const beta_type beta, ScalarType* y, const OrdinalType incy) const;
 
-    //! Performs the matrix-std::vector operation:  \c x \c <- \c A*x or \c x \c <- \c A'*x where \c A is a unit/non-unit \c n by \c n upper/lower triangular matrix.
+    //! Performs the matrix-vector operation:  \c x \c <- \c A*x or \c x \c <- \c A'*x where \c A is a unit/non-unit \c n by \c n upper/lower triangular matrix.
     template <typename A_type>
     void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const A_type* A,
               const OrdinalType lda, ScalarType* x, const OrdinalType incx) const;
 
     //! \brief Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A.
+    /// \note  For complex arithmetic, this routine performs [Z/C]GERU.
     template <typename alpha_type, typename x_type, typename y_type>
     void GER(const OrdinalType m, const OrdinalType n, const alpha_type alpha, const x_type* x, const OrdinalType incx,
              const y_type* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const;
@@ -517,15 +518,15 @@ namespace Teuchos
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     OrdinalType i, ix = izero;
-    if ( n > izero ) {
-        // Set the initial index (ix).
-        if (incx < izero) { ix = (-n+ione)*incx; }
-        // Scale the std::vector.
-        for(i = izero; i < n; i++)
-        {
-            x[ix] *= alpha;
-            ix += incx;
-        }
+
+    if ( n < ione || incx < ione )
+      return;
+
+    // Scale the vector.
+    for(i = izero; i < n; i++)
+    {
+      x[ix] *= alpha;
+      ix += incx;
     }
   } /* end SCAL */
 
@@ -579,17 +580,29 @@ namespace Teuchos
     typename ScalarTraits<ScalarType>::magnitudeType result =
       ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
     OrdinalType i, ix = izero;
-    if( n > izero ) {
-        // Set the initial indices
-        if (incx < izero) { ix = (-n+ione)*incx; }
 
+    if ( n < ione || incx < ione )
+      return result;
+
+    if (ScalarTraits<ScalarType>::isComplex)
+      {
+        for(i = izero; i < n; i++)
+          {
+            result += ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].real());
+            result += ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].imag());
+            ix += incx;
+          }
+      }
+    else
+      {
         for(i = izero; i < n; i++)
           {
             result += ScalarTraits<ScalarType>::magnitude(x[ix]);
             ix += incx;
           }
-    }
-   return result;
+      }
+   
+    return result;
   } /* end ASUM */
 
   template<typename OrdinalType, typename ScalarType>
@@ -624,18 +637,16 @@ namespace Teuchos
     typename ScalarTraits<ScalarType>::magnitudeType result =
       ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
     OrdinalType i, ix = izero;
-    if ( n > izero )
-      {
-        // Set the initial index.
-        if (incx < izero) { ix = (-n+ione)*incx; }
 
-        for(i = izero; i < n; i++)
-          {
-            result += ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::conjugate(x[ix]) * x[ix]);
-            ix += incx;
-          }
-        result = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::squareroot(result);
+    if ( n < ione || incx < ione )
+      return result;
+
+    for(i = izero; i < n; i++)
+      {
+        result += ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::conjugate(x[ix]) * x[ix]);
+        ix += incx;
       }
+    result = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::squareroot(result);
     return result;
   } /* end NRM2 */
 
@@ -645,12 +656,33 @@ namespace Teuchos
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     OrdinalType result = izero, ix = izero, i;
+    typename ScalarTraits<ScalarType>::magnitudeType curval =
+      ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
     typename ScalarTraits<ScalarType>::magnitudeType maxval =
       ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
 
-    if ( n > izero )
+    if ( n < ione || incx < ione )
+      return result;
+  
+    if (ScalarTraits<ScalarType>::isComplex)
       {
-        if (incx < izero) { ix = (-n+ione)*incx; }
+        maxval = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].real())
+               + ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].imag());
+        ix += incx;
+        for(i = ione; i < n; i++)
+          {
+            curval = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].real())
+                   + ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].imag());
+            if(curval > maxval)
+              {
+                result = i;
+                maxval = curval;
+              }
+            ix += incx;
+          }
+      }
+    else
+      {
         maxval = ScalarTraits<ScalarType>::magnitude(x[ix]);
         ix += incx;
         for(i = ione; i < n; i++)
@@ -857,7 +889,7 @@ namespace Teuchos
       // Determine if this is a conjugate tranpose
       noConj = (ETranspChar[trans] == 'T');
 
-      // Set the starting pointer for the std::vector x if incx < 0.
+      // Set the starting pointer for the vector x if incx < 0.
       if (incx < izero) { kx = (-n+ione)*incx; }
 
       // Start the operations for a nontransposed triangular matrix
@@ -1026,9 +1058,6 @@ namespace Teuchos
     alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
     y_type y_zero = ScalarTraits<y_type>::zero();
     bool BadArgument = false;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
-            "Teuchos::BLAS::GER() does not currently support complex data types.");
 
     // Quick return if there is nothing to do!
     if( m == izero || n == izero || alpha == alpha_zero ){ return; }
@@ -1665,7 +1694,7 @@ namespace Teuchos
     bool LSide = (ESideChar[side] == 'L');
     bool noUnit = (EDiagChar[diag] == 'N');
     bool Upper = (EUploChar[uplo] == 'U');
-    bool noConj = (EUploChar[transa] == 'T');
+    bool noConj = (ETranspChar[transa] == 'T');
 
     if(!LSide) { NRowA = n; }
 
@@ -1897,7 +1926,7 @@ namespace Teuchos
     OrdinalType NRowA = m;
     bool BadArgument = false;
     bool noUnit = (EDiagChar[diag]=='N');
-    bool noConj = (EUploChar[transa] == 'T');
+    bool noConj = (ETranspChar[transa] == 'T');
 
     if (!(ESideChar[side] == 'L')) { NRowA = n; }
 
@@ -1919,7 +1948,7 @@ namespace Teuchos
     if(!BadArgument)
       {
         int i, j, k;
-        // Set the solution to the zero std::vector.
+        // Set the solution to the zero vector.
         if(alpha == alpha_zero) {
             for(j = izero; j < n; j++) {
                 for( i = izero; i < m; i++) {
