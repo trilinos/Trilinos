@@ -47,6 +47,10 @@ extern "C" {
 #include "qpOASES.hpp"
 #endif
 
+#ifdef HAVE_STOKHOS_DAKOTA
+#include "CompressedSensing.hpp"
+#endif
+
 template <typename ordinal_type, typename value_type>
 Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
 ReducedQuadratureFactory(
@@ -121,122 +125,6 @@ createReducedQuadrature(
 
   return reduced_quad;
 }
-
-
-/*
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-reducedQuadrature_CS(
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-  const Teuchos::Array<value_type>& weights,
-  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
-  ) const
-{
-  //
-  // Find reduced quadrature weights by applying column-pivoted QR to
-  // problem Q2^T*w = e_1
-  //
-  ordinal_type sz = Q.numCols();
-  ordinal_type sz2 = sz*(sz+1)/2;
-  ordinal_type nqp = Q.numRows();
-  ordinal_type d = F.numCols();
-
-  if (verbose) {
-    std::cout << "sz = " << sz << std::endl;
-    std::cout << "nqp = " << nqp << std::endl;
-    std::cout << "sz2 = " << sz2 << std::endl;
-  }
-
-  // Compute Q matrix with all possible products
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2t(sz2, nqp);
-  ordinal_type jdx=0;
-  for (ordinal_type j=0; j<sz; j++) {
-    for (ordinal_type k=j; k<sz; k++) {
-      for (ordinal_type i=0; i<nqp; i++)
-	Q2t(jdx,i) = Q(i,j)*Q(i,k);
-      jdx++;
-    }
-  }
-  TEUCHOS_ASSERT(jdx == sz2);
-
-  Teuchos::SerialDenseVector<ordinal_type,value_type> b(sz2), x(nqp);
-  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q2t, w, 0.0);
-  c.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, QQ2, b, 0.0);
-
-  Pecos::CompressedSensing CS;
-  CS.BasisPursuit(Q2t, 
-
-  // Apply column-pivoted QR to Q2
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> QQ2, R2;
-  Teuchos::Array<ordinal_type> piv2;
-  Stokhos::CPQR_Householder3(Q2t, QQ2, R2, piv2);
-  ordinal_type rank = computeRank(R2, reduction_tol);
-
-  if (verbose)
-    std::cout << "rank = " << rank << std::endl;
-
-  
-
-  // Compute [R11^{-1}*b1; 0] where b1 is the first r rows of b
-  blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
-	    Teuchos::NON_UNIT_DIAG, rank, 1, 1.0, R2.values(), n, c.values(),
-	    n);
-  for (ordinal_type i=rank; i<n; i++)
-    c[i] = 0.0;
-
-  // Get reduced weights, points and values
-  Teuchos::SerialDenseVector<ordinal_type,value_type> wt(nqp);
-  wt.putScalar(0.0);
-  for (ordinal_type i=0; i<n; i++)
-    wt[piv2[i]] = c[i];
-
-  if (verbose) {
-    b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -1.0, Q2t, wt, 1.0);
-    std::cout << "product integration error = " << b.normInf() << std::endl;
-
-    Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz);
-    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, w, 0.0);
-    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, wt, 1.0);
-    std::cout << "basis integration error = " << e1.normInf() << std::endl;
-  }
-
-  reduced_weights =
-    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
-  reduced_points =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  reduced_values =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  ordinal_type idx = 0;
-  for (ordinal_type i=0; i<nqp; i++) {
-    if (wt[i] != 0.0) {
-      (*reduced_weights)[idx] = wt[i];
-      (*reduced_points)[idx].resize(d);
-      for (ordinal_type j=0; j<d; j++)
-	(*reduced_points)[idx][j] = F(i,j);
-      (*reduced_values)[idx].resize(sz);
-      for (ordinal_type j=0; j<sz; j++)
-	(*reduced_values)[idx][j] = Q(i,j);
-      idx++;
-    }
-  }
-  
-  // idx may be less than rank if we obtained zero weights in solving
-  // the least-squares problem
-  TEUCHOS_ASSERT(idx <= rank);
-  if (idx < rank) {
-    rank = idx;
-    reduced_weights->resize(rank);
-    reduced_points->resize(rank);
-    reduced_values->resize(rank);
-  }
-}
-*/
 
 template <typename ordinal_type, typename value_type>
 void
@@ -448,6 +336,10 @@ underdetermined_solver(
     solver_GLPK(A, b, x, transa, uplo);
   else if (solver_method == "qpOASES")
     solver_qpOASES(A, b, x, transa, uplo);
+  else if (solver_method == "Basis Pursuit")
+    solver_BasisPursuit(A, b, x, transa, uplo);
+  else if (solver_method == "Orthogonal Matching Pursuit")
+    solver_OrthogonalMatchingPursuit(A, b, x, transa, uplo);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, 
@@ -893,6 +785,80 @@ solver_qpOASES(
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     "qpOASES solver called but not enabled!");
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+solver_BasisPursuit(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
+{
+#ifdef HAVE_STOKHOS_DAKOTA
+  ordinal_type m = A.numRows();
+  ordinal_type n = A.numCols();
+  ordinal_type n_rows;
+  ordinal_type n_cols;
+  if (transa == Teuchos::NO_TRANS) {
+    n_rows = m;
+    n_cols = n;
+  }
+  else {
+    n_rows = n;
+    n_cols = m;
+  }
+  if (x.length() < n_cols)
+    x.shape(n_cols, 1);
+
+  // Setup L1 minimization problem
+  Pecos::CompressedSensing CS;
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(A, transa);
+  Teuchos::SerialDenseVector<ordinal_type, value_type> bb(b);
+  CS.BasisPursuit(AA, bb, x);
+  
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     "BasisPursuit solver called but not enabled!");
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+solver_OrthogonalMatchingPursuit(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
+{
+#ifdef HAVE_STOKHOS_DAKOTA
+  ordinal_type m = A.numRows();
+  ordinal_type n = A.numCols();
+  ordinal_type n_rows;
+  ordinal_type n_cols;
+  if (transa == Teuchos::NO_TRANS) {
+    n_rows = m;
+    n_cols = n;
+  }
+  else {
+    n_rows = n;
+    n_cols = m;
+  }
+  if (x.length() < n_cols)
+    x.shape(n_cols, 1);
+
+  // Setup L1 minimization problem
+  Pecos::CompressedSensing CS;
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(A, transa);
+  Teuchos::SerialDenseVector<ordinal_type, value_type> bb(b);
+  CS.OrthogonalMatchingPursuit(AA, bb, x);
+  
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     "BasisPursuit solver called but not enabled!");
 #endif
 }
 

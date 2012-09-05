@@ -79,12 +79,12 @@ static const char *quad_reduction_method_names[] = {
   "None", "Q Squared" };
 
 // solver methods
-enum Solver_Method { TRSM, GLPK, CLP, CLP_IP, QPOASES };
-static const int num_solver_method = 5;
+enum Solver_Method { TRSM, GLPK, CLP, CLP_IP, QPOASES, BASIS_PURSUIT, ORTHOGONAL_MATCHING_PURSUIT };
+static const int num_solver_method = 7;
 static const Solver_Method solver_method_values[] = { 
-  TRSM, GLPK, CLP, CLP_IP, QPOASES };
+  TRSM, GLPK, CLP, CLP_IP, QPOASES, BASIS_PURSUIT, ORTHOGONAL_MATCHING_PURSUIT };
 static const char *solver_method_names[] = { 
-  "TRSM", "GLPK", "Clp", "Clp-IP", "qpOASES" };
+  "TRSM", "GLPK", "Clp", "Clp-IP", "qpOASES", "Basis Pursuit", "Orthogonal Matching Pursuit" };
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
 typedef Sacado::ETPCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > pce_type;
