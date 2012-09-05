@@ -112,7 +112,7 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
 
    // build and register the gather/scatter evaluators with 
    // the base class.
-   buildGatherScatterEvaluators(*this);
+   this->buildGatherScatterEvaluators(*this);
 }
 
 template <typename Traits,typename LocalOrdinalT>
