@@ -548,12 +548,27 @@ namespace Kokkos {
   }
 
   /// \class CUSPARSEOps
-  /// \brief Default implementation of sparse matrix-vector multiply
-  ///   and solve routines, for host-based Kokkos Node types.
+  /// \brief Implementation of local sparse operations for GPUs that uses cuSPARSE.
   /// \ingroup kokkos_crs_ops
+  ///
+  /// This class is one of various classes in Kokkos that implement
+  /// local sparse matrix-(multi)vector multiply and sparse triangular
+  /// solve.  ("Local" means "on a single node; not using MPI.")
+  /// Examples include DefaultHostSparseOps, AltSparseOps, and
+  /// MklSparseOps for host-based Kokkos Nodes, and CuspOps for NVIDIA
+  /// GPUs (Graphics Processing Units).  This class provides an
+  /// interface to the local sparse operations provided by
+  /// <a href="http://developer.nvidia.com/cuda/cusparse">cuSPARSE</a>,
+  /// the NVIDIA CUDA Sparse Matrix library.
   ///
   /// \tparam Scalar The type of entries of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
+  ///
+  /// \note Unlike CuspOps and the other local sparse operations
+  /// classes mentioned above, this class is not templated on the
+  /// Ordinal type (of column indices in the sparse matrix).  This is
+  /// because cuSPARSE currently only supports column indices of type
+  /// int.
   template <class Scalar, class Node>
   class CUSPARSEOps {
   public:
@@ -569,25 +584,37 @@ namespace Kokkos {
     //! The type of this object, the sparse operator object
     typedef CUSPARSEOps<Scalar,Node> sparse_ops_type;
 
-    /** \brief Typedef for local graph class; empty */
+    /// \brief Typedef for local graph class.
+    ///
+    /// CUSPARSEOps does not support arbitrary Ordinal types.  This is
+    /// why this class' other_type typedef has a default definition
+    /// which results in a compile error if used.  The graph<int,N>
+    /// specialization (see below) is defined.
     template <class O, class N>
     struct graph {
+      // This will raise a compile error if the given ordinal type O is not supported.
       typedef typename O::this_ordinal_not_supported_by_cusparse graph_type;
     };
 
-    /** \brief Typedef for local graph class */
+    //! Partial specialization of graph<O,N> for O=int.
     template <class N>
     struct graph<int,N> {
       typedef CUSPARSECrsGraph<N> graph_type;
     };
 
-    /** \brief Typedef for local matrix class; empty */
+    /// \brief Typedef for local matrix class.
+    ///
+    /// CUSPARSEOps does not support arbitrary Ordinal types.  This is
+    /// why this class' other_type typedef has a default definition
+    /// which results in a compile error if used.  The matrix<S,int,N>
+    /// specialization (see below) is defined.
     template <class S, class O, class N>
     struct matrix {
+      // This will raise a compile error if the given ordinal type O is not supported.
       typedef typename O::this_ordinal_not_supported_by_cusparse matrix_type;
     };
 
-    /** \brief Int-specialization of typedef for local matrix class */
+    //! Partial specialization of matrix<S,O,N> for O=int.
     template <class S, class N>
     struct matrix<S,int,N> {
       typedef CUSPARSECrsMatrix<S,N> matrix_type;
@@ -599,7 +626,8 @@ namespace Kokkos {
     /// operations for a scalar type S2, which may be different from
     /// \c Scalar.
     ///
-    /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar type to the appropriate scalar.
+    /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar
+    /// type to the appropriate scalar.
     ///
     /// This always specifies a specialization of \c
     /// CUSPARSEOps, regardless of the scalar type S2.
@@ -800,9 +828,9 @@ namespace Kokkos {
       // us explicit diagonal entries if diag == Teuchos::UNIT_DIAG,
       // we must allocate space for them.
       const size_t numnz = hostinds.size() + numRows;
-      TEUCHOS_TEST_FOR_EXCEPTION( 
-          numnz > CUDA_MAX_INT, std::runtime_error, 
-          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than " << CUDA_MAX_INT << " non-zeros." 
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          numnz > CUDA_MAX_INT, std::runtime_error,
+          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than " << CUDA_MAX_INT << " non-zeros."
       );
       devptrs = node->template allocBuffer<int>( numRows+1 );
       if (numnz) devinds = node->template allocBuffer<int>( numnz );
@@ -831,9 +859,9 @@ namespace Kokkos {
     else {
       // our format == their format; just allocate and copy
       const size_t numnz = hostinds.size();
-      TEUCHOS_TEST_FOR_EXCEPTION( 
-          numnz > CUDA_MAX_INT, std::runtime_error, 
-          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than " << CUDA_MAX_INT << " non-zeros." 
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          numnz > CUDA_MAX_INT, std::runtime_error,
+          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than " << CUDA_MAX_INT << " non-zeros."
       );
       devptrs = node->template allocBuffer<int>( numRows+1 );
       ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
