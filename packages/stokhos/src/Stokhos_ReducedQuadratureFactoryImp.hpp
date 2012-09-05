@@ -40,6 +40,7 @@ extern "C" {
 #ifdef HAVE_STOKHOS_CLP
 #include "coin/ClpSimplex.hpp"
 #include "coin/CoinBuild.hpp"
+#include "coin/ClpInterior.hpp"
 #endif
 
 #ifdef HAVE_STOKHOS_QPOASES
@@ -51,10 +52,12 @@ Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
 ReducedQuadratureFactory(
   const Teuchos::ParameterList& params_) :
   params(params_),
-  reduction_method(params.get("Reduced Quadrature Method", 
-			      "Column-Pivoted QR")),
+  reduction_method(params.get("Reduced Quadrature Method", "Q Squared")),
+  solver_method(params.get("Solver Method", "TRSM")),
+  eliminate_dependent_rows(params.get("Eliminate Dependent Rows", true)),
   verbose(params.get("Verbose", false)),
-  reduction_tol(params.get("Reduction Tolerance", 1.0e-12))
+  reduction_tol(params.get("Reduction Tolerance", 1.0e-12)),
+  objective_value(params.get("Objective Value", 0.0))
 {
 }
 
@@ -71,32 +74,13 @@ createReducedQuadrature(
   Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > > red_values;
 
   // Compute reduced quadrature rule
-  if (reduction_method == "Column-Pivoted QR")
-    reducedQuadrature_QRCP(Q, F, weights, 
-			   red_weights, red_points, red_values);
-  else if (reduction_method == "L1 Minimization") {
-    std::string solver = params.get("LP Solver", "GLPK");
-    if (solver == "GLPK")
-       reducedQuadrature_GLPK(Q, F, weights, 
-			      red_weights, red_points, red_values);
-    else if (solver == "CLP")
-       reducedQuadrature_CLP(Q, F, weights, 
-			     red_weights, red_points, red_values);
-    else if (solver == "qpOASES")
-       reducedQuadrature_qpOASES(Q, F, weights, 
-				 red_weights, red_points, red_values);
-    else if (solver == "GLPK-CPQR")
-       reducedQuadrature_GLPK_CPQR(Q, F, weights, 
-				   red_weights, red_points, red_values);
-    else if (solver == "CLP-CPQR")
-       reducedQuadrature_CLP_CPQR(Q, F, weights, 
-				  red_weights, red_points, red_values);
-    else if (solver == "qpOASES-CPQR")
-       reducedQuadrature_qpOASES_CPQR(Q, F, weights, 
-				      red_weights, red_points, red_values);
+  if (reduction_method == "Q Squared") {
+    if (eliminate_dependent_rows)
+      reducedQuadrature_Q_Squared_CPQR(Q, F, weights, 
+				       red_weights, red_points, red_values);
     else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, "Invalid LP solver method " << solver);
+      reducedQuadrature_Q_Squared(Q, F, weights, 
+				  red_weights, red_points, red_values);
   }
   else if (reduction_method == "None") {
     ordinal_type sz = Q.numCols();
@@ -138,129 +122,6 @@ createReducedQuadrature(
   return reduced_quad;
 }
 
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-reducedQuadrature_QRCP(
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-  const Teuchos::Array<value_type>& weights,
-  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
-  ) const
-{
-  //
-  // Find reduced quadrature weights by applying column-pivoted QR to
-  // problem Q2^T*w = e_1
-  //
-  ordinal_type sz = Q.numCols();
-  //ordinal_type sz2 = sz*(sz+1)/2;
-  ordinal_type sz2 = sz*sz;
-  ordinal_type nqp = Q.numRows();
-  ordinal_type d = F.numCols();
-
-  if (verbose) {
-    std::cout << "sz = " << sz << std::endl;
-    std::cout << "nqp = " << nqp << std::endl;
-    std::cout << "sz2 = " << sz2 << std::endl;
-  }
-
-  // Compute Q matrix with all possible products
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2t(sz2, nqp);
-  ordinal_type jdx=0;
-  for (ordinal_type j=0; j<sz; j++) {
-    //for (ordinal_type k=j; k<sz; k++) {
-    for (ordinal_type k=0; k<sz; k++) {
-      for (ordinal_type i=0; i<nqp; i++)
-	Q2t(jdx,i) = Q(i,j)*Q(i,k);
-      jdx++;
-    }
-  }
-  TEUCHOS_ASSERT(jdx == sz2);
-
-  // Apply column-pivoted QR to Q2
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> QQ2, R2;
-  Teuchos::Array<ordinal_type> piv2;
-  Stokhos::CPQR_Householder(Q2t, QQ2, R2, piv2);
-  ordinal_type rank = computeRank(R2, reduction_tol);
-
-  if (verbose) {
-    std::cout << "rank = " << rank << std::endl;
-
-    // std::cout << "full diag(R) = [ ";
-    // for (ordinal_type i=0; i<R2.numRows(); i++)
-    //   std::cout << R2(i,i) << " ";
-    // std::cout << "]" << std::endl;
-
-    std::cout << "diag(R) = [ ";
-    for (ordinal_type i=0; i<rank; i++)
-      std::cout << R2(i,i) << " ";
-    std::cout << "]" << std::endl;
-  }
-
-  // Apply c = QQ2^T*Q2^T*w
-  ordinal_type n = QQ2.numCols();
-  //std::cout << "n = " << n << std::endl;
-  Teuchos::SerialDenseVector<ordinal_type,value_type> b(sz2), c(n);
-  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q2t, w, 0.0);
-  c.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, QQ2, b, 0.0);
-
-  // Compute [R11^{-1}*b1; 0] where b1 is the first r rows of b
-  blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
-	    Teuchos::NON_UNIT_DIAG, rank, 1, 1.0, R2.values(), n, c.values(),
-	    n);
-  for (ordinal_type i=rank; i<n; i++)
-    c[i] = 0.0;
-
-  // Get reduced weights, points and values
-  Teuchos::SerialDenseVector<ordinal_type,value_type> wt(nqp);
-  wt.putScalar(0.0);
-  for (ordinal_type i=0; i<n; i++)
-    wt[piv2[i]] = c[i];
-
-  if (verbose) {
-    b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -1.0, Q2t, wt, 1.0);
-    std::cout << "product integration error = " << b.normInf() << std::endl;
-
-    Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz);
-    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, w, 0.0);
-    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, wt, 1.0);
-    std::cout << "basis integration error = " << e1.normInf() << std::endl;
-  }
-
-  reduced_weights =
-    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
-  reduced_points =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  reduced_values =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  ordinal_type idx = 0;
-  for (ordinal_type i=0; i<nqp; i++) {
-    if (wt[i] != 0.0) {
-      (*reduced_weights)[idx] = wt[i];
-      (*reduced_points)[idx].resize(d);
-      for (ordinal_type j=0; j<d; j++)
-	(*reduced_points)[idx][j] = F(i,j);
-      (*reduced_values)[idx].resize(sz);
-      for (ordinal_type j=0; j<sz; j++)
-	(*reduced_values)[idx][j] = Q(i,j);
-      idx++;
-    }
-  }
-  
-  // idx may be less than rank if we obtained zero weights in solving
-  // the least-squares problem
-  TEUCHOS_ASSERT(idx <= rank);
-  if (idx < rank) {
-    rank = idx;
-    reduced_weights->resize(rank);
-    reduced_points->resize(rank);
-    reduced_values->resize(rank);
-  }
-}
 
 /*
 template <typename ordinal_type, typename value_type>
@@ -380,7 +241,7 @@ reducedQuadrature_CS(
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-reducedQuadrature_GLPK(
+reducedQuadrature_Q_Squared(
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
   const Teuchos::Array<value_type>& weights,
@@ -389,7 +250,6 @@ reducedQuadrature_GLPK(
   Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
   ) const
 {
-#ifdef HAVE_STOKHOS_GLPK
   //
   // Find reduced quadrature weights by solving linear program
   // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2p = Q2*R2
@@ -419,167 +279,10 @@ reducedQuadrature_GLPK(
     e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
   TEUCHOS_ASSERT(ret == 0);
 
-  // Setup linear program
-  LPX *lp = lpx_create_prob();
-  lpx_set_prob_name(lp, "MonomialProj PCE Reduction");
-  lpx_set_obj_dir(lp, LPX_MIN);
-  lpx_add_rows(lp, sz2);
-  lpx_add_cols(lp, nqp);
-  for (ordinal_type i=0; i<sz2; i++)
-    lpx_set_row_bnds(lp, i+1, LPX_FX, e1[i], e1[i]);
-
-  // Set columns bounds and object coefficients
-  for (ordinal_type j=0; j<nqp; j++) {
-    lpx_set_col_bnds(lp, j+1, LPX_LO, 0.0, 0.0);
-    lpx_set_obj_coef(lp, j+1, 1.0);
-  }
-
-  // Set constraint matrix = Q2^T
-  int **cols = new int*[sz2];
-  double **vals = new double*[sz2];
-  for (ordinal_type i=0; i<sz2; i++) {
-    cols[i] = new int[nqp+1];
-    vals[i] = new double[nqp+1];
-    for (ordinal_type j=0; j<nqp; j++) {
-      cols[i][j+1] = j+1;
-      vals[i][j+1] = Q2(j,i);
-    }
-    lpx_set_mat_row(lp, i+1, nqp, cols[i], vals[i]);
-  }
-
-  if (params.get("Write MPS File", false) == true)
-    lpx_write_mps(lp, params.get("MPS Filename", "lp.mps").c_str());
-  
-  // Solve linear program
-  lpx_simplex(lp);
-  int status = lpx_get_status(lp);
-  if (verbose) {
-    std::cout << "glpk status = " << status << std::endl;
-    double z = lpx_get_obj_val(lp);
-    std::cout << "glpk objective = " << z << std::endl;
-  }
+  // Solve problem
   Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
-  for (ordinal_type i=0; i<nqp; i++)
-    u[i] = lpx_get_col_prim(lp, i+1);
-  if (verbose)
-    std::cout << "reduced weights = " << u << std::endl;
+  underdetermined_solver(Q2, e1, u, Teuchos::TRANS, Teuchos::UNDEF_TRI);
 
-  // Clean up linear program
-  lpx_delete_prob(lp);
-  for (ordinal_type i=0; i<sz2; i++) {
-    delete [] cols[i];
-    delete [] vals[i];
-  }
-  delete [] cols;
-  delete [] vals;
-  
-  ordinal_type rank = 0;
-  for (ordinal_type i=0; i<nqp; i++)
-    if (std::abs(u[i]) > reduction_tol) ++rank;
-
-  // Get reduced weights, points and values
-  reduced_weights =
-    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
-  reduced_points =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  reduced_values =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  ordinal_type idx = 0;
-  for (ordinal_type i=0; i<nqp; i++) {
-    if (std::abs(u[i]) > reduction_tol) {
-      (*reduced_weights)[idx] = u[i];
-      (*reduced_points)[idx].resize(d);
-      for (ordinal_type j=0; j<d; j++)
-	(*reduced_points)[idx][j] = F(i,j);
-      (*reduced_values)[idx].resize(sz);
-      for (ordinal_type j=0; j<sz; j++)
-	(*reduced_values)[idx][j] = Q(i,j);
-      idx++;
-    }
-  }
-  
-  // idx may be less than rank if we obtained zero weights in solving
-  // the least-squares problem
-  TEUCHOS_ASSERT(idx <= rank);
-  if (idx < rank) {
-    rank = idx;
-    reduced_weights->resize(rank);
-    reduced_points->resize(rank);
-    reduced_values->resize(rank);
-  }
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     "GLPK solver called but not enabled!");
-#endif
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-reducedQuadrature_CLP(
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-  const Teuchos::Array<value_type>& weights,
-  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
-  ) const
-{
-#ifdef HAVE_STOKHOS_CLP
-  //
-  // Find reduced quadrature weights by solving linear program
-  // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2p = Q2*R2
-  //
-  ordinal_type sz = Q.numCols();
-  ordinal_type sz2 = sz*(sz+1)/2;
-  ordinal_type nqp = Q.numRows();
-  ordinal_type d = F.numCols();
-
-  // Compute Q matrix with all possible products
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
-  ordinal_type jdx=0;
-  for (ordinal_type j=0; j<sz; j++) {
-    for (ordinal_type k=j; k<sz; k++) {
-      for (ordinal_type i=0; i<nqp; i++)
-	Q2(i,jdx) = Q(i,j)*Q(i,k);
-      jdx++;
-    }
-  }
-  TEUCHOS_ASSERT(jdx == sz2);
-
-  // Compute e_1 = Q2^T*w which is our constraint
-  Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz2);
-  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  ordinal_type ret = 
-    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
-  TEUCHOS_ASSERT(ret == 0);
-
-  // Setup linear program
-  ClpSimplex model;
-  model.resize(0, nqp);
-
-  // Set columns bounds and object coefficients
-  for (ordinal_type i=0; i<nqp; i++) {
-    model.setColLower(i, 0.0);
-    model.setColUpper(i, DBL_MAX);
-    model.setObjectiveCoefficient(i, 0.0);
-  }
-
-  // Set constraint matrix = Q2^T, set row constraints
-  Teuchos::Array< Teuchos::Array<int> > cols(sz2);
-  for (ordinal_type i=0; i<sz2; i++) {
-    cols[i].resize(nqp);
-    for (ordinal_type j=0; j<nqp; j++)
-      cols[i][j] = j;
-    model.addRow(nqp, &cols[i][0], Q2[i], e1[i], e1[i]);
-  }
-  
-  // Solve linear program
-  model.primal();
-  double *solution = model.primalColumnSolution();
-  Teuchos::SerialDenseVector<ordinal_type,value_type> u(
-    Teuchos::Copy, solution, nqp);
   if (verbose)
     std::cout << "reduced weights = " << u << std::endl;
   
@@ -617,16 +320,12 @@ reducedQuadrature_CLP(
     reduced_points->resize(rank);
     reduced_values->resize(rank);
   }
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     "CLP solver called but not enabled!");
-#endif
 }
 
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-reducedQuadrature_qpOASES(
+reducedQuadrature_Q_Squared_CPQR(
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
   const Teuchos::Array<value_type>& weights,
@@ -635,121 +334,6 @@ reducedQuadrature_qpOASES(
   Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
   ) const
 {
-#ifdef HAVE_STOKHOS_QPOASES
-  //
-  // Find reduced quadrature weights by solving linear program
-  // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2p = Q2*R2
-  //
-  ordinal_type sz = Q.numCols();
-  ordinal_type sz2 = sz*(sz+1)/2;
-  ordinal_type nqp = Q.numRows();
-  ordinal_type d = F.numCols();
-
-  // Compute Q matrix with all possible products
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
-  ordinal_type jdx=0;
-  for (ordinal_type j=0; j<sz; j++) {
-    for (ordinal_type k=j; k<sz; k++) {
-      for (ordinal_type i=0; i<nqp; i++)
-	Q2(i,jdx) = Q(i,j)*Q(i,k);
-      jdx++;
-    }
-  }
-  TEUCHOS_ASSERT(jdx == sz2);
-
-  // Compute e_1 = Q2^T*w which is our constraint
-  Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz2);
-  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  ordinal_type ret =
-    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
-  TEUCHOS_ASSERT(ret == 0);
-
-  // Compute objective vector
-  Teuchos::SerialDenseVector<ordinal_type,value_type> c(nqp);
-  c.putScalar(1.0);
-
-  // Compute lower bounds
-  Teuchos::SerialDenseVector<ordinal_type,value_type> lb(nqp);
-  lb.putScalar(0.0);
-
-  // Setup linear program
-  int nWSR = 10000;
-  qpOASES::QProblem lp(nqp, sz2, qpOASES::HST_ZERO);
-  lp.init(NULL,         // zero Hessian
-	  c.values(),   // objective
-	  Q2.values(),  // constrait matrix -- qpOASES expects row-wise storage
-	  lb.values(),  // variable lower bounds
-	  NULL,         // no upper bounds
-	  e1.values(),  // constraint lower bounds
-	  e1.values(),  // constraint upper bounds
-	  nWSR,         // maximum number of working set recalculations
-	  NULL,         // maximum CPU time
-	  w.values(),   // initial guess for primal
-	  NULL,         // initial guess for dual
-	  NULL,         // guessed bounds
-	  NULL          // guessed constraints
-    );
-
-  // Get solution
-  Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
-  lp.getPrimalSolution(u.values());
-  if (verbose)
-    std::cout << "reduced weights = " << u << std::endl;
-  
-  ordinal_type rank = 0;
-  for (ordinal_type i=0; i<nqp; i++)
-    if (std::abs(u[i]) > reduction_tol) ++rank;
-
-  // Get reduced weights, points and values
-  reduced_weights =
-    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
-  reduced_points =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  reduced_values =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  ordinal_type idx = 0;
-  for (ordinal_type i=0; i<nqp; i++) {
-    if (std::abs(u[i]) > reduction_tol) {
-      (*reduced_weights)[idx] = u[i];
-      (*reduced_points)[idx].resize(d);
-      for (ordinal_type j=0; j<d; j++)
-	(*reduced_points)[idx][j] = F(i,j);
-      (*reduced_values)[idx].resize(sz);
-      for (ordinal_type j=0; j<sz; j++)
-	(*reduced_values)[idx][j] = Q(i,j);
-      idx++;
-    }
-  }
-  
-  // idx may be less than rank if we obtained zero weights in solving
-  // the least-squares problem
-  TEUCHOS_ASSERT(idx <= rank);
-  if (idx < rank) {
-    rank = idx;
-    reduced_weights->resize(rank);
-    reduced_points->resize(rank);
-    reduced_values->resize(rank);
-  }
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     "qpOASES solver called but not enabled!");
-#endif
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-reducedQuadrature_GLPK_CPQR(
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-  const Teuchos::Array<value_type>& weights,
-  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
-  ) const
-{
-#ifdef HAVE_STOKHOS_GLPK
   //
   // Find reduced quadrature weights by solving linear program
   // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2p = Q2*R2
@@ -788,55 +372,18 @@ reducedQuadrature_GLPK_CPQR(
   R.reshape(r, R.numCols());
   Z.reshape(Z.numRows(), r);
 
+  if (verbose) {
+    std::cout << "Q2 rank = " << r << std::endl;
+  }
+
   // Compute new constraint vector
   Teuchos::SerialDenseVector<ordinal_type,value_type> e1t(r);
   ret = e1t.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Z, e1, 0.0);
   TEUCHOS_ASSERT(ret == 0);
 
-  // Setup linear program
-  LPX *lp = lpx_create_prob();
-  lpx_set_prob_name(lp, "MonomialProj PCE Reduction");
-  lpx_set_obj_dir(lp, LPX_MIN);
-  lpx_add_rows(lp, r);
-  lpx_add_cols(lp, nqp);
-  for (ordinal_type i=0; i<r; i++)
-    lpx_set_row_bnds(lp, i+1, LPX_FX, e1t[i], e1t[i]);
-
-  // Set columns bounds and object coefficients
-  for (ordinal_type j=0; j<nqp; j++) {
-    lpx_set_col_bnds(lp, j+1, LPX_LO, 0.0, 0.0);
-    lpx_set_obj_coef(lp, j+1, 0.0);
-  }
-
-  // Set constraint matrix = R
-  int **cols = new int*[r];
-  double **vals = new double*[r];
-  for (ordinal_type i=0; i<r; i++) {
-    cols[i] = new int[nqp+1];
-    vals[i] = new double[nqp+1];
-    for (ordinal_type j=0; j<nqp; j++) {
-      cols[i][j+1] = j+1;
-      vals[i][j+1] = R(i,j);
-    }
-    lpx_set_mat_row(lp, i+1, nqp, cols[i], vals[i]);
-  }
-
-  if (params.get("Write MPS File", false) == true)
-    lpx_write_mps(lp, params.get("MPS Filename", "lp.mps").c_str());
-  
-  // Solve linear program
-  lpx_simplex(lp);
-  int status = lpx_get_status(lp);
-  if (verbose) {
-    std::cout << "glpk status = " << status << std::endl;
-    double z = lpx_get_obj_val(lp);
-    std::cout << "glpk objective = " << z << std::endl;
-  }
-
-  // Get solution
+  // Solve problem
   Teuchos::SerialDenseVector<ordinal_type,value_type> ut(nqp);
-  for (ordinal_type i=0; i<nqp; i++)
-    ut[i] = lpx_get_col_prim(lp, i+1);
+  underdetermined_solver(R, e1t, ut, Teuchos::NO_TRANS, Teuchos::UPPER_TRI);
 
   // Transform solution back to original
   Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
@@ -845,15 +392,6 @@ reducedQuadrature_GLPK_CPQR(
 
   if (verbose)
     std::cout << "reduced weights = " << u << std::endl;
-
-  // Clean up linear program
-  lpx_delete_prob(lp);
-  for (ordinal_type i=0; i<r; i++) {
-    delete [] cols[i];
-    delete [] vals[i];
-  }
-  delete [] cols;
-  delete [] vals;
   
   ordinal_type rank = 0;
   for (ordinal_type i=0; i<nqp; i++)
@@ -889,165 +427,288 @@ reducedQuadrature_GLPK_CPQR(
     reduced_points->resize(rank);
     reduced_values->resize(rank);
   }
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     "GLPK solver called but not enabled!");
-#endif
 }
 
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-reducedQuadrature_CLP_CPQR(
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-  const Teuchos::Array<value_type>& weights,
-  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
-  ) const
+underdetermined_solver(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
 {
-#ifdef HAVE_STOKHOS_CLP
-  //
-  // Find reduced quadrature weights by solving linear program
-  // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2p = Q2*R2
-  //
-  ordinal_type sz = Q.numCols();
-  ordinal_type sz2 = sz*(sz+1)/2;
-  ordinal_type nqp = Q.numRows();
-  ordinal_type d = F.numCols();
+  if (solver_method == "TRSM")
+    solver_TRSM(A, b, x, transa, uplo);
+  else if (solver_method == "Clp")
+    solver_CLP(A, b, x, transa, uplo);
+  else if (solver_method == "Clp-IP")
+    solver_CLP_IP(A, b, x, transa, uplo);
+  else if (solver_method == "GLPK")
+    solver_GLPK(A, b, x, transa, uplo);
+  else if (solver_method == "qpOASES")
+    solver_qpOASES(A, b, x, transa, uplo);
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, 
+      "Invalid solver method " << solver_method);
+}
 
-  // Compute Q matrix with all possible products
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
-  ordinal_type jdx=0;
-  for (ordinal_type j=0; j<sz; j++) {
-    for (ordinal_type k=j; k<sz; k++) {
-      for (ordinal_type i=0; i<nqp; i++)
-	Q2(i,jdx) = Q(i,j)*Q(i,k);
-      jdx++;
-    }
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+solver_TRSM(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(uplo == Teuchos::UNDEF_TRI, std::logic_error,
+			     "TRSM solver requires triangular matrix!");
+  ordinal_type m = A.numRows();
+  ordinal_type n = A.numCols();
+  ordinal_type n_rows;
+  ordinal_type n_cols;
+  if (transa == Teuchos::NO_TRANS) {
+    n_rows = m;
+    n_cols = n;
   }
-  TEUCHOS_ASSERT(jdx == sz2);
-
-  // Compute e_1 = Q2^T*w which is our constraint
-  Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz2);
-  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  ordinal_type ret = 
-    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
-  TEUCHOS_ASSERT(ret == 0);
-
-  // Compute QR decomposition of Q2^T:  Q2^T*P = Z*R
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2t(Q2, Teuchos::TRANS);
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Z, R;
-  Teuchos::Array<ordinal_type> piv;
-  CPQR_Householder(Q2t, Z, R, piv);
-  ordinal_type r = computeRank(R, reduction_tol);
-  R.reshape(r, R.numCols());
-  Z.reshape(Z.numRows(), r);
-
-  // Compute new constraint vector
-  Teuchos::SerialDenseVector<ordinal_type,value_type> e1t(r);
-  ret = e1t.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Z, e1, 0.0);
-  TEUCHOS_ASSERT(ret == 0);
-
-  /*
-  // Setup linear program
-  ClpSimplex model;
-  model.resize(0, nqp);
-
-  // Set columns bounds and object coefficients
-  for (ordinal_type i=0; i<nqp; i++) {
-    model.setColLower(i, 0.0);
-    model.setColUpper(i, DBL_MAX);
-    model.setObjectiveCoefficient(i, 0.0);
+  else {
+    n_rows = n;
+    n_cols = m;
   }
+  if (x.length() < n_cols)
+    x.shape(n_cols, 1);
+  x.putScalar(0.0);
+  blas.COPY(n_rows, b.values(), 1, x.values(), 1);
 
-  // Set constraint matrix = R.  Here we use the fact that R is upper
-  // triangular
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Rt(R, Teuchos::TRANS);
-  Teuchos::Array< Teuchos::Array<int> > cols(r);
-  for (ordinal_type i=0; i<r; i++) {
-    cols[i].resize(nqp-i);
-    for (ordinal_type j=0; j<nqp-i; j++)
-      cols[i][j] = i+j;
-    model.addRow(nqp-i, &cols[i][0], Rt[i]+i, e1t[i], e1t[i]);
+  // Here we assume A is upper triangular
+  blas.TRSM(Teuchos::LEFT_SIDE, uplo, transa, 
+	    Teuchos::NON_UNIT_DIAG, n_rows, 1, 1.0, A.values(), A.stride(), 
+	    x.values(), x.stride());
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+solver_GLPK(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
+{
+#ifdef HAVE_STOKHOS_GLPK
+  ordinal_type m = A.numRows();
+  ordinal_type n = A.numCols();
+  ordinal_type n_rows;
+  ordinal_type n_cols;
+  if (transa == Teuchos::NO_TRANS) {
+    n_rows = m;
+    n_cols = n;
   }
-  */
+  else {
+    n_rows = n;
+    n_cols = m;
+  }
+  if (x.length() < n_cols)
+    x.shape(n_cols, 1);
 
-  // Setup linear program
-  ClpSimplex model;
-  model.resize(r, 0);
+  LPX *lp = lpx_create_prob();
+  lpx_set_prob_name(lp, "Reduced Quadrature");
+  lpx_set_obj_dir(lp, LPX_MIN);
+  lpx_add_rows(lp, n_rows);
+  lpx_add_cols(lp, n_cols);
 
   // Set row bounds
-  for (ordinal_type i=0; i<r; i++) {
-    model.setRowLower(i, e1t[i]);
-    model.setRowUpper(i, e1t[i]);
+  for (ordinal_type i=0; i<n_rows; i++)
+    lpx_set_row_bnds(lp, i+1, LPX_FX, b[i], b[i]);
+
+  // Set columns bounds and object coefficients
+  for (ordinal_type j=0; j<n_cols; j++) {
+    lpx_set_col_bnds(lp, j+1, LPX_LO, 0.0, 0.0);
+    lpx_set_obj_coef(lp, j+1, objective_value);
   }
 
-  // Set constraint matrix = R.  Here we use the fact that R is upper
-  // triangular
-  Teuchos::Array< Teuchos::Array<int> > rows(nqp);
-  CoinBuild buildObject;
-  for (ordinal_type j=0; j<nqp; j++) {
-    int nrows = r;
-    if (j < r)
-      nrows = j+1;
-    rows[j].resize(nrows);
-    for (ordinal_type i=0; i<nrows; i++)
-      rows[j][i] = i;
-    buildObject.addColumn(nrows, &rows[j][0], R[j], 0.0, DBL_MAX, 0.0);
+  // Set constraint matrix
+  // GLPK uses this silly 1-based indexing scheme which essentially
+  // requires us to copy the matrix.  While copying we will also transpose
+  // to make loading in GLPK easier
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(n_rows+1,n_cols+1);
+  AA.putScalar(0.0);
+  Teuchos::EUplo AA_uplo = uplo;
+  if (transa == Teuchos::NO_TRANS) {
+    Teuchos::SerialDenseMatrix<ordinal_type, value_type> AAA(
+      Teuchos::View, AA, n_rows, n_cols, 1, 1);
+    AAA.assign(A);
   }
-  model.addColumns(buildObject);
-  
-  // Solve linear program
-  model.primal();
-  double *solution = model.primalColumnSolution();
-  Teuchos::SerialDenseVector<ordinal_type,value_type> ut(
-    Teuchos::Copy, solution, nqp);
-
-  // Transform solution back to original
-  Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
-  for (ordinal_type i=0; i<nqp; i++)
-    u[piv[i]] = ut[i];
-
-  if (verbose)
-    std::cout << "reduced weights = " << u << std::endl;
-  
-  ordinal_type rank = 0;
-  for (ordinal_type i=0; i<nqp; i++)
-    if (std::abs(u[i]) > reduction_tol) ++rank;
-
-  // Get reduced weights, points and values
-  reduced_weights =
-    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
-  reduced_points =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  reduced_values =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  ordinal_type idx = 0;
-  for (ordinal_type i=0; i<nqp; i++) {
-    if (std::abs(u[i]) > reduction_tol) {
-      (*reduced_weights)[idx] = u[i];
-      (*reduced_points)[idx].resize(d);
-      for (ordinal_type j=0; j<d; j++)
-	(*reduced_points)[idx][j] = F(i,j);
-      (*reduced_values)[idx].resize(sz);
-      for (ordinal_type j=0; j<sz; j++)
-	(*reduced_values)[idx][j] = Q(i,j);
-      idx++;
+  else {
+    for (ordinal_type i=0; i<n_rows; i++)
+      for (ordinal_type j=0; j<n_cols; j++)
+	AA(i+1,j+1) = A(j,i);
+    if (uplo == Teuchos::UPPER_TRI)
+      AA_uplo = Teuchos::LOWER_TRI;
+    else if (uplo == Teuchos::LOWER_TRI)
+      AA_uplo = Teuchos::UPPER_TRI;
+  }
+  Teuchos::Array< Teuchos::Array<int> > row_indices(n_cols);
+  if (AA_uplo == Teuchos::UNDEF_TRI) {
+    for (ordinal_type j=0; j<n_cols; j++) {
+      row_indices[j].resize(n_rows+1);
+      for (ordinal_type i=0; i<n_rows; i++)
+	row_indices[j][i+1] = i+1; 
+      lpx_set_mat_col(lp, j+1, n_rows, &row_indices[j][0], AA[j+1]);
     }
   }
-  
-  // idx may be less than rank if we obtained zero weights in solving
-  // the least-squares problem
-  TEUCHOS_ASSERT(idx <= rank);
-  if (idx < rank) {
-    rank = idx;
-    reduced_weights->resize(rank);
-    reduced_points->resize(rank);
-    reduced_values->resize(rank);
+  else if (AA_uplo == Teuchos::UPPER_TRI) {
+    // For AA upper-triangular, only need to include leading 
+    // min(n_rows,n_cols) x n_cols block (remaining rows must be zero)
+    for (ordinal_type j=0; j<n_cols; j++) {
+      ordinal_type nr = n_rows;
+      if (j < n_rows)
+	nr = j+1;
+      row_indices[j].resize(nr+1);
+      for (ordinal_type i=0; i<nr; i++)
+	row_indices[j][i+1] = i+1; 
+      lpx_set_mat_col(lp, j+1, nr, &row_indices[j][0], AA[j+1]);
+    }
   }
+  else if (AA_uplo == Teuchos::LOWER_TRI) {
+    // For AA lower-triangular, only need to include leading 
+    // n_rows x min(n_rows,n_cols) block (remaining columns must be zero)
+    for (ordinal_type j=0; j<n_cols; j++) {
+      if (j < n_rows) {
+	ordinal_type nr = n_rows-j;
+	row_indices[j].resize(nr+1);
+	for (ordinal_type i=0; i<nr; i++)
+	  row_indices[j][i+1] = j+i+1; 
+	lpx_set_mat_col(lp, j+1, nr, &row_indices[j][0], AA[j+1]+j);
+      }
+    }
+  }
+    
+  // Write MPS-file if requested
+  if (params.get("Write MPS File", false) == true)
+    lpx_write_mps(lp, params.get("MPS Filename", "lp.mps").c_str());
+
+  // Solve linear program
+  lpx_simplex(lp);
+  int status = lpx_get_status(lp);
+  if (verbose) {
+    std::cout << "glpk status = " << status << std::endl;
+    double z = lpx_get_obj_val(lp);
+    std::cout << "glpk objective = " << z << std::endl;
+  }
+
+  // Get solution
+  for (ordinal_type i=0; i<n_cols; i++)
+    x[i] = lpx_get_col_prim(lp, i+1);
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     "GLPK solver called but not enabled!");
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+solver_CLP(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
+{
+#ifdef HAVE_STOKHOS_CLP
+  ordinal_type m = A.numRows();
+  ordinal_type n = A.numCols();
+  ordinal_type n_rows;
+  ordinal_type n_cols;
+  if (transa == Teuchos::NO_TRANS) {
+    n_rows = m;
+    n_cols = n;
+  }
+  else {
+    n_rows = n;
+    n_cols = m;
+  }
+  if (x.length() < n_cols)
+    x.shape(n_cols, 1);
+
+  // Setup linear program
+  ClpSimplex model;
+  model.resize(n_rows, 0);
+
+  // Set row bounds
+  for (ordinal_type i=0; i<n_rows; i++) {
+    model.setRowLower(i, b[i]);
+    model.setRowUpper(i, b[i]);
+  }
+
+  // Set constraint matrix, columns bounds and objective coefficients
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA;
+  Teuchos::EUplo AA_uplo = uplo;
+  if (transa == Teuchos::NO_TRANS) {
+     AA = Teuchos::SerialDenseMatrix<ordinal_type, value_type>(
+       Teuchos::View, A, n_rows, n_cols);
+  }
+  else {
+    AA.reshape(n_rows, n_cols);
+    for (ordinal_type i=0; i<n_rows; i++)
+      for (ordinal_type j=0; j<n_cols; j++)
+	AA(i,j) = A(j,i);
+    if (uplo == Teuchos::UPPER_TRI)
+      AA_uplo = Teuchos::LOWER_TRI;
+    else if (uplo == Teuchos::LOWER_TRI)
+      AA_uplo = Teuchos::UPPER_TRI;
+  }
+  Teuchos::Array< Teuchos::Array<int> > row_indices(n_cols);
+  CoinBuild buildObject;
+  if (AA_uplo == Teuchos::UNDEF_TRI) {
+    for (ordinal_type j=0; j<n_cols; j++) {
+      row_indices[j].resize(n_rows);
+      for (ordinal_type i=0; i<n_rows; i++)
+	row_indices[j][i] = i; 
+      buildObject.addColumn(
+	n_rows, &row_indices[j][0], AA[j], 0.0, DBL_MAX, objective_value);
+    }
+  }
+  else if (AA_uplo == Teuchos::UPPER_TRI) {
+    // For AA upper-triangular, only need to include leading 
+    // min(n_rows,n_cols) x n_cols block (remaining rows must be zero)
+    for (ordinal_type j=0; j<n_cols; j++) {
+      ordinal_type nr = n_rows;
+      if (j < n_rows)
+	nr = j+1;
+      row_indices[j].resize(nr);
+      for (ordinal_type i=0; i<nr; i++)
+	row_indices[j][i] = i; 
+      buildObject.addColumn(nr, &row_indices[j][0], AA[j], 0.0, DBL_MAX, objective_value);
+    }
+  }
+  else if (AA_uplo == Teuchos::LOWER_TRI) {
+    // For AA lower-triangular, only need to include leading 
+    // n_rows x min(n_rows,n_cols) block (remaining columns must be zero)
+    for (ordinal_type j=0; j<n_cols; j++) {
+      if (j < n_rows) {
+	ordinal_type nr = n_rows-j;
+	row_indices[j].resize(nr);
+	for (ordinal_type i=0; i<nr; i++)
+	  row_indices[j][i] = j+i; 
+	buildObject.addColumn(
+	  nr, &row_indices[j][0], AA[j]+j, 0.0, DBL_MAX, objective_value);
+      }
+      else
+	buildObject.addColumn(0, NULL, NULL, 0.0, DBL_MAX, objective_value);
+    }
+  }
+  model.addColumns(buildObject);
+
+  // Solve linear program
+  model.primal();
+
+  // Get solution
+  double *solution = model.primalColumnSolution();
+  for (ordinal_type i=0; i<n_cols; i++)
+    x[i] = solution[i];
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     "CLP solver called but not enabled!");
@@ -1057,149 +718,178 @@ reducedQuadrature_CLP_CPQR(
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-reducedQuadrature_qpOASES_CPQR(
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-  const Teuchos::Array<value_type>& weights,
-  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
-  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
-  ) const
+solver_CLP_IP(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
 {
-#ifdef HAVE_STOKHOS_QPOASES
-  //
-  // Find reduced quadrature weights by solving linear program
-  // min b^T*u s.t. Q2^T*u = e_1, u >= 0 where B2p = Q2*R2
-  //
-  ordinal_type sz = Q.numCols();
-  ordinal_type sz2 = sz*(sz+1)/2;
-  ordinal_type nqp = Q.numRows();
-  ordinal_type d = F.numCols();
-
-  // Compute Q matrix with all possible products
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
-  ordinal_type jdx=0;
-  for (ordinal_type j=0; j<sz; j++) {
-    for (ordinal_type k=j; k<sz; k++) {
-      for (ordinal_type i=0; i<nqp; i++)
-	Q2(i,jdx) = Q(i,j)*Q(i,k);
-      jdx++;
-    }
+#ifdef HAVE_STOKHOS_CLP
+  ordinal_type m = A.numRows();
+  ordinal_type n = A.numCols();
+  ordinal_type n_rows;
+  ordinal_type n_cols;
+  if (transa == Teuchos::NO_TRANS) {
+    n_rows = m;
+    n_cols = n;
   }
-  TEUCHOS_ASSERT(jdx == sz2);
-
-  // Compute e_1 = Q2^T*w which is our constraint
-  Teuchos::SerialDenseVector<ordinal_type,value_type> e1(sz2);
-  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
-    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
-  ordinal_type ret = 
-    e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
-  TEUCHOS_ASSERT(ret == 0);
-
-  // Compute objective vector
-  Teuchos::SerialDenseVector<ordinal_type,value_type> c(nqp);
-  c.putScalar(1.0);
-
-  // Compute lower bounds
-  Teuchos::SerialDenseVector<ordinal_type,value_type> lb(nqp);
-  lb.putScalar(0.0);
-
-  // Compute QR decomposition of Q2^T:  Q2^T*P = Z*R
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2t(Q2, Teuchos::TRANS);
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Z, R;
-  Teuchos::Array<ordinal_type> piv;
-  CPQR_Householder(Q2t, Z, R, piv);
-  ordinal_type r = computeRank(R, reduction_tol);
-  R.reshape(r, R.numCols());
-  Z.reshape(Z.numRows(), r);
-
-  // Compute new constraint vector
-  Teuchos::SerialDenseVector<ordinal_type,value_type> e1t(r);
-  ret = e1t.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Z, e1, 0.0);
-  TEUCHOS_ASSERT(ret == 0);
-
-  // Compute new constraint matrix
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Rt(R, Teuchos::TRANS);
-
-  // Compute new objective vector
-  Teuchos::SerialDenseVector<ordinal_type,value_type> ct(nqp);
-  for (ordinal_type i=0; i<nqp; i++)
-    ct[piv[i]] = c[i];
-
-  // Compute initial guess
-  Teuchos::SerialDenseVector<ordinal_type,value_type> wt(nqp);
-  for (ordinal_type i=0; i<r; i++)
-    wt[i] = e1t[i];
-  blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
-	    Teuchos::NON_UNIT_DIAG, r, 1, 1.0, R.values(), r, wt.values(),
-	    nqp);
-  for (ordinal_type i=r; i<nqp; i++)
-    wt[i] = 0.0;
+  else {
+    n_rows = n;
+    n_cols = m;
+  }
+  if (x.length() < n_cols)
+    x.shape(n_cols, 1);
 
   // Setup linear program
-  int nWSR = 10000;
-  qpOASES::QProblem lp(nqp, r, qpOASES::HST_ZERO);
-  lp.init(NULL,         // zero Hessian
-	  ct.values(),  // objective
-	  Rt.values(),  // constrait matrix -- qpOASES expects row-wise storage
-	  lb.values(),  // variable lower bounds
-	  NULL,         // no upper bounds
-	  e1t.values(),  // constraint lower bounds
-	  e1t.values(),  // constraint upper bounds
-	  nWSR,         // maximum number of working set recalculations
-	  NULL,         // maximum CPU time
-	  wt.values(),  // initial guess for primal
-	  NULL,         // initial guess for dual
-	  NULL,         // guessed bounds
-	  NULL          // guessed constraints
-    );
+  ClpInterior model;
+  model.resize(n_rows, 0);
 
-  // Get solution
-  Teuchos::SerialDenseVector<ordinal_type,value_type> ut(nqp);
-  lp.getPrimalSolution(ut.values());
+  // Set row bounds
+  for (ordinal_type i=0; i<n_rows; i++) {
+    model.setRowLower(i, b[i]);
+    model.setRowUpper(i, b[i]);
+  }
 
-  // Transform solution back to original
-  Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
-  for (ordinal_type i=0; i<nqp; i++)
-    u[piv[i]] = ut[i];
-
-  if (verbose)
-    std::cout << "reduced weights = " << u << std::endl;
-  
-  ordinal_type rank = 0;
-  for (ordinal_type i=0; i<nqp; i++)
-    if (std::abs(u[i]) > reduction_tol) ++rank;
-
-  // Get reduced weights, points and values
-  reduced_weights =
-    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
-  reduced_points =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  reduced_values =
-    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
-  ordinal_type idx = 0;
-  for (ordinal_type i=0; i<nqp; i++) {
-    if (std::abs(u[i]) > reduction_tol) {
-      (*reduced_weights)[idx] = u[i];
-      (*reduced_points)[idx].resize(d);
-      for (ordinal_type j=0; j<d; j++)
-	(*reduced_points)[idx][j] = F(i,j);
-      (*reduced_values)[idx].resize(sz);
-      for (ordinal_type j=0; j<sz; j++)
-	(*reduced_values)[idx][j] = Q(i,j);
-      idx++;
+  // Set constraint matrix, columns bounds and objective coefficients
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA;
+  Teuchos::EUplo AA_uplo = uplo;
+  if (transa == Teuchos::NO_TRANS) {
+     AA = Teuchos::SerialDenseMatrix<ordinal_type, value_type>(
+       Teuchos::View, A, n_rows, n_cols);
+  }
+  else {
+    AA.reshape(n_rows, n_cols);
+    for (ordinal_type i=0; i<n_rows; i++)
+      for (ordinal_type j=0; j<n_cols; j++)
+	AA(i,j) = A(j,i);
+    if (uplo == Teuchos::UPPER_TRI)
+      AA_uplo = Teuchos::LOWER_TRI;
+    else if (uplo == Teuchos::LOWER_TRI)
+      AA_uplo = Teuchos::UPPER_TRI;
+  }
+  Teuchos::Array< Teuchos::Array<int> > row_indices(n_cols);
+  CoinBuild buildObject;
+  if (AA_uplo == Teuchos::UNDEF_TRI) {
+    for (ordinal_type j=0; j<n_cols; j++) {
+      row_indices[j].resize(n_rows);
+      for (ordinal_type i=0; i<n_rows; i++)
+	row_indices[j][i] = i; 
+      buildObject.addColumn(
+	n_rows, &row_indices[j][0], AA[j], 0.0, DBL_MAX, objective_value);
     }
   }
-  
-  // idx may be less than rank if we obtained zero weights in solving
-  // the least-squares problem
-  TEUCHOS_ASSERT(idx <= rank);
-  if (idx < rank) {
-    rank = idx;
-    reduced_weights->resize(rank);
-    reduced_points->resize(rank);
-    reduced_values->resize(rank);
+  else if (AA_uplo == Teuchos::UPPER_TRI) {
+    // For AA upper-triangular, only need to include leading 
+    // min(n_rows,n_cols) x n_cols block (remaining rows must be zero)
+    for (ordinal_type j=0; j<n_cols; j++) {
+      ordinal_type nr = n_rows;
+      if (j < n_rows)
+	nr = j+1;
+      row_indices[j].resize(nr);
+      for (ordinal_type i=0; i<nr; i++)
+	row_indices[j][i] = i; 
+      buildObject.addColumn(nr, &row_indices[j][0], AA[j], 0.0, DBL_MAX, objective_value);
+    }
   }
+  else if (AA_uplo == Teuchos::LOWER_TRI) {
+    // For AA lower-triangular, only need to include leading 
+    // n_rows x min(n_rows,n_cols) block (remaining columns must be zero)
+    for (ordinal_type j=0; j<n_cols; j++) {
+      if (j < n_rows) {
+	ordinal_type nr = n_rows-j;
+	row_indices[j].resize(nr);
+	for (ordinal_type i=0; i<nr; i++)
+	  row_indices[j][i] = j+i; 
+	buildObject.addColumn(
+	  nr, &row_indices[j][0], AA[j]+j, 0.0, DBL_MAX, objective_value);
+      }
+      else
+	buildObject.addColumn(0, NULL, NULL, 0.0, DBL_MAX, objective_value);
+    }
+  }
+  model.addColumns(buildObject);
+
+  // Solve linear program
+  model.primalDual();
+
+  // Get solution
+  double *solution = model.primalColumnSolution();
+  for (ordinal_type i=0; i<n_cols; i++)
+    x[i] = solution[i];
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     "CLP solver called but not enabled!");
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+solver_qpOASES(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
+{
+#ifdef HAVE_STOKHOS_QPOASES
+  ordinal_type m = A.numRows();
+  ordinal_type n = A.numCols();
+  ordinal_type n_rows;
+  ordinal_type n_cols;
+  if (transa == Teuchos::NO_TRANS) {
+    n_rows = m;
+    n_cols = n;
+  }
+  else {
+    n_rows = n;
+    n_cols = m;
+  }
+  if (x.length() < n_cols)
+    x.shape(n_cols, 1);
+  
+  // Compute objective vector
+  Teuchos::SerialDenseVector<ordinal_type,value_type> c(n_cols);
+  c.putScalar(objective_value);
+
+  // Compute lower bounds
+  Teuchos::SerialDenseVector<ordinal_type,value_type> lb(n_cols);
+  lb.putScalar(0.0);
+
+  // Setup linear program
+  qpOASES::QProblem lp(n_cols, n_rows, qpOASES::HST_ZERO);
+
+  // Solve linear program -- qpOASES expects row-wise storage
+  // so transpose the matrix if necessary.  Since qpOASES uses dense
+  // linear algebra, can't take advantage of upper/lower triangular info
+  int nWSR = params.get("Max Working Set Recalculations", 10000);
+  if (transa == Teuchos::NO_TRANS) {
+    Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(A, Teuchos::TRANS);
+    lp.init(NULL,         // zero Hessian
+	    c.values(),   // objective
+	    AA.values(),  // constrait matrix
+	    lb.values(),  // variable lower bounds
+	    NULL,         // no upper bounds
+	    b.values(),   // constraint lower bounds
+	    b.values(),   // constraint upper bounds
+	    nWSR,         // maximum number of working set recalculations
+	    NULL          // maximum CPU time
+      );
+  }
+  else {
+    lp.init(NULL,         // zero Hessian
+	    c.values(),   // objective
+	    A.values(),   // constrait matrix
+	    lb.values(),  // variable lower bounds
+	    NULL,         // no upper bounds
+	    b.values(),   // constraint lower bounds
+	    b.values(),   // constraint upper bounds
+	    nWSR,         // maximum number of working set recalculations
+	    NULL          // maximum CPU time
+      );
+  }
+
+  // Get solution
+  lp.getPrimalSolution(x.values());
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     "qpOASES solver called but not enabled!");

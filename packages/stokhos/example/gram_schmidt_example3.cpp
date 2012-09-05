@@ -71,20 +71,20 @@ static const char *orthogonalization_method_names[] = {
   "Householder", "Classical Gram-Schmidt", "Modified Gram-Schmidt" };
 
 // quadrature reduction methods
-enum Quadrature_Reduction_Method { NONE, CPQR, L1_MINIMIZATION };
-static const int num_quad_reduction_method = 3;
+enum Quadrature_Reduction_Method { NONE, QSQUARED };
+static const int num_quad_reduction_method = 2;
 static const Quadrature_Reduction_Method quad_reduction_method_values[] = { 
-  NONE, CPQR, L1_MINIMIZATION };
+  NONE, QSQUARED };
 static const char *quad_reduction_method_names[] = { 
-  "None", "Column-Pivoted QR", "L1 Minimization" };
+  "None", "Q Squared" };
 
-// L1 solver methods
-enum L1_Solver_Method { GLPK, CLP, QPOASES, GLPK_CPQR, CLP_CPQR, QPOASES_CPQR };
-static const int num_l1_solver_method = 6;
-static const L1_Solver_Method l1_solver_method_values[] = { 
-  GLPK, CLP, QPOASES, GLPK_CPQR, CLP_CPQR, QPOASES_CPQR };
-static const char *l1_solver_method_names[] = { 
-  "GLPK", "CLP", "qpOASES", "GLPK-CPQR", "CLP-CPQR", "qpOASES-CPQR" };
+// solver methods
+enum Solver_Method { TRSM, GLPK, CLP, CLP_IP, QPOASES };
+static const int num_solver_method = 5;
+static const Solver_Method solver_method_values[] = { 
+  TRSM, GLPK, CLP, CLP_IP, QPOASES };
+static const char *solver_method_names[] = { 
+  "TRSM", "GLPK", "Clp", "Clp-IP", "qpOASES" };
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
 typedef Sacado::ETPCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > pce_type;
@@ -182,15 +182,21 @@ int main(int argc, char **argv)
 		  num_orthogonalization_method, orthogonalization_method_values, 
 		  orthogonalization_method_names, "Orthogonalization method");
 
-    Quadrature_Reduction_Method quad_reduction_method = CPQR;
+    Quadrature_Reduction_Method quad_reduction_method = QSQUARED;
     CLP.setOption("quadrature_reduction_method", &quad_reduction_method, 
 		  num_quad_reduction_method, quad_reduction_method_values, 
 		  quad_reduction_method_names, "Quadrature reduction method");
 
-    L1_Solver_Method l1_solver_method = CLP_CPQR;
-    CLP.setOption("L1_solver_method", &l1_solver_method, 
-		  num_l1_solver_method, l1_solver_method_values, 
-		  l1_solver_method_names, "L1 solver method");
+    Solver_Method solver_method = TRSM;
+    CLP.setOption("solver_method", &solver_method, num_solver_method, 
+		  solver_method_values,  solver_method_names, 
+		  "Reduced quadrature solver method");
+
+    bool eliminate_dependent_rows = true;
+    CLP.setOption("cpqr", "no-cpqr", &eliminate_dependent_rows, "Eliminate dependent rows in quadrature constraint matrix");
+
+    double objective_value = 0.0;
+    CLP.setOption("objective_value", &objective_value, "Value for LP objective function");
 
     bool project = true;
     CLP.setOption("project", "no-project", &project, "Use Projected Lanczos Method");
@@ -217,9 +223,11 @@ int main(int argc, char **argv)
 	      << "\tquadrature_reduction_method = " 
 	      << quad_reduction_method_names[quad_reduction_method] 
 	      << std::endl
-	      << "\tL1_solver_method            = " 
-	      << l1_solver_method_names[l1_solver_method] 
+	      << "\tsolver_method               = " 
+	      << solver_method_names[solver_method] << std::endl
+	      << "\tcpqr                        = " << eliminate_dependent_rows 
 	      << std::endl
+	      << "\tobjective_value             = " << objective_value << std::endl
 	      << "\tproject                     = " << project << std::endl
 	      << "\tstieljtes                   = " << use_stieltjes << std::endl
 	      << "\tp                           = " << p << std::endl
@@ -321,11 +329,13 @@ int main(int argc, char **argv)
       params.sublist("Reduced Quadrature");
     red_quad_params.set("Reduced Quadrature Method", 
 			quad_reduction_method_names[quad_reduction_method]);
-    red_quad_params.set("LP Solver", 
-			l1_solver_method_names[l1_solver_method]);
+    red_quad_params.set("Solver Method",
+			solver_method_names[solver_method]);
+    red_quad_params.set("Eliminate Dependent Rows", eliminate_dependent_rows);
     red_quad_params.set("Write MPS File", false);
     red_quad_params.set("Reduction Tolerance", reduction_tolerance);
     red_quad_params.set("Verbose", verbose);
+    red_quad_params.set("Objective Value", objective_value);
     Stokhos::ReducedBasisFactory<int,double> factory(params);
     Teuchos::RCP< Stokhos::ReducedPCEBasis<int,double> > gs_basis = 
       factory.createReducedBasis(p2, pces, quad, Cijk);

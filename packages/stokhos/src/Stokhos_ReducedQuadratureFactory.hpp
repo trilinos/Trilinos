@@ -69,8 +69,8 @@ namespace Stokhos {
       const Teuchos::Array<value_type>& weights) const;
 
   protected:
-    
-    void reducedQuadrature_QRCP(
+
+    void reducedQuadrature_Q_Squared(
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
       const Teuchos::Array<value_type>& weights,
@@ -78,6 +78,51 @@ namespace Stokhos {
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
       ) const;
+
+    void reducedQuadrature_Q_Squared_CPQR(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+      const Teuchos::Array<value_type>& weights,
+      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
+      ) const;
+
+    void underdetermined_solver(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+      const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+      Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
+
+    void solver_TRSM(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+      const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+      Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
+
+    void solver_GLPK(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+      const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+      Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
+
+    void solver_CLP(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+      const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+      Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
+
+    void solver_CLP_IP(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+      const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+      Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
+
+    void solver_qpOASES(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+      const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
+      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
+      Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
 
     /*
     void reducedQuadrature_CS(
@@ -89,60 +134,6 @@ namespace Stokhos {
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
       ) const;
     */
-
-    void reducedQuadrature_GLPK(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
-      ) const;
-
-    void reducedQuadrature_CLP(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
-      ) const;
-
-    void reducedQuadrature_qpOASES(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
-      ) const;
-
-    void reducedQuadrature_GLPK_CPQR(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
-      ) const;
-
-    void reducedQuadrature_CLP_CPQR(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
-      ) const;
-
-    void reducedQuadrature_qpOASES_CPQR(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
-      ) const;
 
     ordinal_type computeRank(
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& R,
@@ -164,11 +155,20 @@ namespace Stokhos {
     //! Reduction method
     std::string reduction_method;
 
+    //! Underdetermined solver method
+    std::string solver_method;
+
+    //! Whether to eliminate dependent rows in constraints
+    bool eliminate_dependent_rows;
+
     //! Whether to print a bunch of stuff out
     bool verbose;
 
     //! Dimension reduction tolerance
     value_type reduction_tol;
+
+    //! Value used in LP-based objective function
+    value_type objective_value;
 
     Teuchos::LAPACK<ordinal_type,value_type> lapack;
     Teuchos::BLAS<ordinal_type,value_type> blas;
