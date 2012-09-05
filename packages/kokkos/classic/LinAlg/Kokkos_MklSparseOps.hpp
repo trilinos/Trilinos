@@ -59,6 +59,7 @@
 #include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_Mkl_MatrixDescriptor.hpp"
 #include "Kokkos_Mkl_RawSparseKernels.hpp"
+#include "Teuchos_ConfigDefs.hpp" // HAVE_TEUCHOS_COMPLEX
 
 #ifdef HAVE_KOKKOSCLASSIC_MKL
 // Unfortunately, we have to include the header file in order to have
@@ -143,6 +144,7 @@ namespace Kokkos {
       typedef MklSparseOps<double, Ordinal, Node, Allocator> other_type;
     };
 
+#ifdef HAVE_TEUCHOS_COMPLEX
     // Partial specialization for Scalar=std::complex<float>.
     template <class Ordinal, class Node, class Allocator>
     struct MklBindScalar<std::complex<float>, Ordinal, Node, Allocator> {
@@ -154,6 +156,7 @@ namespace Kokkos {
     struct MklBindScalar<std::complex<double>, Ordinal, Node, Allocator> {
       typedef MklSparseOps<std::complex<double>, Ordinal, Node, Allocator> other_type;
     };
+#endif // HAVE_TEUCHOS_COMPLEX
 
     /// \struct MklBindOrdinal
     /// \brief When using MKL, given an Ordinal type, find the right local sparse ops.
@@ -211,6 +214,76 @@ namespace Kokkos {
       typedef MklSparseOps<Scalar, MKL_INT, Node, Allocator> other_type;
     };
 
+    /// \struct MklBindScalarAndOrdinal
+    /// \brief When using MKL, given Scalar and Ordinal types,
+    ///   find the right local sparse ops.
+    ///
+    /// \note This class is _not_ meant for users.  It is an
+    ///   implementation detail of MklSparseOps (which is defined
+    ///   below in this header file).
+    ///
+    /// \tparam Scalar The type of entries in the sparse matrix; same
+    ///   as the Scalar template parameter of MklSparseOps.
+    /// \tparam Ordinal The type of column indices in the sparse
+    ///   matrix; same as the Ordinal template parameter of
+    ///   MklSparseOps.
+    /// \tparam Node The Kokkos Node type; same as the Node template
+    ///   parameter of MklSparseOps.
+    /// \tparam Allocator The type that implements allocation of
+    ///   sparse matrix arrays; same as the Allocator template
+    ///   parameter of MklSparseOps.
+    ///
+    /// Intel's Math Kernel Library (MKL) only provides local sparse
+    /// kernels (matrix-(multi)vector multiply and triangular solve)
+    /// for certain Scalar and Ordinal types.  In turn, our MKL
+    /// wrapper, MklSparseOps, only has valid specializations for
+    /// those types.  This means that if the user's combination of
+    /// Scalar and Ordinal types is not supported by MKL, we need a
+    /// fall-back.
+    ///
+    /// This struct provides the fall-back, given a Scalar and an
+    /// Ordinal type.  If MKL provides kernels for the given Scalar
+    /// and Ordinal types, this struct's \c other_type typedef is a
+    /// partial specialization of MklSparseOps.  Otherwise, this
+    /// struct's \c other_type typedef is a specialization of
+    /// DefaultHostSparseOps.  We say that this struct "binds" the
+    /// given Scalar and Ordinal types to the appropriate local sparse
+    /// ops implementation, hence the name ("bind Scalar and Ordinal").
+    ///
+    /// \note To developers: MklBindScalarAndOrdinal exists because it
+    ///   was either impossible or too hard to get the syntax right
+    ///   for partially specializing the bind_scalar and bind_ordinal
+    ///   template classes inside of MklSparseOps.
+    template <class Scalar, class Ordinal, class Node, class Allocator>
+    struct MklBindScalarAndOrdinal {
+      typedef DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator> other_type;
+    };
+
+    // Partial specialization for Scalar=float and Ordinal=MKL_INT.
+    template <class Node, class Allocator>
+    struct MklBindScalarAndOrdinal<float, MKL_INT, Node, Allocator> {
+      typedef MklSparseOps<float, MKL_INT, Node, Allocator> other_type;
+    };
+
+    // Partial specialization for Scalar=double and Ordinal=MKL_INT.
+    template <class Node, class Allocator>
+    struct MklBindScalarAndOrdinal<double, MKL_INT, Node, Allocator> {
+      typedef MklSparseOps<double, MKL_INT, Node, Allocator> other_type;
+    };
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+    // Partial specialization for Scalar=std::complex<float> and Ordinal=MKL_INT.
+    template <class Node, class Allocator>
+    struct MklBindScalarAndOrdinal<std::complex<float>, MKL_INT, Node, Allocator> {
+      typedef MklSparseOps<std::complex<float>, MKL_INT, Node, Allocator> other_type;
+    };
+
+    // Partial specialization for Scalar=std::complex<double> and Ordinal=MKL_INT.
+    template <class Node, class Allocator>
+    struct MklBindScalarAndOrdinal<std::complex<double>, MKL_INT, Node, Allocator> {
+      typedef MklSparseOps<std::complex<double>, MKL_INT, Node, Allocator> other_type;
+    };
+#endif // HAVE_TEUCHOS_COMPLEX
 
     /// \class ConvertRowPtrs
     /// \brief Kokkos kernel for converting sparse matrix row offsets
@@ -491,7 +564,7 @@ namespace Kokkos {
     /// \tparam O2 An ordinal type possibly different from \c Ordinal.
     template <class O2>
     struct bind_ordinal {
-      typedef typename MklBindOrdinal<Scalar,O2,Node,Allocator> other_type;
+      typedef typename MklBindOrdinal<Scalar,O2,Node,Allocator>::other_type other_type;
     };
 
     //@}
