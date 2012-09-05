@@ -115,8 +115,8 @@ public:
   */
   bool MatrixShapeOK() const;
 
-  //! Always returns true.
-  bool UseTranspose() const {return(true);};
+  //! Always returns false. Superludist doesn't support transpose solve
+  bool UseTranspose() const {return(false);};
   //@}
 
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
