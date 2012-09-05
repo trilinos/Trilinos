@@ -1,6 +1,5 @@
 <ParameterList name="ShyLU Driver Input">
-    <Parameter name="mm_file" type ="string" value="mat/XyceTest5_Matrix4.mm" />
-    <Parameter name="rhs_file" type ="string" value="mat/XyceTest5_RHS4.mm" />
+    <Parameter name="mm_file" type ="string" value="wathenSmall.mtx" />
     <Parameter name="preconditioner" type ="string" value="ShyLU" />
     <Parameter name="Outer Solver MaxIters" type ="int" value="1" />
     <Parameter name="Outer Solver Tolerance" type ="double" value="1e-6" />

@@ -546,8 +546,6 @@ template <typename User>
     throw std::runtime_error("graph build option not yet implemented");
   }
 
-  removeSelfEdges = removeSelfEdges && ia->diagonalEntriesMayBePresent();
-
   // Get the matrix from the input adapter
 
   gid_t const *vtxIds=NULL, *nborIds=NULL;
@@ -616,7 +614,7 @@ template <typename User>
 
   // Now remove undesired edges.
 
-  if (subsetGraph || (removeSelfEdges && ia->diagonalEntriesMayBePresent())){
+  if (subsetGraph || removeSelfEdges){
 
     ArrayRCP<input_t> noEdgeWeights;
     ArrayRCP<const gid_t> newEdges;
