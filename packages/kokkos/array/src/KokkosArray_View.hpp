@@ -48,6 +48,7 @@
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
 #include <impl/KokkosArray_Shape.hpp>
+#include <impl/KokkosArray_AnalyzeShape.hpp>
 
 namespace KokkosArray {
 
@@ -79,9 +80,7 @@ public:
 
 private:
 
-  typedef Impl::Shape< array_layout ,
-                       typename Impl::AnalyzeShape<DataType>::shape >
-      shape_type ;
+  typedef typename Impl::AnalyzeShape<DataType,LayoutType>::shape shape_type ;
 
 public:
 
@@ -296,7 +295,7 @@ struct View_create_requires_non_const_data_type< const T > {};
 namespace KokkosArray {
 namespace Impl {
 
-template< typename ValueType , class MemorySpace , class Shape >
+template< class MemorySpace , typename ValueType , class Shape >
 class ViewOper ;
 
 template< typename ValueType , class DeviceDst , class DeviceSrc >

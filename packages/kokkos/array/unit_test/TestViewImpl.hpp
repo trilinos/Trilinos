@@ -73,8 +73,7 @@ struct DummyMemorySpace
 
 template< class Layout , class Type >
 struct DefineShape {
-  typedef typename KokkosArray::Impl::AnalyzeShape<Type>::shape shape ;
-  typedef KokkosArray::Impl::Shape< Layout , shape > type ;
+  typedef typename KokkosArray::Impl::AnalyzeShape<Type,Layout>::shape type ;
 };
 
 template< class Type >
@@ -132,42 +131,45 @@ void test_view_impl()
 
   ASSERT_TRUE( shape_01.rank_dynamic == 0u );
   ASSERT_TRUE( shape_01.rank         == 1u );
+  ASSERT_TRUE( shape_01.N0           == 100u );
 
   ASSERT_TRUE( shape_11.rank_dynamic == 1u );
   ASSERT_TRUE( shape_11.rank         == 1u );
+  ASSERT_TRUE( shape_11.N0           == 1000u );
 
   ASSERT_TRUE( shape_03.rank_dynamic == 0u );
   ASSERT_TRUE( shape_03.rank         == 3u );
+  ASSERT_TRUE( shape_03.N0           == 5u );
+  ASSERT_TRUE( shape_03.N1           == 6u );
+  ASSERT_TRUE( shape_03.N2           == 700u );
 
   ASSERT_TRUE( shape_14.rank_dynamic == 1u );
   ASSERT_TRUE( shape_14.rank         == 4u );
+  ASSERT_TRUE( shape_14.StaticN0     == 0u );
+  ASSERT_TRUE( shape_14.N0           == 0u );
+  ASSERT_TRUE( shape_14.N1           == 8u );
+  ASSERT_TRUE( shape_14.N2           == 9u );
+  ASSERT_TRUE( shape_14.N3           == 900u );
 
   ASSERT_TRUE( shape_22.rank_dynamic == 2u );
   ASSERT_TRUE( shape_22.rank         == 2u );
+  ASSERT_TRUE( shape_22.StaticN0     == 0u );
+  ASSERT_TRUE( shape_22.StaticN1     == 0u );
+  ASSERT_TRUE( shape_22.N0           == 0u );
+  ASSERT_TRUE( shape_22.N1           == 0u );
 
   ASSERT_TRUE( shape_36.rank_dynamic == 3u );
   ASSERT_TRUE( shape_36.rank         == 6u );
+  ASSERT_TRUE( shape_36.StaticN0     == 0u );
+  ASSERT_TRUE( shape_36.StaticN1     == 0u );
+  ASSERT_TRUE( shape_36.StaticN2     == 0u );
+  ASSERT_TRUE( shape_36.N0           == 10u );
+  ASSERT_TRUE( shape_36.N1           == 20u );
+  ASSERT_TRUE( shape_36.N2           == 30u );
+  ASSERT_TRUE( shape_36.N3           == 5u  );
+  ASSERT_TRUE( shape_36.N4           == 6u  );
+  ASSERT_TRUE( shape_36.N5           == 7u  );
 
-  ASSERT_TRUE( shape_01.N0 == 100u );
-  ASSERT_TRUE( shape_11.N0 == 1000u );
-
-  ASSERT_TRUE( shape_03.N0 == 5u );
-  ASSERT_TRUE( shape_03.N1 == 6u );
-  ASSERT_TRUE( shape_03.N2 == 700u );
-  ASSERT_TRUE( shape_03.N3 == 0u );
-  ASSERT_TRUE( shape_03.N4 == 0u );
-  ASSERT_TRUE( shape_03.N5 == 0u );
-  ASSERT_TRUE( shape_03.N6 == 0u );
-  ASSERT_TRUE( shape_03.N7 == 0u );
-
-  ASSERT_TRUE( shape_36.N0 == 10u );
-  ASSERT_TRUE( shape_36.N1 == 20u );
-  ASSERT_TRUE( shape_36.N2 == 30u );
-  ASSERT_TRUE( shape_36.N3 == 5u  );
-  ASSERT_TRUE( shape_36.N4 == 6u  );
-  ASSERT_TRUE( shape_36.N5 == 7u  );
-  ASSERT_TRUE( shape_36.N6 == 0u  );
-  ASSERT_TRUE( shape_36.N7 == 0u  );
 
   ASSERT_TRUE( shape_01 == shape_01 );
   ASSERT_TRUE( shape_11 == shape_11 );

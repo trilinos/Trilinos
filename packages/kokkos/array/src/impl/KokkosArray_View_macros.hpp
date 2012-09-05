@@ -51,19 +51,21 @@
 
 #else
 
+#include <impl/KokkosArray_AnalyzeShape.hpp>
+
 namespace KokkosArray {
 
 template< class DataType , class LayoutType >
 class View< DataType , LayoutType , KOKKOSARRAY_MACRO_DEVICE >
   : public Impl::ViewOper<
-      typename Impl::AnalyzeShape< DataType >::value_type ,
       KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-      Impl::Shape< typename LayoutType::array_layout ,
-                   typename Impl::AnalyzeShape< DataType >::shape > >
+      typename Impl::AnalyzeShape< DataType , typename LayoutType::array_layout >::value_type ,
+      typename Impl::AnalyzeShape< DataType , typename LayoutType::array_layout >::shape >
 {
 private:
 
-  typedef Impl::AnalyzeShape<DataType>       analysis ;
+  typedef Impl::AnalyzeShape<DataType,
+                             typename LayoutType::array_layout >  analysis ;
   typedef typename analysis::const_type      const_data_type ;
   typedef typename analysis::non_const_type  non_const_data_type ;
 
@@ -83,14 +85,12 @@ public:
   typedef typename LayoutType::array_layout   array_layout ;
   typedef typename device_type::memory_space  memory_space ;
   typedef typename device_type::size_type     size_type ;
-
-  typedef Impl::Shape< array_layout, typename analysis::shape > shape_type ;
+  typedef typename analysis::shape            shape_type ;
 
 private:
 
-  typedef Impl::ViewOper< value_type ,
-                          KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                          shape_type > oper_type ;
+  typedef Impl::ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                          value_type , shape_type > oper_type ;
 
   template< class , class , class > friend class View ;
 

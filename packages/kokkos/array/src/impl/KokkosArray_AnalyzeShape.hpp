@@ -44,6 +44,8 @@
 #ifndef KOKKOSARRAY_ANALYZESHAPE_HPP
 #define KOKKOSARRAY_ANALYZESHAPE_HPP
 
+#include <impl/KokkosArray_Shape.hpp>
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -52,296 +54,293 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< unsigned RankDynamic ,
-          unsigned Rank ,
-          unsigned ValueSize ,
-          unsigned ArgN0 ,
-          unsigned ArgN1 ,
-          unsigned ArgN2 ,
-          unsigned ArgN3 ,
-          unsigned ArgN4 ,
-          unsigned ArgN5 ,
-          unsigned ArgN6 ,
-          unsigned ArgN7 >
-struct ShapeStaticInfo {
-  static const unsigned rank_dynamic = RankDynamic ;
-  static const unsigned rank         = Rank ;
-  static const unsigned value_size   = ValueSize ;
+template< class ShapeType , unsigned N ,
+          unsigned R = ShapeType::rank_dynamic >
+struct ShapeInsert ;
 
-  static const unsigned N0 = ArgN0 ;
-  static const unsigned N1 = ArgN1 ;
-  static const unsigned N2 = ArgN2 ;
-  static const unsigned N3 = ArgN3 ;
-  static const unsigned N4 = ArgN4 ;
-  static const unsigned N5 = ArgN5 ;
-  static const unsigned N6 = ArgN6 ;
-  static const unsigned N7 = ArgN7 ;
+template< class ShapeType , unsigned N >
+struct ShapeInsert< ShapeType , N , 0 >
+{
+  typedef Shape< typename ShapeType::array_layout ,
+                 ShapeType::value_size ,
+                 ShapeType::rank + 1 ,
+                 N ,
+                 ShapeType::StaticN0 ,
+                 ShapeType::StaticN1 ,
+                 ShapeType::StaticN2 ,
+                 ShapeType::StaticN3 ,
+                 ShapeType::StaticN4 ,
+                 ShapeType::StaticN5 ,
+                 ShapeType::StaticN6 > type ;
 };
 
-// Maximum rank == 8
+template< class ShapeType , unsigned N >
+struct ShapeInsert< ShapeType , N , 1 >
+{
+  typedef Shape< typename ShapeType::array_layout ,
+                 ShapeType::value_size ,
+                 ShapeType::rank + 1 ,
+                 ShapeType::StaticN0 ,
+                 N ,
+                 ShapeType::StaticN1 ,
+                 ShapeType::StaticN2 ,
+                 ShapeType::StaticN3 ,
+                 ShapeType::StaticN4 ,
+                 ShapeType::StaticN5 ,
+                 ShapeType::StaticN6 > type ;
+};
 
-template< unsigned RankDynamic ,
-          unsigned ValueSize ,
-          unsigned ArgN0 ,
-          unsigned ArgN1 ,
-          unsigned ArgN2 ,
-          unsigned ArgN3 ,
-          unsigned ArgN4 ,
-          unsigned ArgN5 ,
-          unsigned ArgN6 ,
-          unsigned ArgN7 >
-struct ShapeStaticInfo<RankDynamic,9,ValueSize,
-                       ArgN0,ArgN1,ArgN2,ArgN3,
-                       ArgN4,ArgN5,ArgN6,ArgN7> {};
+template< class ShapeType , unsigned N >
+struct ShapeInsert< ShapeType , N , 2 >
+{
+  typedef Shape< typename ShapeType::array_layout ,
+                 ShapeType::value_size ,
+                 ShapeType::rank + 1 ,
+                 ShapeType::StaticN0 ,
+                 ShapeType::StaticN1 ,
+                 N ,
+                 ShapeType::StaticN2 ,
+                 ShapeType::StaticN3 ,
+                 ShapeType::StaticN4 ,
+                 ShapeType::StaticN5 ,
+                 ShapeType::StaticN6 > type ;
+};
+
+template< class ShapeType , unsigned N >
+struct ShapeInsert< ShapeType , N , 3 >
+{
+  typedef Shape< typename ShapeType::array_layout ,
+                 ShapeType::value_size ,
+                 ShapeType::rank + 1 ,
+                 ShapeType::StaticN0 ,
+                 ShapeType::StaticN1 ,
+                 ShapeType::StaticN2 ,
+                 N ,
+                 ShapeType::StaticN3 ,
+                 ShapeType::StaticN4 ,
+                 ShapeType::StaticN5 ,
+                 ShapeType::StaticN6 > type ;
+};
+
+template< class ShapeType , unsigned N >
+struct ShapeInsert< ShapeType , N , 4 >
+{
+  typedef Shape< typename ShapeType::array_layout ,
+                 ShapeType::value_size ,
+                 ShapeType::rank + 1 ,
+                 ShapeType::StaticN0 ,
+                 ShapeType::StaticN1 ,
+                 ShapeType::StaticN2 ,
+                 ShapeType::StaticN3 ,
+                 N ,
+                 ShapeType::StaticN4 ,
+                 ShapeType::StaticN5 ,
+                 ShapeType::StaticN6 > type ;
+};
+
+template< class ShapeType , unsigned N >
+struct ShapeInsert< ShapeType , N , 5 >
+{
+  typedef Shape< typename ShapeType::array_layout ,
+                 ShapeType::value_size ,
+                 ShapeType::rank + 1 ,
+                 ShapeType::StaticN0 ,
+                 ShapeType::StaticN1 ,
+                 ShapeType::StaticN2 ,
+                 ShapeType::StaticN3 ,
+                 ShapeType::StaticN4 ,
+                 N ,
+                 ShapeType::StaticN5 ,
+                 ShapeType::StaticN6 > type ;
+};
+
+template< class ShapeType , unsigned N >
+struct ShapeInsert< ShapeType , N , 6 >
+{
+  typedef Shape< typename ShapeType::array_layout ,
+                 ShapeType::value_size ,
+                 ShapeType::rank + 1 ,
+                 ShapeType::StaticN0 ,
+                 ShapeType::StaticN1 ,
+                 ShapeType::StaticN2 ,
+                 ShapeType::StaticN3 ,
+                 ShapeType::StaticN4 ,
+                 ShapeType::StaticN5 ,
+                 N ,
+                 ShapeType::StaticN6 > type ;
+};
+
+template< class ShapeType , unsigned N >
+struct ShapeInsert< ShapeType , N , 7 >
+{
+  typedef Shape< typename ShapeType::array_layout ,
+                 ShapeType::value_size ,
+                 ShapeType::rank + 1 ,
+                 ShapeType::StaticN0 ,
+                 ShapeType::StaticN1 ,
+                 ShapeType::StaticN2 ,
+                 ShapeType::StaticN3 ,
+                 ShapeType::StaticN4 ,
+                 ShapeType::StaticN5 ,
+                 ShapeType::StaticN6 ,
+                 N > type ;
+};
 
 //----------------------------------------------------------------------------
 
-template< class T >
+template< class T , class Layout = void >
 struct AnalyzeShape ;
 
-template< class T >
+template< class T , class Layout >
 struct AnalyzeShape {
-  typedef       T value_type ;
-  typedef       T array_type ;
-  typedef       T type ;
-  typedef const T const_value_type ;
-  typedef const T const_array_type ;
-  typedef const T const_type ;
-  typedef       T non_const_value_type ;
-  typedef       T non_const_array_type ;
-  typedef       T non_const_type ;
+  typedef       T  value_type ;
+  typedef       T  array_type ;
+  typedef       T  type ;
+  typedef const T  const_value_type ;
+  typedef const T  const_array_type ;
+  typedef const T  const_type ;
+  typedef       T  non_const_value_type ;
+  typedef       T  non_const_array_type ;
+  typedef       T  non_const_type ;
 
-  typedef ShapeStaticInfo< 0, 0, sizeof(T), 0, 0, 0, 0, 0, 0, 0, 0 >  shape ;
+  typedef Shape< Layout, sizeof(T), 0 >  shape ;
 };
 
-template< class T >
-struct AnalyzeShape< const T > {
+template< class T , class Layout >
+struct AnalyzeShape< const T , Layout > {
 private:
-  typedef AnalyzeShape<T> nested ;
+  typedef AnalyzeShape<T,Layout> nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
-  typedef typename nested::const_value_type value_type ;
-  typedef typename nested::const_array_type array_type ;
-  typedef typename nested::const_type       type ;
+  typedef typename nested::const_value_type  value_type ;
+  typedef typename nested::const_array_type  array_type ;
+  typedef typename nested::const_type        type ;
 
-  typedef typename nested::const_value_type const_value_type ;
-  typedef typename nested::const_array_type const_array_type ;
-  typedef typename nested::const_type       const_type ;
+  typedef typename nested::const_value_type  const_value_type ;
+  typedef typename nested::const_array_type  const_array_type ;
+  typedef typename nested::const_type        const_type ;
 
-  typedef typename nested::non_const_value_type non_const_value_type ;
-  typedef typename nested::non_const_array_type non_const_array_type ;
-  typedef typename nested::non_const_type       non_const_type ;
+  typedef typename nested::non_const_value_type  non_const_value_type ;
+  typedef typename nested::non_const_array_type  non_const_array_type ;
+  typedef typename nested::non_const_type        non_const_type ;
 
-  typedef ShapeStaticInfo< nested_shape::rank_dynamic ,
-                           nested_shape::rank ,
-                           nested_shape::value_size ,
-                           nested_shape::N0 ,
-                           nested_shape::N1 ,
-                           nested_shape::N2 ,
-                           nested_shape::N3 ,
-                           nested_shape::N4 ,
-                           nested_shape::N5 ,
-                           nested_shape::N6 ,
-                           nested_shape::N7 > shape ;
+  typedef nested_shape shape ;
 };
 
-template< class T >
-struct AnalyzeShape< T[] >
+template< class T , class Layout >
+struct AnalyzeShape< T * , Layout >
 {
 private:
-  typedef AnalyzeShape<T> nested ;
+  typedef AnalyzeShape<T, Layout > nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
-  typedef typename nested::value_type value_type ;
-  typedef typename nested::array_type array_type [] ;
-  typedef typename nested::type       type [] ;
-
-  typedef typename nested::const_value_type const_value_type ;
-  typedef typename nested::const_array_type const_array_type [] ;
-  typedef typename nested::const_type       const_type [] ;
-
-  typedef typename nested::non_const_value_type non_const_value_type ;
-  typedef typename nested::non_const_array_type non_const_array_type [] ;
-  typedef typename nested::non_const_type       non_const_type [] ;
-
-  typedef ShapeStaticInfo< nested_shape::rank_dynamic + 1 ,
-                           nested_shape::rank + 1 ,
-                           nested_shape::value_size ,
-                           0 ,
-                           nested_shape::N0 ,
-                           nested_shape::N1 ,
-                           nested_shape::N2 ,
-                           nested_shape::N3 ,
-                           nested_shape::N4 ,
-                           nested_shape::N5 ,
-                           nested_shape::N6 > shape ;
-};
-
-template< class T >
-struct AnalyzeShape< const T[] >
-{
-private:
-  typedef AnalyzeShape< const T > nested ;
-  typedef typename nested::shape nested_shape ;
-public:
-
-  typedef typename nested::value_type value_type ;
-  typedef typename nested::array_type array_type ;
-  typedef typename nested::type       type ;
-
-  typedef typename nested::const_value_type const_value_type ;
-  typedef typename nested::const_array_type const_array_type [] ;
-  typedef typename nested::const_type       const_type [] ;
-
-  typedef typename nested::non_const_value_type non_const_value_type ;
-  typedef typename nested::non_const_array_type non_const_array_type [] ;
-  typedef typename nested::non_const_type       non_const_type [] ;
-
-  typedef ShapeStaticInfo< nested_shape::rank_dynamic + 1 ,
-                           nested_shape::rank + 1 ,
-                           nested_shape::value_size ,
-                           0 ,
-                           nested_shape::N0 ,
-                           nested_shape::N1 ,
-                           nested_shape::N2 ,
-                           nested_shape::N3 ,
-                           nested_shape::N4 ,
-                           nested_shape::N5 ,
-                           nested_shape::N6 > shape ;
-};
-
-template< class T >
-struct AnalyzeShape< T * >
-{
-private:
-  typedef AnalyzeShape<T> nested ;
-  typedef typename nested::shape nested_shape ;
-public:
-
-  typedef typename nested::value_type value_type ;
+  typedef typename nested::value_type   value_type ;
   typedef typename nested::array_type * array_type ;
   typedef typename nested::type       * type ;
 
-  typedef typename nested::const_value_type const_value_type ;
+  typedef typename nested::const_value_type   const_value_type ;
   typedef typename nested::const_array_type * const_array_type ;
   typedef typename nested::const_type       * const_type ;
 
-  typedef typename nested::non_const_value_type non_const_value_type ;
+  typedef typename nested::non_const_value_type   non_const_value_type ;
   typedef typename nested::non_const_array_type * non_const_array_type ;
   typedef typename nested::non_const_type       * non_const_type ;
 
-  typedef ShapeStaticInfo< nested_shape::rank_dynamic + 1 ,
-                           nested_shape::rank + 1 ,
-                           nested_shape::value_size ,
-                           0 ,
-                           nested_shape::N0 ,
-                           nested_shape::N1 ,
-                           nested_shape::N2 ,
-                           nested_shape::N3 ,
-                           nested_shape::N4 ,
-                           nested_shape::N5 ,
-                           nested_shape::N6 > shape ;
+  typedef typename ShapeInsert< nested_shape , 0 >::type shape ;
 };
 
-template< class T >
-struct AnalyzeShape< const T * >
+template< class T , class Layout >
+struct AnalyzeShape< T[] , Layout >
 {
 private:
-  typedef AnalyzeShape<const T> nested ;
+  typedef AnalyzeShape<T,Layout> nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
-  typedef typename nested::value_type value_type ;
-  typedef typename nested::array_type * array_type ;
-  typedef typename nested::type       * type ;
+  typedef typename nested::value_type  value_type ;
+  typedef typename nested::array_type  array_type [] ;
+  typedef typename nested::type        type [] ;
 
-  typedef typename nested::const_value_type const_value_type ;
-  typedef typename nested::const_array_type * const_array_type ;
-  typedef typename nested::const_type       * const_type ;
+  typedef typename nested::const_value_type  const_value_type ;
+  typedef typename nested::const_array_type  const_array_type [] ;
+  typedef typename nested::const_type        const_type [] ;
 
-  typedef typename nested::non_const_value_type non_const_value_type ;
-  typedef typename nested::non_const_array_type * non_const_array_type ;
-  typedef typename nested::non_const_type       * non_const_type ;
+  typedef typename nested::non_const_value_type  non_const_value_type ;
+  typedef typename nested::non_const_array_type  non_const_array_type [] ;
+  typedef typename nested::non_const_type        non_const_type [] ;
 
-  typedef ShapeStaticInfo< nested_shape::rank_dynamic + 1 ,
-                           nested_shape::rank + 1 ,
-                           nested_shape::value_size ,
-                           0 ,
-                           nested_shape::N0 ,
-                           nested_shape::N1 ,
-                           nested_shape::N2 ,
-                           nested_shape::N3 ,
-                           nested_shape::N4 ,
-                           nested_shape::N5 ,
-                           nested_shape::N6 > shape ;
+  typedef typename ShapeInsert< nested_shape , 0 >::type shape ;
 };
 
-template< class T , unsigned N >
-struct AnalyzeShape< T[N] >
+template< class T , class Layout >
+struct AnalyzeShape< const T[] , Layout >
 {
 private:
-  typedef AnalyzeShape<T> nested ;
+  typedef AnalyzeShape< const T,Layout> nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
-  typedef typename nested::value_type value_type ;
-  typedef typename nested::array_type array_type [N] ;
-  typedef typename nested::type  type [N] ;
+  typedef typename nested::value_type  value_type ;
+  typedef typename nested::array_type  array_type [] ;
+  typedef typename nested::type        type [] ;
 
-  typedef typename nested::const_value_type const_value_type ;
-  typedef typename nested::const_array_type const_array_type [N] ;
-  typedef typename nested::const_type       const_type [N] ;
+  typedef typename nested::const_value_type  const_value_type ;
+  typedef typename nested::const_array_type  const_array_type [] ;
+  typedef typename nested::const_type        const_type [] ;
 
-  typedef typename nested::non_const_value_type non_const_value_type ;
-  typedef typename nested::non_const_array_type non_const_array_type [N] ;
-  typedef typename nested::non_const_type       non_const_type [N] ;
+  typedef typename nested::non_const_value_type  non_const_value_type ;
+  typedef typename nested::non_const_array_type  non_const_array_type [] ;
+  typedef typename nested::non_const_type        non_const_type [] ;
 
-  typedef ShapeStaticInfo< nested_shape::rank_dynamic ,
-                           nested_shape::rank + 1 ,
-                           nested_shape::value_size ,
-                           N ,
-                           nested_shape::N0 ,
-                           nested_shape::N1 ,
-                           nested_shape::N2 ,
-                           nested_shape::N3 ,
-                           nested_shape::N4 ,
-                           nested_shape::N5 ,
-                           nested_shape::N6 > shape ;
+  typedef typename ShapeInsert< nested_shape , 0 >::type shape ;
 };
 
-template< class T , unsigned N >
-struct AnalyzeShape< const T[N] >
+template< class T , unsigned N , class Layout >
+struct AnalyzeShape< T[N] , Layout >
 {
 private:
-  typedef AnalyzeShape< const T > nested ;
+  typedef AnalyzeShape<T, Layout > nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
-  typedef typename nested::value_type value_type ;
-  typedef typename nested::array_type array_type [N] ;
-  typedef typename nested::type  type [N] ;
+  typedef typename nested::value_type  value_type ;
+  typedef typename nested::array_type  array_type [N] ;
+  typedef typename nested::type        type [N] ;
 
-  typedef typename nested::const_value_type const_value_type ;
-  typedef typename nested::const_array_type const_array_type [N] ;
-  typedef typename nested::const_type       const_type [N] ;
+  typedef typename nested::const_value_type  const_value_type ;
+  typedef typename nested::const_array_type  const_array_type [N] ;
+  typedef typename nested::const_type        const_type [N] ;
 
-  typedef typename nested::non_const_value_type non_const_value_type ;
-  typedef typename nested::non_const_array_type non_const_array_type [N] ;
-  typedef typename nested::non_const_type       non_const_type [N] ;
+  typedef typename nested::non_const_value_type  non_const_value_type ;
+  typedef typename nested::non_const_array_type  non_const_array_type [N] ;
+  typedef typename nested::non_const_type        non_const_type [N] ;
 
-  typedef ShapeStaticInfo< nested_shape::rank_dynamic ,
-                           nested_shape::rank + 1 ,
-                           nested_shape::value_size ,
-                           N ,
-                           nested_shape::N0 ,
-                           nested_shape::N1 ,
-                           nested_shape::N2 ,
-                           nested_shape::N3 ,
-                           nested_shape::N4 ,
-                           nested_shape::N5 ,
-                           nested_shape::N6 > shape ;
+  typedef typename ShapeInsert< nested_shape , N >::type shape ;
+};
+
+template< class T , unsigned N , class Layout >
+struct AnalyzeShape< const T[N] , Layout >
+{
+private:
+  typedef AnalyzeShape< const T, Layout > nested ;
+  typedef typename nested::shape nested_shape ;
+public:
+
+  typedef typename nested::value_type  value_type ;
+  typedef typename nested::array_type  array_type [N] ;
+  typedef typename nested::type        type [N] ;
+
+  typedef typename nested::const_value_type  const_value_type ;
+  typedef typename nested::const_array_type  const_array_type [N] ;
+  typedef typename nested::const_type        const_type [N] ;
+
+  typedef typename nested::non_const_value_type  non_const_value_type ;
+  typedef typename nested::non_const_array_type  non_const_array_type [N] ;
+  typedef typename nested::non_const_type        non_const_type [N] ;
+
+  typedef typename ShapeInsert< nested_shape , N >::type shape ;
 };
 
 } // namespace Impl
