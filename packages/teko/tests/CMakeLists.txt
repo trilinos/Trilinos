@@ -53,6 +53,9 @@ SET(TEST_DRIVER_DATA_FILES
   tOpMat.mm
   tOpMp.mm
   tOpRhs.mm
+  szdMat.mm
+  szdMp.mm
+  szdRHS.mm
   )
 
 IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
@@ -178,14 +181,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  ModALPreconditioner
-#  SOURCES
-#    unit_tests/tModALPreconditioner.cpp
-#  #  ${TEUCHOS_STD_UNIT_TEST_MAIN}
-#  COMM serial mpi
-#  NUM_MPI_PROCS 1
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ModALPreconditioner
+  SOURCES
+    unit_tests/tModALPreconditioner.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ReorderBlocking
@@ -202,5 +205,4 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     unit_tests/tUtilitiesTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
-  NUM_MPI_PROCS 1
   )
