@@ -85,7 +85,6 @@ void Ifpack_ShyLU::Destroy()
 
         if (slu_config_.schurSolver == "Amesos")
         {
-            delete slu_data_.LP2;
             delete slu_data_.dsolver;
         }
         else if (slu_config_.libName == "Belos")
@@ -141,6 +140,8 @@ int Ifpack_ShyLU::Initialize()
                                                 "Schur Approximation Method");
     slu_config_.schurSolver = Teuchos::getParameter<string>(List_,
                                                 "Schur Complement Solver");
+    slu_config_.schurAmesosSolver = List_.get<string>("Schur Amesos Solver",
+    											"Amesos_Klu");
     slu_config_.diagonalBlockSolver =
             Teuchos::getParameter<string>(List_, "Diagonal Block Solver");
 
@@ -184,14 +185,7 @@ int Ifpack_ShyLU::Initialize()
 
     if (slu_config_.schurSolver == "Amesos")
     {
-        slu_data_.LP2 = new Epetra_LinearProblem();
-        Amesos Factory;
-        std::string SolverType =
-                Teuchos::getParameter<string>(List_, "Schur Amesos Solver");
-
-        bool IsAvailable = Factory.Query(SolverType);
-        assert(IsAvailable == true);
-        slu_data_.dsolver = Factory.Create(SolverType, *(slu_data_.LP2));
+        slu_data_.LP2 = Teuchos::rcp(new Epetra_LinearProblem());
     }
     else
     {

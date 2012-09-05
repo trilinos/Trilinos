@@ -796,7 +796,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
 
     // Create the local and distributed row map
-    Epetra_SerialComm LComm;
+    Epetra_MpiComm LComm(MPI_COMM_SELF);
     Epetra_Map LocalDRowMap(-1, data->Dnr, data->DRowElems, 0, LComm);
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
@@ -876,10 +876,35 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     if (config->schurSolver == "Amesos")
     {
         Teuchos::ParameterList aList;
-        aList.set("Reindex", true);
+        //aList.set("Reindex", true);
 
-        data->LP2->SetOperator(data->Sbar.get());
-        data->LP2->SetLHS(0); data->LP2->SetRHS(0);
+        data->Sbarlhs = Teuchos::RCP<Epetra_MultiVector>
+                        (new Epetra_MultiVector(data->Sbar->RowMap(), 16));
+        data->Sbarrhs = Teuchos::RCP<Epetra_MultiVector>
+                        (new Epetra_MultiVector(data->Sbar->RowMap(), 16));
+
+        Teuchos::RCP<Epetra_LinearProblem> LP2 =
+        		Teuchos::rcp(new Epetra_LinearProblem);
+
+        LP2->SetOperator(data->Sbar.get());
+        LP2->SetRHS(data->Sbarrhs.getRawPtr());
+        LP2->SetLHS(data->Sbarlhs.getRawPtr());
+
+        data->ReIdx_LP2 = Teuchos::RCP
+        		<EpetraExt::ViewTransform<Epetra_LinearProblem> >
+				(new EpetraExt::LinearProblem_Reindex2(0));
+        data->LP2 =
+        		Teuchos::RCP<Epetra_LinearProblem>
+        		(&((*(data->ReIdx_LP2))(*LP2)), false);
+
+        data->OrigLP2 = LP2;
+
+        Amesos Factory;
+        bool IsAvailable = Factory.Query(config->schurAmesosSolver);
+        assert(IsAvailable == true);
+        data->dsolver = Factory.Create(
+        		config->schurAmesosSolver, *(data->LP2));
+
         data->dsolver->SetParameters(aList);
         //cout << "Created the direct Schur  Solver" << endl;
 

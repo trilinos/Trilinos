@@ -79,8 +79,12 @@ typedef struct
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
     AztecOO *innersolver;            // inner solver
-    Epetra_LinearProblem *LP2;   // Local problem to solve
-    Amesos_BaseSolver *dsolver;  // Local Subdomain solver
+    Teuchos::RCP<Epetra_MultiVector> Sbarlhs;
+    Teuchos::RCP<Epetra_MultiVector> Sbarrhs;
+    Teuchos::RCP<Epetra_LinearProblem> LP2;   // Local problem to solve
+    Teuchos::RCP<Epetra_LinearProblem> OrigLP2;   // Local problem to solve D
+	Teuchos::RCP<EpetraExt::ViewTransform<Epetra_LinearProblem> > ReIdx_LP2;
+	Amesos_BaseSolver *dsolver;  // Local Subdomain solver
     Teuchos::RCP<AmesosSchurOperator> schur_prec;
     Teuchos::RCP<ShyLU_Probing_Operator> schur_op;
     int lmax;                    // May be this is optimizing too much
