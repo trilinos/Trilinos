@@ -3051,7 +3051,6 @@ namespace Iopx {
 	      }
 	    }
 	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
 	    // Need a larger vector to get the entire sideset and then filter down to the correct size...
 	    std::vector<char> element(number_sides * int_byte_size_api());
 	    std::vector<char> sides(number_sides * int_byte_size_api());
@@ -3067,6 +3066,7 @@ namespace Iopx {
 	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(sides));
 	    }
 	    
+	    Ioss::IntVector is_valid_side;
 	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
 							TOPTR(element), TOPTR(sides),
 							number_sides, get_region());
@@ -3149,7 +3149,7 @@ namespace Iopx {
 	  // Need to read all values for the specified field and then
 	  // filter down to the elements actually in this side block.
 
-	  Ioss::IntVector is_valid_side(number_sides);
+	  Ioss::IntVector is_valid_side;
 	  // Need a larger vector to get the entire sideset and then filter down to the correct size...
 	  std::vector<char> element(number_sides * int_byte_size_api());
 	  std::vector<char> sides(number_sides * int_byte_size_api());
@@ -3441,7 +3441,7 @@ namespace Iopx {
 	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(side));
       }
 	    
-      Ioss::IntVector is_valid_side(number_sides);
+      Ioss::IntVector is_valid_side;
       Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
 						  (void*)TOPTR(element), (void*)TOPTR(side),
 						  number_sides, get_region());
@@ -3621,7 +3621,7 @@ namespace Iopx {
       }
       //----
 
-      Ioss::IntVector is_valid_side(number_sides);
+      Ioss::IntVector is_valid_side;
       Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
 						  TOPTR(element), TOPTR(sides),
 						  number_sides, get_region());

@@ -3582,7 +3582,7 @@ namespace Ioex {
 	      }
 	      assert(index/2 == entity_count);
 	    } else {
-	      Ioss::IntVector is_valid_side(number_sides);
+	      Ioss::IntVector is_valid_side;
 	      Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
 							  TOPTR(element), TOPTR(sides),
 							  number_sides, get_region());
@@ -3654,7 +3654,7 @@ namespace Ioex {
 	      }
 	      assert(index/2 == entity_count);
 	    } else {
-	      Ioss::IntVector is_valid_side(number_sides);
+	      Ioss::IntVector is_valid_side;
 	      Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
 							  TOPTR(element), TOPTR(sides),
 							  number_sides, get_region());
@@ -3725,7 +3725,7 @@ namespace Ioex {
 	    // filter down to the elements actualy in this side block.
 
 	    // Determine which sides are member of this block
-	    Ioss::IntVector is_valid_side(number_sides);
+	    Ioss::IntVector is_valid_side;
 	    {
 	      //----
 	      std::vector<char> element(number_sides * int_byte_size_api());
@@ -4011,7 +4011,7 @@ namespace Ioex {
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
       //----
 
-      Ioss::IntVector is_valid_side(number_sides);
+      Ioss::IntVector is_valid_side;
       Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
 						  (void*)TOPTR(element), (void*)TOPTR(side),
 						  number_sides, get_region());
@@ -4170,7 +4170,7 @@ namespace Ioex {
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
       //----
 
-      Ioss::IntVector is_valid_side(number_sides);
+      Ioss::IntVector is_valid_side;
       Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
 						  TOPTR(element), TOPTR(side),
 						  number_sides, get_region());

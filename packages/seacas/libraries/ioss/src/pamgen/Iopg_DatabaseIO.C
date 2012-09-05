@@ -1266,7 +1266,7 @@ namespace Iopg {
 	      ids[iel] = new_id;
 	    }
 	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
+	    Ioss::IntVector is_valid_side;
 	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, TOPTR(sides),
 							number_sides, get_region());
 	    size_t ieb = 0;
@@ -1314,7 +1314,7 @@ namespace Iopg {
 	    }
 	    assert(index/2 == entity_count);
 	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
+	    Ioss::IntVector is_valid_side;
 	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element), TOPTR(sides),
 							number_sides, get_region());
 
@@ -1922,7 +1922,7 @@ namespace Iopg {
       pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 //----
 
-    Ioss::IntVector is_valid_side(number_sides);
+    Ioss::IntVector is_valid_side;
     Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element), TOPTR(side),
 						number_sides, get_region());
 
