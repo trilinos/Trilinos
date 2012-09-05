@@ -323,7 +323,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    // build field maps as needed
    Teuchos::RCP<const Map> reducedMap = gh_reducedFieldMaps_[fieldNum];
    if(gh_reducedFieldMaps_[fieldNum]==Teuchos::null) {
-      reducedMap = getFieldMap(fieldNum,*gh_reducedFieldVector_);
+      reducedMap = panzer::getFieldMap(fieldNum,*gh_reducedFieldVector_);
       gh_reducedFieldMaps_[fieldNum] = reducedMap;
    }
 
@@ -350,7 +350,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
    Teuchos::RCP<const Map> map = gh_fieldMaps_[fieldNum];
    if(gh_fieldMaps_[fieldNum]==Teuchos::null) {
-      map = getFieldMap(fieldNum,*gh_fieldVector_);
+      map = panzer::getFieldMap(fieldNum,*gh_fieldVector_);
       gh_fieldMaps_[fieldNum] = map;
    }
 
@@ -381,7 +381,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    int fieldNum = ugi_->getFieldNum(fieldName);
    Teuchos::RCP<const Map> destMap = fieldMaps_[fieldNum];
    if(fieldMaps_[fieldNum]==Teuchos::null) {
-      destMap = getFieldMap(fieldNum,*fieldVector_);
+      destMap = panzer::getFieldMap(fieldNum,*fieldVector_);
       fieldMaps_[fieldNum] = destMap;
    }
 
@@ -412,6 +412,24 @@ void ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    localFieldVector->doImport(source,importer,Tpetra::INSERT);
 
    fieldVector_ = localFieldVector;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
+ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
+getFieldMap(const std::string & fieldName) const
+{
+   int fieldNum = ugi_->getFieldNum(fieldName);
+
+   if(fieldMaps_[fieldNum]==Teuchos::null) {
+      // if neccessary build field vector
+      if(fieldVector_==Teuchos::null)
+         buildFieldVector(*gh_fieldVector_);
+
+      fieldMaps_[fieldNum] = panzer::getFieldMap(fieldNum,*fieldVector_);
+   }
+
+   return fieldMaps_[fieldNum];
 }
                                    
 } // end namspace panzer
