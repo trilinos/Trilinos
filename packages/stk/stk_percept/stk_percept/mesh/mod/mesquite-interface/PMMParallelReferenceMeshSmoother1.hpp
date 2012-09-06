@@ -18,7 +18,8 @@ namespace stk {
 
     using namespace Mesquite;
 
-    /// A Jacobian based optimization smoother - 1/A - 1/W (A = local current Jacobian, W is for original mesh)
+    /// A Jacobian based optimization smoother, e.g. 1/A - 1/W, W/A - I, etc. (A = local current Jacobian, W is for original mesh)
+    /// Conjugate-gradient version, element-based metrics
     class PMMParallelReferenceMeshSmoother1 : public PMMParallelReferenceMeshSmoother {
      
     public:  

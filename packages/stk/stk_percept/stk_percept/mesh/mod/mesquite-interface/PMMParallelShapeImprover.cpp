@@ -5,6 +5,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother2.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother3.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMSmootherMetric.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>

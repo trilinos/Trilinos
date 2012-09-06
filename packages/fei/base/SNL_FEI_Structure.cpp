@@ -3640,12 +3640,11 @@ int SNL_FEI_Structure::gatherSlaveEqns(MPI_Comm comm,
   //We're going to send all of our slave equations to all other processors, and
   //receive the slave equations from all other processors.
   //So we'll first fill a ProcEqns object with all of our eqn/proc pairs,
-  //then use the regular exchange functions from EqnCommMgr. (This may not be
-  //the most efficient way to do it, but it involves the least amount of new
-  //code.)
+  //then use the regular exchange functions from EqnCommMgr.
   ProcEqns localProcEqns, remoteProcEqns;
   std::vector<int>& slvEqnNums = slaveEqns->eqnNumbers();
-  fei::CSVec** slvEqnsPtr = &(slaveEqns->eqns()[0]);
+  fei::CSVec** slvEqnsPtr = NULL;
+  if (slaveEqns->eqns().size() > 0) slvEqnsPtr = &(slaveEqns->eqns()[0]);
 
   for(size_t i=0; i<slvEqnNums.size(); i++) {
     for(int p=0; p<numProcs; p++) {

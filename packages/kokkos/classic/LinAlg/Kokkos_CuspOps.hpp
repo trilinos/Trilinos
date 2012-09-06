@@ -62,7 +62,7 @@ namespace Kokkos {
   //! \class CuspCrsGraph
   /** \brief CRS sparse graph class supporting the Cusp library.
   */
-  template <class Ordinal, 
+  template <class Ordinal,
             class Node>
   class CuspCrsGraph : public CrsGraphBase<Ordinal,Node>
   {
@@ -228,30 +228,39 @@ namespace Kokkos {
   { dev_vals_ = devvals; }
 
   template <class Scalar, class Ordinal, class Node>
-  inline void CuspCrsMatrix<Scalar,Ordinal,Node>::getDeviceDataTrans(ArrayRCP<const Ordinal> &tptrs, 
-                                                                     ArrayRCP<const Ordinal> &tinds, 
+  inline void CuspCrsMatrix<Scalar,Ordinal,Node>::getDeviceDataTrans(ArrayRCP<const Ordinal> &tptrs,
+                                                                     ArrayRCP<const Ordinal> &tinds,
                                                                      ArrayRCP<const Scalar> &tvals) const
   {
-    tptrs = dev_rowptrs_t_;  
-    tinds = dev_colinds_t_;  
-    tvals = dev_vals_t_;  
+    tptrs = dev_rowptrs_t_;
+    tinds = dev_colinds_t_;
+    tvals = dev_vals_t_;
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void CuspCrsMatrix<Scalar,Ordinal,Node>::setDeviceDataTrans(const ArrayRCP<const Ordinal> &devptrs, 
-                                                              const ArrayRCP<const Ordinal> &devinds, 
-                                                              const ArrayRCP<const Scalar> &devvals) { 
-    dev_rowptrs_t_ = devptrs; 
-    dev_colinds_t_ = devinds; 
-    dev_vals_t_    = devvals; 
+  void CuspCrsMatrix<Scalar,Ordinal,Node>::setDeviceDataTrans(const ArrayRCP<const Ordinal> &devptrs,
+                                                              const ArrayRCP<const Ordinal> &devinds,
+                                                              const ArrayRCP<const Scalar> &devvals) {
+    dev_rowptrs_t_ = devptrs;
+    dev_colinds_t_ = devinds;
+    dev_vals_t_    = devvals;
   }
 
   /// \class CuspOps
-  /// \brief Default implementation of sparse matrix-vector multiply
-  ///   and solve routines, for host-based Kokkos Node types.
+  /// \brief Implementation of local sparse operations for GPUs that uses Cusp.
   /// \ingroup kokkos_crs_ops
   ///
+  /// This class is one of various classes in Kokkos that implement
+  /// local sparse matrix-(multi)vector multiply and sparse triangular
+  /// solve.  ("Local" means "on a single node; not using MPI.")
+  /// Examples include DefaultHostSparseOps, AltSparseOps, and
+  /// MklSparseOps for host-based Kokkos Nodes, and CUSPARSEOps for
+  /// NVIDIA GPUs (Graphics Processing Units).  This class provides an
+  /// interface to the local sparse operations provided by the
+  /// <a href="https://code.google.com/p/cusp-library/">Cusp library</a>.
+  ///
   /// \tparam Scalar The type of entries of the sparse matrix.
+  /// \tparam Ordinal The type of (local) column indices in the sparse matrix.
   /// \tparam Node The Kokkos Node type.
   template <class Scalar, class Ordinal, class Node>
   class CuspOps {
@@ -286,7 +295,8 @@ namespace Kokkos {
     /// operations for a scalar type S2, which may be different from
     /// \c Scalar.
     ///
-    /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar type to the appropriate scalar.
+    /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar
+    /// type to the appropriate scalar.
     ///
     /// This always specifies a specialization of \c
     /// CuspOps, regardless of the scalar type S2.
@@ -481,9 +491,9 @@ namespace Kokkos {
     // set description
     graph.setMatDesc(uplo,diag);
     const size_t numnz = hostinds.size();
-    TEUCHOS_TEST_FOR_EXCEPTION( 
-        numnz > (size_t)MAX_NNZ, std::runtime_error, 
-        "Kokkos::CuspOps: Selected ordinal does not support more than " << MAX_NNZ << " non-zeros." 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        numnz > (size_t)MAX_NNZ, std::runtime_error,
+        "Kokkos::CuspOps: Selected ordinal does not support more than " << MAX_NNZ << " non-zeros."
         );
     devptrs = node->template allocBuffer<Ordinal>( numRows+1 );
     ArrayRCP<Ordinal> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
@@ -529,7 +539,7 @@ namespace Kokkos {
       // explicitly create Transpose if true
       if (params->get("Prepare Transpose Multiply",false)) {
         ArrayRCP<Scalar>  tvals = node->template allocBuffer<Scalar>( numnz );
-        ArrayRCP<Ordinal> tptrs = node->template allocBuffer<Ordinal>( numCols+1 ), 
+        ArrayRCP<Ordinal> tptrs = node->template allocBuffer<Ordinal>( numCols+1 ),
                           tinds = node->template allocBuffer<Ordinal>( numnz );
         ArrayRCP<const Ordinal> ptrs = graph.getDevPointers();
         ArrayRCP<const Ordinal> inds = graph.getDevIndices();
@@ -538,7 +548,7 @@ namespace Kokkos {
                                       ptrs.getRawPtr(),inds.getRawPtr(),vals.getRawPtr(),
                                       tptrs.getRawPtr(),tinds.getRawPtr(),tvals.getRawPtr());
         matrix.setDeviceDataTrans(tptrs,tinds,tvals);
-      } 
+      }
       // if (params->get("Prepare Multiply",true))  {}            // delete non-transpose if false
     }
   }
@@ -546,7 +556,7 @@ namespace Kokkos {
   // ======= graph and matrix finalization ===========
   template <class Scalar, class Ordinal, class Node>
   void CuspOps<Scalar,Ordinal,Node>::finalizeGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag,
-                                                            CuspCrsGraph<Ordinal,Node> &graph, 
+                                                            CuspCrsGraph<Ordinal,Node> &graph,
                                                             CuspCrsMatrix<Scalar,Ordinal,Node> &matrix,
                                                             const RCP<ParameterList> &params)
   {
@@ -614,7 +624,7 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void CuspOps<Scalar,Ordinal,Node>::setGraphAndMatrix(const RCP<const CuspCrsGraph<Ordinal,Node> > &graph_in, 
+  void CuspOps<Scalar,Ordinal,Node>::setGraphAndMatrix(const RCP<const CuspCrsGraph<Ordinal,Node> > &graph_in,
                                                        const RCP<const CuspCrsMatrix<Scalar,Ordinal,Node> > &matrix_in)
   {
     std::string tfecfFuncName("setGraphAndMatrix(graph_in,matrix_in)");
@@ -671,11 +681,11 @@ namespace Kokkos {
         (size_t)Y.getNumRows() != (size_t)opRows,
         std::runtime_error, "Size of Y is not congruous with dimensions of operator.")
     if (trans == Teuchos::NO_TRANS) {
-      Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(), 
+      Cuspdetails::cuspCrsMultiply(numMatRows, numMatCols, numNZ, rowPtrs_.getRawPtr(), colInds_.getRawPtr(), rowVals_.getRawPtr(),
                                    numRHS, data_x, stride_x, data_y, stride_y);
     }
     else {
-      Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(), 
+      Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(),
                                    numRHS, data_x, stride_x, data_y, stride_y);
     }
     if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
@@ -729,7 +739,7 @@ namespace Kokkos {
                                      numRHS, data_x, stride_x, data_y, stride_y);
       }
       else {
-        Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(), 
+        Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(),
                                      numRHS, data_x, stride_x, data_y, stride_y);
       }
       if (alpha != Teuchos::ScalarTraits<RangeScalar>::one()) {
@@ -746,7 +756,7 @@ namespace Kokkos {
                                      numRHS, data_x, stride_x, tmp.getRawPtr(), opRows);
       }
       else {
-        Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(), 
+        Cuspdetails::cuspCrsMultiply(numMatCols, numMatRows, numNZ, rowPtrs_t_.getRawPtr(), colInds_t_.getRawPtr(), rowVals_t_.getRawPtr(),
                                      numRHS, data_x, stride_x, tmp.getRawPtr(), opRows);
       }
       // Y = alpha*tmp + beta*Y

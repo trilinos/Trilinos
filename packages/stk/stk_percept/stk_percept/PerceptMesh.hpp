@@ -338,6 +338,9 @@ namespace stk {
       /// Must be called before commit()
       void add_coordinate_state_fields();
 
+      /// add spacing fields for having refinement obey the spacing (i.e. putting new nodes not at midpoint)
+      void add_spacing_fields();
+
       /// set proc_rank on each element
       void set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field=0);
 

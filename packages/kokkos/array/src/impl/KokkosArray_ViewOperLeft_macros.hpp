@@ -56,15 +56,15 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , 0 , 0 > >
+template< typename ValueType , unsigned ValueSize >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType , Shape< LayoutLeft , ValueSize, 0 > >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                     * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,0,0> m_shape ;
+  ValueType                   * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,0> m_shape ;
 
 public:
 
@@ -86,15 +86,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , RankDyn , 1 > >
+template< typename ValueType , unsigned ValueSize , unsigned s0 >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType , Shape< LayoutLeft, ValueSize, 1, s0 > >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                           * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,RankDyn,1> m_shape ;
+  ValueType                      * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,1,s0> m_shape ;
 
 public:
 
@@ -128,15 +128,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , RankDyn , 2 > >
+template< typename ValueType , unsigned ValueSize , unsigned s0 , unsigned s1 >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType , Shape< LayoutLeft, ValueSize, 2, s0, s1 > >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                           * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,RankDyn,2> m_shape ;
+  ValueType                         * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,2,s0,s1> m_shape ;
 
 public:
 
@@ -159,15 +159,17 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , RankDyn , 3 > >
+template< typename ValueType , unsigned ValueSize ,
+          unsigned s0 , unsigned s1 , unsigned s2 >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType ,
+                Shape<LayoutLeft,ValueSize,3,s0,s1,s2> >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                           * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,RankDyn,3> m_shape ;
+  ValueType                            * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,3,s0,s1,s2> m_shape ;
 
 public:
 
@@ -192,15 +194,17 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , RankDyn , 4 > >
+template< typename ValueType , unsigned ValueSize ,
+          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType ,
+                Shape<LayoutLeft,ValueSize,4,s0,s1,s2,s3> >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                           * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,RankDyn,4> m_shape ;
+  ValueType * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,4,s0,s1,s2,s3> m_shape ;
 
 public:
 
@@ -227,15 +231,18 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , RankDyn , 5 > >
+template< typename ValueType , unsigned ValueSize ,
+          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
+          unsigned s4 >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType ,
+                Shape<LayoutLeft,ValueSize,5,s0,s1,s2,s3,s4> >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                           * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,RankDyn,5> m_shape ;
+  ValueType * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,5,s0,s1,s2,s3,s4> m_shape ;
 
 public:
 
@@ -264,15 +271,18 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , RankDyn , 6 > >
+template< typename ValueType , unsigned ValueSize ,
+          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
+          unsigned s4 , unsigned s5 >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType ,
+                Shape<LayoutLeft,ValueSize,6,s0,s1,s2,s3,s4,s5> >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                           * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,RankDyn,6> m_shape ;
+  ValueType * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,6,s0,s1,s2,s3,s4,s5> m_shape ;
 
 public:
 
@@ -302,15 +312,18 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , RankDyn , 7 > >
+template< typename ValueType , unsigned ValueSize ,
+          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
+          unsigned s4 , unsigned s5 , unsigned s6 >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType ,
+                Shape<LayoutLeft,ValueSize,7,s0,s1,s2,s3,s4,s5,s6> >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                           * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,RankDyn,7> m_shape ;
+  ValueType * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,7,s0,s1,s2,s3,s4,s5,s6> m_shape ;
 
 public:
 
@@ -343,15 +356,18 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class ShapeType , unsigned RankDyn >
-class ViewOper< ValueType , KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                Shape< LayoutLeft , ShapeType , RankDyn , 8 > >
+template< typename ValueType , unsigned ValueSize ,
+          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
+          unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
+class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
+                ValueType ,
+                Shape<LayoutLeft,ValueSize,8,s0,s1,s2,s3,s4,s5,s6,s7> >
 {
 private:
   template< class , class , class > friend class KokkosArray::View ;
 
-  ValueType                           * m_ptr_on_device ;
-  Shape<LayoutLeft,ShapeType,RankDyn,8> m_shape ;
+  ValueType * m_ptr_on_device ;
+  Shape<LayoutLeft,ValueSize,8,s0,s1,s2,s3,s4,s5,s6,s7> m_shape ;
 
 public:
 

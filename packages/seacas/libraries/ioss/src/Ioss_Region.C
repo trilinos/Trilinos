@@ -427,25 +427,28 @@ namespace Ioss {
 
   int Region::add_state(double time)
   {
+    static bool warning_output = false;
+    
     // NOTE:  For restart input databases, it is possible that the time
     //        is not monotonically increasing...
-    double out_time = time;
     if (!get_database()->is_input() && stateTimes.size() >= 1 && time <= stateTimes[stateTimes.size()-1]) {
       // Check that time is increasing...
-      std::ostringstream errmsg;
-      errmsg << "Current time, " << time
-	     << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
-	     << " in\n"
-	     << get_database()->get_filename() << std::endl
-	     << "Modifying time to ensure monotonic increase.";
-      IOSS_WARNING << errmsg.str();
-      out_time = stateTimes[stateTimes.size()-1] + stateTimes[stateTimes.size()-1]/1.0e5;
+      if (!warning_output) {
+	std::ostringstream errmsg;
+	errmsg << "IOSS WARNING: Current time, " << time
+	       << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
+	       << " in\n"
+	       << get_database()->get_filename()
+	       << ". This may cause problems in applications that assume monotonically increasing time values.";
+	IOSS_WARNING << errmsg.str();
+	warning_output = true;
+      }
     }
 
     if (get_database()->is_input() ||
 	get_database()->usage() == WRITE_RESULTS ||
 	get_database()->usage() == WRITE_RESTART ) {
-      stateTimes.push_back(out_time);
+      stateTimes.push_back(time);
       assert((int)stateTimes.size() == stateCount+1);
 
     } else {
@@ -455,9 +458,9 @@ namespace Ioss {
       // a list of times that have been written since they are just streamed out and never read
       // We do sometimes need the list of times written to restart or results files though...
       if (stateTimes.empty()) {
-	stateTimes.push_back(out_time);
+	stateTimes.push_back(time);
       } else {
-	stateTimes[0] = out_time;
+	stateTimes[0] = time;
       }
     }
     return ++stateCount;;

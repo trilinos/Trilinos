@@ -60,6 +60,7 @@ namespace stk {
     static double MegaByte(MemorySizeType x) { return  ((double)x/1024.0/1024.0); }
 
 
+
     struct MemoryMultipliers
     {
       MemorySizeType num_hex8;
@@ -509,6 +510,8 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
+      int refine_to_spacing = 0;
+      //double min_spacing_factor = 0.25; // range [0,0.5]
       int remove_geometry_blocks = 0;
       int sync_io_regions = 1;
       int delete_parents = 1;
@@ -719,6 +722,7 @@ namespace stk {
           std::string mesh_name = Ioss::Utils::decode_filename(input_mesh_save, 0, m_M);
           eMesh.open(mesh_name);
           if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
+          if (refine_to_spacing == 1) eMesh.add_spacing_fields();
           s_spatialDim = eMesh.get_spatial_dim();
           VERIFY_OP_ON(s_spatialDim, >=, 2, "AdaptMain bad spatial_dim");
         }
@@ -846,6 +850,7 @@ namespace stk {
                       {
                         eMesh.open(input_mesh);
                         if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
+                        if (refine_to_spacing == 1) eMesh.add_spacing_fields();
                         if (!sync_io_regions) eMesh.set_sync_io_regions(false);
                         if (!s_spatialDim) s_spatialDim = eMesh.get_spatial_dim();
 
@@ -868,6 +873,7 @@ namespace stk {
                                     eMesh.close();
                                     eMesh.open(input_mesh);
                                     if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
+                                    if (refine_to_spacing == 1) eMesh.add_spacing_fields();
                                   }
                               }
             
@@ -989,6 +995,7 @@ namespace stk {
                             breaker.setQueryPassOnly(query_only == 1);
                             breaker.setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
                             //breaker.setIgnoreSideSets(true);
+
 
                             for (int iBreak = 0; iBreak < number_refines; iBreak++)
                               {

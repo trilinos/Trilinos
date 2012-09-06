@@ -334,6 +334,8 @@ namespace MueLu {
       smooProto = Teuchos::rcp( new DirectSolver("Superludist",Teuchos::ParameterList(),AFact) );
     } else if(type == "Amesos-KLU") {
       smooProto = Teuchos::rcp( new DirectSolver("Klu",Teuchos::ParameterList(),AFact) );
+    } else if(type == "Amesos-UMFPACK") {
+      smooProto = Teuchos::rcp( new DirectSolver("Umfpack",Teuchos::ParameterList(),AFact) );
     } else if(type == "") {
       smooProto = Teuchos::rcp( new DirectSolver("",Teuchos::ParameterList(),AFact) );
     } else {
