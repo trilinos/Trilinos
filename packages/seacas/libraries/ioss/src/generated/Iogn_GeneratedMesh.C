@@ -601,7 +601,7 @@ namespace Iogn {
     assert(block_number <= block_count() && block_number > 0);
 
     if (block_number == 1) {
-      return std::make_pair(std::string("hex8"), 8);;
+      return std::make_pair(std::string("hex8"), 8);
     } else {
       return std::make_pair(std::string("shell4"), 4);
     }
@@ -1432,5 +1432,208 @@ namespace Iogn {
     }
 #endif
   }
+
+  int64_t CustomMesh::node_count() const
+{
+    return 8;
+}
+int64_t CustomMesh::node_count_proc() const
+{
+    return node_count();
+}
+int64_t CustomMesh::element_count() const
+{
+    return 2;
+}
+int64_t CustomMesh::element_count(int64_t block_number) const
+{
+    return 1;
+}
+int64_t CustomMesh::block_count() const
+{
+    return 2;
+}
+int64_t CustomMesh::nodeset_count() const
+{
+    return 0;
+}
+int64_t CustomMesh::sideset_count() const
+{
+    return 2;
+}
+
+int64_t CustomMesh::element_count_proc() const
+{
+    return element_count();
+}
+
+int64_t CustomMesh::element_count_proc(int64_t block_number) const
+{
+    return 1;
+}
+
+int64_t CustomMesh::nodeset_node_count_proc(int64_t id) const
+{
+    return 0;
+}
+int64_t CustomMesh::sideset_side_count_proc(int64_t id) const
+{
+    return 1;
+}
+int64_t CustomMesh::communication_node_count_proc() const
+{
+    return 0;
+}
+
+void CustomMesh::coordinates(double *coord) const
+{
+    std::cout << "coordinates(double *coord) called" << std::endl;
+    double coords[24] = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0};
+    for(int i = 0; i < 24; i++)
+    {
+        coord[i] = coords[i];
+    }
+}
+
+void CustomMesh::coordinates(std::vector<double> &coord) const
+{
+    std::cout << "coordinates(std::vector<double> &coord) called" << std::endl;
+}
+
+void CustomMesh::coordinates(int component, std::vector<double> &xyz) const
+{
+    std::cout << "coordinates(int component, std::vector<double> &xyz) called" << std::endl;
+}
+
+void CustomMesh::coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const
+{
+    std::cout << "coordinates(x, y, z) called" << std::endl;
+}
+
+void CustomMesh::connectivity(int64_t block_number, int* connect) const
+{
+    switch(block_number)
+    {
+        case 1:
+            connect[0] = 1;
+            connect[1] = 2;
+            connect[2] = 3;
+            connect[3] = 4;
+            return;
+        case 2:
+            connect[0] = 5;
+            connect[1] = 6;
+            connect[2] = 7;
+            connect[3] = 8;
+            return;
+        default:
+            throw std::exception();
+    }
+}
+
+std::pair<std::string, int> CustomMesh::topology_type(int64_t block_number) const
+{
+    const int numNodesPerElement = 4;
+    return std::make_pair(std::string("shell4"), numNodesPerElement);
+}
+
+void CustomMesh::sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) const
+{
+    elem_sides.clear();
+    switch(setId)
+    {
+        case 1:
+            elem_sides.push_back(1);
+            elem_sides.push_back(0);
+            return;
+        case 2:
+            elem_sides.push_back(2);
+            elem_sides.push_back(1);
+            return;
+        default:
+            throw std::exception();
+    }
+}
+
+void CustomMesh::nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const
+{
+    return;
+}
+
+void CustomMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
+{
+    return;
+}
+
+void CustomMesh::node_map(IntVector &map)
+{
+    map.resize(node_count());
+    for(int i = 0; i < node_count(); i++)
+    {
+        map[i] = i + 1;
+    }
+}
+
+void CustomMesh::node_map(MapVector &map)
+{
+    map.resize(node_count());
+    for(int i = 0; i < node_count(); i++)
+    {
+        map[i] = i + 1;
+    }
+}
+
+void CustomMesh::element_map(int block_number, IntVector &map) const
+{
+    switch(block_number)
+    {
+        case 1:
+            map[0] = 1;
+            return;
+        case 2:
+            map[1] = 2;
+            return;
+        default:
+            throw std::exception();
+    }
+}
+
+void CustomMesh::element_map(int64_t block_number, MapVector &map) const
+{
+    switch(block_number)
+    {
+        case 1:
+            map[0] = 1;
+            return;
+        case 2:
+            map[1] = 2;
+            return;
+        default:
+            throw std::exception();
+    }
+}
+
+void CustomMesh::element_map(MapVector &map) const
+{
+    int count = element_count_proc();
+    map.resize(count);
+
+    for(int i = 0; i < count; i++)
+    {
+        map[i] = i + 1;
+    }
+}
+
+void CustomMesh::element_map(IntVector &map) const
+{
+    int count = element_count_proc();
+    map.resize(count);
+
+    for(int i = 0; i < count; i++)
+    {
+        map[i] = i + 1;
+    }
+}
+
 }
 
