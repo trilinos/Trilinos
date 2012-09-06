@@ -312,7 +312,7 @@ namespace MueLu {
             std::cout << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
             std::cout << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[agg][k] << std::endl;
             std::cout << "id aggToRowMap[agg][k]=" << aggToRowMap[agg][k] << " is global element in nonUniqueMap = " << nonUniqueMap->isNodeGlobalElement(aggToRowMap[agg][k]) << std::endl;
-	    std::cout << "colMap local id aggToRowMap[agg][k]=" << nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) << std::endl;
+            std::cout << "colMap local id aggToRowMap[agg][k]=" << nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) << std::endl;
             std::cout << "fineNS...=" << fineNS[j][ nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) ] << std::endl;
             std::cerr << "caught an error!" << std::endl;
           }
@@ -322,6 +322,7 @@ namespace MueLu {
 
 #if 0
       std::cout << "Input" << std::endl;
+      std::cout << "myAggSize " << myAggSize << std::endl;
       // loop over rows
       for (size_t i=0; i<myAggSize; i++) {
         // loop over cols
@@ -332,35 +333,75 @@ namespace MueLu {
       }
 #endif
 
-      // calculate QR decomposition
-      // R is stored in localQR (size: myAggSize x NSDim)
-      qrWidget.Compute(myAggSize, localQR);
-      
-      // special handling: small aggregates (i.e. 1 pt aggregate with big NSDim)
-      if(myAggSize<Teuchos::as<LocalOrdinal>(NSDim)) {
-        for(size_t i=myAggSize; i<NSDim; i++) {  // use result from Lapack call and fill remaining nullspace dofs with default nullspace
-	  for(size_t j=0; j<NSDim; j++) {
-	    if(i==j) localQR[NSDim*j+i] = 1.0;
-	    else localQR[NSDim*j+i] = 0.0;
-	  }
-	}
-      }
-
-      // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
-      // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
-      // This stores the (offset+k)th entry only if it is local according to the coarseMap.
       Xpetra::global_size_t offset=agg*NSDim;
-      for (size_t j=0; j<NSDim; ++j) {
-        for (size_t k=0; k<=j; ++k) {
-          try {
-            if (coarseMap->isNodeLocalElement(offset+k))
-              coarseNS[j][offset+k] = localQR[ myAggSize*j + k ]; //TODO is offset+k the correct local ID?!
-          }
-          catch(...) {
-            std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
+
+      if(myAggSize >= Teuchos::as<LocalOrdinal>(NSDim)) {
+        // calculate QR decomposition (standard)
+         // R is stored in localQR (size: myAggSize x NSDim)
+         qrWidget.Compute(myAggSize, localQR);
+
+         // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
+         // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
+         // This stores the (offset+k)th entry only if it is local according to the coarseMap.
+         for (size_t j=0; j<NSDim; ++j) {
+           for (size_t k=0; k<=j; ++k) {
+             try {
+               if (coarseMap->isNodeLocalElement(offset+k)) {
+                   coarseNS[j][offset+k] = localQR[ myAggSize*j + k ]; //TODO is offset+k the correct local ID?!
+               }
+             }
+             catch(...) {
+               std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
+             }
+           }
+         }
+
+         // Calculate Q, the tentative prolongator.
+         // The Lapack GEQRF call only works for myAggsize >= NSDim
+         qrWidget.ExtractQ(myAggSize, localQR);
+
+         // end default case (myAggSize >= NSDim)
+      } else {  // sepcial handling for myAggSize < NSDim (i.e. 1pt nodes)
+        // construct R by hand, i.e. keep first myAggSize rows untouched
+        GetOStream(Warnings0,0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
+
+        // copy initial localQR values in temporary variable
+        ArrayRCP<SC> tmplocalQR(localQRsize);
+        for (size_t i=0; i<myAggSize; i++) {
+          // loop over cols
+          for (size_t j=0; j<NSDim; j++) {
+            tmplocalQR[ myAggSize*j + i] = localQR[myAggSize*j + i];
           }
         }
-      }
+
+        // copy temporary variables back to correct positions (column size is now NSDim instead of myAggSize
+        for (size_t j=0; j<NSDim; j++) {  // loop over cols
+          for (size_t i=0; i<myAggSize; i++) {  // loop over rows
+            localQR[ NSDim*j + i] = tmplocalQR[myAggSize*j + i];
+          }
+          // fill NSDim-myAggSize rows with default null space
+          for(size_t i=myAggSize; i<NSDim; i++) { // loop over rows
+             if(i==j) localQR[NSDim*j+i] = 1.0;
+             else localQR[NSDim*j+i] = 0.0;
+          }
+        }
+
+        // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
+        // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
+        // This stores the (offset+k)th entry only if it is local according to the coarseMap.
+
+        for (size_t j=0; j<NSDim; ++j) {
+          for (size_t k=0; k<=j; ++k) {
+            try {
+              if (coarseMap->isNodeLocalElement(offset+k)) {
+                  coarseNS[j][offset+k] = localQR[ NSDim*j + k ]; // agg has only one node
+              }
+            }
+            catch(...) {
+              std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
+            }
+          }
+        }
 
 #if 0
       std::cout << "R" << std::endl;
@@ -371,18 +412,16 @@ namespace MueLu {
           if(j>=i) { std::cout << localQR[ NSDim*j + i]; std::cout << "\t"; }
           else
             std::cout << "00\t";
+          //std::cout << localQR[ NSDim*j + i]; std::cout << "\t";
         }
         std::cout << std::endl;
       }
 #endif
 
-      // Calculate Q, the tentative prolongator.
-      // The Lapack GEQRF call only works for myAggsize >= NSDim
-      if(myAggSize>=Teuchos::as<LocalOrdinal>(NSDim))
-        qrWidget.ExtractQ(myAggSize, localQR);
-      else {
-	// special handling for very small aggregates (with myAggsize < NSDim)
-        GetOStream(Warnings0,0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
+        // Calculate Q, the tentative prolongator.
+        // The Lapack GEQRF call only works for myAggsize >= NSDim
+        // special handling for very small aggregates (with myAggsize < NSDim)
+
         // calculate identity matrix with zero columns for the last NSDim-myAggsize columns.
         for (size_t i=0; i<Teuchos::as<size_t>(myAggSize); i++) {
           // loop over cols
@@ -391,7 +430,7 @@ namespace MueLu {
             else localQR[ myAggSize*j + i] = 0.0;
           }
         }
-      }
+      } // end else (special handling for 1pt aggregates)
 
 #if 0
       std::cout << "Q" << std::endl;
