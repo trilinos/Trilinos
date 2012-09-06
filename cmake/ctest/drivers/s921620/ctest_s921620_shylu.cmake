@@ -115,8 +115,8 @@ SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DShyLU_ENABLE_TESTS:BOOL=ON "
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
-    "-D TPL_LAPACK_LIBRARIES:FILEPATH=/home/srajama/lapack/lapack-3.2.1/lapack_LINUX.a"
-    "-D TPL_BLAS_LIBRARIES:FILEPATH=/home/srajama/lapack/lapack-3.2.1/blas_LINUX.a"
+    "-DTPL_LAPACK_LIBRARIES:FILEPATH=/home/srajama/lapack/lapack-3.2.1/lapack_LINUX.a"
+    "-DTPL_BLAS_LIBRARIES:FILEPATH=/home/srajama/lapack/lapack-3.2.1/blas_LINUX.a"
   )
 
 TRILINOS_CTEST_DRIVER()
