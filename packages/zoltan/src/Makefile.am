@@ -558,19 +558,17 @@ EXTRA_libzoltan_a_SOURCES = \
 	$(EXTRA_FORTRAN_H) \
 	$(EXTRA_FORTRAN)
 
-#if F90_MODULE_LOWERCASE
-#FORTRAN_MODULES = \
-#	lb_user_const.mod \
-#	zoltan_types.mod \
-#	zoltan.mod \
-#	zoltan_user_data.mod
-#else
-#FORTRAN_MODULES = \
-#	LB_USER_CONST.mod \
-#	ZOLTAN_TYPES.mod \
-#	ZOLTAN.mod \
-#	ZOLTAN_USER_DATA.mod
-#endif
+if F90_MODULE_LOWERCASE
+FORTRAN_MODULES = \
+	zoltan_types.mod \
+	zoltan.mod \
+	zoltan_user_data.mod
+else
+FORTRAN_MODULES = \
+	ZOLTAN_TYPES.mod \
+	ZOLTAN.mod \
+	ZOLTAN_USER_DATA.mod
+endif
 
 include $(top_builddir)/Makefile.export.zoltan
 

@@ -72,10 +72,10 @@ zfdrive_SOURCES = \
 	$(srcdir)/mpistring.c \
 	$(FARG_SRC) \
 	$(srcdir)/mmio.f \
+	$(srcdir)/fdr_sort.f90 \
 	$(srcdir)/fdr_const.f90 \
 	$(srcdir)/fdr_input.f90 \
 	$(srcdir)/fdr_chaco_io.f90 \
-	$(srcdir)/fdr_sort.f90 \
 	$(srcdir)/fdr_param_file.f90 \
 	$(srcdir)/fdr_mm_io.f90 \
 	$(srcdir)/fdr_migrate.f90 \
