@@ -215,6 +215,7 @@ protected:
 
 public:
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \name Deprecated */
   //@{
 
@@ -242,6 +243,7 @@ public:
 
   //@}
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
 
   // //////////////////////////////
@@ -343,7 +345,7 @@ template<class Scalar>
 RCP<const ProductVectorBase<Scalar> >
 castOrCreateProductVectorBase(const RCP<const VectorBase<Scalar> > v);
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 /** \brief Deprecated. */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -370,7 +372,7 @@ defaultProductVector(
   return defaultProductVector<Scalar>(productSpace,
     Teuchos::arrayView(vecs, productSpace->numBlocks()));
 }
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 

@@ -161,7 +161,7 @@ bool tAbsRowSum::test_absRowSum(int verbosity,std::ostream & os)
    {
       std::stringstream ss;
       Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
-      const bool result = tester.compare( *pB, *absRowA, &fos );
+      const bool result = tester.compare( *pB, *absRowA, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
              std::endl << "   tAbsRowSum::test_absRowSum "
              << ": Testing basic sum functionality");
@@ -217,7 +217,7 @@ bool tAbsRowSum::test_invAbsRowSum(int verbosity,std::ostream & os)
    {
       std::stringstream ss;
       Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
-      const bool result = tester.compare( *pB, *absRowA, &fos );
+      const bool result = tester.compare( *pB, *absRowA, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
              std::endl << "   tLummping::test_invAbsRowSum "
              << ": Testing basic inv abs row sum functionality");

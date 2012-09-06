@@ -464,7 +464,7 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
 
       // test inverse mass
       ss.str("");
-      result = tester.compare( *invMass, *iStrat.getInvMass(blkA,state), &fos );
+      result = tester.compare( *invMass, *iStrat.getInvMass(blkA,state), Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized::test_strategy " << toString(status)
                       << " : Comparing mass operators");
@@ -473,7 +473,7 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
 
       // test inverse F
       ss.str("");
-      result = tester.compare( *iF, *iStrat.getInvF(blkA,state), &fos );
+      result = tester.compare( *iF, *iStrat.getInvF(blkA,state), Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized::test_strategy " << toString(status)
                       << " : Comparing F operators");
@@ -482,7 +482,7 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
 
       // test inverse B*Q*Bt-gamma*C
       ss.str("");
-      result = tester.compare( *iBQBtmC, *iStrat.getInvBQBt(blkA,state), &fos );
+      result = tester.compare( *iBQBtmC, *iStrat.getInvBQBt(blkA,state), Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized::test_strategy " << toString(status)
                       << " : Comparing B*Q*Bt-C operators");
@@ -492,7 +492,7 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
       // test alpha*inv(D)
       ss.str("");
       // result = tester.compare( *aiD, *iStrat.getInvAlphaD(blkA,state), &fos );
-      result = tester.compare( *aiD, *iStrat.getOuterStabilization(blkA,state), &fos );
+      result = tester.compare( *aiD, *iStrat.getOuterStabilization(blkA,state), Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized::test_strategy " << toString(status)
                       << " : Comparing alpha*inv(D) operators");
@@ -501,7 +501,7 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
 
       // test full op
       ss.str("");
-      result = tester.compare( *P, *prec, &fos );
+      result = tester.compare( *P, *prec, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized::test_strategy " << toString(status)
                       << " : Comparing full op");

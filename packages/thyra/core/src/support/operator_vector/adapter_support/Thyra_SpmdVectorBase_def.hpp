@@ -213,6 +213,7 @@ SpmdVectorBase<Scalar>::space() const
 }
 
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 // Deprecated
 
 
@@ -258,6 +259,7 @@ void SpmdVectorBase<Scalar>::freeLocalData( const Scalar* values ) const
 }
 
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 // protected
 
 

@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
    tester.show_all_tests(true);
    tester.set_all_error_tol(1e-14);
 
-   const bool result = tester.compare( *invA, *invExactA, &out);
+   const bool result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
@@ -186,7 +186,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
    Teko::ModifiableLinearOp invA_ml = Teko::buildInverse(*invFact_ml,A);
    Teko::ModifiableLinearOp invExactA = Teko::buildInverse(*subsolve,A);
 
-   result = tester.compare( *invA, *invExactA, &out);
+   result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
    Teko::rebuildInverse(*invFact,A,invA);
    Teko::rebuildInverse(*invFact_ml,A,invA_ml); // here we tested repeatability using ML
 
-   result = tester.compare( *invA, *invExactA, &out);
+   result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
@@ -239,7 +239,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
    Teko::ModifiableLinearOp invA_ml = Teko::buildInverse(*invFact_ml,A);
    Teko::ModifiableLinearOp invExactA = Teko::buildInverse(*subsolve,A);
 
-   result = tester.compare( *invA, *invExactA, &out);
+   result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
@@ -251,7 +251,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
    Teko::rebuildInverse(*invFact,A,invA);
    Teko::rebuildInverse(*invFact_ml,A,invA_ml); // here we tested repeatability using ML
 
-   result = tester.compare( *invA, *invExactA, &out);
+   result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;

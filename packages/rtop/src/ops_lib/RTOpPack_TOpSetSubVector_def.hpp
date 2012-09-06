@@ -88,7 +88,7 @@ void TOpSetSubVector<Scalar>::apply_op_impl(
 
   typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t;
   typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
-  typedef typename Teuchos::ArrayRCP<const Teuchos_Index>::iterator const_indices_iter_t;
+  typedef typename Teuchos::ArrayRCP<const Teuchos_Ordinal>::iterator const_indices_iter_t;
   
   validate_apply_op( *this, 0, 1, false, sub_vecs, targ_sub_vecs, reduct_obj.getConst() );
 

@@ -161,10 +161,10 @@ extern "C" {
  * \ingroup RTOpPack_parallel_helpers_grp
  */
 void RTOp_parallel_calc_overlap(
-  Teuchos_Index global_dim, Teuchos_Index local_sub_dim, Teuchos_Index local_off
-  ,const Teuchos_Index first_ele_off, const Teuchos_Index sub_dim, const Teuchos_Index global_off
-  ,Teuchos_Index* overlap_first_local_ele_off, Teuchos_Index* overalap_local_sub_dim
-  ,Teuchos_Index* overlap_global_off
+  Teuchos_Ordinal global_dim, Teuchos_Ordinal local_sub_dim, Teuchos_Ordinal local_off
+  ,const Teuchos_Ordinal first_ele_off, const Teuchos_Ordinal sub_dim, const Teuchos_Ordinal global_off
+  ,Teuchos_Ordinal* overlap_first_local_ele_off, Teuchos_Ordinal* overalap_local_sub_dim
+  ,Teuchos_Ordinal* overlap_global_off
   );
 
 #ifdef __cplusplus

@@ -178,23 +178,23 @@ void DefaultLinearSolverBuilder::readParameters( std::ostream *out )
   using Teuchos::updateParametersFromXmlFile;
   using Teuchos::updateParametersFromXmlString;
   using std::endl;
-
-  if(!paramList_.get()) {
+  
+  if (!paramList_.get()) {
     paramList_ = parameterList("DefaultLinearSolverBuilder");
   }
   if (paramsXmlFileName().length()) {
     if (out) {
       *out << endl << "Reading parameters from XML file \"" 
-	   << paramsXmlFileName() << "\" ..." << endl;
+           << paramsXmlFileName() << "\" ..." << endl;
     }
-    updateParametersFromXmlFile (paramsXmlFileName (), ptr (&*paramList_));
+    updateParametersFromXmlFile (paramsXmlFileName (), paramList_.ptr());
   }
   if (extraParamsXmlString().length()) {
     if (out) {
       *out << endl << "Appending extra parameters from the XML string \""
-	   << extraParamsXmlString() << "\" ..." << endl;
+           << extraParamsXmlString() << "\" ..." << endl;
     }
-    updateParametersFromXmlString (extraParamsXmlString (), ptr (&*paramList_));
+    updateParametersFromXmlString (extraParamsXmlString (), paramList_.ptr());
   }
   setParameterList(paramList_);
 }

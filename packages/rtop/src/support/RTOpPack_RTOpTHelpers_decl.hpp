@@ -483,11 +483,11 @@ public:
       const ptrdiff_t v0_s = sub_vecs[0].stride();
 
       if ( v0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i )
           eleWiseReduction_( *v0_val++, reduct);
       }
       else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i, v0_val += v0_s )
           eleWiseReduction_( *v0_val, reduct);
       }
       
@@ -635,11 +635,11 @@ public:
       RTOpPack::index_type global_i = sub_vecs[0].globalOffset();
 
       if ( v0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i, ++global_i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i, ++global_i )
           eleWiseReduction_( global_i, *v0_val++, reduct);
       }
       else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s, ++global_i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i, v0_val += v0_s, ++global_i )
           eleWiseReduction_( global_i, *v0_val, reduct);
       }
       
@@ -718,11 +718,11 @@ public:
       const ptrdiff_t v1_s = sub_vecs[1].stride();
 
       if( v0_s == 1 && v1_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i )
           eleWiseReduction_( *v0_val++, *v1_val++, reduct);
       }
       else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s, v1_val += v1_s )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i, v0_val += v0_s, v1_val += v1_s )
           eleWiseReduction_( *v0_val, *v1_val, reduct);
       }
 
@@ -820,11 +820,11 @@ public:
       const ptrdiff_t z0_s = targ_sub_vecs[0].stride();
 
       if ( z0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i )
           eleWiseTransformation_( *z0_val++);
       }
       else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, z0_val += z0_s )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i, z0_val += z0_s )
           eleWiseTransformation_( *z0_val);
       }
       
@@ -894,11 +894,11 @@ public:
       RTOpPack::index_type global_i = targ_sub_vecs[0].globalOffset();
 
       if ( z0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i, ++global_i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i, ++global_i )
           eleWiseTransformation_(global_i, *z0_val++);
       }
       else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, z0_val += z0_s, ++global_i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i, z0_val += z0_s, ++global_i )
           eleWiseTransformation_(global_i, *z0_val);
       }
       
@@ -958,11 +958,11 @@ public:
       const ptrdiff_t z0_s = targ_sub_vecs[0].stride();
 
       if ( v0_s == 1 && z0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i )
           eleWiseTransformation_( *v0_val++, *z0_val++);
       }
       else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s, z0_val += z0_s )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i, v0_val += v0_s, z0_val += z0_s )
           eleWiseTransformation_( *v0_val, *z0_val);
       }
       
@@ -1055,12 +1055,12 @@ public:
       const ptrdiff_t z0_s = targ_sub_vecs[0].stride();
 
       if ( v0_s == 1 && v1_s == 1 && z0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i )
           eleWiseTransformation_( *v0_val++, *v1_val++, *z0_val++ );
       }
       else {
         for(
-          Teuchos_Index i = 0;
+          Teuchos_Ordinal i = 0;
           i < subDim;
           ++i, v0_val += v0_s, v1_val += v1_s, z0_val += z0_s
           )

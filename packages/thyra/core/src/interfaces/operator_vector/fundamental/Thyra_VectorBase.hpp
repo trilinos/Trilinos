@@ -564,7 +564,7 @@ void applyOp(
     targ_vecs[0]->applyOp(op, vecs, targ_vecs, reduct_obj, global_offset);
 }
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 /** \brief Deprecated.
  *
  * \relates VectorBase
@@ -590,7 +590,7 @@ void applyOp(
     targ_vecs[k] = ptr(targ_vecs_inout[k]);
   applyOp<Scalar>(op, vecs(), targ_vecs(), ptr(reduct_obj), global_offset);
 }
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // end namespace Thyra
 

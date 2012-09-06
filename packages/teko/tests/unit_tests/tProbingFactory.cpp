@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST(tProbingFactory, basic_test)
    tester.show_all_tests(true);
 
    {
-      const bool result = tester.compare( *probedInverse, *invLo, &out);
+      const bool result = tester.compare( *probedInverse, *invLo, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply: FAILURE" << std::endl;
          success = false;
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(tProbingFactory, parameterlist_constr)
       tester.show_all_tests(true);
    
       {
-         const bool result = tester.compare( *probedInverse, *invLo, &out);
+         const bool result = tester.compare( *probedInverse, *invLo, Teuchos::ptrFromRef(out));
          if (!result) {
             out << "Apply: FAILURE" << std::endl;
             success = false;
@@ -228,7 +228,7 @@ TEUCHOS_UNIT_TEST(tProbingFactory, parameterlist_constr)
       tester.show_all_tests(true);
    
       {
-         const bool result = tester.compare( *probedInverse, *invLo, &out);
+         const bool result = tester.compare( *probedInverse, *invLo, Teuchos::ptrFromRef(out));
          if (!result) {
             out << "Apply: FAILURE" << std::endl;
             success = false;
@@ -272,7 +272,7 @@ TEUCHOS_UNIT_TEST(tProbingFactory, invlib_constr)
       tester.show_all_tests(true);
    
       {
-         const bool result = tester.compare( *probedInverse, *invLo, &out);
+         const bool result = tester.compare( *probedInverse, *invLo, Teuchos::ptrFromRef(out));
          if (!result) {
             out << "Apply: FAILURE" << std::endl;
             success = false;

@@ -106,6 +106,7 @@ prec(
 }
 
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 //
 // Deprecated
 //
@@ -148,6 +149,7 @@ void uninitializePrec(
 }
 
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 } // namespace Thyra
 
 

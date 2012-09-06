@@ -454,7 +454,7 @@ int Amesos_Klu::PerformSymbolicFactorization()
     PrivateKluData_->common_ = rcp(new klu_common());
     amesos_klu_defaults(&*PrivateKluData_->common_) ;
     PrivateKluData_->Symbolic_ =
-      rcp(
+      rcpWithDealloc(
 	  amesos_klu_analyze (NumGlobalElements_, &Ap[0], Ai,  &*PrivateKluData_->common_ ) 
 	  ,deallocFunctorDeleteWithCommon<klu_symbolic>(PrivateKluData_->common_,amesos_klu_free_symbolic)
 	  ,true
@@ -538,7 +538,7 @@ int Amesos_Klu::PerformNumericFactorization( )
       
       // factor the matrix using partial pivoting
       PrivateKluData_->Numeric_ =
-	rcp( amesos_klu_factor(&Ap[0], Ai, Aval,
+	rcpWithDealloc( amesos_klu_factor(&Ap[0], Ai, Aval,
 			       &*PrivateKluData_->Symbolic_, &*PrivateKluData_->common_),
 	     deallocFunctorDeleteWithCommon<klu_numeric>(PrivateKluData_->common_,amesos_klu_free_numeric)
 	     ,true

@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST(tDiagonalPreconditionerFactory, diag_inv_test)
       Thyra::LinearOpTester<double> tester;
       tester.show_all_tests(true);
    
-      const bool result = tester.compare( *idA_fact, *idA_drct, &out);
+      const bool result = tester.compare( *idA_fact, *idA_drct, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE (\"" << precName[i] << "\")" << std::endl;
          success = false;
@@ -232,7 +232,7 @@ TEUCHOS_UNIT_TEST(tDiagonalPreconditionerFactory, blkdiag_inv_test)
       Thyra::LinearOpTester<double> tester;
       tester.show_all_tests(true);
 
-      const bool result = tester.compare( *idA_fact, *idA_drct, &out);
+      const bool result = tester.compare( *idA_fact, *idA_drct, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE (\"" << precName << "\")" << std::endl;
          success = false;

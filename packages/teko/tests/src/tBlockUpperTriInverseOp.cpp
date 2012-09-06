@@ -254,7 +254,7 @@ bool tBlockUpperTriInverseOp::test_apply(int verbosity,std::ostream & os)
    tester.show_all_tests(true);
    std::stringstream ss;
    Teuchos::FancyOStream fos(Teuchos::rcpFromRef(ss),"      |||");
-   const bool result = tester.compare( *invA_, *invTri, &fos );
+   const bool result = tester.compare( *invA_, *invTri, Teuchos::ptrFromRef(fos) );
    TEST_ASSERT(result,
           std::endl << "   tBlockUpperTriInverseOp::test_apply "
                     << ": Comparing implicitly generated operator to exact operator");

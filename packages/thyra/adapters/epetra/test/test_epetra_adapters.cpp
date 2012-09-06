@@ -131,8 +131,8 @@ int main( int argc, char* argv[] )
   using Teuchos::rcp;
   using Teuchos::rcp_static_cast;
   using Teuchos::rcp_const_cast;
+  using Teuchos::testRelErr;
 
-  using Thyra::testRelErr;
   using Thyra::passfail;
   using Thyra::NOTRANS;
   using Thyra::TRANS;

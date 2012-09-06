@@ -601,6 +601,9 @@ void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
   const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex );
 
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
+
+
 /** \brief Deprecated. */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -872,6 +875,9 @@ THYRA_DEPRECATED
 void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
   Scalar *maxEle, Ordinal *maxIndex )
 { maxLessThanBound(x, bound, Teuchos::ptr(maxEle), Teuchos::ptr(maxIndex)); }
+
+
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 
 } // end namespace Thyra

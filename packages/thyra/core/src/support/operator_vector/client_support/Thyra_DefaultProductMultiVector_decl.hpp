@@ -227,6 +227,7 @@ protected:
 
 public:
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \name Deprecated. */
   //@{
 
@@ -259,6 +260,7 @@ public:
 
   //@}
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
 
   // //////////////////////////////

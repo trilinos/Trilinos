@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
   cout << "Reading parameter list from \"input.xml\"" << endl;
   Teuchos::RCP<Teuchos::ParameterList> paramList2 = 
     Teuchos::rcp(new Teuchos::ParameterList);
-  Teuchos::updateParametersFromXmlFile("input.xml", paramList2.get());
+  Teuchos::updateParametersFromXmlFile("input.xml", paramList2.ptr());
   paramList = paramList2;
 #endif
 

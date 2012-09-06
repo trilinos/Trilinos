@@ -135,7 +135,7 @@ TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test)
 
       Teko::LinearOp invA = Teko::createLU2x2InverseOp(A,invA_00,invA_00,invS,"Approximation");
       
-      const bool result = tester.compare( *invA, *iA, &out);
+      const bool result = tester.compare( *invA, *iA, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply: FAILURE" << std::endl;
          success = false;
