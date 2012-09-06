@@ -1231,6 +1231,48 @@ namespace stk {
 
       }
 
+      static double spacing_edge(unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8])
+      {
+        unsigned iv[2]={iv0,iv1};
+        double alp[2]={0.0,0.0};
+        double alp1[2]={0.0,0.0};
+        for (unsigned ipts=0; ipts < nsz; ipts++)
+          {
+            unsigned jpts = iv[ipts];
+            double len = 0.0;
+            alp[ipts]=0.0;
+
+            for (unsigned isp = 0; isp < nsp; isp++)
+              {
+                alp[ipts] += (coord[iv[1]][isp] - coord[iv[0]][isp])*lspc[jpts][isp];
+                len += (coord[iv[1]][isp] - coord[iv[0]][isp])*(coord[iv[1]][isp] - coord[iv[0]][isp]);
+              }                            
+            alp[ipts] = std::fabs(alp[ipts])/std::sqrt(len);
+          }
+        const double fac=3.0, facden = 4.0;
+        for (unsigned ipts=0; ipts < nsz; ipts++)
+          {
+            double lsum=0.0;
+            double lsum1=0.0;
+            for (unsigned jpts=0; jpts < nsz; jpts++)
+              {
+                lsum1 += (jpts==ipts?0:alp[jpts]);
+                lsum += alp[jpts];
+              }
+            alp1[ipts] = (alp[ipts] + lsum1*fac)/(facden*lsum);
+          }
+        double sum=0.0;
+        for (unsigned ipts=0; ipts < nsz; ipts++)
+          {
+            sum += alp1[ipts];
+          }
+        for (unsigned ipts=0; ipts < nsz; ipts++)
+          {
+            alp1[ipts] /= sum;
+          }
+        return 1.0-alp1[0];
+      }
+
       static void normalize_spacing_0(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
       {
         //double m_min_spacing_factor = 0.5;
@@ -1277,7 +1319,7 @@ namespace stk {
           }
       }
 
-      static void normalize_spacing(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
+      static void normalize_spacing(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8])
       {
         double fac = 0.0, facden=0.0;
         switch(nsz) {
@@ -1295,7 +1337,7 @@ namespace stk {
           return; 
         }
 
-        facden = 1+(double(nsz)-1)*fac;
+        //facden = 1+(double(nsz)-1)*fac;
         double lspc[8][3];
         for (unsigned isp = 0; isp < nsp; isp++)
           {
@@ -1307,16 +1349,42 @@ namespace stk {
 
         for (unsigned isp = 0; isp < nsp; isp++)
           {
-            for (unsigned ipts=0; ipts < nsz; ipts++)
+            if (nsz == 4)
               {
-                double lsum=0.0;
-                double lsum1=0.0;
-                for (unsigned jpts=0; jpts < nsz; jpts++)
+                double alp01 = spacing_edge(0, 1, 2, nsp,  lspc, den_xyz, coord);
+                double alp32 = spacing_edge(3, 2, 2, nsp,  lspc, den_xyz, coord);
+                double x = 0.5*(alp01+alp32);
+                double alp12 = spacing_edge(1, 2, 2, nsp,  lspc, den_xyz, coord);
+                double alp03 = spacing_edge(0, 3, 2, nsp,  lspc, den_xyz, coord);
+                double y = 0.5*(alp12+alp03);
+                if (isp == 0)
                   {
-                    lsum1 += (jpts==ipts?0:lspc[jpts][isp]);
-                    lsum += lspc[jpts][isp];
+                    spc[0][0] = (1-x)*(1-y);
+                    spc[1][0] = x*(1-y);
+                    spc[2][0] = x*y;
+                    spc[3][0] = (1-x)*y;
                   }
-                spc[ipts][isp] = (lspc[ipts][isp] + lsum1*fac)/(facden*lsum);
+                else
+                  {
+                    for (unsigned ipts=0; ipts < nsz; ipts++)
+                      {
+                        spc[ipts][isp] = spc[ipts][0];
+                      }
+                  }
+              }
+            else
+              {
+                for (unsigned ipts=0; ipts < nsz; ipts++)
+                  {
+                    double lsum=0.0;
+                    double lsum1=0.0;
+                    for (unsigned jpts=0; jpts < nsz; jpts++)
+                      {
+                        lsum1 += (jpts==ipts?0:lspc[jpts][isp]);
+                        lsum += lspc[jpts][isp];
+                      }
+                    spc[ipts][isp] = (lspc[ipts][isp] + lsum1*fac)/(facden*lsum);
+                  }
               }
             double sum=0.0;
             for (unsigned ipts=0; ipts < nsz; ipts++)
@@ -1326,6 +1394,8 @@ namespace stk {
             for (unsigned ipts=0; ipts < nsz; ipts++)
               {
                 spc[ipts][isp] /= sum;
+                if (nsz == 4 && isp == 1) 
+                  std::cout << "spc[" << ipts << "]= " << spc[ipts][isp] << std::endl;
               }
           }
       }
@@ -1491,10 +1561,13 @@ namespace stk {
                       den = 0.0;
                       for (ipts=0; ipts < nsz; ipts++)
                         {
+                          double len = 0.0;
                           for (int isp = 0; isp < spatialDim; isp++)
                             {
                               spc[ipts][0] += (coord[1][isp] - coord[0][isp])*spacing[ipts][isp];
+                              len += (coord[1][isp] - coord[0][isp])*(coord[1][isp] - coord[0][isp]);
                             }                            
+                          spc[ipts][0] = std::fabs(spc[ipts][0])/std::sqrt(len);
                         }
                       for (ipts=0; ipts < nsz; ipts++)
                         {
@@ -1514,7 +1587,7 @@ namespace stk {
                             }
                         }
                     }
-                  normalize_spacing(nsz, spatialDim, spc, den_xyz);
+                  normalize_spacing(nsz, spatialDim, spc, den_xyz, coord);
                   if (nsz==2 && (coord[1][0] < 1.e-3 && coord[0][0] < 1.e-3))
                     for (ipts=0; ipts < nsz; ipts++)
                       for (int isp = 0; isp < spatialDim; isp++)
