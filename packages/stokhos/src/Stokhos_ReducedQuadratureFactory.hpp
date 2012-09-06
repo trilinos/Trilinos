@@ -65,7 +65,7 @@ namespace Stokhos {
     virtual Teuchos::RCP<const Stokhos::UserDefinedQuadrature<ordinal_type, value_type> >
     createReducedQuadrature(
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q2,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
       const Teuchos::Array<value_type>& weights) const;
 
@@ -91,27 +91,7 @@ namespace Stokhos {
 
     void reducedQuadrature_Q2(
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
-      ) const;
-
-    void reducedQuadrature_B2(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
-      const Teuchos::Array<value_type>& weights,
-      Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_points,
-      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& red_values
-      ) const;
-
-    void reducedQuadrature_B2_CPQR(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q2,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
       const Teuchos::Array<value_type>& weights,
       Teuchos::RCP< Teuchos::Array<value_type> >& red_weights,
