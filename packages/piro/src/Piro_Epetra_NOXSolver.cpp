@@ -370,7 +370,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
   std::string sensitivity_method = piroParams->get("Sensitivity Method",
 						   "Forward");
 
-  bool do_sens;
+  bool do_sens = false;
   for (int i=0; i<num_p; i++) {
     // p
     model_inargs.set_p(i, inArgs.get_p(i));
