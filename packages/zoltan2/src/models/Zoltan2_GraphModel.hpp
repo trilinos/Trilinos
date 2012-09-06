@@ -51,6 +51,7 @@
 #define _ZOLTAN2_GRAPHMODEL_HPP_
 
 #include <Zoltan2_Model.hpp>
+#include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
@@ -62,6 +63,7 @@
 #include <Teuchos_Hashtable.hpp>
 
 namespace Zoltan2 {
+
 
 /*! \brief Helper function to remove undesired edges from a graph.
  *          
@@ -241,6 +243,145 @@ template <typename User> size_t removeUndesiredEdges(
   }
 
   return numKeep;
+}
+
+/*! \brief Helper function to create new edges lists containing
+     only edges connected to a neighbor on this process.
+ */
+
+template <typename User> size_t computeLocalEdgeList( 
+  const RCP<const Environment> &env, int rank,
+  size_t numLocalEdges,           // local edges
+  size_t numLocalGraphEdges,      // edges in "local" graph
+  RCP<const IdentifierMap<User> > &idMap,
+  ArrayRCP<const typename InputTraits<User>::gid_t> &allEdgeIds, // in 
+  ArrayRCP<int> &allProcs,                                 // in
+  ArrayRCP<const typename InputTraits<User>::lno_t> &allOffs,    // in
+  ArrayRCP<StridedData<typename InputTraits<User>::lno_t, 
+    typename InputTraits<User>::scalar_t> > &allWeights,         // in
+  ArrayRCP<const typename InputTraits<User>::lno_t> &edgeLocalIds, // 
+  ArrayRCP<const typename InputTraits<User>::lno_t> &offsets,      // out
+  ArrayRCP<StridedData<typename InputTraits<User>::lno_t, 
+    typename InputTraits<User>::scalar_t> > &eWeights)             // out
+{
+  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef typename InputTraits<User>::gno_t gno_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::lno_t lno_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
+
+  bool gnosAreGids = idMap->gnosAreGids();
+
+  edgeLocalIds = ArrayRCP<const lno_t>(Teuchos::null);
+  offsets = ArrayRCP<const lno_t>(Teuchos::null);
+  eWeights = ArrayRCP<input_t>(Teuchos::null);
+
+  if (numLocalGraphEdges == 0)
+    return 0;
+
+  if (numLocalGraphEdges == numLocalEdges){
+
+    // Entire graph is local.
+
+    lno_t *lnos = new lno_t [numLocalEdges];
+    env->localMemoryAssertion(__FILE__, __LINE__,numLocalEdges, lnos);
+    for (lno_t i=0; i < numLocalEdges; i++)
+      lnos[i] = i;
+    edgeLocalIds = arcp(lnos, 0, numLocalEdges, true);
+    offsets = allOffs;
+    eWeights = allWeights;
+  }
+  else{
+
+    // Create subset list of local graph edges, offsets and weights.
+
+    int eWeightDim = allWeights.size();
+
+    ArrayRCP<const gid_t> newEgids;
+    scalar_t **newWeights = NULL;
+
+    ArrayView<const gid_t> dummyVtx;
+    ArrayView<const gid_t> nborView= allEdgeIds.view(0, numLocalEdges);
+    ArrayView<const int> nborOwner = allProcs.view(0, numLocalEdges);
+    ArrayView<input_t> eWgts = allWeights.view(0, eWeightDim);
+    ArrayView<const lno_t> offView = allOffs.view(0, allOffs.size());
+
+    try{
+      numLocalEdges = removeUndesiredEdges<User>(
+        env, rank,
+        false, true, false,
+        dummyVtx,
+        nborView,
+        nborOwner,
+        eWgts,
+        offView,
+        newEgids,
+        newWeights,
+        offsets);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    env->localBugAssertion(__FILE__, __LINE__, "local graph miscalculation",
+      numLocalEdges == numLocalGraphEdges, BASIC_ASSERTION);
+
+    // offsets array was set by removeUndesiredEdges.  Create weight array.
+
+    if (eWeightDim > 0){
+      input_t *wgts = new input_t [eWeightDim];
+      for (int w=0; w < eWeightDim; w++){
+        if (newWeights[w]){
+          ArrayRCP<const scalar_t> wgtArray(
+            newWeights[w], 0, numLocalGraphEdges, true);
+          wgts[w] = input_t(wgtArray, 1);
+        }
+      }
+      eWeights = arcp(wgts, 0, eWeightDim);
+    }
+  
+    // Create local ID array.  First translate gid to gno.
+
+    ArrayRCP<gno_t> gnoArray;
+
+    if (gnosAreGids){
+      ArrayRCP<const gno_t> gnosConst = 
+        arcp_reinterpret_cast<const gno_t>(newEgids);
+      gnoArray = arcp_const_cast<gno_t>(gnosConst);
+    }
+    else{
+
+      ArrayRCP<gid_t> gidArray = arcp_const_cast<gid_t>(newEgids);
+      gno_t *gnoList= new gno_t [numLocalGraphEdges];
+      env->localMemoryAssertion(__FILE__, __LINE__, numLocalGraphEdges, 
+        gnoList);
+      gnoArray = arcp(gnoList, 0, numLocalGraphEdges, true);
+
+      try {
+        idMap->gidTranslate(
+          gidArray.view(0,numLocalGraphEdges), 
+          gnoArray.view(0,numLocalGraphEdges),
+          TRANSLATE_APP_TO_LIB);
+      }    
+      Z2_FORWARD_EXCEPTIONS;
+    }
+
+    // translate gno to lno
+
+    lno_t *lnoList = new lno_t [numLocalGraphEdges];
+    env->localMemoryAssertion(__FILE__, __LINE__, numLocalGraphEdges, 
+      lnoList);
+    ArrayView<lno_t> lnoView(lnoList, numLocalGraphEdges);
+
+    try {
+      idMap->lnoTranslate(
+        lnoView,
+        gnoArray.view(0,numLocalGraphEdges),
+        TRANSLATE_LIB_TO_APP);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+    edgeLocalIds = arcp<const lno_t>(lnoList, 0, numLocalGraphEdges, true);
+  }
+
+  return numLocalGraphEdges;
 }
 
 /*!  \brief GraphModel defines the interface required for graph models.  
@@ -452,7 +593,24 @@ public:
 
   size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
     ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &wgts);
+    ArrayView<input_t> &wgts){
+
+    if (localGraphEdgeLnos_.size() < numLocalGraphEdges_){
+
+      RCP<const IdentifierMap<User> > idmap = this->getIdentifierMap();
+    
+      computeLocalEdgeList<User>(env_, comm_->getRank(),
+        numLocalEdges_, numLocalGraphEdges_, 
+        idmap, edgeGids_, procIds_, offsets_, eWeights_,
+        localGraphEdgeLnos_, localGraphEdgeOffsets_, localGraphEdgeWeights_);
+    }
+
+    edgeIds = localGraphEdgeLnos_;
+    offsets = localGraphEdgeOffsets_;
+    wgts = localGraphEdgeWeights_;
+
+    return numLocalGraphEdges_;
+  }
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -497,7 +655,7 @@ private:
   ArrayRCP<const gno_t> edgeGnosConst_;
   ArrayRCP<const int> procIdsConst_;
 
-  bool gidsAreGnos_;
+  bool gnosAreGids_;
 
   // For local graphs (graph restricted to local process).  We only
   // create these arrays if required by the algorithm.
@@ -526,7 +684,7 @@ template <typename User>
      edgeGids_(), edgeGnos_(), procIds_(), offsets_(), 
      eWeightDim_(0), eWeights_(),
      gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
-     gidsAreGnos_(false), 
+     gnosAreGids_(false), 
      localGraphEdgeLnos_(), localGraphEdgeOffsets_(), localGraphEdgeWeights_(), 
      numLocalVertices_(0), numGlobalVertices_(0), numLocalEdges_(0),
      numGlobalEdges_(0), numLocalGraphEdges_(0)
@@ -673,7 +831,7 @@ template <typename User>
   this->setIdentifierMap(idMap);  
 
   numGlobalVertices_ = idMap->getGlobalNumberOfIds();
-  gidsAreGnos_ = idMap->gnosAreGids();
+  gnosAreGids_ = idMap->gnosAreGids();
 
   // Compute internal global numbers if we can not use the
   // user's global Ids.  Also find the process owning each
@@ -685,7 +843,7 @@ template <typename User>
 
   if (numLocalVertices_){
 
-    if (!gidsAreGnos_){   // need vertex global numbers, edge global numbers
+    if (!gnosAreGids_){   // need vertex global numbers, edge global numbers
       gno_t *tmp = new gno_t [numLocalVertices_];
       env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, tmp);
       gnos_ = arcp(tmp, 0, numLocalVertices_);
@@ -732,10 +890,9 @@ template <typename User>
 
   numLocalGraphEdges_ = 0;
   int *pids = procArray.getRawPtr();
-  for (lno_t i=0; i < numLocalEdges_; i++){
+  for (lno_t i=0; i < numLocalEdges_; i++)
     if (pids[i] == comm_->getRank())
       numLocalGraphEdges_++;
-  }
 
   // Vertex weights
 
@@ -812,7 +969,7 @@ template <typename User>
   {
     size_t nv = gids_.size();
 
-    if (gidsAreGnos_)
+    if (gnosAreGids_)
       Ids = gids_.view(0, nv);
     else
       Ids = gnosConst_.view(0, nv);
@@ -828,7 +985,7 @@ template <typename User>
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds, 
     ArrayView<const lno_t> &offsets, ArrayView<input_t> &wgts) const
 {
-  if (gidsAreGnos_)
+  if (gnosAreGids_)
     edgeIds = edgeGids_.view(0, numLocalEdges_);
   else
     edgeIds = edgeGnosConst_.view(0, numLocalEdges_);
@@ -838,121 +995,6 @@ template <typename User>
   wgts = eWeights_.view(0, eWeightDim_);
 
   return numLocalEdges_;
-}
-
-template <typename User>
-  size_t GraphModel<MatrixInput<User> >::getLocalEdgeList( 
-    ArrayView<const lno_t> &edgeLocalIds,
-    ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &eWeights)
-{
-  if (numLocalGraphEdges_ == 0)
-    return 0;
-
-  if (numLocalGraphEdges_ != localGraphEdgeLnos_.size()){
-  
-    ArrayRCP<const gid_t> newEgids;
-    scalar_t **newWeights = NULL;
-    size_t numLocalEdges = 0;
-
-    ArrayView<const gid_t> dummyVtx;
-    ArrayView<const gid_t> nborView= edgeGids_.view(0, numLocalEdges_);
-    ArrayView<const int> nborOwner = procIdsConst_.view(0, numLocalEdges_);
-    ArrayView<input_t> eWgts = eWeights_.view(0, eWeightDim_);
-    ArrayView<const lno_t> offView = offsets_.view(0, numLocalVertices_ + 1);
-
-    try{
-      numLocalEdges = removeUndesiredEdges<User>(
-        env_, comm_->getRank(),
-        false, true, false,
-        dummyVtx,
-        nborView,
-        nborOwner,
-        eWgts,
-        offView,
-        newEgids,
-        newWeights,
-        localGraphEdgeOffsets_);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    env_->localBugAssertion(__FILE__, __LINE__, "local graph miscalculation",
-      numLocalEdges == numLocalGraphEdges_, BASIC_ASSERTION);
-
-    if (numLocalGraphEdges_ == numLocalEdges_){
-
-      localGraphEdgeOffsets_ = offsets_;
-      localGraphEdgeWeights_ = eWeights_;
-
-    } else if (numLocalGraphEdges_ > 0){
-
-      if (eWeightDim_ > 0){
-        input_t *wgts = new input_t [eWeightDim_];
-        for (int w=0; w < eWeightDim_; w++){
-          if (newWeights[w]){
-            ArrayRCP<const scalar_t> wgtArray(
-              newWeights[w], 0, numLocalGraphEdges_, true);
-            wgts[w] = input_t(wgtArray, 1);
-          }
-        }
-        localGraphEdgeWeights_ = arcp(wgts, 0, eWeightDim_);
-      }
-   }
-  
-   // We need the local Id for the edges.
-
-   if (numLocalGraphEdges_ > 0){
-  
-      lno_t *lnoList = new lno_t [numLocalGraphEdges_];
-      env_->localMemoryAssertion(__FILE__, __LINE__, numLocalGraphEdges_, 
-        lnoList);
-      ArrayRCP<lno_t> lnoArray(lnoList, 0, numLocalGraphEdges_, true);
-  
-      ArrayRCP<gno_t> gnoArray;
-  
-      if (gidsAreGnos_){
-        ArrayRCP<const gno_t> gnoConstArray = 
-          arcp_reinterpret_cast<const gno_t>(newEgids);
-        gnoArray = arcp_const_cast<gno_t>(gnoConstArray);
-      }
-      else{
-  
-        // translate gid to gno
-  
-        ArrayRCP<gid_t> gidArray = arcp_const_cast<gid_t>(newEgids);
-        gno_t *gnoList= new gno_t [numLocalGraphEdges_];
-        env_->localMemoryAssertion(__FILE__, __LINE__, numLocalGraphEdges_, 
-          gnoList);
-        ArrayRCP<gno_t> gnoArray = arcp(gnoList, 0, numLocalGraphEdges_, true);
-  
-        try {
-          this->getIdentifierMap()->gidTranslate(
-            gidArray.view(0,numLocalGraphEdges_), 
-            gnoArray.view(0,numLocalGraphEdges_),
-            TRANSLATE_APP_TO_LIB);
-        }    
-        Z2_FORWARD_EXCEPTIONS;
-      }
-  
-      // translate gno to lno
-  
-      try {
-        this->getIdentifierMap()->lnoTranslate(
-          lnoArray.view(0,numLocalGraphEdges_),
-          gnoArray.view(0,numLocalGraphEdges_),
-          TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS;
-  
-      localGraphEdgeLnos_ = arcp_const_cast<const lno_t>(lnoArray);
-    }
-  }
-  
-  edgeLocalIds = localGraphEdgeLnos_.view(0, numLocalGraphEdges_);
-  offsets = localGraphEdgeOffsets_.view(0, numLocalVertices_ + 1);
-  eWeights =  localGraphEdgeWeights_.view(0, eWeightDim_);
-
-  return numLocalGraphEdges_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1017,7 +1059,24 @@ public:
 
   size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
     ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &wgts);
+    ArrayView<input_t> &wgts){
+
+    if (localGraphEdgeLnos_.size() < numLocalGraphEdges_){
+    
+      RCP<const IdentifierMap<User> > idmap = this->getIdentifierMap();
+
+      computeLocalEdgeList(env_, comm_->getRank(),
+        numLocalEdges_, numLocalGraphEdges_,
+        idmap, edgeGids_, procIds_, offsets_, eWeights_,
+        localGraphEdgeLnos_, localGraphEdgeOffsets_, localGraphEdgeWeights_);
+    }
+
+    edgeIds = localGraphEdgeLnos_;
+    offsets = localGraphEdgeOffsets_;
+    wgts = localGraphEdgeWeights_;
+
+    return numLocalGraphEdges_;
+  }
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -1029,7 +1088,7 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const
   {
-    ArrayView<const scalar_t> xyz, wgts;
+    ArrayView<input_t> xyz, wgts;
     getVertexList(gnos, xyz, wgts);
   }
 
@@ -1062,7 +1121,7 @@ private:
   ArrayRCP<const gno_t> edgeGnosConst_;
   ArrayRCP<const int> procIdsConst_;
 
-  bool gidsAreGnos_;
+  bool gnosAreGids_;
 
   // For local graphs (graph restricted to local process).  We only
   // create these arrays if required by the algorithm.
@@ -1092,7 +1151,7 @@ template <typename User>
      edgeGids_(), edgeGnos_(), procIds_(), offsets_(), 
      eWeightDim_(0), eWeights_(),
      gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
-     gidsAreGnos_(false), 
+     gnosAreGids_(false), 
      localGraphEdgeLnos_(), localGraphEdgeOffsets_(), localGraphEdgeWeights_(), 
      numLocalVertices_(0), numGlobalVertices_(0), numLocalEdges_(0),
      numGlobalEdges_(0), numLocalGraphEdges_(0)
@@ -1127,10 +1186,10 @@ template <typename User>
   }
 
   for (int w=0; w < eWeightDim_; w++){
-    scalar_t *ewgts=NULL;
+    const scalar_t *ewgts=NULL;
     int stride=0;
 
-    ia->getEdgeWeights(w, ewgts[w], stride);
+    ia->getEdgeWeights(w, ewgts, stride);
 
     ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
     eWeights_[w] = input_t(wgtArray, stride);
@@ -1249,7 +1308,7 @@ template <typename User>
   this->setIdentifierMap(idMap);  
 
   numGlobalVertices_ = idMap->getGlobalNumberOfIds();
-  gidsAreGnos_ = idMap->gnosAreGids();
+  gnosAreGids_ = idMap->gnosAreGids();
 
   // Compute internal global numbers if we can not use the
   // user's global Ids.  Also find the process owning each
@@ -1261,7 +1320,7 @@ template <typename User>
 
   if (numLocalVertices_){
 
-    if (!gidsAreGnos_){   // need vertex global numbers, edge global numbers
+    if (!gnosAreGids_){   // need vertex global numbers, edge global numbers
       gno_t *tmp = new gno_t [numLocalVertices_];
       env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, tmp);
       gnos_ = arcp(tmp, 0, numLocalVertices_);
@@ -1311,12 +1370,6 @@ template <typename User>
   for (lno_t i=0; i < numLocalEdges_; i++)
     if (pids[i] == comm_->getRank())
       numLocalGraphEdges_++;
-
-  if (numLocalGraphEdges_ == numLocalEdges_){
-    localGraphEdgeLnos_ = edgeGnosConst_;
-    localGraphEdgeOffsets_ = offsets_;
-    localGraphEdgeWeights_ = eWeights_;
-  }
 
   // Vertex weights
 
@@ -1380,7 +1433,7 @@ template <typename User>
   {
     size_t nv = gids_.size();
 
-    if (gidsAreGnos_)
+    if (gnosAreGids_)
       Ids = gids_.view(0, nv);
     else
       Ids = gnosConst_.view(0, nv);
@@ -1396,7 +1449,7 @@ template <typename User>
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds, 
     ArrayView<const lno_t> &offsets, ArrayView<input_t> &wgts) const
 {
-  if (gidsAreGnos_)
+  if (gnosAreGids_)
     edgeIds = edgeGids_.view(0, numLocalEdges_);
   else
     edgeIds = edgeGnosConst_.view(0, numLocalEdges_);
@@ -1406,121 +1459,6 @@ template <typename User>
   wgts = eWeights_.view(0, eWeightDim_);
 
   return numLocalEdges_;
-}
-
-template <typename User>
-  size_t GraphModel<GraphInput<User> >::getLocalEdgeList( 
-    ArrayView<const lno_t> &edgeLocalIds,
-    ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &eWeights)
-{
-  if (numLocalGraphEdges_ == 0)
-    return 0;
-
-  if (numLocalGraphEdges_ != localGraphEdgeLnos_.size()){
-  
-    ArrayRCP<const gid_t> newEgids;
-    scalar_t **newWeights = NULL;
-    size_t numLocalEdges = 0;
-
-    ArrayView<const gid_t> dummyVtx;
-    ArrayView<const gid_t> nborView= edgeGids_.view(0, numLocalEdges_);
-    ArrayView<const int> nborOwner = procIdsConst_.view(0, numLocalEdges_);
-    ArrayView<input_t> eWgts = eWeights_.view(0, eWeightDim_);
-    ArrayView<const lno_t> offView = offsets_.view(0, numLocalVertices_ + 1);
-
-    try{
-      numLocalEdges = removeUndesiredEdges<User>(
-        env_, comm_->getRank(),
-        false, true, false,
-        dummyVtx,
-        nborView,
-        nborOwner,
-        eWgts,
-        offView,
-        newEgids,
-        newWeights,
-        localGraphEdgeOffsets_);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    env_->localBugAssertion(__FILE__, __LINE__, "local graph miscalculation",
-      numLocalEdges == numLocalGraphEdges_, BASIC_ASSERTION);
-
-    if (numLocalGraphEdges_ == numLocalEdges_){
-
-      localGraphEdgeOffsets_ = offsets_;
-      localGraphEdgeWeights_ = eWeights_;
-
-    } else if (numLocalGraphEdges_ > 0){
-
-      if (eWeightDim_ > 0){
-        input_t *wgts = new input_t [eWeightDim_];
-        for (int w=0; w < eWeightDim_; w++){
-          if (newWeights[w]){
-            ArrayRCP<const scalar_t> wgtArray(
-              newWeights[w], 0, numLocalGraphEdges_, true);
-            wgts[w] = input_t(wgtArray, 1);
-          }
-        }
-        localGraphEdgeWeights_ = arcp(wgts, 0, eWeightDim_);
-      }
-   }
-  
-   // We need the local Id for the edges.
-
-   if (numLocalGraphEdges_ > 0){
-  
-      lno_t *lnoList = new lno_t [numLocalGraphEdges_];
-      env_->localMemoryAssertion(__FILE__, __LINE__, numLocalGraphEdges_, 
-        lnoList);
-      ArrayRCP<lno_t> lnoArray(lnoList, 0, numLocalGraphEdges_, true);
-  
-      ArrayRCP<gno_t> gnoArray;
-  
-      if (gidsAreGnos_){
-        ArrayRCP<const gno_t> gnoConstArray = 
-          arcp_reinterpret_cast<const gno_t>(newEgids);
-        gnoArray = arcp_const_cast<gno_t>(gnoConstArray);
-      }
-      else{
-  
-        // translate gid to gno
-  
-        ArrayRCP<gid_t> gidArray = arcp_const_cast<gid_t>(newEgids);
-        gno_t *gnoList= new gno_t [numLocalGraphEdges_];
-        env_->localMemoryAssertion(__FILE__, __LINE__, numLocalGraphEdges_, 
-          gnoList);
-        ArrayRCP<gno_t> gnoArray = arcp(gnoList, 0, numLocalGraphEdges_, true);
-  
-        try {
-          this->getIdentifierMap()->gidTranslate(
-            gidArray.view(0,numLocalGraphEdges_), 
-            gnoArray.view(0,numLocalGraphEdges_),
-            TRANSLATE_APP_TO_LIB);
-        }    
-        Z2_FORWARD_EXCEPTIONS;
-      }
-  
-      // translate gno to lno
-  
-      try {
-        this->getIdentifierMap()->lnoTranslate(
-          lnoArray.view(0,numLocalGraphEdges_),
-          gnoArray.view(0,numLocalGraphEdges_),
-          TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS;
-  
-      localGraphEdgeLnos_ = arcp_const_cast<const lno_t>(lnoArray);
-    }
-  }
-  
-  edgeLocalIds = localGraphEdgeLnos_.view(0, numLocalGraphEdges_);
-  offsets = localGraphEdgeOffsets_.view(0, numLocalVertices_ + 1);
-  eWeights =  localGraphEdgeWeights_.view(0, eWeightDim_);
-
-  return numLocalGraphEdges_;
 }
 
 ////////////////////////////////////////////////////////////////

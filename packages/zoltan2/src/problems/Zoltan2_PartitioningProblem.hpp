@@ -161,7 +161,7 @@ public:
    *   Metrics were only computed if user requested
    *   metrics with a parameter.
    */
-  const ArrayRCP<MetricValues<scalar_t> > &getMetrics() const {
+  ArrayRCP<const MetricValues<scalar_t> > getMetrics() const {
    if (metrics_.is_null()){
       ArrayRCP<const MetricValues<scalar_t> > emptyMetrics;
       return emptyMetrics;
