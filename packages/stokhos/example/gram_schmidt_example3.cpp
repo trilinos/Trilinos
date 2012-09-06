@@ -47,12 +47,12 @@ static const char *quadrature_method_names[] = {
   "Tensor", "Sparse" };
 
 // reduced basis methods
-enum Reduced_Basis_Method { LANCZOS, MONOMIAL_GS, LANCZOS_GS };
-static const int num_reduced_basis_method = 3;
+enum Reduced_Basis_Method { LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_GS, LANCZOS_GS };
+static const int num_reduced_basis_method = 4;
 static const Reduced_Basis_Method reduced_basis_method_values[] = { 
-  LANCZOS, MONOMIAL_GS, LANCZOS_GS };
+  LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_GS, LANCZOS_GS };
 static const char *reduced_basis_method_names[] = { 
-  "Lanczos", "Monomial-GS", "Lanczos-GS" };
+  "Lanczos", "Monomial-Proj-GS", "Monomial-GS", "Lanczos-GS" };
 
 // basis reduction methods
 enum Basis_Reduction_Method { BR_CPQR, SVD };
@@ -71,12 +71,12 @@ static const char *orthogonalization_method_names[] = {
   "Householder", "Classical Gram-Schmidt", "Modified Gram-Schmidt" };
 
 // quadrature reduction methods
-enum Quadrature_Reduction_Method { NONE, QSQUARED };
-static const int num_quad_reduction_method = 2;
+enum Quadrature_Reduction_Method { NONE, QSQUARED, Q2 };
+static const int num_quad_reduction_method = 3;
 static const Quadrature_Reduction_Method quad_reduction_method_values[] = { 
-  NONE, QSQUARED };
+  NONE, QSQUARED, Q2 };
 static const char *quad_reduction_method_names[] = { 
-  "None", "Q Squared" };
+  "None", "Q Squared", "Q2" };
 
 // solver methods
 enum Solver_Method { TRSM, GLPK, CLP, CLP_IP, QPOASES, BASIS_PURSUIT, ORTHOGONAL_MATCHING_PURSUIT };
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
     CLP.setOption("level", &level, 
 		  "Sparse grid level (set to -1 to use default)");
 
-    Reduced_Basis_Method reduced_basis_method = MONOMIAL_GS;
+    Reduced_Basis_Method reduced_basis_method = MONOMIAL_PROJ_GS;
     CLP.setOption("reduced_basis_method", &reduced_basis_method, 
 		  num_reduced_basis_method, reduced_basis_method_values, 
 		  reduced_basis_method_names, "Reduced basis method");
@@ -304,8 +304,10 @@ int main(int argc, char **argv)
       pces[i] = x2[i].getOrthogPolyApprox();
     pces[d2] = y.getOrthogPolyApprox();
     Teuchos::ParameterList params;
-    if (reduced_basis_method == MONOMIAL_GS)
+    if (reduced_basis_method == MONOMIAL_PROJ_GS)
       params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt");
+    else if (reduced_basis_method == MONOMIAL_GS)
+      params.set("Reduced Basis Method", "Monomial Gram-Schmidt");
     else if (reduced_basis_method == LANCZOS)
       params.set("Reduced Basis Method", "Product Lanczos");
     else if (reduced_basis_method == LANCZOS_GS)

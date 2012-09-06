@@ -31,13 +31,13 @@
 #include "Teuchos_SerialDenseHelpers.hpp"
 
 template <typename ordinal_type, typename value_type>
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
-MonomialProjGramSchmidtPCEBasis(
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
+MonomialGramSchmidtPCEBasis(
   ordinal_type max_p,
   const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
   const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
   const Teuchos::ParameterList& params_) :
-  name("MonomialProj Gram Schmidt  PCE Basis"),
+  name("Monomial Gram Schmidt  PCE Basis"),
   params(params_),
   pce_basis(pce[0].basis()),
   pce_sz(pce_basis->size()),
@@ -45,10 +45,8 @@ MonomialProjGramSchmidtPCEBasis(
   d(pce.size()),
   verbose(params.get("Verbose", false)),
   rank_threshold(params.get("Rank Threshold", 1.0e-12)),
-  basis_reduction_method(params.get("Basis Reduction Method", 
-				    "Column-pivoted QR")),
   orthogonalization_method(params.get("Orthogonalization Method", 
-				      "Householder"))
+				      "Modified Gram-Schmidt"))
 {
   // Check for pce's that are constant and don't represent true random
   // dimensions
@@ -117,14 +115,14 @@ MonomialProjGramSchmidtPCEBasis(
 }
 
 template <typename ordinal_type, typename value_type>
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
-~MonomialProjGramSchmidtPCEBasis()
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
+~MonomialGramSchmidtPCEBasis()
 {
 }
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 order() const
 {
   return p;
@@ -132,7 +130,7 @@ order() const
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 dimension() const
 {
   return d;
@@ -140,7 +138,7 @@ dimension() const
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 size() const
 {
   return sz;
@@ -148,7 +146,7 @@ size() const
 
 template <typename ordinal_type, typename value_type>
 const Teuchos::Array<value_type>&
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 norm_squared() const
 {
   return norms;
@@ -156,7 +154,7 @@ norm_squared() const
 
 template <typename ordinal_type, typename value_type>
 const value_type&
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 norm_squared(ordinal_type i) const
 {
   return norms[i];
@@ -164,7 +162,7 @@ norm_squared(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 computeTripleProductTensor(ordinal_type order) const
 
 {
@@ -173,7 +171,7 @@ computeTripleProductTensor(ordinal_type order) const
 
 template <typename ordinal_type, typename value_type>
 value_type
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 evaluateZero(ordinal_type i) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented!");
@@ -181,7 +179,7 @@ evaluateZero(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 evaluateBases(const Teuchos::Array<value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
@@ -190,12 +188,12 @@ evaluateBases(const Teuchos::Array<value_type>& point,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 print(std::ostream& os) const
 {
   os << "Gram-Schmidt basis of order " << p << ", dimension " << d 
      << ", and size " << sz << ".  Matrix coefficients:\n";
-  os << Qp << std::endl;
+  os << Q << std::endl;
   os << "Basis vector norms (squared):\n\t";
   for (ordinal_type i=0; i<sz; i++)
     os << norms[i] << " ";
@@ -204,7 +202,7 @@ print(std::ostream& os) const
 
 template <typename ordinal_type, typename value_type>
 const std::string&
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 getName() const
 {
   return name;
@@ -212,7 +210,7 @@ getName() const
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 transformToOriginalBasis(const value_type *in, value_type *out,
 			 ordinal_type ncol, bool transpose) const
 {
@@ -234,7 +232,7 @@ transformToOriginalBasis(const value_type *in, value_type *out,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 transformFromOriginalBasis(const value_type *in, value_type *out,
 			 ordinal_type ncol, bool transpose) const
 {
@@ -256,7 +254,7 @@ transformFromOriginalBasis(const value_type *in, value_type *out,
 
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 getReducedQuadrature() const
 {
   return reduced_quad;
@@ -264,7 +262,7 @@ getReducedQuadrature() const
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
-Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
+Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 buildReducedBasis(ordinal_type max_p, const SDM& A, const SDM& F,
 		  const Teuchos::Array<value_type>& weights, 
 		  Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
@@ -291,100 +289,72 @@ buildReducedBasis(ordinal_type max_p, const SDM& A, const SDM& F,
     }
   }
 
-  // Project B into original basis -- should use SPAM for this
-  SDM Bp(pce_sz, max_sz);
-  const Teuchos::Array<value_type>& basis_norms = pce_basis->norm_squared();
-  for (ordinal_type i=0; i<pce_sz; i++) {
-    for (ordinal_type j=0; j<max_sz; j++) {
-      Bp(i,j) = 0.0;
-      for (ordinal_type k=0; k<nqp; k++)
-	Bp(i,j) += weights[k]*B(k,j)*A(k,i);
-      Bp(i,j) /= basis_norms[i];
-    }
-  }
-
-  // Rescale columns of Bp to have unit norm
+  // Rescale columns of B to have unit norm
   for (ordinal_type j=0; j<max_sz; j++) {
     value_type nrm = 0.0;
-    for (ordinal_type i=0; i<pce_sz; i++)
-      nrm += Bp(i,j)*Bp(i,j)*basis_norms[i];
+    for (ordinal_type i=0; i<nqp; i++)
+      nrm += B(i,j)*B(i,j)*weights[i];
     nrm = std::sqrt(nrm);
-    for (ordinal_type i=0; i<pce_sz; i++)
-      Bp(i,j) /= nrm;
+    for (ordinal_type i=0; i<nqp; i++)
+      B(i,j) /= nrm;
   }
 
-  // Compute our new basis -- each column of Qp is the coefficients of the
-  // new basis in the original basis
+  // Compute our new basis -- each column of Q is the new basis evaluated
+  // at the original quadrature points
   ordinal_type sz_;
-  if (basis_reduction_method == "Column-pivoted QR") {
-    // Compute QR factorization of Bp using column-pivoted QR
-    // By setting the first d+1 entries of piv, we enforce that they are
-    // permuted to the front of Bp*P
-    // "Q" in the QR factorization defines the new basis
-    Teuchos::Array<value_type> w(pce_sz, 1.0);
-    SDM R;
-    Teuchos::Array<ordinal_type> piv(max_sz);
-    for (int i=0; i<d+1; i++)
-      piv[i] = 1;
-    if (orthogonalization_method == "Householder")
-      sz_ = CPQR_Householder_threshold(rank_threshold, Bp, w, Qp_, R, piv);
-    else if (orthogonalization_method == "Modified Gram-Schmidt")
-      sz_ = CPQR_MGS_threshold(rank_threshold, Bp, w, Qp_, R, piv);
-    else if (orthogonalization_method == "Classical Gram-Schmidt")
-      sz_ = CPQR_CGS_threshold(rank_threshold, Bp, w, Qp_, R, piv);
-    else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid orthogonalization method " << orthogonalization_method);
-
-    if (verbose) {
-      std::cout << "piv = [";
-      for (ordinal_type i=0; i<sz_; i++)
-	std::cout << piv[i] << " ";
-      std::cout << "]" << std::endl;
-    
-      std::cout << "diag(R) = [ ";
-      for (ordinal_type i=0; i<sz_; i++)
-	std::cout << R(i,i) << " ";
-      std::cout << "]" << std::endl;
-      
-      std::cout << "rank = " << sz_ << std::endl;
-
-      // Check Bpp = Qp_*R
-      std::cout << "||A*P-Q*R||_infty = " 
-		<< Stokhos::residualCPQRError(Bp,Qp_,R,piv) << std::endl;
-      
-      // Check Qp_^T*Qp_ = I
-      std::cout << "||I - Q^T*Q||_infty = " 
-		<< QROrthogonalizationError(Qp_) << std::endl;
-    }
-  }
-  else if (basis_reduction_method == "SVD") {
-    // Compute SVD of Bp using standard SVD algorithm
-    // "U" in the SVD defines the new basis
-    Teuchos::Array<value_type> sigma;
-    SDM Vt;
-    sz_ = svd_threshold(rank_threshold, Bp, sigma, Qp_, Vt);
-
-    if (verbose) {
-      std::cout << "diag(sigma) = [ ";
-      for (ordinal_type i=0; i<sz_; i++)
-	std::cout << sigma[i] << " ";
-      std::cout << "]" << std::endl;
-      
-      std::cout << "rank = " << sz_ << std::endl;
-    }
-  }
+  
+  // Compute QR factorization of B using column-pivoted QR
+  // By setting the first d+1 entries of piv, we enforce that they are
+  // permuted to the front of B*P
+  // "Q" in the QR factorization defines the new basis
+  SDM R;
+  Teuchos::Array<ordinal_type> piv(max_sz);
+  for (int i=0; i<d+1; i++)
+    piv[i] = 1;
+  if (orthogonalization_method == "Modified Gram-Schmidt")
+    sz_ = CPQR_MGS_threshold(rank_threshold, B, weights, Q_, R, piv);
+  else if (orthogonalization_method == "Classical Gram-Schmidt")
+    sz_ = CPQR_CGS_threshold(rank_threshold, B, weights, Q_, R, piv);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid basis reduction method " << basis_reduction_method);
+      true, std::logic_error, 
+      "Invalid orthogonalization method " << orthogonalization_method);
+  
+  if (verbose) {
+    std::cout << "piv = [";
+    for (ordinal_type i=0; i<sz_; i++)
+      std::cout << piv[i] << " ";
+    std::cout << "]" << std::endl;
+    
+    std::cout << "diag(R) = [ ";
+    for (ordinal_type i=0; i<sz_; i++)
+      std::cout << R(i,i) << " ";
+    std::cout << "]" << std::endl;
+    
+    std::cout << "rank = " << sz_ << std::endl;
+    
+    // Check B = Q*R
+    std::cout << "||A*P-Q*R||_infty = " 
+	      << Stokhos::residualCPQRError(B,Q_,R,piv) << std::endl;
+    
+    // Check Q_^T*W*Q_ = I
+    std::cout << "||I - Q^T*W*Q||_infty = " 
+	      << weightedQROrthogonalizationError(Q_, weights) << std::endl;
+  }
 
-  // Evaluate new basis at original quadrature points
-  Q_.reshape(nqp, sz_);
+  // Compute Qp = A^T*W*Q
+  SDM tmp(nqp, sz_);
+  Qp_.reshape(pce_sz, sz_);
+  for (ordinal_type i=0; i<nqp; i++)
+    for (ordinal_type j=0; j<sz_; j++)
+      tmp(i,j) = Q_(i,j)*weights[i];
   ordinal_type ret = 
-    Q_.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, A, Qp_, 0.0);
+    Qp_.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, A, tmp, 0.0);
   TEUCHOS_ASSERT(ret == 0);
+
+  // It isn't clear that Qp is orthogonal, but if you derive the projection
+  // matrix from the original space to the reduced, you end up with 
+  // Q^T*W*A = Qp^T
 
   return sz_;
 }

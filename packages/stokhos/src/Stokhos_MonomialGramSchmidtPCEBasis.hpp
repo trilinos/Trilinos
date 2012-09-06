@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MONOMIAL_PROJ_GRAM_SCHMIDT_PCE_BASIS_HPP
-#define STOKHOS_MONOMIAL_PROJ_GRAM_SCHMIDT_PCE_BASIS_HPP
+#ifndef STOKHOS_MONOMIAL_PROJ_SCHMIDT_PCE_BASIS_HPP
+#define STOKHOS_MONOMIAL_PROJ_SCHMIDT_PCE_BASIS_HPP
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
@@ -53,7 +53,7 @@ namespace Stokhos {
    * using the simplex method.
    */
   template <typename ordinal_type, typename value_type>
-  class MonomialProjGramSchmidtPCEBasis : 
+  class MonomialGramSchmidtPCEBasis : 
     public ReducedPCEBasis<ordinal_type,value_type> {
   public:
 
@@ -65,14 +65,14 @@ namespace Stokhos {
      * \param Cijk sparse triple product tensor for basis defining pce
      * \param sparse_tol tolerance for dropping terms in sparse tensors
      */
-    MonomialProjGramSchmidtPCEBasis(
+    MonomialGramSchmidtPCEBasis(
      ordinal_type p,
      const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
      const Teuchos::ParameterList& params = Teuchos::ParameterList());
 
     //! Destructor
-    virtual ~MonomialProjGramSchmidtPCEBasis();
+    virtual ~MonomialGramSchmidtPCEBasis();
 
     //! \name Implementation of Stokhos::OrthogPolyBasis methods
     //@{
@@ -161,7 +161,7 @@ namespace Stokhos {
       ordinal_type max_p, 
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A, 
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& F,
-      const Teuchos::Array<value_type>& weights, 
+      const Teuchos::Array<value_type>& weights,
       Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
       Teuchos::Array<ordinal_type>& num_terms_,
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Qp_, 
@@ -170,10 +170,10 @@ namespace Stokhos {
   private:
 
     // Prohibit copying
-    MonomialProjGramSchmidtPCEBasis(const MonomialProjGramSchmidtPCEBasis&);
+    MonomialGramSchmidtPCEBasis(const MonomialGramSchmidtPCEBasis&);
 
     // Prohibit Assignment
-    MonomialProjGramSchmidtPCEBasis& operator=(const MonomialProjGramSchmidtPCEBasis& b);
+    MonomialGramSchmidtPCEBasis& operator=(const MonomialGramSchmidtPCEBasis& b);
     
   protected:
 
@@ -226,19 +226,16 @@ namespace Stokhos {
     //! Rank threshold
     value_type rank_threshold;
 
-    //! Basis reduction method
-    std::string basis_reduction_method;
-
     //! Orthogonalization method
     std::string orthogonalization_method;
 
     Teuchos::BLAS<ordinal_type,value_type> blas;
 
-  }; // class MonomialProjGramSchmidtPCEBasis
+  }; // class MonomialGramSchmidtPCEBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_MonomialProjGramSchmidtPCEBasisImp.hpp"
+#include "Stokhos_MonomialGramSchmidtPCEBasisImp.hpp"
 
 #endif

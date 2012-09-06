@@ -255,7 +255,8 @@ ProductLanczosGramSchmidtPCEBasis(
   // Compute reduced quadrature rule
   Stokhos::ReducedQuadratureFactory<ordinal_type,value_type> quad_factory(
     params.sublist("Reduced Quadrature"));
-  reduced_quad = quad_factory.createReducedQuadrature(Q, F, weights);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> B2;
+  reduced_quad = quad_factory.createReducedQuadrature(Q, B2, F, weights);
 
   // Basis is orthonormal by construction
   norms.resize(sz, 1.0);
