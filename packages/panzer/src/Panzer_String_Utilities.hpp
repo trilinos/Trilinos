@@ -56,6 +56,8 @@ namespace panzer {
   //! Turn a vector of tokens into a vector of doubles
   void TokensToDoubles(std::vector<double> & values,const std::vector<std::string> & tokens);
 
+  //! Turn a vector of tokens into a vector of ints
+  void TokensToInts(std::vector<int> & values,const std::vector<std::string> & tokens);
 }
 
 #endif

@@ -1,16 +1,61 @@
 
 // File: index.xml
 
+// File: classA.xml
+%feature("docstring") A "";
+
+
+// File: classA_3_01int_00_01U_01_4.xml
+%feature("docstring") A< int, U > " ";
+
+
+// File: classB.xml
+%feature("docstring") B "";
+
+
 // File: classstk_1_1percept_1_1IntrepidManager_1_1Bases.xml
 %feature("docstring") stk::percept::IntrepidManager::Bases "
 
 these are the \"transformed_basis_values\" at each point in each cell
-in the work set ([C],[B],[P]), or ([C],[B],[P],[D]) for GRAD here we
-assume that [B] is equivalent to [V]
+in the work set ([C],[ B],[P]), or ([C],[ B],[P],[D]) for GRAD here we
+assume that [ B] is equivalent to [V]
 
 C++ includes: IntrepidManager.hpp ";
 
 %feature("docstring")  stk::percept::IntrepidManager::Bases::Bases "stk::percept::IntrepidManager::Bases::Bases(IM &im) ";
+
+
+// File: classBases.xml
+%feature("docstring") Bases "";
+
+%feature("docstring")  Bases::Bases "Bases< T, I, Topology,
+ReferenceElement >::Bases(T pt[Topology::dim]) ";
+
+%feature("docstring")  Bases::basis "T Bases< T, I, Topology,
+ReferenceElement >::basis(I i, T pt[Topology::dim]) ";
+
+
+// File: classBasis.xml
+%feature("docstring") Basis "";
+
+%feature("docstring")  Basis::Basis "Basis< T, I, Topology,
+ReferenceElement >::Basis() ";
+
+%feature("docstring")  Basis::Basis "Basis< T, I, Topology,
+ReferenceElement >::Basis(T pt[Topology::dim]) ";
+
+
+// File: classBasis_3_01T_00_01I_00_01Quadrilateral4_00_01StandardReferenceElement_01_4.xml
+%feature("docstring") Basis< T, I, Quadrilateral4,
+StandardReferenceElement > " ";
+
+%feature("docstring")  Basis< T, I, Quadrilateral4,
+StandardReferenceElement >::Basis " Basis< T, I, Quadrilateral4,
+StandardReferenceElement >::Basis(T pt[Base::topology::dim]) ";
+
+%feature("docstring")  Basis< T, I, Quadrilateral4,
+StandardReferenceElement >::basis " T Basis< T, I, Quadrilateral4,
+StandardReferenceElement >::basis(I i, T pt[Base::topology::dim]) ";
 
 
 // File: classIntrepid_1_1Basis__HGRAD__HEX__C2__Serendipity__FEM.xml
@@ -385,6 +430,29 @@ FVD basis evaluation: invocation of this method throws an exception.
 ";
 
 
+// File: classBasisBase.xml
+%feature("docstring") BasisBase "";
+
+%feature("docstring")  BasisBase::BasisBase "BasisBase< T, I,
+Topology, ReferenceElement >::BasisBase(T pt[Topology::dim]) ";
+
+%feature("docstring")  BasisBase::basis "T BasisBase< T, I, Topology,
+ReferenceElement >::basis(I i, T pt[Topology::dim]) ";
+
+
+// File: classBasisImpl.xml
+%feature("docstring") BasisImpl "";
+
+
+// File: classBasisImpl_3_01T_00_01I_00_01Quadrilateral4_00_01StandardReferenceElement_01_4.xml
+%feature("docstring") BasisImpl< T, I, Quadrilateral4,
+StandardReferenceElement > " ";
+
+%feature("docstring")  BasisImpl< T, I, Quadrilateral4,
+StandardReferenceElement >::basis " T BasisImpl< T, I, Quadrilateral4,
+StandardReferenceElement >::basis(I i, T pt[Quadrilateral4::dim]) ";
+
+
 // File: classstk_1_1percept_1_1BeamFixture.xml
 %feature("docstring") stk::percept::BeamFixture "
 
@@ -593,6 +661,43 @@ codomain_dimensions=Dimensions(), unsigned integration_order=0) ";
 &v) ";
 
 
+// File: classCPPArray.xml
+%feature("docstring") CPPArray "";
+
+%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
+D0, D1, D2, T >::dimension(const unsigned d) const ";
+
+%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
+D1, D2, T >::rank() const ";
+
+%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
+D0, D1, D2, T >::dimension(const unsigned d) ";
+
+%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
+D1, D2, T >::rank() const ";
+
+%feature("docstring")  CPPArray::CPPArray "CPPArray< D0, D1, D2, T
+>::CPPArray() ";
+
+%feature("docstring")  CPPArray::init "void CPPArray< D0, D1, D2, T
+>::init() ";
+
+%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
+D0, D1, D2, T >::dimension(const unsigned d) const ";
+
+%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
+D1, D2, T >::rank() const ";
+
+%feature("docstring")  CPPArray::CPPArray "CPPArray< D0, D1, D2, T
+>::CPPArray() ";
+
+%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
+D0, D1, D2, T >::dimension(const unsigned d) const ";
+
+%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
+D1, D2, T >::rank() const ";
+
+
 // File: classstk_1_1percept_1_1IntrepidManager_1_1CubaturePoints.xml
 %feature("docstring") stk::percept::IntrepidManager::CubaturePoints "
 
@@ -624,6 +729,10 @@ stk::percept::IntrepidManager::CubatureWeights::CubatureWeights "stk::percept::I
 ([P]) ";
 
 
+// File: structDim.xml
+%feature("docstring") Dim "";
+
+
 // File: classstk_1_1percept_1_1Dimensions.xml
 %feature("docstring") stk::percept::Dimensions "";
 
@@ -634,6 +743,10 @@ stk::percept::IntrepidManager::CubatureWeights::CubatureWeights "stk::percept::I
 %feature("docstring")  stk::percept::Dimensions::Dimensions "stk::percept::Dimensions::Dimensions(int i0, int i1) ";
 
 %feature("docstring")  stk::percept::Dimensions::Dimensions "stk::percept::Dimensions::Dimensions(int i0, int i1, int i2) ";
+
+
+// File: classElementFunctor.xml
+%feature("docstring") ElementFunctor "";
 
 
 // File: classstk_1_1percept_1_1ElementOp.xml
@@ -759,28 +872,21 @@ searchType=SIMPLE_SEARCH, unsigned integration_order=0) ";
 
 %feature("docstring")  stk::percept::FieldFunction::~FieldFunction "stk::percept::FieldFunction::~FieldFunction() ";
 
+%feature("docstring")  stk::percept::FieldFunction::derivative "virtual Teuchos::RCP<Function >
+stk::percept::FieldFunction::derivative(MDArrayString &deriv_spec)
+
+Return a function that is the derivative of this function. The
+derivative is specified as a rank-2 array of strings that specify what
+derivative to take and how many derivatives. For example, ";
+
+%feature("docstring")  stk::percept::FieldFunction::gradient "virtual
+Teuchos::RCP<Function > stk::percept::FieldFunction::gradient(int
+spatialDim=3) ";
+
 %feature("docstring")  stk::percept::FieldFunction::localEvaluation "void stk::percept::FieldFunction::localEvaluation(MDArray &in, MDArray
-&out, double time_value_optional=0.0)
+&out, double time_value_optional=0.0) ";
 
-Evaluate the function at this input point (or points) returning
-value(s) in output_field_values
-
-In the following, the arrays are dimensioned using the notation (from
-Intrepid's doc):
-
-[C] - num. integration domains (cells/elements) [F] - num. Intrepid
-\"fields\" (number of bases within an element == num. nodes typically)
-[P] - num. integration (or interpolation) points within the element
-[D] - spatial dimension [D1], [D2] - spatial dimension
-
-Locally, we introduce this notation:
-
-[DOF] - number of degrees-of-freedom per node of the interpolated stk
-Field. For example, a vector field in 3D has [DOF] = 3
-
-Dimensions of input_phy_points are required to be either ([D]) or
-([P],[D]) Dimensions of output_field_values are required to be ([DOF])
-or ([P],[DOF]) respectively ";
+%feature("docstring")  stk::percept::FieldFunction::setup_searcher "void stk::percept::FieldFunction::setup_searcher(int D_) ";
 
 %feature("docstring")  stk::percept::FieldFunction::helper "void
 stk::percept::FieldFunction::helper(MDArray &input_phy_points, MDArray
@@ -818,6 +924,16 @@ each cell: ";
 
 // File: structstk_1_1percept_1_1unit__tests_1_1FindMapItem2.xml
 %feature("docstring") stk::percept::unit_tests::FindMapItem2 "";
+
+
+// File: classFlux__.xml
+%feature("docstring") Flux_ "";
+
+%feature("docstring")  Flux_::Flux_ "Flux_< Mu, Mu2, Temperature
+>::Flux_(Mu mu, Mu2 mu2, Temperature temperature) ";
+
+%feature("docstring")  Flux_::Flux_ "Flux_< Mu, Mu2, Temperature
+>::Flux_(Mu mu, Mu2 mu2, Temperature temperature) ";
 
 
 // File: classstk_1_1percept_1_1Function.xml
@@ -902,6 +1018,10 @@ Return a function that is the derivative of this function. The
 derivative is specified as a rank-2 array of strings that specify what
 derivative to take and how many derivatives. For example, ";
 
+%feature("docstring")  stk::percept::Function::gradient "virtual
+Teuchos::RCP<Function > stk::percept::Function::gradient(int
+spatialDim=3) ";
+
 %feature("docstring")  stk::percept::Function::derivativeAtPoint "void stk::percept::Function::derivativeAtPoint(MDArrayString
 &deriv_spec, MDArray &domain, MDArray &codomain, double time=0.0) ";
 
@@ -922,6 +1042,22 @@ dims) ";
 
 %feature("docstring")  stk::percept::Function::setCodomainDimensions "void stk::percept::Function::setCodomainDimensions(const Dimensions
 dims) ";
+
+%feature("docstring")  stk::percept::Function::argsAreValid "bool
+stk::percept::Function::argsAreValid(const MDArray &in, const MDArray
+&out)
+
+Verify that the last dimensions of
+
+Parameters:
+-----------
+
+in:  and
+
+out:  are the same; this allows Functions to be invoked at multiple
+points where the first M indices represent an M-d array of points to
+evaluate the function, while the last N indices should match the
+Functions domain and codomain dimensions. ";
 
 
 // File: classstk_1_1percept_1_1FunctionOperator.xml
@@ -1162,6 +1298,47 @@ Jacobian's sign by testing it at all the cubature points ";
 %feature("docstring")  stk::percept::GMeshSpec::GMeshSpec "stk::percept::GMeshSpec::GMeshSpec(const std::string &name) ";
 
 
+// File: classGRAD.xml
+%feature("docstring") GRAD "";
+
+
+// File: classstk_1_1percept_1_1H1__NormOp.xml
+%feature("docstring") stk::percept::H1_NormOp "";
+
+%feature("docstring")  stk::percept::H1_NormOp::H1_NormOp "stk::percept::H1_NormOp::H1_NormOp(Function &integrand, int
+spatialDim=3)
+
+integrand tells what fields Intrepid should compute, etc. ";
+
+%feature("docstring")  stk::percept::H1_NormOp::finalOp "void
+stk::percept::H1_NormOp::finalOp(const std::vector< double > &vin,
+std::vector< double > &vout) ";
+
+
+// File: classstk_1_1percept_1_1H1Norm.xml
+%feature("docstring") stk::percept::H1Norm "
+
+compute the H1 norm or semi-norm
+
+C++ includes: H1Norm.hpp ";
+
+%feature("docstring")  stk::percept::H1Norm::H1Norm "stk::percept::H1Norm::H1Norm(mesh::BulkData &bulkData, std::string
+partName, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false)
+";
+
+%feature("docstring")  stk::percept::H1Norm::H1Norm "stk::percept::H1Norm::H1Norm(mesh::BulkData &bulkData, MDArrayString
+&partNames, TurboOption turboOpt=TURBO_NONE, bool
+is_surface_norm=false) ";
+
+%feature("docstring")  stk::percept::H1Norm::H1Norm "stk::percept::H1Norm::H1Norm(mesh::BulkData &bulkData, mesh::Part
+*part=0, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false)
+";
+
+%feature("docstring")  stk::percept::H1Norm::H1Norm "stk::percept::H1Norm::H1Norm(mesh::BulkData &bulkData, mesh::Selector
+*selector, TurboOption turboOpt=TURBO_NONE, bool
+is_surface_norm=false) ";
+
+
 // File: classstk_1_1percept_1_1HasConstValue.xml
 %feature("docstring") stk::percept::HasConstValue "";
 
@@ -1210,6 +1387,10 @@ stk::percept::HeterogeneousFixture::HeterogeneousFixture "stk::percept::Heteroge
 comm, bool doCommit=true, bool do_sidesets=false) ";
 
 %feature("docstring")  stk::percept::HeterogeneousFixture::populate "void stk::percept::HeterogeneousFixture::populate() ";
+
+
+// File: classHex__.xml
+%feature("docstring") Hex_ "";
 
 
 // File: classstk_1_1adapt_1_1IAdapter.xml
@@ -1311,6 +1492,10 @@ Following these examples we show the prototype for the operations that
 are performed on these predicates.
 
 C++ includes: IElementBasedAdapterPredicate.hpp ";
+
+
+// File: structInit.xml
+%feature("docstring") Init "";
 
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1Integral.xml
@@ -1424,7 +1609,7 @@ stk::percept::IntegratedOp::init() ";
 |---------------------------|-----------|---------------------------------------------------------|
 | point | [P] | number of points stored in an MD array | | vertex |
 [V] | number of nodes stored in an MD aray | | field | [F] | number of
-fields stored in an MD array | | basis field | [B] | number of basis
+fields stored in an MD array | | basis field | [ B] | number of basis
 fields stored in an MD array | | cell | [C] | number of cells stored
 in an MD array | | field coordinate | [D] | space dimension | |
 derivative ordinal | [K] | cardinality of the set of kth derivatives |
@@ -1545,6 +1730,10 @@ stk::percept::l2NormOpScalarFunction::l2NormOpScalarFunction "stk::percept::l2No
 &f) ";
 
 
+// File: classLine__.xml
+%feature("docstring") Line_ "";
+
+
 // File: classstk_1_1percept_1_1LN__NormOp.xml
 %feature("docstring") stk::percept::LN_NormOp "
 
@@ -1569,10 +1758,12 @@ stk::percept::LN_NormOp< Power >::finalOp(const std::vector< double >
 
 %feature("docstring")
 stk::percept::unit_tests::LocalFixture::LocalFixture "stk::percept::unit_tests::LocalFixture::LocalFixture(size_t num_xyz=4,
-size_t num_y=0, size_t num_z=0, bool sidesets=false) ";
+size_t num_y=0, size_t num_z=0, bool sidesets=false, bool commit=true)
+";
 
 %feature("docstring")  stk::percept::unit_tests::LocalFixture::init "int stk::percept::unit_tests::LocalFixture::init(size_t num_xyz,
-size_t num_y_arg, size_t num_z_arg, bool sidesets=false) ";
+size_t num_y_arg, size_t num_z_arg, bool sidesets=false, bool
+commit=true) ";
 
 
 // File: structstk_1_1percept_1_1lstr.xml
@@ -1604,6 +1795,9 @@ Function &integrand) ";
 
 %feature("docstring")  stk::percept::MDArrayString::MDArrayString "stk::percept::MDArrayString::MDArrayString(int dim0, int dim1) ";
 
+%feature("docstring")  stk::percept::MDArrayString::MDArrayString "stk::percept::MDArrayString::MDArrayString(const MDArrayString &mda)
+";
+
 %feature("docstring")  stk::percept::MDArrayString::resize "void
 stk::percept::MDArrayString::resize(int dim) ";
 
@@ -1617,7 +1811,26 @@ stk::percept::MDArrayString::rank() const ";
 stk::percept::MDArrayString::setValues(std::string *data) ";
 
 %feature("docstring")  stk::percept::MDArrayString::dimension "int
-stk::percept::MDArrayString::dimension(int i1) ";
+stk::percept::MDArrayString::dimension(int i1) const ";
+
+
+// File: structstk_1_1adapt_1_1regression__tests_1_1MemoryInfo.xml
+%feature("docstring") stk::adapt::regression_tests::MemoryInfo "";
+
+%feature("docstring")
+stk::adapt::regression_tests::MemoryInfo::MemoryInfo "stk::adapt::regression_tests::MemoryInfo::MemoryInfo() ";
+
+%feature("docstring")
+stk::adapt::regression_tests::MemoryInfo::get_memory_usage "void
+stk::adapt::regression_tests::MemoryInfo::get_memory_usage() ";
+
+%feature("docstring")
+stk::adapt::regression_tests::MemoryInfo::set_state "void
+stk::adapt::regression_tests::MemoryInfo::set_state() ";
+
+%feature("docstring")
+stk::adapt::regression_tests::MemoryInfo::get_increment "void
+stk::adapt::regression_tests::MemoryInfo::get_increment() ";
 
 
 // File: structstk_1_1adapt_1_1MemoryMultipliers.xml
@@ -1836,6 +2049,26 @@ stk::percept::minMaxAve::finish(stk::mesh::BulkData &mesh) ";
 %feature("docstring")  stk::percept::minMaxAve::setStandardRanges "void stk::percept::minMaxAve::setStandardRanges() ";
 
 
+// File: classMu2__.xml
+%feature("docstring") Mu2_ "";
+
+%feature("docstring")  Mu2_::Mu2_ "Mu2_< Temperature
+>::Mu2_(Temperature temperature) ";
+
+%feature("docstring")  Mu2_::Mu2_ "Mu2_< Temperature
+>::Mu2_(Temperature temperature) ";
+
+
+// File: classMu__.xml
+%feature("docstring") Mu_ "";
+
+%feature("docstring")  Mu_::Mu_ "Mu_< Temperature >::Mu_(Temperature
+temperature) ";
+
+%feature("docstring")  Mu_::Mu_ "Mu_< Temperature >::Mu_(Temperature
+temperature) ";
+
+
 // File: classstk_1_1percept_1_1MultipleFieldFunction.xml
 %feature("docstring") stk::percept::MultipleFieldFunction "
 
@@ -1900,6 +2133,14 @@ stk::adapt::regression_tests::MyEdgeBasedRefinePredicate::MyEdgeBasedRefinePredi
 
 // File: structstk_1_1adapt_1_1myVec.xml
 %feature("docstring") stk::adapt::myVec "";
+
+
+// File: classstk_1_1percept_1_1Math_1_1MyVector.xml
+%feature("docstring") stk::percept::Math::MyVector "";
+
+%feature("docstring")  stk::percept::Math::MyVector::MyVector "stk::percept::Math::MyVector::MyVector(double x=0.0) ";
+
+%feature("docstring")  stk::percept::Math::MyVector::MyVector "stk::percept::Math::MyVector::MyVector(double *x) ";
 
 
 // File: classstk_1_1percept_1_1Name.xml
@@ -2387,6 +2628,9 @@ TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) ";
 Power >::Norm(mesh::BulkData &bulkData, mesh::Selector *selector,
 TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) ";
 
+%feature("docstring")  stk::percept::Norm::~Norm "virtual
+stk::percept::Norm< Power >::~Norm() ";
+
 %feature("docstring")  stk::percept::Norm::setCubDegree "void
 stk::percept::Norm< Power >::setCubDegree(unsigned cubDegree) ";
 
@@ -2402,6 +2646,13 @@ stk::percept::Norm< Power >::get_is_surface_norm() ";
 
 %feature("docstring")  stk::percept::Norm::evaluate "double
 stk::percept::Norm< Power >::evaluate(Function &integrand) ";
+
+%feature("docstring")  stk::percept::Norm::error_check_is_surface_norm
+"void stk::percept::Norm< Power >::error_check_is_surface_norm()
+
+if a Selector is specified with part(s) that are not auto-declared,
+make sure all parts are of the same rank, and that m_is_surface_norm
+is set correctly (if not, warn...) ";
 
 
 // File: classstk_1_1percept_1_1Observable.xml
@@ -2433,6 +2684,10 @@ DATA_TYPE > &observer) ";
 
 %feature("docstring")  stk::percept::Observer::notify "virtual void
 stk::percept::Observer< DATA_TYPE >::notify(DATA_TYPE *data)=0 ";
+
+
+// File: classOnePointRule.xml
+%feature("docstring") OnePointRule "";
 
 
 // File: classstk_1_1percept_1_1ParallelMachineFinalize.xml
@@ -2753,6 +3008,103 @@ return the number of steps in the database ";
 
 transform mesh by a given 3x3 matrix ";
 
+%feature("docstring")
+stk::percept::PerceptMesh::add_coordinate_state_fields "void
+stk::percept::PerceptMesh::add_coordinate_state_fields()
+
+add coordinate-like fields needed, for example, to use smoothing of
+geometry-projected refined meshes Must be called before commit() ";
+
+%feature("docstring")  stk::percept::PerceptMesh::add_spacing_fields "void stk::percept::PerceptMesh::add_spacing_fields()
+
+add spacing fields for having refinement obey the spacing (i.e.
+putting new nodes not at midpoint) ";
+
+%feature("docstring")  stk::percept::PerceptMesh::set_proc_rank_field
+"void
+stk::percept::PerceptMesh::set_proc_rank_field(stk::mesh::FieldBase
+*proc_rank_field=0)
+
+set proc_rank on each element ";
+
+%feature("docstring")
+stk::percept::PerceptMesh::has_coordinate_state_fields "bool
+stk::percept::PerceptMesh::has_coordinate_state_fields()
+
+get number of coordinate field states needed ";
+
+%feature("docstring")  stk::percept::PerceptMesh::copy_field_state "void stk::percept::PerceptMesh::copy_field_state(stk::mesh::FieldBase
+*field, unsigned dest_state, unsigned src_state)
+
+copy field state data from one state (src_state) to another
+(dest_state) ";
+
+%feature("docstring")  stk::percept::PerceptMesh::copy_field "void
+stk::percept::PerceptMesh::copy_field(stk::mesh::FieldBase
+*field_dest, stk::mesh::FieldBase *field_src)
+
+copy field data from one field (field_src) to another (field_dest) ";
+
+%feature("docstring")
+stk::percept::PerceptMesh::nodal_field_state_axpby "void
+stk::percept::PerceptMesh::nodal_field_state_axpby(stk::mesh::FieldBase
+*field, double alpha, unsigned x_state, double beta, unsigned y_state)
+
+axpby calculates: y = alpha*x + beta*y ";
+
+%feature("docstring")  stk::percept::PerceptMesh::nodal_field_axpby "void stk::percept::PerceptMesh::nodal_field_axpby(double alpha,
+stk::mesh::FieldBase *field_x, double beta, stk::mesh::FieldBase
+*field_y)
+
+axpby calculates: y = alpha*x + beta*y ";
+
+%feature("docstring")
+stk::percept::PerceptMesh::nodal_field_state_axpbypgz "void
+stk::percept::PerceptMesh::nodal_field_state_axpbypgz(stk::mesh::FieldBase
+*field, double alpha, unsigned x_state, double beta, unsigned y_state,
+double gamma, unsigned z_state)
+
+axpbypgz calculates: z = alpha*x + beta*y + gamma*z ";
+
+%feature("docstring")  stk::percept::PerceptMesh::nodal_field_axpbypgz
+"void stk::percept::PerceptMesh::nodal_field_axpbypgz(double alpha,
+stk::mesh::FieldBase *field_x, double beta, stk::mesh::FieldBase
+*field_y, double gamma, stk::mesh::FieldBase *field_z)
+
+axpbypgz calculates: z = alpha*x + beta*y + gamma*z ";
+
+%feature("docstring")  stk::percept::PerceptMesh::nodal_field_dot "double stk::percept::PerceptMesh::nodal_field_dot(stk::mesh::FieldBase
+*field_x, stk::mesh::FieldBase *field_y)
+
+dot calculates: x.y ";
+
+%feature("docstring")
+stk::percept::PerceptMesh::nodal_field_set_value "void
+stk::percept::PerceptMesh::nodal_field_set_value(stk::mesh::FieldBase
+*field_x, double value=0.0)
+
+set field to constant value ";
+
+%feature("docstring")
+stk::percept::PerceptMesh::remove_geometry_blocks_on_output "void
+stk::percept::PerceptMesh::remove_geometry_blocks_on_output(std::string
+geometry_file_name)
+
+remove blocks in the mesh used solely for geometry association, during
+output of the mesh to Exodus.
+
+Parameters:
+-----------
+
+geometry_file_name:  = name of the OpenNURBS file (*.3dm) containing
+the geometry info
+
+Only available when Percept is configured with
+STK_PERCEPT_HAS_GEOMETRY ";
+
+%feature("docstring")  stk::percept::PerceptMesh::set_sync_io_regions
+"void stk::percept::PerceptMesh::set_sync_io_regions(bool val) ";
+
 %feature("docstring")  stk::percept::PerceptMesh::transform_mesh "void stk::percept::PerceptMesh::transform_mesh(Math::Matrix &matrix)
 
 transform mesh by a given 3x3 matrix ";
@@ -2995,7 +3347,7 @@ stk::mesh::FieldBase *field, stk::mesh::Selector *selector, bool
 is_surface_norm=false) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::edge_length_ave "double stk::percept::PerceptMesh::edge_length_ave(const
-stk::mesh::Entity &entity) ";
+stk::mesh::Entity &entity, mesh::FieldBase *coord_field=0) ";
 
 %feature("docstring")
 stk::percept::PerceptMesh::adapt_parent_to_child_relations "SameRankRelation&
@@ -3192,6 +3544,10 @@ stk::percept::QuadFixture< Scalar, Topology
 "void stk::percept::QuadFixture< Scalar, Topology
 >::generate_sides_bulk(std::vector< stk::mesh::EntityId >
 &element_ids_on_this_processor) ";
+
+
+// File: structQuadrilateral4.xml
+%feature("docstring") Quadrilateral4 "";
 
 
 // File: structstk_1_1adapt_1_1RefinementInfoByType.xml
@@ -3654,6 +4010,10 @@ stk::adapt::Refiner::setSmoothGeometry(bool do_smooth) ";
 %feature("docstring")  stk::adapt::Refiner::getSmoothGeometry "bool
 stk::adapt::Refiner::getSmoothGeometry() ";
 
+%feature("docstring")  stk::adapt::Refiner::setRemoveGeometryBlocks "void stk::adapt::Refiner::setRemoveGeometryBlocks(bool do_remove) ";
+
+%feature("docstring")  stk::adapt::Refiner::getRemoveGeometryBlocks "bool stk::adapt::Refiner::getRemoveGeometryBlocks() ";
+
 %feature("docstring")  stk::adapt::Refiner::setIgnoreSideSets "void
 stk::adapt::Refiner::setIgnoreSideSets(bool ignore_sidesets) ";
 
@@ -4008,12 +4368,12 @@ bool debug=false) ";
 stk::ParallelMachine comm, bool debug=false) ";
 
 %feature("docstring")
-stk::percept::RunEnvironment::processCommandLine "void
+stk::percept::RunEnvironment::processCommandLine "int
 stk::percept::RunEnvironment::processCommandLine(int argc, char
 **argv) ";
 
 %feature("docstring")
-stk::percept::RunEnvironment::processCommandLine "void
+stk::percept::RunEnvironment::processCommandLine "int
 stk::percept::RunEnvironment::processCommandLine() ";
 
 %feature("docstring")  stk::percept::RunEnvironment::~RunEnvironment "stk::percept::RunEnvironment::~RunEnvironment() ";
@@ -4058,6 +4418,10 @@ void stk::percept::Searcher::setupSearch() ";
 stk::percept::Searcher::~Searcher() ";
 
 
+// File: classSENS.xml
+%feature("docstring") SENS "";
+
+
 // File: classstk_1_1adapt_1_1SerializeNodeRegistry.xml
 %feature("docstring") stk::adapt::SerializeNodeRegistry "";
 
@@ -4066,22 +4430,6 @@ stk::adapt::SerializeNodeRegistry::SerializeNodeRegistry "stk::adapt::SerializeN
 &eMesh, NodeRegistry *nodeRegistry, std::string input_mesh_name,
 std::string output_mesh_name, int M, int iM, int W=1, int iW=0, int
 M_0=-1, int M_1=-1) ";
-
-
-// File: classstk_1_1adapt_1_1regression__tests_1_1SetRefineField.xml
-%feature("docstring") stk::adapt::regression_tests::SetRefineField "";
-
-%feature("docstring")
-stk::adapt::regression_tests::SetRefineField::SetRefineField "stk::adapt::regression_tests::SetRefineField::SetRefineField(percept::PerceptMesh
-&eMesh) ";
-
-%feature("docstring")
-stk::adapt::regression_tests::SetRefineField::init_elementOp "virtual
-void stk::adapt::regression_tests::SetRefineField::init_elementOp() ";
-
-%feature("docstring")
-stk::adapt::regression_tests::SetRefineField::fini_elementOp "virtual
-void stk::adapt::regression_tests::SetRefineField::fini_elementOp() ";
 
 
 // File: classstk_1_1adapt_1_1unit__tests_1_1SetRefineField.xml
@@ -4100,20 +4448,20 @@ stk::adapt::unit_tests::SetRefineField::fini_elementOp "virtual void
 stk::adapt::unit_tests::SetRefineField::fini_elementOp() ";
 
 
-// File: classstk_1_1adapt_1_1regression__tests_1_1SetUnrefineField.xml
-%feature("docstring") stk::adapt::regression_tests::SetUnrefineField "";
+// File: classstk_1_1adapt_1_1regression__tests_1_1SetRefineField.xml
+%feature("docstring") stk::adapt::regression_tests::SetRefineField "";
 
 %feature("docstring")
-stk::adapt::regression_tests::SetUnrefineField::SetUnrefineField "stk::adapt::regression_tests::SetUnrefineField::SetUnrefineField(percept::PerceptMesh
+stk::adapt::regression_tests::SetRefineField::SetRefineField "stk::adapt::regression_tests::SetRefineField::SetRefineField(percept::PerceptMesh
 &eMesh) ";
 
 %feature("docstring")
-stk::adapt::regression_tests::SetUnrefineField::init_elementOp "virtual void
-stk::adapt::regression_tests::SetUnrefineField::init_elementOp() ";
+stk::adapt::regression_tests::SetRefineField::init_elementOp "virtual
+void stk::adapt::regression_tests::SetRefineField::init_elementOp() ";
 
 %feature("docstring")
-stk::adapt::regression_tests::SetUnrefineField::fini_elementOp "virtual void
-stk::adapt::regression_tests::SetUnrefineField::fini_elementOp() ";
+stk::adapt::regression_tests::SetRefineField::fini_elementOp "virtual
+void stk::adapt::regression_tests::SetRefineField::fini_elementOp() ";
 
 
 // File: classstk_1_1adapt_1_1unit__tests_1_1SetUnrefineField.xml
@@ -4132,6 +4480,22 @@ stk::adapt::unit_tests::SetUnrefineField::fini_elementOp "virtual
 void stk::adapt::unit_tests::SetUnrefineField::fini_elementOp() ";
 
 
+// File: classstk_1_1adapt_1_1regression__tests_1_1SetUnrefineField.xml
+%feature("docstring") stk::adapt::regression_tests::SetUnrefineField "";
+
+%feature("docstring")
+stk::adapt::regression_tests::SetUnrefineField::SetUnrefineField "stk::adapt::regression_tests::SetUnrefineField::SetUnrefineField(percept::PerceptMesh
+&eMesh) ";
+
+%feature("docstring")
+stk::adapt::regression_tests::SetUnrefineField::init_elementOp "virtual void
+stk::adapt::regression_tests::SetUnrefineField::init_elementOp() ";
+
+%feature("docstring")
+stk::adapt::regression_tests::SetUnrefineField::fini_elementOp "virtual void
+stk::adapt::regression_tests::SetUnrefineField::fini_elementOp() ";
+
+
 // File: classShape.xml
 %feature("docstring") Shape "";
 
@@ -4147,6 +4511,16 @@ Shape::area(void)=0 ";
 
 %feature("docstring")  Shape::perimeter "virtual double
 Shape::perimeter(void)=0 ";
+
+
+// File: classShape__.xml
+%feature("docstring") Shape_ "";
+
+%feature("docstring")  Shape_::Shape_ "Shape_< ElementType
+>::Shape_(ElementType element_type) ";
+
+%feature("docstring")  Shape_::Shape_ "Shape_< ElementType
+>::Shape_(ElementType element_type) ";
 
 
 // File: classstk_1_1percept_1_1ShardsInterfaceTable.xml
@@ -4285,6 +4659,10 @@ Square::area(void) ";
 Square::perimeter(void) ";
 
 
+// File: structStandardReferenceElement_3_01Quadrilateral4_01_4.xml
+%feature("docstring") StandardReferenceElement< Quadrilateral4 > " ";
+
+
 // File: structstk_1_1adapt_1_1STK__Adapt__Auto__Part.xml
 %feature("docstring") stk::adapt::STK_Adapt_Auto_Part "
 
@@ -4342,6 +4720,9 @@ stk::percept::StringFunction::derivative(MDArrayString &deriv_spec)
 Return a function that is the derivative of this function. The
 derivative is specified as a rank-2 array of strings that specify what
 derivative to take and how many derivatives. For example, ";
+
+%feature("docstring")  stk::percept::StringFunction::gradient "Teuchos::RCP< Function > stk::percept::StringFunction::gradient(int
+spatialDim=3) ";
 
 %feature("docstring")  stk::percept::StringFunction::StringFunction "stk::percept::StringFunction::StringFunction(const char
 *function_string, Name name, Dimensions domain_dimensions, Dimensions
@@ -4405,6 +4786,42 @@ SDSEntityType > >::hashCode() ";
 
 // File: structstk_1_1adapt_1_1SubDimCellCompare.xml
 %feature("docstring") stk::adapt::SubDimCellCompare "";
+
+
+// File: classstk_1_1utils_1_1SweepMesher.xml
+%feature("docstring") stk::utils::SweepMesher "
+
+A simple utility to product tensor product (line, quad, hex) meshes by
+sweeping as well as non-tensor product mesh by breaking into sub-
+elements (tri, tet, wedge, pyramid).
+
+Steve Kennon, Brian Carnes, Kevin Copps  Usage: initialize with a
+simple pair of node, element arrays, such as
+
+double coords[][3] = { {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0}, {0,0,1},
+{1,0,1}, {2,2,1}, {0,3,1} };
+
+unsigned quad4Elems[] = { 0,1,2,3, 4,5,6,7 };
+
+SweepMesher tp; tp.initNodes(coords, 8); tp.initElems(elemType, // one
+of enum's defined below quad4Elems, 2);
+
+Then use sweep to create a hex mesh (this example breaks a quad to
+create two Tri's, then creates a mixed hex/wedge mesh)
+
+boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
+xforms(1, &TransformDir( dir ) );
+
+// break one of the quads into tris unsigned quadElemIndex = 1;
+tp2.breakElem<SweepMesher::ET_Quad4,
+SweepMesher::ET_Tri3>(quadElemIndex); std::cout << \"after
+break\\\\n\"; tp2.dump();
+
+// sweep to make a hex mesh boost::array< double, 3> dir1 =
+{0,0,2.345}; xforms[0] = &TransformDir(dir1); tp2.sweep(
+SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
+
+C++ includes: SweepMesher.hpp ";
 
 
 // File: classstk_1_1percept_1_1SweepMesher.xml
@@ -4561,44 +4978,26 @@ stk::percept::SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine
 stk::percept::SweepMesher::writeSTKMesh(const char *filename) ";
 
 
-// File: classstk_1_1utils_1_1SweepMesher.xml
-%feature("docstring") stk::utils::SweepMesher "
+// File: classTCoeff.xml
+%feature("docstring") TCoeff "";
 
-A simple utility to product tensor product (line, quad, hex) meshes by
-sweeping as well as non-tensor product mesh by breaking into sub-
-elements (tri, tet, wedge, pyramid).
+%feature("docstring")  TCoeff::TCoeff "TCoeff::TCoeff() ";
 
-Steve Kennon, Brian Carnes, Kevin Copps  Usage: initialize with a
-simple pair of node, element arrays, such as
-
-double coords[][3] = { {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0}, {0,0,1},
-{1,0,1}, {2,2,1}, {0,3,1} };
-
-unsigned quad4Elems[] = { 0,1,2,3, 4,5,6,7 };
-
-SweepMesher tp; tp.initNodes(coords, 8); tp.initElems(elemType, // one
-of enum's defined below quad4Elems, 2);
-
-Then use sweep to create a hex mesh (this example breaks a quad to
-create two Tri's, then creates a mixed hex/wedge mesh)
-
-boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
-xforms(1, &TransformDir( dir ) );
-
-// break one of the quads into tris unsigned quadElemIndex = 1;
-tp2.breakElem<SweepMesher::ET_Quad4,
-SweepMesher::ET_Tri3>(quadElemIndex); std::cout << \"after
-break\\\\n\"; tp2.dump();
-
-// sweep to make a hex mesh boost::array< double, 3> dir1 =
-{0,0,2.345}; xforms[0] = &TransformDir(dir1); tp2.sweep(
-SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
-
-C++ includes: SweepMesher.hpp ";
+%feature("docstring")  TCoeff::TCoeff "TCoeff::TCoeff() ";
 
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1temp.xml
 %feature("docstring") stk::percept::IntrepidManager::temp "";
+
+
+// File: classTemperature__.xml
+%feature("docstring") Temperature_ "";
+
+%feature("docstring")  Temperature_::Temperature_ "Temperature_<
+TCoeff, Shape >::Temperature_(TCoeff t, Shape shape) ";
+
+%feature("docstring")  Temperature_::Temperature_ "Temperature_<
+TCoeff, Shape >::Temperature_(TCoeff t, Shape shape) ";
 
 
 // File: classstk_1_1adapt_1_1TestLocalRefiner.xml
@@ -6672,6 +7071,12 @@ shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 6
 shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 6
 >::UniformRefinerPattern(percept::PerceptMesh &eMesh, BlockNamesType
 block_names=BlockNamesType()) ";
+
+%feature("docstring")  stk::adapt::UniformRefinerPattern<
+shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 6
+>::~UniformRefinerPattern " stk::adapt::UniformRefinerPattern<
+shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 6
+>::~UniformRefinerPattern() ";
 
 %feature("docstring")  stk::adapt::UniformRefinerPattern<
 shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 6 >::setSubPatterns
@@ -8760,6 +9165,59 @@ sub-elements of the refined element ";
 %feature("docstring") stk::percept::Util "";
 
 
+// File: classVector.xml
+%feature("docstring") Vector "";
+
+%feature("docstring")  Vector::init "void Vector< T >::init(double t,
+RefElem i) ";
+
+%feature("docstring")  Vector::init "void Vector< T, I >::init(T t, I
+i) ";
+
+%feature("docstring")  Vector::value "T Vector< T >::value() ";
+
+
+// File: classvector.xml
+%feature("docstring") vector "";
+
+%feature("docstring")  vector::init "void vector< T >::init(T t) ";
+
+%feature("docstring")  vector::value "T vector< T >::value() ";
+
+%feature("docstring")  vector::init "void vector< double
+>::init(double t) ";
+
+
+// File: classvector1.xml
+%feature("docstring") vector1 "";
+
+%feature("docstring")  vector1::init "void vector1< T, V >::init(T t)
+";
+
+%feature("docstring")  vector1::init "void vector1< double, vector
+>::init(double d) ";
+
+
+// File: classvector2.xml
+%feature("docstring") vector2 "";
+
+%feature("docstring")  vector2::init "void vector2< T, V >::init(T t)
+";
+
+%feature("docstring")  vector2::init "void vector2< double, vector
+>::init(double d) ";
+
+
+// File: classVectorB.xml
+%feature("docstring") VectorB "";
+
+%feature("docstring")  VectorB::init "void VectorB< T, RefElem
+>::init(T t, RefElem i) ";
+
+%feature("docstring")  VectorB::value "T VectorB< T, RefElem
+>::value() ";
+
+
 // File: classstk_1_1percept_1_1Verifier.xml
 %feature("docstring") stk::percept::Verifier "";
 
@@ -8812,10 +9270,10 @@ stk::percept::IntrepidManager::WeightedMeasure::WeightedMeasure "stk::percept::I
 %feature("docstring") stk::percept::unit_tests::XF1 "";
 
 
-// File: namespace@189.xml
+// File: namespace@303.xml
 
 
-// File: namespace@199.xml
+// File: namespace@313.xml
 
 
 // File: namespaceIntrepid.xml
@@ -9046,10 +9504,10 @@ stk::adapt::Elem::StdMeshObjTopologies::getRefinementEdgePermutation "const UInt
 Elem::CellTopology &cell_topology, UInt permutation_ordinal) ";
 
 
-// File: namespacestk_1_1adapt_1_1Elem_1_1@266.xml
+// File: namespacestk_1_1adapt_1_1Elem_1_1@398.xml
 
 
-// File: namespacestk_1_1adapt_1_1Elem_1_1@272.xml
+// File: namespacestk_1_1adapt_1_1Elem_1_1@404.xml
 
 
 // File: namespacestk_1_1adapt_1_1Elem_1_1StdMeshObjTopologies.xml
@@ -9896,6 +10354,13 @@ test_parallel_1) ";
 "stk::adapt::regression_tests::STKUNIT_UNIT_TEST(nodeRegistry_regr,
 test_parallel_2) ";
 
+%feature("docstring")  stk::adapt::regression_tests::MegaByte "double
+stk::adapt::regression_tests::MegaByte(MemorySizeType x) ";
+
+%feature("docstring")  stk::adapt::regression_tests::STKUNIT_UNIT_TEST
+"stk::adapt::regression_tests::STKUNIT_UNIT_TEST(adapt, count_memory)
+";
+
 %feature("docstring")  stk::adapt::regression_tests::output_draw "static void stk::adapt::regression_tests::output_draw(std::string
 filename, std::string toFile) ";
 
@@ -10269,6 +10734,320 @@ set cell topology for the part block_hex_20 ";
 
 %feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(SubDimCell, test2) ";
 
+%feature("docstring")  stk::adapt::unit_tests::fixture_setup_0 "static void stk::adapt::unit_tests::fixture_setup_0()
+
+Creates meshes for use in later tests 1. Create hex mesh from a
+fixture and write it in Exodus format for use later. 2. Read the hex
+mesh and convert it to tet elements using stk_adapt/UniformRefiner,
+write it in Exodus format ";
+
+%feature("docstring")  stk::adapt::unit_tests::fixture_setup_1 "static void stk::adapt::unit_tests::fixture_setup_1()
+
+Creates meshes for use in later tests - quad meshes with and without
+sidesets. ";
+
+%feature("docstring")  stk::adapt::unit_tests::fixture_setup "static
+void stk::adapt::unit_tests::fixture_setup() ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+stk_fixture_workaround) ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad_to_quad_sierra_1_test)
+
+Refine a quad mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tri_to_tri_sierra_1_test)
+
+Refine a triangle mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
+break_quad_to_quad_sierra)
+
+Refine quad elements uses the Sierra-ported tables from
+framework/{element,mesh_modification}
+
+!eMesh, \"./square_quad4_ref_sierra_out.e\"); ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
+break_quad_to_quad_sierra_1)
+
+Refine quad elements with beam elements for the \"side sets\". ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
+break_tri_to_tri_sierra)
+
+Create a triangle mesh using the QuadFixture with the option of
+breaking the quads into triangles Refine the triangle mesh, write the
+results. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
+hex8_hex8_8_1)
+
+Refine a hex8 mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
+wedge6_1)
+
+Create and write a wedge mesh using the WedgeFixture. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+beam_enrich)
+
+Create a Beam mesh and enrich it. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+beam_refine)
+
+Create a beam mesh and refine it. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+generate_tables)
+
+This code generates C++ tables used by stk_adapt - tables contain node
+numbering, parametric coordinates consistent with Intrepid, and
+related information needed by UniformRefiner. The generated code
+should be compared with and merged into
+<stk_adapt/sierra_element/GeneratedRefinementTable.hpp> as appropriate
+if there is a change in the tables in that package, or an additional
+element type is added. This comment is from the generated code and
+tells how to bootstrap this process. Bootstrapping this file: to
+create this file, run the regression test
+RegressionTestUniformRefiner.cpp :: generate_tables after putting in a
+dummy entry in ./sierra_element/GeneratedRefinementTable.hpp. The run
+will produce a local file, generated_refinement_tables.hpp which can
+be checked against the gold copy of GeneratedRefinementTable.hpp, then
+copied over it. Add a call below to generate the actual new table
+data. ";
+
+%feature("docstring")  stk::adapt::unit_tests::output_draw "static
+void stk::adapt::unit_tests::output_draw(std::string filename,
+std::string toFile)
+
+Code to generate Dot/Graphviz files representing the topology of
+element refinement based on the internal tables. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner, draw1)
+";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner, draw)
+";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad_to_tri_6)
+
+Convert a quad mesh to triangles with 6 triangles per quad. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad_to_tri_4)
+
+Convert a quad mesh to triangles with 4 triangles per quad. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad_to_quad)
+
+Refine a quad mesh using the \"standalone\" refinement pattern:
+UniformRefinerPattern<shards::Quadrilateral<4>,
+shards::Quadrilateral<4>, 4 > This pattern is an example (like the
+convert-type patterns) showing how to write a new pattern with no
+dependencies ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad_to_quad_sierra)
+
+Refine a quad mesh uses the Sierra-ported tables from
+framework/{element,mesh_modification} ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad_to_quad_sierra_sidesets)
+
+Refine a quad mesh with sidesets uses the Sierra-ported tables from
+framework/{element,mesh_modification} ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_tet4_24_1)
+
+Convert a hex mesh to tets using 24 tets per hex. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_tet4_6_12_1)
+
+Convert a hex mesh using 6 tets per hex. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_tet4_6_12_2)
+
+Convert a hex mesh using 6 tets per hex. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+quad4_quad4_4_test_1)
+
+Refine a quad mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad_to_quad_sierra_1)
+
+Refine a quad mesh; test the multiple refinement feature. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad_to_quad_sierra_2)
+
+Refine a quad mesh; test the multiple refinement feature. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad4_to_quad9)
+
+Enrich a quad mesh (convert linear Quad4 elements to quadratic Quad9).
+";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad4_to_quad8)
+
+Enrich a quad mesh (convert linear Quad4 elements to serendepity
+Quad8). ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad8_to_quad8)
+
+Refine a quad8/serendepity mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad4_to_quad9_to_quad9_0)
+
+Enrich a quad4 mesh to quad9 then refine it. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_quad4_to_quad9_to_quad9)
+
+Enrich a quad4 mesh to quad9 then refine it. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tri_to_tri_sierra_0)
+
+Refine a triangle mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tri_to_tri_sierra_1)
+
+Refine a triangle mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tri3_to_tri6_sierra)
+
+Enrich a triangle mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tri3_to_tri6_to_tri6_sierra)
+
+Enrich a triangle mesh then refine it. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tet4_tet4_0)
+
+Refine a linear tet mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tet4_tet4_1)
+
+Refine a linear tet mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tet4_tet10_1)
+
+Enrich a linear tet mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+break_tet4_tet10_tet10_1)
+
+Enrich a linear tet mesh then refine it. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_hex8_8_1)
+
+Refine a linear hex mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_hex8_8_2)
+
+Refine a linear hex mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_hex27_1_1)
+
+Enrich a linear hex mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_hex27_1_2)
+
+Enrich a linear hex mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_hex20_1_1)
+
+Enrich a linear hex mesh to serendepity hex20 elements. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_hex20_1_2)
+
+Enrich a linear hex mesh to serendepity hex20 elements. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex20_hex20_1)
+
+Refine a serendepity hex20 mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex20_hex20_1_2)
+
+Refine a serendepity hex20 mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex27_hex27_0)
+
+Refine a quadratic hex27 mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+hex8_hex27_hex27_1)
+
+Refine a quadratic hex27 mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+wedge6_2)
+
+Refine a linear wedge mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+wedge6_enrich_1)
+
+Enrich a linear wedge mesh to serendepity Wedge15. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+wedge6_enrich_refine)
+
+Enrich a linear wedge mesh to serendepity Wedge15 then refine it. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+heterogeneous_mesh)
+
+Generate a heterogeneous mesh (tet, hex, wedge elements) then refine
+it. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+heterogeneous_mesh_enrich)
+
+Enrich a heterogeneous mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+heterogeneous_quadratic_refine)
+
+Refine the enriched heterogeneous mesh. ";
+
+%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
+wedge6_wedge18_enrich)
+
+Enrich a wedge6 mesh to wedge18. ";
+
 
 // File: namespacestk_1_1diag.xml
 
@@ -10328,7 +11107,7 @@ double t, Function &func) ";
 
 %feature("docstring")  stk::percept::interface_table::first_dimensions
 "static void stk::percept::first_dimensions(MDArray &arr, int
-arr_offset, int *n_points) ";
+arr_offset, int *n_points, int max_rank=3) ";
 
 %feature("docstring")
 stk::percept::interface_table::get_entity_rank_names "static
@@ -10468,22 +11247,22 @@ stk::percept::SQR(T t) ";
 stk::percept::toInt(std::string t) ";
 
 
-// File: namespacestk_1_1percept_1_1@101.xml
+// File: namespacestk_1_1percept_1_1@198.xml
 
 
-// File: namespacestk_1_1percept_1_1@105.xml
+// File: namespacestk_1_1percept_1_1@202.xml
 
 
-// File: namespacestk_1_1percept_1_1@107.xml
+// File: namespacestk_1_1percept_1_1@204.xml
 
 
-// File: namespacestk_1_1percept_1_1@110.xml
+// File: namespacestk_1_1percept_1_1@207.xml
 
 
-// File: namespacestk_1_1percept_1_1@190.xml
+// File: namespacestk_1_1percept_1_1@304.xml
 
 
-// File: namespacestk_1_1percept_1_1@191.xml
+// File: namespacestk_1_1percept_1_1@305.xml
 
 
 // File: namespacestk_1_1percept_1_1interface__table.xml
@@ -10695,6 +11474,18 @@ create a field function from the existing coordinates field
 here we evaluate this field function ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_point_eval_deriv_verify)
+
+test evaluation of field function at a point
+
+the coordinates field is always created by the PerceptMesh read
+operation, here we just get the field
+
+create a field function from the existing coordinates field
+
+here we evaluate this field function ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
 fieldFunction_point_eval_timing)
 
 test evaluation of field function at a point
@@ -10761,12 +11552,25 @@ the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
 the function to be integrated: (Max[ x^2+y^3+z^4, dxdydz]) =?= (@
 [-0.5, 0.5]^3 ) ==> .5^2+.5^3+.5^4)
 
+indirection
+
 the function to be integrated: sqrt(Integral[(x*y*z)^2, dxdydz]) =?=
 (see unitTest1.py)
+
+indirection
 
 the function to be integrated (but over a rotated domain):
 sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
 the mesh ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm, string_function_1)
+
+Create the operator that will do the work get the l2 norm
+
+the function to be integrated: sqrt(Integral[(x*y*z)^2, dxdydz]) =?=
+(see unitTest1.py)
+
+indirection ";
 
 %feature("docstring")
 stk::percept::unit_tests::TEST_norm_string_function_turbo_verify_correctness
@@ -10858,6 +11662,54 @@ Create the operator that will do the work get the l2 norm
 the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
 |x|^2/2 @ [0, 0.5]) ==> .25) ";
 
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm, h1_volume)
+
+create a field function from the existing coordinates field
+
+the function to be integrated - here it is just the identity, and when
+integrated should produce the volume
+
+A place to hold the result. This is a \"writable\" function (we may
+want to make this explicit - StringFunctions are not writable;
+FieldFunctions are since we interpolate values to them from other
+functions).
+
+Create the operator that will do the work
+
+get the l2 norm of identity ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm, h1_volume_1)
+
+create a field function from the existing coordinates field
+
+the function to be integrated - here it is just the identity, and when
+integrated should produce the volume
+
+A place to hold the result. This is a \"writable\" function (we may
+want to make this explicit - StringFunctions are not writable;
+FieldFunctions are since we interpolate values to them from other
+functions).
+
+Create the operator that will do the work
+
+get the l2 norm of plane ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm, h1_volume_2)
+
+create a field function from the existing coordinates field
+
+the function to be integrated - here it is just the identity, and when
+integrated should produce the volume
+
+A place to hold the result. This is a \"writable\" function (we may
+want to make this explicit - StringFunctions are not writable;
+FieldFunctions are since we interpolate values to them from other
+functions).
+
+Create the operator that will do the work
+
+get the l2 norm of plane ";
+
 %feature("docstring")  stk::percept::unit_tests::fixture_setup_0 "static void stk::percept::unit_tests::fixture_setup_0()
 
 create a mesh of hex elements for use in other tests below ";
@@ -10895,6 +11747,9 @@ create_skewed_mesh) ";
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(perceptMesh,
 create_quad_streaming_mesh) ";
 
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(perceptMesh, test_states)
+";
+
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(search, test1)
 
 dw().m(LOG_SEARCH) << \"Use case 1\" << stk::diag::push <<
@@ -10928,7 +11783,9 @@ stringFunction_derivative_1) ";
 stringFunction_derivative_2) ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-stringFunction_multiplePoints) ";
+stringFunction_multiplePoints)
+
+indirection ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
 stringFunction_expressions) ";
@@ -11160,6 +12017,15 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: Allocate_8cpp.xml
 
 
+// File: Basis_81_8hpp.xml
+
+
+// File: Basis_82_8hpp.xml
+
+
+// File: Basis_8hpp.xml
+
+
 // File: BeamFixture_8cpp.xml
 
 
@@ -11181,7 +12047,11 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: CellTopology_8hpp.xml
 
 
-// File: CMakeCXXCompilerId_8cpp.xml
+// File: build_81_8nogit_2CMakeFiles_2CompilerIdCXX_2CMakeCXXCompilerId_8cpp.xml
+%feature("docstring")  main "int main(int argc, char *argv[]) ";
+
+
+// File: build_8dir_2CMakeFiles_2CompilerIdCXX_2CMakeCXXCompilerId_8cpp.xml
 %feature("docstring")  main "int main(int argc, char *argv[]) ";
 
 
@@ -11201,6 +12071,60 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 
 
 // File: ConstantFunction_8hpp.xml
+
+
+// File: cpp-templates_81_8cpp.xml
+%feature("docstring")  main "int main() ";
+
+
+// File: cpp-templates_82_8cpp.xml
+%feature("docstring")  main "int main() ";
+
+
+// File: cpp-templates_83_8cpp.xml
+%feature("docstring")  init "void init(T t, I i) ";
+
+%feature("docstring")  init "void init(T t, int i) ";
+
+%feature("docstring")  main "int main() ";
+
+
+// File: cpp-templates_84_8cpp.xml
+%feature("docstring")  basis1 "T basis1(BasisBase< T, I, Topology,
+ReferenceElement > &b, I i, T pt[Topology::dim]) ";
+
+%feature("docstring")  basis1 "double basis1(BasisBase< double, int,
+Quadrilateral4, StandardReferenceElement > &b, int i, double
+pt[Quadrilateral4::dim]) ";
+
+%feature("docstring")  main "int main() ";
+
+
+// File: cpp-templates_85_8cpp.xml
+%feature("docstring")  main "int main() ";
+
+
+// File: cpp-templates_8cpp.xml
+%feature("docstring")  main "int main() ";
+
+
+// File: CPPArray_8hpp.xml
+
+
+// File: CPPArray__unit_81_8cpp.xml
+%feature("docstring")  main "int main() ";
+
+
+// File: CPPArray__unit_81_8hpp.xml
+%feature("docstring")  init "static void init(double val[2], int
+dim[1]) ";
+
+
+// File: CPPArray__unit_8cpp.xml
+%feature("docstring")  init "static void init(double val[2], int
+dim[1]) ";
+
+%feature("docstring")  main "int main() ";
 
 
 // File: Dimensions_8cpp.xml
@@ -11234,6 +12158,12 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 
 
 // File: FieldFunction_8hpp.xml
+
+
+// File: FiniteElement_81_8hpp.xml
+
+
+// File: FiniteElement_8hpp.xml
 
 
 // File: Fixture_8cpp.xml
@@ -11300,6 +12230,9 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: GeometryVerifier_8hpp.xml
 
 
+// File: H1Norm_8hpp.xml
+
+
 // File: HasValue_8hpp.xml
 
 
@@ -11357,7 +12290,17 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: IsInElement_8hpp.xml
 
 
+// File: JacobianUtil_8cpp.xml
+
+
+// File: JacobianUtil_8hpp.xml
+
+
 // File: main-sun_8cpp.xml
+%feature("docstring")  main "int main() ";
+
+
+// File: main_8cpp.xml
 %feature("docstring")  main "int main() ";
 
 
@@ -11423,6 +12366,10 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: Observable_8hpp.xml
 
 
+// File: old-shape_8hpp.xml
+%feature("docstring")  main "int main() ";
+
+
 // File: OptionMask_8hpp.xml
 
 
@@ -11477,6 +12424,39 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: PMMLaplaceSmoother1_8hpp.xml
 
 
+// File: PMMMsqMatrix_8hpp.xml
+
+
+// File: PMMParallelReferenceMeshSmoother_8cpp.xml
+
+
+// File: PMMParallelReferenceMeshSmoother_8hpp.xml
+
+
+// File: PMMParallelReferenceMeshSmoother1_8cpp.xml
+
+
+// File: PMMParallelReferenceMeshSmoother1_8hpp.xml
+
+
+// File: PMMParallelReferenceMeshSmoother2_8cpp.xml
+
+
+// File: PMMParallelReferenceMeshSmoother2_8hpp.xml
+
+
+// File: PMMParallelReferenceMeshSmoother3_8cpp.xml
+
+
+// File: PMMParallelReferenceMeshSmoother3_8hpp.xml
+
+
+// File: PMMParallelShapeImprover_8cpp.xml
+
+
+// File: PMMParallelShapeImprover_8hpp.xml
+
+
 // File: PMMShapeImprover_8cpp.xml
 
 
@@ -11487,6 +12467,9 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 
 
 // File: PMMShapeSizeOrientImprover_8hpp.xml
+
+
+// File: PMMSmootherMetric_8hpp.xml
 
 
 // File: PredicateBasedEdgeAdapter_8hpp.xml
@@ -11576,25 +12559,46 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: RegressionTestPerceptMeshFieldFunction_8cpp.xml
 
 
+// File: RegressionTestSTKMeshMemory_8cpp.xml
+
+
 // File: RegressionTestUniformRefiner_8cpp.xml
 
 
-// File: RTOpPack__ROpGetSubVector_8hpp.xml
+// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__ROpGetSubVector_8hpp.xml
 
 
-// File: RTOpPack__RTOpSubRangeDecorator_8hpp.xml
+// File: build_8dir_2packages_2rtop_2src_2RTOpPack__ROpGetSubVector_8hpp.xml
 
 
-// File: RTOpPack__RTOpT_8hpp.xml
+// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__RTOpSubRangeDecorator_8hpp.xml
 
 
-// File: RTOpPack__RTOpTHelpers_8hpp.xml
+// File: build_8dir_2packages_2rtop_2src_2RTOpPack__RTOpSubRangeDecorator_8hpp.xml
 
 
-// File: RTOpPack__SPMD__apply__op_8hpp.xml
+// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__RTOpT_8hpp.xml
 
 
-// File: RTOpPack__TOpLinearCombination_8hpp.xml
+// File: build_8dir_2packages_2rtop_2src_2RTOpPack__RTOpT_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__RTOpTHelpers_8hpp.xml
+
+
+// File: build_8dir_2packages_2rtop_2src_2RTOpPack__RTOpTHelpers_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__SPMD__apply__op_8hpp.xml
+
+
+// File: build_8dir_2packages_2rtop_2src_2RTOpPack__SPMD__apply__op_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__TOpLinearCombination_8hpp.xml
+
+
+// File: build_8dir_2packages_2rtop_2src_2RTOpPack__TOpLinearCombination_8hpp.xml
 
 
 // File: RunEnvironment_8cpp.xml
@@ -11628,6 +12632,12 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 
 
 // File: SingleTetFixture_8hpp.xml
+
+
+// File: SpacingFieldUtil_8cpp.xml
+
+
+// File: SpacingFieldUtil_8hpp.xml
 
 
 // File: StdMeshObjTopologies_8cpp.xml
@@ -11753,223 +12763,442 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 **argv) ";
 
 
-// File: Thyra__apply__op__helper_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__apply__op__helper_8hpp.xml
 
 
-// File: Thyra__BelosLinearOpWithSolve_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__apply__op__helper_8hpp.xml
 
 
-// File: Thyra__BelosLinearOpWithSolveFactory_8hpp.xml
+// File: build_81_8nogit_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__BelosLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DefaultAddedLinearOp_8hpp.xml
+// File: build_8dir_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__BelosLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DefaultAdjointLinearOpWithSolve_8hpp.xml
+// File: build_81_8nogit_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__BelosLinearOpWithSolveFactory_8hpp.xml
 
 
-// File: Thyra__DefaultBlockedLinearOp_8hpp.xml
+// File: build_8dir_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__BelosLinearOpWithSolveFactory_8hpp.xml
 
 
-// File: Thyra__DefaultBlockedTriangularLinearOpWithSolve_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultAddedLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultBlockedTriangularLinearOpWithSolveFactory_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultAddedLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultClusteredSpmdProductVector_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultAdjointLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DefaultClusteredSpmdProductVectorSpace_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultAdjointLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DefaultColumnwiseMultiVector_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultDiagonalLinearOp_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultDiagonalLinearOpWithSolve_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedTriangularLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DefaultFiniteDifferenceModelEvaluator_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedTriangularLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DefaultIdentityLinearOp_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedTriangularLinearOpWithSolveFactory_8hpp.xml
 
 
-// File: Thyra__DefaultInverseLinearOp_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedTriangularLinearOpWithSolveFactory_8hpp.xml
 
 
-// File: Thyra__DefaultLinearOpSource_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultClusteredSpmdProductVector_8hpp.xml
 
 
-// File: Thyra__DefaultMultipliedLinearOp_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultClusteredSpmdProductVector_8hpp.xml
 
 
-// File: Thyra__DefaultMultiVectorLinearOpWithSolve_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultClusteredSpmdProductVectorSpace_8hpp.xml
 
 
-// File: Thyra__DefaultMultiVectorProductVector_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultClusteredSpmdProductVectorSpace_8hpp.xml
 
 
-// File: Thyra__DefaultMultiVectorProductVectorSpace_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultColumnwiseMultiVector_8hpp.xml
 
 
-// File: Thyra__DefaultPreconditioner_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultColumnwiseMultiVector_8hpp.xml
 
 
-// File: Thyra__DefaultProductMultiVector_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultDiagonalLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultProductVector_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultDiagonalLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultProductVectorSpace_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultDiagonalLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DefaultScaledAdjointLinearOp_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultDiagonalLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DefaultSerialDenseLinearOpWithSolve_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultFiniteDifferenceModelEvaluator_8hpp.xml
 
 
-// File: Thyra__DefaultSerialDenseLinearOpWithSolveFactory_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultFiniteDifferenceModelEvaluator_8hpp.xml
 
 
-// File: Thyra__DefaultSpmdMultiVector_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultIdentityLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultSpmdVector_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultIdentityLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultSpmdVectorSpace_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultInverseLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultSpmdVectorSpaceFactory_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultInverseLinearOp_8hpp.xml
 
 
-// File: Thyra__DefaultZeroLinearOp_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultLinearOpSource_8hpp.xml
 
 
-// File: Thyra__DelayedLinearOpWithSolve_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultLinearOpSource_8hpp.xml
 
 
-// File: Thyra__DelayedLinearOpWithSolveFactory_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultMultipliedLinearOp_8hpp.xml
 
 
-// File: Thyra__describeLinearOp_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultMultipliedLinearOp_8hpp.xml
 
 
-// File: Thyra__DiagonalQuadraticResponseOnlyModelEvaluator_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DiagonalScalarProd_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__DirectionalFiniteDiffCalculator_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorProductVector_8hpp.xml
 
 
-// File: Thyra__EuclideanScalarProd_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorProductVector_8hpp.xml
 
 
-// File: Thyra__GeneralSolveCriteriaBelosStatusTest_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorProductVectorSpace_8hpp.xml
 
 
-// File: Thyra__LinearOpBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorProductVectorSpace_8hpp.xml
 
 
-// File: Thyra__LinearOpDefaultBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultPreconditioner_8hpp.xml
 
 
-// File: Thyra__LinearOpScalarProd_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultPreconditioner_8hpp.xml
 
 
-// File: Thyra__LinearOpTester_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultProductMultiVector_8hpp.xml
 
 
-// File: Thyra__LinearOpWithSolveBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultProductMultiVector_8hpp.xml
 
 
-// File: Thyra__LinearOpWithSolveFactoryBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultProductVector_8hpp.xml
 
 
-// File: Thyra__LinearOpWithSolveTester_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultProductVector_8hpp.xml
 
 
-// File: Thyra__ModelEvaluatorBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultProductVectorSpace_8hpp.xml
 
 
-// File: Thyra__MultiVectorAdapterBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultProductVectorSpace_8hpp.xml
 
 
-// File: Thyra__MultiVectorBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultScaledAdjointLinearOp_8hpp.xml
 
 
-// File: Thyra__MultiVectorDefaultBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultScaledAdjointLinearOp_8hpp.xml
 
 
-// File: Thyra__MultiVectorStdOps_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSerialDenseLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__MultiVectorStdOpsTester_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSerialDenseLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__MultiVectorTester_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSerialDenseLinearOpWithSolveFactory_8hpp.xml
 
 
-// File: Thyra__PreconditionerFactoryBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSerialDenseLinearOpWithSolveFactory_8hpp.xml
 
 
-// File: Thyra__ScalarProdBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdMultiVector_8hpp.xml
 
 
-// File: Thyra__ScalarProdVectorSpaceBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdMultiVector_8hpp.xml
 
 
-// File: Thyra__ScaledAdjointLinearOpBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVector_8hpp.xml
 
 
-// File: Thyra__ScaledModelEvaluator_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVector_8hpp.xml
 
 
-// File: Thyra__Simple2DModelEvaluator_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVectorSpace_8hpp.xml
 
 
-// File: Thyra__SpmdMultiVectorBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVectorSpace_8hpp.xml
 
 
-// File: Thyra__SpmdMultiVectorSerializer_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVectorSpaceFactory_8hpp.xml
 
 
-// File: Thyra__SpmdVectorBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVectorSpaceFactory_8hpp.xml
 
 
-// File: Thyra__SpmdVectorSpaceBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultZeroLinearOp_8hpp.xml
 
 
-// File: Thyra__SpmdVectorSpaceDefaultBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultZeroLinearOp_8hpp.xml
 
 
-// File: Thyra__VectorDefaultBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DelayedLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__VectorSpaceBase_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DelayedLinearOpWithSolve_8hpp.xml
 
 
-// File: Thyra__VectorSpaceDefaultBase_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DelayedLinearOpWithSolveFactory_8hpp.xml
 
 
-// File: Thyra__VectorSpaceTester_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DelayedLinearOpWithSolveFactory_8hpp.xml
 
 
-// File: Thyra__VectorStdOps_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__describeLinearOp_8hpp.xml
 
 
-// File: Thyra__VectorStdOpsTester_8hpp.xml
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__describeLinearOp_8hpp.xml
 
 
-// File: Thyra__VectorTester_8hpp.xml
+// File: build_81_8nogit_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__DiagonalQuadraticResponseOnlyModelEvaluator_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__DiagonalQuadraticResponseOnlyModelEvaluator_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__DiagonalScalarProd_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__DiagonalScalarProd_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DirectionalFiniteDiffCalculator_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DirectionalFiniteDiffCalculator_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__EuclideanScalarProd_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__EuclideanScalarProd_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__GeneralSolveCriteriaBelosStatusTest_8hpp.xml
+
+
+// File: build_8dir_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__GeneralSolveCriteriaBelosStatusTest_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpDefaultBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpDefaultBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpScalarProd_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpScalarProd_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpTester_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpTester_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveFactoryBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveFactoryBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveTester_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveTester_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ModelEvaluatorBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ModelEvaluatorBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorAdapterBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorAdapterBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorDefaultBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorDefaultBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorStdOps_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorStdOps_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorStdOpsTester_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorStdOpsTester_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorTester_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorTester_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__PreconditionerFactoryBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__PreconditionerFactoryBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ScalarProdBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ScalarProdBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ScalarProdVectorSpaceBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ScalarProdVectorSpaceBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ScaledAdjointLinearOpBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ScaledAdjointLinearOpBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ScaledModelEvaluator_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ScaledModelEvaluator_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__Simple2DModelEvaluator_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__Simple2DModelEvaluator_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdMultiVectorBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdMultiVectorBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdMultiVectorSerializer_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdMultiVectorSerializer_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdVectorBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdVectorBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdVectorSpaceBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdVectorSpaceBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdVectorSpaceDefaultBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdVectorSpaceDefaultBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorDefaultBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorDefaultBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorSpaceBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorSpaceBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorSpaceDefaultBase_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorSpaceDefaultBase_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorSpaceTester_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorSpaceTester_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorStdOps_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorStdOps_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorStdOpsTester_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorStdOpsTester_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorTester_8hpp.xml
+
+
+// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorTester_8hpp.xml
 
 
 // File: TopologyVerifier_8cpp.xml
@@ -11978,55 +13207,106 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: TopologyVerifier_8hpp.xml
 
 
-// File: Tpetra__BlockCrsGraph_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__BlockCrsGraph_8hpp.xml
 
 
-// File: Tpetra__BlockMap_8hpp.xml
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__BlockCrsGraph_8hpp.xml
 
 
-// File: Tpetra__BlockMultiVector_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__BlockMap_8hpp.xml
 
 
-// File: Tpetra__CrsGraph_8hpp.xml
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__BlockMap_8hpp.xml
 
 
-// File: Tpetra__CrsMatrix_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__BlockMultiVector_8hpp.xml
 
 
-// File: Tpetra__CrsMatrixMultiplyOp_8hpp.xml
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__BlockMultiVector_8hpp.xml
 
 
-// File: Tpetra__CrsMatrixSolveOp_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__CrsGraph_8hpp.xml
 
 
-// File: Tpetra__Directory_8hpp.xml
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__CrsGraph_8hpp.xml
 
 
-// File: Tpetra__Map_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__CrsMatrix_8hpp.xml
 
 
-// File: Tpetra__MatrixIO_8hpp.xml
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__CrsMatrix_8hpp.xml
 
 
-// File: Tpetra__MultiVector_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__CrsMatrixMultiplyOp_8hpp.xml
 
 
-// File: Tpetra__RowMatrixTransposer_8hpp.xml
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__CrsMatrixMultiplyOp_8hpp.xml
 
 
-// File: Tpetra__VbrMatrix_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__CrsMatrixSolveOp_8hpp.xml
 
 
-// File: Tpetra__Vector_8hpp.xml
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__CrsMatrixSolveOp_8hpp.xml
 
 
-// File: TpetraExt__BlockExtraction_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__Directory_8hpp.xml
 
 
-// File: TpetraExt__MatrixMatrix_8hpp.xml
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__Directory_8hpp.xml
 
 
-// File: TpetraExt__MMHelpers_8hpp.xml
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__Map_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__Map_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2tpetra_2inout_2Tpetra__MatrixIO_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2inout_2Tpetra__MatrixIO_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__MultiVector_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__MultiVector_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__RowMatrixTransposer_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__RowMatrixTransposer_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__VbrMatrix_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__VbrMatrix_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__Vector_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2src_2Tpetra__Vector_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2tpetra_2ext_2TpetraExt__BlockExtraction_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2ext_2TpetraExt__BlockExtraction_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2tpetra_2ext_2TpetraExt__MatrixMatrix_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2ext_2TpetraExt__MatrixMatrix_8hpp.xml
+
+
+// File: build_81_8nogit_2packages_2tpetra_2ext_2TpetraExt__MMHelpers_8hpp.xml
+
+
+// File: build_8dir_2packages_2tpetra_2ext_2TpetraExt__MMHelpers_8hpp.xml
 
 
 // File: TransformPath_8hpp.xml
@@ -12276,10 +13556,19 @@ char **argv) ";
 // File: dir_43b85d1b9756cd92573a05b256534e97.xml
 
 
+// File: dir_39663f98425a89e72081ace7340e200d.xml
+
+
 // File: dir_28fe238ec277346dd5ac9abf6486ecdc.xml
 
 
+// File: dir_c4f432dcc56274f262ee25f6c7e2797d.xml
+
+
 // File: dir_4cd0eb8fce7a6ee8ac0f33e12658ea31.xml
+
+
+// File: dir_6d019fe9a3e912022e34420a98559810.xml
 
 
 // File: dir_93acfb67a15c26e3fe5fe49fc9b7326b.xml
@@ -12288,16 +13577,28 @@ char **argv) ";
 // File: dir_74894c83a9b783e238234574b90570d4.xml
 
 
+// File: dir_ba265262617a39be59e5c0b75c304539.xml
+
+
 // File: dir_165c6557e1301ecb3c9f5905eec3b00b.xml
 
 
+// File: dir_88acda998ade427962a1aa8508daf788.xml
+
+
 // File: dir_920c0bfc63489478efe34b800b46c97f.xml
+
+
+// File: dir_0443bedd395825987c9352c6b26347a0.xml
 
 
 // File: dir_c7c5b2cad158fb171fec82ab94b075cc.xml
 
 
 // File: dir_33761180d013d3a426bf969aabed0981.xml
+
+
+// File: dir_87355dd6c023fe3112a1eb08b5bd3d90.xml
 
 
 // File: dir_97ccff9159689a66d84f5690d42f6e91.xml
@@ -12313,6 +13614,9 @@ char **argv) ";
 
 
 // File: dir_5469e35ff415ec73490a0d10cd6a4da4.xml
+
+
+// File: dir_a0f0fc4a584be87a71e7cbd43b9a7c3b.xml
 
 
 // File: dir_36ebc1658037cfbe2a3bddb93ac684c2.xml
@@ -12342,13 +13646,22 @@ char **argv) ";
 // File: dir_1ee449185ae9f96b294df79597402ef9.xml
 
 
+// File: dir_e64ab482b65c8c2adc5f5c6863c92f30.xml
+
+
 // File: dir_df3262facab5696542d8ae3effebf9e8.xml
+
+
+// File: dir_15365b9e2d352a1ca0edd7cbf7a3464a.xml
 
 
 // File: dir_410c1fe22e0084673b69062c6c54d879.xml
 
 
 // File: dir_073c6910f180136e38f3faaac4e2a78d.xml
+
+
+// File: dir_ff477d759c31d91d840e8f68d4d3307e.xml
 
 
 // File: dir_702756e862c498edd6b289e650bd4f23.xml
@@ -12363,19 +13676,34 @@ char **argv) ";
 // File: dir_45ee8ae98f67f343e71aedeb361668fe.xml
 
 
+// File: dir_2165f1784ae20b5da3935b09d83f066e.xml
+
+
 // File: dir_d558d26576acd1c39a83ffd0505d3402.xml
 
 
 // File: dir_5ac9855eb2a152d35b8c8730350743d8.xml
 
 
+// File: dir_33bc1e7d328ef6eaf2b5b327efca805e.xml
+
+
 // File: dir_fc26ebcb0c645981cb8a320bc0cf8db6.xml
+
+
+// File: dir_128b25ae309c0099aa78423b81222b12.xml
 
 
 // File: dir_e349b3b9e712ee09db2a3cb7f9ac55ed.xml
 
 
+// File: dir_b236f165722599467367314bd533ebb3.xml
+
+
 // File: dir_642888a80233615f89234a856e08879d.xml
+
+
+// File: dir_ed42a66720eeb3d62cedc9bc0b4314bc.xml
 
 
 // File: dir_036f272561d74278959e0ca0a17c87ce.xml
@@ -12387,6 +13715,9 @@ char **argv) ";
 // File: dir_8476efa39462d68fa0fcb0fd9fbc6f41.xml
 
 
+// File: dir_bb76877bacd7903b45d18d5b03d8db4d.xml
+
+
 // File: dir_745a945aedff9456fe32200265e844a9.xml
 
 
@@ -12396,16 +13727,28 @@ char **argv) ";
 // File: dir_e39d2153e012a72ddf68a6c835aa1fb2.xml
 
 
+// File: dir_3befe1e5fb3228176e604f3801f5b895.xml
+
+
 // File: dir_534e19014992359ef56b8dac61596d0e.xml
 
 
 // File: dir_be24f826505eaa65a3c6b4a01e254fe2.xml
 
 
+// File: dir_c3265abd3a68485f5633c533094a6871.xml
+
+
 // File: dir_b0b96e322f3cbdb53a38b8603baaa664.xml
 
 
+// File: dir_b88e0f0f53cb1d5e809f45e5b3718b5a.xml
+
+
 // File: dir_0cb005c1013ddf5c357d41a0c66cb4a8.xml
+
+
+// File: dir_eec3f98673451bab17591b540eb377d4.xml
 
 
 // File: dir_3a8e978858dd8ded4ec2aa714334a98d.xml

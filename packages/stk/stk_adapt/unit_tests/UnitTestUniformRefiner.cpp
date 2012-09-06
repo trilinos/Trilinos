@@ -6,6 +6,8 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
+#include <stk_percept/Percept.hpp>
+
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/PrintTable.hpp>
 
@@ -19,6 +21,14 @@
 #include <stk_percept/function/FieldFunction.hpp>
 #include <stk_percept/function/ConstantFunction.hpp>
 #include <stk_percept/PerceptMesh.hpp>
+
+#if defined ( STK_PERCEPT_HAS_MESQUITE )
+
+#define StackTraceTmp StackTrace
+#undef StackTrace
+#include <stk_percept/mesh/mod/mesquite-interface/SpacingFieldUtil.hpp>
+#define StackTrace StackTraceTmp
+#endif
 
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/UniformRefiner.hpp>
@@ -70,7 +80,8 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
-#if 0
+#define DO_TESTS 0
+#if DO_TESTS
       static int print_infoLevel = 0;
 
       /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
@@ -1819,6 +1830,170 @@ namespace stk {
 
       }
 
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+#if defined ( STK_PERCEPT_HAS_MESQUITE )
+
+      /// Refine a triangle mesh with spacing
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_quad_sierra_spc)
+      {
+        fixture_setup();
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 3)
+          {
+            const unsigned n = 12;
+            //const unsigned nx = n , ny = n , nz = p_size*n ;
+            const unsigned nx = n , ny = n;
+
+            bool createEdgeSets = true;
+            percept::QuadFixture<double > fixture( pm , nx , ny, createEdgeSets);
+            fixture.set_bounding_box(0,1,0,1);
+
+            bool isCommitted = false;
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+            Quad4_Quad4_4 break_quad_to_quad_4(eMesh);
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            //stk::mesh::FieldBase* proc_rank_field_edge =
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+
+            //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
+            //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
+
+            eMesh.add_spacing_fields();
+            //fixture.meta_data.commit();
+            eMesh.commit();
+
+            fixture.generate_mesh();
+
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& node = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+                        double iy = data[1]; // /double(nele);
+                        iy = iy*iy;
+                        data[1] = iy; // *double(nele);
+                      }
+                  }
+              }
+            SpacingFieldUtil sfu(eMesh);
+            sfu.compute_spacing_field();
+
+            //eMesh.print_info("quad mesh", 5);
+            eMesh.print_info("quad mesh");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_quad3_spc_0.e");
+
+            UniformRefiner breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
+            breaker.doBreak();
+
+            //eMesh.print_info("quad mesh refined", 5);
+            eMesh.print_info("quad mesh refined");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_quad3_spc_1.e");
+
+            // end_demo
+          }
+
+      }
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      /// Refine a triangle mesh with spacing
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_sierra_spc)
+      {
+        fixture_setup();
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 3)
+          {
+            const unsigned n = 12;
+            //const unsigned nx = n , ny = n , nz = p_size*n ;
+            const unsigned nx = n , ny = n;
+
+            bool createEdgeSets = true;
+            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+            fixture.set_bounding_box(0,1,0,1);
+
+            bool isCommitted = false;
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+            Tri3_Tri3_4 break_tri_to_tri_4(eMesh);
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            //stk::mesh::FieldBase* proc_rank_field_edge =
+            eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+
+            //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
+            //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
+
+            eMesh.add_spacing_fields();
+            //fixture.meta_data.commit();
+            eMesh.commit();
+
+            fixture.generate_mesh();
+
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& node = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+                        double iy = data[1]; // /double(nele);
+                        iy = iy*iy;
+                        data[1] = iy; // *double(nele);
+                      }
+                  }
+              }
+            SpacingFieldUtil sfu(eMesh);
+            sfu.compute_spacing_field();
+
+            //eMesh.print_info("tri mesh", 5);
+            eMesh.print_info("tri mesh");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri3_spc_0.e");
+
+            UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
+            breaker.doBreak();
+
+            //eMesh.print_info("tri mesh refined", 5);
+            eMesh.print_info("tri mesh refined");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri3_spc_1.e");
+
+            // end_demo
+          }
+
+      }
+
+#endif
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================

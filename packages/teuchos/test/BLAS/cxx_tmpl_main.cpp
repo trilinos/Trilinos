@@ -99,7 +99,7 @@ using Teuchos::ScalarTraits;
 #define NRM2TESTS  5
 #define SCALTESTS  5
 #define GEMVTESTS  5
-#define GERTESTS   0
+#define GERTESTS   5
 #define TRMVTESTS  5
 #define GEMMTESTS  5
 #define SYMMTESTS  5

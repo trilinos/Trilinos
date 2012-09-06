@@ -60,7 +60,7 @@ namespace stk {
     public:
       PMMSmootherMetricUntangle(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {
         //int spatialDim= eMesh->get_spatial_dim();
-        m_beta_mult = 0.05*2;
+        m_beta_mult = 0.05;
       }
       virtual double length_scaling_power() { return 3.0; }
 
@@ -134,10 +134,10 @@ namespace stk {
       }
     };
 
-    class PMMSmootherMetricScaledJacobian0 : public PMMSmootherMetric
+    class PMMSmootherMetricScaledJacobianNodal : public PMMSmootherMetric
     {
     public:
-      PMMSmootherMetricScaledJacobian0(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) 
+      PMMSmootherMetricScaledJacobianNodal(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) 
       { m_is_nodal=true; m_combine=COP_MAX; }
       virtual double length_scaling_power() { return 1.0; }
 
@@ -188,10 +188,10 @@ namespace stk {
       }
     };
 
-    class PMMSmootherMetricScaledJacobian : public PMMSmootherMetric
+    class PMMSmootherMetricScaledJacobianElemental : public PMMSmootherMetric
     {
     public:
-      PMMSmootherMetricScaledJacobian(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
+      PMMSmootherMetricScaledJacobianElemental(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
       virtual double length_scaling_power() { return 1.0; }
 
       virtual double metric(stk::mesh::Entity& element, bool& valid)
@@ -207,24 +207,30 @@ namespace stk {
         double val=0.0, val_shape=0.0;
 
         val_shape = 0.0;
+        //val_shape = std::numeric_limits<double>::max();
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double detAi = jacA.m_detJ[i];
             double detSAi = jacSA.m_detJ[i];
-            double detWi = jacW.m_detJ[i];
+            //double detWi = jacW.m_detJ[i];
+            double FAi = Frobenius(jacA.m_detJ[i]);
+            double FWi = Frobenius(jacW.m_detJ[i]);
             if (detAi < 0)
               {
                 valid = false;
               }
             double shape_metric = 0.0;
             //MsqMatrix<3,3>& A = jacA.m_J[i];
-            double scale_factor = detWi;
-            scale_factor = 1.0;
-            double sign_SA = (detSAi > 0.0 ? 1.0 : -1.0);
-            double fac = 0.2;
-            shape_metric = scale_factor* (detSAi > fac ? fac*fac : sign_SA*detSAi*detSAi);
+            double scale_factor = (FAi < FWi ? FAi/FWi : (FAi > 1.e-6? FWi / FAi : 1.0));
+            scale_factor = FAi/FWi;
+            //scale_factor = 1.0;
+            //double sign_SA = (detSAi > 0.0 ? 1.0 : -1.0);
+            //double fac = 0.2;
+            //shape_metric = scale_factor* (detSAi > fac ? fac : detSAi);
+            shape_metric = scale_factor*detSAi;
             val_shape += shape_metric;
-            //std::cout << "tmp srk i= " << i << " detAi = " << detAi << " detSAi= " << detSAi << " shape_metric= " << shape_metric << " val_shape= " << val_shape << std::endl;
+            //val_shape = std::min(val_shape, shape_metric);
+            //std::cout << "tmp srk i= " << i << " detAi = " << detAi << " detSAi= " << detSAi << " shape_metric= " << shape_metric << " val_shape= " << val_shape << " scale_factor= " << scale_factor << " FAi= " << FAi << " FWi= " << FWi << std::endl;
           }
 
         val = -val_shape;

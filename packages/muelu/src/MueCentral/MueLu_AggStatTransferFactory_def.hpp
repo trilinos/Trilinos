@@ -97,7 +97,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggStatTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
 
-    FactoryMonitor m(*this, "VariableTransferFactory", coarseLevel);
+    FactoryMonitor m(*this, "AggStatTransferFactory", coarseLevel);
 
     // TODO find something smarter than distinction by variable name
     // for example one could use the underlaying type of the variable

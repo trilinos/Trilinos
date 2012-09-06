@@ -422,8 +422,13 @@ evaluateFields(typename Traits::EvalData workset)
 
                // if you didn't find one before, add it to the hash table
                if(subJac==Teuchos::null) {
-                  Teuchos::RCP<Epetra_Operator> eOp
-                     = Thyra::get_Epetra_Operator(*Jac->getNonconstBlock(blockIndex.first,blockIndex.second)); 
+                  Teuchos::RCP<Thyra::LinearOpBase<double> > tOp = Jac->getNonconstBlock(blockIndex.first,blockIndex.second); 
+
+                  // block operator is null, don't do anything (it is excluded)
+                  if(Teuchos::is_null(tOp))
+                     continue;
+
+                  Teuchos::RCP<Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*tOp);
                   subJac = rcp_dynamic_cast<Epetra_CrsMatrix>(eOp,true);
                   jacEpetraBlocks[blockIndex] = subJac;
                }

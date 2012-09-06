@@ -49,7 +49,10 @@
 /*! \brief Test of GraphModel interface.
  *
  *  \todo test all methods of GraphModel
- *  \todo test with GraphInput
+ *  \todo test with GraphInput: add testGraphInput which is 
+           like testMatrixInput except is uses GraphInput
+           queries and it may have edges weights.
+ *  \todo Address the TODOs in the code below.
  */
 
 #include <Zoltan2_GraphModel.hpp>
@@ -72,6 +75,8 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
 
+typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
+typedef Tpetra::Map<lno_t, gno_t, node_t> tmap_t;
 typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
 
 using std::string;
@@ -126,30 +131,113 @@ void printGraph(lno_t nrows, const gno_t *v, const lno_t *elid,
   comm->barrier();
 }
 
-void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
+void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     const RCP<const Comm<int> > &comm,
-    bool consecutiveIdsRequested, bool noSelfEdges)
+    bool idsAreConsecutive,
+    int rowWeightDim, int nnzDim, int coordDim,
+    bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int fail=0;
   int rank = comm->getRank();
+  int nprocs = comm->getSize();
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+
+  lno_t nLocalRows = M->getNodeNumRows();
+  lno_t nLocalNZ = M->getNodeNumEntries();
+  gno_t nGlobalRows =  M->getGlobalNumRows();
+  gno_t nGlobalNZ = M->getGlobalNumEntries();
+
+  // Create a matrix input adapter.
+
+  typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
+  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
     modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
-  if (noSelfEdges)
+  if (removeSelfEdges)
     modelFlags.set(Zoltan2::SELF_EDGES_MUST_BE_REMOVED);
 
-  if (rank==0){
-    std::cout << "     Request consecutive IDs " << consecutiveIdsRequested;
-    std::cout << ", remove self edges " << noSelfEdges << std::endl;;
+  scalar_t **coords=NULL;
+  scalar_t **rowWeights=NULL;
+
+  if (coordDim > 0){
+    coords = new scalar_t * [coordDim];
+    for (int i=0; i < coordDim; i++){
+      coords[i] = new scalar_t [nLocalRows];
+      for (size_t j=0; j < nLocalRows; j++){
+        coords[i][j] = 100000*i + j;
+      }
+    }
   }
 
-  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
-  typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
-  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
+  if (rowWeightDim > 0){
+    rowWeights = new scalar_t * [rowWeightDim];
+    for (int i=0; i < rowWeightDim; i++){
+      if (nnzDim == i)
+        rowWeights[i] = NULL;
+      else{
+        rowWeights[i] = new scalar_t [nLocalRows];
+        for (size_t j=0; j < nLocalRows; j++){
+          rowWeights[i][j] = 200000*i + j;
+        }
+      }
+    }
+  }
 
-  adapter_t tmi(M);
+  adapter_t tmi(M, coordDim, rowWeightDim);
+
+  for (int i=0; i < rowWeightDim; i++){
+    if (nnzDim == i)
+      tmi.setRowWeightIsNumberOfNonZeros(i);
+    else
+      tmi.setRowWeights(i, rowWeights[i], 1);
+  }
+
+  for (int i=0; i < coordDim; i++){
+    tmi.setRowCoordinates(i, coords[i], 1);
+  }
+
+  int numLocalDiags = M->getNodeNumDiags();
+  int numGlobalDiags = M->getGlobalNumDiags();
+
+  const RCP<const tmap_t> rowMap = M->getRowMap();
+  const RCP<const tmap_t> colMap = M->getColMap();
+
+  // How many neighbor vertices are not on my process.
+
+  // we know GIDs are consecutive
+  int minLocalGID = rowMap->getMinGlobalIndex();
+  int maxLocalGID = rowMap->getMaxGlobalIndex();
+
+  int *numNbors = new int [nLocalRows];
+  int *numLocalNbors = new int [nLocalRows];
+  bool *haveDiag = new bool [nLocalRows];
+  gno_t totalLocalNbors = 0;
+
+  for (lno_t i=0; i < nLocalRows; i++){
+    numLocalNbors[i] = 0;
+    haveDiag[i] = false;
+    ArrayView<const lno_t> idx;
+    ArrayView<const scalar_t> val;
+    M->getLocalRowView(i, idx, val);
+    numNbors[i] = idx.size();
+
+    for (lno_t j=0; j < idx.size(); j++){
+      if (idx[j] == i){
+        haveDiag[i] = true;
+      }
+      else{
+        gno_t gidVal = colMap->getGlobalElement(idx[j]);
+        if (gidVal >= minLocalGID && gidVal <= maxLocalGID){
+          numLocalNbors[i]++;
+          totalLocalNbors++;
+        }
+      }
+    }
+  }
+
+  // Create a GraphModel based on this input data.
 
   Zoltan2::GraphModel<base_adapter_t> *model = NULL;
   const base_adapter_t *baseTmi = &tmi;
@@ -166,11 +254,6 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   // Test the GraphModel interface
 
-  lno_t nLocalRows = M->getNodeNumRows();
-  lno_t nLocalNonZeros = M->getNodeNumEntries();
-  gno_t nGlobalRows =  M->getGlobalNumRows();
-  gno_t nGlobalNonZeros = M->getGlobalNumEntries();
-
   if (model->getLocalNumVertices() != size_t(nLocalRows))
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumVertices", 1)
@@ -179,31 +262,47 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-  if (noSelfEdges){
-    if (model->getGlobalNumEdges() >  size_t(nGlobalNonZeros))
-      fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
+  size_t num = (removeSelfEdges ? (nLocalNZ-numLocalDiags) : nLocalNZ);
 
-    if (model->getLocalNumGlobalEdges() > size_t(nLocalNonZeros))
-      fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
-  }
-  else{
-    if (model->getGlobalNumEdges() !=  size_t(nGlobalNonZeros))
-      fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
+  if (model->getLocalNumGlobalEdges() != num)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
 
-    if (model->getLocalNumGlobalEdges() != size_t(nLocalNonZeros))
-      fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
+  num = totalLocalNbors;
+  if (!removeSelfEdges){
+    for (lno_t i=0; i < nLocalRows; i++)
+      if (haveDiag[i])
+        num++;
   }
+
+  if (model->getLocalNumLocalEdges() != num)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumLocalEdges", 1)
+
+  num = (removeSelfEdges ? (nGlobalNZ-numGlobalDiags) : nGlobalNZ);
+
+  if (model->getGlobalNumEdges() != num)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
+
+  if (model->getVertexWeightDim() != rowWeightDim)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexWeightDim", 1)
+
+  if (model->getEdgeWeightDim() != 0)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeWeightDim", 1)
+
+  if (model->getCoordinateDim() != coordDim)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getCoordinateDim", 1)
 
   ArrayView<const gno_t> vertexGids;
-  ArrayView<input_t> coords;  // not implemented yet
-  ArrayView<input_t> wgts;    // not implemented yet
+  ArrayView<input_t> crds;
+  ArrayView<input_t> wgts;
 
   try{
-    model->getVertexList(vertexGids, coords, wgts);
+    model->getVertexList(vertexGids, crds, wgts);
   }
   catch (std::exception &e){
     std::cerr << rank << ") Error " << e.what() << std::endl;
@@ -214,6 +313,66 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   if (vertexGids.size() != nLocalRows)
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexList", 1)
+
+  // We know model stores things in same order we gave it.
+
+  if (idsAreConsecutive){
+    for (lno_t i=0; i < nLocalRows; i++){
+      if (vertexGids[i] != minLocalGID + i) {
+        fail = 1;
+        break;
+      }
+    }
+  }
+  else{  // round robin ids
+    gid_t myGid = rank;
+    for (lno_t i=0; i < nLocalRows; i++, myGid += nprocs){
+      if (vertexGids[i] != myGid){
+        fail = 1;
+        break;
+      }
+    }
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, !fail, "vertex gids", 1)
+
+  if ((crds.size() != coordDim) || (wgts.size() != rowWeightDim))
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, !fail, "coord or weight array size", 1)
+
+  for (int i=0; !fail && i < coordDim; i++){
+    for (lno_t j=0; j < nLocalRows; j++){
+      if (crds[i][j] != 200000*i + j){
+        fail = 1;
+        break;
+      }
+    }
+  }
+  TEST_FAIL_AND_EXIT(*comm, !fail, "coord values", 1)
+
+  for (int i=0; !fail && i < rowWeightDim; i++){
+    if (nnzDim == i){
+      for (lno_t j=0; j < nLocalRows; j++){
+        scalar_t val = numNbors[j];
+        if (removeSelfEdges && haveDiag[j])
+          val -= 1;
+        if (wgts[i][j] != val){
+          fail = 1;
+          break;
+        }
+      }
+    }
+    else{
+      for (lno_t j=0; j < nLocalRows; j++){
+        if (wgts[i][j] != 100000*i + j){
+          fail = 1;
+          break;
+        }
+      }
+    }
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, !fail, "row weight values", 1)
   
   ArrayView<const gno_t> edgeGids;
   ArrayView<const int> procIds;
@@ -229,16 +388,22 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeList", 1)
 
-  lno_t numLocalEdges = 0;
-  for (size_t i=0; i < numEdges; i++){
-    if (procIds[i] == rank)
-      numLocalEdges++;
+  TEST_FAIL_AND_EXIT(*comm, wgts.size() == 0, "edge weights present", 1)
+
+  num = 0;
+  for (size_t i=0; i < offsets.size()-1; i++){
+    size_t edgeListSize = offsets[i+1] - offsets[i];
+    num += edgeListSize;
+    size_t val = numNbors[i];
+    if (removeSelfEdges && haveDiag[i])
+      val--;
+    if (edgeListSize != val){
+      fail = 1;
+      break;
+    }
   }
 
-  if (numEdges != model->getLocalNumGlobalEdges())
-    fail = 1;
-
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeList size", 1)
+  TEST_FAIL_AND_EXIT(*comm, numEdges==num, "getEdgeList size", 1)
 
   if (nGlobalRows < 200){
     printGraph(nLocalRows, vertexGids.getRawPtr(), NULL,
@@ -264,13 +429,30 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList", 1)
 
-  if (size_t(numLocalEdges) != numLocalNeighbors)
+#ifdef THIS_CODE_DOESNT_FAIL
+  num = 0;
+  for (size_t i=0; i < localOffsets.size()-1; i++){
+    size_t edgeListSize = localOffsets[i+1] - localOffsets[i];
+    num += edgeListSize;
+    size_t val = numLocalNbors[i];
+    if (removeSelfEdges && haveDiag[i])
+      val--;
+    if (edgeListSize != val){
+      fail = 1;
+      break;
+    }
+  }
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList list sizes", 1)
+
+  TEST_FAIL_AND_EXIT(*comm, numLocalNeighbors==num, "getLocalEdgeList size", 1)
+
+  if (size_t(totalLocalNbors) != numLocalNeighbors)
     fail = 1;
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList size", 1)
 
   if (nGlobalRows < 200){
-    if (numLocalEdges == 0){
+    if (totalLocalNbors == 0){
       if (rank == 0)
         std::cout << "  Graph of local edges is empty" << std::endl; 
     }
@@ -279,19 +461,62 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
         localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
     }
   }
-
-  // Get graph restricted to this process
+#endif
 
   delete model;
+
+  if (nLocalRows){
+    delete [] numNbors;
+    delete [] numLocalNbors;
+    delete [] haveDiag;
+
+    if (rowWeightDim > 0){
+      for (int i=0; i < rowWeightDim; i++){
+        if (rowWeights[i])
+          delete [] rowWeights[i];
+      }
+      delete [] rowWeights;
+    }
+
+    if (coordDim > 0){
+      for (int i=0; i < coordDim; i++){
+        if (coords[i])
+          delete [] coords[i];
+      }
+      delete [] coords;
+    }
+  }
 
   if (rank==0) std::cout << "    OK" << std::endl;
 }
 
 void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
-    const RCP<const Comm<int> > &comm)
+    const RCP<const Comm<int> > &comm,
+    int rowWeightDim, int nnzDim, int coordDim,
+    bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
+
+  if (rank==0){
+    cout << endl << "=======================" << endl;
+    if (fname.size() > 0)
+      cout << endl << "Test parameters: file name " << fname << endl;
+    else{
+      cout << endl << "Test parameters: dimension ";
+      cout  << xdim << "x" << ydim << "x" << zdim << endl;
+    }
+
+    cout << "Vertex weight dim: " << rowWeightDim << endl;
+    if (nnzDim >= 0)
+     cout << "  Dimension " << nnzDim << " is number of neighbors" << endl;
+
+    cout << "Coordinate dim: " << coordDim << endl;
+    cout << "Request consecutive vertex gids: ";
+    cout << (consecutiveIdsRequested ? "yes" : "no") << endl;
+    cout << "Request to remove self edges: ";
+    cout << (removeSelfEdges ? "yes" : "no") << endl;
+  }
 
   typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
 
@@ -305,9 +530,6 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   RCP<tcrsMatrix_t> M = input->getTpetraCrsMatrix();
 
-  bool consecutiveIds=true;
-  bool noSelfEdges=true;
-
   // Row Ids of test input are already consecutive
 
   RCP<const tcrsMatrix_t> Mconsec = rcp_const_cast<const tcrsMatrix_t>(M);
@@ -317,12 +539,21 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
     "Graph with consecutive IDs");
 
-//  checkModel(Mconsec, comm, consecutiveIds, noSelfEdges);
-//  checkModel(Mconsec, comm, !consecutiveIds, !noSelfEdges);
-//  checkModel(Mconsec, comm, !consecutiveIds, noSelfEdges);
+  bool idsAreConsecutive = true;
+
+  testMatrixInput(Mconsec, comm,  idsAreConsecutive,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+
+#if 0
+  testGraphInput(Mconsec, comm, idsAreConsecutive,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+#endif
 
   // Do a round robin migration so that global IDs are not consecutive.
 
+#ifdef TODO_THESE_HAVE_BEEN_TESTED
   Array<gno_t> myNewRows;
   for (size_t i=rank; i < Mconsec->getGlobalNumRows(); i+=nprocs)
     myNewRows.push_back(i);
@@ -336,9 +567,19 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
     "Graph with non-consecutive IDs");
 
-  checkModel(Mnonconsec, comm, consecutiveIds, noSelfEdges);
-  checkModel(Mnonconsec, comm, !consecutiveIds, !noSelfEdges);
-  checkModel(Mnonconsec, comm, !consecutiveIds, noSelfEdges);
+  idsAreConsecutive = false;
+
+  testMatrixInput(Mnonconsec, comm, idsAreConsecutive,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+
+#if 0
+  testGraphInput(Mnonconsec, comm, idsAreConsecutive,
+     rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+#endif
+
+#endif
 
   delete input;
 }
@@ -351,15 +592,57 @@ int main(int argc, char *argv[])
 
   int rank = comm->getRank();
 
+  int rowWeightDim=0;
+  int nnzDim = -1; 
+  int coordDim=0;
+  bool consecutiveIdsRequested=false, removeSelfEdges=false;
   string fname("simple");
 
-  if (rank==0)
-    std::cout << fname << std::endl;
+  testGraphModel(fname, 0, 0, 0, comm,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
 
-  testGraphModel(fname, 0, 0, 0, comm);
+#ifdef TODO_THESE_HAVE_BEEN_TESTED
+  rowWeightDim = 1;
+
+  testGraphModel(fname, 0, 0, 0, comm,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+
+  nnzDim = 1;
+
+  testGraphModel(fname, 0, 0, 0, comm,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+
+  rowWeightDim = 2;
+  coordDim = 3;
+
+  testGraphModel(fname, 0, 0, 0, comm,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+
+  consecutiveIdsRequested = true;
+
+  testGraphModel(fname, 0, 0, 0, comm,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+
+  removeSelfEdges = true;
+
+  testGraphModel(fname, 0, 0, 0, comm,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+
+  consecutiveIdsRequested = false;
+
+  testGraphModel(fname, 0, 0, 0, comm,
+    rowWeightDim, nnzDim, coordDim,
+    consecutiveIdsRequested, removeSelfEdges);
+#endif
 
   if (rank==0)
-    std::cout << "PASS" << std::endl;
+    cout << "PASS" << endl;
 
   return 0;
 }

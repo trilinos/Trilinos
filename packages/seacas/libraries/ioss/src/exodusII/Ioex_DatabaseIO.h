@@ -322,6 +322,9 @@ namespace Ioex {
     int64_t add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity, int64_t position=0);
     int64_t get_side_connectivity(const Ioss::SideBlock* fb, int64_t id, int64_t side_count,
 			      void *fconnect, bool map_ids) const;
+    template <typename INT>
+      int64_t get_side_connectivity_internal(const Ioss::SideBlock* fb, int64_t id, int64_t side_count,
+					     INT *fconnect, bool map_ids) const;
     int64_t get_side_distributions(const Ioss::SideBlock* fb, int64_t id,
 			       int64_t side_count, double *dist_fact, size_t data_size) const;
 

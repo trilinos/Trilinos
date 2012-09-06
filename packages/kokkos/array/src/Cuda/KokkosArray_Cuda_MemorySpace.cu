@@ -194,7 +194,11 @@ size_t CudaMemorySpace::preferred_alignment(
 {
   const size_t alignment = Impl::CudaTraits::WarpSize * sizeof(Cuda::size_type);
 
-  if ( 0 == alignment % value_size ) {
+  // If the array is larger than the warp-alignment
+  // then align the count on the warp boundary.
+
+  if ( alignment < value_size * value_count &&
+       0 == alignment % value_size ) {
     const size_t align = alignment / value_size ;
     const size_t rem   = value_count % align ;
     if ( rem ) value_count += align - rem ;

@@ -1,34 +1,53 @@
 /*!
-\mainpage Belos: A Linear Solvers Package
+\mainpage Belos: An Iterative Linear Solvers Package
 
-%Belos is a powerful, extensible and interoperable C++ framework for the
-numerical solution of large-scale linear systems of equations. The motivation 
-for this framework is to provide a generic interface to a collection of algorithms for
-solving large-scale linear problems. %Belos' interoperability results
-from its understanding of operators and vectors as opaque objects---these
-objects are accessed only via elementary operations. Hence the user has the
-flexibility to specify the data representation for operators and vectors and
-may so leverage any existing software investment. This mechanism is
-accomplished via the \ref belos_opvec_interfaces "Belos Operator/Vector abstract interface".
-Current interfaces available include Thyra, Epetra and Tpetra. As a result, any
-existing code employing Thyra, Epetra or Tpetra operators and vectors (such as other
-packages in Trilinos) may also be used in conjunction with %Belos.
+%Belos is an extensible and interoperable C++ framework for the
+numerical solution of large-scale linear systems of equations.  It
+provides a collection of iterative linear solver algorithms, which
+work for any combination of matrix, preconditioner, and vector types
+which make sense together.  
 
-The \ref belos_solver_framework "Belos linear solver framework" describes solver
-managers that provide efficient, convenient, and powerful computational methods
-for solving large-scale linear systems of equations. %Belos' power is a result of the
-distribution of functionality across different computational entities in the
-framework: orthogonalization, iterations, stopping criteria, restarting methodologies, etc.
-%Belos' extensibility comes via the abstract interfaces describing these entities. 
-%Belos currently provides a robust set of options, and users are able to expand this 
-set to suit specific research and/or application needs.
-The ability to interact directly with these objects provides great flexibility in computation, 
-while the existence of solver managers allow convenient programming for standard use cases.
+%Belos' is <it>interoperable</it> because it accesses matrices,
+preconditioners, and vectors as opaque objects with simple interfaces.
+These interfaces do not depend on the internal representation of these
+objects.  %Belos' solvers only use matrices and preconditioners as
+black-box "operators" that take one or more vectors as input, and
+return the same number of vectors as output.  They only access vectors
+via a simple interface for adding vectors together or computing their
+inner products or norms.
+
+We provide implementations of operator and vector interfaces for
+Epetra, Tpetra, and Thyra objects.  As a result, any existing code
+employing Epetra, Tpetra, or Thyra operators and vectors (such as
+other packages in Trilinos) may also be used in conjunction with
+%Belos.  %Belos is <it>extensible</it> because users may define this
+interface for their own operators and vectors.  This allows them to
+use any %Belos solver with their objects without changing a line of
+%Belos code.  Defining this interface requires only a modest effort,
+and %Belos provides plenty of examples.  For more details, please
+refer to the \ref belos_opvec_interfaces "Belos Operator/Vector
+abstract interface".
+
+The \ref belos_solver_framework "Belos linear solver framework"
+describes solver managers that provide efficient, convenient, and
+powerful computational methods for solving large-scale linear systems
+of equations. %Belos' power is a result of the distribution of
+functionality across different computational entities in the
+framework, including orthogonalization, iterations, stopping criteria,
+and restarting methodologies.  %Belos' extensibility comes via the
+abstract interfaces describing these entities.  %Belos currently
+provides a robust set of options, and users are able to expand this
+set to suit specific research and/or application needs.  The ability
+to interact directly with these objects provides great flexibility in
+computation, while the existence of solver managers allow convenient
+programming for standard use cases.
 
 \section solvers Current Linear Solvers 
 
-%Belos provides a framework capable of solving a wide variety of linear systems of equations. 
-%Belos can currently solve complex and real, Hermitian and non-Hermitian, linear problems, via the following included methods:
+%Belos provides a framework capable of solving a wide variety of
+linear systems of equations.  %Belos can currently solve complex and
+real, Hermitian and non-Hermitian, linear problems, via the following
+included solvers:
 
    <ul>
    <li>Single-vector and block GMRES
@@ -43,14 +62,27 @@ while the existence of solver managers allow convenient programming for standard
    The following people have contributed to the development of %Belos:
 
    <ul>
-     <li> <a href="http://www.csm.ornl.gov/~cbaker">Chris Baker</a>, Oak Ridge National Lab
-     <li> <a href="http://www.sandia.gov/~maherou">Mike Heroux</a>, Sandia National Labs
-     <li> David Day, Sandia National Labs 
+     <li> <a href="http://www.csm.ornl.gov/~cbaker">Chris Baker</a>, Oak Ridge National Laboratory
+     <li> <a href="http://www.sandia.gov/~maherou">Mike Heroux</a>, Sandia National Laboratory
+     <li> David Day, Sandia National Laboratory
      <li> <a href="http://www.math.ttu.edu/~vhowle">Vicki Howle</a>, Texas Tech University
-     <li> <a href="http://www.sandia.gov/~rblehou">Rich Lehoucq</a>, Sandia National Labs
-     <li> <a href="http://www.sandia.gov/~mlparks">Mike Parks</a>, Sandia National Labs
-     <li> <a href="http://www.cs.sandia.gov/~hkthorn/">Heidi Thornquist</a>, Sandia National Labs
+     <li> <a href="http://www.sandia.gov/~rblehou">Rich Lehoucq</a>, Sandia National Laboratory
+     <li> <a href="http://www.sandia.gov/~mlparks">Mike Parks</a>, Sandia National Laboratory
+     <li> <a href="http://www.cs.sandia.gov/~hkthorn/">Heidi Thornquist</a>, Sandia National Laboratory
+     <li> <a href="http://www.cs.berkeley.edu/~mhoemmen/">Mark Hoemmen</a>, Sandia National Laboratory
+     <li> Nico Schloemer, Universitaet Antwerpen
    </ul>
+
+\section starting_place Where to start
+
+A good place for new users to start is with Belos::SolverFactory.
+This factory class lets the user ask for the Belos solver they want by
+its string name.  For example, you can ask for "GMRES" or "CG" by name
+and the SolverFactory will create that solver, without you needing to
+know the name of the corresponding class in Belos.  You may also pass
+parameters (via Teuchos::ParameterList) to the solver at this time.
+All solvers that SolverFactory creates implement the
+Belos::SolverManager interface (which see).
 
 \section belos_browser Browse all of Belos as a single doxygen collection
 

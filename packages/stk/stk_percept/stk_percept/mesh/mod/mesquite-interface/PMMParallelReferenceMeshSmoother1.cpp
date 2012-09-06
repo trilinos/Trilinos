@@ -136,7 +136,8 @@ namespace stk {
         {
           return true;
         }
-      if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
+      //if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
+      if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
           return true;
         }      
@@ -268,14 +269,23 @@ namespace stk {
                               coord_current[idim] += eps1;
                               bool pvalid=false, mvalid=false;
                               double mp = metric(element, pvalid);
-                              coord_current[idim] -= 2.0*eps1;
+                              const bool second_order = true;
+                              if (second_order)
+                                coord_current[idim] -= 2.0*eps1;
+                              else
+                                coord_current[idim] = cc;
                               double mm = metric(element, mvalid);
                               coord_current[idim] = cc;
                               double dd = 0.0;
                               //if ((pvalid && mvalid) || m_stage == 0)
-                              {
-                                dd = (mp - mm)/(2*eps1);
-                              }
+                              if (second_order)
+                                {
+                                  dd = (mp - mm)/(2*eps1);
+                                }
+                              else
+                                {
+                                  dd = (mp - mm)/(eps1);
+                                }
                               gsav[idim] = dd;
                               //if (std::fabs(mp) > 1.e-10) std::cout << "tmp srk mp = " << mp << " mm= " << mm << " dd= " << dd << std::endl;
 
@@ -653,8 +663,23 @@ namespace stk {
                       }
                   } 
               }
+
+            // try over-relaxation
+            if (0)
+              {
+                double an = alpha*1.5;
+                //double fa = total_metric(mesh, alpha, 1.0, total_valid);
+                double fn = total_metric(mesh, an, 1.0, total_valid);
+                if (fn < metric_0 && total_valid)
+                  {
+                    PRINT_1("tmp srk found accelerated alpha = " << an );
+                    alpha = an;
+                  }
+              }
+
           }
       }
+
 
       /// x = x + alpha*d
       m_alpha = alpha;
@@ -710,9 +735,8 @@ namespace stk {
 
 
       // FIXME
-      //int N = num_nodes;
-      //if (m_iter == N || cg_beta <= 0.0) 
-      if (cg_beta <= 0.0 || restarted) 
+      int N = m_num_nodes;
+      if (m_iter % N == 0 || cg_beta <= 0.0 || restarted) 
         {
           /// d = s
           eMesh->copy_field(cg_d_field, cg_s_field);

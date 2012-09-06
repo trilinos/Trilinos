@@ -386,6 +386,8 @@ Data and other attributes defined here:<br>
 <dl><dt><strong>__getattr__</strong> <em>lambda</em> self, name</dt></dl>
 
 <dl><dt><a name="BulkData-__init__"><strong>__init__</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-__init__">__init__</a>(self,&nbsp;MetaData&nbsp;mesh_meta_data,&nbsp;ParallelMachine&nbsp;parallel,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;unsigned&nbsp;int&nbsp;bucket_max_size&nbsp;=&nbsp;1000,&nbsp;bool&nbsp;use_memory_pool&nbsp;=&nbsp;True)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
+<a href="#BulkData-__init__">__init__</a>(self,&nbsp;MetaData&nbsp;mesh_meta_data,&nbsp;ParallelMachine&nbsp;parallel,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;unsigned&nbsp;int&nbsp;bucket_max_size&nbsp;=&nbsp;1000)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
 <a href="#BulkData-__init__">__init__</a>(self,&nbsp;MetaData&nbsp;mesh_meta_data,&nbsp;ParallelMachine&nbsp;parallel)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a></tt></dd></dl>
 
@@ -436,6 +438,8 @@ Data and other attributes defined here:<br>
 <dl><dt><a name="BulkData-entity_comm_sharing"><strong>entity_comm_sharing</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-entity_comm_sharing">entity_comm_sharing</a>(self,&nbsp;EntityKey&nbsp;key)&nbsp;-&gt;&nbsp;PairIterEntityComm</tt></dd></dl>
 
 <dl><dt><a name="BulkData-entity_comm_swap"><strong>entity_comm_swap</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-entity_comm_swap">entity_comm_swap</a>(self,&nbsp;EntityKey&nbsp;key1,&nbsp;EntityKey&nbsp;key2)</tt></dd></dl>
+
+<dl><dt><a name="BulkData-final_modification_end"><strong>final_modification_end</strong></a>(self)</dt><dd><tt><a href="#BulkData-final_modification_end">final_modification_end</a>(self)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
 
 <dl><dt><a name="BulkData-generate_new_entities"><strong>generate_new_entities</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-generate_new_entities">generate_new_entities</a>(self,&nbsp;std::vector&lt;(size_t,std::allocator&lt;(size_t)&gt;)&gt;&nbsp;requests,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;std::vector&lt;(p.stk::mesh::Entity,std::allocator&lt;(p.stk::mesh::Entity)&gt;)&gt;&nbsp;requested_entities)</tt></dd></dl>
@@ -554,6 +558,24 @@ stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-add_a
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
+<dl><dt><a name="ConstantFunction-argsAreValid"><strong>argsAreValid</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunction-argsAreValid">argsAreValid</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;_in)&nbsp;-&gt;&nbsp;bool<br>
+&nbsp;<br>
+bool<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-argsAreValid">argsAreValid</a>(const&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;in,&nbsp;const&nbsp;<a href="#MDArray">MDArray</a><br>
+&amp;out)<br>
+&nbsp;<br>
+Verify&nbsp;that&nbsp;the&nbsp;last&nbsp;dimensions&nbsp;of<br>
+&nbsp;<br>
+Parameters:<br>
+-----------<br>
+&nbsp;<br>
+in:&nbsp;&nbsp;and<br>
+&nbsp;<br>
+out:&nbsp;&nbsp;are&nbsp;the&nbsp;same;&nbsp;this&nbsp;allows&nbsp;Functions&nbsp;to&nbsp;be&nbsp;invoked&nbsp;at&nbsp;multiple<br>
+points&nbsp;where&nbsp;the&nbsp;first&nbsp;M&nbsp;indices&nbsp;represent&nbsp;an&nbsp;M-d&nbsp;array&nbsp;of&nbsp;points&nbsp;to<br>
+evaluate&nbsp;the&nbsp;function,&nbsp;while&nbsp;the&nbsp;last&nbsp;N&nbsp;indices&nbsp;should&nbsp;match&nbsp;the<br>
+Functions&nbsp;domain&nbsp;and&nbsp;codomain&nbsp;dimensions.</tt></dd></dl>
+
 <dl><dt><a name="ConstantFunction-derivative"><strong>derivative</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunction-derivative">derivative</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;deriv_spec)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
 &nbsp;<br>
 virtual<br>
@@ -579,6 +601,13 @@ unsigned&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#Constant
 &nbsp;<br>
 std::string&amp;<br>
 stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-getName">getName</a>()</tt></dd></dl>
+
+<dl><dt><a name="ConstantFunction-gradient"><strong>gradient</strong></a>(self, spatialDim<font color="#909090">=3</font>)</dt><dd><tt><a href="#ConstantFunction-gradient">gradient</a>(self,&nbsp;int&nbsp;spatialDim&nbsp;=&nbsp;3)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+<a href="#ConstantFunction-gradient">gradient</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+&nbsp;<br>
+virtual<br>
+Teuchos::RCP&lt;<a href="#Function">Function</a>&nbsp;&gt;&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-gradient">gradient</a>(int<br>
+spatialDim=3)</tt></dd></dl>
 
 <dl><dt><a name="ConstantFunction-setCodomainDimensions"><strong>setCodomainDimensions</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunction-setCodomainDimensions">setCodomainDimensions</a>(self,&nbsp;<a href="#Dimensions">Dimensions</a>&nbsp;dims)<br>
 &nbsp;<br>
@@ -616,7 +645,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x3c0f3f0&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x18870480&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -722,6 +751,24 @@ stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-ad
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
+<dl><dt><a name="ConstantFunctionVec-argsAreValid"><strong>argsAreValid</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunctionVec-argsAreValid">argsAreValid</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;_in)&nbsp;-&gt;&nbsp;bool<br>
+&nbsp;<br>
+bool<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-argsAreValid">argsAreValid</a>(const&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;in,&nbsp;const&nbsp;<a href="#MDArray">MDArray</a><br>
+&amp;out)<br>
+&nbsp;<br>
+Verify&nbsp;that&nbsp;the&nbsp;last&nbsp;dimensions&nbsp;of<br>
+&nbsp;<br>
+Parameters:<br>
+-----------<br>
+&nbsp;<br>
+in:&nbsp;&nbsp;and<br>
+&nbsp;<br>
+out:&nbsp;&nbsp;are&nbsp;the&nbsp;same;&nbsp;this&nbsp;allows&nbsp;Functions&nbsp;to&nbsp;be&nbsp;invoked&nbsp;at&nbsp;multiple<br>
+points&nbsp;where&nbsp;the&nbsp;first&nbsp;M&nbsp;indices&nbsp;represent&nbsp;an&nbsp;M-d&nbsp;array&nbsp;of&nbsp;points&nbsp;to<br>
+evaluate&nbsp;the&nbsp;function,&nbsp;while&nbsp;the&nbsp;last&nbsp;N&nbsp;indices&nbsp;should&nbsp;match&nbsp;the<br>
+Functions&nbsp;domain&nbsp;and&nbsp;codomain&nbsp;dimensions.</tt></dd></dl>
+
 <dl><dt><a name="ConstantFunctionVec-derivative"><strong>derivative</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunctionVec-derivative">derivative</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;deriv_spec)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
 &nbsp;<br>
 virtual<br>
@@ -747,6 +794,13 @@ unsigned&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#Constant
 &nbsp;<br>
 std::string&amp;<br>
 stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-getName">getName</a>()</tt></dd></dl>
+
+<dl><dt><a name="ConstantFunctionVec-gradient"><strong>gradient</strong></a>(self, spatialDim<font color="#909090">=3</font>)</dt><dd><tt><a href="#ConstantFunctionVec-gradient">gradient</a>(self,&nbsp;int&nbsp;spatialDim&nbsp;=&nbsp;3)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+<a href="#ConstantFunctionVec-gradient">gradient</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+&nbsp;<br>
+virtual<br>
+Teuchos::RCP&lt;<a href="#Function">Function</a>&nbsp;&gt;&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-gradient">gradient</a>(int<br>
+spatialDim=3)</tt></dd></dl>
 
 <dl><dt><a name="ConstantFunctionVec-setCodomainDimensions"><strong>setCodomainDimensions</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunctionVec-setCodomainDimensions">setCodomainDimensions</a>(self,&nbsp;<a href="#Dimensions">Dimensions</a>&nbsp;dims)<br>
 &nbsp;<br>
@@ -784,7 +838,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x3c0f3f0&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x18870480&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -1271,6 +1325,15 @@ searchType=SIMPLE_SEARCH,&nbsp;unsigned&nbsp;integration_order=0)</tt></dd></dl>
 
 <dl><dt><strong>__setattr__</strong> <em>lambda</em> self, name, value</dt></dl>
 
+<dl><dt><a name="FieldFunction-derivative"><strong>derivative</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-derivative">derivative</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;deriv_spec)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+&nbsp;<br>
+virtual&nbsp;Teuchos::RCP&lt;<a href="#Function">Function</a>&nbsp;&gt;<br>
+stk::percept::<a href="#FieldFunction">FieldFunction</a>::<a href="#FieldFunction-derivative">derivative</a>(<a href="#MDArrayString">MDArrayString</a>&nbsp;&amp;deriv_spec)<br>
+&nbsp;<br>
+Return&nbsp;a&nbsp;function&nbsp;that&nbsp;is&nbsp;the&nbsp;derivative&nbsp;of&nbsp;this&nbsp;function.&nbsp;The<br>
+derivative&nbsp;is&nbsp;specified&nbsp;as&nbsp;a&nbsp;rank-2&nbsp;array&nbsp;of&nbsp;strings&nbsp;that&nbsp;specify&nbsp;what<br>
+derivative&nbsp;to&nbsp;take&nbsp;and&nbsp;how&nbsp;many&nbsp;derivatives.&nbsp;For&nbsp;example,</tt></dd></dl>
+
 <dl><dt><a name="FieldFunction-getFoundOnLocalOwnedPart"><strong>getFoundOnLocalOwnedPart</strong></a>(self)</dt><dd><tt><a href="#FieldFunction-getFoundOnLocalOwnedPart">getFoundOnLocalOwnedPart</a>(self)&nbsp;-&gt;&nbsp;bool<br>
 &nbsp;<br>
 bool<br>
@@ -1284,6 +1347,13 @@ mesh::<a href="#BulkData">BulkData</a>&nbsp;*&nbsp;stk::percept::<a href="#Field
 &nbsp;<br>
 mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*&nbsp;stk::percept::<a href="#FieldFunction">FieldFunction</a>::<a href="#FieldFunction-get_field">get_field</a>()</tt></dd></dl>
 
+<dl><dt><a name="FieldFunction-gradient"><strong>gradient</strong></a>(self, spatialDim<font color="#909090">=3</font>)</dt><dd><tt><a href="#FieldFunction-gradient">gradient</a>(self,&nbsp;int&nbsp;spatialDim&nbsp;=&nbsp;3)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+<a href="#FieldFunction-gradient">gradient</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+&nbsp;<br>
+virtual<br>
+Teuchos::RCP&lt;<a href="#Function">Function</a>&nbsp;&gt;&nbsp;stk::percept::<a href="#FieldFunction">FieldFunction</a>::<a href="#FieldFunction-gradient">gradient</a>(int<br>
+spatialDim=3)</tt></dd></dl>
+
 <dl><dt><a name="FieldFunction-interpolateFrom"><strong>interpolateFrom</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-interpolateFrom">interpolateFrom</a>(self,&nbsp;<a href="#Function">Function</a>&nbsp;function)<br>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#FieldFunction">FieldFunction</a>::<a href="#FieldFunction-interpolateFrom">interpolateFrom</a>(<a href="#Function">Function</a>&nbsp;&amp;function)<br>
@@ -1295,27 +1365,11 @@ function,&nbsp;assign&nbsp;to&nbsp;the&nbsp;codomain&nbsp;field</tt></dd></dl>
 <a href="#FieldFunction-localEvaluation">localEvaluation</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;_in)<br>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#FieldFunction">FieldFunction</a>::<a href="#FieldFunction-localEvaluation">localEvaluation</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;in,&nbsp;<a href="#MDArray">MDArray</a><br>
-&amp;out,&nbsp;double&nbsp;time_value_optional=0.0)<br>
+&amp;out,&nbsp;double&nbsp;time_value_optional=0.0)</tt></dd></dl>
+
+<dl><dt><a name="FieldFunction-setup_searcher"><strong>setup_searcher</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-setup_searcher">setup_searcher</a>(self,&nbsp;int&nbsp;D_)<br>
 &nbsp;<br>
-Evaluate&nbsp;the&nbsp;function&nbsp;at&nbsp;this&nbsp;input&nbsp;point&nbsp;(or&nbsp;points)&nbsp;returning<br>
-<a href="#FieldFunction-value">value</a>(s)&nbsp;in&nbsp;output_field_values<br>
-&nbsp;<br>
-In&nbsp;the&nbsp;following,&nbsp;the&nbsp;arrays&nbsp;are&nbsp;dimensioned&nbsp;using&nbsp;the&nbsp;notation&nbsp;(from<br>
-Intrepid's&nbsp;doc):<br>
-&nbsp;<br>
-[C]&nbsp;-&nbsp;num.&nbsp;integration&nbsp;domains&nbsp;(cells/elements)&nbsp;[F]&nbsp;-&nbsp;num.&nbsp;Intrepid<br>
-"fields"&nbsp;(number&nbsp;of&nbsp;bases&nbsp;within&nbsp;an&nbsp;element&nbsp;==&nbsp;num.&nbsp;nodes&nbsp;typically)<br>
-[P]&nbsp;-&nbsp;num.&nbsp;integration&nbsp;(or&nbsp;interpolation)&nbsp;points&nbsp;within&nbsp;the&nbsp;element<br>
-[D]&nbsp;-&nbsp;spatial&nbsp;dimension&nbsp;[D1],&nbsp;[D2]&nbsp;-&nbsp;spatial&nbsp;dimension<br>
-&nbsp;<br>
-Locally,&nbsp;we&nbsp;introduce&nbsp;this&nbsp;notation:<br>
-&nbsp;<br>
-[DOF]&nbsp;-&nbsp;number&nbsp;of&nbsp;degrees-of-freedom&nbsp;per&nbsp;node&nbsp;of&nbsp;the&nbsp;interpolated&nbsp;stk<br>
-Field.&nbsp;For&nbsp;example,&nbsp;a&nbsp;vector&nbsp;field&nbsp;in&nbsp;3D&nbsp;has&nbsp;[DOF]&nbsp;=&nbsp;3<br>
-&nbsp;<br>
-<a href="#Dimensions">Dimensions</a>&nbsp;of&nbsp;input_phy_points&nbsp;are&nbsp;required&nbsp;to&nbsp;be&nbsp;either&nbsp;([D])&nbsp;or<br>
-([P],[D])&nbsp;<a href="#Dimensions">Dimensions</a>&nbsp;of&nbsp;output_field_values&nbsp;are&nbsp;required&nbsp;to&nbsp;be&nbsp;([DOF])<br>
-or&nbsp;([P],[DOF])&nbsp;respectively</tt></dd></dl>
+void&nbsp;stk::percept::<a href="#FieldFunction">FieldFunction</a>::<a href="#FieldFunction-setup_searcher">setup_searcher</a>(int&nbsp;D_)</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -1344,15 +1398,23 @@ stk::percept::<a href="#Function">Function</a>::<a href="#FieldFunction-add_alia
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
-<dl><dt><a name="FieldFunction-derivative"><strong>derivative</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-derivative">derivative</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;deriv_spec)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+<dl><dt><a name="FieldFunction-argsAreValid"><strong>argsAreValid</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-argsAreValid">argsAreValid</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;_in)&nbsp;-&gt;&nbsp;bool<br>
 &nbsp;<br>
-virtual<br>
-Teuchos::RCP&lt;<a href="#Function">Function</a>&nbsp;&gt;<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#FieldFunction-derivative">derivative</a>(<a href="#MDArrayString">MDArrayString</a>&nbsp;&amp;deriv_spec)<br>
+bool<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#FieldFunction-argsAreValid">argsAreValid</a>(const&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;in,&nbsp;const&nbsp;<a href="#MDArray">MDArray</a><br>
+&amp;out)<br>
 &nbsp;<br>
-Return&nbsp;a&nbsp;function&nbsp;that&nbsp;is&nbsp;the&nbsp;derivative&nbsp;of&nbsp;this&nbsp;function.&nbsp;The<br>
-derivative&nbsp;is&nbsp;specified&nbsp;as&nbsp;a&nbsp;rank-2&nbsp;array&nbsp;of&nbsp;strings&nbsp;that&nbsp;specify&nbsp;what<br>
-derivative&nbsp;to&nbsp;take&nbsp;and&nbsp;how&nbsp;many&nbsp;derivatives.&nbsp;For&nbsp;example,</tt></dd></dl>
+Verify&nbsp;that&nbsp;the&nbsp;last&nbsp;dimensions&nbsp;of<br>
+&nbsp;<br>
+Parameters:<br>
+-----------<br>
+&nbsp;<br>
+in:&nbsp;&nbsp;and<br>
+&nbsp;<br>
+out:&nbsp;&nbsp;are&nbsp;the&nbsp;same;&nbsp;this&nbsp;allows&nbsp;Functions&nbsp;to&nbsp;be&nbsp;invoked&nbsp;at&nbsp;multiple<br>
+points&nbsp;where&nbsp;the&nbsp;first&nbsp;M&nbsp;indices&nbsp;represent&nbsp;an&nbsp;M-d&nbsp;array&nbsp;of&nbsp;points&nbsp;to<br>
+evaluate&nbsp;the&nbsp;function,&nbsp;while&nbsp;the&nbsp;last&nbsp;N&nbsp;indices&nbsp;should&nbsp;match&nbsp;the<br>
+Functions&nbsp;domain&nbsp;and&nbsp;codomain&nbsp;dimensions.</tt></dd></dl>
 
 <dl><dt><a name="FieldFunction-derivativeAtPoint"><strong>derivativeAtPoint</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-derivativeAtPoint">derivativeAtPoint</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;deriv_spec,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;double&nbsp;time&nbsp;=&nbsp;0.0)<br>
@@ -1406,7 +1468,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x3c0f3f0&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x18870480&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -1541,6 +1603,24 @@ stk::percept::<a href="#Function">Function</a>::<a href="#Function-add_alias">ad
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
+<dl><dt><a name="Function-argsAreValid"><strong>argsAreValid</strong></a>(self, *args)</dt><dd><tt><a href="#Function-argsAreValid">argsAreValid</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;_in)&nbsp;-&gt;&nbsp;bool<br>
+&nbsp;<br>
+bool<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#Function-argsAreValid">argsAreValid</a>(const&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;in,&nbsp;const&nbsp;<a href="#MDArray">MDArray</a><br>
+&amp;out)<br>
+&nbsp;<br>
+Verify&nbsp;that&nbsp;the&nbsp;last&nbsp;dimensions&nbsp;of<br>
+&nbsp;<br>
+Parameters:<br>
+-----------<br>
+&nbsp;<br>
+in:&nbsp;&nbsp;and<br>
+&nbsp;<br>
+out:&nbsp;&nbsp;are&nbsp;the&nbsp;same;&nbsp;this&nbsp;allows&nbsp;Functions&nbsp;to&nbsp;be&nbsp;invoked&nbsp;at&nbsp;multiple<br>
+points&nbsp;where&nbsp;the&nbsp;first&nbsp;M&nbsp;indices&nbsp;represent&nbsp;an&nbsp;M-d&nbsp;array&nbsp;of&nbsp;points&nbsp;to<br>
+evaluate&nbsp;the&nbsp;function,&nbsp;while&nbsp;the&nbsp;last&nbsp;N&nbsp;indices&nbsp;should&nbsp;match&nbsp;the<br>
+Functions&nbsp;domain&nbsp;and&nbsp;codomain&nbsp;dimensions.</tt></dd></dl>
+
 <dl><dt><a name="Function-derivative"><strong>derivative</strong></a>(self, *args)</dt><dd><tt><a href="#Function-derivative">derivative</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;deriv_spec)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
 &nbsp;<br>
 virtual<br>
@@ -1566,6 +1646,13 @@ unsigned&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#Function
 &nbsp;<br>
 std::string&amp;<br>
 stk::percept::<a href="#Function">Function</a>::<a href="#Function-getName">getName</a>()</tt></dd></dl>
+
+<dl><dt><a name="Function-gradient"><strong>gradient</strong></a>(self, spatialDim<font color="#909090">=3</font>)</dt><dd><tt><a href="#Function-gradient">gradient</a>(self,&nbsp;int&nbsp;spatialDim&nbsp;=&nbsp;3)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+<a href="#Function-gradient">gradient</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+&nbsp;<br>
+virtual<br>
+Teuchos::RCP&lt;<a href="#Function">Function</a>&nbsp;&gt;&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#Function-gradient">gradient</a>(int<br>
+spatialDim=3)</tt></dd></dl>
 
 <dl><dt><a name="Function-setCodomainDimensions"><strong>setCodomainDimensions</strong></a>(self, *args)</dt><dd><tt><a href="#Function-setCodomainDimensions">setCodomainDimensions</a>(self,&nbsp;<a href="#Dimensions">Dimensions</a>&nbsp;dims)<br>
 &nbsp;<br>
@@ -1603,7 +1690,7 @@ Static methods defined here:<br>
 
 <hr>
 Data and other attributes defined here:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x3c0f3f0&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x18870480&gt; &gt;</dl>
 
 <dl><dt><strong>__swig_destroy__</strong> = &lt;built-in function delete_Function&gt;<dd><tt>delete_Function(<a href="#Function">Function</a>&nbsp;self)</tt></dl>
 
@@ -1961,6 +2048,14 @@ TurboOption&nbsp;turboOpt=TURBO_NONE,&nbsp;bool&nbsp;is_surface_norm=false)</tt>
 
 <dl><dt><strong>__setattr__</strong> <em>lambda</em> self, name, value</dt></dl>
 
+<dl><dt><a name="L1Norm-error_check_is_surface_norm"><strong>error_check_is_surface_norm</strong></a>(self)</dt><dd><tt><a href="#L1Norm-error_check_is_surface_norm">error_check_is_surface_norm</a>(self)<br>
+&nbsp;<br>
+void&nbsp;stk::percept::Norm&lt;&nbsp;Power&nbsp;&gt;::<a href="#L1Norm-error_check_is_surface_norm">error_check_is_surface_norm</a>()<br>
+&nbsp;<br>
+if&nbsp;a&nbsp;<a href="#Selector">Selector</a>&nbsp;is&nbsp;specified&nbsp;with&nbsp;part(s)&nbsp;that&nbsp;are&nbsp;not&nbsp;auto-declared,<br>
+make&nbsp;sure&nbsp;all&nbsp;parts&nbsp;are&nbsp;of&nbsp;the&nbsp;same&nbsp;rank,&nbsp;and&nbsp;that&nbsp;m_is_surface_norm<br>
+is&nbsp;set&nbsp;correctly&nbsp;(if&nbsp;not,&nbsp;warn...)</tt></dd></dl>
+
 <dl><dt><a name="L1Norm-evaluate"><strong>evaluate</strong></a>(self, *args)</dt><dd><tt><a href="#L1Norm-evaluate">evaluate</a>(self,&nbsp;<a href="#Function">Function</a>&nbsp;integrand)&nbsp;-&gt;&nbsp;double<br>
 &nbsp;<br>
 double<br>
@@ -1998,9 +2093,8 @@ Data descriptors defined here:<br>
 Data and other attributes defined here:<br>
 <dl><dt><strong>__swig_destroy__</strong> = &lt;built-in function delete_L1Norm&gt;<dd><tt>delete_L1Norm(<a href="#L1Norm">L1Norm</a>&nbsp;self)<br>
 &nbsp;<br>
-for&nbsp;Power&nbsp;=&nbsp;-1,&nbsp;compute&nbsp;the&nbsp;inf-norm<br>
-&nbsp;<br>
-C++&nbsp;includes:&nbsp;Norm.hpp</tt></dl>
+virtual<br>
+stk::percept::Norm&lt;&nbsp;Power&nbsp;&gt;::~Norm()</tt></dl>
 
 <dl><dt><strong>__swig_getmethods__</strong> = {}</dl>
 
@@ -2040,6 +2134,14 @@ TurboOption&nbsp;turboOpt=TURBO_NONE,&nbsp;bool&nbsp;is_surface_norm=false)</tt>
 
 <dl><dt><strong>__setattr__</strong> <em>lambda</em> self, name, value</dt></dl>
 
+<dl><dt><a name="L2Norm-error_check_is_surface_norm"><strong>error_check_is_surface_norm</strong></a>(self)</dt><dd><tt><a href="#L2Norm-error_check_is_surface_norm">error_check_is_surface_norm</a>(self)<br>
+&nbsp;<br>
+void&nbsp;stk::percept::Norm&lt;&nbsp;Power&nbsp;&gt;::<a href="#L2Norm-error_check_is_surface_norm">error_check_is_surface_norm</a>()<br>
+&nbsp;<br>
+if&nbsp;a&nbsp;<a href="#Selector">Selector</a>&nbsp;is&nbsp;specified&nbsp;with&nbsp;part(s)&nbsp;that&nbsp;are&nbsp;not&nbsp;auto-declared,<br>
+make&nbsp;sure&nbsp;all&nbsp;parts&nbsp;are&nbsp;of&nbsp;the&nbsp;same&nbsp;rank,&nbsp;and&nbsp;that&nbsp;m_is_surface_norm<br>
+is&nbsp;set&nbsp;correctly&nbsp;(if&nbsp;not,&nbsp;warn...)</tt></dd></dl>
+
 <dl><dt><a name="L2Norm-evaluate"><strong>evaluate</strong></a>(self, *args)</dt><dd><tt><a href="#L2Norm-evaluate">evaluate</a>(self,&nbsp;<a href="#Function">Function</a>&nbsp;integrand)&nbsp;-&gt;&nbsp;double<br>
 &nbsp;<br>
 double<br>
@@ -2077,9 +2179,8 @@ Data descriptors defined here:<br>
 Data and other attributes defined here:<br>
 <dl><dt><strong>__swig_destroy__</strong> = &lt;built-in function delete_L2Norm&gt;<dd><tt>delete_L2Norm(<a href="#L2Norm">L2Norm</a>&nbsp;self)<br>
 &nbsp;<br>
-for&nbsp;Power&nbsp;=&nbsp;-1,&nbsp;compute&nbsp;the&nbsp;inf-norm<br>
-&nbsp;<br>
-C++&nbsp;includes:&nbsp;Norm.hpp</tt></dl>
+virtual<br>
+stk::percept::Norm&lt;&nbsp;Power&nbsp;&gt;::~Norm()</tt></dl>
 
 <dl><dt><strong>__swig_getmethods__</strong> = {}</dl>
 
@@ -2119,6 +2220,14 @@ TurboOption&nbsp;turboOpt=TURBO_NONE,&nbsp;bool&nbsp;is_surface_norm=false)</tt>
 
 <dl><dt><strong>__setattr__</strong> <em>lambda</em> self, name, value</dt></dl>
 
+<dl><dt><a name="LInfNorm-error_check_is_surface_norm"><strong>error_check_is_surface_norm</strong></a>(self)</dt><dd><tt><a href="#LInfNorm-error_check_is_surface_norm">error_check_is_surface_norm</a>(self)<br>
+&nbsp;<br>
+void&nbsp;stk::percept::Norm&lt;&nbsp;Power&nbsp;&gt;::<a href="#LInfNorm-error_check_is_surface_norm">error_check_is_surface_norm</a>()<br>
+&nbsp;<br>
+if&nbsp;a&nbsp;<a href="#Selector">Selector</a>&nbsp;is&nbsp;specified&nbsp;with&nbsp;part(s)&nbsp;that&nbsp;are&nbsp;not&nbsp;auto-declared,<br>
+make&nbsp;sure&nbsp;all&nbsp;parts&nbsp;are&nbsp;of&nbsp;the&nbsp;same&nbsp;rank,&nbsp;and&nbsp;that&nbsp;m_is_surface_norm<br>
+is&nbsp;set&nbsp;correctly&nbsp;(if&nbsp;not,&nbsp;warn...)</tt></dd></dl>
+
 <dl><dt><a name="LInfNorm-evaluate"><strong>evaluate</strong></a>(self, *args)</dt><dd><tt><a href="#LInfNorm-evaluate">evaluate</a>(self,&nbsp;<a href="#Function">Function</a>&nbsp;integrand)&nbsp;-&gt;&nbsp;double<br>
 &nbsp;<br>
 double<br>
@@ -2156,9 +2265,8 @@ Data descriptors defined here:<br>
 Data and other attributes defined here:<br>
 <dl><dt><strong>__swig_destroy__</strong> = &lt;built-in function delete_LInfNorm&gt;<dd><tt>delete_LInfNorm(<a href="#LInfNorm">LInfNorm</a>&nbsp;self)<br>
 &nbsp;<br>
-for&nbsp;Power&nbsp;=&nbsp;-1,&nbsp;compute&nbsp;the&nbsp;inf-norm<br>
-&nbsp;<br>
-C++&nbsp;includes:&nbsp;Norm.hpp</tt></dl>
+virtual<br>
+stk::percept::Norm&lt;&nbsp;Power&nbsp;&gt;::~Norm()</tt></dl>
 
 <dl><dt><strong>__swig_getmethods__</strong> = {}</dl>
 
@@ -2275,8 +2383,9 @@ Data and other attributes defined here:<br>
 <dl><dt><a name="MDArrayString-__init__"><strong>__init__</strong></a>(self, *args)</dt><dd><tt><a href="#MDArrayString-__init__">__init__</a>(self)&nbsp;-&gt;&nbsp;<a href="#MDArrayString">MDArrayString</a><br>
 <a href="#MDArrayString-__init__">__init__</a>(self,&nbsp;int&nbsp;dim)&nbsp;-&gt;&nbsp;<a href="#MDArrayString">MDArrayString</a><br>
 <a href="#MDArrayString-__init__">__init__</a>(self,&nbsp;int&nbsp;dim0,&nbsp;int&nbsp;dim1)&nbsp;-&gt;&nbsp;<a href="#MDArrayString">MDArrayString</a><br>
+<a href="#MDArrayString-__init__">__init__</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;mda)&nbsp;-&gt;&nbsp;<a href="#MDArrayString">MDArrayString</a><br>
 &nbsp;<br>
-stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString">MDArrayString</a>(int&nbsp;dim0,&nbsp;int&nbsp;dim1)</tt></dd></dl>
+stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString">MDArrayString</a>(const&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;&amp;mda)</tt></dd></dl>
 
 <dl><dt><a name="MDArrayString-__repr__"><strong>__repr__</strong></a> = _swig_repr(self)</dt></dl>
 
@@ -2285,7 +2394,7 @@ stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayStrin
 <dl><dt><a name="MDArrayString-dimension"><strong>dimension</strong></a>(self, *args)</dt><dd><tt><a href="#MDArrayString-dimension">dimension</a>(self,&nbsp;int&nbsp;i1)&nbsp;-&gt;&nbsp;int<br>
 &nbsp;<br>
 int<br>
-stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString-dimension">dimension</a>(int&nbsp;i1)</tt></dd></dl>
+stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString-dimension">dimension</a>(int&nbsp;i1)&nbsp;const</tt></dd></dl>
 
 <dl><dt><a name="MDArrayString-rank"><strong>rank</strong></a>(self)</dt><dd><tt><a href="#MDArrayString-rank">rank</a>(self)&nbsp;-&gt;&nbsp;int<br>
 &nbsp;<br>
@@ -2369,6 +2478,24 @@ stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-add_al
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
+<dl><dt><a name="MaxOfNodeValues-argsAreValid"><strong>argsAreValid</strong></a>(self, *args)</dt><dd><tt><a href="#MaxOfNodeValues-argsAreValid">argsAreValid</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;_in)&nbsp;-&gt;&nbsp;bool<br>
+&nbsp;<br>
+bool<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-argsAreValid">argsAreValid</a>(const&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;in,&nbsp;const&nbsp;<a href="#MDArray">MDArray</a><br>
+&amp;out)<br>
+&nbsp;<br>
+Verify&nbsp;that&nbsp;the&nbsp;last&nbsp;dimensions&nbsp;of<br>
+&nbsp;<br>
+Parameters:<br>
+-----------<br>
+&nbsp;<br>
+in:&nbsp;&nbsp;and<br>
+&nbsp;<br>
+out:&nbsp;&nbsp;are&nbsp;the&nbsp;same;&nbsp;this&nbsp;allows&nbsp;Functions&nbsp;to&nbsp;be&nbsp;invoked&nbsp;at&nbsp;multiple<br>
+points&nbsp;where&nbsp;the&nbsp;first&nbsp;M&nbsp;indices&nbsp;represent&nbsp;an&nbsp;M-d&nbsp;array&nbsp;of&nbsp;points&nbsp;to<br>
+evaluate&nbsp;the&nbsp;function,&nbsp;while&nbsp;the&nbsp;last&nbsp;N&nbsp;indices&nbsp;should&nbsp;match&nbsp;the<br>
+Functions&nbsp;domain&nbsp;and&nbsp;codomain&nbsp;dimensions.</tt></dd></dl>
+
 <dl><dt><a name="MaxOfNodeValues-derivative"><strong>derivative</strong></a>(self, *args)</dt><dd><tt><a href="#MaxOfNodeValues-derivative">derivative</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;deriv_spec)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
 &nbsp;<br>
 virtual<br>
@@ -2394,6 +2521,13 @@ unsigned&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNod
 &nbsp;<br>
 std::string&amp;<br>
 stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-getName">getName</a>()</tt></dd></dl>
+
+<dl><dt><a name="MaxOfNodeValues-gradient"><strong>gradient</strong></a>(self, spatialDim<font color="#909090">=3</font>)</dt><dd><tt><a href="#MaxOfNodeValues-gradient">gradient</a>(self,&nbsp;int&nbsp;spatialDim&nbsp;=&nbsp;3)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+<a href="#MaxOfNodeValues-gradient">gradient</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+&nbsp;<br>
+virtual<br>
+Teuchos::RCP&lt;<a href="#Function">Function</a>&nbsp;&gt;&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-gradient">gradient</a>(int<br>
+spatialDim=3)</tt></dd></dl>
 
 <dl><dt><a name="MaxOfNodeValues-setCodomainDimensions"><strong>setCodomainDimensions</strong></a>(self, *args)</dt><dd><tt><a href="#MaxOfNodeValues-setCodomainDimensions">setCodomainDimensions</a>(self,&nbsp;<a href="#Dimensions">Dimensions</a>&nbsp;dims)<br>
 &nbsp;<br>
@@ -2431,7 +2565,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x3c0f3f0&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x18870480&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -2764,6 +2898,14 @@ Create&nbsp;a&nbsp;Mesh&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;t
 
 <dl><dt><strong>__setattr__</strong> <em>lambda</em> self, name, value</dt></dl>
 
+<dl><dt><a name="PerceptMesh-add_coordinate_state_fields"><strong>add_coordinate_state_fields</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-add_coordinate_state_fields">add_coordinate_state_fields</a>(self)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-add_coordinate_state_fields">add_coordinate_state_fields</a>()<br>
+&nbsp;<br>
+add&nbsp;coordinate-like&nbsp;fields&nbsp;needed,&nbsp;for&nbsp;example,&nbsp;to&nbsp;use&nbsp;smoothing&nbsp;of<br>
+geometry-projected&nbsp;refined&nbsp;meshes&nbsp;Must&nbsp;be&nbsp;called&nbsp;before&nbsp;<a href="#PerceptMesh-commit">commit</a>()</tt></dd></dl>
+
 <dl><dt><a name="PerceptMesh-add_field"><strong>add_field</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-add_field">add_field</a>(self,&nbsp;string&nbsp;name,&nbsp;unsigned&nbsp;int&nbsp;entity_rank,&nbsp;int&nbsp;vectorDimension&nbsp;=&nbsp;0,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;string&nbsp;part_name&nbsp;=&nbsp;"universal_part")&nbsp;-&gt;&nbsp;<a href="#FieldBase">FieldBase</a><br>
 <a href="#PerceptMesh-add_field">add_field</a>(self,&nbsp;string&nbsp;name,&nbsp;unsigned&nbsp;int&nbsp;entity_rank,&nbsp;int&nbsp;vectorDimension&nbsp;=&nbsp;0)&nbsp;-&gt;&nbsp;<a href="#FieldBase">FieldBase</a><br>
@@ -2774,6 +2916,13 @@ std::string&nbsp;&amp;name,&nbsp;const&nbsp;unsigned&nbsp;entity_rank,&nbsp;int&
 const&nbsp;std::string&nbsp;part_name="universal_part")<br>
 &nbsp;<br>
 add&nbsp;a&nbsp;field&nbsp;to&nbsp;the&nbsp;mesh</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-add_spacing_fields"><strong>add_spacing_fields</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-add_spacing_fields">add_spacing_fields</a>(self)<br>
+&nbsp;<br>
+void&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-add_spacing_fields">add_spacing_fields</a>()<br>
+&nbsp;<br>
+add&nbsp;spacing&nbsp;fields&nbsp;for&nbsp;having&nbsp;refinement&nbsp;obey&nbsp;the&nbsp;spacing&nbsp;(i.e.<br>
+putting&nbsp;new&nbsp;nodes&nbsp;not&nbsp;at&nbsp;midpoint)</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-close"><strong>close</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-close">close</a>(self)<br>
 &nbsp;<br>
@@ -2791,6 +2940,22 @@ stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-comm
 &nbsp;<br>
 commits&nbsp;mesh&nbsp;-&nbsp;any&nbsp;operations&nbsp;done&nbsp;on&nbsp;a&nbsp;non-committed&nbsp;mesh,&nbsp;except&nbsp;to<br>
 add&nbsp;fields&nbsp;will&nbsp;throw&nbsp;an&nbsp;exception</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-copy_field"><strong>copy_field</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-copy_field">copy_field</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_dest,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_src)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-copy_field">copy_field</a>(stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*field_dest,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field_src)<br>
+&nbsp;<br>
+copy&nbsp;field&nbsp;data&nbsp;from&nbsp;one&nbsp;field&nbsp;(field_src)&nbsp;to&nbsp;another&nbsp;(field_dest)</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-copy_field_state"><strong>copy_field_state</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-copy_field_state">copy_field_state</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;unsigned&nbsp;int&nbsp;dest_state,&nbsp;unsigned&nbsp;int&nbsp;src_state)<br>
+&nbsp;<br>
+void&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-copy_field_state">copy_field_state</a>(stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*field,&nbsp;unsigned&nbsp;dest_state,&nbsp;unsigned&nbsp;src_state)<br>
+&nbsp;<br>
+copy&nbsp;field&nbsp;state&nbsp;data&nbsp;from&nbsp;one&nbsp;state&nbsp;(src_state)&nbsp;to&nbsp;another<br>
+(dest_state)</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-dump_elements"><strong>dump_elements</strong></a>(self, partName<font color="#909090">=''</font>)</dt><dd><tt><a href="#PerceptMesh-dump_elements">dump_elements</a>(self,&nbsp;string&nbsp;partName&nbsp;=&nbsp;"")<br>
 <a href="#PerceptMesh-dump_elements">dump_elements</a>(self)<br>
@@ -2988,6 +3153,13 @@ parallel&nbsp;rank</tt></dd></dl>
 &nbsp;<br>
 int&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_spatial_dim">get_spatial_dim</a>()</tt></dd></dl>
 
+<dl><dt><a name="PerceptMesh-has_coordinate_state_fields"><strong>has_coordinate_state_fields</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-has_coordinate_state_fields">has_coordinate_state_fields</a>(self)&nbsp;-&gt;&nbsp;bool<br>
+&nbsp;<br>
+bool<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-has_coordinate_state_fields">has_coordinate_state_fields</a>()<br>
+&nbsp;<br>
+get&nbsp;number&nbsp;of&nbsp;coordinate&nbsp;field&nbsp;states&nbsp;needed</tt></dd></dl>
+
 <dl><dt><a name="PerceptMesh-new_mesh"><strong>new_mesh</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-new_mesh">new_mesh</a>(self,&nbsp;<a href="#GMeshSpec">GMeshSpec</a>&nbsp;gmesh_spec)<br>
 &nbsp;<br>
 void<br>
@@ -3011,6 +3183,59 @@ Parameters:<br>
 -----------<br>
 &nbsp;<br>
 gmesh_spec:&nbsp;&nbsp;Read:&nbsp;&nbsp;Only&nbsp;mode,&nbsp;no&nbsp;edits&nbsp;allowed</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-nodal_field_axpby"><strong>nodal_field_axpby</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-nodal_field_axpby">nodal_field_axpby</a>(self,&nbsp;double&nbsp;alpha,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_x,&nbsp;double&nbsp;beta,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_y)<br>
+&nbsp;<br>
+void&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-nodal_field_axpby">nodal_field_axpby</a>(double&nbsp;alpha,<br>
+stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field_x,&nbsp;double&nbsp;beta,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*field_y)<br>
+&nbsp;<br>
+axpby&nbsp;calculates:&nbsp;y&nbsp;=&nbsp;alpha*x&nbsp;+&nbsp;beta*y</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-nodal_field_axpbypgz"><strong>nodal_field_axpbypgz</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-nodal_field_axpbypgz">nodal_field_axpbypgz</a>(self,&nbsp;double&nbsp;alpha,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_x,&nbsp;double&nbsp;beta,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_y,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;double&nbsp;gamma,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_z)<br>
+&nbsp;<br>
+void&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-nodal_field_axpbypgz">nodal_field_axpbypgz</a>(double&nbsp;alpha,<br>
+stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field_x,&nbsp;double&nbsp;beta,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*field_y,&nbsp;double&nbsp;gamma,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field_z)<br>
+&nbsp;<br>
+axpbypgz&nbsp;calculates:&nbsp;z&nbsp;=&nbsp;alpha*x&nbsp;+&nbsp;beta*y&nbsp;+&nbsp;gamma*z</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-nodal_field_dot"><strong>nodal_field_dot</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-nodal_field_dot">nodal_field_dot</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_x,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_y)&nbsp;-&gt;&nbsp;double<br>
+&nbsp;<br>
+double&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-nodal_field_dot">nodal_field_dot</a>(stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*field_x,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field_y)<br>
+&nbsp;<br>
+dot&nbsp;calculates:&nbsp;x.y</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-nodal_field_set_value"><strong>nodal_field_set_value</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-nodal_field_set_value">nodal_field_set_value</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_x,&nbsp;double&nbsp;value&nbsp;=&nbsp;0.0)<br>
+<a href="#PerceptMesh-nodal_field_set_value">nodal_field_set_value</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field_x)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-nodal_field_set_value">nodal_field_set_value</a>(stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*field_x,&nbsp;double&nbsp;value=0.0)<br>
+&nbsp;<br>
+set&nbsp;field&nbsp;to&nbsp;constant&nbsp;value</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-nodal_field_state_axpby"><strong>nodal_field_state_axpby</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-nodal_field_state_axpby">nodal_field_state_axpby</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;double&nbsp;alpha,&nbsp;unsigned&nbsp;int&nbsp;x_state,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;double&nbsp;beta,&nbsp;unsigned&nbsp;int&nbsp;y_state)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-nodal_field_state_axpby">nodal_field_state_axpby</a>(stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*field,&nbsp;double&nbsp;alpha,&nbsp;unsigned&nbsp;x_state,&nbsp;double&nbsp;beta,&nbsp;unsigned&nbsp;y_state)<br>
+&nbsp;<br>
+axpby&nbsp;calculates:&nbsp;y&nbsp;=&nbsp;alpha*x&nbsp;+&nbsp;beta*y</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-nodal_field_state_axpbypgz"><strong>nodal_field_state_axpbypgz</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-nodal_field_state_axpbypgz">nodal_field_state_axpbypgz</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;double&nbsp;alpha,&nbsp;unsigned&nbsp;int&nbsp;x_state,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;double&nbsp;beta,&nbsp;unsigned&nbsp;int&nbsp;y_state,&nbsp;double&nbsp;gamma,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;unsigned&nbsp;int&nbsp;z_state)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-nodal_field_state_axpbypgz">nodal_field_state_axpbypgz</a>(stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*field,&nbsp;double&nbsp;alpha,&nbsp;unsigned&nbsp;x_state,&nbsp;double&nbsp;beta,&nbsp;unsigned&nbsp;y_state,<br>
+double&nbsp;gamma,&nbsp;unsigned&nbsp;z_state)<br>
+&nbsp;<br>
+axpbypgz&nbsp;calculates:&nbsp;z&nbsp;=&nbsp;alpha*x&nbsp;+&nbsp;beta*y&nbsp;+&nbsp;gamma*z</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-node_rank"><strong>node_rank</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-node_rank">node_rank</a>(self)&nbsp;-&gt;&nbsp;EntityRank<br>
 &nbsp;<br>
@@ -3088,6 +3313,24 @@ set&nbsp;the&nbsp;current&nbsp;data&nbsp;in&nbsp;fields&nbsp;to&nbsp;the&nbsp;gi
 from&nbsp;the&nbsp;database&nbsp;(finds&nbsp;the&nbsp;closest&nbsp;step&nbsp;to&nbsp;the&nbsp;given&nbsp;time&nbsp;(no<br>
 interpolation&nbsp;yet))</tt></dd></dl>
 
+<dl><dt><a name="PerceptMesh-remove_geometry_blocks_on_output"><strong>remove_geometry_blocks_on_output</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-remove_geometry_blocks_on_output">remove_geometry_blocks_on_output</a>(self,&nbsp;string&nbsp;geometry_file_name)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-remove_geometry_blocks_on_output">remove_geometry_blocks_on_output</a>(std::string<br>
+geometry_file_name)<br>
+&nbsp;<br>
+remove&nbsp;blocks&nbsp;in&nbsp;the&nbsp;mesh&nbsp;used&nbsp;solely&nbsp;for&nbsp;geometry&nbsp;association,&nbsp;during<br>
+output&nbsp;of&nbsp;the&nbsp;mesh&nbsp;to&nbsp;Exodus.<br>
+&nbsp;<br>
+Parameters:<br>
+-----------<br>
+&nbsp;<br>
+geometry_file_name:&nbsp;&nbsp;=&nbsp;name&nbsp;of&nbsp;the&nbsp;OpenNURBS&nbsp;file&nbsp;(*.3dm)&nbsp;containing<br>
+the&nbsp;geometry&nbsp;info<br>
+&nbsp;<br>
+Only&nbsp;available&nbsp;when&nbsp;Percept&nbsp;is&nbsp;configured&nbsp;with<br>
+STK_PERCEPT_HAS_GEOMETRY</tt></dd></dl>
+
 <dl><dt><a name="PerceptMesh-reopen"><strong>reopen</strong></a>(self, temp_file_name<font color="#909090">='percept_tmp.e'</font>)</dt><dd><tt><a href="#PerceptMesh-reopen">reopen</a>(self,&nbsp;string&nbsp;temp_file_name&nbsp;=&nbsp;"percept_tmp.e")<br>
 <a href="#PerceptMesh-reopen">reopen</a>(self)<br>
 &nbsp;<br>
@@ -3125,6 +3368,15 @@ ordinal=0)<br>
 &nbsp;<br>
 set&nbsp;the&nbsp;value&nbsp;of&nbsp;a&nbsp;field&nbsp;on&nbsp;the&nbsp;given&nbsp;node;&nbsp;if&nbsp;a&nbsp;vector&nbsp;field,&nbsp;pass&nbsp;in<br>
 the&nbsp;index&nbsp;of&nbsp;the&nbsp;vector&nbsp;required&nbsp;(ordinal)</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-set_proc_rank_field"><strong>set_proc_rank_field</strong></a>(self, proc_rank_field<font color="#909090">=None</font>)</dt><dd><tt><a href="#PerceptMesh-set_proc_rank_field">set_proc_rank_field</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;proc_rank_field&nbsp;=&nbsp;None)<br>
+<a href="#PerceptMesh-set_proc_rank_field">set_proc_rank_field</a>(self)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-set_proc_rank_field">set_proc_rank_field</a>(stk::mesh::<a href="#FieldBase">FieldBase</a><br>
+*proc_rank_field=0)<br>
+&nbsp;<br>
+set&nbsp;proc_rank&nbsp;on&nbsp;each&nbsp;element</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-side_rank"><strong>side_rank</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-side_rank">side_rank</a>(self)&nbsp;-&gt;&nbsp;EntityRank<br>
 &nbsp;<br>
@@ -3273,9 +3525,6 @@ Data descriptors defined here:<br>
 <dl><dt><strong>coord_field</strong></dt>
 <dd><tt>QuadFixture_3_coord_field_get(QuadFixture_3&nbsp;self)&nbsp;-&gt;&nbsp;CoordFieldType</tt></dd>
 </dl>
-<dl><dt><strong>coord_gather_field</strong></dt>
-<dd><tt>QuadFixture_3_coord_gather_field_get(QuadFixture_3&nbsp;self)&nbsp;-&gt;&nbsp;CoordGatherFieldType</tt></dd>
-</dl>
 <dl><dt><strong>debug_geom_side_sets_as_blocks</strong></dt>
 <dd><tt>QuadFixture_3_debug_geom_side_sets_as_blocks_get(QuadFixture_3&nbsp;self)&nbsp;-&gt;&nbsp;bool</tt></dd>
 </dl>
@@ -3299,7 +3548,7 @@ Data and other attributes defined here:<br>
 &nbsp;<br>
 stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology&nbsp;&gt;::~QuadFixture()</tt></dl>
 
-<dl><dt><strong>__swig_getmethods__</strong> = {'NX': &lt;built-in function QuadFixture_3_NX_get&gt;, 'NY': &lt;built-in function QuadFixture_3_NY_get&gt;, 'bulk_data': &lt;built-in function QuadFixture_3_bulk_data_get&gt;, 'coord_field': &lt;built-in function QuadFixture_3_coord_field_get&gt;, 'coord_gather_field': &lt;built-in function QuadFixture_3_coord_gather_field_get&gt;, 'debug_geom_side_sets_as_blocks': &lt;built-in function QuadFixture_3_debug_geom_side_sets_as_blocks_get&gt;, 'generate_sidesets': &lt;built-in function QuadFixture_3_generate_sidesets_get&gt;, 'get_entity_rank_names': &lt;function &lt;lambda&gt;&gt;, 'meta_data': &lt;built-in function QuadFixture_3_meta_data_get&gt;, 'quad_part': &lt;built-in function QuadFixture_3_quad_part_get&gt;, ...}</dl>
+<dl><dt><strong>__swig_getmethods__</strong> = {'NX': &lt;built-in function QuadFixture_3_NX_get&gt;, 'NY': &lt;built-in function QuadFixture_3_NY_get&gt;, 'bulk_data': &lt;built-in function QuadFixture_3_bulk_data_get&gt;, 'coord_field': &lt;built-in function QuadFixture_3_coord_field_get&gt;, 'debug_geom_side_sets_as_blocks': &lt;built-in function QuadFixture_3_debug_geom_side_sets_as_blocks_get&gt;, 'generate_sidesets': &lt;built-in function QuadFixture_3_generate_sidesets_get&gt;, 'get_entity_rank_names': &lt;function &lt;lambda&gt;&gt;, 'meta_data': &lt;built-in function QuadFixture_3_meta_data_get&gt;, 'quad_part': &lt;built-in function QuadFixture_3_quad_part_get&gt;, 'side_parts': &lt;built-in function QuadFixture_3_side_parts_get&gt;}</dl>
 
 <dl><dt><strong>__swig_setmethods__</strong> = {'debug_geom_side_sets_as_blocks': &lt;built-in function QuadFixture_3_debug_geom_side_sets_as_blocks_set&gt;, 'generate_sidesets': &lt;built-in function QuadFixture_3_generate_sidesets_set&gt;, 'side_parts': &lt;built-in function QuadFixture_3_side_parts_set&gt;}</dl>
 
@@ -3411,9 +3660,6 @@ Data descriptors defined here:<br>
 <dl><dt><strong>coord_field</strong></dt>
 <dd><tt>QuadFixture_4_coord_field_get(QuadFixture_4&nbsp;self)&nbsp;-&gt;&nbsp;CoordFieldType</tt></dd>
 </dl>
-<dl><dt><strong>coord_gather_field</strong></dt>
-<dd><tt>QuadFixture_4_coord_gather_field_get(QuadFixture_4&nbsp;self)&nbsp;-&gt;&nbsp;CoordGatherFieldType</tt></dd>
-</dl>
 <dl><dt><strong>debug_geom_side_sets_as_blocks</strong></dt>
 <dd><tt>QuadFixture_4_debug_geom_side_sets_as_blocks_get(QuadFixture_4&nbsp;self)&nbsp;-&gt;&nbsp;bool</tt></dd>
 </dl>
@@ -3437,7 +3683,7 @@ Data and other attributes defined here:<br>
 &nbsp;<br>
 stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology&nbsp;&gt;::~QuadFixture()</tt></dl>
 
-<dl><dt><strong>__swig_getmethods__</strong> = {'NX': &lt;built-in function QuadFixture_4_NX_get&gt;, 'NY': &lt;built-in function QuadFixture_4_NY_get&gt;, 'bulk_data': &lt;built-in function QuadFixture_4_bulk_data_get&gt;, 'coord_field': &lt;built-in function QuadFixture_4_coord_field_get&gt;, 'coord_gather_field': &lt;built-in function QuadFixture_4_coord_gather_field_get&gt;, 'debug_geom_side_sets_as_blocks': &lt;built-in function QuadFixture_4_debug_geom_side_sets_as_blocks_get&gt;, 'generate_sidesets': &lt;built-in function QuadFixture_4_generate_sidesets_get&gt;, 'get_entity_rank_names': &lt;function &lt;lambda&gt;&gt;, 'meta_data': &lt;built-in function QuadFixture_4_meta_data_get&gt;, 'quad_part': &lt;built-in function QuadFixture_4_quad_part_get&gt;, ...}</dl>
+<dl><dt><strong>__swig_getmethods__</strong> = {'NX': &lt;built-in function QuadFixture_4_NX_get&gt;, 'NY': &lt;built-in function QuadFixture_4_NY_get&gt;, 'bulk_data': &lt;built-in function QuadFixture_4_bulk_data_get&gt;, 'coord_field': &lt;built-in function QuadFixture_4_coord_field_get&gt;, 'debug_geom_side_sets_as_blocks': &lt;built-in function QuadFixture_4_debug_geom_side_sets_as_blocks_get&gt;, 'generate_sidesets': &lt;built-in function QuadFixture_4_generate_sidesets_get&gt;, 'get_entity_rank_names': &lt;function &lt;lambda&gt;&gt;, 'meta_data': &lt;built-in function QuadFixture_4_meta_data_get&gt;, 'quad_part': &lt;built-in function QuadFixture_4_quad_part_get&gt;, 'side_parts': &lt;built-in function QuadFixture_4_side_parts_get&gt;}</dl>
 
 <dl><dt><strong>__swig_setmethods__</strong> = {'debug_geom_side_sets_as_blocks': &lt;built-in function QuadFixture_4_debug_geom_side_sets_as_blocks_set&gt;, 'generate_sidesets': &lt;built-in function QuadFixture_4_generate_sidesets_set&gt;, 'side_parts': &lt;built-in function QuadFixture_4_side_parts_set&gt;}</dl>
 
@@ -3549,6 +3795,24 @@ stk::percept::<a href="#Function">Function</a>::<a href="#RCPFunction-add_alias"
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
+<dl><dt><a name="RCPFunction-argsAreValid"><strong>argsAreValid</strong></a>(self, *args)</dt><dd><tt><a href="#RCPFunction-argsAreValid">argsAreValid</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;_in,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;out)&nbsp;-&gt;&nbsp;bool<br>
+&nbsp;<br>
+bool<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#RCPFunction-argsAreValid">argsAreValid</a>(const&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;in,&nbsp;const&nbsp;<a href="#MDArray">MDArray</a><br>
+&amp;out)<br>
+&nbsp;<br>
+Verify&nbsp;that&nbsp;the&nbsp;last&nbsp;dimensions&nbsp;of<br>
+&nbsp;<br>
+Parameters:<br>
+-----------<br>
+&nbsp;<br>
+in:&nbsp;&nbsp;and<br>
+&nbsp;<br>
+out:&nbsp;&nbsp;are&nbsp;the&nbsp;same;&nbsp;this&nbsp;allows&nbsp;Functions&nbsp;to&nbsp;be&nbsp;invoked&nbsp;at&nbsp;multiple<br>
+points&nbsp;where&nbsp;the&nbsp;first&nbsp;M&nbsp;indices&nbsp;represent&nbsp;an&nbsp;M-d&nbsp;array&nbsp;of&nbsp;points&nbsp;to<br>
+evaluate&nbsp;the&nbsp;function,&nbsp;while&nbsp;the&nbsp;last&nbsp;N&nbsp;indices&nbsp;should&nbsp;match&nbsp;the<br>
+Functions&nbsp;domain&nbsp;and&nbsp;codomain&nbsp;dimensions.</tt></dd></dl>
+
 <dl><dt><a name="RCPFunction-assert_not_null"><strong>assert_not_null</strong></a>(self)</dt><dd><tt><a href="#RCPFunction-assert_not_null">assert_not_null</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a></tt></dd></dl>
 
 <dl><dt><a name="RCPFunction-assert_valid_ptr"><strong>assert_valid_ptr</strong></a>(self)</dt><dd><tt><a href="#RCPFunction-assert_valid_ptr">assert_valid_ptr</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a></tt></dd></dl>
@@ -3614,6 +3878,13 @@ stk::percept::<a href="#Function">Function</a>::<a href="#RCPFunction-getName">g
 <dl><dt><a name="RCPFunction-getNewMDArray"><strong>getNewMDArray</strong></a>(self, *args)</dt><dd><tt><a href="#RCPFunction-getNewMDArray">getNewMDArray</a>(self,&nbsp;<a href="#Dimensions">Dimensions</a>&nbsp;dims)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a></tt></dd></dl>
 
 <dl><dt><a name="RCPFunction-getRawPtr"><strong>getRawPtr</strong></a>(self)</dt><dd><tt><a href="#RCPFunction-getRawPtr">getRawPtr</a>(self)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a></tt></dd></dl>
+
+<dl><dt><a name="RCPFunction-gradient"><strong>gradient</strong></a>(self, spatialDim<font color="#909090">=3</font>)</dt><dd><tt><a href="#RCPFunction-gradient">gradient</a>(self,&nbsp;int&nbsp;spatialDim&nbsp;=&nbsp;3)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+<a href="#RCPFunction-gradient">gradient</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+&nbsp;<br>
+virtual<br>
+Teuchos::RCP&lt;<a href="#Function">Function</a>&nbsp;&gt;&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#RCPFunction-gradient">gradient</a>(int<br>
+spatialDim=3)</tt></dd></dl>
 
 <dl><dt><a name="RCPFunction-has_ownership"><strong>has_ownership</strong></a>(self)</dt><dd><tt><a href="#RCPFunction-has_ownership">has_ownership</a>(self)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
 
@@ -3880,6 +4151,10 @@ NodeRegistry&amp;&nbsp;stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Ref
 std::vector&lt;&nbsp;RefinementInfoByType&nbsp;&gt;&nbsp;&amp;<br>
 stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-getRefinementInfoByType">getRefinementInfoByType</a>()</tt></dd></dl>
 
+<dl><dt><a name="Refiner-getRemoveGeometryBlocks"><strong>getRemoveGeometryBlocks</strong></a>(self)</dt><dd><tt><a href="#Refiner-getRemoveGeometryBlocks">getRemoveGeometryBlocks</a>(self)&nbsp;-&gt;&nbsp;bool<br>
+&nbsp;<br>
+bool&nbsp;stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-getRemoveGeometryBlocks">getRemoveGeometryBlocks</a>()</tt></dd></dl>
+
 <dl><dt><a name="Refiner-getRemoveOldElements"><strong>getRemoveOldElements</strong></a>(self)</dt><dd><tt><a href="#Refiner-getRemoveOldElements">getRemoveOldElements</a>(self)&nbsp;-&gt;&nbsp;bool<br>
 &nbsp;<br>
 bool&nbsp;stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-getRemoveOldElements">getRemoveOldElements</a>()</tt></dd></dl>
@@ -3920,6 +4195,10 @@ stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-setIgnoreSideSets"
 &nbsp;<br>
 void<br>
 stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-setQueryPassOnly">setQueryPassOnly</a>(bool&nbsp;doQueryOnly)</tt></dd></dl>
+
+<dl><dt><a name="Refiner-setRemoveGeometryBlocks"><strong>setRemoveGeometryBlocks</strong></a>(self, *args)</dt><dd><tt><a href="#Refiner-setRemoveGeometryBlocks">setRemoveGeometryBlocks</a>(self,&nbsp;bool&nbsp;do_remove)<br>
+&nbsp;<br>
+void&nbsp;stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-setRemoveGeometryBlocks">setRemoveGeometryBlocks</a>(bool&nbsp;do_remove)</tt></dd></dl>
 
 <dl><dt><a name="Refiner-setRemoveOldElements"><strong>setRemoveOldElements</strong></a>(self, *args)</dt><dd><tt><a href="#Refiner-setRemoveOldElements">setRemoveOldElements</a>(self,&nbsp;bool&nbsp;do_remove)<br>
 &nbsp;<br>
@@ -4155,6 +4434,12 @@ stk::percept::<a href="#StringFunction">StringFunction</a>::<a href="#StringFunc
 &nbsp;<br>
 std::string&nbsp;stk::percept::<a href="#StringFunction">StringFunction</a>::<a href="#StringFunction-getFunctionString">getFunctionString</a>()</tt></dd></dl>
 
+<dl><dt><a name="StringFunction-gradient"><strong>gradient</strong></a>(self, spatialDim<font color="#909090">=3</font>)</dt><dd><tt><a href="#StringFunction-gradient">gradient</a>(self,&nbsp;int&nbsp;spatialDim&nbsp;=&nbsp;3)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+<a href="#StringFunction-gradient">gradient</a>(self)&nbsp;-&gt;&nbsp;<a href="#RCPFunction">RCPFunction</a><br>
+&nbsp;<br>
+Teuchos::RCP&lt;&nbsp;<a href="#Function">Function</a>&nbsp;&gt;&nbsp;stk::percept::<a href="#StringFunction">StringFunction</a>::<a href="#StringFunction-gradient">gradient</a>(int<br>
+spatialDim=3)</tt></dd></dl>
+
 <dl><dt><a name="StringFunction-resolve"><strong>resolve</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-resolve">resolve</a>(self,&nbsp;stk::expreval::VariableMap::iterator&nbsp;var_it)<br>
 &nbsp;<br>
 void<br>
@@ -4184,6 +4469,24 @@ Methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
 stk::percept::<a href="#Function">Function</a>::<a href="#StringFunction-add_alias">add_alias</a>(const&nbsp;char&nbsp;*alias)<br>
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
+
+<dl><dt><a name="StringFunction-argsAreValid"><strong>argsAreValid</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-argsAreValid">argsAreValid</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;_in)&nbsp;-&gt;&nbsp;bool<br>
+&nbsp;<br>
+bool<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#StringFunction-argsAreValid">argsAreValid</a>(const&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;in,&nbsp;const&nbsp;<a href="#MDArray">MDArray</a><br>
+&amp;out)<br>
+&nbsp;<br>
+Verify&nbsp;that&nbsp;the&nbsp;last&nbsp;dimensions&nbsp;of<br>
+&nbsp;<br>
+Parameters:<br>
+-----------<br>
+&nbsp;<br>
+in:&nbsp;&nbsp;and<br>
+&nbsp;<br>
+out:&nbsp;&nbsp;are&nbsp;the&nbsp;same;&nbsp;this&nbsp;allows&nbsp;Functions&nbsp;to&nbsp;be&nbsp;invoked&nbsp;at&nbsp;multiple<br>
+points&nbsp;where&nbsp;the&nbsp;first&nbsp;M&nbsp;indices&nbsp;represent&nbsp;an&nbsp;M-d&nbsp;array&nbsp;of&nbsp;points&nbsp;to<br>
+evaluate&nbsp;the&nbsp;function,&nbsp;while&nbsp;the&nbsp;last&nbsp;N&nbsp;indices&nbsp;should&nbsp;match&nbsp;the<br>
+Functions&nbsp;domain&nbsp;and&nbsp;codomain&nbsp;dimensions.</tt></dd></dl>
 
 <dl><dt><a name="StringFunction-derivativeAtPoint"><strong>derivativeAtPoint</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-derivativeAtPoint">derivativeAtPoint</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;deriv_spec,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;double&nbsp;time&nbsp;=&nbsp;0.0)<br>
@@ -4237,7 +4540,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x3c0f3f0&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x18870480&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -5490,6 +5793,7 @@ mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href=
  <dl><dt><a name="-bucket_part_equal"><strong>bucket_part_equal</strong></a>(*args)</dt><dd><tt><a href="#-bucket_part_equal">bucket_part_equal</a>(unsigned&nbsp;int&nbsp;lhs,&nbsp;unsigned&nbsp;int&nbsp;rhs)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
  <dl><dt><a name="-contain"><strong>contain</strong></a>(*args)</dt><dd><tt><a href="#-contain">contain</a>(PartVector&nbsp;arg0,&nbsp;<a href="#Part">Part</a>&nbsp;arg1)&nbsp;-&gt;&nbsp;bool<br>
 <a href="#-contain">contain</a>(PartVector&nbsp;arg0,&nbsp;PartVector&nbsp;arg1)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
+ <dl><dt><a name="-convert_to_internal_name"><strong>convert_to_internal_name</strong></a>(*args)</dt><dd><tt><a href="#-convert_to_internal_name">convert_to_internal_name</a>(string&nbsp;part_name)&nbsp;-&gt;&nbsp;string</tt></dd></dl>
  <dl><dt><a name="-db_api_int_size"><strong>db_api_int_size</strong></a>(*args)</dt><dd><tt><a href="#-db_api_int_size">db_api_int_size</a>(GroupingEntity&nbsp;entity)&nbsp;-&gt;&nbsp;size_t</tt></dd></dl>
  <dl><dt><a name="-define_io_fields"><strong>define_io_fields</strong></a>(*args)</dt><dd><tt><a href="#-define_io_fields">define_io_fields</a>(GroupingEntity&nbsp;entity,&nbsp;Ioss::Field::RoleType&nbsp;role,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Part">Part</a>&nbsp;part,&nbsp;EntityRank&nbsp;part_type)</tt></dd></dl>
@@ -5556,6 +5860,8 @@ mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href=
 <a href="#-ioss_add_fields">ioss_add_fields</a>(<a href="#Part">Part</a>&nbsp;part,&nbsp;EntityRank&nbsp;part_type,&nbsp;GroupingEntity&nbsp;entity,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;Ioss::Field::RoleType&nbsp;filter_role)</tt></dd></dl>
  <dl><dt><a name="-is_cell_topology_root_part"><strong>is_cell_topology_root_part</strong></a>(*args)</dt><dd><tt><a href="#-is_cell_topology_root_part">is_cell_topology_root_part</a>(<a href="#Part">Part</a>&nbsp;part)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
+ <dl><dt><a name="-is_internal"><strong>is_internal</strong></a>(*args)</dt><dd><tt><a href="#-is_internal">is_internal</a>(string&nbsp;part_name)&nbsp;-&gt;&nbsp;bool<br>
+<a href="#-is_internal">is_internal</a>(<a href="#Part">Part</a>&nbsp;part)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
  <dl><dt><a name="-is_part_io_part"><strong>is_part_io_part</strong></a>(*args)</dt><dd><tt><a href="#-is_part_io_part">is_part_io_part</a>(mesh::<a href="#Part">Part</a>&nbsp;part)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
  <dl><dt><a name="-is_valid_part_field"><strong>is_valid_part_field</strong></a>(*args)</dt><dd><tt><a href="#-is_valid_part_field">is_valid_part_field</a>(<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;EntityRank&nbsp;part_type,&nbsp;<a href="#Part">Part</a>&nbsp;part,&nbsp;<a href="#Part">Part</a>&nbsp;universal,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;Ioss::Field::RoleType&nbsp;filter_role,&nbsp;<br>
@@ -5635,6 +5941,8 @@ mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href=
 <strong>HEX8_HEX8_8</strong> = 13<br>
 <strong>HEX8_TET4_24</strong> = 41<br>
 <strong>HEX8_TET4_6_12</strong> = 42<br>
+<strong>INTERNAL_PART_POSTFIX</strong> = '}'<br>
+<strong>INTERNAL_PART_PREFIX</strong> = '{'<br>
 <strong>INVALID</strong> = 0<br>
 <strong>InvalidEntityRank</strong> = 4294967295<br>
 <strong>InvalidOrdinal</strong> = 4294967295<br>
@@ -5645,6 +5953,7 @@ mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href=
 <strong>MaximumFieldDimension</strong> = 7<br>
 <strong>NEW_FIX_ELEMENT_SIDES</strong> = 1<br>
 <strong>PART_ID</strong> = 2<br>
+<strong>PERCEPT_QF_USE_COORD_GATHER_FIELD</strong> = 0<br>
 <strong>PERCEPT_USE_FAMILY_TREE</strong> = 1<br>
 <strong>PERCEPT_USE_PSEUDO_ELEMENTS</strong> = 0<br>
 <strong>PYRAMID13_PYRAMID13_10</strong> = 26<br>

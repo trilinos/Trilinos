@@ -52,180 +52,53 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class T , unsigned RankDynamic , unsigned Rank >
+template < unsigned ValueSize , unsigned Rank ,
+           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
+           unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
 inline
-size_t allocation_count( const Shape<LayoutRight,T,RankDynamic,Rank> & shape )
+size_t allocation_count(
+  const Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> & shape )
 {
-  return Rank < 1 ? 1 : shape.N0 * shape.Stride ;
+  return shape.N0 * shape.Stride ;
 }
-
-template< class T , class MemorySpace >
-struct ShapeMap< Shape<LayoutRight,T,0,0> , MemorySpace > {};
-
-template< class T , unsigned RankDynamic , class MemorySpace >
-struct ShapeMap< Shape<LayoutRight,T,RankDynamic,1> , MemorySpace >
-{
-  inline static
-  size_t stride( const Shape<LayoutRight,T,RankDynamic,1> shape ) 
-  { return 1 ; }
-};
-
-template< class T , unsigned RankDynamic , unsigned Rank , class MemorySpace >
-struct ShapeMap< Shape<LayoutRight,T,RankDynamic,Rank> , MemorySpace >
-{
-  inline static
-  size_t stride( const Shape<LayoutRight,T,RankDynamic,Rank> shape ) 
-  {
-    const size_t block_count = 
-                      shape.N1 * (
-      2 == Rank ? 1 : shape.N2 * (
-      3 == Rank ? 1 : shape.N3 * (
-      4 == Rank ? 1 : shape.N4 * (
-      5 == Rank ? 1 : shape.N5 * (
-      6 == Rank ? 1 : shape.N6 * (
-      7 == Rank ? 1 : shape.N7 ))))));
-
-    return MemorySpace::preferred_alignment( shape.value_size , block_count );
-  }
-};
 
 //----------------------------------------------------------------------------
 
-template< class T , unsigned RankDynamic >
-struct ShapeOffset< Shape<LayoutRight,T,RankDynamic,1> >
+template < unsigned ValueSize , unsigned Rank ,
+           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
+           unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
+struct ShapeMap< Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
 {
-  inline static
-  size_t apply( const Shape<LayoutRight,T,RankDynamic,1> shape ,
-                const size_t i0 )
-    {
-      assert_shape_bounds( shape, i0 );
+  typedef Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> shape_type ;
 
-      return i0 ;
-    }
-};
+  static inline
+  size_t offset(
+    const shape_type & shape ,
+    const size_t i0 = 0 , const size_t i1 = 0 ,
+    const size_t i2 = 0 , const size_t i3 = 0 ,
+    const size_t i4 = 0 , const size_t i5 = 0 ,
+    const size_t i6 = 0 , const size_t i7 = 0 )
+  {
+    assert_shape_bounds( shape, i0, i1, i2, i3, i4, i5, i6, i7 );
 
-template< class T , unsigned RankDynamic >
-struct ShapeOffset< Shape<LayoutRight,T,RankDynamic,2> >
-{
-  inline static
-  size_t apply( const Shape<LayoutRight,T,RankDynamic,2> shape ,
-                const size_t i0 , const size_t i1 )
-    {
-      assert_shape_bounds( shape, i0, i1 );
+    return i7 + shape.N7 * (
+           i6 + shape.N6 * (
+           i5 + shape.N5 * (
+           i4 + shape.N4 * (
+           i3 + shape.N3 * (
+           i2 + shape.N2 * (
+           i1 )))))) + i0 * shape.Stride ;
+  }
 
-      return i1 + i0 * shape.Stride ;
-    }
-};
+  template< class MemorySpace >
+  static inline
+  size_t stride( const shape_type & shape )
+  {
+    const size_t block_count = shape.N1 * shape.N2 * shape.N3 *
+                               shape.N4 * shape.N5 * shape.N6 * shape.N7 ;
 
-template< class T , unsigned RankDynamic >
-struct ShapeOffset< Shape<LayoutRight,T,RankDynamic,3> >
-{
-  inline static
-  size_t apply( const Shape<LayoutRight,T,RankDynamic,3> shape ,
-                const size_t i0 , const size_t i1 ,
-                const size_t i2 )
-    {
-      assert_shape_bounds( shape, i0, i1, i2 );
-
-      return i2 + shape.N2 * (
-             i1 ) + i0 * shape.Stride ;
-    }
-};
-
-template< class T , unsigned RankDynamic >
-struct ShapeOffset< Shape<LayoutRight,T,RankDynamic,4> >
-{
-  inline static
-  size_t apply( const Shape<LayoutRight,T,RankDynamic,4> shape ,
-                const size_t i0 , const size_t i1 ,
-                const size_t i2 , const size_t i3 )
-    {
-      assert_shape_bounds( shape, i0, i1, i2, i3 );
-
-      return i3 + shape.N3 * (
-             i2 + shape.N2 * (
-             i1 )) + i0 * shape.Stride ;
-    }
-};
-
-template< class T , unsigned RankDynamic >
-struct ShapeOffset< Shape<LayoutRight,T,RankDynamic,5> >
-{
-  inline static
-  size_t apply( const Shape<LayoutRight,T,RankDynamic,5> shape ,
-                const size_t i0 , const size_t i1 ,
-                const size_t i2 , const size_t i3 ,
-                const size_t i4 )
-    {
-      assert_shape_bounds( shape, i0, i1, i2, i3, i4 );
-
-      return i4 + shape.N4 * (
-             i3 + shape.N3 * (
-             i2 + shape.N2 * (
-             i1 ))) + i0 * shape.Stride ;
-    }
-};
-
-template< class T , unsigned RankDynamic >
-struct ShapeOffset< Shape<LayoutRight,T,RankDynamic,6> >
-{
-  inline static
-  size_t apply( const Shape<LayoutRight,T,RankDynamic,6> shape ,
-                const size_t i0 , const size_t i1 ,
-                const size_t i2 , const size_t i3 ,
-                const size_t i4 , const size_t i5 )
-    {
-      assert_shape_bounds( shape, i0, i1, i2, i3, i4, i5 );
-
-      return i5 + shape.N5 * (
-             i4 + shape.N4 * (
-             i3 + shape.N3 * (
-             i2 + shape.N2 * (
-             i1 )))) + i0 * shape.Stride ;
-    }
-};
-
-template< class T , unsigned RankDynamic >
-struct ShapeOffset< Shape<LayoutRight,T,RankDynamic,7> >
-{
-  inline static
-  size_t apply( const Shape<LayoutRight,T,RankDynamic,7> shape ,
-                const size_t i0 , const size_t i1 ,
-                const size_t i2 , const size_t i3 ,
-                const size_t i4 , const size_t i5 ,
-                const size_t i6 )
-    {
-      assert_shape_bounds( shape, i0, i1, i2, i3, i4, i5, i6 );
-
-      return i6 + shape.N6 * (
-             i5 + shape.N5 * (
-             i4 + shape.N4 * (
-             i3 + shape.N3 * (
-             i2 + shape.N2 * (
-             i1 ))))) + i0 * shape.Stride ;
-    }
-};
-
-template< class T , unsigned RankDynamic >
-struct ShapeOffset< Shape<LayoutRight,T,RankDynamic,8> >
-{
-  inline static
-  size_t apply( const Shape<LayoutRight,T,RankDynamic,8> shape ,
-                const size_t i0 , const size_t i1 ,
-                const size_t i2 , const size_t i3 ,
-                const size_t i4 , const size_t i5 ,
-                const size_t i6 , const size_t i7 )
-    {
-      assert_shape_bounds( shape, i0, i1, i2, i3, i4, i5, i6, i7 );
-
-      return i7 + shape.N7 * (
-             i6 + shape.N6 * (
-             i5 + shape.N5 * (
-             i4 + shape.N4 * (
-             i3 + shape.N3 * (
-             i2 + shape.N2 * (
-             i1 )))))) + i0 * shape.Stride ;
-    }
+    return MemorySpace::preferred_alignment( shape.value_size , block_count );
+  }
 };
 
 //----------------------------------------------------------------------------

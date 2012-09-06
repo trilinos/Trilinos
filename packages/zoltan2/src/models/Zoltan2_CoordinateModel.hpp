@@ -953,7 +953,6 @@ CoordinateModel<GraphInput<User> >::CoordinateModel(
 
   env_->memory("After construction of coordinate model");
 }
-
 #endif   // DOXYGEN_SHOULD_SKIP_THIS
 
 }   // namespace Zoltan2

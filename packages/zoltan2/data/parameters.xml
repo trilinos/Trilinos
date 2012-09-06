@@ -319,7 +319,8 @@
     <Validator type="StringValidator" validatorId="13">
       <String value="rcm"/>
       <String value="minimum_degree"/>
-      <String value="method3"/>
+      <String value="natural"/>
+      <String value="random"/>
     </Validator>
 
     <Validator defaultParameterName="compute_metrics" integralValue="int" type="StringIntegralValidator(int)" validatorId="15">

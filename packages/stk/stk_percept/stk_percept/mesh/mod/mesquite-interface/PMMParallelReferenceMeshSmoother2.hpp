@@ -18,7 +18,7 @@ namespace stk {
 
     using namespace Mesquite;
 
-    /// A Jacobian based optimization smoother - 1/A - 1/W (A = local current Jacobian, W is for original mesh)
+    /// A Jacobian based optimization smoother, eg. 1/A - 1/W (A = local current Jacobian, W is for original mesh)
     /// LOCAL patch version
     class PMMParallelReferenceMeshSmoother2 : public PMMParallelReferenceMeshSmoother1 {
      
@@ -36,20 +36,8 @@ namespace stk {
 
     protected:
 
-      //virtual void get_gradient( Mesh* mesh, MeshDomain *domain);
-      //virtual void get_scale( Mesh* mesh, MeshDomain *domain);
-      //void debug_print(double alpha);
-
       virtual double run_one_iteration( Mesh* mesh,  MeshDomain *domain,
                                       MsqError& err );
-
-      //virtual double total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid);
-      //virtual double metric(stk::mesh::Entity& entity, bool& valid);
-      //virtual void update_node_positions(Mesh* mesh, double alpha);
-      //virtual bool check_convergence();
-
-      //double nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid );
-      //double nodal_edge_length_ave(stk::mesh::Entity& node);
 
     };
 

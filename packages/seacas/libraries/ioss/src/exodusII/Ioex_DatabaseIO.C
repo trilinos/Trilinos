@@ -3981,10 +3981,11 @@ namespace Ioex {
       return num_valid_sides;
     }
 
-    int64_t DatabaseIO::get_side_connectivity(const Ioss::SideBlock* fb,
-					      int64_t id, int64_t,
-					      void *fconnect,
-					      bool map_ids) const
+    template <typename INT>
+    int64_t DatabaseIO::get_side_connectivity_internal(const Ioss::SideBlock* fb,
+						       int64_t id, int64_t,
+						       INT *fconnect,
+						       bool map_ids) const
     {
       // Get size of data stored on the file...
       ex_set set_param[1];
@@ -4002,10 +4003,12 @@ namespace Ioex {
       // Allocate space for element and local side number
       assert(number_sides > 0);
       //----
-      std::vector<char> element(number_sides * int_byte_size_api());
-      std::vector<char> side(number_sides * int_byte_size_api());
+      std::vector<INT> element(number_sides);
+      std::vector<INT> side(number_sides);
 
-      ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(side));
+      set_param[0].entry_list = TOPTR(element);
+      set_param[0].extra_list = TOPTR(side);
+      ierr = ex_get_sets(get_file_pointer(), 1, set_param);
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
       //----
@@ -4015,27 +4018,14 @@ namespace Ioex {
 						  (void*)TOPTR(element), (void*)TOPTR(side),
 						  number_sides, get_region());
 
-      std::vector<char> elconnect;
+      std::vector<INT> elconnect;
       int64_t elconsize = 0; // Size of currently allocated connectivity block
       Ioss::ElementBlock *conn_block = NULL; // Block that we currently
       // have connectivity for
 
       Ioss::ElementBlock *block = NULL;
+      Ioss::IntVector side_elem_map; // Maps the side into the elements
 
-      int     *element32 = NULL;
-      int64_t *element64 = NULL;
-      int     *side32 = NULL;
-      int64_t *side64 = NULL;
-      
-      if (int_byte_size_api() == 4) {
-	element32 = (int*)TOPTR(element);
-	side32 = (int*)TOPTR(side);
-      } else {
-	element64 = (int64_t*)TOPTR(element);
-	side64 = (int64_t*)TOPTR(side);
-      }
-
-	Ioss::IntVector side_elem_map; // Maps the side into the elements
       // connectivity array
       int64_t current_side = -1;
       int nelnode = 0;
@@ -4045,12 +4035,7 @@ namespace Ioex {
       for (ssize_t iel = 0; iel < number_sides; iel++) {
 	if (is_valid_side[iel] == 1) {
 
-	  int64_t elem_id = 0;
-	  if (int_byte_size_api() == 4) {
-	    elem_id = element32[iel];
-	  } else {
-	    elem_id = element64[iel];
-	  }
+	  int64_t elem_id = element[iel];
 
 	  // ensure we have correct connectivity
 	  block = get_region()->get_element_block(elem_id);
@@ -4063,7 +4048,7 @@ namespace Ioex {
 	    offset = block->get_offset() + 1;
 	    if (elconsize < nelem * nelnode) {
 	      elconsize = nelem * nelnode;
-	      elconnect.resize(elconsize*int_byte_size_api());
+	      elconnect.resize(elconsize);
 	    }
 	    if (map_ids) {
 	      get_field_internal(block, block->get_field("connectivity"),
@@ -4078,12 +4063,7 @@ namespace Ioex {
 
 	  // NOTE: Element connectivity is returned with nodes in global id space if "map_ids" false,
 	  //       otherwise it is in local space.
-	  int64_t side_id = 0;
-	  if (int_byte_size_api() == 4) {
-	    side_id = side32[iel];
-	  } else {
-	    side_id = side64[iel];
-	  }
+	  int64_t side_id = side[iel];
 	  
 	  if (current_side != side_id) {
 	    side_elem_map = block->topology()->boundary_connectivity(side_id);
@@ -4091,17 +4071,24 @@ namespace Ioex {
 	    nfnodes = block->topology()->boundary_type(side_id)->number_nodes();
 	  }
 	  for (int inode = 0; inode < nfnodes; inode++) {
-	    int64_t global_node = elconnect[(elem_id-offset)*nelnode +
-					side_elem_map[inode]];
-	    if (int_byte_size_api() == 4) {
-	      ((int*)fconnect)[ieb++] = global_node;
-	    } else {
-	      ((int64_t*)fconnect)[ieb++] = global_node;
-	    }
+	    size_t index = (elem_id-offset)*nelnode + side_elem_map[inode];
+	    fconnect[ieb++] = elconnect[index];
 	  }
 	}
       }
       return ierr;
+    }
+
+    int64_t DatabaseIO::get_side_connectivity(const Ioss::SideBlock* fb,
+					      int64_t id, int64_t side_count,
+					      void *fconnect,
+					      bool map_ids) const
+    {
+      if (int_byte_size_api() == 4) {
+	return get_side_connectivity_internal(fb, id, side_count, (int*)fconnect, map_ids);
+      } else {
+	return get_side_connectivity_internal(fb, id, side_count, (int64_t*)fconnect, map_ids);
+      }
     }
 
     // Get distribution factors for the specified side block

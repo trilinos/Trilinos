@@ -142,12 +142,13 @@ namespace panzer_stk {
       // Assembly sublist
       {
 	Teuchos::ParameterList& p = pl->sublist("Assembly");
-	p.set<std::size_t>("Workset Size", 1);
+	p.set<unsigned long>("Workset Size", 1);
 	p.set<std::string>("Field Order","");
 	p.set<bool>("Use DOFManager2",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
+        p.set<std::string>("Excluded Blocks","");
       }
 
       pl->sublist("Block ID to Physics ID Mapping").disableRecursiveValidation();
@@ -224,7 +225,7 @@ namespace panzer_stk {
     panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
     
     // extract assembly information
-    std::size_t workset_size = assembly_params.get<std::size_t>("Workset Size");
+    std::size_t workset_size = assembly_params.get<unsigned long>("Workset Size");
     std::string field_order  = assembly_params.get<std::string>("Field Order"); // control nodal ordering of unknown
                                                                                    // global IDs in linear system
     bool use_dofmanager2  = assembly_params.get<bool>("Use DOFManager2"); // use FEI if false, otherwise use internal dof manager
@@ -341,9 +342,29 @@ namespace panzer_stk {
          = globalIndexerFactory.buildUniqueGlobalIndexer(*(mpi_comm->getRawMpiComm()),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
     
-       linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,
+       Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > bloLinObjFactory
+        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,
                                                           Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,int> >(dofManager)));
+ 
+       // parse any explicitly excluded pairs or blocks
+       const std::string excludedBlocks = assembly_params.get<std::string>("Excluded Blocks");
+       std::vector<std::string> stringPairs;
+       panzer::StringTokenizer(stringPairs,excludedBlocks,";",true);
+       for(std::size_t i=0;i<stringPairs.size();i++) {
+          std::vector<std::string> sPair; 
+          std::vector<int> iPair; 
+          panzer::StringTokenizer(sPair,stringPairs[i],",",true);
+          panzer::TokensToInts(iPair,sPair);
 
+          TEUCHOS_TEST_FOR_EXCEPTION(iPair.size()!=2,std::logic_error,
+                        "Input Error: The correct format for \"Excluded Blocks\" parameter in \"Assembly\" sub list is:\n"
+                        "   <int>,<int>; <int>,<int>; ...; <int>,<int>\n"
+                        "Failure on string pair " << stringPairs[i] << "!");
+
+          bloLinObjFactory->addExcludedPair(iPair[0],iPair[1]);
+       }
+
+       linObjFactory = bloLinObjFactory;
     }
     else {
        // use a flat DOF manager
@@ -534,50 +555,6 @@ namespace panzer_stk {
     }
    
     m_physics_me = thyra_me;
-
-/*
-    Teuchos::RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
-    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
-
-    std::string solver = solncntl_params.get<std::string>("Piro Solver");
-    if (solver=="NOX") {
-      Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
-	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,globalIndexer,linObjFactory);
-      piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
-      piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
-      // override printing to use panzer ostream
-      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
-      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
-      piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
-    }
-    else if (solver=="Rythmos") {
-      Teuchos::RCP<const panzer_stk::RythmosObserverFactory> observer_factory = 
-	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::RythmosObserverFactory> >("Rythmos Observer Factory");
-
-      // install the nox observer
-      if(observer_factory->useNOXObserver()) {
-         Teuchos::RCP<const panzer_stk::NOXObserverFactory> nox_observer_factory = 
-   	    p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
-         
-         Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(mesh,globalIndexer,linObjFactory);
-         piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
-      }
-
-      // override printing to use panzer ostream
-      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
-      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
-      piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
-
-      piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer_factory->buildRythmosObserver(mesh,globalIndexer,linObjFactory)));
-    } 
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-			 "Error: Unknown Piro Solver : " << solver);
-    }
-
-    m_rome_me = piro;
-*/
     m_global_data = global_data;
   }
 

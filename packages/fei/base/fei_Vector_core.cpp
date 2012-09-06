@@ -189,7 +189,8 @@ int fei::Vector_core::scatterToOverlap()
   for(unsigned i=0; i<recvProcs.size(); ++i) {
     int proc = recvProcs[i];
 
-    int size = remotelyOwned_[i]->size();
+    fei::CSVec* remoteVec = getRemotelyOwned(proc);
+    int size = remoteVec->size();
     MPI_Send(&size, 1, MPI_INT, proc, tag1, comm_);
   }
  
@@ -209,8 +210,9 @@ int fei::Vector_core::scatterToOverlap()
   //now send the indices that we want to receive data for.
   for(unsigned i=0; i<recvProcs.size(); ++i) {
     int proc = recvProcs[i];
-    int size = remotelyOwned_[i]->size();
-    int* indices = &(remotelyOwned_[i]->indices())[0];
+    fei::CSVec* remoteVec = getRemotelyOwned(proc);
+    int size = remoteVec->size();
+    int* indices = &(remoteVec->indices())[0];
     MPI_Send(indices, size, MPI_INT, proc, tag1, comm_);
   }
 
@@ -219,8 +221,9 @@ int fei::Vector_core::scatterToOverlap()
   //now post our recvs.
   for(unsigned i=0; i<recvProcs.size(); ++i) {
     int proc = recvProcs[i];
-    int size = remotelyOwned_[i]->size();
-    double* coefs = &(remotelyOwned_[i]->coefs())[0];
+    fei::CSVec* remoteVec = getRemotelyOwned(proc);
+    int size = remoteVec->size();
+    double* coefs = &(remoteVec->coefs())[0];
     MPI_Irecv(coefs, size, MPI_DOUBLE, proc, tag2, comm_, &mpiReqs[i]);
   }
 
@@ -236,8 +239,7 @@ int fei::Vector_core::scatterToOverlap()
       return(err);
     }
 
-    MPI_Send(&(send_doubles[i][0]), num, MPI_DOUBLE, proc,
-             tag2, comm_);
+    MPI_Send(&(send_doubles[i][0]), num, MPI_DOUBLE, proc, tag2, comm_);
   }
 
   MPI_Waitall(recvProcs.size(), &mpiReqs[0], &mpiStatuses[0]);

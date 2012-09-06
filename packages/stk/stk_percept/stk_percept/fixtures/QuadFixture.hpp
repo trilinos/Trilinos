@@ -34,6 +34,12 @@
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_io/IossBridge.hpp>
 
+#ifdef PERCEPT_QF_USE_COORD_GATHER_FIELD
+#undef PERCEPT_QF_USE_COORD_GATHER_FIELD
+#endif
+
+#define PERCEPT_QF_USE_COORD_GATHER_FIELD 0
+
 namespace stk {
   namespace percept {
 
@@ -78,7 +84,9 @@ namespace stk {
             bulk_data(  stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm ),
             quad_part( meta_data.declare_part("block_1", meta_data.element_rank() ) ),
             coord_field( meta_data.declare_field<CoordFieldType>("coordinates") ),
+#if PERCEPT_QF_USE_COORD_GATHER_FIELD
             coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
+#endif
             NX( nx ),
             NY( ny ),
             generate_sidesets(generate_sidesets_in),
@@ -101,6 +109,7 @@ namespace stk {
                     SpatialDim
                     );
 
+#if PERCEPT_QF_USE_COORD_GATHER_FIELD
           //put coord-gather-field on all elements:
           put_field(
                     coord_gather_field,
@@ -108,12 +117,13 @@ namespace stk {
                     meta_data.universal_part(),
                     NodesPerElem
                     );
-
           // Field relation so coord-gather-field on elements points
           // to coord-field of the element's nodes
 
           const stk::mesh::EntityRank element_rank = 2;
           meta_data.declare_field_relation( coord_gather_field, stk::mesh::fem::element_node_stencil<QuadOrTriTopo, element_rank>, coord_field);
+#endif
+
 
           if (generate_sidesets)
             generate_sides_meta( );
@@ -239,7 +249,9 @@ namespace stk {
         stk::mesh::BulkData    bulk_data ;
         stk::mesh::Part      & quad_part ;
         CoordFieldType       & coord_field ;
+#if PERCEPT_QF_USE_COORD_GATHER_FIELD
         CoordGatherFieldType & coord_gather_field ;
+#endif
         const unsigned         NX ;
         const unsigned         NY ;
         stk::mesh::Part *side_parts[4];
@@ -456,4 +468,6 @@ namespace stk {
 
   } // percept
 } // stk
+#undef PERCEPT_QF_USE_COORD_GATHER_FIELD
+
 #endif
