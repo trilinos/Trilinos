@@ -273,6 +273,30 @@ namespace Teuchos
   ///   itself or anything it contains may change at any time.
   namespace details {
 
+    // Compute magnitude.
+    template<typename ScalarType, bool isComplex>
+    class MagValue {
+    public:
+      void
+      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const; 
+    };
+
+    // Complex-arithmetic specialization. 
+    template<typename ScalarType>
+    class MagValue<ScalarType, true> {
+    public:
+      void
+      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const; 
+    };
+
+    // Real-arithmetic specialization.
+    template<typename ScalarType>
+    class MagValue<ScalarType, false> {
+    public:
+      void
+      blas_dabs1(const ScalarType* a, ScalarType* ret) const;
+    };
+ 
     template<typename ScalarType, bool isComplex>
     class GivensRotator {
     public:
@@ -303,7 +327,6 @@ namespace Teuchos
             ScalarType* db,
             ScalarType* c,
             ScalarType* s) const;
-
     private:
       /// Return ABS(x) if y > 0 or y is +0, else -ABS(x) (if y is -0 or < 0).
       ///
@@ -470,6 +493,26 @@ namespace Teuchos
       *da = r;
       *db = z;
     }
+
+    // Real-valued implementation of MagValue
+    template<typename ScalarType>
+    void 
+    MagValue<ScalarType, false>::
+    blas_dabs1(const ScalarType* a, ScalarType* ret) const 
+    {
+      *ret = Teuchos::ScalarTraits<ScalarType>::magnitude( *a );  
+    }
+
+    // Complex-valued implementation of MagValue
+    template<typename ScalarType>
+    void 
+    MagValue<ScalarType, true>::
+    blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const 
+    {
+      *ret = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(a->real());
+      *ret += ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(a->imag());
+    }
+
   } // namespace details
 
   template<typename OrdinalType, typename ScalarType>
@@ -577,29 +620,19 @@ namespace Teuchos
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    typename ScalarTraits<ScalarType>::magnitudeType result =
+    typename ScalarTraits<ScalarType>::magnitudeType temp, result =
       ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
     OrdinalType i, ix = izero;
 
     if ( n < ione || incx < ione )
       return result;
 
-    if (ScalarTraits<ScalarType>::isComplex)
+    details::MagValue<ScalarType, ScalarTraits<ScalarType>::isComplex> mval;
+    for (i = izero; i < n; i++)
       {
-        for(i = izero; i < n; i++)
-          {
-            result += ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].real());
-            result += ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].imag());
-            ix += incx;
-          }
-      }
-    else
-      {
-        for(i = izero; i < n; i++)
-          {
-            result += ScalarTraits<ScalarType>::magnitude(x[ix]);
-            ix += incx;
-          }
+        mval.blas_dabs1( &x[ix], &temp );
+        result += temp;
+        ix += incx;
       }
    
     return result;
@@ -664,37 +697,21 @@ namespace Teuchos
     if ( n < ione || incx < ione )
       return result;
   
-    if (ScalarTraits<ScalarType>::isComplex)
+    details::MagValue<ScalarType, ScalarTraits<ScalarType>::isComplex> mval;
+
+    mval.blas_dabs1( &x[ix], &maxval );
+    ix += incx;
+    for(i = ione; i < n; i++)
       {
-        maxval = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].real())
-               + ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].imag());
-        ix += incx;
-        for(i = ione; i < n; i++)
+        mval.blas_dabs1( &x[ix], &curval );
+        if(curval > maxval)
           {
-            curval = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].real())
-                   + ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(x[ix].imag());
-            if(curval > maxval)
-              {
-                result = i;
-                maxval = curval;
-              }
-            ix += incx;
+            result = i;
+            maxval = curval;
           }
-      }
-    else
-      {
-        maxval = ScalarTraits<ScalarType>::magnitude(x[ix]);
         ix += incx;
-        for(i = ione; i < n; i++)
-          {
-            if(ScalarTraits<ScalarType>::magnitude(x[ix]) > maxval)
-              {
-                result = i;
-                maxval = ScalarTraits<ScalarType>::magnitude(x[ix]);
-              }
-            ix += incx;
-          }
       }
+
     return result + 1; // the BLAS I?AMAX functions return 1-indexed (Fortran-style) values
   } /* end IAMAX */
 
