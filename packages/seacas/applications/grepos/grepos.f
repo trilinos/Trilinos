@@ -364,6 +364,10 @@ C     --Reserve memory for offsets
          CALL MDRSRV ('ZEXPL', KZEXPL, 1)
       END IF
 
+C     -- Reserve memory for node equiv (equiv node X with Y handled in command)
+      
+      call mdrsrv ('IXNP', KIXNP, NUMNP)
+
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
 
@@ -401,7 +405,7 @@ C     .. Set up status arrays for element to nodal variable conversion
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS),
      &     A(KXN), A(KYN), A(KZN),
      &     A(KXEXPL), A(KYEXPL), A(KZEXPL), MODBLK,
-     &     ISATRB, A(KATRSC),
+     &     ISATRB, A(KATRSC), IA(KIXNP), IA(KMAPNN),
      &     IA(KIELBS), IA(KINPSS), IA(KIESSS),
      &     NQAREC, C(KQAREC), NINFO, c(kinfo), c(kbktyp),
      *     c(knameb), c(knamnp), c(knamss), c(knamatt),
@@ -605,24 +609,28 @@ C     ... See if node equivalencing specified
       DELNP = .FALSE.
 
       if (equiv) then
-         call mdrsrv ('IXNP', KIXNP, NUMNP)
-         call mdrsrv ('IX',   KIX,   NUMNP)
-         CALL MDSTAT (NERR, MEM)
-         IF (NERR .GT. 0) GOTO 40
+        if (eqtoler .ge. 0.0) then
+          call mdrsrv ('IX',   KIX,   NUMNP)
+          CALL MDSTAT (NERR, MEM)
+          IF (NERR .GT. 0) GOTO 40
 
-         call matxyz(ndim, numnp, a(kxn), a(kyn), a(kzn), ia(kix),
-     &        ia(kixnp), nmatch, eqtoler)
-         
-         DELNP = (NMATCH .NE. 0)
-         
-         IF (.NOT. DELNP) THEN
-            CALL MDDEL ('IXNP')
-         ELSE
-C     ... Fix up IXNP array to match expected format            
-         END IF
-         CALL MDDEL('IX')
-         CALL MDSTAT (NERR, MEM)
-         IF (NERR .GT. 0) GOTO 40
+          call matxyz(ndim, numnp, a(kxn), a(kyn), a(kzn), ia(kix),
+     &      ia(kixnp), nmatch, eqtoler)
+          CALL MDDEL('IX')
+          CALL MDSTAT (NERR, MEM)
+          IF (NERR .GT. 0) GOTO 40
+        else
+          nmatch = 0
+          do i=1, numnp
+            if (ia(kixnp+i-1) .ne. i) nmatch = nmatch+1
+          end do
+        end if
+        write (*,*) 'Equivalencing ', nmatch, ' nodes'
+        DELNP = (NMATCH .NE. 0)
+        
+        IF (.NOT. DELNP) THEN
+          CALL MDDEL ('IXNP')
+        END IF
       end if
 C     --"Munch" the element blocks
 
@@ -641,6 +649,10 @@ C     --location of original numelb, isevok arrays
       NUMEL1 = NUMEL
 
       
+      if (renel .or. delnp) then
+        CALL MDRSRV ('MSCR', KMSCR, MAX(NUMEL0, NUMNP0))
+      end if
+
       IF (RENEL) THEN
 C     ... Reserve space for original NUMELB and ISEVOK arrays and copy
 C     old array contents into new (Only needed if EXODUS)       
@@ -664,7 +676,6 @@ C     ... Map from new var to old for mapping variables.
             CALL INIMAP(NUMNP0, IA(KMAPN))
          END IF
          
-         CALL MDRSRV ('MSCR', KMSCR, MAX(NUMEL0, NUMNP0))
          CALL MDRSRV ('IXEL', KIXEL, NUMEL)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
