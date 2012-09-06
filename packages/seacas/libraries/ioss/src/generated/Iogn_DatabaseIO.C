@@ -84,7 +84,10 @@ namespace Iogn {
 
   void DatabaseIO::read_meta_data()
   {
-    m_generatedMesh = new GeneratedMesh(get_filename(), util().parallel_size(), util().parallel_rank());
+    if(m_generatedMesh == NULL)
+    {
+      m_generatedMesh = new GeneratedMesh(get_filename(), util().parallel_size(), util().parallel_rank());
+    }
 
     spatialDimension = 3;
     nodeCount = m_generatedMesh->node_count_proc();
@@ -605,8 +608,8 @@ namespace Iogn {
       block->property_add(Ioss::Property("original_block_order", i));
       block->property_add(Ioss::Property("global_entity_count", (int64_t)m_generatedMesh->element_count(i+1)));
       
-      int attribute_count = i == 0 ? 0 : 1;
-      if (attribute_count > 0) {
+      if(type == "shell4")
+      {
 	block->field_add(Ioss::Field("thickness", Ioss::Field::REAL, "scalar", Ioss::Field::ATTRIBUTE,
 				     (int64_t)m_generatedMesh->element_count_proc(i+1)));
       }

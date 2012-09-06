@@ -1,9 +1,13 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-TRIBITS_ADD_EXECUTABLE(driver 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(driver 
   SOURCES ${HEADERS} driver.cpp
+  NUM_MPI_PROCS 4
   COMM mpi serial
+  ARGS "basic.xml"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Zoltan2_copy_test_options

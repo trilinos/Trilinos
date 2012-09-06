@@ -99,6 +99,9 @@ namespace Iogn {
     const GeneratedMesh* get_generated_mesh() const
       { return m_generatedMesh; }
 
+    void setGeneratedMesh(Iogn::GeneratedMesh* generatedMesh)
+    { m_generatedMesh = generatedMesh; }
+
     const std::vector<std::string>& get_sideset_names() const
       { return m_sideset_names; }
   private:

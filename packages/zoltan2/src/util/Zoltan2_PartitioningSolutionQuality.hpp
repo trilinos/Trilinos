@@ -99,8 +99,8 @@ public:
   /*! \brief Return the metric values.
    *  \param values on return is the array of values.
    */
-  void getMetrics(ArrayRCP<const MetricValues<scalar_t> > &values) const{
-    values = metricsConst_;
+  ArrayRCP<const MetricValues<scalar_t> > getMetrics() const{
+    return metricsConst_;
   }
 
   /*! \brief Return the object count imbalance.

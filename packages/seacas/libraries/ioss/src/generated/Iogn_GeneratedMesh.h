@@ -35,11 +35,13 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
+#include <iostream>
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;
   typedef std::vector<int64_t> Int64Vector;
   typedef std::vector<int>     IntVector;
+
   class GeneratedMesh
   {
   public:
@@ -182,7 +184,8 @@ namespace Iogn {
        time the coordinates are generated/retrieved)
     */
     explicit GeneratedMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
-    GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z,        int proc_count = 1, int my_proc = 0);
+    GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z, int proc_count = 1, int my_proc = 0);
+    GeneratedMesh() { };
     ~GeneratedMesh();
 
     /**
@@ -263,22 +266,22 @@ namespace Iogn {
     /**
      * Return number of nodes in the entire model.
      */
-    int64_t node_count() const;
+    virtual int64_t node_count() const;
 
     /**
      * Return number of nodes on this processor.
      */
-    int64_t node_count_proc() const;
+    virtual int64_t node_count_proc() const;
 
     /**
      * Return number of element blocks in the entire model.
      */
-    int64_t block_count() const;
+    virtual int64_t block_count() const;
 
     /**
      * Return number of nodesets in the entire model.
      */
-    int64_t nodeset_count() const;
+    virtual int64_t nodeset_count() const;
 
     /**
      * Return number of nodeset nodes on nodeset 'id'
@@ -288,12 +291,12 @@ namespace Iogn {
     /**
      * Return number of nodeset nodes on nodeset 'id' on the current processor
      */
-    int64_t nodeset_node_count_proc(int64_t id) const;
+    virtual int64_t nodeset_node_count_proc(int64_t id) const;
 
     /**
      * Return number of sidesets in the entire model.
      */
-    int64_t sideset_count() const;
+    virtual int64_t sideset_count() const;
 
     /**
      * Return number of sideset 'sides' on sideset 'id'
@@ -304,12 +307,12 @@ namespace Iogn {
      * Return number of sideset 'sides' on sideset 'id' on the current
      * processor.
      */
-    int64_t sideset_side_count_proc(int64_t id) const;
+    virtual int64_t sideset_side_count_proc(int64_t id) const;
 
     /**
      * Return number of elements in all element blocks in the model.
      */
-    int64_t element_count() const;
+    virtual int64_t element_count() const;
 
     /**
      * Return number of shell elements in all element blocks in the model.
@@ -319,7 +322,7 @@ namespace Iogn {
     /**
      * Return number of elements in all element blocks on this processor.
      */
-    int64_t element_count_proc() const;
+    virtual int64_t element_count_proc() const;
 
     /**
      * Return number of shell elements in all element blocks on this processor.
@@ -331,48 +334,48 @@ namespace Iogn {
      * 'block_number'. The 'block_number' ranges from '1' to
      * 'block_count()'. 
      */
-    int64_t element_count(int64_t block_number) const;
+    virtual int64_t element_count(int64_t block_number) const;
 
     /**
      * Return number of elements on this processor in the element
      * block with id 'block_number'. The 'block_number' ranges from
      * '1' to 'block_count()'.
      */
-    int64_t element_count_proc(int64_t block_number) const;
+    virtual int64_t element_count_proc(int64_t block_number) const;
 
     /**
      * Returns pair containing "topology type string" and "number of
      * nodes / element". The topology type string will be "hex8" for
      * the hex element block and "shell4" for the shell element blocks.
      */
-    std::pair<std::string, int>  topology_type(int64_t block_number) const;
+    virtual std::pair<std::string, int>  topology_type(int64_t block_number) const;
     
-    int64_t communication_node_count_proc() const;
-    void node_communication_map(MapVector &map, std::vector<int> &proc);
+    virtual int64_t communication_node_count_proc() const;
+    virtual void node_communication_map(MapVector &map, std::vector<int> &proc);
     
     /** 
      * Fill the passed in 'map' argument with the node map
      * "map[local_position] = global_id" for the nodes on this
      * processor.
      */
-    void node_map(MapVector &map);
-    void node_map(IntVector &map);
+    virtual void node_map(MapVector &map);
+    virtual void node_map(IntVector &map);
 
     /** 
      * Fill the passed in 'map' argument with the element map
      * "map[local_position] = global_id" for the elements on this
      * processor in block "block_number".
      */
-    void element_map(int64_t block_number, MapVector &map) const;
-    void element_map(int     block_number, IntVector &map) const;
+    virtual void element_map(int64_t block_number, MapVector &map) const;
+    virtual void element_map(int     block_number, IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
      * "map[local_position] = global_id" for all elements on this
      * processor 
      */
-    void element_map(MapVector &map) const;
-    void element_map(IntVector &map) const;
+    virtual void element_map(MapVector &map) const;
+    virtual void element_map(IntVector &map) const;
     
     /** 
      * Fill the passed in 'map' argument with the element map pair
@@ -396,7 +399,7 @@ namespace Iogn {
     void connectivity(int64_t block_number, Int64Vector &connect) const;
     void connectivity(int64_t block_number, IntVector &connect) const;
     void connectivity(int64_t block_number, int64_t* connect) const;
-    void connectivity(int64_t block_number, int* connect) const;
+    virtual void connectivity(int64_t block_number, int* connect) const;
 
     /**
      * Return the coordinates for all nodes on this processor.  The
@@ -405,8 +408,8 @@ namespace Iogn {
      * resized to the size required to contain the nodal coordinates;
      * all information in 'coord' will be overwritten.
      */
-    void coordinates(std::vector<double> &coord) const;
-    void coordinates(double *coord) const;
+    virtual void coordinates(std::vector<double> &coord) const;
+    virtual void coordinates(double *coord) const;
 
     /**
      * Return the coordinates for all nodes on this processor in
@@ -414,7 +417,7 @@ namespace Iogn {
      * required to contain the nodal coordinates; all information in
      * the vectors will be overwritten.
      */
-    void coordinates(std::vector<double> &x,
+    virtual void coordinates(std::vector<double> &x,
 		     std::vector<double> &y,
 		     std::vector<double> &z) const;
     
@@ -427,14 +430,14 @@ namespace Iogn {
      * It is an error to request the coordinates via this function
      * if a rotation is defined.
      */
-    void coordinates(int component, std::vector<double> &xyz) const;
+    virtual void coordinates(int component, std::vector<double> &xyz) const;
 
     /**
      * Return the list of nodes in nodeset 'id' on this processor.
      * The 'nodes' vector will be resized to the size required to
      * contain the node list. The ids are global ids.
      */
-    void nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const;
+    virtual void nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const;
 
     /**
      * Return the list of the face/ordinal pairs
@@ -445,7 +448,7 @@ namespace Iogn {
      * required to contain the list. The element ids are global ids,
      * the side ordinal is 0-based.
      */
-    void sideset_elem_sides(int64_t nset_id, Int64Vector &elem_sides) const;
+    virtual void sideset_elem_sides(int64_t nset_id, Int64Vector &elem_sides) const;
     int64_t get_num_x() const {return numX;}
     int64_t get_num_y() const {return numY;}
     int64_t get_num_z() const {return numZ;}
@@ -476,5 +479,40 @@ namespace Iogn {
 			      * sclY*i+offY, sclZ*i+offZ) */
     bool doRotation;
   };
+
+class CustomMesh : public GeneratedMesh
+{
+public:
+    CustomMesh() { }
+    virtual ~CustomMesh() { }
+
+    virtual int64_t node_count() const;
+    virtual int64_t node_count_proc() const;
+    virtual int64_t element_count() const;
+    virtual int64_t element_count(int64_t block_number) const;
+    virtual int64_t block_count() const;
+    virtual int64_t nodeset_count() const;
+    virtual int64_t sideset_count() const;
+    virtual int64_t element_count_proc() const;
+    virtual int64_t element_count_proc(int64_t block_number) const;
+    virtual int64_t nodeset_node_count_proc(int64_t id) const;
+    virtual int64_t sideset_side_count_proc(int64_t id) const;
+    virtual int64_t communication_node_count_proc() const;
+    virtual void coordinates(double *coord) const;
+    virtual void coordinates(std::vector<double> &coord) const;
+    virtual void coordinates(int component, std::vector<double> &xyz) const;
+    virtual void coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const;
+    virtual void connectivity(int64_t block_number, int* connect) const;
+    virtual std::pair<std::string, int> topology_type(int64_t block_number) const;
+    virtual void sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) const;
+    virtual void nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const;
+    virtual void node_communication_map(MapVector &map, std::vector<int> &proc);
+    virtual void node_map(IntVector &map);
+    virtual void node_map(MapVector &map);
+    virtual void element_map(int block_number, IntVector &map) const;
+    virtual void element_map(int64_t block_number, MapVector &map) const;
+    virtual void element_map(MapVector &map) const;
+    virtual void element_map(IntVector &map) const;
+};
 }
 #endif
