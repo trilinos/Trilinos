@@ -29,10 +29,10 @@
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
  * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT(INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -69,36 +69,45 @@ extern "C" {
 
 #ifndef TRUE
 #define FALSE (0)
-#define TRUE  (1)
+#define TRUE (1)
 #endif /* !TRUE */
+
+/***********  Distributed Directory Function Prototypes ************/
+
+unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries,
+ unsigned int n, void *hashdata, ZOLTAN_HASH_FN *fn);
+
+void Zoltan_DD_default_cleanup(void *hashdata);
+
+typedef unsigned int DD_Hash_fn(ZOLTAN_ID_PTR, int, unsigned int, void *,
+                                ZOLTAN_HASH_FN *);
+typedef void DD_Cleanup_fn(void*);
 
 
 
 /************  Zoltan_DD_Directory, DD_Node  **********************/
 
+typedef int DD_NodeIdx;   /* Index into dd->nodelist; 
+                             must be a signed type as -1 indicates NULL */
 
 /* The following structure, DD_Node, is the basic unit of the hash table's
- * linked list.  DD_Node contains the global ID (used as the table lookup
+ * linked list.  DD_Node contains the global ID(used as the table lookup
  * key) and other necessary information.  NOTE: DD_Node is malloc'd to
  * store gid, lid & user data beyond the struct's end.
 */
 
 typedef struct DD_Node  {
-   int              owner;      /* processor hosting global ID object    */
-   int              partition;  /* Optional data                         */
-   int              errcheck;   /* Error checking (inconsistent updates) */
-   struct DD_Node  *next;       /* Next DD_Node in linked list or NULL   */
-   ZOLTAN_ID_TYPE   gid[1];     /* gid used as key for update & lookup   */
-                                 /* lid starts at gid + dd->gid_length    */
-                                 /* (user) data starts at                 */
-                                 /* gid + dd->gid_length + dd->lid_length */
+  int              owner;      /* processor hosting global ID object    */
+  int              partition;  /* Optional data                         */
+  int              errcheck;   /* Error checking(inconsistent updates) */
+  DD_NodeIdx       next;       /* index in nodelist of next DD_Node in 
+                                  linked list or free node list */
+  ZOLTAN_ID_TYPE   gid[1];     /* gid used as key for update & lookup   */
+                               /* lid starts at gid + dd->gid_length    */
+                               /*(user) data starts at                 */
+                               /* gid + dd->gid_length + dd->lid_length */
 } DD_Node;
 
-/* Hash function */
-
-typedef unsigned int DD_Hash_fn (ZOLTAN_ID_PTR, int, unsigned int, void *,
-                                 ZOLTAN_HASH_FN *);
-typedef void DD_Cleanup_fn (void*);
 
 /* The directory structure, Zoltan_DD_Struct, is created by the call
  * to Zoltan_DD_Create(). It maintains the state information and storage
@@ -115,13 +124,13 @@ struct Zoltan_DD_Struct {
   int nproc;              /* Number of processors in MPI Comm       */
   int gid_length;         /* = zz->Num_GID -- avoid needing Zoltan_Struct */
   int lid_length;         /* = zz->Num_LID -- avoid needing Zoltan_Struct */
-  int max_id_length;      /* max (gid_length, lid_length)           */
+  int max_id_length;      /* max(gid_length, lid_length)           */
   int user_data_length;   /* Optional user data length in chars */
   int table_length;       /* # of heads of linked lists             */
-  int node_size;          /* Malloc'd to include GID & LID storage  */
-  int find_msg_size;      /* Total allocation for DD_FIND_MSG       */
-  int update_msg_size;    /* Total allocation for DD_UPDATE_MSG     */
-  int remove_msg_size;    /* Total allocation for DD_REMOVE_MSG     */
+  size_t node_size;       /* Malloc'd to include GID & LID storage  */
+  size_t find_msg_size;   /* Total allocation for DD_FIND_MSG       */
+  size_t update_msg_size; /* Total allocation for DD_UPDATE_MSG     */
+  size_t remove_msg_size; /* Total allocation for DD_REMOVE_MSG     */
   int debug_level;        /* Determines actions to multiple updates */
 
   DD_Hash_fn *hash;       /* Hash function used by this DD         */
@@ -129,14 +138,18 @@ struct Zoltan_DD_Struct {
   ZOLTAN_HASH_FN *hashfn; /* ... Or user's hash function, not both */
   DD_Cleanup_fn *cleanup; /* Functioned to free our hash data      */
 
-  MPI_Comm comm;          /* Dup of original MPI Comm (KDD)         */
-  DD_Node *table[1];      /* Hash table, heads of the link lists    */
+  MPI_Comm comm;          /* Dup of original MPI Comm(KDD)         */
+  DD_Node *nodelist;      /* Memory for storing all nodes in the directory */
+  DD_NodeIdx nodelistlen; /* Length of the nodelist. */
+  DD_NodeIdx nextfreenode;/* Index of first free node in nodelist; 
+                             -1 if no nodes are free */
+  DD_NodeIdx table[1];    /* Hash table heads of the link lists     */
 };
 
 
 /*************** DD Communication Messages *********************/
 
-/* Note: These message structures should become MPI datatypes (KDD)   */
+/* Note: These message structures should become MPI datatypes(KDD)   */
 
 
 typedef struct {           /* Only used by Zoltan_DD_Update()              */
@@ -153,7 +166,7 @@ typedef struct {           /* Only used by Zoltan_DD_Update()              */
 
 
 
-/* A single structure can serve for both the request and its answer (in
+/* A single structure can serve for both the request and its answer(in
  * DD_Find_Msg if its memory is sized to hold either a global ID or a
  * local ID.  On the request direction, the proc field is the
  * destination and the id field holds the global ID being located.  In
@@ -171,24 +184,11 @@ typedef struct {           /* Only used by Zoltan_DD_Find()         */
 } DD_Find_Msg;
 
 
-
-
-
-
 typedef struct  {          /* Only used by Zoltan_DD_Remove()      */
    int        owner;       /* range [0, nproc-1] or -1             */
    ZOLTAN_ID_TYPE gid[1];  /* structure malloc'd to include gid    */
 }  DD_Remove_Msg;
 
-
-
-
-/***********  Distributed Directory Function Prototypes ************/
-
-unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries,
- unsigned int n, void *hashdata, ZOLTAN_HASH_FN *fn);
-
-void Zoltan_DD_default_cleanup(void *hashdata);
 
 
 #ifdef __cplusplus

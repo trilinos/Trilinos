@@ -68,19 +68,17 @@ extern "C" {
 #define NO_PROC -1
 
 
-typedef struct
-   {
+typedef struct {
    int old_owner ;
    int new_owner ;      /* old != new ==> simultated data move    */
    int partition ;
    ZOLTAN_ID_TYPE id[1] ;   /* malloc'd beyond end of struct              */
                             /* ZOLTAN_ID_TYPE lid[]  at gid + glen        */
                             /* ZOLTAN_ID_TYPE user[] at gid + glen + llen */
-   } Data ;
+} Data ;
 
 
-typedef struct
-   {
+typedef struct {
    int count ;          /* number of global IDs to simulate            */
    int pdelete ;        /* fraction of GIDs removed per cycle x100     */
    int pmove ;          /* fraction of GIDs moved per cycle x100       */
@@ -96,7 +94,7 @@ typedef struct
 
    int name_scheme ;
    int debug_level ;
-   } Param ;
+} Param ;
 
 
 static int get_params (Param *p) ;
@@ -151,7 +149,7 @@ typedef struct Zoltan_Timer {
    {ZOLTAN_TIMER_STOP(zt, timer[arg], MPI_COMM_WORLD);}
 
 int main (int argc, char *argv[])
-   {
+{
    Zoltan_DD_Directory *dd;
    ZTIMER *zt;
 
@@ -192,7 +190,7 @@ int main (int argc, char *argv[])
 
    MACRO_TIMER_START(0, "DD_Create time", 0);
    err = Zoltan_DD_Create (&dd, MPI_COMM_WORLD, param.glen, param.llen,
-    param.ulen, param.tlen, param.debug_level);
+    param.ulen*sizeof(ZOLTAN_ID_TYPE), param.tlen, param.debug_level);
    if (err != ZOLTAN_OK)
       ZOLTAN_PRINT_ERROR (myproc, yo, "Failed return from DD Create");
    MACRO_TIMER_STOP(0);
@@ -238,7 +236,8 @@ int main (int argc, char *argv[])
          ++count;
       }
    MACRO_TIMER_START (1, "DD_Update timer", 0);
-   err = Zoltan_DD_Update (dd, glist, llist, ulist, plist, count);
+printf("KDDKDD Update1 %d\n", count);
+   err = Zoltan_DD_Update (dd, glist, llist, (char*)ulist, plist, count);
    if (err != ZOLTAN_OK)
       ZOLTAN_PRINT_ERROR (myproc, yo, "Failed return from DD Update");
    MACRO_TIMER_STOP(1);
@@ -248,8 +247,10 @@ int main (int argc, char *argv[])
       ZOLTAN_SET_ID (param.glen, glist + i * param.glen, ((Data *)p)->id);
       ++i;
    }
+printf("KDDKDD Find1\n");
    MACRO_TIMER_START(2, "DD_Find timer", 0);
-   err = Zoltan_DD_Find (dd, glist, llist, ulist, plist, param.count, olist);
+   err = Zoltan_DD_Find (dd, glist, llist, (char*)ulist, plist, 
+                         param.count, olist);
    if (err != ZOLTAN_OK)
       ZOLTAN_PRINT_ERROR (myproc, yo, "Failed return from DD Find");
    MACRO_TIMER_STOP(2);
@@ -265,8 +266,7 @@ int main (int argc, char *argv[])
    ZOLTAN_PRINT_INFO (myproc, yo, str);
 
    /* repeatedly simulate moving "dots" around the system */
-   for (loop = 0; loop < param.nloops; loop++)
-       {
+   for (loop = 0; loop < param.nloops; loop++) {
        for (p = store; p < store + param.count * param.slen; p += param.slen)
           ((Data*) p)->old_owner = ((Data*) p)->new_owner;
 
@@ -300,8 +300,9 @@ int main (int argc, char *argv[])
               plist [count] = ((Data *)p)->partition;
               ++count;
            }
+printf("KDDKDD Update2\n");
        MACRO_TIMER_START(1, "DD_Update", 0);
-       err = Zoltan_DD_Update (dd, glist, llist, ulist, plist, count);
+       err = Zoltan_DD_Update (dd, glist, llist, (char*)ulist, plist, count);
        if (err != ZOLTAN_OK)
           ZOLTAN_PRINT_ERROR (myproc, yo, "Failed return from DD Update");
        MACRO_TIMER_STOP(1);
@@ -313,17 +314,22 @@ int main (int argc, char *argv[])
           ++i;
        }
  
+printf("KDDKDD Find2\n");
        MACRO_TIMER_START(2, "DD_Find timer", 0);
        if (loop % 5 == 0)
-          err = Zoltan_DD_Find(dd,glist,NULL,ulist,plist,param.count,olist);
+          err = Zoltan_DD_Find(dd,glist,NULL,(char*)ulist,
+                               plist,param.count,olist);
        else if (loop % 7 == 0)
           err = Zoltan_DD_Find(dd,glist,llist,NULL,plist,param.count,olist);
        else if (loop % 9 == 0)
-          err = Zoltan_DD_Find(dd,glist,llist,ulist,NULL,param.count,olist);
+          err = Zoltan_DD_Find(dd,glist,llist,(char*)ulist,
+                               NULL,param.count,olist);
        else if (loop % 2 == 0) 
-          err = Zoltan_DD_Find(dd,glist,llist,ulist,plist,param.count,NULL);
+          err = Zoltan_DD_Find(dd,glist,llist,(char*)ulist,
+                               plist,param.count,NULL);
        else
-           err = Zoltan_DD_Find(dd,glist,llist,ulist,plist,param.count,olist);
+           err = Zoltan_DD_Find(dd,glist,llist,(char*)ulist,
+                               plist,param.count,olist);
        if (err != ZOLTAN_OK)
           ZOLTAN_PRINT_ERROR (myproc, yo, "Failed return from DD Find");
        MACRO_TIMER_STOP(2);
@@ -354,6 +360,7 @@ int main (int argc, char *argv[])
           }
           data->new_owner = NO_PROC;
        }
+printf("KDDKDD Remove1\n");
        MACRO_TIMER_START(3, "DD_Remove timer", 0);
        err = Zoltan_DD_Remove (dd, glist, count);
        MACRO_TIMER_STOP(3);
@@ -378,6 +385,7 @@ int main (int argc, char *argv[])
               plist [count] = ((Data*)p)->partition;
               ++count;
            }
+printf("KDDKDD Update3\n");
        MACRO_TIMER_START(1, "DD_Update timer", 0);
        err = Zoltan_DD_Update (dd, glist, NULL, NULL, NULL, count);
        if (err != ZOLTAN_OK)
@@ -394,6 +402,7 @@ int main (int argc, char *argv[])
          ++count;
       }
    }
+printf("KDDKDD Find3\n");
    MACRO_TIMER_START(2, "DD_Find", 0);
    err = Zoltan_DD_Find (dd, glist, NULL, NULL, NULL, count, olist);
    if (err != ZOLTAN_OK)
@@ -411,6 +420,7 @@ int main (int argc, char *argv[])
    else
       ZOLTAN_PRINT_INFO (myproc, yo, "TEST SUCCESSFUL");
 
+printf("KDDKDD Stats\n");
    Zoltan_DD_Stats (dd);
 
    /* done, now free memory, stop MPI & directory, return */
@@ -424,6 +434,7 @@ int main (int argc, char *argv[])
 
    ZOLTAN_PRINT_INFO (myproc, yo, "Completing program");
    MACRO_TIMER_START(4, "DD_Destroy", 0);
+printf("KDDKDD Destroy\n");
    Zoltan_DD_Destroy (&dd);
    MACRO_TIMER_STOP(4);
    MACRO_TIMER_STOP(5);
@@ -433,12 +444,12 @@ int main (int argc, char *argv[])
 
    MPI_Finalize ();
    return ZOLTAN_OK;
-   }
+}
 
 
 
 static int initialize_data (Param *param, char *store, int nproc)
-   {
+{
    int i;
    int j;
    Data *data;
@@ -464,13 +475,13 @@ static int initialize_data (Param *param, char *store, int nproc)
    srand ((unsigned int) param->rseed);
 
    return ZOLTAN_OK;
-   }
+}
 
 
 
 
 static int get_params (Param *param)
-    {
+{
     /* establish default values */
     param->count       = 250000; 
     param->pmove       = 10;
@@ -491,7 +502,7 @@ static int get_params (Param *param)
     /* read external file for optional non default parameter values */
 
     return ZOLTAN_OK;
-    }
+}
 
 
 #ifdef __cplusplus

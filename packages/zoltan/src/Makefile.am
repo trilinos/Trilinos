@@ -343,6 +343,7 @@ UTILITIES = \
 	$(srcdir)/Utilities/Communication/comm_invert_plan.c \
 	$(srcdir)/Utilities/Timer/zoltan_timer.c \
 	$(srcdir)/Utilities/Timer/timer.c \
+	$(srcdir)/Utilities/DDirectory/DD_Memory.c \
 	$(srcdir)/Utilities/DDirectory/DD_Find.c \
 	$(srcdir)/Utilities/DDirectory/DD_Destroy.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn3.c \

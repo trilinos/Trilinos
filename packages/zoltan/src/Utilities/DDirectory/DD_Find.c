@@ -63,6 +63,7 @@ int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd,
 {
   int ierr = ZOLTAN_OK;
   int i, k;
+  DD_NodeIdx nodeidx;
   DD_Node *ptr;
   int gid_alloc_size;
 
@@ -72,7 +73,9 @@ int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd,
 
   k= 0;
   for (i = 0; i < dd->table_length; i++)
-    for (ptr = dd->table[i]; ptr != NULL; ptr = ptr->next) {
+    for (nodeidx = dd->table[i]; nodeidx != -1;
+         nodeidx = dd->nodelist[nodeidx].next) {
+      ptr = dd->nodelist + nodeidx;
       if (k >= gid_alloc_size) {
         gid_alloc_size *= 2;
         (*gid) = (ZOLTAN_ID_PTR)
@@ -282,6 +285,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
  int *owner)                /* gid's owner (processor number) (out)   */
 {
    DD_Node *ptr;
+   DD_NodeIdx nodeidx;
    int      index;
    char    *yo = "DD_Find_Local";
 
@@ -297,7 +301,9 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
    index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length,
                             dd->hashdata, NULL);
    /* walk link list until end looking for matching global ID */
-   for (ptr = dd->table[index]; ptr != NULL; ptr = ptr->next)
+   for (nodeidx = dd->table[index]; nodeidx != -1;
+        nodeidx = dd->nodelist[nodeidx].next) {
+      ptr = dd->nodelist + nodeidx;
       if (ZOLTAN_EQ_ID (dd->gid_length, gid, ptr->gid) == TRUE)  {
          /* matching global ID found! Return gid's information */
          if (lid) ZOLTAN_SET_ID(dd->lid_length, lid, ptr->gid + dd->gid_length);
@@ -311,6 +317,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
             ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL);
          return ZOLTAN_OK;
       }
+   }
 
 
    if (owner != NULL)

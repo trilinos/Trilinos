@@ -65,6 +65,7 @@ extern "C" {
 #endif
 
 extern int Zoltan_Align(int);
+extern size_t Zoltan_Align_size_t(size_t);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

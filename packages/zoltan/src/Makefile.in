@@ -220,6 +220,7 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/Utilities/Communication/comm_invert_plan.c \
 	$(srcdir)/Utilities/Timer/zoltan_timer.c \
 	$(srcdir)/Utilities/Timer/timer.c \
+	$(srcdir)/Utilities/DDirectory/DD_Memory.c \
 	$(srcdir)/Utilities/DDirectory/DD_Find.c \
 	$(srcdir)/Utilities/DDirectory/DD_Destroy.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn3.c \
@@ -303,10 +304,10 @@ am__objects_22 = comm_exchange_sizes.$(OBJEXT) \
 	comm_create.$(OBJEXT) comm_resize.$(OBJEXT) \
 	comm_sort_ints.$(OBJEXT) comm_destroy.$(OBJEXT) \
 	comm_invert_plan.$(OBJEXT) zoltan_timer.$(OBJEXT) \
-	timer.$(OBJEXT) DD_Find.$(OBJEXT) DD_Destroy.$(OBJEXT) \
-	DD_Set_Neighbor_Hash_Fn3.$(OBJEXT) DD_Remove.$(OBJEXT) \
-	DD_Create.$(OBJEXT) DD_Update.$(OBJEXT) DD_Stats.$(OBJEXT) \
-	DD_Hash2.$(OBJEXT) DD_Print.$(OBJEXT) \
+	timer.$(OBJEXT) DD_Memory.$(OBJEXT) DD_Find.$(OBJEXT) \
+	DD_Destroy.$(OBJEXT) DD_Set_Neighbor_Hash_Fn3.$(OBJEXT) \
+	DD_Remove.$(OBJEXT) DD_Create.$(OBJEXT) DD_Update.$(OBJEXT) \
+	DD_Stats.$(OBJEXT) DD_Hash2.$(OBJEXT) DD_Print.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn2.$(OBJEXT) DD_Set_Hash_Fn.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn1.$(OBJEXT) mem.$(OBJEXT) \
 	zoltan_align.$(OBJEXT) zoltan_id.$(OBJEXT)
@@ -793,6 +794,7 @@ UTILITIES = \
 	$(srcdir)/Utilities/Communication/comm_invert_plan.c \
 	$(srcdir)/Utilities/Timer/zoltan_timer.c \
 	$(srcdir)/Utilities/Timer/timer.c \
+	$(srcdir)/Utilities/DDirectory/DD_Memory.c \
 	$(srcdir)/Utilities/DDirectory/DD_Find.c \
 	$(srcdir)/Utilities/DDirectory/DD_Destroy.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn3.c \
@@ -1263,6 +1265,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Destroy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Find.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Hash2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Print.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Remove.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Set_Hash_Fn.Po@am__quote@
@@ -3028,6 +3031,20 @@ timer.obj: $(srcdir)/Utilities/Timer/timer.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/Timer/timer.c' object='timer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o timer.obj `if test -f '$(srcdir)/Utilities/Timer/timer.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Timer/timer.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Timer/timer.c'; fi`
+
+DD_Memory.o: $(srcdir)/Utilities/DDirectory/DD_Memory.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT DD_Memory.o -MD -MP -MF $(DEPDIR)/DD_Memory.Tpo -c -o DD_Memory.o `test -f '$(srcdir)/Utilities/DDirectory/DD_Memory.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/DDirectory/DD_Memory.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/DD_Memory.Tpo $(DEPDIR)/DD_Memory.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/DDirectory/DD_Memory.c' object='DD_Memory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o DD_Memory.o `test -f '$(srcdir)/Utilities/DDirectory/DD_Memory.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/DDirectory/DD_Memory.c
+
+DD_Memory.obj: $(srcdir)/Utilities/DDirectory/DD_Memory.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT DD_Memory.obj -MD -MP -MF $(DEPDIR)/DD_Memory.Tpo -c -o DD_Memory.obj `if test -f '$(srcdir)/Utilities/DDirectory/DD_Memory.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/DDirectory/DD_Memory.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/DDirectory/DD_Memory.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/DD_Memory.Tpo $(DEPDIR)/DD_Memory.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/DDirectory/DD_Memory.c' object='DD_Memory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o DD_Memory.obj `if test -f '$(srcdir)/Utilities/DDirectory/DD_Memory.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/DDirectory/DD_Memory.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/DDirectory/DD_Memory.c'; fi`
 
 DD_Find.o: $(srcdir)/Utilities/DDirectory/DD_Find.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT DD_Find.o -MD -MP -MF $(DEPDIR)/DD_Find.Tpo -c -o DD_Find.o `test -f '$(srcdir)/Utilities/DDirectory/DD_Find.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/DDirectory/DD_Find.c
