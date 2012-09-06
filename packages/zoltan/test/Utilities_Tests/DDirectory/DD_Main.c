@@ -236,7 +236,6 @@ int main (int argc, char *argv[])
          ++count;
       }
    MACRO_TIMER_START (1, "DD_Update timer", 0);
-printf("KDDKDD Update1 %d\n", count);
    err = Zoltan_DD_Update (dd, glist, llist, (char*)ulist, plist, count);
    if (err != ZOLTAN_OK)
       ZOLTAN_PRINT_ERROR (myproc, yo, "Failed return from DD Update");
@@ -247,7 +246,6 @@ printf("KDDKDD Update1 %d\n", count);
       ZOLTAN_SET_ID (param.glen, glist + i * param.glen, ((Data *)p)->id);
       ++i;
    }
-printf("KDDKDD Find1\n");
    MACRO_TIMER_START(2, "DD_Find timer", 0);
    err = Zoltan_DD_Find (dd, glist, llist, (char*)ulist, plist, 
                          param.count, olist);
@@ -300,7 +298,6 @@ printf("KDDKDD Find1\n");
               plist [count] = ((Data *)p)->partition;
               ++count;
            }
-printf("KDDKDD Update2\n");
        MACRO_TIMER_START(1, "DD_Update", 0);
        err = Zoltan_DD_Update (dd, glist, llist, (char*)ulist, plist, count);
        if (err != ZOLTAN_OK)
@@ -314,7 +311,6 @@ printf("KDDKDD Update2\n");
           ++i;
        }
  
-printf("KDDKDD Find2\n");
        MACRO_TIMER_START(2, "DD_Find timer", 0);
        if (loop % 5 == 0)
           err = Zoltan_DD_Find(dd,glist,NULL,(char*)ulist,
@@ -360,7 +356,6 @@ printf("KDDKDD Find2\n");
           }
           data->new_owner = NO_PROC;
        }
-printf("KDDKDD Remove1\n");
        MACRO_TIMER_START(3, "DD_Remove timer", 0);
        err = Zoltan_DD_Remove (dd, glist, count);
        MACRO_TIMER_STOP(3);
@@ -385,7 +380,6 @@ printf("KDDKDD Remove1\n");
               plist [count] = ((Data*)p)->partition;
               ++count;
            }
-printf("KDDKDD Update3\n");
        MACRO_TIMER_START(1, "DD_Update timer", 0);
        err = Zoltan_DD_Update (dd, glist, NULL, NULL, NULL, count);
        if (err != ZOLTAN_OK)
@@ -402,7 +396,6 @@ printf("KDDKDD Update3\n");
          ++count;
       }
    }
-printf("KDDKDD Find3\n");
    MACRO_TIMER_START(2, "DD_Find", 0);
    err = Zoltan_DD_Find (dd, glist, NULL, NULL, NULL, count, olist);
    if (err != ZOLTAN_OK)
@@ -420,7 +413,6 @@ printf("KDDKDD Find3\n");
    else
       ZOLTAN_PRINT_INFO (myproc, yo, "TEST SUCCESSFUL");
 
-printf("KDDKDD Stats\n");
    Zoltan_DD_Stats (dd);
 
    /* done, now free memory, stop MPI & directory, return */
@@ -434,7 +426,6 @@ printf("KDDKDD Stats\n");
 
    ZOLTAN_PRINT_INFO (myproc, yo, "Completing program");
    MACRO_TIMER_START(4, "DD_Destroy", 0);
-printf("KDDKDD Destroy\n");
    Zoltan_DD_Destroy (&dd);
    MACRO_TIMER_STOP(4);
    MACRO_TIMER_STOP(5);

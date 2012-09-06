@@ -143,7 +143,8 @@ int Zoltan_DD_Create (
 
    /* NULL heads of link list in hash table */
    for (i = 0; i < size; i++) (*dd)->table[i] = -1;  /* NULL values */
-   (*dd)->nodelist = NULL;   
+   (*dd)->nodelist = NULL;
+   (*dd)->nodedata = NULL;
    (*dd)->nodelistlen = 0;
    (*dd)->nextfreenode = -1;
 
@@ -161,7 +162,7 @@ int Zoltan_DD_Create (
 
    /* frequently used dynamic allocation computed sizes */
    size = ((num_gid + num_lid) * sizeof(ZOLTAN_ID_TYPE)) + user_length;
-   (*dd)->node_size       = size + sizeof(DD_Node);
+   (*dd)->nodedata_size   = size;
    (*dd)->update_msg_size = size + sizeof(DD_Update_Msg);
 
    size = num_gid * sizeof(ZOLTAN_ID_TYPE);
@@ -171,7 +172,7 @@ int Zoltan_DD_Create (
    (*dd)->find_msg_size   = size + sizeof(DD_Find_Msg);
 
    /* force alignment */
-   (*dd)->node_size       = Zoltan_Align_size_t((*dd)->node_size);
+   (*dd)->nodedata_size   = Zoltan_Align_size_t((*dd)->nodedata_size);
    (*dd)->update_msg_size = Zoltan_Align_size_t((*dd)->update_msg_size);
    (*dd)->remove_msg_size = Zoltan_Align_size_t((*dd)->remove_msg_size);
    (*dd)->find_msg_size   = Zoltan_Align_size_t((*dd)->find_msg_size);
@@ -217,11 +218,12 @@ int Zoltan_DD_Copy_To(Zoltan_DD_Directory **toptr, Zoltan_DD_Directory *from)
   }
 
   if (from) {
+    DD_NodeIdx i;
 
     to = *toptr = 
       (Zoltan_DD_Directory *)ZOLTAN_MALLOC(
         sizeof (Zoltan_DD_Directory) + 
-        (from->table_length * sizeof(DD_Node*)));
+        (from->table_length * sizeof(DD_NodeIdx)));
 
     if (!to) {
       ZOLTAN_PRINT_ERROR(from->my_proc, yo, "Insufficient memory."); 
@@ -229,11 +231,21 @@ int Zoltan_DD_Copy_To(Zoltan_DD_Directory **toptr, Zoltan_DD_Directory *from)
     }
   
     *to = *from;
+    memcpy(to->table, from->table, to->table_length * sizeof(DD_NodeIdx));
 
     MPI_Comm_dup(from->comm, &(to->comm));
 
-    to->nodelist = (DD_Node *) ZOLTAN_MALLOC(to->nodelistlen * to->node_size);
-    memcpy(to->nodelist, from->nodelist, to->nodelistlen * to->node_size);
+    if (to->nodelistlen) {
+      to->nodelist = (DD_Node *) ZOLTAN_MALLOC(to->nodelistlen * sizeof(DD_Node));
+      memcpy(to->nodelist, from->nodelist, to->nodelistlen * sizeof(DD_Node));
+
+      to->nodedata = (char *) ZOLTAN_MALLOC(to->nodelistlen * to->nodedata_size);
+      memcpy(to->nodedata, from->nodedata, to->nodelistlen * to->nodedata_size);
+
+      for (i = 0; i < to->nodelistlen; i++) {
+        to->nodelist[i].gid = (ZOLTAN_ID_PTR)(to->nodedata + i*to->nodedata_size);
+      }
+    }
   }
 
   return ZOLTAN_OK;

@@ -73,6 +73,7 @@ void Zoltan_DD_Destroy (Zoltan_DD_Directory **dd)
       ZOLTAN_TRACE_IN ((*dd)->my_proc, yo, NULL);
 
    ZOLTAN_FREE(&((*dd)->nodelist));
+   ZOLTAN_FREE(&((*dd)->nodedata));
 
    /* execute user registered cleanup function, if needed */
    if ((*dd)->cleanup != NULL)

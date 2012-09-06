@@ -77,20 +77,30 @@ int DD_Memory_Alloc_Nodelist(
 /* Allocate node memory and initialize it to be all free. */
 /* Return error code if memory alloc fails.               */
   int ierr = ZOLTAN_OK;
+  DD_Node *ptr;
+  char *dataptr;
   DD_NodeIdx nodeidx;
   DD_NodeIdx len = count * (1. + overalloc);
 
   dd->nodelistlen = len;
-printf("KDDKDD count = %d len = %d node_size = %d\n", count, len, dd->node_size); fflush(stdout);
-  dd->nodelist = (DD_Node *) ZOLTAN_MALLOC(dd->node_size * len);
-  /* TODO ADD ERROR CHECK */
 
-  /* Initialize the freenode list; all nodes are initially free. */
-  dd->nextfreenode = 0;
-  for (nodeidx = 0; nodeidx < len-1; nodeidx++) {
-    dd->nodelist[nodeidx].next = nodeidx+1;
+  if (len > 0) {
+
+    dd->nodelist = (DD_Node *) ZOLTAN_MALLOC(sizeof(DD_Node) * len);
+    dd->nodedata = (char *) ZOLTAN_MALLOC(dd->nodedata_size * len);
+    /* TODO ADD ERROR CHECK */
+
+    /* Initialize the freenode list; all nodes are initially free. */
+    /* Also initialize gid pointers to nodedata.                   */
+    dd->nextfreenode = 0;
+    for (ptr = dd->nodelist, dataptr = dd->nodedata, nodeidx = 0; 
+         nodeidx < len;
+         nodeidx++, ptr++, dataptr += dd->nodedata_size) {
+      ptr->next = nodeidx + 1;
+      ptr->gid = (ZOLTAN_ID_PTR) dataptr;
+    }
+    dd->nodelist[len-1].next = -1;  /* NULL value at end of list */
   }
-  dd->nodelist[len-1].next = -1;  /* NULL value */
 
   return ierr;
 }
@@ -110,11 +120,22 @@ DD_NodeIdx returnnode;
      */
     DD_NodeIdx newlen = dd->nodelistlen * 2;
     DD_NodeIdx nodeidx;
-printf("KDDKDD nodelistlen = %d newlen = %d node_size = %d\n", dd->nodelistlen, newlen, dd->node_size); fflush(stdout);
+    DD_Node *ptr;
+    char *dataptr;
+
     dd->nodelist = (DD_Node *) ZOLTAN_REALLOC(dd->nodelist,
-                                              dd->node_size * newlen);
+                                              sizeof(DD_Node) * newlen);
+    dd->nodedata = (char *) ZOLTAN_REALLOC(dd->nodedata,
+                                           dd->nodedata_size * newlen);
     /* TODO ADD ERROR CHECK */
 
+    /* Reinitialize the gid pointers in the realloc'ed nodelist. */
+    for (ptr = dd->nodelist, dataptr = dd->nodedata, nodeidx = 0;
+         nodeidx < newlen;
+         ptr++, dataptr += dd->nodedata_size, nodeidx++) 
+      ptr->gid = (ZOLTAN_ID_PTR) dataptr;
+
+    /* Initialize free list in the newly extended memory */
     dd->nextfreenode = dd->nodelistlen;
     for (nodeidx = dd->nodelistlen; nodeidx < newlen-1; nodeidx++)
       dd->nodelist[nodeidx].next = nodeidx+1;

@@ -102,7 +102,7 @@ typedef struct DD_Node  {
   int              errcheck;   /* Error checking(inconsistent updates) */
   DD_NodeIdx       next;       /* index in nodelist of next DD_Node in 
                                   linked list or free node list */
-  ZOLTAN_ID_TYPE   gid[1];     /* gid used as key for update & lookup   */
+  ZOLTAN_ID_TYPE  *gid;        /* gid used as key for update & lookup   */
                                /* lid starts at gid + dd->gid_length    */
                                /*(user) data starts at                 */
                                /* gid + dd->gid_length + dd->lid_length */
@@ -127,7 +127,7 @@ struct Zoltan_DD_Struct {
   int max_id_length;      /* max(gid_length, lid_length)           */
   int user_data_length;   /* Optional user data length in chars */
   int table_length;       /* # of heads of linked lists             */
-  size_t node_size;       /* Malloc'd to include GID & LID storage  */
+  size_t nodedata_size;   /* Malloc for GID & LID & user storage    */
   size_t find_msg_size;   /* Total allocation for DD_FIND_MSG       */
   size_t update_msg_size; /* Total allocation for DD_UPDATE_MSG     */
   size_t remove_msg_size; /* Total allocation for DD_REMOVE_MSG     */
@@ -140,6 +140,7 @@ struct Zoltan_DD_Struct {
 
   MPI_Comm comm;          /* Dup of original MPI Comm(KDD)         */
   DD_Node *nodelist;      /* Memory for storing all nodes in the directory */
+  char *nodedata;         /* Memory for storing all data in the directory  */
   DD_NodeIdx nodelistlen; /* Length of the nodelist. */
   DD_NodeIdx nextfreenode;/* Index of first free node in nodelist; 
                              -1 if no nodes are free */
