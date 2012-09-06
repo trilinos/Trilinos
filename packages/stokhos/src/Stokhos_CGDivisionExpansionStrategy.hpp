@@ -192,11 +192,10 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     
     if (pb < Cijk->num_k())
       k_end = Cijk->find_k(pb);
-    value_type tmp, cijk;
+    value_type cijk;
     ordinal_type i,j,k;
     for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
       k = index(k_it);
-      tmp = value_type(0.0);
       for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
 	   j_it != Cijk->j_end(k_it); ++j_it) {
 	j = index(j_it);
@@ -245,7 +244,6 @@ if (linear == 1){
       k_end = Cijk->find_k(pb);
     for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
       k = index(k_it);
-      tmp = value_type(0.0);
       for ( typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it);
            j_it != Cijk->j_end(k_it); ++j_it) {
         j = index(j_it);
