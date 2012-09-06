@@ -23,7 +23,7 @@ namespace stk {
       /// either average or take max of spacing to the nodes
       enum SpacingType { SPACING_AVE, SPACING_MAX };
 
-      SpacingFieldUtil(PerceptMesh& eMesh, SpacingType type=SPACING_MAX) : m_eMesh(eMesh), m_type(type) {}
+      SpacingFieldUtil(PerceptMesh& eMesh, SpacingType type=SPACING_AVE) : m_eMesh(eMesh), m_type(type) {}
 
 
       void compute_spacing_field();

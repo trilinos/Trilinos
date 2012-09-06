@@ -1231,7 +1231,7 @@ namespace stk {
 
       }
 
-      static void normalize_spacing(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
+      static void normalize_spacing_0(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
       {
         //double m_min_spacing_factor = 0.5;
         double m_min_spacing_factor = 0.0;
@@ -1274,6 +1274,59 @@ namespace stk {
                 spc[ipts][isp] /= den;
               }
 
+          }
+      }
+
+      static void normalize_spacing(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
+      {
+        double fac = 0.0, facden=0.0;
+        switch(nsz) {
+        case 2:
+          fac = 3.0; facden=4.0;
+          break;
+         case 4:
+           fac = 41./3./7.; facden=16./7.; // heuristic
+           break;
+         case 8:
+           fac = 411./259.; facden=64./37.; // heuristic
+           break;
+        default:
+          normalize_spacing_0(nsz,nsp,spc,den_xyz); 
+          return; 
+        }
+
+        facden = 1+(double(nsz)-1)*fac;
+        double lspc[8][3];
+        for (unsigned isp = 0; isp < nsp; isp++)
+          {
+            for (unsigned ipts=0; ipts < nsz; ipts++)
+              {
+                lspc[ipts][isp] = spc[ipts][isp];
+              }
+          }
+
+        for (unsigned isp = 0; isp < nsp; isp++)
+          {
+            for (unsigned ipts=0; ipts < nsz; ipts++)
+              {
+                double lsum=0.0;
+                double lsum1=0.0;
+                for (unsigned jpts=0; jpts < nsz; jpts++)
+                  {
+                    lsum1 += (jpts==ipts?0:lspc[jpts][isp]);
+                    lsum += lspc[jpts][isp];
+                  }
+                spc[ipts][isp] = (lspc[ipts][isp] + lsum1*fac)/(facden*lsum);
+              }
+            double sum=0.0;
+            for (unsigned ipts=0; ipts < nsz; ipts++)
+              {
+                sum += spc[ipts][isp];
+              }
+            for (unsigned ipts=0; ipts < nsz; ipts++)
+              {
+                spc[ipts][isp] /= sum;
+              }
           }
       }
 
