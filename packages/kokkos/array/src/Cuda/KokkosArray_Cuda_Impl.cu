@@ -163,12 +163,15 @@ public:
   unsigned                  m_maxWarpCount ;
   unsigned                  m_maxBlock ;
   unsigned                  m_maxSharedWords ;
-  size_type               * m_reduceScratchSpace ;
-  size_type               * m_reduceScratchFlag ;
+  size_type                 m_scratchSpaceCount ;
+  size_type                 m_scratchFlagsCount ;
+  size_type               * m_scratchSpace ;
+  size_type               * m_scratchFlags ;
 
-  static CudaInternal & raw_singleton();
+  static       CudaInternal & raw_singleton();
   static const CudaInternal & singleton();
 
+  const CudaInternal & assert_initialized() const ;
   void initialize( int cuda_device_id );
   void finalize();
 
@@ -180,14 +183,21 @@ public:
     , m_maxWarpCount( 0 )
     , m_maxBlock( 0 ) 
     , m_maxSharedWords( 0 )
-    , m_reduceScratchSpace( 0 )
-    , m_reduceScratchFlag( 0 )
+    , m_scratchSpaceCount( 0 )
+    , m_scratchFlagsCount( 0 )
+    , m_scratchSpace( 0 )
+    , m_scratchFlags( 0 )
     {}
+
+  size_type * scratch_space( const size_type size );
+  size_type * scratch_flags( const size_type size );
+
+  void stream_resize( const size_type count );
 };
 
 CudaInternal::~CudaInternal()
 {
-  if ( m_reduceScratchSpace ) {
+  if ( m_scratchSpace || m_scratchFlags) {
     std::cerr << "KokkosArray::Cuda ERROR: Failed to call KokkosArray::Cuda::finalize()"
               << std::endl ;
     std::cerr.flush();
@@ -197,15 +207,17 @@ CudaInternal::~CudaInternal()
 CudaInternal & CudaInternal::raw_singleton()
 { static CudaInternal self ; return self ; }
 
-const CudaInternal & CudaInternal::singleton()
+const CudaInternal & CudaInternal::assert_initialized() const
 {
-  const CudaInternal & self = raw_singleton();
-
-  if ( self.m_cudaDev == -1 ) {
+  if ( m_cudaDev == -1 ) {
     throw std::runtime_error(std::string("CATASTROPHIC FAILURE: Using KokkosArray::Cuda before calling KokkosArray::Cuda::initialize(...)"));
   }
+  return *this ;
+}
 
-  return self ;
+const CudaInternal & CudaInternal::singleton()
+{
+  return raw_singleton().assert_initialized();
 }
 
 void CudaInternal::initialize( int cuda_device_id )
@@ -214,7 +226,7 @@ void CudaInternal::initialize( int cuda_device_id )
 
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
 
-  const bool ok_init = 0 == m_reduceScratchSpace ;
+  const bool ok_init = 0 == m_scratchSpace ;
   const bool ok_id   = 0 <= cuda_device_id &&
                             cuda_device_id < dev_info.m_cudaDevCount ;
 
@@ -257,51 +269,22 @@ void CudaInternal::initialize( int cuda_device_id )
     m_maxSharedWords = cudaProp.sharedMemPerBlock / WordSize ;
 
     //----------------------------------
-    {
-      // Set the maximum number of blocks to the maximum number of
-      // resident blocks per multiprocessor times the number of
-      // multiprocessors on the device.  Once a block is active on
-      // a multiprocessor then let it do all the work that it can.
 
-      enum { MaxResidentBlocksPerMultiprocessor = 8 };
-
-      const unsigned minBlock = cudaProp.multiProcessorCount *
-                                MaxResidentBlocksPerMultiprocessor ;
-
-      m_maxBlock = 1 ;
-      while ( m_maxBlock < minBlock &&
-              ( m_maxBlock << 1 ) <= (unsigned) cudaProp.maxGridSize[0] ) {
-        m_maxBlock <<= 1 ;
-      }
-    }
+    m_maxBlock = cudaProp.maxGridSize[0] ;
 
     //----------------------------------
     // Allocate a parallel stream for each multiprocessor
     // to support concurrent heterogeneous multi-functor execution.
 
-    m_streams.resize( cudaProp.multiProcessorCount );
-
-    for ( int i = 0 ; i < cudaProp.multiProcessorCount ; ++i ) {
-      CUDA_SAFE_CALL( cudaStreamCreate(    & m_streams[i] ) );
-      CUDA_SAFE_CALL( cudaStreamSynchronize( m_streams[i] ) );
-    }
+    stream_resize( cudaProp.multiProcessorCount );
 
     //----------------------------------
-    // Allocate shared memory image for multiblock reduction scratch space
+    // Multiblock reduction uses scratch flags for counters
+    // and scratch space for partial reduction values.
+    // Allocate some initial space.  This will grow as needed.
 
-    const size_t sharedWord =
-     ( cudaProp.sharedMemPerBlock + WordSize - 1 ) / WordSize ;
-
-    m_reduceScratchSpace = (size_type *)
-      CudaMemorySpace::allocate(
-        std::string("MultiblockReduceScratchSpace") ,
-        typeid( size_type ),
-        sizeof( size_type ),
-        sharedWord + 1 );
-
-    m_reduceScratchFlag = m_reduceScratchSpace + sharedWord ;
-
-    CUDA_SAFE_CALL( cudaMemset( m_reduceScratchFlag , 0 , WordSize ) );
+    (void) scratch_flags( 2 * m_maxWarpCount * Impl::CudaTraits::WarpSize );
+    (void) scratch_space( 2 * m_maxBlock );
   }
   else {
 
@@ -326,6 +309,85 @@ void CudaInternal::initialize( int cuda_device_id )
   } 
 }
 
+//----------------------------------------------------------------------------
+
+Cuda::size_type *
+CudaInternal::scratch_flags( const Cuda::size_type count )
+{
+  enum { WordSize = sizeof(size_type) };
+
+  assert_initialized();
+
+  if ( m_scratchFlagsCount < count ) {
+
+    cudaDeviceSynchronize();
+
+    CudaMemorySpace::decrement( m_scratchFlags );
+  
+    m_scratchFlagsCount = count ;
+
+    m_scratchFlags = (size_type *)
+      CudaMemorySpace::allocate(
+        std::string("InternalScratchFlags") ,
+        typeid( size_type ),
+        sizeof( size_type ),
+        count );
+
+    CUDA_SAFE_CALL( cudaMemset( m_scratchFlags , 0 , WordSize * count ) );
+  }
+
+  return m_scratchFlags ;
+}
+
+Cuda::size_type *
+CudaInternal::scratch_space( const Cuda::size_type count )
+{
+  enum { WordSize = sizeof(size_type) };
+
+  assert_initialized();
+
+  if ( m_scratchSpaceCount < count ) {
+
+    cudaDeviceSynchronize();
+
+    CudaMemorySpace::decrement( m_scratchSpace );
+  
+    m_scratchSpaceCount = count ;
+
+    m_scratchSpace = (size_type *)
+      CudaMemorySpace::allocate(
+        std::string("InternalScratchSpace") ,
+        typeid( size_type ),
+        sizeof( size_type ),
+        count );
+  }
+
+  return m_scratchSpace ;
+}
+
+//----------------------------------------------------------------------------
+
+void CudaInternal::stream_resize( const Cuda::size_type count )
+{
+  assert_initialized();
+
+  const size_type current_count = m_streams.size();
+
+  if ( current_count < count ) {
+
+    cudaDeviceSynchronize();
+
+    m_streams.resize( count );
+
+    for ( int i = current_count ; i < count ; ++i ) {
+      CUDA_SAFE_CALL( cudaStreamCreate(    & m_streams[i] ) );
+      CUDA_SAFE_CALL( cudaStreamSynchronize( m_streams[i] ) );
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+
 void CudaInternal::finalize()
 {
   for ( size_t i = m_streams.size() ; i ; ) {
@@ -334,15 +396,18 @@ void CudaInternal::finalize()
     CUDA_SAFE_CALL( cudaStreamDestroy( m_streams[i] ) );
   }
 
-  CudaMemorySpace::decrement( m_reduceScratchSpace );
+  CudaMemorySpace::decrement( m_scratchSpace );
+  CudaMemorySpace::decrement( m_scratchFlags );
 
   m_streams.clear();
   m_cudaDev            = -1 ;
   m_maxWarpCount       = 0 ;
   m_maxBlock           = 0 ; 
   m_maxSharedWords     = 0 ;
-  m_reduceScratchSpace = 0 ;
-  m_reduceScratchFlag  = 0 ;
+  m_scratchSpaceCount  = 0 ;
+  m_scratchSpaceCount  = 0 ;
+  m_scratchSpace       = 0 ;
+  m_scratchFlags       = 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -359,6 +424,9 @@ Cuda::size_type cuda_internal_maximum_shared_words()
 Cuda::size_type cuda_internal_stream_count()
 { return CudaInternal::singleton().m_streams.size(); }
 
+void cuda_internal_stream_resize( Cuda::size_type n )
+{ CudaInternal::raw_singleton().stream_resize( n ); } 
+
 cudaStream_t & cuda_internal_stream( Cuda::size_type i )
 {
   CudaInternal & s = CudaInternal::raw_singleton();
@@ -373,11 +441,11 @@ cudaStream_t & cuda_internal_stream( Cuda::size_type i )
   return s.m_streams[i] ;
 }
 
-Cuda::size_type * cuda_internal_reduce_multiblock_scratch_space()
-{ return CudaInternal::singleton().m_reduceScratchSpace ; }
+Cuda::size_type * cuda_internal_scratch_space( const Cuda::size_type count )
+{ return CudaInternal::raw_singleton().scratch_space( count ); }
 
-Cuda::size_type * cuda_internal_reduce_multiblock_scratch_flag()
-{ return CudaInternal::singleton().m_reduceScratchFlag ; }
+Cuda::size_type * cuda_internal_scratch_flags( const Cuda::size_type count )
+{ return CudaInternal::raw_singleton().scratch_flags( count ); }
 
 } // namespace Impl
 } // namespace KokkosArray
@@ -400,7 +468,7 @@ bool Cuda::sleep() { return false ; }
 bool Cuda::wake() { return true ; }
 
 void Cuda::fence()
-{ cudaThreadSynchronize(); }
+{ cudaDeviceSynchronize(); }
 
 } // namespace KokkosArray
 

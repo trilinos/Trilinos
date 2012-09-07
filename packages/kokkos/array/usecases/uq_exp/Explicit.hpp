@@ -633,7 +633,7 @@ static void driver( const char * label , comm::Machine machine ,
 
     PerformanceData perf , best ;
 
-    for ( size_t iuq = uq_count_beg ; iuq < uq_count_end ; ++iuq ) {
+    for ( size_t iuq = uq_count_beg ; iuq < uq_count_end ; iuq *= 2 ) {
 
       for( size_t j = 0; j < run_count ; j++ ) {
 
