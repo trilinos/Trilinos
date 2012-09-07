@@ -209,6 +209,20 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Xpetra" dir="packages/xpetra" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,KokkosClassic,Tpetra"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Tpetra"/>
+    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="xpetra-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="ThyraCore" dir="packages/thyra/core" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,RTOp"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -351,7 +365,7 @@
   </Package>
   <Package name="Galeri" dir="packages/galeri" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Xpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -1256,20 +1270,6 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Regression address="aristos-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
-  <Package name="Xpetra" dir="packages/xpetra" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,KokkosClassic,Tpetra"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Tpetra"/>
-    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="xpetra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>

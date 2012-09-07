@@ -9,10 +9,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src/Utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src/Headers)
 
 APPEND_SET(HEADERS
-  MueLu_GalleryParameters.hpp
-  MueLu_MatrixFactory.hpp  
-  MueLu_MatrixTypes.hpp
-  MueLu_VectorTraits.hpp
+  Galeri_XpetraGalleryParameters.hpp
+  Galeri_XpetraMatrixFactory.hpp  
+  Galeri_XpetraMatrixTypes.hpp
+  Galeri_XpetraVectorTraits.hpp
   )
 
 APPEND_SET(SOURCES
@@ -20,8 +20,8 @@ APPEND_SET(SOURCES
   )
 
 TRIBITS_ADD_LIBRARY(
-  muelu-gallery
+  galeri-xpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu # for timers etc.
+  DEPLIBS teuchos # for timers etc.
   )

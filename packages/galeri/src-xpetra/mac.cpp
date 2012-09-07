@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -45,4 +45,4 @@
 // @HEADER
 // MacOs 'ar' utility doesn't work on empty library.
 
-void libmuelu_gallery() {}
+void libgaleri_xpetra() {}

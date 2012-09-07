@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -51,11 +51,10 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include "MueLu_Exceptions.hpp" // Dependency to MueLu should be remove
 
-namespace MueLu {
+namespace Galeri {
   
-  namespace Gallery {
+  namespace Xpetra {
     
     // TODO nx/ny/nz == GO or global_size_t ? But what is the best to do?
 

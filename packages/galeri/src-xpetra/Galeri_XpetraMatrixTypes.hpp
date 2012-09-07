@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -49,8 +49,8 @@
 
 // TODO: rename variables (camelCase)
 
-#ifndef MUELU_MATRIXTYPES_HPP
-#define MUELU_MATRIXTYPES_HPP
+#ifndef GALERI_XPETRAMATRIXTYPES_HPP
+#define GALERI_XPETRAMATRIXTYPES_HPP
 
 //#define XPETRA_ENABLED //TODO!
 #ifdef XPETRA_ENABLED
@@ -62,12 +62,11 @@
 #include "Xpetra_OperatorFactory.hpp"
 #endif
 
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Memory.hpp"
+#include "Galeri_ConfigDefs.hpp"
 
-namespace MueLu {
+namespace Galeri {
   
-  namespace Gallery {
+  namespace Xpetra {
     
     /* prototypes */
     template <typename GlobalOrdinal>
@@ -967,8 +966,8 @@ namespace MueLu {
     } //Fill9PointStencil()
 
 
-  } // namespace Gallery
-} // namespace MueLu
+  } // namespace Xpetra
+} // namespace Galeri
 
 
-#endif //ifndef MUELU_MATRIXTYPES_HPP
+#endif //ifndef GALERI_XPETRAMATRIXTYPES_HPP

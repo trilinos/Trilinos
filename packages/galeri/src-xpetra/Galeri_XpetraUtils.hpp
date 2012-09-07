@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -46,19 +46,19 @@
 /*
   Direct translation of Galeri coordinate generator.
 */
-#ifndef MUELU_GALLERYUTILS_HPP
-#define MUELU_GALLERYUTILS_HPP
+#ifndef GALERI_XPETRAUTILS_HPP
+#define GALERI_XPETRAUTILS_HPP
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 
-#include "MueLu_VectorTraits.hpp"
+#include "Galeri_XpetraVectorTraits.hpp"
 
 #include <iostream>
 
-namespace MueLu {
+namespace Galeri {
   
-  class GalleryUtils {
+  class XpetraGalleryUtils {
 
     public:
 
@@ -66,7 +66,7 @@ namespace MueLu {
     static Teuchos::RCP<MultiVector>
     CreateCartesianCoordinates(std::string const &coordType, RCP<const Map> const & map, Teuchos::ParameterList& list)
     {
-      using MueLu::Gallery::VectorTraits;
+      using Galeri::Xpetra::VectorTraits;
 
       Teuchos::RCP<MultiVector> coordinates;
 
@@ -143,7 +143,7 @@ namespace MueLu {
 
       } else {
 
-        throw(std::runtime_error("in MueLu::GalleryUtils : `coordType' has incorrect value (" + coordType + ")"));
+        throw(std::runtime_error("in Galeri::XpetraGalleryUtils : `coordType' has incorrect value (" + coordType + ")"));
 
       } //if (coordType == ...
 
@@ -154,6 +154,6 @@ namespace MueLu {
   }; // class GalleryUtils
 } // namespace MueLu
 
-#define MUELU_GALLERYUTILS_SHORT
+#define GALERI_XPETRAGALLERYUTILS_SHORT
 
-#endif //ifndef MUELU_GALLERYUTILS_HPP
+#endif //ifndef GALERI_XPETRAGALLERYUTILS_HPP

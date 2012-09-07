@@ -34,7 +34,7 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example example-fem)
 TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 TRIBITS_EXCLUDE_FILES(
-  src-pfem
+  src-pfem   
   example-pfem
   doc/AdvDiffSquare.png
   doc/L.*.png
