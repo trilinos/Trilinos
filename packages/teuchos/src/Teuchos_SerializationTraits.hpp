@@ -424,6 +424,11 @@ class SerializationTraits<Ordinal, long long int>
   : public DirectSerializationTraits<Ordinal, long long int>
 {};
 
+template<typename Ordinal>
+class SerializationTraits<Ordinal, unsigned long long int>
+  : public DirectSerializationTraits<Ordinal, unsigned long long int>
+{};
+
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 } // namespace Teuchos
