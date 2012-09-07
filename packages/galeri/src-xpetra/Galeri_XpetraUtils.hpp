@@ -57,8 +57,8 @@
 #include <iostream>
 
 namespace Galeri {
-  
-  class XpetraGalleryUtils {
+  namespace Xpetra {
+  class Utils {
 
     public:
 
@@ -143,7 +143,7 @@ namespace Galeri {
 
       } else {
 
-        throw(std::runtime_error("in Galeri::XpetraGalleryUtils : `coordType' has incorrect value (" + coordType + ")"));
+        throw(std::runtime_error("in Galeri::XpetraUtils : `coordType' has incorrect value (" + coordType + ")"));
 
       } //if (coordType == ...
 
@@ -151,9 +151,10 @@ namespace Galeri {
 
     } // CreateCartesianCoordinates()
 
-  }; // class GalleryUtils
-} // namespace MueLu
+  }; // class Utils
+  } // namespace Xpetra
+} // namespace Galeri
 
-#define GALERI_XPETRAGALLERYUTILS_SHORT
+#define GALERI_XPETRAUTILS_SHORT
 
-#endif //ifndef GALERI_XPETRAGALLERYUTILS_HPP
+#endif //ifndef GALERI_XPETRAUTILS_HPP
