@@ -80,11 +80,6 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_StridedEpetraMap.hpp>
 
-// Gallery
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
-#include <MueLu_GalleryParameters.hpp>
-#include <MueLu_MatrixFactory.hpp>
-
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"

@@ -58,6 +58,10 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
 
+// Galeri
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp>
+
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
 
@@ -79,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp(false); // Note: 
 
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
 
   std::string xmlFileName; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
@@ -108,7 +112,7 @@ int main(int argc, char *argv[]) {
   //
 
   RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator>  A   = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Operator>  A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
   //
   // Preconditionner configuration
