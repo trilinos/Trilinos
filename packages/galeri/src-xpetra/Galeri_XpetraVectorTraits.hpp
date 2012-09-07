@@ -87,12 +87,12 @@ namespace Galeri {
 
     // Specialized traits for     Map = Xpetra::Map<...>, Vector = Xpetra::MultiVector<...>
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    class VectorTraits <Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
+    class VectorTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
     {
     public:
-      static RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
-        Build(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &map, size_t numVectors, bool zeroOut)
-      { return Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node>::Build(map, numVectors, zeroOut);};
+      static RCP< ::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
+      Build(const RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &map, size_t numVectors, bool zeroOut)
+      { return ::Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node>::Build(map, numVectors, zeroOut);};
     };
 
 #endif

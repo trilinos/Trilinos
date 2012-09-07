@@ -87,7 +87,7 @@ namespace Galeri {
 
       if (coordType == "1D") {
         coordinates = VectorTraits<Map,MultiVector>::Build(map,1,false);
-        Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(1);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(1);
         Coord[0] = coordinates->getDataNonConst(0);
 
         delta_x = lx / (nx - 1);
@@ -100,7 +100,7 @@ namespace Galeri {
       } else if (coordType == "2D") {
 
         coordinates = VectorTraits<Map,MultiVector>::Build(map,2,false);
-        Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(2);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(2);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
 
@@ -119,7 +119,7 @@ namespace Galeri {
       } else if (coordType == "3D") {
 
         coordinates = VectorTraits<Map,MultiVector>::Build(map,3,false);
-        Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(3);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(3);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
         Coord[2] = coordinates->getDataNonConst(2);
