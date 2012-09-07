@@ -1487,8 +1487,16 @@ int64_t CustomMesh::communication_node_count_proc() const
 
 void CustomMesh::coordinates(double *coord) const
 {
-    std::cout << "coordinates(double *coord) called" << std::endl;
-    double coords[24] = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0};
+    double coords[24] = {
+            0, 0, 0,
+            1, 0, 0,
+            1, 1, 0,
+            0, 1, 0,
+
+            0, 0, 0,
+            1, 0, 0,
+            1, 1, 0,
+            0, 1, 0};
     for(int i = 0; i < 24; i++)
     {
         coord[i] = coords[i];
@@ -1497,17 +1505,17 @@ void CustomMesh::coordinates(double *coord) const
 
 void CustomMesh::coordinates(std::vector<double> &coord) const
 {
-    std::cout << "coordinates(std::vector<double> &coord) called" << std::endl;
+    throw std::exception();
 }
 
 void CustomMesh::coordinates(int component, std::vector<double> &xyz) const
 {
-    std::cout << "coordinates(int component, std::vector<double> &xyz) called" << std::endl;
+    throw std::exception();
 }
 
 void CustomMesh::coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const
 {
-    std::cout << "coordinates(x, y, z) called" << std::endl;
+    throw std::exception();
 }
 
 void CustomMesh::connectivity(int64_t block_number, int* connect) const
