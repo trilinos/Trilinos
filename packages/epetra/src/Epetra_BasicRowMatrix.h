@@ -311,26 +311,29 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   //! @name Attribute access functions
   //@{ 
 
-    //! Returns the infinity norm of the global matrix.
-    /* Returns the quantity \f$ \| A \|_\infty\f$ such that
+    /*! @brief Returns the infinity norm of the global matrix.
+
+       Returns the quantity \f$ \| A \|_\infty\f$ such that
        \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
 
-     \warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
+     @warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
 
     */ 
     virtual double NormInf() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormInf_);}
 
-    //! Returns the one norm of the global matrix.
-    /* Returns the quantity \f$ \| A \|_1\f$ such that
+    /*! @brief Returns the one norm of the global matrix.
+
+       Returns the quantity \f$ \| A \|_1\f$ such that
        \f[\| A \|_1= \max_{1\lej\len} \sum_{i=1}^m |a_{ij}| \f].
 
-     \warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
+     @warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
 
     */ 
     virtual double NormOne() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormOne_);}
 
-    //! Returns the number of nonzero entries in the global matrix.
-    /* Note that if the data decomposition is defined such that some nonzeros
+    /*! @brief Returns the number of nonzero entries in the global matrix.
+
+       Note that if the data decomposition is defined such that some nonzeros
        appear on multiple processors, then those nonzeros will be counted
        multiple times.
     */
