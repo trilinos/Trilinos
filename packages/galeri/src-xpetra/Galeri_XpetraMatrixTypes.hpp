@@ -52,8 +52,7 @@
 #ifndef GALERI_XPETRAMATRIXTYPES_HPP
 #define GALERI_XPETRAMATRIXTYPES_HPP
 
-//#define XPETRA_ENABLED //TODO!
-#ifdef XPETRA_ENABLED
+#ifdef HAVE_GALERI_XPETRA
 // needed for the specialized traits:
 #include "Xpetra_Map.hpp"
 #include "Xpetra_CrsMatrix.hpp"
@@ -115,7 +114,7 @@ namespace Galeri {
       };
     };
 
-#ifdef XPETRA_ENABLED
+#ifdef HAVE_GALERI_XPETRA
 
     /* Specialized traits for:
        - Map = Xpetra::Map<...>, Matrix = Xpetra::CrsMatrix<...> */

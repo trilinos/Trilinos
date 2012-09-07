@@ -53,7 +53,7 @@
 #ifndef GALERI_XPETRAVECTORTRAITS_HPP
 #define GALERI_XPETRAVECTORTRAITS_HPP
 
-#ifdef XPETRA_ENABLED
+#ifdef HAVE_GALERI_XPETRA
 #  include "Xpetra_Map.hpp"  // needed for specialized traits
 #endif
 
@@ -71,7 +71,7 @@ namespace Galeri {
       }
     };
 
-#ifdef XPETRA_ENABLED
+#ifdef HAVE_GALERI_XPETRA
 
 /*
     // Specialized traits for     Map = Xpetra::Map<...>, Vector = Xpetra::Vector<...>
