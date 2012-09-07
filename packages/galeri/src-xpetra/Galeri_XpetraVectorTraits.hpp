@@ -48,7 +48,7 @@
 */
 
 // TODO: rename variables (camelCase)
-#include "Galeri_ConfigDefs.hpp"
+#include "Galeri_config.h"
 
 #ifndef GALERI_XPETRAVECTORTRAITS_HPP
 #define GALERI_XPETRAVECTORTRAITS_HPP

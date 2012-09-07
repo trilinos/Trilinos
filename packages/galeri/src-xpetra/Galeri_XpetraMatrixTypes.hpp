@@ -51,6 +51,9 @@
 
 #ifndef GALERI_XPETRAMATRIXTYPES_HPP
 #define GALERI_XPETRAMATRIXTYPES_HPP
+#include "Galeri_config.h"
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 #ifdef HAVE_GALERI_XPETRA
 // needed for the specialized traits:
@@ -60,8 +63,6 @@
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_OperatorFactory.hpp"
 #endif
-
-#include "Galeri_ConfigDefs.hpp"
 
 namespace Galeri {
   
@@ -109,7 +110,7 @@ namespace Galeri {
     class MatrixTraits 
     {
     public:
-      static RCP<Matrix> Build(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow) // TODO: pftype
+      static Teuchos::RCP<Matrix> Build(const Teuchos::RCP<const Map> &rowMap, size_t maxNumEntriesPerRow) // TODO: pftype
       { return rcp( new Matrix(rowMap, maxNumEntriesPerRow) );
       };
     };
@@ -119,23 +120,23 @@ namespace Galeri {
     /* Specialized traits for:
        - Map = Xpetra::Map<...>, Matrix = Xpetra::CrsMatrix<...> */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MatrixTraits <Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
+    class MatrixTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
     {
     public:
-      static RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
+      static Teuchos::RCP< ::Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
       // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
-      { return Xpetra::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap,  maxNumEntriesPerRow); };
+      { return ::Xpetra::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap,  maxNumEntriesPerRow); };
     };
 
     /* Specialized traits for:
        - Map = Xpetra::Map<...>, Matrix = Xpetra::Operator<...> */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MatrixTraits <Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
+    class MatrixTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
     {
     public:
-      static RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
+      static Teuchos::RCP< ::Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
       // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
-      { return Xpetra::OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap, maxNumEntriesPerRow); };
+      { return ::Xpetra::OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap, maxNumEntriesPerRow); };
     };
 
 #endif
@@ -144,12 +145,12 @@ namespace Galeri {
      *    (Scaled) Identity
      * ****************************************************************************************************** */
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    RCP<Matrix>
-    Identity(const RCP<const Map> & map,
+    Teuchos::RCP<Matrix>
+    Identity(const Teuchos::RCP<const Map> & map,
             const Scalar a)
     {
   
-      RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -169,18 +170,18 @@ namespace Galeri {
      *    Laplace 1D
      * ****************************************************************************************************** */
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    RCP<Matrix>
-    TriDiag(const RCP<const Map> & map,
+    Teuchos::RCP<Matrix>
+    TriDiag(const Teuchos::RCP<const Map> & map,
             const GlobalOrdinal nx, // note: nx unused
             const Scalar a, const Scalar b, const Scalar c)
     {
   
-      RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 3);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 3);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
-      RCP<const Teuchos::Comm<int> > comm = map->getComm();
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = map->getComm();
 
       GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
 
@@ -192,7 +193,7 @@ namespace Galeri {
       comm->barrier();
       if (comm->getRank() == 0) {
         std::cout << "starting global insert" << std::endl;
-        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
+	//        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
       }
 
 /*
@@ -200,7 +201,7 @@ namespace Galeri {
       double t1,t2;
 */
 
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);
 
       for (LocalOrdinal i = 0; i < NumMyElements; ++i)
@@ -290,13 +291,13 @@ namespace Galeri {
      *    Laplace 2D
      * ****************************************************************************************************** */
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    RCP<Matrix>
-    Cross2D(const RCP<const Map> & map,
+    Teuchos::RCP<Matrix>
+    Cross2D(const Teuchos::RCP<const Map> & map,
             const GlobalOrdinal nx, const GlobalOrdinal ny,
             const Scalar a, const Scalar b, const Scalar c, 
             const Scalar d, const Scalar e, const bool keepBCs=false)
     {
-      RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 5);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 5);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -388,15 +389,15 @@ namespace Galeri {
      *    Star2D
      * ****************************************************************************************************** */
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    RCP<Matrix>
-    Star2D(const RCP<const Map> & map,
+    Teuchos::RCP<Matrix>
+    Star2D(const Teuchos::RCP<const Map> & map,
            const GlobalOrdinal nx, const GlobalOrdinal ny,
            const Scalar a, const Scalar b, const Scalar c, 
            const Scalar d, const Scalar e,
            const Scalar z1, const Scalar z2,
            const Scalar z3, const Scalar z4)
     {
-      RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 9);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 9);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -492,8 +493,8 @@ namespace Galeri {
      *    BigStar2D (2D Biharmonic operator, for example)
      * ****************************************************************************************************** */
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    RCP<Matrix>
-    BigStar2D(const RCP<const Map> & map,
+    Teuchos::RCP<Matrix>
+    BigStar2D(const Teuchos::RCP<const Map> & map,
               const GlobalOrdinal nx, const GlobalOrdinal ny,
               const Scalar a, const Scalar b, const Scalar c, 
               const Scalar d, const Scalar e,
@@ -501,7 +502,7 @@ namespace Galeri {
               const Scalar z3, const Scalar z4,
               const Scalar bb, const Scalar cc, const Scalar dd, const Scalar ee)
     {
-      RCP<Matrix> mtx= MatrixTraits<Map,Matrix>::Build(map, 13);
+      Teuchos::RCP<Matrix> mtx= MatrixTraits<Map,Matrix>::Build(map, 13);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -614,14 +615,14 @@ namespace Galeri {
      *    Laplace3D
      * ****************************************************************************************************** */
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    RCP<Matrix>
-    Cross3D(const RCP<const Map> & map,
+    Teuchos::RCP<Matrix>
+    Cross3D(const Teuchos::RCP<const Map> & map,
             const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
             const Scalar a, const Scalar b, const Scalar c, 
             const Scalar d, const Scalar e,
             const Scalar f, const Scalar g)
     {
-      RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 7);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 7);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -696,14 +697,14 @@ namespace Galeri {
      *    3D 27-point stencil
      * ****************************************************************************************************** */
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    RCP<Matrix>
-    Brick3D(const RCP<const Map> & map,
+    Teuchos::RCP<Matrix>
+    Brick3D(const Teuchos::RCP<const Map> & map,
             const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
             const Scalar a, const Scalar b, const Scalar c, 
             const Scalar d, const Scalar e,
             const Scalar f, const Scalar g)
     {
-      RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 27);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 27);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();

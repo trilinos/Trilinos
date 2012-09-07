@@ -143,7 +143,7 @@ namespace Galeri {
 
       } else {
 
-        throw(std::runtime_error("in Galeri::XpetraUtils : `coordType' has incorrect value (" + coordType + ")"));
+        throw(std::runtime_error("in Galeri::Xpetra::Utils : `coordType' has incorrect value (" + coordType + ")"));
 
       } //if (coordType == ...
 
@@ -154,7 +154,5 @@ namespace Galeri {
   }; // class Utils
   } // namespace Xpetra
 } // namespace Galeri
-
-#define GALERI_XPETRAUTILS_SHORT
 
 #endif //ifndef GALERI_XPETRAUTILS_HPP

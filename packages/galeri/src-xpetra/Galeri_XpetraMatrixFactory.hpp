@@ -183,6 +183,4 @@ namespace Galeri {
   } // namespace Xpetra
 } // namespace Galeri
 
-#define GALERI_XPETRAMATRIXFACTORY_SHORT
-
 #endif //ifndef GALERI_XPETRAMATRIXFACTORY_HPP
