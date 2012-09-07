@@ -27,6 +27,8 @@ TRIBITS_PACKAGE(Belos)
 # Tpetra, since Tpetra already had an optional dependency on Epetra.
 # So, for better or worse, you won't be able to use TSQR with Epetra
 # unless you enable both Epetra and Tpetra in your Trilinos build.
+# HAVE_BELOS_TSQR will correctly reflect this: it won't be defined 
+# unless both Epetra and Tpetra are enabled in your Trilinos build.
 IF(Belos_ENABLE_Epetra AND Belos_ENABLE_Tpetra AND KokkosClassic_ENABLE_TSQR)
   SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT ON)
 ELSE()

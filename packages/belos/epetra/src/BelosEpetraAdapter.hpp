@@ -58,6 +58,21 @@
 #include "BelosTypes.hpp"
 
 #ifdef HAVE_BELOS_TSQR
+// This header file actually lives in the Tpetra package.
+//
+// mfh 07 Sep 2012: Back in 2010, I had to put Epetra's TSQR adapter
+// in Tpetra.  This was because an external software package was
+// linking to Epetra without using Trilinos' Makefile.export mechanism
+// to consider which Trilinos libraries to use.  Making Epetra
+// optionally depend on Kokkos (to make TSQR work) changed the list of
+// libraries, and that software package wasn't doing the right thing
+// to adjust.  In any case, I chose at the time to put Epetra's TSQR
+// adapter in Tpetra, since Tpetra already had an optional dependency
+// on Epetra.  So, for better or worse, you won't be able to use TSQR
+// with Epetra unless you enable both Epetra and Tpetra in your
+// Trilinos build.  HAVE_BELOS_TSQR will correctly reflect this: it
+// won't be defined unless both Epetra and Tpetra are enabled in your
+// Trilinos build.
 #  include <Epetra_TsqrAdaptor.hpp>
 #endif // HAVE_BELOS_TSQR
 
