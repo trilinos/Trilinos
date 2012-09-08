@@ -135,11 +135,12 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Komplex               packages/komplex                  PS
   ML                    packages/ml                       PS
   Belos                 packages/belos                    PS
+  Anasazi               packages/anasazi                  PS
+  Zoltan2               packages/zoltan2                  SS
   Ifpack2               packages/ifpack2                  PS
   ShyLU                 packages/shylu                    EX
   Stratimikos           packages/stratimikos              PS
   FEI                   packages/fei                      PS
-  Anasazi               packages/anasazi                  PS
   Teko                  packages/teko                     SS
   RBGen                 packages/rbgen                    PS
   TriKota               packages/TriKota                  SS
@@ -154,7 +155,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
   MueLu                 packages/muelu                    SS
-  Zoltan2               packages/zoltan2                  SS
   Stokhos               packages/stokhos                  SS
   Piro                  packages/piro                     SS
   Panzer                packages/panzer                   SS
