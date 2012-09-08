@@ -259,3 +259,18 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
    else
       out << "Apply 0: SUCCESS" << std::endl;
 }
+
+TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues)
+{
+   #ifdef HAVE_MPI
+      Epetra_MpiComm Comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm Comm;
+   #endif
+
+   RCP<Thyra::LinearOpBase<double> > A =  buildSystem(Comm,50);
+
+   Teko::MultiVector diag = Teko::getDiagonal(A,Teko::AbsRowSum);
+   Teko::replaceValue(diag,0.0,1.0);
+   Teko::LinearOp invDiagOp = Teko::buildInvDiagonal(diag);
+}
