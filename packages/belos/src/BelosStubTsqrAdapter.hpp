@@ -53,10 +53,10 @@ namespace details {
   /// TSQR works independently of the particular multivector
   /// implementation, and interfaces to the latter via an adapter
   /// class.  Each multivector type MV needs its own adapter class.
-  /// The specialization of MultiVecTraits for MV includes refers to
-  /// this adapter class as its \c tsqr_adaptor_type [sic; sorry about
-  /// the lack of standard spelling of "adapter"] typedef.  For
-  /// examples, please refer to the Epetra_MultiVector and
+  /// The specialization of MultiVecTraits for MV refers to its
+  /// corresponding adapter class as its \c tsqr_adaptor_type [sic;
+  /// sorry about the lack of standard spelling of "adapter"] typedef.
+  /// For examples, please refer to the Epetra_MultiVector and
   /// Tpetra::MultiVector specializations of Belos::MultiVecTraits.
   ///
   /// Nevertheless, there may be multivector types for which a TSQR
@@ -77,7 +77,6 @@ namespace details {
     typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-  public:
     /// \brief Constructor (that accepts a parameter list).
     ///
     /// \param plist [in] List of parameters for configuring TSQR.

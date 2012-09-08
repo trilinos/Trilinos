@@ -219,8 +219,139 @@ public:
    */
   virtual void MvPrint ( std::ostream& os ) const = 0;
   //@}
+
+#ifdef HAVE_BELOS_TSQR
+  //! @name TSQR-related methods
+  //@{ 
+
+  /// \brief Compute the QR factorization *this = QR, using TSQR.
+  ///
+  /// The *this multivector on input is the multivector A to factor.
+  /// It is overwritten with garbage on output.
+  ///
+  /// \param Q [out] On input: a multivector with the same number of
+  ///   rows and columns as A (the *this multivector).  Its contents
+  ///   are overwritten on output with the (explicitly stored) Q
+  ///   factor in the QR factorization of A.
+  ///
+  /// \param R [out] On output: the R factor in the QR factorization
+  ///   of the (input) multivector A.
+  ///
+  /// \param forceNonnegativeDiagonal [in] If true, then (if
+  ///   necessary) do extra work (modifying both the Q and R
+  ///   factors) in order to force the R factor to have a
+  ///   nonnegative diagonal.
+  ///
+  /// For syntax's sake, we provide a default implementation of this
+  /// method that throws std::logic_error.  You should implement this
+  /// method if you intend to use TsqrOrthoManager or
+  /// TsqrMatOrthoManager with your subclass of MultiVec.
+  virtual void 
+  factorExplicit (MultiVec<ScalarType>& Q, 
+		  Teuchos::SerialDenseMatrix<int, ScalarType>& R,
+		  const bool forceNonnegativeDiagonal=false)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The Belos::MultiVec<" 
+      << Teuchos::TypeNameTraits<ScalarType>::name() << "> subclass which you "
+      "are using does not implement the TSQR-related method factorExplicit().");
+  }
+
+  /// \brief Use result of factorExplicit() to compute rank-revealing decomposition.
+  ///
+  /// When calling this method, the *this multivector should be the Q
+  /// factor output of factorExplicit().  Using that Q factor and the
+  /// R factor from factorExplicit(), compute the singular value
+  /// decomposition (SVD) of R (\f$R = U \Sigma V^*\f$).  If R is full
+  /// rank (with respect to the given relative tolerance tol), don't
+  /// change Q (= *this) or R.  Otherwise, compute \f$Q := Q \cdot
+  /// U\f$ and \f$R := \Sigma V^*\f$ in place (the latter may be no
+  /// longer upper triangular).
+  ///
+  /// The *this multivector on input must be the explicit Q factor
+  /// output of a previous call to factorExplicit().  On output: On
+  /// output: If R is of full numerical rank with respect to the
+  /// tolerance tol, Q is unmodified.  Otherwise, Q is updated so that
+  /// the first rank columns of Q are a basis for the column space of
+  /// A (the original matrix whose QR factorization was computed by
+  /// factorExplicit()).  The remaining columns of Q are a basis for
+  /// the null space of A.
+  ///
+  /// \param R [in/out] On input: N by N upper triangular matrix with
+  ///   leading dimension LDR >= N.  On output: if input is full rank,
+  ///   R is unchanged on output.  Otherwise, if \f$R = U \Sigma
+  ///   V^*\f$ is the SVD of R, on output R is overwritten with
+  ///   \f$\Sigma \cdot V^*\f$.  This is also an N by N matrix, but
+  ///   may not necessarily be upper triangular.
+  ///
+  /// \param tol [in] Relative tolerance for computing the numerical
+  ///   rank of the matrix R.
+  ///
+  /// For syntax's sake, we provide a default implementation of this
+  /// method that throws std::logic_error.  You should implement this
+  /// method if you intend to use TsqrOrthoManager or
+  /// TsqrMatOrthoManager with your subclass of MultiVec.
+  virtual int
+  revealRank (Teuchos::SerialDenseMatrix<int, ScalarType>& R,
+	      const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& tol)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The Belos::MultiVec<" 
+      << Teuchos::TypeNameTraits<ScalarType>::name() << "> subclass which you "
+      "are using does not implement the TSQR-related method revealRank().");
+  }
+
+  //@}
+#endif // HAVE_BELOS_TSQR
 };
 
+
+namespace details {
+/// \class MultiVecTsqrAdapter
+/// \brief TSQR adapter for MultiVec.
+///
+/// TSQR (Tall Skinny QR factorization) is an orthogonalization
+/// kernel that is as accurate as Householder QR, yet requires only
+/// \f$2 \log P\f$ messages between $P$ MPI processes, independently
+/// of the number of columns in the multivector.  
+///
+/// TSQR works independently of the particular multivector
+/// implementation, and interfaces to the latter via an adapter
+/// class.  Each multivector type MV needs its own adapter class.
+/// The specialization of MultiVecTraits for MV refers to its
+/// corresponding adapter class as its \c tsqr_adaptor_type [sic;
+/// sorry about the lack of standard spelling of "adapter"] typedef.
+///
+/// This class is the TSQR adapter for MultiVec.  It merely calls 
+/// MultiVec's corresponding methods for TSQR functionality.
+template<class ScalarType>
+class MultiVecTsqrAdapter {
+public:
+  typedef MultiVec<ScalarType> MV;
+  typedef ScalarType scalar_type; 
+  typedef int ordinal_type; // This doesn't matter either
+  typedef int node_type; // Nor does this
+  typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+  
+  //! Compute QR factorization A = QR, using TSQR.
+  void
+  factorExplicit (MV& A,
+		  MV& Q,
+		  dense_matrix_type& R,
+		  const bool forceNonnegativeDiagonal=false)
+  {
+    A.factorExplicit (Q, R, forceNonnegativeDiagonal);
+  }
+
+  //! Compute rank-revealing decomposition using results of factorExplicit().
+  int
+  revealRank (MV& Q,
+	      dense_matrix_type& R,
+	      const magnitude_type& tol)
+  {
+    return Q.revealRank (R, tol);
+  }
+};
+} // namespace details
 
   ////////////////////////////////////////////////////////////////////
   //
@@ -228,13 +359,15 @@ public:
   //
   ////////////////////////////////////////////////////////////////////
 
-
   /// \brief Specialization of MultiVecTraits for Belos::MultiVec.
   ///
-  /// This is a partial specialization of MultiVecTraits for
-  /// Belos::MultiVec, which is a generic interface that users may
-  /// implement in order to wrap their own multivector
-  /// implementations.
+  /// Belos interfaces to every multivector implementation through a
+  /// specialization of MultiVecTraits.  Thus, we provide a
+  /// specialization of MultiVecTraits for the MultiVec run-time
+  /// polymorphic interface above.
+  ///
+  /// \tparam ScalarType The type of entries in the multivector; the
+  ///   template parameter of MultiVec.
   template<class ScalarType>
   class MultiVecTraits<ScalarType,MultiVec<ScalarType> >
   {
@@ -299,16 +432,13 @@ public:
 
 #ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
-    /// \brief TsqrAdaptor specialization for the multivector type MV.
+    /// \brief TSQR adapter for MultiVec.
     ///
-    /// By default, we provide a "stub" implementation.  It has the
-    /// right methods and typedefs, but its constructors and methods
-    /// all throw std::logic_error.  Later, we will extend MultiVec
-    /// with a TSQR interface itself, and write an adapter for
-    /// MultiVec that calls MultiVec's methods.  This will allow users
-    /// of MultiVec to extend it to implement a TSQR adapter if they
-    /// wish.
-    typedef Belos::details::StubTsqrAdapter<MultiVec<ScalarType> > tsqr_adaptor_type;
+    /// Our TSQR adapter for MultiVec calls MultiVec's virtual
+    /// methods.  If you want to use TSQR with your MultiVec subclass,
+    /// you must implement these methods yourself, as the default
+    /// implementations throws std::logic_error.
+    typedef details::MultiVecTsqrAdapter<ScalarType> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   };
 
