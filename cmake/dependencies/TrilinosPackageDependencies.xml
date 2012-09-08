@@ -1290,7 +1290,7 @@
   <Package name="Zoltan2" dir="packages/zoltan2" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Tpetra,KokkosClassic,Epetra,Teuchos,Xpetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Tpetra,KokkosClassic,Epetra,Teuchos,Xpetra,MueLu"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Tpetra,KokkosClassic,Epetra,Teuchos,Xpetra,Galeri"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Zoltan"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="METIS,PaToH,ParMETIS,Scotch,AMD,CCOLAMD,OVIS"/>
