@@ -31,6 +31,8 @@
 
 #include <BelosConfigDefs.hpp>
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <stdexcept>
 

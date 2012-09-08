@@ -54,6 +54,7 @@
 /// (ScalarType) and multivector type (MV).
 
 #include "BelosTypes.hpp"
+#include "BelosStubTsqrAdapter.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -301,6 +302,22 @@ namespace Belos {
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
     //@}
+
+#ifdef HAVE_BELOS_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for the multivector type MV.
+    ///
+    /// By default, we provide a "stub" implementation.  It has the
+    /// right methods and typedefs, but its constructors and methods
+    /// all throw std::logic_error.  If you plan to use TSQR in Belos
+    /// (e.g., through TsqrOrthoManager or TsqrMatOrthoManager), and
+    /// if your multivector type MV is neither Epetra_MultiVector nor
+    /// Tpetra::MultiVector, you must implement a functional TSQR
+    /// adapter.  Please refer to Epetra::TsqrAdapter (for
+    /// Epetra_MultiVector) or Tpetra::TsqrAdaptor (for
+    /// Tpetra::MultiVector) for examples.
+    typedef Belos::details::StubTsqrAdapter<MV> tsqr_adaptor_type;
+#endif // HAVE_BELOS_TSQR
   };
   
 } // namespace Belos

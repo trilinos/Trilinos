@@ -42,59 +42,75 @@
 #ifndef BELOS_MULTI_VEC_HPP
 #define BELOS_MULTI_VEC_HPP
 
-/*! \file BelosMultiVec.hpp
-  \brief Templated virtual class for creating multi-vectors that can interface with the Belos::MultiVecTraits class
-*/
+/// \file BelosMultiVec.hpp
+/// \brief Interface for multivectors used by Belos' linear solvers.
+///
+/// We provide two options for letting Belos' linear solvers use
+/// arbitrary multivector types.  One is via compile-time
+/// polymorphism, by specializing MultiVecTraits.  The other is via
+/// run-time polymorphism, by implementing MultiVec (the interface
+/// defined in this header file).  Belos ultimately only uses
+/// MultiVecTraits (it uses MultiVec via a specialization of
+/// MultiVecTraits for MultiVec), so the preferred way to tell Belos
+/// how to use your multivector class is via a MultiVecTraits
+/// specialization.  However, some users find a run-time polymorphic
+/// interface useful, so we provide it as a service to them.
 
 #include "BelosMultiVecTraits.hpp"
 #include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 
-/*! 	\class Belos::MultiVec
-
-	\brief Belos's templated pure virtual class for constructing multivectors that 
-	are used by the linear solver.
-
-	A concrete implementation of this class is necessary.  The user can create
-	their own implementation if those supplied are not suitable for their needs.
-
-	\author Michael Heroux, Rich Lehoucq, Heidi Thornquist
-*/
-
 namespace Belos {
 
+/// \class MultiVec
+/// \brief Interface for multivectors used by Belos' linear solvers.
+/// \author Michael Heroux, Rich Lehoucq, and Heidi Thornquist
+///
+/// \tparam ScalarType The type of entries of the multivector.
+///
+/// Belos accesses multivectors through a traits interface called
+/// MultiVecTraits.  If you want to use Belos with your own
+/// multivector class MV, you may either specialize MultiVecTraits for
+/// MV, or you may wrap MV in your own class that implements MultiVec.
+/// Specializing MultiVecTraits works via compile-time polymorphism,
+/// whereas implementing the MultiVec interface works via run-time
+/// polymorphism.  You may pick whichever option you like.  However,
+/// specializing MultiVecTraits is the preferred method.  This is
+/// because Belos' linear solvers always use a specialization of
+/// MultiVecTraits to access multivector operations.  They only use
+/// MultiVec through a specialization of the MultiVecTraits traits
+/// class, which is implemented below in this header file.
+///
+/// If you want your multivector class (or a wrapper thereof) to
+/// implement the MultiVec interface, you should inherit from
+/// MultiVec<ScalarType>, where ScalarType is the type of entries in
+/// the multivector.  For example, a multivector with entries of type
+/// double would inherit from MultiVec<double>.
 template <class ScalarType>
 class MultiVec {
 public:
   //! @name Constructor/Destructor
   //@{ 
-  //! %Belos::MultiVec constructor.
+  //! Default constructor.
   MultiVec() {};
   
-  //! %Belos::MultiVec destructor.
+  //! Destructor (virtual for memory safety of derived classes).
   virtual ~MultiVec () {};
   
   //@}
   //! @name Creation methods for new multivectors
   //@{ 
   
-  /*! \brief Creates a new empty %Belos::MultiVec containing \c numvecs columns.
-    
-  \return Pointer to the new multivector with uninitialized values	
-  */
-  
+  /// \brief Create a new MultiVec with \c numvecs columns.
+  /// \return Pointer to the new multivector with uninitialized values.
   virtual MultiVec<ScalarType> * Clone ( const int numvecs ) const = 0;
   
-  /*! \brief Creates a new %Belos::MultiVec and copies contents of \c *this into
-    the new std::vector (deep copy).
-    
-    \return Pointer to the new multivector	
-  */
-  
+  /// \brief Create a new MultiVec and copy contents of \c *this into it (deep copy).
+  /// \return Pointer to the new multivector	
   virtual MultiVec<ScalarType> * CloneCopy () const = 0;
   
   /*! \brief Creates a new %Belos::MultiVec and copies the selected contents of \c *this 
-    into the new std::vector (deep copy).  The copied 
+    into the new multivector (deep copy).  The copied 
     vectors from \c *this are indicated by the \c index.size() indices in \c index.
     
     \return Pointer to the new multivector	
@@ -123,7 +139,7 @@ public:
   
   //! @name Dimension information methods	
   //@{ 
-  //! Obtain the std::vector length of *this multivector block.
+  //! Obtain the multivector length of *this multivector block.
   
   virtual int GetVecLength () const = 0;
   
@@ -161,7 +177,7 @@ public:
   
   virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const = 0;
   
-  /*! \brief Compute a std::vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
+  /*! \brief Compute a multivector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
    */
   
   virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>& b ) const = 0;
@@ -170,8 +186,8 @@ public:
   //! @name Norm method
   //@{ 
   
-  /*! \brief Compute the 2-norm of each individual std::vector of \c *this.  
-    Upon return, \c normvec[i] holds the 2-norm of the \c i-th std::vector of \c *this
+  /*! \brief Compute the 2-norm of each vector of \c *this.  
+    Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
   */
   
   virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType type = TwoNorm ) const = 0;
@@ -280,7 +296,20 @@ public:
     ///
     static void MvPrint( const MultiVec<ScalarType>& mv, std::ostream& os )
     { mv.MvPrint(os); }
-    
+
+#ifdef HAVE_BELOS_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for the multivector type MV.
+    ///
+    /// By default, we provide a "stub" implementation.  It has the
+    /// right methods and typedefs, but its constructors and methods
+    /// all throw std::logic_error.  Later, we will extend MultiVec
+    /// with a TSQR interface itself, and write an adapter for
+    /// MultiVec that calls MultiVec's methods.  This will allow users
+    /// of MultiVec to extend it to implement a TSQR adapter if they
+    /// wish.
+    typedef Belos::details::StubTsqrAdapter<MultiVec<ScalarType> > tsqr_adaptor_type;
+#endif // HAVE_BELOS_TSQR
   };
 
 
