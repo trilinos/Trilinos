@@ -817,6 +817,11 @@ void clipLower(MultiVector & v,double lowerBound);
   */
 void clipUpper(MultiVector & v,double upperBound);
 
+/** This replaces entries of a vector equal to a particular value
+  * with a new value.
+  */
+void replaceValue(MultiVector & v,double currentValue,double newValue);
+
 } // end namespace Teko
 
 #endif

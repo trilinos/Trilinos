@@ -1447,4 +1447,22 @@ void clipUpper(MultiVector & v,double upperBound)
    }
 }
 
+void replaceValue(MultiVector & v,double currentValue,double newValue)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   // cast so entries are accessible
+   RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+      = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
+
+   Thyra::Ordinal i = 0;
+   Teuchos::ArrayRCP<double> values;
+   spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
+   for(Teuchos::ArrayRCP<double>::size_type j=0;j<values.size();j++) {
+      if(values[j]==currentValue)
+         values[j] = newValue;
+   }
+}
+
 }
