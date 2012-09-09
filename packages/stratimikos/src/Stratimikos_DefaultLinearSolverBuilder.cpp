@@ -173,19 +173,28 @@ void DefaultLinearSolverBuilder::setupCLP( Teuchos::CommandLineProcessor *clp )
 
 void DefaultLinearSolverBuilder::readParameters( std::ostream *out )
 {
+  using Teuchos::parameterList;
+  using Teuchos::ptr;
+  using Teuchos::updateParametersFromXmlFile;
+  using Teuchos::updateParametersFromXmlString;
+  using std::endl;
+
   if(!paramList_.get()) {
-    paramList_ = Teuchos::parameterList("DefaultLinearSolverBuilder");
+    paramList_ = parameterList("DefaultLinearSolverBuilder");
   }
   if (paramsXmlFileName().length()) {
-    if(out) *out
-      << "\nReading parameters from XML file \""<<paramsXmlFileName()<<"\" ...\n";
-    Teuchos::updateParametersFromXmlFile(paramsXmlFileName(), &*paramList_);
+    if (out) {
+      *out << endl << "Reading parameters from XML file \"" 
+	   << paramsXmlFileName() << "\" ..." << endl;
+    }
+    updateParametersFromXmlFile (paramsXmlFileName (), ptr (&*paramList_));
   }
   if (extraParamsXmlString().length()) {
-    if(out) *out
-      << "\nAppending extra parameters from the XML string \""
-      <<extraParamsXmlString()<<"\" ...\n";
-    Teuchos::updateParametersFromXmlString(extraParamsXmlString(), &*paramList_);
+    if (out) {
+      *out << endl << "Appending extra parameters from the XML string \""
+	   << extraParamsXmlString() << "\" ..." << endl;
+    }
+    updateParametersFromXmlString (extraParamsXmlString (), ptr (&*paramList_));
   }
   setParameterList(paramList_);
 }
