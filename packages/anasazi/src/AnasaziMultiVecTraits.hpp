@@ -41,23 +41,28 @@
 /// (ScalarType) and multivector type (MV).
 
 #include "AnasaziTypes.hpp"
+#include "AnasaziStubTsqrAdapter.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Anasazi {
 
-  /*! \brief This is the default struct used by MultiVecTraits<ScalarType, MV> class to produce a
-      compile time error when the specialization does not exist for multivector type <tt>MV</tt>.
-  */
+  /// \class UndefinedMultiVecTraits
+  /// \brief Used by MultiVecTraits to report lack of a specialization.
+  ///
+  /// MultiVecTraits<ScalarType, MV> uses this struct to produce a
+  /// compile-time error when no specialization exists for the scalar
+  /// type ScalarType and multivector type MV.
   template< class ScalarType, class MV >
   struct UndefinedMultiVecTraits
   {
-    //! This function should not compile if there is an attempt to instantiate!
-    /*! \note Any attempt to compile this function results in a compile time error.  This means
-      that the template specialization of Anasazi::MultiVecTraits class for type <tt>MV</tt> does 
-      not exist, or is not complete.
-    */
+    /// \brief Any attempt to compile this method will result in a compile-time error.
+    ///
+    /// If you see compile errors referring to this method, then
+    /// either no specialization of MultiVecTraits exists for the
+    /// scalar type ScalarType and multivector type MV, or the
+    /// specialization for ScalarType and MV is not complete.
     static inline ScalarType notDefined() { return MV::this_type_is_missing_a_specialization(); };
   };
 
@@ -297,6 +302,22 @@ namespace Anasazi {
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
     //@}
+
+#ifdef HAVE_ANASAZI_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for the multivector type MV.
+    ///
+    /// By default, we provide a "stub" implementation.  It has the
+    /// right methods and typedefs, but its constructors and methods
+    /// all throw std::logic_error.  If you plan to use TSQR in
+    /// Anasazi (e.g., through TsqrOrthoManager), and if your
+    /// multivector type MV is neither Epetra_MultiVector nor
+    /// Tpetra::MultiVector, you must implement a functional TSQR
+    /// adapter.  Please refer to Epetra::TsqrAdapter (for
+    /// Epetra_MultiVector) or Tpetra::TsqrAdaptor (for
+    /// Tpetra::MultiVector) for examples.
+    typedef Anasazi::details::StubTsqrAdapter<MV> tsqr_adaptor_type;
+#endif // HAVE_ANASAZI_TSQR
   };
   
 } // namespace Anasazi
