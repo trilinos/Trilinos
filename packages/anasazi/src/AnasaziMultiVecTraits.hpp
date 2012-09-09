@@ -95,11 +95,19 @@ namespace Anasazi {
   /// MultiVec, then you must implement a specialization of
   /// MultiVecTraits for MV.  Otherwise, this traits class will report
   /// a compile-time error (relating to UndefinedMultiVecTraits).
+  /// Specializing MultiVecTraits for your MV type is not hard.  Just
+  /// look at the examples for Epetra_MultiVector (in
+  /// anasazi/epetra/src/AnasaziEpetraAdapter.hpp) and
+  /// Tpetra::MultiVector (in
+  /// anasazi/tpetra/src/AnasaziTpetraAdapter.hpp).
+  ///
+  /// \note You do <i>not</i> need to write a specialization of
+  ///   MultiVecTraits if you are using Epetra, Tpetra, or Thyra
+  ///   multivectors.  Anasazi already provides specializations for
+  ///   these types.  Just relax and enjoy using the solvers!
   template<class ScalarType, class MV>
-  class MultiVecTraits 
-  {
+  class MultiVecTraits {
   public:
-
     //! @name Creation methods
     //@{
 
