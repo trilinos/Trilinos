@@ -47,14 +47,15 @@
 ///
 /// We provide two options for letting Belos' linear solvers use
 /// arbitrary multivector types.  One is via compile-time
-/// polymorphism, by specializing MultiVecTraits.  The other is via
-/// run-time polymorphism, by implementing MultiVec (the interface
-/// defined in this header file).  Belos ultimately only uses
-/// MultiVecTraits (it uses MultiVec via a specialization of
-/// MultiVecTraits for MultiVec), so the preferred way to tell Belos
-/// how to use your multivector class is via a MultiVecTraits
-/// specialization.  However, some users find a run-time polymorphic
-/// interface useful, so we provide it as a service to them.
+/// polymorphism, by specializing Belos::MultiVecTraits.  The other is
+/// via run-time polymorphism, by implementing Belos::MultiVec (the
+/// interface defined in this header file).  Belos ultimately only
+/// uses Belos::MultiVecTraits (it uses Belos::MultiVec via a
+/// specialization of Belos::MultiVecTraits for Belos::MultiVec), so
+/// the preferred way to tell Belos how to use your multivector class
+/// is via a Belos::MultiVecTraits specialization.  However, some
+/// users find a run-time polymorphic interface useful, so we provide
+/// it as a service to them.
 
 #include "BelosMultiVecTraits.hpp"
 #include "BelosTypes.hpp"
@@ -115,7 +116,6 @@ public:
     
     \return Pointer to the new multivector	
   */
-  
   virtual MultiVec<ScalarType> * CloneCopy ( const std::vector<int>& index ) const = 0;
   
   /*! \brief Creates a new %Belos::MultiVec that shares the selected contents of \c *this.
@@ -124,7 +124,6 @@ public:
     
     \return Pointer to the new multivector	
   */
-  
   virtual MultiVec<ScalarType> * CloneViewNonConst ( const std::vector<int>& index ) = 0;
   
   /*! \brief Creates a new %Belos::MultiVec that shares the selected contents of \c *this.
@@ -133,90 +132,81 @@ public:
     
     \return Pointer to the new multivector	
   */
-  
   virtual const MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) const = 0;
+
   //@}
-  
   //! @name Dimension information methods	
   //@{ 
-  //! Obtain the multivector length of *this multivector block.
-  
+
+  //! The number of rows in the multivector.
   virtual int GetVecLength () const = 0;
   
-  //! Obtain the number of vectors in *this multivector block.
-  
+  //! The number of vectors (i.e., columns) in the multivector.
   virtual int GetNumberVecs () const = 0;
-  
+
   //@}
   //! @name Update methods
   //@{ 
-  /*! \brief Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
-   */
+
+  //! Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
+  virtual void 
+  MvTimesMatAddMv (const ScalarType alpha, 
+		   const MultiVec<ScalarType>& A, 
+		   const Teuchos::SerialDenseMatrix<int,ScalarType>& B, const ScalarType beta) = 0;
   
-  virtual void MvTimesMatAddMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, 
-				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, const ScalarType beta ) = 0;
-  
-  /*! \brief Replace \c *this with \c alpha * \c A + \c beta * \c B.
-   */
-  
+  //! Replace \c *this with \c alpha * \c A + \c beta * \c B.
   virtual void MvAddMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, const ScalarType beta, const MultiVec<ScalarType>& B ) = 0;
   
-  /*! \brief Scale each element of the vectors in \c *this with \c alpha.
-   */
-  
+  //! Scale each element of the vectors in \c *this with \c alpha.
   virtual void MvScale ( const ScalarType alpha ) = 0;
   
-  /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
-   */
-  
+  //! Scale each element of the <tt>i</tt>-th vector in \c *this with <tt>alpha[i]</tt>.
   virtual void MvScale ( const std::vector<ScalarType>& alpha ) = 0;
   
   /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply 
     \c alpha * \c A^T * (\c *this).
   */
-  
   virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const = 0;
-  
-  /*! \brief Compute a multivector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
-   */
-  
+
+  /// \brief Compute the dot product of each column of *this with the corresponding column of A.
+  ///
+  /// Compute a vector \c b whose entries are the individual
+  /// dot-products.  That is, <tt>b[i] = A[i]^H * (*this)[i]</tt>
+  /// where <tt>A[i]</tt> is the i-th column of A.
   virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>& b ) const = 0;
   
   //@}
   //! @name Norm method
   //@{ 
   
-  /*! \brief Compute the 2-norm of each vector of \c *this.  
-    Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
-  */
-  
+  /// \brief Compute the norm of each vector in \c *this.  
+  ///
+  /// \param normvec [out] On output, normvec[i] holds the norm of the
+  ///   \c i-th vector of \c *this.
+  /// \param type [in] The type of norm to compute.  The 2-norm is the default.
   virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType type = TwoNorm ) const = 0;
   
   //@}
   //! @name Initialization methods
   //@{ 
-  /*! \brief Copy the vectors in \c A to a set of vectors in \c *this.  The \c 
-    numvecs vectors in \c A are copied to a subset of vectors in \c *this
-    indicated by the indices given in \c index.
-  */
-  
+
+  /// \brief Copy the vectors in \c A to a set of vectors in \c *this.  
+  ///
+  /// The \c numvecs vectors in \c A are copied to a subset of vectors
+  /// in \c *this indicated by the indices given in \c index.
   virtual void SetBlock ( const MultiVec<ScalarType>& A, const std::vector<int>& index ) = 0;
-  
-  /*! \brief Replace the vectors in \c *this with random vectors.
-   */
-  
+
+  //! Fill all the vectors in \c *this with random numbers.  
   virtual void MvRandom () = 0;
   
-  /*! \brief Replace each element of the vectors in \c *this with \c alpha.
-   */
-  
+  //! Replace each element of the vectors in \c *this with \c alpha.
   virtual void MvInit ( const ScalarType alpha ) = 0;
   
   //@}
   //! @name Print method
   //@{ 
-  /*! \brief Print the \c *this multivector.
-   */
+
+  //! Print \c *this multivector to the \c os output stream.
   virtual void MvPrint ( std::ostream& os ) const = 0;
   //@}
 
@@ -353,12 +343,6 @@ public:
 };
 } // namespace details
 
-  ////////////////////////////////////////////////////////////////////
-  //
-  // Implementation of the Belos::MultiVecTraits for Belos::MultiVec.
-  //
-  ////////////////////////////////////////////////////////////////////
-
   /// \brief Specialization of MultiVecTraits for Belos::MultiVec.
   ///
   /// Belos interfaces to every multivector implementation through a
@@ -369,13 +353,17 @@ public:
   /// \tparam ScalarType The type of entries in the multivector; the
   ///   template parameter of MultiVec.
   template<class ScalarType>
-  class MultiVecTraits<ScalarType,MultiVec<ScalarType> >
-  {
+  class MultiVecTraits<ScalarType,MultiVec<ScalarType> > {
   public:
+    //! @name Creation methods
+    //@{ 
 
-    ///
-    static Teuchos::RCP<MultiVec<ScalarType> > Clone( const MultiVec<ScalarType>& mv, const int numvecs )
-    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).Clone(numvecs) ); }
+    /// \brief Create a new empty \c MultiVec containing \c numvecs columns.
+    /// \return Reference-counted pointer to the new \c MultiVec.
+    static Teuchos::RCP<MultiVec<ScalarType> > 
+    Clone (const MultiVec<ScalarType>& mv, const int numvecs) {
+      return Teuchos::rcp (const_cast<MultiVec<ScalarType>&> (mv).Clone (numvecs)); 
+    }
     ///
     static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy() ); }
@@ -437,7 +425,7 @@ public:
     /// Our TSQR adapter for MultiVec calls MultiVec's virtual
     /// methods.  If you want to use TSQR with your MultiVec subclass,
     /// you must implement these methods yourself, as the default
-    /// implementations throws std::logic_error.
+    /// implementations throw std::logic_error.
     typedef details::MultiVecTsqrAdapter<ScalarType> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   };
