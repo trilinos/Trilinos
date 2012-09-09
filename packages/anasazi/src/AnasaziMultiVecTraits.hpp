@@ -62,13 +62,39 @@ namespace Anasazi {
   };
 
 
-  /*! \brief Virtual base class which defines basic traits for the multi-vector type.
-
-      An adapter for this traits class must exist for the <tt>MV</tt> type.
-      If not, this class will produce a compile-time error.
-
-      \ingroup anasazi_opvec_interfaces
-  */
+  /// \brief Traits class which defines basic operations on multivectors.
+  /// \ingroup anasazi_opvec_interfaces
+  ///
+  /// \tparam ScalarType The type of the entries in the multivectors.
+  /// \tparam MV The type of the multivectors themselves.
+  ///
+  /// This traits class tells Anasazi's solvers how to perform
+  /// multivector operations for the multivector type MV.  These
+  /// operations include creating copies or views, finding the number
+  /// of rows or columns (i.e., vectors) in a given multivector, and
+  /// computing inner products, norms, and vector sums.  (Anasazi's
+  /// solvers use the OperatorTraits traits class to apply operators
+  /// to multivectors.)
+  ///
+  /// Anasazi gives users two different ways to tell its solvers how
+  /// to compute with multivectors of a given type MV.  The first and
+  /// preferred way is for users to specialize MultiVecTraits, this
+  /// traits class, for their given MV type.  Anasazi provides
+  /// specializations for MV = Epetra_MultiVector,
+  /// Tpetra::MultiVector, and Thyra::MultiVectorBase.  The second way
+  /// is for users to make their multivector type (or a wrapper
+  /// thereof) inherit from MultiVec.  This works because Anasazi
+  /// provides a specialization of MultiVecTraits for MultiVec.
+  /// Specializing MultiVecTraits is more flexible because it does not
+  /// require a multivector type to inherit from MultiVec; this is
+  /// possible even if you do not have control over the interface of a
+  /// class.
+  ///
+  /// If you have a different multivector type MV that you would like
+  /// to use with Anasazi, and if that type does not inherit from
+  /// MultiVec, then you must implement a specialization of
+  /// MultiVecTraits for MV.  Otherwise, this traits class will report
+  /// a compile-time error (relating to UndefinedMultiVecTraits).
   template<class ScalarType, class MV>
   class MultiVecTraits 
   {
