@@ -153,7 +153,7 @@ namespace details {
   };
 
 } // namespace details
-} // namespace Tpetra
+} // namespace Belos
 
 #endif // __Belos_StubTsqrAdapter_hpp
 
